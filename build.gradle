@@ -1,0 +1,113 @@
+apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+version = "1.1.39"
+group = 'net.sourceforge.getl'
+
+configurations {
+	addJars
+	deployerJars
+}
+
+repositories {
+	jcenter()
+	
+	mavenCentral()
+	maven {
+		url 'https://raw.githubusercontent.com/Takuto88/sauronsoftware-maven/master/releases/'
+	}
+}
+
+dependencies {
+	compile 'org.codehaus.groovy:groovy-all:2.4.5'
+	
+	addJars 'com.sun.mail:smtp:1.5.4'
+	addJars 'com.sun.mail:mailapi:1.5.4'
+	addJars 'net.lingala.zip4j:zip4j:1.3.2'
+	addJars 'it.sauronsoftware:ftp4j:1.7.2'
+	addJars 'com.jcraft:jsch:0.1.53'
+	addJars 'net.sf.supercsv:super-csv:2.3.1'
+	addJars 'com.h2database:h2:1.4.190'
+	configurations.compile.extendsFrom(configurations.addJars)
+	
+	deployerJars "org.apache.maven.wagon:wagon-http:2.2"
+}
+
+task copyDeps(type: Copy) {
+  from configurations.runtime
+  into 'libs'
+}
+
+signing {
+	sign configurations.archives
+}
+
+jar {
+	from configurations.addJars.collect { it.isDirectory() ? it : zipTree(it) }
+	from { ['docs/getl.readme.txt', 'docs/getl.license.txt', 'docs/getl.license_rus.txt'] }
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: groovydoc) {
+	classifier = 'javadoc'
+	from groovydoc.destinationDir
+}
+
+artifacts {
+	archives javadocJar, sourcesJar
+}
+
+build.dependsOn sourcesJar
+build.dependsOn javadocJar
+
+uploadArchives {
+	repositories.mavenDeployer {
+		beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+		
+		configuration = configurations.deployerJars
+		
+		repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2/') {
+			authentication(userName: ossrhUsername, password: ossrhPassword)
+		}
+		
+		snapshotRepository(url: 'https://oss.sonatype.org/content/repositories/snapshots/') {
+			authentication(userName: ossrhPassword, password: ossrhPassword)
+		  }
+		
+		pom.project {
+			inceptionYear '2015'
+			packaging 'jar'
+			name 'getl'
+			artifactId 'getl'
+			groupId 'net.sourceforge.getl'
+			description 'GETL - based package in Groovy, which automates the work of loading and transforming data'
+			url 'https://sourceforge.net/projects/getl/'
+			
+			licenses {
+				license {
+					name 'GNU GENERAL PUBLIC LICENSE, Version 3'
+					url 'http://www.gnu.org/licenses/gpl.txt'
+					distribution 'repo'
+				}
+			}
+			
+			scm {
+				url 'svn://svn.code.sf.net/p/getl/source/trunk'
+			}
+			
+			developers {
+				developer {
+					id 'owner'
+					name 'Aleksey Konstantinov'
+					email 'ascrus@easydata.ru'
+					timezone 'UTC+3'
+				}
+			}
+		}
+	}
+}

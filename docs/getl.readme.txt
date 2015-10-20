@@ -1,0 +1,32 @@
+GETL (c) 2013-2015 EasyData LTD
+
+*** Installation ***
+Set path to file getl-xxx.jar to CLASSPATH variable for JVM. 
+if you want to run getl jobs as scripts, install groovy and copy file getl-xxx.jar to lib folder for groovy install path.
+
+*** Build by Maven ***
+For use in Maven projects write to section dependencies:
+<dependency>
+  <groupId>net.sourceforge.getl</groupId>
+  <artifactId>getl</artifactId>
+  <version>1.x.x</version>
+  <scope>compile</scope>
+</dependency>
+
+*** Build by Gradle ***
+For use in Gradle projects write to section dependencies:
+compile 'net.sourceforge.getl:getl:1.x.x'
+
+*** Open by Eclipse ***
+Project by SVN created by Eclipse with plugins:
+Groovy Eclipse (https://github.com/groovy/groovy-eclipse)
+
+*** Required ***
+GETL includes all needed libraries for running and work with files, ftp, logs and H2 database. 
+Working with others RDBMS required JDBC vendor libraries.
+
+*** Examples ***
+Archive getl_example-sources.jar contains source code of demonstration work using the GETL.
+
+*** Contacts ***
+Please send you questions and requests to email: ascrus@easydata.ru.
