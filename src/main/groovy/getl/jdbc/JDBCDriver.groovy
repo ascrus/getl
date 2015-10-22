@@ -806,8 +806,9 @@ ${extend}'''
 			if (dir.beforefor != null) sb << dir.beforefor + " "
 			sb << "FROM "
 			if (dir.afterfor != null) sb << dir.afterfor + " "
+			sb << fn
 			if (dir.aftertable != null) sb << " " + dir.aftertable
-			sb << fn + " tab"
+			sb << " tab"
 			if (dir.afteralias != null) sb << " " + dir.afteralias
 			sb << "\n"
 			
