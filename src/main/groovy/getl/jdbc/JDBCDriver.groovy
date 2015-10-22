@@ -759,6 +759,7 @@ ${extend}'''
 	 * <li>beforefor
 	 * <li>afterfor
 	 * <li>aftertable
+	 * <li>afteralias
 	 * <li>finish
 	 * </ul> 
 	 * @param dataset
@@ -805,8 +806,9 @@ ${extend}'''
 			if (dir.beforefor != null) sb << dir.beforefor + " "
 			sb << "FROM "
 			if (dir.afterfor != null) sb << dir.afterfor + " "
-			sb << fn + " tab"
 			if (dir.aftertable != null) sb << " " + dir.aftertable
+			sb << fn + " tab"
+			if (dir.afteralias != null) sb << " " + dir.afteralias
 			sb << "\n"
 			
 			if (where != null) sb << "WHERE ${where}\n"

@@ -1,7 +1,7 @@
 package getl.oracle
 
 /**
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for «Groovy ETL».
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for ï¿½Groovy ETLï¿½.
 
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
@@ -47,7 +47,7 @@ class OracleDriver extends JDBCDriver {
 		caseObjectName = "UPPER"
 		sqlType."BIGINT"."name" = "number"
 		
-		methodParams.register("eachRow", ["scn", "timestamp", "hints"])
+		methodParams.register("eachRow", ["scn", "timestamp", "hints", "partition"])
 	}
 	
 	@Override
@@ -71,17 +71,21 @@ class OracleDriver extends JDBCDriver {
 		if (params."scn" != null) {
 			Long scn
 			if (params."scn" instanceof String) scn = ConvertUtils.Object2Long(params."scn") else scn = params."scn"
-			dir."aftertable" = "AS OF SCN $scn"
+			dir."afteralias" = "AS OF SCN $scn"
 		}
 		else if (params."timestamp" != null) {
 			Date timestamp 
 			if (params."timestamp" instanceof String) timestamp = DateUtils.ParseDate("yyyy-MM-dd HH:mm:ss", params."timestamp") else timestamp = params."timestamp"
 			def ts = DateUtils.FormatDate("yyyy-MM-dd HH:mm:ss.sss", timestamp)
-			dir."aftertable" = "AS OF TIMESTAMP TO_TIMESTAMP('$ts', 'YYYY-MM-DD HH24:MI:SS.FF')"
+			dir."afteralias" = "AS OF TIMESTAMP TO_TIMESTAMP('$ts', 'YYYY-MM-DD HH24:MI:SS.FF')"
 		}
 		
 		if (params."hints" != null) {
 			dir."afterselect" = "/*+ ${params."hints"} */"
+		}
+		
+		if (params."partition" != null) {
+			dir."aftertable" = "PARTITION (${params."partition"})"
 		}
 	}
 	
