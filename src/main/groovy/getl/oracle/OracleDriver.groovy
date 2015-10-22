@@ -47,7 +47,7 @@ class OracleDriver extends JDBCDriver {
 		caseObjectName = "UPPER"
 		sqlType."BIGINT"."name" = "number"
 		
-		methodParams.register("eachRow", ["scn", "timestamp", "hints", "partition"])
+		methodParams.register("eachRow", ["scn", "timestamp", "hints", "usePartition"])
 	}
 	
 	@Override
@@ -84,8 +84,8 @@ class OracleDriver extends JDBCDriver {
 			dir."afterselect" = "/*+ ${params."hints"} */"
 		}
 		
-		if (params."partition" != null) {
-			dir."aftertable" = "PARTITION (${params."partition"})"
+		if (params."usePartition" != null) {
+			dir."aftertable" = "PARTITION (${params."usePartition"})"
 		}
 	}
 	
