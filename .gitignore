@@ -1,1 +1,25 @@
-/bin/
+### OSX template
+.DS_Store
+
+### Gradle template
+.gradle
+build/
+
+### Eclipse template
+bin/
+
+# JDT-specific (Eclipse Java Development Tools)
+*.iml
+
+## Directory-based project format:
+.idea/
+
+# IntelliJ
+out/
+
+# mpeltonen/sbt-idea plugin
+.idea_modules/
+
+### Java template
+*.class
+
