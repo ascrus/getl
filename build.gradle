@@ -2,7 +2,7 @@ apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-version = "1.1.40"
+version = "1.1.41"
 group = 'net.sourceforge.getl'
 
 configurations {
