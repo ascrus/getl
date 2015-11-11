@@ -63,7 +63,7 @@ class CSVDriver extends FileDriver {
 	CSVDriver () {
 		super()
 		methodParams.register("eachRow", ["isValid", "quoteStr", "fieldDelimiter", "rowDelimiter", "header", "isSplit", "readAsText", 
-											"escaped", "processError", "filter"])
+											"escaped", "processError", "filter", "nullAsValue"])
 		methodParams.register("openWrite", ["batchSize", "onSaveBatch", "isValid", "escaped", "splitSize", 
 								"quoteStr", "fieldDelimiter", "rowDelimiter", "header", "nullAsValue", "decimalSeparator", "formatDate", "formatTime", "formatDateTime", "onSplitFile"])
 	}
