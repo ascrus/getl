@@ -1,7 +1,7 @@
 package getl.utils
 
 /**
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for «Groovy ETL».
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for ï¿½Groovy ETLï¿½.
 
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
@@ -73,7 +73,7 @@ class StringUtils {
 	/**
 	 * Evaluate string with macros
 	 * @param value
-	 * @param macros
+	 * @param vars
 	 * @return
 	 */
 	public static String EvalMacroString(String value, Map vars) {
