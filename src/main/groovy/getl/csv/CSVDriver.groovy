@@ -30,7 +30,6 @@ import groovy.transform.Synchronized
 import java.nio.CharBuffer
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
-import java.util.Map;
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
@@ -177,7 +176,7 @@ class CSVDriver extends FileDriver {
 												String formatDate, String formatTime, String formatDateTime, boolean isValid) {
 		CellProcessor cp
 		
-		if (field.type == null || (field.type in [Field.Type.STRING, Field.Type.OBJECT, Field.Type.ROWID, Field.Type.TEXT])) {
+		if (field.type == null || (field.type in [Field.Type.STRING, Field.Type.OBJECT, Field.Type.ROWID/*, Field.Type.TEXT*/])) {
 			if (field.trim == true) {
 				cp = new Trim()
 			}
@@ -282,16 +281,19 @@ class CSVDriver extends FileDriver {
 				cp = new FmtDate(df)
 			}
 		} else if (field.type == Field.Type.BLOB) {
-		if (!isWrite) {
-			cp = new CSVParseBlob()
-		}
-		else {
-			cp = new CSVFmtBlob()
-		}
-		
-		/*} else if (field.type == Field.Type.TEXT) {
-			throw new ExceptionGETL("TEXT field not supported")*/
-				
+			if (!isWrite) {
+				cp = new CSVParseBlob()
+			}
+			else {
+				cp = new CSVFmtBlob()
+			} 
+		} else if (field.type == Field.Type.TEXT) {
+			if (!isWrite) {
+				cp = new CSVParseClob()
+			}
+			else {
+				cp = new CSVFmtClob()
+			}
 		} else {
 			throw new ExceptionGETL("Type ${field.type} not supported")
 		}

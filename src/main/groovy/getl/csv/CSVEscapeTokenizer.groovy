@@ -13,6 +13,7 @@ class CSVEscapeTokenizer extends Tokenizer {
 		super(reader, preferences)
 	}
 	
+	@groovy.transform.CompileStatic
 	@Override
 	protected String readLine() throws IOException {
 		def res = super.readLine()

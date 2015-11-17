@@ -17,11 +17,12 @@ class CSVEscapeMapReader extends CsvMapReader {
 		super(tokenizer, preferences)
 	}
 	
+	@groovy.transform.CompileStatic
 	@Override
 	public Map<String, Object> read(String[] cols, CellProcessor[] proc) throws IOException {
 		def res = super.read(cols, proc)
-		res.each { key, value ->
-			if (value instanceof String) res.put(key, StringUtils.UnescapeJava(value))
+		res?.each { key, value ->
+			if (value instanceof String) res.put(key, StringUtils.UnescapeJava((String)value))
 		}
 		
 		return res

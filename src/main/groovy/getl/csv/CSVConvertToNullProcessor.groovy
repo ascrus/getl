@@ -1,7 +1,7 @@
 package getl.csv
 
 /**
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for «Groovy ETL».
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for ï¿½Groovy ETLï¿½.
 
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
@@ -48,10 +48,9 @@ class CSVConvertToNullProcessor extends CellProcessorAdaptor
 		this.nullValue = nullValue
 	}
 
+	@groovy.transform.CompileStatic
 	@Override
 	public Object execute(Object value, CsvContext context) {
-		//validateInputNotNull(value, context)
-		
 		if (nullValue != null && value != null && value == nullValue) value = null
 		
 		next.execute(value, context)

@@ -6,6 +6,7 @@ import org.supercsv.util.CsvContext
 import getl.utils.*
 
 class CSVParseBlob extends CellProcessorAdaptor {
+	@groovy.transform.CompileStatic
 	@Override
 	public Object execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
@@ -14,7 +15,7 @@ class CSVParseBlob extends CellProcessorAdaptor {
 			throw new SuperCsvCellProcessorException(String.class, value, context, this);
 		}
 
-		def result = StringUtils.HexToRaw(value)
+		def result = StringUtils.HexToRaw((String)value)
 		return next.execute(result, context)
 	}
 

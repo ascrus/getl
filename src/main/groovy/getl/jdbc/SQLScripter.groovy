@@ -1,7 +1,7 @@
 package getl.jdbc
 
 /**
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for «Groovy ETL».
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for пїЅGroovy ETLпїЅ.
 
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
@@ -115,7 +115,7 @@ public class SQLScripter {
 		Pattern p
 		Matcher m
 		
-		// Заменяем значения переменных
+		// Compile vars
 		p = Pattern.compile('(\\{\\w+\\})')
 		m = p.matcher(script)
 		StringBuffer b = new StringBuffer()

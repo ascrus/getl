@@ -6,6 +6,7 @@ import org.supercsv.util.CsvContext
 import getl.utils.*
 
 class CSVFmtBlob extends CellProcessorAdaptor {
+	@groovy.transform.CompileStatic
 	@Override
 	public Object execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
@@ -14,7 +15,7 @@ class CSVFmtBlob extends CellProcessorAdaptor {
 			throw new SuperCsvCellProcessorException((byte[]).class, value, context, this);
 		}
 		
-		String result = /*'0x' + */StringUtils.RawToHex(value)
+		String result = /*'0x' + */StringUtils.RawToHex((byte[])value)
 		return next.execute(result, context)
 	}
 

@@ -1125,59 +1125,6 @@ $sql
 			def fn = f.name.toLowerCase()
 			def dbType = (f.dbType != null)?f.dbType:type2dbType(f.type)
 			
-			/*
-			switch (dbType) {
-				case java.sql.Types.BIGINT:
-					sb << "if (row.'${fn}' != null) stat.setLong(${curField}, row.'${fn}') else stat.setNull(${curField}, java.sql.Types.BIGINT)"
-					break
-					 
-				case java.sql.Types.INTEGER: case java.sql.Types.SMALLINT: case java.sql.Types.TINYINT: 
-					sb << "if (row.'${fn}' != null) stat.setInt(${curField}, row.'${fn}') else stat.setNull(${curField}, java.sql.Types.INTEGER)"
-					break
-				
-				case java.sql.Types.CHAR: case java.sql.Types.NCHAR:	
-				case java.sql.Types.LONGVARCHAR: case java.sql.Types.LONGNVARCHAR:
-				case java.sql.Types.VARCHAR: case java.sql.Types.NVARCHAR:
-					sb << "if (row.'${fn}' != null) stat.setString(${curField}, row.'${fn}') else stat.setNull(${curField}, java.sql.Types.VARCHAR)"
-					break
-				
-				case java.sql.Types.BOOLEAN: case Sql.BIT:
-					sb << "if (row.'${fn}' != null) stat.setBoolean(${curField}, row.'${fn}') else stat.setNull(${curField}, java.sql.Types.BOOLEAN)" 
-					break
-					
-				case java.sql.Types.DOUBLE: case java.sql.Types.FLOAT: case java.sql.Types.REAL:
-					sb << "if (row.'${fn}' != null) stat.setDouble(${curField}, row.'${fn}') else stat.setNull(${curField}, java.sql.Types.DOUBLE)"
-					break
-					
-				case java.sql.Types.DECIMAL: case java.sql.Types.NUMERIC:
-					sb << "if (row.'${fn}' != null) stat.setBigDecimal(${curField}, row.'${fn}') else stat.setNull(${curField}, java.sql.Types.DECIMAL)"
-					break
-					
-				case java.sql.Types.BLOB: case java.sql.Types.LONGVARBINARY: case java.sql.Types.VARBINARY:
-					sb << "if (row.'${fn}' != null) stat.setBlob(${curField}, new javax.sql.rowset.serial.SerialBlob(row.'${fn}')) else stat.setNull(${curField}, java.sql.Types.BLOB)"
-					break
-					
-				case java.sql.Types.CLOB: case java.sql.Types.NCLOB:
-					sb << "if (row.'${fn}' != null) stat.setClob(${curField}, row.'${fn}') else stat.setNull(${curField}, java.sql.Types.CLOB)"
-					break
-					
-				case java.sql.Types.DATE:
-					sb << "if (row.'${fn}' != null) stat.setDate(${curField}, new java.sql.Date(row.'${fn}'.getTime())) else stat.setNull(${curField}, java.sql.Types.DATE)"
-					break
-					
-				case java.sql.Types.TIME:
-					sb << "if (row.'${fn}' != null) stat.setTime(${curField}, new java.sql.Time(row.'${fn}'.getTime())) else stat.setNull(${curField}, java.sql.Types.TIME)"
-					break
-					
-				case java.sql.Types.TIMESTAMP:
-					sb << "if (row.'${fn}' != null) stat.setTimestamp(${curField}, new java.sql.Timestamp(row.'${fn}'.getTime())) else stat.setNull(${curField}, java.sql.Types.TIMESTAMP)"
-					break
-					
-				default:
-					sb << "if (row.'${fn}' != null) stat.setObject(${curField}, row.'${fn}') else stat.setNull(${curField}, java.sql.Types.OBJECT)"
-
-			}
-			*/
 			sb << GenerationUtils.GenerateSetParam(curField, dbType, new String("row.'${fn}'"))
 			sb << "\n"
 		}

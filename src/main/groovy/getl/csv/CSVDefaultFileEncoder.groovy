@@ -43,6 +43,7 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 		replaceTab = escaped && dataset.fieldDelimiter == "\t"
 	}
 
+	@groovy.transform.CompileStatic
 	@Override
 	public String encode(String value, CsvContext context, CsvPreference pref) {
 		String res = (replaceQuote)?value.replace(quote, '\u0007'):value
