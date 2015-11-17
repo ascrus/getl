@@ -6,6 +6,8 @@ import org.supercsv.io.CsvMapReader
 import org.supercsv.io.ITokenizer
 import org.supercsv.prefs.CsvPreference
 import getl.utils.StringUtils
+import java.sql.Clob
+import javax.sql.rowset.serial.SerialClob
 
 @InheritConstructors
 class CSVEscapeMapReader extends CsvMapReader {
@@ -22,7 +24,15 @@ class CSVEscapeMapReader extends CsvMapReader {
 	public Map<String, Object> read(String[] cols, CellProcessor[] proc) throws IOException {
 		def res = super.read(cols, proc)
 		res?.each { key, value ->
-			if (value instanceof String) res.put(key, StringUtils.UnescapeJava((String)value))
+			if (value instanceof String) {
+				res.put(key, StringUtils.UnescapeJava((String)value))
+			}
+			else if (value instanceof Clob) {
+				Clob text = (Clob)value
+				String str = (text.getSubString(1, (int)text.length()))
+				str = StringUtils.UnescapeJava(str)
+				res.put(key, new SerialClob(str.chars))
+			}
 		}
 		
 		return res
