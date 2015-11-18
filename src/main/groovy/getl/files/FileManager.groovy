@@ -1,7 +1,7 @@
 package getl.files
 
 /**
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for «Groovy ETL».
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for ï¿½Groovy ETLï¿½.
 
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
@@ -25,9 +25,7 @@ package getl.files
 */
 
 import getl.exception.ExceptionGETL
-import getl.utils.Config
-import getl.utils.FileUtils
-import getl.utils.Path
+import getl.utils.*
 import groovy.transform.InheritConstructors
 
 /**
@@ -44,7 +42,7 @@ class FileManager extends Manager {
 	@Override
 	protected void initMethods () {
 		super.initMethods()
-		methodParams.register("super", ["codePage"])
+		methodParams.register("super", ["codePage", "createRootPath"])
 	}
 	
 	/**
@@ -52,6 +50,13 @@ class FileManager extends Manager {
 	 */
 	public String getCodePage () { params.codePage?:"utf-8" }
 	public void setCodePage (String value) { params.codePage = value }
+	
+	/**
+	 * Create root path if not exists
+	 * @return
+	 */
+	public boolean getCreateRootPath () { ListUtils.NotNullValue([params.createRootPath, false]) }
+	public void setCreateRootPath (boolean value) { params.createRootPath = value }
 	
 	@Override
 	public boolean isCaseSensitiveName () { false }
@@ -65,7 +70,10 @@ class FileManager extends Manager {
 	public void connect () {
 		if (connected) throw new ExceptionGETL("Client already connected")
 		if (rootPath == null) throw new ExceptionGETL("Required value for \"rootPath\" property")
-		currentDir = new File(rootPath)
+		File rp = new File(rootPath)
+		if (!rp.exists() && createRootPath) rp.mkdirs() 
+
+		currentDir = rp
 		connected = true
 		currentPath = rootPath
 	}
