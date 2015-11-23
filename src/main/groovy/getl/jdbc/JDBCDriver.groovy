@@ -352,8 +352,8 @@ class JDBCDriver extends Driver {
 			con.sysParams."currentConnectURL" = url
 			if (server != null) con.sysParams."balancerServer" = server
 
-			sql.getConnection().autoCommit = con.autoCommit
-			sql.getConnection().transactionIsolation = java.sql.Connection.TRANSACTION_READ_COMMITTED
+			sql.getConnection().setAutoCommit(con.autoCommit)
+			sql.getConnection().setTransactionIsolation(java.sql.Connection.TRANSACTION_READ_COMMITTED)
 			if (con.fetchSize != null) sql.withStatement{ stmt -> stmt.fetchSize = con.fetchSize } 
 			if (con.sessionProperty != null) sql.properties.putAll(con.sessionProperty)
 		}
