@@ -1,7 +1,7 @@
 package getl.utils
 
 /**
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for «Groovy ETL».
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for ï¿½Groovy ETLï¿½.
 
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
@@ -42,9 +42,31 @@ class NumericUtils {
 		value.toBigInteger().mod( 2 ) == 0
 	}
 	
+	/**
+	 * Round big decimal by precision scale
+	 * @param value
+	 * @param prec
+	 * @return
+	 */
 	public static BigDecimal Round(BigDecimal value, Integer prec) {
 		if (value == null) return null
 		if (prec == null) return value
 		value.setScale(prec, BigDecimal.ROUND_HALF_UP)
+	}
+
+	/**
+	 * Calc hash value by values list	
+	 * @param args
+	 * @return
+	 */
+	public static long Hash(List args) {
+		long result = 0
+		long s = 1
+		args.each { 
+			result += it.toString().hashCode().abs() * s
+			s = s * 10 
+		}
+		
+		result
 	}
 }
