@@ -69,4 +69,15 @@ class NumericUtils {
 		
 		result
 	}
+	
+	/**
+	 * Calc segment number by value list as hash algorithm 
+	 * @param countSegment
+	 * @param args
+	 * @return
+	 */
+	public static int SegmentByHash(int countSegment, List args) {
+		long hash = Hash(args)
+		(int)(hash - BigDecimal.valueOf(hash).divide(BigDecimal.valueOf(countSegment), 0, BigDecimal.ROUND_DOWN).toLong() * countSegment)
+	}
 }
