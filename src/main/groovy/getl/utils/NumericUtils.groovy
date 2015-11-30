@@ -1,5 +1,7 @@
 package getl.utils
 
+import java.security.MessageDigest
+
 /**
  GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for �Groovy ETL�.
 
@@ -60,14 +62,28 @@ class NumericUtils {
 	 * @return
 	 */
 	public static long Hash(List args) {
-		long result = 0
-		long s = 1
-		args.each { 
-			result += it.toString().hashCode().abs() * s
-			s = s * 10 
+		StringBuffer sb = new StringBuffer()
+		args.each {
+			if (it instanceof Date || it instanceof java.sql.Timestamp) {
+				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", it))
+			}
+			else {
+				sb.append(it.toString())
+			}
 		}
 		
-		result
+		/*
+		long result = 0
+		MessageDigest md = MessageDigest.getInstance("MD5");
+		byte[] hashCode = md.digest(sb.toString().getBytes('UTF8'));
+		
+		
+		hashCode.each { byte num ->
+			result += Integer.valueOf(num & 0xFF)
+		}
+		*/
+		
+		sb.hashCode() & 0xFF
 	}
 	
 	/**
@@ -78,6 +94,10 @@ class NumericUtils {
 	 */
 	public static int SegmentByHash(int countSegment, List args) {
 		long hash = Hash(args)
-		(int)(hash - BigDecimal.valueOf(hash).divide(BigDecimal.valueOf(countSegment), 0, BigDecimal.ROUND_DOWN).toLong() * countSegment)
+		/*def bg = BigDecimal.valueOf(hash).divide(BigDecimal.valueOf(countSegment), 0, BigDecimal.ROUND_DOWN).toLong()
+		println "$hash=>$bg"
+		(int)(hash - bg * countSegment)*/
+		
+		hash.mod(countSegment).intValue()
 	}
 }
