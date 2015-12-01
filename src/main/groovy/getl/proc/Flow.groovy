@@ -209,7 +209,7 @@ class Flow {
 					destFields << dn
 				}
 				else {
-					sb << "// NOT VALUE REQUIRED"
+					sb << "// $dn: NOT VALUE REQUIRED"
 				}
 			}
 			else {

@@ -54,13 +54,6 @@ abstract class Manager {
 		countFileList = 0
 		
 		initMethods()
-		
-		if (fileListName == null) {
-			fileList = TDS.dataset(tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}") 
-		} 
-		else {
-			fileList = TDS.dataset(tableName: fileListName)
-		} 
 	}
 	
 	public static Manager BuildManager (String name) {
@@ -378,7 +371,8 @@ abstract class Manager {
 	/**
 	 * File list
 	 */
-	public TableDataset fileList /*= TDS.dataset()*/
+	private TableDataset fileList
+	public TableDataset getFileList () { fileList }
 	
 	/**
 	 * Name of table file list
@@ -387,24 +381,31 @@ abstract class Manager {
 	public String getFileListName () { fileListName }
 	public void setFileListName (String value) {
 		fileListName = value
-		fileList.tableName = value
 	}
+	
+	/**
+	 * Connection from table file list (if null, use TDS connection)
+	 */
+	private JDBCConnection fileListConnection
+	public JDBCConnection getFileListConnection () { fileListConnection}
+	public void setFileListConnection (JDBCConnection value) { fileListConnection = value }
 	
 	/**
 	 * Count found files 
 	 */
 	public long countFileList
 	
+	@groovy.transform.CompileStatic
 	protected void processList (Map params) {
-		Path path = params.path
-		String maskFile = params.maskFile
-		TypeFile type = params.type
-		boolean recursive = params.recursive
-		int filelevel = params."filelevel"?:1
-		boolean requiredAnalize = params."requiredAnalize"
+		Path path = (Path)(params.path)
+		String maskFile = (String)(params.maskFile)
+		TypeFile type = (TypeFile)(params.type)
+		boolean recursive = (boolean)(params.recursive)
+		int filelevel = (int)(params."filelevel")?:1
+		boolean requiredAnalize = (boolean)(params."requiredAnalize")
 		
-		Closure code = params.code
-		Closure updater = params.updater
+		Closure code = (Closure)(params.code)
+		Closure updater = (Closure)(params.updater)
 		def curPath = currentDir()
 		def addFile = { Map file ->
 			if (!recursive || file.type == TypeFile.FILE) {
@@ -418,7 +419,7 @@ abstract class Manager {
 					nf.localfilename = nf.filename
 					nf.filelevel = filelevel
 					m.each { var, value ->
-						nf."${var.toLowerCase()}" = value
+						nf.put(((String)var).toLowerCase(), value)
 					}
 					def b = (code != null)?code(nf):true
 					if (b) {
@@ -446,15 +447,18 @@ abstract class Manager {
 							nf.localfilename = nf.filename
 							nf.filelevel = filelevel
 							m.each { var, value ->
-								nf."${var.toLowerCase()}" = value
+								nf.put(((String)var).toLowerCase(), value)
 							}
 							b = code(nf)
+						}
+						else {
+							b = true
 						}
 					}
 				}
 				
 				if (b) {
-					changeDirectory(file.filename)
+					changeDirectory((String)(file.filename))
 					processList(path: path, maskFile: maskFile, type: type, recursive: recursive, filelevel: filelevel + 1, code: code, requiredAnalize: requiredAnalize, updater: updater)
 					changeDirectory("..")
 				}
@@ -480,6 +484,7 @@ abstract class Manager {
 	 */
 	public void buildList (Map lparams, Closure code) {
 		methodParams.validation("buildList", lparams)
+		
 		Path path = lparams.path?:(new Path(mask: "*.*"))
 		boolean requiredAnalize = !(path.vars.isEmpty())
 		String maskFile = lparams.maskFile?:null
@@ -487,96 +492,142 @@ abstract class Manager {
 		boolean recursive = (lparams.recursive != null)?lparams.recursive:false
 		boolean takePathInStory =  (lparams.takePathInStory != null)?lparams.takePathInStory:true
 		if (recursive && (maskFile != null || type != TypeFile.FILE)) throw new ExceptionGETL("Don't compatibility parameters recursive vs maskFile/type")
-		
+
+		countFileList = 0
+
+		// History table		
 		TableDataset story = lparams."story"
 		
-		TableDataset newFiles = TDS.dataset()
-		newFiles.field << new Field(name: "FILENAME", length: 250, isKey: true)
-		if (takePathInStory) newFiles.field << new Field(name: "FILEPATH", length: 500, isKey: true)
-		newFiles.create()
-		
-		Sql tdsCon = ((JDBCConnection)newFiles.connection).sqlConnection
-		tdsCon.cacheStatements = true
-		
-		def sqlExists, sqlInsert
-		if (takePathInStory) {
-			sqlExists = "SELECT 1 AS ISEXISTS FROM ${newFiles.fullNameDataset()} WHERE FILENAME= ? AND FILEPATH = ?"
-			sqlInsert = "INSERT INTO ${newFiles.fullNameDataset()} (FILENAME, FILEPATH) VALUES (?, ?)"
-		}
-		else {
-			sqlExists = "SELECT 1 AS ISEXISTS FROM ${newFiles.fullNameDataset()} WHERE FILENAME= ?"
-			sqlInsert = "INSERT INTO ${newFiles.fullNameDataset()} (FILENAME) VALUES (?)"
-		}
-		newFiles.connection.driver.saveToHistory(sqlExists)
-		newFiles.connection.driver.saveToHistory(sqlInsert)
-		
-		Closure procCode
-		if (story != null) {
-			if (!story.connection.connected) story.connection.connected = true
-			
-			Sql con = ((JDBCConnection)story.connection).sqlConnection
-			con.cacheStatements = true
-			
-			def sql
-			if (takePathInStory) {
-				sql = "SELECT 1 AS ISEXISTS FROM ${story.fullNameDataset()} WHERE FILENAME= ? AND FILEPATH = ?"
-			}
-			else {
-				sql = "SELECT 1 AS ISEXISTS FROM ${story.fullNameDataset()} WHERE FILENAME= ?"
-			}
-			story.connection.driver.saveToHistory(sql)
-			
-			procCode = { file ->
-				if (code != null) {
-					if (!code(file)) return false
-				}
-				
-				String filepath = file."filepath"
-				String filename = file."localfilename"?:file."filename"
-				List rowsParam = [filename]
-				if (takePathInStory) rowsParam << filepath
-				
-				def prevRow = tdsCon.rows(sqlExists, rowsParam)
-				if (!prevRow.isEmpty()) return false
-				if (tdsCon.executeUpdate(sqlInsert, rowsParam) != 1) throw new ExceptionGETL("Can not insert file name to buffer table")
-				
-				def row = con.rows(sql, rowsParam)
-				if (!row.isEmpty()) return false
-				
-				true
-			}
-		}
-		else {
-			procCode = { file ->
-				if (code != null) {
-					if (!code(file)) return false
-				}
-				
-				String filepath = file."filepath"
-				String filename = file."localfilename"?:file."filename"
-				List rowsParam = [filename]
-				if (takePathInStory) rowsParam << filepath
-
-				def prevRow = tdsCon.rows(sqlExists, rowsParam)
-				if (!prevRow.isEmpty()) return false
-				if (tdsCon.executeUpdate(sqlInsert, rowsParam) != 1) throw new ExceptionGETL("Can not insert file name to buffer table")
-								
-				true
-			}
-		}
-			
-		
+		// Init file list
+		fileList = new TableDataset(connection: fileListConnection?:new TDS(), 
+									tableName: fileListName?:"FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}")
 		initFileList()
 		path.vars.each { key, attr ->
 			def ft = attr.type?:Field.Type.STRING
 			def length = attr.lenMax?:((ft == Field.Type.STRING)?250:30)
 			fileList.field << new Field(name: key.toUpperCase(), type: ft, length: length, precision: attr.precision?:0)
 		}
+		fileList.drop(ifExists: true)
 		fileList.create()
 		
-		countFileList = 0
-		new Flow().writeTo(dest: fileList) { Closure updater ->
-			processList(path: path, maskFile: maskFile, type: type, recursive: recursive, code: procCode, requiredAnalize: requiredAnalize, updater: updater)
+		TableDataset newFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
+		newFiles.field = [new Field(name: 'ID', type: 'INTEGER', isNull: false, isAutoincrement: true)] + fileList.field
+		newFiles.clearKeys()
+		newFiles.fieldByName('ID').isKey = true
+		newFiles.drop(ifExists: true)
+		newFiles.create(onCommit: true, indexes: [idx_filename: [columns: ['FILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID']]])
+		
+		TableDataset doubleFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
+		doubleFiles.field = newFiles.getFields(['FILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
+		doubleFiles.fieldByName('ID').isAutoincrement = false
+		doubleFiles.drop(ifExists: true)
+		doubleFiles.create(onCommit: true/*, indexes: [idx_filename: [columns: ['FILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID']]]*/)
+		
+		TableDataset useFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
+		useFiles.field = [newFiles.fieldByName('ID')]
+		useFiles.fieldByName('ID').isAutoincrement = false
+		
+		try {
+			// Get files to buffer table
+			new Flow().writeTo(dest: newFiles) { Closure updater ->
+				processList(path: path, maskFile: maskFile, type: type, recursive: recursive, code: code, requiredAnalize: requiredAnalize, updater: updater)
+			}
+			
+			// Detect double file name
+			def sqlDetectDouble = """
+INSERT INTO ${doubleFiles.fullNameDataset()} (FILENAME${(takePathInStory)?', FILEPATH':''}, ID)
+	SELECT FILENAME${(takePathInStory)?', FILEPATH':''}, ID
+	FROM ${newFiles.fullNameDataset()} d
+	WHERE 
+		EXISTS(
+			SELECT 1
+			FROM ${newFiles.fullNameDataset()} o
+			WHERE o.FILENAME = d.FILENAME ${(takePathInStory)?'AND o.FILEPATH = d.FILEPATH':''}
+			GROUP BY FILENAME${(takePathInStory)?', FILEPATH':''}
+			HAVING Min(o.ID) < d.ID
+		);
+"""
+			newFiles.connection.startTran()
+			long countDouble
+			try {
+				countDouble = newFiles.connection.executeCommand(command: sqlDetectDouble, isUpdate: true)
+			}
+			catch (Exception e) {
+				newFiles.connection.rollbackTran()
+				throw e
+			}
+			newFiles.connection.commitTran()
+			
+			if (countDouble > 0) {
+				Logs.Fine("warning, found $countDouble double files name for build list files in filemanager!")
+				def sqlDeleteDouble = """
+DELETE FROM ${newFiles.fullNameDataset()}
+WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
+"""
+				newFiles.connection.startTran()
+				long countDelete
+				try {
+					countDelete = newFiles.connection.executeCommand(command: sqlDeleteDouble, isUpdate: true)
+				}
+				catch (Exception e) {
+					newFiles.connection.rollbackTran()
+					throw e
+				}
+				newFiles.connection.commitTran()
+				if (countDouble != countDelete) throw new ExceptionGETL("internal error on delete double files name for build list files in filemanager!")
+			}
+			doubleFiles.drop(ifExists: true)
+			
+			// Valid already loaded file in history table
+			if (story != null) {
+				useFiles.drop(ifExists: true)
+				useFiles.create()
+				
+				TableDataset validFiles = new TableDataset(connection: story.connection, 
+															tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
+				validFiles.field = newFiles.getFields(['FILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
+				validFiles.fieldByName('ID').isAutoincrement = false
+				validFiles.clearKeys()
+				validFiles.fieldByName('FILENAME').isKey = true
+				if (takePathInStory) validFiles.fieldByName('FILEPATH').isKey = true
+				validFiles.drop(ifExists: true)
+				validFiles.create(onCommit: true)
+				try {
+					new Flow().copy(source: newFiles, dest: validFiles, dest_batchSize: 10000)
+					
+					def sqlFoundNew = """
+SELECT ID
+FROM ${validFiles.fullNameDataset()} f
+WHERE 
+	NOT EXISTS(
+		SELECT *
+		FROM ${story.fullNameDataset()} h
+		WHERE h.FILENAME = f.FILENAME ${(takePathInStory)?'AND h.FILEPATH = f.FILEPATH':''}
+	)
+"""
+					QueryDataset getNewFiles = new QueryDataset(connection: story.connection, query: sqlFoundNew)
+					new Flow().copy(source: getNewFiles, dest: useFiles, dest_batchSize: 10000)
+				}
+				finally {
+					validFiles.drop(ifExists: true)
+				}
+			}
+			
+			def sqlCopyFiles = """
+SELECT ${fileList.sqlFields().join(', ')}
+FROM ${newFiles.fullNameDataset()}
+"""
+			if (story != null) {
+				sqlCopyFiles += """WHERE ID IN (SELECT ID FROM ${useFiles.fullNameDataset()})"""
+			}
+			
+			def QueryDataset processFiles = new QueryDataset(connection: fileList.connection, query: sqlCopyFiles)
+			countFileList = new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 10000)
+		}
+		finally {
+			newFiles.drop(ifExists: true)
+			doubleFiles.drop(ifExists: true)
+			useFiles.drop(ifExists: true)
 		}
 	}
 	
@@ -636,7 +687,7 @@ abstract class Manager {
 			storyFiles.field = fileList.field
 			storyFiles.create()
 			
-			new Flow().writeTo(dest: storyFiles, dest_batchSize: 1000) { updater ->
+			new Flow().writeTo(dest: storyFiles, dest_batchSize: 10000) { updater ->
 				fileList.eachRow { file ->
 					def row = [:]
 					row.putAll(file)

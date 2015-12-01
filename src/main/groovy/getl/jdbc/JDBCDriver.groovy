@@ -610,7 +610,7 @@ ${extend}'''
 		def defFields = []
 		def defPrimary = GenerationUtils.SqlKeyFields(connection, dataset.field, null, null)
 		dataset.field.each { Field f ->
-			if (f.isReadOnly) return
+//			if (f.isReadOnly) return
 			try {
 				String s = "	${fieldPrefix}${prepareObjectName(f.name)}${fieldPrefix} ${type2sqlType(f, useNativeDBType)}" + ((!f.isNull)?" NOT NULL":"") + 
 							((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
@@ -1096,7 +1096,11 @@ $sql
 	private Closure generateSetStatement (String operation, List<Field> procFields, List updateField, WriterParams wp) {
 		List<Field> fields
 		if (operation in ['INSERT', 'MERGE']) {
-			fields = procFields
+			fields = [] 
+			procFields.each { Field f ->
+				if (f.isAutoincrement || f.isReadOnly) return
+				fields << f
+			}
 		}
 		else if (operation == 'UPDATE') {
 			fields = []
@@ -1281,6 +1285,7 @@ $sql
 		}
 		else {
 			fields.each { Field f ->
+				if (f.isAutoincrement || f.isReadOnly) return
 				updateField << f.name
 			}
 		}
@@ -1291,6 +1296,7 @@ $sql
 				def h = []
 				def v = []
 				fields.each { Field f ->
+					if (f.isAutoincrement || f.isReadOnly) return
 					//h << "${fieldPrefix}${prepareObjectName(f.name)}${fieldPrefix}" 
 					h << "${prepareObjectNameForSQL(f.name)}"
 					v << "?"
@@ -1310,16 +1316,6 @@ $sql
 				def v = []
 				
 				fields.each { Field f ->
-					/*
-					if (f.isKey) {
-						pk << "${fieldPrefix}${prepareObjectName(f.name)}${fieldPrefix} = ?"
-					}
-					else {
-						if (updateField.find { it.toLowerCase() == f.name.toLowerCase() } != null) {
-							v << "	${fieldPrefix}${prepareObjectName(f.name)}${fieldPrefix} = ?"
-						}
-					}
-					*/
 					if (f.isKey) {
 						pk << "${prepareObjectNameForSQL(f.name)} = ?"
 					}
@@ -1344,7 +1340,6 @@ $sql
 				def pk = []
 				fields.each { Field f ->
 					if (f.isKey) {
-						//pk << "${fieldPrefix}${prepareObjectName(f.name)}${fieldPrefix} = ?"
 						pk << "${prepareObjectNameForSQL(f.name)} = ?"
 						
 					}

@@ -184,6 +184,7 @@ class FTPManager extends Manager {
 		}
 	}
 	
+	@groovy.transform.CompileStatic
 	@Override
 	public void list(String mask, Closure processCode) {
 		if (processCode == null) throw new ExceptionGETL("Required processing file attributes code")

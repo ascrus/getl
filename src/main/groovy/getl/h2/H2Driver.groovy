@@ -185,9 +185,14 @@ FROM CSVREAD('${source.fullFileName()}', ${heads}, '${functionParms}')
 	
 	@Override
 	protected String openWriteMergeSql(JDBCDataset dataset, Map params, List<Field> fields) {
+		def excludeFields = []
+		fields.each { Field f -> 
+			if (f.isAutoincrement || f.isReadOnly) excludeFields << f 
+		}
+		
 		String res = """
-MERGE INTO ${dataset.fullNameDataset()} (${GenerationUtils.SqlFields(dataset.connection, fields, null, null).join(", ")})
-VALUES(${GenerationUtils.SqlFields(dataset.connection, fields, "?", null).join(", ")})
+MERGE INTO ${dataset.fullNameDataset()} (${GenerationUtils.SqlFields(dataset.connection, fields, null, excludeFields).join(", ")})
+VALUES(${GenerationUtils.SqlFields(dataset.connection, fields, "?", excludeFields).join(", ")})
 """
 		
 		res

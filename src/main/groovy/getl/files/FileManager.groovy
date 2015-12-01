@@ -89,6 +89,7 @@ class FileManager extends Manager {
 		if (!connected) throw new ExceptionGETL("Client not connected")
 	}
 	
+	@groovy.transform.CompileStatic
 	@Override
 	public void list(String mask, Closure processCode) {
 		if (processCode == null) throw new ExceptionGETL("Required processing file attributes code")

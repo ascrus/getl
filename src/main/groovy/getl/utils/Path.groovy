@@ -241,7 +241,7 @@ class Path {
 								b.append("(\\d{${vt.lenMin},${vt.lenMax}})")
 							}
 							else {
-								b.append("(\\d*)")
+								b.append("(\\d+)")
 							}
 						}
 						else {

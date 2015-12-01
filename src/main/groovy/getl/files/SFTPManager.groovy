@@ -190,11 +190,13 @@ class SFTPManager extends Manager {
 		}
 	}
 
+	@groovy.transform.CompileStatic
 	@Override
 	public void list(String maskFiles, Closure processCode) {
 		if (maskFiles == null) maskFiles = "*"
 		writeScriptHistoryFile("COMMAND: list \"$maskFiles\"")
-		channelFtp.ls(maskFiles).each { ChannelSftp.LsEntry item ->
+		channelFtp.ls(maskFiles).each { listItem ->
+			ChannelSftp.LsEntry item = (ChannelSftp.LsEntry)listItem
 			def file = [:]
 			
 			file."filename" = item.filename
