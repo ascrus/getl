@@ -1,13 +1,11 @@
-package getl.jdbc
-
-/**
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for �Groovy ETL�.
+/*
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
 
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +21,8 @@ package getl.jdbc
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
+
+package getl.jdbc
 
 import getl.data.Connection
 import getl.data.Dataset
@@ -406,7 +406,6 @@ class JDBCConnection extends Connection {
 	 */
 	protected validSqlHistoryFile () {
 		if (fileNameSqlHistory == null) {
-//			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile.replace('\\', '\\\\'), [date: DateUtils.NowDate()])
 			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile, StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(fileNameSqlHistory)
 		}

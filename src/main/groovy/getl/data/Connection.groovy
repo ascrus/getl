@@ -1,13 +1,11 @@
-package getl.data
-
-/**
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for «Groovy ETL».
+/*
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
 
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,8 +22,11 @@ package getl.data
  If not, see <http://www.gnu.org/licenses/>.
 */
 
+package getl.data
+
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.jdbc.JDBCConnection;
 import getl.utils.*
 
 /**
@@ -345,4 +346,14 @@ public class Connection {
 
 	@Override	
 	public String toString() { objectName }
+	
+	/**
+	 * Clone current connection
+	 * @return
+	 */
+	public Connection cloneConnection () {
+		String className = this.class.name
+		Map p = MapUtils.Clone(this.params)
+		CreateConnection([connection: className] + MapUtils.CleanMap(this.params, ['sysParams']))
+	}
 }

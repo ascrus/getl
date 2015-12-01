@@ -1,14 +1,37 @@
+/*
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
+
+ GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
+ transform and load data into programs written in Groovy, or Java, as well as from any software that supports
+ the work with Java classes.
+ 
+ Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License and
+ GNU Lesser General Public License along with this program.
+ If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package getl.files
 
-import getl.utils.Path;
+import getl.utils.Path
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 public class FileCleaner {
 	private Path filePath = new Path();
@@ -112,7 +135,7 @@ public class FileCleaner {
 					paths[i] = null;
 		}
 
-		// Проходим по списку файлов
+		// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		for (int i = 0; i < r.length; i++) {
 			String s = r[i];
 			String sl = s.toLowerCase();
@@ -120,7 +143,7 @@ public class FileCleaner {
 			String arc = arcPath.maskPath;
 			HashMap<String, String> values = new HashMap<String, String>();
 			
-			// Проверяем файл на вхождение в путь
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ
 			if (paths != null) {
 				boolean inPath = (paths.length == 0);
 				if (paths.length > 0)
@@ -133,7 +156,7 @@ public class FileCleaner {
 				if (!inPath) continue;
 			}
 
-			// Получаем параметры с пути файла
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 			Matcher mf = pf.matcher(sl);
 			boolean added = mf.matches();
 			if (added) {
@@ -143,7 +166,7 @@ public class FileCleaner {
 				}
 			}
 			
-			// Устанавливаем системные переменные
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			if (added && sysVar) {
 				File f = new File(s);
 				
@@ -154,18 +177,18 @@ public class FileCleaner {
 				values.put("#file_size", String.valueOf(f.length()));
 			}
 			
-			// Вызываем фильтр
+			// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 			if (added && filter != null) {
 				added = filter(s, values);
 			}
 			
 			if (added) {
-				// Формируем имя архива
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 				values.each { key, value ->
 					arc = arc.replace("{" + key + "}", value);
 				}
 				
-				// Заносим файл в список файлов для архива
+				// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 				LinkedList<String> fl = arcs.get(arc);
 				if (fl == null) {
 					fl = new LinkedList<String>();
@@ -177,7 +200,7 @@ public class FileCleaner {
 		}
 	}
 	
-	// Проверяем что архив не существует
+	// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	private String arcName(String arcname) {
 		File dir = new File(arcname.substring(0, arcname.lastIndexOf("/")));
 		if (!dir.exists()) dir.mkdirs();
