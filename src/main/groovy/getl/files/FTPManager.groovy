@@ -24,6 +24,8 @@
 
 package getl.files
 
+import org.h2.command.dml.NoOperation;
+
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.InheritConstructors
@@ -172,10 +174,19 @@ class FTPManager extends Manager {
 	
 	@Override
 	public void disconnect () {
-		client.setAutoNoopTimeout(0)
 		if (client.connected) {
 			try {
+				def numRetry = 0
+				def sleepTime = (client.autoNoopTimeout > 0)?client.autoNoopTimeout:100
+				client.autoNoopTimeout = 0
+				
 				client.disconnect(isHardDisconnect)
+				while (client.connected) {
+					numRetry++
+					sleep(sleepTime)
+					
+					if (numRetry > 4) throw new ExceptionGETL('Can not disconnect from server') 
+				}
 			}
 			catch (Throwable e) {
 				Logs.Severe("Can not disconnect from $server:$port")
