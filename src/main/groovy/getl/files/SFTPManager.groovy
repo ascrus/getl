@@ -370,8 +370,8 @@ class SFTPManager extends Manager {
 	public boolean isAllowCommand() { true }
 	
 	@Override
-	protected int doCommand(String command, StringBuilder out, StringBuilder err) {
-		int res
+	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
+		Integer res
 		command = "cd \"$currentPath\" && $command"
 		ChannelExec channelCmd = clientSession.openChannel("exec")
 		try {

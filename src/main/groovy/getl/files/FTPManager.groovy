@@ -24,8 +24,6 @@
 
 package getl.files
 
-import org.h2.command.dml.NoOperation;
-
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.InheritConstructors
@@ -113,7 +111,7 @@ class FTPManager extends Manager {
 	 * @return
 	 */
 	public Integer getCloseTimeout () { params.closeTimeout }
-	public void setCloseTimeout (int value) {
+	public void setCloseTimeout (Integer value) {
 		if (client.connected) client.connector.closeTimeout = value
 		params.closeTimeout = value
 	}
@@ -123,7 +121,7 @@ class FTPManager extends Manager {
 	 * @return
 	 */
 	public Integer getConnectionmTimeout () { params.connectionTimeout }
-	public void setConnectionTimeout (int value) {
+	public void setConnectionTimeout (Integer value) {
 		if (client.connected) client.connector.connectionTimeout = value
 		params.connectionTimeout = value
 	}
@@ -133,7 +131,7 @@ class FTPManager extends Manager {
 	 * @return
 	 */
 	public Integer getReadTimeout () { params.readTimeout }
-	public void setReadTimeout (int value) {
+	public void setReadTimeout (Integer value) {
 		if (client.connected) client.connector.readTimeout = value
 		params.readTimeout = value
 	}

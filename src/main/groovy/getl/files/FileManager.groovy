@@ -213,7 +213,7 @@ class FileManager extends Manager {
 	public boolean isAllowCommand() { true }
 	
 	@Override
-	protected int doCommand(String command, StringBuilder out, StringBuilder err) {
+	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
 		Process p
 		try {
 			String[] env = []

@@ -420,7 +420,7 @@ abstract class Manager {
 		String maskFile = (String)(params.maskFile)
 		TypeFile type = (TypeFile)(params.type)
 		boolean recursive = (boolean)(params.recursive)
-		int filelevel = (int)(params."filelevel")?:1
+		Integer filelevel = (Integer)(params."filelevel")?:1
 		boolean requiredAnalize = (boolean)(params."requiredAnalize")
 		
 		Closure code = (Closure)(params.code)
@@ -1109,7 +1109,7 @@ WHERE
 	 * @param err - error console log
 	 * @return - 0 on sucessfull, greater 0 on error, -1 on invalid command
 	 */
-	public int command(String command, StringBuilder out, StringBuilder err) {
+	public Integer command(String command, StringBuilder out, StringBuilder err) {
 		out.setLength(0)
 		err.setLength(0)
 		
@@ -1131,7 +1131,7 @@ WHERE
 	 * @param err
 	 * @return
 	 */
-	protected int doCommand(String command, StringBuilder out, StringBuilder err) { }
+	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) { }
 	
 	/**
 	 * Real script history file name
