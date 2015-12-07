@@ -124,7 +124,15 @@ abstract class Manager {
 		}
 	}
 	
+	/**
+	 * Write errors to log
+	 */
 	public boolean writeErrorsToLog = true
+	
+	/**
+	 * File system is windows
+	 */
+	protected boolean isWindowsFileSystem = false
 	
 	private final Closure doInitConfig = {
 		if (config == null) return
@@ -233,14 +241,23 @@ abstract class Manager {
 	 * @param dir
 	 */
 	public void changeDirectory (String dir) {
-		if (dir == null) throw new ExceptionGETL("Null dir not allowed for cd operation")
+		if (dir == null || dir == '') throw new ExceptionGETL("Null dir not allowed for cd operation")
 		if (dir == '.') return
 		if (dir == '..') {
 			changeDirectoryUp()
 			return
 		}
 		
-		if (dir[0] == '/') {
+		def isRoot
+		if (!isWindowsFileSystem) {
+			isRoot = (dir[0] == '/')
+		}
+		else {
+			dir = FileUtils.ConvertToWindowsPath(dir)
+			isRoot = (dir.matches('(?i)[a-z][:][\\\\].*') || dir.matches('(?i)[\\\\][\\\\].+'))
+		}
+		
+		if (isRoot) {
 			try {
 				currentPath = dir
 			}
@@ -1019,19 +1036,24 @@ WHERE
 	 */
 	public abstract boolean existsDirectory (String dirName)
 	
-	/**
-	 * Delete empty directory
-	 * @param dirName
-	 * @param recursive
-	 */
 	public boolean deleteEmptyFolder(String dirName, boolean recursive) {
+		deleteEmptyFolder(dirName, recursive, null)
+	}
+	
+	/**
+	 * Delete empty directories for current directory
+	 * @param dirName - directory name
+	 * @param recursive - required recursive deleting
+	 * @return - true if directiry exist files
+	 */
+	public boolean deleteEmptyFolder(String dirName, boolean recursive, Closure onDelete) {
 		changeDirectory(dirName)
 		def existsFiles = false
 		try {
 			list() { file ->
 				if (file."type" == TypeFile.DIRECTORY) {
 					if (recursive) {
-						existsFiles = deleteEmptyFolder(file."filename", recursive) || existsFiles
+						existsFiles = deleteEmptyFolder(file."filename", recursive, onDelete) || existsFiles
 					}
 					else {
 						existsFiles = true
@@ -1049,6 +1071,7 @@ WHERE
 		}
 		
 		if (!existsFiles) {
+			if (onDelete != null) onDelete("${currentDir()}")
 			removeDir(dirName)
 		}
 		

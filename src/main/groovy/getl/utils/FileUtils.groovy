@@ -277,15 +277,15 @@ class FileUtils {
 					}
 					else if (vf.isFile()) {
 						if (onDelete != null) onDelete(vf)
-						vf.delete()
+						if (!vf.delete()) throw new ExceptionGETL("Can not delete directory \"${vf.absolutePath}\"")
 					}
 				}
 				if (onDelete != null) onDelete(df)
-				df.deleteDir()
+				if (!df.deleteDir()) throw new ExceptionGETL("Can not delete directory \"${df.absolutePath}\"")
 			}
 		}
 		if (deleteRoot) {
-			root.deleteDir()
+			if (!root.deleteDir()) throw new ExceptionGETL("Can not delete directory \"${root.absolutePath}\"")
 		}
 	}
 	

@@ -86,17 +86,6 @@ class StringUtils {
 		
 		if (value.matches("(?i).*([{][a-z0-9-_]+[}]).*")) throw new ExceptionGETL("Unknown variable in \"$value\", known vars: $vars")
 		
-		/*
-		String res
-		try {
-			res = EvalString('"""' + value + '"""')
-		}
-		catch (Exception e) {
-			Logs.Severe("Error parse [$value] from [$vars]")
-			e.printStackTrace()
-			throw e
-		}*/
-		
 		value
 	}
 	

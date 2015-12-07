@@ -39,6 +39,11 @@ class FileManager extends Manager {
 	public boolean getConnected () { connected }
 	private File currentDir
 	
+	FileManager () {
+		super()
+		isWindowsFileSystem = (File.separator == "\\")
+	}
+	
 	@Override
 	protected void initMethods () {
 		super.initMethods()
