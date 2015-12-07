@@ -124,6 +124,8 @@ abstract class Manager {
 		}
 	}
 	
+	public boolean writeErrorsToLog = true
+	
 	private final Closure doInitConfig = {
 		if (config == null) return
 		Map cp = Config.FindSection("files.${config}")

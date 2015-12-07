@@ -140,7 +140,7 @@ class SFTPManager extends Manager {
 				s.connect()
 			}
 			catch (Throwable e) {
-				Logs.Severe("Can not connect to $server:$port or invalid login/password")
+				if (writeErrorsToLog) Logs.Severe("Can not connect to $server:$port or invalid login/password")
 				throw e
 			}
 		}
@@ -185,7 +185,7 @@ class SFTPManager extends Manager {
 			}
 		}
 		catch (Throwable e) {
-			Logs.Severe("Can not disconnect from $server:$port")
+			if (writeErrorsToLog) Logs.Severe("Can not disconnect from $server:$port")
 			throw e
 		}
 	}
@@ -249,7 +249,7 @@ class SFTPManager extends Manager {
 			channelFtp.get(fileName, s)
 		}
 		catch (Throwable e) {
-			Logs.Severe("Can not download file \"$fileName\" to \"$fn\"")
+			if (writeErrorsToLog) Logs.Severe("Can not download file \"$fileName\" to \"$fn\"")
 			throw e
 		}
 		finally {
@@ -267,7 +267,7 @@ class SFTPManager extends Manager {
 			channelFtp.put(s, fileName)
 		}
 		catch (Throwable e) {
-			Logs.Severe("Can not upload file \"$fileName\" from \"$fn\"")
+			if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fileName\" from \"$fn\"")
 			throw e
 		}
 		finally {
@@ -282,7 +282,7 @@ class SFTPManager extends Manager {
 			channelFtp.rm(fileName)
 		}
 		catch (Throwable e) {
-			Logs.Severe("Can not remove file \"$fileName\"")
+			if (writeErrorsToLog) Logs.Severe("Can not remove file \"$fileName\"")
 			throw e
 		}
 	}
@@ -314,7 +314,7 @@ class SFTPManager extends Manager {
 			}
 		}
 		catch (Throwable e) {
-			Logs.Severe("Can not create directory \"$cdDir\"")
+			if (writeErrorsToLog) Logs.Severe("Can not create directory \"$cdDir\"")
 			throw e
 		}
 		finally {
@@ -330,7 +330,7 @@ class SFTPManager extends Manager {
 			channelFtp.rmdir(dirName)
 		}
 		catch (Throwable e) {
-			Logs.Severe("Can not remove directory \"$dirName\"")
+			if (writeErrorsToLog) Logs.Severe("Can not remove directory \"$dirName\"")
 			throw e
 		}
 	}
@@ -342,7 +342,7 @@ class SFTPManager extends Manager {
 			channelFtp.rename(fileName, path)
 		}
 		catch (Throwable e) {
-			Logs.Severe("Can not rename file \"$fileName\" to \"$path\"")
+			if (writeErrorsToLog) Logs.Severe("Can not rename file \"$fileName\" to \"$path\"")
 			throw e
 		}
 	}
