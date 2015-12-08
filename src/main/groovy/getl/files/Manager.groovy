@@ -1041,19 +1041,33 @@ WHERE
 	}
 	
 	/**
-	 * Delete empty directories for current directory
+	 * Delete empty directories in specified directory
 	 * @param dirName - directory name
 	 * @param recursive - required recursive deleting
 	 * @return - true if directiry exist files
 	 */
-	public boolean deleteEmptyFolder(String dirName, boolean recursive, Closure onDelete) {
+	public boolean deleteEmptyFolder(String dirName, Boolean recursive, Closure onDelete) {
+		deleteEmptyFolderRecurse(0, dirName, recursive, onDelete)
+	}
+	
+	/**
+	 * Delete empry directories as recursive
+	 * @param level
+	 * @param dirName
+	 * @param recursive
+	 * @param onDelete
+	 * @return
+	 */
+	protected boolean deleteEmptyFolderRecurse(Integer level, String dirName, Boolean recursive, Closure onDelete) {
 		changeDirectory(dirName)
 		def existsFiles = false
 		try {
 			list() { file ->
+				if (existsFiles) return
+				
 				if (file."type" == TypeFile.DIRECTORY) {
 					if (recursive) {
-						existsFiles = deleteEmptyFolder(file."filename", recursive, onDelete) || existsFiles
+						existsFiles = deleteEmptyFolderRecurse(level + 1, file."filename", recursive, onDelete) || existsFiles
 					}
 					else {
 						existsFiles = true
@@ -1070,8 +1084,8 @@ WHERE
 			changeDirectoryUp()
 		}
 		
-		if (!existsFiles) {
-			if (onDelete != null) onDelete("${currentDir()}")
+		if (!existsFiles && level > 0) {
+			if (onDelete != null) onDelete("$currentPath/$dirName")
 			removeDir(dirName)
 		}
 		
