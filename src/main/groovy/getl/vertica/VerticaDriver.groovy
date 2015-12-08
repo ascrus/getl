@@ -88,7 +88,7 @@ class VerticaDriver extends JDBCDriver {
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		String result = ""
 		def temporary = (dataset.sysParams.type in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
-		if (temporary && params.onCommit != null) result += "ON COMMIT ${params.onCommit} ROWS "
+		if (temporary && params.onCommit != null && params.onCommit) result += "ON COMMIT PRESERVE ROWS "
 		if (params.orderBy != null && !params.orderBy.isEmpty()) result += "ORDER BY ${params.orderBy.join(", ")} "
 		if (params.segmentedBy != null) result += "SEGMENTED BY ${params.segmentedBy} "
 		if (params.unsegmented != null && params.unsegmented) result += "UNSEGMENTED ALL NODES "
