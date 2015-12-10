@@ -1063,7 +1063,7 @@ WHERE
 		def existsFiles = false
 		try {
 			list() { file ->
-				if (existsFiles) return
+//				if (existsFiles) return
 				
 				if (file."type" == TypeFile.DIRECTORY) {
 					if (recursive) {
