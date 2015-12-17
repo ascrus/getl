@@ -207,7 +207,7 @@ abstract class Manager {
 	 * @return
 	 */
 	public List<Map> list (String maskFiles) {
-		List<Map> res = []
+		List<Map> res = new LinkedList<Map>()
 		Closure addToList = { res << it }
 		list(maskFiles, addToList)
 		
@@ -219,7 +219,7 @@ abstract class Manager {
 	 * @return
 	 */
 	public List<Map> list () {
-		List<Map> res = []
+		List<Map> res = new LinkedList<Map>()
 		Closure addToList = { res << it }
 		list(null, addToList)
 		

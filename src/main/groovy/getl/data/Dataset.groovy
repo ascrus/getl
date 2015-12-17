@@ -841,10 +841,8 @@ ${ef.toString()}
 		// Save parse and assert errors to file
 		boolean saveErrors = (procParams.saveErrors != null)?procParams.saveErrors:false
 		
-		// ������������� ��� ���������� ������ ������		
 		def setErrorValue = generateSetErrorValue(code)
 		
-		// ��������� ������ ��������� ������
 		def doProcessError = { Exception e, long recNo ->
 			isReadError = true
 			Map errorRow = [:]
