@@ -26,6 +26,7 @@ package getl.jdbc
 
 import getl.data.Field
 import getl.exception.ExceptionGETL
+import getl.exception.ExceptionSQLScripter
 import getl.utils.*
 import java.sql.Connection
 import java.sql.ResultSet
@@ -43,7 +44,7 @@ public class SQLScripter {
 	/** 
 	 * Type of script command 
 	 */
-	public enum TypeCommand {UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF}
+	public enum TypeCommand {UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR}
 	
 	/** 
 	 * Script variables
@@ -162,6 +163,9 @@ public class SQLScripter {
 		} else if (sql.matches("(?is)if(\\s|\\n|\\t).*")) {
 			sql = "SELECT true AS result WHERE " + sql.substring(3).trim()
 			typeSql = TypeCommand.IF
+		} else if (sql.matches("(?is)error(\\s|\\t).*")) {
+			sql = sql.substring(6).trim()
+			typeSql = TypeCommand.ERROR
 		} else {
 			if (sql.matches("(?is)[/][*][:].*[*][/].*")) {
 				int ic = sql.indexOf("*/")
@@ -338,6 +342,9 @@ public class SQLScripter {
 					break
 				case TypeCommand.IF:
 					i = doIf(st, i)
+					break
+				case TypeCommand.ERROR:
+					throw new ExceptionSQLScripter("script error: $sql")
 					break
 				default:
 					throw new ExceptionGETL("Unknown type command ${typeSql}")
