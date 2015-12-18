@@ -395,7 +395,7 @@ public class SQLScripter {
 		List<String> res = sql.split('\n')
 		for (int i = 0; i < res.size(); i++) {
 			String s = res[i].trim()
-			if (s.matches("(?is)echo(\\s|\\t).*")) {
+			if (s.matches("(?is)echo(\\s|\\t).*") || s.matches("(?is)error(\\s|\\t).*")) {
 				if (s.substring(s.length() - 1) != ';') res[i] = res[i] + ';'
 			}
 		}
