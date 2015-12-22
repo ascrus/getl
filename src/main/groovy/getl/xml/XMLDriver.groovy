@@ -38,7 +38,7 @@ import getl.utils.*
 @InheritConstructors
 class XMLDriver extends FileDriver {
 	XMLDriver () {
-		methodParams.register("eachRow", ["fields", "filter"])
+		methodParams.register("eachRow", ["fields", "filter", "initAttr"])
 	}
 
 	@Override
@@ -80,7 +80,7 @@ class XMLDriver extends FileDriver {
 				sb << "\n"
 			}
 			sb << "dataset.params.attributeValue = attrValue\n"
-			if (initAttr != null) sb << "initAttr(dataset)\n"
+			if (initAttr != null) sb << "if (!initAttr(dataset)) return\n"
 			sb << "\n"
 		}
 		
