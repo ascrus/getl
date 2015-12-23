@@ -127,18 +127,18 @@ class VerticaDriver extends JDBCDriver {
 		
 		List fileList
 		if (params.files != null) {
-//			fileList = ListUtils.QuoteList(params.files, "'")
 			fileList = []
-			params.files.each { fileName ->  
-				fileList << "'$fileName'$onNode"
+			params.files.each { String fileName ->
+				fileList << "'${fileName.replace("\\", "/")}'$onNode"
 			}
 		}
 		else if (params.fileMask != null) {
 			fileList =  ["'${params.fileMask}'$onNode"]
 		}
 		else {
-			fileList =  ["'${source.fullFileName()}'$onNode"]
+			fileList =  ["'${source.fullFileName().replace("\\", "/")}'$onNode"]
 		}
+		
 		if (compressed != null) {
 			def f = []
 			fileList.each { file ->
@@ -146,7 +146,7 @@ class VerticaDriver extends JDBCDriver {
 			}
 			fileList = f
 		}
-		def fileName = fileList.join(",").replace("\\", "/")
+		def fileName = fileList.join(",")
 		
 		if (exceptionPath != null) FileUtils.ValidFilePath(exceptionPath)
 		if (rejectedPath != null) FileUtils.ValidFilePath(rejectedPath)
