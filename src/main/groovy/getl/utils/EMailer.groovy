@@ -66,7 +66,13 @@ class EMailer {
 	/**
 	 * Port server
 	 */
-	public int getPort () { params."port"?:25 }
+	public int getPort () { 
+		if (params."port" != null) return params."port"
+		if (starttls != null && starttls) return 587
+		if (ssl != null && ssl) return 465
+		
+		25
+	}
 	public void setPort(int value) { params.port = value }
 	
 	/**
@@ -85,13 +91,38 @@ class EMailer {
 	/**
 	 * Required authorization
 	 */
-	public boolean getAuth () { ListUtils.NotNullValue([params."auth", false]) }
-	public void setAuth (boolean value) { params."auth" = value }
+	public Boolean getAuth () { params."auth" }
+	public void setAuth (Boolean value) { params."auth" = value }
+	
+	/**
+	 * Use ssl
+	 */
+	public Boolean getSsl () { params."ssl" }
+	public void setSsl (Boolean value) { params."ssl" = value }
+	
+	/**
+	 * Use starttls for auth
+	 */
+	public Boolean getStarttls () { params."starttls" }
+	public void setStarttls (Boolean value) { params."starttls" = value }
+	
+	/**
+	 * Socket factory fallback
+	 */
+	public Boolean getSocketFactoryFallback () { params."socketFactoryFallback" }
+	public void setSocketFactoryFallback (Boolean value) { params."socketFactoryFallback" = value }
+	
+	/**
+	 * Use SSL socket factory
+	 * Example: javax.net.ssl.SSLSocketFactory
+	 */
+	public String getSocketFactoryClass () { params."socketFactoryClass" }
+	public void setSocketFactoryClass (String value) { params."socketFactoryClass" = value }
 	
 	/**
 	 * From address 
 	 */
-	public String getFromAddress () { params."fromAddress"?:"anonimus@getl" }
+	public String getFromAddress () { params."fromAddress"?:"anonimus@getl.com" }
 	public void setFromAddress (String value) { params."fromAddress" = value }
 	
 	/**
@@ -103,7 +134,7 @@ class EMailer {
 	/**
 	 * Active emailer
 	 */
-	public boolean getActive () { ListUtils.NotNullValue([params."active", true]) }
+	public Boolean getActive () { ListUtils.NotNullValue([params."active", true]) }
 	public void setActive (boolean value) { params."active" = value }
 	
 	/**
@@ -132,16 +163,20 @@ class EMailer {
 		}
 		Properties mprops = new Properties()
 		mprops.setProperty("mail.transport.protocol", "smtp")
-		mprops.setProperty("mail.host", host)
+		mprops.setProperty('mail.host', host)
 		mprops.setProperty("mail.smtp.port", port.toString())
-		mprops.setProperty("mail.smtp.auth", auth.toString())
+		if (auth != null) mprops.setProperty('mail.smtp.auth', auth.toString())
+		if (starttls != null) mprops.setProperty('mail.smtp.starttls.enable', starttls.toString())
+		if (ssl != null) mprops.setProperty('mail.smtp.ssl', ssl.toString())
+		if (socketFactoryClass != null) mprops.setProperty("mail.smtp.socketFactory.class", socketFactoryClass)
+		if (socketFactoryFallback != null) mprops.setProperty("mail.smtp.socketFactory.fallback", socketFactoryFallback.toString())
 		
 		def u = user
 		def p = password
 		
 		def authenticator = new javax.mail.Authenticator() {
 			protected PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication(u, p);
+				return new PasswordAuthentication(u, p)
 			}
 		  }
 		
@@ -153,9 +188,19 @@ class EMailer {
 		msg.setSubject(subject, "utf-8")
 		msg.setText(message, "utf-8")
 	  
-		Transport transporter = lSession.getTransport("smtp")
-		transporter.connect()
-		 
-		transporter.send(msg)
+		try {
+			Transport transporter = lSession.getTransport("smtp")
+			transporter.connect()
+			try {
+				transporter.send(msg)
+			}
+			finally {
+				transporter.close()
+			}
+		}
+		catch (javax.mail.MessagingException e) {
+			Logs.Severe("emailer: failed send message for param $mprops")
+			throw e
+		}
 	}
 }
