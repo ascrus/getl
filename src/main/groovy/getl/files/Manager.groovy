@@ -544,12 +544,12 @@ abstract class Manager {
 		newFiles.drop(ifExists: true)
 		newFiles.create(onCommit: true, 
 						indexes: [
-							idx_filename: [columns: ['FILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID']],
+							idx_filename: [columns: ['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID']],
 							idx_id: [columns: ['ID']]
 						])
 		
 		TableDataset doubleFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
-		doubleFiles.field = newFiles.getFields(['FILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
+		doubleFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 		doubleFiles.fieldByName('ID').with { 
 			isAutoincrement = false
 			isKey = true
@@ -572,15 +572,15 @@ abstract class Manager {
 			
 			// Detect double file name
 			def sqlDetectDouble = """
-INSERT INTO ${doubleFiles.fullNameDataset()} (FILENAME${(takePathInStory)?', FILEPATH':''}, ID)
-	SELECT FILENAME${(takePathInStory)?', FILEPATH':''}, ID
+INSERT INTO ${doubleFiles.fullNameDataset()} (LOCALFILENAME${(takePathInStory)?', FILEPATH':''}, ID)
+	SELECT LOCALFILENAME${(takePathInStory)?', FILEPATH':''}, ID
 	FROM ${newFiles.fullNameDataset()} d
 	WHERE 
 		EXISTS(
 			SELECT 1
 			FROM ${newFiles.fullNameDataset()} o
-			WHERE o.FILENAME = d.FILENAME ${(takePathInStory)?'AND o.FILEPATH = d.FILEPATH':''}
-			GROUP BY FILENAME${(takePathInStory)?', FILEPATH':''}
+			WHERE o.LOCALFILENAME = d.LOCALFILENAME ${(takePathInStory)?'AND o.FILEPATH = d.FILEPATH':''}
+			GROUP BY LOCALFILENAME${(takePathInStory)?', FILEPATH':''}
 			HAVING Min(o.ID) < d.ID
 		);
 """
@@ -622,10 +622,10 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				
 				TableDataset validFiles = new TableDataset(connection: story.connection, 
 															tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
-				validFiles.field = newFiles.getFields(['FILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
+				validFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 				validFiles.fieldByName('ID').isAutoincrement = false
 				validFiles.clearKeys()
-				validFiles.fieldByName('FILENAME').isKey = true
+				validFiles.fieldByName('LOCALFILENAME').isKey = true
 				if (takePathInStory) validFiles.fieldByName('FILEPATH').isKey = true
 				validFiles.drop(ifExists: true)
 				validFiles.create(onCommit: true)
@@ -639,7 +639,7 @@ WHERE
 	NOT EXISTS(
 		SELECT *
 		FROM ${story.fullNameDataset()} h
-		WHERE h.FILENAME = f.FILENAME ${(takePathInStory)?'AND h.FILEPATH = f.FILEPATH':''}
+		WHERE h.FILENAME = f.LOCALFILENAME ${(takePathInStory)?'AND h.FILEPATH = f.FILEPATH':''}
 	)
 """
 					QueryDataset getNewFiles = new QueryDataset(connection: story.connection, query: sqlFoundNew)
