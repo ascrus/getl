@@ -76,6 +76,7 @@ class FileManager extends Manager {
 		if (connected) throw new ExceptionGETL("Client already connected")
 		if (rootPath == null) throw new ExceptionGETL("Required value for \"rootPath\" property")
 		File rp = new File(rootPath)
+		params.rootPath = rp.absolutePath
 		if (!rp.exists() && createRootPath) rp.mkdirs() 
 
 		currentDir = rp
