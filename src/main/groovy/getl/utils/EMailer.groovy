@@ -134,7 +134,7 @@ class EMailer {
 	/**
 	 * Active emailer
 	 */
-	public Boolean getActive () { ListUtils.NotNullValue([params."active", true]) }
+	public Boolean getActive () { BoolUtils.IsValue(params."active", true) }
 	public void setActive (boolean value) { params."active" = value }
 	
 	/**

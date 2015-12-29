@@ -29,7 +29,7 @@ import getl.exception.ExceptionGETL
 import  groovy.json.StringEscapeUtils
 
 /**
- * String library functions class
+ * String functions
  * @author Alexsey Konstantinov
  *
  */

@@ -69,6 +69,6 @@ class H2Connection extends JDBCConnection {
 	 * Set inmemory mode
 	 * @return
 	 */
-	public Boolean getInMemory () { ListUtils.NotNullValue([params."inMemory", false]) }
+	public Boolean getInMemory () { BoolUtils.IsValue(params."inMemory", false) }
 	public void setInMemory (Boolean value) { params."inMemory" = value }
 }

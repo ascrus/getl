@@ -167,13 +167,13 @@ public class Connection {
 	 * Auto load schema with meta file for connection datasets
 	 * @return
 	 */
-	public boolean getAutoSchema () { ListUtils.NotNullValue([params.autoSchema, false]) }
+	public boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema, false) }
 	public void setAutoSchema (boolean value) { params.autoSchema = value }
 	
 	/**
 	 * Print write rows to console
 	 */
-	public boolean getLogWriteToConsole () { ListUtils.NotNullValue([params.logWriteToConsole, false]) }
+	public boolean getLogWriteToConsole () { BoolUtils.IsValue(params.logWriteToConsole, false) }
 	public void setLogWriteToConsole (boolean value) { params.logWriteToConsole = value }
 	
 	/**

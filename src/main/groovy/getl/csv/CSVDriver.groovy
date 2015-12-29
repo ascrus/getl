@@ -106,7 +106,7 @@ class CSVDriver extends FileDriver {
 		p.fieldDelimiter = fieldDelimiter.charAt(0)
 		
 		p.rowDelimiter = ListUtils.NotNullValue([params.rowDelimiter, dataset.rowDelimiter])
-		p.isHeader = ListUtils.NotNullValue([params.header, dataset.header])
+		p.isHeader = ListUtils.NotNullValue([BoolUtils.IsValue(params.header, null), dataset.header])
 		p.qMode = datasetQuoteMode(dataset)
 		p.isSplit = (params.isSplit != null)?params.isSplit:false
 		p.nullAsValue = ListUtils.NotNullValue([params.nullAsValue, dataset.nullAsValue])
@@ -384,9 +384,9 @@ class CSVDriver extends FileDriver {
 		CSVDataset cds = (CSVDataset)dataset
 		if (cds.fileName == null) throw new ExceptionGETL('Dataset required fileName')
 		
-		boolean escaped = ListUtils.NotNullValue([params.escaped, cds.escaped])
-		boolean readAsText = ListUtils.NotNullValue([params.readAsText, false])
-		boolean ignoreHeader = ListUtils.NotNullValue([params.ignoreHeader, cds.ignoreHeader, false])
+		boolean escaped = ListUtils.NotNullValue([BoolUtils.IsValue(params.escaped, null), cds.escaped])
+		boolean readAsText = BoolUtils.IsValue(params.readAsText, false)
+		boolean ignoreHeader = BoolUtils.IsValue(params.ignoreHeader?:cds.ignoreHeader, false)
 		Closure filter = (Closure)params."filter"
 
 		long countRec = 0
@@ -552,7 +552,7 @@ class CSVDriver extends FileDriver {
 		boolean isAppend = p.params.isAppend
 		boolean isValid = (params.isValid != null)?params.isValid:false
 		boolean bulkFile = (params.bulkFile != null)?params.bulkFile:false
-		boolean escaped = ListUtils.NotNullValue([params.escaped, dataset.escaped])
+		boolean escaped = ListUtils.NotNullValue([BoolUtils.IsValue(params.escaped, null), dataset.escaped])
 		
 		if (params.batchSize != null) wp.batchSize = params.batchSize
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch
@@ -773,7 +773,7 @@ class CSVDriver extends FileDriver {
 		def fs = new File(source.fullFileName())
 		def fw = new File(target.fullFileName())
 		if (target.autoSchema) target.saveDatasetMetadata()
-		if (ListUtils.NotNullValue([target.params.deleteOnExit, false])) {
+		if (BoolUtils.IsValue(target.params.deleteOnExit, false)) {
 			fw.deleteOnExit()
 			if (target.autoSchema) {
 				File ws = new File(target.fullFileSchemaName())

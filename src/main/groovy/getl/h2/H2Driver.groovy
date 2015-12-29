@@ -86,7 +86,7 @@ class H2Driver extends JDBCDriver {
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		String result = ""
 		def temporary = (dataset.sysParams.type in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
-		if (ListUtils.NotNullValue([params."not_persistent", false])) result += "NOT PERSISTENT "
+		if (BoolUtils.IsValue(params."not_persistent", false)) result += "NOT PERSISTENT "
 		if (temporary && params.transactional != null && params.transactional) result += "TRANSACTIONAL "
 		
 		result

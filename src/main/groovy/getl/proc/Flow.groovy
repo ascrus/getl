@@ -351,7 +351,7 @@ class Flow {
 		if (dest.sysParams.isTFSFile != null && dest.sysParams.isTFSFile && dest.field.isEmpty() && !isDestTemp) isDestTemp = true
 		def isDestVirtual = (dest.sysParams.isVirtual != null && dest.sysParams.isVirtual) 
 		
-		boolean inheritFields = ListUtils.NotNullValue([dest.sysParams.inheriteFields, params.inheritFields, false])
+		boolean inheritFields = BoolUtils.IsValue(dest.sysParams.inheriteFields?:params.inheritFields, false)
 		
 		boolean isBulkLoad = (params.bulkLoad != null)?params.bulkLoad:false
 		if (isBulkLoad && (isDestTemp || isDestVirtual)) throw new ExceptionGETL("Is not possible to start the process BulkLoad for a given destination dataset")

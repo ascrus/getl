@@ -602,7 +602,7 @@ ${extend}'''
 		}
 		
 		String ifNotExists = (params."ifNotExists" != null && params."ifNotExists")?"IF NOT EXISTS":""
-		boolean useNativeDBType = ListUtils.NotNullValue([params."useNativeDBType", true])
+		boolean useNativeDBType = BoolUtils.IsValue(params."useNativeDBType", true)
 		
 		def p = MapUtils.CleanMap(params, ["ifNotExists", "indexes", "hashPrimaryKey", "useNativeDBType"])
 		def extend = createDatasetExtend(dataset, p)
@@ -1206,7 +1206,7 @@ $sql
 		Map map = (params.map != null)?MapUtils.MapToLower(params.map):[:]
 		
 		// Allow aliases in map
-		boolean allowMapAlias = ListUtils.NotNullValue([params.allowMapAlias, false])
+		boolean allowMapAlias = BoolUtils.IsValue(params.allowMapAlias, false)
 		
 		// Mapping column to field
 		List<Map> mapping = []
