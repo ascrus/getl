@@ -60,7 +60,7 @@ class FileManager extends Manager {
 	 * Create root path if not exists
 	 * @return
 	 */
-	public boolean getCreateRootPath () { ListUtils.NotNullValue([params.createRootPath, false]) }
+	public boolean getCreateRootPath () { BoolUtils.IsValue(params.createRootPath, false) }
 	public void setCreateRootPath (boolean value) { params.createRootPath = value }
 	
 	@Override

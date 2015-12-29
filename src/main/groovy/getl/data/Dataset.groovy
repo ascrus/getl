@@ -170,7 +170,7 @@ class Dataset {
 	 * Auto load schema with meta file
 	 * @return
 	 */
-	public boolean getAutoSchema () { ListUtils.NotNullValue([params.autoSchema, connection.autoSchema, false]) }
+	public boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema?:connection.autoSchema, false) }
 	public void setAutoSchema (boolean value) {
 		params.autoSchema = value
 		if (value) params.manualSchema = true
@@ -196,7 +196,7 @@ class Dataset {
 	/**
 	 * Print write rows to console
 	 */
-	public boolean getLogWriteToConsole () { ListUtils.NotNullValue([params.logWriteToConsole, connection.logWriteToConsole,false]) }
+	public boolean getLogWriteToConsole () { BoolUtils.IsValue(params.logWriteToConsole?:connection.logWriteToConsole, false) }
 	public void setLogWriteToConsole (boolean value) { params.logWriteToConsole = value }
 
 	/**
@@ -590,7 +590,7 @@ class Dataset {
 		methodParams.validation("bulkLoadFile", procParams, [connection.driver.methodParams.params("bulkLoadFile")])
 		
 		if (field.size() == 0) {
-			if (ListUtils.NotNullValue([procParams.autoSchema, autoSchema])) {
+			if (BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
 				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA)) throw new ExceptionGETL("Can not auto load schema from destination dataset")
 				loadDatasetMetadata()
 			}
@@ -602,12 +602,12 @@ class Dataset {
 		
 		CSVDataset source = procParams.source
 		if (source == null) throw new ExceptionGETL("Required parameter \"source\"")
-		if (ListUtils.NotNullValue([procParams.inheritFields, false])) {
+		if (BoolUtils.IsValue(procParams.inheritFields, false)) {
 			source.field = field
 		}
 		
 		if (source.field.size() == 0) { 
-			if (ListUtils.NotNullValue([procParams.source_autoSchema, source.autoSchema])) {
+			if (BoolUtils.IsValue(procParams.source_autoSchema, source.autoSchema)) {
 				if (!source.connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA)) throw new ExceptionGETL("Can not auto load schema from source dataset")
 				source.loadDatasetMetadata()
 			}
@@ -830,7 +830,7 @@ ${ef.toString()}
 		
 		connection.tryConnect()
 		
-		if (field.size() == 0 && ListUtils.NotNullValue([procParams.autoSchema, autoSchema])) {
+		if (field.size() == 0 && BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
 			if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA)) throw new ExceptionGETL("Can not auto load schema from dataset")
 			loadDatasetMetadata()
 		}
@@ -922,7 +922,7 @@ ${ef.toString()}
 		if (procParams == null) procParams = [:]
 		methodParams.validation("openWrite", procParams, [connection.driver.methodParams.params("openWrite")])
 		
-		def saveSchema = ListUtils.NotNullValue([procParams.autoSchema, autoSchema]) 
+		def saveSchema = BoolUtils.IsValue(procParams.autoSchema, autoSchema) 
 		if (saveSchema && !connection.driver.isSupport(Driver.Support.AUTOSAVESCHEMA)) throw new ExceptionGETL("Can not auto save schema from dataset")
 		
 		connection.tryConnect()

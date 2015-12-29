@@ -115,13 +115,13 @@ class VerticaDriver extends JDBCDriver {
 		List<Map> map = params.map
 		Map expressions = params.expression?:[:]
 		String loadMethod = ListUtils.NotNullValue([params.loadMethod, "AUTO"])
-		boolean enforceLength = ListUtils.NotNullValue([params.enforceLength, true])
-		boolean autoCommit = ListUtils.NotNullValue([params.autoCommit, dest.connection.tranCount == 0])
+		boolean enforceLength = BoolUtils.IsValue(params.enforceLength, true)
+		boolean autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
 		String compressed = ListUtils.NotNullValue([params.compressed, (isGzFile?"GZIP":null)])
 		String exceptionPath = params.exceptionPath
 		String rejectedPath = params.rejectedPath
 		Integer rejectMax = params.rejectMax
-		boolean abortOnError = ListUtils.NotNullValue([params.abortOnError, ((rejectedPath != null || exceptionPath != null)?false:true)])
+		boolean abortOnError = ListUtils.NotNullValue([BoolUtils.IsValue(params.abortOnError, null), ((rejectedPath != null || exceptionPath != null)?false:true)])
 		String location = params."location"
 		String onNode = (location != null)?(" ON " + location):""
 		

@@ -71,19 +71,19 @@ class CSVConnection extends FileConnection {
 	/**
 	 * File has header of fields name
 	 */
-	public boolean getHeader () { ListUtils.NotNullValue([params.header, true]) }
+	public boolean getHeader () { BoolUtils.IsValue(params.header, true) }
 	public void setHeader (boolean value) { params.header = value }
 	
 	/**
 	 * Ignore header field name
 	 */
-	public boolean getIgnoreHeader () { ListUtils.NotNullValue([params.ignoreHeader, false]) }
+	public boolean getIgnoreHeader () { BoolUtils.IsValue(params.ignoreHeader, false) }
 	public void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
 	
 	/**
 	 * Required convert string to escape value
 	 */
-	public boolean getEscaped () { ListUtils.NotNullValue([params.escaped, false]) }
+	public boolean getEscaped () { BoolUtils.IsValue(params.escaped, false) }
 	public void setEscaped (boolean value) { params.escaped = value }
 	
 	/**
@@ -95,7 +95,7 @@ class CSVConnection extends FileConnection {
 	/**
 	 * Required format values for output to file
 	 */
-	public boolean getFormatOutput () { ListUtils.NotNullValue([params.formatOutput, true]) }
+	public boolean getFormatOutput () { BoolUtils.IsValue(params.formatOutput, true) }
 	public void setFormatOutput (boolean value) { params.formatOutput = value }
 	
 	/**

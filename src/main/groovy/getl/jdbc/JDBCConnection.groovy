@@ -148,7 +148,7 @@ class JDBCConnection extends Connection {
 	 * Auto commit transaction
 	 * @return
 	 */
-	public boolean getAutoCommit () { ListUtils.NotNullValue([params.autoCommit, false]) }
+	public boolean getAutoCommit () { BoolUtils.IsValue(params.autoCommit, false) }
 	public void setAutoCommit (boolean value) { 
 		params.autoCommit = value
 		if (connected) driver.setAutoCommit(value)

@@ -798,6 +798,7 @@ sb << """
 		}
 		catch (Exception e) {
 			Logs.Severe("Error parse [$value] from [$vars]")
+			Logs.Dump(e, 'GenerationUtils', 'EvalGroovyScript', "vars: $vars\nscript:\n$value")
 			throw e
 		}
 		

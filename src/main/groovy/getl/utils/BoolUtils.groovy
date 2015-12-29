@@ -22,39 +22,24 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.deploy
+package getl.utils
 
 /**
- * Version manager
- * @author Aleksey Konstantinov
+ * Boolean functions
+ * @author Alexsey Konstantonov
+ *
  */
-class Version {
+@groovy.transform.CompileStatic
+class BoolUtils {
 	/**
-	 * GETL version
-	 */
-	public static version = "1.1.44"
-	
-	/**
-	 * GETL version as numeric
-	 */
-	public static versionNum = 1.0144
-
-	/**
-	 * Compatibility GETL version
-	 */
-	public static versionNumCompatibility = 1.0121
-	
-	/**
-	 * Valid compatibility version
-	 * @param ver
+	 * Return boolean by value
+	 * @param value - any value, compatible with boolean type
+	 * @param defaultValue - return if value has null
 	 * @return
 	 */
-	public static boolean IsCompatibility (def ver) { 
-		ver >= versionNumCompatibility && ver <= versionNum 
+	public static Boolean IsValue(def value, Boolean defaultValue) {
+		if (value == null) return defaultValue
+		if (value instanceof Boolean) return value
+		(value.toString() in ['true', '1', 'on'])
 	}
-	
-	/**
-	 * Years development
-	 */
-	public static years = "2014-2015"
 }

@@ -228,10 +228,10 @@ abstract class FileDriver extends Driver {
 		res.fn = fullFileNameDataset(dataset, portion)
 		res.isGzFile = dataset.isGzFile
 		res.codePage = ListUtils.NotNullValue([params.codePage, dataset.codePage])
-		res.isAppend = ListUtils.NotNullValue([params.append, dataset.append])
-		res.autoSchema = ListUtils.NotNullValue([params.autoSchema, dataset.autoSchema])
-		res.createPath = ListUtils.NotNullValue([params.createPath, dataset.createPath])
-		res.deleteOnEmpty = ListUtils.NotNullValue([params.deleteOnEmpty, dataset.deleteOnEmpty])
+		res.isAppend = BoolUtils.IsValue(params.append, dataset.append)
+		res.autoSchema = BoolUtils.IsValue(params.autoSchema, dataset.autoSchema)
+		res.createPath = BoolUtils.IsValue(params.createPath, dataset.createPath)
+		res.deleteOnEmpty = BoolUtils.IsValue(params.deleteOnEmpty?:dataset.deleteOnEmpty, null)
 		
 		res
 	}
@@ -295,7 +295,7 @@ abstract class FileDriver extends Driver {
 		def wp = getDatasetParams(dataset, params, portion)
 		
 		def fn = wp.fn 
-		if (!ListUtils.NotNullValue([params.append, dataset.append, false])) fn = "${wp.fn}.getltemp"
+		if (!BoolUtils.IsValue(params.append?:dataset.append, false)) fn = "${wp.fn}.getltemp"
 		dataset.sysParams.writeFiles.put(wp.fn, fn)
 		
 		if (wp.createPath) createPath(fn)
