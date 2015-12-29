@@ -231,7 +231,7 @@ abstract class FileDriver extends Driver {
 		res.isAppend = BoolUtils.IsValue(params.append, dataset.append)
 		res.autoSchema = BoolUtils.IsValue(params.autoSchema, dataset.autoSchema)
 		res.createPath = BoolUtils.IsValue(params.createPath, dataset.createPath)
-		res.deleteOnEmpty = BoolUtils.IsValue([BoolUtils.IsValue(params.deleteOnEmpty, null), dataset.deleteOnEmpty])
+		res.deleteOnEmpty = BoolUtils.IsValue(params.deleteOnEmpty?:dataset.deleteOnEmpty, null)
 		
 		res
 	}
