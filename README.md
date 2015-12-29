@@ -9,5 +9,4 @@ GETL taken into account when developing ideas and following requirements:
 * Compiling the code on the fly bail speed and reserve for the optimization;
 * Sophisticated class hierarchy guarantee easy connection of other open source solutions.
 
-Maven URL:
-http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22net.sourceforge.getl%22
+Maven URL: http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22net.sourceforge.getl%22

@@ -38,7 +38,7 @@ import getl.utils.*
 @InheritConstructors
 class XMLDriver extends FileDriver {
 	XMLDriver () {
-		methodParams.register("eachRow", ["fields", "filter"])
+		methodParams.register("eachRow", ["fields", "filter", "initAttr"])
 	}
 
 	@Override
@@ -80,7 +80,7 @@ class XMLDriver extends FileDriver {
 				sb << "\n"
 			}
 			sb << "dataset.params.attributeValue = attrValue\n"
-			if (initAttr != null) sb << "initAttr(dataset)\n"
+			if (initAttr != null) sb << "if (!initAttr(dataset)) return\n"
 			sb << "\n"
 		}
 		
@@ -108,9 +108,16 @@ class XMLDriver extends FileDriver {
 		}
 		sb << "	code(row)\n"
 		sb << "}"
+//		println sb.toString()
 		
 		def vars = [dataset: dataset, initAttr: initAttr, code: code, data: data]
-		GenerationUtils.EvalGroovyScript(sb.toString(), vars)
+		try {
+			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
+		}
+		catch (Exception e) {
+			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
+			throw e
+		}
 	}
 
 	private void doRead(Dataset dataset, Map params, Closure prepareCode, Closure code) {
@@ -159,6 +166,8 @@ class XMLDriver extends FileDriver {
 			countRec++
 			code(row)
 		}
+		
+		countRec
 	}
 
 	@Override

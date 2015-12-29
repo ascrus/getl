@@ -26,8 +26,13 @@ package getl.exception
 
 import groovy.transform.InheritConstructors
 
+/**
+ * Exception SQL parser
+ * @author Alexsey Konstantinov
+ *
+ */
 @InheritConstructors
-class ExceptionParser extends Exception {
+class ExceptionParser extends ExceptionGETL {
 	/**
 	 * Tokens from parsing
 	 */

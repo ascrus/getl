@@ -207,7 +207,7 @@ abstract class Manager {
 	 * @return
 	 */
 	public List<Map> list (String maskFiles) {
-		List<Map> res = []
+		List<Map> res = new LinkedList<Map>()
 		Closure addToList = { res << it }
 		list(maskFiles, addToList)
 		
@@ -219,7 +219,7 @@ abstract class Manager {
 	 * @return
 	 */
 	public List<Map> list () {
-		List<Map> res = []
+		List<Map> res = new LinkedList<Map>()
 		Closure addToList = { res << it }
 		list(null, addToList)
 		
@@ -410,6 +410,11 @@ abstract class Manager {
 	public void setFileListConnection (JDBCConnection value) { fileListConnection = value }
 	
 	/**
+	 * Use temporary tables for build list process
+	 */
+	public boolean fileUseTempTables = true
+	
+	/**
 	 * Count found files 
 	 */
 	public long countFileList
@@ -529,40 +534,53 @@ abstract class Manager {
 		fileList.drop(ifExists: true)
 		fileList.create()
 		
-		TableDataset newFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
+		def tableType = (fileUseTempTables)?JDBCDataset.Type.LOCAL_TEMPORARY:JDBCDataset.Type.TABLE
+		
+		TableDataset newFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
 		newFiles.field = [new Field(name: 'ID', type: 'INTEGER', isNull: false, isAutoincrement: true)] + fileList.field
 		newFiles.clearKeys()
-		newFiles.fieldByName('ID').isKey = true
+//		newFiles.fieldByName('ID').isKey = true
+		
 		newFiles.drop(ifExists: true)
-		newFiles.create(onCommit: true, indexes: [idx_filename: [columns: ['FILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID']]])
+		newFiles.create(onCommit: true, 
+						indexes: [
+							idx_filename: [columns: ['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID']],
+							idx_id: [columns: ['ID']]
+						])
 		
-		TableDataset doubleFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
-		doubleFiles.field = newFiles.getFields(['FILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
-		doubleFiles.fieldByName('ID').isAutoincrement = false
+		TableDataset doubleFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
+		doubleFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
+		doubleFiles.fieldByName('ID').with { 
+			isAutoincrement = false
+			isKey = true
+		}
 		doubleFiles.drop(ifExists: true)
-		doubleFiles.create(onCommit: true/*, indexes: [idx_filename: [columns: ['FILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID']]]*/)
+		doubleFiles.create(onCommit: true)
 		
-		TableDataset useFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
+		TableDataset useFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
 		useFiles.field = [newFiles.fieldByName('ID')]
-		useFiles.fieldByName('ID').isAutoincrement = false
+		useFiles.fieldByName('ID').with {
+			isAutoincrement = false
+			isKey = true
+		}
 		
 		try {
 			// Get files to buffer table
-			new Flow().writeTo(dest: newFiles) { Closure updater ->
+			new Flow().writeTo(dest: newFiles, dest_batchSize: 1000) { Closure updater ->
 				processList(path: path, maskFile: maskFile, type: type, recursive: recursive, code: code, requiredAnalize: requiredAnalize, updater: updater)
 			}
 			
 			// Detect double file name
 			def sqlDetectDouble = """
-INSERT INTO ${doubleFiles.fullNameDataset()} (FILENAME${(takePathInStory)?', FILEPATH':''}, ID)
-	SELECT FILENAME${(takePathInStory)?', FILEPATH':''}, ID
+INSERT INTO ${doubleFiles.fullNameDataset()} (LOCALFILENAME${(takePathInStory)?', FILEPATH':''}, ID)
+	SELECT LOCALFILENAME${(takePathInStory)?', FILEPATH':''}, ID
 	FROM ${newFiles.fullNameDataset()} d
 	WHERE 
 		EXISTS(
 			SELECT 1
 			FROM ${newFiles.fullNameDataset()} o
-			WHERE o.FILENAME = d.FILENAME ${(takePathInStory)?'AND o.FILEPATH = d.FILEPATH':''}
-			GROUP BY FILENAME${(takePathInStory)?', FILEPATH':''}
+			WHERE o.LOCALFILENAME = d.LOCALFILENAME ${(takePathInStory)?'AND o.FILEPATH = d.FILEPATH':''}
+			GROUP BY LOCALFILENAME${(takePathInStory)?', FILEPATH':''}
 			HAVING Min(o.ID) < d.ID
 		);
 """
@@ -604,15 +622,15 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				
 				TableDataset validFiles = new TableDataset(connection: story.connection, 
 															tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
-				validFiles.field = newFiles.getFields(['FILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
+				validFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 				validFiles.fieldByName('ID').isAutoincrement = false
 				validFiles.clearKeys()
-				validFiles.fieldByName('FILENAME').isKey = true
+				validFiles.fieldByName('LOCALFILENAME').isKey = true
 				if (takePathInStory) validFiles.fieldByName('FILEPATH').isKey = true
 				validFiles.drop(ifExists: true)
 				validFiles.create(onCommit: true)
 				try {
-					new Flow().copy(source: newFiles, dest: validFiles, dest_batchSize: 10000)
+					new Flow().copy(source: newFiles, dest: validFiles, dest_batchSize: 1000)
 					
 					def sqlFoundNew = """
 SELECT ID
@@ -621,11 +639,11 @@ WHERE
 	NOT EXISTS(
 		SELECT *
 		FROM ${story.fullNameDataset()} h
-		WHERE h.FILENAME = f.FILENAME ${(takePathInStory)?'AND h.FILEPATH = f.FILEPATH':''}
+		WHERE h.FILENAME = f.LOCALFILENAME ${(takePathInStory)?'AND h.FILEPATH = f.FILEPATH':''}
 	)
 """
 					QueryDataset getNewFiles = new QueryDataset(connection: story.connection, query: sqlFoundNew)
-					new Flow().copy(source: getNewFiles, dest: useFiles, dest_batchSize: 10000)
+					new Flow().copy(source: getNewFiles, dest: useFiles, dest_batchSize: 1000)
 				}
 				finally {
 					validFiles.drop(ifExists: true)
@@ -641,7 +659,7 @@ FROM ${newFiles.fullNameDataset()}
 			}
 			
 			def QueryDataset processFiles = new QueryDataset(connection: fileList.connection, query: sqlCopyFiles)
-			countFileList = new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 10000)
+			countFileList = new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 1000)
 		}
 		finally {
 			newFiles.drop(ifExists: true)

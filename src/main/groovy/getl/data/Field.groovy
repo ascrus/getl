@@ -331,6 +331,7 @@ class Field implements Serializable {
 	public void assign (Field f) {
 		type = (f.type != Type.OBJECT)?f.type:type
 		typeName = f.typeName
+		dbType = f.dbType
 		isNull = (!f.isNull)?false:isNull
 		isKey = (f.isKey)?true:isKey
 		ordKey = (f.ordKey != null)?f.ordKey:ordKey
@@ -356,7 +357,7 @@ class Field implements Serializable {
 	 */
 	public Field copy() {
 		Field f = new Field(
-				name: this.name, type: this.type, typeName: this.typeName, isNull: this.isNull, length: this.length, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
+				name: this.name, type: this.type, typeName: this.typeName, dbType: this.dbType, isNull: this.isNull, length: this.length, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
 				isAutoincrement: this.isAutoincrement, isReadOnly: this.isReadOnly, defaultValue: this.defaultValue, compute: this.compute, 
 				minValue: this.minValue, maxValue: this.maxValue, format: this.format, alias: this.alias, trim: this.trim, 
 				decimalSeparator: this.decimalSeparator, description: this.description, extended: MapUtils.DeepCopy(extended))
