@@ -344,7 +344,14 @@ class MapUtils {
 				String value
 				if (p.matches()) {
 					ArrayList pm = (ArrayList)p[0]
-					name = ((String)pm[1]).toLowerCase()
+					name = ((String)pm[1])
+					def c = name.indexOf('.')
+					if (c == -1) {
+						 name = name.toLowerCase()
+					}
+					else {
+						name = name.substring(0, c + 1).toLowerCase() + name.substring(c + 1) 
+					}
 					value = pm[2]
 				}
 				else {
