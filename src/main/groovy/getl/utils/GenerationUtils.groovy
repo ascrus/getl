@@ -289,7 +289,7 @@ class GenerationUtils {
 			case getl.data.Field.Type.STRING:
 				if (source.type == getl.data.Field.Type.DATE || source.type == getl.data.Field.Type.TIME || source.type == getl.data.Field.Type.DATETIME) {
 					dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(source.type)
-					r =  "getl.utils.DateUtils.FormatDate(\"${dataformat}\", ${sourceValue})"
+					r =  "getl.utils.DateUtils.FormatDate(\"${dataformat}\", (Date)${sourceValue})"
 				}
 				else {
 					r = "getl.utils.ConvertUtils.Object2String(${sourceValue})"
@@ -298,13 +298,13 @@ class GenerationUtils {
 				break
 			case getl.data.Field.Type.BOOLEAN:
 				if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.BIGINT)
-					r = "getl.utils.ConvertUtils.Int2Boolean({sourceValue}?.intValue())"
+					r = "getl.utils.ConvertUtils.Int2Boolean((Integer){sourceValue}?.intValue())"
 				else if (source.type == getl.data.Field.Type.STRING) {
 					def bf = ["true", "false"]
 					if (dataformat != null) {
 						bf = dataformat.toLowerCase().split("[|]")
 					}
-					r =  "getl.utils.ConvertUtils.String2Boolean(${sourceValue}, \"${bf[0]}\")"
+					r =  "getl.utils.ConvertUtils.String2Boolean((String)${sourceValue}, \"${bf[0]}\")"
 				}
 				else
 					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
@@ -316,7 +316,7 @@ class GenerationUtils {
 				else if (source.type == getl.data.Field.Type.DOUBLE || source.type == getl.data.Field.Type.NUMERIC || source.type == getl.data.Field.Type.BIGINT)
 					r = "${sourceValue}?.intValue()"
 				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "getl.utils.ConvertUtils.Boolean2Int(${sourceValue})"
+					r = "getl.utils.ConvertUtils.Boolean2Int((Boolean)${sourceValue})"
 				else
 					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
 				
@@ -328,7 +328,7 @@ class GenerationUtils {
 				else if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.DOUBLE || source.type == getl.data.Field.Type.NUMERIC)
 					r = "${sourceValue}?.longValue()"
 				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "getl.utils.ConvertUtils.Boolean2Int(${sourceValue})?.longValue()"
+					r = "getl.utils.ConvertUtils.Boolean2Int((Boolean)${sourceValue})?.longValue()"
 				else
 					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
 				
@@ -340,7 +340,7 @@ class GenerationUtils {
 				else if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.DOUBLE || source.type == getl.data.Field.Type.BIGINT)
 					r = "getl.utils.ConvertUtils.Object2BigDecimal(${sourceValue})"
 				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "getl.utils.ConvertUtils.Boolean2BigDecimal(${sourceValue})"
+					r = "getl.utils.ConvertUtils.Boolean2BigDecimal((Boolean)${sourceValue})"
 				else
 					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
 
@@ -349,7 +349,7 @@ class GenerationUtils {
 				if (source.type == getl.data.Field.Type.STRING || source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.NUMERIC || source.type == getl.data.Field.Type.BIGINT)
 						r =  "getl.utils.ConvertUtils.Object2Double(${sourceValue})"
 				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "getl.utils.ConvertUtils.Boolean2Double(${sourceValue})"
+					r = "getl.utils.ConvertUtils.Boolean2Double((Boolean)${sourceValue})"
 				else
 					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
 				
@@ -358,10 +358,10 @@ class GenerationUtils {
 				if (source.type != getl.data.Field.Type.STRING && source.type != getl.data.Field.Type.DATETIME) throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
 				if (source.type == getl.data.Field.Type.STRING) {
 					dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(dest.type)
-					r =  "getl.utils.DateUtils.ParseDate(\"${dataformat}\", ${sourceValue})"
+					r =  "getl.utils.DateUtils.ParseDate(\"${dataformat}\", (String)${sourceValue})"
 				}
 				else {
-					r = "getl.utils.DateUtils.ClearTime(${sourceValue})"
+					r = "getl.utils.DateUtils.ClearTime((Date)${sourceValue})"
 				}
 				
 				break
@@ -371,7 +371,7 @@ class GenerationUtils {
 				
 				if (source.type == getl.data.Field.Type.STRING) {
 					dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(dest.type)
-					r =  "getl.utils.DateUtils.ParseDate(\"${dataformat}\", ${sourceValue})"
+					r =  "getl.utils.DateUtils.ParseDate(\"${dataformat}\", (String)${sourceValue})"
 				}
 				else {
 					r = "${sourceValue}"
@@ -381,9 +381,9 @@ class GenerationUtils {
 				
 			case getl.data.Field.Type.TIME:
 				if (source.type == getl.data.Field.Type.BIGINT)
-					r = "getl.utils.ConvertUtils.Long2Time(${sourceValue})"
+					r = "getl.utils.ConvertUtils.Long2Time((Long)${sourceValue})"
 				else if (source.type == getl.data.Field.Type.STRING)
-					r = "getl.utils.ConvertUtils.String2Time(${sourceValue})"
+					r = "getl.utils.ConvertUtils.String2Time((String)${sourceValue})"
 				else
 					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
 				
@@ -391,7 +391,7 @@ class GenerationUtils {
 				
 			case getl.data.Field.Type.TEXT:
 				if (source.type == getl.data.Field.Type.STRING)
-					r = "new javax.sql.rowset.serial.SerialClob((${sourceValue}).chars)"
+					r = "new javax.sql.rowset.serial.SerialClob(((String)${sourceValue}).chars)"
 				else
 					r = "${sourceValue}"
 				
