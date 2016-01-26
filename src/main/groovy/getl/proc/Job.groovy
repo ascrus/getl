@@ -38,6 +38,12 @@ abstract class Job {
 	 */
 	public Map jobArgs
 	
+	/**
+	 * Job arguments (backward compatible) 
+	 * @return
+	 */
+	public Map getArgs() { jobArgs }
+	
 	private void processConfigArgs (def args) {
 		def m = MapUtils.ProcessArguments(args)
 		if (m.errout != null) Logs.RedirectErrOut(m.errout)
