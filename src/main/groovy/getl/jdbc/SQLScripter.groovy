@@ -217,7 +217,7 @@ public class SQLScripter {
 		QueryDataset query = new QueryDataset(connection: connection, query: sql)
 		query.eachRow(limit: 1) { row ->
 			query.field.each { Field f ->
-				vars."${f.name}" = row."${f.name.toLowerCase()}"
+				vars."${f.name.toLowerCase()}" = row."${f.name.toLowerCase()}"
 			}
 		}
 	}
@@ -256,7 +256,7 @@ public class SQLScripter {
 		
 		rows.each { row ->
 			query.field.each { Field f ->
-				ns.vars."${f.name}" = row."${f.name.toLowerCase()}"
+				ns.vars."${f.name.toLowerCase()}" = row."${f.name.toLowerCase()}"
 			}
 			try {
 				ns.runSql()
