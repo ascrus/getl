@@ -56,25 +56,25 @@ class FileDataset extends Dataset {
 	/**
 	 * Append if file exists
 	 */
-	public boolean getAppend () { BoolUtils.IsValue(params.append?:connection.append, false) }
+	public boolean getAppend () { BoolUtils.IsValue([params.append, connection.append], false) }
 	public void setAppend (boolean value) { params.append = value }
 	
 	/**
 	 * Auto create path for connection
 	 */
-	public boolean getCreatePath () { BoolUtils.IsValue(params.createPath?:connection.createPath, false) }
+	public boolean getCreatePath () { BoolUtils.IsValue([params.createPath, connection.createPath], false) }
 	public void setCreatePath (boolean value) { params.createPath = value }
 	
 	/**
 	 * Delete file if empty after write
 	 */
-	public boolean getDeleteOnEmpty () { BoolUtils.IsValue(params.deleteOnEmpty?:connection.deleteOnEmpty, false) }
+	public boolean getDeleteOnEmpty () { BoolUtils.IsValue([params.deleteOnEmpty, connection.deleteOnEmpty], false) }
 	public void setDeleteOnEmpty (boolean value) { params.deleteOnEmpty = value }
 	
 	/**
 	 * File is pack of GZIP
 	 */
-	public boolean getIsGzFile() { BoolUtils.IsValue(params.isGzFile?:connection.isGzFile, false) }
+	public boolean getIsGzFile() { BoolUtils.IsValue([params.isGzFile, connection.isGzFile], false) }
 	public void setIsGzFile (boolean value) { params.isGzFile = value }
 	
 	/**
@@ -161,7 +161,7 @@ class FileDataset extends Dataset {
 	@Override
 	public void closeWrite () {
 		super.closeWrite()
-		if (!BoolUtils.IsValue(sysParams.append?:append, false)) {
+		if (!BoolUtils.IsValue([sysParams.append, append], false)) {
 			if (isWriteError || (sysParams.deleteOnEmpty && writeRows == 0)) {
 				connection.driver.fixTempFiles(this, true)
 			} else {

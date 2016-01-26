@@ -303,7 +303,7 @@ class Field implements Serializable {
 		s.type = type
 		s.typeName = typeName
 		s.isNull = isNull
-		s.lenghth = length
+		s.length = length
 		s.precision = precision
 		s.isKey = isKey
 		s.ordKey = ordKey

@@ -108,6 +108,15 @@ class Config {
 	}
 	
 	/**
+	 * Clear all configurations
+	 */
+	@Synchronized
+	public static void ClearConfig () {
+		content.clear()
+		content.vars = [:]
+	}
+	
+	/**
 	 * Load configuration from file
 	 * Use parameters: params.path and params.fileName) 
 	 */

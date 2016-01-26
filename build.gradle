@@ -2,7 +2,7 @@ apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-version = "1.1.44"
+version = "1.1.45"
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -28,7 +28,7 @@ dependencies {
 	addJars 'it.sauronsoftware:ftp4j:1.7.2'
 	addJars 'com.jcraft:jsch:0.1.53'
 	addJars 'net.sf.supercsv:super-csv:2.3.1'
-	addJars 'com.h2database:h2:1.4.190'
+	addJars 'com.h2database:h2:1.4.191'
 	configurations.compile.extendsFrom(configurations.addJars)
 	
 	deployerJars "org.apache.maven.wagon:wagon-http:2.2"

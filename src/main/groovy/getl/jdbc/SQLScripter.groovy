@@ -112,6 +112,9 @@ public class SQLScripter {
 	private void prepareSql(String script) {
 		if (script == null) 
 			throw new ExceptionGETL("PrepareError: script is empty")
+			
+		List varNames = []
+		vars.keySet().toArray().each { varNames << it }
 		
 		Pattern p
 		Matcher m
@@ -123,11 +126,14 @@ public class SQLScripter {
 		String vn
 		while (m.find()) {
 			vn = m.group()
-			vn = vn.substring(1, vn.length() - 1).trim()/*.toLowerCase()*/
+			vn = vn.substring(1, vn.length() - 1).trim().toLowerCase()
 //			if (!vars.containsKey(vn))
 //				throw new ExceptionGETL("PrepareError: variable [${vn}] not found, exists vars: ${vars}, script: ${script.replace('\n', '; ')}")
-			if (!vars.containsKey(vn)) continue
-			def val = vars.get(vn)
+			
+			def varName = varNames.find { vn == it.toLowerCase() }
+			
+			if (varName == null) continue
+			def val = vars.get(varName)
 			String valStr
 			if (val == null) {
 				valStr = "null"
@@ -217,7 +223,7 @@ public class SQLScripter {
 		QueryDataset query = new QueryDataset(connection: connection, query: sql)
 		query.eachRow(limit: 1) { row ->
 			query.field.each { Field f ->
-				vars."${f.name}" = row."${f.name.toLowerCase()}"
+				vars."${f.name.toLowerCase()}" = row."${f.name.toLowerCase()}"
 			}
 		}
 	}
@@ -256,7 +262,7 @@ public class SQLScripter {
 		
 		rows.each { row ->
 			query.field.each { Field f ->
-				ns.vars."${f.name}" = row."${f.name.toLowerCase()}"
+				ns.vars."${f.name.toLowerCase()}" = row."${f.name.toLowerCase()}"
 			}
 			try {
 				ns.runSql()

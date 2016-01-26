@@ -40,6 +40,15 @@ class BoolUtils {
 	public static Boolean IsValue(def value, Boolean defaultValue) {
 		if (value == null) return defaultValue
 		if (value instanceof Boolean) return value
+		if (value instanceof List) {
+			Boolean result
+			value.each { 
+				if (result == null && it != null) {
+					if (it instanceof Boolean) result = it else result = (it.toString() in ['true', '1', 'on']) 
+				} 
+			}
+			if (result == null) return defaultValue else return result
+		}
 		(value.toString() in ['true', '1', 'on'])
 	}
 }
