@@ -87,6 +87,12 @@ abstract class Job {
 			Config.SetValue("vars.$key", value)
 		}
 	}
+
+	/**
+	 * Job arguments from config content
+	 * @return
+	 */
+	public Map getArgs() { Config.content.job.args }
 	
 	/**
 	 * Run job with arguments of command line
