@@ -25,9 +25,7 @@
 package getl.xml
 
 import groovy.transform.InheritConstructors
-
-import getl.data.Connection
-import getl.data.StructureFileDataset
+import getl.data.*
 
 /**
  * XML dataset class
@@ -40,5 +38,13 @@ class XMLDataset extends StructureFileDataset {
 	public void setConnection(Connection value) {
 		assert value == null || value instanceof XMLConnection
 		super.setConnection(value)
+	}
+	
+	/**
+	 * Read XML dataset attributes
+	 * @param params
+	 */
+	public void readAttrs (Map params) {
+		((XMLDriver)(connection.driver)).readAttrs(this, params)
 	}
 }

@@ -25,7 +25,11 @@
 package getl.json
 
 import groovy.json.JsonSlurper
+import groovy.lang.Closure;
 import groovy.transform.InheritConstructors
+
+import java.util.Map;
+
 import getl.data.*
 import getl.data.Field.Type
 import getl.driver.*
@@ -57,29 +61,51 @@ class JSONDriver extends FileDriver {
 
 	@Override
 	protected List<Field> fields(Dataset dataset) {
-		return null;
+		return null
 	}
 	
-	private void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure code) {
-		StringBuilder sb = new StringBuilder()
+	/**
+	 * Read only attributes from dataset
+	 * @param dataset
+	 * @param initAttr
+	 * @param sb
+	 */
+	private void generateAttrRead (Dataset dataset, Closure initAttr, StringBuilder sb) {
 		List<Field> attrs = (dataset.params.attributeField != null)?dataset.params.attributeField:[]
-		if (!attrs.isEmpty()) {
-			sb << "Map<String, Object> attrValue = [:]\n"
-			int a = 0
-			attrs.each { Field d ->
-				a++
-				
-				Field s = d.copy()
-				if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
-				
-				String path = GenerationUtils.Field2Alias(d)
-				sb << "attrValue.'${d.name.toLowerCase()}' = "
-				sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}")
-				
-				sb << "\n"
-			}
-			sb << "dataset.params.attributeValue = attrValue\n\n"
+		if (attrs.isEmpty()) return
+		
+		sb << "Map<String, Object> attrValue = [:]\n"
+		int a = 0
+		attrs.each { Field d ->
+			a++
+			
+			Field s = d.copy()
+			if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
+			
+			String path = GenerationUtils.Field2Alias(d)
+			sb << "attrValue.'${d.name.toLowerCase()}' = "
+			sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}")
+			
+			sb << "\n"
 		}
+		sb << "dataset.params.attributeValue = attrValue\n"
+		if (initAttr != null) sb << "if (!initAttr(dataset)) return\n"
+		sb << "\n"
+	}
+	
+	/**
+	 * Read attributes and rows from dataset
+	 * @param dataset
+	 * @param listFields
+	 * @param rootNode
+	 * @param limit
+	 * @param data
+	 * @param initAttr
+	 * @param code
+	 */
+	private void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure initAttr, Closure code) {
+		StringBuilder sb = new StringBuilder()
+		generateAttrRead(dataset, initAttr, sb)
 		
 		if (limit > 0) sb << "long cur = 0\n"
 		sb << "data" + ((rootNode != ".")?"." + rootNode:"") + ".each { struct ->\n"
@@ -105,23 +131,48 @@ class JSONDriver extends FileDriver {
 		sb << "	code(row)\n"
 		sb << "}"
 		
-		def vars = [dataset: dataset, code: code, data: data]
-		GenerationUtils.EvalGroovyScript(sb.toString(), vars)
+		def vars = [dataset: dataset, initAttr: initAttr, code: code, data: data]
+		try {
+			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
+		}
+		catch (Exception e) {
+			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
+			throw e
+		}
 	}
 	
-	private void doRead(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
-		if (dataset.params.rootNode == null) throw new ExceptionGETL("Required \"rootNode\" parameter with dataset")
+	/**
+	 * Read only attributes from dataset
+	 * @param dataset
+	 * @param params
+	 */
+	public void readAttrs (Dataset dataset, Map params) {
+		params = params?:[:]
 		String rootNode = dataset.params.rootNode
+		def data = readData(dataset, params)
+		
+		StringBuilder sb = new StringBuilder()
+		generateAttrRead(dataset, null, sb)
+		
+		def vars = [dataset: dataset, data: data]
+		try {
+			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
+		}
+		catch (Exception e) {
+			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
+			throw e
+		}
+	}
+	
+	/**
+	 * Read JSON data from file
+	 * @param dataset
+	 * @param params
+	 * @return
+	 */
+	private def readData (Dataset dataset, Map params) {
 		boolean convertToList = (dataset.params.convertToList != null)?dataset.params.convertToList:false
 		
-		String fn = fullFileNameDataset(dataset)
-		if (fn == null) throw new ExceptionGETL("Required \"fileName\" parameter with dataset")
-		File f = new File(fn)
-		if (!f.exists()) throw new ExceptionGETL("File \"${fn}\" not found")
-		
-		long limit = (params.limit != null)?params.limit:0
-
 		def json = new JsonSlurper()
 		def data
 		
@@ -140,22 +191,37 @@ class JSONDriver extends FileDriver {
 				int lastObjPos = sb.lastIndexOf("}")
 				if (sb.substring(lastObjPos + 1, sb.length()).trim() == ',') sb.delete(lastObjPos + 1, sb.length())
 				sb << "\n]"
-//				println sb.toString()
 				data = json.parseText(sb.toString())
 			}
 		}
 		finally {
 			reader.close()
 		}
+		
+		data
+	}
+	
+	private void doRead(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
+		if (dataset.params.rootNode == null) throw new ExceptionGETL("Required \"rootNode\" parameter with dataset")
+		String rootNode = dataset.params.rootNode
+		
+		String fn = fullFileNameDataset(dataset)
+		if (fn == null) throw new ExceptionGETL("Required \"fileName\" parameter with dataset")
+		File f = new File(fn)
+		if (!f.exists()) throw new ExceptionGETL("File \"${fn}\" not found")
+		
+		long limit = (params.limit != null)?params.limit:0
 
+		def data = readData(dataset, params)
 		
 		List<String> fields = []
 		if (prepareCode != null) {
 			prepareCode(fields)
 		}
 		else if (params.fields != null) fields = params.fields
-
-		readRows(dataset, fields, rootNode, limit, data, code)
+		
+		readRows(dataset, fields, rootNode, limit, data, params.initAttr, code)
 	}
 	
 	@Override

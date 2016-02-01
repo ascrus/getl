@@ -53,36 +53,51 @@ class XMLDriver extends FileDriver {
 
 	@Override
 	protected List<Field> fields(Dataset dataset) {
-		return null;
+		return null
 	}
-
-	private void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure initAttr, Closure code) {
-		StringBuilder sb = new StringBuilder()
+	
+	/**
+	 * Generate attribute read code
+	 * @param dataset
+	 * @param initAttr
+	 * @param sb
+	 */
+	private void generateAttrRead (Dataset dataset, Closure initAttr, StringBuilder sb) {
 		List<Field> attrs = (dataset.params.attributeField != null)?dataset.params.attributeField:[]
-		if (!attrs.isEmpty()) {
-			sb << "Map<String, Object> attrValue = [:]\n"
-			int a = 0
-			attrs.each { Field d ->
-				a++
-				/*
-				sb << GenerationUtils.GenerateEmptyValue(d.type, "a_${a}")
-				sb << "\n"
-				*/
-				
-				Field s = d.copy()
-				if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
-				
-				String path = GenerationUtils.Field2Alias(d, false)
-				sb << "attrValue.'${d.name.toLowerCase()}' = "
-				//sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}", "a_${a}")
-				sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}")
-				
-				sb << "\n"
-			}
-			sb << "dataset.params.attributeValue = attrValue\n"
-			if (initAttr != null) sb << "if (!initAttr(dataset)) return\n"
+		if (attrs.isEmpty()) return
+		
+		sb << "Map<String, Object> attrValue = [:]\n"
+		int a = 0
+		attrs.each { Field d ->
+			a++
+			
+			Field s = d.copy()
+			if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
+			
+			String path = GenerationUtils.Field2Alias(d, false)
+			sb << "attrValue.'${d.name.toLowerCase()}' = "
+			sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}")
+			
 			sb << "\n"
 		}
+		sb << "dataset.params.attributeValue = attrValue\n"
+		if (initAttr != null) sb << "if (!initAttr(dataset)) return\n"
+		sb << "\n"
+	}
+
+	/**
+	 * Read attributes and rows from dataset
+	 * @param dataset
+	 * @param listFields
+	 * @param rootNode
+	 * @param limit
+	 * @param data
+	 * @param initAttr
+	 * @param code
+	 */
+	private void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure initAttr, Closure code) {
+		StringBuilder sb = new StringBuilder()
+		generateAttrRead(dataset, initAttr, sb)
 		
 		if (limit > 0) sb << "long cur = 0\n"
 		sb << "data" + ((rootNode != ".")?"." + rootNode:"") + ".each { struct ->\n"
@@ -119,19 +134,37 @@ class XMLDriver extends FileDriver {
 			throw e
 		}
 	}
-
-	private void doRead(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
-		if (dataset.params.rootNode == null) throw new ExceptionGETL("Required \"rootNode\" parameter with dataset")
+	
+	/**
+	 * Read only attributes from dataset
+	 * @param dataset
+	 * @param params
+	 */
+	public void readAttrs (Dataset dataset, Map params) {
+		params = params?:[:]
 		String rootNode = dataset.params.rootNode
+		def data = readData(dataset, params)
 		
-		String fn = fullFileNameDataset(dataset)
-		if (fn == null) throw new ExceptionGETL("Required \"fileName\" parameter with dataset")
-		File f = new File(fn)
-		if (!f.exists()) throw new ExceptionGETL("File \"${fn}\" not found")
+		StringBuilder sb = new StringBuilder()
+		generateAttrRead(dataset, null, sb)
 		
-		long limit = (params.limit != null)?params.limit:0
-
+		def vars = [dataset: dataset, data: data]
+		try {
+			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
+		}
+		catch (Exception e) {
+			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
+			throw e
+		}
+	}
+	
+	/**
+	 * Read XML data from file
+	 * @param dataset
+	 * @param params
+	 * @return
+	 */
+	private def readData (Dataset dataset, Map params) {
 		def xml = new XmlParser()
 		def data
 		
@@ -142,7 +175,30 @@ class XMLDriver extends FileDriver {
 		finally {
 			reader.close()
 		}
+		
+		data
+	}
 
+	/**
+	 * Read dataset attribute and rows
+	 * @param dataset
+	 * @param params
+	 * @param prepareCode
+	 * @param code
+	 */
+	private void doRead (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
+		if (dataset.params.rootNode == null) throw new ExceptionGETL("Required \"rootNode\" parameter with dataset")
+		String rootNode = dataset.params.rootNode
+		
+		String fn = fullFileNameDataset(dataset)
+		if (fn == null) throw new ExceptionGETL("Required \"fileName\" parameter with dataset")
+		File f = new File(fn)
+		if (!f.exists()) throw new ExceptionGETL("File \"${fn}\" not found")
+		
+		long limit = (params.limit != null)?params.limit:0
+		
+		def data = readData(dataset, params)
 		
 		List<String> fields = []
 		if (prepareCode != null) {
@@ -150,9 +206,9 @@ class XMLDriver extends FileDriver {
 		}
 		else if (params.fields != null) fields = params.fields
 		
-		def initAttr = (params.initAttr != null)?params.initAttr:null
+//		def initAttr = (params.initAttr != null)?params.initAttr:null
 
-		readRows(dataset, fields, rootNode, limit, data, initAttr, code)
+		readRows(dataset, fields, rootNode, limit, data, params.initAttr, code)
 	}
 
 	@Override

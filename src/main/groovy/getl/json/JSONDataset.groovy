@@ -24,6 +24,8 @@
 
 package getl.json
 
+import java.util.Map;
+
 import getl.data.Connection
 import getl.data.StructureFileDataset
 import groovy.transform.InheritConstructors
@@ -51,5 +53,13 @@ class JSONDataset extends StructureFileDataset {
 	public void setConnection(Connection value) {
 		assert value == null || value instanceof JSONConnection
 		super.setConnection(value)
+	}
+	
+	/**
+	 * Read JSON dataset attributes
+	 * @param params
+	 */
+	public void readAttrs (Map params) {
+		((JSONDriver)(connection.driver)).readAttrs(this, params)
 	}
 }
