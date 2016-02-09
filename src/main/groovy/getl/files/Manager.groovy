@@ -27,6 +27,7 @@ package getl.files
 import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
+import getl.proc.Executor
 import getl.proc.Flow
 import getl.utils.*
 import getl.tfs.*
@@ -34,6 +35,7 @@ import groovy.sql.Sql
 
 import java.sql.PreparedStatement
 import java.sql.ResultSet
+import java.util.Map;
 
 import groovy.transform.Synchronized
 
@@ -47,8 +49,8 @@ abstract class Manager {
 	protected File localDirFile = new File(TFS.storage.path)
 	
 	Manager () {
-		methodParams.register("super", ["rootPath", "localDirectory", "scriptHistoryFile"])
-		methodParams.register("buildList", ["path", "type", "maskFile", "recursive", "story", "takePathInStory"])
+		methodParams.register("super", ["rootPath", "localDirectory", "scriptHistoryFile", "noopTime", "threadBuildList", "sayNoop"])
+		methodParams.register("buildList", ["path", "maskFile", "recursive", "story", "takePathInStory"])
 		methodParams.register("downloadFiles", ["deleteLoadedFile", "story", "ignoreError", "folders", "filter", "order"])
 		
 		countFileList = 0
@@ -95,6 +97,24 @@ abstract class Manager {
 		params.localDirectory = value
 		localDirFile = new File(value)
 	}
+	
+	/**
+	 * Set noop time (use in list operation)
+	 */
+	public Integer getNoopTime () { params."noopTime" }
+	public void setNoopTime (Integer value) { params."noopTime" = value }
+	
+	/**
+	 * Count thread for build list file 
+	 */
+	public int getThreadBuildList () { params."threadBuildList"?:1 }
+	public void setThreadBuildList (int value) {
+		if (value <= 0) throw new ExceptionGETL("threadBuildList been must great zero") 
+		params."threadBuildList" = value 
+	}
+	
+	public boolean getSayNoop () { BoolUtils.IsValue(params."sayNoop", false) }
+	public void setSayNoop (boolean value) { params."sayNoop" = value }
 	
 	/**
 	 * Log script file on running commands 
@@ -192,7 +212,18 @@ abstract class Manager {
 	 * @param maskFiles
 	 * @return
 	 */
-	public abstract void list (String maskFiles, Closure processCode)
+	@SuppressWarnings("rawtypes")
+	public abstract Map<String, Object>[] listDir (String maskFiles)
+	
+	@groovy.transform.CompileStatic
+	@Synchronized
+	public void list (String maskFiles, Closure processCode) {
+		if (processCode == null) throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager")
+		Map<String, Object>[] files = listDir(maskFiles)
+		for (int i = 0; i < files.length; i++) { 
+			processCode(files[i])
+		}
+	}
 	
 	/**
 	 * Return list files of current directory from server
@@ -419,11 +450,23 @@ abstract class Manager {
 	 */
 	public long countFileList
 	
+	@SuppressWarnings("rawtypes")
+	@groovy.transform.CompileStatic
+	@Synchronized
+	private Map<String, Object>[] listDirSync(String mask) {
+		listDir(mask)
+	}
+	
+	@groovy.transform.CompileStatic
+	@Synchronized
+	private void changeDirSync(String dir) {
+		changeDirectory(dir)
+	} 
+	
 	@groovy.transform.CompileStatic
 	protected void processList (Map params) {
 		Path path = (Path)(params.path)
 		String maskFile = (String)(params.maskFile)
-		TypeFile type = (TypeFile)(params.type)
 		boolean recursive = (boolean)(params.recursive)
 		Integer filelevel = (Integer)(params."filelevel")?:1
 		boolean requiredAnalize = (boolean)(params."requiredAnalize")
@@ -431,34 +474,18 @@ abstract class Manager {
 		Closure code = (Closure)(params.code)
 		Closure updater = (Closure)(params.updater)
 		def curPath = currentDir()
-		def addFile = { Map file ->
-			if (!recursive || file.type == TypeFile.FILE) {
-				def fn = "${((recursive && curPath != '.')?curPath + '/':'')}${file.filename}"
-				def m = path.analizeFile(fn)
-				if (m != null && (type == TypeFile.ALL || type == file.type)) {
-					def nf = [:]
-					nf.filepath = curPath
-					nf.putAll(file)
-					nf.filetype = file.type.toString()
-					nf.localfilename = nf.filename
-					nf.filelevel = filelevel
-					m.each { var, value ->
-						nf.put(((String)var).toLowerCase(), value)
-					}
-					def b = (code != null)?code(nf):true
-					if (b) {
-						countFileList++
-						updater(nf)
-					}
-				}
-			}
+		
+		Map<String, Object>[] listFiles = listDirSync(maskFile)
+		List<Map<String, Object>> onlyFiles = new LinkedList<Map<String, Object>>()
+		for (int i = 0; i < listFiles.length; i++) {
+			Map<String, Object> file = listFiles[i - 1]
 			
-			if (recursive && file.type == TypeFile.DIRECTORY) {
+			if (file.type == TypeFile.FILE) {
+				onlyFiles << file
+			}
+			else if (file.type == TypeFile.DIRECTORY && recursive) {
 				def b = true
-				if (!requiredAnalize) {
-					b = true
-				}
-				else {
+				if (requiredAnalize) {
 					b = false
 					def fn = "${(curPath != '.' && curPath != "")?curPath + '/':''}${file.filename}"
 					def m = path.analizeDir(fn)
@@ -482,14 +509,43 @@ abstract class Manager {
 				}
 				
 				if (b) {
-					changeDirectory((String)(file.filename))
-					processList(path: path, maskFile: maskFile, type: type, recursive: recursive, filelevel: filelevel + 1, code: code, requiredAnalize: requiredAnalize, updater: updater)
-					changeDirectory("..")
+					changeDirSync((String)(file.filename))
+					processList(path: path, maskFile: maskFile, recursive: recursive, filelevel: filelevel + 1, code: code, requiredAnalize: requiredAnalize, updater: updater)
+					changeDirSync('..')
 				}
 			}
 		}
 		
-		list(maskFile, addFile)
+		if (!onlyFiles.isEmpty()) {
+			new Executor().run(onlyFiles, threadBuildList) { Map<String, Object> file ->
+				def fn = "${((recursive && curPath != '.')?curPath + '/':'')}${file.filename}"
+				def m = path.analizeFile(fn)
+				if (m != null) {
+					file.filepath = curPath
+					file.filetype = file.type.toString()
+					file.localfilename = file.filename
+					file.filelevel = filelevel
+					m.each { var, value ->
+						file.put(((String)var).toLowerCase(), value)
+					}
+				}
+			}
+			
+			onlyFiles.each { Map<String, Object> file ->
+				if (file.filepath == null) return
+				def b = (code != null)?code(file):true
+				if (b) {
+					try {
+						updater(file)
+					}
+					catch (Exception e) {
+						println file
+						throw e
+					}
+					countFileList++
+				}
+			}
+		}
 	}
 	
 	/**
@@ -507,15 +563,15 @@ abstract class Manager {
 	 * @return
 	 */
 	public void buildList (Map lparams, Closure code) {
+		lparams = lparams?:[:]
 		methodParams.validation("buildList", lparams)
-		
-		Path path = lparams.path?:(new Path(mask: "*.*"))
-		boolean requiredAnalize = !(path.vars.isEmpty())
+
 		String maskFile = lparams.maskFile?:null
-		TypeFile type = lparams.type?:TypeFile.FILE
+		Path path = lparams.path?:(new Path(mask: maskFile?:"*.*"))
+		boolean requiredAnalize = !(path.vars.isEmpty())
 		boolean recursive = (lparams.recursive != null)?lparams.recursive:false
 		boolean takePathInStory =  (lparams.takePathInStory != null)?lparams.takePathInStory:true
-		if (recursive && (maskFile != null || type != TypeFile.FILE)) throw new ExceptionGETL("Don't compatibility parameters recursive vs maskFile/type")
+		if (recursive && maskFile != null) throw new ExceptionGETL("Don't compatibility parameters recursive vs maskFile")
 
 		countFileList = 0
 
@@ -539,7 +595,6 @@ abstract class Manager {
 		TableDataset newFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
 		newFiles.field = [new Field(name: 'ID', type: 'INTEGER', isNull: false, isAutoincrement: true)] + fileList.field
 		newFiles.clearKeys()
-//		newFiles.fieldByName('ID').isKey = true
 		
 		newFiles.drop(ifExists: true)
 		newFiles.create(onCommit: true, 
@@ -564,10 +619,16 @@ abstract class Manager {
 			isKey = true
 		}
 		
+		Executor noopService
+		if (noopTime != null) {
+			noopService = new Executor(waitTime: noopTime * 1000)
+			noopService.startBackground { noop() }
+		}
+		
 		try {
 			// Get files to buffer table
 			new Flow().writeTo(dest: newFiles, dest_batchSize: 1000) { Closure updater ->
-				processList(path: path, maskFile: maskFile, type: type, recursive: recursive, code: code, requiredAnalize: requiredAnalize, updater: updater)
+				processList(path: path, maskFile: maskFile, recursive: recursive, code: code, requiredAnalize: requiredAnalize, updater: updater)
 			}
 			
 			// Detect double file name
@@ -662,6 +723,8 @@ FROM ${newFiles.fullNameDataset()}
 			countFileList = new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 1000)
 		}
 		finally {
+			if (noopService != null) noopService.stopBackground()
+			
 			newFiles.drop(ifExists: true)
 			doubleFiles.drop(ifExists: true)
 			useFiles.drop(ifExists: true)
@@ -673,7 +736,6 @@ FROM ${newFiles.fullNameDataset()}
 	 * <p><b>Dynamic parameters:</b></p>
 	 * <ul>
 	 * <li>Path path - path processor
-	 * <li>TypeFile type - process type file
 	 * <li>String maskFile - mask processed files
 	 * </ul>
 	 * @param params - parameters
@@ -1196,5 +1258,12 @@ WHERE
 		finally {
 			f.close()
 		}
+	}
+	
+	/**
+	 * Send noop command to server
+	 */
+	public void noop () { 
+		if (sayNoop) Logs.Fine("files.manager: NOOP")
 	}
 }

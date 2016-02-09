@@ -28,7 +28,10 @@ import groovy.transform.InheritConstructors
 import com.jcraft.jsch.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import getl.proc.*
 import java.nio.CharBuffer
+import java.util.Map;
+
 import groovy.transform.Synchronized
 
 /**
@@ -57,7 +60,7 @@ class SFTPManager extends Manager {
 	@Override
 	protected void initMethods () {
 		super.initMethods()
-		methodParams.register("super", ["server", "port", "login", "password", "knownHostsFile", "identityFile", "codePage"])
+		methodParams.register("super", ["server", "port", "login", "password", "knownHostsFile", "identityFile", "codePage", "aliveInterval", "aliveCountMax"])
 	}
 	
 	@Override
@@ -116,6 +119,18 @@ class SFTPManager extends Manager {
 	public String getCodePage () { params.codePage?:"utf-8" }
 	public void setCodePage (String value) { params.codePage = value }
 	
+	/**
+	 * Alive interval (in seconds)
+	 */
+	public Integer getAliveInterval () { params."aliveInterval" }
+	public void setAliveInterval (Integer value) { params."aliveInterval" = value }
+	
+	/**
+	 * Alive retry count max
+	 */
+	public Integer getAliveCountMax () { params."aliveCountMax" }
+	public void setAliveCountMax (Integer value) { params."aliveCountMax" = value }
+	
 	@Override
 	public boolean isCaseSensitiveName () { true }
 	
@@ -143,6 +158,9 @@ class SFTPManager extends Manager {
 				if (writeErrorsToLog) Logs.Severe("Can not connect to $server:$port or invalid login/password")
 				throw e
 			}
+			
+			if (aliveInterval != null) s.setServerAliveInterval(aliveInterval * 1000)
+			if (aliveCountMax != null) s.setServerAliveCountMax(aliveCountMax)
 		}
 		catch (Throwable e) {
 			if (s.connected) clientSession.disconnect()
@@ -192,12 +210,16 @@ class SFTPManager extends Manager {
 
 	@groovy.transform.CompileStatic
 	@Override
-	public void list(String maskFiles, Closure processCode) {
+	@SuppressWarnings("rawtypes")
+	public Map<String, Object>[] listDir(String maskFiles) {
 		if (maskFiles == null) maskFiles = "*"
 		writeScriptHistoryFile("COMMAND: list \"$maskFiles\"")
-		channelFtp.ls(maskFiles).each { listItem ->
+		Vector< ChannelSftp.LsEntry> listFiles = channelFtp.ls(maskFiles)
+		Map<String, Object>[] res = new HashMap<String, Object>[listFiles.size()]
+		int i = 0
+		listFiles.each { listItem ->
 			ChannelSftp.LsEntry item = (ChannelSftp.LsEntry)listItem
-			def file = [:]
+			Map<String, Object> file = new HashMap<String, Object>()
 			
 			file."filename" = item.filename
 			file."filedate" = new Date(item.attrs.MTime * 1000L)
@@ -215,8 +237,11 @@ class SFTPManager extends Manager {
 			
 			writeScriptHistoryFile("LIST: $file")
 			
-			processCode(file)
+			res[i] = file
+			i++
 		}
+
+		res
 	}
 
 	@Override
@@ -406,5 +431,12 @@ class SFTPManager extends Manager {
 		}
 		
 		res
+	}
+
+	@Override
+	public void noop () {
+		super.noop()
+		clientSession.sendKeepAliveMsg()
+		writeScriptHistoryFile("NOOP")
 	}
 }
