@@ -1188,6 +1188,98 @@ WHERE
 	}
 	
 	/**
+	 * Remove empty foldes from building list files
+	 */
+	public void deleteEmptyFolders() {
+		deleteEmptyFolders(false, null)
+	}
+	
+	/**
+	 * Remove empty foldes from building list files
+	 * @param ignoreErrors
+	 */
+	public void deleteEmptyFolders(Boolean ignoreErrors) {
+		deleteEmptyFolders(ignoreErrors, null)
+	}
+	
+	/**
+	 * Remove empty foldes from building list files
+	 * @param onDelete
+	 * @return
+	 */
+	public boolean deleteEmptyFolders(Closure onDelete) {
+		deleteEmptyFolders(false, onDelete)
+	}
+	
+	/**
+	 * Remove empty foldes from building list files
+	 * @param onDelete
+	 */
+	public boolean deleteEmptyFolders(Boolean ignoreErrors, Closure onDelete) {
+		if (fileList == null) throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders')
+		
+		Map dirs = [:]
+		QueryDataset pathes = new QueryDataset(connection: fileList.connection, query: "SELECT DISTINCT FILEPATH FROM ${fileList.fullNameDataset()} ORDER BY FILEPATH")
+		pathes.eachRow() { row ->
+			if (row."filepath" == '.') return
+			String[] d = row."filepath".split('/')
+			Map c = dirs
+			d.each {
+				if (c.containsKey(it)) {
+					c = c.get(it)
+				}
+				else {
+					Map n = [:]
+					c.put(it, n)
+					c = n
+				}
+			}
+		}
+		
+		changeDirectoryToRoot()
+		deleteEmptyDirs(dirs, ignoreErrors, onDelete)
+	}
+	
+	/**
+	 * Remove empty foldes from map dirs structure
+	 * @param dirs
+	 * @param ignoreErrors
+	 * @param onDelete
+	 * @return
+	 */
+	public boolean deleteEmptyDirs(Map dirs, Boolean ignoreErrors, Closure onDelete) {
+		boolean res = true
+		dirs.each { String name, Map subDirs ->
+			changeDirectory(name)
+			if (!subDirs.isEmpty()) {
+				if (!deleteEmptyDirs(subDirs, ignoreErrors, onDelete)) {
+					if (res) res = false
+				}
+			}
+			
+			if (res) {
+				res = (listDir(null).length == 0)
+			}
+			
+			changeDirectoryUp()
+			
+			if (res) {
+				def errRemove = false
+				try {
+					removeDir(name)
+				}
+				catch (Exception e) {
+					if (!BoolUtils.IsValue(ignoreErrors, false)) throw e
+					errRemove = true
+				}
+				if (!errRemove && onDelete != null) onDelete("${currentDir()}/$name")
+			}
+		}
+		
+		res
+	}
+	
+	/**
 	 * Delete empty directories for current directory
 	 * @param recursive
 	 */
