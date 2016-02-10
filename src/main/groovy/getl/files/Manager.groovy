@@ -49,7 +49,7 @@ abstract class Manager {
 	protected File localDirFile = new File(TFS.storage.path)
 	
 	Manager () {
-		methodParams.register("super", ["rootPath", "localDirectory", "scriptHistoryFile", "noopTime", "threadBuildList", "sayNoop"])
+		methodParams.register("super", ["rootPath", "localDirectory", "scriptHistoryFile", "noopTime", "threadBuildList", "sayNoop", "threadFilesCount"])
 		methodParams.register("buildList", ["path", "maskFile", "recursive", "story", "takePathInStory"])
 		methodParams.register("downloadFiles", ["deleteLoadedFile", "story", "ignoreError", "folders", "filter", "order"])
 		
@@ -113,6 +113,12 @@ abstract class Manager {
 		params."threadBuildList" = value 
 	}
 	
+	public int getThreadFilesCount () { params."threadFilesCount"?:100}
+	public void setThreadFilesCount(int value) { params."threadFilesCount" = value }
+	
+	/**
+	 * Write to log when send noop message
+	 */
 	public boolean getSayNoop () { BoolUtils.IsValue(params."sayNoop", false) }
 	public void setSayNoop (boolean value) { params."sayNoop" = value }
 	
@@ -476,12 +482,21 @@ abstract class Manager {
 		def curPath = currentDir()
 		
 		Map<String, Object>[] listFiles = listDirSync(maskFile)
-		List<Map<String, Object>> onlyFiles = new LinkedList<Map<String, Object>>()
+		List<List<Map<String, Object>>> onlyFiles = new LinkedList<List<Map<String, Object>>>()
+		List<Map<String, Object>> curFile
+		int curNum = threadFilesCount
 		for (int i = 0; i < listFiles.length; i++) {
 			Map<String, Object> file = listFiles[i - 1]
 			
 			if (file.type == TypeFile.FILE) {
-				onlyFiles << file
+				curNum++
+				if (curNum > threadFilesCount) {
+					curNum = 1
+					curFile = new LinkedList<Map<String, Object>>()
+					onlyFiles << curFile
+				}
+				
+				curFile << file
 			}
 			else if (file.type == TypeFile.DIRECTORY && recursive) {
 				def b = true
@@ -517,31 +532,31 @@ abstract class Manager {
 		}
 		
 		if (!onlyFiles.isEmpty()) {
-			new Executor().run(onlyFiles, threadBuildList) { Map<String, Object> file ->
-				def fn = "${((recursive && curPath != '.')?curPath + '/':'')}${file.filename}"
-				def m = path.analizeFile(fn)
-				if (m != null) {
-					file.filepath = curPath
-					file.filetype = file.type.toString()
-					file.localfilename = file.filename
-					file.filelevel = filelevel
-					m.each { var, value ->
-						file.put(((String)var).toLowerCase(), value)
+			new Executor().run(onlyFiles, threadBuildList) { List<Map<String, Object>> files ->
+				files.each { Map<String, Object> file ->
+					def fn = "${((recursive && curPath != '.')?curPath + '/':'')}${file.filename}"
+					def m = path.analizeFile(fn)
+					if (m != null) {
+						file.filepath = curPath
+						file.filetype = file.type.toString()
+						file.localfilename = file.filename
+						file.filelevel = filelevel
+						m.each { var, value ->
+							file.put(((String)var).toLowerCase(), value)
+						}
+						def b = (code != null)?code(file):true
+						file."__use_file__" = b
+					}
+					else {
+						file."__use_file__" = false
 					}
 				}
 			}
 			
-			onlyFiles.each { Map<String, Object> file ->
-				if (file.filepath == null) return
-				def b = (code != null)?code(file):true
-				if (b) {
-					try {
-						updater(file)
-					}
-					catch (Exception e) {
-						println file
-						throw e
-					}
+			onlyFiles.each { List<Map<String, Object>> files ->
+				files.each { Map<String, Object> file ->
+					if (!file."__use_file__") return
+					updater(file)
 					countFileList++
 				}
 			}
