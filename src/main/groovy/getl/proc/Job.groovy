@@ -33,6 +33,17 @@ import getl.utils.*
  *
  */
 abstract class Job {
+	/**
+	 * Job arguments
+	 */
+	public Map jobArgs
+	
+	/**
+	 * Job arguments (backward compatible) 
+	 * @return
+	 */
+	public Map getArgs() { jobArgs }
+	
 	private void processConfigArgs (def args) {
 		def m = MapUtils.ProcessArguments(args)
 		if (m.errout != null) Logs.RedirectErrOut(m.errout)
@@ -67,19 +78,15 @@ abstract class Job {
 				}
 			}
 		}
-		Config.SetValue("job.args", MapUtils.Copy(m, ['stdout', 'stderr', 'stdcodepage']))
+		jobArgs = MapUtils.Copy(m, ['stdout', 'stderr', 'stdcodepage'])
+		if (jobArgs.vars == null) jobArgs.vars = [:]
+//		Config.SetValue("job.args", MapUtils.Copy(m, ['stdout', 'stderr', 'stdcodepage']))
 		
 		// Set variables from arguments
-		Config.content.job?.args?.vars?.each { key, value ->
+		jobArgs.vars.each { key, value ->
 			Config.SetValue("vars.$key", value)
 		}
 	}
-	
-	/**
-	 * Job command line arguments
-	 * @return
-	 */
-	public Map getArgs() { Config.content.job.args }
 	
 	/**
 	 * Run job with arguments of command line
@@ -88,6 +95,7 @@ abstract class Job {
 	public void run (def args) {
 		processConfigArgs(args)
 		
+		Config.ClearConfig()
 		init()
 		Config.LoadConfig()
 		doRun()
@@ -102,6 +110,7 @@ abstract class Job {
 	public void run (Class jobClass, String codePage, def args) {
 		processConfigArgs(args)
 		
+		Config.ClearConfig()
 		init()
 		Config.LoadConfigClass(jobClass, codePage)
 		doRun()
@@ -118,6 +127,7 @@ abstract class Job {
 	 * Run jobs without arguments of command line
 	 */
 	public void run () {
+		Config.ClearConfig()
 		init()
 		Config.LoadConfig()
 		doRun()

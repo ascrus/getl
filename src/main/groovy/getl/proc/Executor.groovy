@@ -232,17 +232,19 @@ class Executor {
 	}
 	
 	private ExecutorService threadBackground
-	private boolean  runBackground = false
+	private boolean runBackgroundService = false
+	@Synchronized
+	public boolean isRunBackground () { runBackgroundService }
 	
 	/**
 	 * Start background process
 	 * @param code
 	 */
 	public void startBackground(Closure code) {
-		if (runBackground) throw new ExceptionGETL("Background process already running")
+		if (isRunBackground()) throw new ExceptionGETL("Background process already running")
 		def runCode = {
 			try {
-				while (runBackground) {
+				while (isRunBackground()) {
 					code()
 					sleep waitTime
 				}
@@ -256,8 +258,9 @@ class Executor {
 			}
 		}
 		
-		runBackground = true
+		runBackgroundService = true
 		threadBackground = Executors.newSingleThreadExecutor()
+//		threadBackground = Executors.newFixedThreadPool(1)
 		threadBackground.execute(runCode)
 	}
 	
@@ -265,14 +268,16 @@ class Executor {
 	 * Finish background process
 	 */
 	public void stopBackground () {
-		if (!runBackground) throw new ExceptionGETL("Not Background process running")
-		runBackground = false
-		try {
-			threadBackground.shutdown()
-			while (!threadBackground.isShutdown()) threadBackground.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
-		}
-		finally {
-			threadBackground = null
+		if (!isRunBackground()) throw new ExceptionGETL("Not Background process running")
+		runBackgroundService = false
+		if (threadBackground != null) {
+			try {
+				threadBackground.shutdown()
+				while (!threadBackground.isShutdown()) threadBackground.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
+			}
+			finally {
+				threadBackground = null
+			}
 		}
 	}
 	

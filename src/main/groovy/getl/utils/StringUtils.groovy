@@ -51,7 +51,13 @@ class StringUtils {
 		'datetime': DateUtils.FormatDate("yyyy-MM-dd_HH-mm-ss", DateUtils.Now()),	//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "yyyy-MM-dd_HH-mm-ss")',
 		'shortdatetime': DateUtils.FormatDate("yyyy-MM-dd_HH", DateUtils.Now()) 	//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "yyyy-MM-dd_HH")'
 	]
-	
+
+	/**
+	 * Change variable to value in string	
+	 * @param value
+	 * @param vars
+	 * @return
+	 */
 	public static String SetValueString(String value, Map vars) {
 		vars.each { k, v ->
 			if (v == null) throw new ExceptionGETL("Invalid value null in variable \"$k\"")
@@ -142,6 +148,11 @@ class StringUtils {
 		res
 	}
 	
+	/**
+	 * Processing assertion error message
+	 * @param e
+	 * @return
+	 */
 	public static String ProcessAssertionError(AssertionError e) {
 		if (e == null) return null
 		int i = e.message.indexOf("\n")
@@ -198,6 +209,11 @@ class StringUtils {
 		java.util.UUID.randomUUID().toString()
 	}
 	
+	/**
+	 * Prepare expression for split string
+	 * @param value
+	 * @return
+	 */
 	public static String Delimiter2SplitExpression(String value) {
         String res = ""
         value.each { 
@@ -207,10 +223,20 @@ class StringUtils {
         res
     }
 	
+	/**
+	 * Convert array of bytes to hex sting 
+	 * @param bytes
+	 * @return
+	 */
 	public static String RawToHex(byte[] bytes) {
 		javax.xml.bind.DatatypeConverter.printHexBinary(bytes)
 	}
 	
+	/**
+	 * Convert hex string to array of bytes
+	 * @param str
+	 * @return
+	 */
 	public static byte[] HexToRaw(String str) {
 		if (str == null) return null
 		return javax.xml.bind.DatatypeConverter.parseHexBinary(str/*.substring(2)*/);

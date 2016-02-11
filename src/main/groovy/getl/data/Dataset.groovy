@@ -170,7 +170,7 @@ class Dataset {
 	 * Auto load schema with meta file
 	 * @return
 	 */
-	public boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema?:connection.autoSchema, false) }
+	public boolean getAutoSchema () { BoolUtils.IsValue([params.autoSchema, connection.autoSchema], false) }
 	public void setAutoSchema (boolean value) {
 		params.autoSchema = value
 		if (value) params.manualSchema = true
@@ -196,7 +196,7 @@ class Dataset {
 	/**
 	 * Print write rows to console
 	 */
-	public boolean getLogWriteToConsole () { BoolUtils.IsValue(params.logWriteToConsole?:connection.logWriteToConsole, false) }
+	public boolean getLogWriteToConsole () { BoolUtils.IsValue([params.logWriteToConsole, connection.logWriteToConsole], false) }
 	public void setLogWriteToConsole (boolean value) { params.logWriteToConsole = value }
 
 	/**

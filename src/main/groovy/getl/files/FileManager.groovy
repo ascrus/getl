@@ -97,9 +97,8 @@ class FileManager extends Manager {
 	
 	@groovy.transform.CompileStatic
 	@Override
-	public void list(String mask, Closure processCode) {
-		if (processCode == null) throw new ExceptionGETL("Required processing file attributes code")
-		
+	@SuppressWarnings("rawtypes")
+	public Map<String, Object>[] listDir(String mask) {
 		validConnect()
 		
 		Closure filter
@@ -115,15 +114,20 @@ class FileManager extends Manager {
 			filter = { File file, String name -> true }
 		}
 		
-		currentDir.listFiles(new Filter(filter)).each { File f ->
-			def m = [:]
+		File[] listFiles = currentDir.listFiles(new Filter(filter))
+		Map<String, Object>[] res = new HashMap<String, Object>[listFiles.length]
+		for (int i = 0; i < listFiles.length; i++) {
+			File f = listFiles[i]
+			Map<String, Object> m =  new HashMap<String, Object>()
 			m.filename = f.name
 			m.filedate = new Date(f.lastModified())
 			m.filesize = f.length()
 			if (f.isDirectory()) m.type = Manager.TypeFile.DIRECTORY else m.type = Manager.TypeFile.FILE
 			 
-			processCode(m)
+			res[i] = m
 		}
+		
+		res
 	}
 	
 	@Override

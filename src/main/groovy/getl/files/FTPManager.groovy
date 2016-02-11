@@ -23,7 +23,6 @@
 */
 
 package getl.files
-
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.InheritConstructors
@@ -195,19 +194,21 @@ class FTPManager extends Manager {
 	
 	@groovy.transform.CompileStatic
 	@Override
-	public void list(String mask, Closure processCode) {
-		if (processCode == null) throw new ExceptionGETL("Required processing file attributes code")
-		
-		FTPFile[] list 
+	@SuppressWarnings("rawtypes")
+	public Map<String, Object>[] listDir(String mask) {
+		FTPFile[] listFiles 
 		try {
-			list = (mask != null)?client.list(mask):client.list()
+			listFiles = (mask != null)?client.list(mask):client.list()
 		}
 		catch (Throwable e) {
 			if (writeErrorsToLog) Logs.Severe("Can not read ftp list")
 			throw e
 		}
-		list.each { FTPFile f ->  
-			def m = [:]
+		Map<String, Object>[] res = new HashMap<String, Object>[listFiles.length]
+		for (int i = 0; i < listFiles.length; i++) {
+			FTPFile f = listFiles[i]
+			  
+			Map<String, Object> m = new HashMap<String, Object>()
 			m.filename = f.name
 			m.filedate = f.modifiedDate
 			m.filesize = f.size
@@ -226,8 +227,11 @@ class FTPManager extends Manager {
 				default:
 					throw new ExceptionGETL("Unnknown type object ${f.type}")
 			}
-			processCode(m)
+			
+			res[i] = m
 		}
+		
+		res
 	}
 	
 	@Override
@@ -358,5 +362,11 @@ class FTPManager extends Manager {
 		client.changeDirectory(cur)
 		
 		isExists
+	}
+	
+	@Override
+	public void noop () {
+		super.noop()
+		client.noop()
 	}
 }

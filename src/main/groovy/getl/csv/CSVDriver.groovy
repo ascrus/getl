@@ -106,7 +106,7 @@ class CSVDriver extends FileDriver {
 		p.fieldDelimiter = fieldDelimiter.charAt(0)
 		
 		p.rowDelimiter = ListUtils.NotNullValue([params.rowDelimiter, dataset.rowDelimiter])
-		p.isHeader = ListUtils.NotNullValue([BoolUtils.IsValue(params.header, null), dataset.header])
+		p.isHeader = BoolUtils.IsValue(params.header, dataset.header)
 		p.qMode = datasetQuoteMode(dataset)
 		p.isSplit = (params.isSplit != null)?params.isSplit:false
 		p.nullAsValue = ListUtils.NotNullValue([params.nullAsValue, dataset.nullAsValue])
@@ -384,9 +384,9 @@ class CSVDriver extends FileDriver {
 		CSVDataset cds = (CSVDataset)dataset
 		if (cds.fileName == null) throw new ExceptionGETL('Dataset required fileName')
 		
-		boolean escaped = ListUtils.NotNullValue([BoolUtils.IsValue(params.escaped, null), cds.escaped])
+		boolean escaped = BoolUtils.IsValue(params.escaped, cds.escaped)
 		boolean readAsText = BoolUtils.IsValue(params.readAsText, false)
-		boolean ignoreHeader = BoolUtils.IsValue(params.ignoreHeader?:cds.ignoreHeader, false)
+		boolean ignoreHeader = BoolUtils.IsValue([params.ignoreHeader, cds.ignoreHeader], false)
 		Closure filter = (Closure)params."filter"
 
 		long countRec = 0
@@ -552,7 +552,7 @@ class CSVDriver extends FileDriver {
 		boolean isAppend = p.params.isAppend
 		boolean isValid = (params.isValid != null)?params.isValid:false
 		boolean bulkFile = (params.bulkFile != null)?params.bulkFile:false
-		boolean escaped = ListUtils.NotNullValue([BoolUtils.IsValue(params.escaped, null), dataset.escaped])
+		boolean escaped = BoolUtils.IsValue(params.escaped, dataset.escaped)
 		
 		if (params.batchSize != null) wp.batchSize = params.batchSize
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch

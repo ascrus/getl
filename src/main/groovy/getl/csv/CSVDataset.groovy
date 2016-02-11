@@ -60,19 +60,19 @@ class CSVDataset extends FileDataset {
 	/**
 	 * File has header of fields name
 	 */
-	public boolean getHeader () { BoolUtils.IsValue(params.header?:connection?.header, true) }
+	public boolean getHeader () { BoolUtils.IsValue([params.header, connection?.header], true) }
 	public void setHeader (boolean value) { params.header = value }
 	
 	/**
 	 * Ignore header field name
 	 */
-	public boolean getIgnoreHeader () { BoolUtils.IsValue(params.ignoreHeader?:connection?.ignoreHeader, false) }
+	public boolean getIgnoreHeader () { BoolUtils.IsValue([params.ignoreHeader, connection?.ignoreHeader], false) }
 	public void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
 	
 	/**
 	 * Required format values for output to file 
 	 */
-	public boolean getFormatOutput () { BoolUtils.IsValue(params.formatOutput?:connection?.formatOutput, true) }
+	public boolean getFormatOutput () { BoolUtils.IsValue([params.formatOutput, connection?.formatOutput], true) }
 	public void setFormatOutput (boolean value) { params.formatOutput = value }
 	
 	/**
@@ -84,7 +84,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Required convert string to escape value 	
 	 */
-	public boolean getEscaped () { BoolUtils.IsValue(params.escaped?:connection?.escaped, false) }
+	public boolean getEscaped () { BoolUtils.IsValue([params.escaped, connection?.escaped], false) }
 	public void setEscaped (boolean value) { params.escaped = value }
 	
 	/**
