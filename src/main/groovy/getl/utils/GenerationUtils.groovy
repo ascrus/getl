@@ -797,8 +797,8 @@ sb << """
 			res = sh.evaluate(value)
 		}
 		catch (Exception e) {
-			Logs.Severe("Error parse [$value] from [$vars]")
-			Logs.Dump(e, 'GenerationUtils', 'EvalGroovyScript', "vars: $vars\nscript:\n$value")
+			Logs.Severe("Error parse [${StringUtils.CutStr(value, 1000)}]")
+			Logs.Dump(e, 'GenerationUtils', 'EvalGroovyScript', "script: $value\nvars: $vars")
 			throw e
 		}
 		
