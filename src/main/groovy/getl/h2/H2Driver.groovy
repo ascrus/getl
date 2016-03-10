@@ -24,6 +24,8 @@
 
 package getl.h2
 
+import java.util.Map;
+
 import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
@@ -81,6 +83,16 @@ class H2Driver extends JDBCDriver {
 		
 		(con.connectHost != null)?"jdbc:h2:tcp://{host}/{database}":"jdbc:h2://{database}"
 	}
+	
+	/*
+	@Override
+	protected Map getConnectProperty() {
+		Map res = super.getConnectProperty()
+		if (!('IGNORECASE' in res.keySet().toArray()*.toUpperCase())) res.put('IGNORECASE', 'TRUE')
+		
+		res
+	}
+	*/
 	
 	@Override
 	protected String createDatasetExtend(Dataset dataset, Map params) {

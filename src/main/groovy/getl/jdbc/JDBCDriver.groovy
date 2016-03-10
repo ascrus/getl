@@ -315,7 +315,13 @@ class JDBCDriver extends Driver {
 	@Synchronized
 	public static Sql NewSql (String url, String login, String password, String drvName, int loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
-		Sql.newInstance(url, login, password, drvName)
+		try {
+			Sql.newInstance(url, login, password, drvName)
+		}
+		catch (SQLException e) {
+			Logs.Severe("Unable connect to \"$url\" with \"$drvName\" driver")
+			throw e
+		}
 	}
 	
 	@Override
