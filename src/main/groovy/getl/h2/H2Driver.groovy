@@ -84,15 +84,23 @@ class H2Driver extends JDBCDriver {
 		(con.connectHost != null)?"jdbc:h2:tcp://{host}/{database}":"jdbc:h2://{database}"
 	}
 	
-	/*
+	/**
+	 * Prepare object name by prefix
+	 * @param name
+	 * @param prefix
+	 * @return
+	 */
 	@Override
-	protected Map getConnectProperty() {
-		Map res = super.getConnectProperty()
-		if (!('IGNORECASE' in res.keySet().toArray()*.toUpperCase())) res.put('IGNORECASE', 'TRUE')
+	public String prepareObjectNameWithPrefix(String name, String prefix) {
+		if (name == null) return null
+		
+		String res
+		
+		def m = name =~ /([^a-zA-Z0-9_])/
+		if (m.size() > 0) res = prefix + name + prefix else res = name.toUpperCase()
 		
 		res
 	}
-	*/
 	
 	@Override
 	protected String createDatasetExtend(Dataset dataset, Map params) {
