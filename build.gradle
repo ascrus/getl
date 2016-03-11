@@ -2,7 +2,7 @@ apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-version = "1.2.00"
+version = "1.2.01"
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-	compile 'org.codehaus.groovy:groovy-all:2.4.5'
+	compile 'org.codehaus.groovy:groovy-all:2.4.6'
 	
 	addJars 'com.sun.mail:smtp:1.5.4'
 	addJars 'com.sun.mail:mailapi:1.5.4'

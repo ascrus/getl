@@ -315,7 +315,13 @@ class JDBCDriver extends Driver {
 	@Synchronized
 	public static Sql NewSql (String url, String login, String password, String drvName, int loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
-		Sql.newInstance(url, login, password, drvName)
+		try {
+			Sql.newInstance(url, login, password, drvName)
+		}
+		catch (SQLException e) {
+			Logs.Severe("Unable connect to \"$url\" with \"$drvName\" driver")
+			throw e
+		}
 	}
 	
 	@Override
@@ -612,7 +618,7 @@ ${extend}'''
 		dataset.field.each { Field f ->
 //			if (f.isReadOnly) return
 			try {
-				String s = "	${fieldPrefix}${prepareObjectName(f.name)}${fieldPrefix} ${type2sqlType(f, useNativeDBType)}" + ((!f.isNull)?" NOT NULL":"") + 
+				String s = "	${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((!f.isNull)?" NOT NULL":"") + 
 							((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
 							((f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
 							((f.compute != null)?" AS ${f.compute}":"")
@@ -636,7 +642,7 @@ ${extend}'''
 		try {
 			def varsCT = [  temporary: temporary, 
 							ifNotExists: ifNotExists, 
-							tableName: prepareObjectName(tableName),
+							tableName: tableName,
 							fields: fields, 
 							pk: pk, 
 							extend: extend]
@@ -650,13 +656,13 @@ ${extend}'''
 					String createIndexCode = '"""' + sqlCreateIndex + '"""'
 					
 					def idxCols = []
-					value.columns?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareObjectNameForSQL(nameCol):nameCol) }
+					value.columns?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol):nameCol) }
 					
-					def varsCI = [  indexName: tablePrefix + prepareObjectName(name) + tablePrefix,
+					def varsCI = [  indexName: prepareTableNameForSQL(name),
 									unique: (value.unique != null && value.unique == true)?"UNIQUE":"",
 									hash: (value.hash != null && value.hash == true)?"HASH":"",
 									ifNotExists: (value.ifNotExists != null && value.ifNotExists == true)?"IF NOT EXISTS":"",
-									tableName: prepareObjectName(tableName),
+									tableName: tableName,
 									columns: idxCols.join(",")
 									]
 					def sqlCodeCI = GenerationUtils.EvalGroovyScript(createIndexCode, varsCI)
@@ -692,24 +698,42 @@ ${extend}'''
 		return '"'
 	}
 	
+	public String prepareObjectNameWithPrefix(String name, String prefix) {
+		if (name == null) return null
+		String res
+		switch (caseObjectName) {
+			case "LOWER":
+				res = name.toLowerCase()
+				break
+			case "UPPER":
+				res = name.toUpperCase()
+				break
+			default:
+				res = name
+		}
+		
+		prefix + res + prefix
+	}
+	
 	/**
 	 * Preparing object name with case politics
 	 * @param name
 	 * @return
 	 */
 	public String prepareObjectName(String name) {
-		if (name == null) return null
-		switch (caseObjectName) {
-			case "LOWER":
-				return name.toLowerCase()
-			case "UPPER":
-				return name.toUpperCase()
-		}
-		name
+		prepareObjectNameWithPrefix(name, '')
 	}
 	
 	public String prepareObjectNameForSQL(String name) {
-		"${fieldPrefix}${prepareObjectName(name)}${fieldPrefix}"
+		prepareObjectNameWithPrefix(name, fieldPrefix)
+	}
+	
+	public String prepareFieldNameForSQL(String name) {
+		prepareObjectNameWithPrefix(name, fieldPrefix)
+	}
+	
+	public String prepareTableNameForSQL(String name) {
+		prepareObjectNameWithPrefix(name, tablePrefix)
 	}
 	
 	public String prepareObjectNameWithEval(String name) {
@@ -724,35 +748,35 @@ ${extend}'''
 	public String fullNameDataset (Dataset dataset) {
 		if (dataset.sysParams.isTable == null || !dataset.sysParams.isTable) return 'noname'
 		
-		def r = tablePrefix + dataset.params.tableName + tablePrefix
-		if (dataset.schemaName != null) r = tablePrefix + dataset.schemaName + tablePrefix +'.' + r 
+		def r = prepareTableNameForSQL(dataset.params.tableName)
+		if (dataset.schemaName != null) r = prepareTableNameForSQL(dataset.schemaName) +'.' + r 
 		if (dataset.dbName != null) {
 			if (dataset.schemaName != null) {
-				r = tablePrefix + dataset.dbName + tablePrefix + '.' + r
+				r = prepareTableNameForSQL(dataset.dbName) + '.' + r
 			}
 			else {
-				r = tablePrefix + dataset.dbName + tablePrefix + '..' + r
+				r = prepareTableNameForSQL(dataset.dbName) + '..' + r
 			}
 		}
 
-		prepareObjectName(r)
+		r
 	}
 	
 	public String nameDataset (Dataset dataset) {
 		if (dataset.sysParams.isTable == null || !dataset.sysParams.isTable) return 'noname'
 		
-		def r = dataset.params.tableName
-		if (dataset.schemaName != null) r = dataset.schemaName + '.' + r
+		def r = prepareObjectName(dataset.params.tableName)
+		if (dataset.schemaName != null) r = prepareObjectName(dataset.schemaName) + '.' + r
 		if (dataset.dbName != null) {
 			if (dataset.schemaName != null) {
-				r = dataset.dbName + '.' + r
+				r = prepareObjectName(dataset.dbName) + '.' + r
 			}
 			else {
-				r = dataset.dbName + '..' + r
+				r = prepareObjectName(dataset.dbName) + '..' + r
 			}
 		}
 
-		prepareObjectName(r)
+		r
 	}
 
 	@Override
@@ -802,7 +826,7 @@ ${extend}'''
 			List<String> fields = []
 			
 			dataset.field.each { Field f ->
-				fields << fieldPrefix + prepareObjectName(f.name) + fieldPrefix
+				fields << prepareFieldNameForSQL(f.name)
 			}
 			
 			if (fields.isEmpty()) throw new ExceptionGETL("Required fields by dataset $dataset") 
@@ -810,8 +834,15 @@ ${extend}'''
 			def selectFields = fields.join(",")
 			def where = params.where
 			def order = params.order
-			if (order != null && !(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
-			def orderBy = (order != null)?order.join(","):null
+			def orderBy
+			if (order != null) { 
+				if (!(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
+				def orderFields = []
+				order.each { col ->
+					if (dataset.fieldByName(col) != null) orderFields << prepareFieldNameForSQL(col) else orderFields << col
+				}
+				orderBy = orderFields.join(", ")
+			}
 			def forUpdate = (params.forUpdate != null && params.forUpdate)?"FOR UPDATE\n":null
 			
 			def dir = [:]
@@ -1297,8 +1328,7 @@ $sql
 				def v = []
 				fields.each { Field f ->
 					if (f.isAutoincrement || f.isReadOnly) return
-					//h << "${fieldPrefix}${prepareObjectName(f.name)}${fieldPrefix}" 
-					h << "${prepareObjectNameForSQL(f.name)}"
+					h << prepareFieldNameForSQL(f.name)
 					v << "?"
 				}
 				
@@ -1317,11 +1347,11 @@ $sql
 				
 				fields.each { Field f ->
 					if (f.isKey) {
-						pk << "${prepareObjectNameForSQL(f.name)} = ?"
+						pk << "${prepareFieldNameForSQL(f.name)} = ?"
 					}
 					else {
 						if (updateField.find { it.toLowerCase() == f.name.toLowerCase() } != null) {
-							v << "	${prepareObjectNameForSQL(f.name)} = ?"
+							v << "	${prepareFieldNameForSQL(f.name)} = ?"
 						}
 					}
 				}
@@ -1340,7 +1370,7 @@ $sql
 				def pk = []
 				fields.each { Field f ->
 					if (f.isKey) {
-						pk << "${prepareObjectNameForSQL(f.name)} = ?"
+						pk << "${prepareFieldNameForSQL(f.name)} = ?"
 						
 					}
 				}
@@ -1561,7 +1591,7 @@ $sql
 			def sourceField = map."${targetField.toLowerCase()}" 
 			
 			if (sourceField != null) {
-				if (source.fieldByName(sourceField) != null) sourceField = "s." + fieldPrefix + prepareObjectName(sourceField) + fieldPrefix
+				if (source.fieldByName(sourceField) != null) sourceField = "s." + prepareFieldNameForSQL(sourceField)
 			}
 			else {			
 				// Exclude fields from sql
@@ -1570,7 +1600,7 @@ $sql
 				// Find field in destination if not exists by map
 				if (sourceField == null && autoMap) {
 					sourceField = source.fieldByName(targetField)?.name
-					if (sourceField != null) sourceField = "s." + fieldPrefix + prepareObjectName(sourceField) + fieldPrefix
+					if (sourceField != null) sourceField = "s." + prepareFieldNameForSQL(sourceField)
 				}
 			}
 			

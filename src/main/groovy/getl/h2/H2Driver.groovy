@@ -24,6 +24,8 @@
 
 package getl.h2
 
+import java.util.Map;
+
 import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
@@ -80,6 +82,24 @@ class H2Driver extends JDBCDriver {
 		}
 		
 		(con.connectHost != null)?"jdbc:h2:tcp://{host}/{database}":"jdbc:h2://{database}"
+	}
+	
+	/**
+	 * Prepare object name by prefix
+	 * @param name
+	 * @param prefix
+	 * @return
+	 */
+	@Override
+	public String prepareObjectNameWithPrefix(String name, String prefix) {
+		if (name == null) return null
+		
+		String res
+		
+		def m = name =~ /([^a-zA-Z0-9_])/
+		if (m.size() > 0) res = prefix + name + prefix else res = name.toUpperCase()
+		
+		res
 	}
 	
 	@Override

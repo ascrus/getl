@@ -123,6 +123,11 @@ class StringUtils {
 		(s.length() <= len)?s:s.substring(0, len)
 	}
 	
+	public static String CutStr(String s, int len) {
+		if (s == null) return null
+		(s.length() <= len)?s:s.substring(0, len) + ' ...'
+	}
+	
 	/**
 	 * Get right part of string
 	 * @param s

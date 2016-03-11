@@ -64,6 +64,24 @@ class OracleDriver extends JDBCDriver {
 		result
 	}
 	
+	/**
+	 * Prepare object name by prefix
+	 * @param name
+	 * @param prefix
+	 * @return
+	 */
+	@Override
+	public String prepareObjectNameWithPrefix(String name, String prefix) {
+		if (name == null) return null
+		
+		String res
+		
+		def m = name =~ /([^a-zA-Z0-9_])/
+		if (m.size() > 0) res = prefix + name + prefix else res = name.toUpperCase()
+		
+		res
+	}
+	
 	@Override
 	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		if (params."scn" != null) {
