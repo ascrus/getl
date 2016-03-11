@@ -834,8 +834,15 @@ ${extend}'''
 			def selectFields = fields.join(",")
 			def where = params.where
 			def order = params.order
-			if (order != null && !(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
-			def orderBy = (order != null)?order.join(","):null
+			def orderBy
+			if (order != null) { 
+				if (!(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
+				def orderFields = []
+				order.each { col ->
+					if (dataset.fieldByName(col) != null) orderFields << prepareFieldNameForSQL(col) else orderFields << col
+				}
+				orderBy = orderFields.join(", ")
+			}
 			def forUpdate = (params.forUpdate != null && params.forUpdate)?"FOR UPDATE\n":null
 			
 			def dir = [:]

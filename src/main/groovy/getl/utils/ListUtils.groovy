@@ -138,8 +138,10 @@ class ListUtils {
 		def res = []
 		
 		value.each { v ->
-			if (v instanceof String || v instanceof GString) { 
-				res << GenerationUtils.EvalGroovyScript('"""' + ((String)v).replace("\\", "\\\\") + '"""', vars)
+			if (v instanceof String || v instanceof GString) {
+				def val = v.toString().replace("\\", "\\\\").replace('"""', '\\"\\"\\"').replace('${', '\u0001{').replace('$', '\\$').replace('\u0001{', '${')
+				
+				res << GenerationUtils.EvalGroovyScript('"""' + val + '"""', vars)
 			}
 			else if (v instanceof List) {
 				res << EvalMacroValues((List)v, vars)
