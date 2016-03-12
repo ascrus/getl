@@ -44,6 +44,7 @@ class TFSDataset extends CSVDataset {
 		super()
 		sysParams.isTFSFile = true
 		sysParams.inheriteFields = true
+		manualSchema = true
 	}
 
 	@Override

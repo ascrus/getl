@@ -25,7 +25,6 @@
 package getl.jdbc
 
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 import groovy.sql.ResultSetMetaDataWrapper
 import groovy.sql.Sql
 
@@ -312,7 +311,7 @@ class JDBCDriver extends Driver {
 		conParams
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static Sql NewSql (String url, String login, String password, String drvName, int loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
 		try {

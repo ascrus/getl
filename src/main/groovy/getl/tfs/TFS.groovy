@@ -96,9 +96,7 @@ class TFS extends CSVConnection {
 	 * @return
 	 */
 	public static TFSDataset dataset(String name, boolean validExists) {
-		TFSDataset ds = new TFSDataset(connection: storage, fileName: name)
-		if (validExists && !ds.existsFile()) throw new ExceptionGETL("Temporary file \"${name}\" not exists")
-		ds
+		dataset(storage, name, validExists)
 	}
 	
 	/**
@@ -116,5 +114,38 @@ class TFS extends CSVConnection {
 	 */
 	public static TFSDataset dataset() {
 		dataset(FileUtils.UniqueFileName(), false)
+	}
+	
+	/**
+	 * Create new temporary named dataset object
+	 * @param connection - TFS connection
+	 * @param name - name of object
+	 * @param validExists - object required is exists 
+	 * @return
+	 */
+	public static TFSDataset dataset(TFS connection, String name, boolean validExists) {
+		TFSDataset ds = new TFSDataset(connection: connection, fileName: name)
+		if (validExists && !ds.existsFile()) throw new ExceptionGETL("Temporary file \"${name}\" not exists")
+		
+		ds
+	}
+
+	/**
+	 * Create new temporary named dataset object
+	 * @param connection - TFS connection
+	 * @param name - name of object
+	 * @return
+	 */
+	public static TFSDataset dataset(TFS connection, String name) {
+		dataset(connection, name, false)
+	}
+	
+	/**
+	 * Create new temporary unnamed dataset object
+	 * @param connection - TFS connection
+	 * @return
+	 */
+	public static TFSDataset dataset(TFS connection) {
+		dataset(connection, FileUtils.UniqueFileName(), false)
 	}
 }

@@ -24,8 +24,6 @@
 
 package getl.utils
 
-import groovy.transform.Synchronized
-
 import getl.data.*
 import getl.exception.*
 
@@ -97,7 +95,8 @@ class Balancer  {
 	 * @return
 	 */
 	public List getServers () { params."servers" }
-	@Synchronized
+	
+	@groovy.transform.Synchronized
 	public void setServers (List value) {
 		servers.clear()
 		servers.addAll(value)
@@ -108,14 +107,15 @@ class Balancer  {
 	 * @return
 	 */
 	public int getCheckTimeErrorServers () { params."checkTimeErrorServers"?:600 }
-	@Synchronized
+	
+	@groovy.transform.Synchronized
 	public void setCheckTimeErrorServers (int value) { params."checkTimeErrorServers" = value }
 	
 	/**
 	 * Get server parameter for connect
 	 * @return
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public Map wantConnect () {
 		if (servers.isEmpty()) throw new ExceptionGETL("Required servers list")
 		
@@ -143,7 +143,7 @@ class Balancer  {
 	 * @param server
 	 * @return
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public boolean didDisconnect (Map server) {
 		if (servers.isEmpty()) throw new ExceptionGETL("Required servers list")
 		def i = servers.indexOf(server)
@@ -166,7 +166,7 @@ class Balancer  {
 	 * @param server
 	 * @return
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public boolean errorDisconnect (Map server) {
 		if (servers.isEmpty()) throw new ExceptionGETL("Required servers list")
 		def i = servers.indexOf(server)

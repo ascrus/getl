@@ -35,7 +35,6 @@ import groovy.sql.Sql
 
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import java.util.Map;
 
 import groovy.transform.Synchronized
 
@@ -49,8 +48,8 @@ abstract class Manager {
 	protected File localDirFile = new File(TFS.storage.path)
 	
 	Manager () {
-		methodParams.register("super", ["rootPath", "localDirectory", "scriptHistoryFile", "noopTime", "threadBuildList", "sayNoop", "threadFilesCount"])
-		methodParams.register("buildList", ["path", "maskFile", "recursive", "story", "takePathInStory"])
+		methodParams.register("super", ["rootPath", "localDirectory", "scriptHistoryFile", "noopTime", "threadBuildList", "sayNoop", "threadFilesCount", "cacheFileList", "sqlHistoryFile"])
+		methodParams.register("buildList", ["path", "maskFile", "recursive", "story", "takePathInStory", "limit"])
 		methodParams.register("downloadFiles", ["deleteLoadedFile", "story", "ignoreError", "folders", "filter", "order"])
 		
 		countFileList = 0
@@ -113,7 +112,7 @@ abstract class Manager {
 		params."threadBuildList" = value 
 	}
 	
-	public int getThreadFilesCount () { params."threadFilesCount"?:100}
+	public int getThreadFilesCount () { params."threadFilesCount"?:10000}
 	public void setThreadFilesCount(int value) { params."threadFilesCount" = value }
 	
 	/**
@@ -123,12 +122,27 @@ abstract class Manager {
 	public void setSayNoop (boolean value) { params."sayNoop" = value }
 	
 	/**
+	 * Use cache for build file list
+	 * @return
+	 */
+	public boolean getCacheFileList () { BoolUtils.IsValue(params."cacheFileList", false) }
+	public void setCacheFileList (boolean value) { params."cacheFileList" = value }
+	
+	/**
 	 * Log script file on running commands 
 	 */
 	public String getScriptHistoryFile () { params.scriptHistoryFile }
 	public void setScriptHistoryFile (String value) { 
 		params.scriptHistoryFile = value
 		fileNameScriptHistory = null 
+	}
+	
+	/**
+	 * Log script file on file list connection
+	 */
+	public String getSqlHistoryFile () { params.sqlHistoryFile }
+	public void setSqlHistoryFile (String value) {
+		params.sqlHistoryFile = value
 	}
 	
 	/**
@@ -467,36 +481,176 @@ abstract class Manager {
 	@Synchronized
 	private void changeDirSync(String dir) {
 		changeDirectory(dir)
-	} 
+	}
 	
 	@groovy.transform.CompileStatic
-	protected void processList (Map params) {
+	protected void processListCache (Map params) {
 		Path path = (Path)(params.path)
 		String maskFile = (String)(params.maskFile)
 		boolean recursive = (boolean)(params.recursive)
 		Integer filelevel = (Integer)(params."filelevel")?:1
 		boolean requiredAnalize = (boolean)(params."requiredAnalize")
+		int limit = (int)(params."limit")?:0
+		int countFiles = 0
+		TFS tfs = (TFS)(params."tfs")
 		
-		Closure code = (Closure)(params.code)
+		ManagerListProcessing code = (ManagerListProcessing)(params.code)
+		
 		Closure updater = (Closure)(params.updater)
-		def curPath = currentDir()
+		String curPath = currentDir()
 		
 		Map<String, Object>[] listFiles = listDirSync(maskFile)
-		List<List<Map<String, Object>>> onlyFiles = new LinkedList<List<Map<String, Object>>>()
-		List<Map<String, Object>> curFile
+		List<TFSDataset> onlyFiles = new LinkedList<TFSDataset>()
+		TFSDataset curFile
+		
 		int curNum = threadFilesCount
-		for (int i = 0; i < listFiles.length; i++) {
-			Map<String, Object> file = listFiles[i - 1]
-			
-			if (file.type == TypeFile.FILE) {
-				curNum++
-				if (curNum > threadFilesCount) {
-					curNum = 1
-					curFile = new LinkedList<Map<String, Object>>()
-					onlyFiles << curFile
-				}
+		try {
+			for (int i = 0; i < listFiles.length; i++) {
+				Map file = listFiles[i - 1]
 				
-				curFile << file
+				if (file.type == TypeFile.FILE  && (limit == 0 || countFiles <= limit)) {
+					curNum++
+					if (curNum > threadFilesCount) {
+						if (curFile != null) {
+							curFile.doneWrite()
+							curFile.closeWrite()
+						}
+	
+						curNum = 1
+	
+						curFile = tfs.dataset(tfs)
+						AddFieldListToDS(curFile)
+						curFile.openWrite()
+						
+						onlyFiles << curFile
+					}
+	
+					file."filetype" = file."type".toString()
+					curFile.write(file)
+					countFiles++
+				}
+				else if (file.type == TypeFile.DIRECTORY && recursive) {
+					def b = true
+					if (requiredAnalize) {
+						b = false
+						def fn = "${(curPath != '.' && curPath != "")?curPath + '/':''}${file.filename}"
+						def m = path.analizeDir(fn)
+						if (m != null) {
+							if (code != null) {
+								Map nf = [:]
+								nf.filepath = curPath
+								nf.putAll(file)
+								nf.filetype = file.type.toString()
+								nf.localfilename = nf.filename
+								nf.filelevel = filelevel
+								m.each { var, value ->
+									nf.put(((String)var).toLowerCase(), value)
+								}
+								b = code.prepare(nf)
+							}
+							else {
+								b = true
+							}
+						}
+					}
+					
+					if (b) {
+						Map p = [path: path, maskFile: maskFile, recursive: recursive, filelevel: filelevel + 1, limit: limit, tfs: tfs, code: code, requiredAnalize: requiredAnalize, updater: updater]
+						changeDirSync((String)(file.filename))
+						processListCache(p)
+						changeDirSync('..')
+					}
+				}
+			}
+		}
+		finally {
+			if (curFile != null) {
+				curFile.doneWrite()
+				curFile.closeWrite()
+			}
+		}
+
+		if (!onlyFiles.isEmpty()) {
+			TFSDataset processFiles = tfs.dataset(tfs)
+			processFiles.field = fileList.field
+			new Flow().writeTo(dest: processFiles) { Closure writeFile ->
+				new Executor().run(onlyFiles, threadBuildList) { TFSDataset files ->
+					ManagerListProcessing procCode
+					if (code != null) {
+						procCode= code.newProcessing()
+						procCode.init()
+					}
+					try {
+						files.eachRow() { Map file ->
+							String fn = "${((recursive && curPath != '.')?curPath + '/':'')}${file.filename}"
+							Map m = path.analizeFile(fn)
+							if (m != null) {
+								file.filepath = curPath
+								file.localfilename = file.filename
+								file.filelevel = filelevel
+								m.each { var, value ->
+									file.put(((String)var).toLowerCase(), value)
+								}
+								
+								if (procCode == null || procCode.prepare(file)) writeFile(file)
+							}
+						}
+					}
+					finally {
+						files.drop()
+					}
+				}
+			}
+			
+			try {
+				processFiles.eachRow() { Map file ->
+					updater(file)
+					countFileList++
+				}
+			}
+			finally {
+				processFiles.drop()
+			}
+		}
+	}
+	
+	@groovy.transform.CompileStatic
+	protected void processListNonCache (Map params) {
+		Path path = (Path)(params.path)
+		String maskFile = (String)(params.maskFile)
+		boolean recursive = (boolean)(params.recursive)
+		Integer filelevel = (Integer)(params."filelevel")?:1
+		boolean requiredAnalize = (boolean)(params."requiredAnalize")
+		int limit = (int)(params."limit")?:0
+		int countFiles = 0
+		
+		ManagerListProcessing code = (ManagerListProcessing)(params.code)
+		
+		Closure updater = (Closure)(params.updater)
+		String curPath = currentDir()
+		
+		Map<String, Object>[] listFiles = listDirSync(maskFile)
+		for (int i = 0; i < listFiles.length; i++) {
+			Map file = listFiles[i - 1]
+			
+			if (file.type == TypeFile.FILE  && (limit == 0 || countFiles <= limit)) {
+				String fn = "${((recursive && curPath != '.')?curPath + '/':'')}${file.filename}"
+				Map m = path.analizeFile(fn)
+				if (m != null) {
+					file.filepath = curPath
+					file.filetype = file.type.toString()
+					file.localfilename = file.filename
+					file.filelevel = filelevel
+					m.each { var, value ->
+						file.put(((String)var).toLowerCase(), value)
+					}
+					
+					if (code == null || code.prepare(file)) {
+						updater(file)
+						countFiles++
+						countFileList++
+					}
+				}
 			}
 			else if (file.type == TypeFile.DIRECTORY && recursive) {
 				def b = true
@@ -506,7 +660,7 @@ abstract class Manager {
 					def m = path.analizeDir(fn)
 					if (m != null) {
 						if (code != null) {
-							def nf = [:]
+							Map nf = [:]
 							nf.filepath = curPath
 							nf.putAll(file)
 							nf.filetype = file.type.toString()
@@ -515,7 +669,7 @@ abstract class Manager {
 							m.each { var, value ->
 								nf.put(((String)var).toLowerCase(), value)
 							}
-							b = code(nf)
+							b = code.prepare(nf)
 						}
 						else {
 							b = true
@@ -524,40 +678,10 @@ abstract class Manager {
 				}
 				
 				if (b) {
+					Map p = [path: path, maskFile: maskFile, recursive: recursive, filelevel: filelevel + 1, limit: limit, code: code, requiredAnalize: requiredAnalize, updater: updater]
 					changeDirSync((String)(file.filename))
-					processList(path: path, maskFile: maskFile, recursive: recursive, filelevel: filelevel + 1, code: code, requiredAnalize: requiredAnalize, updater: updater)
+					processListNonCache(p)
 					changeDirSync('..')
-				}
-			}
-		}
-		
-		if (!onlyFiles.isEmpty()) {
-			new Executor().run(onlyFiles, threadBuildList) { List<Map<String, Object>> files ->
-				files.each { Map<String, Object> file ->
-					def fn = "${((recursive && curPath != '.')?curPath + '/':'')}${file.filename}"
-					def m = path.analizeFile(fn)
-					if (m != null) {
-						file.filepath = curPath
-						file.filetype = file.type.toString()
-						file.localfilename = file.filename
-						file.filelevel = filelevel
-						m.each { var, value ->
-							file.put(((String)var).toLowerCase(), value)
-						}
-						def b = (code != null)?code(file):true
-						file."__use_file__" = b
-					}
-					else {
-						file."__use_file__" = false
-					}
-				}
-			}
-			
-			onlyFiles.each { List<Map<String, Object>> files ->
-				files.each { Map<String, Object> file ->
-					if (!file."__use_file__") return
-					updater(file)
-					countFileList++
 				}
 			}
 		}
@@ -575,9 +699,26 @@ abstract class Manager {
 	 * </ul>
 	 * @param params - parameters
 	 * @param code - processing code for file attributes as boolean code (Map file)
-	 * @return
 	 */
 	public void buildList (Map lparams, Closure code) {
+		ManagerListProcessClosure p = new ManagerListProcessClosure(code: code)
+		buildList(lparams, p)  
+	}
+	
+	/**
+	 * Build list files with path processor<br>
+	 * <p><b>Dynamic parameters:</b></p>
+	 * <ul>
+	 * <li>Path path - path processor
+	 * <li>TypeFile type - process type file
+	 * <li>String maskFile - mask processed files
+	 * <li>TableDataset story - story table on file history
+	 * <li>Boolean recursive - find as recursive
+	 * </ul>
+	 * @param params - parameters
+	 * @param code - processing code for file attributes as boolean code (Map file)
+	 */
+	public void buildList (Map lparams, ManagerListProcessing code) {
 		lparams = lparams?:[:]
 		methodParams.validation("buildList", lparams)
 
@@ -586,6 +727,8 @@ abstract class Manager {
 		boolean requiredAnalize = !(path.vars.isEmpty())
 		boolean recursive = (lparams.recursive != null)?lparams.recursive:false
 		boolean takePathInStory =  (lparams.takePathInStory != null)?lparams.takePathInStory:true
+		Integer limit = lparams."limit"
+		
 		if (recursive && maskFile != null) throw new ExceptionGETL("Don't compatibility parameters recursive vs maskFile")
 
 		countFileList = 0
@@ -596,6 +739,8 @@ abstract class Manager {
 		// Init file list
 		fileList = new TableDataset(connection: fileListConnection?:new TDS(), 
 									tableName: fileListName?:"FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}")
+		if (sqlHistoryFile != null) ((JDBCConnection)fileList.connection).sqlHistoryFile = sqlHistoryFile
+		
 		initFileList()
 		path.vars.each { key, attr ->
 			def ft = attr.type?:Field.Type.STRING
@@ -641,9 +786,17 @@ abstract class Manager {
 		}
 		
 		try {
+			if (code != null) code.init()
+			
 			// Get files to buffer table
 			new Flow().writeTo(dest: newFiles, dest_batchSize: 1000) { Closure updater ->
-				processList(path: path, maskFile: maskFile, recursive: recursive, code: code, requiredAnalize: requiredAnalize, updater: updater)
+				if (cacheFileList) {
+					TFS tfs = new TFS(path: String.valueOf("${FileUtils.SystemTempDir()}/getl/${FileUtils.UniqueFileName()}"))
+					processListCache(path: path, maskFile: maskFile, recursive: recursive, limit: limit, tfs: tfs, code: code, requiredAnalize: requiredAnalize, updater: updater)
+				}
+				else {
+					processListNonCache(path: path, maskFile: maskFile, recursive: recursive, limit: limit, code: code, requiredAnalize: requiredAnalize, updater: updater)
+				}
 			}
 			
 			// Detect double file name
@@ -757,7 +910,7 @@ FROM ${newFiles.fullNameDataset()}
 	 * @return
 	 */
 	public void buildList (Map params) {
-		buildList(params, null)
+		buildList(params, (ManagerListProcessing)null)
 	}
 	
 	/**
@@ -942,7 +1095,7 @@ WHERE
 	 * @param dataset
 	 */
 	public static void AddFieldsToDS(Dataset dataset) {
-		dataset.field = []
+//		dataset.field = []
 		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 1)
 		dataset.field << new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 2)
 		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
@@ -956,12 +1109,23 @@ WHERE
 	private void initFileList() {
 		fileList.drop(ifExists: true)
 		fileList.field = []
-		fileList.field << new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 1)
-		fileList.field << new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 2)
-		fileList.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
-		fileList.field << new Field(name: "FILESIZE", type: "BIGINT", isNull: false)
-		fileList.field << new Field(name: "FILETYPE", length: 20, isNull: false)
-		fileList.field << new Field(name: "LOCALFILENAME", length: 250, isNull: false)
+		AddFieldFileListToDS(fileList)
+	}
+	
+	public static void AddFieldFileListToDS(Dataset dataset) {
+		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 1)
+		dataset.field << new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 2)
+		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
+		dataset.field << new Field(name: "FILESIZE", type: "BIGINT", isNull: false)
+		dataset.field << new Field(name: "FILETYPE", length: 20, isNull: false)
+		dataset.field << new Field(name: "LOCALFILENAME", length: 250, isNull: false)
+	}
+	
+	public static void AddFieldListToDS(Dataset dataset) {
+		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false)
+		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
+		dataset.field << new Field(name: "FILESIZE", type: "BIGINT", isNull: false)
+		dataset.field << new Field(name: "FILETYPE", length: 20, isNull: false)
 	}
 
 	/**

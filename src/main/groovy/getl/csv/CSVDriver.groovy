@@ -25,7 +25,6 @@
 package getl.csv
 
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 
 import java.nio.CharBuffer
 import java.text.DecimalFormat
@@ -526,7 +525,7 @@ class CSVDriver extends FileDriver {
 		boolean escaped
 		Long splitSize
 		boolean formatOutput = true
-		long batchSize = 100
+		long batchSize = 1000
 		List<Map> rows = []
 		long current = 0
 		long batch = 0
@@ -595,7 +594,6 @@ class CSVDriver extends FileDriver {
 		}
 	}
 	
-	@Synchronized
 	@groovy.transform.CompileStatic
 	protected void writeRows (Dataset dataset, WriterParams wp) {
 		wp.batch++
@@ -656,7 +654,6 @@ class CSVDriver extends FileDriver {
 		if (wp.onSaveBatch) wp.onSaveBatch.call(wp.batch)
 	}
 	
-	@Synchronized
 	@groovy.transform.CompileStatic
 	@Override
 	protected void write(Dataset dataset, Map row) {

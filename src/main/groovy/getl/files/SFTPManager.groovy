@@ -30,9 +30,6 @@ import getl.exception.ExceptionGETL
 import getl.utils.*
 import getl.proc.*
 import java.nio.CharBuffer
-import java.util.Map;
-
-import groovy.transform.Synchronized
 
 /**
  * SFTP file manager
@@ -171,7 +168,7 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	@Synchronized
+	@groovy.transform.Synchronized
 	public void connect() {
 		if (clientSession != null && clientSession.connected) throw new ExceptionGETL("SFTP already connect to server")
 		if (server == null || port == null) throw new ExceptionGETL("Required server host and port for connect")

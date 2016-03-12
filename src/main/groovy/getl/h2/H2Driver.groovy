@@ -97,7 +97,7 @@ class H2Driver extends JDBCDriver {
 		String res
 		
 		def m = name =~ /([^a-zA-Z0-9_])/
-		if (m.size() > 0) res = prefix + name + prefix else res = name.toUpperCase()
+		if (m.size() > 0) res = prefix + name + prefix else res = prefix + name.toUpperCase() + prefix
 		
 		res
 	}

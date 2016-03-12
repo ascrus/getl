@@ -24,7 +24,6 @@
 
 package getl.jdbc
 
-import groovy.transform.Synchronized
 import getl.data.Field
 import getl.proc.Flow
 import getl.utils.*
@@ -164,7 +163,7 @@ class SavePointManager {
 	 * @param ifNotExists
 	 * @return
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public boolean create(boolean ifNotExists) {
 		prepareTable()
 		
@@ -183,7 +182,7 @@ class SavePointManager {
 	 * @param ifExists
 	 * @return
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public boolean drop(boolean ifExists) {
 		prepareTable()
 		
@@ -197,14 +196,14 @@ class SavePointManager {
 	 * Valid save point table exists
 	 * @return
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public boolean isExists() {
 		prepareTable()
 		
 		table.exists
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public String getFullTableName() {
 		prepareTable()
 		
@@ -216,7 +215,7 @@ class SavePointManager {
 	 * @param source
 	 * @return res.type (D and N) and res.value
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public Map lastValue (String source) {
 		prepareTable()
 		source = source.toUpperCase()
@@ -317,7 +316,7 @@ class SavePointManager {
 	 * @param source
 	 * @param value
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public void saveValue(String source, def value, String format) {
 		prepareTable()
 		
@@ -411,7 +410,7 @@ class SavePointManager {
 	 * Clear save point value by source
 	 * @param source
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public void clearValue (String source) {
 		prepareTable()
 		

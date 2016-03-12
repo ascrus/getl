@@ -24,7 +24,6 @@
 
 package getl.proc
 
-import groovy.transform.Synchronized
 import getl.data.*
 import getl.data.Dataset.Status
 import getl.driver.Driver

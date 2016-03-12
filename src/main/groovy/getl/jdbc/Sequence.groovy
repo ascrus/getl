@@ -24,7 +24,6 @@
 
 package getl.jdbc
 
-import groovy.transform.Synchronized
 import getl.data.Connection
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
@@ -42,7 +41,7 @@ class Sequence {
 	private long current = 0
 	private long offs = 0
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public long getNextValue() {
 		if (!connection.driver.isSupport(Driver.Support.SEQUENCE)) throw new ExceptionGETL("Driver not support sequences")
 		if ((current == 0) || (offs >= cache)) {

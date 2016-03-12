@@ -28,7 +28,6 @@ import java.util.concurrent.Callable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import groovy.transform.Synchronized
 import getl.exception.ExceptionGETL
 import getl.utils.*
 
@@ -82,7 +81,7 @@ class Executor {
 	 * Run has errors
 	 * @return
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public boolean getIsError () { hasError }
 	
 	/**
@@ -90,7 +89,7 @@ class Executor {
 	 */
 	public final Map exceptions = [:]
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	protected void setError (def obj, def except) {
 		hasError = true
 		if (obj != null) exceptions.put(obj, except)
@@ -112,7 +111,7 @@ class Executor {
 	 * Set interrupt flag for current thread processes	
 	 * @param value
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public void setInterrupt(boolean value) { isInterrupt = true }   
 	
 	/**
@@ -233,7 +232,8 @@ class Executor {
 	
 	private ExecutorService threadBackground
 	private boolean runBackgroundService = false
-	@Synchronized
+	
+	@groovy.transform.Synchronized
 	public boolean isRunBackground () { runBackgroundService }
 	
 	/**
