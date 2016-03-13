@@ -487,10 +487,10 @@ abstract class Manager {
 	protected void processListCache (Map params) {
 		Path path = (Path)(params.path)
 		String maskFile = (String)(params.maskFile)
-		boolean recursive = (boolean)(params.recursive)
+		Boolean recursive = (Boolean)(params.recursive)
 		Integer filelevel = (Integer)(params."filelevel")?:1
-		boolean requiredAnalize = (boolean)(params."requiredAnalize")
-		int limit = (int)(params."limit")?:0
+		Boolean requiredAnalize = (Boolean)(params."requiredAnalize")
+		Integer limit = (Integer)(params."limit")?:0
 		int countFiles = 0
 		TFS tfs = (TFS)(params."tfs")
 		
@@ -628,10 +628,10 @@ abstract class Manager {
 	protected void processListNonCache (Map params) {
 		Path path = (Path)(params.path)
 		String maskFile = (String)(params.maskFile)
-		boolean recursive = (boolean)(params.recursive)
+		Boolean recursive = (Boolean)(params.recursive)
 		Integer filelevel = (Integer)(params."filelevel")?:1
-		boolean requiredAnalize = (boolean)(params."requiredAnalize")
-		int limit = (int)(params."limit")?:0
+		Boolean requiredAnalize = (Boolean)(params."requiredAnalize")
+		Integer limit = (Integer)(params."limit")?:0
 		int countFiles = 0
 		
 		ManagerListProcessing code = (ManagerListProcessing)(params.code)
