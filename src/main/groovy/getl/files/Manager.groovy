@@ -236,16 +236,15 @@ abstract class Manager {
 	 * @param maskFiles
 	 * @return
 	 */
-	@SuppressWarnings("rawtypes")
-	public abstract Map<String, Object>[] listDir (String maskFiles)
+	public abstract FileManagerList listDir (String maskFiles)
 	
 	@groovy.transform.CompileStatic
 	@Synchronized
 	public void list (String maskFiles, Closure processCode) {
 		if (processCode == null) throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager")
-		Map<String, Object>[] files = listDir(maskFiles)
-		for (int i = 0; i < files.length; i++) { 
-			processCode(files[i])
+		FileManagerList list = listDir(maskFiles)
+		for (int i = 0; i < list.size(); i++) { 
+			processCode(list.item(i))
 		}
 	}
 	
@@ -471,10 +470,9 @@ abstract class Manager {
 	
 	private final SynchronizeObject countFileListSync = new SynchronizeObject() 
 	
-	@SuppressWarnings("rawtypes")
 	@groovy.transform.CompileStatic
 	@Synchronized
-	private Map<String, Object>[] listDirSync(String mask) {
+	private FileManagerList listDirSync(String mask) {
 		listDir(mask)
 	}
 	
@@ -493,11 +491,11 @@ abstract class Manager {
 		long countFiles = 0
 		long countDirs = 0
 		
-		Map<String, Object>[] listFiles = man.listDir(maskFile)
+		FileManagerList listFiles = man.listDir(maskFile)
 		List<String> threadDirs
 		if (threadCount != null) threadDirs = new LinkedList<String>()
-		for (int i = 0; i < listFiles.length; i++) {
-			Map file = listFiles[i - 1]
+		for (int i = 0; i < listFiles.size(); i++) {
+			Map file = listFiles.item(i)
 			
 			if (file.type == TypeFile.FILE) {
 				String fn = "${((recursive && curPath != '.')?curPath + '/':'')}${file.filename}"
@@ -559,7 +557,7 @@ abstract class Manager {
 				}
 			}
 		}
-		listFiles = null
+		listFiles.clear()
 		
 		if (threadCount != null && !threadDirs.isEmpty()) {
 			new Executor().run(threadDirs, threadCount) { String dirName ->
@@ -586,10 +584,8 @@ abstract class Manager {
 					newMan.changeDirectory(newDir)
 					try {
 						TableDataset newDest = (TableDataset)(dest.cloneDataset())
-						newDest.openWrite()
+						newDest.openWrite(batchSize: 100)
 						try {
-//							Map p = [man: newMan, dest: newDest, path: path, maskFile: maskFile, recursive: recursive, filelevel: filelevel + 1, 
-//										limit: limit, code: newCode, requiredAnalize: requiredAnalize]
 							processList(newMan, newDest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, newCode)
 						}
 						finally {
@@ -716,11 +712,9 @@ abstract class Manager {
 		try {
 			if (code != null) code.init()
 			try {
-				newFiles.openWrite()
+				newFiles.openWrite(batchSize: 100)
 				try {
 					processList(this, newFiles, path, maskFile, recursive, 1, requiredAnalize, limit, threadLevel, code)
-//					processList(man: this, dest: newFiles, path: path, maskFile: maskFile, recursive: recursive, 
-//								limit: limit, threadLevel: threadLevel, code: code, requiredAnalize: requiredAnalize)
 				}
 				finally {
 					newFiles.doneWrite()
@@ -1354,7 +1348,7 @@ WHERE
 			}
 			
 			if (res) {
-				res = (listDir(null).length == 0)
+				res = (listDir(null).size() == 0)
 			}
 			
 			changeDirectoryUp()
