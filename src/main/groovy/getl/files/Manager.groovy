@@ -49,7 +49,7 @@ abstract class Manager {
 	
 	Manager () {
 		methodParams.register("super", ["rootPath", "localDirectory", "scriptHistoryFile", "noopTime", "buildListThread", "sayNoop", "sqlHistoryFile"])
-		methodParams.register("buildList", ["path", "maskFile", "recursive", "story", "takePathInStory", "threadLimit", "threadLevel"])
+		methodParams.register("buildList", ["path", "maskFile", "recursive", "story", "takePathInStory", "limitDirs", "threadLevel"])
 		methodParams.register("downloadFiles", ["deleteLoadedFile", "story", "ignoreError", "folders", "filter", "order"])
 		
 		initMethods()
@@ -485,18 +485,8 @@ abstract class Manager {
 	}
 	
 	@groovy.transform.CompileStatic
-	protected void processList (Map params) {
-		Manager man = (Manager)(params."man")
-		TableDataset dest = (TableDataset)(params."dest")
-		Path path = (Path)(params.path)
-		String maskFile = (String)(params.maskFile)
-		Boolean recursive = (Boolean)(params.recursive)
-		Integer filelevel = (Integer)(params."filelevel")?:1
-		Boolean requiredAnalize = (Boolean)(params."requiredAnalize")
-		Integer limit = (Integer)(params."limit")
-		Integer threadLevel = (Integer)(params."threadLevel")
-		ManagerListProcessing code = (ManagerListProcessing)(params.code)
-		
+	protected void processList (Manager man, TableDataset dest, Path path, String maskFile, Boolean recursive, Integer filelevel,
+								Boolean requiredAnalize, Integer limit, Integer threadLevel, ManagerListProcessing code) {
 		Integer threadCount = (threadLevel != null)?buildListThread:null
 		
 		String curPath = man.currentDir()
@@ -528,6 +518,9 @@ abstract class Manager {
 				}
 			}
 			else if (file.type == TypeFile.DIRECTORY && recursive) {
+				countDirs++
+				if (limit != null && countDirs > limit) break
+				
 				def b = true
 				if (requiredAnalize) {
 					b = false
@@ -554,19 +547,19 @@ abstract class Manager {
 				
 				if (b) {
 					if (threadCount == null || filelevel != threadLevel) {
-						Map p = [man: man, dest: dest, path: path, maskFile: maskFile, recursive: recursive, filelevel: filelevel + 1, 
-									limit: limit, code: code, requiredAnalize: requiredAnalize]
+//						Map p = [man: man, dest: dest, path: path, maskFile: maskFile, recursive: recursive, filelevel: filelevel + 1, 
+//									limit: limit, code: code, requiredAnalize: requiredAnalize]
 						man.changeDirectory((String)(file.filename))
-						processList(p)
+						processList(man, dest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, code)
 						man.changeDirectory('..')
 					}
 					else {
-						countDirs++
-						if (limit == null || countDirs <= limit) threadDirs << (String)(file.filename)
+						threadDirs << (String)(file.filename)
 					}
 				}
 			}
 		}
+		listFiles = null
 		
 		if (threadCount != null && !threadDirs.isEmpty()) {
 			new Executor().run(threadDirs, threadCount) { String dirName ->
@@ -595,9 +588,9 @@ abstract class Manager {
 						TableDataset newDest = (TableDataset)(dest.cloneDataset())
 						newDest.openWrite()
 						try {
-							Map p = [man: newMan, dest: newDest, path: path, maskFile: maskFile, recursive: recursive, filelevel: filelevel + 1, 
-										limit: limit, code: newCode, requiredAnalize: requiredAnalize]
-							processList(p)
+//							Map p = [man: newMan, dest: newDest, path: path, maskFile: maskFile, recursive: recursive, filelevel: filelevel + 1, 
+//										limit: limit, code: newCode, requiredAnalize: requiredAnalize]
+							processList(newMan, newDest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, newCode)
 						}
 						finally {
 							newDest.doneWrite()
@@ -658,8 +651,8 @@ abstract class Manager {
 		boolean recursive = (lparams.recursive != null)?lparams.recursive:false
 		boolean takePathInStory =  (lparams.takePathInStory != null)?lparams.takePathInStory:true
 		
-		Integer limit = lparams."threadLimit"
-		if (limit != null && limit <= 0) throw new ExceptionGETL("threadLimit parameter must be great zero")
+		Integer limit = lparams."limitDirs"
+		if (limit != null && limit <= 0) throw new ExceptionGETL("limitDirs parameter must be great zero")
 		
 		Integer threadLevel = lparams."threadLevel"
 		if (threadLevel != null && threadLevel <= 0) throw new ExceptionGETL("threadLevel parameter must be great zero")
@@ -725,8 +718,9 @@ abstract class Manager {
 			try {
 				newFiles.openWrite()
 				try {
-					processList(man: this, dest: newFiles, path: path, maskFile: maskFile, recursive: recursive, 
-								limit: limit, threadLevel: threadLevel, code: code, requiredAnalize: requiredAnalize)
+					processList(this, newFiles, path, maskFile, recursive, 1, requiredAnalize, limit, threadLevel, code)
+//					processList(man: this, dest: newFiles, path: path, maskFile: maskFile, recursive: recursive, 
+//								limit: limit, threadLevel: threadLevel, code: code, requiredAnalize: requiredAnalize)
 				}
 				finally {
 					newFiles.doneWrite()
