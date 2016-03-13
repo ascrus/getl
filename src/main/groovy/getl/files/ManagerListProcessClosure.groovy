@@ -42,8 +42,8 @@ class ManagerListProcessClosure extends ManagerListProcessing {
 	private Closure runCode
 
 	@Override
-	@groovy.transform.Synchronized
 	public void init() {
+		super.init()
 		runCode = code.clone()
 	}
 

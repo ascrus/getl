@@ -562,6 +562,8 @@ abstract class Manager {
 					}
 				}
 			}
+			
+			if (code != null) code.done()
 		}
 		finally {
 			if (curFile != null) {
@@ -571,10 +573,12 @@ abstract class Manager {
 		}
 
 		if (!onlyFiles.isEmpty()) {
-			TFSDataset processFiles = tfs.dataset(tfs)
-			processFiles.field = fileList.field
-			new Flow().writeTo(dest: processFiles) { Closure writeFile ->
-				new Executor().run(onlyFiles, threadBuildList) { TFSDataset files ->
+			List<TFSDataset> procFileList = Collections.synchronizedList(new LinkedList<TFSDataset>())
+			new Executor().run(onlyFiles, threadBuildList) { TFSDataset files ->
+				TFSDataset processFiles = tfs.dataset(tfs)
+				procFileList.add(processFiles)
+				processFiles.field = fileList.field
+				new Flow().writeTo(dest: processFiles) { Closure writeFile ->
 					ManagerListProcessing procCode
 					if (code != null) {
 						procCode= code.newProcessing()
@@ -595,6 +599,8 @@ abstract class Manager {
 								if (procCode == null || procCode.prepare(file)) writeFile(file)
 							}
 						}
+						
+						if (procCode != null) procCode.done()
 					}
 					finally {
 						files.drop()
@@ -602,15 +608,19 @@ abstract class Manager {
 				}
 			}
 			
-			try {
-				processFiles.eachRow() { Map file ->
-					updater(file)
-					countFileList++
+			for (int i = 0; i < procFileList.size(); i++) {
+				TFSDataset processFiles = procFileList[i]
+				try {
+					processFiles.eachRow() { Map file ->
+						updater(file)
+						countFileList++
+					}
+				}
+				finally {
+					processFiles.drop()
 				}
 			}
-			finally {
-				processFiles.drop()
-			}
+			procFileList.clear()
 		}
 	}
 	
@@ -796,6 +806,7 @@ abstract class Manager {
 				}
 				else {
 					processListNonCache(path: path, maskFile: maskFile, recursive: recursive, limit: limit, code: code, requiredAnalize: requiredAnalize, updater: updater)
+					if (code != null) code.done()
 				}
 			}
 			

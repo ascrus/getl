@@ -35,7 +35,7 @@ abstract class ManagerListProcessing {
 	/**
 	 * Parameters
 	 */
-	public final Map params = new java.util.concurrent.ConcurrentHashMap<String, Object>()
+	public final Map params = Collections.synchronizedMap(new HashMap<String, Object>())
 	
 	/**
 	 * Clone class for use in thread
@@ -51,12 +51,19 @@ abstract class ManagerListProcessing {
 	/**
 	 * Init class for build thread
 	 */
-	abstract public void init ()
+	@groovy.transform.Synchronized
+	public void init () { }
 	
 	/**
 	 * Prepare file and return allow use
 	 * @param file
 	 * @return
 	 */
-	abstract public boolean prepare (Map file)  
+	abstract public boolean prepare (Map file)
+	
+	/**
+	 * Done class after build thread
+	 */
+	@groovy.transform.Synchronized
+	public void done () { }
 }
