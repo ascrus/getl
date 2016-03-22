@@ -34,9 +34,20 @@ import getl.exception.ExceptionGETL
  *
  */
 class Sequence {
+	/**
+	 * Connection for use 
+	 */
 	public Connection connection
+	
+	/**
+	 * Sequence name
+	 */
 	public String name
-	public long cache = 500
+	
+	/**
+	 * Sequence cache interval
+	 */
+	public long cache = 1
 	
 	private long current = 0
 	private long offs = 0
