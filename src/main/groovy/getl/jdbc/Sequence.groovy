@@ -52,8 +52,20 @@ class Sequence {
 	private long current = 0
 	private long offs = 0
 	
+	/**
+	 * Get next sequence value with synchronized
+	 * @return
+	 */
 	@groovy.transform.Synchronized
 	public long getNextValue() {
+		nextValueFast
+	}
+
+	/**
+	 * Get next sequence value without synchronized	
+	 * @return
+	 */
+	public long getNextValueFast() {
 		if (!connection.driver.isSupport(Driver.Support.SEQUENCE)) throw new ExceptionGETL("Driver not support sequences")
 		if ((current == 0) || (offs >= cache)) {
 				connection.tryConnect()
