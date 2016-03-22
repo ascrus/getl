@@ -7,6 +7,7 @@ import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.DateUtil
+import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.xssf.usermodel.XSSFCell
 import org.apache.poi.xssf.usermodel.XSSFRow
 import org.apache.poi.xssf.usermodel.XSSFSheet
@@ -50,18 +51,21 @@ class ExcelDriver extends Driver {
         if (dataset.params.listName == null) throw new ExceptionGETL("Required \"listName\" parameter with dataset")
 
         long countRec = 0
+        def limit = dataset.params.limit ?: 1000000000
         String fn = "${dataset.connection.params.path}/${dataset.connection.params.fileName}"
         def ln = dataset.params.listName ?: 0
 
         XSSFWorkbook workbook = new XSSFWorkbook(new FileInputStream(fn))
         def sheet = workbook.getSheet(ln)
-        Iterator rows = sheet.rowIterator()
+        def rows = sheet.rowIterator()
 
-        rows.each { XSSFRow row ->
+        rows.each { Row row ->
+            if (row.rowNum >= limit) return
+
             Iterator cells = row.cellIterator()
 
             Map updater = [:]
-            cells.each { XSSFCell cell ->
+            cells.each { Cell cell ->
 
                 def value
 
@@ -83,6 +87,7 @@ class ExcelDriver extends Driver {
 
                 updater."${dataset.field.get(cell.columnIndex).name}" = value
             }
+
             code(updater)
             countRec++
         }
