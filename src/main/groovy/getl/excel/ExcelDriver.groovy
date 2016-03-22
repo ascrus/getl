@@ -60,8 +60,9 @@ class ExcelDriver extends Driver {
         rows.each { XSSFRow row ->
             Iterator cells = row.cellIterator()
 
+            Map updater = [:]
             cells.each { XSSFCell cell ->
-                Map updater = [:]
+
                 def value
 
                 switch(cell.cellType) {
@@ -81,10 +82,9 @@ class ExcelDriver extends Driver {
                 }
 
                 updater."${dataset.field.get(cell.columnIndex).name}" = value
-
-                countRec++
-                code(updater)
             }
+            code(updater)
+            countRec++
         }
 
         countRec

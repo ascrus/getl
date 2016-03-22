@@ -17,6 +17,8 @@ class ExcelDriverTest extends GroovyTestCase {
         excelDataset.field << new Field(name: 'b', type: Field.Type.INTEGER)
         excelDataset.field << new Field(name: 'c', type: Field.Type.STRING)
 
-        println excelDataset.rows()
+        excelDataset.rows().each {
+            println it
+        }
     }
 }
