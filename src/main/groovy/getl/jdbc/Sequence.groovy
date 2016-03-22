@@ -53,6 +53,33 @@ class Sequence {
 	private long offs = 0
 	
 	/**
+	 * Clone sequence as new instance with current connection
+	 * @return
+	 */
+	public Sequence newSequence () {
+		Sequence res = getClass().newInstance()
+		res.connection = this.connection
+		res.name = this.name
+		res.cache = this.cache
+		
+		res
+	} 
+	
+	/**
+	 * Clone sequence as new instance with other connection
+	 * @param con
+	 * @return
+	 */
+	public Sequence newSequence (Connection con) {
+		Sequence res = getClass().newInstance()
+		res.connection = con
+		res.name = this.name
+		res.cache = this.cache
+		
+		res
+	}
+	
+	/**
 	 * Get next sequence value with synchronized
 	 * @return
 	 */
