@@ -407,7 +407,7 @@ class MapUtils {
 			if (v instanceof String || v instanceof GString) {
 				def val = v.toString().replace("\\", "\\\\").replace('"""', '\\"\\"\\"').replace('${', '\u0001{').replace('$', '\\$').replace('\u0001{', '${')
 
-				res.put(k, GenerationUtils.EvalGroovyScript('"""' + val + '"""', vars))
+				if (val.trim() != '"') res.put(k, GenerationUtils.EvalGroovyScript('"""' + val + '"""', vars)) else res.putAt(k, val)
 			}
 			else if (v instanceof Map) {
 				res.put(k, EvalMacroValues((Map)v, vars))
