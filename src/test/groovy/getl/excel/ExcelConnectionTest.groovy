@@ -1,12 +1,12 @@
 package getl.excel
 
-import getl.data.Field
+import getl.utils.GenerationUtils
 
 /**
  * @author Dmitry Shaldin
  */
 class ExcelConnectionTest extends GroovyTestCase {
-    public static final String path = '/Users/DShaldin/Documents/'
+    public static final String path = '/Users/DShaldin/Documents'
     public static final String fileName = 'test.xlsx'
 
     void testCheckFileName() {
@@ -29,13 +29,11 @@ class ExcelConnectionTest extends GroovyTestCase {
 
         excelConnection = new ExcelConnection(extension: 'xlsx')
         assertEquals('xlsx', excelConnection.extension)
+    }
 
-        excelConnection = new ExcelConnection(fileName: fileName, path: path)
-        ExcelDataset dataset = new ExcelDataset(connection: excelConnection, listName: 'test')
-        dataset.field << new Field(name: 'a', type: Field.Type.INTEGER)
-        dataset.field << new Field(name: 'b', type: Field.Type.INTEGER)
-        dataset.field << new Field(name: 'c', type: Field.Type.STRING)
-
-        dataset.rows()
+    void testFileExists() {
+        shouldFail {
+            ExcelConnection connection = new ExcelConnection(path: path, fileName: fileName + GenerationUtils.GenerateString(5))
+        }
     }
 }

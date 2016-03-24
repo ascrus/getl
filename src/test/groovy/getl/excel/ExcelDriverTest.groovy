@@ -56,7 +56,7 @@ class ExcelDriverTest extends GroovyTestCase {
         assertEquals(listName, excelDataset.listName)
 
         excelDataset.listName = null
-        shouldFail { excelDataset.rows() }
+        excelDataset.rows()
     }
 
     void testListNameAsZero() {

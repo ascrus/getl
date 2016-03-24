@@ -26,20 +26,11 @@ class ExcelDataset extends Dataset {
     void setListName (String value) { params.listName = value }
 
     /**
-     * Params for start and end position
+     * Offset param
      * @return
      */
-    int getStartRow() { params.startRow }
-    void setStartRow(int value) { params.startRow = value }
-
-    int getStartCell() { params.startCell }
-    void setStartCell(int value) { params.startCell = value }
-
-    int getEndRow() { params.endRow }
-    void setEndRow(int value) { params.endRow = value }
-
-    int getEndCell() { params.endCell }
-    void setEndCell(int value) { params.endCell = value }
+    int getOffset() { params.offset }
+    void setOffset(final Map<String, Integer> value) { params.offset = value }
 
     /**
      * Limit rows to return

@@ -22,7 +22,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
  */
 class ExcelDriver extends Driver {
     ExcelDriver () {
-        methodParams.register("eachRow", ["fields", "filter"])
+        methodParams.register("eachRow", [])
     }
 
     @Override
@@ -47,20 +47,29 @@ class ExcelDriver extends Driver {
 
     @Override
     protected long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-        if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
-        if (dataset.connection.params.path == null) throw new ExceptionGETL("Required \"path\" parameter with connection")
-        if (dataset.connection.params.fileName == null) throw new ExceptionGETL("Required \"fileName\" parameter with connection")
+        String path = dataset.connection.params.path
+        String fileName = dataset.connection.params.fileName
+        String fullPath = FileUtils.ConvertToDefaultOSPath(path + File.separator + fileName)
 
-        long countRec = 0
+        if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
+        if (!path) throw new ExceptionGETL("Required \"path\" parameter with connection")
+        if (!fileName) throw new ExceptionGETL("Required \"fileName\" parameter with connection")
+        if (!FileUtils.ExistsFile(fullPath)) throw new ExceptionGETL("File \"${fileName}\" doesn't exists in \"${path}\"")
+
         def limit = dataset.params.limit ?: 1000000000
-        String fn = "${dataset.connection.params.path}/${dataset.connection.params.fileName}"
         def ln = dataset.params.listName ?: 0
         def header = dataset.params.header ?: false
 
-        Workbook workbook = getWorkbookType(fn, dataset.connection.params.extension)
+        int offsetRows = dataset.params.offset?.rows?:0
+        int offsetCells = dataset.params.offset?.cells?:0
+
+        long countRec = 0
+
+        Workbook workbook = getWorkbookType(fullPath, dataset.connection.params.extension)
         Sheet sheet
 
-        if (ln instanceof java.lang.String) sheet = workbook.getSheet(ln as String)
+        if (ln instanceof java.lang.String)
+            sheet = workbook.getSheet(ln as String)
         else {
             sheet = workbook.getSheetAt(ln)
             Logs.Warning("Parameter listName not found. Using list name: '${workbook.getSheetName(ln)}'")
@@ -69,11 +78,15 @@ class ExcelDriver extends Driver {
         Iterator rows = sheet.rowIterator()
 
         if (header) rows.next()
+        if (offsetRows != 0) offsetRows.times { rows.next() }
+        int additionalRows = limit + offsetRows + (header ? 1 as int : 0 as int)
 
         rows.each { Row row ->
-            if (row.rowNum >= limit) return
+            if (row.rowNum >= additionalRows) return
             Iterator cells = row.cellIterator()
             Map updater = [:]
+
+            if (offsetCells != 0) offsetCells.times { cells.next() }
 
             cells.each { Cell cell ->
                 updater."${dataset.field.get(cell.columnIndex).name}" = getCellValue(cell)
@@ -86,15 +99,12 @@ class ExcelDriver extends Driver {
         countRec
     }
 
-    private static getCellValue(Cell cell) {
+    private static getCellValue(final Cell cell) {
         def value
         switch (cell.cellType) {
             case Cell.CELL_TYPE_NUMERIC:
-                if (DateUtil.isCellDateFormatted(cell)) {
-                    value = cell.dateCellValue
-                } else {
-                    value = !cell.numericCellValue ? 0 : cell.numericCellValue.toBigDecimal()
-                }
+                if (DateUtil.isCellDateFormatted(cell)) value = cell.dateCellValue
+                else value = !cell.numericCellValue ? 0 : cell.numericCellValue.toBigDecimal()
                 break
             case Cell.CELL_TYPE_BOOLEAN:
                 value = cell.booleanCellValue
@@ -107,7 +117,7 @@ class ExcelDriver extends Driver {
         value
     }
 
-    private static getWorkbookType(String fileName, String extension) {
+    private static getWorkbookType(final String fileName, final String extension) {
         def ext = extension ?: FileUtils.FileExtension(fileName)
         if (!(new File(fileName).exists())) throw new ExceptionGETL("File '$fileName' doesn't exists")
         if (!(ext in ['xls', 'xlsx'])) throw new ExceptionGETL("'$extension' is not available. Please, use 'xls' or 'xlsx'.")
