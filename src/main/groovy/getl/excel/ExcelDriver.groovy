@@ -6,13 +6,13 @@ import getl.data.Field
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.utils.FileUtils
+import getl.utils.Logs
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.DateUtil
 import org.apache.poi.ss.usermodel.Row
-import org.apache.poi.xssf.usermodel.XSSFCell
-import org.apache.poi.xssf.usermodel.XSSFRow
-import org.apache.poi.xssf.usermodel.XSSFSheet
+import org.apache.poi.ss.usermodel.Sheet
+import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 /**
@@ -50,7 +50,6 @@ class ExcelDriver extends Driver {
         if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
         if (dataset.connection.params.path == null) throw new ExceptionGETL("Required \"path\" parameter with connection")
         if (dataset.connection.params.fileName == null) throw new ExceptionGETL("Required \"fileName\" parameter with connection")
-        if (!dataset.params.listName) throw new ExceptionGETL("Required \"listName\" parameter with dataset")
 
         long countRec = 0
         def limit = dataset.params.limit ?: 1000000000
@@ -58,9 +57,18 @@ class ExcelDriver extends Driver {
         def ln = dataset.params.listName ?: 0
         def header = dataset.params.header ?: false
 
-        def workbook = getWorkbookType(fn, dataset.connection.params.extension)
-        def sheet = workbook.getSheet(ln)
-        def rows = sheet.rowIterator()
+        Workbook workbook = getWorkbookType(fn, dataset.connection.params.extension)
+        Sheet sheet
+
+        if (ln instanceof java.lang.String) sheet = workbook.getSheet(ln as String)
+        else {
+            sheet = workbook.getSheetAt(ln)
+            Logs.Warning("Parameter listName not found. Using list name: '${workbook.getSheetName(ln)}'")
+        }
+
+        Iterator rows = sheet.rowIterator()
+
+        if (header) rows.next()
 
         rows.each { Row row ->
             if (row.rowNum >= limit) return
