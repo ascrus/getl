@@ -56,12 +56,14 @@ class ExcelDriver extends Driver {
         if (!fileName) throw new ExceptionGETL("Required \"fileName\" parameter with connection")
         if (!FileUtils.ExistsFile(fullPath)) throw new ExceptionGETL("File \"${fileName}\" doesn't exists in \"${path}\"")
 
-        def limit = dataset.params.limit ?: 1000000000
-        def ln = dataset.params.listName ?: 0
-        def header = dataset.params.header ?: false
+        Map datasetParams = dataset.params
 
-        int offsetRows = dataset.params.offset?.rows?:0
-        int offsetCells = dataset.params.offset?.cells?:0
+        def limit = datasetParams.limit ?: 1000000000
+        def ln = datasetParams.listName ?: 0
+        def header = datasetParams.header ?: false
+
+        int offsetRows = datasetParams.offset?.rows?:0
+        int offsetCells = datasetParams.offset?.cells?:0
 
         long countRec = 0
 
@@ -100,35 +102,34 @@ class ExcelDriver extends Driver {
     }
 
     private static getCellValue(final Cell cell) {
-        def value
         switch (cell.cellType) {
             case Cell.CELL_TYPE_NUMERIC:
-                if (DateUtil.isCellDateFormatted(cell)) value = cell.dateCellValue
-                else value = !cell.numericCellValue ? 0 : cell.numericCellValue.toBigDecimal()
+                if (DateUtil.isCellDateFormatted(cell)) cell.dateCellValue
+                else !cell.numericCellValue ? 0 : cell.numericCellValue.toBigDecimal()
                 break
             case Cell.CELL_TYPE_BOOLEAN:
-                value = cell.booleanCellValue
+                cell.booleanCellValue
                 break
             default:
-                value = cell.stringCellValue
-                break
+                cell.stringCellValue
         }
-
-        value
     }
 
-    private static getWorkbookType(final String fileName, final String extension) {
+    private static def getWorkbookType(final String fileName, final String extension) {
         def ext = extension ?: FileUtils.FileExtension(fileName)
         if (!(new File(fileName).exists())) throw new ExceptionGETL("File '$fileName' doesn't exists")
         if (!(ext in ['xls', 'xlsx'])) throw new ExceptionGETL("'$extension' is not available. Please, use 'xls' or 'xlsx'.")
 
-        def workbook
-
-        if (fileName.endsWith(ext) && ext == 'xlsx') workbook = new XSSFWorkbook(new FileInputStream(fileName))
-        else if (fileName.endsWith(ext) && ext == 'xls') workbook = new HSSFWorkbook(new FileInputStream(fileName))
-        else throw new ExceptionGETL("Something went wrong")
-
-        workbook
+        switch (ext) {
+            case {fileName.endsWith(ext) && ext == 'xlsx'}:
+                new XSSFWorkbook(new FileInputStream(fileName))
+                break
+            case {fileName.endsWith(ext) && ext == 'xls'}:
+                new HSSFWorkbook(new FileInputStream(fileName))
+                break
+            default:
+                throw new ExceptionGETL("Something went wrong")
+        }
     }
 
     @Override

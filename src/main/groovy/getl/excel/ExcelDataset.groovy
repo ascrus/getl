@@ -23,7 +23,7 @@ class ExcelDataset extends Dataset {
      * @return
      */
     String getListName () { params.listName }
-    void setListName (String value) { params.listName = value }
+    void setListName (final String value) { params.listName = value }
 
     /**
      * Offset param
@@ -37,12 +37,12 @@ class ExcelDataset extends Dataset {
      * @return
      */
     int getLimit() { params.limit }
-    void setLimit(int value) { params.limit = value }
+    void setLimit(final int value) { params.limit = value }
 
     /**
      * Header row
      * @return
      */
     boolean getHeader() { params.header }
-    void setHeader(boolean value) { params.header = value }
+    void setHeader(final boolean value) { params.header = value }
 }
