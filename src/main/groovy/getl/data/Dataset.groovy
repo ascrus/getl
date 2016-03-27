@@ -969,7 +969,7 @@ ${ef.toString()}
 	 * Write list of row
 	 * @param rows
 	 */
-	public void write (List<Map> rows) {
+	public void writeList (List<Map> rows) {
 		if (status != Dataset.Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
 		try {
 			rows.each { Map row ->
@@ -990,16 +990,7 @@ ${ef.toString()}
 	 */
 	@groovy.transform.Synchronized
 	public void writeSynch (Map row) {
-		if (status != Dataset.Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
-		try {
-			if (logWriteToConsole) println("$this: $row")
-			connection.driver.write(this, row)
-		}
-		catch (Exception e) {
-			isWriteError = true
-			Logs.Exception(e, getClass().name, objectName)
-			throw e
-		}
+		write(row)
 	}
 	
 	/**
@@ -1007,19 +998,8 @@ ${ef.toString()}
 	 * @param rows
 	 */
 	@groovy.transform.Synchronized
-	public void writeSynch (List<Map> rows) {
-		if (status != Dataset.Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
-		try {
-			rows.each { Map row ->
-				if (logWriteToConsole) println("$this: $row")
-				connection.driver.write(this, row)
-			}
-		}
-		catch (Exception e) {
-			isWriteError = true
-			Logs.Exception(e, getClass().name, objectName)
-			throw e
-		}
+	public void writeListSynch (List<Map> rows) {
+		writeList(rows)
 	}
 	
 	public void doneWrite () {
