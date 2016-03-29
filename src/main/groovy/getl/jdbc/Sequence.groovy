@@ -24,7 +24,6 @@
 
 package getl.jdbc
 
-import groovy.transform.Synchronized
 import getl.data.Connection
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
@@ -35,15 +34,65 @@ import getl.exception.ExceptionGETL
  *
  */
 class Sequence {
+	/**
+	 * Connection for use 
+	 */
 	public Connection connection
+	
+	/**
+	 * Sequence name
+	 */
 	public String name
-	public long cache = 500
+	
+	/**
+	 * Sequence cache interval
+	 */
+	public long cache = 1
 	
 	private long current = 0
 	private long offs = 0
 	
-	@Synchronized
+	/**
+	 * Clone sequence as new instance with current connection
+	 * @return
+	 */
+	public Sequence newSequence () {
+		Sequence res = getClass().newInstance()
+		res.connection = this.connection
+		res.name = this.name
+		res.cache = this.cache
+		
+		res
+	} 
+	
+	/**
+	 * Clone sequence as new instance with other connection
+	 * @param con
+	 * @return
+	 */
+	public Sequence newSequence (Connection con) {
+		Sequence res = getClass().newInstance()
+		res.connection = con
+		res.name = this.name
+		res.cache = this.cache
+		
+		res
+	}
+	
+	/**
+	 * Get next sequence value with synchronized
+	 * @return
+	 */
+	@groovy.transform.Synchronized
 	public long getNextValue() {
+		nextValueFast
+	}
+
+	/**
+	 * Get next sequence value without synchronized	
+	 * @return
+	 */
+	public long getNextValueFast() {
 		if (!connection.driver.isSupport(Driver.Support.SEQUENCE)) throw new ExceptionGETL("Driver not support sequences")
 		if ((current == 0) || (offs >= cache)) {
 				connection.tryConnect()

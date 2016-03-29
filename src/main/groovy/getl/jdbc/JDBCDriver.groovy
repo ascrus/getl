@@ -25,7 +25,7 @@
 package getl.jdbc
 
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
+import groovy.json.internal.ArrayUtils;
 import groovy.sql.ResultSetMetaDataWrapper
 import groovy.sql.Sql
 
@@ -312,7 +312,7 @@ class JDBCDriver extends Driver {
 		conParams
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static Sql NewSql (String url, String login, String password, String drvName, int loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
 		try {
@@ -416,8 +416,8 @@ class JDBCDriver extends Driver {
 		String catalog = prepareObjectName(params."dbName")?:defaultDBName
 		String schemaPattern = prepareObjectName(params."schemaName")?:defaultSchemaName
 		String tableNamePattern = prepareObjectName(params."tableName")
-		String[] types = [] 
-		if (params."type" != null) types = params."type" else types = ["TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM"]
+		String[] types
+		if (params."type" != null) types = params."type" as String[] else types = ['TABLE', 'GLOBAL TEMPORARY', 'LOCAL TEMPORARY', 'ALIAS', 'SYNONYM', 'VIEW'] as String[]
 
 		List<Map> tables = []
 		ResultSet rs = sqlConnect.connection.metaData.getTables(catalog, schemaPattern, tableNamePattern, types)

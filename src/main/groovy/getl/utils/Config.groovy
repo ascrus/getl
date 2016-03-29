@@ -24,7 +24,6 @@
 
 package getl.utils
 
-import groovy.transform.Synchronized
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 
@@ -102,7 +101,7 @@ class Config {
 	 */
 	public static final List<Closure> init = []
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void RegisterOnInit(Closure code) {
 		init << code
 	}
@@ -110,7 +109,7 @@ class Config {
 	/**
 	 * Clear all configurations
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void ClearConfig () {
 		content.clear()
 		content.vars = [:]
@@ -120,7 +119,7 @@ class Config {
 	 * Load configuration from file
 	 * Use parameters: params.path and params.fileName) 
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadConfig () {
 		if (fileName != null) {
 			try {
@@ -152,7 +151,7 @@ class Config {
 	 * Use parameters: params.path
 	 * @param jobClass
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadConfigClass(Class jobClass) {
 		LoadConfig(jobClass, this.codePage)
 	}
@@ -163,7 +162,7 @@ class Config {
 	 * @param jobClass
 	 * @param codePage
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadConfigClass(Class jobClass, String codePage) {
 		String className = jobClass.name.replace(".", File.separator)
 		def fn = ((path != null)?path + File.separator:"") + className + ".conf"
@@ -175,7 +174,7 @@ class Config {
 	 * Load configuration from file
 	 * @param fileName
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadConfig (String fileName) {
 		if (path != null) fileName = path + File.separator + fileName
 		LoadConfigFile(new File(fileName), this.codePage)
@@ -187,7 +186,7 @@ class Config {
 	 * @param fileName
 	 * @param codePage
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadConfig (String fileName, String codePage) {
 		if (path != null) fileName = path + File.separator + fileName
 		LoadConfigFile(new File(fileName), codePage)
@@ -198,7 +197,7 @@ class Config {
 	 * Load configuration from file
 	 * @param file
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadConfigFile (File file) {
 		LoadConfigFile(file, this.codePage)
 	}
@@ -209,7 +208,7 @@ class Config {
 	 * @param file
 	 * @param codePage
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadConfigFile (File file, String codePage) {
 		if (!file.exists()) throw new ExceptionGETL("Config file \"${file.path}\" not found")
 		Logs.Config("Load config file \"${file.absolutePath}\"")
@@ -226,7 +225,7 @@ class Config {
 	 * Load configuration from reader
 	 * @param reader
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadConfigReader (Reader reader) {
 		LoadSection(reader)
 	}
@@ -234,7 +233,7 @@ class Config {
 	/**
 	 * Run every eventer after load config files
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void DoInitEvent () {
 		init.each { doInit ->
 			doInit()
@@ -246,7 +245,7 @@ class Config {
 	 * @param section
 	 * @param reader
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadSection(Reader reader) {
 		def json = new JsonSlurper()
 		def data
@@ -285,7 +284,7 @@ class Config {
 	 * Load configuration file to config section
 	 * @param fileName
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadSection (String fileName) {
 		LoadSection(new File(fileName), this.codePage)
 	}
@@ -295,7 +294,7 @@ class Config {
 	 * @param fileName
 	 * @param codePage
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadSection (String fileName, String codePage) {
 		LoadSection(new File(fileName), codePage)
 	}
@@ -305,7 +304,7 @@ class Config {
 	 * @param file
 	 * @param codePage
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadSection (File file, String codePage) {
 		if (!file.exists()) throw new ExceptionGETL("File \"${file.path}\" not found")
 		LoadSection(file.newReader(codePage))
@@ -315,7 +314,7 @@ class Config {
 	 * Load configuration file to config section
 	 * @param file
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void LoadSection (File file) {
 		if (!file.exists()) throw new ExceptionGETL("File \"${file.path}\" not found")
 		LoadSection(file.newReader(this.codePage))
@@ -327,7 +326,7 @@ class Config {
 	 * @param section
 	 * @return
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static Map FindSection (String section) {
 		if (section == null) return null
 		def res = MapUtils.FindSection(content, section)
@@ -339,7 +338,7 @@ class Config {
 	 * @param section
 	 * @return
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static boolean ContainsSection (String section) {
 		MapUtils.ContainsSection(content, section)
 	}
@@ -349,7 +348,7 @@ class Config {
 	 * @param name
 	 * @param value
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void SetValue(String name, value) {
 		MapUtils.SetValue(content, name, value)
 	}
@@ -358,7 +357,7 @@ class Config {
 	 * Save content to JSON configuration file
 	 * @param writer
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void SaveConfig (Writer writer) {
 		JsonBuilder b = new JsonBuilder()
 		b.call(content)
@@ -370,7 +369,7 @@ class Config {
 	 * @param file
 	 * @param codePage
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void SaveConfig (File file, String codePage) {
 		def writer = file.newWriter(codePage)
 		try {
@@ -385,7 +384,7 @@ class Config {
 	 * Save content to JSON configuration file
 	 * @param file
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void SaveConfig (File file) {
 		SaveConfig(file, "UTF-8")
 	}
@@ -395,7 +394,7 @@ class Config {
 	 * @param file
 	 * @param codePage
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void SaveConfig (String file, String codePage) {
 		SaveConfig(new File(file), codePage)
 	}
@@ -404,7 +403,7 @@ class Config {
 	 * Save content to JSON configuration file
 	 * @param file
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void SaveConfig (String file) {
 		SaveConfig(file, "UTF-8")
 	}
@@ -412,7 +411,7 @@ class Config {
 	/**
 	 * Evaluation macros in the configuration values 
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void EvalConfig () {
 		def vars = Config.content."vars"?:[:]
 		def evalContent = MapUtils.EvalMacroValues(Config.content, vars)

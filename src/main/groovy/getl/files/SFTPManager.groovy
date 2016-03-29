@@ -30,9 +30,6 @@ import getl.exception.ExceptionGETL
 import getl.utils.*
 import getl.proc.*
 import java.nio.CharBuffer
-import java.util.Map;
-
-import groovy.transform.Synchronized
 
 /**
  * SFTP file manager
@@ -171,7 +168,7 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	@Synchronized
+	@groovy.transform.Synchronized
 	public void connect() {
 		if (clientSession != null && clientSession.connected) throw new ExceptionGETL("SFTP already connect to server")
 		if (server == null || port == null) throw new ExceptionGETL("Required server host and port for connect")
@@ -207,18 +204,19 @@ class SFTPManager extends Manager {
 			throw e
 		}
 	}
+	
+	class SFTPList extends FileManagerList {
+		Vector<ChannelSftp.LsEntry> listFiles
+		
+		@groovy.transform.CompileStatic
+		public Integer size () {
+			listFiles.size()
+		}
+		
+		@groovy.transform.CompileStatic
+		public Map item (int index) {
+			ChannelSftp.LsEntry item = listFiles.get(index)
 
-	@groovy.transform.CompileStatic
-	@Override
-	@SuppressWarnings("rawtypes")
-	public Map<String, Object>[] listDir(String maskFiles) {
-		if (maskFiles == null) maskFiles = "*"
-		writeScriptHistoryFile("COMMAND: list \"$maskFiles\"")
-		Vector< ChannelSftp.LsEntry> listFiles = channelFtp.ls(maskFiles)
-		Map<String, Object>[] res = new HashMap<String, Object>[listFiles.size()]
-		int i = 0
-		listFiles.each { listItem ->
-			ChannelSftp.LsEntry item = (ChannelSftp.LsEntry)listItem
 			Map<String, Object> file = new HashMap<String, Object>()
 			
 			file."filename" = item.filename
@@ -234,13 +232,25 @@ class SFTPManager extends Manager {
 			else {
 				file."type" = Manager.TypeFile.FILE
 			}
-			
-			writeScriptHistoryFile("LIST: $file")
-			
-			res[i] = file
-			i++
+		  
+			file
 		}
+		
+		public void clear () {
+			listFiles.clear()
+		}
+	}
 
+	@groovy.transform.CompileStatic
+	@Override
+	public FileManagerList listDir(String maskFiles) {
+		if (maskFiles == null) maskFiles = "*"
+		writeScriptHistoryFile("COMMAND: list \"$maskFiles\"")
+		Vector< ChannelSftp.LsEntry> listFiles = channelFtp.ls(maskFiles)
+		
+		SFTPList res = new SFTPList()
+		res.listFiles = listFiles
+		
 		res
 	}
 

@@ -22,39 +22,36 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.deploy
+package getl.files
 
 /**
- * Version manager
- * @author Aleksey Konstantinov
+ * Processing files by files.Manager.buildList method with closure code
+ * @author @author Alexsey Konstantinov
+ *
  */
-class Version {
+class ManagerListProcessClosure extends ManagerListProcessing {
 	/**
-	 * GETL version
+	 * Process client code 
 	 */
-	public static version = "1.2.02"
+	Closure getCode() { params."code" }
+	void setCode(Closure value) { params."code" = value }
 	
 	/**
-	 * GETL version as numeric
+	 * Run code
 	 */
-	public static versionNum = 1.0202
+	private Closure runCode
 
-	/**
-	 * Compatibility GETL version
-	 */
-	public static versionNumCompatibility = 1.0200
-	
-	/**
-	 * Valid compatibility version
-	 * @param ver
-	 * @return
-	 */
-	public static boolean IsCompatibility (def ver) { 
-		ver >= versionNumCompatibility && ver <= versionNum 
+	@Override
+	public void init() {
+		super.init()
+		runCode = code.clone()
 	}
-	
-	/**
-	 * Years development
-	 */
-	public static years = "2014-2016"
+
+	@Override
+	@groovy.transform.CompileStatic
+	public boolean prepare(Map file) {
+		if (runCode != null) return runCode(file)
+		
+		true
+	}
 }

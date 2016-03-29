@@ -24,7 +24,6 @@
 
 package getl.proc
 
-import groovy.transform.Synchronized
 import getl.data.*
 import getl.data.Dataset.Status
 import getl.driver.Driver
@@ -43,10 +42,10 @@ class Flow {
 	Flow () {
 		methodParams.register("copy", ["source", "tempSource", "dest", "tempDest", "inheritFields", "tempFields", "map",
 			"source_*", "dest_*", "autoMap", "autoConvert", "autoTran", "clear", "saveErrors", "excludeFields", "mirrorCSV",
-			"bulkLoad", "bulkAsGZIP", "onInit", "onWrite", "onDone", "debug"])
+			"bulkLoad", "bulkAsGZIP", "onInit", "onWrite", "onDone", "debug", "writeSynch"])
 		
-		methodParams.register("writeTo", ["dest", "dest_*", "autoTran", "tempDest", "tempFields", "bulkLoad", "bulkAsGZIP", "clear"])
-		methodParams.register("writeAllTo", ["dest", "dest_*", "autoTran", "bulkLoad", "bulkAsGZIP"])
+		methodParams.register("writeTo", ["dest", "dest_*", "autoTran", "tempDest", "tempFields", "bulkLoad", "bulkAsGZIP", "clear", "writeSynch"])
+		methodParams.register("writeAllTo", ["dest", "dest_*", "autoTran", "bulkLoad", "bulkAsGZIP", "writeSynch"])
 		
 		methodParams.register("process", ["source", "source_*", "tempSource", "saveErrors"])
 	}
@@ -267,6 +266,7 @@ class Flow {
 	 * <li>Map map						- map card columns with syntax: [<destination field>:"<source field>:<convert format>"]
 	 * <li>Map source_*					- parameters for source read process
 	 * <li>Map dest_*					- parameters for destination write process
+	 * <li>boolean writeSynch			- write with synchronize main thread
 	 * <li>boolean autoMap				- auto mapping value from source fields to destination fields 
 	 * <li>boolean autoConvert			- auto converting type value from source fields to destination fields
 	 * <li>boolean autoTran				- auto starting and finishing transaction for copy process
@@ -303,6 +303,7 @@ class Flow {
 	 * <li>Map map						- map card columns with syntax: [<destination field>:"<source field>:<convert format>"]
 	 * <li>Map source_*					- parameters for source read process
 	 * <li>Map dest_*					- parameters for destination write process
+	 * <li>boolean writeSynch			- write with synchronize main thread
 	 * <li>boolean autoMap				- auto mapping value from source fields to destination fields 
 	 * <li>boolean autoConvert			- auto converting type value from source fields to destination fields
 	 * <li>boolean autoTran				- auto starting and finishing transaction for copy process
@@ -352,6 +353,7 @@ class Flow {
 		def isDestVirtual = (dest.sysParams.isVirtual != null && dest.sysParams.isVirtual) 
 		
 		boolean inheritFields = BoolUtils.IsValue([dest.sysParams.inheriteFields, params.inheritFields], false)
+		boolean writeSynch = BoolUtils.IsValue(params.writeSynch, false)
 		
 		boolean isBulkLoad = (params.bulkLoad != null)?params.bulkLoad:false
 		if (isBulkLoad && (isDestTemp || isDestVirtual)) throw new ExceptionGETL("Is not possible to start the process BulkLoad for a given destination dataset")
@@ -400,6 +402,7 @@ class Flow {
 			if (dest.field.isEmpty()) dest.retrieveFields()
 			bulkDS.field = dest.field
 			writer = bulkDS
+			writeSynch = false
 		}
 		else {
 			writer = dest
@@ -488,7 +491,7 @@ class Flow {
 						}
 					} 
 					if (!isError) {
-						writer.write(outRow)
+						if (!writeSynch) writer.write(outRow) else writer.writeSynch(outRow)
 						if (writeCode != null) writeCode(inRow, outRow)
 					}
 					count++
@@ -552,6 +555,7 @@ class Flow {
 	 * <ul>
 	 * <li>Dataset dest					- destination dataset
 	 * <li>boolean autoTran				- auto starting and finishing transaction for copy process
+	 * <li>boolean writeSynch			- write with synchronize main thread
 	 * <li>String tempDest				- name temporary dataset for dest use
 	 * <li>List<Field> tempFields		- list of field from destination dataset
 	 * <li>boolean bulkLoad				- load to destination as bulk load (only is supported)
@@ -590,6 +594,8 @@ class Flow {
 		
 		boolean clear = (params.clear != null)?params.clear:false
 		
+		boolean writeSynch = BoolUtils.IsValue(params."writeSynch", false)
+		
 		Map destParams = MapUtils.GetLevel(params, "dest_")
 		Map bulkParams
 		
@@ -610,6 +616,7 @@ class Flow {
 			
 			destParams = [:]
 			writer = bulkDS
+			writeSynch = false
 		}
 		else {
 			writer = dest
@@ -618,7 +625,7 @@ class Flow {
 //		SynchronizeObject counter = new SynchronizeObject()
 		long counter = 0		
 		def updateCode = { Map row ->
-			writer.write(row)
+			if (!writeSynch) writer.write(row) else writer.writeSynch(row)
 			counter++
 		}
 		
@@ -685,6 +692,7 @@ class Flow {
 	 * <p><b>Dynamic parameters:</b></p>
 	 * <ul>
 	 * <li>Map<Name, Dataset> dest		- list of destination datasets
+	 * <li>boolean writeSynch			- write with synchronize main thread
 	 * <li>boolean autoTran				- auto starting and finishing transaction for copy process
 	 * <li>List bulkLoad				- list of destination dataset must load as bulk load (only is supported)
 	 * <li>List bulkAsGZIP				- list of destination dataset must generate bulk CSV file in GZIP format
@@ -704,6 +712,8 @@ class Flow {
 		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
 		
 		boolean autoTran = (params.autoTran != null)?params.autoTran:true
+		
+		boolean writeSynch = BoolUtils.IsValue(params."writeSynch", false)
 		
 		List bulkLoad = (params.bulkLoad != null)?params.bulkLoad:null
 		List bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:null
@@ -797,7 +807,7 @@ class Flow {
 		def updateCode = { String name, Map row ->
 			curUpdater = name
 			Dataset d = writer."${name}"
-			d.write(row)
+			if (!writeSynch) d.write(row) else d.writeSynch(row)
 		}
 		
 		def closeDests = { boolean isError ->

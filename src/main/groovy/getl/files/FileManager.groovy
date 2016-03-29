@@ -24,9 +24,12 @@
 
 package getl.files
 
+import java.util.Map;
+
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.InheritConstructors
+import it.sauronsoftware.ftp4j.FTPFile;
 
 /**
  * File manager 
@@ -95,10 +98,35 @@ class FileManager extends Manager {
 		if (!connected) throw new ExceptionGETL("Client not connected")
 	}
 	
+	class FilesList extends FileManagerList {
+		public File[] listFiles
+		
+		@groovy.transform.CompileStatic
+		public Integer size () {
+			listFiles.length
+		}
+		
+		@groovy.transform.CompileStatic
+		public Map item (int index) {
+			File f = listFiles[index]
+
+			Map<String, Object> m =  new HashMap<String, Object>()
+			m.filename = f.name
+			m.filedate = new Date(f.lastModified())
+			m.filesize = f.length()
+			if (f.isDirectory()) m.type = Manager.TypeFile.DIRECTORY else m.type = Manager.TypeFile.FILE
+		  
+			m
+		}
+		
+		public void clear () {
+			listFiles = []
+		}
+	}
+	
 	@groovy.transform.CompileStatic
 	@Override
-	@SuppressWarnings("rawtypes")
-	public Map<String, Object>[] listDir(String mask) {
+	public FileManagerList listDir(String mask) {
 		validConnect()
 		
 		Closure filter
@@ -115,17 +143,9 @@ class FileManager extends Manager {
 		}
 		
 		File[] listFiles = currentDir.listFiles(new Filter(filter))
-		Map<String, Object>[] res = new HashMap<String, Object>[listFiles.length]
-		for (int i = 0; i < listFiles.length; i++) {
-			File f = listFiles[i]
-			Map<String, Object> m =  new HashMap<String, Object>()
-			m.filename = f.name
-			m.filedate = new Date(f.lastModified())
-			m.filesize = f.length()
-			if (f.isDirectory()) m.type = Manager.TypeFile.DIRECTORY else m.type = Manager.TypeFile.FILE
-			 
-			res[i] = m
-		}
+		
+		FilesList res = new FilesList()
+		res.listFiles = listFiles
 		
 		res
 	}

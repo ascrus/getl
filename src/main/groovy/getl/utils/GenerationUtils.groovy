@@ -424,7 +424,7 @@ class GenerationUtils {
 		String result = ""
 		while (result.length() < length) result += ((result.length() > 0)?" ":"") + StringUtils.RandomStr().replace('-', ' ')
 		
-		def l2 = (int)length / 2
+		def l2 = (int)(length / 2)
 		def l = GenerateInt(l2, length)
 		
 		StringUtils.LeftStr(result + "a", l)

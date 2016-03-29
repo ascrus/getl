@@ -23,6 +23,8 @@
 */
 
 package getl.files
+import java.util.Map;
+
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.InheritConstructors
@@ -192,28 +194,24 @@ class FTPManager extends Manager {
 		}
 	}
 	
-	@groovy.transform.CompileStatic
-	@Override
-	@SuppressWarnings("rawtypes")
-	public Map<String, Object>[] listDir(String mask) {
-		FTPFile[] listFiles 
-		try {
-			listFiles = (mask != null)?client.list(mask):client.list()
+	class FTPList extends FileManagerList {
+		public FTPFile[] listFiles
+		
+		@groovy.transform.CompileStatic
+		public Integer size () {
+			listFiles.length
 		}
-		catch (Throwable e) {
-			if (writeErrorsToLog) Logs.Severe("Can not read ftp list")
-			throw e
-		}
-		Map<String, Object>[] res = new HashMap<String, Object>[listFiles.length]
-		for (int i = 0; i < listFiles.length; i++) {
-			FTPFile f = listFiles[i]
-			  
+		
+		@groovy.transform.CompileStatic
+		public Map item (int index) {
+			FTPFile f = listFiles[index]
+
 			Map<String, Object> m = new HashMap<String, Object>()
 			m.filename = f.name
 			m.filedate = f.modifiedDate
 			m.filesize = f.size
 			m.link = f.link
-			
+
 			switch (f.type) {
 				case FTPFile.TYPE_DIRECTORY:
 					m.type = Manager.TypeFile.DIRECTORY
@@ -226,10 +224,30 @@ class FTPManager extends Manager {
 					break
 				default:
 					throw new ExceptionGETL("Unnknown type object ${f.type}")
-			}
-			
-			res[i] = m
+			  }
+		  
+			m
 		}
+		
+		public void clear () {
+			listFiles = []
+		}
+	}
+	
+	@groovy.transform.CompileStatic
+	@Override
+	public FileManagerList listDir(String mask) {
+		FTPFile[] listFiles 
+		try {
+			listFiles = (mask != null)?client.list(mask):client.list()
+		}
+		catch (Throwable e) {
+			if (writeErrorsToLog) Logs.Severe("Can not read ftp list")
+			throw e
+		}
+		
+		FTPList res = new FTPList()
+		res.listFiles = listFiles
 		
 		res
 	}

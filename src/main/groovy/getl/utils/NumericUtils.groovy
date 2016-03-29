@@ -62,7 +62,7 @@ class NumericUtils {
 	 * @return
 	 */
 	public static long Hash(List args) {
-		StringBuffer sb = new StringBuffer()
+		StringBuilder sb = new StringBuilder()
 		args.each {
 			if (it instanceof Date || it instanceof java.sql.Timestamp) {
 				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", it))

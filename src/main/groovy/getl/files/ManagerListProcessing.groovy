@@ -22,39 +22,48 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.deploy
+package getl.files
+
+import getl.utils.*
 
 /**
- * Version manager
- * @author Aleksey Konstantinov
+ * Processing files by files.Manager.buildList method
+ * @author Alexsey Konstantinov
+ *
  */
-class Version {
+abstract class ManagerListProcessing {
 	/**
-	 * GETL version
+	 * Parameters
 	 */
-	public static version = "1.2.02"
+	public final Map params = Collections.synchronizedMap(new HashMap<String, Object>())
 	
 	/**
-	 * GETL version as numeric
+	 * Clone class for use in thread
 	 */
-	public static versionNum = 1.0202
+	@groovy.transform.Synchronized
+	public ManagerListProcessing newProcessing () {
+		ManagerListProcessing res = getClass().newInstance()
+		res.params.putAll(params)
 
-	/**
-	 * Compatibility GETL version
-	 */
-	public static versionNumCompatibility = 1.0200
-	
-	/**
-	 * Valid compatibility version
-	 * @param ver
-	 * @return
-	 */
-	public static boolean IsCompatibility (def ver) { 
-		ver >= versionNumCompatibility && ver <= versionNum 
+		res
 	}
 	
 	/**
-	 * Years development
+	 * Init class for build thread
 	 */
-	public static years = "2014-2016"
+	@groovy.transform.Synchronized
+	public void init () { }
+	
+	/**
+	 * Prepare file and return allow use
+	 * @param file
+	 * @return
+	 */
+	abstract public boolean prepare (Map file)
+	
+	/**
+	 * Done class after build thread
+	 */
+	@groovy.transform.Synchronized
+	public void done () { }
 }

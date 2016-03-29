@@ -25,7 +25,6 @@
 package getl.utils
 
 import getl.exception.ExceptionGETL
-import groovy.transform.Synchronized
 import groovy.util.logging.*
 
 import org.codehaus.groovy.runtime.DateGroovyMethods
@@ -110,7 +109,7 @@ class Logs {
 	 * @param time
 	 * @param message
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	protected static void event (java.util.logging.Level level, String message) {
 		eventers.each { Closure eventer -> eventer(level.toString(), new Date(), message) }
 	}
@@ -263,7 +262,7 @@ class Logs {
 	 * @param level
 	 * @param message
 	 */
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void ToOut(Level level, String message) {
 //		if (errStream != null && level == Level.SEVERE) return
 		if (level == Level.OFF) return
@@ -271,7 +270,7 @@ class Logs {
 		print formatter.format(lr)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Fine (String message) {
 		ToOut(Level.FINE, message)
 		def msg = FormatMessage(message)
@@ -279,7 +278,7 @@ class Logs {
 		event(Level.FINE, message)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Finer (String message) {
 		ToOut(Level.FINER, message)
 		def msg = FormatMessage(message)
@@ -287,7 +286,7 @@ class Logs {
 		event(Level.FINER, message)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Finest (String message) {
 		ToOut(Level.FINEST, message)
 		def msg = FormatMessage(message)
@@ -295,7 +294,7 @@ class Logs {
 		event(Level.FINEST, message)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Info (String message) {
 		ToOut(Level.INFO, message)
 		def msg = FormatMessage(message)
@@ -303,7 +302,7 @@ class Logs {
 		event(Level.INFO, message)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Warning (String message) {
 		ToOut(Level.WARNING, message)
 		def msg = FormatMessage(message)
@@ -311,7 +310,7 @@ class Logs {
 		event(Level.WARNING, message)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Warning (Throwable e) {
 		ToOut(Level.WARNING, e.message)
 		org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
@@ -321,7 +320,7 @@ class Logs {
 		event(Level.WARNING, e.message)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Severe (String message) {
 		ToOut(Level.SEVERE, message)
 		def msg = FormatMessage(message)
@@ -329,7 +328,7 @@ class Logs {
 		event(Level.SEVERE, message)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Exception (Throwable e) {
 		ToOut(Level.SEVERE, e.message)
 		org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
@@ -339,7 +338,7 @@ class Logs {
 		event(Level.SEVERE, e.message)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Exception (Throwable e, String typeObject, String nameObject) {
 		ToOut(Level.SEVERE, e.message)
 		def t = (e.stackTrace.length > 0)?" => " + e.stackTrace[0]:""
@@ -351,17 +350,17 @@ class Logs {
 		
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Entering (String sourceClass, String sourceMethod, Object[] params) {
 		logger.entering(sourceClass, sourceMethod, params)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Exiting (String sourceClass, String sourceMethod, Object result) {
 		logger.exiting(sourceClass, sourceMethod, result)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Write(Level level, String message) {
 		if (level == Level.OFF) return
 		ToOut(level, message)
@@ -370,7 +369,7 @@ class Logs {
 		event(level, message)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Write(String level, String message) {
 		def l = StrToLevel(level)
 		if (l == Level.OFF) return
@@ -380,12 +379,12 @@ class Logs {
 		event(l, message)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static String DumpFolder() {
 		FileUtils.ConvertToUnixPath("${FileUtils.PathFromFile(fileNameHandler)}/dump/${FileUtils.FileName(fileNameHandler)}")
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public static void Dump (Throwable e, String typeObject, String nameObject, def data) {
 		if (fileNameHandler == null) {
 			Severe("Can not save dump, required logFileName")

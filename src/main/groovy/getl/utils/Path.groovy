@@ -608,7 +608,7 @@ class Path {
 				value = DateUtils.FormatDate(format, value)
 				break
 				
-			case Field.Type.DATE:
+			case Field.Type.TIME:
 				def format = v.format?:"HH:mm:ss"
 				value = DateUtils.FormatDate(format, value)
 				break

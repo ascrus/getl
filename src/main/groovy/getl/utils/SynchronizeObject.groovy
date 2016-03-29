@@ -24,84 +24,82 @@
 
 package getl.utils
 
-import groovy.transform.Synchronized
-
 class SynchronizeObject {
 	private long count = 0
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public long getCount () { count }
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public setCount (long value) { count = value }
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public clear  () { count = 0 }
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public long nextCount () { 
 		count++
 		
 		count
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public long prevCount () {
 		count--
 		
 		count
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public void addCount (long value) {
 		count += value
 	}
 	
 	private String text
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public String getText () { text }
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public setText (String value) { text = value }
 	
 	private final List list = []
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public def getList(int index) {
 		list[index]
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public void addToList (int index, def value) {
 		list.add(index, value)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public Boolean addToList (def value) {
 		list.add(value)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public Boolean addAllToList (List list) {
 		list.addAll(list)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public Boolean addAllToList (int index, List list) {
 		list.addAll(index, list)
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public void clearList () {
 		list.clear()
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public Boolean isEmptyList () {
 		list.isEmpty()
 	}
 	
-	@Synchronized
+	@groovy.transform.Synchronized
 	public List getList () { list }
 }
