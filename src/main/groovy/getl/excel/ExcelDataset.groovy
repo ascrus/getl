@@ -2,6 +2,7 @@ package getl.excel
 
 import getl.data.Connection
 import getl.data.Dataset
+import getl.utils.FileUtils
 
 /**
  * Excel Dataset class
@@ -10,6 +11,7 @@ import getl.data.Dataset
 class ExcelDataset extends Dataset {
     ExcelDataset () {
         super()
+        params.header = true
     }
 
     @Override
@@ -45,4 +47,7 @@ class ExcelDataset extends Dataset {
      */
     boolean getHeader() { params.header }
     void setHeader(final boolean value) { params.header = value }
+
+    @Override public String getObjectName() { connection.params.fileName }
+    @Override public String getObjectFullName() { FileUtils.ConvertToDefaultOSPath(connection.params.path + File.separator + objectName) }
 }

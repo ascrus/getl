@@ -5,15 +5,18 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
+import groovy.transform.CompileStatic
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.DateUtil
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.ss.usermodel.Sheet
 import org.apache.poi.ss.usermodel.Workbook
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.codehaus.groovy.runtime.DateGroovyMethods
 
 /**
  * Excel Driver class
@@ -26,24 +29,20 @@ class ExcelDriver extends Driver {
     }
 
     @Override
-    List<Driver.Support> supported() {
-        [Driver.Support.EACHROW, Driver.Support.AUTOLOADSCHEMA]
+    List<Support> supported() {
+        [Support.EACHROW, Support.AUTOLOADSCHEMA]
     }
 
     @Override
-    List<Driver.Operation> operations() {
-        [Driver.Operation.DROP]
+    List<Operation> operations() {
+        [Operation.DROP]
     }
 
     @Override
-    protected List<Object> retrieveObjects(Map params, Closure filter) {
-        return null
-    }
+    protected List<Object> retrieveObjects(Map params, Closure filter) { null }
 
     @Override
-    protected List<Field> fields(Dataset dataset) {
-        return null
-    }
+    protected List<Field> fields(Dataset dataset) { null }
 
     @Override
     protected long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
@@ -58,24 +57,27 @@ class ExcelDriver extends Driver {
 
         Map datasetParams = dataset.params
 
-        def limit = datasetParams.limit ?: 1000000000
         def ln = datasetParams.listName ?: 0
         def header = datasetParams.header ?: false
 
-        int offsetRows = datasetParams.offset?.rows?:0
-        int offsetCells = datasetParams.offset?.cells?:0
+        int offsetRows = datasetParams.offset?.rows ?: 0
+        int offsetCells = datasetParams.offset?.cells ?: 0
 
         long countRec = 0
 
-        Workbook workbook = getWorkbookType(fullPath, dataset.connection.params.extension)
+        if (prepareCode != null) prepareCode([])
+
+        Workbook workbook = getWorkbookType(fullPath, dataset.connection.params.extension as String)
         Sheet sheet
 
-        if (ln instanceof java.lang.String)
-            sheet = workbook.getSheet(ln as String)
+        if (ln instanceof String) sheet = workbook.getSheet(ln as String)
         else {
             sheet = workbook.getSheetAt(ln)
-            Logs.Warning("Parameter listName not found. Using list name: '${workbook.getSheetName(ln)}'")
+            dataset.params.listName = workbook.getSheetName(ln)
+            Logs.Warning("Parameter listName not found. Using list name: '${dataset.params.listName}'")
         }
+
+        def limit = datasetParams.limit ?: sheet.lastRowNum
 
         Iterator rows = sheet.rowIterator()
 
@@ -91,7 +93,7 @@ class ExcelDriver extends Driver {
             if (offsetCells != 0) offsetCells.times { cells.next() }
 
             cells.each { Cell cell ->
-                updater."${dataset.field.get(cell.columnIndex).name}" = getCellValue(cell)
+                updater."${dataset.field.get(cell.columnIndex).name}" = getCellValue(cell, dataset)
             }
 
             code(updater)
@@ -101,21 +103,41 @@ class ExcelDriver extends Driver {
         countRec
     }
 
-    private static getCellValue(final Cell cell) {
-        switch (cell.cellType) {
-            case Cell.CELL_TYPE_NUMERIC:
-                if (DateUtil.isCellDateFormatted(cell)) cell.dateCellValue
-                else !cell.numericCellValue ? 0 : cell.numericCellValue.toBigDecimal()
+    private static getCellValue(final Cell cell, final Dataset dataset) {
+        Field.Type fieldType = dataset.field.get(cell.columnIndex).type
+
+        switch (fieldType) {
+            case Field.Type.BIGINT:
+                cell.numericCellValue.toBigInteger()
                 break
-            case Cell.CELL_TYPE_BOOLEAN:
+            case Field.Type.BOOLEAN:
                 cell.booleanCellValue
                 break
-            default:
+            case Field.Type.DATE:
+                cell.dateCellValue
+                break
+            case Field.Type.DATETIME:
+                cell.dateCellValue
+                break
+            case Field.Type.DOUBLE:
+                cell.dateCellValue
+                break
+            case Field.Type.INTEGER:
+                cell.numericCellValue.toInteger()
+                break
+            case Field.Type.NUMERIC:
+                cell.numericCellValue.toBigDecimal()
+                break
+            case Field.Type.STRING:
                 cell.stringCellValue
+                break
+            default:
+                throw new ExceptionGETL('Default field type not supported.')
         }
     }
 
-    private static def getWorkbookType(final String fileName, final String extension) {
+    @CompileStatic
+    private static getWorkbookType(final String fileName, final String extension) {
         def ext = extension ?: FileUtils.FileExtension(fileName)
         if (!(new File(fileName).exists())) throw new ExceptionGETL("File '$fileName' doesn't exists")
         if (!(ext in ['xls', 'xlsx'])) throw new ExceptionGETL("'$extension' is not available. Please, use 'xls' or 'xlsx'.")

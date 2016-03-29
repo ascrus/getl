@@ -24,7 +24,7 @@ class ExcelDriverTest extends GroovyTestCase {
             counter++
         }
 
-        assertEquals(3, counter)
+        assertEquals(2, counter)
     }
 
     void testLimit() {
@@ -41,7 +41,7 @@ class ExcelDriverTest extends GroovyTestCase {
     }
 
     void testNullHeader() {
-        assertEquals(false, excelDataset.header)
+        assertEquals(true, excelDataset.header)
     }
 
     void testHeaderResults() {
