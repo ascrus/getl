@@ -34,8 +34,8 @@ class ExcelConnectionTest extends GroovyTestCase {
     void testFileExists() {
         String str = GenerationUtils.GenerateString(20)
         String newFileName = fileName + str
-//        shouldFail {
-            ExcelConnection connection = new ExcelConnection(path: path, fileName: newFileName)
-//        }
+        shouldFail {
+            new ExcelDataset(connection: new ExcelConnection(path: path, fileName: newFileName)).rows()
+        }
     }
 }

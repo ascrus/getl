@@ -49,6 +49,7 @@ class ExcelDriver extends Driver {
         String path = dataset.connection.params.path
         String fileName = dataset.connection.params.fileName
         String fullPath = FileUtils.ConvertToDefaultOSPath(path + File.separator + fileName)
+        boolean warnings = params.showWarnings
 
         if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
         if (!path) throw new ExceptionGETL("Required \"path\" parameter with connection")
@@ -60,8 +61,8 @@ class ExcelDriver extends Driver {
         def ln = datasetParams.listName ?: 0
         def header = datasetParams.header ?: false
 
-        int offsetRows = datasetParams.offset?.rows ?: 0
-        int offsetCells = datasetParams.offset?.cells ?: 0
+        Number offsetRows = datasetParams.offset?.rows ?: 0
+        Number offsetCells = datasetParams.offset?.cells ?: 0
 
         long countRec = 0
 
@@ -74,7 +75,7 @@ class ExcelDriver extends Driver {
         else {
             sheet = workbook.getSheetAt(ln)
             dataset.params.listName = workbook.getSheetName(ln)
-            Logs.Warning("Parameter listName not found. Using list name: '${dataset.params.listName}'")
+            if (warnings) Logs.Warning("Parameter listName not found. Using list name: '${dataset.params.listName}'")
         }
 
         def limit = datasetParams.limit ?: sheet.lastRowNum
@@ -104,39 +105,47 @@ class ExcelDriver extends Driver {
     }
 
     private static getCellValue(final Cell cell, final Dataset dataset) {
-        Field.Type fieldType = dataset.field.get(cell.columnIndex).type
+        try{
+            Field.Type fieldType = dataset.field.get(cell.columnIndex).type
 
-        switch (fieldType) {
-            case Field.Type.BIGINT:
-                cell.numericCellValue.toBigInteger()
-                break
-            case Field.Type.BOOLEAN:
-                cell.booleanCellValue
-                break
-            case Field.Type.DATE:
-                cell.dateCellValue
-                break
-            case Field.Type.DATETIME:
-                cell.dateCellValue
-                break
-            case Field.Type.DOUBLE:
-                cell.dateCellValue
-                break
-            case Field.Type.INTEGER:
-                cell.numericCellValue.toInteger()
-                break
-            case Field.Type.NUMERIC:
-                cell.numericCellValue.toBigDecimal()
-                break
-            case Field.Type.STRING:
-                cell.stringCellValue
-                break
-            default:
-                throw new ExceptionGETL('Default field type not supported.')
+            switch (fieldType) {
+                case Field.Type.BIGINT:
+                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue as BigInteger)
+                    else (cell.numericCellValue as BigInteger)
+                    break
+                case Field.Type.BOOLEAN:
+                    cell.booleanCellValue
+                    break
+                case Field.Type.DATE:
+                    cell.dateCellValue
+                    break
+                case Field.Type.DATETIME:
+                    cell.dateCellValue
+                    break
+                case Field.Type.DOUBLE:
+                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue as Double)
+                    else (cell.numericCellValue as Double)
+                    break
+                case Field.Type.INTEGER:
+                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue as Integer)
+                    else (cell.numericCellValue as Integer)
+                    break
+                case Field.Type.NUMERIC:
+                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue as BigDecimal)
+                    else (cell.numericCellValue as BigDecimal)
+                    break
+                case Field.Type.STRING:
+                    cell.stringCellValue
+                    break
+                default:
+                    throw new ExceptionGETL('Default field type not supported.')
+            }
+        } catch (e) {
+            Logs.Warning("Error in ${cell.rowIndex}")
+            Logs.Exception(e)
         }
     }
 
-    @CompileStatic
     private static getWorkbookType(final String fileName, final String extension) {
         def ext = extension ?: FileUtils.FileExtension(fileName)
         if (!(new File(fileName).exists())) throw new ExceptionGETL("File '$fileName' doesn't exists")
