@@ -12,6 +12,7 @@ class ExcelDataset extends Dataset {
     ExcelDataset () {
         super()
         params.header = true
+        params.showWarnings = false
     }
 
     @Override
@@ -47,6 +48,14 @@ class ExcelDataset extends Dataset {
      */
     boolean getHeader() { params.header }
     void setHeader(final boolean value) { params.header = value }
+
+    /**
+     * Warnings from Dataset (e.g. show warning when list not found)
+     * @return
+     */
+
+    boolean getShowWarnings() { params.showWarnings }
+    void setShowWarnings(final boolean value) { params.showWarnings = value}
 
     @Override public String getObjectName() { connection.params.fileName }
     @Override public String getObjectFullName() { FileUtils.ConvertToDefaultOSPath(connection.params.path + File.separator + objectName) }
