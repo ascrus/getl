@@ -122,7 +122,7 @@ public class SQLScripter {
 		// Compile vars
 		p = Pattern.compile('(\\{\\w+\\})')
 		m = p.matcher(script)
-		StringBuilder b = new StringBuilder()
+		StringBuffer b = new StringBuffer()
 		String vn
 		while (m.find()) {
 			vn = m.group()
@@ -139,7 +139,7 @@ public class SQLScripter {
 				valStr = "null"
 			}
 			else if (val instanceof List) {
-				StringBuilder sb = new StringBuilder()
+				StringBuffer sb = new StringBuffer()
 				sb << "\n"
 				val.each {
 					sb << "				"
@@ -238,7 +238,7 @@ public class SQLScripter {
 	private int doFor(List<String> st, int i) {
 		int fe = -1
 		int fc = 1
-		StringBuilder b = new StringBuilder()
+		StringBuffer b = new StringBuffer()
 		for (int fs = i + 1; fs < st.size(); fs++) {
 			String c = st[fs] 
 			if (c.matches("(?is)for(\\s|\\n|\\t)+select(\\s|\\n|\\t).*")) {
@@ -286,7 +286,7 @@ public class SQLScripter {
 	private int doIf(List<String> st, int i) {
 		int fe = -1
 		int fc = 1
-		StringBuilder b = new StringBuilder()
+		StringBuffer b = new StringBuffer()
 		for (int fs = i + 1; fs < st.size(); fs++) {
 			if (st[fs].matches("(?is)if(\\s|\\n|\\t)+.*")) {
 				fc++
@@ -368,7 +368,7 @@ public class SQLScripter {
 		if (sql == null) throw new ExceptionGETL("Required sql")
 		
 		// Delete multi comment
-		StringBuilder b = new StringBuilder()
+		StringBuffer b = new StringBuffer()
 		int cur = 0
 		int start = sql.indexOf("/*")
 		int finish = -1
@@ -391,7 +391,7 @@ public class SQLScripter {
 		p = Pattern.compile("(--.*)")
 		m = p.matcher(sql)
 		
-		b = new StringBuilder()
+		b = new StringBuffer()
 		while (m.find()) {
 			m.appendReplacement(b, "")
 		}
