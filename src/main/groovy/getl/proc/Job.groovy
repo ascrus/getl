@@ -93,9 +93,8 @@ abstract class Job {
 	 * @param args
 	 */
 	public void run (def args) {
-		processConfigArgs(args)
-		
 		Config.ClearConfig()
+		processConfigArgs(args)
 		init()
 		Config.LoadConfig()
 		doRun()
@@ -108,9 +107,8 @@ abstract class Job {
 	 * @param args
 	 */
 	public void run (Class jobClass, String codePage, def args) {
-		processConfigArgs(args)
-		
 		Config.ClearConfig()
+		processConfigArgs(args)
 		init()
 		Config.LoadConfigClass(jobClass, codePage)
 		doRun()
