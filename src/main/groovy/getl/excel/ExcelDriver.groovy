@@ -5,18 +5,16 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
-import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
-import groovy.transform.CompileStatic
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
+import org.apache.poi.openxml4j.opc.OPCPackage
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.ss.usermodel.Cell
-import org.apache.poi.ss.usermodel.DateUtil
 import org.apache.poi.ss.usermodel.Row
 import org.apache.poi.ss.usermodel.Sheet
 import org.apache.poi.ss.usermodel.Workbook
-import org.codehaus.groovy.runtime.DateGroovyMethods
 
 /**
  * Excel Driver class
@@ -83,18 +81,20 @@ class ExcelDriver extends Driver {
         Iterator rows = sheet.rowIterator()
 
         if (header) rows.next()
-        if (offsetRows != 0) offsetRows.times { rows.next() }
+        if (offsetRows != 0) 1..offsetRows.each { rows.next() }
         int additionalRows = limit + offsetRows + (header ? 1 as int : 0 as int)
 
         rows.each { Row row ->
             if (row.rowNum >= additionalRows) return
             Iterator cells = row.cellIterator()
-            Map updater = [:]
+            LinkedHashMap<String, Object> updater = [:]
 
-            if (offsetCells != 0) offsetCells.times { cells.next() }
+            if (offsetCells != 0) 1..offsetCells.each { cells.next() }
 
             cells.each { Cell cell ->
-                updater."${dataset.field.get(cell.columnIndex).name}" = getCellValue(cell, dataset)
+                int columnIndex = cell.columnIndex - offsetCells
+                if (columnIndex >= dataset.field.size()) return
+                updater."${dataset.field.get(columnIndex).name}" = getCellValue(cell, dataset, columnIndex)
             }
 
             code(updater)
@@ -104,14 +104,14 @@ class ExcelDriver extends Driver {
         countRec
     }
 
-    private static getCellValue(final Cell cell, final Dataset dataset) {
+    private static getCellValue(final Cell cell, final Dataset dataset, final int columnIndex) {
         try{
-            Field.Type fieldType = dataset.field.get(cell.columnIndex).type
+            Field.Type fieldType = dataset.field.get(columnIndex).type
 
             switch (fieldType) {
                 case Field.Type.BIGINT:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue as BigInteger)
-                    else (cell.numericCellValue as BigInteger)
+                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue.toBigInteger())
+                    else cell.numericCellValue.toBigInteger()
                     break
                 case Field.Type.BOOLEAN:
                     cell.booleanCellValue
@@ -123,16 +123,16 @@ class ExcelDriver extends Driver {
                     cell.dateCellValue
                     break
                 case Field.Type.DOUBLE:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue as Double)
-                    else (cell.numericCellValue as Double)
+                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue.toDouble())
+                    else cell.numericCellValue
                     break
                 case Field.Type.INTEGER:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue as Integer)
-                    else (cell.numericCellValue as Integer)
+                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue.toInteger())
+                    else cell.numericCellValue.toInteger()
                     break
                 case Field.Type.NUMERIC:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue as BigDecimal)
-                    else (cell.numericCellValue as BigDecimal)
+                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue.toBigDecimal())
+                    else cell.numericCellValue.toBigDecimal()
                     break
                 case Field.Type.STRING:
                     cell.stringCellValue
@@ -141,7 +141,7 @@ class ExcelDriver extends Driver {
                     throw new ExceptionGETL('Default field type not supported.')
             }
         } catch (e) {
-            Logs.Warning("Error in ${cell.rowIndex}")
+            Logs.Warning("Error in ${cell.rowIndex} row")
             Logs.Exception(e)
         }
     }
@@ -153,10 +153,10 @@ class ExcelDriver extends Driver {
 
         switch (ext) {
             case {fileName.endsWith(ext) && ext == 'xlsx'}:
-                new XSSFWorkbook(new FileInputStream(fileName))
+                new XSSFWorkbook(OPCPackage.open(new File(fileName)))
                 break
             case {fileName.endsWith(ext) && ext == 'xls'}:
-                new HSSFWorkbook(new FileInputStream(fileName))
+                new HSSFWorkbook(new NPOIFSFileSystem(new File(fileName)))
                 break
             default:
                 throw new ExceptionGETL("Something went wrong")
