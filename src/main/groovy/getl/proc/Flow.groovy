@@ -42,10 +42,10 @@ class Flow {
 	Flow () {
 		methodParams.register("copy", ["source", "tempSource", "dest", "tempDest", "inheritFields", "tempFields", "map",
 			"source_*", "dest_*", "autoMap", "autoConvert", "autoTran", "clear", "saveErrors", "excludeFields", "mirrorCSV",
-			"bulkLoad", "bulkAsGZIP", "onInit", "onWrite", "onDone", "debug", "writeSynch"])
+			"bulkLoad", "bulkAsGZIP", "bulkEscaped", "onInit", "onWrite", "onDone", "debug", "writeSynch"])
 		
-		methodParams.register("writeTo", ["dest", "dest_*", "autoTran", "tempDest", "tempFields", "bulkLoad", "bulkAsGZIP", "clear", "writeSynch"])
-		methodParams.register("writeAllTo", ["dest", "dest_*", "autoTran", "bulkLoad", "bulkAsGZIP", "writeSynch"])
+		methodParams.register("writeTo", ["dest", "dest_*", "autoTran", "tempDest", "tempFields", "bulkLoad", "bulkAsGZIP", "bulkEscaped", "clear", "writeSynch"])
+		methodParams.register("writeAllTo", ["dest", "dest_*", "autoTran", "bulkLoad", "bulkAsGZIP", "bulkEscaped", "writeSynch"])
 		
 		methodParams.register("process", ["source", "source_*", "tempSource", "saveErrors"])
 	}
@@ -357,7 +357,8 @@ class Flow {
 		
 		boolean isBulkLoad = (params.bulkLoad != null)?params.bulkLoad:false
 		if (isBulkLoad && (isDestTemp || isDestVirtual)) throw new ExceptionGETL("Is not possible to start the process BulkLoad for a given destination dataset")
-		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destinitaion dataset not support bulk load") 
+		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destinitaion dataset not support bulk load")
+		boolean bulkEscaped = (params.bulkEscaped != null)?params.bulkEscaped:false 
 		
 		boolean bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:false
 		
@@ -396,6 +397,7 @@ class Flow {
 			destParams = [:]
 			
 			bulkDS = TFS.dataset()
+			bulkDS.escaped = bulkEscaped
 			if (bulkAsGZIP) {
 				bulkDS.isGzFile = true
 			}
@@ -589,8 +591,8 @@ class Flow {
 		
 		boolean isBulkLoad = (params.bulkLoad != null)?params.bulkLoad:false
 		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destinitaion dataset not support bulk load")
-		
 		boolean bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:false
+		boolean bulkEscaped = (params.bulkEscaped != null)?params.bulkEscaped:false
 		
 		boolean clear = (params.clear != null)?params.clear:false
 		
@@ -604,6 +606,7 @@ class Flow {
 		
 		if (isBulkLoad) {
 			bulkDS = TFS.dataset()
+			bulkDS.escaped = bulkEscaped
 			dest.retrieveFields()
 			bulkDS.field = dest.field
 			
@@ -717,6 +720,7 @@ class Flow {
 		
 		List bulkLoad = (params.bulkLoad != null)?params.bulkLoad:null
 		List bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:null
+		boolean bulkEscaped = (params.bulkEscaped != null)?params.bulkEscaped:false
 		
 		def destAutoTran = [:]
 		def destParams = [:]
@@ -759,7 +763,8 @@ class Flow {
 			if (isBulk) {
 				if (!d.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destination dataset \"${n}\" not support bulk load")
 				d.retrieveFields()
-				Dataset bulkDS = TFS.dataset()
+				TFSDataset bulkDS = TFS.dataset()
+				bulkDS.escaped = bulkEscaped
 				bulkLoadDS."${n}" = bulkDS
 				
 				def bp = destParams."${n}"
