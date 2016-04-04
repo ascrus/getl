@@ -45,6 +45,17 @@ class NumericUtils {
 	}
 	
 	/**
+	 * Valid multiple of integer
+	 * @param value
+	 * @param divider
+	 * @return
+	 */
+	public static Boolean IsMultiple(Long value, Long divider) {
+		if (value == null) return null
+		value.toBigInteger().mod( divider ) == 0
+	}
+	
+	/**
 	 * Round big decimal by precision scale
 	 * @param value
 	 * @param prec
