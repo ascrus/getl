@@ -22,24 +22,24 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.json
-
-import getl.data.FileConnection
+package getl.files
 
 /**
- * JSON connection class
+ * Files connection
  * @author Alexsey Konstantinov
  *
  */
 @groovy.transform.InheritConstructors
-class JSONConnection extends FileConnection {
-	JSONConnection () {
-		super([driver: JSONDriver])
+class FilesConnection extends getl.data.FileConnection {
+	FilesConnection() {
+		super([driver: FilesDriver])
+		
+		if (this.getClass().name == 'getl.files.FileConnection') methodParams.validation("Super", params)
 	}
 	
-	JSONConnection (Map params) {
-		super(params + [driver: JSONDriver])
+	FilesConnection(Map params) {
+		super(params + [driver: FilesDriver])
 		
-		if (this.getClass().name == 'getl.json.JSONConnection') methodParams.validation("Super", params)
+		if (this.getClass().name == 'getl.files.FileConnection') methodParams.validation("Super", params)
 	}
 }

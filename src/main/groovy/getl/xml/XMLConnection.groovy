@@ -25,20 +25,21 @@
 package getl.xml
 
 import getl.data.FileConnection
-import groovy.transform.InheritConstructors
 
 /**
  * XML connection class 
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
+@groovy.transform.InheritConstructors
 class XMLConnection extends FileConnection {
 	XMLConnection () {
-		super(driver: XMLDriver)
+		super([driver: XMLDriver])
 	}
 	
 	XMLConnection (Map params) {
-		super(new HashMap([driver: XMLDriver]) + params)
+		super(params + [driver: XMLDriver])
+		
+		if (this.getClass().name == 'getl.xml.XMLConnection') methodParams.validation("Super", params)
 	}
 }

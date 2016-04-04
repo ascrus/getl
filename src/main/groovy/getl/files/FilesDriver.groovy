@@ -22,24 +22,54 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.json
+package getl.files
 
-import getl.data.FileConnection
+import getl.data.*
+import getl.driver.*
+import getl.driver.Driver.Operation
+import getl.driver.Driver.Support
+import getl.exception.ExceptionGETL
 
 /**
- * JSON connection class
+ * Files driver
  * @author Alexsey Konstantinov
  *
  */
 @groovy.transform.InheritConstructors
-class JSONConnection extends FileConnection {
-	JSONConnection () {
-		super([driver: JSONDriver])
+class FilesDriver extends FileDriver {
+
+	@Override
+	public List<Support> supported() {
+		[]
 	}
-	
-	JSONConnection (Map params) {
-		super(params + [driver: JSONDriver])
-		
-		if (this.getClass().name == 'getl.json.JSONConnection') methodParams.validation("Super", params)
+
+	@Override
+	public List<Operation> operations() {
+		[Driver.Operation.DROP]
+	}
+
+	@Override
+	protected List<Field> fields(Dataset dataset) {
+		throw new ExceptionGETL("Not supported")
+	}
+
+	@Override
+	protected long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		throw new ExceptionGETL("Not supported")
+	}
+
+	@Override
+	protected void openWrite(Dataset dataset, Map params, Closure prepareCode) {
+		throw new ExceptionGETL("Not supported")
+	}
+
+	@Override
+	protected void write(Dataset dataset, Map row) {
+		throw new ExceptionGETL("Not supported")
+	}
+
+	@Override
+	protected void closeWrite(Dataset dataset) {
+		throw new ExceptionGETL("Not supported")
 	}
 }
