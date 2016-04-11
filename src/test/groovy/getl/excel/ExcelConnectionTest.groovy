@@ -6,7 +6,7 @@ import getl.utils.GenerationUtils
  * @author Dmitry Shaldin
  */
 class ExcelConnectionTest extends GroovyTestCase {
-    public static final String path = '/Users/DShaldin/Documents'
+    public static final String path = 'tests/excel'
     public static final String fileName = 'test.xlsx'
 
     void testCheckFileName() {

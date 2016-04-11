@@ -14,5 +14,7 @@
 	<classpathentry kind="lib" path="libs/zip4j-1.3.2.jar"/>
 	<classpathentry kind="lib" path="libs/h2.jar"/>
 	<classpathentry kind="lib" path="libs/jsch-0.1.53x.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="libs/apache_poi-3.14.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
