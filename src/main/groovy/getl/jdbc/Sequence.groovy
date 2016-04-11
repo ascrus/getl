@@ -104,4 +104,9 @@ class Sequence {
 		
 		return (current + offs - 1)
 	}
+	
+	@Override
+	public String toString() {
+		name
+	}
 }

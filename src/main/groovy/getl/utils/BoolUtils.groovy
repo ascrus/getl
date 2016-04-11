@@ -51,4 +51,23 @@ class BoolUtils {
 		}
 		(value.toString() in ['true', '1', 'on'])
 	}
+	
+	/**
+	 * Validation instaceof use class for super class
+	 * @param useClass
+	 * @param superClass
+	 * @return
+	 */
+	public static boolean ClassInstanceOf(Class useClass, Class superClass) {
+		def c = useClass.getSuperclass()
+		int i = 0
+		while ( c.name != 'java.lang.Object' && i < 1000) {
+			if (c == superClass) return true
+			
+			c = c.getSuperclass()
+			i++
+		}
+		
+		false
+	}
 }

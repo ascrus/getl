@@ -647,7 +647,7 @@ class CSVDriver extends FileDriver {
 			}
 		}
 		finally {
-			wp.rows = []
+			wp.rows.clear()
 			wp.current = 0
 		}
 		

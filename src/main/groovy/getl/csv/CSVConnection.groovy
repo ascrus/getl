@@ -25,24 +25,23 @@
 package getl.csv
 
 import getl.csv.CSVDataset.QuoteMode
-import getl.data.Connection;
+import getl.data.Connection
 import getl.data.FileConnection
 import getl.utils.*
-import groovy.transform.InheritConstructors
 
 /**
  * CSV connection class
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
+@groovy.transform.InheritConstructors
 class CSVConnection extends FileConnection {
 	CSVConnection () {
-		super(driver: CSVDriver)
+		super([driver: CSVDriver])
 	}
 	
 	CSVConnection (Map params) {
-		super(new HashMap([driver: CSVDriver]) + params)
+		super(params + [driver: CSVDriver])
 		
 		methodParams.register("Super", ["quoteStr", "fieldDelimiter", "rowDelimiter", "header", "escaped", 
 										"nullAsValue", "quoteMode", "decimalSeparator", "formatDate", "formatTime", 

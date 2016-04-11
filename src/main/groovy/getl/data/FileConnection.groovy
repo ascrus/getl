@@ -26,20 +26,22 @@ package getl.data
 
 import getl.exception.ExceptionGETL
 import getl.driver.FileDriver
-import getl.utils.FileUtils
+import getl.utils.*
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
-import groovy.transform.InheritConstructors
 
 /**
  * File connection class
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
-class FileConnection extends Connection {
+@groovy.transform.InheritConstructors
+abstract class FileConnection extends Connection {
+	
 	FileConnection (Map params) {
 		super(params)
+		if (!BoolUtils.ClassInstanceOf(params.driver, FileDriver)) throw new ExceptionGETL("Requider FileDriver instance class for connection")
+		
 		methodParams.register("Super", ["path", "codePage", "createPath", "isGzFile", "extension", "append", "deleteOnEmpty", "fileSeparator", "bufferSize"])
 	}
 	
