@@ -56,15 +56,15 @@ class ExcelDataset extends Dataset {
      * Offset param
      * @return
      */
-    int getOffset() { params.offset }
+    Map<String, Integer> getOffset() { params.offset }
     void setOffset(final Map<String, Integer> value) { params.offset = value }
 
     /**
      * Limit rows to return
      * @return
      */
-    int getLimit() { params.limit }
-    void setLimit(final int value) { params.limit = value }
+    Integer getLimit() { params.limit }
+    void setLimit(final Integer value) { params.limit = value }
 
     /**
      * Header row
