@@ -903,7 +903,7 @@ sb << """
 		fields.each { Field f ->
 			if ((!(f.name.toLowerCase() in excludeFields)) && f.isKey) kf << f
 		}
-		kf.sort(true) { Field a, Field b -> a.ordKey?:999999 <=> b.ordKey?:999999 }
+		kf.sort(true) { Field a, Field b -> (a.ordKey?:999999) <=> (b.ordKey?:999999) }
 		
 		List<String> res = []
 		kf.each { Field f ->
