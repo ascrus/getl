@@ -1,12 +1,36 @@
+/*
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
+
+ GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
+ transform and load data into programs written in Groovy, or Java, as well as from any software that supports
+ the work with Java classes.
+ 
+ Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License and
+ GNU Lesser General Public License along with this program.
+ If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package getl.excel
 
-import getl.csv.CSVDataset
-import getl.data.Dataset
-import getl.data.Field
+import getl.data.*
 import getl.driver.Driver
+import getl.driver.Driver.Operation
+import getl.driver.Driver.Support
+import getl.csv.CSVDataset
 import getl.exception.ExceptionGETL
-import getl.utils.FileUtils
-import getl.utils.Logs
+import getl.utils.*
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.openxml4j.opc.OPCPackage
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem
@@ -21,26 +45,27 @@ import org.apache.poi.ss.usermodel.Workbook
  * @author Dmitry Shaldin
  *
  */
+@groovy.transform.InheritConstructors
 class ExcelDriver extends Driver {
     ExcelDriver () {
-        methodParams.register("eachRow", [])
+        methodParams.register("eachRow", ["header", "offset", "limit", "showWarnings", "rows", "cells"])
     }
 
     @Override
-    List<Support> supported() {
+    List<Driver.Support> supported() {
         [Support.EACHROW, Support.AUTOLOADSCHEMA]
     }
 
     @Override
-    List<Operation> operations() {
+    List<Driver.Operation> operations() {
         [Operation.DROP]
     }
 
     @Override
-    protected List<Object> retrieveObjects(Map params, Closure filter) { null }
+    protected List<Object> retrieveObjects(Map params, Closure filter) { throw new ExceptionGETL("Not supported") }
 
     @Override
-    protected List<Field> fields(Dataset dataset) { null }
+    protected List<Field> fields(Dataset dataset) { throw new ExceptionGETL("Not supported") }
 
     @Override
     protected long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
@@ -56,17 +81,19 @@ class ExcelDriver extends Driver {
 
         Map datasetParams = dataset.params
 
-        def ln = datasetParams.listName ?: 0
-        def header = datasetParams.header ?: false
+        def ln = datasetParams.listName?:0
+        def header = BoolUtils.IsValue([params.header, datasetParams.header], false)
+		
+		def offset = params.offset?:datasetParams.offset
 
-        Number offsetRows = datasetParams.offset?.rows ?: 0
-        Number offsetCells = datasetParams.offset?.cells ?: 0
+        Number offsetRows = offset?.rows?:0
+        Number offsetCells = offset?.cells?:0
 
         long countRec = 0
 
         if (prepareCode != null) prepareCode([])
 
-        Workbook workbook = getWorkbookType(fullPath, dataset.connection.params.extension as String)
+        Workbook workbook = getWorkbookType(fullPath)
         Sheet sheet
 
         if (ln instanceof String) sheet = workbook.getSheet(ln as String)
@@ -76,13 +103,13 @@ class ExcelDriver extends Driver {
             if (warnings) Logs.Warning("Parameter listName not found. Using list name: '${dataset.params.listName}'")
         }
 
-        def limit = datasetParams.limit ?: sheet.lastRowNum
+        def limit = ListUtils.NotNullValue([params.limit, datasetParams.limit, sheet.lastRowNum])
 
         Iterator rows = sheet.rowIterator()
 
         if (header) rows.next()
         if (offsetRows != 0) 1..offsetRows.each { rows.next() }
-        int additionalRows = limit + offsetRows + (header ? 1 as int : 0 as int)
+        int additionalRows = limit + offsetRows + (header?(1 as int):(0 as int))
 
         rows.each { Row row ->
             if (row.rowNum >= additionalRows) return
@@ -143,13 +170,14 @@ class ExcelDriver extends Driver {
         } catch (e) {
             Logs.Warning("Error in ${cell.rowIndex} row")
             Logs.Exception(e)
+			throw e
         }
     }
 
-    private static getWorkbookType(final String fileName, final String extension) {
-        def ext = extension ?: FileUtils.FileExtension(fileName)
+    private static getWorkbookType(final String fileName) {
+        def ext = FileUtils.FileExtension(fileName)
         if (!(new File(fileName).exists())) throw new ExceptionGETL("File '$fileName' doesn't exists")
-        if (!(ext in ['xls', 'xlsx'])) throw new ExceptionGETL("'$extension' is not available. Please, use 'xls' or 'xlsx'.")
+        if (!(ext in ['xls', 'xlsx'])) throw new ExceptionGETL("'$ext' is not available. Please, use 'xls' or 'xlsx'.")
 
         switch (ext) {
             case {fileName.endsWith(ext) && ext == 'xlsx'}:

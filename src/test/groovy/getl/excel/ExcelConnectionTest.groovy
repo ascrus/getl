@@ -21,16 +21,6 @@ class ExcelConnectionTest extends GroovyTestCase {
         assertEquals(path, excelConnection.path)
     }
 
-    void testExtensions() {
-        def excelConnection
-
-        excelConnection = new ExcelConnection(extension: 'xls')
-        assertEquals('xls', excelConnection.extension)
-
-        excelConnection = new ExcelConnection(extension: 'xlsx')
-        assertEquals('xlsx', excelConnection.extension)
-    }
-
     void testFileExists() {
         String str = GenerationUtils.GenerateString(20)
         String newFileName = fileName + str

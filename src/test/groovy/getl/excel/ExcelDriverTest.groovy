@@ -22,8 +22,9 @@ class ExcelDriverTest extends GroovyTestCase {
 		println "testEachRow ..."
 		
         def counter = 0
-        excelDataset.rows().each {
+        excelDataset.eachRow {
             counter++
+			println it
         }
 
         assertEquals(2, counter)
