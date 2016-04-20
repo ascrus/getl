@@ -33,7 +33,7 @@ import javax.sql.rowset.serial.SerialClob
 class CSVParseClob extends CellProcessorAdaptor {
 	@groovy.transform.CompileStatic
 	@Override
-	public Object execute(final Object value, final CsvContext context) {
+	public <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
 		
 		if (!(value instanceof String)) {

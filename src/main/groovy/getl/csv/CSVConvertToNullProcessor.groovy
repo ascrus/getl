@@ -50,7 +50,7 @@ class CSVConvertToNullProcessor extends CellProcessorAdaptor
 
 	@groovy.transform.CompileStatic
 	@Override
-	public Object execute(Object value, CsvContext context) {
+	public <T> T execute(Object value, CsvContext context) {
 		if (nullValue != null && value != null && value == nullValue) value = null
 		
 		next.execute(value, context)

@@ -32,7 +32,7 @@ import getl.utils.*
 class CSVFmtBlob extends CellProcessorAdaptor {
 	@groovy.transform.CompileStatic
 	@Override
-	public Object execute(final Object value, final CsvContext context) {
+	public <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
 		
 		if (!(value instanceof byte[])) {
