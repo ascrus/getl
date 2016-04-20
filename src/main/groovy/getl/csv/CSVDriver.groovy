@@ -526,7 +526,7 @@ class CSVDriver extends FileDriver {
 		Long splitSize
 		boolean formatOutput = true
 		long batchSize = 1000
-		List<Map> rows = []
+		List<Map> rows = new ArrayList<Map>()
 		long current = 0
 		long batch = 0
 		long fieldDelimiterSize = 0
@@ -594,6 +594,11 @@ class CSVDriver extends FileDriver {
 		}
 	}
 	
+	/**
+	 * Write rows batch to file
+	 * @param dataset
+	 * @param wp
+	 */
 	@groovy.transform.CompileStatic
 	protected void writeRows (Dataset dataset, WriterParams wp) {
 		wp.batch++
