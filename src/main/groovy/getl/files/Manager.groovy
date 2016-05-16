@@ -302,6 +302,8 @@ abstract class Manager {
 			return
 		}
 		
+		if (dir.matches('[.]/.*')) dir = dir.substring(1)
+		
 		def isRoot
 		if (!isWindowsFileSystem) {
 			isRoot = (dir[0] == '/')
@@ -514,6 +516,7 @@ abstract class Manager {
 						countFiles++
 					}
 				}
+				file.clear()
 			}
 			else if (file.type == TypeFile.DIRECTORY && recursive) {
 				countDirs++
@@ -545,8 +548,6 @@ abstract class Manager {
 				
 				if (b) {
 					if (threadCount == null || filelevel != threadLevel) {
-//						Map p = [man: man, dest: dest, path: path, maskFile: maskFile, recursive: recursive, filelevel: filelevel + 1, 
-//									limit: limit, code: code, requiredAnalize: requiredAnalize]
 						man.changeDirectory((String)(file.filename))
 						processList(man, dest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, code)
 						man.changeDirectory('..')

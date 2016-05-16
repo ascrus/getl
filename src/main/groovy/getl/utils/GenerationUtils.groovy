@@ -782,11 +782,12 @@ sb << """
 	 * @param vars
 	 * @return
 	 */
-	public static def EvalGroovyScript(String value, Map vars) {
+	@groovy.transform.CompileStatic
+	public static def EvalGroovyScript(String value, Map<String, Object> vars) {
 		if (value == null) return null
 		
 		Binding bind = new Binding()
-		vars?.each { key, val ->
+		vars?.each { String key, Object val ->
 			bind.setVariable(key, val)
 		}
 		
@@ -803,6 +804,23 @@ sb << """
 		}
 		
 		res
+	}
+	
+	/**
+	 * Evaluate ${variable} in text
+	 * @param value
+	 * @param vars
+	 * @return
+	 */
+	@groovy.transform.CompileStatic
+	public static String EvalText(String value, Map<String, Object> vars) {
+		if (value == null) return null
+		vars.each { String key, Object val ->
+			key = '${' + key + '}'
+			value = value.replace(key, val.toString())
+		}
+		
+		value
 	}
 	
 	/**

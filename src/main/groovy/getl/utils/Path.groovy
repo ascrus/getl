@@ -152,8 +152,8 @@ class Path {
 	 * </ul>
 	 * @return
 	 */
-	private Map vars = [:]
-	public Map getVars () { this.vars }
+	private Map<String, Object> vars = [:]
+	public Map<String, Object> getVars () { this.vars }
 	
 	private Pattern maskPathPattern
 		
@@ -572,10 +572,11 @@ class Path {
 	 * @param formatValue - format value of variable
 	 * @return
 	 */
-	public String generateFileName(Map varValues, boolean formatValue) {
+	@groovy.transform.CompileStatic
+	public String generateFileName(Map<String, Object> varValues, boolean formatValue) {
 		def v = [:]
 		if (formatValue) {
-			vars.each { key, value ->
+			vars.each { String key, Object value ->
 				def val = formatVariable(key, varValues.get(key))
 				v.put(key, val)
 			}
@@ -585,7 +586,7 @@ class Path {
 				v.put(key, varValues.get(key))
 			}
 		}
-		def res = GenerationUtils.EvalGroovyScript("\"\"\"${maskFile}\"\"\"", v)
+		def res = GenerationUtils.EvalText(maskFile, v)
 		
 		res
 	}
