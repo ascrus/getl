@@ -302,7 +302,7 @@ abstract class Manager {
 			return
 		}
 		
-		if (dir.matches('[.]/.*')) dir = dir.substring(1)
+		if (dir.matches('[.]/.*')) dir = dir.substring(2)
 		
 		def isRoot
 		if (!isWindowsFileSystem) {
