@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-	compile 'org.codehaus.groovy:groovy-all:2.4.6'
+	compile 'org.codehaus.groovy:groovy-all:2.4.3'
 	compile 'com.jcraft:jsch:0.1.53'
 	compile 'net.sf.supercsv:super-csv:2.4.0'
 	compile 'com.h2database:h2:1.4.191'
