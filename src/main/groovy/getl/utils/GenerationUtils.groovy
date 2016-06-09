@@ -799,7 +799,9 @@ sb << """
 		}
 		catch (Exception e) {
 			Logs.Severe("Error parse [${StringUtils.CutStr(value, 1000)}]")
-			Logs.Dump(e, 'GenerationUtils', 'EvalGroovyScript', "script: $value\nvars: $vars")
+			StringBuilder sb = new StringBuilder("script:\n$value\nvars:")
+			vars.each { varName, varValue -> sb.append("\n	$varName: ${StringUtils.LeftStr(varValue.toString(), 256)}") }
+			Logs.Dump(e, 'GenerationUtils', 'EvalGroovyScript', sb.toString())
 			throw e
 		}
 		
