@@ -164,11 +164,16 @@ class XMLDriver extends FileDriver {
 	 * @param params
 	 * @return
 	 */
-	private def readData (Dataset dataset, Map params) {
+	public def readData (Dataset dataset, Map params) {
+		XMLDataset xmlDataset = dataset
 		def xml = new XmlParser()
-		def data
+
+		xmlDataset.features.each { String option, Boolean value ->
+			xml.setFeature(option, value)
+		}
 		
-		def reader = getFileReader(dataset, params)
+		def data
+		def reader = getFileReader(xmlDataset, params)
 		try {
 			data = xml.parse(reader)
 		}

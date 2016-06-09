@@ -34,6 +34,22 @@ import getl.data.*
  */
 @InheritConstructors
 class XMLDataset extends StructureFileDataset {
+	XMLDataset () {
+		super()
+		
+		Map<String, Boolean> m = [:]
+		params."features" = m
+	}
+	
+	/**
+	 * Feature parsing options
+	 */
+	public Map getFeatures () { params."features" }
+	public void setFeatures(Map values) { 
+		params."features".clear()
+		params."features".putAll(values)
+	}
+	
 	@Override
 	public void setConnection(Connection value) {
 		assert value == null || value instanceof XMLConnection
