@@ -198,7 +198,10 @@ class Field implements Serializable {
 	 */
 	private Map extended = [:]
 	public Map getExtended () { extended }
-	public void setExtended (Map value) { if (value != null) extended.putAll(value) }
+	public void setExtended (Map value) {
+		extended.clear() 
+		if (value != null) extended.putAll(value) 
+	}
 	
 	/**
 	 * Get value method
