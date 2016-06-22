@@ -77,28 +77,29 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 	 * @throws SuperCsvCellProcessorException
 	 *             if value is null or is not a Date, or if dateFormat is not a valid date format
 	 */
+	@SuppressWarnings("unchecked")
 	public Object execute(final Object value, final CsvContext context) {
-		validateInputNotNull(value, context);
+		validateInputNotNull(value, context)
 		
 		if( !(value instanceof Date) ) {
-			throw new SuperCsvCellProcessorException(Date.class, value, context, this);
+			throw new SuperCsvCellProcessorException(Date.class, value, context, this)
 		}
 		
-		final SimpleDateFormat formatter;
+		final SimpleDateFormat formatter
 		try {
 			if (locale == null) {
-				formatter = new SimpleDateFormat(dateFormat);
+				formatter = new SimpleDateFormat(dateFormat)
 			}
 			else {
-				formatter = new SimpleDateFormat(dateFormat, locale);
+				formatter = new SimpleDateFormat(dateFormat, locale)
 			}
 		}
 		catch(IllegalArgumentException e) {
 			throw new SuperCsvCellProcessorException(String.format("'%s' is not a valid date format", dateFormat),
-				context, this, e);
+				context, this, e)
 		}
 		
-		String result = formatter.format((Date) value);
-		return next.execute(result, context);
+		String result = formatter.format((Date) value)
+		return next.execute(result, context)
 	}
 }
