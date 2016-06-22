@@ -246,4 +246,17 @@ class StringUtils {
 		if (str == null) return null
 		return javax.xml.bind.DatatypeConverter.parseHexBinary(str/*.substring(2)*/);
 	}
+	
+	/**
+	 * Return new locale
+	 * @param locale - Language-Country 
+	 * @return
+	 */
+	public static NewLocale(String locale) {
+		if (locale == null) return null
+		def s = locale.split('-')
+		if (s.length == 1) return new Locale(s[0])
+		
+		new Locale(s[0], s[1])
+	}
 }
