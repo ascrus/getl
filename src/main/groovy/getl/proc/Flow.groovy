@@ -171,7 +171,7 @@ class Flow {
 			// Map field name
 			def mn = dn
 			
-			def convert = (!d.name.toLowerCase() in notConverted) && (autoConvert == null || autoConvert)
+			def convert = (!(d.name.toLowerCase() in notConverted)) && (autoConvert == null || autoConvert)
 			 
 			String mapFormat
 			// Has contains field in mapping
