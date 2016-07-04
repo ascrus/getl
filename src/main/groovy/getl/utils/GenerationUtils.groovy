@@ -520,7 +520,20 @@ class GenerationUtils {
 					result = rowID
 				}
 				else {
-					result = GenerateNumeric(f.length, f.precision)
+					if (f.length != null) {
+						if (f.precision != null) {
+							result = GenerateNumeric(f.length, f.precision)
+						}
+						else {
+							result = GenerateNumeric(f.length, 0)
+						}
+					}
+					else if (f.precision != null) {
+						result = GenerateNumeric(f.precision)
+					}
+					else {
+						result = GenerateNumeric()
+					}
 				}
 				break
 			case getl.data.Field.Type.DOUBLE:
