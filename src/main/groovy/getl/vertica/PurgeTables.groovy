@@ -45,7 +45,7 @@ class PurgeTables extends Job {
 
 	@Override
 	public void process () {
-		def perc = Config.content."purge_percent"?:50
+		def perc = Config.content."purge_percent"?:30
 		List excludeTables = Config.content."exclude"?:[]
 		def excludeWhere = ""
 		
@@ -53,7 +53,7 @@ class PurgeTables extends Job {
 		Logs.Info("Using the $perc coefficient to determine the table to purge")
 		if (!excludeTables.isEmpty()) {
 			Logs.Info("From processing excluded $excludeTables tables")
-			excludeWhere = "WHERE Lower(x.table_name) NOT IN (${ListUtils.QuoteList(excludeTables, "'")*.toLowerCase().join(', ')})"
+			excludeWhere = "WHERE x.table_name NOT IN (${ListUtils.QuoteList(excludeTables, "'")*.toLowerCase().join(', ')})"
 		}
 		
 		cVertica.connected = true

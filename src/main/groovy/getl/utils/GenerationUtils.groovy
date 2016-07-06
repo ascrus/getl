@@ -520,7 +520,20 @@ class GenerationUtils {
 					result = rowID
 				}
 				else {
-					result = GenerateNumeric(f.length, f.precision)
+					if (f.length != null) {
+						if (f.precision != null) {
+							result = GenerateNumeric(f.length, f.precision)
+						}
+						else {
+							result = GenerateNumeric(f.length, 0)
+						}
+					}
+					else if (f.precision != null) {
+						result = GenerateNumeric(f.precision)
+					}
+					else {
+						result = GenerateNumeric()
+					}
 				}
 				break
 			case getl.data.Field.Type.DOUBLE:
@@ -782,11 +795,12 @@ sb << """
 	 * @param vars
 	 * @return
 	 */
-	public static def EvalGroovyScript(String value, Map vars) {
+	@groovy.transform.CompileStatic
+	public static def EvalGroovyScript(String value, Map<String, Object> vars) {
 		if (value == null) return null
 		
 		Binding bind = new Binding()
-		vars?.each { key, val ->
+		vars?.each { String key, Object val ->
 			bind.setVariable(key, val)
 		}
 		
@@ -798,11 +812,30 @@ sb << """
 		}
 		catch (Exception e) {
 			Logs.Severe("Error parse [${StringUtils.CutStr(value, 1000)}]")
-			Logs.Dump(e, 'GenerationUtils', 'EvalGroovyScript', "script: $value\nvars: $vars")
+			StringBuilder sb = new StringBuilder("script:\n$value\nvars:")
+			vars.each { varName, varValue -> sb.append("\n	$varName: ${StringUtils.LeftStr(varValue.toString(), 256)}") }
+			Logs.Dump(e, 'GenerationUtils', 'EvalGroovyScript', sb.toString())
 			throw e
 		}
 		
 		res
+	}
+	
+	/**
+	 * Evaluate ${variable} in text
+	 * @param value
+	 * @param vars
+	 * @return
+	 */
+	@groovy.transform.CompileStatic
+	public static String EvalText(String value, Map<String, Object> vars) {
+		if (value == null) return null
+		vars.each { String key, Object val ->
+			key = '${' + key + '}'
+			value = value.replace(key, val.toString())
+		}
+		
+		value
 	}
 	
 	/**

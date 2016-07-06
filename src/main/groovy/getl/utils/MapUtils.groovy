@@ -339,12 +339,15 @@ class MapUtils {
 		def res = [:]
 		if (args != null) {
 			for (int i = 0; i < la.size(); i++) {
-				def p = la[i] =~ /(?i)(.+)=(.+)/
+				def str = la[i]
+				def le = str.indexOf('=')
+//				def p = la[i] =~ /(?i)(.+)=(.+)/
 				String name
 				String value
-				if (p.matches()) {
-					ArrayList pm = (ArrayList)p[0]
-					name = ((String)pm[1])
+				if (le != -1) {
+//					ArrayList pm = (ArrayList)p[0]
+//					name = ((String)pm[1])
+					name = str.substring(0, le)
 					def c = name.indexOf('.')
 					if (c == -1) {
 						 name = name.toLowerCase()
@@ -352,7 +355,8 @@ class MapUtils {
 					else {
 						name = name.substring(0, c + 1).toLowerCase() + name.substring(c + 1) 
 					}
-					value = pm[2]
+//					value = pm[2]
+					value = str.substring(le + 1)
 				}
 				else {
 					name = la[i]
@@ -365,6 +369,15 @@ class MapUtils {
 				}
 
 				if (name.substring(0, 1) == '-') name = name.substring(1)
+				if (value != null) {
+					value = value.trim()
+					def p = value =~ /"(.+)"/
+					if (p.size() == 1) {
+						List l = (List)p[0]
+						value = l[1]
+					}
+				}
+				
 				SetValue(res, name, value)
 			}
 		}

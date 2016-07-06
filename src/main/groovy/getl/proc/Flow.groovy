@@ -41,7 +41,7 @@ class Flow {
 	
 	Flow () {
 		methodParams.register("copy", ["source", "tempSource", "dest", "tempDest", "inheritFields", "tempFields", "map",
-			"source_*", "dest_*", "autoMap", "autoConvert", "autoTran", "clear", "saveErrors", "excludeFields", "mirrorCSV",
+			"source_*", "dest_*", "autoMap", "autoConvert", "autoTran", "clear", "saveErrors", "excludeFields", "mirrorCSV", "notConverted",
 			"bulkLoad", "bulkAsGZIP", "bulkEscaped", "onInit", "onWrite", "onDone", "debug", "writeSynch"])
 		
 		methodParams.register("writeTo", ["dest", "dest_*", "autoTran", "tempDest", "tempFields", "bulkLoad", "bulkAsGZIP", "bulkEscaped", "clear", "writeSynch"])
@@ -128,7 +128,7 @@ class Flow {
 	 */
 	public String scriptMap
 	
-	protected void generateMap(Dataset source, Dataset dest, Map fieldMap, Boolean autoConvert, List<String> excludeFields, Map result) {
+	protected void generateMap(Dataset source, Dataset dest, Map fieldMap, Boolean autoConvert, List<String> excludeFields, List<String> notConverted, Map result) {
 		def countMethod = new BigDecimal(dest.field.size() / 100).intValue() + 1
 		def curMethod = 0
 
@@ -161,7 +161,7 @@ class Flow {
 				}
 			}
 			
-			if (excludeFields.find { d.name.toLowerCase() == it.toLowerCase() } != null) {
+			if (d.name.toLowerCase() in excludeFields) {
 				sb << "// Exclude field ${d.name}\n\n"
 				return
 			}
@@ -171,7 +171,8 @@ class Flow {
 			// Map field name
 			def mn = dn
 			
-			def convert = (autoConvert == null || autoConvert) 
+			def convert = (!(d.name.toLowerCase() in notConverted)) && (autoConvert == null || autoConvert)
+			 
 			String mapFormat
 			// Has contains field in mapping
 			if (map.containsKey(dn)) {
@@ -273,6 +274,7 @@ class Flow {
 	 * <li>boolean clear				- clearing destination dataset before copy
 	 * <li>boolean saveErrors			- save assert errors to temporary dataset "errorsDataset"
 	 * <li>List<String> excludeFields	- list of fields that do not need to use
+	 * <li>List<String> notConverted	- list of fields that do not need to converted
 	 * <li>String mirrorCSV				- filename  of mirror CSV dataset
 	 * <li>boolean bulkLoad				- load to destinition as bulk load (if supported)
 	 * <li>boolean bulkAsGZIP			- generate bulk CSV file in GZIP format (you need set parameter for destination bulk gzip format) 
@@ -310,6 +312,7 @@ class Flow {
 	 * <li>boolean clear				- clearing destination dataset before copy
 	 * <li>boolean saveErrors			- save assert errors to temporary dataset "errorsDataset"
 	 * <li>List<String> excludeFields	- list of fields that do not need to use
+	 * <li>List<String> notConverted	- list of fields that do not need to converted
 	 * <li>String mirrorCSV				- filename  of mirror CSV dataset
 	 * <li>boolean bulkLoad				- load to destination as bulk load (only is supported)
 	 * <li>boolean bulkAsGZIP			- generate bulk CSV file in GZIP format 
@@ -376,6 +379,7 @@ class Flow {
 		boolean isSaveErrors = (params.saveErrors != null)?params.saveErrors:false
 		
 		List<String> excludeFields = (params.excludeFields != null)?params.excludeFields*.toLowerCase():[]
+		List<String> notConverted = (params.notConverted != null)?params.notConverted*.toLowerCase():[]
 		
 		Closure writeCode = (params.onWrite != null)?params.onWrite:null
 		Closure initCode = (params.onInit != null)?params.onInit:null
@@ -416,7 +420,7 @@ class Flow {
 		def initDest = {
 			List<String> result = []
 			if (autoMap) {
-				generateMap(source, writer, map, autoConvert, excludeFields, generateResult)
+				generateMap(source, writer, map, autoConvert, excludeFields, notConverted, generateResult)
 				auto_map_code = generateResult.code
 				result = generateResult.destFields
 			}

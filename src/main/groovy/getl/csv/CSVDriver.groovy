@@ -255,29 +255,25 @@ class CSVDriver extends FileDriver {
 			else {
 				cp = new FmtBool(v[0], v[1])
 			}
-		} else if (field.type == Field.Type.DATE) {
-			def df = ListUtils.NotNullValue([field.format, formatDate, "yyyy-MM-dd"])
+		} else if (field.type in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME]) {
+			def formatDefault = (field.type == Field.Type.DATE)?'yyyy-MM-dd':((field.type == Field.Type.TIME)?'HH:mm:ss':'yyyy-MM-dd HH:mm:ss')
+			def df = ListUtils.NotNullValue([field.format, formatDate, formatDefault])
+			def locale = field.extended.locale
 			if (!isWrite) {
-				cp = new ParseDate(df, true)
+				if (locale == null) {
+					cp = new ParseDate(df, true)
+				}
+				else {
+					cp = new ParseDate(df, true, StringUtils.NewLocale(locale))
+				}
 			}
 			else {
-				cp = new FmtDate(df)
-			}
-		} else if (field.type == Field.Type.TIME) {
-			def df = ListUtils.NotNullValue([field.format, formatTime, "HH:mm:ss"])
-			if (!isWrite) {
-				cp = new ParseDate(df, true)
-			}
-			else {
-				cp = new FmtDate(df)
-			}
-		} else if (field.type == Field.Type.DATETIME) {
-			def df = ListUtils.NotNullValue([field.format, formatDateTime, "yyyy-MM-dd HH:mm:ss"]) 
-			if (!isWrite) {
-				cp = new ParseDate(df, true)
-			}
-			else {
-				cp = new FmtDate(df)
+				if (locale == null) {
+					cp = new org.supercsv.cellprocessor.FmtDate(df)
+				}
+				else {
+					cp = new CSVFmtDate(df, locale)
+				}
 			}
 		} else if (field.type == Field.Type.BLOB) {
 			if (!isWrite) {

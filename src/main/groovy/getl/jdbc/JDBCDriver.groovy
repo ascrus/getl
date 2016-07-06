@@ -1063,7 +1063,7 @@ $sql
 		if (command == null || command.trim().length() == 0) return result
 		
 		if (params.queryParams != null) {
-			command = StringUtils.SetValueString(command, params.queryParams) //StringUtils.ProcessParams(command, params.queryParams)
+			command = StringUtils.SetValueString(command, params.queryParams)
 		}
 		
 		JDBCConnection con = connection

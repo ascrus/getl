@@ -45,12 +45,19 @@ class ProcessWorkload extends Job {
 
 	@Override
 	public void process() {
+		Logs.Info("### Analyze vertica workload utilite")
+		
+		if (Config.content."interval" != null) {
+			qWorkload.query = "SELECT ANALYZE_WORKLOAD('', ${Config.content."interval"})"
+			Logs.Info("Use workload interval \"${Config.content."interval"}\"")
+		} 
+
 		List excludeTables = Config.content."exclude"?:[]
 		def excludeWhere = ""
 		
-		Logs.Info("### Analyze vertica workload utilite")
+		
 		if (!excludeTables.isEmpty()) {
-			Logs.Info("From processing excluded $excludeTables schemas")
+			Logs.Info("Excluded $excludeTables schemas")
 			excludeWhere = "AND Lower(table_schema) NOT IN (${ListUtils.QuoteList(excludeTables, "'")*.toLowerCase().join(', ')})"
 		}
 		
