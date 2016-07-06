@@ -26,6 +26,7 @@ package getl.db2
 
 import java.sql.PreparedStatement
 import getl.data.Dataset
+import getl.data.Field;
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
 import groovy.transform.InheritConstructors
@@ -41,7 +42,10 @@ class DB2Driver extends JDBCDriver {
 	DB2Driver () {
 		super()
 		
-		caseObjectName = "UPPER"
+		caseObjectName = 'UPPER'
+		connectionParamBegin = ':'
+		connectionParamJoin = ';'
+		connectionParamFinish = ';'
 	}
 	
 	@Override
@@ -61,5 +65,19 @@ class DB2Driver extends JDBCDriver {
 	@Override
 	public String defaultConnectURL () {
 		"jdbc:db2://{host}/{database}"
+	}
+	
+	@Override
+	protected void prepareField (Field field) {
+		super.prepareField(field)
+		
+		if (field.typeName?.matches('(?i)CLOB')) {
+			field.type= Field.Type.STRING
+			field.getMethod = "(({field} != null)?{field}.getSubString(1, (int){field}.length()):null)"
+		}
+		else if (field.typeName?.matches('(?i)XML')) {
+			field.type= Field.Type.STRING
+			field.getMethod = "(({field} != null)?{field}.getString():null)"
+		} 
 	}
 }

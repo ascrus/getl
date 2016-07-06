@@ -277,6 +277,7 @@ class JDBCDriver extends Driver {
 	
 	protected String connectionParamBegin = "?"
 	protected String connectionParamJoin = "&"
+	protected String connectionParamFinish = null
 	
 	/**
 	 * Build jdbc connection url 
@@ -306,7 +307,7 @@ class JDBCDriver extends Driver {
 			prop.each { k, v ->
 				listParams << "${k}=${v}"
 			}
-			conParams = connectionParamBegin + listParams.join(connectionParamJoin)
+			conParams = connectionParamBegin + listParams.join(connectionParamJoin) + (connectionParamFinish?:'')
 		}
 		
 		conParams
