@@ -71,17 +71,20 @@ build.dependsOn sourcesJar
 build.dependsOn javadocJar
 
 uploadArchives {
+	def login = project.properties."ossrhUsername"
+	def password = project.properties."ossrhPassword"
+	
 	repositories.mavenDeployer {
 		beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 		
 		configuration = configurations.deployerJars
 		
 		repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2/') {
-			authentication(userName: ossrhUsername, password: ossrhPassword)
+			authentication(userName: login, password: password)
 		}
 		
 		snapshotRepository(url: 'https://oss.sonatype.org/content/repositories/snapshots/') {
-			authentication(userName: ossrhPassword, password: ossrhPassword)
+			authentication(userName: login, password: password)
 		  }
 		
 		pom.project {
