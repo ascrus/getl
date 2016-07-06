@@ -1063,6 +1063,12 @@ sb << """
 if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = new Date(_getl_temp_var_${i}.time)  
 """
 			}
+			else if (f.type == getl.data.Field.Type.BLOB) {
+				i++
+				sb << """def _getl_temp_var_$i = $methodGetValue
+					if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = _getl_temp_var_${i}.getBytes((long)1, (int)(_getl_temp_var_${i}.length()))
+				"""
+			}
 			else {
 				sb << "outRow.'${f.name.toLowerCase()}' = $methodGetValue\n"
 			}
