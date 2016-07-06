@@ -124,7 +124,8 @@ class OracleDriver extends JDBCDriver {
 		
 		if (field.typeName != null) {
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)]") || 
-					field.typeName.matches("(?i)TIMESTAMP")) {
+					field.typeName.matches("(?i)TIMESTAMP") ||
+					field.typeName.matches("(?i)DATE")) {
 				field.type = Field.Type.DATETIME
 				field.getMethod = "(({field} != null)?new java.sql.Timestamp({field}.timestampValue().getTime()):null)"
 				return
