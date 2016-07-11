@@ -149,6 +149,11 @@ class OracleDriver extends JDBCDriver {
 				return
 			}
 			
+			if (field.typeName.matches("(?i)NVARCHAR2")) {
+				field.type = Field.Type.STRING
+				return
+			}
+			
 			if (field.typeName.matches("(?i)LONG")) {
 				field.type = Field.Type.STRING
 				return
