@@ -385,7 +385,10 @@ class JDBCDriver extends Driver {
 
 			sql.getConnection().setAutoCommit(con.autoCommit)
 			sql.getConnection().setTransactionIsolation(java.sql.Connection.TRANSACTION_READ_COMMITTED)
-			if (con.fetchSize != null) sql.withStatement{ stmt -> stmt.fetchSize = con.fetchSize } 
+			sql.withStatement{ stmt -> 
+				if (con.fetchSize != null) stmt.fetchSize = con.fetchSize
+				if (con.queryTimeout != null) stmt.queryTimeout = con.queryTimeout
+			} 
 			if (con.sessionProperty != null) sql.properties.putAll(con.sessionProperty)
 		}
 		

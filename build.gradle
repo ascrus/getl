@@ -20,10 +20,10 @@ repositories {
 }
 
 dependencies {
-	compile 'org.codehaus.groovy:groovy-all:2.4.3'
+	compile 'org.codehaus.groovy:groovy-all:2.4.7'
 	compile 'com.jcraft:jsch:0.1.53'
 	compile 'net.sf.supercsv:super-csv:2.4.0'
-	compile 'com.h2database:h2:1.4.191'
+	compile 'com.h2database:h2:1.4.192'
 	compile ('org.apache.poi:poi-ooxml:3.14') {
 		exclude group: 'stax'
 	}
@@ -37,6 +37,10 @@ dependencies {
 
 	deployerJars "org.apache.maven.wagon:wagon-http:2.2"
 	testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+tasks.withType(GroovyCompile) {
+  groovyOptions.optimizationOptions.indy = false
 }
 
 task copyDeps(type: Copy) {
