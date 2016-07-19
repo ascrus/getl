@@ -810,7 +810,7 @@ WHERE
 			}
 			
 			def sqlCopyFiles = """
-SELECT ${fileList.sqlFields(['FILEINSTORY']).join(', ')}, ${(story == null)?'FALSE AS FILEINSTORY':'(story.ID IS NULL) AS FILEINSTORY'}, files.ID AS FILE_ID, story.ID AS STORY_ID
+SELECT ${fileList.sqlFields(['FILEINSTORY']).join(', ')}, ${(story == null)?'FALSE AS FILEINSTORY':'(story.ID IS NULL) AS FILEINSTORY'}
 FROM ${newFiles.fullNameDataset()} files
 """
 			if (story != null) {
