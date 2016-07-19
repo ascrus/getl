@@ -48,9 +48,9 @@ abstract class Manager {
 	protected File localDirFile = new File(TFS.storage.path)
 	
 	Manager () {
-		methodParams.register("super", ["rootPath", "localDirectory", "scriptHistoryFile", "noopTime", "buildListThread", "sayNoop", "sqlHistoryFile"])
-		methodParams.register("buildList", ["path", "maskFile", "recursive", "story", "takePathInStory", "limitDirs", "threadLevel"])
-		methodParams.register("downloadFiles", ["deleteLoadedFile", "story", "ignoreError", "folders", "filter", "order"])
+		methodParams.register('super', ['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop', 'sqlHistoryFile'])
+		methodParams.register('buildList', ['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel', 'ignoreExistInStory'])
+		methodParams.register('downloadFiles', ['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
 		
 		initMethods()
 	}
@@ -634,6 +634,7 @@ abstract class Manager {
 	 * <li>String maskFile - mask processed files
 	 * <li>TableDataset story - story table on file history
 	 * <li>Boolean recursive - find as recursive
+	 * <li>Boolean ignoreExistInStory - ignore already loaded file by story (default true)
 	 * </ul>
 	 * @param params - parameters
 	 * @param code - processing code for file attributes as boolean code (Map file)
@@ -645,8 +646,9 @@ abstract class Manager {
 		String maskFile = lparams.maskFile?:null
 		Path path = lparams.path?:(new Path(mask: maskFile?:"*.*"))
 		boolean requiredAnalize = !(path.vars.isEmpty())
-		boolean recursive = (lparams.recursive != null)?lparams.recursive:false
-		boolean takePathInStory =  (lparams.takePathInStory != null)?lparams.takePathInStory:true
+		boolean recursive = BoolUtils.IsValue(lparams."recursive", false)
+		boolean takePathInStory =  BoolUtils.IsValue(lparams."takePathInStory", true)
+		boolean ignoreExistInStory = BoolUtils.IsValue(lparams."ignoreExistInStory", true)
 		
 		Integer limit = lparams."limitDirs"
 		if (limit != null && limit <= 0) throw new ExceptionGETL("limitDirs parameter must be great zero")
@@ -679,6 +681,7 @@ abstract class Manager {
 		
 		TableDataset newFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
 		newFiles.field = [new Field(name: 'ID', type: 'INTEGER', isNull: false, isAutoincrement: true)] + fileList.field
+		newFiles.removeField('FILEINSTORY')
 		newFiles.clearKeys()
 		
 		newFiles.drop(ifExists: true)
@@ -807,13 +810,12 @@ WHERE
 			}
 			
 			def sqlCopyFiles = """
-SELECT ${fileList.sqlFields().join(', ')}
-FROM ${newFiles.fullNameDataset()}
+SELECT ${fileList.sqlFields(['FILEINSTORY']).join(', ')}, ${(story == null)?'FALSE AS FILEINSTORY':'(story.ID IS NULL) AS FILEINSTORY'}, files.ID AS FILE_ID, story.ID AS STORY_ID
+FROM ${newFiles.fullNameDataset()} files
 """
 			if (story != null) {
-				sqlCopyFiles += """WHERE ID IN (SELECT ID FROM ${useFiles.fullNameDataset()})"""
+				sqlCopyFiles += "${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID"
 			}
-			
 			def QueryDataset processFiles = new QueryDataset(connection: fileList.connection, query: sqlCopyFiles)
 			countFileListSync.setCount(new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 1000))
 		}
@@ -1046,6 +1048,7 @@ WHERE
 		dataset.field << new Field(name: "FILESIZE", type: "BIGINT", isNull: false)
 		dataset.field << new Field(name: "FILETYPE", length: 20, isNull: false)
 		dataset.field << new Field(name: "LOCALFILENAME", length: 250, isNull: false)
+		dataset.field << new Field(name: "FILEINSTORY", type: "BOOLEAN", isNull: false, defaultValue: false)
 	}
 	
 	public static void AddFieldListToDS(Dataset dataset) {

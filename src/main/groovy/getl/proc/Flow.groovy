@@ -315,7 +315,8 @@ class Flow {
 	 * <li>List<String> notConverted	- list of fields that do not need to converted
 	 * <li>String mirrorCSV				- filename  of mirror CSV dataset
 	 * <li>boolean bulkLoad				- load to destination as bulk load (only is supported)
-	 * <li>boolean bulkAsGZIP			- generate bulk CSV file in GZIP format 
+	 * <li>boolean bulkEscaped			- convert bulk file to escaped format
+	 * <li>boolean bulkAsGZIP			- compress bulk file from GZIP algorithm
 	 * <li>Closure onInit()				- initialization code on start process copying
 	 * <li>Closure onWrite(inRow, outRow)	- code executed before writing to destination dataset
 	 * <li>Closure onDone()				- code to complete process copying
@@ -565,7 +566,8 @@ class Flow {
 	 * <li>String tempDest				- name temporary dataset for dest use
 	 * <li>List<Field> tempFields		- list of field from destination dataset
 	 * <li>boolean bulkLoad				- load to destination as bulk load (only is supported)
-	 * <li>boolean bulkAsGZIP			- generate bulk CSV file in GZIP format
+	 * <li>boolean bulkEscaped			- convert bulk file to escaped format
+	 * <li>boolean bulkAsGZIP			- compress bulk file from GZIP algorithm	 * 
 	 * </ul>
 	 *
 	 * @param params	- parameters
@@ -702,8 +704,8 @@ class Flow {
 	 * <li>boolean writeSynch			- write with synchronize main thread
 	 * <li>boolean autoTran				- auto starting and finishing transaction for copy process
 	 * <li>List bulkLoad				- list of destination dataset must load as bulk load (only is supported)
-	 * <li>List bulkAsGZIP				- list of destination dataset must generate bulk CSV file in GZIP format
-	 * </ul>
+	 * <li>boolean bulkEscaped			- convert bulk file to escaped format
+	 * <li>boolean bulkAsGZIP			- compress bulk file from GZIP algorithm	 * </ul>
 	 *
 	 * @param params	- parameters
 	 * @param code		- user code generation rows
