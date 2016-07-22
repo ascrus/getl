@@ -36,17 +36,19 @@ class CSVFmtClob extends CellProcessorAdaptor {
 	public <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
 		
-		if (!(value instanceof Clob) && !(value instanceof String)) {
-			throw new SuperCsvCellProcessorException((byte[]).class, value, context, this)
-		}
-
 		String result
-		if (value instanceof Clob) {
+		if (value instanceof java.lang.String) {
+			result = value
+		}
+		else if (value instanceof GString) {
+			result = value.toString()
+		}
+		else if (value instanceof Clob) {
 			Clob text = (Clob)value
 			result = (text.getSubString(1, (int)text.length()))
 		}
 		else {
-			result = value
+			throw new SuperCsvCellProcessorException((String).class, value, context, this)
 		}
 		
 		return next.execute(result, context)

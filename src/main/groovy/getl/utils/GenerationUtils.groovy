@@ -1047,9 +1047,9 @@ sb << """
 	 * @param fields
 	 * @return
 	 */
-	public static Map GenerateRowCopy(List<Field> fields) {
+	public static Map GenerateRowCopy(JDBCDriver driver, List<Field> fields) {
 		StringBuilder sb = new StringBuilder()
-		sb << "{ inRow, Map outRow, java.sql.Connection connection ->\n"
+		sb << "{ java.sql.Connection connection, inRow, Map outRow ->\n"
 		def i = 0
 		fields.each { Field f ->
 			String methodGetValue = ((f.getMethod?:"{field}").replace("{field}", "inRow.'${f.name}'"))
@@ -1063,11 +1063,17 @@ sb << """
 if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = new Date(_getl_temp_var_${i}.time)  
 """
 			}
-			else if (f.type == getl.data.Field.Type.BLOB) {
+			else if (f.type == getl.data.Field.Type.BLOB && driver.blobReadAsObject()) {
 				i++
 				sb << """def _getl_temp_var_$i = $methodGetValue
-					if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = _getl_temp_var_${i}.getBytes((long)1, (int)(_getl_temp_var_${i}.length()))
-				"""
+if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = _getl_temp_var_${i}.getBytes((long)1, (int)(_getl_temp_var_${i}.length()))
+"""
+			}
+			else if (f.type == getl.data.Field.Type.TEXT) {
+			 i++
+			 sb << """def _getl_temp_var_$i = $methodGetValue
+if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = _getl_temp_var_${i}.getSubString((long)1, (int)(_getl_temp_var_${i}.length()))
+			 """
 			}
 			else {
 				sb << "outRow.'${f.name.toLowerCase()}' = $methodGetValue\n"
@@ -1097,57 +1103,58 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 		result
 	}
 	
-	public static String GenerateSetParam(int paramNum, int fieldType, String value) {
+	public static String GenerateSetParam(JDBCDriver driver, int paramNum, int fieldType, String value) {
 		String res
+		Map types = driver.javaTypes()
 		switch (fieldType) {
-			case java.sql.Types.BIGINT:
-				res = "if ($value != null) stat.setLong($paramNum, $value) else stat.setNull($paramNum, java.sql.Types.BIGINT)"
+			case types.BIGINT:
+				res = "if ($value != null) _getl_stat.setLong($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.BIGINT)"
 				break
 				 
-			case java.sql.Types.INTEGER: case java.sql.Types.SMALLINT: case java.sql.Types.TINYINT:
-				res = "if ($value != null) stat.setInt($paramNum, $value) else stat.setNull($paramNum, java.sql.Types.INTEGER)"
+			case types.INTEGER:
+				res = "if ($value != null) _getl_stat.setInt($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.INTEGER)"
 				break
 			
-			case java.sql.Types.CHAR: case java.sql.Types.NCHAR:
-			case java.sql.Types.LONGVARCHAR: case java.sql.Types.LONGNVARCHAR:
-			case java.sql.Types.VARCHAR: case java.sql.Types.NVARCHAR:
-				res = "if ($value != null) stat.setString($paramNum, $value) else stat.setNull($paramNum, java.sql.Types.VARCHAR)"
+			case types.STRING:
+				res = "if ($value != null) _getl_stat.setString($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
 				break
 			
-			case java.sql.Types.BOOLEAN: case groovy.sql.Sql.BIT:
-				res = "if ($value != null) stat.setBoolean($paramNum, $value) else stat.setNull($paramNum, java.sql.Types.BOOLEAN)"
+			case types.BOOLEAN:
+				res = "if ($value != null) _getl_stat.setBoolean($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.BOOLEAN)"
 				break
 				
-			case java.sql.Types.DOUBLE: case java.sql.Types.FLOAT: case java.sql.Types.REAL:
-				res = "if ($value != null) stat.setDouble($paramNum, $value) else stat.setNull($paramNum, java.sql.Types.DOUBLE)"
+			case types.DOUBLE:
+				res = "if ($value != null) _getl_stat.setDouble($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.DOUBLE)"
 				break
 				
-			case java.sql.Types.DECIMAL: case java.sql.Types.NUMERIC:
-				res = "if ($value != null) stat.setBigDecimal($paramNum, $value) else stat.setNull($paramNum, java.sql.Types.DECIMAL)"
+			case types.NUMERIC:
+				res = "if ($value != null) _getl_stat.setBigDecimal($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.DECIMAL)"
 				break
 				
-			case java.sql.Types.BLOB: case java.sql.Types.LONGVARBINARY: case java.sql.Types.VARBINARY:
-				res = "if ($value != null) stat.setBlob($paramNum, new javax.sql.rowset.serial.SerialBlob($value)) else stat.setNull($paramNum, java.sql.Types.BLOB)"
+			case types.BLOB:
+				def bc = "def blobWrite_$paramNum = ${driver.blobClosureWrite()}"
+				res = "$bc\nif ($value != null) _getl_stat.setBlob($paramNum, blobWrite_$paramNum($value)) else _getl_stat.setNull($paramNum, java.sql.Types.BLOB)"
 				break
 				
-			case java.sql.Types.CLOB: case java.sql.Types.NCLOB:
-				res = "if ($value != null) stat.setClob($paramNum, $value) else stat.setNull($paramNum, java.sql.Types.CLOB)"
+			case types.TEXT:
+				def bc = "def clobWrite_$paramNum = ${driver.clobClosureWrite()}"
+				res = "$bc\nif ($value != null) _getl_stat.setClob($paramNum, clobWrite_$paramNum($value)) else _getl_stat.setNull($paramNum, java.sql.Types.CLOB)"
 				break
 				
-			case java.sql.Types.DATE:
-				res = "if ($value != null) stat.setDate($paramNum, new java.sql.Date(${value}.getTime())) else stat.setNull($paramNum, java.sql.Types.DATE)"
+			case types.DATE:
+				res = "if ($value != null) _getl_stat.setDate($paramNum, new java.sql.Date(${value}.getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.DATE)"
 				break
 				
-			case java.sql.Types.TIME:
-				res = "if ($value != null) stat.setTime($paramNum, new java.sql.Time(${value}.getTime())) else stat.setNull($paramNum, java.sql.Types.TIME)"
+			case types.TIME:
+				res = "if ($value != null) _getl_stat.setTime($paramNum, new java.sql.Time(${value}.getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIME)"
 				break
 				
-			case java.sql.Types.TIMESTAMP:
-				res = "if ($value != null) stat.setTimestamp($paramNum, new java.sql.Timestamp(${value}.getTime())) else stat.setNull($paramNum, java.sql.Types.TIMESTAMP)"
+			case types.TIMESTAMP:
+				res = "if ($value != null) _getl_stat.setTimestamp($paramNum, new java.sql.Timestamp(${value}.getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP)"
 				break
 				
 			default:
-				res = "if ($value != null) stat.setObject($paramNum, $value) else stat.setNull($paramNum, java.sql.Types.OBJECT)"
+				res = "if ($value != null) _getl_stat.setObject($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.OBJECT)"
 		}
 		
 		res

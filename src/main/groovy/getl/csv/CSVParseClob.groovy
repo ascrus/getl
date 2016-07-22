@@ -40,8 +40,8 @@ class CSVParseClob extends CellProcessorAdaptor {
 			throw new SuperCsvCellProcessorException(String.class, value, context, this)
 		}
 
-		def result = new SerialClob(((String)value).chars)
-		return next.execute(result, context)
+//		def result = new SerialClob(((String)value).chars)
+		return next.execute(value, context)
 	}
 
 }

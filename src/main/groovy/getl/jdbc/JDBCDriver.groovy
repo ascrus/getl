@@ -81,6 +81,43 @@ class JDBCDriver extends Driver {
 	}
 	
 	/**
+	 * Class name for generate write data to blob field
+	 * @return
+	 */
+	public String blobClosureWrite() { '{ byte[] value -> new javax.sql.rowset.serial.SerialBlob(value) }' }
+	
+	/**
+	 * Blob field return value as Blob interface
+	 * @return
+	 */
+	public boolean blobReadAsObject() { true }
+	
+	/**
+	 * Class name for generate write data to clob field
+	 * @return
+	 */
+	public String clobClosureWrite() { '{ String value -> new javax.sql.rowset.serial.SerialClob(value.toCharArray()) }' }
+	
+	/**
+	 * Java field type association
+	 */
+	public Map javaTypes() {
+		[
+			BIGINT: [java.sql.Types.BIGINT],
+			INTEGER: [java.sql.Types.INTEGER, java.sql.Types.SMALLINT, java.sql.Types.TINYINT],
+			STRING: [java.sql.Types.CHAR, java.sql.Types.NCHAR, java.sql.Types.LONGVARCHAR, java.sql.Types.LONGNVARCHAR, java.sql.Types.VARCHAR, java.sql.Types.NVARCHAR],
+			BOOLEAN: [java.sql.Types.BOOLEAN, groovy.sql.Sql.BIT],
+			DOUBLE: [java.sql.Types.DOUBLE, java.sql.Types.FLOAT, java.sql.Types.REAL],
+			NUMERIC: [java.sql.Types.DECIMAL, java.sql.Types.NUMERIC],
+			BLOB: [java.sql.Types.BLOB, java.sql.Types.LONGVARBINARY, java.sql.Types.VARBINARY, java.sql.Types.BINARY],
+			TEXT: [java.sql.Types.CLOB, java.sql.Types.NCLOB, java.sql.Types.LONGNVARCHAR, java.sql.Types.LONGVARCHAR],
+			DATE: [java.sql.Types.DATE],
+			TIME: [java.sql.Types.TIME/*, java.sql.Types.TIME_WITH_TIMEZONE*/],
+			TIMESTAMP: [java.sql.Types.TIMESTAMP/*, java.sql.Types.TIMESTAMP_WITH_TIMEZONE*/]
+		]
+	}
+	
+	/**
 	 * Default connection url
 	 * @return
 	 */
@@ -206,21 +243,23 @@ class JDBCDriver extends Driver {
 	/**
 	 * SQL type mapper
 	 */
-	protected final Map sqlType = [
-							"STRING": [name: "varchar", useLength: sqlTypeUse.ALWAYS], 
-							"INTEGER": [name: "int"], 
-							"BIGINT": [name: "bigint"], 
-							"NUMERIC": [name: "decimal", useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.SOMETIMES], 
-							"DOUBLE": [name: "double"], 
-							"BOOLEAN": [name: "boolean"], 
-							"DATE": [name: "date"],
-							"TIME": [name: "time"], 
-							"DATETIME": [name: "timestamp"], 
-							"BLOB": [name: "blob", useLength: sqlTypeUse.ALWAYS, defaultLength: 65535], 
-							"TEXT": [name: "clob", useLength: sqlTypeUse.ALWAYS, defaultLength: 65535], 
-							"OBJECT": [name: "object"]
-						]
-
+	public Map getSqlType () {
+		[
+			"STRING": [name: "varchar", useLength: sqlTypeUse.ALWAYS], 
+			"INTEGER": [name: "int"], 
+			"BIGINT": [name: "bigint"], 
+			"NUMERIC": [name: "decimal", useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.SOMETIMES], 
+			"DOUBLE": [name: "double"], 
+			"BOOLEAN": [name: "boolean"], 
+			"DATE": [name: "date"],
+			"TIME": [name: "time"], 
+			"DATETIME": [name: "timestamp"], 
+			"BLOB": [name: "blob", useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535], 
+			"TEXT": [name: "clob", useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535], 
+			"OBJECT": [name: "object"]
+		]
+	}
+	
 	/**
 	 * Convert field type to SQL data type
 	 * @param type
@@ -963,7 +1002,7 @@ ${extend}'''
 				}
 			}
 			if (fields.isEmpty()) throw new ExceptionGETL("Required fields from read dataset")
-			rowCopy = GenerationUtils.GenerateRowCopy(fields)
+			rowCopy = GenerationUtils.GenerateRowCopy(this, fields)
 			copyToMap = (Closure)(rowCopy.code)
 		}
 		int offs = (params.start != null)?(int)(params.start):0
@@ -995,7 +1034,7 @@ ${extend}'''
 			if (sqlParams == null) {
 				sqlConnect.eachRow(sql, getFields, offs, max) { row ->
 					Map outRow = [:]
-					copyToMap(row, outRow, con)
+					copyToMap(con, row, outRow)
 					
 					if (filter != null && !filter(outRow)) return
 					
@@ -1126,6 +1165,7 @@ $sql
 		boolean error = false
 		File saveOut
 		String statement
+		java.sql.Connection con
 	}
 	
 	private Closure generateSetStatement (String operation, List<Field> procFields, List updateField, WriterParams wp) {
@@ -1163,10 +1203,10 @@ $sql
 		def curMethod = 0
 		
 		StringBuilder sb = new StringBuilder()
-		sb << "{ java.sql.PreparedStatement stat, Map row ->\n"
+		sb << "{ getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection _getl_con, java.sql.PreparedStatement _getl_stat, Map _getl_row ->\n"
 		
 		if (countMethod > 1) {
-			(1..countMethod).each { sb << "	method_${it}(stat, row)\n" }
+			(1..countMethod).each { sb << "	method_${it}(_getl_driver, _getl_con, _getl_stat, _getl_row)\n" }
 			sb << "}\n"
 		}
 		
@@ -1181,19 +1221,20 @@ $sql
 				if (fieldMethod != curMethod) {
 					if (curMethod > 0) sb << "}\n"
 					curMethod = fieldMethod
-					sb << "\nvoid method_${curMethod} (java.sql.PreparedStatement stat, Map<String, Object> row) {\n"
+					sb << "\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
 				}
 			}
 			
 			def fn = f.name.toLowerCase()
 			def dbType = (f.dbType != null)?f.dbType:type2dbType(f.type)
 			
-			sb << GenerationUtils.GenerateSetParam(curField, dbType, new String("row.'${fn}'"))
+			sb << GenerationUtils.GenerateSetParam(this, curField, dbType, new String("_getl_row.'${fn}'"))
 			sb << "\n"
 		}
 		sb << "}"
 		wp.statement = sb.toString()
-		//println wp.statement
+		
+//		println wp.statement
 		
 		Closure code = GenerationUtils.EvalGroovyScript(wp.statement)
 		
@@ -1397,9 +1438,10 @@ $sql
 		
 		saveToHistory(query)
 		
+		java.sql.Connection con = sqlConnect.connection 
 		PreparedStatement stat
 		try {
-			stat = sqlConnect.connection.prepareStatement(query)
+			stat = con.prepareStatement(query)
 		}
 		catch (Throwable e) {
 			Logs.Dump(e, getClass().name, dataset.objectFullName, query)
@@ -1412,6 +1454,7 @@ $sql
 		wp.query = query
 		wp.stat = stat
 		wp.setStatement = setStatement
+		wp.con = con
 		
 		if (params.logRows != null) {
 			wp.saveOut = new File(params.logRows)
@@ -1464,7 +1507,7 @@ $sql
 		}
 		
 		try {
-			wp.setStatement.call(wp.stat, row)
+			wp.setStatement.call(this, wp.con, wp.stat, row)
 			wp.stat.addBatch()
 			wp.stat.clearParameters()
 		}
