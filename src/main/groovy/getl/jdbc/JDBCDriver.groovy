@@ -1045,7 +1045,7 @@ ${extend}'''
 			else {
 				sqlConnect.eachRow(sqlParams, sql, getFields, offs, max) { row ->
 					Map outRow = [:]
-					copyToMap(row, outRow, con)
+					copyToMap(con, row, outRow)
 					
 					if (filter != null && !filter(outRow)) return
 					
