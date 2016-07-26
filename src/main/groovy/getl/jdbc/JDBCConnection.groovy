@@ -56,7 +56,7 @@ class JDBCConnection extends Connection {
 		super.registerParameters()
 		methodParams.register("Super", ["login", "password", "connectURL", "sqlHistoryFile", "autoCommit", "connectProperty", "dbName",
 			"javaConnection", "maskDate", "maskDateTime", "sessionProperty", "maskTime", "schemaName", "driverName", "connectHost", "connectDatabase",
-			"balancer", "fetchSize", "loginTimeout"])
+			"balancer", "fetchSize", "loginTimeout", "queryTimeout"])
 	}
 	
 	@Override
@@ -239,6 +239,13 @@ class JDBCConnection extends Connection {
 	 */
 	public Integer getLoginTimeout () { params.loginTimeout }
 	public void setLoginTimeout (Integer value) { params.loginTimeout = value }
+	
+	/**
+	 * Set statement timeout for connection driver (in seconds)
+	 * @return
+	 */
+	public Integer getQueryTimeout () { params.queryTimeout }
+	public void setQueryTimeout (Integer value) { params.queryTimeout = value }
 	
 	/**
 	 * Return using groovy SQL connection

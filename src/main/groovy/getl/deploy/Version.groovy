@@ -32,12 +32,12 @@ class Version {
 	/**
 	 * GETL version
 	 */
-	public static version = "1.2.04"
+	public static version = "1.2.05"
 	
 	/**
 	 * GETL version as numeric
 	 */
-	public static versionNum = 1.0204
+	public static versionNum = 1.0205
 
 	/**
 	 * Compatibility GETL version

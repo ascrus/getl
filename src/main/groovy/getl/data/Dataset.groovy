@@ -1193,7 +1193,13 @@ ${ef.toString()}
 	public void loadDatasetMetadata () {
 		def fn = fullFileSchemaName()
 		if (fn == null) throw new ExceptionGETL("Required \"schemaFileName\" for save dataset schema")
-		loadDatasetMetadataFromJSON(new File(fn).newReader("UTF-8"))
+		try {
+			loadDatasetMetadataFromJSON(new File(fn).newReader("UTF-8"))
+		}
+		catch (Exception e) {
+			Logs.Severe("Error read \"$fn\" schema file for \"$objectFullName\"")
+			throw e
+		}
 		manualSchema = true
 	}
 	

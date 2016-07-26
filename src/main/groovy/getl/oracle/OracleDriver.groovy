@@ -26,6 +26,8 @@ package getl.oracle
 
 import groovy.transform.InheritConstructors
 import java.sql.PreparedStatement
+import java.util.Map;
+
 import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
@@ -62,6 +64,24 @@ class OracleDriver extends JDBCDriver {
 		result << Driver.Operation.BULKLOAD
 		result << Driver.Operation.CREATE
 		result
+	}
+	
+	@Override
+	public String blobClosureWrite () { '{ byte[] value -> def blob = _getl_con.createBlob(); def stream = blob.getBinaryOutputStream(); stream.write(value); stream.close(); blob }' }
+	
+	@Override
+	public boolean blobReadAsObject () { false }
+	
+	@Override
+	public String clobClosureWrite () { '{ String value -> def clob = _getl_con.createClob(); clob.setString(1, value); clob }' }
+	
+	@Override
+	public Map getSqlType () {
+		Map res = super.getSqlType()
+		res."BLOB"."name" = "raw"
+		res."TEXT"."useLength" = JDBCDriver.sqlTypeUse.NEVER
+		
+		res
 	}
 	
 	/**
@@ -124,8 +144,7 @@ class OracleDriver extends JDBCDriver {
 		
 		if (field.typeName != null) {
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)]") || 
-					field.typeName.matches("(?i)TIMESTAMP") ||
-					field.typeName.matches("(?i)DATE")) {
+					field.typeName.matches("(?i)TIMESTAMP")) {
 				field.type = Field.Type.DATETIME
 				field.getMethod = "(({field} != null)?new java.sql.Timestamp({field}.timestampValue().getTime()):null)"
 				return
@@ -150,6 +169,11 @@ class OracleDriver extends JDBCDriver {
 				return
 			}
 			
+			if (field.typeName.matches("(?i)NVARCHAR2")) {
+				field.type = Field.Type.STRING
+				return
+			}
+			
 			if (field.typeName.matches("(?i)LONG")) {
 				field.type = Field.Type.STRING
 				return
@@ -157,6 +181,12 @@ class OracleDriver extends JDBCDriver {
 			
 			if (field.typeName.matches("(?i)BINARY_FLOAT") || field.typeName.matches("(?i)BINARY_DOUBLE")) {
 				field.type = Field.Type.DOUBLE
+				return
+			}
+			
+			if (field.typeName.matches("(?i)NCLOB")) {
+				field.type = Field.Type.TEXT
+				field.dbType = java.sql.Types.NCLOB
 				return
 			}
 		}

@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2016  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -22,26 +22,36 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.csv
+package getl.db2
 
-import org.supercsv.cellprocessor.CellProcessorAdaptor
-import org.supercsv.exception.SuperCsvCellProcessorException
-import org.supercsv.util.CsvContext
-import getl.utils.*
-import javax.sql.rowset.serial.SerialClob
+import groovy.transform.InheritConstructors
+import getl.jdbc.JDBCConnection
 
-class CSVParseClob extends CellProcessorAdaptor {
-	@groovy.transform.CompileStatic
-	@Override
-	public <T> T execute(final Object value, final CsvContext context) {
-		validateInputNotNull(value, context)
-		
-		if (!(value instanceof String)) {
-			throw new SuperCsvCellProcessorException(String.class, value, context, this)
-		}
-
-//		def result = new SerialClob(((String)value).chars)
-		return next.execute(value, context)
+/**
+ * IBM DB2 connection class
+ * @author Alexsey Konstantinov
+ *
+ */
+@InheritConstructors
+class DB2Connection extends JDBCConnection {
+	DB2Connection() {
+		super(driver: DB2Driver)
 	}
-
+	
+	DB2Connection(Map params) {
+		super(new HashMap([driver: DB2Driver]) + params)
+		if (this.getClass().name == 'getl.db2.DB2Connection') methodParams.validation("Super", params)
+	}
+	
+	@Override
+	protected void onLoadConfig (Map configSection) {
+		super.onLoadConfig(configSection)
+		if (this.getClass().name == 'getl.db2.DB2Connection') methodParams.validation("Super", params)
+	}
+	
+	@Override
+	protected void doInitConnection () {
+		super.doInitConnection()
+		driverName = "com.ibm.db2.jcc.DB2Driver"
+	}
 }
