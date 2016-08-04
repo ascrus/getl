@@ -44,7 +44,7 @@ public class SQLScripter {
 	/** 
 	 * Type of script command 
 	 */
-	public enum TypeCommand {UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR}
+	public enum TypeCommand {UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR, EXIT}
 	
 	/** 
 	 * Script variables
@@ -172,6 +172,9 @@ public class SQLScripter {
 		} else if (sql.matches("(?is)error(\\s|\\t).*")) {
 			sql = sql.substring(6).trim()
 			typeSql = TypeCommand.ERROR
+		} else if (sql.matches("(?is)exit")) {
+			sql = null
+			typeSql = TypeCommand.EXIT
 		} else {
 			if (sql.matches("(?is)[/][*][:].*[*][/].*")) {
 				int ic = sql.indexOf("*/")
@@ -259,13 +262,19 @@ public class SQLScripter {
 		query.eachRow { row-> rows << row }
 		
 		SQLScripter ns = new SQLScripter(connection: connection, script: b.toString(), logEcho: logEcho, vars: vars)
-		
+		boolean isExit = false
 		rows.each { row ->
+			if (isExit) return
+			
 			query.field.each { Field f ->
 				ns.vars."${f.name.toLowerCase()}" = row."${f.name.toLowerCase()}"
 			}
 			try {
 				ns.runSql()
+				if (ns.isRequiredExit()) {
+					isExit = true
+					requiredExit = true
+				}
 			}
 			finally {
 				sql = ns.getSql()
@@ -313,6 +322,9 @@ public class SQLScripter {
 		ns.vars.putAll(vars)*/
 		try {
 			ns.runSql()
+			if (ns.isRequiredExit()) {
+				requiredExit = true
+			}
 		}
 		finally {
 			sql = ns.getSql()
@@ -321,13 +333,18 @@ public class SQLScripter {
 		return fe
 	}
 	
+	private boolean requiredExit
+	public boolean isRequiredExit() { requiredExit }
+	
 	/** 
 	 * Run script as SQL
 	 */ 
 	public void runSql () {
+		requiredExit = false
 		def st = BatchSQL2List(script, ";")
 		rowCount = 0
 		for (int i = 0; i < st.size(); i++) {
+			if (requiredExit) return
 			prepareSql(st[i])
 			
 			switch (typeSql) {
@@ -351,6 +368,9 @@ public class SQLScripter {
 					break
 				case TypeCommand.ERROR:
 					throw new ExceptionSQLScripter("script error: $sql")
+					break
+				case TypeCommand.EXIT:
+					requiredExit = true
 					break
 				default:
 					throw new ExceptionGETL("Unknown type command ${typeSql}")
