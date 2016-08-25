@@ -101,7 +101,7 @@ class SavePointManager {
 		params.saveMethod = value.toUpperCase()
 		map.clear()
 	}
-	
+
 	/**
 	 * Preparing map fields
 	 */
