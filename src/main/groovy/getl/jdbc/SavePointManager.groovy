@@ -320,16 +320,22 @@ class SavePointManager {
 	public void saveValue(String source, def value, String format) {
 		prepareTable()
 		
-		if (!(value instanceof Date || value instanceof Integer || value instanceof Long || value instanceof BigDecimal)) {
+		if (!(value instanceof Date || value instanceof java.sql.Timestamp || 
+				value instanceof Integer || value instanceof Long || 
+				value instanceof BigDecimal || 
+				value instanceof String || value instanceof GString)) {
 			 throw new ExceptionGETL("Not allowed save point type \"${value.getClass().name}\"")
 		}
 		
 		def type
-		if (value instanceof Date) {
+		if (value instanceof Date || value instanceof java.sql.Timestamp) {
+			type = "D"
+			value = DateUtils.Timestamp2Value(value)
+		}
+		else if (value instanceof String || value instanceof GString) {
 			type = "D"
 			if (format == null) format = "yyyy-MM-dd HH:mm:ss.SSS"
-			def dateStr = DateUtils.FormatDate(format, value)
-			value = DateUtils.Timestamp2Value(DateUtils.ParseDate(format, dateStr))
+			value = DateUtils.Timestamp2Value(DateUtils.ParseDate(format, value, false))
 		}
 		else if (value instanceof Integer || value instanceof Long) {
 			type = "N"

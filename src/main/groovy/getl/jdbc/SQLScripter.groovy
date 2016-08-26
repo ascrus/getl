@@ -45,7 +45,7 @@ public class SQLScripter {
 	 * Type of script command 
 	 */
 	public enum TypeCommand {
-		UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR, EXIT, LOAD_POINT, SAVE_POINT
+		UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR, EXIT, LOAD_POINT, SAVE_POINT, BLOCK
 	}
 	
 	/** 
@@ -187,6 +187,8 @@ public class SQLScripter {
 			typeSql = TypeCommand.LOAD_POINT
 		} else if (sql.matches("(?is)save_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+from(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*")) {
 			typeSql = TypeCommand.SAVE_POINT
+		} else if (sql.matches("(?is)begin(\\s|\\t)+block(\\s|\\t)*")) {
+			typeSql = TypeCommand.BLOCK
 		} else {
 			if (sql.matches("(?is)[/][*][:].*[*][/].*")) {
 				int ic = sql.indexOf("*/")
@@ -401,6 +403,30 @@ public class SQLScripter {
 		return fe
 	}
 	
+	private int doBlock(List<String> st, int i) {
+		int fe = -1
+		int fc = 1
+		StringBuffer b = new StringBuffer()
+		for (int fs = i + 1; fs < st.size(); fs++) {
+			if (st[fs].matches("(?is)begin(\\s|\\t)+block(\\s|\\t)*")) {
+				fc++
+			} else if (st[fs].matches("(?is)end(\\s|\\t)+block(\\s|\\t)*")) {
+				fc--
+				if (fc == 0) {
+					fe = fs
+					break
+				}
+			}
+			b.append(st[fs] + ";\n")
+		}
+		if (fe == -1) throw new ExceptionGETL("SQLScripter: can not find END BLOCK construction")
+
+		sql = StringUtils.EvalMacroString(b.toString(), vars)
+		connection.executeCommand(command: sql)
+		
+		return fe
+	}
+	
 	private boolean requiredExit
 	public boolean isRequiredExit() { requiredExit }
 	
@@ -433,6 +459,9 @@ public class SQLScripter {
 					break
 				case TypeCommand.IF:
 					i = doIf(st, i)
+					break
+				case TypeCommand.BLOCK:
+					i = doBlock(st, i)
 					break
 				case TypeCommand.ERROR:
 					throw new ExceptionSQLScripter("SQLScripter: found error $sql")
