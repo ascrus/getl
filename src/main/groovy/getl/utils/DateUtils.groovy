@@ -34,7 +34,7 @@ import org.codehaus.groovy.runtime.DateGroovyMethods
  * @author Alexsey Konstantinov
  *
  */
-//@groovy.transform.CompileStatic
+@groovy.transform.CompileStatic
 class DateUtils {
 	/**
 	 * Zero date
@@ -386,7 +386,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static BigDecimal Timestamp2Value(java.sql.Timestamp value) {
-		if (value == null) return null
+		if ((Object)value == null) return null
 		
 		def t = value.time.intdiv(1000)
 		def n = new BigDecimal(value.nanos).divide(BigDecimal.valueOf(1000000000), 9, RoundingMode.UNNECESSARY)
