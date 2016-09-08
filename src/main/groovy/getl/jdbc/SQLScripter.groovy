@@ -229,6 +229,7 @@ public class SQLScripter {
 		}
 	}
 	
+	@groovy.transform.Synchronized
 	private void doSavePoint (List<String> st, int i) {
 		def m = sql =~ "(?is)save_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+from(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
 		def point = m[0][2]
@@ -251,7 +252,7 @@ public class SQLScripter {
 		if (dbName != null) pm.dbName = dbName
 		if (schemaName != null) pm.schemaName = schemaName
 		
-		pm.create(true)
+		if (!pm.exists) pm.create(false)
 		pm.saveValue(pointName, value)
 	}
 	
