@@ -187,6 +187,18 @@ class StringUtils {
 	}
 	
 	/**
+	 * Process escaped string and return java string with custom process feed line char
+	 * @param str
+	 * @param procLineChar
+	 * @return
+	 */
+	public static String UnescapeJavaWithProcLineChar(String str, String procLineChar) {
+		if (str == null) return null
+		str = str.replace(procLineChar, '\n')
+		StringEscapeUtils.unescapeJava(str)
+	}
+	
+	/**
 	 * Process escaped string and return java string without UTF-8 escaped
 	 * @param str
 	 * @return

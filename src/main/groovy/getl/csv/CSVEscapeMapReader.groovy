@@ -35,6 +35,8 @@ import javax.sql.rowset.serial.SerialClob
 
 @InheritConstructors
 class CSVEscapeMapReader extends CsvMapReader {
+	private String escapeProcessLineChar
+	
 	CSVEscapeMapReader (Reader reader, CsvPreference preferences) {
 		super(reader, preferences)
 	}
@@ -43,22 +45,43 @@ class CSVEscapeMapReader extends CsvMapReader {
 		super(tokenizer, preferences)
 	}
 	
+	CSVEscapeMapReader (ITokenizer tokenizer, CsvPreference preferences, String escapeProcessLineChar) {
+		super(tokenizer, preferences)
+		this.escapeProcessLineChar = escapeProcessLineChar
+	}
+	
 	@groovy.transform.CompileStatic
 	@Override
 	public Map<String, Object> read(String[] cols, CellProcessor[] proc) throws IOException {
-		def res = super.read(cols, proc)
-		res?.each { key, value ->
-			if (value instanceof String) {
-				res.put(key, StringUtils.UnescapeJava((String)value))
+		Map<String, Object> res = super.read(cols, proc)
+		if (res == null) return res
+		if (escapeProcessLineChar == null) {
+			res.each { String key, value ->
+				if (value instanceof String) {
+					res.put(key, StringUtils.UnescapeJava((String)value))
+				}
+				else if (value instanceof Clob) {
+					Clob text = (Clob)value
+					String str = (text.getSubString(1, (int)text.length()))
+					str = StringUtils.UnescapeJava(str)
+					res.put(key, new SerialClob(str.chars))
+				}
 			}
-			else if (value instanceof Clob) {
-				Clob text = (Clob)value
-				String str = (text.getSubString(1, (int)text.length()))
-				str = StringUtils.UnescapeJava(str)
-				res.put(key, new SerialClob(str.chars))
+		}
+		else {
+			res.each { String key, value ->
+				if (value instanceof String) {
+					res.put(key, StringUtils.UnescapeJavaWithProcLineChar((String)value, this.escapeProcessLineChar))
+				}
+				else if (value instanceof Clob) {
+					Clob text = (Clob)value
+					String str = (text.getSubString(1, (int)text.length()))
+					str = StringUtils.UnescapeJavaWithProcLineChar(str, this.escapeProcessLineChar)
+					res.put(key, new SerialClob(str.chars))
+				}
 			}
 		}
 		
-		return res
+		res
 	}
 }

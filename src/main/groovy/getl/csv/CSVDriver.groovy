@@ -60,10 +60,11 @@ import getl.utils.*
 class CSVDriver extends FileDriver {
 	CSVDriver () {
 		super()
-		methodParams.register("eachRow", ["isValid", "quoteStr", "fieldDelimiter", "rowDelimiter", "header", "isSplit", "readAsText", 
-											"escaped", "processError", "filter", "nullAsValue"])
-		methodParams.register("openWrite", ["batchSize", "onSaveBatch", "isValid", "escaped", "splitSize", 
-								"quoteStr", "fieldDelimiter", "rowDelimiter", "header", "nullAsValue", "decimalSeparator", "formatDate", "formatTime", "formatDateTime", "onSplitFile"])
+		methodParams.register('eachRow', ['isValid', 'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'isSplit', 'readAsText', 
+											'escaped', 'processError', 'filter', 'nullAsValue', 'escapeProcessLineChar'])
+		methodParams.register('openWrite', ['batchSize', 'onSaveBatch', 'isValid', 'escaped', 'splitSize', 
+								'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'nullAsValue', 'decimalSeparator', 
+								'formatDate', 'formatTime', 'formatDateTime', 'onSplitFile', 'escapeProcessLineChar'])
 	}
 	
 	@Override
@@ -219,14 +220,14 @@ class CSVDriver extends FileDriver {
 					def f = field.format
 					if (f == null) {
 						if (p > 0) {
-							def s = ""
+							def s = ''
 							(1..p).each {
-								s += "0"
+								s += '0'
 							}
-							f = "0." + s
+							f = '0.' + s
 						}
 						else {
-							f = "0"
+							f = '0'
 						}
 					}
 					
@@ -245,9 +246,9 @@ class CSVDriver extends FileDriver {
 				cp = new Optional()
 			}
 		} else if (field.type == Field.Type.BOOLEAN) {
-			String[] v = (field.format == null)?["1", "0"]:field.format.toLowerCase().split("[|]")
-			if (v[0] == null) v[0] = "1"
-			if (v[1] == null) v[1] = "0"
+			String[] v = (field.format == null)?['1', '0']:field.format.toLowerCase().split('[|]')
+			if (v[0] == null) v[0] = '1'
+			if (v[1] == null) v[1] = '0'
 			
 			if (!isWrite) {
 				cp = new ParseBool(v[0], v[1])
@@ -374,7 +375,7 @@ class CSVDriver extends FileDriver {
 	@groovy.transform.CompileStatic
 	@Override
 	protected long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		if (code == null) throw new ExceptionGETL("Required process code")
+		if (code == null) throw new ExceptionGETL('Required process code')
 		
 		CSVDataset cds = (CSVDataset)dataset
 		if (cds.fileName == null) throw new ExceptionGETL('Dataset required fileName')
@@ -382,6 +383,7 @@ class CSVDriver extends FileDriver {
 		boolean escaped = BoolUtils.IsValue(params.escaped, cds.escaped)
 		boolean readAsText = BoolUtils.IsValue(params.readAsText, false)
 		boolean ignoreHeader = BoolUtils.IsValue([params.ignoreHeader, cds.ignoreHeader], false)
+		String escapeProcessLineChar = ListUtils.NotNullValue([params.escapeProcessLineChar, cds.escapeProcessLineChar])
 		Closure filter = (Closure)params."filter"
 
 		long countRec = 0
@@ -399,7 +401,7 @@ class CSVDriver extends FileDriver {
 		def filePath = new Path(mask: fileMask, vars: vars)
 		
 		fm.buildList(path: filePath)
-		def filesParams = (p.isSplit)?[order: ["number"]]:[:]
+		def filesParams = (p.isSplit)?[order: ['number']]:[:]
 		def files = fm.fileList.rows(filesParams)
 		if (files.isEmpty()) throw new ExceptionGETL("File(s) \"${cds.fileName}\" not found or invalid path \"${((CSVConnection)cds.connection).path}\"")
 		Integer portion = 0
@@ -411,7 +413,7 @@ class CSVDriver extends FileDriver {
 		ICsvMapReader reader
 		if (escaped) { 
 			if (!readAsText) {
-				reader = new CSVEscapeMapReader(new CSVEscapeTokenizer(bufReader, pref), pref)
+				reader = new CSVEscapeMapReader(new CSVEscapeTokenizer(bufReader, pref), pref, escapeProcessLineChar)
 			}
 			else {
 				reader = new CsvMapReader(new CSVEscapeTokenizer(bufReader, pref), pref)
@@ -519,6 +521,7 @@ class CSVDriver extends FileDriver {
 		String quote
 		String nullAsValue
 		boolean escaped
+		String escapeProcessLineChar
 		Long splitSize
 		boolean formatOutput = true
 		long batchSize = 1000
@@ -548,6 +551,7 @@ class CSVDriver extends FileDriver {
 		boolean isValid = (params.isValid != null)?params.isValid:false
 		boolean bulkFile = (params.bulkFile != null)?params.bulkFile:false
 		boolean escaped = BoolUtils.IsValue(params.escaped, dataset.escaped)
+		String escapeProcessLineChar = ListUtils.NotNullValue([params.escapeProcessLineChar, dataset.escapeProcessLineChar])
 		
 		if (params.batchSize != null) wp.batchSize = params.batchSize
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch
@@ -559,7 +563,7 @@ class CSVDriver extends FileDriver {
 		}
 		
 		wp.header = fields2header(dataset.field, listFields)
-		if (wp.header.length == 0) throw new ExceptionGETL("Required fields declare")
+		if (wp.header.length == 0) throw new ExceptionGETL('Required fields declare')
 
 		wp.params = params
 		wp.cp = fields2cellProcessor(dataset: dataset, fields: listFields, header: wp.header, isOptional: false, isWrite: true, isValid: isValid, isEscape: escaped, nullAsValue: p.nullAsValue)
@@ -570,6 +574,7 @@ class CSVDriver extends FileDriver {
 		wp.quote = p.quote
 		wp.nullAsValue = p.nullAsValue
 		wp.escaped = escaped
+		wp.escapeProcessLineChar = escapeProcessLineChar
 		wp.splitSize = params.splitSize
 		if (wp.splitSize != null) wp.portion = 1
 		
@@ -689,7 +694,7 @@ class CSVDriver extends FileDriver {
 	
 	protected long readLinesCount (CSVDataset dataset) {
 		if (!dataset.existsFile()) throw new ExceptionGETL("File \"${dataset.fullFileName()}\" not found")
-		if (!(dataset.rowDelimiter in ["\n", "\r\n"])) throw new ExceptionGETL("Allow CSV file only standart row delimiter")
+		if (!(dataset.rowDelimiter in ['\n', '\r\n'])) throw new ExceptionGETL('Allow CSV file only standart row delimiter')
 		
 		BufferedReader reader
 		if (dataset.isGzFile) {
@@ -718,10 +723,10 @@ class CSVDriver extends FileDriver {
 	
 	public long prepareCSVForBulk(CSVDataset target, CSVDataset source, Map encodeTable, Closure code) {
 		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
-		if (!(source.rowDelimiter in ["\n", "\r\n"])) throw new ExceptionGETL("Allow convert CSV files only standart row delimiter")
+		if (!(source.rowDelimiter in ['\n', '\r\n'])) throw new ExceptionGETL('Allow convert CSV files only standart row delimiter')
 
 		if (source.field.isEmpty() && source.autoSchema) source.loadDatasetMetadata()
-		//if (source.field.isEmpty()) throw new ExceptionGETL("Required fields from source dataset")
+		//if (source.field.isEmpty()) throw new ExceptionGETL('Required fields from source dataset')
 		
 		target.connection.validPath()
 
@@ -730,9 +735,9 @@ class CSVDriver extends FileDriver {
 		target.nullAsValue = source.nullAsValue
 		target.escaped = false
 		/*
-		target.rowDelimiter = "\u0001"
-		target.fieldDelimiter = "\u0002"
-		target.quoteStr = "\u0003"
+		target.rowDelimiter = '\u0001'
+		target.fieldDelimiter = '\u0002'
+		target.quoteStr = '\u0003'
 		*/
 
 		//int targetFieldCount = target.field.size()
@@ -740,7 +745,7 @@ class CSVDriver extends FileDriver {
 		String targetRowDelimiter = target.rowDelimiter
 		String sourceFieldDelimiter = source.fieldDelimiter
 		int sourceFieldDelimiterLen = sourceFieldDelimiter.length()
-		String sourceFieldDelimiterLast = sourceFieldDelimiter + "\u0000"
+		String sourceFieldDelimiterLast = sourceFieldDelimiter + '\u0000'
 		String targetFieldDelimiter = target.fieldDelimiter
 		boolean source_escaped = source.escaped
 		String sourceQuoteStr = source.quoteStr
@@ -750,20 +755,20 @@ class CSVDriver extends FileDriver {
 		//String lastBadQuoteExpr = '\\\\\\\\"$'
 		String decodeQuote = sourceQuoteStr
 		if (targetQuoteStr == sourceQuoteStr) decodeQuote += sourceQuoteStr
-		Map convertMap = ["\u0004": "$decodeQuote", "\u0005": "\\\\"]
+		Map convertMap = ['\u0004': "$decodeQuote", '\u0005': '\\\\']
 		
 		Map encodeMap = [:]
 		if (!source_escaped) {
-			//encodeMap."$sourceQuoteStr$sourceQuoteStr$sourceQuoteStr" = "\"\u0004"
-			encodeMap."$sourceQuoteStr$sourceQuoteStr" = "\u0004"
-			//encodeMap."\\" = "\u0005"
+			//encodeMap."$sourceQuoteStr$sourceQuoteStr$sourceQuoteStr" = '"\u0004'
+			encodeMap."$sourceQuoteStr$sourceQuoteStr" = '\u0004'
+			//encodeMap."\\" = '\u0005'
 		}
 		else {
-			encodeMap."\\\\" = "\u0005"
-			encodeMap."\\$sourceQuoteStr" = "\u0004"
-			encodeMap."\\n" = "\n"
-			encodeMap."\\t" = "\t"
-			//encodeMap."\\" = "\u0005"
+			encodeMap."\\\\" = '\u0005'
+			encodeMap."\\$sourceQuoteStr" = '\u0004'
+			encodeMap."\\n" = '\n'
+			encodeMap."\\t" = '\t'
+			//encodeMap."\\" = '\u0005'
 		}
 		
 		String splitFieldDelimiter = StringUtils.Delimiter2SplitExpression(sourceFieldDelimiter)
@@ -861,7 +866,7 @@ class CSVDriver extends FileDriver {
 					}
 					
 					if (isQuoteFirst) {
-						bufStr << "\n"
+						bufStr << '\n'
 						readStr = reader.readLine(true)
 						continue
 					}
@@ -916,15 +921,15 @@ class CSVDriver extends FileDriver {
 		
 		Map encodeMap = [:]
 		if (target.escaped) {
-			encodeMap."\\" = "\\\\"
-			encodeMap."\n" = "\\n" 
-			encodeMap."\t" = "\\t"
+			encodeMap."\\" = '\\\\'
+			encodeMap."\n" = '\\n' 
+			encodeMap."\t" = '\\t'
 			encodeMap."$targetQuoteStr" = "\\$targetQuoteStr"
 		}
 		else {
 			encodeMap."$targetQuoteStr" = "$targetQuoteStr$targetQuoteStr"
 		}
-		encodeMap.putAll(["\u0001": targetRowDelimiter, "\u0002": target.fieldDelimiter, "\u0003": target.quoteStr])
+		encodeMap.putAll(['\u0001': targetRowDelimiter, '\u0002': target.fieldDelimiter, '\u0003': target.quoteStr])
 
 		BufferedReader reader
 		if (source.isGzFile) {

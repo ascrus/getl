@@ -48,13 +48,13 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Field delimiter
 	 */
-	public String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, connection?.fieldDelimiter, ","]) }
+	public String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, connection?.fieldDelimiter, ',']) }
 	public void setFieldDelimiter (String value) { params.fieldDelimiter = value }
 	
 	/**
 	 * Row delimiter
 	 */
-	public String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, connection?.rowDelimiter,"\n"]) }
+	public String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, connection?.rowDelimiter,'\n']) }
 	public void setRowDelimiter (String value) { params.rowDelimiter = value }
 	
 	/**
@@ -88,6 +88,12 @@ class CSVDataset extends FileDataset {
 	public void setEscaped (boolean value) { params.escaped = value }
 	
 	/**
+	 * Convert line feed to custom escape char 
+	 */
+	public String getEscapeProcessLineChar () { ListUtils.NotNullValue([params.escapeProcessLineChar, connection?.escapeProcessLineChar]) }
+	public void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
+	
+	/**
 	 * Mode of quote value 
 	 */
 	public QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, connection?.quoteMode, QuoteMode.NORMAL]) }
@@ -96,7 +102,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Decimal separator for number fields
 	 */
-	public String getDecimalSeparator () { ListUtils.NotNullValue([params.decimalSeparator, connection?.decimalSeparator, "."]) }
+	public String getDecimalSeparator () { ListUtils.NotNullValue([params.decimalSeparator, connection?.decimalSeparator, '.']) }
 	public void setDecimalSeparator (String value) { params.decimalSeparator = value }
 	
 	/**
@@ -144,8 +150,9 @@ class CSVDataset extends FileDataset {
 	@Override
 	public List<String> inheriteConnectionParams () {
 		super.inheriteConnectionParams() + 
-				["quoteStr", "fieldDelimiter", "rowDelimiter", "header", 
-					"escaped", "decimalSeparator", "formatDate", "formatTime", "formatDateTime", "ignoreHeader"]
+				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 
+					'escaped', 'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime', 'ignoreHeader', 
+					'escapeProcessLineChar']
 	}
 	
 	/**
