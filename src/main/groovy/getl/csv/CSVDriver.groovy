@@ -257,8 +257,18 @@ class CSVDriver extends FileDriver {
 				cp = new FmtBool(v[0], v[1])
 			}
 		} else if (field.type in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME]) {
-			def formatDefault = (field.type == Field.Type.DATE)?'yyyy-MM-dd':((field.type == Field.Type.TIME)?'HH:mm:ss':'yyyy-MM-dd HH:mm:ss')
-			def df = ListUtils.NotNullValue([field.format, formatDate, formatDefault])
+			String df
+			switch (field.type) {
+				case Field.Type.DATE:
+					df = ListUtils.NotNullValue([field.format, formatDate, 'yyyy-MM-dd'])
+					break
+				case Field.Type.TIME:
+					df = ListUtils.NotNullValue([field.format, formatTime, 'HH:mm:ss'])
+					break
+				case Field.Type.DATETIME:
+					df = ListUtils.NotNullValue([field.format, formatDateTime, 'yyyy-MM-dd HH:mm:ss'])
+					break
+			}
 			def locale = field.extended.locale
 			if (!isWrite) {
 				if (locale == null) {
@@ -325,9 +335,9 @@ class CSVDriver extends FileDriver {
 		boolean isEscape = fParams.isEscape
 		String nullAsValue = fParams.nullAsValue
 		String decimalSeparator = ListUtils.NotNullValue([fParams.decimalSeparator, dataset.decimalSeparator, '.'])
-		String formatDate = ListUtils.NotNullValue([fParams.formatDate, dataset.formatDate])
-		String formatTime = ListUtils.NotNullValue([fParams.formatDate, dataset.formatTime])
-		String formatDateTime = ListUtils.NotNullValue([fParams.formatDate, dataset.formatDateTime])
+		String formatDate = fParams.formatDate
+		String formatTime = fParams.formatTime
+		String formatDateTime = fParams.formatDateTime
 		
 		if (fields == null) fields = []
 		def quoteStr = dataset.quoteStr
@@ -551,6 +561,9 @@ class CSVDriver extends FileDriver {
 		boolean isValid = (params.isValid != null)?params.isValid:false
 		boolean bulkFile = (params.bulkFile != null)?params.bulkFile:false
 		boolean escaped = BoolUtils.IsValue(params.escaped, dataset.escaped)
+		String formatDate = ListUtils.NotNullValue([params.formatDate, dataset.formatDate])
+		String formatTime = ListUtils.NotNullValue([params.formatTime, dataset.formatTime])
+		String formatDateTime = ListUtils.NotNullValue([params.formatDateTime, dataset.formatDateTime])
 		String escapeProcessLineChar = ListUtils.NotNullValue([params.escapeProcessLineChar, dataset.escapeProcessLineChar])
 		
 		if (params.batchSize != null) wp.batchSize = params.batchSize
@@ -566,7 +579,10 @@ class CSVDriver extends FileDriver {
 		if (wp.header.length == 0) throw new ExceptionGETL('Required fields declare')
 
 		wp.params = params
-		wp.cp = fields2cellProcessor(dataset: dataset, fields: listFields, header: wp.header, isOptional: false, isWrite: true, isValid: isValid, isEscape: escaped, nullAsValue: p.nullAsValue)
+		wp.cp = fields2cellProcessor(
+					dataset: dataset, fields: listFields, header: wp.header, isOptional: false, 
+					isWrite: true, isValid: isValid, isEscape: escaped, nullAsValue: p.nullAsValue,
+					formatDate: formatDate, formatTime: formatTime, formatDateTime: formatDateTime)
 		wp.fieldDelimiterSize = p.fieldDelimiter.toString().length()
 		wp.rowDelimiterSize = p.rowDelimiter.length()
 		wp.countFields = listFields.size()
