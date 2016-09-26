@@ -357,7 +357,7 @@ class CSVDriver extends FileDriver {
 				else {
 					Field f = dataset.field[i]
 					
-					CellProcessor p = type2cellProcessor(f, isWrite, isEscape, nullAsValue, decimalSeparator, 
+					CellProcessor p = type2cellProcessor(f, isWrite, isEscape, nullAsValue, decimalSeparator as String,
 															formatDate, formatTime, formatDateTime, isValid)
 					cp << p
 				}
