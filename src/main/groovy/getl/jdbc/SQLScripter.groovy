@@ -409,16 +409,28 @@ public class SQLScripter {
 		int fc = 1
 		StringBuffer b = new StringBuffer()
 		for (int fs = i + 1; fs < st.size(); fs++) {
-			if (st[fs].matches("(?is)begin(\\s|\\t)+block(\\s|\\t)*")) {
+			if (st[fs].matches('(?is)begin(\\s|\\t)+block(\\s|\\t)*')) {
 				fc++
-			} else if (st[fs].matches("(?is)end(\\s|\\t)+block(\\s|\\t)*")) {
+			}
+			else if (st[fs].matches('(?is)end(\\s|\\t)+block(\\s|\\t)*')) {
 				fc--
 				if (fc == 0) {
 					fe = fs
 					break
 				}
 			}
-			b.append(st[fs] + ";\n")
+			else if (st[fs].matches('(?is)end(\\s|\\t)+block(\\s|\\t)+(.+)')) {
+				fc--
+				if (fc == 0) {
+					fe = fs
+					def pattern = '(?is)end(\\s|\\t)+block(\\s|\\t)+(.+)'
+					def m = st[fs] =~ pattern
+					def symbol = m[0][3]
+					b.append(symbol)
+					break
+				}
+			}
+			b.append(st[fs].replace('\r', '') + ";\n")
 		}
 		if (fe == -1) throw new ExceptionGETL("SQLScripter: can not find END BLOCK construction")
 
