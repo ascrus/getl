@@ -44,7 +44,9 @@ public class SQLScripter {
 	/** 
 	 * Type of script command 
 	 */
-	public enum TypeCommand {UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR}
+	public enum TypeCommand {
+		UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR, EXIT, LOAD_POINT, SAVE_POINT, BLOCK
+	}
 	
 	/** 
 	 * Script variables
@@ -66,6 +68,15 @@ public class SQLScripter {
 	private JDBCConnection connection
 	public JDBCConnection getConnection() { connection }
 	public void setConnection(JDBCConnection value) { connection = value }
+	
+	/*
+	 * Connection for point manager
+	 */
+	private JDBCConnection pointConnection
+	public JDBCConnection getPointConnection () { pointConnection }
+	public void setPointConnection(JDBCConnection value) {
+		pointConnection = value
+	}
 	
 	/** 
 	 * Count proccessed rows 
@@ -111,7 +122,7 @@ public class SQLScripter {
 	 */
 	private void prepareSql(String script) {
 		if (script == null) 
-			throw new ExceptionGETL("PrepareError: script is empty")
+			throw new ExceptionGETL("SQLScripter: need script in prepareSql method")
 			
 		List varNames = []
 		vars.keySet().toArray().each { varNames << it }
@@ -127,8 +138,6 @@ public class SQLScripter {
 		while (m.find()) {
 			vn = m.group()
 			vn = vn.substring(1, vn.length() - 1).trim().toLowerCase()
-//			if (!vars.containsKey(vn))
-//				throw new ExceptionGETL("PrepareError: variable [${vn}] not found, exists vars: ${vars}, script: ${script.replace('\n', '; ')}")
 			
 			def varName = varNames.find { vn == it.toLowerCase() }
 			
@@ -172,6 +181,14 @@ public class SQLScripter {
 		} else if (sql.matches("(?is)error(\\s|\\t).*")) {
 			sql = sql.substring(6).trim()
 			typeSql = TypeCommand.ERROR
+		} else if (sql.matches("(?is)exit")) {
+			typeSql = TypeCommand.EXIT
+		} else if (sql.matches("(?is)load_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+to(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*")) {
+			typeSql = TypeCommand.LOAD_POINT
+		} else if (sql.matches("(?is)save_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+from(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*")) {
+			typeSql = TypeCommand.SAVE_POINT
+		} else if (sql.matches("(?is)begin(\\s|\\t)+block(\\s|\\t)*")) {
+			typeSql = TypeCommand.BLOCK
 		} else {
 			if (sql.matches("(?is)[/][*][:].*[*][/].*")) {
 				int ic = sql.indexOf("*/")
@@ -180,6 +197,63 @@ public class SQLScripter {
 			}
 			if (sql.matches("(?is)SELECT.*FROM.*")) typeSql = TypeCommand.SELECT else typeSql = TypeCommand.UPDATE
 		}
+	}
+	
+	private void doLoadPoint (List<String> st, int i) {
+		def m = sql =~ "(?is)load_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+to(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
+		def point = m[0][2]
+		def varName = m[0][5]
+		
+		def pointList = point.split('[.]').toList()
+		while (pointList.size() < 4) pointList.add(0, null)
+		def dbName = pointList[0]
+		def schemaName = pointList[1]
+		def tableName = pointList[2]
+		def pointName = pointList[3]
+		def methodName = m[0][8]
+		
+		if (tableName == null) throw new ExceptionGETL("SQLScripter: need table name for LOAD_POINT operator")
+		if (pointName == null) throw new ExceptionGETL("SQLScripter: need pointer name for LOAD_POINT operator")
+		
+		def pm = new SavePointManager(connection: pointConnection?:connection, tableName: tableName, saveMethod: methodName)
+		if (dbName != null) pm.dbName = dbName
+		if (schemaName != null) pm.schemaName = schemaName
+		
+		if (pm.isExists()) {
+			def res = pm.lastValue(pointName)
+			def value = (res.type == null)?null:res.value
+			vars.put(varName, value)
+		}
+		else {
+			vars.put(varName, null)
+		}
+	}
+	
+	@groovy.transform.Synchronized
+	private void doSavePoint (List<String> st, int i) {
+		def m = sql =~ "(?is)save_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+from(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
+		def point = m[0][2]
+		def varName = m[0][5]
+		def value = vars.get(varName)
+		if (value == null) throw new ExceptionGETL("SQLScripter: variable \"$varName\" has empty value for SAVE_POINT operator")
+		
+		def pointList = point.split('[.]').toList()
+		while (pointList.size() < 4) pointList.add(0, null)
+		def dbName = pointList[0]
+		def schemaName = pointList[1]
+		def tableName = pointList[2]
+		def pointName = pointList[3]
+		def methodName = m[0][8]
+		
+		if (tableName == null) throw new ExceptionGETL("SQLScripter: need table name for SAVE_POINT operator")
+		if (pointName == null) throw new ExceptionGETL("SQLScripter: need pointer name for SAVE_POINT operator")
+		
+		def pm = new SavePointManager(connection: pointConnection?:connection, tableName: tableName, saveMethod: methodName)
+		if (dbName != null) pm.dbName = dbName
+		if (schemaName != null) pm.schemaName = schemaName
+		
+		if (!pm.exists) pm.create(false)
+		pm.saveValue(pointName, value)
 	}
 	
 	/*** 
@@ -252,20 +326,26 @@ public class SQLScripter {
 			}
 			b.append(c + ";\n")
 		}
-		if (fe == -1) throw new ExceptionGETL("Can not find END FOR construction")
+		if (fe == -1) throw new ExceptionGETL("SQLScripter: can not find END FOR construction")
 		
 		QueryDataset query = new QueryDataset(connection: connection, query: sql)
 		List<Map> rows = []
 		query.eachRow { row-> rows << row }
 		
 		SQLScripter ns = new SQLScripter(connection: connection, script: b.toString(), logEcho: logEcho, vars: vars)
-		
+		boolean isExit = false
 		rows.each { row ->
+			if (isExit) return
+			
 			query.field.each { Field f ->
 				ns.vars."${f.name.toLowerCase()}" = row."${f.name.toLowerCase()}"
 			}
 			try {
 				ns.runSql()
+				if (ns.isRequiredExit()) {
+					isExit = true
+					requiredExit = true
+				}
 			}
 			finally {
 				sql = ns.getSql()
@@ -299,7 +379,7 @@ public class SQLScripter {
 			}
 			b.append(st[fs] + ";\n")
 		}
-		if (fe == -1) throw new ExceptionGETL("Can not find END IF construction")
+		if (fe == -1) throw new ExceptionGETL("SQLScripter: can not find END IF construction")
 		
 		QueryDataset query = new QueryDataset(connection: connection, query: sql)
 		def rows = query.rows(limit: 1)  
@@ -313,6 +393,9 @@ public class SQLScripter {
 		ns.vars.putAll(vars)*/
 		try {
 			ns.runSql()
+			if (ns.isRequiredExit()) {
+				requiredExit = true
+			}
 		}
 		finally {
 			sql = ns.getSql()
@@ -321,13 +404,54 @@ public class SQLScripter {
 		return fe
 	}
 	
+	private int doBlock(List<String> st, int i) {
+		int fe = -1
+		int fc = 1
+		StringBuffer b = new StringBuffer()
+		for (int fs = i + 1; fs < st.size(); fs++) {
+			if (st[fs].matches('(?is)begin(\\s|\\t)+block(\\s|\\t)*')) {
+				fc++
+			}
+			else if (st[fs].matches('(?is)end(\\s|\\t)+block(\\s|\\t)*')) {
+				fc--
+				if (fc == 0) {
+					fe = fs
+					break
+				}
+			}
+			else if (st[fs].matches('(?is)end(\\s|\\t)+block(\\s|\\t)+(.+)')) {
+				fc--
+				if (fc == 0) {
+					fe = fs
+					def pattern = '(?is)end(\\s|\\t)+block(\\s|\\t)+(.+)'
+					def m = st[fs] =~ pattern
+					def symbol = m[0][3]
+					b.append(symbol)
+					break
+				}
+			}
+			b.append(st[fs].replace('\r', '') + ";\n")
+		}
+		if (fe == -1) throw new ExceptionGETL("SQLScripter: can not find END BLOCK construction")
+
+		sql = StringUtils.EvalMacroString(b.toString(), vars)
+		connection.executeCommand(command: sql)
+		
+		return fe
+	}
+	
+	private boolean requiredExit
+	public boolean isRequiredExit() { requiredExit }
+	
 	/** 
 	 * Run script as SQL
 	 */ 
 	public void runSql () {
+		requiredExit = false
 		def st = BatchSQL2List(script, ";")
 		rowCount = 0
 		for (int i = 0; i < st.size(); i++) {
+			if (requiredExit) return
 			prepareSql(st[i])
 			
 			switch (typeSql) {
@@ -349,11 +473,23 @@ public class SQLScripter {
 				case TypeCommand.IF:
 					i = doIf(st, i)
 					break
+				case TypeCommand.BLOCK:
+					i = doBlock(st, i)
+					break
 				case TypeCommand.ERROR:
-					throw new ExceptionSQLScripter("script error: $sql")
+					throw new ExceptionSQLScripter("SQLScripter: found error $sql")
+					break
+				case TypeCommand.EXIT:
+					requiredExit = true
+					break
+				case TypeCommand.LOAD_POINT:
+					doLoadPoint(st, i)
+					break
+				case TypeCommand.SAVE_POINT:
+					doSavePoint(st, i)
 					break
 				default:
-					throw new ExceptionGETL("Unknown type command ${typeSql}")
+					throw new ExceptionGETL("SQLScripter: unknown type command \"${typeSql}\"")
 			}
 		}
 	}
@@ -365,7 +501,7 @@ public class SQLScripter {
 	 * @return
 	 */
 	public static List<String> BatchSQL2List (String sql, String delim) {
-		if (sql == null) throw new ExceptionGETL("Required sql")
+		if (sql == null) throw new ExceptionGETL("SQLScripter: required sql for BatchSQL2List method")
 		
 		// Delete multi comment
 		StringBuffer b = new StringBuffer()

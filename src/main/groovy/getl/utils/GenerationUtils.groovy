@@ -409,17 +409,20 @@ class GenerationUtils {
 	}
 	
 	public static final Random random = new Random()
-	
+
+	@groovy.transform.CompileStatic
 	public static int GenerateInt () {
 		random.nextInt()
 	}
 	
+	@groovy.transform.CompileStatic
 	public static int GenerateInt (int minValue, int maxValue) {
 		def res = minValue - 1
 		while (res < minValue) res = random.nextInt(maxValue + 1)
 		res
 	}
 	
+	@groovy.transform.CompileStatic
 	public static String GenerateString (int length) {
 		String result = ""
 		while (result.length() < length) result += ((result.length() > 0)?" ":"") + StringUtils.RandomStr().replace('-', ' ')
@@ -430,18 +433,22 @@ class GenerationUtils {
 		StringUtils.LeftStr(result + "a", l)
 	}
 	
+	@groovy.transform.CompileStatic
 	public static long GenerateLong () {
 		random.nextLong()
 	}
 	
+	@groovy.transform.CompileStatic
 	public static BigDecimal GenerateNumeric () {
 		BigDecimal.valueOf(random.nextDouble()) + random.nextInt()
 	}
 	
+	@groovy.transform.CompileStatic
 	public static BigDecimal GenerateNumeric (int precision) {
 		NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextInt(), precision)
 	}
 	
+	@groovy.transform.CompileStatic
 	public static BigDecimal GenerateNumeric (int length, int precision) {
 		BigDecimal res
 		def intSize = length - precision
@@ -449,7 +456,7 @@ class GenerationUtils {
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()), precision)
 		}
 		else if (intSize < 15) {
-			int lSize = Math.pow(10, intSize) - 1
+			int lSize = (Math.pow(10, intSize)).intValue() - 1
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextInt(lSize), precision)
 		}
 		else {
@@ -457,31 +464,37 @@ class GenerationUtils {
 		}
 	}
 	
+	@groovy.transform.CompileStatic
 	public static double GenerateDouble () {
 		random.nextDouble() + random.nextLong()
 	}
 	
+	@groovy.transform.CompileStatic
 	public static boolean GenerateBoolean () {
 		random.nextBoolean()
 	}
 	
+	@groovy.transform.CompileStatic
 	public static Date GenerateDate() {
 		DateUtils.AddDate("dd", -GenerateInt(0, 365), DateUtils.CurrentDate())
 	}
 	
+	@groovy.transform.CompileStatic
 	public static Date GenerateDate(int days) {
 		DateUtils.AddDate("dd", -GenerateInt(0, days), DateUtils.CurrentDate())
 	}
 	
+	@groovy.transform.CompileStatic
 	public static Date GenerateDateTime() {
 		DateUtils.AddDate("ss", -GenerateInt(0, 525600), DateUtils.Now())
 	}
 	
+	@groovy.transform.CompileStatic
 	public static Date GenerateDateTime(int seconds) {
 		DateUtils.AddDate("ss", -GenerateInt(0, seconds), DateUtils.Now())
 	}
 	
-	
+	@groovy.transform.CompileStatic
 	public static def GenerateValue (Field f) {
 		GenerateValue(f, null)
 	}
@@ -492,6 +505,7 @@ class GenerationUtils {
 	 * @param rowID
 	 * @return
 	 */
+	@groovy.transform.CompileStatic
 	public static def GenerateValue (Field f, def rowID) {
 		def result
 		def l = f.length?:1
@@ -510,9 +524,9 @@ class GenerationUtils {
 					result = rowID
 				}
 				else {
-					if (f.minValue == null && f.maxValue == null) result = GenerateInt() else result = GenerateInt(f.minValue?:0, f.maxValue?:1000000)
+					if (f.minValue == null && f.maxValue == null) result = GenerateInt() else result = GenerateInt((Integer)f.minValue?:0, (Integer)f.maxValue?:1000000)
 				}
-				if (f.type == getl.data.Field.Type.BIGINT) result = result.longValue()
+				if (f.type == getl.data.Field.Type.BIGINT) result = ((BigDecimal)result).longValue()
 				
 				break 
 			case getl.data.Field.Type.NUMERIC:
@@ -555,16 +569,18 @@ class GenerationUtils {
 		result
 	}
 	
+	@groovy.transform.CompileStatic
 	public static Map GenerateRowValues (List<Field> field) {
 		GenerateRowValues(field, null)
 	}
 	
+	@groovy.transform.CompileStatic
 	public static Map GenerateRowValues (List<Field> field, def rowID) {
 		Map row = [:]
 		field.each { Field f ->
 			def fieldName = f.name.toLowerCase()
 			def value = GenerateValue(f, rowID)
-			row."$fieldName" = value
+			row.put(fieldName, value)
 		}
 		
 		row
@@ -575,11 +591,13 @@ class GenerationUtils {
 	 * @param value
 	 * @return
 	 */
+	@groovy.transform.CompileStatic
 	public static String GenerateStringValue (String value) {
 		if (value == null) return "null"
 		return '"' + value.replace('"', '\\"') + '"'
 	}
 	
+	@groovy.transform.CompileStatic
 	public static String GenerateCommand(String command, int numTab, boolean condition) {
 		if (!condition) return ""
 		StringUtils.Replicate("\t", numTab) + command
@@ -887,6 +905,7 @@ sb << """
 	 * Convert all dataset fields to string
 	 * @param dataset
 	 */
+	@groovy.transform.CompileStatic
 	public static void ConvertToStringFields (Dataset dataset) {
 		dataset.field.each { FieldConvertToString(it) }
 	}
@@ -980,12 +999,13 @@ sb << """
 	 * @param row
 	 * @return
 	 */
+	@groovy.transform.CompileStatic
 	public static Map RowKeyMapValues(List<Field> fields, Map row, List<String> excludeFields) {
 		Map res = [:]
 		if (excludeFields != null) excludeFields = excludeFields*.toLowerCase() else excludeFields = []
 		fields.each { Field f ->
 			if (f.isKey) {
-				if (!(f.name.toLowerCase() in excludeFields)) res."${f.name.toLowerCase()}" = row."${f.name.toLowerCase()}"
+				if (!(f.name.toLowerCase() in excludeFields)) res.put(f.name.toLowerCase(), row.get(f.name.toLowerCase()))
 			}
 		}
 		
@@ -998,10 +1018,11 @@ sb << """
 	 * @param row
 	 * @return
 	 */
+	@groovy.transform.CompileStatic
 	public static List RowListValues (List<String> fields, Map row) {
 		def res = new ArrayList()
 		fields.each { String n ->
-			res << row."${n.toLowerCase()}"
+			res << row.get(n.toLowerCase())
 		}
 		
 		res
@@ -1014,18 +1035,19 @@ sb << """
 	 * @param toLower
 	 * @return
 	 */
+	@groovy.transform.CompileStatic
 	public static Map RowMapValues (List<String> fields, Map row, boolean toLower) {
 		Map res = [:]
 		if (toLower) {
 			fields.each { String n ->
 				n = n.toLowerCase()
-				res."$n" = row."$n"
+				res.put(n, row.get(n))
 			}
 		}
 		else {
 			fields.each { String n ->
 				n = n.toLowerCase()
-				res."${n.toUpperCase()}" = row."$n"
+				res.put(n.toUpperCase(), row.get(n))
 			}
 		}
 		
@@ -1038,6 +1060,7 @@ sb << """
 	 * @param row
 	 * @return
 	 */
+	@groovy.transform.CompileStatic
 	public static Map RowMapValues (List<String> fields, Map row) {
 		RowMapValues(fields, row, true)
 	}

@@ -52,7 +52,7 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register("createDataset", ["orderBy", "segmentedBy", "unsegmented", "partitionBy"])
 		methodParams.register("bulkLoadFile", ["loadMethod", "rejectMax", "enforceLength", "compressed", "exceptionPath", 
 												"rejectedPath", "expression", "files", "fileMask", "location", "abortOnError",
-												"maskDate", "maskTime", "maskDateTime"])
+												"maskDate", "maskTime", "maskDateTime", "parser"])
 		methodParams.register("unionDataset", ["direct"])
 	}
 	
@@ -111,6 +111,28 @@ class VerticaDriver extends JDBCDriver {
 		def header = source.header
 		def nullAsValue = (source.nullAsValue != null)?"\nNULL AS '${source.nullAsValue}'":""
 		def isGzFile = source.isGzFile
+		
+		String parserText = ''
+		if (params."parser" != null) {
+			String parserFunc = params."parser"."function"
+			if (parserFunc == null) throw new ExceptionGETL("Required parser function name")
+			Map parserOptions = params."parser"."options"
+			if (parserOptions != null) {
+				def ol = []
+				parserOptions.each { String name, def value ->
+					if (value instanceof String) {
+						ol << "$name='$value'"
+					}
+					else {
+						ol << "$name=$value"
+					}
+				}
+				parserText = "\nWITH PARSER $parserFunc(${ol.join(', ')})"
+			}
+			else {
+				parserText = "\nWITH PARSER $parserFunc()"
+			}
+		}
 		
 		List<Map> map = params.map
 		Map expressions = params.expression?:[:]
@@ -213,7 +235,7 @@ class VerticaDriver extends JDBCDriver {
 			sb << "\n)\n"
 		}
 		
-		sb << """FROM ${(location == null)?"LOCAL ":""}$fileName
+		sb << """FROM ${(location == null)?"LOCAL ":""}$fileName $parserText
 DELIMITER AS $fieldDelimiter$nullAsValue
 ENCLOSED BY $quoteStr
 RECORD TERMINATOR $rowDelimiter

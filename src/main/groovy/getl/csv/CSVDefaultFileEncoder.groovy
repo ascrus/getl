@@ -46,6 +46,7 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 	private boolean replaceTab
 	private String quote_replace
 	private boolean escaped
+	private String escapeProcessLineChar
 	private long fieldDelimiterSize
 	private long rowDelimiterSize
 	private int countFields
@@ -56,6 +57,7 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 		
 		this.quote = wp.quote
 		this.escaped = wp.escaped
+		this.escapeProcessLineChar = wp.escapeProcessLineChar
 		this.fieldDelimiterSize = wp.fieldDelimiterSize
 		this.rowDelimiterSize = wp.rowDelimiterSize
 		this.countFields = wp.countFields
@@ -74,7 +76,12 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 		boolean isQuoted = (res.indexOf("\u0007") > -1)
 		if (escaped) {
 			res = res.replace('\\', '\\\\')
-			res = res.replace('\n', '\\n').replace('\r', '\\r')
+			if (escapeProcessLineChar == null) {
+				res = res.replace('\n', '\\n').replace('\r', '\\r')
+			}
+			else {
+				res = res.replace('\n', escapeProcessLineChar).replace('\r', '')
+			}
 			if (replaceTab) res = res.replace('\t', '\\t')
 			if (replaceQuote && isQuoted) {
 				res = quote + res.replace('\u0007', quote_replace) + quote

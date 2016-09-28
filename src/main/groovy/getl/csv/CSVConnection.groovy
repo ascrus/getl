@@ -43,10 +43,10 @@ class CSVConnection extends FileConnection {
 	CSVConnection (Map params) {
 		super(params + [driver: CSVDriver])
 		
-		methodParams.register("Super", ["quoteStr", "fieldDelimiter", "rowDelimiter", "header", "escaped", 
-										"nullAsValue", "quoteMode", "decimalSeparator", "formatDate", "formatTime", 
-										"formatDateTime", "ignoreHeader"])
-		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation("Super", params)
+		methodParams.register('Super', ['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped', 
+										'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime', 
+										'formatDateTime', 'ignoreHeader', 'escapeProcessLineChar'])
+		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation('Super', params)
 	}
 	
 	/**
@@ -58,13 +58,13 @@ class CSVConnection extends FileConnection {
 	/**
 	 * Field delimiter
 	 */
-	public String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, ","]) }
+	public String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, ',']) }
 	public void setFieldDelimiter (String value) { params.fieldDelimiter = value }
 	
 	/**
 	 * Row delimiter
 	 */
-	public String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, "\n"]) }
+	public String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, '\n']) }
 	public void setRowDelimiter (String value) { params.rowDelimiter = value }
 	
 	/**
@@ -84,6 +84,12 @@ class CSVConnection extends FileConnection {
 	 */
 	public boolean getEscaped () { BoolUtils.IsValue(params.escaped, false) }
 	public void setEscaped (boolean value) { params.escaped = value }
+	
+	/**
+	 * Convert line feed to custom escape char 
+	 */
+	public String getEscapeProcessLineChar () { params.escapeProcessLineChar }
+	public void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
 	
 	/**
 	 * Convert NULL to value
@@ -106,7 +112,7 @@ class CSVConnection extends FileConnection {
 	/**
 	 * Decimal separator for number fields
 	 */
-	public String getDecimalSeparator () { params.decimalSeparator?:"." }
+	public String getDecimalSeparator () { params.decimalSeparator?:'.' }
 	public void setDecimalSeparator (String value) { params.decimalSeparator = value }
 	
 	/**

@@ -374,21 +374,25 @@ class DateUtils {
 	 * @param value
 	 * @return
 	 */
-	public static BigDecimal Timestamp2Value(java.sql.Timestamp value) {
-		def t = value.time.intdiv(1000)
-		def n = new BigDecimal(value.nanos).divide(BigDecimal.valueOf(1000000000), 9, RoundingMode.UNNECESSARY)
-		def res = t + n
-
-		res
+	public static BigDecimal Timestamp2Value(Date value) {
+		if (value == null) return null
+		
+		Timestamp2Value(new java.sql.Timestamp(value.time))
 	}
-
+	
 	/**
 	 * Parse BigDecimal value from Timestamp
 	 * @param value
 	 * @return
 	 */
-	public static BigDecimal Timestamp2Value(Date value) {
-		Timestamp2Value(new java.sql.Timestamp(value.time))
+	public static BigDecimal Timestamp2Value(java.sql.Timestamp value) {
+		if ((Object)value == null) return null
+		
+		def t = value.time.intdiv(1000)
+		def n = new BigDecimal(value.nanos).divide(BigDecimal.valueOf(1000000000), 9, RoundingMode.UNNECESSARY)
+		def res = t + n
+
+		res
 	}
 	
 	/**
@@ -397,6 +401,8 @@ class DateUtils {
 	 * @return
 	 */
 	public static java.sql.Timestamp Value2Timestamp(BigDecimal value) {
+		if (value == null) return null
+		
 		def t = value.longValue() * 1000
 		def n = (value - value.longValue()) * 1000000000
 		def res = new java.sql.Timestamp(t)
@@ -413,7 +419,7 @@ class DateUtils {
 	public static Map PeriodCrossing(List<Map> intervals) {
 		Date start
 		Date finish
-		intervals.each { Map interval ->
+		intervals?.each { Map interval ->
 			if (interval."start" == null) throw new ExceptionGETL("Required start date from interval")
 			if (interval."finish" == null) throw new ExceptionGETL("Required finish date from interval")
 			if (start == null || (Date)(interval."start") < start) {
