@@ -14,8 +14,12 @@ repositories {
 	jcenter()
 	
 	mavenCentral()
-	maven {
-		url 'https://raw.githubusercontent.com/Takuto88/sauronsoftware-maven/master/releases/'
+//	maven {
+//		url 'https://raw.githubusercontent.com/Takuto88/sauronsoftware-maven/master/releases/'
+//	}
+
+	flatDir {
+		dirs 'libs'
 	}
 }
 

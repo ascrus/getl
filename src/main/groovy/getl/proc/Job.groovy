@@ -122,7 +122,7 @@ abstract class Job {
 	}
 	
 	/**
-	 * Run jobs without arguments of command line
+	 * Run vertica without arguments of command line
 	 */
 	public void run () {
 		Config.ClearConfig()
