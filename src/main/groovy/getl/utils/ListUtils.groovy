@@ -144,10 +144,12 @@ class ListUtils {
 				if (val.trim() != '"') res << GenerationUtils.EvalGroovyScript('"""' + val + '"""', vars) else res << val
 			}
 			else if (v instanceof List) {
-				res << EvalMacroValues((List)v, vars)
+				List r = v as List
+				res << EvalMacroValues(r, vars)
 			}
 			else if (v instanceof Map) {
-				res << MapUtils.EvalMacroValues((Map)v, vars)
+				Map r = v as Map
+				res << MapUtils.EvalMacroValues(r, vars)
 			}
 			else {
 				res << v

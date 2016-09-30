@@ -42,85 +42,85 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Quote delimiter string	
 	 */
-	public String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, connection?.quoteStr, '"']) }
+	public String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, csvConnection()?.quoteStr, '"']) }
 	public void setQuoteStr (String value) { params.quoteStr = value }
 	
 	/**
 	 * Field delimiter
 	 */
-	public String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, connection?.fieldDelimiter, ',']) }
+	public String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, csvConnection()?.fieldDelimiter, ',']) }
 	public void setFieldDelimiter (String value) { params.fieldDelimiter = value }
 	
 	/**
 	 * Row delimiter
 	 */
-	public String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, connection?.rowDelimiter,'\n']) }
+	public String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, csvConnection()?.rowDelimiter,'\n']) }
 	public void setRowDelimiter (String value) { params.rowDelimiter = value }
 	
 	/**
 	 * File has header of fields name
 	 */
-	public boolean getHeader () { BoolUtils.IsValue([params.header, connection?.header], true) }
+	public boolean getHeader () { BoolUtils.IsValue([params.header, csvConnection()?.header], true) }
 	public void setHeader (boolean value) { params.header = value }
 	
 	/**
 	 * Ignore header field name
 	 */
-	public boolean getIgnoreHeader () { BoolUtils.IsValue([params.ignoreHeader, connection?.ignoreHeader], false) }
+	public boolean getIgnoreHeader () { BoolUtils.IsValue([params.ignoreHeader, csvConnection()?.ignoreHeader], false) }
 	public void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
 	
 	/**
 	 * Required format values for output to file 
 	 */
-	public boolean getFormatOutput () { BoolUtils.IsValue([params.formatOutput, connection?.formatOutput], true) }
+	public boolean getFormatOutput () { BoolUtils.IsValue([params.formatOutput, csvConnection()?.formatOutput], true) }
 	public void setFormatOutput (boolean value) { params.formatOutput = value }
 	
 	/**
 	 * Convert NULL to value
 	 */
-	public String getNullAsValue () { ListUtils.NotNullValue([params.nullAsValue, connection?.nullAsValue]) }
+	public String getNullAsValue () { ListUtils.NotNullValue([params.nullAsValue, csvConnection()?.nullAsValue]) }
 	public void setNullAsValue (String value) { params.nullAsValue = value }
 
 	/**
 	 * Required convert string to escape value 	
 	 */
-	public boolean getEscaped () { BoolUtils.IsValue([params.escaped, connection?.escaped], false) }
+	public boolean getEscaped () { BoolUtils.IsValue([params.escaped, csvConnection()?.escaped], false) }
 	public void setEscaped (boolean value) { params.escaped = value }
 	
 	/**
 	 * Convert line feed to custom escape char 
 	 */
-	public String getEscapeProcessLineChar () { ListUtils.NotNullValue([params.escapeProcessLineChar, connection?.escapeProcessLineChar]) }
+	public String getEscapeProcessLineChar () { ListUtils.NotNullValue([params.escapeProcessLineChar, csvConnection()?.escapeProcessLineChar]) }
 	public void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
 	
 	/**
 	 * Mode of quote value 
 	 */
-	public QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, connection?.quoteMode, QuoteMode.NORMAL]) }
+	public QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, csvConnection()?.quoteMode, QuoteMode.NORMAL]) }
 	public void setQuoteMode (QuoteMode value) { params.quoteMode = value }
 	
 	/**
 	 * Decimal separator for number fields
 	 */
-	public String getDecimalSeparator () { ListUtils.NotNullValue([params.decimalSeparator, connection?.decimalSeparator, '.']) }
+	public String getDecimalSeparator () { ListUtils.NotNullValue([params.decimalSeparator, csvConnection()?.decimalSeparator, '.']) }
 	public void setDecimalSeparator (String value) { params.decimalSeparator = value }
 	
 	/**
 	 * Format for date fields
 	 */
-	public String getFormatDate () { params.formatDate?:(connection?.formatDate) }
+	public String getFormatDate () { ListUtils.NotNullValue([params.formatDate, csvConnection()?.formatDate]) }
 	public void setFormatDate (String value) { params.formatDate = value }
 	
 	/**
 	 * Format for time fields
 	 */
-	public String getFormatTime () { params.formatTime?:(connection?.formatTime) }
+	public String getFormatTime () { ListUtils.NotNullValue([params.formatTime, csvConnection()?.formatTime]) }
 	public void setFormatTime (String value) { params.formatTime = value }
 	
 	/**
 	 * Format for datetime fields
 	 */
-	public String getFormatDateTime () { params.formatDateTime?:(connection?.formatDateTime) }
+	public String getFormatDateTime () { ListUtils.NotNullValue([params.formatDateTime, csvConnection()?.formatDateTime]) }
 	public void setFormatDateTime (String value) { params.formatDateTime = value }
 		
 	/**
@@ -154,6 +154,8 @@ class CSVDataset extends FileDataset {
 					'escaped', 'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime', 'ignoreHeader', 
 					'escapeProcessLineChar']
 	}
+
+	public CSVConnection csvConnection() { connection as CSVConnection}
 	
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
