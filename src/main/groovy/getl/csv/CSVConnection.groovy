@@ -41,8 +41,8 @@ class CSVConnection extends FileConnection {
 	}
 	
 	CSVConnection (Map params) {
-		super(params + [driver: CSVDriver])
-		
+		super(new HashMap([driver: CSVDriver]) + params)
+
 		methodParams.register('Super', ['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped', 
 										'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime', 
 										'formatDateTime', 'ignoreHeader', 'escapeProcessLineChar'])
