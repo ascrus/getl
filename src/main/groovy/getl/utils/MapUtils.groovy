@@ -26,7 +26,6 @@ package getl.utils
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
-import getl.data.Field
 import getl.exception.ExceptionGETL
 
 /**
@@ -331,7 +330,7 @@ class MapUtils {
 			la = (List<String>)args
 		}
 		else if (args instanceof String[]){
-			la = (List<String>)((String[])args).collect()
+			la = (args as String[]).collect() as List<String>
 		}
 		else {
 			throw new ExceptionGETL("Invalid arguments for processing")
@@ -423,10 +422,10 @@ class MapUtils {
 				if (val.trim() != '"') res.put(k, GenerationUtils.EvalGroovyScript('"""' + val + '"""', vars)) else res.putAt(k, val)
 			}
 			else if (v instanceof Map) {
-				res.put(k, EvalMacroValues((Map)v, vars))
+				res.put(k, EvalMacroValues(((Map)v), vars))
 			}
 			else if (v instanceof List) {
-				res.put(k, ListUtils.EvalMacroValues((List)v, vars))
+				res.put(k, ListUtils.EvalMacroValues(((List)v), vars))
 			}
 			else {
 				res.put(k, v)
@@ -434,5 +433,19 @@ class MapUtils {
 		}
 
 		res
+	}
+
+	/**
+	 * Convert map structure to url parameters
+	 * @param m
+	 * @return
+	 */
+	public static String MapToUrlParams(Map<String, Object> m) {
+		List l = []
+		m.each { String k, v ->
+			l << "$k=${v.toString()}"
+		}
+
+		l.join('&')
 	}
 }
