@@ -138,11 +138,14 @@ class HDFSManager extends Manager {
 
     @Override
     void setCurrentPath(String path) {
+        if (path == curPath) return
+
         if (path == null || path == '/') {
             if (writeErrorsToLog) Logs.Severe('Invalid path: \"$path\"')
             throw new ExceptionGETL('Invalid null path')
         }
         if (path[0] == '/') path = path.substring(1)
+        path = fullName(path, null)
         def p = new Path(path)
         if (!client.exists(p)) {
             if (writeErrorsToLog) Logs.Severe("Path \"$path\" not found")
@@ -157,6 +160,7 @@ class HDFSManager extends Manager {
 
     private fullName(String dir, String file) {
         if (dir != null && dir[0] == '/') dir = dir.substring(1)
+        if (!((dir + '/').matches(rootPath + '/.*'))) dir = rootPath + '/' + dir
         ((dir != null)?dir:'') + ((file != null)?"/$file":'')
     }
 
@@ -241,7 +245,7 @@ class HDFSManager extends Manager {
     void download(String fileName, String path, String localFileName) {
         def fn = ((path != null)?path + '/':'') + localFileName
         try {
-            client.copyFromLocalFile(new Path(fn), fullPath(currentPath, fileName))
+            client.copyToLocalFile(false, fullPath(currentPath, fileName), new Path(fn), true)
         }
         catch (Throwable e) {
             if (writeErrorsToLog) Logs.Severe("Can not download file \"${fullName(currentPath, fileName)}\" to \"$fn\"")
@@ -253,7 +257,7 @@ class HDFSManager extends Manager {
     void upload(String path, String fileName) {
         def fn = ((path != null)?path + "/":"") + fileName
         try {
-            client.copyToLocalFile(fullPath(currentPath, fileName), new Path(fn))
+            client.copyFromLocalFile(new Path(fn), fullPath(currentPath, fileName))
         }
         catch (Throwable e) {
             if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fn\" to \"${fullName(currentPath, fileName)}\"")

@@ -827,6 +827,13 @@ FROM ${newFiles.fullNameDataset()} files
 			useFiles.drop(ifExists: true)
 		}
 	}
+
+	/**
+	 * Download files of list
+	 */
+	public void buildList () {
+		buildList([:], null)
+	}
 	
 	/**
 	 * Build list files with path processor<br>
@@ -840,6 +847,14 @@ FROM ${newFiles.fullNameDataset()} files
 	 */
 	public void buildList (Map params) {
 		buildList(params, (ManagerListProcessing)null)
+	}
+
+	/**
+	 * Download files of list
+	 * @param onDownloadFile - run code after download file as void onDownloadFile (Map file)
+	 */
+	public void buildList (Closure onDownloadFile) {
+		buildList([:], onDownloadFile)
 	}
 	
 	/**
@@ -859,7 +874,7 @@ FROM ${newFiles.fullNameDataset()} files
 	 */
 	public void downloadFiles(Map params, Closure onDownloadFile) {
 		methodParams.validation("downloadFiles", params)
-		if (fileList.field.isEmpty()) throw new ExceptionGETL("Before download build fileList dataset")
+		if (fileList == null || fileList.field.isEmpty()) throw new ExceptionGETL("Before download build fileList dataset")
 		
 		boolean deleteLoadedFile = (params.deleteLoadedFile != null)?params.deleteLoadedFile:false
 		TableDataset ds = params.story?:null
@@ -906,7 +921,7 @@ WHERE
 			ds.openWrite()
 		} 
 		
-		def ld = (localDirectory != null)?localDirectory + "/":""
+		def ld = currentLocalDir() //(localDirectory != null)?localDirectory + "/":""
 		def curDir = currentDir()
 
 		try {
@@ -919,7 +934,7 @@ WHERE
 					curDir = currentDir()
 				}
 				
-				def lpath = (folders)?"${localDirectory}/${file.filepath}":localDirectory
+				def lpath = (folders)?"${ld}/${file.filepath}":ld
 				FileUtils.ValidPath(lpath)
 				
 				def tempName = "_" + FileUtils.UniqueFileName()  + ".tmp"
@@ -971,18 +986,20 @@ WHERE
 			}
 			
 			if (useStory) ds.doneWrite()
+			if (useStory) ds.connection.commitTran()
 		}
 		catch (Exception e) {
-			if (useStory) ds.connection.rollbackTran()
+			if (useStory && ds.connection.connected) ds.connection.rollbackTran()
 			throw e
 		}
 		finally {
 			if (useStory) {
-				ds.closeWrite()
-				storyFiles.drop(ifExists: true)
+				if (ds.connection.connected) {
+					ds.closeWrite()
+					storyFiles.drop(ifExists: true)
+				}
 			}
 		}
-		if (useStory) ds.connection.commitTran()
 	}
 	
 	/**
@@ -1180,7 +1197,7 @@ WHERE
 		if (dir == '..') {
 			changeLocalDirectoryUp()
 		}
-		
+
 		setCurrentLocalPath(processLocalDirPath(dir))
 	}
 	

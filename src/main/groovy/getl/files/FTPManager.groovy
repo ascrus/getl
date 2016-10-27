@@ -23,13 +23,11 @@
 */
 
 package getl.files
-import java.util.Map;
 
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.InheritConstructors
-import it.sauronsoftware.ftp4j.FTPClient
-import it.sauronsoftware.ftp4j.FTPFile
+import it.sauronsoftware.ftp4j.*
 
 /**
  * FTP Manager
