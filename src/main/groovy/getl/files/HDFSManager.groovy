@@ -245,7 +245,11 @@ class HDFSManager extends Manager {
     void download(String fileName, String path, String localFileName) {
         def fn = ((path != null)?path + '/':'') + localFileName
         try {
-            client.copyToLocalFile(false, fullPath(currentPath, fileName), new Path(fn), true)
+            def p = fullPath(currentPath, fileName)
+            def s = client.getFileStatus(p)
+            client.copyToLocalFile(false, p, new Path(fn), true)
+            def f = new File(fn)
+            f.setLastModified(s.modificationTime)
         }
         catch (Throwable e) {
             if (writeErrorsToLog) Logs.Severe("Can not download file \"${fullName(currentPath, fileName)}\" to \"$fn\"")
@@ -257,7 +261,10 @@ class HDFSManager extends Manager {
     void upload(String path, String fileName) {
         def fn = ((path != null)?path + "/":"") + fileName
         try {
-            client.copyFromLocalFile(new Path(fn), fullPath(currentPath, fileName))
+            def p = fullPath(currentPath, fileName)
+            client.copyFromLocalFile(new Path(fn), p)
+            def f = new File(fn)
+            client.setTimes(p, f.lastModified(), f.lastModified())
         }
         catch (Throwable e) {
             if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fn\" to \"${fullName(currentPath, fileName)}\"")
@@ -288,9 +295,9 @@ class HDFSManager extends Manager {
     }
 
     @Override
-    void removeDir(String dirName) {
+    void removeDir(String dirName, Boolean recursive) {
         try {
-            client.delete(fullPath(currentPath, dirName), false)
+            client.delete(fullPath(currentPath, dirName), recursive)
         }
         catch (Throwable e) {
             if (writeErrorsToLog) Logs.Severe("Can not remove dir \"${fullName(currentPath, dirName)}\"")

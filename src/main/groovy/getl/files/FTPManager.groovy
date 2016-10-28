@@ -41,18 +41,20 @@ class FTPManager extends Manager {
 	@Override
 	protected void initMethods () {
 		super.initMethods()
-		methodParams.register("super", ["server", "port", "login", "password", "passive", "isHardDisconnect", "autoNoopTimeout", "closeTimeout", "connectionTimeout", "readTimeout"])
+		methodParams.register('super', ['server', 'port', 'login', 'password', 'passive', 'isHardDisconnect',
+										'autoNoopTimeout', 'closeTimeout', 'connectionTimeout', 'readTimeout',
+                                        'timeZone'])
 	}
 	
 	@Override
 	protected void onLoadConfig (Map configSection) {
 		super.onLoadConfig(configSection)
-		if (rootPath != null && rootPath.substring(0, 1) != "/") rootPath = "/" + rootPath
+		if (rootPath != null && rootPath.substring(0, 1) != '/') rootPath = '/' + rootPath
 	}
 	
 	@Override
 	public void setRootPath (String value) {
-		if (value != null && value.substring(0, 1) != "/") value = "/" + value
+		if (value != null && value.substring(0, 1) != '/') value = '/' + value
 		super.setRootPath(value)
 	}
 	
@@ -82,7 +84,6 @@ class FTPManager extends Manager {
 	
 	/**
 	 * Passive mode
-	 * @return
 	 */
 	public boolean getPassive () { (params.passive != null)?params.passive:true }
 	public void setPassive (boolean value) {
@@ -107,7 +108,6 @@ class FTPManager extends Manager {
 	
 	/**
 	 * Close timeout
-	 * @return
 	 */
 	public Integer getCloseTimeout () { params.closeTimeout }
 	public void setCloseTimeout (Integer value) {
@@ -117,7 +117,6 @@ class FTPManager extends Manager {
 	
 	/**
 	 * Connection timeout
-	 * @return
 	 */
 	public Integer getConnectionmTimeout () { params.connectionTimeout }
 	public void setConnectionTimeout (Integer value) {
@@ -127,22 +126,35 @@ class FTPManager extends Manager {
 	
 	/**
 	 * Read timeout
-	 * @return
 	 */
 	public Integer getReadTimeout () { params.readTimeout }
 	public void setReadTimeout (Integer value) {
 		if (client.connected) client.connector.readTimeout = value
 		params.readTimeout = value
 	}
+
+    /**
+     * FTP server time zone
+     */
+    public Integer getTimeZone () { params.timeZone }
+    public void setTimeZone (Integer value) { params.timeZone = value }
 	
 	@Override
 	public boolean isCaseSensitiveName () { true }
+
+    final private supportCommands = []
+    /**
+     * Valid support command for FTP server
+     * @param cmd
+     * @return
+     */
+    public boolean supportCommand(String cmd) { (cmd.toUpperCase() in supportCommands) }
 	
 	@Override
 	public void connect () {
-		if (client.connected) throw new ExceptionGETL("FTP already connect to server")
-		if (server == null || port == null) throw new ExceptionGETL("Required server host and port for connect")
-		if (login == null) throw new ExceptionGETL("Required login for connect")
+		if (client.connected) throw new ExceptionGETL('FTP already connect to server')
+		if (server == null || port == null) throw new ExceptionGETL('Required server host and port for connect')
+		if (login == null) throw new ExceptionGETL('Required login for connect')
 		
 		if (connectionmTimeout != null) client.connector.connectionTimeout = connectionmTimeout
 		try {
@@ -165,7 +177,12 @@ class FTPManager extends Manager {
 		if (autoNoopTimeout != null) client.setAutoNoopTimeout(autoNoopTimeout * 1000)
 		if (closeTimeout != null) client.connector.closeTimeout = closeTimeout
 		if (readTimeout != null) client.connector.readTimeout = readTimeout
-		
+
+        supportCommands.clear()
+        client.sendCustomCommand('FEAT').messages.each { String cmd ->
+            supportCommands << cmd.trim().toUpperCase()
+        }
+
 		if (rootPath != null) currentPath = rootPath
 	}
 	
@@ -240,7 +257,7 @@ class FTPManager extends Manager {
 			listFiles = (mask != null)?client.list(mask):client.list()
 		}
 		catch (Throwable e) {
-			if (writeErrorsToLog) Logs.Severe("Can not read ftp list")
+			if (writeErrorsToLog) Logs.Severe('Can not read ftp list')
 			throw e
 		}
 		
@@ -272,16 +289,21 @@ class FTPManager extends Manager {
 			client.changeDirectoryUp()
 		}
 		catch (Throwable e) {
-			if (writeErrorsToLog) Logs.Severe("Can not change directory to up")
+			if (writeErrorsToLog) Logs.Severe('Can not change directory to up')
 			throw e
 		}
 	}
 	
 	@Override
 	public void download (String fileName, String path, String localFileName) {
-		def fn = ((path != null)?path + "/":"") + localFileName
+		def fn = ((path != null)?path + '/':'') + localFileName
 		try {
-			client.download(fileName, new File(fn))
+            def f = new File(fn)
+			client.download(fileName, f)
+            def fl = client.list(fileName)
+            if (fl.length != 1) throw new ExceptionGETL('Incorrect get file operation for setting attributes')
+            f.setLastModified(fl[0].modifiedDate.time)
+
 		}
 		catch (Throwable e) {
 			if (writeErrorsToLog) Logs.Severe("Can not download file \"$fileName\" to \"$fn\"")
@@ -291,9 +313,19 @@ class FTPManager extends Manager {
 	
 	@Override
 	public void upload (String path, String fileName) {
-		def fn = ((path != null)?path + "/":"") + fileName
+		def fn = ((path != null)?path + '/':'') + fileName
 		try {
-			client.upload(new File(fn))
+            def f = new File(fn)
+			client.upload(f)
+            if (supportCommand('MFMT')) {
+                def d = new Date(f.lastModified())
+                if (timeZone != null) {
+                    def tz = DateUtils.PartOfDate('TIMEZONE', d)
+                    if (timeZone != tz) d = DateUtils.AddDate('HH', timeZone - tz, d)
+                }
+                def df = DateUtils.FormatDate('yyyyMMddHHmmss', d)
+                client.sendCustomCommand("MFMT $df $fileName")
+            }
 		}
 		catch (Throwable e) {
 			if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fileName\" from \"$fn\"")
@@ -317,7 +349,7 @@ class FTPManager extends Manager {
 		def curDir = client.currentDirectory()
 		def cdDir
 		try {
-			def dirs = dirName.split("[/]")
+			def dirs = dirName.split('[/]')
 
 			dirs.each { dir ->
 				if (cdDir == null) cdDir = dir else cdDir = "$cdDir/$dir"
@@ -344,15 +376,46 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public void removeDir (String dirName) {
+	public void removeDir (String dirName, Boolean recursive) {
 		try {
-			client.deleteDirectory(dirName)
+			if (recursive) {
+                def l = client.list()
+                def d = l.find { FTPFile f -> f.name == dirName && f.type == FTPFile.TYPE_DIRECTORY}
+                if (d == null) throw new ExceptionGETL("Cannot get attribute by directory \"$dirName\"")
+                doDeleteDirectory(d)
+            }
+            else {
+                client.deleteDirectory(dirName)
+            }
 		}
 		catch (Throwable e) {
 			if (writeErrorsToLog) Logs.Severe("Can not remove directory \"$dirName\"")
 			throw e
 		}
 	}
+
+    /**
+     * Recursive remove dir
+     * @param objName
+     */
+    private void doDeleteDirectory(FTPFile obj) {
+        if (obj.type == FTPFile.TYPE_DIRECTORY) {
+            client.changeDirectory(obj.name)
+            try {
+                def fl = client.list()
+                fl.each { FTPFile f ->
+                    doDeleteDirectory(f)
+                }
+            }
+            finally {
+                client.changeDirectoryUp()
+            }
+            client.deleteDirectory(obj.name)
+        }
+        else  {
+            client.deleteFile(obj.name)
+        }
+    }
 	
 	@Override
 	public void rename(String fileName, String path) {

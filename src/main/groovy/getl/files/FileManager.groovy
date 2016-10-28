@@ -177,6 +177,9 @@ class FileManager extends Manager {
 		
 		def fn = ((path != null)?path + "/":"") + localFileName
 		FileUtils.CopyToFile(f.path, fn, false)
+
+        def fDest = new File(fn)
+        fDest.setLastModified(f.lastModified())
 	}
 	
 	@Override
@@ -188,6 +191,10 @@ class FileManager extends Manager {
 		
 		def dest = "${currentDir.path}/${fileName}"
 		FileUtils.CopyToFile(fn, dest, false)
+
+		def fSource = new File(fn)
+		def fDest = new File(dest)
+        fDest.setLastModified(fSource.lastModified())
 	}
 	
 	@Override
@@ -208,12 +215,17 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	public void removeDir (String dirName) {
+	public void removeDir (String dirName, Boolean recursive) {
 		validConnect()
 		
 		File f = new File("${currentDir.path}/${dirName}")
 		if (!f.exists()) throw new ExceptionGETL("Directory \"${f.path}\" not found")
-		if (!f.deleteDir()) throw new ExceptionGETL("Can not remove directory \"${f.path}\"")
+        if (recursive) {
+            if (!f.deleteDir()) throw new ExceptionGETL("Can not remove directory \"${f.path}\"")
+        }
+        else {
+            if (!f.delete()) throw new ExceptionGETL("Can not remove directory \"${f.path}\"")
+        }
 	}
 	
 	@Override

@@ -400,7 +400,16 @@ abstract class Manager {
 	 * Remove directory from server
 	 * @param dirName
 	 */
-	public abstract void removeDir (String dirName)
+	public void removeDir (String dirName) {
+        removeDir(dirName, false)
+    }
+
+    /**
+     * Remove directory from server
+     * @param dirName
+     * @param recursive
+     */
+	public abstract void removeDir (String dirName, Boolean recursive)
 	
 	/**
 	 * Return current directory with full path
