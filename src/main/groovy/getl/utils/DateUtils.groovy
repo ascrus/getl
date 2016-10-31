@@ -360,7 +360,8 @@ class DateUtils {
 			ret = c.get(Calendar.WEEK_OF_YEAR)
 			break
 		case 11:
-			ret = (int)(c.get(Calendar.ZONE_OFFSET)).intdiv(1000 * 60 * 60)
+//			ret = ((int)(c.get(Calendar.ZONE_OFFSET))).intdiv(1000 * 60 * 60)
+            ret = ((Long)Long.divideUnsigned(Long.valueOf(c.get(Calendar.ZONE_OFFSET)), 1000L * 60 * 60)).intValue()
 			break
 		default:
 			break
@@ -387,8 +388,9 @@ class DateUtils {
 	 */
 	public static BigDecimal Timestamp2Value(java.sql.Timestamp value) {
 		if ((Object)value == null) return null
-		
-		def t = value.time.intdiv(1000)
+
+//		def t = value.time.intdiv(1000)
+        def t = Long.divideUnsigned(value.time, 1000)
 		def n = new BigDecimal(value.nanos).divide(BigDecimal.valueOf(1000000000), 9, RoundingMode.UNNECESSARY)
 		def res = t + n
 
@@ -422,10 +424,10 @@ class DateUtils {
 		intervals?.each { Map interval ->
 			if (interval."start" == null) throw new ExceptionGETL("Required start date from interval")
 			if (interval."finish" == null) throw new ExceptionGETL("Required finish date from interval")
-			if (start == null || (Date)(interval."start") < start) {
+			if (start == null || ((Date)(interval."start")) < start) {
 				start = (Date)(interval."start")
 			}
-			if (finish == null || (Date)(interval."finish") > finish) {
+			if (finish == null || ((Date)(interval."finish")) > finish) {
 				finish = (Date)(interval."finish")
 			}
 		}

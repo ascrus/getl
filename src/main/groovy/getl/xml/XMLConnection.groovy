@@ -38,7 +38,7 @@ class XMLConnection extends FileConnection {
 	}
 	
 	XMLConnection (Map params) {
-		super(params + [driver: XMLDriver])
+		super(new HashMap([driver: XMLDriver]) + params)
 		
 		if (this.getClass().name == 'getl.xml.XMLConnection') methodParams.validation("Super", params)
 	}

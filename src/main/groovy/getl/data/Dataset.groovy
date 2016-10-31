@@ -603,7 +603,7 @@ class Dataset {
 		CSVDataset source = procParams.source
 		if (source == null) throw new ExceptionGETL("Required parameter \"source\"")
 		if (BoolUtils.IsValue(procParams.inheritFields, false)) {
-			source.field = field
+			source.setField(field)
 		}
 		
 		if (source.field.size() == 0) { 
@@ -1276,7 +1276,7 @@ ${ef.toString()}
 		Map p = MapUtils.Clone(this.params)
 		Dataset ds = CreateDataset([dataset: className] + MapUtils.CleanMap(this.params, ['sysParams']))
 		if (newConnection != null) ds.connection = newConnection
-		ds.field = this.field
+		ds.setField(this.field)
 		ds.manualSchema = this.manualSchema
 		
 		ds

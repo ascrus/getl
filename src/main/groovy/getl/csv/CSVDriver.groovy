@@ -25,6 +25,7 @@
 package getl.csv
 
 import groovy.transform.InheritConstructors
+import org.openxmlformats.schemas.presentationml.x2006.main.STTLAnimateBehaviorCalcMode
 
 import java.nio.CharBuffer
 import java.text.DecimalFormat
@@ -172,8 +173,8 @@ class CSVDriver extends FileDriver {
 		fields
 	}
 
-	protected CellProcessor type2cellProcessor (Field field, boolean isWrite, boolean isEscape, String nullAsValue, String decimalSeparator, 
-												String formatDate, String formatTime, String formatDateTime, boolean isValid) {
+	protected CellProcessor type2cellProcessor (Field field, Boolean isWrite, Boolean isEscape, String nullAsValue, String decimalSeparator,
+												String formatDate, String formatTime, String formatDateTime, Boolean isValid) {
 		CellProcessor cp
 		
 		if (field.type == null || (field.type in [Field.Type.STRING, Field.Type.OBJECT, Field.Type.ROWID/*, Field.Type.TEXT*/])) {
@@ -329,15 +330,15 @@ class CSVDriver extends FileDriver {
 		CSVDataset dataset = (CSVDataset)fParams.dataset
 		ArrayList<String> fields = (ArrayList<String>)fParams.filds
 		String[] header = (String[])fParams.header
-		boolean isOptional = fParams.isOptional
-		boolean isWrite = fParams.isWrite
-		boolean isValid = fParams.isValid
-		boolean isEscape = fParams.isEscape
-		String nullAsValue = fParams.nullAsValue
-		String decimalSeparator = ListUtils.NotNullValue([fParams.decimalSeparator, dataset.decimalSeparator, '.'])
-		String formatDate = fParams.formatDate
-		String formatTime = fParams.formatTime
-		String formatDateTime = fParams.formatDateTime
+		Boolean isOptional = fParams.isOptional as Boolean
+		Boolean isWrite = fParams.isWrite as Boolean
+		Boolean isValid = fParams.isValid as Boolean
+		Boolean isEscape = fParams.isEscape as Boolean
+		String nullAsValue = fParams.nullAsValue as String
+		String decimalSeparator = ListUtils.NotNullValue([fParams.decimalSeparator, dataset.decimalSeparator, '.']) as String
+		String formatDate = ListUtils.NotNullValue([fParams.formatDate, dataset.formatDate]) as String
+		String formatTime = ListUtils.NotNullValue([fParams.formatTime, dataset.formatTime]) as String
+		String formatDateTime = ListUtils.NotNullValue([fParams.formatDateTime, dataset.formatDateTime]) as String
 		
 		if (fields == null) fields = []
 		def quoteStr = dataset.quoteStr
@@ -357,7 +358,7 @@ class CSVDriver extends FileDriver {
 				else {
 					Field f = dataset.field[i]
 					
-					CellProcessor p = type2cellProcessor(f, isWrite, isEscape, nullAsValue, decimalSeparator as String,
+					CellProcessor p = type2cellProcessor(f, isWrite, isEscape, nullAsValue, decimalSeparator,
 															formatDate, formatTime, formatDateTime, isValid)
 					cp << p
 				}

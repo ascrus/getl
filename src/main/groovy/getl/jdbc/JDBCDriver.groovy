@@ -1205,10 +1205,10 @@ $sql
 		StringBuilder sb = new StringBuilder()
 		sb << "{ getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection _getl_con, java.sql.PreparedStatement _getl_stat, Map _getl_row ->\n"
 		
-		if (countMethod > 1) {
+//		if (countMethod > 1) {
 			(1..countMethod).each { sb << "	method_${it}(_getl_driver, _getl_con, _getl_stat, _getl_row)\n" }
 			sb << "}\n"
-		}
+//		}
 		
 		
 		//PreparedStatement stat // !!!
@@ -1216,14 +1216,15 @@ $sql
 		fields.each { Field f ->
 			curField++
 			
-			if (countMethod > 1) {
+//			if (countMethod > 1) {
 				def fieldMethod = new BigDecimal(curField / 100).intValue() + 1
 				if (fieldMethod != curMethod) {
 					if (curMethod > 0) sb << "}\n"
 					curMethod = fieldMethod
 					sb << "\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
+//					sb << "\n@groovy.transform.CompileStatic\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
 				}
-			}
+//			}
 			
 			def fn = f.name.toLowerCase()
 			def dbType = (f.dbType != null)?f.dbType:type2dbType(f.type)

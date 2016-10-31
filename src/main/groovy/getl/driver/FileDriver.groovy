@@ -327,7 +327,7 @@ abstract class FileDriver extends Driver {
 	 * @param fileName
 	 * @param fileTemp
 	 */
-	protected void processWriteFile(String fileName, File fileTemp) { }
+	protected void processWriteFile(String fileName, File fileTemp) {  }
 	
 	/**
 	 * Fixing temporary files to persistent file or deleting 

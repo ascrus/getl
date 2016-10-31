@@ -2,7 +2,7 @@ apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-version = "1.2.06"
+version = "1.2.07"
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -14,8 +14,12 @@ repositories {
 	jcenter()
 	
 	mavenCentral()
-	maven {
-		url 'https://raw.githubusercontent.com/Takuto88/sauronsoftware-maven/master/releases/'
+//	maven {
+//		url 'https://raw.githubusercontent.com/Takuto88/sauronsoftware-maven/master/releases/'
+//	}
+
+	flatDir {
+		dirs 'libs'
 	}
 }
 
@@ -27,7 +31,10 @@ dependencies {
 	compile ('org.apache.poi:poi-ooxml:3.14') {
 		exclude group: 'stax'
 	}
+
 	compile 'org.apache.poi:ooxml-schemas:1.3'
+	compile 'org.apache.hadoop:hadoop-hdfs:2.7.2'
+	compile 'org.apache.hadoop:hadoop-common:2.7.2'
 
 	addJars 'com.sun.mail:smtp:1.5.4'
 	addJars 'com.sun.mail:mailapi:1.5.4'

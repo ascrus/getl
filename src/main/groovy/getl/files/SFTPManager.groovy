@@ -279,7 +279,8 @@ class SFTPManager extends Manager {
 	public void download(String fileName, String path, String localFileName) {
 		def fn = ((path != null)?path + "/":"") + localFileName
 		writeScriptHistoryFile("COMMAND: get \"$fileName\" to \"$fn\"")
-		OutputStream s = new File(fn).newOutputStream()
+        def f = new File(fn)
+		OutputStream s = f.newOutputStream()
 		try {
 			channelFtp.get(fileName, s)
 		}
@@ -290,16 +291,21 @@ class SFTPManager extends Manager {
 		finally {
 			s.close()
 		}
-		
+
+        def a = channelFtp.stat(fileName)
+        def d = new Date(a.MTime * 1000L)
+        f.setLastModified(d.time)
 	}
 
 	@Override
 	public void upload(String path, String fileName) {
 		def fn = ((path != null)?path + "/":"") + fileName
 		writeScriptHistoryFile("COMMAND: put \"$fn\" to \"$fileName\"")
-		InputStream s = new File(fn).newInputStream()
+        def f = new File(fn)
+		InputStream s = f.newInputStream()
 		try {
 			channelFtp.put(s, fileName)
+            channelFtp.setMtime(fileName, (f.lastModified() / 1000L).intValue())
 		}
 		catch (Throwable e) {
 			if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fileName\" from \"$fn\"")
@@ -359,16 +365,46 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	public void removeDir(String dirName) {
+	public void removeDir(String dirName, Boolean recursive) {
 		writeScriptHistoryFile("COMMAND: rmdir \"$dirName\"")
+        if (!channelFtp.stat(dirName).isDir()) throw new ExceptionGETL("$dirName is not directory")
 		try {
-			channelFtp.rmdir(dirName)
+            if (recursive) {
+                doDeleteDirectory(dirName)
+            }
+            else {
+                channelFtp.rmdir(dirName)
+            }
 		}
 		catch (Throwable e) {
 			if (writeErrorsToLog) Logs.Severe("Can not remove directory \"$dirName\"")
 			throw e
 		}
 	}
+
+    /**
+     * Recursive remove dir
+     * @param objName
+     */
+    private void doDeleteDirectory(String objName) {
+        if (objName in ['.', '..']) return
+
+        if (channelFtp.stat(objName).isDir()) {
+            channelFtp.cd(objName)
+            try {
+                Vector<ChannelSftp.LsEntry> entries = channelFtp.ls(".")
+                for (ChannelSftp.LsEntry entry : entries) {
+                    doDeleteDirectory(entry.getFilename())
+                }
+            }
+            finally {
+                channelFtp.cd("..")
+            }
+            channelFtp.rmdir(objName)
+        } else {
+            channelFtp.rm(objName)
+        }
+    }
 
 	@Override
 	public void rename(String fileName, String path) {
