@@ -26,6 +26,7 @@ package getl.data
 
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import org.apache.commons.lang.BooleanUtils
 
 /**
  * Base field class
@@ -348,7 +349,7 @@ class Field implements Serializable {
 		maxValue = (f.maxValue != null)?f.maxValue:maxValue
 		format = (f.format != null)?f.format:format
 		alias = (f.alias != null)?f.alias:alias
-		trim = (f.trim == true)?true:trim
+		trim = (BooleanUtils.isTrue(f.trim))?true:trim
 		decimalSeparator = (f.decimalSeparator != null)?f.decimalSeparator:decimalSeparator
 		description = (f.description != null)?f.description:description
 		extended.putAll(f.extended)
@@ -359,7 +360,7 @@ class Field implements Serializable {
 	 * @return
 	 */
 	public Field copy() {
-		Field f = new Field(
+		return new Field(
 				name: this.name, type: this.type, typeName: this.typeName, dbType: this.dbType, isNull: this.isNull, length: this.length, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
 				isAutoincrement: this.isAutoincrement, isReadOnly: this.isReadOnly, defaultValue: this.defaultValue, compute: this.compute, 
 				minValue: this.minValue, maxValue: this.maxValue, format: this.format, alias: this.alias, trim: this.trim, 

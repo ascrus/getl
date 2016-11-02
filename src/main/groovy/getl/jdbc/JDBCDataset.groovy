@@ -78,12 +78,12 @@ class JDBCDataset extends Dataset {
 	public String getObjectFullName() { fullNameDataset() }
 	
 	public String nameDataset () {
-		JDBCDriver drv = connection.driver
+		JDBCDriver drv = connection.driver as JDBCDriver
 		drv.nameDataset(this)
 	}
 	
 	public String fullNameDataset () {
-		JDBCDriver drv = connection.driver
+		JDBCDriver drv = connection.driver as JDBCDriver
 		drv.fullNameDataset(this)
 	}
 	
@@ -99,11 +99,11 @@ class JDBCDataset extends Dataset {
 	 * @return
 	 */
 	public String sqlObjectName (String name) {
-		GenerationUtils.SqlObjectName(connection, name)
+		GenerationUtils.SqlObjectName(connection as JDBCConnection, name)
 	}
 	
 	public List<String> sqlListObjectName (List<String> listNames) {
-		GenerationUtils.SqlListObjectName(connection, listNames)
+		GenerationUtils.SqlListObjectName(connection as JDBCConnection, listNames)
 	}
 	
 	/**
@@ -112,7 +112,7 @@ class JDBCDataset extends Dataset {
 	 * @return
 	 */
 	public List<String> sqlKeyFields (String expr, List<String> excludeFields) {
-		GenerationUtils.SqlKeyFields(connection, field, expr, excludeFields)
+		GenerationUtils.SqlKeyFields(connection as JDBCConnection, field, expr, excludeFields)
 	}
 	
 	/**
@@ -147,7 +147,7 @@ class JDBCDataset extends Dataset {
 	 * @return
 	 */
 	public List<String> sqlFields (String expr, List<String> excludeFields) {
-		GenerationUtils.SqlFields(connection, field, expr, excludeFields)
+		GenerationUtils.SqlFields(connection as JDBCConnection, field, expr, excludeFields)
 	}
 	
 	/**
@@ -157,7 +157,7 @@ class JDBCDataset extends Dataset {
 	 * @return
 	 */
 	public List<String> sqlFieldsFrom (List<Field> fields, String expr) {
-		GenerationUtils.SqlFields(connection, fields, expr, null)
+		GenerationUtils.SqlFields(connection as JDBCConnection, fields, expr, null)
 	}
 	
 	/**

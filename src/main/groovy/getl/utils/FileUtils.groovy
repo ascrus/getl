@@ -105,13 +105,18 @@ class FileUtils {
 	 * @param newName
 	 */
 	public static void RenameTo(String fileName, String newName) {
+        fileName = ConvertToDefaultOSPath(fileName)
+        newName = ConvertToDefaultOSPath(newName)
 		File f = new File(fileName)
 		if (!f.exists()) throw new ExceptionGETL("File \"$fileName\" not found")
+
+        if (!(File.separator in newName)) newName = PathFromFile(fileName) + File.separator + newName
+
 		f.renameTo(newName)
 	}
 	
 	/**
-	 * Remove file to folder
+	 * Move file to folder
 	 * @param fileName
 	 * @param path
 	 * @param createPath
@@ -277,12 +282,16 @@ class FileUtils {
 					}
 					else if (vf.isFile()) {
 						if (onDelete != null) onDelete(vf)
-						if (!vf.delete()) throw new ExceptionGETL("Can not delete directory \"${vf.absolutePath}\"")
+						if (!vf.delete()) throw new ExceptionGETL("Can not delete file \"${vf.absolutePath}\"")
 					}
 				}
 				if (onDelete != null) onDelete(df)
 				if (!df.deleteDir()) throw new ExceptionGETL("Can not delete directory \"${df.absolutePath}\"")
 			}
+            else {
+                if (onDelete != null) onDelete(df)
+                if (!df.delete()) throw new ExceptionGETL("Can not delete file \"${df.absolutePath}\"")
+            }
 		}
 		if (deleteRoot) {
 			if (!root.deleteDir()) throw new ExceptionGETL("Can not delete directory \"${root.absolutePath}\"")
@@ -366,6 +375,7 @@ class FileUtils {
 	 * @return
 	 */
 	public static String lastDirFromPath(String path) {
+        if (path == null) return null
 		path = ConvertToUnixPath(path)
 		def l = path.split("/")
 		if (l.size() == 0) return null
@@ -387,6 +397,7 @@ class FileUtils {
 	 * @return
 	 */
 	public static String lastDirFromFile(String file) {
+        if (file == null) return null
 		lastDirFromPath(new File(file).parent)
 	}
 	
@@ -451,9 +462,9 @@ class FileUtils {
 		file = ConvertToDefaultOSPath(file)
 		String res
 		if (MaskFile(file) != null) {
-			def i = file.lastIndexOf(File.separator)
-			if (i < 0) file = '' else file = file.substring(0, i)
-			res = new File(file).absolutePath
+//			def i = file.lastIndexOf(File.separator)
+//			if (i < 0) file = '.' else file = file.substring(0, i)
+			res = new File(RelativePathFromFile(file)).absolutePath
 		}
 		else {
 			res = new File(file).parent
@@ -497,23 +508,36 @@ class FileUtils {
 		
 		res
 	}
-	
-	public static boolean IsLockFileForRead(String fileName) {
+
+    /**
+     * File is lock another process for reading
+     * @param fileName
+     * @return
+     */
+	public static Boolean IsLockFileForRead(String fileName) {
+        if (fileName == null) return null
+
 		def res = false
+
         def file = new File(fileName)
-        def rf = new FileInputStream(file)
-        def fc = rf.channel
+        if (!file.exists()) throw new ExceptionGETL("File \"$fileName\" not found")
+
+        def stream = new RandomAccessFile(file, 'rw')
+        def channel = stream.channel
         try {
-            fc.tryLock()
+            def lock = channel.tryLock(0L, Long.MAX_VALUE, false)
+            res = (lock == null)
+            if (lock != null) lock.release()
         }
         catch (Throwable e) {
             res = true
         }
         finally {
-            rf.close()
+            channel.close()
+            stream.close()
         }
-        
-        res
+
+        return res
 	}
 	
 	/**
@@ -529,7 +553,7 @@ class FileUtils {
 		
 		channel.tryLock(0L, Long.MAX_VALUE, share)
 	}
-	
+
 	/**
 	 * Convert text with rules
 	 * @param reader
@@ -551,11 +575,11 @@ class FileUtils {
 				
 				def oldValue = rule."old"
 				if (oldValue == null) throw new ExceptionGETL("Required \"old\" parameter from rule $rule")
-				oldValue = StringUtils.EscapeJava(oldValue)
+				oldValue = StringUtils.EscapeJava(oldValue as String)
 				
 				def newValue = rule."new"
 				if (newValue == null) throw new ExceptionGETL("Required \"new\" parameter from rule $rule")
-				newValue = StringUtils.EscapeJava(newValue)
+				newValue = StringUtils.EscapeJava(newValue as String)
 				
 				if (type == "REPLACE") {
 					sb << "	line = line.replace('$oldValue', '$newValue')"
@@ -567,7 +591,7 @@ class FileUtils {
 			}
 			sb << "	line\n}"
 //			println sb.toString()
-			convertCode = GenerationUtils.EvalGroovyScript(sb.toString())
+			convertCode = GenerationUtils.EvalGroovyClosure(sb.toString())
 		}
 		
 		String line = reader.readLine()
@@ -602,7 +626,7 @@ class FileUtils {
 	public static long ConvertTextFile (String sourceFileName, String sourceCodePage, boolean isSourceGz, 
 										String destFileName, String destCodePage, boolean isDestGz, List rules,
 										Closure convertLine, def convertBuffer) {
-		long res
+		long res = 0
 		
 		Reader reader
 		if (isSourceGz) {
@@ -632,7 +656,7 @@ class FileUtils {
 			reader.close()
 		}
 		
-		res
+		return res
 	}
 										
 	/**

@@ -57,7 +57,7 @@ class Sequence {
 	 * @return
 	 */
 	public Sequence newSequence () {
-		Sequence res = getClass().newInstance()
+		Sequence res = getClass().newInstance() as Sequence
 		res.connection = this.connection
 		res.name = this.name
 		res.cache = this.cache
@@ -71,7 +71,7 @@ class Sequence {
 	 * @return
 	 */
 	public Sequence newSequence (Connection con) {
-		Sequence res = getClass().newInstance()
+		Sequence res = getClass().newInstance() as Sequence
 		res.connection = con
 		res.name = this.name
 		res.cache = this.cache

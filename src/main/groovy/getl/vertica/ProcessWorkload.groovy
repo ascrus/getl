@@ -52,7 +52,7 @@ class ProcessWorkload extends Job {
 			Logs.Info("Use workload interval \"${Config.content."interval"}\"")
 		} 
 
-		List excludeTables = Config.content."exclude"?:[]
+		List excludeTables = (Config.content."exclude" as List)?:[]
 		def excludeWhere = ""
 		
 		

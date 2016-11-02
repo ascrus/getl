@@ -26,7 +26,6 @@ package getl.driver
 
 import getl.csv.CSVDataset
 import getl.data.*
-import getl.data.Field.Type
 import getl.utils.ParamMethodValidator
 
 /**
@@ -35,7 +34,7 @@ import getl.utils.ParamMethodValidator
  *
  */
 abstract class Driver {
-	protected ParamMethodValidator methodParams = new ParamMethodValidator()
+	public ParamMethodValidator methodParams = new ParamMethodValidator()
 	
 	Driver () {
 		methodParams.register("retrieveObjects", [])
@@ -62,28 +61,28 @@ abstract class Driver {
 	public boolean isOperation(Driver.Operation operation) {
 		(operations().indexOf(operation) != -1)
 	}
-	
-	protected void prepareField (Field field) { }
-	
-	protected abstract boolean isConnect ()
-	
-	protected abstract void connect ()
-	
-	protected abstract void disconnect ()
-	
-	protected abstract List<Object> retrieveObjects (Map params, Closure filter)
 
-	protected abstract  List<Field> fields (Dataset dataset)
+	public void prepareField (Field field) { }
 	
-	protected abstract void startTran ()
+	public abstract boolean isConnected()
+
+	public abstract void connect ()
+
+	public abstract void disconnect ()
 	
-	protected abstract void commitTran ()
-	
-	protected abstract void rollbackTran ()
-	
-	protected abstract void createDataset (Dataset dataset, Map params)
-	
-	protected void dropDataset (Dataset dataset, Map params) {
+	public abstract List<Object> retrieveObjects (Map params, Closure filter)
+
+	public abstract  List<Field> fields (Dataset dataset)
+
+	public abstract void startTran ()
+
+	public abstract void commitTran ()
+
+	public abstract void rollbackTran ()
+
+	public abstract void createDataset (Dataset dataset, Map params)
+
+	public void dropDataset (Dataset dataset, Map params) {
 		if (dataset.autoSchema) {
 			def name = fullFileNameSchema(dataset)
 			if (name != null) {
@@ -92,22 +91,22 @@ abstract class Driver {
 			}
 		}
 	}
-	
-	protected abstract long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code)
-	
-	protected abstract void openWrite(Dataset dataset, Map params, Closure prepareCode)
-	
-	protected abstract void write (Dataset dataset, Map row)
-	
-	protected abstract void doneWrite (Dataset dataset)
-	
-	protected abstract void closeWrite (Dataset dataset)
-	
-	protected abstract void bulkLoadFile (CSVDataset source, Dataset dest, Map params, Closure prepareCode)
-	
-	protected abstract void clearDataset (Dataset dataset, Map params)
-	
-	protected abstract long executeCommand (String command, Map params)
+
+	public abstract long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code)
+
+	public abstract void openWrite(Dataset dataset, Map params, Closure prepareCode)
+
+	public abstract void write (Dataset dataset, Map row)
+
+	public abstract void doneWrite (Dataset dataset)
+
+	public abstract void closeWrite (Dataset dataset)
+
+	public abstract void bulkLoadFile (CSVDataset source, Dataset dest, Map params, Closure prepareCode)
+
+	public abstract void clearDataset (Dataset dataset, Map params)
+
+	public abstract long executeCommand (String command, Map params)
 	
 	public abstract long getSequence(String sequenceName)
 	

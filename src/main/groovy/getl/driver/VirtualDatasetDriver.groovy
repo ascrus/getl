@@ -26,9 +26,6 @@ package getl.driver
 
 import getl.csv.CSVDataset
 import getl.data.*
-import getl.data.Field.Type
-import getl.driver.Driver.Operation
-import getl.driver.Driver.Support
 import getl.exception.ExceptionGETL
 import groovy.transform.InheritConstructors
 
@@ -50,75 +47,85 @@ abstract class VirtualDatasetDriver extends Driver {
 	}
 
 	@Override
-	protected boolean isConnect() {
+	public boolean isConnected() {
 		true
 	}
 
 	@Override
-	protected void connect() { }
+	public void connect() { }
 
 	@Override
-	protected void disconnect() { }
+	public void disconnect() { }
 
 	@Override
-	protected List<Object> retrieveObjects(Map params, Closure filter) {
+	public List<Object> retrieveObjects(Map params, Closure filter) {
 		throw new ExceptionGETL("Not supported")
 	}
 	
-	protected Dataset getDestinition(Dataset dataset) {
+	protected static Dataset getDestinition(Dataset dataset) {
 		Dataset ds = dataset.params.dest
 		if (ds == null) throw new ExceptionGETL("Required set param \"dest\" with dataset")
 		
-		ds
+		return ds
 	}
 
 	@Override
-	protected List<Field> fields(Dataset dataset) {
+	public
+	List<Field> fields(Dataset dataset) {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void startTran() {
+	public
+	void startTran() {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void commitTran() {
+	public
+	void commitTran() {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void rollbackTran() {
+	public
+	void rollbackTran() {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void createDataset(Dataset dataset, Map params) {
+	public
+	void createDataset(Dataset dataset, Map params) {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void dropDataset(Dataset dataset, Map params) {
+	public
+	void dropDataset(Dataset dataset, Map params) {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	public
+	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		throw new ExceptionGETL("Not supported")
 	}
 	
 	@Override
-	protected void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+	public
+	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void clearDataset(Dataset dataset, Map params) {
+	public
+	void clearDataset(Dataset dataset, Map params) {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected long executeCommand(String command, Map params) {
+	public
+	long executeCommand(String command, Map params) {
 		throw new ExceptionGETL("Not supported")
 	}
 

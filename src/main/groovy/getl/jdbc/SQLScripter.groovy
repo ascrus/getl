@@ -201,8 +201,10 @@ public class SQLScripter {
 	
 	private void doLoadPoint (List<String> st, int i) {
 		def m = sql =~ "(?is)load_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+to(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
-		def point = m[0][2]
-		def varName = m[0][5]
+		//noinspection GroovyAssignabilityCheck
+		def point = m[0][2] as String
+		//noinspection GroovyAssignabilityCheck
+		def varName = m[0][5] as String
 		
 		def pointList = point.split('[.]').toList()
 		while (pointList.size() < 4) pointList.add(0, null)
@@ -210,7 +212,8 @@ public class SQLScripter {
 		def schemaName = pointList[1]
 		def tableName = pointList[2]
 		def pointName = pointList[3]
-		def methodName = m[0][8]
+		//noinspection GroovyAssignabilityCheck
+		def methodName = m[0][8] as String
 		
 		if (tableName == null) throw new ExceptionGETL("SQLScripter: need table name for LOAD_POINT operator")
 		if (pointName == null) throw new ExceptionGETL("SQLScripter: need pointer name for LOAD_POINT operator")
@@ -232,8 +235,10 @@ public class SQLScripter {
 	@groovy.transform.Synchronized
 	private void doSavePoint (List<String> st, int i) {
 		def m = sql =~ "(?is)save_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+from(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
-		def point = m[0][2]
-		def varName = m[0][5]
+		//noinspection GroovyAssignabilityCheck
+		def point = m[0][2] as String
+		//noinspection GroovyAssignabilityCheck
+		def varName = m[0][5] as String
 		def value = vars.get(varName)
 		if (value == null) throw new ExceptionGETL("SQLScripter: variable \"$varName\" has empty value for SAVE_POINT operator")
 		
@@ -243,7 +248,8 @@ public class SQLScripter {
 		def schemaName = pointList[1]
 		def tableName = pointList[2]
 		def pointName = pointList[3]
-		def methodName = m[0][8]
+		//noinspection GroovyAssignabilityCheck
+		def methodName = m[0][8] as String
 		
 		if (tableName == null) throw new ExceptionGETL("SQLScripter: need table name for SAVE_POINT operator")
 		if (pointName == null) throw new ExceptionGETL("SQLScripter: need pointer name for SAVE_POINT operator")
@@ -330,7 +336,7 @@ public class SQLScripter {
 		
 		QueryDataset query = new QueryDataset(connection: connection, query: sql)
 		List<Map> rows = []
-		query.eachRow { row-> rows << row }
+		query.eachRow { Map row -> rows << row }
 		
 		SQLScripter ns = new SQLScripter(connection: connection, script: b.toString(), logEcho: logEcho, vars: vars)
 		boolean isExit = false
@@ -425,7 +431,8 @@ public class SQLScripter {
 					fe = fs
 					def pattern = '(?is)end(\\s|\\t)+block(\\s|\\t)+(.+)'
 					def m = st[fs] =~ pattern
-					def symbol = m[0][3]
+					//noinspection GroovyAssignabilityCheck
+					def symbol = m[0][3] as String
 					b.append(symbol)
 					break
 				}
@@ -507,7 +514,7 @@ public class SQLScripter {
 		StringBuffer b = new StringBuffer()
 		int cur = 0
 		int start = sql.indexOf("/*")
-		int finish = -1
+		int finish //= -1
 		while (start >= 0) {
 			if (cur < start) b.append(sql.substring(cur, start))
 			finish = sql.indexOf("*/", start)

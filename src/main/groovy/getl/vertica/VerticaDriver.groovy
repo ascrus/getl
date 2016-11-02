@@ -98,8 +98,8 @@ class VerticaDriver extends JDBCDriver {
 	}
 	
 	@Override
-	protected void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
-		def params = bulkLoadFilePrepare(source, dest, bulkParams, prepareCode)
+	public	void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
+		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
 		
 		if (source.fieldDelimiter == null || source.fieldDelimiter.length() != 1) throw new ExceptionGETL("Required one char field delimiter")
 		if (source.rowDelimiter == null || source.rowDelimiter.length() != 1) throw new ExceptionGETL("Required one char row delimiter")
@@ -116,7 +116,7 @@ class VerticaDriver extends JDBCDriver {
 		if (params."parser" != null) {
 			String parserFunc = params."parser"."function"
 			if (parserFunc == null) throw new ExceptionGETL("Required parser function name")
-			Map parserOptions = params."parser"."options"
+			Map<String, Object> parserOptions = params."parser"."options"
 			if (parserOptions != null) {
 				def ol = []
 				parserOptions.each { String name, def value ->
@@ -135,7 +135,7 @@ class VerticaDriver extends JDBCDriver {
 		}
 		
 		List<Map> map = params.map
-		Map expressions = params.expression?:[:]
+		Map<String, String> expressions = params.expression?:[:]
 		String loadMethod = ListUtils.NotNullValue([params.loadMethod, "AUTO"])
 		boolean enforceLength = BoolUtils.IsValue(params.enforceLength, true)
 		boolean autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
@@ -143,7 +143,8 @@ class VerticaDriver extends JDBCDriver {
 		String exceptionPath = params.exceptionPath
 		String rejectedPath = params.rejectedPath
 		Integer rejectMax = params.rejectMax
-		boolean abortOnError = ListUtils.NotNullValue([BoolUtils.IsValue(params.abortOnError, null), ((rejectedPath != null || exceptionPath != null)?false:true)])
+		boolean abortOnError = ListUtils.NotNullValue([BoolUtils.IsValue(params.abortOnError, null),
+													   (!(rejectedPath != null || exceptionPath != null))])
 		String location = params."location"
 		String onNode = (location != null)?(" ON " + location):""
 		
@@ -176,7 +177,7 @@ class VerticaDriver extends JDBCDriver {
 		StringBuilder sb = new StringBuilder()
 		sb << "COPY ${fullNameDataset(dest)} (\n"
 		
-		JDBCConnection con = dest.connection
+		JDBCConnection con = dest.connection as JDBCConnection
 		String formatDate = ListUtils.NotNullValue([params.maskDate, con.maskDate])
 		String formatTime = ListUtils.NotNullValue([params.maskTime, con.maskTime])
 		String formatDateTime = ListUtils.NotNullValue([params.maskDateTime, con.maskDateTime])
@@ -218,10 +219,10 @@ class VerticaDriver extends JDBCDriver {
 			}
 		}
 		
-		expressions.each { col, expr ->
+		expressions.each { String col, String expr ->
 			if (dest.fieldByName(col) == null) throw new ExceptionGETL("Expression field \"$col\" not found")
 			if (expr != null) {
-				col = dest.sqlObjectName(col) 
+				col = (dest as JDBCDataset).sqlObjectName(col)
 				columns << "$col AS $expr"
 			}
 		}
@@ -268,11 +269,11 @@ RECORD TERMINATOR $rowDelimiter
 	
 	@Override
 	protected String sessionID() {
-		String res 
+		String res = null
 		def rows = sqlConnect.rows("SELECT session_id FROM CURRENT_SESSION;")
 		if (!rows.isEmpty()) res = rows[0].session_id
 		
-		res
+		return res
 	}
 	
 	@Override

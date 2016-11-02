@@ -40,7 +40,7 @@ abstract class FileConnection extends Connection {
 	
 	FileConnection (Map params) {
 		super(params)
-		if (!BoolUtils.ClassInstanceOf(params.driver, FileDriver)) throw new ExceptionGETL("Requider FileDriver instance class for connection")
+		if (!BoolUtils.ClassInstanceOf(params.driver as Class, FileDriver)) throw new ExceptionGETL("Requider FileDriver instance class for connection")
 		
 		methodParams.register("Super", ["path", "codePage", "createPath", "isGzFile", "extension", "append", "deleteOnEmpty", "fileSeparator", "bufferSize"])
 	}
@@ -117,8 +117,8 @@ abstract class FileConnection extends Connection {
 		def p = new File(path)
 		if (!p.exists()) return false
 		
-		retrieveObjects().each { File f ->
-			f.delete()
+		retrieveObjects().each { f ->
+			(f as File).delete()
 		}
 		
 		p.deleteDir()

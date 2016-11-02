@@ -24,8 +24,8 @@
 
 package getl.utils
 
-import getl.data.*
 import getl.exception.*
+import groovy.transform.Synchronized
 
 /**
  * Balancer connections
@@ -94,10 +94,10 @@ class Balancer  {
 	 * </ul>
 	 * @return
 	 */
-	public List getServers () { params."servers" }
+	public List<Map> getServers () { params."servers" }
 	
-	@groovy.transform.Synchronized
-	public void setServers (List value) {
+	@Synchronized
+	public void setServers (List<Map> value) {
 		servers.clear()
 		servers.addAll(value)
 	}
@@ -108,14 +108,14 @@ class Balancer  {
 	 */
 	public int getCheckTimeErrorServers () { params."checkTimeErrorServers"?:600 }
 	
-	@groovy.transform.Synchronized
+	@Synchronized
 	public void setCheckTimeErrorServers (int value) { params."checkTimeErrorServers" = value }
 	
 	/**
 	 * Get server parameter for connect
 	 * @return
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	public Map wantConnect () {
 		if (servers.isEmpty()) throw new ExceptionGETL("Required servers list")
 		
@@ -123,7 +123,7 @@ class Balancer  {
 			if (server."count" == null) server."count" = 0
 			
 			if (server."errorTime" != null) {
-				if (DateUtils.AddDate("ss", checkTimeErrorServers, server."errorTime") < DateUtils.Now()) {
+				if (DateUtils.AddDate("ss", checkTimeErrorServers, (Date)server."errorTime") < DateUtils.Now()) {
 					server."errorTime" = null
 				}
 			}
@@ -143,7 +143,7 @@ class Balancer  {
 	 * @param server
 	 * @return
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	public boolean didDisconnect (Map server) {
 		if (servers.isEmpty()) throw new ExceptionGETL("Required servers list")
 		def i = servers.indexOf(server)
@@ -166,7 +166,7 @@ class Balancer  {
 	 * @param server
 	 * @return
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	public boolean errorDisconnect (Map server) {
 		if (servers.isEmpty()) throw new ExceptionGETL("Required servers list")
 		def i = servers.indexOf(server)

@@ -30,6 +30,7 @@ import getl.jdbc.*
 import getl.data.*
 import getl.exception.*
 import getl.utils.*
+import org.h2.tools.DeleteDbFiles
 
 /**
  * Temporary data storage manager class
@@ -68,7 +69,15 @@ class TDS extends H2Connection {
 		if (this.getClass().name == 'getl.tfs.TDS') methodParams.validation("Super", params)
 		
 		if (connectURL == null && params."inMemory" == null) inMemory = true
-		if (connectURL == null && connectDatabase == null) connectDatabase = "getl"
+		if (connectURL == null && connectDatabase == null) {
+			if (inMemory) {
+				connectDatabase = "getl"
+			}
+			else {
+                tempPath = TFS.systemPath
+				connectDatabase = "$tempPath/getl"
+			}
+		}
 		if (login == null && password == null) {
 			login = "easyload"
 			password = "easydata"
@@ -87,6 +96,11 @@ class TDS extends H2Connection {
 		}
 		if (params."config" == null) config = "getl_tds"
 	}
+
+    /**
+     * Temp path of database file
+     */
+    private String tempPath
 	
 	/**
 	 * Internal name in config section
@@ -113,6 +127,14 @@ class TDS extends H2Connection {
 		if (inMemory && connectProperty."DB_CLOSE_DELAY" == null) connectProperty."DB_CLOSE_DELAY" = -1
 		autoCommit = true
 	}
+
+    @Override
+    protected void doDoneDisconnect () {
+        super.doDoneDisconnect()
+        if (tempPath != null) {
+            DeleteDbFiles.execute(tempPath, 'getl', true)
+        }
+    }
 	
 	/**
 	 * Generate new table from temporary data stage

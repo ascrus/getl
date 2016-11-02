@@ -26,7 +26,6 @@ package getl.data
 
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
-import getl.jdbc.JDBCConnection;
 import getl.utils.*
 
 /**
@@ -59,7 +58,7 @@ public class Connection {
 		if (driverClass == null) throw new ExceptionGETL("Required parameter \"driver\" (driver class name)")
 		this.driver = driverClass.newInstance()
 		this.driver.connection = this
-		def load_config = parameters.config
+		def load_config = (String)parameters.config
 		if (load_config != null) setConfig(load_config)
 		MapUtils.MergeMap(this.params, MapUtils.CleanMap(parameters, ["driver", "config"]))
 		doInitConnection()
@@ -94,10 +93,10 @@ public class Connection {
 			MapUtils.MergeMap(configParams, params)
 			params = configParams
 		}
-		def connectionClass = params.connection
+		def connectionClass = (String)params.connection
 		if (connectionClass == null) throw new ExceptionGETL("Required parameter \"connection\"")
 		
-		Class.forName(connectionClass).newInstance(MapUtils.CleanMap(params, ["connection", "config"]))
+		(Connection)(Class.forName(connectionClass).newInstance(MapUtils.CleanMap(params, ["connection", "config"])))
 	}
 	
 	/**
@@ -215,7 +214,7 @@ public class Connection {
 	 * @param filter Filter closure
 	 * @return List of objects
 	 */
-	public List<Object> retrieveObjects (Closure filter) { retrieveObjects([], filter) }
+	public List<Object> retrieveObjects (Closure filter) { retrieveObjects([:], filter) }
 	
 	/**
 	 * Return objects list of connection
@@ -235,7 +234,7 @@ public class Connection {
 	 * Is connected to source
 	 * @return
 	 */
-	public boolean getConnected () { driver.isConnect() }
+	public boolean getConnected () { driver.isConnected() }
 	
 	/**
 	 * Set connected to source
@@ -331,7 +330,7 @@ public class Connection {
 		if (params == null) params = [:]
 		methodParams.validation("executeCommand", params, [driver.methodParams.params("executeCommand")])
 		
-		def command = params.command
+		String command = params.command
 		if (command == null) throw new ExceptionGETL("Required parameter \"command\"")
 		
 		tryConnect()
@@ -354,6 +353,6 @@ public class Connection {
 	public Connection cloneConnection () {
 		String className = this.class.name
 		Map p = MapUtils.Clone(this.params)
-		CreateConnection([connection: className] + MapUtils.CleanMap(this.params, ['sysParams']))
+		CreateConnection([connection: className] + MapUtils.CleanMap(p, ['sysParams']))
 	}
 }

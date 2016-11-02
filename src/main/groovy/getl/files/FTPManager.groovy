@@ -191,7 +191,7 @@ class FTPManager extends Manager {
 		if (client.connected) {
 			try {
 				def numRetry = 0
-				def sleepTime = (client.autoNoopTimeout > 0)?client.autoNoopTimeout:100
+				def sleepTime = ((client.autoNoopTimeout > 0)?client.autoNoopTimeout:100) as Integer
 				client.autoNoopTimeout = 0
 				
 				client.disconnect(isHardDisconnect)
@@ -347,17 +347,17 @@ class FTPManager extends Manager {
 	@Override
 	public void createDir (String dirName) {
 		def curDir = client.currentDirectory()
-		def cdDir
+		String cdDir = null
 		try {
 			def dirs = dirName.split('[/]')
 
-			dirs.each { dir ->
+			dirs.each { String dir ->
 				if (cdDir == null) cdDir = dir else cdDir = "$cdDir/$dir"
 				def isExists = true
 				try {
 					client.changeDirectory(dir)
 				}
-				catch (Throwable e) {
+				catch (Throwable ignored) {
 					isExists = false
 				}
 				if (!isExists) {
@@ -435,7 +435,7 @@ class FTPManager extends Manager {
 		try {
 			client.changeDirectory(dirName)
 		}
-		catch (Throwable e) {
+		catch (Throwable ignored) {
 			isExists = false
 		}
 		client.changeDirectory(cur)

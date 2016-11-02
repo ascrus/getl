@@ -87,7 +87,7 @@ class Flow {
 	 */
 	public final Map params = [:]
 	
-	protected Map convertFieldMap(Map map) {
+	protected static Map convertFieldMap(Map<String, String> map) {
 		def result = [:]
 		map.each { k, v ->
 			def m = [:]
@@ -108,19 +108,24 @@ class Flow {
 			}
 			result.put(k.toLowerCase(), m)
 		}
-		result
+		return result
 	}
 	
-	protected String findFieldInFieldMap (Map map, String field) {
+	protected static String findFieldInFieldMap (Map<String, Map> map, String field) {
 		String result = null
 		field = field.toLowerCase()
-		map.each { String k, Map v ->
-			if (v.name?.toLowerCase() == field) {
-				result = k
-				return
-			}
-		}
-		result
+
+//		map.each { String k, Map v ->
+//			if (v.name?.toLowerCase() == field) {
+//				result = k
+//				return
+//			}
+//		}
+
+        def fr = map.find { String key, Map value -> value.name?.toLowerCase() == field }
+        if (fr != null) result = fr.key
+
+		return result
 	}
 	
 	/**
@@ -173,10 +178,10 @@ class Flow {
 			
 			def convert = (!(d.name.toLowerCase() in notConverted)) && (autoConvert == null || autoConvert)
 			 
-			String mapFormat
+			String mapFormat = null
 			// Has contains field in mapping
 			if (map.containsKey(dn)) {
-				Map mapName = map.get(dn)
+				Map mapName = map.get(dn) as Map
 				// No source map field
 				if (mapName.isEmpty()) {
 					// Nothing mapping
@@ -184,7 +189,7 @@ class Flow {
 				}
 				else {
 					// Set source map field
-					Field sf = source.fieldByName(mapName.name)
+					Field sf = source.fieldByName(mapName.name as String)
 					if (sf == null) throw new ExceptionGETL("Not found field \"${mapName.name}\" in source dataset")
 					mn = sf.name.toLowerCase()
 					if (mapName.convert != null) convert = (mapName.convert.trim().toLowerCase() == "true")
@@ -237,11 +242,11 @@ class Flow {
 		result.destFields = destFields
 	}
 	
-	protected void assignFieldToTemp (Dataset source, Dataset dest, Map map) {
+	protected static void assignFieldToTemp (Dataset source, Dataset dest, Map map) {
 		map = convertFieldMap(map)
 		dest.field = source.field
 		map.each { k, v ->
-			Field f = dest.fieldByName(v.name)
+			Field f = dest.fieldByName(v.name as String)
 			if (f != null) {
 				if (k != null && k != "") f.name = k else dest.removeField(f)
 			}
@@ -337,7 +342,7 @@ class Flow {
 		Dataset source = params.source
 		String sourceDescription
 		if (source == null && params.tempSource != null) {
-			source = TFS.dataset(params.tempSource, true)
+			source = TFS.dataset(params.tempSource as String, true)
 			sourceDescription = "temp.${params.tempSource}"
 		}
 		if (source == null) new ExceptionGETL("Required parameter \"source\"")
@@ -347,9 +352,9 @@ class Flow {
 		String destDescription
 		boolean isDestTemp = false
 		if (dest == null && params.tempDest != null) {
-			dest = (Dataset)TFS.dataset(params.tempDest)
+			dest = (Dataset)TFS.dataset(params.tempDest as String)
 			destDescription = "temp.${params.tempDest}"
-			if (params.tempFields!= null) dest.field = params.tempFields else isDestTemp = true
+			if (params.tempFields!= null) dest.setField((List<Field>)params.tempFields) else isDestTemp = true
 		}
 		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
 		if (destDescription == null) destDescription = dest.objectName
@@ -391,10 +396,10 @@ class Flow {
 		if (isSaveErrors) errorsDataset = TFS.dataset() else errorsDataset = null
 		
 		Dataset writer
-		TFSDataset bulkDS
+		TFSDataset bulkDS = null
 		
 		Map destParams = MapUtils.GetLevel(params, "dest_")
-		Map bulkParams
+		Map bulkParams = null
 		if (isBulkLoad) {
 			bulkParams = destParams
 			if (bulkAsGZIP) bulkParams.compressed = "GZIP"
@@ -584,9 +589,9 @@ class Flow {
 		String destDescription
 		if (dest == null && params.tempDest != null) {
 			if (params.tempFields == null) throw new ExceptionGETL("Required parameter \"tempFields\" from temp storage \"${params.tempDest}\"")
-			dest = TFS.dataset(params.tempDest)
+			dest = TFS.dataset(params.tempDest as String)
 			destDescription = "temp.${params.tempDest}"
-			dest.field = params.tempFields
+			dest.setField((List<Field>)params.tempFields)
 		}
 		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
 		if (destDescription == null) destDescription = dest.objectName
@@ -605,9 +610,9 @@ class Flow {
 		boolean writeSynch = BoolUtils.IsValue(params."writeSynch", false)
 		
 		Map destParams = MapUtils.GetLevel(params, "dest_")
-		Map bulkParams
+		Map bulkParams = null
 		
-		TFSDataset bulkDS
+		TFSDataset bulkDS = null
 		Dataset writer
 		
 		if (isBulkLoad) {
@@ -728,11 +733,11 @@ class Flow {
 		List bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:null
 		boolean bulkEscaped = (params.bulkEscaped != null)?params.bulkEscaped:false
 		
-		def destAutoTran = [:]
+		Map<Connection, String> destAutoTran = [:]
 		def destParams = [:]
 		def bulkParams = [:]
-		def bulkLoadDS = [:]
-		def writer = [:]
+		Map<String, Dataset> bulkLoadDS = [:]
+		Map<String, Dataset> writer = [:]
 		dest.each { String n, Dataset d ->
 			// Define is required bulk load use
 			def isBulk = bulkLoad?.find { it == n} != null
@@ -796,7 +801,7 @@ class Flow {
 							if (f == null) throw new ExceptionGETL("Can not find field \"${fn}\" in \"${d.objectName}\" for list result of prepare code")
 							lf << f
 						}
-						bulkDS.field = ls
+						bulkDS.setField(lf)
 					}
 				}
 				else {
@@ -813,7 +818,7 @@ class Flow {
 		}
 		
 //		SynchronizeObject curUpdater = new SynchronizeObject()
-		String curUpdater
+		String curUpdater = null
 		
 		def updateCode = { String name, Map row ->
 			curUpdater = name
@@ -822,7 +827,7 @@ class Flow {
 		}
 		
 		def closeDests = { boolean isError ->
-			writer.each { n, Dataset d ->
+			writer.each { String n, Dataset d ->
 				if (d.status == Dataset.Status.WRITE) {
 					if (!isError) d.closeWrite() else Executor.RunIgnoreErrors { d.closeWrite() }
 				}
@@ -859,7 +864,7 @@ class Flow {
 		
 		writer.each { String n, Dataset d ->
 			try {
-				d.openWrite(destParams."${n}")
+				d.openWrite(destParams."${n}" as Map)
 			}
 			catch (Throwable e) {
 				Logs.Exception(e, getClass().name + ".writeAllTo.openWrite", d.objectName)

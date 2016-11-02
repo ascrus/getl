@@ -24,7 +24,6 @@
 
 package getl.data
 
-import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
 import getl.csv.CSVDataset
@@ -89,16 +88,16 @@ class Dataset {
 			params = configParams + params
 		}
 		
-		def datasetClass = params.dataset
+		def datasetClass = params.dataset as String
 		if (datasetClass == null) throw new ExceptionGETL("Required parameter \"dataset\"")
 		
-		def dataset = Class.forName(datasetClass).newInstance()
+		def dataset = Class.forName(datasetClass).newInstance() as Dataset
 		dataset.connection = params.connection
-		if (params.containsKey("config")) dataset.setConfig(params.config)
-		if (params.containsKey("field")) dataset.setField(params.containsKey("field"))
-		dataset.params = MapUtils.CleanMap(params, ["dataset", "connection", "config", "field"])
+		if (params.containsKey("config")) dataset.setConfig(params.config as String)
+		if (params.containsKey("field")) dataset.setField(params.field as List<Field>)
+		dataset.setParams(MapUtils.CleanMap(params, ["dataset", "connection", "config", "field"]))
 		
-		dataset
+		return dataset
 	}
 	
 	/**
@@ -210,11 +209,11 @@ class Dataset {
 	protected void onLoadConfig (Map configSection) {
 		MapUtils.MergeMap(params, MapUtils.CleanMap(configSection, ["fields"]))
 		if (configSection.containsKey("fields")) {
-			List l = configSection.fields
+			List<Map> l = configSection.fields
 			try {
 				List<Field> fl = []
-				l.each {
-					fl << Field.ParseMap(it)
+				l.each { Map n ->
+					fl << Field.ParseMap(n)
 				}
 				setField(fl)
 			}
@@ -357,11 +356,9 @@ class Dataset {
 	 * @param fieldName
 	 * @return
 	 */
-	public int findField(List<Field> fieldList, String fieldName) {
+	public static int findField(List<Field> fieldList, String fieldName) {
 		fieldName = fieldName.toLowerCase()
-		fieldList.findIndexOf { Field f ->
-			(f.name.toLowerCase() == fieldName)
-		}
+		return fieldList.findIndexOf { Field f -> (f.name.toLowerCase() == fieldName) }
 	}
 	
 	/**
@@ -552,7 +549,7 @@ class Dataset {
 		
 		connection.tryConnect()
 		Map p = MapUtils.CleanMap(procParams, ["autoTran"])
-		def autoTran = (procParams.autoTran != null)?procParams.autoTran:((connection.tranCount == 0)?true:false)
+		def autoTran = (procParams.autoTran != null)?procParams.autoTran:(connection.tranCount == 0)
 		
 		if (autoTran) connection.startTran()
 		try {
@@ -619,12 +616,12 @@ class Dataset {
 		
 		connection.tryConnect()
 		
-		def prepareCode = (procParams.prepare != null)?procParams.prepare:null
+		def prepareCode = ((procParams.prepare != null)?procParams.prepare:null) as Closure
 		
 		def prepareFields = { List<Field> sourceFields ->
 			doInitFields(sourceFields)
 			List<String> result = []
-			if (prepareCode != null) result = prepareCode()
+			if (prepareCode != null) result = prepareCode() as List<String>
 			result
 		}
 		
@@ -650,7 +647,7 @@ class Dataset {
 	 */
 	public List<Map> rows (Map procParams) {
 		List<Map> rows = []
-		eachRow(procParams) { row ->
+		eachRow(procParams) { Map row ->
 			rows << row
 		}
 		return rows
@@ -685,9 +682,9 @@ class Dataset {
 ${ef.toString()}
 }"""
 
-		Closure result = GenerationUtils.EvalGroovyScript(s)
+		Closure result = GenerationUtils.EvalGroovyClosure(s)
 
-		result
+		return result
 	}
 	
 	/**
@@ -841,7 +838,7 @@ ${ef.toString()}
 		// Save parse and assert errors to file
 		boolean saveErrors = (procParams.saveErrors != null)?procParams.saveErrors:false
 		
-		def setErrorValue = generateSetErrorValue(code)
+//		def setErrorValue = generateSetErrorValue(code)
 		
 		def doProcessError = { Exception e, long recNo ->
 			isReadError = true
@@ -859,13 +856,14 @@ ${ef.toString()}
 			true
 		}
 		
-		def prepareCode = (procParams.prepare != null)?procParams.prepare:null
+		def prepareCode = ((procParams.prepare != null)?procParams.prepare:null) as Closure
 
 		def prepareFields = { List<Field> sourceFields ->
 			doInitFields(sourceFields)
 			List<String> result = []
-			if (prepareCode != null) result = prepareCode()
-			result
+			if (prepareCode != null) result = prepareCode() as List<String>
+
+			return result
 		}
 		
 		Map p = MapUtils.CleanMap(procParams, ["prepare"])
@@ -927,15 +925,15 @@ ${ef.toString()}
 		
 		connection.tryConnect()
 		
-		def prepareCode = (procParams.prepare != null)?procParams.prepare:null
+		def prepareCode = ((procParams.prepare != null)?procParams.prepare:null) as Closure
 		
 		def prepareFields = { List<Field> sourceFields ->
 			doInitFields(sourceFields)
 			List<String> result = []
-			if (prepareCode != null) result = prepareCode()
+			if (prepareCode != null) result = prepareCode() as List<String>
 			if (saveSchema) saveDatasetMetadata(result)
 			
-			result
+			return result
 		}
 		
 		Map p = MapUtils.CleanMap(procParams, ["prepare"])
@@ -1129,7 +1127,7 @@ ${ef.toString()}
 	 */
 	public void loadDatasetMetadataFromJSON (Reader reader, boolean useParams) {
 		def b = new JsonSlurper()
-		def l
+		def l = null
 		try {
 			l = b.parse(reader)
 		}
@@ -1141,8 +1139,8 @@ ${ef.toString()}
 			reader.close()
 		}
 		
-		if (useParams && l.params != null) params.putAll(l.params)
-		List<Field> fl = GenerationUtils.Map2Fields(l)
+		if (useParams && l.params != null) params.putAll(l.params as Map)
+		List<Field> fl = GenerationUtils.Map2Fields(l as Map)
 		if (fl == null || fl.isEmpty()) throw new ExceptionGETL("Fields not found in json schema")
 		
 		setField(fl)
@@ -1228,7 +1226,7 @@ ${ef.toString()}
 	 * @return
 	 */
 	public List RowListValues(Map row) {
-		GenerationUtils.RowListValues(fieldNames, row, null)
+		GenerationUtils.RowListValues(fieldNames, row)
 	}
 	
 	/**
@@ -1274,7 +1272,7 @@ ${ef.toString()}
 	public Dataset cloneDataset (Connection newConnection) {
 		String className = this.class.name
 		Map p = MapUtils.Clone(this.params)
-		Dataset ds = CreateDataset([dataset: className] + MapUtils.CleanMap(this.params, ['sysParams']))
+		Dataset ds = CreateDataset([dataset: className] + MapUtils.CleanMap(p, ['sysParams']))
 		if (newConnection != null) ds.connection = newConnection
 		ds.setField(this.field)
 		ds.manualSchema = this.manualSchema

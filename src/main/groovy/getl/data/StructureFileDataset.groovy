@@ -61,7 +61,7 @@ class StructureFileDataset extends FileDataset {
 				boolean isKey = it.isKey?:false
 				boolean isAutoincrement = it.isAutoincrement?:false
 				boolean isReadOnly = it.isReadOnly?:false
-				String defaultValie = it.defaultValue
+//				String defaultValie = it.defaultValue
 				String compute = it.compute
 				String format = it.format
 				String alias = it.alias

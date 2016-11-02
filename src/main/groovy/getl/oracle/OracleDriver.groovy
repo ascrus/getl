@@ -25,9 +25,6 @@
 package getl.oracle
 
 import groovy.transform.InheritConstructors
-import java.sql.PreparedStatement
-import java.util.Map;
-
 import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
@@ -126,7 +123,8 @@ class OracleDriver extends JDBCDriver {
 	}
 	
 	@Override
-	protected void prepareField (Field field) {
+    public
+    void prepareField (Field field) {
 		super.prepareField(field)
 		
 		if (field.type == Field.Type.NUMERIC) {
@@ -187,7 +185,7 @@ class OracleDriver extends JDBCDriver {
 			if (field.typeName.matches("(?i)NCLOB")) {
 				field.type = Field.Type.TEXT
 				field.dbType = java.sql.Types.NCLOB
-				return
+//				return
 			}
 		}
 	}

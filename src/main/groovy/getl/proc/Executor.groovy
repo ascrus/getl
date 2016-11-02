@@ -87,10 +87,10 @@ class Executor {
 	/**
 	 * How exceptions in process stopping execute
 	 */
-	public final Map exceptions = [:]
+	public final Map<Object, Throwable> exceptions = [:]
 	
 	@groovy.transform.Synchronized
-	protected void setError (def obj, def except) {
+	protected void setError (Object obj, Throwable except) {
 		hasError = true
 		if (obj != null) exceptions.put(obj, except)
 	}
@@ -153,7 +153,10 @@ class Executor {
 		def runCode = { num, element -> 
 			try {
 				if (limit == 0 || num <= limit) {
-					if ((!isError || !abortOnError) && !isInterrupt) code(element)
+					if ((!isError || !abortOnError) && !isInterrupt) {
+						//noinspection GroovyAssignabilityCheck
+						code(element)
+					}
 				}
 			}
 			catch (Throwable e) {
@@ -167,7 +170,7 @@ class Executor {
 						e.printStackTrace()
 					}
 				}
-				catch (Throwable ee) { }
+				catch (Throwable ignored) { }
 			}
 		}
 		

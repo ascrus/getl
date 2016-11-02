@@ -26,8 +26,6 @@ package getl.files
 
 import getl.data.*
 import getl.driver.*
-import getl.driver.Driver.Operation
-import getl.driver.Driver.Support
 import getl.exception.ExceptionGETL
 
 /**
@@ -49,27 +47,32 @@ class FilesDriver extends FileDriver {
 	}
 
 	@Override
-	protected List<Field> fields(Dataset dataset) {
+    public
+    List<Field> fields(Dataset dataset) {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+    public
+    long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void openWrite(Dataset dataset, Map params, Closure prepareCode) {
+    public
+    void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void write(Dataset dataset, Map row) {
+    public
+    void write(Dataset dataset, Map row) {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void closeWrite(Dataset dataset) {
+    public
+    void closeWrite(Dataset dataset) {
 		throw new ExceptionGETL("Not supported")
 	}
 }

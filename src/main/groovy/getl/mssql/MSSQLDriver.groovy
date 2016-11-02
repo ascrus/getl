@@ -73,10 +73,10 @@ class MSSQLDriver extends JDBCDriver {
 	
 	@Override
 	protected String sessionID() {
-		String res
+		String res = null
 		def rows = sqlConnect.rows("SELECT @@SPID AS session_id")
 		if (!rows.isEmpty()) res = rows[0].session_id.toString()
 		
-		res
+		return res
 	}
 }

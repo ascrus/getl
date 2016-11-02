@@ -36,7 +36,8 @@ class CSVFmtBlob extends CellProcessorAdaptor {
 		validateInputNotNull(value, context)
 		
 		if (!(value instanceof byte[])) {
-			throw new SuperCsvCellProcessorException((byte[]).class, value, context, this);
+			byte[] b = []
+			throw new SuperCsvCellProcessorException((b.class), value, context, this);
 		}
 		
 		String result = /*'0x' + */StringUtils.RawToHex((byte[])value)

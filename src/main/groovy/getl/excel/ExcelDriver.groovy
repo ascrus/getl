@@ -26,8 +26,6 @@ package getl.excel
 
 import getl.data.*
 import getl.driver.Driver
-import getl.driver.Driver.Operation
-import getl.driver.Driver.Support
 import getl.csv.CSVDataset
 import getl.exception.ExceptionGETL
 import getl.utils.*
@@ -62,13 +60,15 @@ class ExcelDriver extends Driver {
     }
 
     @Override
-    protected List<Object> retrieveObjects(Map params, Closure filter) { throw new ExceptionGETL("Not supported") }
+    public List<Object> retrieveObjects(Map params, Closure filter) { throw new ExceptionGETL("Not supported") }
 
     @Override
-    protected List<Field> fields(Dataset dataset) { throw new ExceptionGETL("Not supported") }
+    public
+    List<Field> fields(Dataset dataset) { throw new ExceptionGETL("Not supported") }
 
     @Override
-    protected long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+    public
+    long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
         String path = dataset.connection.params.path
         String fileName = dataset.connection.params.fileName
         String fullPath = FileUtils.ConvertToDefaultOSPath(path + File.separator + fileName)
@@ -192,32 +192,38 @@ class ExcelDriver extends Driver {
     }
 
     @Override
-    protected void doneWrite (Dataset dataset) {
+    public
+    void doneWrite (Dataset dataset) {
         throw new ExceptionGETL("Not supported")
     }
 
     @Override
-    protected void closeWrite(Dataset dataset) {
+    public
+    void closeWrite(Dataset dataset) {
         throw new ExceptionGETL("Not supported")
     }
 
     @Override
-    protected void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+    public
+    void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
         throw new ExceptionGETL("Not supported")
     }
 
     @Override
-    protected void openWrite(Dataset dataset, Map params, Closure prepareCode) {
+    public
+    void openWrite(Dataset dataset, Map params, Closure prepareCode) {
         throw new ExceptionGETL("Not supported")
     }
 
     @Override
-    protected void write(Dataset dataset, Map row) {
+    public
+    void write(Dataset dataset, Map row) {
         throw new ExceptionGETL("Not supported")
     }
 
     @Override
-    protected long executeCommand (String command, Map params) {
+    public
+    long executeCommand (String command, Map params) {
         throw new ExceptionGETL("Not supported")
     }
 
@@ -227,46 +233,53 @@ class ExcelDriver extends Driver {
     }
 
     @Override
-    protected void clearDataset(Dataset dataset, Map params) {
+    public
+    void clearDataset(Dataset dataset, Map params) {
         throw new ExceptionGETL("Not supported")
 
     }
 
     @Override
-    protected void createDataset(Dataset dataset, Map params) {
+    public
+    void createDataset(Dataset dataset, Map params) {
         throw new ExceptionGETL("Not supported")
 
     }
 
     @Override
-    protected void startTran() {
+    public
+    void startTran() {
         throw new ExceptionGETL("Not supported")
 
     }
 
     @Override
-    protected void commitTran() {
+    public
+    void commitTran() {
         throw new ExceptionGETL("Not supported")
 
     }
 
     @Override
-    protected void rollbackTran() {
+    public
+    void rollbackTran() {
         throw new ExceptionGETL("Not supported")
     }
 
     @Override
-    protected void connect () {
+    public
+    void connect () {
         throw new ExceptionGETL("Not supported")
     }
 
     @Override
-    protected void disconnect () {
+    public
+    void disconnect () {
         throw new ExceptionGETL("Not supported")
     }
 
     @Override
-    protected boolean isConnect () {
+    public boolean isConnected() {
         throw new ExceptionGETL("Not supported")
     }
 }

@@ -112,7 +112,7 @@ class CacheManager extends H2Connection {
 		regDatasets.clear()
 	}
 	
-	public String datasetName(long connectionid, Dataset dataset) {
+	public static String datasetName(long connectionid, Dataset dataset) {
 		assert dataset.objectName != null, "Required \"name\" for dataset"
 		"CON${connectionid}_${StringUtils.TransformObjectName(dataset.objectName).toUpperCase()}"
 	}

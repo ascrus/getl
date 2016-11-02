@@ -133,7 +133,7 @@ class SavePointManager {
 		
 		if (!map.isEmpty()) return
 		
-		JDBCDriver drv = connection.driver 
+		JDBCDriver drv = connection.driver as JDBCDriver
 		
 		// Mapping fields
 		table_field.each { Field field ->
@@ -154,8 +154,8 @@ class SavePointManager {
 		table.tableName = tableName
 		table.field = table_field
 		
-		table.fieldByName(map.source).isKey = (saveMethod == "MERGE")
-		table.fieldByName(map.time).isKey = (saveMethod == "INSERT")
+		table.fieldByName(map.source as String).isKey = (saveMethod == "MERGE")
+		table.fieldByName(map.time as String).isKey = (saveMethod == "INSERT")
 	}
 	
 	/**
@@ -216,11 +216,11 @@ class SavePointManager {
 	 * @return res.type (D and N) and res.value
 	 */
 	@groovy.transform.Synchronized
-	public Map lastValue (String source) {
+	public Map<String, Object> lastValue (String source) {
 		prepareTable()
 		source = source.toUpperCase()
 		
-		JDBCDriver driver = connection.driver
+		JDBCDriver driver = connection.driver as JDBCDriver
 		def fp = driver.fieldPrefix
 		
 		def sql
@@ -243,14 +243,14 @@ class SavePointManager {
 		}
 		connection.commitTran()
 		
-		def res = [type: null, value: null]
+		Map<String, Object> res = [type: null, value: null]
 		rows.each { row ->
 			def type = row.type?.toUpperCase()
 			if (!(type in ["D", "N", "F"])) throw new ExceptionGETL("Unknown type value \"$type\" from source $source")
 			res.type = row.type
 			if (type == "D") {
-				res.value = DateUtils.Value2Timestamp(row.value)
-				
+				BigDecimal v = row.value
+				res.value = DateUtils.Value2Timestamp(v)
 			}
 			else if (type =="N") {
 				BigDecimal v = row.value
@@ -270,8 +270,8 @@ class SavePointManager {
 	 * @param source
 	 * @return
 	 */
-	public String value2String(Map value) {
-		value2String(value, false, null)
+	public static String value2String(Map value) {
+		return value2String(value, false, null)
 	}
 	
 	/**
@@ -280,7 +280,7 @@ class SavePointManager {
 	 * @param quote
 	 * @return
 	 */
-	public String value2String(Map value, boolean quote, String format) {
+	public static String value2String(Map value, boolean quote, String format) {
 		if (value == null) return null
 		
 		def type = value.type?.toUpperCase()
@@ -291,14 +291,14 @@ class SavePointManager {
 		}
 		else if (type == "D") {
 			if (format == null) format = "yyyy-MM-dd HH:mm:ss.SSS"
-			res = DateUtils.FormatDate(format, value.value)
+			res = DateUtils.FormatDate(format, value.value as Date)
 			if (quote) res = "'$res'"
 		}
 		else {
 			res = "null"
 		}
 		
-		res
+		return res
 	}
 	
 	/**
@@ -328,9 +328,13 @@ class SavePointManager {
 		}
 		
 		def type
-		if (value instanceof Date || value instanceof java.sql.Timestamp) {
+		if (value instanceof Date) {
 			type = "D"
-			value = DateUtils.Timestamp2Value(value)
+			value = DateUtils.Timestamp2Value(value as Date)
+		}
+		else if (value instanceof java.sql.Timestamp) {
+			type = "D"
+			value = DateUtils.Timestamp2Value(value as java.sql.Timestamp)
 		}
 		else if (value instanceof String || value instanceof GString) {
 			type = "D"
@@ -388,7 +392,8 @@ class SavePointManager {
 			case Field.Type.INTEGER: case Field.Type.BIGINT:
 				res."type" = "N"
 				try {
-					res."value" = new Long(value)
+                    //noinspection GroovyAssignabilityCheck
+                    res."value" = new Long(value)
 				}
 				catch (Throwable e) {
 					Logs.Severe("Can not parse \"$value\" to long")
@@ -398,7 +403,8 @@ class SavePointManager {
 			case Field.Type.NUMERIC:
 				res."type" = "F"
 				try {
-					res."value" = new BigDecimal(value)
+                    //noinspection GroovyAssignabilityCheck
+                    res."value" = new BigDecimal(value)
 				}
 				catch (Throwable e) {
 					Logs.Severe("Can not parse \"$value\" to numeric")

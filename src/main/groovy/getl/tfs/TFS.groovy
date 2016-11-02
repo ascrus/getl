@@ -38,7 +38,11 @@ import getl.utils.FileUtils
  */
 @InheritConstructors
 class TFS extends CSVConnection {
-	public static def systemPath = "${FileUtils.SystemTempDir()}/getl/${FileUtils.UniqueFileName()}"
+	private static String _systemPath
+	public static def getSystemPath() {
+        if (_systemPath == null) _systemPath = "${FileUtils.SystemTempDir()}/getl/${FileUtils.UniqueFileName()}"
+        return _systemPath
+    }
 	
 	/**
 	 * Global Temporary File Storage connection object
@@ -47,6 +51,11 @@ class TFS extends CSVConnection {
 	
 	TFS () {
 		super(driver: TFSDriver)
+
+		methodParams.register("Super", ["deleteOnExit"])
+		if (this.getClass().name == 'getl.tfs.TFS') methodParams.validation("Super", params)
+
+		initParams()
 	}
 	
 	TFS (Map params) {
@@ -67,7 +76,7 @@ class TFS extends CSVConnection {
 		if (params.autoSchema == null) autoSchema = true
 		
 		if (params.deleteOnExit == null) params.deleteOnExit = true
-		setPath(params.path?:systemPath)
+		setPath((params.path)?:systemPath)
 	}
 	
 	/**
@@ -78,7 +87,7 @@ class TFS extends CSVConnection {
 	public void setDeleteOnExit (boolean value) { params.deleteOnExit = value }
 	
 	@Override
-	public void setPath (String value) { 
+	public void setPath (String value) {
 		super.setPath(value)
 		if (value != null) {
 			def f = new File(value)

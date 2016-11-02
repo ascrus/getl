@@ -52,10 +52,11 @@ class DateUtils {
 	 * @return
 	 */
 	public static Date ParseDate(String format, def value, boolean ignoreError) {
-		Date result
+		Date result = null
 		if (value == null) return result
 		try {
 			def sdf = new SimpleDateFormat(format)
+            sdf.setLenient(false);
 			result = sdf.parse(value.toString())
 		}
 		catch (Exception e) {
@@ -78,7 +79,8 @@ class DateUtils {
 	}
 	
 	public static Date SQLDate2Date (java.sql.Timestamp value) {
-		(value != (java.sql.Timestamp)null)?new Date(value.time):null
+		//(value != (java.sql.Timestamp)null)?new Date(value.time):null
+		value
 	}
 	
 	/**
@@ -130,6 +132,7 @@ class DateUtils {
 		if (date == null) return null
 		Calendar c = Calendar.getInstance()
 		c.setTime((Date)(date.clone()))
+		//noinspection GroovyFallthrough,GroovyDuplicateSwitchBranch
 		switch (part) {
 			case Calendar.HOUR:
 				c.set(Calendar.MINUTE, 0)
@@ -314,8 +317,8 @@ class DateUtils {
 	 */
 	public static int PartOfDate(String partName, Date date) {
 
-		if (partName == null || date == null)
-			return 0
+		if (partName == null || date == null) return 0
+
 		int ret = 0
 		String[] fieldsName = ["YEAR", "MONTH", "HOUR", "MINUTE", "SECOND", "DAY_OF_WEEK", "DAY_OF_MONTH", "DAY_OF_YEAR",
 				"WEEK_OF_MONTH", "DAY_OF_WEEK_IN_MONTH", "WEEK_OF_YEAR", "TIMEZONE" ]
@@ -328,10 +331,10 @@ class DateUtils {
 			ret = c.get(Calendar.YEAR)
 			break
 		case 1:
-			ret = c.get(Calendar.MONTH)
+			ret = c.get(Calendar.MONTH) + 1
 			break
 		case 2:
-			ret = c.get(Calendar.HOUR)
+			ret = c.get(Calendar.HOUR_OF_DAY)
 			break
 		case 3:
 			ret = c.get(Calendar.MINUTE)
@@ -422,13 +425,17 @@ class DateUtils {
 		Date start
 		Date finish
 		intervals?.each { Map interval ->
-			if (interval."start" == null) throw new ExceptionGETL("Required start date from interval")
-			if (interval."finish" == null) throw new ExceptionGETL("Required finish date from interval")
-			if (start == null || ((Date)(interval."start")) < start) {
-				start = (Date)(interval."start")
+            def istart = interval.start as Date
+            def ifinish = interval.finish as Date
+
+			if (istart == null) throw new ExceptionGETL("Required start date from interval")
+			if (ifinish == null) throw new ExceptionGETL("Required finish date from interval")
+
+			if (start == null || istart < start) {
+				start = istart
 			}
-			if (finish == null || ((Date)(interval."finish")) > finish) {
-				finish = (Date)(interval."finish")
+			if (finish == null || ifinish > finish) {
+				finish = ifinish
 			}
 		}
 		

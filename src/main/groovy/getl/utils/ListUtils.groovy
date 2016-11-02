@@ -38,13 +38,15 @@ class ListUtils {
 	 * @return
 	 */
 	public static List CopyWhere(List list, Closure from) {
-		if (list == null) return
+		if (list == null) return null
 		
 		def result = []
 		list.each {  
-			if (from(it)) result << it
+			//noinspection GroovyAssignabilityCheck
+            if (from(it)) result << it
 		}
-		result
+
+		return result
 	}
 	
 	/**

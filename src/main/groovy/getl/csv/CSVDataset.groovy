@@ -96,7 +96,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Mode of quote value 
 	 */
-	public QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, csvConnection()?.quoteMode, QuoteMode.NORMAL]) }
+	public QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, csvConnection()?.quoteMode, QuoteMode.NORMAL]) as QuoteMode }
 	public void setQuoteMode (QuoteMode value) { params.quoteMode = value }
 	
 	/**
@@ -164,7 +164,7 @@ class CSVDataset extends FileDataset {
 	 * @param code
 	 */
 	public long prepareCSVForBulk (CSVDataset source, Map encodeTable, Closure code) {
-		CSVDriver drv = connection.driver
+		CSVDriver drv = connection.driver as CSVDriver
 		
 		drv.prepareCSVForBulk(this, source, encodeTable, code)
 	}
@@ -204,7 +204,7 @@ class CSVDataset extends FileDataset {
 	 * @return
 	 */
 	public long decodeBulkCSV (CSVDataset source) {
-		CSVDriver drv = connection.driver
+		CSVDriver drv = connection.driver as CSVDriver
 		drv.decodeBulkCSV(this, source)
 	}
 	
@@ -227,7 +227,7 @@ class CSVDataset extends FileDataset {
 	 * @return
 	 */
 	public long readLinesCount () {
-		CSVDriver drv = connection.driver
+		CSVDriver drv = connection.driver as CSVDriver
 		
 		drv.readLinesCount(this)
 	}

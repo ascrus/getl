@@ -46,10 +46,10 @@ class CacheDataset extends TableDataset {
 	@Override
 	public void setConnection(Connection value) {
 		assert value == null || value instanceof CacheManager 
-		CacheManager oldValue = connection
+		CacheManager oldValue = (CacheManager)connection
 		super.setConnection(value)
 		if (value != null && oldValue != value) {
-			CacheManager cm = value
+			CacheManager cm = (CacheManager)value
 			cm.addCacheDataset(this)
 		}
 		else if (value == null && oldValue != null) {
@@ -74,19 +74,19 @@ class CacheDataset extends TableDataset {
 	public Closure onUpdateData
 	
 	protected long connectionid
-	
+
 	@Override
 	public void eachRow (Map procParams, Closure code) {
-		CacheManager cm = connection
+		CacheManager cm = (CacheManager)connection
 		def rowObjects = cm.findObject(connectionid, dataset)
 		assert rowObjects != null, "Can not find dataset \"${dataset.objectName}\" from register objects"
-		
+
 		// Limit live time
-		Date readed = DateUtils.AddDate("ss", liveTime, rowObjects.readed)
+		Date readed = DateUtils.AddDate("ss", liveTime, (Date)rowObjects.readed)
 		Date updated = rowObjects.updated
 		// Current time
 		Date now = DateUtils.Now()
-		
+
 		// Reread data from source with timeout live time and fix new time
 		if (readed < now || updated > readed) {
 			cm.startTran()
@@ -106,7 +106,7 @@ class CacheDataset extends TableDataset {
 			cm.commitTran()
 			if (onUpdateData != null) onUpdateData(this)
 		}
-		
+
 		super.eachRow(procParams, code)
 	}
 	
@@ -115,13 +115,13 @@ class CacheDataset extends TableDataset {
 	 * @return
 	 */
 	public Date getCacheReaded () {
-		def row
-		CacheManager cm = connection
+		def row = null
+		CacheManager cm = (CacheManager)connection
 		cm.startTran()
 		try {
 			row = cm.findObject(this)
 		}
-		catch (Exception e) {
+		catch (Exception ignored) {
 			cm.rollbackTran()
 		}
 		cm.commitTran()
@@ -133,13 +133,13 @@ class CacheDataset extends TableDataset {
 	 * @return
 	 */
 	public Date getCacheUpdated () {
-		def row
-		CacheManager cm = connection
+		def row = null
+		CacheManager cm = (CacheManager)connection
 		cm.startTran()
 		try {
 			row = cm.findObject(this)
 		}
-		catch (Exception e) {
+		catch (Exception ignored) {
 			cm.rollbackTran()
 		}
 		cm.commitTran()

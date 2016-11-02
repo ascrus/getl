@@ -24,8 +24,6 @@
 
 package getl.h2
 
-import java.util.Map;
-
 import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
@@ -34,7 +32,6 @@ import getl.exception.ExceptionGETL
 import getl.jdbc.JDBCConnection
 import getl.jdbc.JDBCDriver
 import getl.jdbc.JDBCDataset
-import getl.jdbc.TableDataset
 import getl.utils.*
 import groovy.transform.InheritConstructors
 
@@ -76,7 +73,7 @@ class H2Driver extends JDBCDriver {
 	
 	@Override
 	public String defaultConnectURL () {
-		H2Connection con = connection 
+		H2Connection con = connection as H2Connection
 		if (con.inMemory) {
 			return (con.connectHost != null)?"jdbc:h2:tcp://{host}/mem:{database}":"jdbc:h2:mem:{database}" 
 		}
@@ -113,10 +110,11 @@ class H2Driver extends JDBCDriver {
 	}
 	
 	@Override
-	protected void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+    public
+    void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
 		if (params.compressed != null) throw new ExceptionGETL("H2 bulk load dont support compression files")
 		
-		params = bulkLoadFilePrepare(source, dest, params, prepareCode)
+		params = bulkLoadFilePrepare(source, dest as JDBCDataset, params, prepareCode)
 		
 		List<Map> map = params.map
 		boolean autoCommit = (params.autoCommit != null)?params.autoCommit:(dest.connection.tranCount == 0 && !dest.connection.autoCommit)
@@ -127,7 +125,7 @@ class H2Driver extends JDBCDriver {
 		List fparm = []
 		map.each { Map f ->
 			if (f.field != null) {
-				columns << fieldPrefix + f.field.name.toUpperCase() + fieldPrefix
+				columns << fieldPrefix + (f.field.name as String).toUpperCase() + fieldPrefix
 				headers << f.field.name.toUpperCase()
 			}
 		}
@@ -196,11 +194,11 @@ FROM CSVREAD('${source.fullFileName()}', ${heads}, '${functionParms}')
 	
 	@Override
 	protected String sessionID() {
-		String res
+		String res = null
 		def rows = sqlConnect.rows("SELECT SESSION_ID() AS session_id;")
 		if (!rows.isEmpty()) res = rows[0].session_id.toString()
 		
-		res
+		return res
 	}
 	
 	@Override
@@ -211,8 +209,8 @@ FROM CSVREAD('${source.fullFileName()}', ${heads}, '${functionParms}')
 		}
 		
 		String res = """
-MERGE INTO ${dataset.fullNameDataset()} (${GenerationUtils.SqlFields(dataset.connection, fields, null, excludeFields).join(", ")})
-VALUES(${GenerationUtils.SqlFields(dataset.connection, fields, "?", excludeFields).join(", ")})
+MERGE INTO ${dataset.fullNameDataset()} (${GenerationUtils.SqlFields(dataset.connection as JDBCConnection, fields, null, excludeFields).join(", ")})
+VALUES(${GenerationUtils.SqlFields(dataset.connection as JDBCConnection, fields, "?", excludeFields).join(", ")})
 """
 		
 		res

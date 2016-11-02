@@ -68,13 +68,13 @@ class JDBCConnection extends Connection {
 	@Override
 	protected void doDoneConnect () {
 		super.doDoneConnect()
-		JDBCDriver drv = driver
+		JDBCDriver drv = driver as JDBCDriver
 		sysParams.sessionID = drv.sessionID()
 		drv.saveToHistory("-- USER CONNECT (URL: ${sysParams."currentConnectURL"})${(autoCommit)?' WITH AUTOCOMMIT':''}")
 	}
 	
 	protected void doDoneDisconnect () {
-		JDBCDriver drv = driver
+		JDBCDriver drv = driver as JDBCDriver
 		drv.saveToHistory("-- USER DISCONNECT (URL: ${sysParams."currentConnectURL"})${(autoCommit)?' WITH AUTOCOMMIT':''}")
 		super.doDoneDisconnect()
 		sysParams.sessionID = null
@@ -267,7 +267,7 @@ class JDBCConnection extends Connection {
 	 */
 	public List<TableDataset> retrieveDatasets (Map params, Closure code) {
 		if (params == null) params = [:]
-		List<Dataset> result = []
+		List<TableDataset> result = []
 		def o = retrieveObjects(params, code)
 		o.each { row ->
 			TableDataset d = new TableDataset(connection: this, type: JDBCDataset.Type.UNKNOWN)
@@ -287,7 +287,8 @@ class JDBCConnection extends Connection {
 			}
 			result << d
 		}
-		result
+
+		return result
 	}
 	
 	/**
@@ -324,7 +325,7 @@ class JDBCConnection extends Connection {
 	 * @param sql
 	 */
 	public void saveToHistory(String sql) {
-		JDBCDriver drv = driver
+		JDBCDriver drv = driver as JDBCDriver
 		drv.saveToHistory(sql)
 	}
 	
@@ -341,7 +342,7 @@ class JDBCConnection extends Connection {
 	 * @return
 	 */
 	public String buildConnectParams () {
-		JDBCDriver drv = driver
+		JDBCDriver drv = driver as JDBCDriver
 		drv.buildConnectParams()
 	}
 	
@@ -367,10 +368,10 @@ class JDBCConnection extends Connection {
 	public static Integer ConnectHost2PortNumber(String host) {
 		if (host == null) return null
 		def pos = host.indexOf(":")
-		Integer res
+		Integer res = null
 		if (pos != -1) res = Integer.valueOf(host.substring(pos + 1))
 		
-		res
+		return res
 	}
 	
 	/**
@@ -416,5 +417,10 @@ class JDBCConnection extends Connection {
 			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile, StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(fileNameSqlHistory)
 		}
+	}
+
+	@Override
+	public String toString() {
+		return MapUtils.ToJson(MapUtils.CleanMap(params, ['login', 'password']))
 	}
 }

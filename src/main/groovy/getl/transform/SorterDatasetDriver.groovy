@@ -25,10 +25,7 @@
 package getl.transform
 
 import getl.data.*
-import getl.data.Field.Type
 import getl.driver.VirtualDatasetDriver
-import getl.driver.Driver.Operation
-import getl.driver.Driver.Support
 import getl.exception.ExceptionGETL
 import getl.utils.GenerationUtils
 import groovy.transform.InheritConstructors
@@ -41,14 +38,16 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class SorterDatasetDriver extends VirtualDatasetDriver {
 	
-	private List<String> getFieldOrderBy(Dataset dataset) {
+	private static List<String> getFieldOrderBy(Dataset dataset) {
 		List<String> res = dataset.params.fieldOrderBy
 		if (res == null) throw new ExceptionGETL("Required parameter \"fieldOrderBy\" in dataset")
-		res
+
+		return res
 	}
 	
 	@Override
-	protected void openWrite(Dataset dataset, Map params, Closure prepareCode) {
+    public
+    void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		Dataset ds = getDestinition(dataset)
 		def fieldOrderBy = getFieldOrderBy(dataset)
 		
@@ -60,26 +59,29 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 	}
 
 	@Override
-	protected void write(Dataset dataset, Map row) {
+	public
+	void write(Dataset dataset, Map row) {
 		List data = dataset.params.sorter_data
 		data << row
 	}
 
 	@Override
-	protected void doneWrite(Dataset dataset) {
+	public
+	void doneWrite(Dataset dataset) {
 		List data = dataset.params.sorter_data
 		Closure code = dataset.params.sorter_code
 		data.sort(true, code)
 		
 		Dataset ds = getDestinition(dataset)
-		data.each { row ->
+		data.each { Map row ->
 			ds.write(row)
 		}
 		ds.doneWrite()
 	}
 
 	@Override
-	protected void closeWrite(Dataset dataset) {
+	public
+	void closeWrite(Dataset dataset) {
 		Dataset ds = getDestinition(dataset)
 		ds.closeWrite()
 		
@@ -88,7 +90,7 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 		dataset.params.remove("sorter_code")
 	}
 	
-	private Closure generateSortCode(List<String> fieldOrderBy) {
+	private static Closure generateSortCode(List<String> fieldOrderBy) {
 		StringBuilder sb = new StringBuilder()
 		sb << "{ Map row1, Map row2 ->\n	def eq\n"
 		fieldOrderBy.each { field ->
@@ -100,8 +102,8 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 		}
 		sb << "	return 0\n}"
 		
-		Closure result = GenerationUtils.EvalGroovyScript(sb.toString())
+		Closure result = GenerationUtils.EvalGroovyClosure(sb.toString())
 		
-		result
+		return result
 	}
 }

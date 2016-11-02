@@ -46,13 +46,13 @@ abstract class Job {
 	
 	private void processConfigArgs (def args) {
 		def m = MapUtils.ProcessArguments(args)
-		if (m.errout != null) Logs.RedirectErrOut(m.errout)
+		if (m.errout != null) Logs.RedirectErrOut(m.errout as String)
 		if (m.stdout != null) {
-			Logs.RedirectStdOut(m.stdout)
+			Logs.RedirectStdOut(m.stdout as String)
 		}
 		else if (m.stdcodepage != null) {
 			println "Change console code page to \"${m.stdcodepage}\""
-			System.setOut(new PrintStream(System.out, true, m.stdcodepage))
+			System.setOut(new PrintStream(System.out, true, m.stdcodepage as String))
 		}
 
 		// Set job parameters from arguments
@@ -64,7 +64,7 @@ abstract class Job {
 			}
 			def configPath = (Config.path != null)?"${Config.path}${File.separator}":""
 			if (config.filename != null) {
-				def fn = config.filename
+				def fn = config.filename as String
 				if (fn.indexOf(";") == -1) {
 					Config.fileName = fn
 					if (!(new File(configPath + Config.fileName).exists())) throw new ExceptionGETL("Can not find config file \"${Config.fileName}\"")
