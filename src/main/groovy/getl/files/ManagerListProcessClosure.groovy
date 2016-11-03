@@ -44,7 +44,7 @@ class ManagerListProcessClosure extends ManagerListProcessing {
 	@Override
 	public void init() {
 		super.init()
-		runCode = code.clone() as Closure
+		if (code != null) runCode = code.clone() as Closure
 	}
 
 	@Override
