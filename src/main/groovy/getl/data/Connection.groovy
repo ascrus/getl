@@ -352,7 +352,7 @@ public class Connection {
 	 */
 	public Connection cloneConnection () {
 		String className = this.class.name
-		Map p = MapUtils.Clone(this.params)
+		Map p = CloneUtils.CloneMap(this.params)
 		CreateConnection([connection: className] + MapUtils.CleanMap(p, ['sysParams']))
 	}
 }

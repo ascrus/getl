@@ -1271,7 +1271,7 @@ ${ef.toString()}
 	 */
 	public Dataset cloneDataset (Connection newConnection) {
 		String className = this.class.name
-		Map p = MapUtils.Clone(this.params)
+		Map p = CloneUtils.CloneMap(this.params)
 		Dataset ds = CreateDataset([dataset: className] + MapUtils.CleanMap(p, ['sysParams']))
 		if (newConnection != null) ds.connection = newConnection
 		ds.setField(this.field)

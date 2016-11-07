@@ -529,7 +529,7 @@ class FileUtils {
             res = (lock == null)
             if (lock != null) lock.release()
         }
-        catch (Throwable e) {
+        catch (Throwable ignored) {
             res = true
         }
         finally {

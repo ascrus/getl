@@ -36,7 +36,7 @@ import getl.exception.ExceptionGETL
 @groovy.transform.CompileStatic
 class MapUtils {
 	/**
-	 * Clone all map items as new objects
+	 * Copy all map items as new objects with Json builder
 	 * @param map
 	 * @return
 	 */
@@ -58,17 +58,17 @@ class MapUtils {
 
 		res
 	}
-	
+
 	/**
-	 * Clone map
+	 * Copy map with stream
 	 * @param map
 	 * @return
 	 */
-	public static Map Clone (Map map) {
+	public static Map StreamCopy (Map map) {
 		if (map == null) return null
-		
+
 		Map res
-		
+
 		ByteArrayOutputStream bos = new ByteArrayOutputStream()
 		ObjectOutputStream oos = new ObjectOutputStream(bos)
 		try {
@@ -307,7 +307,7 @@ class MapUtils {
 			MergeMapChildren(source, value, key)
 		}
 	}
-	
+
 	private static void MergeMapChildren (Map source, def added, String section) {
 		if (!(added instanceof Map)) {
 			SetValue(source, section, added)
@@ -422,10 +422,10 @@ class MapUtils {
 				if (val.trim() != '"') res.put(k, GenerationUtils.EvalGroovyScript('"""' + val + '"""', vars)) else res.put(k, val)
 			}
 			else if (v instanceof Map) {
-				res.put(k, EvalMacroValues(((Map)v), vars))
+				res.put(k, EvalMacroValues(v as Map, vars))
 			}
 			else if (v instanceof List) {
-				res.put(k, ListUtils.EvalMacroValues(((List)v), vars))
+				res.put(k, ListUtils.EvalMacroValues(v as List, vars))
 			}
 			else {
 				res.put(k, v)
@@ -441,11 +441,11 @@ class MapUtils {
 	 * @return
 	 */
 	public static String MapToUrlParams(Map<String, Object> m) {
-		List l = []
-		m.each { String k, v ->
-			l << "$k=${v.toString()}"
-		}
+        List l = []
+        m.each { String k, v ->
+            l << "$k=${v.toString()}"
+        }
 
-		l.join('&')
-	}
+        l.join('&')
+    }
 }

@@ -21,7 +21,6 @@ class ConfigTest extends GroovyTestCase {
         Config.content.putAll(conf.root)
         Config.SaveConfig(configFile)
         assertTrue(configFile.exists())
-        println "FILE: ${configFile.text}"
 
         Config.ClearConfig()
         assertTrue(MapUtils.CleanMap(Config.content, ['vars']).isEmpty())
@@ -30,7 +29,6 @@ class ConfigTest extends GroovyTestCase {
         assertEquals(Config.vars.test_var, 'variable value')
 
         Config.LoadConfigFile(configFile)
-        println MapUtils.ToJson(Config.content)
         assertEquals(Config.content.var, 'variable value')
     }
 }

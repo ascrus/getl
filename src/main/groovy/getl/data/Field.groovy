@@ -364,7 +364,7 @@ class Field implements Serializable {
 				name: this.name, type: this.type, typeName: this.typeName, dbType: this.dbType, isNull: this.isNull, length: this.length, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
 				isAutoincrement: this.isAutoincrement, isReadOnly: this.isReadOnly, defaultValue: this.defaultValue, compute: this.compute, 
 				minValue: this.minValue, maxValue: this.maxValue, format: this.format, alias: this.alias, trim: this.trim, 
-				decimalSeparator: this.decimalSeparator, description: this.description, extended: MapUtils.DeepCopy(extended))
+				decimalSeparator: this.decimalSeparator, description: this.description, extended: CloneUtils.CloneMap(extended))
 	}
 	
 	public static boolean IsConvertibleType(Field.Type source, Field.Type dest) {
