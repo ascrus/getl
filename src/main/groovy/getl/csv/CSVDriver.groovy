@@ -25,7 +25,6 @@
 package getl.csv
 
 import groovy.transform.InheritConstructors
-import org.apache.commons.lang.BooleanUtils
 
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -178,7 +177,7 @@ class CSVDriver extends FileDriver {
 		CellProcessor cp
 		
 		if (field.type == null || (field.type in [Field.Type.STRING, Field.Type.OBJECT, Field.Type.ROWID/*, Field.Type.TEXT*/])) {
-			if (BooleanUtils.isTrue(field.trim)) {
+			if (BoolUtils.IsValue(field.trim)) {
 				cp = new Trim()
 			}
 			else {

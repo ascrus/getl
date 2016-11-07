@@ -26,7 +26,6 @@ package getl.data
 
 import getl.exception.ExceptionGETL
 import getl.utils.*
-import org.apache.commons.lang.BooleanUtils
 
 /**
  * Base field class
@@ -349,7 +348,7 @@ class Field implements Serializable {
 		maxValue = (f.maxValue != null)?f.maxValue:maxValue
 		format = (f.format != null)?f.format:format
 		alias = (f.alias != null)?f.alias:alias
-		trim = (BooleanUtils.isTrue(f.trim))?true:trim
+		trim = BoolUtils.IsValue(f.trim, trim)
 		decimalSeparator = (f.decimalSeparator != null)?f.decimalSeparator:decimalSeparator
 		description = (f.description != null)?f.description:description
 		extended.putAll(f.extended)

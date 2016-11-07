@@ -82,6 +82,10 @@ class BoolUtils {
 
         return result
 	}
+
+	public static Boolean IsValue(def value) {
+		IsValue(value, false)
+	}
 	
 	/**
 	 * Validation instaceof use class for super class
