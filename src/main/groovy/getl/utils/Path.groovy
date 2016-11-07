@@ -606,7 +606,12 @@ class Path {
 		if (!vars.containsKey(varName)) throw new ExceptionGETL("Variable ${varName} not found")
 		def v = vars.get(varName)
 		def type = v."type"
-		if (type != null && type instanceof String) type = Field.Type."$type"
+		if (type == null) {
+            type = Field.Type.STRING
+        }
+        else if (type instanceof String) {
+            type = Field.Type."$type"
+        }
 		
 		switch (type) {
 			case Field.Type.DATE:
