@@ -4,7 +4,7 @@ import getl.tfs.TFS
 import groovy.json.JsonBuilder
 
 /**
- * Created by ascru on 01.11.2016.
+ * @author Alexsey Konstantinov
  */
 class ConfigTest extends GroovyTestCase {
     void testSaveLoadConfig() {

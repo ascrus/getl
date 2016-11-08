@@ -32,10 +32,15 @@ import groovy.json.internal.LazyMap
  * @author Alexsey Konstantinov
  */
 class CloneUtils {
-    public static def CloneObject(def obj) {
+    /**
+     * Clone object
+     * @param obj
+     * @return
+     */
+    public static Object CloneObject(Object obj) {
         if (obj == null) return null
 
-        def res
+        Object res
         if (obj instanceof Map) {
             res = CloneMap(obj as Map)
         }
@@ -110,5 +115,33 @@ class CloneUtils {
         }
 
         return res
+    }
+
+    /**
+     * Clone object by stream
+     * @param obj
+     * @return
+     */
+    public static Object StreamClone (Object obj) {
+        if (obj == null) return null
+
+        Object res
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream()
+        ObjectOutputStream oos = new ObjectOutputStream(bos)
+        try {
+            oos.writeObject(obj)
+            oos.flush()
+        }
+        finally {
+            oos.close()
+            bos.close()
+        }
+        byte[] byteData = bos.toByteArray()
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(byteData)
+        res = new ObjectInputStream(bais).readObject()
+
+        res
     }
 }

@@ -458,7 +458,10 @@ class Path {
 		mat = fn =~ pattern
 		if (mat.groupCount() >= 1 && ((List)mat[0]).size() > 1) {
 			int i = 0
+            def isError = false
 			vars.each { key, value ->
+                if (isError) return
+
                 //noinspection GroovyAssignabilityCheck
                 def v = (mat[0][i + 1]) as String
 
@@ -487,40 +490,42 @@ class Path {
 						case Field.Type.DATE:
 							def format = (value.format != null)?value.format:"yyyy-MM-dd"
 							try {
-								v = DateUtils.ParseDate(format, v)
+								v = DateUtils.ParseDate(format, v, ignoreConvertError)
 							}
-							catch (Exception ignored) {
-								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to date")
-								v = null 
+							catch (Exception e) {
+								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to date: ${e.message}")
 							}
+                            isError = (v == null)
 							break
 						case Field.Type.DATETIME:
 							def format = (value.format != null)?value.format:"yyyyMMddHHmmss"
 							try {
-								v = DateUtils.ParseDate(format, v)
+								v = DateUtils.ParseDate(format, v, ignoreConvertError)
 							}
-							catch (Exception ignored) {
-								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to datetime")
-								v = null
+							catch (Exception e) {
+								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to datetime: ${e.message}")
 							}
+                            isError = (v == null)
 							break
 						case Field.Type.INTEGER:
 							try {
 								v = Integer.valueOf(v)
 							}
-							catch (Exception ignored) {
-								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to integer")
+							catch (Exception e) {
+								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to integer: ${e.message}")
 								v = null
 							}
+                            isError = (v == null)
 							break
 						case Field.Type.BIGINT:
 							try {
 								v = Long.valueOf(v)
 							}
-							catch (Exception ignored) {
-								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to bigint")
+							catch (Exception e) {
+								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to bigint: ${e.message}")
 								v = null
 							}
+                            isError = (v == null)
 							break
 						case Field.Type.STRING:
 							break
@@ -528,10 +533,12 @@ class Path {
 							throw new ExceptionGETL("Unknown type ${value.type}")
 					}
 				}
+                if (isError) return
 				
 				res.put(key, v)
 				i++
 			}
+            if (isError) return null
 		}
 		
 		return res
@@ -651,7 +658,7 @@ elements:
 			def pe = elements[i]
 			b.append("[${i+1}]:\t")
 			b.append(pe.mask)
-            Map vr = pe.vars
+            List vr = pe.vars
 			if (vr.size() > 0) b.append(" [")
 			for (int v = 0; v < vr.size(); v++) {
 				b.append(vr.get(v))

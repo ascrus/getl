@@ -1,7 +1,7 @@
 package getl.utils
 
 /**
- * Created by ascru on 01.11.2016.
+ * @author Alexsey Konstantinov
  */
 class DateUtilsTest extends GroovyTestCase {
     void testParseDate() {

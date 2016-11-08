@@ -3,10 +3,10 @@ package getl.utils
 import groovy.json.*
 
 /**
- * Created by ascru on 07.11.2016.
+ * @author Alexsey Konstantinov
  */
 class CloneUtilsTest extends GroovyTestCase {
-    void testCloneMap() {
+    private Map exampleObjectByJson() {
         def parser = new JsonSlurper()
         def s = '''
 {
@@ -25,9 +25,22 @@ class CloneUtilsTest extends GroovyTestCase {
 }
 '''
 
-        def c = parser.parseText(s)
-        def n = CloneUtils.CloneObject(c)
+        return parser.parseText(s)
+    }
 
+    private Map exampleObjectByMap() {
+        return [
+                map: [
+                        test: 'test',
+                        list: [1,2,3,4,5, [a:11, b:12, c:13]],
+                        submap: [a:1, b:2, c:3, sublist:[21,22,23]]
+                ],
+                list: ['a', 'b', 'c'],
+                prop: 'value'
+        ]
+    }
+
+    private void validClone(Map c, Map n) {
         n.map.test = "complete"
         n.map.list[0] = 11
         n.map.list[5].a = 111
@@ -47,5 +60,19 @@ class CloneUtilsTest extends GroovyTestCase {
         assertFalse(c.map.submap.sublist[0] == n.map.submap.sublist[0])
         assertFalse(c.list[0] == n.list[0])
         assertFalse(c.prop == n.prop)
+    }
+
+    void testClone() {
+        def c = exampleObjectByJson()
+        def n = CloneUtils.CloneObject(c)
+
+        validClone(c, n)
+    }
+
+    void testStreamClone() {
+        def c = exampleObjectByMap()
+        def n = CloneUtils.StreamClone(c)
+
+        validClone(c, n)
     }
 }

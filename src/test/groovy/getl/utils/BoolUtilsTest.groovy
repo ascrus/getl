@@ -1,9 +1,7 @@
 package getl.utils
 
-import com.sun.org.apache.xpath.internal.operations.Bool
-
 /**
- * Created by ascru on 01.11.2016.
+ * @author Alexsey Konstantinov
  */
 class BoolUtilsTest extends GroovyTestCase {
     void testIsValue() {

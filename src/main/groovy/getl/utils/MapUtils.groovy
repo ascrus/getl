@@ -60,34 +60,6 @@ class MapUtils {
 	}
 
 	/**
-	 * Copy map with stream
-	 * @param map
-	 * @return
-	 */
-	public static Map StreamCopy (Map map) {
-		if (map == null) return null
-
-		Map res
-
-		ByteArrayOutputStream bos = new ByteArrayOutputStream()
-		ObjectOutputStream oos = new ObjectOutputStream(bos)
-		try {
-			oos.writeObject(map)
-			oos.flush()
-		}
-		finally {
-			oos.close()
-			bos.close()
-		}
-		byte[] byteData = bos.toByteArray()
-		
-		ByteArrayInputStream bais = new ByteArrayInputStream(byteData)
-		res = (Map)new ObjectInputStream(bais).readObject()
-
-		res
-	}
-	
-	/**
 	 * Set keys of map to lower case
 	 * @param m
 	 * @return

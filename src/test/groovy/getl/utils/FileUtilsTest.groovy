@@ -5,7 +5,7 @@ import getl.tfs.TFS
 import groovy.transform.Synchronized
 
 /**
- * Created by ascru on 02.11.2016.
+ * @author Alexsey Konstantinov
  */
 class FileUtilsTest extends GroovyTestCase {
     void testFileExtension() {
