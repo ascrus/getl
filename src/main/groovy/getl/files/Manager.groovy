@@ -930,7 +930,7 @@ WHERE
 			ds.openWrite()
 		} 
 		
-		def ld = currentLocalDir() //(localDirectory != null)?localDirectory + "/":""
+		def ld = currentLocalDir()
 		def curDir = currentDir()
 
 		try {
