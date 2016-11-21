@@ -191,8 +191,24 @@ abstract class FileDriver extends Driver {
 	@Override
 	public
 	void dropDataset(Dataset dataset, Map params) {
-		def f = new File(fullFileNameDataset(dataset))
-		if (f.exists()) f.delete()
+        if (params.portions == null) {
+            def f = new File(fullFileNameDataset(dataset))
+            if (f.exists()) {
+                f.delete()
+            } else if (BoolUtils.IsValue(params.validExist, false)) {
+                throw new ExceptionGETL("File ${fullFileNameDataset(dataset)} not found")
+            }
+        }
+        else {
+            (1..params.portions).each { num ->
+                def f = new File(fullFileNameDataset(dataset, num))
+                if (f.exists()) {
+                    f.delete()
+                } else if (BoolUtils.IsValue(params.validExist, false)) {
+                    throw new ExceptionGETL("File ${fullFileNameDataset(dataset)} not found")
+                }
+            }
+        }
 		
 		super.dropDataset(dataset, params)
 	}

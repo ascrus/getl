@@ -1041,7 +1041,7 @@ WHERE
 	 * @param params - parameters
 	 * @return - list of download files
 	 */
-	public downloadFiles(Map params) {
+	public void downloadFiles(Map params) {
 		downloadFiles(params, null)
 	}
 
@@ -1162,21 +1162,23 @@ WHERE
 	 * @param dirName
 	 * @param throwError
 	 */
-	public void removeLocalDirs (String dirName, boolean throwError) {
-		String[] dirs = dirName.replace("\\", "/").split("/")
-		dirs.each { dir -> changeLocalDirectory(dir) }
-		for (int i = dirs.length; i--; i >= 0) {
-			changeLocalDirectoryUp()
-			removeLocalDir(dirs[i])
-		}
+	public Boolean removeLocalDirs (String dirName, boolean throwError) {
+//		String[] dirs = dirName.replace("\\", "/").split("/")
+//		dirs.each { dir -> changeLocalDirectory(dir) }
+//		for (int i = dirs.length; i--; i >= 0) {
+//			changeLocalDirectoryUp()
+//			removeLocalDir(dirs[i])
+//		}
+        def fullDirName = "${currentLocalDir()}/$dirName"
+        return FileUtils.DeleteFolder(fullDirName, true, throwError)
 	}
 
 	/**
 	 * Remove local directories
 	 * @param dirName
 	 */
-	public void removeLocalDirs (String dirName) {
-		removeLocalDirs(dirName, true)
+	public Boolean removeLocalDirs (String dirName) {
+		return removeLocalDirs(dirName, true)
 	}
 	
 	/**

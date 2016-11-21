@@ -88,7 +88,7 @@ class FileUtilsTest extends GroovyTestCase {
         assertTrue(new File("$path/1").exists())
         assertFalse(new File("$path/2").exists())
 
-        FileUtils.DeleteFolder("$path/1", true)
+        assertTrue(FileUtils.DeleteFolder("$path/1", true))
         assertFalse(new File("$path/1").exists())
 
         FileUtils.DeleteEmptyFolder(path, true)

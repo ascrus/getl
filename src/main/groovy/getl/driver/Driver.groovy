@@ -56,7 +56,7 @@ abstract class Driver {
 		(supported().indexOf(feature) != -1)
 	}
 	
-	public enum Operation {CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS}
+	public enum Operation {CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS, MERGE}
 	public abstract List<Driver.Operation> operations ()
 	public boolean isOperation(Driver.Operation operation) {
 		(operations().indexOf(operation) != -1)

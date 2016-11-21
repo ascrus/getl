@@ -422,7 +422,7 @@ class CSVDriver extends FileDriver {
 		Reader bufReader = getFileReader(dataset, params, (Integer)files[portion].number)
 		
 		Closure processError = (params.processError != null)?params.processError:null
-		boolean isValid = (params.isValid != null)?params.isValid:false
+		boolean isValid = BoolUtils.IsValue(params.isValid, false)
 		CsvPreference pref = new CsvPreference.Builder((char)p.quoteStr, (int)p.fieldDelimiter, (String)p.rowDelimiter).useQuoteMode((QuoteMode)p.qMode).build()
 		ICsvMapReader reader
 		if (escaped) { 
@@ -518,7 +518,7 @@ class CSVDriver extends FileDriver {
 		}
 		finally {
 			reader.close()
-			dataset.params.countReadPortions = portion
+			dataset.params.countReadPortions = portion + 1
 		}
 		
 		countRec
@@ -685,8 +685,7 @@ class CSVDriver extends FileDriver {
 	
 	@groovy.transform.CompileStatic
 	@Override
-	public
-	void write(Dataset dataset, Map row) {
+	public void write(Dataset dataset, Map row) {
 		WriterParams wp = (WriterParams)dataset.driver_params
 		wp.rows << row
 		wp.current++

@@ -39,6 +39,7 @@ import getl.utils.*
 class FileDataset extends Dataset {
 	FileDataset () {
 		methodParams.register("openWrite", ["deleteOnEmpty"])
+		methodParams.register("drop", ["validExist", "portions"])
 	}
 	
 	/**

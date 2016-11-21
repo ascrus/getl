@@ -44,6 +44,9 @@ import getl.utils.*
  */
 @InheritConstructors
 class CacheManager extends H2Connection {
+    /**
+     * TODO: valid work and create test case
+     */
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()

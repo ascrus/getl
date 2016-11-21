@@ -68,6 +68,7 @@ class H2Driver extends JDBCDriver {
 		List<Driver.Operation> result = super.operations()
 		result << Driver.Operation.BULKLOAD
 		result << Driver.Operation.CREATE
+		result << Driver.Operation.MERGE
 		result
 	}
 	

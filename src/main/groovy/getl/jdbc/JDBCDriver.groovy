@@ -878,8 +878,9 @@ ${extend}'''
 			def fn = fullNameDataset(dataset)
 			
 			List<String> fields = []
-			
-			dataset.field.each { Field f ->
+            List<Field> useFields = (params.useFields != null && params.useFields.size() > 0)?params.useFields:dataset.field
+
+            useFields.each { Field f ->
 				fields << prepareFieldNameForSQL(f.name)
 			}
 			
@@ -990,9 +991,9 @@ ${extend}'''
 				}
 			}
 		}
-		
-		dataset.field = metaFields
-		String sql = sqlForDataset(dataset, params)
+
+//		dataset.field = metaFields
+		String sql = sqlForDataset(dataset, params + [useFields: metaFields])
 		
 		Map rowCopy
 		Closure copyToMap

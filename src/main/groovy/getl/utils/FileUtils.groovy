@@ -261,58 +261,93 @@ class FileUtils {
 	public static boolean DeleteFile(String fileName) {
 		new File(fileName).delete()
 	}
-	
+
 	/**
 	 * Delete directory with all recursive objects
 	 * @param rootFolder
 	 * @param deleteRoot
 	 * @param onDelete
 	 */
-	public static void DeleteFolder(String rootFolder, boolean deleteRoot, Closure onDelete) {
-		if (rootFolder == null) return
+	public static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, boolean throwError, Closure onDelete) {
+		if (rootFolder == null) return null
 		File root = new File(rootFolder)
-		if (!root.exists()) return
+		if (!root.exists()) {
+            if (throwError) throw new ExceptionGETL("Directory \"$rootFolder\" not found")
+            return false
+        }
 		File[] folders = root.listFiles()
+        def res = true
 		folders.each { File df ->
 			if (df.isDirectory()) {
+                def isError = false
 				File[] l = df.listFiles()
 				l.each { File vf ->
 					if (vf.isDirectory()) {
-						DeleteFolder(vf.path, true, onDelete)
-					}
+						if (!DeleteFolder(vf.path, true, throwError, onDelete)) isError = true
+                    }
 					else if (vf.isFile()) {
 						if (onDelete != null) onDelete(vf)
-						if (!vf.delete()) throw new ExceptionGETL("Can not delete file \"${vf.absolutePath}\"")
+						if (!vf.delete()) {
+                            if (throwError) throw new ExceptionGETL("Can not delete file \"${vf.absolutePath}\"")
+                            isError = true
+                        }
 					}
 				}
 				if (onDelete != null) onDelete(df)
-				if (!df.deleteDir()) throw new ExceptionGETL("Can not delete directory \"${df.absolutePath}\"")
+				if (!isError && !df.deleteDir()) {
+                    if (throwError) throw new ExceptionGETL("Can not delete directory \"${df.absolutePath}\"")
+                    isError = true
+                }
+
+                if (isError && res) res = false
 			}
             else {
                 if (onDelete != null) onDelete(df)
-                if (!df.delete()) throw new ExceptionGETL("Can not delete file \"${df.absolutePath}\"")
+                if (!df.delete()) {
+                    if (throwError) throw new ExceptionGETL("Can not delete file \"${df.absolutePath}\"")
+                    res = false
+                }
             }
 		}
-		if (deleteRoot) {
-			if (!root.deleteDir()) throw new ExceptionGETL("Can not delete directory \"${root.absolutePath}\"")
+		if (res && deleteRoot) {
+			if (!root.deleteDir()) {
+                if (throwError) throw new ExceptionGETL("Can not delete directory \"${root.absolutePath}\"")
+                res = false
+            }
 		}
+
+        return res
 	}
-	
-	/**
+
+    /**
+     * Delete directory with all recursive objects
+     * @param rootFolder
+     * @param deleteRoot
+     * @param onDelete
+     */
+    public static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, Closure onDelete) {
+        return DeleteFolder(rootFolder, deleteRoot, true, onDelete)
+    }
+
+    public static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, boolean throwError) {
+        return DeleteFolder(rootFolder, deleteRoot, throwError, null)
+    }
+
+    /**
 	 * Delete directory with all recursive objects
 	 * @param rootFolder
 	 * @param deleteRoot
 	 */
-	public static void DeleteFolder(String rootFolder, boolean deleteRoot) {
-		DeleteFolder(rootFolder, deleteRoot, null)
+	public static Boolean DeleteFolder(String rootFolder, boolean deleteRoot) {
+		return DeleteFolder(rootFolder, deleteRoot, true, null)
 	}
 	
 	/**
 	 * Delete directory with all recursive objects
 	 * @param rootFolder
 	 */
-	public static void DeleteFolder(String rootFolder) {
-		DeleteFolder(rootFolder, true, null)
+	public static Boolean DeleteFolder(String rootFolder) {
+		return DeleteFolder(rootFolder, true, true, null)
 	}
 	
 	/**
@@ -320,8 +355,8 @@ class FileUtils {
 	 * @param rootFolder
 	 * @param onDelete
 	 */
-	public static void DeleteFolder(String rootFolder, Closure onDelete) {
-		DeleteFolder(rootFolder, true, onDelete)
+	public static Boolean DeleteFolder(String rootFolder, Closure onDelete) {
+		return DeleteFolder(rootFolder, true, true, onDelete)
 	}
 	
 	/**

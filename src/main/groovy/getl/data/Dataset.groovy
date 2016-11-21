@@ -1296,4 +1296,19 @@ ${ef.toString()}
 		Connection con = this.connection.cloneConnection()
 		cloneDataset(con)
 	}
+
+    /**
+     * Equal by other fields array with all property
+     * @param eqFields
+     * @return
+     */
+	public Boolean equalsFields(List<Field> eqFields) {
+        if (eqFields == null) return false
+        if (field.size() != eqFields.size()) return false
+        for (int i = 0; i < field.size(); i++) {
+            if (!field[i].equalsAll(eqFields[i])) return false
+        }
+
+        return true
+    }
 }
