@@ -109,6 +109,8 @@ class HDFSManager extends Manager {
                     }
                     homeDirectory = client.homeDirectory
                     setCurrentPath(rootPath)
+
+                    return null
                 }
             }
         )
@@ -308,7 +310,7 @@ class HDFSManager extends Manager {
     @Override
     void rename(String fileName, String path) {
         try {
-            client.rename(fullName(currentPath, fileName), new Path(path))
+            client.rename(fullPath(currentPath, fileName), new Path(path))
         }
         catch (Throwable e) {
             if (writeErrorsToLog) Logs.Severe("Can not rename file \"${fullName(currentPath, fileName)}\" to \"$path\"")

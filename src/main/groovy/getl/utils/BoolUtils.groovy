@@ -24,6 +24,8 @@
 
 package getl.utils
 
+import getl.exception.ExceptionGETL
+
 /**
  * Boolean functions
  * @author Alexsey Konstantonov
@@ -40,16 +42,49 @@ class BoolUtils {
 	public static Boolean IsValue(def value, Boolean defaultValue) {
 		if (value == null) return defaultValue
 		if (value instanceof Boolean) return value
+
+        Boolean result
 		if (value instanceof List) {
-			Boolean result
-			value.each { 
-				if (result == null && it != null) {
-					if (it instanceof Boolean) result = it else result = (it.toString() in ['true', '1', 'on']) 
+			value.each { v ->
+				if (result == null && v != null) {
+					if (v instanceof Boolean) {
+                        result = v
+                    }
+                    else {
+                        def s = v.toString().toLowerCase()
+                        if (s in ['true', '1', 'on']) {
+                            result = true
+                        }
+                        else {
+                            if (s in ['false', '0', 'off']) {
+                                result = false
+                            }
+                            else {
+                                throw new ExceptionGETL("Invalid boolean value \"$s\"")
+                            }
+                        }
+                    }
 				} 
 			}
 			if (result == null) return defaultValue else return result
 		}
-		(value.toString() in ['true', '1', 'on'])
+
+        def v = value.toString().toLowerCase()
+		if (v in ['true', '1', 'on']) {
+            result = true
+        }
+        else if (v in ['false', '0', 'off']) {
+            result = false
+        }
+        else {
+            throw new ExceptionGETL("Invalid boolean value \"$v\"")
+        }
+
+        return result
+	}
+
+	public static Boolean IsValue(def value) {
+		IsValue(value, false)
 	}
 	
 	/**

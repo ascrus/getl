@@ -75,15 +75,15 @@ class Path {
 	 * Path elements
 	 * @return
 	 */
-	private ArrayList<Map> elements = []
-	public ArrayList<Map> getElements () { elements }
+	private List<Map> elements = []
+	public List<Map> getElements () { elements }
 	
 	/**
 	 * SQL like elements
 	 * @return
 	 */
-	private ArrayList<Map> likeElements = []
-	public ArrayList<Map> getLikeElements () { likeElements }
+	private List<Map> likeElements = []
+	public List<Map> getLikeElements () { likeElements }
 	
 	/**
 	 * Count level for mask 
@@ -152,8 +152,8 @@ class Path {
 	 * </ul>
 	 * @return
 	 */
-	private Map<String, Object> vars = [:]
-	public Map<String, Object> getVars () { this.vars }
+	private final Map<String, Map> vars = [:]
+	public Map<String, Map> getVars () { this.vars }
 	
 	private Pattern maskPathPattern
 		
@@ -175,7 +175,7 @@ class Path {
 		if (maskStr == null) throw new ExceptionGETL("Required parameter \"mask\"")
 		boolean sysVar = (params.sysVar != null)?params.sysVar:false
 		Map patterns = params.patterns?:[:] 
-		Map varAttr = params.vars?:[:]
+		Map<String, Map<String, Object>> varAttr = params.vars?:[:]
 		
 		elements.clear()
 		likeElements.clear()
@@ -210,10 +210,10 @@ class Path {
 					def pm = patterns.get(vn) 
 					if (pm == null) {
 						def vt = varAttr.get(vn)
-						def type = vt?.type
+						def type = vt?.type as Field.Type
 						if (type != null && type instanceof String) type = Field.Type."$type"
 						if (type in [Field.Type.DATE, Field.Type.DATETIME, Field.Type.TIME]) {
-							def df
+							String df
 							if (vt.format != null) {
 								df = vt.format
 							}
@@ -282,12 +282,13 @@ class Path {
 		rootPath = (rb.length() == 0)?".":rb.toString().substring(1)
 
 		for (int i = 0; i < elements.size(); i++) {
-			for (int x = 0; x < elements[i].vars.size(); x++) {
-				vars.put(elements[i].vars.get(x), [:])
+			List<String> v = elements[i].vars
+			for (int x = 0; x < v.size(); x++) {
+				vars.put(v[x] as String, [:])
 			}
 		}
 		patterns.each { k, v ->
-			Map p = vars.get(k)
+			def p = vars.get(k) as Map
 			if (p != null) {
 				p.pattern = v
 			}
@@ -299,9 +300,9 @@ class Path {
 			vars.put("#file_size", [:])
 		}
 		
-		varAttr.each { String name, Map values ->
+		varAttr.each { name, values ->
 			def fn = name.toLowerCase()
-			Map attrList = vars.get(fn)
+			Map<String, Object> attrList = vars.get(fn)
 			if (attrList != null) {
 				values.each { String attr, value ->
 					def a = attr.toLowerCase()
@@ -437,7 +438,7 @@ class Path {
 		
 		if (changeSeparator) fn = fn.replace('\\', '/')
 		
-		def countDirs = 0
+		Integer countDirs
 		String pattern
 		
 		if (isDir) {
@@ -457,8 +458,12 @@ class Path {
 		mat = fn =~ pattern
 		if (mat.groupCount() >= 1 && ((List)mat[0]).size() > 1) {
 			int i = 0
+            def isError = false
 			vars.each { key, value ->
-				def v = mat[0][i + 1]
+                if (isError) return
+
+                //noinspection GroovyAssignabilityCheck
+                def v = (mat[0][i + 1]) as String
 
 				if (v?.length() == 0) v = null
 				
@@ -466,12 +471,14 @@ class Path {
 					if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: length value \"${v}\" <> ${value.len}")
 					v = null
 				}
-				
-				if (v != null && value.lenMin != null && v.length() < value.lenMin) {
+
+                //noinspection GroovyAssignabilityCheck
+                if (v != null && value.lenMin != null && v.length() < Integer.valueOf(value.lenMin)) {
 					if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: length value \"${v}\" < ${value.lenMin}")
 					v = null
 				}
-				if (v != null && value.lenMax != null && v.length() > value.lenMax) {
+                //noinspection GroovyAssignabilityCheck
+                if (v != null && value.lenMax != null && v.length() > Integer.valueOf(value.lenMax)) {
 					if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: length value \"${v}\" > ${value.lenMax}")
 					v = null
 				}
@@ -483,40 +490,42 @@ class Path {
 						case Field.Type.DATE:
 							def format = (value.format != null)?value.format:"yyyy-MM-dd"
 							try {
-								v = DateUtils.ParseDate(format, v)
+								v = DateUtils.ParseDate(format, v, ignoreConvertError)
 							}
 							catch (Exception e) {
-								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to date")
-								v = null 
+								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to date: ${e.message}")
 							}
+                            isError = (v == null)
 							break
 						case Field.Type.DATETIME:
 							def format = (value.format != null)?value.format:"yyyyMMddHHmmss"
 							try {
-								v = DateUtils.ParseDate(format, v)
+								v = DateUtils.ParseDate(format, v, ignoreConvertError)
 							}
 							catch (Exception e) {
-								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to datetime")
-								v = null
+								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to datetime: ${e.message}")
 							}
+                            isError = (v == null)
 							break
 						case Field.Type.INTEGER:
 							try {
 								v = Integer.valueOf(v)
 							}
 							catch (Exception e) {
-								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to integer")
+								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to integer: ${e.message}")
 								v = null
 							}
+                            isError = (v == null)
 							break
 						case Field.Type.BIGINT:
 							try {
 								v = Long.valueOf(v)
 							}
 							catch (Exception e) {
-								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to bigint")
+								if (!ignoreConvertError) throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to bigint: ${e.message}")
 								v = null
 							}
+                            isError = (v == null)
 							break
 						case Field.Type.STRING:
 							break
@@ -524,13 +533,15 @@ class Path {
 							throw new ExceptionGETL("Unknown type ${value.type}")
 					}
 				}
+                if (isError) return
 				
 				res.put(key, v)
 				i++
 			}
+            if (isError) return null
 		}
 		
-		res
+		return res
 	}
 	
 	/**
@@ -539,14 +550,15 @@ class Path {
 	 * @return
 	 */
 	public List<Map> filterFiles(List<Map> files) {
-		def changeSeparator = (File.separatorChar != '/')
-		Pattern mask = Pattern.compile(maskPath)
+//		boolean changeSeparator = (File.separatorChar != '/')
+//		Pattern mask = Pattern.compile(maskPath)
 		List<Map> res = []
 		files.each { file ->
-			def m = analizeFile(file)
+			def m = analizeFile(file.filename as String)
 			if (m != null) res << file
 		}
-		res
+
+		return res
 	}
 	
 	/**
@@ -576,7 +588,7 @@ class Path {
 	public String generateFileName(Map<String, Object> varValues, boolean formatValue) {
 		def v = [:]
 		if (formatValue) {
-			vars.each { String key, Object value ->
+			vars.each { key, value ->
 				def val = formatVariable(key, varValues.get(key))
 				v.put(key, val)
 			}
@@ -601,22 +613,27 @@ class Path {
 		if (!vars.containsKey(varName)) throw new ExceptionGETL("Variable ${varName} not found")
 		def v = vars.get(varName)
 		def type = v."type"
-		if (type != null && type instanceof String) type = Field.Type."$type"
+		if (type == null) {
+            type = Field.Type.STRING
+        }
+        else if (type instanceof String) {
+            type = Field.Type."$type"
+        }
 		
 		switch (type) {
 			case Field.Type.DATE:
 				def format = v.format?:"yyyy-MM-dd"
-				value = DateUtils.FormatDate(format, value)
+				value = DateUtils.FormatDate(format, value as Date)
 				break
 				
 			case Field.Type.TIME:
 				def format = v.format?:"HH:mm:ss"
-				value = DateUtils.FormatDate(format, value)
+				value = DateUtils.FormatDate(format, value as Date)
 				break
 				
 			case Field.Type.DATETIME:
 				def format = v.format?:"yyyy-MM-dd HH:mm:ss"
-				value = DateUtils.FormatDate(format, value)
+				value = DateUtils.FormatDate(format, value as Date)
 				break
 		}
 		
@@ -641,13 +658,14 @@ elements:
 			def pe = elements[i]
 			b.append("[${i+1}]:\t")
 			b.append(pe.mask)
-			if (pe.vars.size() > 0) b.append(" [")
-			for (int v = 0; v < pe.vars.size(); v++) {
-				b.append(pe.vars.get(v))
-				if (v < pe.vars.size() - 1)
+            List vr = pe.vars
+			if (vr.size() > 0) b.append(" [")
+			for (int v = 0; v < vr.size(); v++) {
+				b.append(vr.get(v))
+				if (v < vr.size() - 1)
 					b.append(", ")
 			}
-			if (pe.vars.size() > 0) b.append("]")
+			if (vr.size() > 0) b.append("]")
 			b.append("\n")
 		}
 		b.toString()

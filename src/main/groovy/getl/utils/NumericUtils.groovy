@@ -41,7 +41,7 @@ class NumericUtils {
 	 */
 	public static Boolean IsEven(Long value) {
 		if (value == null) return null
-		value.toBigInteger().mod( 2 ) == 0
+		return value.toBigInteger().mod( 2 ) == 0
 	}
 	
 	/**
@@ -52,7 +52,7 @@ class NumericUtils {
 	 */
 	public static Boolean IsMultiple(Long value, Long divider) {
 		if (value == null) return null
-		value.toBigInteger().mod( divider ) == 0
+		return value.toBigInteger().mod( divider ) == 0
 	}
 	
 	/**
@@ -74,12 +74,15 @@ class NumericUtils {
 	 */
 	public static long Hash(List args) {
 		StringBuilder sb = new StringBuilder()
-		args.each {
-			if (it instanceof Date || it instanceof java.sql.Timestamp) {
-				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", it))
+		args.each { def a ->
+			if (a instanceof Date) {
+				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", a as Date))
+			}
+			else if (a instanceof java.sql.Timestamp) {
+				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", a as java.sql.Timestamp))
 			}
 			else {
-				sb.append(it.toString())
+				sb.append(a.toString())
 			}
 			sb.append('|')
 		}
@@ -96,6 +99,6 @@ class NumericUtils {
 	public static int SegmentByHash(int countSegment, List args) {
 		long hash = Hash(args)
 		
-		hash.mod(countSegment).intValue()
+		return hash.mod(countSegment).intValue()
 	}
 }

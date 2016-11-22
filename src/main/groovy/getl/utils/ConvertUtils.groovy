@@ -49,7 +49,8 @@ class ConvertUtils {
 	 */
 	public static BigDecimal Object2BigDecimal(def value) {
 		if (value == null) return null
-		new BigDecimal(value)
+		//noinspection GroovyAssignabilityCheck
+		return new BigDecimal(value)
 	}
 	
 	/**
@@ -59,7 +60,8 @@ class ConvertUtils {
 	 */
 	public static Integer Object2Int(def value) {
 		if (value == null) return null
-		Integer.valueOf(value)
+		//noinspection GroovyAssignabilityCheck
+		return Integer.valueOf(value)
 	}
 	
 	/**
@@ -69,7 +71,8 @@ class ConvertUtils {
 	 */
 	public static Long Object2Long(def value) {
 		if (value == null) return null
-		Long.valueOf(value)
+		//noinspection GroovyAssignabilityCheck
+		return Long.valueOf(value)
 	}
 	
 	/**
@@ -79,7 +82,8 @@ class ConvertUtils {
 	 */
 	public static Double Object2Double(def value) {
 		if (value == null) return null
-		Double.valueOf(value)
+		//noinspection GroovyAssignabilityCheck
+		return Double.valueOf(value)
 	}
 	
 	/**

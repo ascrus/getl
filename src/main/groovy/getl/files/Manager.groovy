@@ -63,9 +63,9 @@ abstract class Manager {
 	public static Manager BuildManager (String name) {
 		Map fileParams = Config.content."files"?."$name"
 		if (fileParams == null) throw new ExceptionGETL("File manager \"$name\" not found in \"files\" section by config")
-		def className = fileParams."manager"
+		def className = fileParams."manager" as String
 		if (className == null) throw new ExceptionGETL("Reqired class name as \"manager\" property in \"files.$name\" file server")
-		Manager manager = Class.forName(className).newInstance()
+		Manager manager = Class.forName(className).newInstance() as Manager
 		manager.params.putAll(MapUtils.CleanMap(fileParams, ["manager"]))
 		manager.validateParams()
 
@@ -77,7 +77,7 @@ abstract class Manager {
 	 * @return
 	 */
 	public Manager cloneManager () {
-		Manager res = getClass().newInstance()
+		Manager res = getClass().newInstance() as Manager
 		res.params.putAll(this.params)
 		
 		res
@@ -202,7 +202,7 @@ abstract class Manager {
 	protected void onLoadConfig (Map configSection) {
 		MapUtils.MergeMap(params, configSection)
 		if (configSection.containsKey("localDirectory")) {
-			setLocalDirectory(params.localDirectory)
+			setLocalDirectory(params.localDirectory as String)
 		}
 		else {
 			params.localDirectory = localDirFile.absolutePath
@@ -242,9 +242,9 @@ abstract class Manager {
 	@Synchronized
 	public void list (String maskFiles, Closure processCode) {
 		if (processCode == null) throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager")
-		FileManagerList list = listDir(maskFiles)
-		for (int i = 0; i < list.size(); i++) { 
-			processCode(list.item(i))
+		FileManagerList l = listDir(maskFiles)
+		for (int i = 0; i < l.size(); i++) {
+            (processCode as Closure).call(l.item(i))
 		}
 	}
 	
@@ -262,7 +262,7 @@ abstract class Manager {
 	 */
 	public List<Map> list (String maskFiles) {
 		List<Map> res = new LinkedList<Map>()
-		Closure addToList = { res << it }
+		Closure addToList = { Map r -> res << r }
 		list(maskFiles, addToList)
 		
 		res
@@ -274,7 +274,7 @@ abstract class Manager {
 	 */
 	public List<Map> list () {
 		List<Map> res = new LinkedList<Map>()
-		Closure addToList = { res << it }
+		Closure addToList = { Map r -> res << r }
 		list(null, addToList)
 		
 		res
@@ -503,7 +503,7 @@ abstract class Manager {
 		long countDirs = 0
 		
 		FileManagerList listFiles = man.listDir(maskFile)
-		List<String> threadDirs
+		List<String> threadDirs = null
 		if (threadCount != null) threadDirs = new LinkedList<String>()
 		for (int i = 0; i < listFiles.size(); i++) {
 			Map file = listFiles.item(i)
@@ -571,7 +571,7 @@ abstract class Manager {
 		
 		if (threadCount != null && !threadDirs.isEmpty()) {
 			new Executor().run(threadDirs, threadCount) { String dirName ->
-				ManagerListProcessing newCode
+				ManagerListProcessing newCode = null
 				if (code != null) {
 					newCode = code.newProcessing() 
 					newCode.init()
@@ -841,7 +841,7 @@ FROM ${newFiles.fullNameDataset()} files
 	 * Download files of list
 	 */
 	public void buildList () {
-		buildList([:], null)
+		buildList([:], null as Closure)
 	}
 	
 	/**
@@ -893,7 +893,7 @@ FROM ${newFiles.fullNameDataset()} files
 		String sqlWhere = params.filter?:null
 		List<String> sqlOrderBy = params.order?:null
 		
-		TableDataset storyFiles
+		TableDataset storyFiles = null
 		
 		if (useStory) {
 			if (ds == null) throw new ExceptionGETL("For use store db required set \"ds\" property")
@@ -908,7 +908,7 @@ FROM ${newFiles.fullNameDataset()} files
 			storyFiles.create()
 			
 			new Flow().writeTo(dest: storyFiles, dest_batchSize: 10000) { updater ->
-				fileList.eachRow { file ->
+				fileList.eachRow { Map file ->
 					def row = [:]
 					row.putAll(file)
 					updater(row)
@@ -930,13 +930,13 @@ WHERE
 			ds.openWrite()
 		} 
 		
-		def ld = currentLocalDir() //(localDirectory != null)?localDirectory + "/":""
+		def ld = currentLocalDir()
 		def curDir = currentDir()
 
 		try {
 			TableDataset files = (useStory)?storyFiles:fileList
 			
-			files.eachRow(where: sqlWhere, order: sqlOrderBy) { file ->
+			files.eachRow(where: sqlWhere, order: sqlOrderBy) { Map file ->
 				def filepath = file.filepath
 				if (curDir != filepath) {
 					setCurrentPath("${rootPath}/${filepath}")
@@ -948,7 +948,7 @@ WHERE
 				
 				def tempName = "_" + FileUtils.UniqueFileName()  + ".tmp"
 				try {
-					download(file.filename, lpath, tempName)
+					download(file.filename as String, lpath, tempName)
 				}
 				catch (Exception e) {
 					Logs.Severe("Can not download file ${file.filepath}/${file.filename}")
@@ -985,7 +985,7 @@ WHERE
 				if (onDownloadFile != null) onDownloadFile(file)
 				if (deleteLoadedFile) {
 					try {
-						removeFile(file.filename)
+						removeFile(file.filename as String)
 					}
 					catch (Exception e) {
 						if (!ignoreError) throw e
@@ -1005,7 +1005,7 @@ WHERE
 			if (useStory) {
 				if (ds.connection.connected) {
 					ds.closeWrite()
-					storyFiles.drop(ifExists: true)
+					storyFiles?.drop(ifExists: true)
 				}
 			}
 		}
@@ -1041,7 +1041,7 @@ WHERE
 	 * @param params - parameters
 	 * @return - list of download files
 	 */
-	public downloadFiles(Map params) {
+	public void downloadFiles(Map params) {
 		downloadFiles(params, null)
 	}
 
@@ -1089,11 +1089,11 @@ WHERE
 	 * @param path
 	 * @return
 	 */
-	public File fileFromLocalDir(String path) {
+	public static File fileFromLocalDir(String path) {
 		def f = new File(path)
 		if (!f.exists() || !f.file) throw new ExceptionGETL("File \"${path}\" not found")
 		
-		f
+		return f
 	}
 	
 	/**
@@ -1111,7 +1111,6 @@ WHERE
 		def lc = localDirectory?.replace('\\', '/')
 		
 		File f
-		def n
 		if (lc != null && dir.matches("(?i)${lc}/.*")) {
 			f = new File(dir)
 		}
@@ -1119,7 +1118,7 @@ WHERE
 			f = new File("${localDirFile.path}/${dir}")
 		}
 		
-		f.absolutePath
+		return f.absolutePath
 	}
 	
 	/**
@@ -1163,21 +1162,23 @@ WHERE
 	 * @param dirName
 	 * @param throwError
 	 */
-	public void removeLocalDirs (String dirName, boolean throwError) {
-		String[] dirs = dirName.replace("\\", "/").split("/")
-		dirs.each { dir -> changeLocalDirectory(dir) }
-		for (int i = dirs.length; i--; i >= 0) {
-			changeLocalDirectoryUp()
-			removeLocalDir(dirs[i])
-		}
+	public Boolean removeLocalDirs (String dirName, boolean throwError) {
+//		String[] dirs = dirName.replace("\\", "/").split("/")
+//		dirs.each { dir -> changeLocalDirectory(dir) }
+//		for (int i = dirs.length; i--; i >= 0) {
+//			changeLocalDirectoryUp()
+//			removeLocalDir(dirs[i])
+//		}
+        def fullDirName = "${currentLocalDir()}/$dirName"
+        return FileUtils.DeleteFolder(fullDirName, true, throwError)
 	}
 
 	/**
 	 * Remove local directories
 	 * @param dirName
 	 */
-	public void removeLocalDirs (String dirName) {
-		removeLocalDirs(dirName, true)
+	public Boolean removeLocalDirs (String dirName) {
+		return removeLocalDirs(dirName, true)
 	}
 	
 	/**
@@ -1282,7 +1283,7 @@ WHERE
 				
 				if (file."type" == TypeFile.DIRECTORY) {
 					if (recursive) {
-						existsFiles = deleteEmptyFolderRecurse(level + 1, file."filename", recursive, onDelete) || existsFiles
+						existsFiles = deleteEmptyFolderRecurse(level + 1, file.filename as String, recursive, onDelete) || existsFiles
 					}
 					else {
 						existsFiles = true
@@ -1342,11 +1343,11 @@ WHERE
 		QueryDataset pathes = new QueryDataset(connection: fileList.connection, query: "SELECT DISTINCT FILEPATH FROM ${fileList.fullNameDataset()} ORDER BY FILEPATH")
 		pathes.eachRow() { row ->
 			if (row."filepath" == '.') return
-			String[] d = row."filepath".split('/')
+			String[] d = (row."filepath" as String).split('/')
 			Map c = dirs
 			d.each {
 				if (c.containsKey(it)) {
-					c = c.get(it)
+					c = c.get(it) as Map
 				}
 				else {
 					Map n = [:]
@@ -1367,7 +1368,7 @@ WHERE
 	 * @param onDelete
 	 * @return
 	 */
-	public boolean deleteEmptyDirs(Map dirs, Boolean ignoreErrors, Closure onDelete) {
+	public boolean deleteEmptyDirs(Map<String, Map> dirs, Boolean ignoreErrors, Closure onDelete) {
 		boolean res = true
 		dirs.each { String name, Map subDirs ->
 			changeDirectory(name)
@@ -1404,8 +1405,8 @@ WHERE
 	 * @param recursive
 	 */
 	public void deleteEmptyFolder (boolean recursive) {
-		list() { file -> 
-			if (file."type" == TypeFile.DIRECTORY) deleteEmptyFolder(file."filename", recursive)
+		list() { Map file ->
+			if (file.type == TypeFile.DIRECTORY) deleteEmptyFolder(file.filename as String, recursive)
 			true
 		}
 	}
@@ -1452,7 +1453,7 @@ WHERE
 	 * @param err
 	 * @return
 	 */
-	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) { }
+	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) { return null }
 	
 	/**
 	 * Real script history file name

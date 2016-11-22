@@ -42,7 +42,7 @@ abstract class ManagerListProcessing {
 	 */
 	@groovy.transform.Synchronized
 	public ManagerListProcessing newProcessing () {
-		ManagerListProcessing res = getClass().newInstance()
+		ManagerListProcessing res = getClass().newInstance() as ManagerListProcessing
 		res.params.putAll(params)
 
 		res

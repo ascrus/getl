@@ -56,7 +56,7 @@ class ProcessTime {
 		
 		def conf = Config.FindSection("statistic")
 		if (conf != null) {
-			if (conf.level != null && logLevel == null) logLevel = Logs.StrToLevel(conf.level)
+			if (conf.level != null && logLevel == null) logLevel = Logs.StrToLevel(conf.level as String)
 			if (conf.debug != null) debug = conf.debug 
 		}
 		if (logLevel == null) logLevel = LogLevelDefault
@@ -81,7 +81,7 @@ class ProcessTime {
 		}
 		
 		if (params.logLevel != null) {
-			logLevel = Logs.StrToLevel(params.logLevel)
+			logLevel = Logs.StrToLevel(params.logLevel as String)
 		}
 		
 		if (params.objectName != null) {

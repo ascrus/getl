@@ -25,8 +25,6 @@
 package getl.jdbc
 
 import groovy.transform.InheritConstructors
-import groovy.json.internal.ArrayUtils;
-import groovy.sql.ResultSetMetaDataWrapper
 import groovy.sql.Sql
 
 import java.sql.DriverManager
@@ -39,11 +37,9 @@ import java.sql.Statement
 import getl.cache.CacheDataset
 import getl.csv.CSVDataset
 import getl.data.*
-import getl.data.Field.Type
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.utils.*
-import getl.proc.Flow
 
 /**
  * JDBC driver class
@@ -101,7 +97,7 @@ class JDBCDriver extends Driver {
 	/**
 	 * Java field type association
 	 */
-	public Map javaTypes() {
+	public static Map javaTypes() {
 		[
 			BIGINT: [java.sql.Types.BIGINT],
 			INTEGER: [java.sql.Types.INTEGER, java.sql.Types.SMALLINT, java.sql.Types.TINYINT],
@@ -124,7 +120,8 @@ class JDBCDriver extends Driver {
 	public String defaultConnectURL () { null }
 
 	@Override
-	protected void prepareField (Field field) {
+	public
+	void prepareField (Field field) {
 		if (field.dbType == null) return
 		if (field.type != null && field.type != Field.Type.STRING) return
 		
@@ -302,7 +299,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	protected boolean isConnect() {
+	public boolean isConnected() {
 		(sqlConnect != null)
 	}
 	
@@ -323,7 +320,7 @@ class JDBCDriver extends Driver {
 	 * @return
 	 */
 	protected String buildConnectURL () {
-		JDBCConnection con = connection
+		JDBCConnection con = connection as JDBCConnection
 		
 		def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()
 		if (url == null) return null
@@ -335,7 +332,7 @@ class JDBCDriver extends Driver {
 	}
 	
 	public String buildConnectParams () {
-		JDBCConnection con = connection
+		JDBCConnection con = connection as JDBCConnection
 		String conParams = ""
 		
 		Map prop = [:]
@@ -365,9 +362,10 @@ class JDBCDriver extends Driver {
 	}
 	
 	@Override
-	protected void connect() {
-		Sql sql
-		JDBCConnection con = connection
+	public
+	void connect() {
+		Sql sql = null
+		JDBCConnection con = connection as JDBCConnection
 		
 		if (con.javaConnection != null) {
 			sql = new Sql(con.javaConnection)
@@ -377,13 +375,13 @@ class JDBCDriver extends Driver {
 			def password = con.password
 			String conParams = buildConnectParams()
 			
-			def drvName = con.params."driverName"
+			def drvName = con.params."driverName" as String
 			if (drvName == null) throw new ExceptionGETL("Required \"driverName\" for connect to server")
 			Class.forName(drvName)
 			def loginTimeout = con.loginTimeout?:30
 			
-			def url
-			def server
+			def url = null
+			Map server
 			def notConnected = true
 			while (notConnected) {
 				if (con.balancer != null) {
@@ -442,23 +440,24 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	protected void disconnect() {
+	public
+	void disconnect() {
 		if (sqlConnect != null) sqlConnect.close()
 		sqlConnect = null
 		
-		JDBCConnection con = connection
+		JDBCConnection con = connection as JDBCConnection
 		if (con.balancer != null && con.sysParams."balancerServer" != null) {
-			def bs = con.sysParams."balancerServer"
+			def bs = con.sysParams."balancerServer" as Map
 			con.sysParams."balancerServer" = null
 			con.balancer.didDisconnect(bs)
 		}
 	}
 
 	@Override
-	protected List<Object> retrieveObjects (Map params, Closure filter) {
-		String catalog = prepareObjectName(params."dbName")?:defaultDBName
-		String schemaPattern = prepareObjectName(params."schemaName")?:defaultSchemaName
-		String tableNamePattern = prepareObjectName(params."tableName")
+	public List<Object> retrieveObjects (Map params, Closure filter) {
+		String catalog = prepareObjectName(params."dbName" as String)?:defaultDBName
+		String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
+		String tableNamePattern = prepareObjectName(params."tableName" as String)
 		String[] types
 		if (params."type" != null) types = params."type" as String[] else types = ['TABLE', 'GLOBAL TEMPORARY', 'LOCAL TEMPORARY', 'ALIAS', 'SYNONYM', 'VIEW'] as String[]
 
@@ -483,12 +482,13 @@ class JDBCDriver extends Driver {
 		tables
 	}
 	
-	public validTableName (Dataset dataset) {
+	public static validTableName (Dataset dataset) {
 		if (dataset.params.tableName == null) throw new ExceptionGETL("Required table name from dataset")
 	}
 
 	@Override
-	protected List<Field> fields(Dataset dataset) {
+	public
+	List<Field> fields(Dataset dataset) {
 		validTableName(dataset)
 		
 		if (dataset.sysParams.cacheDataset != null && dataset.sysParams.cacheRetrieveFields == null) {
@@ -504,11 +504,13 @@ class JDBCDriver extends Driver {
 		}
 		
 		if (dataset.params.onUpdateFields != null) dataset.params.onUpdateFields(dataset)
+
+		JDBCDataset ds = dataset as JDBCDataset
 		
 		List<Field> result = []
-		String dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, defaultDBName]))
-		String schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]))
-		String tableName = prepareObjectName(dataset.params.tableName)
+		String dbName = prepareObjectName(ListUtils.NotNullValue([ds.dbName, defaultDBName]) as String)
+		String schemaName = prepareObjectName(ListUtils.NotNullValue([ds.schemaName, defaultSchemaName]) as String)
+		String tableName = prepareObjectName(ds.params.tableName as String)
 
 		/*
 		def meta = sqlConnect.connection.metaData
@@ -548,7 +550,7 @@ class JDBCDriver extends Driver {
 				try {
 					f.isAutoincrement = (rs.getString("IS_AUTOINCREMENT").toUpperCase() == "YES")
 				}
-				catch (Exception e) { }
+				catch (Exception ignored) { }
 				f.description = rs.getString("REMARKS")
 				
 				result << f
@@ -582,7 +584,8 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	protected void startTran() {
+	public
+	void startTran() {
 		if (connection.tranCount == 0) {
 			saveToHistory("START TRAN")
 		}
@@ -592,7 +595,8 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	protected void commitTran() {
+	public
+	void commitTran() {
 		if (connection == null) throw new ExceptionGETL("Can not commit from disconnected connection")
 		if (connection.tranCount == 1) {
 			saveToHistory("COMMIT")
@@ -604,7 +608,8 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	protected void rollbackTran() {
+	public
+	void rollbackTran() {
 		if (connection == null) throw new ExceptionGETL("Can not rollback from disconnected connection")
 		if (connection.tranCount == 1) {
 			saveToHistory("ROLLBACK")
@@ -632,7 +637,8 @@ ${extend}'''
 	protected String defaultSchemaName = null
 
 	@Override
-	protected void createDataset(Dataset dataset, Map params) {
+	public
+	void createDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
 		def tableName = fullNameDataset(dataset)
 		def tableType = dataset.sysParams.type
@@ -657,7 +663,7 @@ ${extend}'''
 		def extend = createDatasetExtend(dataset, p)
 		
 		def defFields = []
-		def defPrimary = GenerationUtils.SqlKeyFields(connection, dataset.field, null, null)
+		def defPrimary = GenerationUtils.SqlKeyFields(connection as JDBCConnection, dataset.field, null, null)
 		dataset.field.each { Field f ->
 //			if (f.isReadOnly) return
 			try {
@@ -701,7 +707,7 @@ ${extend}'''
 					def idxCols = []
 					value.columns?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol):nameCol) }
 					
-					def varsCI = [  indexName: prepareTableNameForSQL(name),
+					def varsCI = [  indexName: prepareTableNameForSQL(name as String),
 									unique: (value.unique != null && value.unique == true)?"UNIQUE":"",
 									hash: (value.hash != null && value.hash == true)?"HASH":"",
 									ifNotExists: (value.ifNotExists != null && value.ifNotExists == true)?"IF NOT EXISTS":"",
@@ -790,15 +796,17 @@ ${extend}'''
 	 */
 	public String fullNameDataset (Dataset dataset) {
 		if (dataset.sysParams.isTable == null || !dataset.sysParams.isTable) return 'noname'
+
+        JDBCDataset ds = dataset as JDBCDataset
 		
-		def r = prepareTableNameForSQL(dataset.params.tableName)
-		if (dataset.schemaName != null) r = prepareTableNameForSQL(dataset.schemaName) +'.' + r 
-		if (dataset.dbName != null) {
-			if (dataset.schemaName != null) {
-				r = prepareTableNameForSQL(dataset.dbName) + '.' + r
+		def r = prepareTableNameForSQL(ds.params.tableName as String)
+		if (ds.schemaName != null) r = prepareTableNameForSQL(ds.schemaName) +'.' + r
+		if (ds.dbName != null) {
+			if (ds.schemaName != null) {
+				r = prepareTableNameForSQL(ds.dbName) + '.' + r
 			}
 			else {
-				r = prepareTableNameForSQL(dataset.dbName) + '..' + r
+				r = prepareTableNameForSQL(ds.dbName) + '..' + r
 			}
 		}
 
@@ -807,15 +815,17 @@ ${extend}'''
 	
 	public String nameDataset (Dataset dataset) {
 		if (dataset.sysParams.isTable == null || !dataset.sysParams.isTable) return 'noname'
-		
-		def r = prepareObjectName(dataset.params.tableName)
-		if (dataset.schemaName != null) r = prepareObjectName(dataset.schemaName) + '.' + r
-		if (dataset.dbName != null) {
-			if (dataset.schemaName != null) {
-				r = prepareObjectName(dataset.dbName) + '.' + r
+
+        JDBCDataset ds = dataset as JDBCDataset
+
+		def r = prepareObjectName(ds.params.tableName as String)
+		if (ds.schemaName != null) r = prepareObjectName(ds.schemaName) + '.' + r
+		if (ds.dbName != null) {
+			if (ds.schemaName != null) {
+				r = prepareObjectName(ds.dbName) + '.' + r
 			}
 			else {
-				r = prepareObjectName(dataset.dbName) + '..' + r
+				r = prepareObjectName(ds.dbName) + '..' + r
 			}
 		}
 
@@ -823,7 +833,8 @@ ${extend}'''
 	}
 
 	@Override
-	protected void dropDataset(Dataset dataset, Map params) {
+	public
+	void dropDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
 		def n = fullNameDataset(dataset)
 		def t = (dataset.sysParams.type in [JDBCDataset.Type.TABLE, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.MEMORY])?"TABLE":(dataset.sysParams.type == JDBCDataset.Type.VIEW)?"VIEW":null
@@ -835,8 +846,8 @@ ${extend}'''
 		if (commitDDL) sqlConnect.commit()
 	}
 	
-	public boolean isTable(Dataset dataset) {
-		(dataset.sysParams.isTable != null && dataset.sysParams.isTable)
+	public static boolean isTable(Dataset dataset) {
+		return (dataset.sysParams.isTable != null && dataset.sysParams.isTable)
 	}
 	
 	/**
@@ -867,8 +878,9 @@ ${extend}'''
 			def fn = fullNameDataset(dataset)
 			
 			List<String> fields = []
-			
-			dataset.field.each { Field f ->
+            List<Field> useFields = (params.useFields != null && params.useFields.size() > 0)?params.useFields:dataset.field
+
+            useFields.each { Field f ->
 				fields << prepareFieldNameForSQL(f.name)
 			}
 			
@@ -880,15 +892,15 @@ ${extend}'''
 			def orderBy
 			if (order != null) { 
 				if (!(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
-				def orderFields = []
-				order.each { col ->
+				List<String> orderFields = []
+				order.each { String col ->
 					if (dataset.fieldByName(col) != null) orderFields << prepareFieldNameForSQL(col) else orderFields << col
 				}
 				orderBy = orderFields.join(", ")
 			}
 			def forUpdate = (params.forUpdate != null && params.forUpdate)?"FOR UPDATE\n":null
 			
-			def dir = [:]
+			Map<String, String> dir = [:]
 			sqlTableDirective(dataset, params, dir)
 			
 			StringBuilder sb = new StringBuilder()
@@ -921,13 +933,13 @@ ${extend}'''
 		else {
 			assert dataset.params.query != null, "Required value in \"query\" from dataset"
 			def p = [:]
-			if (dataset.params.queryParams != null) p.putAll(dataset.params.queryParams)
-			if (params.queryParams != null) p.putAll(params.queryParams)
+			if (dataset.params.queryParams != null) p.putAll(dataset.params.queryParams as Map)
+			if (params.queryParams != null) p.putAll(params.queryParams as Map)
 			if (p.isEmpty()) {
 				query = dataset.params.query
 			}
 			else {
-				query = StringUtils.SetValueString(dataset.params.query, p)
+				query = StringUtils.SetValueString(dataset.params.query as String, p)
 			}
 		}
 		query
@@ -935,9 +947,11 @@ ${extend}'''
 	
 	protected List<Field> meta2Fields (def meta) {
 		List<Field> result = []
-		for (int i = 0; i < meta.getColumnCount(); i++) {
+        //noinspection GroovyAssignabilityCheck
+        for (int i = 0; i < meta.getColumnCount(); i++) {
 			def c = i + 1
-			Field f = new Field(name: prepareObjectName(meta.getColumnLabel(c)), dbType: meta.getColumnType(c), typeName: meta.getColumnTypeName(c),
+            //noinspection GroovyAssignabilityCheck
+            Field f = new Field(name: prepareObjectName(meta.getColumnLabel(c)) as String, dbType: meta.getColumnType(c), typeName: meta.getColumnTypeName(c),
 								length: meta.getPrecision(c), precision: meta.getScale(c), 
 								isAutoincrement: meta.isAutoIncrement(c), isNull: meta.isNullable(c), isReadOnly: meta.isReadOnly(c)) 
 			prepareField(f)
@@ -949,7 +963,8 @@ ${extend}'''
 	
 	@groovy.transform.CompileStatic
 	@Override
-	protected long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	public
+	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		Integer fetchSize = (Integer)(params."fetchSize")
 		Closure filter = (Closure)(params."filter")
 		List<Field> metaFields = []
@@ -976,9 +991,9 @@ ${extend}'''
 				}
 			}
 		}
-		
-		dataset.field = metaFields
-		String sql = sqlForDataset(dataset, params)
+
+//		dataset.field = metaFields
+		String sql = sqlForDataset(dataset, params + [useFields: metaFields])
 		
 		Map rowCopy
 		Closure copyToMap
@@ -1072,18 +1087,19 @@ ${extend}'''
 	}
 	
 	@Override
-	protected void clearDataset(Dataset dataset, Map params) {
+	public
+	void clearDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
 		def truncate = (params.truncate != null)?params.truncate:false
 		
 		def fn = fullNameDataset(dataset)
 		String q = (truncate)?"TRUNCATE TABLE $fn":"DELETE FROM $fn"
-		def count = executeCommand(q, params + [isUpdate:(!truncate)])
+		def count = executeCommand(q, params + [isUpdate: (!truncate)])
 		dataset.updateRows = count
 	}
 	
 	protected void saveToHistory(String sql) {
-		JDBCConnection con = connection
+		JDBCConnection con = connection as JDBCConnection
 		if (con.sqlHistoryFile != null) {
 			con.validSqlHistoryFile()
 			def f = new File(con.fileNameSqlHistory).newWriter("utf-8", true)
@@ -1100,16 +1116,17 @@ $sql
 	}
 
 	@Override
-	protected long executeCommand(String command, Map params) {
+	public
+	long executeCommand(String command, Map params) {
 		def result = 0
 		
 		if (command == null || command.trim().length() == 0) return result
 		
 		if (params.queryParams != null) {
-			command = StringUtils.SetValueString(command, params.queryParams)
+			command = StringUtils.SetValueString(command, params.queryParams as Map)
 		}
 		
-		JDBCConnection con = connection
+		JDBCConnection con = connection as JDBCConnection
 		def stat = sqlConnect.connection.createStatement()
 		
 		saveToHistory(command)
@@ -1229,7 +1246,7 @@ $sql
 			def fn = f.name.toLowerCase()
 			def dbType = (f.dbType != null)?f.dbType:type2dbType(f.type)
 			
-			sb << GenerationUtils.GenerateSetParam(this, curField, dbType, new String("_getl_row.'${fn}'"))
+			sb << GenerationUtils.GenerateSetParam(this, curField, dbType as Integer, new String("_getl_row.'${fn}'"))
 			sb << "\n"
 		}
 		sb << "}"
@@ -1237,7 +1254,7 @@ $sql
 		
 //		println wp.statement
 		
-		Closure code = GenerationUtils.EvalGroovyScript(wp.statement)
+		Closure code = GenerationUtils.EvalGroovyClosure(wp.statement)
 		
 		code
 	}
@@ -1271,8 +1288,8 @@ $sql
 		fields	
 	}
 	
-	protected Map bulkLoadFilePrepare(CSVDataset source, JDBCDataset dest, Map params, Closure prepareCode) {
-		if (!dest.type in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.MEMORY] ) {
+	protected Map bulkLoadFilePrepare(CSVDataset source, JDBCDataset dest, Map<String, Object> params, Closure prepareCode) {
+		if (!(dest.type in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.MEMORY]) ) {
 			throw new ExceptionGETL("Bulk load support only table and not worked for ${dest.type}")
 		}
 		
@@ -1280,7 +1297,7 @@ $sql
 		List<Field> fields = prepareFieldFromWrite(dest, prepareCode)
 		
 		// User mapping
-		Map map = (params.map != null)?MapUtils.MapToLower(params.map):[:]
+		Map map = (params.map != null)?MapUtils.MapToLower(params.map as Map<String, Object>):[:]
 		
 		// Allow aliases in map
 		boolean allowMapAlias = BoolUtils.IsValue(params.allowMapAlias, false)
@@ -1338,12 +1355,14 @@ $sql
 	}
 	
 	@Override
-	protected void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+	public
+	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
 		throw new ExceptionGETL("Not supported")
 	}
 	
 	@Override
-	protected void openWrite (Dataset dataset, Map params, Closure prepareCode) {
+	public
+	void openWrite (Dataset dataset, Map params, Closure prepareCode) {
 		WriterParams wp = new WriterParams()
 		dataset.driver_params = wp
 		
@@ -1429,7 +1448,7 @@ $sql
 			
 				break
 			case "MERGE":
-				sb << openWriteMergeSql(dataset, params, fields)
+				sb << openWriteMergeSql(dataset as JDBCDataset, params, fields)
 				break
 			default:
 				throw new ExceptionGETL("Not supported operation \"${operation}\"")
@@ -1458,7 +1477,7 @@ $sql
 		wp.con = con
 		
 		if (params.logRows != null) {
-			wp.saveOut = new File(params.logRows)
+			wp.saveOut = new File(params.logRows as String)
 		}
 	}
 	
@@ -1500,7 +1519,8 @@ $sql
 
 	@groovy.transform.CompileStatic
 	@Override
-	protected void write(Dataset dataset, Map row) {
+	public
+	void write(Dataset dataset, Map row) {
 		WriterParams wp = (WriterParams)(dataset.driver_params)
 		
 		if (wp.saveOut != null) {
@@ -1534,7 +1554,8 @@ $sql
 	}
 	
 	@Override
-	protected void doneWrite (Dataset dataset) {
+	public
+	void doneWrite (Dataset dataset) {
 		WriterParams wp = dataset.driver_params
 		
 		if (wp.rowProc > 0) {
@@ -1543,7 +1564,8 @@ $sql
 	}
 
 	@Override
-	protected void closeWrite(Dataset dataset) {
+	public
+	void closeWrite(Dataset dataset) {
 		WriterParams wp = dataset.driver_params
 		try {
 			wp.stat.close()
@@ -1570,7 +1592,7 @@ $sql
     VALUES ({values})'''
 	}
 	
-	protected String unionDatasetMerge (JDBCDataset source, JDBCDataset target, Map map, List<String> keyField, Map procParams) {
+	protected String unionDatasetMerge (JDBCDataset source, JDBCDataset target, Map<String, String> map, List<String> keyField, Map procParams) {
 		if (!source instanceof TableDataset) throw new ExceptionGETL("Source dataset must be \"TableDataset\"")
 		if (keyField.isEmpty()) throw new ExceptionGETL("For MERGE operation required key fields by table")
 		
@@ -1636,7 +1658,7 @@ $sql
 			def targetField = prepareObjectName(field.name)
 			
 			// Mapping source field
-			def sourceField = map."${targetField.toLowerCase()}" 
+			def sourceField = map."${targetField.toLowerCase()}"  as String
 			
 			if (sourceField != null) {
 				if (source.fieldByName(sourceField) != null) sourceField = "s." + prepareFieldNameForSQL(sourceField)

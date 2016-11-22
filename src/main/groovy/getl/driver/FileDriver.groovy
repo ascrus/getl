@@ -24,6 +24,8 @@
 
 package getl.driver
 
+import getl.data.FileConnection
+import getl.data.FileDataset
 import groovy.transform.InheritConstructors
 
 import java.util.zip.GZIPInputStream
@@ -31,8 +33,6 @@ import java.util.zip.GZIPOutputStream
 
 import getl.csv.CSVDataset
 import getl.data.Dataset
-import getl.data.Field
-import getl.data.Field.Type
 import getl.exception.ExceptionGETL
 import getl.utils.*
 
@@ -54,15 +54,15 @@ abstract class FileDriver extends Driver {
 	}
 	
 	@Override
-	protected List<Object> retrieveObjects (Map params, Closure filter) {
-		def path = connection.path
+	public List<Object> retrieveObjects (Map params, Closure filter) {
+		def path = (connection as FileConnection).path
 		if (path == null) throw new ExceptionGETL("Path not setting")
 		
 		if (params.directory != null) path += connection.fileSeparator + params.directory
 		def match = (params.mask != null)?params.mask:".*"
 		RetrieveObjectType type = (params.type == null)?RetrieveObjectType.FILE:params.type
 		RetrieveObjectSort sort = (params.sort == null)?RetrieveObjectSort.NONE:params.sort
-		def recursive = (params.recursive == null || !params.recursive)?false:true
+		def recursive = (params.recursive != null && params.recursive)
 		
 		def list = []
 		
@@ -132,7 +132,7 @@ abstract class FileDriver extends Driver {
 	 * @param dataset
 	 * @return
 	 */
-	public String fileNameWithoutExtension(Dataset dataset) {
+	public static String fileNameWithoutExtension(Dataset dataset) {
 		String fn = dataset.fileName
 		if (fn == null) return null
 		
@@ -177,7 +177,7 @@ abstract class FileDriver extends Driver {
 	 * @param isSplit
 	 * @return
 	 */
-	public String fileMaskDataset(Dataset dataset, boolean isSplit) {
+	public static String fileMaskDataset(Dataset dataset, boolean isSplit) {
 		String fn = fileNameWithoutExtension(dataset)
 		
 		if (isSplit) fn += ".{number}"
@@ -189,9 +189,26 @@ abstract class FileDriver extends Driver {
 	}
 
 	@Override
-	protected void dropDataset(Dataset dataset, Map params) {
-		def f = new File(fullFileNameDataset(dataset))
-		if (f.exists()) f.delete()
+	public
+	void dropDataset(Dataset dataset, Map params) {
+        if (params.portions == null) {
+            def f = new File(fullFileNameDataset(dataset))
+            if (f.exists()) {
+                f.delete()
+            } else if (BoolUtils.IsValue(params.validExist, false)) {
+                throw new ExceptionGETL("File ${fullFileNameDataset(dataset)} not found")
+            }
+        }
+        else {
+            (1..params.portions).each { num ->
+                def f = new File(fullFileNameDataset(dataset, num))
+                if (f.exists()) {
+                    f.delete()
+                } else if (BoolUtils.IsValue(params.validExist, false)) {
+                    throw new ExceptionGETL("File ${fullFileNameDataset(dataset)} not found")
+                }
+            }
+        }
 		
 		super.dropDataset(dataset, params)
 	}
@@ -201,8 +218,8 @@ abstract class FileDriver extends Driver {
 	 * @param filePath
 	 * @return
 	 */
-	protected boolean createPath(String filePath) {
-		FileUtils.ValidFilePath(filePath)
+	protected static boolean createPath(String filePath) {
+		return FileUtils.ValidFilePath(filePath)
 	}
 	
 	/**
@@ -224,16 +241,17 @@ abstract class FileDriver extends Driver {
 	 */
 	protected Map getDatasetParams (Dataset dataset, Map params, Integer portion) {
 		def res = [:]
+		FileDataset ds = dataset as FileDataset
 		
-		res.fn = fullFileNameDataset(dataset, portion)
-		res.isGzFile = dataset.isGzFile
-		res.codePage = ListUtils.NotNullValue([params.codePage, dataset.codePage])
-		res.isAppend = BoolUtils.IsValue(params.append, dataset.append)
-		res.autoSchema = BoolUtils.IsValue(params.autoSchema, dataset.autoSchema)
-		res.createPath = BoolUtils.IsValue(params.createPath, dataset.createPath)
-		res.deleteOnEmpty = BoolUtils.IsValue([params.deleteOnEmpty, dataset.deleteOnEmpty], null)
+		res.fn = fullFileNameDataset(ds, portion)
+		res.isGzFile = ds.isGzFile
+		res.codePage = ListUtils.NotNullValue([params.codePage, ds.codePage])
+		res.isAppend = BoolUtils.IsValue(params.append, ds.append)
+		res.autoSchema = BoolUtils.IsValue(params.autoSchema, ds.autoSchema)
+		res.createPath = BoolUtils.IsValue(params.createPath, ds.createPath)
+		res.deleteOnEmpty = BoolUtils.IsValue([params.deleteOnEmpty, ds.deleteOnEmpty], null)
 		
-		res
+		return res
 	}
 	
 	/**
@@ -256,12 +274,12 @@ abstract class FileDriver extends Driver {
 	protected Reader getFileReader (Dataset dataset, Map params, Integer portion) {
 		def wp = getDatasetParams(dataset, params, portion)
 		
-		def fn = wp.fn
+		def fn = wp.fn as String
 		boolean isGzFile = wp.isGzFile 
-		def codePage = wp.codePage
+		def codePage = wp.codePage as String
 		
 		def reader
-		def input
+		InputStream input
 		if (isGzFile) {
 			input = new GZIPInputStream(new FileInputStream(fn))
 		}
@@ -269,9 +287,9 @@ abstract class FileDriver extends Driver {
 			input = new FileInputStream(fn)
 		}
 		
-		reader = new BufferedReader(new InputStreamReader(input, codePage), dataset.bufferSize)
+		reader = new BufferedReader(new InputStreamReader(input, codePage), (dataset as FileDataset).bufferSize)
 		
-		reader
+		return reader
 	}
 	
 	/**
@@ -301,11 +319,11 @@ abstract class FileDriver extends Driver {
 		if (wp.createPath) createPath(fn)
 		
 		boolean isGzFile = wp.isGzFile
-		def codePage = wp.codePage
-		def isAppend = wp.isAppend
+		def codePage = wp.codePage as String
+		def isAppend = wp.isAppend as Boolean
 
 		def writer
-		def output
+		OutputStream output
 		def file = new File(fn)
 		
 		if (isGzFile) {
@@ -315,11 +333,11 @@ abstract class FileDriver extends Driver {
 			output = new FileOutputStream(file, isAppend)
 		}
 		
-		writer = new BufferedWriter(new OutputStreamWriter(output, codePage), dataset.bufferSize)
+		writer = new BufferedWriter(new OutputStreamWriter(output, codePage), (dataset as FileDataset).bufferSize)
 		
-		processWriteFile(wp.fn, file)
+		processWriteFile(wp.fn as String, file)
 		
-		writer
+		return writer
 	}
 	
 	/**
@@ -334,11 +352,11 @@ abstract class FileDriver extends Driver {
 	 * @param dataset
 	 * @param isDelete
 	 */
-	protected void fixTempFiles (Dataset dataset, boolean isDelete) {
+	protected static void fixTempFiles (Dataset dataset, boolean isDelete) {
 		dataset.sysParams.writeFiles?.each { fileName, tempFileName ->
-			def f = new File(fileName)
+			def f = new File(fileName as String)
 			f.delete()
-			def t = new File(tempFileName)
+			def t = new File(tempFileName as String)
 			if (isDelete) {
 				t.delete()
 				if (dataset.autoSchema) {
@@ -353,12 +371,14 @@ abstract class FileDriver extends Driver {
 	}
 	
 	@Override
-	protected void doneWrite (Dataset dataset) {
+	public
+	void doneWrite (Dataset dataset) {
 		
 	}
 	
 	@Override
-	protected long executeCommand (String command, Map params) {
+	public
+	long executeCommand (String command, Map params) {
 		throw new ExceptionGETL("Not supported")
 	}
 	
@@ -369,52 +389,60 @@ abstract class FileDriver extends Driver {
 	
 
 	@Override
-	protected void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+	public
+	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
 		throw new ExceptionGETL("Not supported")
 
 	}
 
 	@Override
-	protected void clearDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL("Not supported")
-
-	}
-	
-	@Override
-	protected void createDataset(Dataset dataset, Map params) {
+	public
+	void clearDataset(Dataset dataset, Map params) {
 		throw new ExceptionGETL("Not supported")
 
 	}
 	
 	@Override
-	protected void startTran() {
+	public
+	void createDataset(Dataset dataset, Map params) {
+		throw new ExceptionGETL("Not supported")
+
+	}
+	
+	@Override
+	public
+	void startTran() {
 		throw new ExceptionGETL("Not supported")
 
 	}
 
 	@Override
-	protected void commitTran() {
+	public
+	void commitTran() {
 		throw new ExceptionGETL("Not supported")
 
 	}
 
 	@Override
-	protected void rollbackTran() {
+	public
+	void rollbackTran() {
 		throw new ExceptionGETL("Not supported")
 	}
 	
 	@Override
-	protected void connect () {	
+	public
+	void connect () {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void disconnect () { 
+	public
+	void disconnect () {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected boolean isConnect () {
+	public boolean isConnected() {
 		throw new ExceptionGETL("Not supported")
 	}
 }

@@ -39,6 +39,7 @@ import getl.utils.*
 class FileDataset extends Dataset {
 	FileDataset () {
 		methodParams.register("openWrite", ["deleteOnEmpty"])
+		methodParams.register("drop", ["validExist", "portions"])
 	}
 	
 	/**
@@ -86,7 +87,7 @@ class FileDataset extends Dataset {
 	/**
 	 * Size of read/write buffer size
 	 */
-	public Integer getBufferSize () { ListUtils.NotNullValue([params.bufferSize, connection.bufferSize, 1*1024*1024]) }
+	public Integer getBufferSize () { ListUtils.NotNullValue([params.bufferSize, connection.bufferSize, 1*1024*1024]) as Integer }
 	public void setBufferSize()  { params.bufferSize = value }
 	
 	@Override
@@ -101,7 +102,7 @@ class FileDataset extends Dataset {
 	 */
 	public String fullFileName() {
 		if (connection == null) throw new ExceptionGETL("Required connection for dataset \"$objectName\"")
-		FileDriver drv = connection.driver
+		FileDriver drv = connection.driver as FileDriver
 		
 		drv.fullFileNameDataset(this)
 	}
@@ -112,7 +113,7 @@ class FileDataset extends Dataset {
 	 * @return
 	 */
 	public String fullFileName(Integer portion) {
-		FileDriver drv = connection.driver
+		FileDriver drv = connection.driver as FileDriver
 		
 		drv.fullFileNameDataset(this, portion)
 	}
@@ -124,7 +125,7 @@ class FileDataset extends Dataset {
 	 * @return
 	 */
 	public String fileMaskDataset(Dataset dataset, boolean isSplit) {
-		FileDriver drv = connection.driver
+		FileDriver drv = connection.driver as FileDriver
 		
 		drv.fileMaskDataset(this, isSplit)
 	}
@@ -135,7 +136,7 @@ class FileDataset extends Dataset {
 	 * @return
 	 */
 	public String fileNameWithoutExtension(Dataset dataset) {
-		FileDriver drv = connection.driver
+		FileDriver drv = connection.driver as FileDriver
 		
 		drv.fileNameWithoutExtension(this)
 	}

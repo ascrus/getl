@@ -36,19 +36,19 @@ import groovy.json.JsonSlurper
  *
  */
 class GenerationUtils {
-	public static final Long EMPTY_BIGINT
-	public static final def EMPTY_BLOB
-	public static final def EMPTY_CLOB
-	public static final Boolean EMPTY_BOOLEAN
-	public static final Date EMPTY_DATE
-	public static final java.sql.Timestamp EMPTY_DATETIME
-	public static final Double EMPTY_DOUBLE
-	public static final Integer EMPTY_INTEGER
-	public static final BigDecimal EMPTY_NUMERIC
-	public static final def EMPTY_OBJECT
-	public static final String EMPTY_STRING
-	public static final def EMPTY_TEXT
-	public static final java.sql.Time EMPTY_TIME
+	public static final Long EMPTY_BIGINT = null
+	public static final def EMPTY_BLOB = null
+	public static final def EMPTY_CLOB = null
+	public static final Boolean EMPTY_BOOLEAN = null
+	public static final Date EMPTY_DATE = null
+	public static final java.sql.Timestamp EMPTY_DATETIME = null
+	public static final Double EMPTY_DOUBLE = null
+	public static final Integer EMPTY_INTEGER = null
+	public static final BigDecimal EMPTY_NUMERIC = null
+	public static final def EMPTY_OBJECT = null
+	public static final String EMPTY_STRING = null
+	public static final def EMPTY_TEXT = null
+	public static final java.sql.Time EMPTY_TIME = null
 	
 	/**
 	 * Convert string alias as a modifier to access the value of field
@@ -91,7 +91,7 @@ class GenerationUtils {
 	 * @return
 	 */
 	public static String GenerateEmptyValue(getl.data.Field.Type type, String variableName) {
-		def r = ""
+		String r
 		switch (type) {
 			case getl.data.Field.Type.STRING:
 				r = "String ${variableName}"
@@ -126,7 +126,7 @@ class GenerationUtils {
 			default:
 				throw new ExceptionGETL("Type ${type} not supported")
 		}
-		r
+		return r
 	}
 	
 	public static String DateFormat(getl.data.Field.Type type) {
@@ -158,7 +158,7 @@ class GenerationUtils {
 			return "(${sourceValue} != null)?${sourceValue}:${nullValue}"
 		}
 		
-		def r = ""
+		String r
 		
 		switch (dest.type) {
 			case getl.data.Field.Type.STRING:
@@ -175,7 +175,7 @@ class GenerationUtils {
 				if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.BIGINT)
 					r = "(${sourceValue} != null)?Boolean.valueOf(${sourceValue} == 1):${nullValue}"
 				else if (source.type == getl.data.Field.Type.STRING) {
-					def bf = ["true", "false"]
+					String[] bf = ["true", "false"]
 					if (dataformat != null) {
 						bf = dataformat.toLowerCase().split("[|]")
 					}
@@ -225,7 +225,7 @@ class GenerationUtils {
 			case getl.data.Field.Type.DOUBLE:
 				if (source.type == getl.data.Field.Type.STRING)
 					r =  "(${sourceValue} != null)?new Double(${sourceValue}):${nullValue}"
-				if (source.type == getl.data.Field.Type.BOOLEAN)
+				else if (source.type == getl.data.Field.Type.BOOLEAN)
 					r = "(${sourceValue} != null)?Double.valueOf((${sourceValue})?1:0):${nullValue}"
 				else if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.NUMERIC || source.type == getl.data.Field.Type.BIGINT)
 					r =  "(${sourceValue} != null)?Double.valueOf(${sourceValue}):${nullValue}"
@@ -265,7 +265,9 @@ class GenerationUtils {
 				else if (source.type == getl.data.Field.Type.STRING) {
 					r = "(${sourceValue} != null)?Time.valueOf(${sourceValue}):${nullValue}"
 				}
-				if (r == "") throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
+				else {
+                    throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
+                }
 				break
 				
 			case getl.data.Field.Type.OBJECT: case getl.data.Field.Type.BLOB: case getl.data.Field.Type.TEXT:
@@ -275,7 +277,8 @@ class GenerationUtils {
 			default:
 				throw new ExceptionGETL("Type ${dest.type} not supported (${dest.name})")
 		}
-		r
+
+		return r
 	}
 	
 	public static String GenerateConvertValue(Field dest, Field source, String dataformat, String sourceValue) {
@@ -283,7 +286,7 @@ class GenerationUtils {
 			return "${sourceValue}"
 		}
 		
-		def r = ""
+		String r
 		
 		switch (dest.type) {
 			case getl.data.Field.Type.STRING:
@@ -300,7 +303,7 @@ class GenerationUtils {
 				if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.BIGINT)
 					r = "getl.utils.ConvertUtils.Int2Boolean((Integer){sourceValue}?.intValue())"
 				else if (source.type == getl.data.Field.Type.STRING) {
-					def bf = ["true", "false"]
+					String[] bf = ["true", "false"]
 					if (dataformat != null) {
 						bf = dataformat.toLowerCase().split("[|]")
 					}
@@ -405,7 +408,7 @@ class GenerationUtils {
 				throw new ExceptionGETL("Type ${dest.type} not supported (${dest.name})")
 		}
 		
-		r
+		return r
 	}
 	
 	public static final Random random = new Random()
@@ -456,12 +459,14 @@ class GenerationUtils {
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()), precision)
 		}
 		else if (intSize < 15) {
-			int lSize = (Math.pow(10, intSize)).intValue() - 1
+			int lSize = ((Double)Math.pow(10, intSize)).intValue() - 1
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextInt(lSize), precision)
 		}
 		else {
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextLong(), precision)
 		}
+
+        return res
 	}
 	
 	@groovy.transform.CompileStatic
@@ -731,8 +736,8 @@ sb << """
 	public static List<Field> Map2Fields (Map value) {
 		List<Field> res = []
 		
-		value.fields?.each {
-			res << Field.ParseMap(it)
+		value.fields?.each { Map f ->
+			res << Field.ParseMap(f)
 		}
 		
 		res
@@ -747,7 +752,7 @@ sb << """
 		if (value == null) return null
 		
 		def b = new JsonSlurper()
-		def l = b.parseText(value)
+		Map l = b.parseText(value) as Map
 		
 		Map2Fields(l)
 	}
@@ -805,6 +810,25 @@ sb << """
 	 */												
 	public static def EvalGroovyScript(String value) {
 		EvalGroovyScript(value, [:])
+	}
+
+	/**
+	 * Compile groovy script to closure
+	 * @param value
+	 * @return
+	 */
+	public static Closure EvalGroovyClosure(String value) {
+		(Closure)EvalGroovyScript(value, [:])
+	}
+
+	/**
+	 * Compile groovy script to closure
+	 * @param value
+	 * @param vars
+	 * @return
+	 */
+	public static def EvalGroovyClosure(String value, Map<String, Object> vars) {
+		(Closure)EvalGroovyScript(value, vars)
 	}
 
 	/**
@@ -916,7 +940,7 @@ sb << """
 	 * @return
 	 */
 	public static String SqlObjectName (JDBCConnection connection, String name) {
-		JDBCDriver drv = connection.driver
+		JDBCDriver drv = connection.driver as JDBCDriver
 
 		drv.prepareObjectNameForSQL(name)
 	}
@@ -929,7 +953,7 @@ sb << """
 	 */
 	public static List<String> SqlListObjectName (JDBCConnection connection, List<String> listNames) {
 		List<String> res = []
-		JDBCDriver drv = connection.driver
+		JDBCDriver drv = connection.driver as JDBCDriver
 
 		listNames.each { name ->
 			res << drv.prepareObjectNameForSQL(name)
@@ -1105,7 +1129,7 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 		sb << "}"
 		def statement = sb.toString()
 //		println statement
-		Closure code = EvalGroovyScript(statement)
+		Closure code = EvalGroovyClosure(statement)
 		
 		[statement: statement, code: code]
 	}
@@ -1122,7 +1146,7 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 			sb << "outRow.'${f.name}' = inRow.'${f.name.toLowerCase()}'\n"
 		}
 		sb << "}"
-		Closure result = GenerationUtils.EvalGroovyScript(sb.toString())
+		Closure result = GenerationUtils.EvalGroovyClosure(sb.toString())
 		result
 	}
 	

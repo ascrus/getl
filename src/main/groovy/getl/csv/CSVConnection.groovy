@@ -106,7 +106,7 @@ class CSVConnection extends FileConnection {
 	/**
 	 * Mode of quote value
 	 */
-	public QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, QuoteMode.NORMAL]) }
+	public QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, QuoteMode.NORMAL])  as QuoteMode }
 	public void setQuoteMode (QuoteMode value) { params.quoteMode = value }
 	
 	/**

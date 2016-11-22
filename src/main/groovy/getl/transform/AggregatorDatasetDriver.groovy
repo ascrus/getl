@@ -25,10 +25,7 @@
 package getl.transform
 
 import getl.data.*
-import getl.data.Field.Type
 import getl.driver.VirtualDatasetDriver
-import getl.driver.Driver.Operation
-import getl.driver.Driver.Support
 import getl.exception.ExceptionGETL
 import getl.utils.GenerationUtils
 import groovy.transform.InheritConstructors
@@ -41,20 +38,21 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	
-	private List<String> getFieldByGroup(Dataset dataset) {
+	private static List<String> getFieldByGroup(Dataset dataset) {
 		List<String> res = dataset.params.fieldByGroup
 		if (res == null) throw new ExceptionGETL("Required parameter \"fieldByGroup\" in dataset")
 		res
 	}
 	
-	private Map<String, Map> getFieldCalc(Dataset dataset) {
+	private static Map<String, Map> getFieldCalc(Dataset dataset) {
 		Map<String, Map> res = dataset.params.fieldCalc
 		if (res == null) throw new ExceptionGETL("Required parameter \"fieldCalc\" in dataset")
 		res
 	}
 	
 	@Override
-	protected void openWrite(Dataset dataset, Map params, Closure prepareCode) {
+	public
+	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		Dataset ds = getDestinition(dataset)
 		def fieldByGroup = getFieldByGroup(dataset)
 		def fieldCalc = getFieldCalc(dataset)
@@ -75,11 +73,11 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		ds.openWrite(params)
 		
 		if (algorithm == "HASH") {
-			LinkedHashMap data = [:]
+			LinkedHashMap data = new LinkedHashMap()
 			dataset.params.aggregator_data = data
 		}
 		else {
-			TreeMap data = [:]
+			TreeMap data = new TreeMap()
 			dataset.params.aggregator_data = data
 		}
 		
@@ -88,7 +86,8 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	}
 
 	@Override
-	protected void write(Dataset dataset, Map row) {
+	public
+	void write(Dataset dataset, Map row) {
 		Map data = dataset.params.aggregator_data
 		Closure aggregateCode = dataset.params.aggregator_code
 		Map filter = dataset.params.aggregator_filter
@@ -96,9 +95,10 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	}
 
 	@Override
-	protected void doneWrite(Dataset dataset) {
+	public
+	void doneWrite(Dataset dataset) {
 		Dataset ds = getDestinition(dataset)
-		Map data = dataset.params.aggregator_data
+		Map<Object, Map> data = dataset.params.aggregator_data
 		data.each { key, value ->
 			ds.write(value)
 		}
@@ -106,7 +106,8 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	}
 
 	@Override
-	protected void closeWrite(Dataset dataset) {
+	public
+	void closeWrite(Dataset dataset) {
 		Dataset ds = getDestinition(dataset)
 		ds.closeWrite()
 		
@@ -115,7 +116,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		dataset.params.remove("aggregator_code")
 	}
 	
-	private Closure generateAggrCode(List<String> fieldByGroup, Map<String, Map> fieldCalc) {
+	private static Closure generateAggrCode(List<String> fieldByGroup, Map<String, Map> fieldCalc) {
 		StringBuilder sb = new StringBuilder()
 		sb << """{ Map row, Map data, Map filter ->
 	List<String> key = []
@@ -199,7 +200,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		}
 		sb << "}"
 		
-		Closure result = GenerationUtils.EvalGroovyScript(sb.toString())
+		Closure result = GenerationUtils.EvalGroovyClosure(sb.toString())
 		
 		result
 	}

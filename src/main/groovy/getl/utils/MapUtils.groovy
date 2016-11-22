@@ -36,7 +36,7 @@ import getl.exception.ExceptionGETL
 @groovy.transform.CompileStatic
 class MapUtils {
 	/**
-	 * Clone all map items as new objects
+	 * Copy all map items as new objects with Json builder
 	 * @param map
 	 * @return
 	 */
@@ -58,35 +58,7 @@ class MapUtils {
 
 		res
 	}
-	
-	/**
-	 * Clone map
-	 * @param map
-	 * @return
-	 */
-	public static Map Clone (Map map) {
-		if (map == null) return null
-		
-		Map res
-		
-		ByteArrayOutputStream bos = new ByteArrayOutputStream()
-		ObjectOutputStream oos = new ObjectOutputStream(bos)
-		try {
-			oos.writeObject(map)
-			oos.flush()
-		}
-		finally {
-			oos.close()
-			bos.close()
-		}
-		byte[] byteData = bos.toByteArray()
-		
-		ByteArrayInputStream bais = new ByteArrayInputStream(byteData)
-		res = (Map)new ObjectInputStream(bais).readObject()
 
-		res
-	}
-	
 	/**
 	 * Set keys of map to lower case
 	 * @param m
@@ -307,7 +279,7 @@ class MapUtils {
 			MergeMapChildren(source, value, key)
 		}
 	}
-	
+
 	private static void MergeMapChildren (Map source, def added, String section) {
 		if (!(added instanceof Map)) {
 			SetValue(source, section, added)
@@ -419,20 +391,20 @@ class MapUtils {
 			if (v instanceof String || v instanceof GString) {
 				def val = v.toString().replace("\\", "\\\\").replace('"""', '\\"\\"\\"').replace('${', '\u0001{').replace('$', '\\$').replace('\u0001{', '${')
 
-				if (val.trim() != '"') res.put(k, GenerationUtils.EvalGroovyScript('"""' + val + '"""', vars)) else res.putAt(k, val)
+				if (val.trim() != '"') res.put(k, GenerationUtils.EvalGroovyScript('"""' + val + '"""', vars)) else res.put(k, val)
 			}
 			else if (v instanceof Map) {
-				res.put(k, EvalMacroValues(((Map)v), vars))
+				res.put(k, EvalMacroValues(v as Map, vars))
 			}
 			else if (v instanceof List) {
-				res.put(k, ListUtils.EvalMacroValues(((List)v), vars))
+				res.put(k, ListUtils.EvalMacroValues(v as List, vars))
 			}
 			else {
 				res.put(k, v)
 			}
 		}
 
-		res
+		return res
 	}
 
 	/**
@@ -441,11 +413,11 @@ class MapUtils {
 	 * @return
 	 */
 	public static String MapToUrlParams(Map<String, Object> m) {
-		List l = []
-		m.each { String k, v ->
-			l << "$k=${v.toString()}"
-		}
+        List l = []
+        m.each { String k, v ->
+            l << "$k=${v.toString()}"
+        }
 
-		l.join('&')
-	}
+        l.join('&')
+    }
 }

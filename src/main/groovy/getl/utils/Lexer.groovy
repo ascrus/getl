@@ -179,7 +179,7 @@ class Lexer {
 	}
 	
 	private void addChar(int c) {
-		sb << (char)c
+		sb << (char)(c as int)
 	}
 	
 	/**
@@ -256,7 +256,7 @@ class Lexer {
 		}
 		input.reset()
 		
-		if (sb.length() > 0) tokens << [type: TokenType.QUOTED_TEXT, quote: ((char)c).toString(), value: sb.toString()]
+		if (sb.length() > 0) tokens << [type: TokenType.QUOTED_TEXT, quote: ((char)(c as int)).toString(), value: sb.toString()]
 		command = commands.pop()
 		sb = new StringBuilder()
 	}
@@ -306,11 +306,11 @@ class Lexer {
 		if (tokens.size() > 0 && ((Map)(tokens[tokens.size() - 1]))."type" == TokenType.FUNCTION) {
 			Map token = (Map)tokens[tokens.size() - 1]
 			token."list" = curTokens
-			token."start" = ((char)c1).toString()
-			token."finish" = ((char)c2).toString()
+			token."start" = ((char)(c1 as int)).toString()
+			token."finish" = ((char)(c2 as int)).toString()
 		}
 		else {
-			tokens << [type: TokenType.LIST, start: ((char)c1).toString(), finish: ((char)c2).toString(), list: curTokens]
+			tokens << [type: TokenType.LIST, start: ((char)(c1 as int)).toString(), finish: ((char)(c2 as int)).toString(), list: curTokens]
 		}
 		
 		command = commands.pop()
@@ -323,7 +323,7 @@ class Lexer {
 		}
 
 		if (!gap(c) && !(command.type in [CommandType.NONE, CommandType.BRACKET])) error("unexpected comma")
-		Map m = [type: TokenType.COMMA, value: ((char)c).toString()]
+		Map m = [type: TokenType.COMMA, value: ((char)(c as int)).toString()]
 		tokens[tokens.size() - 1]."delimiter" = m
 	}
 	
@@ -335,7 +335,7 @@ class Lexer {
 
 		gap(c)
 		
-		tokens << [type: TokenType.SEMICOLON, value: ((char)c).toString()]
+		tokens << [type: TokenType.SEMICOLON, value: ((char)(c as int)).toString()]
 	}
 	
 	protected error(String message) {
@@ -369,7 +369,7 @@ class Lexer {
 	 * @param start
 	 * @return
 	 */
-	public String keyWords(List<Map> tokens, int start, Integer max) {
+	public static String keyWords(List<Map> tokens, int start, Integer max) {
 		StringBuilder sb = new StringBuilder()
 		int i = 0
 		while (start < tokens.size() && tokens[start]."type" == TokenType.SINGLE_WORD && (max == null || i < max)) {
@@ -387,7 +387,7 @@ class Lexer {
 	 * @param position
 	 * @return
 	 */
-	public List<Map> list (List<Map> tokens, int position) {
+	public static List<Map> list (List<Map> tokens, int position) {
 		(List<Map>)((tokens[position]."type" == TokenType.LIST)?tokens[position]."list":null)
 	}
 	
@@ -397,7 +397,7 @@ class Lexer {
 	 * @param position
 	 * @return
 	 */
-	public Map function (List<Map> tokens, int position) {
+	public static Map function (List<Map> tokens, int position) {
 		Map token = tokens[position]
 		if (token."type" != TokenType.FUNCTION) return null
 
@@ -410,7 +410,7 @@ class Lexer {
 	 * @param res
 	 * @return - next token after object name
 	 */
-	public List object (List<Map> tokens, int start) {
+	public static List object (List<Map> tokens, int start) {
 		if (!(tokens[start]."type" in [TokenType.SINGLE_WORD, TokenType.OBJECT_NAME])) {
 			return null
 		}
@@ -423,7 +423,7 @@ class Lexer {
 	 * @param position
 	 * @return
 	 */
-	public TokenType type (List<Map> tokens, int position) {
+	public static TokenType type (List<Map> tokens, int position) {
 		(TokenType)((position < tokens.size())?tokens[position]."type":null)
 	}
 	
@@ -433,7 +433,7 @@ class Lexer {
 	 * @param start
 	 * @return
 	 */
-	public int findByType (List<Map> tokens, TokenType type, int start) {
+	public static int findByType (List<Map> tokens, TokenType type, int start) {
 		for (int i = start; i < tokens.size(); i++) {
 			if (tokens[i]."type" == type) return i
 		}
@@ -448,7 +448,7 @@ class Lexer {
 	 * @param finish
 	 * @return
 	 */
-	public List<List<Map>> toList (List<Map> tokens, int start, int finish) {
+	public static List<List<Map>> toList (List<Map> tokens, int start, int finish) {
 		List<List<Map>> res = new ArrayList<List<Map>>()
 		List<Map> cur = new ArrayList<Map>()
 		while (start <= finish && tokens[start]."type"  != TokenType.SEMICOLON) {
@@ -475,7 +475,7 @@ class Lexer {
 	 * @param delimiter
 	 * @return
 	 */
-	public List<List<Map>> toList (List<Map> tokens, int start, int finish, String delimiter) {
+	public static List<List<Map>> toList (List<Map> tokens, int start, int finish, String delimiter) {
 		delimiter = delimiter.toUpperCase()
 		List<List<Map>> res = new ArrayList<List<Map>>()
 		List<Map> cur = new ArrayList<Map>()
@@ -503,7 +503,7 @@ class Lexer {
 	 * @param keyWord
 	 * @return
 	 */
-	public int findKeyWord(List<Map> tokens, int start, String keyWord) {
+	public static int findKeyWord(List<Map> tokens, int start, String keyWord) {
 		keyWord = keyWord.toUpperCase()
 		for (int i = start; i < tokens.size(); i++) {
 			def token = tokens[i]

@@ -24,8 +24,6 @@
 
 package getl.db2
 
-import java.sql.PreparedStatement
-import getl.data.Dataset
 import getl.data.Field;
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
@@ -68,7 +66,8 @@ class DB2Driver extends JDBCDriver {
 	}
 	
 	@Override
-	protected void prepareField (Field field) {
+    public
+    void prepareField (Field field) {
 		super.prepareField(field)
 		
 		if (field.typeName?.matches('(?i)CLOB')) {

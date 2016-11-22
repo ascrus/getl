@@ -348,7 +348,7 @@ class Field implements Serializable {
 		maxValue = (f.maxValue != null)?f.maxValue:maxValue
 		format = (f.format != null)?f.format:format
 		alias = (f.alias != null)?f.alias:alias
-		trim = (f.trim == true)?true:trim
+		trim = BoolUtils.IsValue(f.trim, trim)
 		decimalSeparator = (f.decimalSeparator != null)?f.decimalSeparator:decimalSeparator
 		description = (f.description != null)?f.description:description
 		extended.putAll(f.extended)
@@ -359,11 +359,11 @@ class Field implements Serializable {
 	 * @return
 	 */
 	public Field copy() {
-		Field f = new Field(
+		return new Field(
 				name: this.name, type: this.type, typeName: this.typeName, dbType: this.dbType, isNull: this.isNull, length: this.length, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
 				isAutoincrement: this.isAutoincrement, isReadOnly: this.isReadOnly, defaultValue: this.defaultValue, compute: this.compute, 
 				minValue: this.minValue, maxValue: this.maxValue, format: this.format, alias: this.alias, trim: this.trim, 
-				decimalSeparator: this.decimalSeparator, description: this.description, extended: MapUtils.DeepCopy(extended))
+				decimalSeparator: this.decimalSeparator, description: this.description, extended: CloneUtils.CloneMap(extended))
 	}
 	
 	public static boolean IsConvertibleType(Field.Type source, Field.Type dest) {
@@ -398,5 +398,68 @@ class Field implements Serializable {
 		}
 		
 		res
+	}
+
+    /**
+     * Valid equal current object by object
+     * @param other
+     * @return
+     */
+    public boolean canEqual (java.lang.Object other) {
+        return other instanceof Field
+    }
+
+	public boolean equalsAll(java.lang.Object other) {
+		if (other == null) return false
+		if (this.is(other)) return true
+		if (!(other instanceof Field)) return false
+		if (!other.canEqual(this)) return false
+
+        def o = other as Field
+
+        if (this.name?.toUpperCase() != o.name?.toUpperCase()) return false
+        if (this.type != o.type) return false
+        if (this.isNull != o.isNull) return false
+        if (this.isKey != o.isKey) return false
+        if (this.ordKey != o.ordKey) return false
+        if (this.length != o.length) return false
+        if (this.precision != o.precision) return false
+        if (this.dbType != o.dbType) return false
+        if (this.typeName?.toUpperCase() != o.typeName?.toUpperCase()) return false
+        if (this.decimalSeparator != o.decimalSeparator) return false
+        if (this.alias?.toUpperCase() != o.alias?.toUpperCase()) return false
+        if (this.compute != o.compute) return false
+        if (this.defaultValue != o.defaultValue) return false
+        if (this.minValue != o.minValue) return false
+        if (this.maxValue != o.maxValue) return false
+        if (this.format != o.format) return false
+        if (this.isAutoincrement != o.isAutoincrement) return false
+        if (this.isReadOnly != o.isReadOnly) return false
+        if (this.trim != o.trim) return false
+        if (this.extended != o.extended) return false
+        if (this.description != o.description) return false
+        if (this.getMethod != o.getMethod) return false
+
+		return true
+	}
+
+    @Override
+	public boolean equals(java.lang.Object other) {
+		if (other == null) return false
+		if (this.is(other)) return true
+		if (!(other instanceof Field)) return false
+		if (!other.canEqual(this)) return false
+
+		def o = other as Field
+
+		if (this.name?.toUpperCase() != o.name?.toUpperCase()) return false
+		if (this.type != o.type) return false
+		if (this.isNull != o.isNull) return false
+		if (this.isKey != o.isKey) return false
+		if (AllowLength(this) && this.length != o.length) return false
+		if (AllowPrecision(this) && this.precision != o.precision) return false
+		if (this.isAutoincrement != o.isAutoincrement) return false
+
+		return true
 	}
 }

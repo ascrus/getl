@@ -176,7 +176,7 @@ class SFTPManager extends Manager {
 		
 		clientSession = newSession()
 		try {
-			channelFtp = clientSession.openChannel("sftp")
+			channelFtp = clientSession.openChannel("sftp") as ChannelSftp
 			writeScriptHistoryFile("OPEN CHANNEL: sftp")
 			channelFtp.connect()
 			if (rootPath != null) currentPath = rootPath
@@ -333,17 +333,17 @@ class SFTPManager extends Manager {
 		writeScriptHistoryFile("COMMAND: pwd")
 		def curDir = channelFtp.pwd()
 		writeScriptHistoryFile("PWD: \"$curDir\"")
-		def cdDir
+		String cdDir = null
 		try {
 			def dirs = dirName.split("[/]")
 
-			dirs.each { dir ->
+			dirs.each { String dir ->
 				if (cdDir == null) cdDir = dir else cdDir = "$cdDir/$dir"
 				def isExists = true
 				try {
 					channelFtp.cd(dir)
 				}
-				catch (Throwable e) {
+				catch (Throwable ignored) {
 					isExists = false
 				}
 				if (!isExists) {
@@ -428,7 +428,7 @@ class SFTPManager extends Manager {
 			writeScriptHistoryFile("COMMAND: cd \"$dirName\"")
 			channelFtp.cd(dirName)
 		}
-		catch (Throwable e) {
+		catch (Throwable ignored) {
 			isExists = false
 		}
 		writeScriptHistoryFile("COMMAND: cd \"$cur\"")
@@ -442,9 +442,9 @@ class SFTPManager extends Manager {
 	
 	@Override
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
-		Integer res
+		Integer res = null
 		command = "cd \"$currentPath\" && $command"
-		ChannelExec channelCmd = clientSession.openChannel("exec")
+		def channelCmd = clientSession.openChannel("exec") as ChannelExec
 		try {
 			channelCmd.setCommand(command)
 			
@@ -476,7 +476,7 @@ class SFTPManager extends Manager {
 			channelCmd.disconnect()
 		}
 		
-		res
+		return res
 	}
 
 	@Override

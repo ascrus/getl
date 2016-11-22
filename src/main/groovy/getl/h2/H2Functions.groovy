@@ -158,16 +158,16 @@ class H2Functions {
 		QueryDataset ds = new QueryDataset(connection: conSource, query: query)
 		conSource.connected = true
 		
-		JDBCConnection conDest = JDBCConnection.CreateConnection(connection: driverClass, connectURL: connectURL, login: login, password: password)
+		JDBCConnection conDest = JDBCConnection.CreateConnection(connection: driverClass, connectURL: connectURL, login: login, password: password) as JDBCConnection
 		conDest.connected = true
 		TableDataset table = new TableDataset(connection: conDest, dbName: dbName, schemaName: schemaName, tableName: tableName)
-		long count
+		long count = 0
 		try {
 			count = new Flow().copy(source: ds, dest: table, dest_batchSize: batchSize)
 		}
-		catch (Exception e) {
-			throw e
-		}
+//		catch (Exception e) {
+//			throw e
+//		}
 		finally {
 			conDest.connected = false
 		}
@@ -190,7 +190,7 @@ class H2Functions {
 	 */
 	public static long CopyFromJDBC(java.sql.Connection sqlConn, String query, String driverClass, String connectURL,
 										String login, String password, String schemaName, String tableName, Long batchSize) {
-		JDBCConnection conSource = JDBCConnection.CreateConnection(connection: driverClass, connectURL: connectURL, login: login, password: password)
+		JDBCConnection conSource = JDBCConnection.CreateConnection(connection: driverClass, connectURL: connectURL, login: login, password: password) as JDBCConnection
 		conSource.connected = true
 		
 		H2Connection conDest = new H2Connection(javaConnection: sqlConn)
@@ -199,13 +199,13 @@ class H2Functions {
 		QueryDataset ds = new QueryDataset(connection: conSource, query: query)
 		
 		TableDataset table = new TableDataset(connection: conDest, schemaName: schemaName, tableName: tableName)
-		long count
+		long count = 0
 		try {
 			count = new Flow().copy(source: ds, dest: table, dest_batchSize: batchSize)
 		}
-		catch (Exception e) {
-			throw e
-		}
+//		catch (Exception e) {
+//			throw e
+//		}
 		finally {
 			conSource.connected = false
 		}

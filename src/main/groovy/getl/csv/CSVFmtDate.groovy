@@ -68,7 +68,7 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 			throw new NullPointerException("dateFormat should not be null");
 		}
 		
-		def l = StringUtils.NewLocale(localeStr)
+		StringUtils.NewLocale(localeStr)
 	}
 	
 	/**

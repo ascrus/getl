@@ -187,12 +187,11 @@ class FileManager extends Manager {
 		validConnect()
 		
 		def fn = ((path != null)?path + "/":"") + fileName
-		def f = fileFromLocalDir(fn)
-		
+
 		def dest = "${currentDir.path}/${fileName}"
 		FileUtils.CopyToFile(fn, dest, false)
 
-		def fSource = new File(fn)
+		def fSource = fileFromLocalDir(fn)
 		def fDest = new File(dest)
         fDest.setLastModified(fSource.lastModified())
 	}

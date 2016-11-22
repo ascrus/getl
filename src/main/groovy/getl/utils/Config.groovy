@@ -28,7 +28,7 @@ import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 
 import getl.exception.ExceptionGETL
-import getl.utils.MapUtils
+import groovy.transform.Synchronized
 
 /**
  * Configuration manager class
@@ -64,9 +64,9 @@ class Config {
 	/**
 	 * List of configuration files
 	 */
-	private static List files = []
-	public static List getFiles () { files }
-	public static void setFiles (def value) {
+	private static List<String> files = []
+	public static List<String> getFiles () { files }
+	public static void setFiles (List<String> value) {
 		files.clear()
 		files.addAll(value)
 	}
@@ -84,16 +84,22 @@ class Config {
 	/**
 	 * Content config file	
 	 */
-	public static final Map content = [vars: [:]]
+	public static final Map<String, Object> content = [vars: [:]]
 	
 	/**
 	 * Variables
 	 */
-	public static Map getVars() { Config.content."vars" }
-	
-	public void setVars(Map value) { 
-		if (vars == null) Config.content."vars" = [:]
-		vars.putAll(value)
+	public static Map getVars() { (Map<String, Object>)(Config.content."vars") }
+	public static void setVars(Map<String, Object> value) {
+		Map<String, Object> v
+		if (vars == null) {
+			v = new HashMap<String, Object>()
+			Config.content.put('vars', v)
+		}
+		else {
+			v = (Map<String, Object>)(Config.content."vars")
+		}
+		v.putAll(value)
 	}
 	
 	/**
@@ -133,12 +139,12 @@ class Config {
 		}
 		
 		if (files != null) {
-			files.each {
+			files.each { name ->
 				try { 
-					LoadConfigFile(new File(FullConfigName(it)), this.codePage)
+					LoadConfigFile(new File(FullConfigName(name)), this.codePage)
 				}
 				catch (Exception e) {
-					Logs.Severe("Error read config file \"${FullConfigName(it)}\"")
+					Logs.Severe("Error read config file \"${FullConfigName(name)}\"")
 					throw e
 				}
 			}
@@ -153,7 +159,8 @@ class Config {
 	 */
 	@groovy.transform.Synchronized
 	public static void LoadConfigClass(Class jobClass) {
-		LoadConfig(jobClass, this.codePage)
+        //noinspection GroovyAssignabilityCheck
+        LoadConfig(jobClass, this.codePage)
 	}
 	
 	/**
@@ -248,7 +255,7 @@ class Config {
 	@groovy.transform.Synchronized
 	public static void LoadSection(Reader reader) {
 		def json = new JsonSlurper()
-		def data
+		def data = null
 		try {
 			data = json.parse(reader)
 		}
@@ -260,8 +267,8 @@ class Config {
 			reader.close()
 		}
 		
-		Map vars = content.vars?:[:]
-		if (data.vars != null) MapUtils.MergeMap(vars, data.vars)
+		Map<String, Object> vars = (Map<String, Object>)(content.vars)?:[:]
+		if (data?.vars != null) MapUtils.MergeMap(vars, (Map<String, Object>)(data.vars))
 		
 		if (data != null) {
 			if (!vars.isEmpty() && data instanceof Map) {
@@ -269,14 +276,14 @@ class Config {
 					try {
 						data = MapUtils.EvalMacroValues(data, vars)
 					}
-					catch (groovy.lang.MissingPropertyException e) {
+					catch (MissingPropertyException e) {
 						Logs.Severe("${e.message}, avaible vars: ${vars.keySet().toList()}")
 						throw e
 					}
 				}
 			}
 		
-			MapUtils.MergeMap(content, data)
+			MapUtils.MergeMap(content, (Map<String, Object>)data)
 		}
 	}
 	
@@ -284,7 +291,7 @@ class Config {
 	 * Load configuration file to config section
 	 * @param fileName
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	public static void LoadSection (String fileName) {
 		LoadSection(new File(fileName), this.codePage)
 	}
@@ -413,7 +420,7 @@ class Config {
 	 */
 	@groovy.transform.Synchronized
 	public static void EvalConfig () {
-		def vars = Config.content."vars"?:[:]
+		def vars = (Config.content."vars" as Map)?:[:]
 		def evalContent = MapUtils.EvalMacroValues(Config.content, vars)
 		Config.content.clear()
 		Config.content.putAll(evalContent)

@@ -81,13 +81,13 @@ class SynchronizeObject {
 	}
 	
 	@groovy.transform.Synchronized
-	public Boolean addAllToList (List list) {
-		list.addAll(list)
+	public static Boolean addAllToList (List list) {
+		return list.addAll(list)
 	}
 	
 	@groovy.transform.Synchronized
-	public Boolean addAllToList (int index, List list) {
-		list.addAll(index, list)
+	public static Boolean addAllToList (int index, List list) {
+		return list.addAll(index, list)
 	}
 	
 	@groovy.transform.Synchronized

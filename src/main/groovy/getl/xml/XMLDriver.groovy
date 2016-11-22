@@ -52,7 +52,8 @@ class XMLDriver extends FileDriver {
 	}
 
 	@Override
-	protected List<Field> fields(Dataset dataset) {
+    public
+    List<Field> fields(Dataset dataset) {
 		return null
 	}
 	
@@ -62,7 +63,7 @@ class XMLDriver extends FileDriver {
 	 * @param initAttr
 	 * @param sb
 	 */
-	private void generateAttrRead (Dataset dataset, Closure initAttr, StringBuilder sb) {
+	private static void generateAttrRead (Dataset dataset, Closure initAttr, StringBuilder sb) {
 		List<Field> attrs = (dataset.params.attributeField != null)?dataset.params.attributeField:[]
 		if (attrs.isEmpty()) return
 		
@@ -142,7 +143,7 @@ class XMLDriver extends FileDriver {
 	 */
 	public void readAttrs (Dataset dataset, Map params) {
 		params = params?:[:]
-		String rootNode = dataset.params.rootNode
+//		String rootNode = dataset.params.rootNode
 		def data = readData(dataset, params)
 		
 		StringBuilder sb = new StringBuilder()
@@ -165,14 +166,14 @@ class XMLDriver extends FileDriver {
 	 * @return
 	 */
 	public def readData (Dataset dataset, Map params) {
-		XMLDataset xmlDataset = dataset
+		XMLDataset xmlDataset = dataset as XMLDataset
 		def xml = new XmlParser()
 
 		xmlDataset.features.each { String option, Boolean value ->
 			xml.setFeature(option, value)
 		}
 		
-		def data
+		def data = null
 		def reader = getFileReader(xmlDataset, params)
 		try {
 			data = xml.parse(reader)
@@ -181,7 +182,7 @@ class XMLDriver extends FileDriver {
 			reader.close()
 		}
 		
-		data
+		return data
 	}
 
 	/**
@@ -213,15 +214,16 @@ class XMLDriver extends FileDriver {
 		
 //		def initAttr = (params.initAttr != null)?params.initAttr:null
 
-		readRows(dataset, fields, rootNode, limit, data, params.initAttr, code)
+		readRows(dataset, fields, rootNode, limit, data, params.initAttr as Closure, code)
 	}
 
 	@Override
-	protected long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+    public
+    long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		Closure filter = params."filter"
 		
 		long countRec = 0
-		doRead(dataset, params, prepareCode) { row ->
+		doRead(dataset, params, prepareCode) { Map row ->
 			if (filter != null && !filter(row)) return
 			
 			countRec++
@@ -232,17 +234,20 @@ class XMLDriver extends FileDriver {
 	}
 
 	@Override
-	protected void openWrite(Dataset dataset, Map params, Closure prepareCode) {
+    public
+    void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void write(Dataset dataset, Map row) {
+    public
+    void write(Dataset dataset, Map row) {
 		throw new ExceptionGETL("Not supported")
 	}
 
 	@Override
-	protected void closeWrite(Dataset dataset) {
+    public
+    void closeWrite(Dataset dataset) {
 		throw new ExceptionGETL("Not supported")
 	}
 }

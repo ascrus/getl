@@ -19,27 +19,20 @@ class ExcelDriverTest extends GroovyTestCase {
     }
 
     void testEachRow() {
-		println "testEachRow ..."
-		
         def counter = 0
         excelDataset.eachRow {
             counter++
-			println it
         }
 
         assertEquals(2, counter)
     }
 
     void testLimit() {
-		println "testLimit ..."
-		
         excelDataset.limit = 1
         assertEquals(1, excelDataset.rows().size())
     }
 
     void testHeader() {
-		println "testHeader ..."
-		
 		try {
 	        excelDataset.header = true
 	        assertEquals(true, excelDataset.header)
@@ -53,19 +46,14 @@ class ExcelDriverTest extends GroovyTestCase {
     }
 
     void testNullHeader() {
-		println "testNullHeader ..."
         assertEquals(true, excelDataset.header)
     }
 
     void testHeaderResults() {
-		println "testHeaderResults ..."
-		
         assertEquals(2, excelDataset.rows().size())
     }
 
     void testListName() {
-		println "testListName ..."
-		
         assertEquals(listName, excelDataset.listName)
 
         excelDataset.listName = null
@@ -73,8 +61,6 @@ class ExcelDriverTest extends GroovyTestCase {
     }
 
     void testListNameAsZero() {
-		println "testListNameAsZero ..."
-		
         excelDataset.listName = 0
     }
 }

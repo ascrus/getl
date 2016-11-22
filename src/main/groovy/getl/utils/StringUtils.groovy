@@ -109,7 +109,7 @@ class StringUtils {
 	/** Replicate character */
 	public static String Replicate(String c, int len) {
 		if (len == 0) return ""
-		c.multiply(len)
+		return c.multiply(len)
 	}
 
 	/**
@@ -233,8 +233,8 @@ class StringUtils {
 	 */
 	public static String Delimiter2SplitExpression(String value) {
         String res = ""
-        value.each { 
-            if (it in ['|', '^', '\\', '$', '*', '.', '+', '?', '[', ']', '{', '}', '(', ')']) res += '\\' + it else res += it 
+        value.each { String c ->
+            if (c in ['|', '^', '\\', '$', '*', '.', '+', '?', '[', ']', '{', '}', '(', ')']) res += '\\' + c else res += c
         }
         
         res

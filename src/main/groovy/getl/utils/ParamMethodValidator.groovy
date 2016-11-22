@@ -32,7 +32,7 @@ import getl.exception.ExceptionGETL
  *
  */
 class ParamMethodValidator {
-	private final Map methodParams = [:]
+	private final Map<String, Object> methodParams = [:]
 
 	/**
 	 * Register list of parameters by method
@@ -65,7 +65,7 @@ class ParamMethodValidator {
 	 */
 	public List<String> methods () {
 		List<String> res = []
-		methodParams.each { key -> res << key }
+		methodParams.each { String key, value -> res << key }
 		
 		res
 	}
@@ -126,7 +126,7 @@ class ParamMethodValidator {
 		validationSub(content, contentName, contentName, excludeSections?:[])
 	}
 	
-	private void validationSub (Map content, String contentName, String path, List excludeSections) {
+	private void validationSub (Map<String, Object> content, String contentName, String path, List excludeSections) {
 		if (contentName in excludeSections) return
 		
 		List listMethods = methodParams."${contentName}"

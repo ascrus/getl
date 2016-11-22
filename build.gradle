@@ -2,7 +2,7 @@ apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-version = "1.2.07"
+version = "1.2.08"
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -27,7 +27,7 @@ dependencies {
 	compile 'org.codehaus.groovy:groovy-all:2.4.7'
 	compile 'com.jcraft:jsch:0.1.53'
 	compile 'net.sf.supercsv:super-csv:2.4.0'
-	compile 'com.h2database:h2:1.4.192'
+	compile 'com.h2database:h2:1.4.193'
 	compile ('org.apache.poi:poi-ooxml:3.14') {
 		exclude group: 'stax'
 	}

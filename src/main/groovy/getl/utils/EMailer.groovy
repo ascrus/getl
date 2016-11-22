@@ -164,7 +164,7 @@ class EMailer {
 		Properties mprops = new Properties()
 		mprops.setProperty("mail.transport.protocol", "smtp")
 		mprops.setProperty('mail.host', host)
-		mprops.setProperty("mail.smtp.port", port.toString())
+		mprops.setProperty("mail.smtp.port", String.valueOf(port))
 		if (auth != null) mprops.setProperty('mail.smtp.auth', auth.toString())
 		if (starttls != null) mprops.setProperty('mail.smtp.starttls.enable', starttls.toString())
 		if (ssl != null) mprops.setProperty('mail.smtp.ssl', ssl.toString())

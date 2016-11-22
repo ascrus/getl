@@ -111,12 +111,12 @@ END FOR;"""
 		}
 		
 		String connectionName = args."connection"
-		JDBCConnection connection = JDBCConnection.CreateConnection(config: connectionName)
+		JDBCConnection connection = JDBCConnection.CreateConnection(config: connectionName) as JDBCConnection
 		
 		
 		getl.jdbc.SQLScripter scripter = new getl.jdbc.SQLScripter(connection: connection, logEcho: "INFO")
-		scripter.vars.putAll(Config.content."vars")
-		scripter.loadFile(args."script", "utf-8")
+		scripter.vars.putAll(Config.content."vars" as Map)
+		scripter.loadFile(args."script" as String, "utf-8")
 		scripter.runSql()
 		Logs.Info("Finish, ${scripter.rowCount} rows processed")
 	}

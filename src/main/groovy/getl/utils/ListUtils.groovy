@@ -38,13 +38,15 @@ class ListUtils {
 	 * @return
 	 */
 	public static List CopyWhere(List list, Closure from) {
-		if (list == null) return
+		if (list == null) return null
 		
 		def result = []
 		list.each {  
-			if (from(it)) result << it
+			//noinspection GroovyAssignabilityCheck
+            if (from(it)) result << it
 		}
-		result
+
+		return result
 	}
 	
 	/**
@@ -58,7 +60,7 @@ class ListUtils {
 		
 		def res = []
 		list.each { res << "${quote}${it}${quote}" }
-		res
+		return res
 	}
 	
 	/**
@@ -70,7 +72,7 @@ class ListUtils {
 	public static List SortListTo(List list, Closure closure) {
 		if (list == null) return null
 		
-		list.sort(false, closure)
+		return list.sort(false, closure)
 	}
 	
 	/**
@@ -96,7 +98,7 @@ class ListUtils {
 		list.each {
 			res << it.toLowerCase()
 		}
-		res
+		return res
 	}
 	
 	/**
@@ -111,7 +113,7 @@ class ListUtils {
 		list.each {
 			res << it.toUpperCase()
 		}
-		res
+		return res
 	}
 	
 	/**
@@ -125,7 +127,7 @@ class ListUtils {
 		
 		def res = value.find { it != null }
 		
-		res
+		return res
 	}
 	
 	/**
@@ -156,7 +158,7 @@ class ListUtils {
 			}
 		}
 		
-		res
+		return res
 	}
 
 	/**
@@ -169,9 +171,14 @@ class ListUtils {
 		if (value == null) return null
 		
 		String[] res = value.split(expr)
-		(List)res.collect()
-	} 
-	
+		return (List)res.collect()
+	}
+
+    /**
+     * Build Json text by list
+     * @param list
+     * @return
+     */
 	public static String ToJson(List list) {
 		if (list == null) return null
 		
@@ -180,6 +187,6 @@ class ListUtils {
 		list.each { sb << "	$it,\n" }
 		sb << "]"
 		
-		sb.toString()
+		return sb.toString()
 	}
 }
