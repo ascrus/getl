@@ -30,6 +30,9 @@ import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import groovy.json.JsonSlurper
 
+import javax.sql.rowset.serial.SerialBlob
+import javax.sql.rowset.serial.SerialClob
+
 /**
  * Generation code library functions class 
  * @author Alexsey Konstantinov
@@ -56,11 +59,11 @@ class GenerationUtils {
 	 * @return
 	 */
 	public static String ProcessAlias(String value, boolean quote) {
-		List<String> elementsPath = value.split("[.]") .toList()
+		List<String> elementsPath = value.split("[.]").toList()
 		for (int i = 0; i < elementsPath.size(); i++) {
 			elementsPath[i] = ((quote)?'"':"") + elementsPath[i] + ((quote)?'"':"") + ((i < elementsPath.size() - 1)?"?":"")
 		}
-		elementsPath.join(".")
+		return elementsPath.join(".")
 	}
 	
 	/** 
@@ -71,7 +74,7 @@ class GenerationUtils {
 	 */
 	public static String Field2Alias(Field field, boolean quote) {
 		String a = (field.alias != null)?field.alias:field.name
-		ProcessAlias(a, quote)
+        return ProcessAlias(a, quote)
 	}
 	
 	/**
@@ -80,7 +83,7 @@ class GenerationUtils {
 	 * @return
 	 */
 	public static String Field2Alias(Field field) {
-		Field2Alias(field, true)
+        return Field2Alias(field, true)
 	}
 	
 	
@@ -133,15 +136,15 @@ class GenerationUtils {
 		String df
 		
 		if (type == getl.data.Field.Type.DATE)
-			df = "yyyy-MM-dd"
+			df = 'yyyy-MM-dd'
 		else if (type == getl.data.Field.Type.TIME)
-			df = "HH:mm:ss"
+			df = 'HH:mm:ss'
 		else if (type == getl.data.Field.Type.DATETIME)
-			df = "yyyy-MM-dd HH:mm:ss"
+			df = 'yyyy-MM-dd HH:mm:ss'
 		else
 			throw new ExceptionGETL("Can not return date format from \"${type}\" type")
 
-		df
+		return df
 	}
 	
 	/**
@@ -415,14 +418,14 @@ class GenerationUtils {
 
 	@groovy.transform.CompileStatic
 	public static int GenerateInt () {
-		random.nextInt()
+        return random.nextInt()
 	}
 	
 	@groovy.transform.CompileStatic
 	public static int GenerateInt (int minValue, int maxValue) {
 		def res = minValue - 1
 		while (res < minValue) res = random.nextInt(maxValue + 1)
-		res
+        return res
 	}
 	
 	@groovy.transform.CompileStatic
@@ -432,23 +435,23 @@ class GenerationUtils {
 		
 		def l2 = (int)(length / 2)
 		def l = GenerateInt(l2, length)
-		
-		StringUtils.LeftStr(result + "a", l)
+
+        return StringUtils.LeftStr(result + "a", l)
 	}
 	
 	@groovy.transform.CompileStatic
 	public static long GenerateLong () {
-		random.nextLong()
+        return random.nextLong()
 	}
 	
 	@groovy.transform.CompileStatic
 	public static BigDecimal GenerateNumeric () {
-		BigDecimal.valueOf(random.nextDouble()) + random.nextInt()
+        return BigDecimal.valueOf(random.nextDouble()) + random.nextInt()
 	}
 	
 	@groovy.transform.CompileStatic
 	public static BigDecimal GenerateNumeric (int precision) {
-		NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextInt(), precision)
+        return NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextInt(), precision)
 	}
 	
 	@groovy.transform.CompileStatic
@@ -471,37 +474,37 @@ class GenerationUtils {
 	
 	@groovy.transform.CompileStatic
 	public static double GenerateDouble () {
-		random.nextDouble() + random.nextLong()
+        return random.nextDouble() + random.nextLong()
 	}
 	
 	@groovy.transform.CompileStatic
 	public static boolean GenerateBoolean () {
-		random.nextBoolean()
+        return random.nextBoolean()
 	}
 	
 	@groovy.transform.CompileStatic
 	public static Date GenerateDate() {
-		DateUtils.AddDate("dd", -GenerateInt(0, 365), DateUtils.CurrentDate())
+        return DateUtils.AddDate("dd", -GenerateInt(0, 365), DateUtils.CurrentDate())
 	}
 	
 	@groovy.transform.CompileStatic
 	public static Date GenerateDate(int days) {
-		DateUtils.AddDate("dd", -GenerateInt(0, days), DateUtils.CurrentDate())
+        return DateUtils.AddDate("dd", -GenerateInt(0, days), DateUtils.CurrentDate())
 	}
 	
 	@groovy.transform.CompileStatic
 	public static Date GenerateDateTime() {
-		DateUtils.AddDate("ss", -GenerateInt(0, 525600), DateUtils.Now())
+        return DateUtils.AddDate("ss", -GenerateInt(0, 525600), DateUtils.Now())
 	}
 	
 	@groovy.transform.CompileStatic
 	public static Date GenerateDateTime(int seconds) {
-		DateUtils.AddDate("ss", -GenerateInt(0, seconds), DateUtils.Now())
+        return DateUtils.AddDate("ss", -GenerateInt(0, seconds), DateUtils.Now())
 	}
 	
 	@groovy.transform.CompileStatic
 	public static def GenerateValue (Field f) {
-		GenerateValue(f, null)
+        return GenerateValue(f, null)
 	}
 	
 	/**
@@ -524,16 +527,24 @@ class GenerationUtils {
 			case getl.data.Field.Type.BOOLEAN:
 				result = GenerateBoolean()
 				break
-			case getl.data.Field.Type.INTEGER: case getl.data.Field.Type.BIGINT:
+			case getl.data.Field.Type.INTEGER:
+                if (f.isKey && rowID != null) {
+                    result = rowID
+                }
+                else {
+                    if (f.minValue == null && f.maxValue == null) result = GenerateInt() else result = GenerateInt((Integer)f.minValue?:0, (Integer)f.maxValue?:1000000)
+                }
+
+                break
+			case getl.data.Field.Type.BIGINT:
 				if (f.isKey && rowID != null) {
 					result = rowID
 				}
 				else {
-					if (f.minValue == null && f.maxValue == null) result = GenerateInt() else result = GenerateInt((Integer)f.minValue?:0, (Integer)f.maxValue?:1000000)
+					if (f.minValue == null && f.maxValue == null) result = GenerateLong() else result = Long.valueOf(GenerateInt((Integer)f.minValue?:0, (Integer)f.maxValue?:1000000))
 				}
-				if (f.type == getl.data.Field.Type.BIGINT) result = ((BigDecimal)result).longValue()
-				
-				break 
+
+				break
 			case getl.data.Field.Type.NUMERIC:
 				if (f.isKey && rowID != null) {
 					result = rowID
@@ -567,16 +578,22 @@ class GenerationUtils {
 			case getl.data.Field.Type.DATETIME:
 				result = GenerateDateTime()
 				break
+            case getl.data.Field.Type.TEXT:
+                result = new SerialClob(GenerateString(l).chars)
+                break
+            case getl.data.Field.Type.BLOB:
+                result = new SerialBlob(GenerateString(l).bytes)
+                break
 			default:
 				result = GenerateString(l)
 		}
-		
-		result
+
+        return result
 	}
 	
 	@groovy.transform.CompileStatic
 	public static Map GenerateRowValues (List<Field> field) {
-		GenerateRowValues(field, null)
+        return GenerateRowValues(field, null)
 	}
 	
 	@groovy.transform.CompileStatic
@@ -587,8 +604,8 @@ class GenerationUtils {
 			def value = GenerateValue(f, rowID)
 			row.put(fieldName, value)
 		}
-		
-		row
+
+        return row
 	}
 	
 	/**
@@ -605,7 +622,7 @@ class GenerationUtils {
 	@groovy.transform.CompileStatic
 	public static String GenerateCommand(String command, int numTab, boolean condition) {
 		if (!condition) return ""
-		StringUtils.Replicate("\t", numTab) + command
+        return StringUtils.Replicate("\t", numTab) + command
 	}
 	
 	/**
@@ -679,7 +696,7 @@ sb << """
 		}
 		sb << "res\n\n}"
 		
-		sb.toString()
+		return sb.toString()
 	}
 	
 	/**
@@ -697,8 +714,8 @@ sb << """
 		fields.each { Field f ->
 			l << f.toMap()
 		}
-		
-		res
+
+        return res
 	}
 	
 	/**
@@ -715,8 +732,8 @@ sb << """
 			if (excludeFields != null && excludeFields.find { it.toLowerCase() == f.name.toLowerCase() } != null) return
 			res << dataset.sqlObjectName(f.name)
 		}
-		
-		res
+
+        return res
 	}
 	
 	/**
@@ -725,7 +742,7 @@ sb << """
 	 * @return
 	 */
 	public static String GenerateJsonFields (List<Field> fields) {
-		MapUtils.ToJson(Fields2Map(fields))
+        return MapUtils.ToJson(Fields2Map(fields))
 	}
 	
 	/**
@@ -739,8 +756,8 @@ sb << """
 		value.fields?.each { Map f ->
 			res << Field.ParseMap(f)
 		}
-		
-		res
+
+        return res
 	}
 	
 	/**
@@ -753,8 +770,8 @@ sb << """
 		
 		def b = new JsonSlurper()
 		Map l = b.parseText(value) as Map
-		
-		Map2Fields(l)
+
+        return Map2Fields(l)
 	}
 	
 	/**
@@ -772,7 +789,7 @@ sb << """
 				fields.remove(o)
 			}
 		}
-		res
+        return res
 	}
 
 	/**
@@ -799,8 +816,8 @@ sb << """
 				res << nf
 			} 
 		}
-		
-		res
+
+        return res
 	}
 
 	/**
@@ -809,7 +826,7 @@ sb << """
 	 * @return
 	 */												
 	public static def EvalGroovyScript(String value) {
-		EvalGroovyScript(value, [:])
+        return EvalGroovyScript(value, [:])
 	}
 
 	/**
@@ -818,7 +835,7 @@ sb << """
 	 * @return
 	 */
 	public static Closure EvalGroovyClosure(String value) {
-		(Closure)EvalGroovyScript(value, [:])
+        return (Closure)EvalGroovyScript(value, [:])
 	}
 
 	/**
@@ -828,7 +845,7 @@ sb << """
 	 * @return
 	 */
 	public static def EvalGroovyClosure(String value, Map<String, Object> vars) {
-		(Closure)EvalGroovyScript(value, vars)
+        return (Closure)EvalGroovyScript(value, vars)
 	}
 
 	/**
@@ -859,8 +876,8 @@ sb << """
 			Logs.Dump(e, 'GenerationUtils', 'EvalGroovyScript', sb.toString())
 			throw e
 		}
-		
-		res
+
+        return res
 	}
 	
 	/**
@@ -876,8 +893,8 @@ sb << """
 			key = '${' + key + '}'
 			value = value.replace(key, val.toString())
 		}
-		
-		value
+
+        return value
 	}
 	
 	/**
@@ -942,7 +959,7 @@ sb << """
 	public static String SqlObjectName (JDBCConnection connection, String name) {
 		JDBCDriver drv = connection.driver as JDBCDriver
 
-		drv.prepareObjectNameForSQL(name)
+        return drv.prepareObjectNameForSQL(name)
 	}
 	
 	/**
@@ -958,14 +975,19 @@ sb << """
 		listNames.each { name ->
 			res << drv.prepareObjectNameForSQL(name)
 		}
-		
-		res
+
+        return res
 	}
-	
+
+    /**
+     * Remove all pseudo character in field name
+     * @param fieldName
+     * @return
+     */
 	public static String Field2ParamName(String fieldName) {
 		if (fieldName == null) return null
-		
-		fieldName.replaceAll("(?i)[^a-z0-9_]", "_").toLowerCase()
+
+        return fieldName.replaceAll("(?i)[^a-z0-9_]", "_").toLowerCase()
 	}
 	
 	/**
@@ -990,8 +1012,8 @@ sb << """
 				res << expr.replace("{orig}", f.name.toLowerCase()).replace("{field}", SqlObjectName(connection, f.name)).replace("{param}", "${Field2ParamName(f.name)}")
 			}
 		}
-		
-		res
+
+        return res
 	}
 	
 	/**
@@ -1013,8 +1035,8 @@ sb << """
 				}
 			}
 		}
-		
-		res
+
+        return res
 	}
 	
 	/**
@@ -1032,8 +1054,8 @@ sb << """
 				if (!(f.name.toLowerCase() in excludeFields)) res.put(f.name.toLowerCase(), row.get(f.name.toLowerCase()))
 			}
 		}
-		
-		res
+
+        return res
 	}
 
 	/**
@@ -1048,8 +1070,8 @@ sb << """
 		fields.each { String n ->
 			res << row.get(n.toLowerCase())
 		}
-		
-		res
+
+        return res
 	}
 	
 	/**
@@ -1074,8 +1096,8 @@ sb << """
 				res.put(n.toUpperCase(), row.get(n))
 			}
 		}
-		
-		res
+
+        return res
 	}
 
 	/**
@@ -1099,7 +1121,7 @@ sb << """
 		sb << "{ java.sql.Connection connection, inRow, Map outRow ->\n"
 		def i = 0
 		fields.each { Field f ->
-			String methodGetValue = ((f.getMethod?:"{field}").replace("{field}", "inRow.'${f.name}'"))
+			String methodGetValue = ((f.getMethod?:"{field}").replace("{field}", "inRow.'${f.name.toLowerCase()}'"))
 			
 			if (f.type == getl.data.Field.Type.DATE) {
 				sb << "outRow.'${f.name.toLowerCase()}' = getl.utils.DateUtils.ClearTime($methodGetValue)\n"
@@ -1130,8 +1152,8 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 		def statement = sb.toString()
 //		println statement
 		Closure code = EvalGroovyClosure(statement)
-		
-		[statement: statement, code: code]
+
+        return [statement: statement, code: code]
 	}
 	
 	/**
@@ -1143,11 +1165,11 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 		StringBuilder sb = new StringBuilder()
 		sb << "{ Map inRow, outRow ->\n"
 		fields.each { Field f ->
-			sb << "outRow.'${f.name}' = inRow.'${f.name.toLowerCase()}'\n"
+			sb << "outRow.'${f.name.toLowerCase()}' = inRow.'${f.name.toLowerCase()}'\n"
 		}
 		sb << "}"
 		Closure result = GenerationUtils.EvalGroovyClosure(sb.toString())
-		result
+        return result
 	}
 	
 	public static String GenerateSetParam(JDBCDriver driver, int paramNum, int fieldType, String value) {
@@ -1203,7 +1225,7 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 			default:
 				res = "if ($value != null) _getl_stat.setObject($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.OBJECT)"
 		}
-		
-		res
+
+        return res
 	}
 }
