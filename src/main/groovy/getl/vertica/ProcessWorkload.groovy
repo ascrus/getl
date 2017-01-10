@@ -37,7 +37,7 @@ import getl.stat.*
 class ProcessWorkload extends Job {
 	VerticaConnection cVertica = new VerticaConnection(config: "vertica")
 	QueryDataset qTables = new QueryDataset(connection: cVertica)
-	QueryDataset qWorkload = new QueryDataset(connection: cVertica, query: "SELECT ANALYZE_WORKLOAD('', true)")
+	QueryDataset qWorkload = new QueryDataset(connection: cVertica, query: "SELECT ANALYZE_WORKLOAD('')")
 	
 	static main(args) {
 		new ProcessWorkload().run(args)
@@ -46,16 +46,19 @@ class ProcessWorkload extends Job {
 	@Override
 	public void process() {
 		Logs.Info("### Analyze vertica workload utilite")
-		
+
 		if (Config.content."interval" != null) {
+			Logs.Info("Use workload from time \"${Config.content."interval"}\"")
 			qWorkload.query = "SELECT ANALYZE_WORKLOAD('', ${Config.content."interval"})"
-			Logs.Info("Use workload interval \"${Config.content."interval"}\"")
-		} 
+		}
+		else if (BoolUtils.IsValue(Config.content."save")) {
+			Logs.Info("Use workload with save result")
+			qWorkload.query = "SELECT ANALYZE_WORKLOAD('', true)"
+		}
 
 		List excludeTables = (Config.content."exclude" as List)?:[]
 		def excludeWhere = ""
-		
-		
+
 		if (!excludeTables.isEmpty()) {
 			Logs.Info("Excluded $excludeTables schemas")
 			excludeWhere = "AND Lower(table_schema) NOT IN (${ListUtils.QuoteList(excludeTables, "'")*.toLowerCase().join(', ')})"
