@@ -24,3 +24,5 @@ out/
 ### Java template
 *.class
 
+### Config files for test modules
+tests/vertica/
