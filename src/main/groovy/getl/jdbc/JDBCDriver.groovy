@@ -26,6 +26,7 @@ package getl.jdbc
 
 import groovy.transform.InheritConstructors
 import groovy.sql.Sql
+import sun.misc.ClassLoaderUtil
 
 import java.sql.DriverManager
 import java.sql.PreparedStatement
@@ -242,18 +243,18 @@ class JDBCDriver extends Driver {
 	 */
 	public Map getSqlType () {
 		[
-			"STRING": [name: "varchar", useLength: sqlTypeUse.ALWAYS], 
-			"INTEGER": [name: "int"], 
-			"BIGINT": [name: "bigint"], 
-			"NUMERIC": [name: "decimal", useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.SOMETIMES], 
-			"DOUBLE": [name: "double"], 
-			"BOOLEAN": [name: "boolean"], 
-			"DATE": [name: "date"],
-			"TIME": [name: "time"], 
-			"DATETIME": [name: "timestamp"], 
-			"BLOB": [name: "blob", useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535], 
-			"TEXT": [name: "clob", useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535], 
-			"OBJECT": [name: "object"]
+			STRING: [name: 'varchar', useLength: sqlTypeUse.ALWAYS],
+			INTEGER: [name: 'int'],
+			BIGINT: [name: 'bigint'],
+			NUMERIC: [name: 'decimal', useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.SOMETIMES],
+			DOUBLE: [name: 'double'],
+			BOOLEAN: [name: 'boolean'],
+			DATE: [name: 'date'],
+			TIME: [name: 'time'],
+			DATETIME: [name: 'timestamp'],
+			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
+			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
+			OBJECT: [name: 'object']
 		]
 	}
 	
@@ -265,17 +266,17 @@ class JDBCDriver extends Driver {
 	 * @return
 	 */
 	public String type2sqlType (Field field, boolean useNativeDBType) {
-		if (field == null) throw new ExceptionGETL("Required field object")
+		if (field == null) throw new ExceptionGETL('Required field object')
 		
 		def type = field.type.toString()
 		def rule = sqlType."$type"
 		if (rule == null) throw new ExceptionGETL("Can not generate type ${field.type}")
 		
-		def name = (field.typeName != null && useNativeDBType)?field.typeName:rule."name"
-		def useLength = rule."useLength"?:sqlTypeUse.NEVER
-		def defaultLength = rule."defaultLength"
-		def usePrecision = rule."usePrecision"?:sqlTypeUse.NEVER
-		def defaultPrecision = rule."defaultPrecision"
+		def name = (field.typeName != null && useNativeDBType)?field.typeName:rule.name
+		def useLength = rule.useLength?:sqlTypeUse.NEVER
+		def defaultLength = rule.defaultLength
+		def usePrecision = rule.usePrecision?:sqlTypeUse.NEVER
+		def defaultPrecision = rule.defaultPrecision
 		
 		def length = field.length?:defaultLength
 		def precision = (length == null)?null:(field.precision?:defaultPrecision)
@@ -286,13 +287,13 @@ class JDBCDriver extends Driver {
 		StringBuilder res = new StringBuilder()
 		res << name
 		if (useLength != sqlTypeUse.NEVER && length != null) {
-			res << "("
+			res << '('
 			res << length
 			if (usePrecision != sqlTypeUse.NEVER && precision != null) {
-				res << ", "
+				res << ', '
 				res << precision
 			}
-			res << ")"
+			res << ')'
 		}
 		
 		res.toString()
@@ -350,15 +351,23 @@ class JDBCDriver extends Driver {
 	}
 	
 	@groovy.transform.Synchronized
-	public static Sql NewSql (String url, String login, String password, String drvName, int loginTimeout) {
+	public static Sql NewSql (Class driverClass, String url, String login, String password, String drvName, int loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
+        Sql sql
 		try {
-			Sql.newInstance(url, login, password, drvName)
+            def javaDriver = driverClass.newInstance() as java.sql.Driver
+            def prop = new Properties()
+            if (login != null) prop.user = login
+            if (password != null) prop.password = password
+            def javaCon = javaDriver.connect(url, prop)
+            sql = new Sql(javaCon)
 		}
 		catch (SQLException e) {
 			Logs.Severe("Unable connect to \"$url\" with \"$drvName\" driver")
 			throw e
 		}
+
+        return sql
 	}
 	
 	@Override
@@ -375,11 +384,22 @@ class JDBCDriver extends Driver {
 			def password = con.password
 			String conParams = buildConnectParams()
 			
-			def drvName = con.params."driverName" as String
+			def drvName = con.params.driverName as String
 			if (drvName == null) throw new ExceptionGETL("Required \"driverName\" for connect to server")
-			Class.forName(drvName)
+
+            def drvPath = con.params.driverPath as String
+            Class jdbcClass
+            if (drvPath == null) {
+                jdbcClass = Class.forName(drvName)
+            }
+            else {
+                def drvFile = new File(drvPath)
+                if (!drvFile.exists()) throw new ExceptionGETL("Not found driver file \"$drvPath\"")
+                URLClassLoader cl = new URLClassLoader(new URL("file:///${drvFile.absolutePath}"))
+                jdbcClass = Class.forName(drvName, true, cl)
+            }
+
 			def loginTimeout = con.loginTimeout?:30
-			
 			def url = null
 			Map server
 			def notConnected = true
@@ -403,7 +423,7 @@ class JDBCDriver extends Driver {
 				url = url + conParams
 
 				try {
-					sql = NewSql(url, login, password, drvName, loginTimeout)
+					sql = NewSql(jdbcClass, url, login, password, drvName, loginTimeout)
 					notConnected = false
 				}
 				catch (Throwable e) {
@@ -425,23 +445,56 @@ class JDBCDriver extends Driver {
 			sql.withStatement{ stmt -> 
 				if (con.fetchSize != null) stmt.fetchSize = con.fetchSize
 				if (con.queryTimeout != null) stmt.queryTimeout = con.queryTimeout
-			} 
-			if (con.sessionProperty != null) sql.properties.putAll(con.sessionProperty)
+			}
 		}
 		
 		connectDate = DateUtils.Now()
 		sqlConnect = sql
 	}
-	
-	protected String sessionID() { null }
-	
+
+    /**
+     * Return session ID
+     */
+	protected String sessionID() { return null }
+
+    /**
+     * Set autocommit value
+     * @param value
+     */
 	protected void setAutoCommit(boolean value) {
 		sqlConnect.getConnection().autoCommit = value
 	}
 
+    /**
+     * Sql query by change session property value
+     */
+    protected String getChangeSessionPropertyQuery() { return null }
+
+    /**
+     * Change session property value
+     * @param name
+     * @param value
+     */
+    public void changeSessionProperty(String name, def value) {
+        if (changeSessionPropertyQuery == null) throw new ExceptionGETL("Current driver not allowed change session property value")
+        try {
+            (connection as JDBCConnection).executeCommand(command: StringUtils.EvalMacroString(changeSessionPropertyQuery, [name: name, value: value]))
+        }
+        catch (Exception e) {
+            Logs.Severe("Error change session property \"$name\" to value \"$value\"")
+            throw e
+        }
+    }
+
+    /**
+     * Init session properties after connected to database
+     */
+    protected void initSessionProperties() {
+        (connection as JDBCConnection).sessionProperty.each { String name, def value -> changeSessionProperty(name, value) }
+    }
+
 	@Override
-	public
-	void disconnect() {
+	public void disconnect() {
 		if (sqlConnect != null) sqlConnect.close()
 		sqlConnect = null
 		
@@ -646,12 +699,15 @@ ${extend}'''
 		def temporary = ""
 		switch (tableType) {
 			case JDBCDataset.Type.GLOBAL_TEMPORARY:
+                if (!isSupport(Driver.Support.TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables')
 				temporary = "GLOBAL TEMPORARY"
 				break
 			case JDBCDataset.Type.LOCAL_TEMPORARY:
+                if (!isSupport(Driver.Support.TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables')
 				temporary = "LOCAL TEMPORARY"
 				break
 			case JDBCDataset.Type.MEMORY:
+                if (!isSupport(Driver.Support.MEMORY)) throw new ExceptionGETL('Driver not support mempry tables')
 				temporary = "MEMORY"
 				break
 		}
@@ -667,6 +723,9 @@ ${extend}'''
 		dataset.field.each { Field f ->
 //			if (f.isReadOnly) return
 			try {
+                if (f.type == Field.Type.BLOB && !isSupport(Driver.Support.BLOB)) throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")")
+                if (f.type == Field.Type.TEXT && !isSupport(Driver.Support.CLOB)) throw new ExceptionGETL("Driver not support clob fields (field \"${f.name}\")")
+
 				String s = "	${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((!f.isNull)?" NOT NULL":"") + 
 							((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
 							((f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
@@ -1113,6 +1172,10 @@ $sql
 				f.close()
 			}
 		}
+
+        if (con.sqlHistoryOutput) {
+            println "SQL [login: ${con.login} session: ${con.sessionID}]:\n$sql\n"
+        }
 	}
 
 	@Override

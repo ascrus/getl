@@ -52,6 +52,6 @@ class VerticaConnection extends JDBCConnection {
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()
-		driverName = "com.vertica.jdbc.Driver"
+		driverName = 'com.vertica.jdbc.Driver'
 	}
 }

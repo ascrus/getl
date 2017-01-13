@@ -39,12 +39,17 @@ class PostgreSQLDriver extends JDBCDriver {
 	@Override
 	public List<Driver.Support> supported() {
 		List<Driver.Support> result = super.supported()
+        result << Driver.Support.BLOB
+        result << Driver.Support.CLOB
 		result << Driver.Support.INDEX
-		result
+		return result
 	}
 	
 	@Override
 	public String defaultConnectURL () {
-		"jdbc:postgresql://{host}/{database}"
+		return 'jdbc:postgresql://{host}/{database}'
 	}
+
+	@Override
+	protected String getChangeSessionPropertyQuery() { return 'SET {name} TO {value}' }
 }

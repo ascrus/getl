@@ -41,8 +41,8 @@ import getl.utils.*
 class OracleDriver extends JDBCDriver {
 	OracleDriver () {
 		super()
-		caseObjectName = "UPPER"
-		sqlType."BIGINT"."name" = "number"
+		caseObjectName = 'UPPER'
+		sqlType.BIGINT.name = 'number'
 		
 		methodParams.register("eachRow", ["scn", "timestamp", "hints", "usePartition"])
 	}
@@ -50,9 +50,11 @@ class OracleDriver extends JDBCDriver {
 	@Override
 	public List<Driver.Support> supported() {
 		List<Driver.Support> result = super.supported()
+        result << Driver.Support.BLOB
+        result << Driver.Support.CLOB
 		result << Driver.Support.TEMPORARY
 		result << Driver.Support.INDEX
-		result
+		return result
 	}
 	
 	@Override
@@ -60,25 +62,28 @@ class OracleDriver extends JDBCDriver {
 		List<Driver.Operation> result = super.operations()
 		result << Driver.Operation.BULKLOAD
 		result << Driver.Operation.CREATE
-		result
+		return result
 	}
 	
 	@Override
-	public String blobClosureWrite () { '{ byte[] value -> def blob = _getl_con.createBlob(); def stream = blob.getBinaryOutputStream(); stream.write(value); stream.close(); blob }' }
+	public String blobClosureWrite () {
+        return
+            '{ byte[] value -> def blob = _getl_con.createBlob(); def stream = blob.getBinaryOutputStream(); stream.write(value); stream.close(); blob }'
+    }
 	
 	@Override
-	public boolean blobReadAsObject () { false }
+	public boolean blobReadAsObject () { return false }
 	
 	@Override
-	public String clobClosureWrite () { '{ String value -> def clob = _getl_con.createClob(); clob.setString(1, value); clob }' }
+	public String clobClosureWrite () { return '{ String value -> def clob = _getl_con.createClob(); clob.setString(1, value); clob }' }
 	
 	@Override
 	public Map getSqlType () {
 		Map res = super.getSqlType()
-		res."BLOB"."name" = "raw"
-		res."TEXT"."useLength" = JDBCDriver.sqlTypeUse.NEVER
+		res.BLOB.name = 'raw'
+		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
 		
-		res
+		return res
 	}
 	
 	/**
@@ -96,7 +101,7 @@ class OracleDriver extends JDBCDriver {
 		def m = name =~ /([^a-zA-Z0-9_])/
 		if (m.size() > 0) res = prefix + name + prefix else res = prefix + name.toUpperCase() + prefix
 		
-		res
+		return res
 	}
 	
 	@Override
@@ -123,8 +128,7 @@ class OracleDriver extends JDBCDriver {
 	}
 	
 	@Override
-    public
-    void prepareField (Field field) {
+    public void prepareField (Field field) {
 		super.prepareField(field)
 		
 		if (field.type == Field.Type.NUMERIC) {
@@ -192,6 +196,9 @@ class OracleDriver extends JDBCDriver {
 	
 	@Override
 	public String defaultConnectURL () {
-		"jdbc:oracle:thin:@{host}:{database}"
+		return 'jdbc:oracle:thin:@{host}:{database}'
 	}
+
+	@Override
+	protected String getChangeSessionPropertyQuery() { return 'ALTER SESSION SET {name} = \'{value}\'' }
 }

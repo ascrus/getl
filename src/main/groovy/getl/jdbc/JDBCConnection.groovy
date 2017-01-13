@@ -55,8 +55,8 @@ class JDBCConnection extends Connection {
 	protected void registerParameters () {
 		super.registerParameters()
 		methodParams.register("Super", ["login", "password", "connectURL", "sqlHistoryFile", "autoCommit", "connectProperty", "dbName",
-			"javaConnection", "maskDate", "maskDateTime", "sessionProperty", "maskTime", "schemaName", "driverName", "connectHost", "connectDatabase",
-			"balancer", "fetchSize", "loginTimeout", "queryTimeout"])
+			"javaConnection", "maskDate", "maskDateTime", "sessionProperty", "maskTime", "schemaName", "driverName", "driverPath",
+            "connectHost", "connectDatabase", "balancer", "fetchSize", "loginTimeout", "queryTimeout", "sqlHistoryOutput"])
 	}
 	
 	@Override
@@ -71,6 +71,9 @@ class JDBCConnection extends Connection {
 		JDBCDriver drv = driver as JDBCDriver
 		sysParams.sessionID = drv.sessionID()
 		drv.saveToHistory("-- USER CONNECT (URL: ${sysParams."currentConnectURL"})${(autoCommit)?' WITH AUTOCOMMIT':''}")
+        if (!sessionProperty.isEmpty()) {
+            drv.initSessionProperties()
+        }
 	}
 	
 	protected void doDoneDisconnect () {
@@ -125,10 +128,15 @@ class JDBCConnection extends Connection {
 	
 	/**
 	 * JDBC driver name
-	 * @return
 	 */
-	public String getDriverName () { params.driverName }
-	public void setDriverName (String value) { params.driverName = value }
+	public String getDriverName() { params.driverName }
+	public void setDriverName(String value) { params.driverName = value }
+
+    /**
+     * JDBC driver jar file path
+     */
+    public String getDriverPath() { params.driverPath }
+    public void setDriverPath(String value) { params.driverPath = value }
 	
 	/**
 	 * Connection login
@@ -180,6 +188,11 @@ class JDBCConnection extends Connection {
 		connectProperty.clear()
 		addConnectionProperty(value)
 	}
+
+	/**
+	 * Merge connection properties
+	 * @param value
+	 */
 	public void addConnectionProperty (Map value) {
 		connectProperty.putAll(value)
 	}
@@ -190,12 +203,18 @@ class JDBCConnection extends Connection {
 	 */
 	public Map getSessionProperty () {
 		if (params.sessionProperty == null) params.sessionProperty = [:]
-		params.sessionProperty
+		return params.sessionProperty
 	}
 	public void setSessionProperty (Map value) {
 		sessionProperty.clear()
 		addSessionProperty(value)
 	}
+
+	/**
+	 * Merge session properties
+	 * @param value
+	 * @return
+	 */
 	public addSessionProperty (Map value) {
 		sessionProperty.putAll(value)
 	}
@@ -222,10 +241,18 @@ class JDBCConnection extends Connection {
 	 * Name of file history sql commands
 	 */
 	public String getSqlHistoryFile () { params.sqlHistoryFile }
-	public void setSqlHistoryFile (String value) { 
-		params.sqlHistoryFile = value
-		fileNameSqlHistory = null 
-	}
+    public void setSqlHistoryFile (String value) {
+        params.sqlHistoryFile = value
+        fileNameSqlHistory = null
+    }
+
+    /**
+     * Output sql commands to console
+     */
+    public Boolean getSqlHistoryOutput () { BoolUtils.IsValue(params.sqlHistoryOutput, false) }
+    public void setSqlHistoryOutput (Boolean value) {
+        params.sqlHistoryOutput = value
+    }
 	
 	/**
 	 * Fetch size records for read query 

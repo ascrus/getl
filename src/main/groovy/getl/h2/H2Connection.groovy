@@ -25,6 +25,8 @@
 package getl.h2
 
 import groovy.transform.InheritConstructors
+
+import getl.jdbc.JDBCDriver
 import getl.driver.Driver
 import getl.jdbc.JDBCConnection
 import getl.utils.*
@@ -38,37 +40,46 @@ import getl.utils.*
 class H2Connection extends JDBCConnection {
 	H2Connection () {
 		super(driver: H2Driver)
-		if (connectProperty."LOCK_TIMEOUT" == null) connectProperty."LOCK_TIMEOUT" = 10000
+		if (connectProperty.LOCK_TIMEOUT == null) connectProperty.LOCK_TIMEOUT = 10000
 	}
 	
 	H2Connection (Map params) {
 		super(new HashMap([driver: H2Driver]) + params)
-		if (connectProperty."LOCK_TIMEOUT" == null) connectProperty."LOCK_TIMEOUT" = 10000
-		if (this.getClass().name == 'getl.h2.H2Connection') methodParams.validation("Super", params)
+		if (connectProperty.LOCK_TIMEOUT == null) connectProperty.LOCK_TIMEOUT = 10000
+		if (this.getClass().name == 'getl.h2.H2Connection') methodParams.validation('Super', params)
 	}
 	
 	@Override
 	protected void registerParameters () {
 		super.registerParameters()
-		methodParams.register("Super", ["inMemory"])
+		methodParams.register('Super', ['inMemory', 'exclusive'])
 	}
 	
 	@Override
 	protected void onLoadConfig (Map configSection) {
 		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.h2.H2Connection') methodParams.validation("Super", params)
+		if (this.getClass().name == 'getl.h2.H2Connection') methodParams.validation('Super', params)
 	}
 	
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()
-		driverName = "org.h2.Driver"
+		driverName = 'org.h2.Driver'
 	}
 	
 	/**
 	 * Set inmemory mode
 	 * @return
 	 */
-	public Boolean getInMemory () { BoolUtils.IsValue(params."inMemory", false) }
-	public void setInMemory (Boolean value) { params."inMemory" = value }
+	public Boolean getInMemory () { BoolUtils.IsValue(params.inMemory, false) }
+	public void setInMemory (Boolean value) { params.inMemory = value }
+
+    /**
+     * Exclusive connection
+     */
+	public Integer getExclusive() { sessionProperty.exclusive }
+	public void setExclusive(Integer value) {
+        if (connected && exclusive != value) (driver as JDBCDriver).changeSessionProperty('exclusive', value)
+        sessionProperty.exclusive = value
+    }
 }
