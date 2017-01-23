@@ -45,7 +45,7 @@ class ProcessWorkload extends Job {
 
 	@Override
 	public void process() {
-		Logs.Info("### Analyze vertica workload utilite")
+		Logs.Info("### Analyze Vertica workload tool")
 
 		if (Config.content."interval" != null) {
 			Logs.Info("Use workload from time \"${Config.content."interval"}\"")
