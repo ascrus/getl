@@ -50,33 +50,37 @@ class DB2Driver extends JDBCDriver {
 	public List<Driver.Operation> operations() {
 		List<Driver.Operation> result = super.operations()
 		result << Driver.Operation.CREATE
-		result
+		return result
 	}
 	
 	@Override
 	public List<Driver.Support> supported() {
 		List<Driver.Support> result = super.supported()
+        result << Driver.Support.BLOB
+        result << Driver.Support.CLOB
 		result << Driver.Support.INDEX
-		result
+		return result
 	}
 	
 	@Override
 	public String defaultConnectURL () {
-		"jdbc:db2://{host}/{database}"
+		return "jdbc:db2://{host}/{database}"
 	}
 	
 	@Override
-    public
-    void prepareField (Field field) {
+    public void prepareField (Field field) {
 		super.prepareField(field)
 		
 		if (field.typeName?.matches('(?i)CLOB')) {
 			field.type= Field.Type.STRING
-			field.getMethod = "(({field} != null)?{field}.getSubString(1, (int){field}.length()):null)"
+			field.getMethod = '(({field} != null)?{field}.getSubString(1, (int){field}.length()):null)'
 		}
 		else if (field.typeName?.matches('(?i)XML')) {
 			field.type= Field.Type.STRING
-			field.getMethod = "(({field} != null)?{field}.getString():null)"
+			field.getMethod = '(({field} != null)?{field}.getString():null)'
 		} 
 	}
+
+	@Override
+	protected String getChangeSessionPropertyQuery() { return 'SET {name} = {value}' }
 }

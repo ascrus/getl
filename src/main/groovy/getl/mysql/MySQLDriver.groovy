@@ -38,16 +38,18 @@ import groovy.transform.InheritConstructors
 class MySQLDriver extends JDBCDriver {
 	MySQLDriver () {
 		super()
-		connectionParamBegin = "?"
-		connectionParamJoin = "&"
+		connectionParamBegin = '?'
+		connectionParamJoin = '&'
 	}
 	
 	@Override
 	public List<Driver.Support> supported() {
 		List<Driver.Support> result = super.supported()
+        result << Driver.Support.BLOB
+        result << Driver.Support.CLOB
 		result << Driver.Support.TEMPORARY
 		result << Driver.Support.INDEX
-		result
+		return result
 	}
 	
 	@Override
@@ -55,12 +57,12 @@ class MySQLDriver extends JDBCDriver {
 		List<Driver.Operation> result = super.operations()
 		result << Driver.Operation.BULKLOAD
 		result << Driver.Operation.CREATE
-		result
+		return result
 	}
 	
 	@Override
 	protected Map getConnectProperty() {
-		[zeroDateTimeBehavior:"convertToNull"]
+		return [zeroDateTimeBehavior: 'convertToNull']
 	}
 	
 	@Override
@@ -75,6 +77,9 @@ class MySQLDriver extends JDBCDriver {
 	
 	@Override
 	public String defaultConnectURL () {
-		"jdbc:mysql://{host}/{database}"
+		return 'jdbc:mysql://{host}/{database}'
 	}
+
+	@Override
+	protected String getChangeSessionPropertyQuery() { return 'SET {name} = {value}' }
 }

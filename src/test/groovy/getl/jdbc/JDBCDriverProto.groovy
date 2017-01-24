@@ -7,10 +7,12 @@ import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.GenerationUtils
+import groovy.transform.InheritConstructors
 
 /**
  * Created by ascru on 21.11.2016.
  */
+@InheritConstructors
 abstract class JDBCDriverProto extends GroovyTestCase {
     private JDBCConnection _con
     abstract protected JDBCConnection newCon()
@@ -18,19 +20,30 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         if (_con == null) _con = newCon()
         return _con
     }
-    final def table = new TableDataset(connection: con, tableName: 'test')
-    final def fields = [
-            new Field(name: 'id1', type: 'BIGINT', isKey: true, ordKey: 1),
-            new Field(name: 'id2', type: 'DATETIME', isKey: true, ordKey: 2),
-            new Field(name: 'name', type: 'STRING', length: 50, isNull: false),
-            new Field(name: 'value', type: 'NUMERIC', length: 12, precision: 2),
-            new Field(name: 'double', type: 'DOUBLE'),
-            new Field(name: 'date', type: 'DATE', isNull: false),
-            new Field(name: 'time', type: 'TIME'),
-            new Field(name: 'flag', type: 'BOOLEAN', isNull: false, defaultValue: true),
-            new Field(name: 'text', type: 'TEXT', length: 1024),
-            new Field(name: 'data', type: 'BLOB', length: 1024)
-    ]
+    final def table = new TableDataset(connection: con, tableName: '_getl_test')
+    List<Field> getFields () {
+        def res =
+            [
+                new Field(name: 'id1', type: 'BIGINT', isKey: true, ordKey: 1),
+                new Field(name: 'id2', type: 'DATETIME', isKey: true, ordKey: 2),
+                new Field(name: 'name', type: 'STRING', length: 50, isNull: false),
+                new Field(name: 'value', type: 'NUMERIC', length: 12, precision: 2),
+                new Field(name: 'double', type: 'DOUBLE'),
+                new Field(name: 'date', type: 'DATE', isNull: false),
+                new Field(name: 'time', type: 'TIME'),
+                new Field(name: 'flag', type: 'BOOLEAN', isNull: false, defaultValue: true)
+            ]
+
+        if (con != null && con.driver.isSupport(Driver.Support.BLOB)) res << new Field(name: 'data', type: 'BLOB', length: 1024)
+        if (con != null && con.driver.isSupport(Driver.Support.CLOB)) new Field(name: 'text', type: 'TEXT', length: 1024)
+
+        return res
+    }
+
+    @Override
+    protected void runTest() {
+        if (con != null) super.runTest()
+    }
 
     void connect() {
         con.connected = true
@@ -44,11 +57,16 @@ abstract class JDBCDriverProto extends GroovyTestCase {
 
     private void createTable() {
         table.field = fields
-        assertFalse(table.exists)
-        table.create(indexes: [
-                    idx_1: [columns: ['id1', 'date'], unique: true],
-                    idx_2: [columns: ['id2', 'name']]
-        ])
+        if (table.exists) table.drop()
+        if (con.driver.isSupport(Driver.Support.INDEX)) {
+            table.create(indexes: [
+                    _getl_test_idx_1: [columns: ['id1', 'date'], unique: true],
+                    _getl_test_idx_2: [columns: ['id2', 'name']]
+            ])
+        }
+        else {
+            table.create()
+        }
         assertTrue(table.exists)
     }
 
@@ -57,14 +75,17 @@ abstract class JDBCDriverProto extends GroovyTestCase {
             println "Skip test temporary table: ${con.driver.getClass().name} not support this futures"
             return
         }
-        def tempTable = new TableDataset(connection: con, tableName: 'localTempTest', type: JDBCDataset.Type.LOCAL_TEMPORARY)
+        def tempTable = new TableDataset(connection: con, tableName: '_getl_local_temp_test', type: JDBCDataset.Type.LOCAL_TEMPORARY)
         tempTable.field = fields
-        assertFalse(tempTable.exists)
-        tempTable.create(indexes: [
-                idx_1: [columns: ['id1', 'date'], unique: true],
-                idx_2: [columns: ['id2', 'name']]
-        ])
-        assertTrue(tempTable.exists)
+        if (con.driver.isSupport(Driver.Support.INDEX)) {
+            tempTable.create(indexes: [
+                    _getl_local_temp_test_idx_1: [columns: ['id1', 'date'], unique: true],
+                    _getl_local_temp_test_idx_2: [columns: ['id2', 'name']]
+            ])
+        }
+        else {
+            tempTable.create()
+        }
         tempTable.drop(ifExists: true)
     }
 
@@ -73,13 +94,18 @@ abstract class JDBCDriverProto extends GroovyTestCase {
             println "Skip test temporary table: ${con.driver.getClass().name} not support this futures"
             return
         }
-        def tempTable = new TableDataset(connection: con, tableName: 'localTempTest', type: JDBCDataset.Type.GLOBAL_TEMPORARY)
+        def tempTable = new TableDataset(connection: con, tableName: '_getl_global_temp_test', type: JDBCDataset.Type.GLOBAL_TEMPORARY)
         tempTable.field = fields
         assertFalse(tempTable.exists)
-        tempTable.create(indexes: [
-                idx_1: [columns: ['id1', 'date'], unique: true],
-                idx_2: [columns: ['id2', 'name']]
-        ])
+        if (con.driver.isSupport(Driver.Support.INDEX)) {
+            tempTable.create(indexes: [
+                    _getl_global_temp_test_idx_1: [columns: ['id1', 'date'], unique: true],
+                    _getl_global_temp_test_idx_2: [columns: ['id2', 'name']]
+            ])
+        }
+        else {
+            tempTable.create()
+        }
         assertTrue(tempTable.exists)
         tempTable.drop(ifExists: true)
     }
@@ -155,7 +181,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
     }
 
     private void validCount() {
-        def q = new QueryDataset(connection: con, query: 'SELECT Count(*) AS count_rows FROM test WHERE data IS NOT NULL')
+        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE double IS NOT NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
         assertEquals(1000, rows[0].count_rows)
@@ -176,7 +202,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
     }
 
     private void validCountZero() {
-        def q = new QueryDataset(connection: con, query: 'SELECT Count(*) AS count_rows FROM test')
+        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()}")
         def rows = q.rows()
         assertEquals(1, rows.size())
         assertEquals(0, rows[0].count_rows)
@@ -184,10 +210,10 @@ abstract class JDBCDriverProto extends GroovyTestCase {
 
     private void runCommandUpdate() {
         con.startTran()
-        def count = con.executeCommand(command: "UPDATE ${table.fullNameDataset()} SET data = NULL", isUpdate: true)
+        def count = con.executeCommand(command: "UPDATE ${table.fullNameDataset()} SET double = NULL", isUpdate: true)
         assertEquals(1000, count)
         con.commitTran()
-        def q = new QueryDataset(connection: con, query: 'SELECT Count(*) AS count_rows FROM test WHERE data IS NULL')
+        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE double IS NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
         assertEquals(1000, rows[0].count_rows)

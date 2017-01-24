@@ -1188,7 +1188,7 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 				res = "if ($value != null) _getl_stat.setString($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
 				break
 			
-			case types.BOOLEAN:
+			case types.BOOLEAN: case types.BIT:
 				res = "if ($value != null) _getl_stat.setBoolean($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.BOOLEAN)"
 				break
 				

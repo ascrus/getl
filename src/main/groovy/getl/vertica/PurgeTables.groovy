@@ -49,7 +49,7 @@ class PurgeTables extends Job {
 		List excludeTables = (Config.content."exclude" as List)?:[]
 		def excludeWhere = ""
 		
-		Logs.Info("### Purge vertica tables utilite")
+		Logs.Info("### Purge vertica tables tool")
 		Logs.Info("Using the $perc coefficient to determine the table to purge")
 		if (!excludeTables.isEmpty()) {
 			Logs.Info("From processing excluded $excludeTables tables")

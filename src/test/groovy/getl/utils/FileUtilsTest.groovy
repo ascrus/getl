@@ -37,6 +37,11 @@ class FileUtilsTest extends GroovyTestCase {
         new File(source).text = 'test'
         shouldFail { FileUtils.MoveTo(source, destPath, false) }
         FileUtils.MoveTo(source, destPath)
+        assertEquals('test', new File("$destPath/$fileName").text)
+
+        new File(source).text = 'test 1'
+        FileUtils.MoveTo(source, destPath)
+        assertEquals('test 1', new File("$destPath/$fileName").text)
 
         assertTrue(FileUtils.DeleteFile("$destPath/$fileName"))
         assertTrue(FileUtils.DeleteDir(destPath))

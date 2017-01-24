@@ -40,7 +40,7 @@ class Flow {
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 	
 	Flow () {
-		methodParams.register("copy", ["source", "tempSource", "dest", "tempDest", "inheritFields", "tempFields", "map",
+		methodParams.register("copy", ["source", "tempSource", "dest", "tempDest", "inheritFields", "createDest", "tempFields", "map",
 			"source_*", "dest_*", "autoMap", "autoConvert", "autoTran", "clear", "saveErrors", "excludeFields", "mirrorCSV", "notConverted",
 			"bulkLoad", "bulkAsGZIP", "bulkEscaped", "onInit", "onWrite", "onDone", "debug", "writeSynch"])
 		
@@ -245,6 +245,7 @@ class Flow {
 	protected static void assignFieldToTemp (Dataset source, Dataset dest, Map map) {
 		map = convertFieldMap(map)
 		dest.field = source.field
+        dest.field.each { Field f -> f.isReadOnly = false }
 		map.each { k, v ->
 			Field f = dest.fieldByName(v.name as String)
 			if (f != null) {
@@ -266,7 +267,8 @@ class Flow {
 	 * <li>Dataset source				- source dataset
 	 * <li>String tempSource			- name temporary dataset for source use 
 	 * <li>Dataset dest					- destination dataset
-	 * <li>boolean inheritFields		- destinition fields inherit from source fields 
+	 * <li>boolean inheritFields		- destinition fields inherit from source fields
+     * <li>boolean createDest		    - create destination before copy
 	 * <li>String tempDest				- name temporary dataset for dest use
 	 * <li>List<Field> tempFields		- list of field from destination dataset
 	 * <li>Map map						- map card columns with syntax: [<destination field>:"<source field>:<convert format>"]
@@ -283,8 +285,8 @@ class Flow {
 	 * <li>String mirrorCSV				- filename  of mirror CSV dataset
 	 * <li>boolean bulkLoad				- load to destinition as bulk load (if supported)
 	 * <li>boolean bulkAsGZIP			- generate bulk CSV file in GZIP format (you need set parameter for destination bulk gzip format) 
-	 * <li>Closure onInit()				- initialization code on start process copying
-	 * <li>Closure onWrite(inRow, outRow)	- code executed before writing to destination dataset
+	 * <li>Closure onInit(source, dest)	- initialization code on start process copying
+	 * <li>Closure onWrite(inRow, outRow) - code executed before writing to destination dataset
 	 * <li>Closure onDone()				- code to complete process copying
 	 * </ul>   
 	 * 
@@ -304,7 +306,8 @@ class Flow {
 	 * <li>Dataset source				- source dataset
 	 * <li>String tempSource			- name temporary dataset for source use 
 	 * <li>Dataset dest					- destination dataset
-	 * <li>boolean inheritFields		- destination fields inherit from source fields 
+	 * <li>boolean inheritFields		- destination fields inherit from source fields
+     * <li>boolean createDest		    - create destination before copy
 	 * <li>String tempDest				- name temporary dataset for dest use
 	 * <li>List<Field> tempFields		- list of field from destination dataset
 	 * <li>Map map						- map card columns with syntax: [<destination field>:"<source field>:<convert format>"]
@@ -362,6 +365,7 @@ class Flow {
 		def isDestVirtual = (dest.sysParams.isVirtual != null && dest.sysParams.isVirtual) 
 		
 		boolean inheritFields = BoolUtils.IsValue([dest.sysParams.inheriteFields, params.inheritFields], false)
+        boolean createDest = BoolUtils.IsValue([dest.sysParams.createDest, params.createDest], false)
 		boolean writeSynch = BoolUtils.IsValue(params.writeSynch, false)
 		
 		boolean isBulkLoad = (params.bulkLoad != null)?params.bulkLoad:false
@@ -440,7 +444,10 @@ class Flow {
 			if (inheritFields) {
 				assignFieldToTemp(source, writer, map)
 			}
-			
+
+			if (initCode != null) initCode(source, writer)
+            if (createDest) dest.create()
+
 			if (clear) dest.truncate()
 			destParams.prepare = initDest
 			writer.openWrite(destParams)
@@ -462,8 +469,6 @@ class Flow {
 				result = generateResult.sourceFields
 			}
 			
-			if (initCode != null) initCode()
-
 			result
 		}
 		

@@ -41,7 +41,7 @@ class MSSQLDriver extends JDBCDriver {
 	MSSQLDriver () {
 		super()
 		
-		methodParams.register("eachRow", ["with"])
+		methodParams.register('eachRow', ['with'])
 	}
 	
 	@Override
@@ -49,34 +49,39 @@ class MSSQLDriver extends JDBCDriver {
 		List<Driver.Operation> result = super.operations()
 		result << Driver.Operation.BULKLOAD
 		result << Driver.Operation.CREATE
-		result
+		return result
 	}
 	
 	@Override
 	public List<Driver.Support> supported() {
 		List<Driver.Support> result = super.supported()
+        result << Driver.Support.BLOB
+        result << Driver.Support.CLOB
 		result << Driver.Support.INDEX
-		result
+		return result
 	}
 	
 	@Override
 	public String defaultConnectURL () {
-		"jdbc:sqlserver://{host};databaseName={database}"
+		return 'jdbc:sqlserver://{host};databaseName={database}'
 	}
 	
 	@Override
 	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
-		if (params."with" != null) {
-			dir."afteralias" = "with (${params."with"})"
+		if (params.with != null) {
+			dir.afteralias = "with (${params."with"})"
 		}
 	}
 	
 	@Override
 	protected String sessionID() {
 		String res = null
-		def rows = sqlConnect.rows("SELECT @@SPID AS session_id")
+		def rows = sqlConnect.rows('SELECT @@SPID AS session_id')
 		if (!rows.isEmpty()) res = rows[0].session_id.toString()
 		
 		return res
 	}
+
+	@Override
+	protected String getChangeSessionPropertyQuery() { return 'SET {name} {value}' }
 }

@@ -50,7 +50,8 @@ abstract class Driver {
 	
 	protected Connection connection
 	
-	public enum Support {CONNECT, TRANSACTIONAL, SQL, TEMPORARY, BATCH, EACHROW, WRITE, SEQUENCE, AUTOLOADSCHEMA, AUTOSAVESCHEMA, INDEX}
+	public enum Support {CONNECT, TRANSACTIONAL, SQL, TEMPORARY, BATCH, EACHROW, WRITE, SEQUENCE, AUTOLOADSCHEMA,
+	                        AUTOSAVESCHEMA, INDEX, BLOB, CLOB, MEMORY}
 	public abstract List<Driver.Support> supported ()
 	public boolean isSupport(Driver.Support feature) {
 		(supported().indexOf(feature) != -1)

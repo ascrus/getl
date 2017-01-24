@@ -453,7 +453,7 @@ class Field implements Serializable {
 		def o = other as Field
 
 		if (this.name?.toUpperCase() != o.name?.toUpperCase()) return false
-		if (this.type != o.type) return false
+		if (this.type != o.type && !(this.type in [Field.Type.STRING, Field.Type.TEXT] && o.type in [Field.Type.STRING, Field.Type.TEXT])) return false
 		if (this.isNull != o.isNull) return false
 		if (this.isKey != o.isKey) return false
 		if (AllowLength(this) && this.length != o.length) return false

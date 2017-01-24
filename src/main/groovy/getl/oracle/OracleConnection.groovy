@@ -24,6 +24,7 @@
 
 package getl.oracle
 
+import getl.jdbc.JDBCDriver
 import groovy.transform.InheritConstructors
 import getl.jdbc.JDBCConnection
 
@@ -40,18 +41,24 @@ class OracleConnection extends JDBCConnection {
 	
 	OracleConnection(Map params) {
 		super(new HashMap([driver: OracleDriver]) + params)
-		if (this.getClass().name == 'getl.oracle.OracleConnection') methodParams.validation("Super", params)
+		if (this.getClass().name == 'getl.oracle.OracleConnection') methodParams.validation('Super', params)
+	}
+
+	@Override
+	protected void registerParameters () {
+		super.registerParameters()
+		methodParams.register('Super', ['locale'])
 	}
 	
 	@Override
 	protected void onLoadConfig (Map configSection) {
 		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.oracle.OracleConnection') methodParams.validation("Super", params)
+		if (this.getClass().name == 'getl.oracle.OracleConnection') methodParams.validation('Super', params)
 	}
 	
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()
-		driverName = "oracle.jdbc.OracleDriver"
+		driverName = 'oracle.jdbc.OracleDriver'
 	}
 }

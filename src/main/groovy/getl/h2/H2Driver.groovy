@@ -58,9 +58,12 @@ class H2Driver extends JDBCDriver {
 	@Override
 	public List<Driver.Support> supported() {
 		List<Driver.Support> result = super.supported()
+        result << Driver.Support.BLOB
+        result << Driver.Support.CLOB
 		result << Driver.Support.TEMPORARY
+        result << Driver.Support.MEMORY
 		result << Driver.Support.INDEX
-		result
+		return result
 	}
 	
 	@Override
@@ -69,7 +72,7 @@ class H2Driver extends JDBCDriver {
 		result << Driver.Operation.BULKLOAD
 		result << Driver.Operation.CREATE
 		result << Driver.Operation.MERGE
-		result
+		return result
 	}
 	
 	@Override
@@ -79,7 +82,7 @@ class H2Driver extends JDBCDriver {
 			return (con.connectHost != null)?"jdbc:h2:tcp://{host}/mem:{database}":"jdbc:h2:mem:{database}" 
 		}
 		
-		(con.connectHost != null)?"jdbc:h2:tcp://{host}/{database}":"jdbc:h2://{database}"
+		return (con.connectHost != null)?"jdbc:h2:tcp://{host}/{database}":"jdbc:h2://{database}"
 	}
 	
 	/**
@@ -97,7 +100,7 @@ class H2Driver extends JDBCDriver {
 		def m = name =~ /([^a-zA-Z0-9_])/
 		if (m.size() > 0) res = prefix + name + prefix else res = prefix + name.toUpperCase() + prefix
 		
-		res
+		return res
 	}
 	
 	@Override
@@ -107,12 +110,11 @@ class H2Driver extends JDBCDriver {
 		if (BoolUtils.IsValue(params."not_persistent", false)) result += "NOT PERSISTENT "
 		if (temporary && params.transactional != null && params.transactional) result += "TRANSACTIONAL "
 		
-		result
+		return result
 	}
 	
 	@Override
-    public
-    void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+    public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
 		if (params.compressed != null) throw new ExceptionGETL("H2 bulk load dont support compression files")
 		
 		params = bulkLoadFilePrepare(source, dest as JDBCDataset, params, prepareCode)
@@ -201,7 +203,10 @@ FROM CSVREAD('${source.fullFileName()}', ${heads}, '${functionParms}')
 		
 		return res
 	}
-	
+
+    @Override
+    protected String getChangeSessionPropertyQuery() { return 'SET {name} {value}' }
+
 	@Override
 	protected String openWriteMergeSql(JDBCDataset dataset, Map params, List<Field> fields) {
 		def excludeFields = []
@@ -214,6 +219,6 @@ MERGE INTO ${dataset.fullNameDataset()} (${GenerationUtils.SqlFields(dataset.con
 VALUES(${GenerationUtils.SqlFields(dataset.connection as JDBCConnection, fields, "?", excludeFields).join(", ")})
 """
 		
-		res
+		return res
 	}
 }

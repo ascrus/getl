@@ -126,9 +126,9 @@ class FileUtils {
 		
 		if (createPath) ValidPath(path)
 		def dest = new File("${path}/${source.name}")
-		if (dest.exists()) dest.delete()
+//		if (dest.exists()) dest.delete()
 		
-		Files.move(source.toPath(), dest.toPath())
+		Files.move(source.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING)
 	}
 	
 	/**

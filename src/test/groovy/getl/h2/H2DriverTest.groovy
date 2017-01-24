@@ -23,4 +23,15 @@ class H2DriverTest extends JDBCDriverProto {
         assertEquals(1, r.size())
         assertEquals('1.4.193', r[0].version)
     }
+
+    public void testSessionProperties() {
+        def c = new H2Connection(inMemory: true, sessionProperty: ['exclusive': 1])
+        def q = new QueryDataset(connection: c, query: 'SELECT VALUE FROM INFORMATION_SCHEMA.SETTINGS WHERE NAME = \'EXCLUSIVE\'')
+
+        c.connected = true
+        assertEquals('TRUE', q.rows().get(0).value)
+
+        c.exclusive = 0
+        assertEquals('FALSE', q.rows().get(0).value)
+    }
 }
