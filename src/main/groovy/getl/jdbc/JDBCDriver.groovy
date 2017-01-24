@@ -103,7 +103,7 @@ class JDBCDriver extends Driver {
 			BIGINT: [java.sql.Types.BIGINT],
 			INTEGER: [java.sql.Types.INTEGER, java.sql.Types.SMALLINT, java.sql.Types.TINYINT],
 			STRING: [java.sql.Types.CHAR, java.sql.Types.NCHAR, java.sql.Types.LONGVARCHAR, java.sql.Types.LONGNVARCHAR, java.sql.Types.VARCHAR, java.sql.Types.NVARCHAR],
-			BOOLEAN: [java.sql.Types.BOOLEAN, groovy.sql.Sql.BIT],
+			BOOLEAN: [java.sql.Types.BOOLEAN, java.sql.Types.BIT],
 			DOUBLE: [java.sql.Types.DOUBLE, java.sql.Types.FLOAT, java.sql.Types.REAL],
 			NUMERIC: [java.sql.Types.DECIMAL, java.sql.Types.NUMERIC],
 			BLOB: [java.sql.Types.BLOB, java.sql.Types.LONGVARBINARY, java.sql.Types.VARBINARY, java.sql.Types.BINARY],

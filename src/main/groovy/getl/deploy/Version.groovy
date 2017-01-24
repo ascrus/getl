@@ -56,5 +56,5 @@ class Version {
 	/**
 	 * Years development
 	 */
-	public static years = "2014-2016"
+	public static years = "2014-2017"
 }

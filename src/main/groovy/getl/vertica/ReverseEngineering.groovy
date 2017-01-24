@@ -37,6 +37,7 @@ import getl.utils.StringUtils
 
 /**
  * Reverse engineering database model to sql file as DDL operators
+ * @author Aleksey Konstantinov
  */
 class ReverseEngineering extends Job {
     VerticaConnection cVertica = new VerticaConnection(config: "vertica")
@@ -69,7 +70,7 @@ class ReverseEngineering extends Job {
 CREATE LOCAL TEMPORARY TABLE getl_pools ON COMMIT PRESERVE ROWS AS
 SELECT 
     name, memorysize, maxmemorysize, executionparallelism, priority, runtimepriority, runtimeprioritythreshold, 
-    queuetimeout, plannedconcurrency, maxconcurrency, runtimecap::varchar(100), cpuaffinityset, cpuaffinitymode, cascadeto
+    queuetimeout::varchar(100), plannedconcurrency, maxconcurrency, runtimecap::varchar(100), cpuaffinityset, cpuaffinitymode, cascadeto
 FROM v_catalog.resource_pools
 WHERE (NOT is_internal OR name ILIKE 'general') AND {pools}
 ORDER BY Lower(name);
@@ -118,7 +119,7 @@ SELECT grantor, privileges_description, object_type, object_schema, object_name,
 FROM v_catalog.grants
 WHERE 
     Lower(object_type) NOT IN ('procedure') AND 
-    (object_type != 'SCHEMA' OR object_name NOT IN ('v_catalog', 'v_internal', 'v_monitor', 'public')) AND 
+    (object_type != 'SCHEMA' OR object_name NOT IN ('v_catalog', 'v_internal', 'v_monitor', 'public', 'v_txtindex')) AND 
     {grants}
 ORDER BY object_type, object_schema, object_name, grantor, grantee;
 '''
@@ -330,7 +331,7 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
             sqlFile.print parln('PRIORITY', r.priority)
             sqlFile.print parln('RUNTIMEPRIORITY', r.runtimepriority)
             sqlFile.print parln('RUNTIMEPRIORITYTHRESHOLD', r.runtimeprioritythreshold)
-            sqlFile.print parln('QUEUETIMEOUT', r.queuetimeout)
+            sqlFile.print parln('QUEUETIMEOUT', r.queuetimeout, true)
             sqlFile.print parln('PLANNEDCONCURRENCY', r.plannedconcurrency)
             sqlFile.print parln('MAXCONCURRENCY', r.maxconcurrency)
             sqlFile.print parln('RUNTIMECAP', r.runtimecap, true)
