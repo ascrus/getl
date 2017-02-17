@@ -63,8 +63,8 @@ class StringUtils {
 			if (v == null) throw new ExceptionGETL("Invalid value null in variable \"$k\"")
 			value = value.replace('{' + k + '}', (String)v)
 		}
-		
-		value
+
+		return value
 	}
 
 	/**
@@ -73,7 +73,7 @@ class StringUtils {
 	 * @return
 	 */
 	public static String EvalString(String value) {
-		Eval.me(value)
+		return Eval.me(value)
 	}
 	
 	/**
@@ -91,8 +91,8 @@ class StringUtils {
 		}
 		
 		if (value.matches("(?i).*([{][a-z0-9-_]+[}]).*")) throw new ExceptionGETL("Unknown variable in \"$value\", known vars: $vars")
-		
-		value
+
+		return value
 	}
 	
 	/**
@@ -103,7 +103,7 @@ class StringUtils {
 	 */
 	public static String AddLedZeroStr (def s, int len) {
 		if (s == null) return null;
-		s.toString().padLeft(len, '0')
+		return s.toString().padLeft(len, '0')
 	}
 	
 	/** Replicate character */
@@ -120,12 +120,12 @@ class StringUtils {
 	 */
 	public static String LeftStr(String s, int len) {
 		if (s == null) return null
-		(s.length() <= len)?s:s.substring(0, len)
+		return (s.length() <= len)?s:s.substring(0, len)
 	}
 	
 	public static String CutStr(String s, int len) {
 		if (s == null) return null
-		(s.length() <= len)?s:s.substring(0, len) + ' ...'
+		return (s.length() <= len)?s:s.substring(0, len) + ' ...'
 	}
 	
 	/**
@@ -136,7 +136,7 @@ class StringUtils {
 	 */
 	public static String RightStr(String s, int len) {
 		if (s == null) return null
-		(s.length() <= len)?s:s.substring(s.length() - len)
+		return (s.length() <= len)?s:s.substring(s.length() - len)
 	}
 	
 	/**
@@ -149,8 +149,7 @@ class StringUtils {
         if (params.isEmpty()) return value
 		
 		def res = GenerationUtils.EvalGroovyScript('"""' + value.replace('"', '\\"') + '"""', params)
-		
-		res
+		return res
 	}
 	
 	/**
@@ -163,7 +162,7 @@ class StringUtils {
 		int i = e.message.indexOf("\n")
 		def res = (i == -1)?e.message:e.message.substring(0, i)
 		if (res.matches("(?i)assert .*")) res = res.substring(7)
-		res
+		return res
 	}
 
 	/**
@@ -173,7 +172,7 @@ class StringUtils {
 	 */
 	public static String EscapeJava(String str) {
 		if (str == null) return null
-		StringEscapeUtils.escapeJava(str)
+		return StringEscapeUtils.escapeJava(str)
 	}
 	
 	/**
@@ -183,7 +182,7 @@ class StringUtils {
 	 */
 	public static String UnescapeJava(String str) {
 		if (str == null) return null
-		StringEscapeUtils.unescapeJava(str)
+		return StringEscapeUtils.unescapeJava(str)
 	}
 	
 	/**
@@ -195,7 +194,7 @@ class StringUtils {
 	public static String UnescapeJavaWithProcLineChar(String str, String procLineChar) {
 		if (str == null) return null
 		str = str.replace(procLineChar, '\n')
-		StringEscapeUtils.unescapeJava(str)
+		return StringEscapeUtils.unescapeJava(str)
 	}
 	
 	/**
@@ -205,7 +204,7 @@ class StringUtils {
 	 */
 	public static String EscapeJavaWithoutUTF(String str) {
 		if (str == null) return null
-		str.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\b', '\\b').replace('\t', '\\t').replace('\f', '\\f').replace("'", "\\'").replace('"', '\\"')
+		return str.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\b', '\\b').replace('\t', '\\t').replace('\f', '\\f').replace("'", "\\'").replace('"', '\\"')
 	}
 	
 	/**
@@ -215,7 +214,7 @@ class StringUtils {
 	 */
 	public static String TransformObjectName (String str) {
 		if (str == null) return null
-		str.replace('.', '_').replace('-', '_').replace(' ', '_').replace('(', '_').replace(')', '_').replace('[', '_').replace(']', '_').replace('"', '').replace("'", "")
+		return str.replace('.', '_').replace('-', '_').replace(' ', '_').replace('(', '_').replace(')', '_').replace('[', '_').replace(']', '_').replace('"', '').replace("'", "")
 	}
 	
 	/**
@@ -223,7 +222,7 @@ class StringUtils {
 	 * @return
 	 */
 	public static String RandomStr () {
-		java.util.UUID.randomUUID().toString()
+		return java.util.UUID.randomUUID().toString()
 	}
 	
 	/**
@@ -237,7 +236,7 @@ class StringUtils {
             if (c in ['|', '^', '\\', '$', '*', '.', '+', '?', '[', ']', '{', '}', '(', ')']) res += '\\' + c else res += c
         }
         
-        res
+        return res
     }
 	
 	/**
@@ -246,7 +245,7 @@ class StringUtils {
 	 * @return
 	 */
 	public static String RawToHex(byte[] bytes) {
-		javax.xml.bind.DatatypeConverter.printHexBinary(bytes)
+		return javax.xml.bind.DatatypeConverter.printHexBinary(bytes)
 	}
 	
 	/**
@@ -264,11 +263,40 @@ class StringUtils {
 	 * @param locale - Language-Country 
 	 * @return
 	 */
-	public static NewLocale(String locale) {
+	public static Locale NewLocale(String locale) {
 		if (locale == null) return null
 		def s = locale.split('-')
 		if (s.length == 1) return new Locale(s[0])
 		
-		new Locale(s[0], s[1])
+		return new Locale(s[0], s[1])
+	}
+
+	/**
+	 * Convert text to snake case ("TestText" to "test_text")
+	 * @param text
+	 * @return
+	 */
+	public static String ToSnakeCase(String text) {
+        return text.replaceAll( /([A-Z])/, /_$1/ ).toLowerCase().replaceAll( /^_/, '' )
+    }
+
+	/**
+	 * Convert text to camel case ("test_text" to "TestText")
+	 * @param text
+	 * @param capitalize
+	 * @return
+	 */
+	public static String ToCamelCase(String text, boolean capitalized = false) {
+		text = text.replaceAll( "(_)([A-Za-z0-9])", { List<String> it -> it[2].toUpperCase() } )
+		return (capitalized)? text.capitalize() : text
+    }
+
+    /**
+     * Generate password
+     * @param length
+     * @return
+     */
+	public static String GeneratePassword(int length) {
+    	return (('A'..'Z') + ('a'..'z') + ('0'..'9')).with { Collections.shuffle(it);it }.take(length).join('')
 	}
 }
