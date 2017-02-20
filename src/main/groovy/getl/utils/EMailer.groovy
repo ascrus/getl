@@ -155,7 +155,7 @@ class EMailer {
 		MapUtils.MergeMap(params, configSection)
 	}
 	
-    public void sendMail(String toAddress, String subject, String message) {
+    public void sendMail(String toAddress, String subject, String message, boolean isHtml = false) {
 		if (!active) return
 		
 		if (this.toAddress != null) {
@@ -186,8 +186,9 @@ class EMailer {
 		msg.setFrom(new InternetAddress(fromAddress))
 		msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toAddress, true))
 		msg.setSubject(subject, "utf-8")
-		msg.setText(message, "utf-8")
-	  
+//		msg.setText(message, "utf-8")
+		if (isHtml) msg.setText(message, "utf-8", "html") else msg.setText(message, "utf-8")
+
 		try {
 			Transport transporter = lSession.getTransport("smtp")
 			transporter.connect()
