@@ -14,6 +14,7 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 abstract class JDBCDriverProto extends GroovyTestCase {
+    private static final countRows = 100
     private JDBCConnection _con
     abstract protected JDBCConnection newCon()
     public JDBCConnection getCon() {
@@ -123,7 +124,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
 
     private void insertData() {
         def count = new Flow().writeTo(dest: table) { updater ->
-            (1..1000).each { num ->
+            (1..countRows).each { num ->
                 def r = [:]
                 r.id1 = num
                 r.id2 = new Date()
@@ -139,7 +140,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 updater(r)
             }
         }
-        assertEquals(1000, count)
+        assertEquals(countRows, count)
     }
 
     private void updateData() {
@@ -158,7 +159,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 updater(r)
             }
         }
-        assertEquals(1000, count)
+        assertEquals(countRows, count)
     }
 
     private void mergeData() {
@@ -177,14 +178,14 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 updater(r)
             }
         }
-        assertEquals(1000, count)
+        assertEquals(countRows, count)
     }
 
     private void validCount() {
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE double IS NOT NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
-        assertEquals(1000, rows[0].count_rows)
+        assertEquals(countRows, rows[0].count_rows)
     }
 
     private void deleteData() {
@@ -194,7 +195,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 updater(r)
             }
         }
-        assertEquals(1000, count)
+        assertEquals(countRows, count)
     }
 
     private void truncateData() {
@@ -211,18 +212,18 @@ abstract class JDBCDriverProto extends GroovyTestCase {
     private void runCommandUpdate() {
         con.startTran()
         def count = con.executeCommand(command: "UPDATE ${table.fullNameDataset()} SET double = NULL", isUpdate: true)
-        assertEquals(1000, count)
+        assertEquals(countRows, count)
         con.commitTran()
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE double IS NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
-        assertEquals(1000, rows[0].count_rows)
+        assertEquals(countRows, rows[0].count_rows)
     }
 
     private void bulkLoad() {
         def file = TFS.dataset()
         def count = new Flow().copy(source: table, dest: file, inheritFields: true)
-        assertEquals(1000, count)
+        assertEquals(countRows, count)
         truncateData()
         validCountZero()
         table.bulkLoadFile(source: file)

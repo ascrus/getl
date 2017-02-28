@@ -55,6 +55,10 @@ class ProcessWorkload extends Job {
 			Logs.Info("Use workload with save result")
 			qWorkload.query = "SELECT ANALYZE_WORKLOAD('', true)"
 		}
+		else {
+            Logs.Info("Use workload without save result")
+            qWorkload.query = "SELECT ANALYZE_WORKLOAD('', false)"
+		}
 
 		List excludeTables = (Config.content."exclude" as List)?:[]
 		def excludeWhere = ""
