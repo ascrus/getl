@@ -44,22 +44,21 @@ class DB2Driver extends JDBCDriver {
 		connectionParamBegin = ':'
 		connectionParamJoin = ';'
 		connectionParamFinish = ';'
+
+        allowLocalTemporaryTable = false
 	}
 	
 	@Override
 	public List<Driver.Operation> operations() {
-		List<Driver.Operation> result = super.operations()
-		result << Driver.Operation.CREATE
-		return result
+		return super.operations() +
+                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
 	
 	@Override
 	public List<Driver.Support> supported() {
-		List<Driver.Support> result = super.supported()
-        result << Driver.Support.BLOB
-        result << Driver.Support.CLOB
-		result << Driver.Support.INDEX
-		return result
+		return super.supported() +
+				[Driver.Support.BATCH, Driver.Support.WRITE, Driver.Support.SEQUENCE, Driver.Support.TRANSACTIONAL,
+                 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
 	}
 	
 	@Override

@@ -1,10 +1,8 @@
 package getl.vertica
 
-import getl.jdbc.JDBCConnection
-import getl.jdbc.JDBCDriverProto
-import getl.utils.Config
-import getl.utils.FileUtils
-import sun.misc.ClassLoaderUtil
+import getl.data.*
+import getl.jdbc.*
+import getl.utils.*
 
 /**
  * Created by ascru on 13.01.2017.

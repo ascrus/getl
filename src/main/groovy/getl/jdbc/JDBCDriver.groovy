@@ -68,13 +68,12 @@ class JDBCDriver extends Driver {
 	
 	@Override
 	public List<Driver.Support> supported() {
-		[Driver.Support.BATCH, Driver.Support.CONNECT, Driver.Support.SQL, Driver.Support.TRANSACTIONAL, 
-			Driver.Support.WRITE, Driver.Support.SEQUENCE, Driver.Support.EACHROW]
+		[Driver.Support.CONNECT, Driver.Support.SQL, Driver.Support.EACHROW]
 	}
 
 	@Override
 	public List<Driver.Operation> operations() {
-		[Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.RETRIEVEFIELDS]
+		[Driver.Operation.RETRIEVEFIELDS]
 	}
 	
 	/**
@@ -689,6 +688,13 @@ ${extend}'''
 	protected String defaultDBName = null
 	protected String defaultSchemaName = null
 
+	protected String globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
+	protected String localTemporaryTablePrefix = 'LOCAL TEMPORARY'
+	protected String memoryTablePrefix = 'MEMORY'
+
+    protected boolean allowGlobalTemporaryTable = false
+    protected boolean allowLocalTemporaryTable = false
+
 	@Override
 	public
 	void createDataset(Dataset dataset, Map params) {
@@ -699,16 +705,16 @@ ${extend}'''
 		def temporary = ""
 		switch (tableType) {
 			case JDBCDataset.Type.GLOBAL_TEMPORARY:
-                if (!isSupport(Driver.Support.TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables')
-				temporary = "GLOBAL TEMPORARY"
+                if (!isSupport(Driver.Support.TEMPORARY) || !allowGlobalTemporaryTable) throw new ExceptionGETL('Driver not support temporary tables')
+				temporary = globalTemporaryTablePrefix
 				break
 			case JDBCDataset.Type.LOCAL_TEMPORARY:
-                if (!isSupport(Driver.Support.TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables')
-				temporary = "LOCAL TEMPORARY"
+                if (!isSupport(Driver.Support.TEMPORARY) || !allowLocalTemporaryTable) throw new ExceptionGETL('Driver not support temporary tables')
+				temporary = localTemporaryTablePrefix
 				break
 			case JDBCDataset.Type.MEMORY:
-                if (!isSupport(Driver.Support.MEMORY)) throw new ExceptionGETL('Driver not support mempry tables')
-				temporary = "MEMORY"
+                if (!isSupport(Driver.Support.MEMORY)) throw new ExceptionGETL('Driver not support memory tables')
+				temporary = memoryTablePrefix
 				break
 		}
 		
@@ -1223,7 +1229,8 @@ $sql
 			warn = warn.nextWarning
 		}
 		if (!connection.sysParams.warnings.isEmpty()) {
-			Logs.Warning("${con.getClass().name}: ${con.sysParams.warnings}")
+			if (BoolUtils.IsValue(con.outputServerWarningToLog)) Logs.Warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
+            saveToHistory("-- Server warning ${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
 		}
 		
 		result
@@ -1654,6 +1661,11 @@ $sql
   WHEN NOT MATCHED THEN INSERT ({fields})
     VALUES ({values})'''
 	}
+
+    /**
+     * Add PK fields to update statement from merge operator
+     */
+    protected boolean addPKFieldsToUpdateStatementFromMerge = false
 	
 	protected String unionDatasetMerge (JDBCDataset source, JDBCDataset target, Map<String, String> map, List<String> keyField, Map procParams) {
 		if (!source instanceof TableDataset) throw new ExceptionGETL("Source dataset must be \"TableDataset\"")
@@ -1673,7 +1685,7 @@ $sql
 		def insertFields = []
 		def insertValues = []
 		map.each { targetField, sourceField ->
-			if (!target.fieldByName(targetField).isKey) updateFields << "${target.sqlObjectName(targetField)} = $sourceField"
+			if (addPKFieldsToUpdateStatementFromMerge || !target.fieldByName(targetField).isKey) updateFields << "${target.sqlObjectName(targetField)} = $sourceField"
 			insertFields << target.sqlObjectName(targetField)
 			insertValues << sourceField
 		}

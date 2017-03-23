@@ -44,6 +44,11 @@ class VerticaDriver extends JDBCDriver {
 		super()
 
 		defaultSchemaName = 'PUBLIC'
+
+        allowGlobalTemporaryTable = true
+        allowLocalTemporaryTable = true
+
+        addPKFieldsToUpdateStatementFromMerge = true
 		
 		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy'])
 		methodParams.register('bulkLoadFile', ['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath',
@@ -61,22 +66,20 @@ class VerticaDriver extends JDBCDriver {
 
         return res
     }
-	
-	@Override
-	public List<Driver.Support> supported() {
-		List<Driver.Support> result = super.supported()
-        result << Driver.Support.CLOB
-		result << Driver.Support.TEMPORARY
-		return result
-	}
-	
-	@Override
-	public List<Driver.Operation> operations() {
-		List<Driver.Operation> result = super.operations()
-		result << Driver.Operation.BULKLOAD
-		result << Driver.Operation.CREATE
-		return result
-	}
+
+    @Override
+    public List<Driver.Support> supported() {
+        return super.supported() +
+                [Driver.Support.BATCH, Driver.Support.WRITE, Driver.Support.TRANSACTIONAL,
+                 Driver.Support.CLOB, Driver.Support.TEMPORARY]
+    }
+
+    @Override
+    public List<Driver.Operation> operations() {
+        return super.operations() +
+                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
+                 Driver.Operation.BULKLOAD]
+    }
 	
 	@Override
 	public String defaultConnectURL () {

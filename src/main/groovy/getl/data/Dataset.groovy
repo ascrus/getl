@@ -24,6 +24,7 @@
 
 package getl.data
 
+import com.sun.org.apache.xpath.internal.operations.Bool
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
 import getl.csv.CSVDataset
@@ -550,6 +551,7 @@ class Dataset {
 		connection.tryConnect()
 		Map p = MapUtils.CleanMap(procParams, ["autoTran"])
 		def autoTran = (procParams.autoTran != null)?procParams.autoTran:(connection.tranCount == 0)
+		if (BoolUtils.IsValue(procParams."truncate", false)) autoTran = false
 		
 		if (autoTran) connection.startTran()
 		try {

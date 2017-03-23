@@ -43,26 +43,25 @@ class OracleDriver extends JDBCDriver {
 		super()
 		caseObjectName = 'UPPER'
 		sqlType.BIGINT.name = 'number'
+
+        allowGlobalTemporaryTable = true
 		
 		methodParams.register("eachRow", ["scn", "timestamp", "hints", "usePartition"])
 	}
 	
 	@Override
 	public List<Driver.Support> supported() {
+		return super.supported() +
+				[Driver.Support.BATCH, Driver.Support.WRITE, Driver.Support.SEQUENCE, Driver.Support.TRANSACTIONAL,
+				 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX, Driver.Support.TEMPORARY]
 		List<Driver.Support> result = super.supported()
-        result << Driver.Support.BLOB
-        result << Driver.Support.CLOB
-		result << Driver.Support.TEMPORARY
-		result << Driver.Support.INDEX
-		return result
 	}
 	
 	@Override
 	public List<Driver.Operation> operations() {
-		List<Driver.Operation> result = super.operations()
-		result << Driver.Operation.BULKLOAD
-		result << Driver.Operation.CREATE
-		return result
+        return super.operations() +
+                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
+                 Driver.Operation.BULKLOAD]
 	}
 	
 	@Override

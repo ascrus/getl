@@ -39,7 +39,7 @@ class BoolUtils {
 	 * @param defaultValue - return if value has null
 	 * @return
 	 */
-	public static Boolean IsValue(def value, Boolean defaultValue) {
+	public static Boolean IsValue(def value, Boolean defaultValue = false) {
 		if (value == null) return defaultValue
 		if (value instanceof Boolean) return value
 
@@ -83,9 +83,9 @@ class BoolUtils {
         return result
 	}
 
-	public static Boolean IsValue(def value) {
+	/*public static Boolean IsValue(def value) {
 		IsValue(value, false)
-	}
+	}*/
 	
 	/**
 	 * Validation instaceof use class for super class

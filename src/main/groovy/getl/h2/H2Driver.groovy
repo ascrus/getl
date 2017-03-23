@@ -51,28 +51,26 @@ class H2Driver extends JDBCDriver {
 		defaultSchemaName = "PUBLIC"
 		connectionParamBegin = ";"
 		connectionParamJoin = ";"
+
+        allowLocalTemporaryTable = true
+        allowGlobalTemporaryTable = true
 		
 		methodParams.register("createDataset", ["transactional", "not_persistent"])
 	}
 	
 	@Override
 	public List<Driver.Support> supported() {
-		List<Driver.Support> result = super.supported()
-        result << Driver.Support.BLOB
-        result << Driver.Support.CLOB
-		result << Driver.Support.TEMPORARY
-        result << Driver.Support.MEMORY
-		result << Driver.Support.INDEX
-		return result
+		return super.supported() +
+				[Driver.Support.BATCH, Driver.Support.WRITE, Driver.Support.SEQUENCE, Driver.Support.TRANSACTIONAL,
+				 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX, Driver.Support.TEMPORARY,
+				 Driver.Support.MEMORY]
 	}
 	
 	@Override
 	public List<Driver.Operation> operations() {
-		List<Driver.Operation> result = super.operations()
-		result << Driver.Operation.BULKLOAD
-		result << Driver.Operation.CREATE
-		result << Driver.Operation.MERGE
-		return result
+		return super.operations() +
+				[Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
+				 Driver.Operation.BULKLOAD, Driver.Operation.MERGE]
 	}
 	
 	@Override
