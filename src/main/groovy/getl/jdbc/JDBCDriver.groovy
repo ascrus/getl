@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,9 +24,8 @@
 
 package getl.jdbc
 
-import groovy.transform.InheritConstructors
 import groovy.sql.Sql
-import sun.misc.ClassLoaderUtil
+import groovy.transform.InheritConstructors
 
 import java.sql.DriverManager
 import java.sql.PreparedStatement
@@ -368,10 +367,11 @@ class JDBCDriver extends Driver {
 
         return sql
 	}
+
+    protected int defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_COMMITTED
 	
 	@Override
-	public
-	void connect() {
+	public void connect() {
 		Sql sql = null
 		JDBCConnection con = connection as JDBCConnection
 		
@@ -392,10 +392,11 @@ class JDBCDriver extends Driver {
                 jdbcClass = Class.forName(drvName)
             }
             else {
-                def drvFile = new File(drvPath)
-                if (!drvFile.exists()) throw new ExceptionGETL("Not found driver file \"$drvPath\"")
-                URLClassLoader cl = new URLClassLoader(new URL("file:///${drvFile.absolutePath}"))
-                jdbcClass = Class.forName(drvName, true, cl)
+//                def drvFile = new File(drvPath)
+//                if (!drvFile.exists()) throw new ExceptionGETL("Not found driver file \"$drvPath\"")
+//                URLClassLoader cl = new URLClassLoader(new URL("file:///${drvFile.absolutePath}"))
+				FileUtils.AddJarToClassPath(this, drvPath)
+                jdbcClass = Class.forName(drvName)
             }
 
 			def loginTimeout = con.loginTimeout?:30
@@ -440,7 +441,7 @@ class JDBCDriver extends Driver {
 			if (server != null) con.sysParams."balancerServer" = server
 
 			sql.getConnection().setAutoCommit(con.autoCommit)
-			sql.getConnection().setTransactionIsolation(java.sql.Connection.TRANSACTION_READ_COMMITTED)
+			sql.getConnection().setTransactionIsolation(defaultTransactionIsolation)
 			sql.withStatement{ stmt -> 
 				if (con.fetchSize != null) stmt.fetchSize = con.fetchSize
 				if (con.queryTimeout != null) stmt.queryTimeout = con.queryTimeout
@@ -798,20 +799,14 @@ ${extend}'''
 	
 	/**
 	 * Prefix for tables name
-	 * @return
 	 */
-	public String getTablePrefix () {
-		return '"'
-	}
-	
+	public String tablePrefix = '"'
+
 	/**
 	 * Prefix for fields name
-	 * @return
 	 */
-	public String getFieldPrefix () {
-		return '"'
-	}
-	
+	public String fieldPrefix = '"'
+
 	public String prepareObjectNameWithPrefix(String name, String prefix) {
 		if (name == null) return null
 		String res
@@ -826,7 +821,7 @@ ${extend}'''
 				res = name
 		}
 		
-		prefix + res + prefix
+		return prefix + res + prefix
 	}
 	
 	/**

@@ -42,6 +42,8 @@ class MySQLDriver extends JDBCDriver {
 		connectionParamBegin = '?'
 		connectionParamJoin = '&'
 
+		tablePrefix = '`'
+		fieldPrefix = '`'
         allowGlobalTemporaryTable = false
         allowLocalTemporaryTable = true
 
@@ -65,17 +67,7 @@ class MySQLDriver extends JDBCDriver {
 	protected Map getConnectProperty() {
 		return [zeroDateTimeBehavior: 'convertToNull']
 	}
-	
-	@Override
-	public String getTablePrefix () {
-		return '`'
-	}
-	
-	@Override
-	public String getFieldPrefix () {
-		return '`'
-	}
-	
+
 	@Override
 	public String defaultConnectURL () {
 		return 'jdbc:mysql://{host}/{database}'
