@@ -734,15 +734,13 @@ ${extend}'''
 		def defFields = []
 		def defPrimary = GenerationUtils.SqlKeyFields(connection as JDBCConnection, dataset.field, null, null)
 		dataset.field.each { Field f ->
-//			if (f.isReadOnly) return
 			try {
                 if (f.type == Field.Type.BLOB && !isSupport(Driver.Support.BLOB)) throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")")
                 if (f.type == Field.Type.TEXT && !isSupport(Driver.Support.CLOB)) throw new ExceptionGETL("Driver not support clob fields (field \"${f.name}\")")
 
-				String s = "	${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((!f.isNull)?" NOT NULL":"") + 
-							((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
-							((f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
-							((f.compute != null)?" AS ${f.compute}":"")
+				def s = createDatasetAddColumn(f, useNativeDBType)
+				if (s == null) return
+
 				defFields << s
 			}
 			catch (Throwable e) {
@@ -797,6 +795,29 @@ ${extend}'''
 		}
 		
 		if (commitDDL) commitTran()
+	}
+
+	/**
+	 * Get column definition for CREATE TABLE statement
+	 * @param f - specified field
+	 * @param useNativeDBType - use native type for typeName field property
+	 * @return
+	 */
+	public String generateColumnDefinition(Field f, boolean useNativeDBType) {
+		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((!f.isNull)?" NOT NULL":"") +
+				((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
+				((f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
+				((f.compute != null)?" AS ${f.compute}":"")
+	}
+
+	/**
+	 * Generate column definition for CREATE TABLE statement
+	 * @param f - specified field
+	 * @param useNativeDBType - use native type for typeName field property
+	 * @return
+	 */
+	protected String createDatasetAddColumn(Field f, boolean useNativeDBType) {
+		return generateColumnDefinition(f, useNativeDBType)
 	}
 	
 	protected String createDatasetExtend(Dataset dataset, Map params) {

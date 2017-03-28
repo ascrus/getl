@@ -49,11 +49,12 @@ class VerticaDriver extends JDBCDriver {
         allowLocalTemporaryTable = true
 
         addPKFieldsToUpdateStatementFromMerge = true
-		
+
 		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy'])
-		methodParams.register('bulkLoadFile', ['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath',
-												'rejectedPath', 'expression', 'files', 'fileMask', 'location', 'abortOnError',
-												'maskDate', 'maskTime', 'maskDateTime', 'parser'])
+		methodParams.register('bulkLoadFile',
+				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
+				 'expression', 'files', 'fileMask', 'location', 'abortOnError', 'maskDate', 'maskTime', 'maskDateTime',
+				 'parser'])
 		methodParams.register('unionDataset', ['direct'])
 	}
 
@@ -96,7 +97,7 @@ class VerticaDriver extends JDBCDriver {
 	
 	@Override
 	protected String createDatasetExtend(Dataset dataset, Map params) {
-		String result = ''
+		def result = ''
 		def temporary = (dataset.sysParams.type in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
 		if (temporary && params.onCommit != null && params.onCommit) result += 'ON COMMIT PRESERVE ROWS '
 		if (params.orderBy != null && !params.orderBy.isEmpty()) result += "ORDER BY ${params.orderBy.join(", ")} "
