@@ -324,10 +324,16 @@ class JDBCDriver extends Driver {
 		def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()
 		if (url == null) return null
 
-		if (con.connectHost != null) url = url.replace("{host}", con.connectHost)
-		if (con.connectDatabase != null) url = url.replace("{database}", con.connectDatabase)
-		
-		url
+		if (url.indexOf('{host}') != -1) {
+            if (con.connectHost == null) throw new ExceptionGETL('Need set property "connectHost"')
+            url = url.replace("{host}", con.connectHost)
+        }
+        if (url.indexOf('{database}') != -1) {
+            if (con.connectDatabase == null) throw new ExceptionGETL('Need set property "connectDatabase"')
+            url = url.replace("{database}", con.connectDatabase)
+        }
+
+		return url
 	}
 	
 	public String buildConnectParams () {

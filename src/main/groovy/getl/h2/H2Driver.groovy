@@ -75,12 +75,17 @@ class H2Driver extends JDBCDriver {
 	
 	@Override
 	public String defaultConnectURL () {
-		H2Connection con = connection as H2Connection
+		def con = connection as H2Connection
+        def url
 		if (con.inMemory) {
-			return (con.connectHost != null)?"jdbc:h2:tcp://{host}/mem:{database}":"jdbc:h2:mem:{database}" 
+			url = (con.connectHost != null)?"jdbc:h2:tcp://{host}/mem:{database}":"jdbc:h2:mem:{database}"
+			if (con.connectDatabase == null) url = url.replace('{database}', 'memory_database')
 		}
-		
-		return (con.connectHost != null)?"jdbc:h2:tcp://{host}/{database}":"jdbc:h2://{database}"
+		else {
+            url = (con.connectHost != null)?"jdbc:h2:tcp://{host}/{database}":"jdbc:h2://{database}"
+        }
+
+        return url
 	}
 	
 	/**
@@ -105,7 +110,7 @@ class H2Driver extends JDBCDriver {
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		String result = ""
 		def temporary = (dataset.sysParams.type in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
-		if (BoolUtils.IsValue(params."not_persistent", false)) result += "NOT PERSISTENT "
+		if (BoolUtils.IsValue(params."not_persistent")) result += "NOT PERSISTENT "
 		if (temporary && params.transactional != null && params.transactional) result += "TRANSACTIONAL "
 		
 		return result
