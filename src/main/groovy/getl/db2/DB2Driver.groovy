@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2016  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -44,8 +44,13 @@ class DB2Driver extends JDBCDriver {
 		connectionParamBegin = ':'
 		connectionParamJoin = ';'
 		connectionParamFinish = ';'
+	}
 
-        allowLocalTemporaryTable = false
+	@Override
+	public List<Driver.Support> supported() {
+		return super.supported() +
+				[Driver.Support.GLOBAL_TEMPORARY,
+				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
 	}
 	
 	@Override
@@ -53,14 +58,7 @@ class DB2Driver extends JDBCDriver {
 		return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
-	
-	@Override
-	public List<Driver.Support> supported() {
-		return super.supported() +
-				[Driver.Support.BATCH, Driver.Support.WRITE, Driver.Support.SEQUENCE, Driver.Support.TRANSACTIONAL,
-                 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
-	}
-	
+
 	@Override
 	public String defaultConnectURL () {
 		return "jdbc:db2://{host}/{database}"

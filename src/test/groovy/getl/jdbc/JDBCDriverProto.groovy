@@ -3,11 +3,14 @@ package getl.jdbc
 import getl.data.*
 import getl.driver.Driver
 import getl.proc.Flow
-import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.GenerationUtils
+import getl.utils.NumericUtils
+import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
+
+import java.sql.Time
 
 /**
  * Created by ascru on 21.11.2016.
@@ -28,15 +31,15 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 new Field(name: 'id1', type: 'BIGINT', isKey: true, ordKey: 1),
                 new Field(name: 'id2', type: 'DATETIME', isKey: true, ordKey: 2),
                 new Field(name: 'name', type: 'STRING', length: 50, isNull: false),
-                new Field(name: 'value', type: 'NUMERIC', length: 12, precision: 2),
-                new Field(name: 'double', type: 'DOUBLE'),
+                new Field(name: 'value', type: 'NUMERIC', length: 12, precision: 2, isNull: false),
+                new Field(name: 'double', type: 'DOUBLE', isNull: false),
                 new Field(name: 'date', type: 'DATE', isNull: false),
-                new Field(name: 'time', type: 'TIME'),
+                new Field(name: 'time', type: 'TIME', isNull: false),
                 new Field(name: 'flag', type: 'BOOLEAN', isNull: false, defaultValue: true)
             ]
 
         if (con != null && con.driver.isSupport(Driver.Support.BLOB)) res << new Field(name: 'data', type: 'BLOB', length: 1024)
-        if (con != null && con.driver.isSupport(Driver.Support.CLOB)) new Field(name: 'text', type: 'TEXT', length: 1024)
+        if (con != null && con.driver.isSupport(Driver.Support.CLOB)) res << new Field(name: 'text', type: 'TEXT', length: 1024)
 
         return res
     }
@@ -72,8 +75,8 @@ abstract class JDBCDriverProto extends GroovyTestCase {
     }
 
     public void testLocalTable() {
-        if (!con.driver.isSupport(Driver.Support.TEMPORARY)) {
-            println "Skip test temporary table: ${con.driver.getClass().name} not support this futures"
+        if (!con.driver.isSupport(Driver.Support.LOCAL_TEMPORARY)) {
+            println "Skip test local temporary table: ${con.driver.getClass().name} not support this futures"
             return
         }
         def tempTable = new TableDataset(connection: con, tableName: '_getl_local_temp_test', type: JDBCDataset.Type.LOCAL_TEMPORARY)
@@ -91,13 +94,13 @@ abstract class JDBCDriverProto extends GroovyTestCase {
     }
 
     public void testGlobalTable() {
-        if (!con.driver.isSupport(Driver.Support.TEMPORARY)) {
-            println "Skip test temporary table: ${con.driver.getClass().name} not support this futures"
+        if (!con.driver.isSupport(Driver.Support.GLOBAL_TEMPORARY)) {
+            println "Skip test global temporary table: ${con.driver.getClass().name} not support this futures"
             return
         }
         def tempTable = new TableDataset(connection: con, tableName: '_getl_global_temp_test', type: JDBCDataset.Type.GLOBAL_TEMPORARY)
         tempTable.field = fields
-        assertFalse(tempTable.exists)
+        tempTable.drop(ifExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
             tempTable.create(indexes: [
                     _getl_global_temp_test_idx_1: [columns: ['id1', 'date'], unique: true],
@@ -107,7 +110,6 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         else {
             tempTable.create()
         }
-        assertTrue(tempTable.exists)
         tempTable.drop(ifExists: true)
     }
 
@@ -126,63 +128,82 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         def count = new Flow().writeTo(dest: table) { updater ->
             (1..countRows).each { num ->
                 def r = [:]
+                r = GenerationUtils.GenerateRowValues(table.field, num)
                 r.id1 = num
-                r.id2 = new Date()
-                r.name = "String $num"
-                r.value = GenerationUtils.GenerateNumeric(12, 2)
-                r.double = GenerationUtils.GenerateDouble()
-                r.date = GenerationUtils.GenerateDate()
-                r.time = new java.sql.Time(GenerationUtils.GenerateInt(0, 360000))
-                r.flag = GenerationUtils.GenerateBoolean()
-                r.text = GenerationUtils.GenerateString(1024)
-                r.data = GenerationUtils.GenerateString(512).bytes
 
                 updater(r)
             }
         }
         assertEquals(countRows, count)
+        validCount()
     }
 
     private void updateData() {
-        def rows = table.rows()
+        def rows = table.rows(order: ['id1'])
         def count = new Flow().writeTo(dest: table, dest_operation: 'UPDATE') { updater ->
             rows.each { r ->
-                r.name += ' update'
-                r.value += 1
-                r.double += 1
-                r.date = DateUtils.AddDate('ss', 1, r.date)
-                r.time += 100
-                r.flag = GenerationUtils.GenerateBoolean()
-                r.text = GenerationUtils.GenerateString(1024)
-                r.data = GenerationUtils.GenerateString(512).bytes
+                Map nr = [:]
+                nr.putAll(r)
+                nr.name = StringUtils.LeftStr(r.name, 40) + ' update'
+                nr.value = r.value + 1
+                nr.double = r.double + 1.00
+                nr.date = DateUtils.AddDate('dd', 1, r.date)
+                nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
+                nr.flag = GenerationUtils.GenerateBoolean()
+                nr.text = GenerationUtils.GenerateString(1024)
+                nr.data = GenerationUtils.GenerateString(512).bytes
 
-                updater(r)
+                updater(nr)
             }
         }
         assertEquals(countRows, count)
+        validCount()
+
+        def i = 0
+        table.eachRow(order: ['id1']) { r ->
+            assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' update', r.name)
+            assertEquals(rows[i].value + 1, r.value)
+            assertEquals(rows[i].double + 1.00, r.double)
+            assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
+            assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
+            i++
+        }
     }
 
     private void mergeData() {
-        def rows = table.rows()
+        def rows = table.rows(order: ['id1'])
         def count = new Flow().writeTo(dest: table, dest_operation: 'MERGE') { updater ->
             rows.each { r ->
-                r.name += ' merge'
-                r.value += 1
-                r.double += 1
-                r.date = DateUtils.AddDate('ss', 1, r.date)
-                r.time += 100
-                r.flag = GenerationUtils.GenerateBoolean()
-                r.text = GenerationUtils.GenerateString(1024)
-                r.data = GenerationUtils.GenerateString(512).bytes
+                Map nr = [:]
+                nr.putAll(r)
+                nr.name = StringUtils.LeftStr(r.name, 40) + ' merge'
+                nr.value = r.value + 1
+                nr.double = r.double + 1.00
+                nr.date = DateUtils.AddDate('dd', 1, r.date)
+                nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
+                nr.flag = GenerationUtils.GenerateBoolean()
+                nr.text = GenerationUtils.GenerateString(1024)
+                nr.data = GenerationUtils.GenerateString(512).bytes
 
-                updater(r)
+                updater(nr)
             }
         }
         assertEquals(countRows, count)
+        validCount()
+
+        def i = 0
+        table.eachRow(order: ['id1']) { r ->
+            assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' merge', r.name)
+            assertEquals(rows[i].value + 1, r.value)
+            assertEquals(rows[i].double + 1.00, r.double)
+            assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
+            assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
+            i++
+        }
     }
 
     private void validCount() {
-        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE double IS NOT NULL")
+        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE id1 IS NOT NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
         assertEquals(countRows, rows[0].count_rows)
@@ -196,6 +217,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
             }
         }
         assertEquals(countRows, count)
+        validCountZero()
     }
 
     private void truncateData() {
@@ -211,13 +233,12 @@ abstract class JDBCDriverProto extends GroovyTestCase {
 
     private void runCommandUpdate() {
         con.startTran()
-        def count = con.executeCommand(command: "UPDATE ${table.fullNameDataset()} SET double = NULL", isUpdate: true)
+        def count = con.executeCommand(command: "UPDATE ${table.fullNameDataset()} SET double = double + 1", isUpdate: true)
         assertEquals(countRows, count)
         con.commitTran()
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE double IS NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
-        assertEquals(countRows, rows[0].count_rows)
     }
 
     private void bulkLoad() {
@@ -235,19 +256,15 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         createTable()
         retrieveFields()
         insertData()
-        validCount()
         updateData()
-        validCount()
         if (con.driver.isOperation(Driver.Operation.MERGE)) {
             mergeData()
-            validCount()
         }
         if (con.driver.isOperation(Driver.Operation.BULKLOAD)) {
             bulkLoad()
         }
         runCommandUpdate()
         deleteData()
-        validCountZero()
         dropTable()
         disconnect()
     }

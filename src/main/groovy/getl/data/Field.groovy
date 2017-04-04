@@ -104,7 +104,7 @@ class Field implements Serializable {
 	/**
 	 * Use field in partition key
 	 */
-	private Boolean isPartition
+	private boolean isPartition = false
 	public Boolean getInPartition() { return this.isPartition}
 	public void setIsPartition(Boolean value) { this.isPartition = value }
 
@@ -434,9 +434,9 @@ class Field implements Serializable {
         if (this.name?.toUpperCase() != o.name?.toUpperCase()) return false
         if (this.type != o.type) return false
         if (this.isNull != o.isNull) return false
-        if (this.isKey != o.isKey) return false
+        if (BoolUtils.IsValue(this.isKey) != BoolUtils.IsValue(o.isKey)) return false
         if (this.ordKey != o.ordKey) return false
-		if (this.isPartition != o.isPartition) return false
+		if (BoolUtils.IsValue(this.isPartition) != BoolUtils.IsValue(o.isPartition)) return false
 		if (this.ordPartition != o.ordPartition) return false
         if (this.length != o.length) return false
         if (this.precision != o.precision) return false
@@ -449,9 +449,9 @@ class Field implements Serializable {
         if (this.minValue != o.minValue) return false
         if (this.maxValue != o.maxValue) return false
         if (this.format != o.format) return false
-        if (this.isAutoincrement != o.isAutoincrement) return false
-        if (this.isReadOnly != o.isReadOnly) return false
-        if (this.trim != o.trim) return false
+        if (BoolUtils.IsValue(this.isAutoincrement) != BoolUtils.IsValue(o.isAutoincrement)) return false
+        if (BoolUtils.IsValue(this.isReadOnly) != BoolUtils.IsValue(o.isReadOnly)) return false
+        if (BoolUtils.IsValue(this.trim) != BoolUtils.IsValue(o.trim)) return false
         if (this.extended != o.extended) return false
         if (this.description != o.description) return false
         if (this.getMethod != o.getMethod) return false

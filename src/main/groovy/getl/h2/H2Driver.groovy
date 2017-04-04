@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -52,18 +52,14 @@ class H2Driver extends JDBCDriver {
 		connectionParamBegin = ";"
 		connectionParamJoin = ";"
 
-        allowLocalTemporaryTable = true
-        allowGlobalTemporaryTable = true
-		
 		methodParams.register("createDataset", ["transactional", "not_persistent"])
 	}
 	
 	@Override
 	public List<Driver.Support> supported() {
 		return super.supported() +
-				[Driver.Support.BATCH, Driver.Support.WRITE, Driver.Support.SEQUENCE, Driver.Support.TRANSACTIONAL,
-				 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX, Driver.Support.TEMPORARY,
-				 Driver.Support.MEMORY]
+				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.LOCAL_TEMPORARY, Driver.Support.MEMORY,
+				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
 	}
 	
 	@Override
@@ -72,7 +68,7 @@ class H2Driver extends JDBCDriver {
 				[Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
 				 Driver.Operation.BULKLOAD, Driver.Operation.MERGE]
 	}
-	
+
 	@Override
 	public String defaultConnectURL () {
 		def con = connection as H2Connection
@@ -211,12 +207,17 @@ FROM CSVREAD('${source.fullFileName()}', ${heads}, '${functionParms}')
     protected String getChangeSessionPropertyQuery() { return 'SET {name} {value}' }
 
 	@Override
-	protected String openWriteMergeSql(JDBCDataset dataset, Map params, List<Field> fields) {
+	protected String openWriteMergeSql(JDBCDataset dataset, Map params, List<Field> fields, List<String> statFields) {
 		def excludeFields = []
-		fields.each { Field f -> 
-			if (f.isAutoincrement || f.isReadOnly) excludeFields << f 
+		fields.each { Field f ->
+			if (f.isReadOnly) {
+                excludeFields << f.name
+            }
+            else {
+                statFields << f.name
+            }
 		}
-		
+
 		String res = """
 MERGE INTO ${dataset.fullNameDataset()} (${GenerationUtils.SqlFields(dataset.connection as JDBCConnection, fields, null, excludeFields).join(", ")})
 VALUES(${GenerationUtils.SqlFields(dataset.connection as JDBCConnection, fields, "?", excludeFields).join(", ")})

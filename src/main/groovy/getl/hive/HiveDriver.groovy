@@ -45,10 +45,11 @@ class HiveDriver extends JDBCDriver {
 
         connectionParamBegin = ';'
 
-        allowLocalTemporaryTable = true
-        localTemporaryTablePrefix = 'TEMPORARY'
+        localTemporaryTablePrefix = 'LOCAL TEMPORARY'
 
         defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_UNCOMMITTED
+
+        syntaxPartitionKeyInColumns = false
 
         methodParams.register('createDataset',
                 ['clustered', 'skewed', 'rowFormat', 'storedAs', 'location',
@@ -56,16 +57,17 @@ class HiveDriver extends JDBCDriver {
     }
 
     @Override
-    public List<Driver.Operation> operations() {
-        return super.operations() +
-                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
+    public List<Driver.Support> supported() {
+        return super.supported() +
+                [Driver.Support.LOCAL_TEMPORARY, Driver.Support.BLOB] -
+                [Driver.Support.TRANSACTIONAL, Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD,
+                 Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD]
     }
 
     @Override
-    public List<Driver.Support> supported() {
-        return super.supported() +
-                [Driver.Support.BATCH, Driver.Support.WRITE, Driver.Support.TRANSACTIONAL,
-                 Driver.Support.BLOB]
+    public List<Driver.Operation> operations() {
+        return super.operations() +
+                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
     }
 
     @Override
@@ -120,9 +122,9 @@ class HiveDriver extends JDBCDriver {
             def by = clustered.by as List
             sb << "CLUSTERED BY (${by.join(', ')})"
 
-            if (clustered.sorterBy != null) {
-                if (!(clustered.sorterBy instanceof List)) throw new ExceptionGETL('Required list type for parameter "clustered.sorterBy"')
-                def sortedBy = clustered.sorterBy as List
+            if (clustered.sortedBy != null) {
+                if (!(clustered.sortedBy instanceof List)) throw new ExceptionGETL('Required list type for parameter "clustered.sorterBy"')
+                def sortedBy = clustered.sortedBy as List
                 sb << " SORTED BY (${sortedBy.join(', ')})"
             }
 
@@ -201,6 +203,13 @@ class HiveDriver extends JDBCDriver {
         }
 
         return sb.toString()
+    }
+
+    @Override
+    protected String syntaxInsertStatement(Dataset dataset) {
+        return ((dataset.fieldListPartitions.isEmpty()))?
+                'INSERT INTO {table} ({columns}) VALUES({values})':
+                'INSERT INTO {table} PARTITION ({partition}) VALUES({values})'
     }
 
     /*

@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -45,9 +45,6 @@ class VerticaDriver extends JDBCDriver {
 
 		defaultSchemaName = 'PUBLIC'
 
-        allowGlobalTemporaryTable = true
-        allowLocalTemporaryTable = true
-
         addPKFieldsToUpdateStatementFromMerge = true
 
 		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy'])
@@ -71,8 +68,8 @@ class VerticaDriver extends JDBCDriver {
     @Override
     public List<Driver.Support> supported() {
         return super.supported() +
-                [Driver.Support.BATCH, Driver.Support.WRITE, Driver.Support.TRANSACTIONAL,
-                 Driver.Support.CLOB, Driver.Support.TEMPORARY]
+				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.GLOBAL_TEMPORARY,
+				 Driver.Support.SEQUENCE, Driver.Support.CLOB]
     }
 
     @Override

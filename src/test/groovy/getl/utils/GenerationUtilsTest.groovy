@@ -4,6 +4,7 @@ import getl.data.*
 import getl.tfs.TDS
 
 import javax.sql.rowset.serial.SerialBlob
+import javax.sql.rowset.serial.SerialClob
 
 /**
  * Created by ascru on 22.11.2016.
@@ -227,7 +228,16 @@ class GenerationUtilsTest extends GroovyTestCase {
             if (f.type in [Field.Type.STRING, Field.Type.TEXT, Field.Type.BLOB, Field.Type.NUMERIC]) f.length = 20
             if (f.type == Field.Type.NUMERIC) f.precision = 5
             l << f
-            r.put("field_${it.toString().toLowerCase()}".toString(), GenerationUtils.GenerateValue(f))
+            def v = GenerationUtils.GenerateValue(f)
+            switch (it) {
+                case Field.Type.BLOB:
+                    v = new SerialBlob(v)
+                    break
+                case Field.Type.TEXT:
+                    v = new SerialClob(v.chars)
+                    break
+            }
+            r.put("field_${it.toString().toLowerCase()}".toString(), v)
         }
         def stat = GenerationUtils.GenerateRowCopy(c.driver, l)
         def d = [:]

@@ -67,7 +67,9 @@ class JDBCDriver extends Driver {
 	
 	@Override
 	public List<Driver.Support> supported() {
-		[Driver.Support.CONNECT, Driver.Support.SQL, Driver.Support.EACHROW]
+		[Driver.Support.CONNECT, Driver.Support.SQL, Driver.Support.EACHROW, Driver.Support.WRITE, Driver.Support.BATCH,
+		 Driver.Support.COMPUTE_FIELD, Driver.Support.DEFAULT_VALUE, Driver.Support.NOT_NULL_FIELD,
+		 Driver.Support.PRIMARY_KEY, Driver.Support.TRANSACTIONAL]
 	}
 
 	@Override
@@ -374,6 +376,9 @@ class JDBCDriver extends Driver {
         return sql
 	}
 
+	/**
+	 * Default transaction isolation on connect
+	 */
     protected int defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_COMMITTED
 	
 	@Override
@@ -398,9 +403,6 @@ class JDBCDriver extends Driver {
                 jdbcClass = Class.forName(drvName)
             }
             else {
-//                def drvFile = new File(drvPath)
-//                if (!drvFile.exists()) throw new ExceptionGETL("Not found driver file \"$drvPath\"")
-//                URLClassLoader cl = new URLClassLoader(new URL("file:///${drvFile.absolutePath}"))
 				FileUtils.AddJarToClassPath(this, drvPath)
                 jdbcClass = Class.forName(drvName)
             }
@@ -518,7 +520,7 @@ class JDBCDriver extends Driver {
 		String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
 		String tableNamePattern = prepareObjectName(params."tableName" as String)
 		String[] types
-		if (params."type" != null) types = params."type" as String[] else types = ['TABLE', 'GLOBAL TEMPORARY', 'LOCAL TEMPORARY', 'ALIAS', 'SYNONYM', 'VIEW'] as String[]
+		if (params."type" != null) types = params."type" as String[] else types = ['TABLE', 'GLOBAL_TEMPORARY', 'LOCAL_TEMPORARY', 'ALIAS', 'SYNONYM', 'VIEW'] as String[]
 
 		List<Map> tables = []
 		ResultSet rs = sqlConnect.connection.metaData.getTables(catalog, schemaPattern, tableNamePattern, types)
@@ -540,14 +542,17 @@ class JDBCDriver extends Driver {
 		
 		tables
 	}
-	
+
+	/**
+	 * Valid not null table name
+	 * @param dataset
+	 */
 	public static validTableName (Dataset dataset) {
 		if (dataset.params.tableName == null) throw new ExceptionGETL("Required table name from dataset")
 	}
 
 	@Override
-	public
-	List<Field> fields(Dataset dataset) {
+	public List<Field> fields(Dataset dataset) {
 		validTableName(dataset)
 		
 		if (dataset.sysParams.cacheDataset != null && dataset.sysParams.cacheRetrieveFields == null) {
@@ -639,12 +644,11 @@ class JDBCDriver extends Driver {
 			}
 		}
 		
-		result
+		return result
 	}
 
 	@Override
-	public
-	void startTran() {
+	public void startTran() {
 		if (connection.tranCount == 0) {
 			saveToHistory("START TRAN")
 		}
@@ -654,8 +658,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	public
-	void commitTran() {
+	public void commitTran() {
 		if (connection == null) throw new ExceptionGETL("Can not commit from disconnected connection")
 		if (connection.tranCount == 1) {
 			saveToHistory("COMMIT")
@@ -667,8 +670,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	public
-	void rollbackTran() {
+	public void rollbackTran() {
 		if (connection == null) throw new ExceptionGETL("Can not rollback from disconnected connection")
 		if (connection.tranCount == 1) {
 			saveToHistory("ROLLBACK")
@@ -699,24 +701,22 @@ ${extend}'''
 	protected String localTemporaryTablePrefix = 'LOCAL TEMPORARY'
 	protected String memoryTablePrefix = 'MEMORY'
 
-    protected boolean allowGlobalTemporaryTable = false
-    protected boolean allowLocalTemporaryTable = false
-
 	@Override
-	public
-	void createDataset(Dataset dataset, Map params) {
+	public void createDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
 		def tableName = fullNameDataset(dataset)
 		def tableType = dataset.sysParams.type
-		if (!(tableType in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.MEMORY])) throw new ExceptionGETL("Can not create dataset for type \"${tableType}\"")
+		if (!(tableType in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.MEMORY])) {
+            throw new ExceptionGETL("Can not create dataset for type \"${tableType}\"")
+        }
 		def temporary = ""
 		switch (tableType) {
 			case JDBCDataset.Type.GLOBAL_TEMPORARY:
-                if (!isSupport(Driver.Support.TEMPORARY) || !allowGlobalTemporaryTable) throw new ExceptionGETL('Driver not support temporary tables')
+                if (!isSupport(Driver.Support.GLOBAL_TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables')
 				temporary = globalTemporaryTablePrefix
 				break
 			case JDBCDataset.Type.LOCAL_TEMPORARY:
-                if (!isSupport(Driver.Support.TEMPORARY) || !allowLocalTemporaryTable) throw new ExceptionGETL('Driver not support temporary tables')
+                if (!isSupport(Driver.Support.LOCAL_TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables')
 				temporary = localTemporaryTablePrefix
 				break
 			case JDBCDataset.Type.MEMORY:
@@ -750,7 +750,7 @@ ${extend}'''
 		}
 		def fields = defFields.join(",\n")
 		def pk = "" 
-		if (defPrimary.size() > 0) {
+		if (isSupport(Driver.Support.PRIMARY_KEY) && defPrimary.size() > 0) {
 			pk = "	PRIMARY KEY " + ((params.hashPrimaryKey != null && params.hashPrimaryKey)?"HASH ":"") + "(" + defPrimary.join(",") + ")"
 			fields += ","
 		}
@@ -804,10 +804,10 @@ ${extend}'''
 	 * @return
 	 */
 	public String generateColumnDefinition(Field f, boolean useNativeDBType) {
-		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((!f.isNull)?" NOT NULL":"") +
+		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((isSupport(Driver.Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
 				((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
-				((f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
-				((f.compute != null)?" AS ${f.compute}":"")
+				((isSupport(Driver.Support.DEFAULT_VALUE) && f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
+				((isSupport(Driver.Support.COMPUTE_FIELD) && f.compute != null)?" AS ${f.compute}":"")
 	}
 
 	/**
@@ -857,23 +857,23 @@ ${extend}'''
 	 * @return
 	 */
 	public String prepareObjectName(String name) {
-		prepareObjectNameWithPrefix(name, '')
+		return prepareObjectNameWithPrefix(name, '')
 	}
 	
 	public String prepareObjectNameForSQL(String name) {
-		prepareObjectNameWithPrefix(name, fieldPrefix)
+		return prepareObjectNameWithPrefix(name, fieldPrefix)
 	}
 	
 	public String prepareFieldNameForSQL(String name) {
-		prepareObjectNameWithPrefix(name, fieldPrefix)
+		return prepareObjectNameWithPrefix(name, fieldPrefix)
 	}
 	
 	public String prepareTableNameForSQL(String name) {
-		prepareObjectNameWithPrefix(name, tablePrefix)
+		return prepareObjectNameWithPrefix(name, tablePrefix)
 	}
 	
 	public String prepareObjectNameWithEval(String name) {
-		prepareObjectName(name)?.replace("\$", "\\\$")
+		return prepareObjectName(name)?.replace("\$", "\\\$")
 	}
 	
 	/**
@@ -897,7 +897,7 @@ ${extend}'''
 			}
 		}
 
-		r
+		return r
 	}
 	
 	public String nameDataset (Dataset dataset) {
@@ -916,15 +916,16 @@ ${extend}'''
 			}
 		}
 
-		r
+		return r
 	}
 
 	@Override
-	public
-	void dropDataset(Dataset dataset, Map params) {
+	public void dropDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
 		def n = fullNameDataset(dataset)
-		def t = (dataset.sysParams.type in [JDBCDataset.Type.TABLE, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.MEMORY])?"TABLE":(dataset.sysParams.type == JDBCDataset.Type.VIEW)?"VIEW":null
+		def t = (dataset.sysParams.type in
+                    [JDBCDataset.Type.TABLE, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.GLOBAL_TEMPORARY,
+                     JDBCDataset.Type.MEMORY])?"TABLE":(dataset.sysParams.type == JDBCDataset.Type.VIEW)?"VIEW":null
 		if (t == null) throw new ExceptionGETL("Can not support type object \"${dataset.sysParams.type}\"")
 		def e = (params.ifExists != null && params.ifExists)?"IF EXISTS ":""
 		def q = "DROP ${t} ${e}${n}"
@@ -955,9 +956,14 @@ ${extend}'''
 	 * @param params
 	 * @return
 	 */
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
-	}
-	
+	public void sqlTableDirective (Dataset dataset, Map params, Map dir) { }
+
+	/**
+	 * Generate select statement for read rows
+	 * @param dataset
+	 * @param params
+	 * @return
+	 */
 	public String sqlForDataset (Dataset dataset, Map params) {
 		String query
 		if (isTable(dataset)) {
@@ -1029,9 +1035,15 @@ ${extend}'''
 				query = StringUtils.SetValueString(dataset.params.query as String, p)
 			}
 		}
-		query
+
+		return query
 	}
-	
+
+	/**
+	 * Prepare fields with metadata
+	 * @param meta
+	 * @return
+	 */
 	protected List<Field> meta2Fields (def meta) {
 		List<Field> result = []
         //noinspection GroovyAssignabilityCheck
@@ -1050,8 +1062,7 @@ ${extend}'''
 	
 	@groovy.transform.CompileStatic
 	@Override
-	public
-	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	public long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		Integer fetchSize = (Integer)(params."fetchSize")
 		Closure filter = (Closure)(params."filter")
 		List<Field> metaFields = []
@@ -1169,13 +1180,12 @@ ${extend}'''
 		}
 		
 		dataset.readRows = countRec
-		
-		countRec
+
+		return countRec
 	}
 	
 	@Override
-	public
-	void clearDataset(Dataset dataset, Map params) {
+	public void clearDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
 		def truncate = (params.truncate != null)?params.truncate:false
 		
@@ -1207,8 +1217,7 @@ $sql
 	}
 
 	@Override
-	public
-	long executeCommand(String command, Map params) {
+	public long executeCommand(String command, Map params) {
 		def result = 0
 		
 		if (command == null || command.trim().length() == 0) return result
@@ -1254,14 +1263,19 @@ $sql
 			if (BoolUtils.IsValue(con.outputServerWarningToLog)) Logs.Warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
             saveToHistory("-- Server warning ${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
 		}
-		
-		result
+
+		return result
 	}
-	
-	protected List<Map> getIgnoreWarning () {
-		[]
-	}
-	
+
+	/**
+	 * Message when ignored in warning text
+	 * @return
+	 */
+	protected List<Map> getIgnoreWarning () { return [] }
+
+	/**
+	 * Write operation parameters object
+	 */
 	class WriterParams {
 		String operation
 		long batchSize = 0
@@ -1276,81 +1290,61 @@ $sql
 		String statement
 		java.sql.Connection con
 	}
-	
-	private Closure generateSetStatement (String operation, List<Field> procFields, List updateField, WriterParams wp) {
-		List<Field> fields
-		if (operation in ['INSERT', 'MERGE']) {
-			fields = [] 
-			procFields.each { Field f ->
-				if (f.isAutoincrement || f.isReadOnly) return
-				fields << f
-			}
-		}
-		else if (operation == 'UPDATE') {
-			fields = []
-			procFields.each { Field f ->
-				if (!f.isKey) {
-					if (updateField.find { it.toLowerCase() == f.name.toLowerCase()} ) {
-						fields << f
-					}
-				}
-			}
-			
-			procFields.each { Field f ->
-				if (f.isKey) fields << f
-			}
-		}
-		else if (operation == 'DELETE') {
-			fields = []
-			procFields.each { Field f ->
-				if (f.isKey) fields << f
-			}
-		}
-		else throw new ExceptionGETL("Not supported operation \"${operation}\"")
-		
-		def countMethod = new BigDecimal(fields.size() / 100).intValue() + 1
+
+	/**
+	 * Generate set value of fields statement for write operation
+	 * @param operation
+	 * @param procFields
+	 * @param statFields
+	 * @param wp
+	 * @return
+	 */
+	private Closure generateSetStatement (String operation, List<Field> procFields, List<String> statFields, WriterParams wp) {
+		if (statFields.isEmpty()) throw new ExceptionGETL('Required fields from generate prepared statement')
+		def countMethod = new BigDecimal(statFields.size() / 100).intValue() + 1
 		def curMethod = 0
-		
+
 		StringBuilder sb = new StringBuilder()
 		sb << "{ getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection _getl_con, java.sql.PreparedStatement _getl_stat, Map _getl_row ->\n"
-		
-//		if (countMethod > 1) {
-			(1..countMethod).each { sb << "	method_${it}(_getl_driver, _getl_con, _getl_stat, _getl_row)\n" }
-			sb << "}\n"
-//		}
-		
-		
-		//PreparedStatement stat // !!!
+
+		(1..countMethod).each { sb << "	method_${it}(_getl_driver, _getl_con, _getl_stat, _getl_row)\n" }
+		sb << "}\n"
+
+		// PreparedStatement stat
 		def curField = 0
-		fields.each { Field f ->
+		procFields.each { Field f ->
+			def statIndex = statFields.indexOf(f.name)
+			if (statIndex == -1) return
+
 			curField++
-			
-//			if (countMethod > 1) {
-				def fieldMethod = new BigDecimal(curField / 100).intValue() + 1
-				if (fieldMethod != curMethod) {
-					if (curMethod > 0) sb << "}\n"
-					curMethod = fieldMethod
-					sb << "\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
-//					sb << "\n@groovy.transform.CompileStatic\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
-				}
-//			}
-			
+
+			def fieldMethod = new BigDecimal(curField / 100).intValue() + 1
+			if (fieldMethod != curMethod) {
+				if (curMethod > 0) sb << "}\n"
+				curMethod = fieldMethod
+				sb << "\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
+			}
+
 			def fn = f.name.toLowerCase()
 			def dbType = (f.dbType != null)?f.dbType:type2dbType(f.type)
-			
-			sb << GenerationUtils.GenerateSetParam(this, curField, dbType as Integer, new String("_getl_row.'${fn}'"))
+
+			sb << GenerationUtils.GenerateSetParam(this, statIndex + 1, dbType as Integer, new String("_getl_row.'${fn}'"))
 			sb << "\n"
 		}
 		sb << "}"
 		wp.statement = sb.toString()
-		
-//		println wp.statement
-		
+
 		Closure code = GenerationUtils.EvalGroovyClosure(wp.statement)
-		
-		code
+
+		return code
 	}
-	
+
+	/**
+	 * Prepared fields on write operation
+	 * @param dataset
+	 * @param prepareCode
+	 * @return
+	 */
 	protected List<Field> prepareFieldFromWrite (Dataset dataset, Closure prepareCode) {
 		boolean loadedField = (!dataset.field.isEmpty())
 		List<Field> tableFields
@@ -1376,10 +1370,18 @@ $sql
 			}
 		}
 		if (fields.isEmpty()) throw new ExceptionGETL("Required fields from write to dataset")
-	
-		fields	
+
+		return fields
 	}
-	
+
+	/**
+	 * Prepare on bulk load operator
+	 * @param source
+	 * @param dest
+	 * @param params
+	 * @param prepareCode
+	 * @return
+	 */
 	protected Map bulkLoadFilePrepare(CSVDataset source, JDBCDataset dest, Map<String, Object> params, Closure prepareCode) {
 		if (!(dest.type in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.MEMORY]) ) {
 			throw new ExceptionGETL("Bulk load support only table and not worked for ${dest.type}")
@@ -1442,32 +1444,61 @@ $sql
 		
 		Map res = MapUtils.CleanMap(params, ["autoMap", "map"])
 		res.map = mapping
-		
-		res
+
+		return res
 	}
 	
 	@Override
-	public
-	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+	public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
 		throw new ExceptionGETL("Not supported")
 	}
+
+	/**
+	 * Use partition key in columns definition for sql statement
+	 */
+	protected def syntaxPartitionKeyInColumns = true
+
+	/**
+	 * Partition key syntax for use in SQL statement
+	 */
+	protected def syntaxPartitionKey = '{column}=?'
+
+	/**
+	 * SQL insert statement pattern
+	 */
+	protected String syntaxInsertStatement(Dataset dataset) {
+		return 'INSERT INTO {table} ({columns}) VALUES({values})'
+	}
+
+	/**
+	 * SQL update statement pattern
+	 */
+	protected String syntaxUpdateStatement(Dataset dataset) {
+		return 'UPDATE {table} SET {values} WHERE {keys}'
+	}
+
+	/**
+	 * SQL delete statement pattern
+	 */
+	protected String syntaxDeleteStatement(Dataset dataset){
+		return 'DELETE FROM {table} WHERE {keys}'
+	}
 	
 	@Override
-	public
-	void openWrite (Dataset dataset, Map params, Closure prepareCode) {
-		WriterParams wp = new WriterParams()
+	public void openWrite (Dataset dataset, Map params, Closure prepareCode) {
+		def wp = new WriterParams()
 		dataset.driver_params = wp
 		
 		validTableName(dataset)
 		def fn = fullNameDataset(dataset)
-		String operation = (params.operation != null)?params.operation.toUpperCase():"INSERT"
+		def operation = (params.operation != null)?params.operation.toUpperCase():"INSERT"
 		if (!(operation.toUpperCase() in ["INSERT", "UPDATE", "DELETE", "MERGE"])) throw new ExceptionGETL("Unknown operation \"$operation\"")
-		long batchSize = (params.batchSize != null)?params.batchSize:1000
+		def batchSize = (!isSupport(Driver.Support.BATCH)?1:((params.batchSize != null)?params.batchSize:1000L))
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch
 		
-		List<Field> fields = prepareFieldFromWrite(dataset, prepareCode)
+		def fields = prepareFieldFromWrite(dataset, prepareCode)
 		
-		List<String> updateField = []
+		def updateField = [] as List<String>
 		if (params.updateField != null) {
 			updateField = params.updateField
 		}
@@ -1477,70 +1508,137 @@ $sql
 				updateField << f.name
 			}
 		}
+
+		// Order fields
+		def statFields = [] as List<String>
 		
-		StringBuilder sb = new StringBuilder()
+		def sb = new StringBuilder()
 		switch (operation) {
 			case "INSERT":
-				def h = []
-				def v = []
+				def statInsert = syntaxInsertStatement(dataset)
+
+				def h = [] as List<String>
+				def v = [] as List<String>
+				def p = [] as List<String>
+				def sv = [] as List<String>
+				def sp = [] as List<String>
+
 				fields.each { Field f ->
-					if (f.isAutoincrement || f.isReadOnly) return
+					if (f.isAutoincrement || f.isReadOnly || (!syntaxPartitionKeyInColumns && f.isPartition)) return
 					h << prepareFieldNameForSQL(f.name)
 					v << "?"
+					sv << f.name
 				}
-				
-				sb << "INSERT INTO ${fn} ("
-				sb << h.join(",")
-				sb << ")\n"
-				sb << "VALUES ("
-				sb << v.join(",")
-				sb << ")"
-				
+				if (v.isEmpty()) throw new ExceptionGETL('Required fields from insert statement')
+
+				if (statInsert.indexOf('{partition}') != -1) {
+					dataset.fieldListPartitions.each { Field f ->
+						p << syntaxPartitionKey.replace('{column}', prepareFieldNameForSQL(f.name))
+						sp << f.name
+					}
+					if (p.isEmpty()) throw new ExceptionGETL('Required partition key fields from insert statement')
+				}
+
+				def x = [[sp, statInsert.indexOf('{partition}')],
+						 [sv, statInsert.indexOf('{values}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
+				x.each { List l ->
+					statFields.addAll(l[0] as List<String>)
+				}
+
+				sb << statInsert.replace('{table}', fn).replace('{partition}', p.join(', '))
+						.replace('{columns}', h.join(",")).replace('{values}', v.join(","))
+
 				break
 				
 			case "UPDATE":
-				def pk = []
-				def v = []
-				
+				def statUpdate = syntaxUpdateStatement(dataset)
+
+				def k = [] as List<String>
+				def v = [] as List<String>
+				def p = [] as List<String>
+				def sk = [] as List<String>
+				def sv = [] as List<String>
+				def sp = [] as List<String>
+
 				fields.each { Field f ->
+					if (!syntaxPartitionKeyInColumns && f.isPartition) return
+
 					if (f.isKey) {
-						pk << "${prepareFieldNameForSQL(f.name)} = ?"
+						k << "${prepareFieldNameForSQL(f.name)} = ?"
+						sk << f.name
 					}
 					else {
+						if (f.isAutoincrement || f.isReadOnly) return
+
 						if (updateField.find { it.toLowerCase() == f.name.toLowerCase() } != null) {
-							v << "	${prepareFieldNameForSQL(f.name)} = ?"
+							v << "${prepareFieldNameForSQL(f.name)} = ?"
+							sv << f.name
 						}
 					}
 				}
-				
-				if (pk.isEmpty()) throw new ExceptionGETL("Required key fields for update write operation")
-				
-				sb << "UPDATE ${fn}\n"
-				sb << "SET\n"
-				sb << v.join(",\n")
-				sb << "\nWHERE "
-				sb << pk.join(" AND ")
-			
+
+				if (v.isEmpty()) throw new ExceptionGETL('Required fields from update statement')
+				if (k.isEmpty()) throw new ExceptionGETL("Required key fields for update statement")
+
+				if (statUpdate.indexOf('{partition}') != -1) {
+					dataset.fieldListPartitions.each { Field f ->
+						p << syntaxPartitionKey.replace('{column}', prepareFieldNameForSQL(f.name))
+						sp << f.name
+					}
+					if (p.isEmpty()) throw new ExceptionGETL('Required partition key fields from update statement')
+				}
+
+				def x = [[sp, statUpdate.indexOf('{partition}')],
+						 [sk, statUpdate.indexOf('{keys}')],
+						 [sv, statUpdate.indexOf('{values}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
+				x.each { List l ->
+					statFields.addAll(l[0] as List<String>)
+				}
+
+				sb << statUpdate.replace('{table}', fn).replace('{partition}', p.join(', '))
+						.replace('{keys}', k.join(" AND ")).replace('{values}', v.join(","))
+
 				break
 				
 			case "DELETE":
-				def pk = []
+				def statDelete = syntaxDeleteStatement(dataset)
+
+				def k = []
+				def p = [] as List<String>
+				def sk = [] as List<String>
+				def sp = [] as List<String>
 				fields.each { Field f ->
+					if (!syntaxPartitionKeyInColumns && f.isPartition) return
+
 					if (f.isKey) {
-						pk << "${prepareFieldNameForSQL(f.name)} = ?"
-						
+						k << "${prepareFieldNameForSQL(f.name)} = ?"
+						sk << f.name
 					}
 				}
 				
-				if (pk.isEmpty()) throw new ExceptionGETL("Required key fields for delete write operation")
-				
-				sb << "DELETE FROM ${fn}\n"
-				sb << "\nWHERE "
-				sb << pk.join(" AND ")
-			
+				if (k.isEmpty()) throw new ExceptionGETL("Required key fields for delete statement")
+
+				if (statDelete.indexOf('{partition}') != -1) {
+					dataset.fieldListPartitions.each { Field f ->
+						p << syntaxPartitionKey.replace('{column}', prepareFieldNameForSQL(f.name))
+						sp << f.name
+					}
+					if (p.isEmpty()) throw new ExceptionGETL('Required partition key fields from update statement')
+				}
+
+				def x = [[sp, statDelete.indexOf('{partition}')],
+						 [sk, statDelete.indexOf('{keys}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
+
+				x.each { List l ->
+					statFields.addAll(l[0] as List<String>)
+				}
+
+				sb << statDelete.replace('{table}', fn).replace('{partition}', p.join(', '))
+						.replace('{keys}', k.join(" AND "))
+
 				break
 			case "MERGE":
-				sb << openWriteMergeSql(dataset as JDBCDataset, params, fields)
+				sb << openWriteMergeSql(dataset as JDBCDataset, params, fields, statFields)
 				break
 			default:
 				throw new ExceptionGETL("Not supported operation \"${operation}\"")
@@ -1559,8 +1657,8 @@ $sql
 			Logs.Dump(e, getClass().name, dataset.objectFullName, query)
 			throw e
 		}
-		Closure setStatement = generateSetStatement(operation, fields, updateField, wp)
-		
+		Closure setStatement = generateSetStatement(operation, fields, statFields, wp)
+
 		wp.operation = operation
 		wp.batchSize = batchSize
 		wp.query = query
@@ -1572,8 +1670,8 @@ $sql
 			wp.saveOut = new File(params.logRows as String)
 		}
 	}
-	
-	protected String openWriteMergeSql(JDBCDataset dataset, Map params, List<Field> fields) {
+
+	protected String openWriteMergeSql(JDBCDataset dataset, Map params, List<Field> fields, List<String> statFields) {
 		throw new ExceptionGETL("Driver not supported \"MERGE\" operation")
 	}
 	
@@ -1589,19 +1687,32 @@ $sql
 	}
 	
 	@groovy.transform.CompileStatic
-	private void saveBatch (Dataset dataset, PreparedStatement stat) {
-		WriterParams wp = (WriterParams)(dataset.driver_params)
+	private void saveBatch (Dataset dataset, WriterParams wp) {
 		long countComplete = 0
 		long countError = 0
-		try {
-			wp.batchCount++
-			int[] resUpdate = stat.executeBatch()
-			resUpdate.each { int res -> if (res > 0) countComplete++ else if (res < 0) countError++ }
+		wp.batchCount++
+		if (wp.batchSize > 1) {
+			try {
+				int[] resUpdate = wp.stat.executeBatch()
+				resUpdate.each { int res -> if (res > 0) countComplete++ else if (res < 0) countError++ }
+			}
+			catch (BatchUpdateException e) {
+				validRejects(dataset, e.getUpdateCounts())
+				Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
+				throw e
+			}
 		}
-		catch (BatchUpdateException e) {
-			validRejects(dataset, e.getUpdateCounts())
-			Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
-			throw e
+		else {
+			try {
+				wp.stat.executeUpdate()
+				wp.stat.clearParameters()
+				countComplete++
+			}
+			catch (Exception e) {
+				countError++
+				Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
+				throw e
+			}
 		}
 		dataset.updateRows += countComplete
 		wp.rowProc = 0
@@ -1611,18 +1722,19 @@ $sql
 
 	@groovy.transform.CompileStatic
 	@Override
-	public
-	void write(Dataset dataset, Map row) {
+	public void write(Dataset dataset, Map row) {
 		WriterParams wp = (WriterParams)(dataset.driver_params)
 		
 		if (wp.saveOut != null) {
 			wp.saveOut.append("${wp.rowProc}:	${row.toString()}\n")
 		}
-		
+
 		try {
 			wp.setStatement.call(this, wp.con, wp.stat, row)
-			wp.stat.addBatch()
-			wp.stat.clearParameters()
+			if (wp.batchSize > 1) {
+				wp.stat.addBatch()
+				wp.stat.clearParameters()
+			}
 		}
 		catch (Exception e) {
 			Logs.Dump(e, getClass().name + ".write", dataset.objectName, "row:\n${row}\nstatement:\n${wp.statement}")
@@ -1631,9 +1743,10 @@ $sql
 		}
 		
 		wp.rowProc++
+
 		if (wp.batchSize > 0 && wp.rowProc >= wp.batchSize) {
 			try {
-				saveBatch(dataset, wp.stat)
+				saveBatch(dataset, wp)
 				if (wp.saveOut != null) {
 					wp.saveOut.delete()
 				}
@@ -1646,18 +1759,16 @@ $sql
 	}
 	
 	@Override
-	public
-	void doneWrite (Dataset dataset) {
+	public void doneWrite (Dataset dataset) {
 		WriterParams wp = dataset.driver_params
 		
 		if (wp.rowProc > 0) {
-			saveBatch(dataset, wp.stat)
+			saveBatch(dataset, wp)
 		}
 	}
 
 	@Override
-	public
-	void closeWrite(Dataset dataset) {
+	public void closeWrite(Dataset dataset) {
 		WriterParams wp = dataset.driver_params
 		try {
 			wp.stat.close()
@@ -1672,10 +1783,18 @@ $sql
 		def r = sqlConnect.firstRow("SELECT NextVal(${sequenceName}) AS id")
 		r.id
 	}
-	
-	protected Map unionDatasetMergeParams (JDBCDataset source, JDBCDataset target, Map procParams) { [:] }
+
+	/**
+	 * Driver parameters for merge statement
+	 * @param source
+	 * @param target
+	 * @param procParams
+	 * @return
+	 */
+	protected Map unionDatasetMergeParams (JDBCDataset source, JDBCDataset target, Map procParams) { return [:] }
 	
 	protected String unionDatasetMergeSyntax () {
+		return
 		'''MERGE INTO {target} t
   USING {source} s ON ({join})
   WHEN MATCHED THEN UPDATE SET 
@@ -1688,7 +1807,16 @@ $sql
      * Add PK fields to update statement from merge operator
      */
     protected boolean addPKFieldsToUpdateStatementFromMerge = false
-	
+
+	/**
+	 * Generate merge statement
+	 * @param source
+	 * @param target
+	 * @param map
+	 * @param keyField
+	 * @param procParams
+	 * @return
+	 */
 	protected String unionDatasetMerge (JDBCDataset source, JDBCDataset target, Map<String, String> map, List<String> keyField, Map procParams) {
 		if (!source instanceof TableDataset) throw new ExceptionGETL("Source dataset must be \"TableDataset\"")
 		if (keyField.isEmpty()) throw new ExceptionGETL("For MERGE operation required key fields by table")
@@ -1722,9 +1850,15 @@ $sql
 		p."values" = insertValues.join(", ")
 		p."keys" = keys.join(", ")
 		
-		StringUtils.SetValueString(sql, p)
+		return StringUtils.SetValueString(sql, p)
 	}
 
+	/**
+	 * Merge two datasets
+	 * @param target
+	 * @param procParams
+	 * @return
+	 */
 	public long unionDataset (JDBCDataset target, Map procParams) {
 		JDBCDataset source = procParams.source
 		if (source == null) throw new ExceptionGETL("Required \"source\" parameter")
@@ -1790,6 +1924,6 @@ $sql
 		
 		target.updateRows = executeCommand(sql, [isUpdate: true, queryParams: procParams.queryParams])
 		
-		target.updateRows
+		return target.updateRows
 	}
 }

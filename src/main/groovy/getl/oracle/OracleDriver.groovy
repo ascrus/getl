@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -44,17 +44,14 @@ class OracleDriver extends JDBCDriver {
 		caseObjectName = 'UPPER'
 		sqlType.BIGINT.name = 'number'
 
-        allowGlobalTemporaryTable = true
-		
 		methodParams.register("eachRow", ["scn", "timestamp", "hints", "usePartition"])
 	}
 	
 	@Override
 	public List<Driver.Support> supported() {
 		return super.supported() +
-				[Driver.Support.BATCH, Driver.Support.WRITE, Driver.Support.SEQUENCE, Driver.Support.TRANSACTIONAL,
-				 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX, Driver.Support.TEMPORARY]
-		List<Driver.Support> result = super.supported()
+				[Driver.Support.GLOBAL_TEMPORARY,
+                 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
 	}
 	
 	@Override
