@@ -182,7 +182,7 @@ class JDBCConnection extends Connection {
 	 */
 	public Map getConnectProperty () { 
 		if (params.connectProperty == null) params.connectProperty = [:]
-		params.connectProperty
+		return params.connectProperty
 	}
 	public void setConnectProperty (Map value) {
 		connectProperty.clear()

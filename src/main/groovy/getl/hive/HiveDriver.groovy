@@ -24,13 +24,20 @@
 
 package getl.hive
 
+import getl.csv.CSVConnection
 import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.files.SFTPManager
+import getl.jdbc.JDBCDataset
 import getl.jdbc.JDBCDriver
+import getl.jdbc.TableDataset
+import getl.proc.Flow
+import getl.tfs.TFS
 import getl.utils.BoolUtils
+import getl.utils.FileUtils
 
 /**
  * Hive driver class
@@ -44,16 +51,21 @@ class HiveDriver extends JDBCDriver {
         fieldPrefix = ''
 
         connectionParamBegin = ';'
+        connectionParamJoin = ';'
 
-        localTemporaryTablePrefix = 'LOCAL TEMPORARY'
+        localTemporaryTablePrefix = 'TEMPORARY'
 
         defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_UNCOMMITTED
 
         syntaxPartitionKeyInColumns = false
 
         methodParams.register('createDataset',
-                ['clustered', 'skewed', 'rowFormat', 'storedAs', 'location',
-                 'tblproperties', 'select'])
+                ['clustered', 'skewed', 'rowFormat', 'storedAs', 'location', 'tblproperties',
+                 'fieldsTerminated', 'nullDefined', 'select'])
+        methodParams.register('openWrite', ['overwrite'])
+        methodParams.register('bulkLoadFile',
+                ['overwrite', 'ssh_host', 'ssh_port', 'ssh_hostsFile', 'ssh_login', 'ssh_password', 'ssh_tempDir',
+                 'processRow'])
     }
 
     @Override
@@ -67,7 +79,8 @@ class HiveDriver extends JDBCDriver {
     @Override
     public List<Driver.Operation> operations() {
         return super.operations() +
-                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
+                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
+                 Driver.Operation.BULKLOAD]
     }
 
     @Override
@@ -170,6 +183,16 @@ class HiveDriver extends JDBCDriver {
             sb << '\n'
         }
 
+        if (params.fieldsTerminated != null) {
+            sb << "FIELDS TERMINATED BY '${params.fieldsTerminated}'"
+            sb << '\n'
+        }
+
+        if (params.nullDefined != null) {
+            sb << "NULL DEFINED AS '${params.nullDefined}'"
+            sb << '\n'
+        }
+
         if (params.storedAs != null) {
             sb << "STORED AS ${params.storedAs}"
 
@@ -206,17 +229,89 @@ class HiveDriver extends JDBCDriver {
     }
 
     @Override
-    protected String syntaxInsertStatement(Dataset dataset) {
+    protected String syntaxInsertStatement(Dataset dataset, Map params) {
+        String into = (BoolUtils.IsValue(params.overwrite))?'OVERWRITE':'INTO'
         return ((dataset.fieldListPartitions.isEmpty()))?
-                'INSERT INTO {table} ({columns}) VALUES({values})':
-                'INSERT INTO {table} PARTITION ({partition}) VALUES({values})'
+                "INSERT $into {table} ({columns}) VALUES({values})":
+                "INSERT $into {table} PARTITION ({partition}) VALUES({values})"
     }
 
-    /*
     @Override
     public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
+        def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
 
-    }*/
+        def overwrite = BoolUtils.IsValue(bulkParams.overwrite)
+        def ssh_host = bulkParams.ssh_host
+        if (ssh_host == null) throw new ExceptionGETL('Required parameter "ssh_host"')
+        def ssh_port = bulkParams.ssh_port?:22
+        def ssh_hostsFile = bulkParams.ssh_hostsFile
+        def ssh_login = bulkParams.ssh_login
+        if (ssh_login == null) throw new ExceptionGETL('Required parameter "ssh_login"')
+        def ssh_password = bulkParams.ssh_password
+        def ssh_tempDir = bulkParams.ssh_tempDir
+        if (ssh_tempDir == null) throw new ExceptionGETL('Required parameter "ssh_tempDir"')
+        def processRow = bulkParams.processRow as Closure
 
+        def tempFile = TFS.dataset()
+        tempFile.header = false
+        tempFile.fieldDelimiter = '\u0001'
+        tempFile.rowDelimiter = '\n'
+        tempFile.quoteMode = CSVDataset.QuoteMode.NORMAL
+        tempFile.codePage = 'utf-8'
+        tempFile.escaped = false
+        tempFile.nullAsValue = '<NULL>'
 
+        def loadFields = [] as List<String>
+        def partFields = [] as List<String>
+        dest.field.each { Field f ->
+            if (f.isAutoincrement || f.isReadOnly || f.compute) return
+            if (f.isPartition) return
+            def n = f.copy()
+            tempFile.field << n
+            loadFields << n.name
+        }
+        dest.fieldListPartitions.each { Field f ->
+            def n = f.copy()
+            n.isPartition = false
+            tempFile.field << n
+            loadFields << n.name
+            partFields << n.name
+        }
+
+        def count = new Flow().copy([source: source, dest: tempFile, inheritFields: false], processRow)
+        if (count == 0) return
+
+        def fileMan = new SFTPManager(rootPath: ssh_tempDir, server: ssh_host, port: ssh_port,
+                            login: ssh_login, password: ssh_password, knownHostsFile: ssh_hostsFile,
+                            localDirectory: (tempFile.connection as CSVConnection).path)
+        fileMan.connect()
+        try {
+            fileMan.upload(tempFile.fileName)
+        }
+        finally {
+            fileMan.disconnect()
+        }
+
+        try {
+            def tempTable = new TableDataset(connection: dest.connection, tableName: "t_${tempFile.fileName}",
+                    type: JDBCDataset.Type.LOCAL_TEMPORARY)
+            tempTable.field = tempFile.field
+            tempTable.create(rowFormat: 'DELIMITED', fieldsTerminated: '\\001', nullDefined: tempFile.nullAsValue)
+            try {
+                tempTable.connection
+                        .executeCommand(command: "LOAD DATA LOCAL INPATH 'file://${fileMan.rootPath}/${tempFile.fileName}' INTO TABLE ${tempTable.tableName}")
+                tempTable.connection
+                        .executeCommand(command: "FROM ${tempTable.tableName} INSERT ${(overwrite) ? 'OVERWRITE' : 'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
+                        (!partFields.isEmpty() ? " PARTITION(${partFields.join(', ')})" : '') + " SELECT ${loadFields.join(', ')}")
+            }
+            finally {
+                tempTable.drop()
+            }
+        }
+        finally {
+            fileMan.connect()
+            fileMan.removeFile(tempFile.fileName)
+            fileMan.disconnect()
+        }
+    }
 }

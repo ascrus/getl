@@ -318,6 +318,7 @@ class DateUtils {
 	public static int PartOfDate(String partName, Date date) {
 
 		if (partName == null || date == null) return 0
+		partName = partName.toUpperCase()
 
 		int ret = 0
 		String[] fieldsName = ["YEAR", "MONTH", "HOUR", "MINUTE", "SECOND", "DAY_OF_WEEK", "DAY_OF_MONTH", "DAY_OF_YEAR",

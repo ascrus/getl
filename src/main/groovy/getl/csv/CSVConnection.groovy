@@ -76,7 +76,7 @@ class CSVConnection extends FileConnection {
 	/**
 	 * Ignore header field name
 	 */
-	public boolean getIgnoreHeader () { BoolUtils.IsValue(params.ignoreHeader, false) }
+	public boolean getIgnoreHeader () { BoolUtils.IsValue(params.ignoreHeader, true) }
 	public void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
 	
 	/**

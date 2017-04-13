@@ -50,14 +50,14 @@ import getl.utils.*
 class JDBCDriver extends Driver {
 	JDBCDriver () {
 		super()
-		methodParams.register("retrieveObjects", ["dbName", "schemaName", "tableName", "type"])
-		methodParams.register("createDataset", ["ifNotExists", "onCommit", "indexes", "hashPrimaryKey", "useNativeDBType"])
-		methodParams.register("dropDataset", ["ifExists"])
-		methodParams.register("openWrite", ["operation", "batchSize", "updateField", "logRows", "onSaveBatch"])
-		methodParams.register("eachRow", ["onlyFields", "excludeFields", "where", "order", "queryParams", "sqlParams", "fetchSize", "forUpdate", "filter"])
-		methodParams.register("bulkLoadFile", ["allowMapAlias"])
-		methodParams.register("unionDataset", ["source", "operation", "autoMap", "map", "keyField", "queryParams", "condition"])
-		methodParams.register("clearDataset", ["truncate"])
+		methodParams.register('retrieveObjects', ['dbName', 'schemaName', 'tableName', 'type'])
+		methodParams.register('createDataset', ['ifNotExists', 'onCommit', 'indexes', 'hashPrimaryKey', 'useNativeDBType'])
+		methodParams.register('dropDataset', ['ifExists'])
+		methodParams.register('openWrite', ['operation', 'batchSize', 'updateField', 'logRows', 'onSaveBatch'])
+		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order', 'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
+		methodParams.register('bulkLoadFile', ['allowMapAlias'])
+		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField', 'queryParams', 'condition'])
+		methodParams.register('clearDataset', ['truncate'])
 	}
 	
 	private Date connectDate
@@ -353,7 +353,7 @@ class JDBCDriver extends Driver {
 			conParams = connectionParamBegin + listParams.join(connectionParamJoin) + (connectionParamFinish?:'')
 		}
 		
-		conParams
+		return conParams
 	}
 	
 	@groovy.transform.Synchronized
@@ -1466,21 +1466,21 @@ $sql
 	/**
 	 * SQL insert statement pattern
 	 */
-	protected String syntaxInsertStatement(Dataset dataset) {
+	protected String syntaxInsertStatement(Dataset dataset, Map params) {
 		return 'INSERT INTO {table} ({columns}) VALUES({values})'
 	}
 
 	/**
 	 * SQL update statement pattern
 	 */
-	protected String syntaxUpdateStatement(Dataset dataset) {
+	protected String syntaxUpdateStatement(Dataset dataset, Map params) {
 		return 'UPDATE {table} SET {values} WHERE {keys}'
 	}
 
 	/**
 	 * SQL delete statement pattern
 	 */
-	protected String syntaxDeleteStatement(Dataset dataset){
+	protected String syntaxDeleteStatement(Dataset dataset, Map params){
 		return 'DELETE FROM {table} WHERE {keys}'
 	}
 	
@@ -1515,7 +1515,7 @@ $sql
 		def sb = new StringBuilder()
 		switch (operation) {
 			case "INSERT":
-				def statInsert = syntaxInsertStatement(dataset)
+				def statInsert = syntaxInsertStatement(dataset, params)
 
 				def h = [] as List<String>
 				def v = [] as List<String>

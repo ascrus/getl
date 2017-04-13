@@ -7,6 +7,8 @@ import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.NumericUtils
 
+import java.sql.Time
+
 /**
  * Created by ascru on 10.11.2016.
  */
@@ -80,6 +82,17 @@ class CSVDriverTest extends GroovyTestCase {
         def id = 0
         new_csv.eachRow(isSplit: true) { row ->
             id++
+
+            assertTrue(row.id instanceof Long)
+            assertTrue(row.date instanceof Date)
+            assertTrue(row.time instanceof Date)
+            assertTrue(row.datetime instanceof Date)
+            assertTrue(row.double instanceof Double)
+            assertTrue(row.numeric instanceof BigDecimal)
+            assertTrue(row.boolean instanceof Boolean)
+            assertTrue(row.text instanceof String)
+            assertTrue(row.blob instanceof byte[])
+
             assertEquals(id, row.id)
             assertEquals("row $id", row.name)
             assertEquals(DateUtils.ParseDate('2016-10-15'), row.date)
