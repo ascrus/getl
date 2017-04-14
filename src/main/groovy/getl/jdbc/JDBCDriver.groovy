@@ -1551,7 +1551,7 @@ $sql
 				break
 				
 			case "UPDATE":
-				def statUpdate = syntaxUpdateStatement(dataset)
+				def statUpdate = syntaxUpdateStatement(dataset, params)
 
 				def k = [] as List<String>
 				def v = [] as List<String>
@@ -1601,7 +1601,7 @@ $sql
 				break
 				
 			case "DELETE":
-				def statDelete = syntaxDeleteStatement(dataset)
+				def statDelete = syntaxDeleteStatement(dataset, params)
 
 				def k = []
 				def p = [] as List<String>
