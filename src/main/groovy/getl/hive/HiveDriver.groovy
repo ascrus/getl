@@ -24,20 +24,15 @@
 
 package getl.hive
 
-import getl.csv.CSVConnection
-import getl.csv.CSVDataset
-import getl.data.Dataset
-import getl.data.Field
+import getl.csv.*
+import getl.data.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
-import getl.files.SFTPManager
-import getl.jdbc.JDBCDataset
-import getl.jdbc.JDBCDriver
-import getl.jdbc.TableDataset
+import getl.files.*
+import getl.jdbc.*
 import getl.proc.Flow
 import getl.tfs.TFS
-import getl.utils.BoolUtils
-import getl.utils.FileUtils
+import getl.utils.*
 
 /**
  * Hive driver class
@@ -63,9 +58,8 @@ class HiveDriver extends JDBCDriver {
                 ['clustered', 'skewed', 'rowFormat', 'storedAs', 'location', 'tblproperties',
                  'fieldsTerminated', 'nullDefined', 'select'])
         methodParams.register('openWrite', ['overwrite'])
-        methodParams.register('bulkLoadFile',
-                ['overwrite', 'ssh_host', 'ssh_port', 'ssh_hostsFile', 'ssh_login', 'ssh_password', 'ssh_tempDir',
-                 'processRow'])
+        methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
+                                               'hdfsDir', 'processRow', 'files', 'fileMask'])
     }
 
     @Override
@@ -92,7 +86,7 @@ class HiveDriver extends JDBCDriver {
     public Map getSqlType () {
         Map res = super.getSqlType()
         res.STRING.name = 'string'
-        res.STRING.useLength = JDBCDriver.sqlTypeUse.SOMETIMES
+        res.STRING.useLength = JDBCDriver.sqlTypeUse.NEVER
         res.BLOB.name = 'binary'
 
         return res
@@ -239,19 +233,38 @@ class HiveDriver extends JDBCDriver {
     @Override
     public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
         def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
+        def conHive = dest.connection as HiveConnection
 
         def overwrite = BoolUtils.IsValue(bulkParams.overwrite)
-        def ssh_host = bulkParams.ssh_host
-        if (ssh_host == null) throw new ExceptionGETL('Required parameter "ssh_host"')
-        def ssh_port = bulkParams.ssh_port?:22
-        def ssh_hostsFile = bulkParams.ssh_hostsFile
-        def ssh_login = bulkParams.ssh_login
-        if (ssh_login == null) throw new ExceptionGETL('Required parameter "ssh_login"')
-        def ssh_password = bulkParams.ssh_password
-        def ssh_tempDir = bulkParams.ssh_tempDir
-        if (ssh_tempDir == null) throw new ExceptionGETL('Required parameter "ssh_tempDir"')
+        def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, conHive.hdfsHost])
+        def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, conHive.hdfsPort])
+        def hdfsLogin = ListUtils.NotNullValue([bulkParams.hdfsLogin, conHive.hdfsLogin])
+        def hdfsDir = ListUtils.NotNullValue([bulkParams.hdfsDir, conHive.hdfsDir])
         def processRow = bulkParams.processRow as Closure
 
+        if (hdfsHost == null) throw new ExceptionGETL('Required parameter "hdfsHost"')
+        if (hdfsLogin == null) throw new ExceptionGETL('Required parameter "hdfsLogin"')
+        if (hdfsDir == null) throw new ExceptionGETL('Required parameter "hdfsDir"')
+
+        def files = [] as List<String>
+        if (bulkParams.files != null) {
+            files.addAll(bulkParams.files)
+        }
+        else if (bulkParams.fileMask != null) {
+            def fm = new FileManager(rootPath: (source.connection as CSVConnection).path)
+            fm.connect()
+            try {
+                fm.list(bulkParams.fileMask).each { Map f -> files << f.filename }
+            }
+            finally {
+                fm.disconnect()
+            }
+        }
+        else {
+            files << source.fileName
+        }
+
+        // Describe temporary local csv file
         def tempFile = TFS.dataset()
         tempFile.header = false
         tempFile.fieldDelimiter = '\u0001'
@@ -263,6 +276,8 @@ class HiveDriver extends JDBCDriver {
 
         def loadFields = [] as List<String>
         def partFields = [] as List<String>
+
+        // Add not partition fields to temp file from destination dataset
         dest.field.each { Field f ->
             if (f.isAutoincrement || f.isReadOnly || f.compute) return
             if (f.isPartition) return
@@ -270,6 +285,8 @@ class HiveDriver extends JDBCDriver {
             tempFile.field << n
             loadFields << n.name
         }
+
+        // Add partition fields to temp file from destination dataset
         dest.fieldListPartitions.each { Field f ->
             def n = f.copy()
             n.isPartition = false
@@ -278,11 +295,18 @@ class HiveDriver extends JDBCDriver {
             partFields << n.name
         }
 
-        def count = new Flow().copy([source: source, dest: tempFile, inheritFields: false], processRow)
+        // Copy source file to temp csv file
+        def count = 0
+        files.each { String fileName ->
+            source.fileName = fileName
+            count = count + new Flow().copy([source: source, dest: tempFile, inheritFields: false,
+                                             dest_append: (count > 0)], processRow)
+            println "$fileName: $count"
+        }
         if (count == 0) return
 
-        def fileMan = new SFTPManager(rootPath: ssh_tempDir, server: ssh_host, port: ssh_port,
-                            login: ssh_login, password: ssh_password, knownHostsFile: ssh_hostsFile,
+        // Copy temp csv file to HDFS
+        def fileMan = new HDFSManager(rootPath: hdfsDir, server: hdfsHost, port: hdfsPort, login: hdfsLogin,
                             localDirectory: (tempFile.connection as CSVConnection).path)
         fileMan.connect()
         try {
@@ -299,7 +323,7 @@ class HiveDriver extends JDBCDriver {
             tempTable.create(rowFormat: 'DELIMITED', fieldsTerminated: '\\001', nullDefined: tempFile.nullAsValue)
             try {
                 tempTable.connection
-                        .executeCommand(command: "LOAD DATA LOCAL INPATH 'file://${fileMan.rootPath}/${tempFile.fileName}' INTO TABLE ${tempTable.tableName}")
+                        .executeCommand(command: "LOAD DATA INPATH '${fileMan.rootPath}/${tempFile.fileName}' INTO TABLE ${tempTable.tableName}")
                 tempTable.connection
                         .executeCommand(command: "FROM ${tempTable.tableName} INSERT ${(overwrite) ? 'OVERWRITE' : 'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
                         (!partFields.isEmpty() ? " PARTITION(${partFields.join(', ')})" : '') + " SELECT ${loadFields.join(', ')}")

@@ -25,6 +25,7 @@
 package getl.files
 
 import getl.exception.ExceptionGETL
+import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import org.apache.hadoop.fs.*
 import org.apache.hadoop.conf.*
@@ -146,7 +147,7 @@ class HDFSManager extends Manager {
             if (writeErrorsToLog) Logs.Severe('Invalid path: \"$path\"')
             throw new ExceptionGETL('Invalid null path')
         }
-        if (path[0] == '/') path = path.substring(1)
+//        if (path[0] == '/' && StringUtils.LeftStr(path, 6) != '/user/') path = path.substring(1)
         path = fullName(path, null)
         def p = new Path(path)
         if (!client.exists(p)) {
@@ -161,9 +162,9 @@ class HDFSManager extends Manager {
     }
 
     private fullName(String dir, String file) {
-        if (dir != null && dir[0] == '/') dir = dir.substring(1)
+        if (dir != null && dir[0] == '/' && StringUtils.LeftStr(dir, 6) != '/user/') dir = dir.substring(1)
         if (!((dir + '/').matches(rootPath + '/.*'))) dir = rootPath + '/' + dir
-        ((dir != null)?dir:'') + ((file != null)?"/$file":'')
+        return ((dir != null)?dir:'') + ((file != null)?"/$file":'')
     }
 
     private Path fullPath(String dir, String file) {

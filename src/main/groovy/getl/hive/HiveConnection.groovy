@@ -85,4 +85,28 @@ class HiveConnection extends JDBCConnection {
         }
         params.vendor = value
     }
+
+    /**
+     * HDFS host
+     */
+    public String getHdfsHost () { return params.hdfsHost }
+    public void setHdfsHost (String value) { params.hdfsHost = value }
+
+    /**
+     * HDFS port
+     */
+    public Integer getHdfsPort() { return params.hdfsPort }
+    public void setHdfsPort(Integer value) { params.hdfsPort = value }
+
+    /**
+     * HDFS login
+     */
+    public String getHdfsLogin () { return params.hdfsLogin }
+    public void setHdfsLogin (String value) { params.hdfsLogin = value }
+
+    /**
+     * HDFS directory for bulkload files
+     */
+    public String getHdfsDir () { return params.hdfsDir }
+    public void setHdfsDir (String value) { params.hdfsDir = value }
 }

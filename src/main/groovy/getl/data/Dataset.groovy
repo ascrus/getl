@@ -517,7 +517,10 @@ class Dataset {
 		
 		connection.tryConnect()
 		Map p = MapUtils.CleanMap(procParams, ["autoTran"])
-		def autoTran = (procParams.autoTran != null)?procParams.autoTran:(connection.tranCount == 0)
+		def autoTran = false
+		if (connection.driver.isSupport(Driver.Support.TRANSACTIONAL)) {
+			autoTran = (procParams.autoTran != null)?procParams.autoTran:(connection.tranCount == 0)
+		}
 		if (BoolUtils.IsValue(procParams."truncate", false)) autoTran = false
 		
 		if (autoTran) connection.startTran()

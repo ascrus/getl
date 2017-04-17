@@ -1697,10 +1697,14 @@ $sql
 				resUpdate.each { int res -> if (res > 0) countComplete++ else if (res < 0) countError++ }
 			}
 			catch (BatchUpdateException e) {
-				validRejects(dataset, e.getUpdateCounts())
+                validRejects(dataset, e.getUpdateCounts())
 				Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
 				throw e
 			}
+            catch (SQLException e) {
+                Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
+                throw e
+            }
 		}
 		else {
 			try {
