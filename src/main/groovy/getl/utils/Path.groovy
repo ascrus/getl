@@ -189,8 +189,9 @@ class Path {
 		likeFile = null
 		numLocalPath = -1
 	
-		def rmask = maskStr.replace(".", "[.]").replace("*", ".*").replace("+", "\\+").replace("-", "\\-")
-		
+//		def rmask = maskStr.replace(".", "[.]").replace("*", ".*").replace("+", "\\+").replace("-", "\\-")
+		def rmask = FileUtils.FileMaskToMathExpression(maskStr)
+
 		String[] d = rmask.split("/")
 		StringBuilder rb = new StringBuilder()
 		

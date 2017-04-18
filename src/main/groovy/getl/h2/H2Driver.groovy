@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -51,38 +51,37 @@ class H2Driver extends JDBCDriver {
 		defaultSchemaName = "PUBLIC"
 		connectionParamBegin = ";"
 		connectionParamJoin = ";"
-		
+
 		methodParams.register("createDataset", ["transactional", "not_persistent"])
 	}
 	
 	@Override
 	public List<Driver.Support> supported() {
-		List<Driver.Support> result = super.supported()
-        result << Driver.Support.BLOB
-        result << Driver.Support.CLOB
-		result << Driver.Support.TEMPORARY
-        result << Driver.Support.MEMORY
-		result << Driver.Support.INDEX
-		return result
+		return super.supported() +
+				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.LOCAL_TEMPORARY, Driver.Support.MEMORY,
+				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
 	}
 	
 	@Override
 	public List<Driver.Operation> operations() {
-		List<Driver.Operation> result = super.operations()
-		result << Driver.Operation.BULKLOAD
-		result << Driver.Operation.CREATE
-		result << Driver.Operation.MERGE
-		return result
+		return super.operations() +
+				[Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
+				 Driver.Operation.BULKLOAD, Driver.Operation.MERGE]
 	}
-	
+
 	@Override
 	public String defaultConnectURL () {
-		H2Connection con = connection as H2Connection
+		def con = connection as H2Connection
+        def url
 		if (con.inMemory) {
-			return (con.connectHost != null)?"jdbc:h2:tcp://{host}/mem:{database}":"jdbc:h2:mem:{database}" 
+			url = (con.connectHost != null)?"jdbc:h2:tcp://{host}/mem:{database}":"jdbc:h2:mem:{database}"
+			if (con.connectDatabase == null) url = url.replace('{database}', 'memory_database')
 		}
-		
-		return (con.connectHost != null)?"jdbc:h2:tcp://{host}/{database}":"jdbc:h2://{database}"
+		else {
+            url = (con.connectHost != null)?"jdbc:h2:tcp://{host}/{database}":"jdbc:h2://{database}"
+        }
+
+        return url
 	}
 	
 	/**
@@ -107,7 +106,7 @@ class H2Driver extends JDBCDriver {
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		String result = ""
 		def temporary = (dataset.sysParams.type in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
-		if (BoolUtils.IsValue(params."not_persistent", false)) result += "NOT PERSISTENT "
+		if (BoolUtils.IsValue(params."not_persistent")) result += "NOT PERSISTENT "
 		if (temporary && params.transactional != null && params.transactional) result += "TRANSACTIONAL "
 		
 		return result
@@ -208,12 +207,17 @@ FROM CSVREAD('${source.fullFileName()}', ${heads}, '${functionParms}')
     protected String getChangeSessionPropertyQuery() { return 'SET {name} {value}' }
 
 	@Override
-	protected String openWriteMergeSql(JDBCDataset dataset, Map params, List<Field> fields) {
+	protected String openWriteMergeSql(JDBCDataset dataset, Map params, List<Field> fields, List<String> statFields) {
 		def excludeFields = []
-		fields.each { Field f -> 
-			if (f.isAutoincrement || f.isReadOnly) excludeFields << f 
+		fields.each { Field f ->
+			if (f.isReadOnly) {
+                excludeFields << f.name
+            }
+            else {
+                statFields << f.name
+            }
 		}
-		
+
 		String res = """
 MERGE INTO ${dataset.fullNameDataset()} (${GenerationUtils.SqlFields(dataset.connection as JDBCConnection, fields, null, excludeFields).join(", ")})
 VALUES(${GenerationUtils.SqlFields(dataset.connection as JDBCConnection, fields, "?", excludeFields).join(", ")})

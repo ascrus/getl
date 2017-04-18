@@ -364,8 +364,8 @@ class Flow {
 		if (dest.sysParams.isTFSFile != null && dest.sysParams.isTFSFile && dest.field.isEmpty() && !isDestTemp) isDestTemp = true
 		def isDestVirtual = (dest.sysParams.isVirtual != null && dest.sysParams.isVirtual) 
 		
-		boolean inheritFields = BoolUtils.IsValue([dest.sysParams.inheriteFields, params.inheritFields], false)
-        boolean createDest = BoolUtils.IsValue([dest.sysParams.createDest, params.createDest], false)
+		boolean inheritFields = BoolUtils.IsValue([params.inheritFields, dest.sysParams.inheriteFields], false)
+        boolean createDest = BoolUtils.IsValue([params.createDest, dest.sysParams.createDest], false)
 		boolean writeSynch = BoolUtils.IsValue(params.writeSynch, false)
 		
 		boolean isBulkLoad = (params.bulkLoad != null)?params.bulkLoad:false

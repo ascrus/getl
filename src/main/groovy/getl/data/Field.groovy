@@ -42,16 +42,16 @@ class Field implements Serializable {
 	 * @return
 	 */
 	private String name = null
-	public String getName () { name }
-	public void setName (String value) { name = value }
+	public String getName() { return this.name }
+	public void setName(String value) { this.name = value }
 	
 	/**
 	 * Field type
 	 * @return
 	 */
 	private Type type = Type.STRING
-	public Type getType () { type }
-	public void setType (Type value) { type = value }
+	public Type getType() { return this.type }
+	public void setType(Type value) { this.type = value }
 	
 	/**
 	 * Database field type
@@ -65,142 +65,141 @@ class Field implements Serializable {
 	
 	/**
 	 * Value can not be null
-	 * @return
 	 */
 	private boolean isNull = true
-	public boolean getIsNull () { isNull }
-	public void setIsNull (boolean value) { isNull = value }
+	public boolean getIsNull() { return this.isNull }
+	public void setIsNull(boolean value) { this.isNull = value }
 	
 	/**
 	 * Length of value
-	 * @return
 	 */
 	private Integer length
-	public Integer getLength () { length }
-	public void setLength (Integer value) { length = value }
+	public Integer getLength() { return this.length }
+	public void setLength(Integer value) { this.length = value }
 	
 	/**
 	 * Precision number of numeric value
-	 * @return
 	 */
 	private Integer precision
-	public Integer getPrecision () { precision }
-	public void setPrecision (Integer value) { precision = value }
+	public Integer getPrecision() { return this.precision }
+	public void setPrecision(Integer value) { this.precision = value }
 	
 	/**
 	 * Field is primary key
-	 * @return
 	 */
 	private boolean isKey = false
-	public boolean getIsKey () { isKey }
-	public void setIsKey (boolean value) { 
-		isKey = value
-		if (isKey) isNull = false else ordKey = null 
+	public boolean getIsKey() { return this.isKey }
+	public void setIsKey(boolean value) {
+		this.isKey = value
+		if (this.isKey) this.isNull = false else this.ordKey = null
 	}
 	
 	/**
 	 * Number order from primary key
-	 * @return
 	 */
 	private Integer ordKey
-	public Integer getOrdKey () { ordKey }
-	public void setOrdKey (Integer value) { ordKey = value }
+	public Integer getOrdKey() { return this.ordKey }
+	public void setOrdKey(Integer value) { ordKey = value }
+
+	/**
+	 * Use field in partition key
+	 */
+	private boolean isPartition = false
+	public Boolean getInPartition() { return this.isPartition}
+	public void setIsPartition(Boolean value) { this.isPartition = value }
+
+	/**
+	 * Number order if field use in partition key
+	 */
+	private Integer ordPartition
+	public Integer getOrdPartition() { return this.ordPartition }
+	public void setOrdPartition(Integer value) { this.ordPartition = value }
 	
 	/**
 	 * Field is auto increment
-	 * @return
 	 */
 	private boolean isAutoincrement = false
-	public boolean getIsAutoincrement () { isAutoincrement }
-	public void setIsAutoincrement (boolean value) { isAutoincrement = value }
+	public boolean getIsAutoincrement() { return this.isAutoincrement }
+	public void setIsAutoincrement(boolean value) { this.isAutoincrement = value }
 	
 	/**
 	 * Field can not write
-	 * @return
 	 */
 	private boolean isReadOnly = false
-	public boolean getIsReadOnly () { isReadOnly }
-	public void setIsReadOnly (boolean value) { isReadOnly = value }
+	public boolean getIsReadOnly() { return this.isReadOnly }
+	public void setIsReadOnly(boolean value) { this.isReadOnly = value }
 	
 	/**
 	 * Default value from field (used only creating dataset)
-	 * @return
 	 */
 	private String defaultValue = null
-	public String getDefaultValue () { defaultValue }
-	public void setDefaultValue (String value) { defaultValue = value }
+	public String getDefaultValue() { return this.defaultValue }
+	public void setDefaultValue(String value) { this.defaultValue = value }
 	
 	/**
 	 * Compute columns
-	 * @return
 	 */
 	private String compute
-	public String getCompute () { compute }
-	public void setCompute (String value) { compute = value }
+	public String getCompute() { return this.compute }
+	public void setCompute(String value) { this.compute = value }
 	
 	/**
 	 * Minimum value (for validation and generation)
 	 */
 	private def minValue = null
-	public def getMinValue () { minValue }
-	public void setMinValue (def value) { minValue = value }
+	public def getMinValue() { return this.minValue }
+	public void setMinValue(def value) { this.minValue = value }
 	
 	/**
 	 * Minimum value (for validation and generation)
 	 */
 	private def maxValue = null
-	public def getMaxValue () { maxValue }
-	public void setMaxValue (def value) { maxValue = value }
+	public def getMaxValue() { return this.maxValue }
+	public void setMaxValue(def value) { this.maxValue = value }
 	
 	/**
 	 * Format pattern on numeric and datetime fields
-	 * @return
 	 */
 	private String format
-	public String getFormat () { format }
-	public void setFormat (String value) { format = value }
+	public String getFormat () { return this.format }
+	public void setFormat(String value) { this.format = value }
 	
 	/**
 	 * Name of the field in the data source (if different from Field name)
-	 * @return
 	 */
 	private String alias
-	public String getAlias () { alias }
-	public void setAlias (String value) { alias = value }
+	public String getAlias() { return this.alias }
+	public void setAlias(String value) { this.alias = value }
 	
 	/**
 	 * Trim space (used for reading datasource)
-	 * @return
 	 */
 	private boolean trim = false
-	public boolean getTrim () { trim }
-	public void setTrim (boolean value) { trim = value }
+	public boolean getTrim() { return this.trim }
+	public void setTrim(boolean value) { this.trim = value }
 	
 	/**
 	 * Decimal separator
-	 * @return
 	 */
 	private String decimalSeparator
-	public String getDecimalSeparator () { decimalSeparator }
-	public void setDecimalSeparator (String value) { decimalSeparator = value }
+	public String getDecimalSeparator() { return this.decimalSeparator }
+	public void setDecimalSeparator (String value) { this.decimalSeparator = value }
 	
 	/**
 	 * Field description (comments)
-	 * @return
 	 */
 	private String description
-	public String getDescription () { description }
-	public void setDescription (String value) { description = value }
+	public String getDescription() { return this.description }
+	public void setDescription(String value) { this.description = value }
 	
 	/**
 	 * Extended attributes
-	 * @return
 	 */
-	private Map extended = [:]
-	public Map getExtended () { extended }
+	private final Map extended = [:] as Map<String, Object>
+	public Map getExtended() { return this.extended }
 	public void setExtended (Map value) {
-		extended.clear() 
-		if (value != null) extended.putAll(value) 
+		this.extended.clear()
+		if (value != null) this.extended.putAll(value)
 	}
 	
 	/**
@@ -212,7 +211,7 @@ class Field implements Serializable {
 	 * Allow length for field
 	 */
 	public static boolean AllowLength(Field f) {
-		(f.type in [Field.Type.STRING, Field.Type.NUMERIC, Field.Type.BLOB, Field.Type.TEXT, Field.Type.ROWID])
+		return (f.type in [Field.Type.STRING, Field.Type.NUMERIC, Field.Type.BLOB, Field.Type.TEXT, Field.Type.ROWID])
 	}
 	
 	/**
@@ -221,7 +220,7 @@ class Field implements Serializable {
 	 * @return
 	 */
 	public static boolean AllowPrecision(Field f) {
-		(f.type in [Field.Type.NUMERIC])
+		return (f.type in [Field.Type.NUMERIC])
 	}
 	
 	/**
@@ -230,7 +229,7 @@ class Field implements Serializable {
 	 * @return
 	 */
 	public static boolean AllowCreatable(Field f) {
-		!(f.type in [Field.Type.ROWID])
+		return !(f.type in [Field.Type.ROWID])
 	}
 	
 	/**
@@ -248,6 +247,8 @@ class Field implements Serializable {
 		if (!isNull) n.isNull = isNull
 		if (isKey) n.isKey = isKey
 		if (ordKey != null) n.ordKey = ordKey
+		if (isPartition) n.isPartition = isPartition
+		if (ordPartition != null) n.ordPartition = ordPartition
 		if (isAutoincrement) n.isAutoincrement = isAutoincrement
 		if (isReadOnly) n.isReadOnly = isReadOnly
 		if (defaultValue != null) n.defaultValue = defaultValue
@@ -258,7 +259,7 @@ class Field implements Serializable {
 		if (decimalSeparator != null) n.decimalSeparator = decimalSeparator
 		if (description != null) n.description = description
 		
-		n
+		return n
 	}
 	
 	/**
@@ -272,29 +273,34 @@ class Field implements Serializable {
 		if (strField.name == null) throw new ExceptionGETL("Required field name: ${strField}")
 		Field.Type type = strField.type?:Field.Type.STRING
 		String typeName = strField.typeName
-		boolean isNull = (strField.isNull != null)?strField.isNull:true
+		boolean isNull = BoolUtils.IsValue(strField.isNull,true)
 		Integer length = strField.length
 		Integer precision = strField.precision
-		boolean isKey = (strField.isKey != null)?strField.isKey:false
+		boolean isKey = BoolUtils.IsValue(strField.isKey, false)
 		Integer ordKey = strField.ordKey
-		boolean isAutoincrement = (strField.isAutoincrement != null)?strField.isAutoincrement:false
-		boolean isReadOnly = (strField.isReadOnly != null)?strField.isReadOnly:false
+		boolean isPartition = BoolUtils.IsValue(strField.isPartition, false)
+		Integer ordPartition = strField.ordPartition
+		boolean isAutoincrement = BoolUtils.IsValue(strField.isAutoincrement, false)
+		boolean isReadOnly = BoolUtils.IsValue(strField.isReadOnly, false)
 		String defaultValue = strField.defaultValue
 		String compute = strField.compute
 		def minValue = strField.minValue
 		def maxValue = strField.maxValue
 		String format = strField.format
 		String alias = strField.alias
-		boolean trim = (strField.trim != null)?strField.trim:false
+		boolean trim = BoolUtils.IsValue(strField.trim,false)
 		String decimalSeparator = strField.decimalSeparator
 		String description = strField.description
 		Map extended = strField.extended
 		
-		new Field(name: name, type: type, typeName: typeName, isNull: isNull, length: length, precision: precision,
-					isKey: isKey, ordKey: ordKey, isAutoincrement: isAutoincrement, isReadOnly: isReadOnly,
+		return new Field(
+					name: name, type: type, typeName: typeName, isNull: isNull, length: length, precision: precision,
+					isKey: isKey, ordKey: ordKey, isPartition: isPartition, ordPartition: ordPartition,
+					isAutoincrement: isAutoincrement, isReadOnly: isReadOnly,
 					defaultValue: defaultValue, compute: compute, minValue: minValue, maxValue: maxValue,
 					format: format, alias: alias, trim: trim,
-					decimalSeparator: decimalSeparator, description: description, extended: extended)
+					decimalSeparator: decimalSeparator, description: description, extended: extended
+		)
 	}
 	
 	/**
@@ -310,6 +316,8 @@ class Field implements Serializable {
 		s.precision = precision
 		s.isKey = isKey
 		s.ordKey = ordKey
+		s.isPartition = isPartition
+		s.ordPartition = ordPartition
 		s.isAutoincrement = isAutoincrement
 		s.isReadOnly = isReadOnly
 		s.defaultValue = defaultValue
@@ -324,20 +332,22 @@ class Field implements Serializable {
 		s.extended = extended
 		s.getMethod = getMethod
 		
-		MapUtils.ToJson(s)
+		return MapUtils.ToJson(s)
 	}
 	
 	/**
 	 * Assign from field
 	 * @param f
 	 */
-	public void assign (Field f) {
+	public void assign(Field f) {
 		type = (f.type != Type.OBJECT)?f.type:type
 		typeName = f.typeName
 		dbType = f.dbType
 		isNull = (!f.isNull)?false:isNull
 		isKey = (f.isKey)?true:isKey
 		ordKey = (f.ordKey != null)?f.ordKey:ordKey
+		isPartition = (f.isPartition)?true:isPartition
+		ordPartition = (f.ordPartition != null)?f.ordPartition:ordPartition
 		length = (f.length > 0)?f.length:length
 		precision = (f.precision > 0)?f.precision:precision
 		isAutoincrement = (f.isAutoincrement)?true:isAutoincrement
@@ -360,10 +370,14 @@ class Field implements Serializable {
 	 */
 	public Field copy() {
 		return new Field(
-				name: this.name, type: this.type, typeName: this.typeName, dbType: this.dbType, isNull: this.isNull, length: this.length, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
-				isAutoincrement: this.isAutoincrement, isReadOnly: this.isReadOnly, defaultValue: this.defaultValue, compute: this.compute, 
-				minValue: this.minValue, maxValue: this.maxValue, format: this.format, alias: this.alias, trim: this.trim, 
-				decimalSeparator: this.decimalSeparator, description: this.description, extended: CloneUtils.CloneMap(extended))
+				name: this.name, type: this.type, typeName: this.typeName, dbType: this.dbType, isNull: this.isNull,
+				length: this.length, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
+				isPartition: this.isPartition, ordPartition: this.ordPartition, isAutoincrement: this.isAutoincrement,
+				isReadOnly: this.isReadOnly, defaultValue: this.defaultValue, compute: this.compute,
+				minValue: this.minValue, maxValue: this.maxValue, format: this.format, alias: this.alias,
+				trim: this.trim, decimalSeparator: this.decimalSeparator, description: this.description,
+				extended: CloneUtils.CloneMap(extended)
+		)
 	}
 	
 	public static boolean IsConvertibleType(Field.Type source, Field.Type dest) {
@@ -397,7 +411,7 @@ class Field implements Serializable {
 				
 		}
 		
-		res
+		return res
 	}
 
     /**
@@ -405,7 +419,7 @@ class Field implements Serializable {
      * @param other
      * @return
      */
-    public boolean canEqual (java.lang.Object other) {
+    public boolean canEqual(java.lang.Object other) {
         return other instanceof Field
     }
 
@@ -420,8 +434,10 @@ class Field implements Serializable {
         if (this.name?.toUpperCase() != o.name?.toUpperCase()) return false
         if (this.type != o.type) return false
         if (this.isNull != o.isNull) return false
-        if (this.isKey != o.isKey) return false
+        if (BoolUtils.IsValue(this.isKey) != BoolUtils.IsValue(o.isKey)) return false
         if (this.ordKey != o.ordKey) return false
+		if (BoolUtils.IsValue(this.isPartition) != BoolUtils.IsValue(o.isPartition)) return false
+		if (this.ordPartition != o.ordPartition) return false
         if (this.length != o.length) return false
         if (this.precision != o.precision) return false
         if (this.dbType != o.dbType) return false
@@ -433,9 +449,9 @@ class Field implements Serializable {
         if (this.minValue != o.minValue) return false
         if (this.maxValue != o.maxValue) return false
         if (this.format != o.format) return false
-        if (this.isAutoincrement != o.isAutoincrement) return false
-        if (this.isReadOnly != o.isReadOnly) return false
-        if (this.trim != o.trim) return false
+        if (BoolUtils.IsValue(this.isAutoincrement) != BoolUtils.IsValue(o.isAutoincrement)) return false
+        if (BoolUtils.IsValue(this.isReadOnly) != BoolUtils.IsValue(o.isReadOnly)) return false
+        if (BoolUtils.IsValue(this.trim) != BoolUtils.IsValue(o.trim)) return false
         if (this.extended != o.extended) return false
         if (this.description != o.description) return false
         if (this.getMethod != o.getMethod) return false
@@ -456,6 +472,7 @@ class Field implements Serializable {
 		if (this.type != o.type && !(this.type in [Field.Type.STRING, Field.Type.TEXT] && o.type in [Field.Type.STRING, Field.Type.TEXT])) return false
 		if (this.isNull != o.isNull) return false
 		if (this.isKey != o.isKey) return false
+		if (this.isPartition != o.isPartition) return false
 		if (AllowLength(this) && this.length != o.length) return false
 		if (AllowPrecision(this) && this.precision != o.precision) return false
 		if (this.isAutoincrement != o.isAutoincrement) return false

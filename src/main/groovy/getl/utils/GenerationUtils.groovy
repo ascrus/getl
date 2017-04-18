@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -573,16 +573,18 @@ class GenerationUtils {
 				result = GenerateDate()
 				break
 			case getl.data.Field.Type.TIME:
-				result = DateUtils.CurrentTime()
+				result = GenerateDate()
 				break
 			case getl.data.Field.Type.DATETIME:
 				result = GenerateDateTime()
 				break
             case getl.data.Field.Type.TEXT:
-                result = new SerialClob(GenerateString(l).chars)
+//                result = new SerialClob(GenerateString(l).chars)
+				result = GenerateString(l)
                 break
             case getl.data.Field.Type.BLOB:
-                result = new SerialBlob(GenerateString(l).bytes)
+//                result = new SerialBlob(GenerateString(l).bytes)
+                result = GenerateString(l).bytes
                 break
 			default:
 				result = GenerateString(l)
@@ -1001,7 +1003,7 @@ sb << """
 		fields.each { Field f ->
 			if ((!(f.name.toLowerCase() in excludeFields)) && f.isKey) kf << f
 		}
-		kf.sort(true) { Field a, Field b -> (a.ordKey?:999999) <=> (b.ordKey?:999999) }
+		kf.sort(true) { Field a, Field b -> (a.ordKey?:999999999) <=> (b.ordKey?:999999999) }
 		
 		List<String> res = []
 		kf.each { Field f ->

@@ -280,7 +280,23 @@ class MapUtils {
 		}
 	}
 
-	private static void MergeMapChildren (Map source, def added, String section) {
+	private static void MergeMapChildren (Map source, def added, String key) {
+		if (!(added instanceof Map)) {
+            source.put(key, added)
+			return
+		}
+		def c = added as Map<String, Object>
+        def subsource = source.get(key) as Map<String, Object>
+        if (subsource == null) {
+            subsource = [:] as Map<String, Object>
+            source.put(key, subsource)
+        }
+		c.each { String subkey, value ->
+			MergeMapChildren(subsource, value, subkey)
+		}
+	}
+
+	/*private static void MergeMapChildren (Map source, def added, String section) {
 		if (!(added instanceof Map)) {
 			SetValue(source, section, added)
 			return
@@ -289,7 +305,7 @@ class MapUtils {
 		c.each { key, value ->
 			MergeMapChildren(source, value, "${section}.${key}")
 		}
-	}
+	}*/
 	
 	/**
 	 * Process arguments to Map

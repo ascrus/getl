@@ -66,7 +66,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Ignore header field name
 	 */
-	public boolean getIgnoreHeader () { BoolUtils.IsValue([params.ignoreHeader, csvConnection()?.ignoreHeader], false) }
+	public boolean getIgnoreHeader () { BoolUtils.IsValue([params.ignoreHeader, csvConnection()?.ignoreHeader], true) }
 	public void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
 	
 	/**

@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -43,24 +43,19 @@ class MSSQLDriver extends JDBCDriver {
 		
 		methodParams.register('eachRow', ['with'])
 	}
-	
-	@Override
-	public List<Driver.Operation> operations() {
-		List<Driver.Operation> result = super.operations()
-		result << Driver.Operation.BULKLOAD
-		result << Driver.Operation.CREATE
-		return result
-	}
-	
+
 	@Override
 	public List<Driver.Support> supported() {
-		List<Driver.Support> result = super.supported()
-        result << Driver.Support.BLOB
-        result << Driver.Support.CLOB
-		result << Driver.Support.INDEX
-		return result
+		return super.supported() +
+				[Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
 	}
-	
+
+	@Override
+	public List<Driver.Operation> operations() {
+		return super.operations() +
+				[Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
+	}
+
 	@Override
 	public String defaultConnectURL () {
 		return 'jdbc:sqlserver://{host};databaseName={database}'

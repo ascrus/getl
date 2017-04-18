@@ -182,7 +182,7 @@ class JDBCConnection extends Connection {
 	 */
 	public Map getConnectProperty () { 
 		if (params.connectProperty == null) params.connectProperty = [:]
-		params.connectProperty
+		return params.connectProperty
 	}
 	public void setConnectProperty (Map value) {
 		connectProperty.clear()
@@ -237,7 +237,7 @@ class JDBCConnection extends Connection {
 	public String getMaskDateTime () { params.maskDateTime }
 	public void setMaskDateTime (String value) { params.maskDateTime = value }
 	
-	/*
+	/**
 	 * Name of file history sql commands
 	 */
 	public String getSqlHistoryFile () { params.sqlHistoryFile }
@@ -245,6 +245,12 @@ class JDBCConnection extends Connection {
         params.sqlHistoryFile = value
         fileNameSqlHistory = null
     }
+
+    /**
+     * Output server warning messages to log
+     */
+    public Boolean getOutputServerWarningToLog() { params.outputServerWarningToLog }
+    public void setOutputServerWarningToLog(Boolean value) { params.outputServerWarningToLog = value }
 
     /**
      * Output sql commands to console
@@ -448,6 +454,26 @@ class JDBCConnection extends Connection {
 
 	@Override
 	public String toString() {
-		return MapUtils.ToJson(MapUtils.CleanMap(params, ['login', 'password']))
+		def str
+		if (connectURL != null) {
+            def m = connectURL =~ /jdbc:.+:\/\/(.+)/
+            if (m.count == 1) {
+                def p = (driver as JDBCDriver).connectionParamBegin
+                def h = m[0][1] as String
+                def i = h.indexOf(p)
+                str = (i != -1)?h.substring(0, i):h
+            }
+            else {
+                str = connectURL
+            }
+		}
+		else if (connectHost != null) {
+			str = "host: $connectHost"
+			if (connectDatabase != null) str += ", db: $connectDatabase"
+		}
+		else {
+			str = "unknown"
+		}
+		return str
 	}
 }

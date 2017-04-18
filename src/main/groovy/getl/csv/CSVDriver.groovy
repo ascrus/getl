@@ -395,8 +395,8 @@ class CSVDriver extends FileDriver {
 		if (cds.fileName == null) throw new ExceptionGETL('Dataset required fileName')
 		
 		boolean escaped = BoolUtils.IsValue(params.escaped, cds.escaped)
-		boolean readAsText = BoolUtils.IsValue(params.readAsText, false)
-		boolean ignoreHeader = BoolUtils.IsValue([params.ignoreHeader, cds.ignoreHeader], false)
+		boolean readAsText = BoolUtils.IsValue(params.readAsText)
+		boolean ignoreHeader = BoolUtils.IsValue([params.ignoreHeader, cds.ignoreHeader], true)
 		String escapeProcessLineChar = ListUtils.NotNullValue([params.escapeProcessLineChar, cds.escapeProcessLineChar])
 		Closure filter = (Closure)params."filter"
 

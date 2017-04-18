@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -44,11 +44,14 @@ class VerticaDriver extends JDBCDriver {
 		super()
 
 		defaultSchemaName = 'PUBLIC'
-		
+
+        addPKFieldsToUpdateStatementFromMerge = true
+
 		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy'])
-		methodParams.register('bulkLoadFile', ['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath',
-												'rejectedPath', 'expression', 'files', 'fileMask', 'location', 'abortOnError',
-												'maskDate', 'maskTime', 'maskDateTime', 'parser'])
+		methodParams.register('bulkLoadFile',
+				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
+				 'expression', 'files', 'fileMask', 'location', 'abortOnError', 'maskDate', 'maskTime', 'maskDateTime',
+				 'parser'])
 		methodParams.register('unionDataset', ['direct'])
 	}
 
@@ -61,22 +64,20 @@ class VerticaDriver extends JDBCDriver {
 
         return res
     }
-	
-	@Override
-	public List<Driver.Support> supported() {
-		List<Driver.Support> result = super.supported()
-        result << Driver.Support.CLOB
-		result << Driver.Support.TEMPORARY
-		return result
-	}
-	
-	@Override
-	public List<Driver.Operation> operations() {
-		List<Driver.Operation> result = super.operations()
-		result << Driver.Operation.BULKLOAD
-		result << Driver.Operation.CREATE
-		return result
-	}
+
+    @Override
+    public List<Driver.Support> supported() {
+        return super.supported() +
+				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.GLOBAL_TEMPORARY,
+				 Driver.Support.SEQUENCE, Driver.Support.CLOB]
+    }
+
+    @Override
+    public List<Driver.Operation> operations() {
+        return super.operations() +
+                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
+                 Driver.Operation.BULKLOAD]
+    }
 	
 	@Override
 	public String defaultConnectURL () {
@@ -93,7 +94,7 @@ class VerticaDriver extends JDBCDriver {
 	
 	@Override
 	protected String createDatasetExtend(Dataset dataset, Map params) {
-		String result = ''
+		def result = ''
 		def temporary = (dataset.sysParams.type in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
 		if (temporary && params.onCommit != null && params.onCommit) result += 'ON COMMIT PRESERVE ROWS '
 		if (params.orderBy != null && !params.orderBy.isEmpty()) result += "ORDER BY ${params.orderBy.join(", ")} "

@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +24,6 @@
 
 package getl.mysql
 
-import java.sql.PreparedStatement
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
 import groovy.transform.InheritConstructors
@@ -38,43 +37,34 @@ import groovy.transform.InheritConstructors
 class MySQLDriver extends JDBCDriver {
 	MySQLDriver () {
 		super()
+
 		connectionParamBegin = '?'
 		connectionParamJoin = '&'
+
+		tablePrefix = '`'
+		fieldPrefix = '`'
+
+        localTemporaryTablePrefix = 'LOCAL TEMPORARY'
 	}
 	
 	@Override
 	public List<Driver.Support> supported() {
-		List<Driver.Support> result = super.supported()
-        result << Driver.Support.BLOB
-        result << Driver.Support.CLOB
-		result << Driver.Support.TEMPORARY
-		result << Driver.Support.INDEX
-		return result
+		return super.supported() +
+				[Driver.Support.LOCAL_TEMPORARY,
+				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
 	}
 	
 	@Override
 	public List<Driver.Operation> operations() {
-		List<Driver.Operation> result = super.operations()
-		result << Driver.Operation.BULKLOAD
-		result << Driver.Operation.CREATE
-		return result
+        return super.operations() +
+                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
 	
 	@Override
 	protected Map getConnectProperty() {
 		return [zeroDateTimeBehavior: 'convertToNull']
 	}
-	
-	@Override
-	public String getTablePrefix () {
-		return '`'
-	}
-	
-	@Override
-	public String getFieldPrefix () {
-		return '`'
-	}
-	
+
 	@Override
 	public String defaultConnectURL () {
 		return 'jdbc:mysql://{host}/{database}'

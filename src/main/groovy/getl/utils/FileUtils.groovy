@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,12 +24,16 @@
 
 package getl.utils
 
+@GrabConfig(systemClassLoader=true)
+
+import getl.files.FileManager
+import org.codehaus.groovy.tools.RootLoader
+
 import java.nio.file.*
 import java.nio.channels.*
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import net.lingala.zip4j.core.ZipFile
-import net.lingala.zip4j.exception.ZipException
 import net.lingala.zip4j.model.ZipParameters
 import net.lingala.zip4j.util.Zip4jConstants
 import getl.exception.ExceptionGETL
@@ -783,4 +787,40 @@ class FileUtils {
 			if (f.directory) zipFile.addFolder(f, parameters) else zipFile.addFile(f, parameters)
 		}
 	}
+
+    public static String FileMaskToMathExpression(String fileMask) {
+        return fileMask.replace(".", "[.]").replace("*", ".*").replace("+", "\\+").replace("-", "\\-")
+    }
+
+    /**
+     * Add jars files from specified path with current process
+     * @param path
+     */
+	public static void AddJarToClassPath(Object owner, String path) {
+        ClassLoader classLoader = ClassLoader.systemClassLoader
+        def pathFile = new File(path)
+        if (pathFile.isFile()) {
+//            Logs.Fine("FileUtils: load jar file \"${pathFile}\"")
+            classLoader.addURL(pathFile.toURI().toURL())
+            return
+        }
+        def mask = '*.jar'
+        if (!pathFile.isDirectory()) {
+            pathFile = new File(PathFromFile(path))
+            if (!pathFile.exists()) throw new ExceptionGETL("Path $path not found")
+            mask = FileName(path)
+        }
+        def fileMan = new FileManager(rootPath: pathFile.absolutePath)
+        fileMan.connect()
+        try {
+            fileMan.list(mask) { Map file ->
+                def fileName = "${fileMan.rootPath}/${file.filename}"
+//                Logs.Fine("FileUtils: load jar file \"$fileName\"")
+                classLoader.addURL(new File(fileName).toURI().toURL())
+            }
+        }
+        finally {
+            fileMan.disconnect()
+        }
+    }
 }
