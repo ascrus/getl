@@ -24,6 +24,7 @@
 
 package getl.postgresql
 
+import getl.data.Dataset
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
 import groovy.transform.InheritConstructors
@@ -59,4 +60,18 @@ class PostgreSQLDriver extends JDBCDriver {
 
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} TO {value}' }
+
+	@Override
+	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+		def res = (List<String>)[]
+		if (params.limit != null) {
+			res << "LIMIT ${params.limit}"
+		}
+		if (params.offset != null) {
+			res << "OFFSET ${params.offset}"
+		}
+		if (!res.isEmpty()) {
+			dir.afterOrderBy = res.join('\n')
+		}
+	}
 }

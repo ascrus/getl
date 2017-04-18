@@ -51,12 +51,16 @@ class JDBCDriver extends Driver {
 	JDBCDriver () {
 		super()
 		methodParams.register('retrieveObjects', ['dbName', 'schemaName', 'tableName', 'type'])
-		methodParams.register('createDataset', ['ifNotExists', 'onCommit', 'indexes', 'hashPrimaryKey', 'useNativeDBType'])
+		methodParams.register('createDataset', ['ifNotExists', 'onCommit', 'indexes', 'hashPrimaryKey',
+                                                'useNativeDBType'])
 		methodParams.register('dropDataset', ['ifExists'])
-		methodParams.register('openWrite', ['operation', 'batchSize', 'updateField', 'logRows', 'onSaveBatch'])
-		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order', 'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
+		methodParams.register('openWrite', ['operation', 'batchSize', 'updateField', 'logRows',
+                                            'onSaveBatch'])
+		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order', 'offset',
+                                          'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
 		methodParams.register('bulkLoadFile', ['allowMapAlias'])
-		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField', 'queryParams', 'condition'])
+		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
+                                               'queryParams', 'condition'])
 		methodParams.register('clearDataset', ['truncate'])
 	}
 	
@@ -649,6 +653,7 @@ class JDBCDriver extends Driver {
 
 	@Override
 	public void startTran() {
+		if (!isSupport(Driver.Support.TRANSACTIONAL)) return
 		if (connection.tranCount == 0) {
 			saveToHistory("START TRAN")
 		}
@@ -659,6 +664,7 @@ class JDBCDriver extends Driver {
 
 	@Override
 	public void commitTran() {
+        if (!isSupport(Driver.Support.TRANSACTIONAL)) return
 		if (connection == null) throw new ExceptionGETL("Can not commit from disconnected connection")
 		if (connection.tranCount == 1) {
 			saveToHistory("COMMIT")
@@ -671,6 +677,7 @@ class JDBCDriver extends Driver {
 
 	@Override
 	public void rollbackTran() {
+        if (!isSupport(Driver.Support.TRANSACTIONAL)) return
 		if (connection == null) throw new ExceptionGETL("Can not rollback from disconnected connection")
 		if (connection.tranCount == 1) {
 			saveToHistory("ROLLBACK")
@@ -954,9 +961,52 @@ ${extend}'''
 	 * </ul> 
 	 * @param dataset
 	 * @param params
-	 * @return
 	 */
 	public void sqlTableDirective (Dataset dataset, Map params, Map dir) { }
+
+    /**
+     * Build sql select statement for read rows in table
+     * @param dataset
+     * @param params
+     * @return
+     */
+    public String sqlTableBuildSelect(Dataset dataset, Map params) {
+        // Load statement directive by driver
+        def dir = (Map<String, String>)[:]
+        sqlTableDirective(dataset, params, dir)
+
+        StringBuilder sb = new StringBuilder()
+
+        if (dir.start != null) sb << dir.start + '\n'
+
+        if (dir.beforeselect != null) sb << dir.beforeselect + ' '
+        sb << 'SELECT '
+        if (dir.afterselect != null) sb << dir.afterselect + ' '
+        sb << params.selectFields
+        if (dir.afterfield != null) sb << ' ' + dir.afterfield
+        sb << '\n'
+
+        if (dir.beforefor != null) sb << dir.beforefor + ' '
+        sb << 'FROM '
+        if (dir.afterfor != null) sb << dir.afterfor + ' '
+        sb << params.table
+        if (dir.aftertable != null) sb << ' ' + dir.aftertable
+        sb << ' tab'
+        if (dir.afteralias != null) sb << ' ' + dir.afteralias
+        sb << '\n'
+
+        if (params.where != null) sb << "\nWHERE ${params.where}"
+
+        if (params.orderBy != null) sb << "\nORDER BY ${params.orderBy}"
+
+        if (dir.afterOrderBy != null) sb << "\n${dir.afterOrderBy}"
+
+        if (params.forUpdate != null && params.forUpdate) sb << '\nFOR UPDATE'
+
+        if (dir.finish != null) sb << '\n' + dir.finish
+
+        return sb.toString()
+    }
 
 	/**
 	 * Generate select statement for read rows
@@ -980,9 +1030,9 @@ ${extend}'''
 			if (fields.isEmpty()) throw new ExceptionGETL("Required fields by dataset $dataset") 
 			
 			def selectFields = fields.join(",")
-			def where = params.where
+
 			def order = params.order
-			def orderBy
+			String orderBy
 			if (order != null) { 
 				if (!(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
 				List<String> orderFields = []
@@ -991,37 +1041,8 @@ ${extend}'''
 				}
 				orderBy = orderFields.join(", ")
 			}
-			def forUpdate = (params.forUpdate != null && params.forUpdate)?"FOR UPDATE\n":null
-			
-			Map<String, String> dir = [:]
-			sqlTableDirective(dataset, params, dir)
-			
-			StringBuilder sb = new StringBuilder()
-			if (dir.start != null) sb << dir.start + " "
-			
-			if (dir.beforeselect != null) sb << dir.beforeselect + " "
-			sb << "SELECT "
-			if (dir.afterselect != null) sb << dir.afterselect + " "
-			sb << selectFields
-			if (dir.afterfield != null) sb << dir.afterfield + " "
-			sb << "\n"
-			
-			if (dir.beforefor != null) sb << dir.beforefor + " "
-			sb << "FROM "
-			if (dir.afterfor != null) sb << dir.afterfor + " "
-			sb << fn
-			if (dir.aftertable != null) sb << " " + dir.aftertable
-			sb << " tab"
-			if (dir.afteralias != null) sb << " " + dir.afteralias
-			sb << "\n"
-			
-			if (where != null) sb << "WHERE ${where}\n"
-			if (orderBy != null) sb << "ORDER BY ${orderBy}\n"
-			if (forUpdate != null) sb << forUpdate
-			
-			if (dir.finish != null) sb << " " + dir.finish
-			
-			query = sb.toString()
+
+			query = sqlTableBuildSelect(dataset, params + [selectFields: selectFields, table: fn, orderBy: orderBy])
 		} 
 		else {
 			assert dataset.params.query != null, "Required value in \"query\" from dataset"

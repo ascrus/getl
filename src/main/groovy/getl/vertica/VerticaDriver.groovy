@@ -48,6 +48,7 @@ class VerticaDriver extends JDBCDriver {
         addPKFieldsToUpdateStatementFromMerge = true
 
 		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy'])
+        methodParams.register('eachRow', ['label'])
 		methodParams.register('bulkLoadFile',
 				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
 				 'expression', 'files', 'fileMask', 'location', 'abortOnError', 'maskDate', 'maskTime', 'maskDateTime',
@@ -304,4 +305,22 @@ RECORD TERMINATOR $rowDelimiter
 
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} TO {value}' }
+
+	@Override
+	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+        if (params.label != null) {
+            dir."afterselect" = "/*+label(${params.label})*/"
+        }
+
+        def res = (List<String>)[]
+		if (params.limit != null) {
+            res << "LIMIT ${params.limit}"
+        }
+        if (params.offset != null) {
+            res << "OFFSET ${params.offset}"
+        }
+        if (!res.isEmpty()) {
+            dir.afterOrderBy = res.join('\n')
+        }
+	}
 }
