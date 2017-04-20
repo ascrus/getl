@@ -58,7 +58,7 @@ class JDBCDriver extends Driver {
                                             'onSaveBatch'])
 		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order', 'offset',
                                           'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
-		methodParams.register('bulkLoadFile', ['allowMapAlias'])
+		methodParams.register('bulkLoadFile', ['allowMapAlias', 'files', 'fileMask'])
 		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
                                                'queryParams', 'condition'])
 		methodParams.register('clearDataset', ['truncate'])

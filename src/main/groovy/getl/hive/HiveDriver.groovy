@@ -59,7 +59,7 @@ class HiveDriver extends JDBCDriver {
                  'fieldsTerminated', 'nullDefined', 'select'])
         methodParams.register('openWrite', ['overwrite'])
         methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
-                                               'hdfsDir', 'processRow', 'files', 'fileMask'])
+                                               'hdfsDir', 'processRow'])
     }
 
     @Override

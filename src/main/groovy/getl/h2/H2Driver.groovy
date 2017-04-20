@@ -24,16 +24,15 @@
 
 package getl.h2
 
-import getl.csv.CSVDataset
-import getl.data.Dataset
-import getl.data.Field
+import groovy.transform.InheritConstructors
+
+import getl.csv.*
+import getl.data.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
-import getl.jdbc.JDBCConnection
-import getl.jdbc.JDBCDriver
-import getl.jdbc.JDBCDataset
+import getl.files.FileManager
+import getl.jdbc.*
 import getl.utils.*
-import groovy.transform.InheritConstructors
 
 /**
  * H2 driver class
@@ -135,7 +134,6 @@ class H2Driver extends JDBCDriver {
 		def heads = (!source.header)?"'" + headers.join(source.fieldDelimiter) + "'":"null"
 		fparm << "charset=${source.codePage}"
 		fparm << "fieldSeparator=${source.fieldDelimiter}"
-//		fparm << "rowSeparator=${StringUtils.EscapeJava(source.rowDelimiter)}"
 		if (source.quoteStr != null) fparm << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr)}"
 		def functionParms = fparm.join(" ") 
 		
@@ -144,17 +142,39 @@ INSERT INTO ${fullNameDataset(dest)} (
 ${cols}
 )
 SELECT ${cols} 
-FROM CSVREAD('${source.fullFileName()}', ${heads}, '${functionParms}')
-""" 
-		
+FROM CSVREAD('{file_name}', ${heads}, '${functionParms}')
+"""
+        def sql = sb.toString()
 		//println sb.toString()
-		
-		dest.writeRows = 0
+
+        def sourceConnection = source.connection as CSVConnection
+        def files = [] as List<String>
+        if (params.files != null) {
+            files.addAll(params.files)
+        }
+        else if (params.fileMask != null) {
+            def fm = new FileManager(rootPath: sourceConnection.path)
+            fm.connect()
+            try {
+                fm.list(params.fileMask).each { Map f -> files << f.filename }
+            }
+            finally {
+                fm.disconnect()
+            }
+        }
+        else {
+            files << source.fileName
+        }
+
+        dest.writeRows = 0
 		dest.updateRows = 0
 		if (autoCommit) dest.connection.startTran()
-		long count
+		long count = 0
 		try {
-			count = executeCommand(sb.toString(), [isUpdate: true])
+            files.each { String fileName ->
+                def loadFile = "${sourceConnection.path}/$fileName"
+                count += executeCommand(sql.replace('{file_name}', loadFile), [isUpdate: true])
+            }
 		}
 		catch (Exception e) {
 			if (autoCommit) dest.connection.rollbackTran()

@@ -51,7 +51,7 @@ class VerticaDriver extends JDBCDriver {
         methodParams.register('eachRow', ['label'])
 		methodParams.register('bulkLoadFile',
 				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
-				 'expression', 'files', 'fileMask', 'location', 'abortOnError', 'maskDate', 'maskTime', 'maskDateTime',
+				 'expression', 'location', 'abortOnError', 'maskDate', 'maskTime', 'maskDateTime',
 				 'parser'])
 		methodParams.register('unionDataset', ['direct'])
 	}
