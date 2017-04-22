@@ -101,4 +101,34 @@ class NumericUtils {
 		
 		return hash.mod(countSegment).intValue()
 	}
+
+    /**
+     * Check string as integer
+     * @param value
+     * @return
+     */
+	public static boolean IsInteger(String value) {
+		try {
+			Integer.parseInt(value)
+		} catch (NumberFormatException e) {
+			return false
+		}
+		return true
+	}
+
+    /**
+     * Convert string to integer
+     * @param value
+     * @param defaultValue
+     * @return
+     */
+    public static Integer String2Integer(String value, Integer defaultValue) {
+        Integer res
+        try {
+            res = Integer.parseInt(value)
+        } catch (NumberFormatException e) {
+            res = defaultValue
+        }
+        return res
+    }
 }

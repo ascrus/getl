@@ -620,6 +620,7 @@ class JDBCDriver extends Driver {
 				}
 				catch (Exception ignored) { }
 				f.description = rs.getString("REMARKS")
+				if (f.description == '') f.description = null
 				
 				result << f
 			}

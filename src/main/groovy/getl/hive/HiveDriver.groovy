@@ -33,6 +33,7 @@ import getl.jdbc.*
 import getl.proc.Flow
 import getl.tfs.TFS
 import getl.utils.*
+import groovy.transform.CompileStatic
 
 /**
  * Hive driver class
@@ -59,7 +60,7 @@ class HiveDriver extends JDBCDriver {
                  'fieldsTerminated', 'nullDefined', 'select'])
         methodParams.register('openWrite', ['overwrite'])
         methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
-                                               'hdfsDir', 'processRow'])
+                                               'hdfsDir', 'processRow', 'expression'])
     }
 
     @Override
@@ -242,6 +243,11 @@ class HiveDriver extends JDBCDriver {
         def hdfsDir = ListUtils.NotNullValue([bulkParams.hdfsDir, conHive.hdfsDir])
         def processRow = bulkParams.processRow as Closure
 
+        Map<String, String> expression = bulkParams.expression?:[:]
+        expression.each { String fieldName, String expr ->
+            if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
+        }
+
         if (hdfsHost == null) throw new ExceptionGETL('Required parameter "hdfsHost"')
         if (hdfsLogin == null) throw new ExceptionGETL('Required parameter "hdfsLogin"')
         if (hdfsDir == null) throw new ExceptionGETL('Required parameter "hdfsDir"')
@@ -271,7 +277,7 @@ class HiveDriver extends JDBCDriver {
         tempFile.rowDelimiter = '\n'
         tempFile.quoteMode = CSVDataset.QuoteMode.NORMAL
         tempFile.codePage = 'utf-8'
-        tempFile.escaped = false
+        tempFile.escaped = true
         tempFile.nullAsValue = '<NULL>'
 
         def loadFields = [] as List<String>
@@ -283,7 +289,14 @@ class HiveDriver extends JDBCDriver {
             if (f.isPartition) return
             def n = f.copy()
             tempFile.field << n
-            loadFields << n.name
+
+            def exprValue = expression.get(n.name.toLowerCase())
+            if (exprValue == null) {
+                loadFields << n.name
+            }
+            else {
+                loadFields << exprValue
+            }
         }
 
         // Add partition fields to temp file from destination dataset
@@ -291,8 +304,16 @@ class HiveDriver extends JDBCDriver {
             def n = f.copy()
             n.isPartition = false
             tempFile.field << n
-            loadFields << n.name
+
             partFields << n.name
+
+            def exprValue = expression.get(n.name.toLowerCase())
+            if (exprValue == null) {
+                loadFields << n.name
+            }
+            else {
+                loadFields << exprValue
+            }
         }
 
         // Copy source file to temp csv file
@@ -301,7 +322,6 @@ class HiveDriver extends JDBCDriver {
             source.fileName = fileName
             count = count + new Flow().copy([source: source, dest: tempFile, inheritFields: false,
                                              dest_append: (count > 0)], processRow)
-            println "$fileName: $count"
         }
         if (count == 0) return
 
@@ -333,9 +353,101 @@ class HiveDriver extends JDBCDriver {
             }
         }
         finally {
+            tempFile.drop()
             fileMan.connect()
             fileMan.removeFile(tempFile.fileName)
             fileMan.disconnect()
         }
+    }
+
+    @CompileStatic
+    public static Map<String, Object> tableExtendedInfo(TableDataset table) {
+        Map<String, Object> res = [:]
+        def sql = 'SHOW TABLE EXTENDED'
+        if (table.schemaName != null) sql += " IN ${table.schemaName}"
+        sql += " LIKE '${table.tableName}'"
+        def query = new QueryDataset(connection: table.connection, query: sql)
+        query.eachRow { Map r ->
+            def s = r.tab_name as String
+            def i = s.indexOf(':')
+            if (i == -1) return
+            def name = s.substring(0, i)
+            def value = s.substring(i + 1).trim()
+            switch (name) {
+                case 'columns':
+                    def m = value =~ /.+([\\{].+[\\}])/
+                    if (m.size() != 1) {
+                        value = null
+                        return
+                    }
+                    def descCols = (m[0] as List)[1] as String
+                    def cols = descCols.substring(1, descCols.length() - 1).split(', ')
+                    List<Map<String, String>> pc = []
+                    cols.each { String col ->
+                        col = col.trim()
+                        def x = col.indexOf(' ')
+                        String colName, colType
+                        if (x != -1) {
+                            colName = col.substring(x + 1)
+                            colType = col.substring(0, x)
+                        }
+                        Map<String, String> cr = [name: colName, type: colType]
+                        pc << cr
+                    }
+                    value = pc
+                    break
+                case 'partitioned':
+                    value = Boolean.valueOf(value as String)
+                    break
+                case 'partitionColumns':
+                    def m = value =~ /.+([\\{].+[\\}])/
+                    if (m.size() != 1) {
+                        value = null
+                        return
+                    }
+                    def descCols = (m[0] as List)[1] as String
+                    def cols = descCols.substring(1, descCols.length() - 1).split(', ')
+                    List<Map<String, String>> pc = []
+                    cols.each { String col ->
+                        col = col.trim()
+                        def x = col.indexOf(' ')
+                        String colName, colType
+                        if (x != -1) {
+                            colName = col.substring(x + 1)
+                            colType = col.substring(0, x)
+                        }
+                        Map<String, String> cr = [name: colName, type: colType]
+                        pc << cr
+                    }
+                    value = pc
+                    break
+            }
+
+            res.put(name, value)
+        }
+
+        return res
+    }
+
+    @Override
+    public List<Field> fields(Dataset dataset) {
+        def res = super.fields(dataset)
+        if (dataset instanceof TableDataset) {
+            def ext = tableExtendedInfo(dataset)
+            if (BoolUtils.IsValue(ext.partitioned) && ext.partitionColumns != null) {
+                def partNum = 0
+                ext.partitionColumns.each { Map<String, String> col ->
+                    partNum++
+                    def name = col.name.toLowerCase()
+                    def f = res.find { it.name == name }
+                    if (f != null) {
+                        f.isPartition = true
+                        f.ordPartition = partNum
+                    }
+                }
+            }
+        }
+
+        return res
     }
 }
