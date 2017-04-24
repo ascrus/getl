@@ -326,12 +326,8 @@ abstract class FileDriver extends Driver {
 		OutputStream output
 		def file = new File(fn)
         def dsFile = new File(dataset.objectFullName)
-        if (dsFile.exists()) {
-            if (!isAppend) {
-                if (!dsFile.delete()) throw new ExceptionGETL("Failed to remove the file \"${dataset.objectFullName}\"")
-            } else {
-                FileUtils.CopyToFile(dataset.objectFullName, fn)
-            }
+        if (isAppend && dsFile.exists()) {
+            FileUtils.CopyToFile(dataset.objectFullName, fn)
         }
 		
 		if (isGzFile) {
