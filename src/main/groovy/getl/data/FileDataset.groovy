@@ -162,13 +162,13 @@ class FileDataset extends Dataset {
 	@Override
 	public void closeWrite () {
 		super.closeWrite()
-		if (!BoolUtils.IsValue([sysParams.append, append], false)) {
-			if (isWriteError || (sysParams.deleteOnEmpty && writeRows == 0)) {
-				connection.driver.fixTempFiles(this, true)
-			} else {
-				connection.driver.fixTempFiles(this, false)
-			}
+		/*if (!BoolUtils.IsValue([sysParams.append, append], false)) {*/
+		if (isWriteError || (sysParams.deleteOnEmpty && writeRows == 0)) {
+			(connection.driver as FileDriver).fixTempFiles(this, true)
+		} else {
+			(connection.driver as FileDriver).fixTempFiles(this, false)
 		}
+		/*}*/
 	}
 	
 	@Override

@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,13 +24,13 @@
 
 package getl.driver
 
-import getl.data.FileConnection
-import getl.data.FileDataset
 import groovy.transform.InheritConstructors
 
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
+import getl.data.FileConnection
+import getl.data.FileDataset
 import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.exception.ExceptionGETL
@@ -101,7 +101,7 @@ abstract class FileDriver extends Driver {
 			}
 		} 
 
-		list
+		return list
 	}
 	
 	/**
@@ -115,7 +115,7 @@ abstract class FileDriver extends Driver {
 		if (dataset.extension != null) fn += ".${dataset.extension}"
 		if (dataset.connection.path != null) fn = "${dataset.connection.path}${connection.fileSeparator}${fn}"
 
-		fn
+		return fn
 	}
 	
 	/**
@@ -124,7 +124,7 @@ abstract class FileDriver extends Driver {
 	 * @return
 	 */
 	public String fullFileNameDataset(Dataset dataset) {
-		fullFileNameDataset(dataset, null)
+		return fullFileNameDataset(dataset, null)
 	}
 
 	/**
@@ -141,7 +141,7 @@ abstract class FileDriver extends Driver {
 
 		//println "${dataset.fileName}, gz=${dataset.isGzFile}, ext=${dataset.extension}, exclude: ${FileUtils.ExcludeFileExtension(fn)} => $fn"
 		
-		fn
+		return fn
 	}
 	
 	/**
@@ -158,7 +158,7 @@ abstract class FileDriver extends Driver {
 		if (dataset.extension != null) fn += ".${dataset.extension}"
 		if (dataset.isGzFile) fn += ".gz"
 		
-		fn
+		return fn
 	}
 	
 	/**
@@ -168,7 +168,7 @@ abstract class FileDriver extends Driver {
 	 */
 	@Override
 	public String fullFileNameSchema(Dataset dataset) {
-		dataset.schemaFileName?:fullFileNameDatasetWithoutGZ(dataset) + ".schema"
+		return dataset.schemaFileName?:fullFileNameDatasetWithoutGZ(dataset) + ".schema"
 	}
 	
 	/**
@@ -185,12 +185,12 @@ abstract class FileDriver extends Driver {
 		
 		def isGzFile = dataset.isGzFile
 		if (isGzFile) fn += ".gz"
-		fn
+
+		return fn
 	}
 
 	@Override
-	public
-	void dropDataset(Dataset dataset, Map params) {
+	public void dropDataset(Dataset dataset, Map params) {
         if (params.portions == null) {
             def f = new File(fullFileNameDataset(dataset))
             if (f.exists()) {
@@ -209,8 +209,8 @@ abstract class FileDriver extends Driver {
                 }
             }
         }
-		
-		super.dropDataset(dataset, params)
+
+        super.dropDataset(dataset, params)
 	}
 	
 	/**
@@ -229,7 +229,7 @@ abstract class FileDriver extends Driver {
 	 * @return
 	 */
 	protected Map getDatasetParams (Dataset dataset, Map params) {
-		getDatasetParams(dataset, params, null)
+        return getDatasetParams(dataset, params, null)
 	}
 	
 	/**
@@ -261,7 +261,7 @@ abstract class FileDriver extends Driver {
 	 * @return
 	 */
 	protected Reader getFileReader (Dataset dataset, Map params) {
-		getFileReader(dataset, params, null)
+        return getFileReader(dataset, params, null)
 	}
 	
 	/**
@@ -299,7 +299,7 @@ abstract class FileDriver extends Driver {
 	 * @return
 	 */
 	protected Writer getFileWriter (Dataset dataset, Map params) {
-		getFileWriter(dataset, params, null)
+        return getFileWriter(dataset, params, null)
 	}
 	
 	/**
@@ -313,7 +313,7 @@ abstract class FileDriver extends Driver {
 		def wp = getDatasetParams(dataset, params, portion)
 		
 		def fn = wp.fn 
-		if (!BoolUtils.IsValue([params.append, dataset.append], false)) fn = "${wp.fn}.getltemp"
+		/*if (!BoolUtils.IsValue([params.append, dataset.append], false))*/ fn = "${wp.fn}.getltemp"
 		dataset.sysParams.writeFiles.put(wp.fn, fn)
 		
 		if (wp.createPath) createPath(fn)
@@ -325,6 +325,14 @@ abstract class FileDriver extends Driver {
 		def writer
 		OutputStream output
 		def file = new File(fn)
+        def dsFile = new File(dataset.objectFullName)
+        if (dsFile.exists()) {
+            if (!isAppend) {
+                if (!dsFile.delete()) throw new ExceptionGETL("Failed to remove the file \"${dataset.objectFullName}\"")
+            } else {
+                FileUtils.CopyToFile(dataset.objectFullName, fn)
+            }
+        }
 		
 		if (isGzFile) {
 			output = new GZIPOutputStream(new FileOutputStream(file, isAppend))
@@ -355,8 +363,10 @@ abstract class FileDriver extends Driver {
 	protected static void fixTempFiles (Dataset dataset, boolean isDelete) {
 		dataset.sysParams.writeFiles?.each { fileName, tempFileName ->
 			def f = new File(fileName as String)
-			f.delete()
 			def t = new File(tempFileName as String)
+            if (f.exists()) {
+				if (!f.delete()) throw new ExceptionGETL("Failed to remove the file \"$fileName\"")
+			}
 			if (isDelete) {
 				t.delete()
 				if (dataset.autoSchema) {
@@ -365,84 +375,77 @@ abstract class FileDriver extends Driver {
 				}
 			}
 			else {
-				t.renameTo(f)
+                if (!t.renameTo(f)) {
+                    t.delete()
+                    throw new ExceptionGETL("Failed rename temp file to \"${dataset.objectFullName}\"")
+                }
 			}
 		}
 	}
 	
 	@Override
-	public
-	void doneWrite (Dataset dataset) {
+	public void doneWrite (Dataset dataset) {
 		
 	}
 	
 	@Override
-	public
-	long executeCommand (String command, Map params) {
-		throw new ExceptionGETL("Not supported")
+	public long executeCommand (String command, Map params) {
+		throw new ExceptionGETL("Not support this features")
 	}
 	
 	@Override
 	public long getSequence(String sequenceName) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL("Not support this features")
 	}
 	
 
 	@Override
-	public
-	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-		throw new ExceptionGETL("Not supported")
+	public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+		throw new ExceptionGETL("Not support this features")
 
 	}
 
 	@Override
-	public
-	void clearDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL("Not supported")
+	public void clearDataset(Dataset dataset, Map params) {
+		throw new ExceptionGETL("Not support this features")
 
 	}
 	
 	@Override
-	public
-	void createDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL("Not supported")
+	public void createDataset(Dataset dataset, Map params) {
+		throw new ExceptionGETL("Not support this features")
 
 	}
 	
 	@Override
-	public
-	void startTran() {
-		throw new ExceptionGETL("Not supported")
+	public void startTran() {
+		throw new ExceptionGETL("Not support this features")
 
 	}
 
 	@Override
-	public
-	void commitTran() {
-		throw new ExceptionGETL("Not supported")
+	public void commitTran() {
+		throw new ExceptionGETL("Not support this features")
 
 	}
 
 	@Override
-	public
-	void rollbackTran() {
-		throw new ExceptionGETL("Not supported")
+	public void rollbackTran() {
+		throw new ExceptionGETL("Not support this features")
 	}
 	
 	@Override
-	public
-	void connect () {
-		throw new ExceptionGETL("Not supported")
+	public void connect () {
+		throw new ExceptionGETL("Not support this features")
 	}
 
 	@Override
-	public
-	void disconnect () {
-		throw new ExceptionGETL("Not supported")
+	public void disconnect () {
+		throw new ExceptionGETL("Not support this features")
 	}
 
 	@Override
 	public boolean isConnected() {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL("Not support this features")
 	}
 }
