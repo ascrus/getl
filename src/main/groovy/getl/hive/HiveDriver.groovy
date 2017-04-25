@@ -342,11 +342,13 @@ class HiveDriver extends JDBCDriver {
             tempTable.field = tempFile.field
             tempTable.create(rowFormat: 'DELIMITED', fieldsTerminated: '\\001', nullDefined: tempFile.nullAsValue)
             try {
-                tempTable.connection
-                        .executeCommand(command: "LOAD DATA INPATH '${fileMan.rootPath}/${tempFile.fileName}' INTO TABLE ${tempTable.tableName}")
-                tempTable.connection
-                        .executeCommand(command: "FROM ${tempTable.tableName} INSERT ${(overwrite) ? 'OVERWRITE' : 'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
+                dest.readRows = tempTable.connection
+                        .executeCommand(isUpdate: true, command: "LOAD DATA INPATH '${fileMan.rootPath}/${tempFile.fileName}' INTO TABLE ${tempTable.tableName}")
+                def countRows = tempTable.connection
+                        .executeCommand(isUpdate: true, command: "FROM ${tempTable.tableName} INSERT ${(overwrite) ? 'OVERWRITE' : 'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
                         (!partFields.isEmpty() ? " PARTITION(${partFields.join(', ')})" : '') + " SELECT ${loadFields.join(', ')}")
+                dest.writeRows = countRows
+                dest.updateRows = countRows
             }
             finally {
                 tempTable.drop()

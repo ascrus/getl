@@ -317,8 +317,11 @@ class MapUtils {
 		if (args instanceof List) {
 			la = (List<String>)args
 		}
-		else if (args instanceof String[]){
+		else if (args instanceof String[]) {
 			la = (args as String[]).collect() as List<String>
+		}
+		else if (args instanceof String) {
+			la = [args as String]
 		}
 		else {
 			throw new ExceptionGETL("Invalid arguments for processing")

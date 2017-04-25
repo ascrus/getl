@@ -552,6 +552,10 @@ class Dataset {
 	 * @param params
 	 */
 	public void bulkLoadFile (Map procParams) {
+		readRows = 0
+        writeRows = 0
+        updateRows = 0
+
 		validConnection()
 		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Driver not supported bulk load file")
 		
