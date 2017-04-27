@@ -303,7 +303,10 @@ public class SQLScripter {
 		QueryDataset query = new QueryDataset(connection: connection, query: sql)
 		query.eachRow(limit: 1) { row ->
 			query.field.each { Field f ->
-				vars."${f.name.toLowerCase()}" = row."${f.name.toLowerCase()}"
+				def fieldName = f.name.toLowerCase()
+                def fieldValue = row.get(fieldName)
+                if (fieldValue instanceof Date) fieldValue = new java.sql.Timestamp((fieldValue as Date).time)
+				vars.put(fieldName, fieldValue)
 			}
 		}
 	}
@@ -344,7 +347,11 @@ public class SQLScripter {
 			if (isExit) return
 			
 			query.field.each { Field f ->
-				ns.vars."${f.name.toLowerCase()}" = row."${f.name.toLowerCase()}"
+                def fieldName = f.name.toLowerCase()
+                def fieldValue = row.get(fieldName)
+                if (fieldValue instanceof Date) fieldValue = new java.sql.Timestamp((fieldValue as Date).time)
+                ns.vars.put(fieldName, fieldValue)
+//				ns.vars."${f.name.toLowerCase()}" = row."${f.name.toLowerCase()}"
 			}
 			try {
 				ns.runSql()
@@ -511,18 +518,18 @@ public class SQLScripter {
 		if (sql == null) throw new ExceptionGETL("SQLScripter: required sql for BatchSQL2List method")
 		
 		// Delete multi comment
-		StringBuffer b = new StringBuffer()
+		/*StringBuffer b = new StringBuffer()
 		int cur = 0
-		int start = sql.indexOf("/*")
+		int start = sql.indexOf("*//*")
 		int finish //= -1
 		while (start >= 0) {
 			if (cur < start) b.append(sql.substring(cur, start))
-			finish = sql.indexOf("*/", start)
+			finish = sql.indexOf("*//*", start)
 			String comment = sql.substring(start + 2, finish).trim()
 			if ("+".equals(comment.substring(0, 1)) || ":".equals(comment.substring(0, 1)))
-				b.append("/*" + comment + "*/")
+				b.append("*//*" + comment + "*//*")
 			cur = finish + 2
-			start = sql.indexOf("/*", cur)
+			start = sql.indexOf("*//*", cur)
 		}
 		if (cur < sql.length()) b.append(sql.substring(cur))
 		sql = b.toString()
@@ -539,7 +546,7 @@ public class SQLScripter {
 			m.appendReplacement(b, "")
 		}
 		m.appendTail(b)
-		sql = b.toString()
+		sql = b.toString()*/
 		
 		List<String> res = sql.split('\n')
 		for (int i = 0; i < res.size(); i++) {
@@ -551,7 +558,8 @@ public class SQLScripter {
 		String prepare = res.join('\n')
 		res = prepare.split(delim)
 		for (int i = 0; i < res.size(); i++) { res[i] = res[i].trim() }
-		res
+
+		return res
 	}
 
 }
