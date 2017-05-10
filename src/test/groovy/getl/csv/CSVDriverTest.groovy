@@ -69,6 +69,23 @@ class CSVDriverTest extends GroovyTestCase {
             return row
         }
 
+        new Flow().writeTo(dest: csv, dest_append: true) { updater ->
+            (1..100).each { id ->
+                updater(generate_row(id))
+            }
+        }
+        assertEquals(100, csv.writeRows)
+        new Flow().writeTo(dest: csv, dest_append: true) { updater ->
+            (101..200).each { id ->
+                updater(generate_row(id))
+            }
+        }
+        assertEquals(100, csv.writeRows)
+        def csvCountRows = 0
+        csv.eachRow { csvCountRows++ }
+        assertEquals(200, csv.readRows)
+        assertEquals(200, csvCountRows)
+
         new Flow().writeTo(dest: csv, dest_splitSize: 10000) { updater ->
             (1..100).each { id ->
                 updater(generate_row(id))

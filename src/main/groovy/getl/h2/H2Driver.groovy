@@ -24,16 +24,15 @@
 
 package getl.h2
 
-import getl.csv.CSVDataset
-import getl.data.Dataset
-import getl.data.Field
+import groovy.transform.InheritConstructors
+
+import getl.csv.*
+import getl.data.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
-import getl.jdbc.JDBCConnection
-import getl.jdbc.JDBCDriver
-import getl.jdbc.JDBCDataset
+import getl.files.FileManager
+import getl.jdbc.*
 import getl.utils.*
-import groovy.transform.InheritConstructors
 
 /**
  * H2 driver class
@@ -53,6 +52,7 @@ class H2Driver extends JDBCDriver {
 		connectionParamJoin = ";"
 
 		methodParams.register("createDataset", ["transactional", "not_persistent"])
+        methodParams.register('bulkLoadFile', ['expression'])
 	}
 	
 	@Override
@@ -120,41 +120,77 @@ class H2Driver extends JDBCDriver {
 		
 		List<Map> map = params.map
 		boolean autoCommit = (params.autoCommit != null)?params.autoCommit:(dest.connection.tranCount == 0 && !dest.connection.autoCommit)
+
+        Map<String, String> expression = params.expression?:[:]
+        expression.each { String fieldName, String expr ->
+            if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
+        }
 		
 		StringBuilder sb = new StringBuilder()
-		List columns = []
-		List headers = []
-		List fparm = []
-		map.each { Map f ->
-			if (f.field != null) {
-				columns << fieldPrefix + (f.field.name as String).toUpperCase() + fieldPrefix
-				headers << f.field.name.toUpperCase()
+		List<String> columns = []
+        List<String> fields = []
+		List<String> headers = []
+		List<String> fparm = []
+		map.each { Map<String, Object> m ->
+            Field f = m.field as Field
+			if (f != null && !f.isReadOnly) {
+				headers << f.name.toUpperCase()
+                columns << fieldPrefix + f.name.toUpperCase() + fieldPrefix
+                def expr = expression.get(f.name.toLowerCase())
+                if (expr == null) {
+                    fields << fieldPrefix + f.name.toUpperCase() + fieldPrefix
+                }
+                else {
+                    fields << expr
+                }
 			}
 		}
-		def cols = columns.join(", ")
+		def cols = columns.join(', ')
+        def flds = fields.join(', ')
 		def heads = (!source.header)?"'" + headers.join(source.fieldDelimiter) + "'":"null"
 		fparm << "charset=${source.codePage}"
 		fparm << "fieldSeparator=${source.fieldDelimiter}"
-//		fparm << "rowSeparator=${StringUtils.EscapeJava(source.rowDelimiter)}"
 		if (source.quoteStr != null) fparm << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr)}"
 		def functionParms = fparm.join(" ") 
 		
-		sb << """
-INSERT INTO ${fullNameDataset(dest)} (
-${cols}
+		sb <<
+"""INSERT INTO ${fullNameDataset(dest)} (
+$cols
 )
-SELECT ${cols} 
-FROM CSVREAD('${source.fullFileName()}', ${heads}, '${functionParms}')
-""" 
-		
+SELECT $flds 
+FROM CSVREAD('{file_name}', ${heads}, '${functionParms}')
+"""
+        def sql = sb.toString()
 		//println sb.toString()
-		
-		dest.writeRows = 0
+
+        def sourceConnection = source.connection as CSVConnection
+        def files = [] as List<String>
+        if (params.files != null) {
+            files.addAll(params.files)
+        }
+        else if (params.fileMask != null) {
+            def fm = new FileManager(rootPath: sourceConnection.path)
+            fm.connect()
+            try {
+                fm.list(params.fileMask).each { Map f -> files << f.filename }
+            }
+            finally {
+                fm.disconnect()
+            }
+        }
+        else {
+            files << source.fileName
+        }
+
+        dest.writeRows = 0
 		dest.updateRows = 0
 		if (autoCommit) dest.connection.startTran()
-		long count
+		long count = 0
 		try {
-			count = executeCommand(sb.toString(), [isUpdate: true])
+            files.each { String fileName ->
+                def loadFile = "${sourceConnection.path}/$fileName"
+                count += executeCommand(sql.replace('{file_name}', loadFile), [isUpdate: true])
+            }
 		}
 		catch (Exception e) {
 			if (autoCommit) dest.connection.rollbackTran()
@@ -167,33 +203,13 @@ FROM CSVREAD('${source.fullFileName()}', ${heads}, '${functionParms}')
 	
 	@Override
 	protected String unionDatasetMergeSyntax () {
-		'''MERGE INTO {target} ({fields})
+        return
+'''MERGE INTO {target} ({fields})
   KEY ({keys})
     SELECT {values}
 	FROM {source} s'''
 	}
 
-	/*
-	@Override	
-	protected String unionDatasetMerge (JDBCDataset source, JDBCDataset target, Map map, List<String> keyField, Map procParams) {
-			if (!source instanceof TableDataset) throw new ExceptionGETL("Source dataset must be \"TableDataset\"")
-			if (keyField.isEmpty()) throw new ExceptionGETL("For MERGE operation required key fields by table")
-			
-			def insertFields = []
-			def insertValues = []
-			map.each { targetField, sourceField ->
-				insertFields << "$fieldPrefix$targetField$fieldPrefix"
-				insertValues << "$sourceField"
-			}
-			
-			"""MERGE INTO ${target.fullNameDataset()}
-  (${insertFields.join(", ")})
-  KEY (${keyField.join(", ")})
-    SELECT ${insertValues.join(", ")}
-	FROM ${source.fullNameDataset()} s"""
-	}
-	*/
-	
 	@Override
 	protected String sessionID() {
 		String res = null
