@@ -251,7 +251,26 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         validCount()
     }
 
-    void testOperations() {
+    private void runScript() {
+        def table_name = table.fullNameDataset()
+        def sql = """
+----- Test scripter
+ECHO Run sql script ...
+IF EXISTS(SELECT * FROM $table_name); -- test IF operator
+ECHO Table has rows -- test ECHO 
+END IF;
+SET SELECT id2 FROM $table_name WHERE id1 = 1; -- test SET operator
+ECHO For id1=1 then id2={id2}
+
+FOR SELECT id1, id2 FROM $table_name WHERE id1 BETWEEN 2 AND 3; -- test FOR operator
+ECHO For id1={id1} then id2={id2}
+END FOR;
+"""
+        def scripter = new SQLScripter(connection: table.connection, script: sql)
+        scripter.runSql()
+    }
+
+    public void testOperations() {
         connect()
         createTable()
         retrieveFields()
@@ -264,6 +283,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
             bulkLoad()
         }
         runCommandUpdate()
+        runScript()
         deleteData()
         dropTable()
         disconnect()

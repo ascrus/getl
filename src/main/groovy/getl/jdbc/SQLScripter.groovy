@@ -536,17 +536,21 @@ public class SQLScripter {
 		
 		Pattern p
 		Matcher m
+		*/
 		
 		// Delete single comment
-		p = Pattern.compile("(--.*)")
-		m = p.matcher(sql)
-		
-		b = new StringBuffer()
-		while (m.find()) {
-			m.appendReplacement(b, "")
-		}
-		m.appendTail(b)
-		sql = b.toString()*/
+        def sb = new StringBuilder()
+        sql.eachLine { String line ->
+            def i = line.indexOf('--')
+            if (i == -1) {
+                sb << line
+            }
+            else {
+                sb << line.substring(0, i)
+            }
+            sb << '\n'
+        }
+		sql = sb.toString()
 		
 		List<String> res = sql.split('\n')
 		for (int i = 0; i < res.size(); i++) {
