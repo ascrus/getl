@@ -172,7 +172,7 @@ public class SQLScripter {
 		} else if (sql.matches("(?is)echo(\\s|\\t).*")) {
 			sql = sql.substring(5).trim()
 			typeSql = TypeCommand.ECHO
-		} else if (sql.matches("(?is)for(\\s|\\n|\\t)+select(\\s|\\n|\\t).*")) {
+		} else if (sql.matches("(?is)for(\\s|\\n|\\t)+select(\\s|\\n|\\t).*") || sql.matches("(?is)for(\\s|\\n|\\t)+with(\\s|\\n|\\t).*")) {
 			sql = sql.substring(4).trim()
 			typeSql = TypeCommand.FOR
 		} else if (sql.matches("(?is)if(\\s|\\n|\\t).*")) {
@@ -195,7 +195,12 @@ public class SQLScripter {
 				scriptLabel = sql.substring(2, ic).trim().substring(1).trim().toLowerCase()
 				sql = sql.substring(ic + 2).trim()
 			}
-			if (sql.matches("(?is)SELECT.*FROM.*")) typeSql = TypeCommand.SELECT else typeSql = TypeCommand.UPDATE
+			if (sql.matches("(?is)SELECT(\\s|\\n|\\t)+.*") ||
+                    sql.matches("(?is)WITH(\\s|\\n|\\t)+.*")) {
+                typeSql = TypeCommand.SELECT
+            } else {
+                typeSql = TypeCommand.UPDATE
+            }
 		}
 	}
 	
