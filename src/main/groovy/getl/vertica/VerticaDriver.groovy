@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
+
  Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
@@ -52,7 +52,7 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register('bulkLoadFile',
 				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
 				 'expression', 'location', 'abortOnError', 'maskDate', 'maskTime', 'maskDateTime',
-				 'parser'])
+				 'parser', 'streamName'])
 		methodParams.register('unionDataset', ['direct'])
 	}
 
@@ -79,20 +79,20 @@ class VerticaDriver extends JDBCDriver {
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
                  Driver.Operation.BULKLOAD]
     }
-	
+
 	@Override
 	public String defaultConnectURL () {
 		return 'jdbc:vertica://{host}/{database}'
 	}
-	
+
 	@Override
 	protected List<Map> getIgnoreWarning () {
 		List<Map> res = []
 		res << [errorCode: 4486, sqlState: '0A000']
-		
+
 		return res
 	}
-	
+
 	@Override
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		def result = ''
@@ -102,25 +102,25 @@ class VerticaDriver extends JDBCDriver {
 		if (params.segmentedBy != null) result += "SEGMENTED BY ${params.segmentedBy} "
 		if (params.unsegmented != null && params.unsegmented) result += "UNSEGMENTED ALL NODES "
 		if (params.partitionBy != null) result += "PARTITION BY ${params.partitionBy} "
-		
+
 		return result
 	}
-	
+
 	@Override
 	public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
 		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
-		
+
 		if (source.fieldDelimiter == null || source.fieldDelimiter.length() != 1) throw new ExceptionGETL('Required one char field delimiter')
 		if (source.rowDelimiter == null || source.rowDelimiter.length() != 1) throw new ExceptionGETL('Required one char row delimiter')
 		if (source.quoteStr == null || source.quoteStr.length() != 1) throw new ExceptionGETL('Required one char quote str')
-		
+
 		def fieldDelimiter = "E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
 		def rowDelimiter = "E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
 		def quoteStr = "E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
 		def header = source.header
 		def nullAsValue = (source.nullAsValue != null)?"\nNULL AS '${source.nullAsValue}'":''
 		def isGzFile = source.isGzFile
-		
+
 		String parserText = ''
 		if (params.parser != null) {
 			String parserFunc = params.parser.function
@@ -142,7 +142,7 @@ class VerticaDriver extends JDBCDriver {
 				parserText = "\nWITH PARSER $parserFunc()"
 			}
 		}
-		
+
 		List<Map> map = params.map
 		Map<String, String> expressions = params.expression?:[:]
 		String loadMethod = ListUtils.NotNullValue([params.loadMethod, 'AUTO'])
@@ -156,7 +156,9 @@ class VerticaDriver extends JDBCDriver {
 													   (!(rejectedPath != null || exceptionPath != null))])
 		String location = params.location
 		String onNode = (location != null)?(' ON ' + location):''
-		
+
+		String streamName = params.streamName
+
 		List fileList
 		if (params.files != null) {
 			fileList = []
@@ -170,7 +172,7 @@ class VerticaDriver extends JDBCDriver {
 		else {
 			fileList =  ["'${source.fullFileName().replace("\\", "/")}'$onNode"]
 		}
-		
+
 		if (compressed != null) {
 			def f = []
 			fileList.each { file ->
@@ -179,30 +181,30 @@ class VerticaDriver extends JDBCDriver {
 			fileList = f
 		}
 		def fileName = fileList.join(',')
-		
+
 		if (exceptionPath != null) FileUtils.ValidFilePath(exceptionPath)
 		if (rejectedPath != null) FileUtils.ValidFilePath(rejectedPath)
-		
+
 		StringBuilder sb = new StringBuilder()
 		sb << "COPY ${fullNameDataset(dest)} (\n"
-		
+
 		JDBCConnection con = dest.connection as JDBCConnection
 		String formatDate = ListUtils.NotNullValue([params.maskDate, con.maskDate])
 		String formatTime = ListUtils.NotNullValue([params.maskTime, con.maskTime])
 		String formatDateTime = ListUtils.NotNullValue([params.maskDateTime, con.maskDateTime])
-		
+
 		List columns = []
 		List options = []
 		map.each { Map f ->
 			if (f.field != null) {
-				def fieldName = dest.sqlObjectName(f.field.name) 
+				def fieldName = dest.sqlObjectName(f.field.name)
 				columns << fieldName
 				switch (f.field.type) {
 					case Field.Type.BLOB:
 						options << "$fieldName format 'hex'"
 						break
 					case Field.Type.DATE:
-						if (f.format != null && f.format != '') 
+						if (f.format != null && f.format != '')
 							options << "$fieldName format '${f.format}'"
 						else
 							if (formatDate != null) options << "$fieldName format '$formatDate'"
@@ -227,7 +229,7 @@ class VerticaDriver extends JDBCDriver {
 				columns << "${fieldPrefix}__notfound__${f.column}${fieldPrefix} FILLER varchar(8000)"
 			}
 		}
-		
+
 		expressions.each { String col, String expr ->
 			if (dest.fieldByName(col) == null) throw new ExceptionGETL("Expression field \"$col\" not found")
 			if (expr != null) {
@@ -235,16 +237,16 @@ class VerticaDriver extends JDBCDriver {
 				columns << "$col AS $expr"
 			}
 		}
-		
+
 		sb << columns.join(',\n')
 		sb << '\n)\n'
-		
+
 		if (!options.isEmpty()) {
 			sb << 'COLUMN OPTION (\n'
 			sb << options.join(',\n')
 			sb << '\n)\n'
 		}
-		
+
 		sb << """FROM ${(location == null)?"LOCAL ":""}$fileName $parserText
 DELIMITER AS $fieldDelimiter$nullAsValue
 ENCLOSED BY $quoteStr
@@ -257,12 +259,13 @@ RECORD TERMINATOR $rowDelimiter
 		if (enforceLength) sb << 'ENFORCELENGTH\n'
 		if (abortOnError) sb << 'ABORT ON ERROR\n'
 		sb << "${loadMethod}\n"
+		if (streamName != null) sb << "STREAM NAME '$streamName'\n"
 		if (!autoCommit) sb << 'NO COMMIT\n'
-		
+
 		def sql = sb.toString()
 		dest.sysParams.sql = sql
 		//println sql
-		
+
 		dest.writeRows = 0
 		dest.updateRows = 0
 		try {
@@ -275,24 +278,24 @@ RECORD TERMINATOR $rowDelimiter
 			throw e
 		}
 	}
-	
+
 	@Override
 	protected String sessionID() {
 		String res = null
 		def rows = sqlConnect.rows('SELECT session_id FROM CURRENT_SESSION')
 		if (!rows.isEmpty()) res = rows[0].session_id
-		
+
 		return res
 	}
-	
+
 	@Override
 	protected Map unionDatasetMergeParams (JDBCDataset source, JDBCDataset target, Map procParams) {
 		def res = super.unionDatasetMergeParams(source, target, procParams)
 		res.direct = (procParams.direct != null && procParams.direct)?'/*+direct*/':''
-		
+
 		return res
 	}
-	
+
 	@Override
 	protected String unionDatasetMergeSyntax () {
         return '''MERGE {direct} INTO {target} t
