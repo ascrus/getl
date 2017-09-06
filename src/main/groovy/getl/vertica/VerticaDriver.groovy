@@ -274,7 +274,7 @@ RECORD TERMINATOR $rowDelimiter
 			dest.updateRows = count
 		}
 		catch (Exception e) {
-			Logs.Dump(e, getClass().name + '.bulkLoad', "${source.objectName}->${dest.objectName}", sql)
+//			Logs.Dump(e, getClass().name + '.bulkLoad', "${source.objectName}->${dest.objectName}", sql)
 			throw e
 		}
 	}

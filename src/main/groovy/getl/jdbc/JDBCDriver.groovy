@@ -1189,7 +1189,7 @@ ${extend}'''
 				}
 			}
 		}
-		catch (Exception e) {
+		catch (SQLException e) {
 			Logs.Dump(e, getClass().name + ".sql", dataset.objectName, sql)
 			if (rowCopy != null) Logs.Dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
 			throw e
@@ -1675,7 +1675,7 @@ $sql
 		try {
 			stat = con.prepareStatement(query)
 		}
-		catch (Throwable e) {
+		catch (SQLException e) {
 			Logs.Dump(e, getClass().name, dataset.objectFullName, query)
 			throw e
 		}
@@ -1734,7 +1734,7 @@ $sql
 				wp.stat.clearParameters()
 				countComplete++
 			}
-			catch (Exception e) {
+			catch (SQLException e) {
 				countError++
 				Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
 				throw e
@@ -1762,7 +1762,7 @@ $sql
 				wp.stat.clearParameters()
 			}
 		}
-		catch (Exception e) {
+		catch (SQLException e) {
 			Logs.Dump(e, getClass().name + ".write", dataset.objectName, "row:\n${row}\nstatement:\n${wp.statement}")
 			wp.error = true
 			throw e

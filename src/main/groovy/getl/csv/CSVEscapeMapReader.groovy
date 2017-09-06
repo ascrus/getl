@@ -82,6 +82,6 @@ class CSVEscapeMapReader extends CsvMapReader {
 			}
 		}
 		
-		res
+		return res
 	}
 }

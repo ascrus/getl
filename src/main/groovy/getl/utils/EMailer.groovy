@@ -191,7 +191,7 @@ class EMailer {
 		BodyPart messageBodyPart = new MimeBodyPart()
 
 		if (attachment) {
-			messageBodyPart.setContent(message,"text/html")
+			messageBodyPart.setText(message,"text/html")
 
 			Multipart multipart = new MimeMultipart()
 			multipart.addBodyPart(messageBodyPart)

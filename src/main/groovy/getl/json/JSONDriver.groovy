@@ -130,7 +130,7 @@ class JSONDriver extends FileDriver {
 			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
 		}
 		catch (Exception e) {
-			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
+//			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
 			throw e
 		}
 	}
@@ -153,7 +153,7 @@ class JSONDriver extends FileDriver {
 			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
 		}
 		catch (Exception e) {
-			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
+//			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
 			throw e
 		}
 	}

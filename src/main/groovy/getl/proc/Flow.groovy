@@ -547,7 +547,7 @@ class Flow {
 		}
 		catch (Throwable e) {
 			Logs.Exception(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}")
-			Logs.Dump(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}", scriptMap)
+//			Logs.Dump(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}", scriptMap)
 			
 			if (autoTran) {
 				dest.connection.rollbackTran()

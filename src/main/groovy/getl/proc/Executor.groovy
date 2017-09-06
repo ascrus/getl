@@ -61,6 +61,11 @@ class Executor {
 	 * Write thread errors to log 
 	 */
 	public boolean logErrors = true
+
+	/**
+	 * Write thread errors to dump file
+	 */
+	public boolean dumpErrors = false
 	
 	/**
 	 * Return element if error
@@ -164,10 +169,10 @@ class Executor {
 //					org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
 					setError(element, e)
 					def errObject = (debugElementOnError)?"[${num}]: ${element}":"Element ${num}"
-					Logs.Dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: list])}")
+					if (dumpErrors) Logs.Dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: list])}")
 					if (logErrors) {
 						Logs.Exception(e, this.toString(), errObject)
-						e.printStackTrace()
+//						e.printStackTrace()
 					}
 				}
 				catch (Throwable ignored) { }
@@ -256,7 +261,7 @@ class Executor {
 				if (logErrors) {
 					Logs.Exception(e, this.toString(), null)
 					org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
-					e.printStackTrace()
+//					e.printStackTrace()
 				}
 			}
 		}
