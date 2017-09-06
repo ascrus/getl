@@ -127,13 +127,13 @@ class XMLDriver extends FileDriver {
 //		println sb.toString()
 		
 		def vars = [dataset: dataset, initAttr: initAttr, code: code, data: data]
-		try {
+//		try {
 			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
-		}
-		catch (Exception e) {
+//		}
+		/*catch (Exception e) {
 			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
 			throw e
-		}
+		}*/
 	}
 	
 	/**
@@ -150,13 +150,13 @@ class XMLDriver extends FileDriver {
 		generateAttrRead(dataset, null, sb)
 		
 		def vars = [dataset: dataset, data: data]
-		try {
+//		try {
 			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
-		}
-		catch (Exception e) {
+//		}
+		/*catch (Exception e) {
 			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
 			throw e
-		}
+		}*/
 	}
 	
 	/**

@@ -67,6 +67,9 @@ class ReverseEngineering extends Job {
     def curUser
     def sqlFile
     def dropFlag
+    def poolEmpty
+    def userEmpty
+    def sequenceCurrent
     def tableConstraints
     def projectionTables
     def projectionKsafe
@@ -105,7 +108,7 @@ WHERE NOT is_system_schema AND Lower(schema_name) NOT IN ('txtindex', 'v_idol', 
 ORDER BY Lower(schema_name);
 
 CREATE LOCAL TEMPORARY TABLE getl_sequences ON COMMIT PRESERVE ROWS AS
-SELECT sequence_schema, sequence_name, owner_name, identity_table_name, session_cache_count, allow_cycle, output_ordered, increment_by
+SELECT sequence_schema, sequence_name, owner_name, identity_table_name, session_cache_count, allow_cycle, output_ordered, increment_by, current_value::numeric(38)
 FROM v_catalog.sequences
 WHERE identity_table_name IS NULL AND {sequences}
 ORDER BY sequence_schema, sequence_name;
@@ -250,14 +253,31 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
      * @param list
      * @return
      */
-    List<String> procList(String list) {
+    /**
+     * @param list
+     * @return
+     */
+    Map<String, List<String>> procList(String list, Closure valid) {
+        def res = (HashMap<String, ArrayList<String>>)[:]
+
+        def withoutGrant = [] as ArrayList<String>
+        def withGrant = [] as ArrayList<String>
+        res.withoutGrant = withoutGrant
+        res.withGrant = withGrant
+
+        list = list.trim()
+        if (list == '') return res
+
         def l = list.split(',')
         List<String> n = []
         l.each { String s ->
             s = s.trim()
-            if (!s.matches('.*[*]')) n << s
+            if (valid == null || valid(s)) {
+                if (!s.matches('.*[*]')) withoutGrant << s else withGrant << s.substring(0, s.length() - 1)
+            }
         }
-        return n
+
+        return res
     }
 
     /**
@@ -266,14 +286,8 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
      * @param valid
      * @return
      */
-    List<String> procList(String list, Closure valid) {
-        def l = list.split(',')
-        List<String> n = []
-        l.each { String s ->
-            s = s.trim()
-            if (valid(s)) n << s
-        }
-        return n
+    Map<String, List<String>> procList(String list) {
+        return procList(list, null)
     }
 
     /**
@@ -343,7 +357,7 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
                     create << '\n'
                 }
             }
-            else if (projMatcher.count == 1) {
+            else if (projMatcher != null && projMatcher.count == 1) {
                 if (projectionKsafe != null) startProj = true
                 if (projectionAnalyzeSuper) {
                     def projSchema = projMatcher[0][1] as String
@@ -369,6 +383,10 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
                     def ksafe = Integer.valueOf(m[0][1] as String)
                     if (ksafe > projectionKsafe) {
                         create << line.substring(0, m.start(1)) + projectionKsafe.toString() + line.substring(m.end(1))
+                        create << '\n'
+                    }
+                    else {
+                        create << line
                         create << '\n'
                     }
                 }
@@ -411,12 +429,22 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
             Logs.Severe('Required argument "sqlfile"')
             return
         }
-        sqlFile = new File(jobArgs.sqlfile).newPrintWriter()
+        sqlFile = new File(jobArgs.sqlfile).newPrintWriter('UTF-8')
+        Logs.Info("Write script to \"$sqlFile\" file")
 
         readCurUser()
 
         // Read drop flags
         dropFlag = Config.content.drop?:[:]
+
+        // Read pool params
+        poolEmpty = BoolUtils.IsValue(Config.content.pool_empty)
+
+        // Read user params
+        userEmpty = BoolUtils.IsValue(Config.content.user_empty)
+
+        // Read sequence params
+        sequenceCurrent = BoolUtils.IsValue(Config.content.sequences_current)
 
         // Read table params
         tableConstraints = BoolUtils.IsValue(Config.content.table_constraints, true)
@@ -523,24 +551,28 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
                     sqlFile.println "DROP RESOURCE POOL ${r.name};"
                 }
                 sqlFile.println "CREATE RESOURCE POOL ${r.name}"
-                sqlFile.print parln('MEMORYSIZE', r.memorysize, true)
-                sqlFile.print parln('MAXMEMORYSIZE', r.maxmemorysize, true)
+                if (!poolEmpty) {
+                    sqlFile.print parln('MEMORYSIZE', r.memorysize, true)
+                    sqlFile.print parln('MAXMEMORYSIZE', r.maxmemorysize, true)
+                }
             }
             else {
-                sqlFile.println "ALTER RESOURCE POOL ${r.name}"
+                if (!poolEmpty) sqlFile.println "ALTER RESOURCE POOL ${r.name}"
             }
-            sqlFile.print parln('EXECUTIONPARALLELISM', r.executionparallelism)
-            sqlFile.print parln('PRIORITY', r.priority)
-            sqlFile.print parln('RUNTIMEPRIORITY', r.runtimepriority)
-            sqlFile.print parln('RUNTIMEPRIORITYTHRESHOLD', r.runtimeprioritythreshold)
-            sqlFile.print parln('QUEUETIMEOUT', r.queuetimeout, true)
-            sqlFile.print parln('PLANNEDCONCURRENCY', r.plannedconcurrency)
-            sqlFile.print parln('MAXCONCURRENCY', r.maxconcurrency)
-            sqlFile.print parln('RUNTIMECAP', r.runtimecap, true)
-            sqlFile.print parln('CPUAFFINITYSET', r.cpuaffinityset)
-            sqlFile.print parln('CPUAFFINITYMODE', r.cpuaffinitymode)
-            sqlFile.print parln('CASCADE TO', r.cascadeto, true)
-            sqlFile.println ";"
+            if (!poolEmpty) {
+                sqlFile.print parln('EXECUTIONPARALLELISM', r.executionparallelism)
+                sqlFile.print parln('PRIORITY', r.priority)
+                sqlFile.print parln('RUNTIMEPRIORITY', r.runtimepriority)
+                sqlFile.print parln('RUNTIMEPRIORITYTHRESHOLD', r.runtimeprioritythreshold)
+                sqlFile.print parln('QUEUETIMEOUT', r.queuetimeout, true)
+                sqlFile.print parln('PLANNEDCONCURRENCY', r.plannedconcurrency)
+                sqlFile.print parln('MAXCONCURRENCY', r.maxconcurrency)
+                sqlFile.print parln('RUNTIMECAP', r.runtimecap, true)
+                sqlFile.print parln('CPUAFFINITYSET', r.cpuaffinityset)
+                sqlFile.print parln('CPUAFFINITYMODE', r.cpuaffinitymode)
+                sqlFile.print parln('CASCADE TO', r.cascadeto, true)
+            }
+            if (r.name != 'general' || !poolEmpty) sqlFile.println ";"
         }
         sqlFile.println "\n/***** FINISH POOLS *****/\n\n"
         Logs.Info("${hPools.readRows} pools generated")
@@ -577,20 +609,22 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
             else {
                 sqlFile.println "ALTER USER ${r.user_name}"
             }
-            sqlFile.print parln('RESOURCE POOL', r.resource_pool)
-            sqlFile.print statln('MEMORYCAP {val}', (r.memory_cap_kb == 'unlimited')?null:(r.memory_cap_kb + 'K'), true)
-            sqlFile.print statln('TEMPSPACECAP {val}', (r.temp_space_cap_kb == 'unlimited')?null:(r.temp_space_cap_kb + 'K'), true)
-            sqlFile.print parln('RUNTIMECAP', (r.run_time_cap == 'unlimited')?null:r.run_time_cap, true)
+            if (!userEmpty) {
+                sqlFile.print parln('RESOURCE POOL', r.resource_pool)
+                sqlFile.print statln('MEMORYCAP {val}', (r.memory_cap_kb == 'unlimited') ? null : (r.memory_cap_kb + 'K'), true)
+                sqlFile.print statln('TEMPSPACECAP {val}', (r.temp_space_cap_kb == 'unlimited') ? null : (r.temp_space_cap_kb + 'K'), true)
+                sqlFile.print parln('RUNTIMECAP', (r.run_time_cap == 'unlimited') ? null : r.run_time_cap, true)
+            }
             sqlFile.println ";"
 
-            def userRoles = procList(r.all_roles).join(', ')
-            if (userRoles != '') {
-                sqlFile.println "GRANT $userRoles TO ${r.user_name};"
+            def userRoles = procList(r.all_roles)
+            if (!userRoles.withoutGrant.isEmpty()) {
+                sqlFile.println "GRANT ${userRoles.withoutGrant.join(', ')} TO ${r.user_name};"
             }
 
-            def defaultRoles = procList(r.default_roles).join(', ')
-            if (defaultRoles != '') {
-                sqlFile.println "ALTER USER ${r.user_name} DEFAULT ROLE $defaultRoles;"
+            def defaultRoles = procList(r.default_roles)
+            if (!defaultRoles.withoutGrant.isEmpty()) {
+                sqlFile.println "ALTER USER ${r.user_name} DEFAULT ROLE ${defaultRoles.withoutGrant.join(', ')};"
             }
         }
         sqlFile.println "\n/***** FINISH USERS *****/\n\n"
@@ -611,8 +645,7 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
         }
         hUsers.eachRow(order: ['Lower(user_name)']) { Map r ->
             def p = procList(r.search_path, { return !(it in ['v_catalog', 'v_monitor', 'v_internal', 'public', '"$user"', ''])})
-            if (p.isEmpty()) return
-            sqlFile.println "ALTER USER ${r.user_name} SEARCH_PATH ${p.join(', ')};"
+            if (!p.withoutGrant.isEmpty()) sqlFile.println "ALTER USER ${r.user_name} SEARCH_PATH ${p.withoutGrant.join(', ')};"
         }
 
         sqlFile.println "\n/***** FINISH SCHEMAS *****/\n\n"
@@ -630,6 +663,7 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
                 sqlFile.println "DROP SEQUENCE $name;"
             }
             sqlFile.println '\n' + ddl(r.sequence_schema, r.sequence_name)
+            if (sequenceCurrent && r.current_value != null && r.current_value > 0) sqlFile.println "ALTER SEQUENCE $name RESTART WITH ${r.current_value};"
             if (r.owner_name != curUser) sqlFile.println "ALTER SEQUENCE $name OWNER TO ${r.owner_name};"
         }
         sqlFile.println "\n/***** FINISH SEQUENCES *****/\n\n"
@@ -650,7 +684,7 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
             def stat = ddlTable(r.table_schema, r.table_name)
             sqlFile.println '\n' + stat.create
             if (stat.alter != '') alter << stat.alter + '\n'
-            if (r.owner_name != curUser) sqlFile.println "ALTER TABLE $name OWNER TO ${r.owner_name};"
+            if (r.owner_name != curUser && !r.is_temp_table) sqlFile.println "ALTER TABLE $name OWNER TO ${r.owner_name};"
         }
         if (alter.length() > 0) {
             sqlFile.println ''
@@ -695,7 +729,7 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
             if (r.owner != curUser) sqlFile.println "ALTER FUNCTION $name OWNER TO ${r.owner};"
         }
         sqlFile.println "\n/***** FINISH SQL FUNCTIONS *****/\n\n"
-        Logs.Info("${hViews.readRows} sql functions generated")
+        Logs.Info("${hSQLFunctions.readRows} sql functions generated")
     }
 
     /**
@@ -705,22 +739,26 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
         sqlFile.println "/***** BEGIN GRANTS *****/"
         hGrants.eachRow(order: ['Lower(object_type)', 'Lower(object_schema)', 'Lower(object_name)', 'Lower(grantee)']) { Map r ->
             def priveleges = procList(r.privileges_description)
-            if (priveleges.isEmpty()) return
             switch (r.object_type) {
                 case 'RESOURCEPOOL':
-                    sqlFile.println "\nGRANT ${priveleges.join(', ')} ON RESOURCE POOL ${r.object_name} TO ${r.grantee};"
+                    if (!priveleges.withoutGrant.isEmpty()) sqlFile.println "\nGRANT ${priveleges.withoutGrant.join(', ')} ON RESOURCE POOL ${r.object_name} TO ${r.grantee};"
+                    if (!priveleges.withGrant.isEmpty()) sqlFile.println "\nGRANT ${priveleges.withGrant.join(', ')} ON RESOURCE POOL ${r.object_name} TO ${r.grantee} WITH GRANT OPTION;"
                     break
                 case 'SCHEMA':
-                    sqlFile.println "\nGRANT ${priveleges.join(', ')} ON SCHEMA ${r.object_name} TO ${r.grantee};"
+                    if (!priveleges.withoutGrant.isEmpty()) sqlFile.println "\nGRANT ${priveleges.withoutGrant.join(', ')} ON SCHEMA ${r.object_name} TO ${r.grantee};"
+                    if (!priveleges.withGrant.isEmpty()) sqlFile.println "\nGRANT ${priveleges.withGrant.join(', ')} ON SCHEMA ${r.object_name} TO ${r.grantee} WITH GRANT OPTION;"
                     break
                 case 'SEQUENCE':
-                    sqlFile.println "\nGRANT ${priveleges.join(', ')} ON SEQUENCE ${objectName(r.object_schema, r.object_name)} TO ${r.grantee};"
+                    if (!priveleges.withoutGrant.isEmpty()) sqlFile.println "\nGRANT ${priveleges.withoutGrant.join(', ')} ON SEQUENCE ${objectName(r.object_schema, r.object_name)} TO ${r.grantee};"
+                    if (!priveleges.withGrant.isEmpty()) sqlFile.println "\nGRANT ${priveleges.withGrant.join(', ')} ON SEQUENCE ${objectName(r.object_schema, r.object_name)} TO ${r.grantee} WITH GRANT OPTION;"
                     break
                 case 'TABLE': case 'VIEW':
-                    sqlFile.println "\nGRANT ${priveleges.join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO ${r.grantee};"
+                    if (!priveleges.withoutGrant.isEmpty()) sqlFile.println "\nGRANT ${priveleges.withoutGrant.join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO ${r.grantee};"
+                    if (!priveleges.withGrant.isEmpty()) sqlFile.println "\nGRANT ${priveleges.withGrant.join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO ${r.grantee} WITH GRANT OPTION;"
                     break
                 case 'PROCEDURE':
-                    sqlFile.println "\nGRANT ${priveleges.join(', ')} ON FUNCTION ${objectName(r.object_schema, r.object_name)}($r.function_argument_type) TO ${r.grantee};"
+                    if (!priveleges.withoutGrant.isEmpty()) sqlFile.println "\nGRANT ${priveleges.withoutGrant.join(', ')} ON FUNCTION ${objectName(r.object_schema, r.object_name)}($r.function_argument_type) TO ${r.grantee};"
+                    if (!priveleges.withGrant.isEmpty()) sqlFile.println "\nGRANT ${priveleges.withGrant.join(', ')} ON FUNCTION ${objectName(r.object_schema, r.object_name)}($r.function_argument_type) TO ${r.grantee} WITH GRANT OPTION;"
                     break
                 default:
                     new ExceptionGETL("Unknown type object \"${r.object_type}\"")
@@ -728,9 +766,6 @@ ORDER BY object_type, object_schema, object_name, grantor, grantee;
         }
         sqlFile.println "\n/***** FINISH GRANTS *****/\n\n"
         Logs.Info("${hGrants.readRows} grants generated")
-
-//        def grantPools = new QueryDataset(connection: cCache,
-//                query: "SELECT privileges_description, object_name, grantee FROM grants WHERE object_type = 'RESOURCEPOOL' ORDER BY Lower(object_name), Lower(grantee)")
     }
 
 }

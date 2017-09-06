@@ -48,15 +48,15 @@ class MapUtils {
 		def str = ToJson(map)
 		
 		def json = new JsonSlurper()
-		try {
+//		try {
 			res = (Map)(json.parseText(str))
-		}
-		catch (Exception e) {
+//		}
+		/*catch (Exception e) {
 			Logs.Dump(e, "String", "DeepCopy", str)
 			throw e
-		}
+		}*/
 
-		res
+		return res
 	}
 
 	/**
@@ -384,16 +384,16 @@ class MapUtils {
 		
 		JsonBuilder b = new JsonBuilder()
 		def res
-		try {
+//		try {
 			b.call(value)
 			res = b.toPrettyString()
-		}
-		catch (Exception e) {
+//		}
+		/*catch (Exception e) {
 			Logs.Dump(e, "Map", "ToJson", value)
 			throw e
-		}
+		}*/
 		
-		res
+		return res
 	}
 	
 	/**

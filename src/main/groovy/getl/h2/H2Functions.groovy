@@ -252,11 +252,11 @@ class H2Functions {
 			rows = query.rows(sqlParams: params)
 		}
 		catch (SQLException e) {
-			Logs.Dump(e, "SELECT FUNCTION", funcName, MapUtils.ToJson(params))
+//			Logs.Dump(e, "SELECT FUNCTION", funcName, MapUtils.ToJson(params))
 			throw e
 		}
 		if (rows.isEmpty()) return null
 		
-		rows[0]."res"
+		return rows[0]."res"
 	}
 }

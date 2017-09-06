@@ -47,6 +47,6 @@ class CSVEscapeTokenizer extends Tokenizer {
 			res = res.replace("\u0001", "\\\\")
 		}
 		
-		res
+		return res
 	}
 }

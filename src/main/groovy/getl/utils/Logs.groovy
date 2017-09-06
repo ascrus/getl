@@ -347,7 +347,6 @@ class Logs {
 		event(Level.SEVERE, e.message)
 		org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
 		e.printStackTrace()
-		
 	}
 	
 	@groovy.transform.Synchronized
@@ -407,6 +406,7 @@ class Logs {
 			if (e != null) {
 				w.println "Error: $e"
 				w.println "Stack trace:"
+				org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
 				e.printStackTrace(w)
 			}
 			if (data != null) {
