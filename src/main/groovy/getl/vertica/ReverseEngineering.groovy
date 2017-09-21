@@ -639,8 +639,9 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
                 if (BoolUtils.IsValue(sectionDrop.pools)) {
                     writeln"DROP RESOURCE POOL ${r.name};"
                 }
-                writeln "CREATE RESOURCE POOL ${r.name}"
+                writeln "CREATE RESOURCE POOL ${r.name};"
                 if (!poolEmpty) {
+                    writeln "ALTER RESOURCE POOL ${r.name}"
                     write parln('MEMORYSIZE', r.memorysize, true)
                     write parln('MAXMEMORYSIZE', r.maxmemorysize, true)
                 }
@@ -659,9 +660,9 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
                write parln('RUNTIMECAP', r.runtimecap, true)
                write parln('CPUAFFINITYSET', r.cpuaffinityset)
                write parln('CPUAFFINITYMODE', r.cpuaffinitymode)
-               write parln('CASCADE TO', r.cascadeto, true)
+               write parln('CASCADE TO', r.cascadeto)
             }
-            if (r.name != 'general' || !poolEmpty)writeln ";"
+            if (r.name != 'general' || !poolEmpty) writeln ";"
             writeln ''
         }
         Logs.Info("${hPools.readRows} pools generated")
