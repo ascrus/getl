@@ -56,7 +56,7 @@ class ReverseEngineering extends Job {
     def tGrants = new QueryDataset(connection: cVertica, query: 'SELECT * FROM getl_grants')
 
     def cCache = new TDS()
-    def hFiles = new TableDataset(connection: cCache, tableName: 'files', field: [new Field(name: 'filename', length: 128, isKey: true)])
+    def hFiles = new TableDataset(connection: cCache, tableName: 'files', field: [new Field(name: 'filename', length: 1024, isKey: true)])
     def hPools = new TableDataset(connection: cCache, tableName: 'pools')
     def hRoles = new TableDataset(connection: cCache, tableName: 'roles')
     def hUsers = new TableDataset(connection: cCache, tableName: 'users')
