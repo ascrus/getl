@@ -847,7 +847,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
      * Generate grant objects script
      */
     void genGrants() {
-        hGrants.eachRow(order: ['Lower(object_type)', 'Lower(object_schema)', 'Lower(object_name)', 'Lower(grantee)']) { Map r ->
+        hGrants.eachRow(order: ['Lower(object_type)', 'Lower(object_schema)', 'Lower(object_name)', 'Lower(grantee)', 'Lower(function_argument_type)', 'Lower(privileges_description)']) { Map r ->
             if (fileNameGrants != null) setWrite('GRANTS', fileNameGrants)
 
             def priveleges = procList(r.privileges_description)
