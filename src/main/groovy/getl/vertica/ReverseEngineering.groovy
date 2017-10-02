@@ -294,8 +294,8 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
             }
         }
 
-        res.withoutGrant = withoutGrant.sort()
-        res.withGrant = withGrant.sort()
+        res.withoutGrant = withoutGrant.sort(false)
+        res.withGrant = withGrant.sort(false)
         return res
     }
 
