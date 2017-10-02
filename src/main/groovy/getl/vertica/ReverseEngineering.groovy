@@ -280,21 +280,22 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 
         def withoutGrant = [] as ArrayList<String>
         def withGrant = [] as ArrayList<String>
-        res.withoutGrant = withoutGrant
-        res.withGrant = withGrant
 
         list = list.trim()
-        if (list == '') return res
+        if (list != '') {
 
-        def l = list.split(',')
-        List<String> n = []
-        l.each { String s ->
-            s = s.trim()
-            if (valid == null || valid(s)) {
-                if (!s.matches('.*[*]')) withoutGrant << s else withGrant << s.substring(0, s.length() - 1)
+            def l = list.split(',')
+            List<String> n = []
+            l.each { String s ->
+                s = s.trim()
+                if (valid == null || valid(s)) {
+                    if (!s.matches('.*[*]')) withoutGrant << s else withGrant << s.substring(0, s.length() - 1)
+                }
             }
         }
 
+        res.withoutGrant = withoutGrant.sort()
+        res.withGrant = withGrant.sort()
         return res
     }
 
