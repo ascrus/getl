@@ -482,7 +482,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
                 file.text = ''
             }
             cCache.sqlConnection.executeInsert(statFilesInsert, [filename])
-            script = "***** $currentObject *****\n\n" + script
+            script = "--- ***** $currentObject ***** ---\n\n" + script
         }
 
         file.append(script, 'utf-8')
