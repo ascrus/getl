@@ -220,7 +220,7 @@ class EMailer {
 
 			msg.setContent(multipart)
 		} else if (isHtml) msg.setContent(message, "text/html")
-		else msg.setContent(message, "utf-8")
+		else msg.setContent(message, "text/plain; charset=UTF-8")
 
 		try {
 			Transport transporter = lSession.getTransport("smtp")
