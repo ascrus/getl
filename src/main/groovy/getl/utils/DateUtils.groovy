@@ -25,9 +25,10 @@
 package getl.utils
 
 import getl.exception.ExceptionGETL
+
 import java.math.RoundingMode
-import java.text.SimpleDateFormat
 import org.codehaus.groovy.runtime.DateGroovyMethods
+import java.text.SimpleDateFormat
 
 /**
  * Data and time library functions class
@@ -40,10 +41,78 @@ class DateUtils {
 	 * Zero date
 	 */
 	public static final Date zeroDate = ParseDate('0000-00-00')
-	
+
+	/**
+	 * Default date mask
+	 */
 	public static String defaultDateMask = "yyyy-MM-dd"
+	/**
+	 * Default time mask
+	 */
 	public static String defaultTimeMask = "HH:mm:ss.SSS"
+	/**
+	 * Default datetime mask
+	 */
 	public static String defaultDateTimeMask = "yyyy-MM-dd HH:mm:ss.SSS"
+
+	public final static String origTimeZone = TimeZone.default.displayName
+
+	/**
+	 * Init time zone offset at milliseconds
+	 */
+	public final static int origTimeZoneOffs = TimeZone.default.rawOffset
+
+	/**
+	 * Default time zone offset at milliseconds
+	 */
+	public static int defaultTimeZoneOffs = TimeZone.default.rawOffset
+
+	public static int offsTimeZone = 0
+
+	/**
+	 * Cast current date time from current time zone to original zone
+	 */
+	public static boolean castTimeZone = false
+
+	public static void init () {
+		if (Config.content.timeZone != null) init(Config.content.timeZone as Map)
+	}
+
+	public static void init (Map timeZone) {
+		if (timeZone == null || timeZone.isEmpty()) return
+
+		if (timeZone.name != null) {
+			setDefaultTimeZone(timeZone.name as String)
+		}
+		if (timeZone.cast != null) {
+			castTimeZone = BoolUtils.IsValue(timeZone.cast)
+		}
+		if (timeZone.name != null) {
+			Logs.Finest("getl: use time zone ${timeZone.name}")
+			if (castTimeZone) Logs.Finest("getl: use cast machine time to original time zone $origTimeZone")
+		}
+	}
+
+	/**
+	 * Get default time zone name
+	 */
+	public static String getDefaultTimeZone() {
+		return TimeZone.default.displayName
+	}
+
+	/**
+	 * Set new default time zone
+	 * @param timeZone
+	 */
+	public static setDefaultTimeZone(String timeZone) {
+		TimeZone.setDefault(TimeZone.getTimeZone(timeZone))
+		defaultTimeZoneOffs = TimeZone.default.rawOffset
+		offsTimeZone = origTimeZoneOffs - defaultTimeZoneOffs
+	}
+
+	public static void RestoreOrigDefaultTimeZone() {
+		setDefaultTimeZone(origTimeZone)
+	}
 	
 	/**
 	 * Parse string to date with format
@@ -51,36 +120,56 @@ class DateUtils {
 	 * @param value
 	 * @return
 	 */
-	public static Date ParseDate(String format, def value, boolean ignoreError) {
+	public static Date ParseDate(String format, def value, boolean ignoreError = true) {
 		Date result = null
 		if (value == null) return result
 		try {
 			def sdf = new SimpleDateFormat(format)
-            sdf.setLenient(false);
+			sdf.setLenient(false)
 			result = sdf.parse(value.toString())
+
+			/*
+			DateTimeFormatter dtf = DateTimeFormatter.ofPattern(format) //.withZone(ZoneId.of('Z'))
+			LocalDate ldt = LocalDate.parse(value.toString(), dtf)
+			Calendar calendar = Calendar.getInstance(TimeZone.default)
+			calendar.clear()
+			calendar.set(ldt.year, ldt.month.value - 1, ldt.dayOfMonth, ldt.hour, ldt.minute, ldt.second)
+			calendar.clearTime()
+			result = calendar.time
+			*/
 		}
-		catch (Exception e) {
+		catch (Exception  e) {
 			if (ignoreError) return null
 			throw e
 		}
-		result
+
+		return result
 	}
-	
-	public static Date ParseDate(String format, def value) {
-		ParseDate(format, value, true)
+
+	public static Date ParseDate(SimpleDateFormat sdf, def value, boolean ignoreError = true) {
+		Date result = null
+		if (value == null) return result
+		try {
+			result = sdf.parse(value.toString())
+		}
+		catch (Exception  e) {
+			if (ignoreError) return null
+			throw e
+		}
+
+		return result
 	}
 	
 	public static Date ParseDate(def value) {
-		ParseDate(defaultDateMask, value, true)
+		return ParseDate(defaultDateMask, value, true)
 	}
 	
 	public static Date ParseDateTime (def value) {
-		ParseDate(defaultDateTimeMask, value, true)
+		return ParseDate(defaultDateTimeMask, value, true)
 	}
 	
 	public static Date SQLDate2Date (java.sql.Timestamp value) {
-		//(value != (java.sql.Timestamp)null)?new Date(value.time):null
-		value
+		return value
 	}
 	
 	/**
@@ -88,7 +177,22 @@ class DateUtils {
 	 * @return
 	 */
 	public static Date Now() {
-		new Date()
+		Date result = new Date()
+		if (castTimeZone && offsTimeZone != 0) {
+			result = AddDate('sss', offsTimeZone, result)
+		}
+
+		return result
+	}
+
+	public static ToOrigTimeZoneDate(Date date) {
+		if (date != null) {
+			if (castTimeZone && offsTimeZone != 0) {
+				date = AddDate('sss', offsTimeZone, date)
+			}
+		}
+
+		return date
 	}
 	
 	/**
@@ -96,11 +200,11 @@ class DateUtils {
 	 * @return
 	 */
 	public static Date CurrentDate() {
-		DateGroovyMethods.clearTime(new Date())
+		return DateGroovyMethods.clearTime(Now())
 	}
 	
 	public static String CurrentDateStr() {
-		FormatDate('yyyyMMdd', CurrentDate())
+		return FormatDate('yyyyMMdd', CurrentDate())
 	}
 	
 	/**
@@ -108,7 +212,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static String CurrentTime() {
-		DateGroovyMethods.getTimeString(new Date())
+		return DateGroovyMethods.getTimeString(Now())
 	}
 	
 	/**
@@ -119,7 +223,7 @@ class DateUtils {
 	public static Date ClearTime(Date date) {
 		if (date == null) return null
 		Date res = new Date(date.time)
-		DateGroovyMethods.clearTime(res)
+		return DateGroovyMethods.clearTime(res)
 	}
 	
 	/**
@@ -144,8 +248,8 @@ class DateUtils {
 			default:
 				throw new ExceptionGETL("Unsupported type \"$part\"")
 		}
-		
-		c.getTime()
+
+		return c.getTime()
 	}
 	
 	/**
@@ -156,7 +260,7 @@ class DateUtils {
 	 */
 	public static String FormatDate(String format, Date date) {
 		if (date == null) return null
-		DateGroovyMethods.format(date, format)
+		return DateGroovyMethods.format(date, format)
 	}
 	
 	/**
@@ -165,7 +269,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static String FormatDate(Date date) {
-		FormatDate(defaultDateMask, date)
+		return FormatDate(defaultDateMask, date)
 	}
 	
 	/**
@@ -173,7 +277,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static String NowDate() {
-		FormatDate(Now())
+		return FormatDate(Now())
 	}
 	
 	/**
@@ -182,7 +286,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static String FormatDateTime(Date date) {
-		FormatDate(defaultDateTimeMask, date)
+		return FormatDate(defaultDateTimeMask, date)
 	}
 	
 	/**
@@ -191,7 +295,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static String FormatTime(Date date) {
-		FormatDate(defaultTimeMask, date)
+		return FormatDate(defaultTimeMask, date)
 	}
 	
 	/**
@@ -199,7 +303,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static String NowDateTime() {
-		FormatDateTime(Now())
+		return FormatDateTime(Now())
 	}
 	
 	/**
@@ -207,7 +311,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static String NowTime() {
-		FormatTime(Now())
+		return FormatTime(Now())
 	}
 	
 	/**
@@ -381,8 +485,8 @@ class DateUtils {
 	 */
 	public static BigDecimal Timestamp2Value(Date value) {
 		if (value == null) return null
-		
-		Timestamp2Value(new java.sql.Timestamp(value.time))
+
+		return Timestamp2Value(new java.sql.Timestamp(value.time))
 	}
 	
 	/**
@@ -393,12 +497,15 @@ class DateUtils {
 	public static BigDecimal Timestamp2Value(java.sql.Timestamp value) {
 		if ((Object)value == null) return null
 
+		int offset = TimeZone.default.rawOffset
+		if (offset != 0) value = new java.sql.Timestamp(AddDate('sss', -offset, value).time)
+
 //		def t = value.time.intdiv(1000)
         def t = Long.divideUnsigned(value.time, 1000)
 		def n = new BigDecimal(value.nanos).divide(BigDecimal.valueOf(1000000000), 9, RoundingMode.UNNECESSARY)
 		def res = t + n
 
-		res
+		return res
 	}
 	
 	/**
@@ -414,7 +521,7 @@ class DateUtils {
 		def res = new java.sql.Timestamp(t)
 		res.nanos = n.intValue()
 
-		res
+		return res
 	}
 	
 	/**
@@ -439,7 +546,7 @@ class DateUtils {
 				finish = ifinish
 			}
 		}
-		
-		[start: start, finish: finish]
+
+		return [start: start, finish: finish]
 	}
 }

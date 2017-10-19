@@ -141,7 +141,8 @@ abstract class Job {
 	 */
 	private void doRun () {
 		Logs.Init()
-		Logs.Fine("### GETL / version ${getl.deploy.Version.version} created by ${getl.deploy.Version.years} / All right reserved for EasyData company")
+		DateUtils.init()
+		Logs.Finest("### GETL / version ${getl.deploy.Version.version} created by ${getl.deploy.Version.years} / All right reserved for EasyData company")
 		Logs.Info("### Job start")
 		prepareRun()
 		def isError = false

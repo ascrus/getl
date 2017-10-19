@@ -111,7 +111,7 @@ class Logs {
 	 */
 	@groovy.transform.Synchronized
 	protected static void event (java.util.logging.Level level, String message) {
-		eventers.each { Closure eventer -> eventer(level.toString(), new Date(), message) }
+		eventers.each { Closure eventer -> eventer(level.toString(), DateUtils.Now(), message) }
 	}
 	
 	/**
@@ -122,7 +122,7 @@ class Logs {
 	static class LogFormatter extends Formatter {
 		public String format(LogRecord record)  {
 			StringBuilder sb = new StringBuilder()
-			Date d = new Date(record.millis)
+			Date d = DateUtils.ToOrigTimeZoneDate(new Date(record.millis))
 			sb << DateGroovyMethods.format(d, "yyyy-MM-dd HH:mm:ss")
 			sb << " ["
 			sb << record.level

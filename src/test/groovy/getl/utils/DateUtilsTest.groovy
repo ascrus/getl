@@ -1,14 +1,55 @@
 package getl.utils
 
+import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
+
 /**
  * @author Alexsey Konstantinov
  */
 class DateUtilsTest extends GroovyTestCase {
+    void testNow() {
+        DateUtils.defaultTimeZone = 'Europe/Moscow'
+        def date1 = DateUtils.Now()
+        def hour1 = DateUtils.PartOfDate('hour', date1)
+
+        DateUtils.defaultTimeZone = 'UTC'
+        def date2 = DateUtils.Now()
+        def hour2 = DateUtils.PartOfDate('hour', date2)
+
+        assertEquals(hour1, hour2 + 3)
+
+        DateUtils.castTimeZone = true
+        DateUtils.defaultTimeZone = 'Europe/Moscow'
+        date1 = DateUtils.Now()
+        hour1 = DateUtils.PartOfDate('hour', date1)
+
+        DateUtils.defaultTimeZone = 'UTC'
+        date2 = DateUtils.Now()
+        hour2 = DateUtils.PartOfDate('hour', date2)
+
+        assertEquals(hour1, hour2)
+
+        DateUtils.RestoreOrigDefaultTimeZone()
+    }
+
     void testParseDate() {
         assertNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss', null))
 
         assertNotNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss.SSS', textDateTime))
+
         assertNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss.SSS', '2016-13-32 24:61:80.999', true))
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss.'000000000'")
+
+        DateUtils.defaultTimeZone = 'Europe/Moscow'
+        assertNull(DateUtils.ParseDate("yyyy-MM-dd:HH:mm:ss.'000000000'", '1982-04-01 00:00:00.000000000'))
+        assertNull(DateUtils.ParseDate(sdf, '1982-04-01 00:00:00.000000000'))
+
+        DateUtils.defaultTimeZone = 'UTC'
+        assertNotNull(DateUtils.ParseDate("yyyy-MM-dd:HH:mm:ss.'000000000'", '1982-04-01 00:00:00.000000000'), false)
+        assertNotNull(DateUtils.ParseDate(sdf, '1982-04-01 00:00:00.000000000'), false)
+
+        DateUtils.RestoreOrigDefaultTimeZone()
     }
 
     void testClearTime() {
@@ -57,14 +98,21 @@ class DateUtilsTest extends GroovyTestCase {
 
     void testTimestamp2Value() {
         assertNull(DateUtils.Timestamp2Value(null))
-        def b = BigDecimal.valueOf(1483217939.000000000)
+
+        def b = BigDecimal.valueOf(1483228739.000000000)
+        DateUtils.defaultTimeZone = 'UTC'
         assertEquals(b, DateUtils.Timestamp2Value(exampleDateTime))
+
+        DateUtils.RestoreOrigDefaultTimeZone()
     }
 
     void testValue2Timestamp() {
         assertNull(DateUtils.Value2Timestamp(null))
-        def b = BigDecimal.valueOf(1483217939.000000000)
+        def b = BigDecimal.valueOf(1483228739.000000000)
+        DateUtils.defaultTimeZone = 'UTC'
         assertEquals(exampleDateTime, DateUtils.Value2Timestamp(b))
+
+        DateUtils.RestoreOrigDefaultTimeZone()
     }
 
     void testPeriodCrossing() {
