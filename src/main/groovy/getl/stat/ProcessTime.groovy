@@ -52,7 +52,7 @@ class ProcessTime {
 	public String avgSpeedStr
 	
 	private void init () {
-		start = new Date()
+		start = DateUtils.Now()
 		
 		def conf = Config.FindSection("statistic")
 		if (conf != null) {
@@ -102,7 +102,7 @@ class ProcessTime {
 	public long getRowInSec() { rowInSec }
 	
 	public void finish(Long procRow) {
-		finish = new Date()
+		finish = DateUtils.Now()
 		time = TimeCategory.minus(finish, start)
 		countRow = procRow
 		if (countRow != null) {

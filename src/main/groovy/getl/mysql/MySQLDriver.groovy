@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
+
  Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
@@ -45,22 +45,22 @@ class MySQLDriver extends JDBCDriver {
 		tablePrefix = '`'
 		fieldPrefix = '`'
 
-        localTemporaryTablePrefix = 'LOCAL TEMPORARY'
+        localTemporaryTablePrefix = 'TEMPORARY'
 	}
-	
+
 	@Override
 	public List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.LOCAL_TEMPORARY,
 				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
 	}
-	
+
 	@Override
 	public List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
-	
+
 	@Override
 	protected Map getConnectProperty() {
 		return [zeroDateTimeBehavior: 'convertToNull']
