@@ -183,9 +183,9 @@ public class SQLScripter {
 			typeSql = TypeCommand.ERROR
 		} else if (sql.matches("(?is)exit")) {
 			typeSql = TypeCommand.EXIT
-		} else if (sql.matches("(?is)load_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+to(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*")) {
+		} else if (sql.matches("(?is)load_point(\\s|\\t)+.*")) {
 			typeSql = TypeCommand.LOAD_POINT
-		} else if (sql.matches("(?is)save_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+from(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*")) {
+		} else if (sql.matches("(?is)save_point(\\s|\\t)+.*")) {
 			typeSql = TypeCommand.SAVE_POINT
 		} else if (sql.matches("(?is)begin(\\s|\\t)+block(\\s|\\t)*")) {
 			typeSql = TypeCommand.BLOCK
@@ -206,6 +206,7 @@ public class SQLScripter {
 	
 	private void doLoadPoint (List<String> st, int i) {
 		def m = sql =~ "(?is)load_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+to(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
+		if (m.size() == 0) throw new ExceptionGETL("Uncorrect syntax for operator LOAD_POINT: \"$sql\"")
 		//noinspection GroovyAssignabilityCheck
 		def point = m[0][2] as String
 		//noinspection GroovyAssignabilityCheck
@@ -240,6 +241,7 @@ public class SQLScripter {
 	@groovy.transform.Synchronized
 	private void doSavePoint (List<String> st, int i) {
 		def m = sql =~ "(?is)save_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+from(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
+        if (m.size() == 0) throw new ExceptionGETL("Uncorrect syntax for operator SAVE_POINT: \"$sql\"")
 		//noinspection GroovyAssignabilityCheck
 		def point = m[0][2] as String
 		//noinspection GroovyAssignabilityCheck
