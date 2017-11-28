@@ -28,8 +28,6 @@ import groovy.transform.InheritConstructors
 import com.jcraft.jsch.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
-import getl.proc.*
-import java.nio.CharBuffer
 
 /**
  * SFTP file manager
@@ -292,9 +290,7 @@ class SFTPManager extends Manager {
 			s.close()
 		}
 
-        def a = channelFtp.stat(fileName)
-        def d = new Date(a.MTime * 1000L)
-        f.setLastModified(d.time)
+        setLocalLastModified(f, getLastModified(fileName))
 	}
 
 	@Override
@@ -305,7 +301,7 @@ class SFTPManager extends Manager {
 		InputStream s = f.newInputStream()
 		try {
 			channelFtp.put(s, fileName)
-            channelFtp.setMtime(fileName, (f.lastModified() / 1000L).intValue())
+            setLastModified(fileName, f.lastModified())
 		}
 		catch (Throwable e) {
 			if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fileName\" from \"$fn\"")
@@ -484,5 +480,16 @@ class SFTPManager extends Manager {
 		super.noop()
 		clientSession.sendKeepAliveMsg()
 		writeScriptHistoryFile("NOOP")
+	}
+
+	@Override
+	long getLastModified(String fileName) {
+		def a = channelFtp.stat(fileName)
+		return new Date(a.MTime * 1000L).time
+	}
+
+	@Override
+	void setLastModified(String fileName, long time) {
+		if (saveOriginalDate) channelFtp.setMtime(fileName, (time / 1000L).intValue())
 	}
 }

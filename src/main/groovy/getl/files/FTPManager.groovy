@@ -136,7 +136,7 @@ class FTPManager extends Manager {
     /**
      * FTP server time zone
      */
-    public Integer getTimeZone () { params.timeZone }
+    public Integer getTimeZone () { params.timeZone?:0 }
     public void setTimeZone (Integer value) { params.timeZone = value }
 	
 	@Override
@@ -300,9 +300,7 @@ class FTPManager extends Manager {
 		try {
             def f = new File(fn)
 			client.download(fileName, f)
-            def fl = client.list(fileName)
-            if (fl.length != 1) throw new ExceptionGETL('Incorrect get file operation for setting attributes')
-            f.setLastModified(fl[0].modifiedDate.time)
+            setLocalLastModified(f, getLastModified(fileName))
 
 		}
 		catch (Throwable e) {
@@ -323,8 +321,7 @@ class FTPManager extends Manager {
                     def tz = DateUtils.PartOfDate('TIMEZONE', d)
                     if (timeZone != tz) d = DateUtils.AddDate('HH', timeZone - tz, d)
                 }
-                def df = DateUtils.FormatDate('yyyyMMddHHmmss', d)
-                client.sendCustomCommand("MFMT $df $fileName")
+                setLastModified(fileName, d.time)
             }
 		}
 		catch (Throwable e) {
@@ -448,4 +445,22 @@ class FTPManager extends Manager {
 		super.noop()
 		client.noop()
 	}
+
+    @Override
+    long getLastModified(String fileName) {
+        def fl = client.list(fileName)
+        if (fl.length != 1) throw new ExceptionGETL('File $fileName not found!')
+        return fl[0].modifiedDate.time
+    }
+
+    @Override
+    void setLastModified(String fileName, long time) {
+        if (!saveOriginalDate) return
+
+        if (supportCommand('MFMT')) {
+            def d = new Date(time)
+            def df = DateUtils.FormatDate('yyyyMMddHHmmss', d)
+            client.sendCustomCommand("MFMT $df $fileName")
+        }
+    }
 }

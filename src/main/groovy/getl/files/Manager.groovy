@@ -48,7 +48,7 @@ abstract class Manager {
 	protected File localDirFile = new File(TFS.storage.path)
 	
 	Manager () {
-		methodParams.register('super', ['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop', 'sqlHistoryFile'])
+		methodParams.register('super', ['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop', 'sqlHistoryFile', 'saveOriginalDate'])
 		methodParams.register('buildList', ['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel', 'ignoreExistInStory'])
 		methodParams.register('downloadFiles', ['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
 		
@@ -63,13 +63,13 @@ abstract class Manager {
 	public static Manager BuildManager (String name) {
 		Map fileParams = Config.content."files"?."$name"
 		if (fileParams == null) throw new ExceptionGETL("File manager \"$name\" not found in \"files\" section by config")
-		def className = fileParams."manager" as String
+		def className = fileParams.manager as String
 		if (className == null) throw new ExceptionGETL("Reqired class name as \"manager\" property in \"files.$name\" file server")
 		Manager manager = Class.forName(className).newInstance() as Manager
-		manager.params.putAll(MapUtils.CleanMap(fileParams, ["manager"]))
+		manager.params.putAll(MapUtils.CleanMap(fileParams, ['manager']))
 		manager.validateParams()
 
-		manager
+		return manager
 	}
 	
 	/**
@@ -80,7 +80,7 @@ abstract class Manager {
 		Manager res = getClass().newInstance() as Manager
 		res.params.putAll(this.params)
 		
-		res
+		return res
 	}
 
 	/**
@@ -91,7 +91,7 @@ abstract class Manager {
 	/**
 	 * Parameters
 	 */
-	public Map params = [:]
+	public Map<String, Object> params = [:]
 	
 	/**
 	 * Root path
@@ -114,23 +114,23 @@ abstract class Manager {
 	/**
 	 * Set noop time (use in list operation)
 	 */
-	public Integer getNoopTime () { params."noopTime" }
-	public void setNoopTime (Integer value) { params."noopTime" = value }
+	public Integer getNoopTime () { params.noopTime }
+	public void setNoopTime (Integer value) { params.noopTime = value }
 	
 	/**
 	 * Count thread for build list files 
 	 */
-	public Integer getBuildListThread () { params."buildListThread" }
+	public Integer getBuildListThread () { params.buildListThread }
 	public void setBuildListThread (Integer value) {
 		if (value != null && value <= 0) throw new ExceptionGETL("buildListThread been must great zero") 
-		params."buildListThread" = value 
+		params.buildListThread = value
 	}
 	
 	/**
 	 * Write to log when send noop message
 	 */
-	public boolean getSayNoop () { BoolUtils.IsValue(params."sayNoop", false) }
-	public void setSayNoop (boolean value) { params."sayNoop" = value }
+	public boolean getSayNoop () { BoolUtils.IsValue(params.sayNoop, false) }
+	public void setSayNoop (boolean value) { params.sayNoop = value }
 	
 	/**
 	 * Log script file on running commands 
@@ -148,6 +148,12 @@ abstract class Manager {
 	public void setSqlHistoryFile (String value) {
 		params.sqlHistoryFile = value
 	}
+
+    /**
+     * Save original date and time from downloading and uploading file
+     */
+	public boolean getSaveOriginalDate() { BoolUtils.IsValue(params.saveOriginalDate, false)}
+    public void setSaveOriginalDate(boolean value) { params.saveOriginalDate = value }
 	
 	/**
 	 * Name section parameteres value in config file
@@ -1494,4 +1500,28 @@ WHERE
 	public void noop () { 
 		if (sayNoop) Logs.Fine("files.manager: NOOP")
 	}
+
+    /**
+     * Set last modified date and time from local file
+     * @param f
+     * @param time
+     */
+    protected boolean setLocalLastModified(File f, long time) {
+        if (!saveOriginalDate) return false
+        return f.setLastModified(time)
+    }
+
+    /**
+     * Get last modified date and time from file
+     * @param fileName file name
+     * @return last-modified time, measured in milliseconds since the epoch (00:00:00 GMT, January 1, 1970)
+     */
+    public abstract long getLastModified(String fileName)
+
+    /**
+     * Set last modified date and time for file
+     * @param fileName file name
+     * @param time last-modified time, measured in milliseconds since the epoch (00:00:00 GMT, January 1, 1970)
+     */
+    public abstract void setLastModified(String fileName, long time)
 }
