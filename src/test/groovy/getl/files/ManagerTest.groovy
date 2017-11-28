@@ -1,7 +1,10 @@
 package getl.files
 
 import getl.tfs.TFS
+import getl.utils.DateUtils
 import getl.utils.Path
+import getl.utils.StringUtils
+import org.apache.poi.ss.usermodel.DateUtil
 
 /**
  * @author Alexsey Konstantinov
@@ -18,7 +21,11 @@ abstract class ManagerTest extends GroovyTestCase {
     final def subdirDirName = 'subdir'
     final def subdirFileName = 'subdir_file.txt'
 
+    private String origRootPath
+
     void testWork() {
+        if (manager == null) return
+
         manager.connect()
         init()
         create()
@@ -30,8 +37,17 @@ abstract class ManagerTest extends GroovyTestCase {
     }
 
     private void init() {
+        manager.saveOriginalDate = true
+        origRootPath = manager.rootPath
+
+        if (manager.existsDirectory(rootDirName)) manager.removeDir(rootDirName, true)
         manager.createDir(rootDirName)
-        manager.rootPath = "${manager.rootPath}/$rootDirName"
+        if (StringUtils.RightStr(manager.rootPath, 1) in ['/', '\\']) {
+            manager.rootPath = "${manager.rootPath}$rootDirName"
+        }
+        else {
+            manager.rootPath = "${manager.rootPath}/$rootDirName"
+        }
         manager.changeDirectoryToRoot()
 
         manager.localDirectory = "${TFS.systemPath}/test_manager_temp"
@@ -48,12 +64,17 @@ abstract class ManagerTest extends GroovyTestCase {
 
         def rf = new File("${manager.currentLocalDir()}/$rootFileName")
         rf.text = 'root file'
+        def d = DateUtils.ParseDateTime('2016-02-29 23:59:59.000')
+        manager.setLocalLastModified(rf, d.time)
+        assertEquals(d, new Date(rf.lastModified()))
 
         def cf = new File("${manager.currentLocalDir()}/$catalogFileName")
         cf.text = 'catalog file'
 
         def sf = new File("${manager.currentLocalDir()}/$subdirFileName")
         sf.text = 'child file'
+
+        sleep 1000
     }
 
     private void create() {
@@ -87,6 +108,12 @@ abstract class ManagerTest extends GroovyTestCase {
             }
             manager.changeDirectoryUp()
         }
+
+        manager.changeDirectoryToRoot()
+        manager.changeLocalDirectoryToRoot()
+        manager.changeLocalDirectory(initLocalDir)
+        def rf = new File("${manager.currentLocalDir()}/$rootFileName")
+        assertEquals(new Date(rf.lastModified()), new Date(manager.getLastModified(rootFileName)))
     }
 
     private void buildList() {
@@ -104,6 +131,12 @@ abstract class ManagerTest extends GroovyTestCase {
         def loadFiles = 0
         manager.downloadFiles(folders: true) { file -> if (file.filename == subdirFileName) loadFiles++ }
         assertEquals(9, loadFiles)
+
+        manager.changeDirectoryToRoot()
+        manager.changeLocalDirectoryToRoot()
+        manager.changeLocalDirectory(initLocalDir)
+        def rf = new File("${manager.currentLocalDir()}/$rootFileName")
+        assertEquals(new Date(rf.lastModified()), new Date(manager.getLastModified(rootFileName)))
     }
 
     private void remove() {
@@ -119,7 +152,9 @@ abstract class ManagerTest extends GroovyTestCase {
         manager.changeDirectoryUp()
         (1..3).each { catalogNum -> manager.removeDir("${catalogDirName}_$catalogNum", true)}
         manager.removeFile(rootFileName)
-        manager.changeDirectoryUp()
+
+        manager.rootPath = origRootPath
+        manager.changeDirectoryToRoot()
         manager.removeDir(rootDirName)
 
         manager.changeLocalDirectoryToRoot()

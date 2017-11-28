@@ -179,7 +179,7 @@ class FileManager extends Manager {
 		FileUtils.CopyToFile(f.path, fn, false)
 
         def fDest = new File(fn)
-        fDest.setLastModified(f.lastModified())
+        setLocalLastModified(fDest, f.lastModified())
 	}
 	
 	@Override
@@ -193,7 +193,7 @@ class FileManager extends Manager {
 
 		def fSource = fileFromLocalDir(fn)
 		def fDest = new File(dest)
-        fDest.setLastModified(fSource.lastModified())
+        setLocalLastModified(fDest, fSource.lastModified())
 	}
 	
 	@Override
@@ -277,5 +277,15 @@ class FileManager extends Manager {
 		}
 		
 		p.exitValue()
+	}
+
+	@Override
+	long getLastModified(String fileName) {
+		return new File("$rootPath/${currentDir()}/$fileName").lastModified()
+	}
+
+	@Override
+	void setLastModified(String fileName, long time) {
+		if (saveOriginalDate) new File(fileName).setLastModified(time)
 	}
 }

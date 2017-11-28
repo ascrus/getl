@@ -249,10 +249,9 @@ class HDFSManager extends Manager {
         def fn = ((path != null)?path + '/':'') + localFileName
         try {
             def p = fullPath(currentPath, fileName)
-            def s = client.getFileStatus(p)
             client.copyToLocalFile(false, p, new Path(fn), true)
             def f = new File(fn)
-            f.setLastModified(s.modificationTime)
+            setLocalLastModified(f, getLastModified(fileName))
         }
         catch (Throwable e) {
             if (writeErrorsToLog) Logs.Severe("Can not download file \"${fullName(currentPath, fileName)}\" to \"$fn\"")
@@ -267,7 +266,7 @@ class HDFSManager extends Manager {
             def p = fullPath(currentPath, fileName)
             client.copyFromLocalFile(new Path(fn), p)
             def f = new File(fn)
-            client.setTimes(p, f.lastModified(), f.lastModified())
+            setLastModified(fileName, f.lastModified())
         }
         catch (Throwable e) {
             if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fn\" to \"${fullName(currentPath, fileName)}\"")
@@ -322,5 +321,16 @@ class HDFSManager extends Manager {
     @Override
     boolean existsDirectory(String dirName) {
         client.exists(fullPath(dirName, null))
+    }
+
+    @Override
+    long getLastModified(String fileName) {
+        def s = client.getFileStatus(fullPath(currentPath, fileName))
+        return s.modificationTime
+    }
+
+    @Override
+    void setLastModified(String fileName, long time) {
+        if (saveOriginalDate) client.setTimes(fullPath(currentPath, fileName), time, -1)
     }
 }

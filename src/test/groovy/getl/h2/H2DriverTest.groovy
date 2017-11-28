@@ -21,7 +21,7 @@ class H2DriverTest extends JDBCDriverProto {
         def q = new QueryDataset(connection: con, query: 'SELECT H2Version() AS version')
         def r = q.rows()
         assertEquals(1, r.size())
-        assertEquals('1.4.194', r[0].version)
+        assertEquals('1.4.196', r[0].version)
     }
 
     public void testSessionProperties() {

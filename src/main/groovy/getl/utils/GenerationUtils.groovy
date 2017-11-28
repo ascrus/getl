@@ -461,13 +461,13 @@ class GenerationUtils {
 		if (intSize == 0) {
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()), precision)
 		}
-		else if (intSize < 15) {
+		else { //if (intSize < 15) {
 			int lSize = ((Double)Math.pow(10, intSize)).intValue() - 1
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextInt(lSize), precision)
 		}
-		else {
+		/*else {
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextLong(), precision)
-		}
+		}*/
 
         return res
 	}
