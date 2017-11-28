@@ -27,3 +27,4 @@ out/
 ### Config files for test modules
 tests/vertica/
 tests/hive/
+tests/filemanager/
