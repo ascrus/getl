@@ -882,6 +882,14 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
                     if (!priveleges.withoutGrant.isEmpty())writeln "\nGRANT ${priveleges.withoutGrant.join(', ')} ON FUNCTION ${objectName(r.object_schema, r.object_name)}($r.function_argument_type) TO ${r.grantee};"
                     if (!priveleges.withGrant.isEmpty())writeln "\nGRANT ${priveleges.withGrant.join(', ')} ON FUNCTION ${objectName(r.object_schema, r.object_name)}($r.function_argument_type) TO ${r.grantee} WITH GRANT OPTION;"
                     break
+                case 'ROLE':
+                    def grantee = r.grantee.toLowerCase()
+                    def rows = hRoles.rows(where: "Lower(name) = '$grantee'")
+                    if (!rows.isEmpty()) {
+                        if (fileNameGrants == null) setWrite('ROLES', fileNameRoles, [role: grantee])
+                        writeln "\nGRANT ${r.object_name} TO ${r.grantee};"
+                    }
+                    break
                 default:
                     new ExceptionGETL("Unknown type object \"${r.object_type}\"")
             }
