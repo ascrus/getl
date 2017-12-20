@@ -82,6 +82,11 @@ class Logs {
 	 * Eventer on call write to log, has parameters String level, Date time, String message
 	 */
 	private static final List<Closure> eventers = []
+
+	/**
+	 * Print stack trace for error
+	 */
+	public static boolean printStackTraceError = true
 	
 	/**
 	 * Register eventer, closure has parameters String level, Date time, String message
@@ -346,7 +351,7 @@ class Logs {
 		logger.severe(message)
 		event(Level.SEVERE, e.message)
 		org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
-		e.printStackTrace()
+		if (printStackTraceError) e.printStackTrace()
 	}
 	
 	@groovy.transform.Synchronized
@@ -407,7 +412,7 @@ class Logs {
 				w.println "Error: $e"
 				w.println "Stack trace:"
 				org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
-				e.printStackTrace(w)
+				if (printStackTraceError) e.printStackTrace(w)
 			}
 			if (data != null) {
 				w.println "Generated script:"
