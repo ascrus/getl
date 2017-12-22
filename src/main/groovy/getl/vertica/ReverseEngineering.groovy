@@ -534,6 +534,9 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		write(script + '\n')
 	}
 
+	/**
+	 * Init reverse objects
+	 */
 	public void initReverse() {
 		readCurUser()
 
@@ -611,9 +614,9 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		initFiles()
 
 		cVertica.executeCommand(command: sqlPrepare,
-				queryParams: [pools: pools_where, roles: roles_where, users: users_where,
-							  schemas: schemas_where, sequences: sequences_where,
-							  tables: tables_where, views: views_where,
+				queryParams: [pools        : pools_where, roles: roles_where, users: users_where,
+							  schemas      : schemas_where, sequences: sequences_where,
+							  tables       : tables_where, views: views_where,
 							  sql_functions: sql_functions_where, grants: grants_where])
 
 		Logs.Fine("Read object model ...")
@@ -648,6 +651,26 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 	}
 
 	/**
+	 * Finish reverse and clearing temp data
+	 */
+	public void doneReverse() {
+		cVertica.connected = false
+
+		hFiles.drop(ifExists: true)
+		hPools.drop(ifExists: true)
+		hRoles.drop(ifExists: true)
+		hUsers.drop(ifExists: true)
+		hSchemas.drop(ifExists: true)
+		hSequences.drop(ifExists: true)
+		hTables.drop(ifExists: true)
+		hViews.drop(ifExists: true)
+		hSQLFunctions.drop(ifExists: true)
+		hGrants.drop(ifExists: true)
+
+		cCache.connected = false
+	}
+
+	/**
 	 * Process job
 	 */
 	@Override
@@ -666,12 +689,19 @@ Example:
 			return
 		}
 
-		initReverse()
+		try {
+			initReverse()
+		}
+		catch (Exception e) {
+			doneReverse()
+			throw e
+		}
 
 		if (jobArgs.list != null) {
 			def l = jobArgs.list.toLowerCase()
 			if (!(l in ['none', 'print'])) {
 				Logs.Severe("Unknown list option \"$l\"")
+				doneReverse()
 				return
 			}
 			if (l == 'print') {
@@ -714,25 +744,32 @@ Example:
 		if (jobArgs.containsKey('script_path')) {
 			if (jobArgs.script_path == null) {
 				Logs.Severe('Required value from parameter "script_path"')
+				doneReverse()
 				return
 			}
 		}
 		else {
+			doneReverse()
 			return
 		}
 
 		scriptPath = FileUtils.ConvertToDefaultOSPath(jobArgs.script_path)
 		Logs.Info("Write script to \"$scriptPath\" directory")
 
-		genPools()
-		genRoles()
-		genUsers()
-		genSchemas()
-		genSequences()
-		genTables()
-		genViews()
-		genSQLFunctions()
-		genGrants()
+		try {
+			genPools()
+			genRoles()
+			genUsers()
+			genSchemas()
+			genSequences()
+			genTables()
+			genViews()
+			genSQLFunctions()
+			genGrants()
+		}
+		finally {
+			doneReverse()
+		}
 	}
 
 	/**
