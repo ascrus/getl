@@ -59,7 +59,7 @@ class ListUtils {
 		if (list == null) return null
 		
 		def res = []
-		list.each { res << "${quote}${it}${quote}" }
+		list.each { if (it != null && it != '') res << "${quote}${it}${quote}" }
 		return res
 	}
 	

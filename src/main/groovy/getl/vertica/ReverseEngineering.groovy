@@ -32,7 +32,10 @@ import getl.proc.Job
 import getl.tfs.TDS
 import getl.utils.BoolUtils
 import getl.utils.Config
+import getl.utils.ConvertUtils
 import getl.utils.FileUtils
+import getl.utils.GenerationUtils
+import getl.utils.ListUtils
 import getl.utils.Logs
 import getl.utils.StringUtils
 
@@ -45,15 +48,15 @@ import java.util.regex.Matcher
 class ReverseEngineering extends Job {
 	VerticaConnection cVertica = new VerticaConnection(config: "vertica")
 	def tCurUser = new QueryDataset(connection: cVertica, query: 'SELECT CURRENT_USER')
-	def tPools = new QueryDataset(connection: cVertica, query: 'SELECT * FROM getl_pools')
-	def tRoles = new QueryDataset(connection: cVertica, query: 'SELECT * FROM getl_roles')
-	def tUsers = new QueryDataset(connection: cVertica, query: 'SELECT * FROM getl_users')
-	def tSchemas = new QueryDataset(connection: cVertica, query: 'SELECT * FROM getl_schemas')
-	def tSequences = new QueryDataset(connection: cVertica, query: 'SELECT * FROM getl_sequences')
-	def tTables = new QueryDataset(connection: cVertica, query: 'SELECT * FROM getl_tables')
-	def tViews = new QueryDataset(connection: cVertica, query: 'SELECT * FROM getl_views')
-	def tSQLFunctions = new QueryDataset(connection: cVertica, query: 'SELECT * FROM getl_sql_functions')
-	def tGrants = new QueryDataset(connection: cVertica, query: 'SELECT * FROM getl_grants')
+	def tPools = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_pools')
+	def tRoles = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_roles')
+	def tUsers = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_users')
+	def tSchemas = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_schemas')
+	def tSequences = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_sequences')
+	def tTables = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_tables')
+	def tViews = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_views')
+	def tSQLFunctions = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_sql_functions')
+	def tGrants = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_grants')
 
 	def cCache = new TDS()
 	def hFiles = new TableDataset(connection: cCache, tableName: 'files', field: [new Field(name: 'filename', length: 1024, isKey: true)])
@@ -100,7 +103,7 @@ class ReverseEngineering extends Job {
 		roles: [table: 'v_catalog.roles', name: 'NAME',
 				where: '''Lower(name) NOT IN ('pseudosuperuser', 'dbduser', 'public', 'dbadmin', 'sysmonitor')'''],
 
-		users: [table: 'v_catalog.users', name: 'USER_NAME', where: 'true'],
+		users: [table: 'v_catalog.users', name: 'USER_NAME', where: '1 = 1'],
 
 		schemas: [table: 'v_catalog.schemata', name: 'SCHEMA_NAME',
 				  where: '''NOT is_system_schema AND Lower(schema_name) NOT IN ('txtindex', 'v_idol', 'v_txtindex', 'v_temp_schema')'''],
@@ -127,7 +130,7 @@ class ReverseEngineering extends Job {
 		AND f.schema_name NOT IN ('v_txtindex', 'txtindex') 
 		AND NOT (f.schema_name = 'public' AND f.function_name IN ('isOrContains')) 
 		AND f.function_definition ILIKE 'RETURN %\'''',
-				 where: '''Lower(object_type) <> 'database'
+				 where: '''Lower(object_type) NOT IN ('database', 'clientauthentication', 'library')
 	AND (Lower(object_type) <> 'procedure' OR (Lower(object_type) = 'procedure' AND f.function_name IS NOT NULL)) 
 	AND (object_type != 'SCHEMA' OR Lower(object_name) NOT IN ('v_catalog', 'v_internal', 'v_monitor', 'public', 'v_txtindex', 'v_temp_schema'))'''],
 	]
@@ -140,8 +143,7 @@ SELECT
 	queuetimeout::varchar(100), plannedconcurrency, maxconcurrency, runtimecap::varchar(100), cpuaffinityset, cpuaffinitymode, cascadeto
 FROM ${sqlObjects.pools.table}
 WHERE 
-	${sqlObjects.pools.where} 
-	AND ({pools})
+	${sqlObjects.pools.where}
 ORDER BY Lower(name);
 
 -- Get roles
@@ -149,8 +151,7 @@ CREATE LOCAL TEMPORARY TABLE getl_roles ON COMMIT PRESERVE ROWS AS
 SELECT name
 FROM ${sqlObjects.roles.table}
 WHERE 
-	${sqlObjects.roles.where} 
-	AND ({roles})
+	${sqlObjects.roles.where}
 ORDER BY Lower(name);
 
 -- Get users
@@ -158,8 +159,7 @@ CREATE LOCAL TEMPORARY TABLE getl_users ON COMMIT PRESERVE ROWS AS
 SELECT user_name, resource_pool, memory_cap_kb, temp_space_cap_kb, run_time_cap, all_roles, default_roles, search_path
 FROM ${sqlObjects.users.table}
 WHERE 
-	${sqlObjects.users.where} 
-	AND ({users})
+	${sqlObjects.users.where}
 ORDER BY Lower(user_name);
 
 -- Get schemas
@@ -167,48 +167,42 @@ CREATE LOCAL TEMPORARY TABLE getl_schemas ON COMMIT PRESERVE ROWS AS
 SELECT schema_name, schema_owner
 FROM ${sqlObjects.schemas.table}
 WHERE 
-	${sqlObjects.schemas.where} 
-	AND ({schemas})
+	${sqlObjects.schemas.where}
 ORDER BY Lower(schema_name);
 
 CREATE LOCAL TEMPORARY TABLE getl_sequences ON COMMIT PRESERVE ROWS AS
 SELECT sequence_schema, sequence_name, owner_name, identity_table_name, session_cache_count, allow_cycle, output_ordered, increment_by, current_value::numeric(38)
 FROM ${sqlObjects.sequences.table}
 WHERE 
-	${sqlObjects.sequences.where} 
-	AND ({sequences})
+	${sqlObjects.sequences.where}
 ORDER BY sequence_schema, sequence_name;
 
 CREATE LOCAL TEMPORARY TABLE getl_tables ON COMMIT PRESERVE ROWS AS
 SELECT table_schema, table_name, owner_name, is_temp_table
 FROM ${sqlObjects.tables.table}
 WHERE 
-	${sqlObjects.tables.where} 
-	AND ({tables})
+	${sqlObjects.tables.where}
 ORDER BY Lower(table_schema), Lower(table_name);
 
 CREATE LOCAL TEMPORARY TABLE getl_views ON COMMIT PRESERVE ROWS AS
 SELECT table_schema, table_name, owner_name, table_id::numeric(38, 0)
 FROM ${sqlObjects.views.table}
 WHERE 
-	${sqlObjects.views.where} 
-	AND ({views})
+	${sqlObjects.views.where}
 ORDER BY Lower(table_schema), Lower(table_name);
 
 CREATE LOCAL TEMPORARY TABLE getl_sql_functions ON COMMIT PRESERVE ROWS AS
 SELECT schema_name, function_name, owner
 FROM ${sqlObjects.sql_functions.table}
 WHERE 
-	${sqlObjects.sql_functions.where} 
-	AND ({sql_functions})
+	${sqlObjects.sql_functions.where}
 ORDER BY schema_name, function_name;
 
 CREATE LOCAL TEMPORARY TABLE getl_grants ON COMMIT PRESERVE ROWS AS
 SELECT grantor, privileges_description, object_type, object_schema, object_name, grantee, f.function_argument_type
 FROM ${sqlObjects.grants.table}
 WHERE 
-	${sqlObjects.grants.where} 
-	AND ({grants})
+	${sqlObjects.grants.where}
 ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), Lower(grantee);
 """
 
@@ -495,12 +489,17 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 	/**
 	 * Current file mask for write
 	 */
-	def currentFileMask
+	def currentFileMask = ''
 
 	/**
 	 * Current parameters for write
 	 */
-	def currentVars
+	def currentVars = [:]
+
+	/**
+	 * File has write data
+	 */
+	def isWriteln = false
 
 	void setWrite(String object, String filemask, def Map vars = [:]) {
 		assert object != null
@@ -510,10 +509,16 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		currentFileMask = filemask
 
 		currentVars = vars
+
+		isWriteln = false
 	}
 
 	void write(String script) {
-		def filename = StringUtils.EvalMacroString(currentFileMask, currentVars).toLowerCase()
+		def v = [:] as Map<String, String>
+		currentVars.each { String var, String value ->
+			v.put(var, value.replace('*', '_').replace('?', '_').replace('/', '_').replace('\\', '_'))
+		}
+		def filename = StringUtils.EvalMacroString(currentFileMask, v).toLowerCase()
 		def filepath = "$scriptPath${File.separatorChar}${filename}.sql"
 
 		def row = cCache.sqlConnection.firstRow(statFilesFind, [filename])
@@ -528,12 +533,20 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		}
 
 		file.append(script, 'utf-8')
+		isWriteln = true
 	}
 
 	void writeln(String script) {
 		write(script + '\n')
 	}
 
+	String eval(String val) {
+		return GenerationUtils.EvalGroovyScript('"""' + val.replace('"', '\\"') + '"""', Config.vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
+	}
+
+	/**
+	 * Init reverse objects
+	 */
 	public void initReverse() {
 		readCurUser()
 
@@ -588,63 +601,131 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		def sql_functions_where = default_where
 		def grants_where = default_where
 
-		if (sectionCreate.pools) pools_where = sectionCreate.pools; Logs.Info("Reverse pools: $pools_where")
-		if (sectionCreate.roles) roles_where = sectionCreate.roles; Logs.Info("Reverse roles: $roles_where")
-		if (sectionCreate.users) users_where = sectionCreate.users; Logs.Info("Reverse users: $users_where")
-		if (sectionCreate.schemas) schemas_where = sectionCreate.schemas; Logs.Info("Reverse schemas: $schemas_where")
-		if (sectionCreate.sequences) sequences_where = sectionCreate.sequences; Logs.Info("Reverse sequences: $sequences_where")
+		if (sectionCreate.pools) pools_where = eval(sectionCreate.pools.toString())
+		Logs.Info("Reverse pools: $pools_where")
+		if (sectionCreate.roles) roles_where = eval(sectionCreate.roles.toString())
+		Logs.Info("Reverse roles: $roles_where")
+		if (sectionCreate.users) users_where = eval(sectionCreate.users.toString())
+		Logs.Info("Reverse users: $users_where")
+		if (sectionCreate.schemas) schemas_where = eval(sectionCreate.schemas.toString())
+		Logs.Info("Reverse schemas: $schemas_where")
+		if (sectionCreate.sequences) sequences_where = eval(sectionCreate.sequences.toString())
+		Logs.Info("Reverse sequences: $sequences_where")
+		def tablesCreate = ''
 		if (sectionCreate.tables) {
-			tables_where = sectionCreate.tables
-			Logs.Info("Reverse tables: $tables_where")
+			tables_where = eval(sectionCreate.tables.toString())
 			if (projectionTables) {
-				def s = "Reverse projections by tables"
-				if (projectionKsafe != null) s += " with $projectionKsafe ksafe"
-				if (projectionAnalyzeSuper) s += " for analyze super projection and fix type if equal name from base table"
+				tablesCreate = ", option: reverse projections by tables"
+				if (projectionKsafe != null) tablesCreate += " with $projectionKsafe ksafe"
+				if (projectionAnalyzeSuper) tablesCreate += " for analyze super projection and fix type if equal name from base table"
 			}
 		}
-		if (sectionCreate.aggregate_projections) aggr_projections_where = sectionCreate.aggregate_projections; Logs.Info("Reverse aggregate projections: $aggr_projections_where")
-		if (sectionCreate.views) views_where = sectionCreate.views; Logs.Info("Reverse views: $views_where")
-		if (sectionCreate.sql_functions) sql_functions_where = sectionCreate.sql_functions; Logs.Info("Reverse sql functions: $sql_functions_where")
-		if (sectionCreate.grants) grants_where = sectionCreate.grants; Logs.Info("Reverse grants: $grants_where")
+		Logs.Info("Reverse tables: $tables_where$tablesCreate")
+//		if (sectionCreate.aggregate_projections) aggr_projections_where = sectionCreate.aggregate_projections; Logs.Info("Reverse aggregate projections: $aggr_projections_where")
+		if (sectionCreate.views) views_where = eval(sectionCreate.views.toString())
+		Logs.Info("Reverse views: $views_where")
+		if (sectionCreate.sql_functions) sql_functions_where = eval(sectionCreate.sql_functions.toString())
+		Logs.Info("Reverse sql functions: $sql_functions_where")
+		if (sectionCreate.grants) grants_where = eval(sectionCreate.grants.toString())
+		Logs.Info("Reverse grants: $grants_where")
 
 		Logs.Fine("Prepared structures ...")
 		initFiles()
 
-		cVertica.executeCommand(command: sqlPrepare,
-				queryParams: [pools: pools_where, roles: roles_where, users: users_where,
-							  schemas: schemas_where, sequences: sequences_where,
-							  tables: tables_where, views: views_where,
-							  sql_functions: sql_functions_where, grants: grants_where])
+		cVertica.executeCommand(command: sqlPrepare)
 
 		Logs.Fine("Read object model ...")
 		def count = 0
 
-		count = new Flow().copy(source: tPools, dest: hPools, inheritFields: true, createDest: true)
+		count = new Flow().copy(source: tPools, source_where: (pools_where && pools_where != 'false')?'1=1':'0=1',dest: hPools, inheritFields: true, createDest: true)
 		Logs.Fine("$count pools found")
 
-		count = new Flow().copy(source: tRoles, dest: hRoles, inheritFields: true, createDest: true)
+		count = new Flow().copy(source: tRoles, source_where: (roles_where && roles_where != 'false')?'1=1':'0=1', dest: hRoles, inheritFields: true, createDest: true)
 		Logs.Fine("$count roles found")
 
-		count = new Flow().copy(source: tUsers, dest: hUsers, inheritFields: true, createDest: true)
+		count = new Flow().copy(source: tUsers, source_where: (users_where && users_where != 'false')?'1=1':'0=1', dest: hUsers, inheritFields: true, createDest: true)
 		Logs.Fine("$count users found")
 
-		count = new Flow().copy(source: tSchemas, dest: hSchemas, inheritFields: true, createDest: true)
+		count = new Flow().copy(source: tSchemas, source_where: (schemas_where && schemas_where != 'false')?'1=1':'0=1', dest: hSchemas, inheritFields: true, createDest: true)
 		Logs.Fine("$count schemas found")
 
-		count = new Flow().copy(source: tSequences, dest: hSequences, inheritFields: true, createDest: true)
+		count = new Flow().copy(source: tSequences, source_where: (sequences_where && sequences_where != 'false')?'1=1':'0=1', dest: hSequences, inheritFields: true, createDest: true)
 		Logs.Fine("$count sequences found")
 
-		count = new Flow().copy(source: tTables, dest: hTables, inheritFields: true, createDest: true)
+		count = new Flow().copy(source: tTables, source_where: (tables_where && tables_where != 'false')?'1=1':'0=1', dest: hTables, inheritFields: true, createDest: true)
 		Logs.Fine("$count tables found")
 
-		count = new Flow().copy(source: tViews, dest: hViews, inheritFields: true, createDest: true)
+		count = new Flow().copy(source: tViews, source_where: (views_where && views_where != 'false')?'1=1':'0=1', dest: hViews, inheritFields: true, createDest: true)
 		Logs.Fine("$count views found")
 
-		count = new Flow().copy(source: tSQLFunctions, dest: hSQLFunctions, inheritFields: true, createDest: true)
+		count = new Flow().copy(source: tSQLFunctions, source_where: (sql_functions_where && sql_functions_where != 'false')?'1=1':'0=1', dest: hSQLFunctions, inheritFields: true, createDest: true)
 		Logs.Fine("$count sql functions found")
 
-		count = new Flow().copy(source: tGrants, dest: hGrants, inheritFields: true, createDest: true)
+		count = new Flow().copy(source: tGrants, source_where: (grants_where && grants_where != 'false')?'1=1':'0=1', dest: hGrants, inheritFields: true, createDest: true)
 		Logs.Fine("$count grants found")
+
+		cCache.executeCommand(command: "DELETE FROM pools WHERE NOT ($pools_where)")
+
+		cCache.executeCommand(command: "DELETE FROM roles WHERE NOT ($roles_where)")
+
+		cCache.executeCommand(command: "DELETE FROM users WHERE NOT ($users_where)")
+
+		cCache.executeCommand(command: "DELETE FROM schemas WHERE schema_owner <> 'dbadmin' AND schema_owner NOT IN (SELECT user_name FROM users)")
+		cCache.executeCommand(command: "DELETE FROM schemas WHERE NOT ($schemas_where)")
+
+		cCache.executeCommand(command: "DELETE FROM sequences WHERE owner_name <> 'dbadmin' AND owner_name NOT IN (SELECT user_name FROM users)")
+		cCache.executeCommand(command: "DELETE FROM sequences WHERE sequence_schema NOT IN (SELECT schema_name FROM schemas)")
+		cCache.executeCommand(command: "DELETE FROM sequences WHERE NOT ($sequences_where)")
+
+		cCache.executeCommand(command: "DELETE FROM tables WHERE owner_name <> 'dbadmin' AND owner_name NOT IN (SELECT user_name FROM users)")
+		cCache.executeCommand(command: "DELETE FROM tables WHERE table_schema NOT IN (SELECT schema_name FROM schemas)")
+		cCache.executeCommand(command: "DELETE FROM tables WHERE NOT ($tables_where)")
+
+		cCache.executeCommand(command: "DELETE FROM views WHERE owner_name <> 'dbadmin' AND owner_name NOT IN (SELECT user_name FROM users)")
+		cCache.executeCommand(command: "DELETE FROM views WHERE table_schema NOT IN (SELECT schema_name FROM schemas)")
+		cCache.executeCommand(command: "DELETE FROM views WHERE NOT ($views_where)")
+
+		cCache.executeCommand(command: "DELETE FROM sql_functions WHERE owner <> 'dbadmin' AND owner NOT IN (SELECT user_name FROM users)")
+		cCache.executeCommand(command: "DELETE FROM sql_functions WHERE schema_name NOT IN (SELECT schema_name FROM schemas)")
+		cCache.executeCommand(command: "DELETE FROM sql_functions WHERE NOT ($sql_functions_where)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'RESOURCEPOOL' AND object_name NOT IN (SELECT name from pools)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'ROLE' AND object_name NOT IN (SELECT name from roles)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'SCHEMA' AND object_name NOT IN (SELECT schema_name from schemas)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'SEQUENCE' AND NOT EXISTS(SELECT * from sequences WHERE sequence_schema = object_schema AND sequence_name = object_name)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'TABLE' AND NOT EXISTS(SELECT * from tables WHERE table_schema = object_schema AND table_name = object_name)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'VIEW' AND NOT EXISTS(SELECT * from views WHERE table_schema = object_schema AND table_name = object_name)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'PROCEDURE' AND NOT EXISTS(SELECT * from sql_functions WHERE schema_name = object_schema AND function_name = object_name)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE grantee NOT IN ('public', 'dbadmin') AND (grantee NOT IN (SELECT name from roles) AND grantee NOT IN (SELECT user_name from users))")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE NOT ($grants_where)")
+	}
+
+	/**
+	 * Finish reverse and clearing temp data
+	 */
+	public void doneReverse() {
+		cVertica.connected = false
+
+		hFiles.drop(ifExists: true)
+		hPools.drop(ifExists: true)
+		hRoles.drop(ifExists: true)
+		hUsers.drop(ifExists: true)
+		hSchemas.drop(ifExists: true)
+		hSequences.drop(ifExists: true)
+		hTables.drop(ifExists: true)
+		hViews.drop(ifExists: true)
+		hSQLFunctions.drop(ifExists: true)
+		hGrants.drop(ifExists: true)
+
+		cCache.connected = false
 	}
 
 	/**
@@ -656,22 +737,30 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		if (!jobArgs.containsKey('list') && !jobArgs.containsKey('script_path')) {
 			println '''
 Syntax:
-  getl.vertica.ReverseEngineering config.filename=<config file name> [list=<NONE|PRINT>] [script_path=<sql files path>]
+  getl.vertica.ReverseEngineering config.filename=<config file name> [list=<NONE|PRINT>] [clear=<true|false>] [script_path=<sql files path>]
 	
 list: print list of used objects (pools, roles, users, schemas, sequences, tables, views, sql_functions and grants)
+clear: clearing all scripts in destination directory before processing
   
 Example:
-  java -cp "libs/*" getl.vertica.ReverseEngineering config.filename=demo.conf list=print script_path=../sql/demo 
+  java -cp "libs/*" getl.vertica.ReverseEngineering config.filename=demo.conf list=print clear=false script_path=../sql/demo 
 '''
 			return
 		}
 
-		initReverse()
+		try {
+			initReverse()
+		}
+		catch (Exception e) {
+			doneReverse()
+			throw e
+		}
 
 		if (jobArgs.list != null) {
 			def l = jobArgs.list.toLowerCase()
 			if (!(l in ['none', 'print'])) {
 				Logs.Severe("Unknown list option \"$l\"")
+				doneReverse()
 				return
 			}
 			if (l == 'print') {
@@ -714,25 +803,41 @@ Example:
 		if (jobArgs.containsKey('script_path')) {
 			if (jobArgs.script_path == null) {
 				Logs.Severe('Required value from parameter "script_path"')
+				doneReverse()
 				return
 			}
 		}
 		else {
+			doneReverse()
 			return
 		}
 
 		scriptPath = FileUtils.ConvertToDefaultOSPath(jobArgs.script_path)
 		Logs.Info("Write script to \"$scriptPath\" directory")
+		FileUtils.ValidPath(scriptPath)
 
-		genPools()
-		genRoles()
-		genUsers()
-		genSchemas()
-		genSequences()
-		genTables()
-		genViews()
-		genSQLFunctions()
-		genGrants()
+		if (BoolUtils.IsValue(jobArgs.clear)) {
+			Logs.Info("Clearing the destination directory \"$scriptPath\"")
+			if (!FileUtils.DeleteFolder(jobArgs.script_path, false)) {
+				Logs.Severe("Can not clearing destination directory \"$scriptPath\"")
+				return
+			}
+		}
+
+		try {
+			genPools()
+			genRoles()
+			genUsers()
+			genSchemas()
+			genSequences()
+			genTables()
+			genViews()
+			genSQLFunctions()
+			genGrants()
+		}
+		finally {
+			doneReverse()
+		}
 	}
 
 	/**
@@ -744,17 +849,17 @@ Example:
 
 			if (r.name != 'general') {
 				if (BoolUtils.IsValue(sectionDrop.pools)) {
-					writeln"DROP RESOURCE POOL ${r.name};"
+					writeln"DROP RESOURCE POOL \"${r.name}\";"
 				}
-				writeln "CREATE RESOURCE POOL ${r.name};"
+				writeln "CREATE RESOURCE POOL \"${r.name}\";"
 				if (!poolEmpty) {
-					writeln "ALTER RESOURCE POOL ${r.name}"
+					writeln "ALTER RESOURCE POOL \"${r.name}\""
 					write parln('MEMORYSIZE', r.memorysize, true)
 					write parln('MAXMEMORYSIZE', r.maxmemorysize, true)
 				}
 			}
 			else {
-				if (!poolEmpty) writeln "ALTER RESOURCE POOL ${r.name}"
+				if (!poolEmpty) writeln "ALTER RESOURCE POOL \"${r.name}\""
 			}
 			if (!poolEmpty) {
 			   write parln('EXECUTIONPARALLELISM', r.executionparallelism)
@@ -770,7 +875,7 @@ Example:
 			   write parln('CASCADE TO', r.cascadeto)
 			}
 			if (r.name != 'general' || !poolEmpty) writeln ";"
-			writeln ''
+			if (isWriteln) writeln ''
 		}
 		Logs.Info("${hPools.readRows} pools generated")
 	}
@@ -783,9 +888,9 @@ Example:
 			setWrite('ROLES', fileNameRoles, [role: r.name])
 
 			if (BoolUtils.IsValue(sectionDrop.roles)) {
-			   writeln "DROP ROLE ${r.name} CASCADE;"
+			   writeln "DROP ROLE \"${r.name}\" CASCADE;"
 			}
-		   writeln "CREATE ROLE ${r.name};\n"
+		   writeln "CREATE ROLE \"${r.name}\";\n"
 		}
 		Logs.Info("${hRoles.readRows} roles generated")
 	}
@@ -797,34 +902,30 @@ Example:
 		hUsers.eachRow(order: ['Lower(user_name)']) { Map r ->
 			setWrite('USERS', fileNameUsers, [user: r.user_name])
 
-			if (r.user_name != 'dbadmin') {
+			if (r.user_name.toLowerCase() != 'dbadmin') {
 				if (BoolUtils.IsValue(sectionDrop.users)) {
-				   writeln "DROP USER ${r.user_name} CASCADE;"
+				   writeln "DROP USER \"${r.user_name}\" CASCADE;"
 				}
-			   writeln "CREATE USER ${r.user_name}"
+				writeln "CREATE USER \"${r.user_name}\""
 			}
-			else {
-			   writeln "ALTER USER ${r.user_name}"
+			else if (!userEmpty) {
+				writeln "ALTER USER \"${r.user_name}\""
 			}
+
 			if (!userEmpty) {
-			   write parln('RESOURCE POOL', r.resource_pool)
+			   write parln('RESOURCE POOL', "\"${r.resource_pool}\"")
 			   write statln('MEMORYCAP {val}', (r.memory_cap_kb == 'unlimited') ? null : (r.memory_cap_kb + 'K'), true)
 			   write statln('TEMPSPACECAP {val}', (r.temp_space_cap_kb == 'unlimited') ? null : (r.temp_space_cap_kb + 'K'), true)
 			   write parln('RUNTIMECAP', (r.run_time_cap == 'unlimited') ? null : r.run_time_cap, true)
 			}
-		   writeln ";"
-
-			def userRoles = procList(r.all_roles)
-			if (!userRoles.withoutGrant.isEmpty()) {
-			   writeln "\nGRANT ${userRoles.withoutGrant.join(', ')} TO ${r.user_name};"
-			}
+		   if (isWriteln) writeln ";"
 
 			def defaultRoles = procList(r.default_roles)
 			if (!defaultRoles.withoutGrant.isEmpty()) {
-			   writeln "\nALTER USER ${r.user_name} DEFAULT ROLE ${defaultRoles.withoutGrant.join(', ')};"
+			   writeln "\nALTER USER \"${r.user_name}\" DEFAULT ROLE ${ListUtils.QuoteList(defaultRoles.withoutGrant, '"').join(', ')};"
 			}
 
-			writeln ''
+			if (isWriteln) writeln ''
 		}
 		Logs.Info("${hUsers.readRows} users generated")
 	}
@@ -839,19 +940,19 @@ Example:
 
 			if (r.schema_name == 'public') return
 			if (BoolUtils.IsValue(sectionDrop.schemas)) {
-			   writeln "DROP SCHEMA ${r.schema_name} CASCADE;"
+			   writeln "DROP SCHEMA \"${r.schema_name}\" CASCADE;"
 			}
-		   writeln "CREATE SCHEMA ${r.schema_name} AUTHORIZATION ${r.schema_owner};\n"
+		   writeln "CREATE SCHEMA \"${r.schema_name}\" AUTHORIZATION ${r.schema_owner};\n"
 		}
-		writeln ''
+		if (isWriteln) writeln ''
 		hUsers.eachRow(order: ['Lower(user_name)']) { Map r ->
 			def p = procList(r.search_path, { return !(it in ['v_catalog', 'v_monitor', 'v_internal', 'public', '"$user"', ''])})
 			if (!p.withoutGrant.isEmpty()) {
 				if (!isOneFile) setWrite('USERS', fileNameUsers, [user: r.user_name])
-				writeln "ALTER USER ${r.user_name} SEARCH_PATH ${p.withoutGrant.join(', ')};"
+				writeln "ALTER USER \"${r.user_name}\" SEARCH_PATH ${ListUtils.QuoteList(p.withoutGrant, '"').join(', ')};"
 			}
 		}
-		writeln ''
+		if (isWriteln) writeln ''
 
 		Logs.Info("${hSchemas.readRows} schemas generated")
 	}
@@ -865,12 +966,12 @@ Example:
 
 			def name = objectName(r.sequence_schema, r.sequence_name)
 			if (BoolUtils.IsValue(sectionDrop.sequences)) {
-			   writeln "DROP SEQUENCE $name;"
+			   writeln "DROP SEQUENCE \"$name\";"
 			}
 		   writeln ddl(r.sequence_schema, r.sequence_name)
 			if (sequenceCurrent && r.current_value != null && r.current_value > 0)writeln "ALTER SEQUENCE $name RESTART WITH ${r.current_value};"
-			if (r.owner_name != curUser)writeln "\nALTER SEQUENCE $name OWNER TO ${r.owner_name};"
-			writeln ''
+			if (r.owner_name != curUser)writeln "\nALTER SEQUENCE \"$name\" OWNER TO ${r.owner_name};"
+			if (isWriteln) writeln ''
 		}
 		Logs.Info("${hSequences.readRows} sequences generated")
 	}
@@ -891,7 +992,7 @@ Example:
 			}
 			def stat = ddlTable(r.table_schema, r.table_name)
 		   writeln stat.create
-			if (r.owner_name != curUser && !r.is_temp_table) writeln "\nALTER TABLE $name OWNER TO ${r.owner_name};"
+			if (r.owner_name != curUser && !r.is_temp_table) writeln "\nALTER TABLE $name OWNER TO \"${r.owner_name}\";"
 			if (stat.alter != '') {
 				if (isOneFile) {
 					alter << stat.alter + '\n'
@@ -900,7 +1001,7 @@ Example:
 					writeln '\n' + stat.alter
 				}
 			}
-			writeln ''
+			if (isWriteln) writeln ''
 		}
 		if (alter.length() > 0) {
 		   writeln ''
@@ -923,8 +1024,8 @@ Example:
 				sql = 'CREATE OR REPLACE' + sql.substring(i)
 			}
 		   writeln sql
-			if (r.owner_name != curUser)writeln "\nALTER VIEW $name OWNER TO ${r.owner_name};"
-			writeln ''
+			if (r.owner_name != curUser)writeln "\nALTER VIEW $name OWNER TO \"${r.owner_name}\";"
+			if (isWriteln) writeln ''
 		}
 		Logs.Info("${hViews.readRows} views generated")
 	}
@@ -943,8 +1044,8 @@ Example:
 				sql = 'CREATE OR REPLACE' + sql.substring(i)
 			}
 			writeln sql
-			if (r.owner != curUser) writeln "\nALTER FUNCTION $name OWNER TO ${r.owner};"
-			writeln ''
+			if (r.owner != curUser) writeln "\nALTER FUNCTION $name OWNER TO \"${r.owner}\";"
+			if (isWriteln) writeln ''
 		}
 		Logs.Info("${hSQLFunctions.readRows} sql functions generated")
 	}
@@ -960,40 +1061,47 @@ Example:
 			switch (r.object_type) {
 				case 'RESOURCEPOOL':
 					if (fileNameGrants == null) setWrite('POOLS', fileNamePools, [pool: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty())writeln "\nGRANT ${priveleges.withoutGrant.join(', ')} ON RESOURCE POOL ${r.object_name} TO ${r.grantee};"
-					if (!priveleges.withGrant.isEmpty())writeln "\nGRANT ${priveleges.withGrant.join(', ')} ON RESOURCE POOL ${r.object_name} TO ${r.grantee} WITH GRANT OPTION;"
+					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON RESOURCE POOL \"${r.object_name}\" TO \"${r.grantee}\";"
+					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON RESOURCE POOL \"${r.object_name}\" TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'SCHEMA':
 					if (fileNameGrants == null) setWrite('SCHEMAS', fileNameSchemas, [schema: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty())writeln "\nGRANT ${priveleges.withoutGrant.join(', ')} ON SCHEMA ${r.object_name} TO ${r.grantee};"
-					if (!priveleges.withGrant.isEmpty())writeln "\nGRANT ${priveleges.withGrant.join(', ')} ON SCHEMA ${r.object_name} TO ${r.grantee} WITH GRANT OPTION;"
+					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON SCHEMA \"${r.object_name}\" TO \"${r.grantee}\";"
+					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON SCHEMA \"${r.object_name}\" TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'SEQUENCE':
 					if (fileNameGrants == null) setWrite('SEQUENCES', fileNameSequences, [schema: r.object_schema, sequence: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty())writeln "\nGRANT ${priveleges.withoutGrant.join(', ')} ON SEQUENCE ${objectName(r.object_schema, r.object_name)} TO ${r.grantee};"
-					if (!priveleges.withGrant.isEmpty())writeln "\nGRANT ${priveleges.withGrant.join(', ')} ON SEQUENCE ${objectName(r.object_schema, r.object_name)} TO ${r.grantee} WITH GRANT OPTION;"
+					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON SEQUENCE ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\";"
+					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON SEQUENCE ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'TABLE':
 					if (fileNameGrants == null) setWrite('TABLES', fileNameTables, [schema: r.object_schema, table: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty())writeln "\nGRANT ${priveleges.withoutGrant.join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO ${r.grantee};"
-					if (!priveleges.withGrant.isEmpty())writeln "\nGRANT ${priveleges.withGrant.join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO ${r.grantee} WITH GRANT OPTION;"
+					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\";"
+					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'VIEW':
 					if (fileNameGrants == null) setWrite('VIEWS', fileNameViews, [schema: r.object_schema, view: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty())writeln "\nGRANT ${priveleges.withoutGrant.join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO ${r.grantee};"
-					if (!priveleges.withGrant.isEmpty())writeln "\nGRANT ${priveleges.withGrant.join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO ${r.grantee} WITH GRANT OPTION;"
+					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\";"
+					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'PROCEDURE':
 					if (fileNameGrants == null) setWrite('SQL_FUNCTIONS', fileNameSQLFunctions, [schema: r.object_schema, sql_function: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty())writeln "\nGRANT ${priveleges.withoutGrant.join(', ')} ON FUNCTION ${objectName(r.object_schema, r.object_name)}($r.function_argument_type) TO ${r.grantee};"
-					if (!priveleges.withGrant.isEmpty())writeln "\nGRANT ${priveleges.withGrant.join(', ')} ON FUNCTION ${objectName(r.object_schema, r.object_name)}($r.function_argument_type) TO ${r.grantee} WITH GRANT OPTION;"
+					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON FUNCTION ${objectName(r.object_schema, r.object_name)}($r.function_argument_type) TO \"${r.grantee}\";"
+					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON FUNCTION ${objectName(r.object_schema, r.object_name)}($r.function_argument_type) TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'ROLE':
 					def grantee = r.grantee.toLowerCase()
 					def rows = hRoles.rows(where: "Lower(name) = '$grantee'")
 					if (!rows.isEmpty()) {
-						if (fileNameGrants == null) setWrite('ROLES', fileNameRoles, [role: grantee])
-						writeln "\nGRANT ${r.object_name} TO ${r.grantee};"
+						if (fileNameGrants == null) setWrite('ROLES', fileNameRoles, [role: r.grantee])
+						writeln "\nGRANT \"${r.object_name}\" TO \"${r.grantee}\";"
+					}
+					else {
+						rows = hUsers.rows(where: "Lower(user_name) = '$grantee'")
+						if (!rows.isEmpty()) {
+							if (fileNameGrants == null) setWrite('USERS', fileNameUsers, [user: r.grantee])
+							writeln "\nGRANT \"${r.object_name}\" TO \"${r.grantee}\";"
+						}
 					}
 					break
 				default:
