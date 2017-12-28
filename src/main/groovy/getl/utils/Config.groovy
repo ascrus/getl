@@ -24,6 +24,7 @@
 
 package getl.utils
 
+import getl.proc.Job
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 
@@ -117,6 +118,7 @@ class Config {
 	 */
 	@groovy.transform.Synchronized
 	public static void ClearConfig () {
+
 		content.clear()
 		content.vars = [:]
 	}
@@ -274,7 +276,7 @@ class Config {
 			if (!vars.isEmpty() && data instanceof Map) {
 				if (!data.isEmpty()) {
 					try {
-						data = MapUtils.EvalMacroValues(data, vars)
+						data = MapUtils.EvalMacroValues(data, vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
 					}
 					catch (MissingPropertyException e) {
 						Logs.Severe("${e.message}, avaible vars: ${vars.keySet().toList()}")
@@ -421,7 +423,7 @@ class Config {
 	@groovy.transform.Synchronized
 	public static void EvalConfig () {
 		def vars = (Config.content."vars" as Map)?:[:]
-		def evalContent = MapUtils.EvalMacroValues(Config.content, vars)
+		def evalContent = MapUtils.EvalMacroValues(Config.content, vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
 		Config.content.clear()
 		Config.content.putAll(evalContent)
 	}

@@ -36,13 +36,13 @@ abstract class Job {
 	/**
 	 * Job arguments
 	 */
-	public Map jobArgs
+	public static final Map jobArgs = [:] as Map<String, Object>
 	
 	/**
 	 * Job arguments (backward compatible) 
 	 * @return
 	 */
-	public Map getArgs() { jobArgs }
+	public static Map<String, Object> getArgs() { return jobArgs }
 	
 	private void processConfigArgs (def args) {
 		def m = MapUtils.ProcessArguments(args)
@@ -78,12 +78,18 @@ abstract class Job {
 				}
 			}
 		}
-		jobArgs = MapUtils.Copy(m, ['stdout', 'stderr', 'stdcodepage'])
+		jobArgs.clear()
+		jobArgs.putAll(MapUtils.Copy(m, ['stdout', 'stderr', 'stdcodepage']))
 		if (jobArgs.vars == null) jobArgs.vars = [:]
-//		Config.SetValue("job.args", MapUtils.Copy(m, ['stdout', 'stderr', 'stdcodepage']))
-		
+		jobVarsToConfig()
+	}
+
+	/**
+	 * Copy arguments variable to configuration content
+	 */
+	public static void jobVarsToConfig() {
 		// Set variables from arguments
-		jobArgs.vars.each { key, value ->
+		jobArgs.vars?.each { String key, value ->
 			Config.SetValue("vars.$key", value)
 		}
 	}

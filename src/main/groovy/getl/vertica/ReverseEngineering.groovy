@@ -34,6 +34,7 @@ import getl.utils.BoolUtils
 import getl.utils.Config
 import getl.utils.ConvertUtils
 import getl.utils.FileUtils
+import getl.utils.GenerationUtils
 import getl.utils.ListUtils
 import getl.utils.Logs
 import getl.utils.StringUtils
@@ -129,7 +130,7 @@ class ReverseEngineering extends Job {
 		AND f.schema_name NOT IN ('v_txtindex', 'txtindex') 
 		AND NOT (f.schema_name = 'public' AND f.function_name IN ('isOrContains')) 
 		AND f.function_definition ILIKE 'RETURN %\'''',
-				 where: '''Lower(object_type) <> 'database'
+				 where: '''Lower(object_type) NOT IN ('database', 'clientauthentication', 'library')
 	AND (Lower(object_type) <> 'procedure' OR (Lower(object_type) = 'procedure' AND f.function_name IS NOT NULL)) 
 	AND (object_type != 'SCHEMA' OR Lower(object_name) NOT IN ('v_catalog', 'v_internal', 'v_monitor', 'public', 'v_txtindex', 'v_temp_schema'))'''],
 	]
@@ -513,7 +514,11 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 	}
 
 	void write(String script) {
-		def filename = StringUtils.EvalMacroString(currentFileMask, currentVars).toLowerCase().replace('*', '_').replace('?', '_')
+		def v = [:] as Map<String, String>
+		currentVars.each { String var, String value ->
+			v.put(var, value.replace('*', '_').replace('?', '_').replace('/', '_').replace('\\', '_'))
+		}
+		def filename = StringUtils.EvalMacroString(currentFileMask, v).toLowerCase()
 		def filepath = "$scriptPath${File.separatorChar}${filename}.sql"
 
 		def row = cCache.sqlConnection.firstRow(statFilesFind, [filename])
@@ -533,6 +538,10 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 
 	void writeln(String script) {
 		write(script + '\n')
+	}
+
+	String eval(String val) {
+		return GenerationUtils.EvalGroovyScript('"""' + val.replace('"', '\\"') + '"""', Config.vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
 	}
 
 	/**
@@ -592,19 +601,19 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		def sql_functions_where = default_where
 		def grants_where = default_where
 
-		if (sectionCreate.pools) pools_where = sectionCreate.pools.toString();
+		if (sectionCreate.pools) pools_where = eval(sectionCreate.pools.toString())
 		Logs.Info("Reverse pools: $pools_where")
-		if (sectionCreate.roles) roles_where = sectionCreate.roles.toString();
+		if (sectionCreate.roles) roles_where = eval(sectionCreate.roles.toString())
 		Logs.Info("Reverse roles: $roles_where")
-		if (sectionCreate.users) users_where = sectionCreate.users.toString();
+		if (sectionCreate.users) users_where = eval(sectionCreate.users.toString())
 		Logs.Info("Reverse users: $users_where")
-		if (sectionCreate.schemas) schemas_where = sectionCreate.schemas.toString();
+		if (sectionCreate.schemas) schemas_where = eval(sectionCreate.schemas.toString())
 		Logs.Info("Reverse schemas: $schemas_where")
-		if (sectionCreate.sequences) sequences_where = sectionCreate.sequences.toString();
+		if (sectionCreate.sequences) sequences_where = eval(sectionCreate.sequences.toString())
 		Logs.Info("Reverse sequences: $sequences_where")
 		def tablesCreate = ''
 		if (sectionCreate.tables) {
-			tables_where = sectionCreate.tables.toString()
+			tables_where = eval(sectionCreate.tables.toString())
 			if (projectionTables) {
 				tablesCreate = ", option: reverse projections by tables"
 				if (projectionKsafe != null) tablesCreate += " with $projectionKsafe ksafe"
@@ -613,11 +622,11 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		}
 		Logs.Info("Reverse tables: $tables_where$tablesCreate")
 //		if (sectionCreate.aggregate_projections) aggr_projections_where = sectionCreate.aggregate_projections; Logs.Info("Reverse aggregate projections: $aggr_projections_where")
-		if (sectionCreate.views) views_where = sectionCreate.views.toString();
+		if (sectionCreate.views) views_where = eval(sectionCreate.views.toString())
 		Logs.Info("Reverse views: $views_where")
-		if (sectionCreate.sql_functions) sql_functions_where = sectionCreate.sql_functions.toString();
+		if (sectionCreate.sql_functions) sql_functions_where = eval(sectionCreate.sql_functions.toString())
 		Logs.Info("Reverse sql functions: $sql_functions_where")
-		if (sectionCreate.grants) grants_where = sectionCreate.grants.toString();
+		if (sectionCreate.grants) grants_where = eval(sectionCreate.grants.toString())
 		Logs.Info("Reverse grants: $grants_where")
 
 		Logs.Fine("Prepared structures ...")
@@ -681,13 +690,21 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		cCache.executeCommand(command: "DELETE FROM sql_functions WHERE NOT ($sql_functions_where)")
 
 		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'RESOURCEPOOL' AND object_name NOT IN (SELECT name from pools)")
+
 		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'ROLE' AND object_name NOT IN (SELECT name from roles)")
+
 		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'SCHEMA' AND object_name NOT IN (SELECT schema_name from schemas)")
-		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'SEQUENCE' AND object_schema NOT IN (SELECT schema_name from schemas)")
-		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'TABLE' AND object_schema NOT IN (SELECT schema_name from schemas)")
-		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'VIEW' AND object_schema NOT IN (SELECT schema_name from schemas)")
-		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'PROCEDURE' AND object_schema NOT IN (SELECT schema_name from schemas)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'SEQUENCE' AND NOT EXISTS(SELECT * from sequences WHERE sequence_schema = object_schema AND sequence_name = object_name)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'TABLE' AND NOT EXISTS(SELECT * from tables WHERE table_schema = object_schema AND table_name = object_name)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'VIEW' AND NOT EXISTS(SELECT * from views WHERE table_schema = object_schema AND table_name = object_name)")
+
+		cCache.executeCommand(command: "DELETE FROM grants WHERE object_type = 'PROCEDURE' AND NOT EXISTS(SELECT * from sql_functions WHERE schema_name = object_schema AND function_name = object_name)")
+
 		cCache.executeCommand(command: "DELETE FROM grants WHERE grantee NOT IN ('public', 'dbadmin') AND (grantee NOT IN (SELECT name from roles) AND grantee NOT IN (SELECT user_name from users))")
+
 		cCache.executeCommand(command: "DELETE FROM grants WHERE NOT ($grants_where)")
 	}
 
