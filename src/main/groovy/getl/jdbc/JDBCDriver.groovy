@@ -713,7 +713,7 @@ ${extend}'''
 	public void createDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
 		def tableName = fullNameDataset(dataset)
-		def tableType = dataset.sysParams.type
+		def tableType = dataset.sysParams.type as JDBCDataset.Type
 		if (!(tableType in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.MEMORY])) {
             throw new ExceptionGETL("Can not create dataset for type \"${tableType}\"")
         }
@@ -931,7 +931,7 @@ ${extend}'''
 	public void dropDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
 		def n = fullNameDataset(dataset)
-		def t = (dataset.sysParams.type in
+		def t = ((dataset.sysParams.type as JDBCDataset.Type) in
                     [JDBCDataset.Type.TABLE, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.GLOBAL_TEMPORARY,
                      JDBCDataset.Type.MEMORY])?"TABLE":(dataset.sysParams.type == JDBCDataset.Type.VIEW)?"VIEW":null
 		if (t == null) throw new ExceptionGETL("Can not support type object \"${dataset.sysParams.type}\"")

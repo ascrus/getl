@@ -62,7 +62,7 @@ class NumericUtils {
 	 * @return
 	 */
 	public static BigDecimal Round(BigDecimal value, Integer prec) {
-		if (value == null) return null
+		if (value == null) return null as BigDecimal
 		if (prec == null) return value
 		value.setScale(prec, BigDecimal.ROUND_HALF_UP)
 	}

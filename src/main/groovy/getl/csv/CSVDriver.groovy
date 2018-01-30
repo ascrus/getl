@@ -366,8 +366,8 @@ class CSVDriver extends FileDriver {
 				}
 			}
 		}
-		
-		(CellProcessor[])cp.toArray()
+
+		return cp.toArray() as CellProcessor[]
 	} 
 	
 	protected static String[] fields2header (List<Field> fields, List<String> writeFields) {
@@ -382,7 +382,7 @@ class CSVDriver extends FileDriver {
 				if (fi != null) header << v.name.toLowerCase()
 			}
 		} 
-		header.toArray()
+		return header.toArray()
 	}
 	
 	@groovy.transform.CompileStatic
