@@ -1,10 +1,13 @@
 package getl.csv
 
+import getl.data.Dataset
 import getl.data.Field
 import getl.proc.Flow
 import getl.tfs.TFS
+import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.FileUtils
+import getl.utils.GenerationUtils
 import getl.utils.NumericUtils
 
 import java.sql.Time
@@ -14,16 +17,16 @@ import java.sql.Time
  */
 class CSVDriverTest extends GroovyTestCase {
     static def fields = [
-            new Field(name: 'id', type: 'BIGINT', isKey: true),
-            new Field(name: 'name', type: 'STRING', isNull: false, length: 50),
-            new Field(name: 'date', type: 'DATE', isNull: false),
-            new Field(name: 'time', type: 'TIME', isNull: false, format: 'HH-mm-ss'),
-            new Field(name: 'datetime', type: 'DATETIME', isNull: false),
-            new Field(name: 'double', type: 'DOUBLE', isNull: false),
-            new Field(name: 'numeric', type: 'NUMERIC', isNull: false, length: 12, precision: 2),
-            new Field(name: 'boolean', type: 'BOOLEAN', isNull: false),
-            new Field(name: 'text', type: 'TEXT', length: 100),
-            new Field(name: 'blob', type: 'BLOB', length: 100)
+            new Field(name: 'ID', type: 'BIGINT', isKey: true),
+            new Field(name: 'Name', type: 'STRING', isNull: false, length: 50),
+            new Field(name: 'Date', type: 'DATE', isNull: false),
+            new Field(name: 'Time', type: 'TIME', isNull: false, format: 'HH-mm-ss'),
+            new Field(name: 'DateTime', type: 'DATETIME', isNull: false),
+            new Field(name: 'Double', type: 'DOUBLE', isNull: false),
+            new Field(name: 'Numeric', type: 'NUMERIC', isNull: false, length: 12, precision: 2),
+            new Field(name: 'Boolean', type: 'BOOLEAN', isNull: false),
+            new Field(name: 'Text', type: 'TEXT', length: 100),
+            new Field(name: 'Blob', type: 'BLOB', length: 100)
     ]
 
     static def conParams = [path: "${TFS.systemPath}/test_csv", createPath: true, extension: 'csv', codePage: 'utf-8']
@@ -82,11 +85,46 @@ class CSVDriverTest extends GroovyTestCase {
         }
         assertEquals(100, csv.writeRows)
         def csvCountRows = 0
-        csv.eachRow { csvCountRows++ }
+        csv.eachRow { Map row ->
+			assertNotNull(row.id)
+			assertNotNull(row.name)
+			assertNotNull(row.date)
+			assertNotNull(row.time)
+			assertNotNull(row.datetime)
+			assertNotNull(row.double)
+			assertNotNull(row.numeric)
+			assertNotNull(row.boolean)
+			assertNotNull(row.text)
+			assertNotNull(row.blob)
+
+			csvCountRows++
+		}
         assertEquals(200, csv.readRows)
         assertEquals(200, csvCountRows)
 
-        new Flow().writeTo(dest: csv, dest_splitSize: 10000) { updater ->
+		def csv_without_fields = new CSVDataset(connection: con, fileName: name, formatDateTime: DateUtils.defaultDateTimeMask, header: true)
+		csvCountRows = 0
+		csv_without_fields.eachRow { Map row ->
+			assertNotNull(row.id)
+			assertNotNull(row.name)
+			assertNotNull(row.date)
+			assertNotNull(row.time)
+			assertNotNull(row.datetime)
+			assertNotNull(row.double)
+			assertNotNull(row.numeric)
+			assertNotNull(row.boolean)
+			assertNotNull(row.text)
+			assertNotNull(row.blob)
+
+			csvCountRows++
+		}
+		assertEquals(200, csv_without_fields.readRows)
+		assertEquals(200, csvCountRows)
+		def origFieldNameList = Dataset.Fields2List(fields)
+		def newFieldNameList = Dataset.Fields2List(csv_without_fields.field)
+		assertEquals(newFieldNameList, origFieldNameList)
+
+		new Flow().writeTo(dest: csv, dest_splitSize: 10000) { updater ->
             (1..100).each { id ->
                 updater(generate_row(id))
             }
@@ -193,7 +231,5 @@ class CSVDriverTest extends GroovyTestCase {
 
         con = new CSVConnection(conParams + [escaped: true, header: true, isGzFile: false])
         validReadWrite(con, 'unix')
-
-
     }
 }

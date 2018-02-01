@@ -1,5 +1,6 @@
 package getl.excel
 
+import getl.data.Dataset
 import getl.data.Field
 
 class ExcelDriverTest extends GroovyTestCase {
@@ -20,10 +21,43 @@ class ExcelDriverTest extends GroovyTestCase {
 
     void testEachRow() {
         def counter = 0
-        excelDataset.eachRow {
+        excelDataset.eachRow { Map row ->
+			println row
+
+			assertNotNull(row.a)
+			assertTrue(row.a instanceof Integer)
+
+			assertNotNull(row.b)
+			assertTrue(row.b instanceof Integer)
+
+			assertNotNull(row.c)
+			assertTrue(row.c instanceof String)
+
             counter++
         }
 
+        assertEquals(2, counter)
+    }
+
+    void testEachRowWithoutFields() {
+        def counter = 0
+		def ds = new ExcelDataset(connection: connection, header: true)
+        ds.eachRow { Map row ->
+			assertNotNull(row.a)
+			assertTrue(row.a instanceof BigDecimal)
+
+			assertNotNull(row.b)
+			assertTrue(row.b instanceof BigDecimal)
+
+			assertNotNull(row.c)
+			assertTrue(row.c instanceof String)
+
+            counter++
+        }
+		assertEquals(Dataset.Fields2List(ds.field), Dataset.Fields2List(excelDataset.field))
+		assertEquals(ds.fieldByName('a').type, Field.Type.NUMERIC)
+		assertEquals(ds.fieldByName('b').type, Field.Type.NUMERIC)
+		assertEquals(ds.fieldByName('c').type, Field.Type.STRING)
         assertEquals(2, counter)
     }
 

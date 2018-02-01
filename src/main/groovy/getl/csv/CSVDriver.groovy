@@ -167,7 +167,7 @@ class CSVDriver extends FileDriver {
 		List<Field> fields = []
 		header.each { String name ->
 			if (name == null || name.length() == 0) throw new ExceptionGETL("Detected empty field name for $header")
-			fields << new Field(name: name.toLowerCase(), type: Field.Type.STRING)
+			fields << new Field(name: name/*.toLowerCase()*/, type: Field.Type.STRING)
 		}
 		return fields
 	}
@@ -375,11 +375,11 @@ class CSVDriver extends FileDriver {
 		def header = []
 		fields.each { v ->
 			if (writeFields.isEmpty()) {
-				header << v.name.toLowerCase()
+				header << v.name //.toLowerCase()
 			}
 			else {
 				def fi = writeFields.find { (it.toLowerCase() == v.name.toLowerCase()) }
-				if (fi != null) header << v.name.toLowerCase()
+				if (fi != null) header << v.name //.toLowerCase()
 			}
 		} 
 		return header.toArray()
@@ -442,9 +442,8 @@ class CSVDriver extends FileDriver {
 			List<Field> filefields = []
 			if (p.isHeader) {
 				header = reader.getHeader(true)
-				String[] header_new = header*.toLowerCase()
-//				header_new = header*.toLowerCase()
-				header = header_new
+//				String[] header_new = header*.toLowerCase()
+//				header = header_new
 				if (!ignoreHeader) {
 					filefields = header2fields(header)
 				}
@@ -455,7 +454,8 @@ class CSVDriver extends FileDriver {
 			else {
 				header = fields2header(dataset.field, null)
 			}
-				
+			header = header*.toLowerCase()
+
 			ArrayList<String> listFields = new ArrayList<String>()
 			if (prepareCode != null) {
 				listFields = (ArrayList<String>)prepareCode.call(filefields)
@@ -582,8 +582,9 @@ class CSVDriver extends FileDriver {
 			listFields = prepareCode([])
 		}
 		
-		wp.header = fields2header(csv_ds.field, listFields)
-		if (wp.header.length == 0) throw new ExceptionGETL('Required fields declare')
+		def header = fields2header(csv_ds.field, listFields)
+		if (header.length == 0) throw new ExceptionGETL('Required fields declare')
+		wp.header = header*.toLowerCase()
 
 		wp.params = params
 		wp.cp = fields2cellProcessor(
@@ -614,7 +615,7 @@ class CSVDriver extends FileDriver {
 		wp.writer = new CsvMapWriter(wp.bufWriter, wp.pref)
 
 		if ((!isAppend || !isExistsFile || wp.splitSize != null) && wp.isHeader) {
-			wp.writer.writeHeader(wp.header)
+			wp.writer.writeHeader(header)
 		}
 	}
 	
