@@ -484,7 +484,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static BigDecimal Timestamp2Value(Date value) {
-		if (value == null) return null
+		if (value == null) return null as BigDecimal
 
 		return Timestamp2Value(new java.sql.Timestamp(value.time))
 	}
@@ -495,7 +495,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static BigDecimal Timestamp2Value(java.sql.Timestamp value) {
-		if ((Object)value == null) return null
+		if ((Object)value == null) return null as BigDecimal
 
 		int offset = TimeZone.default.rawOffset
 		if (offset != 0) value = new java.sql.Timestamp(AddDate('sss', -offset, value).time)

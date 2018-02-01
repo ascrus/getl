@@ -51,12 +51,12 @@ class ExcelDriver extends Driver {
 
     @Override
     List<Driver.Support> supported() {
-        [Support.EACHROW, Support.AUTOLOADSCHEMA]
+        [Driver.Support.EACHROW, Driver.Support.AUTOLOADSCHEMA]
     }
 
     @Override
     List<Driver.Operation> operations() {
-        [Operation.DROP]
+        [Driver.Operation.DROP]
     }
 
     @Override
@@ -74,7 +74,6 @@ class ExcelDriver extends Driver {
         String fullPath = FileUtils.ConvertToDefaultOSPath(path + File.separator + fileName)
         boolean warnings = params.showWarnings
 
-        if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
         if (!path) throw new ExceptionGETL("Required \"path\" parameter with connection")
         if (!fileName) throw new ExceptionGETL("Required \"fileName\" parameter with connection")
         if (!FileUtils.ExistsFile(fullPath)) throw new ExceptionGETL("File \"${fileName}\" doesn't exists in \"${path}\"")
@@ -83,6 +82,7 @@ class ExcelDriver extends Driver {
 
         def ln = datasetParams.listName?:0
         def header = BoolUtils.IsValue([params.header, datasetParams.header], false)
+        if (dataset.field.isEmpty() && !header) throw new ExceptionGETL("Required fields description with dataset")
 		
 		def offset = params.offset?:datasetParams.offset
 
@@ -107,18 +107,76 @@ class ExcelDriver extends Driver {
 
         Iterator rows = sheet.rowIterator()
 
-        if (header) rows.next()
         if (offsetRows != 0) 1..offsetRows.each { rows.next() }
         int additionalRows = limit + offsetRows + (header?(1 as int):(0 as int))
 
+		def excelFields = [] as List<String>
+		def requiedParseField = dataset.field.isEmpty()
+		if (header) {
+			Row row = rows.next()
+			if (requiedParseField) {
+				Iterator cells = row.cellIterator()
+				def colNum = 0
+				cells.each { Cell cell ->
+					colNum++
+					if (offsetCells >= colNum) return
+					if (cell.cellType != cell.CELL_TYPE_STRING) throw new ExceptionGETL("Not string field name in header by $colNum col")
+					def fieldName = cell.stringCellValue?.trim()
+					if (fieldName == null || fieldName == '') throw new ExceptionGETL("Required field name in header by $colNum col")
+					excelFields << cell.stringCellValue
+				}
+
+				if (excelFields.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
+			}
+		}
+
+		def rowNum = 0
         rows.each { Row row ->
+			rowNum++
             if (row.rowNum >= additionalRows) return
+
             Iterator cells = row.cellIterator()
+			def colNum = 0
+			if (offsetCells != 0) 1..offsetCells.each {
+				colNum++
+				cells.next()
+			}
+
+			if (requiedParseField) {
+				def types = [] as List<String>
+				cells.each { Cell cell ->
+					colNum++
+					switch (cell.cellType) {
+						case cell.CELL_TYPE_STRING:
+							types << 'STRING'
+							break
+						case cell.CELL_TYPE_BOOLEAN:
+							types << 'BOOLEAN'
+							break
+						case cell.CELL_TYPE_NUMERIC:
+							types << 'NUMERIC'
+							break
+						default:
+							throw new ExceptionGETL("Unknown type cell from $rowNum row $colNum col")
+					}
+				}
+				if (types.size() != excelFields.size()) throw new ExceptionGETL("The number of fields in the header and in the next data line does not match")
+				for (int i = 0; i < excelFields.size(); i++) {
+					dataset.field << new Field(name: excelFields[i], type: types[i])
+				}
+				requiedParseField = false
+
+				cells = row.cellIterator()
+				colNum = 0
+				if (offsetCells != 0) 1..offsetCells.each {
+					colNum++
+					cells.next()
+				}
+			}
+
             LinkedHashMap<String, Object> updater = [:]
-
-            if (offsetCells != 0) 1..offsetCells.each { cells.next() }
-
             cells.each { Cell cell ->
+				colNum++
                 int columnIndex = cell.columnIndex - offsetCells
                 if (columnIndex >= dataset.field.size()) return
                 updater."${dataset.field.get(columnIndex).name}" = getCellValue(cell, dataset, columnIndex)
@@ -131,38 +189,54 @@ class ExcelDriver extends Driver {
         countRec
     }
 
-    private static getCellValue(final Cell cell, final Dataset dataset, final int columnIndex) {
+    private static def getCellValue(final Cell cell, final Dataset dataset, final int columnIndex) {
+		def res
         try{
             Field.Type fieldType = dataset.field.get(columnIndex).type
 
+
             switch (fieldType) {
                 case Field.Type.BIGINT:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue.toBigInteger())
-                    else cell.numericCellValue.toBigInteger()
+                    if (cell.cellType == Cell.CELL_TYPE_STRING)
+						res = (cell.stringCellValue.toBigInteger())
+                    else
+						res = cell.numericCellValue.toBigInteger()
+
                     break
                 case Field.Type.BOOLEAN:
-                    cell.booleanCellValue
+                    res = cell.booleanCellValue
+
                     break
                 case Field.Type.DATE:
-                    cell.dateCellValue
+                    res = cell.dateCellValue
+
                     break
                 case Field.Type.DATETIME:
-                    cell.dateCellValue
+                    res = cell.dateCellValue
+
                     break
                 case Field.Type.DOUBLE:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue.toDouble())
-                    else cell.numericCellValue
+                    if (cell.cellType == Cell.CELL_TYPE_STRING)
+						res = (cell.stringCellValue.toDouble())
+                    else
+						res = cell.numericCellValue
+
                     break
                 case Field.Type.INTEGER:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue.toInteger())
-                    else cell.numericCellValue.toInteger()
+                    if (cell.cellType == Cell.CELL_TYPE_STRING)
+						res = (cell.stringCellValue.toInteger())
+                    else
+						res = cell.numericCellValue.toInteger()
+
                     break
                 case Field.Type.NUMERIC:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING) (cell.stringCellValue.toBigDecimal())
-                    else cell.numericCellValue.toBigDecimal()
+                    if (cell.cellType == Cell.CELL_TYPE_STRING)
+						res = (cell.stringCellValue.toBigDecimal())
+                    else
+						res = cell.numericCellValue.toBigDecimal()
                     break
                 case Field.Type.STRING:
-                    cell.stringCellValue
+                    res = cell.stringCellValue
                     break
                 default:
                     throw new ExceptionGETL('Default field type not supported.')
@@ -172,6 +246,8 @@ class ExcelDriver extends Driver {
             Logs.Exception(e)
 			throw e
         }
+
+		return res
     }
 
     private static getWorkbookType(final String fileName) {

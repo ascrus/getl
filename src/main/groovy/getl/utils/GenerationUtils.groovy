@@ -725,7 +725,7 @@ sb << """
 	 * @param fields
 	 * @return
 	 */
-	public static List<String> Fields2List (JDBCDataset dataset, List<String> excludeFields) {
+	public static List<String> Fields2List (JDBCDataset dataset, List<String> excludeFields = null) {
 		if (dataset == null) return null
 		
 		def res = []
