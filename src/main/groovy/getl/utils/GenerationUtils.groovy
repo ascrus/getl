@@ -96,7 +96,7 @@ class GenerationUtils {
 	public static String GenerateEmptyValue(getl.data.Field.Type type, String variableName) {
 		String r
 		switch (type) {
-			case getl.data.Field.Type.STRING:
+			case getl.data.Field.Type.STRING: case getl.data.Field.Type.UUID:
 				r = "String ${variableName}"
 				break
 			case getl.data.Field.Type.BOOLEAN:
@@ -586,6 +586,9 @@ class GenerationUtils {
 //                result = new SerialBlob(GenerateString(l).bytes)
                 result = GenerateString(l).bytes
                 break
+			case getl.data.Field.Type.UUID:
+				result = UUID.randomUUID().toString()
+				break
 			default:
 				result = GenerateString(l)
 		}
@@ -908,7 +911,7 @@ sb << """
 		def len
 		def type = getl.data.Field.Type.STRING
 		switch (field.type) {
-			case getl.data.Field.Type.STRING: 
+			case getl.data.Field.Type.STRING:
 				break
 			case getl.data.Field.Type.ROWID:
 				field.length = 50
@@ -934,6 +937,10 @@ sb << """
 				break
 			case getl.data.Field.Type.NUMERIC:
 				len = (field.length?:50) + 1
+				break
+			case getl.data.Field.Type.UUID:
+				type = getl.data.Field.Type.STRING
+				len = 36
 				break
 			default:
 				throw new ExceptionGETL("Not support convert field type \"${field.type}\" to \"STRING\" from field \"${field.name}\"")

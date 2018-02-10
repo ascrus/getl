@@ -176,7 +176,7 @@ class CSVDriver extends FileDriver {
 											 			String formatDate, String formatTime, String formatDateTime, Boolean isValid) {
 		CellProcessor cp
 		
-		if (field.type == null || (field.type in [Field.Type.STRING, Field.Type.OBJECT, Field.Type.ROWID/*, Field.Type.TEXT*/])) {
+		if (field.type == null || (field.type in [Field.Type.STRING, Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
 			if (BoolUtils.IsValue(field.trim)) {
 				cp = new Trim()
 			}

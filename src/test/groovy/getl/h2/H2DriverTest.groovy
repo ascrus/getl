@@ -15,7 +15,7 @@ import getl.utils.GenerationUtils
  */
 class H2DriverTest extends JDBCDriverProto {
     @Override
-    protected JDBCConnection newCon() { return new TDS() }
+    protected JDBCConnection newCon() { return new TDS(/*sqlHistoryFile: 'c:/tmp/getl.test/h2.sql'*/) }
 
     public void testVersion() {
         def q = new QueryDataset(connection: con, query: 'SELECT H2Version() AS version')

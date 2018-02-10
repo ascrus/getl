@@ -4,8 +4,11 @@ import getl.data.*
 import getl.driver.Driver
 import getl.proc.Flow
 import getl.tfs.TFS
+import getl.utils.Config
 import getl.utils.DateUtils
+import getl.utils.FileUtils
 import getl.utils.GenerationUtils
+import getl.utils.Logs
 import getl.utils.NumericUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
@@ -17,6 +20,13 @@ import java.sql.Time
  */
 @InheritConstructors
 abstract class JDBCDriverProto extends GroovyTestCase {
+	def static configName = 'tests/jdbc/setup.conf'
+	void setUp() {
+		if (!FileUtils.ExistsFile(configName)) return
+		Config.LoadConfig(configName)
+		Logs.Init()
+	}
+
     private static final countRows = 100
     private JDBCConnection _con
     abstract protected JDBCConnection newCon()
@@ -35,11 +45,12 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 new Field(name: 'double', type: 'DOUBLE', isNull: false),
                 new Field(name: 'date', type: 'DATE', isNull: false),
                 new Field(name: 'time', type: 'TIME', isNull: false),
-                new Field(name: 'flag', type: 'BOOLEAN', isNull: false, defaultValue: true)
+                new Field(name: 'flag', type: 'BOOLEAN', isNull: false, defaultValue: 1)
             ]
 
-        if (con != null && con.driver.isSupport(Driver.Support.BLOB)) res << new Field(name: 'data', type: 'BLOB', length: 1024)
-        if (con != null && con.driver.isSupport(Driver.Support.CLOB)) res << new Field(name: 'text', type: 'TEXT', length: 1024)
+        if (con != null && con.driver.isSupport(Driver.Support.BLOB)) res << new Field(name: 'data', type: 'BLOB', length: 1024, isNull: false)
+        if (con != null && con.driver.isSupport(Driver.Support.CLOB)) res << new Field(name: 'text', type: 'TEXT', length: 1024, isNull: false)
+		if (con != null && con.driver.isSupport(Driver.Support.UUID)) res << new Field(name: 'uniqueid', type: 'UUID', isNull: false)
 
         return res
     }
@@ -71,6 +82,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         else {
             table.create()
         }
+
         assertTrue(table.exists)
     }
 
@@ -121,7 +133,22 @@ abstract class JDBCDriverProto extends GroovyTestCase {
     private void retrieveFields() {
         table.field.clear()
         table.retrieveFields()
-        assertEquals(fields, table.field)
+
+		def origFields = fields.clone()
+		origFields.each {Field f ->
+			f.defaultValue = null
+			if (f.type == Field.Type.TEXT) f.type = Field.Type.STRING
+		}
+		def dsFields = table.field.clone()
+		dsFields.each {Field f ->
+			f.defaultValue = null
+			f.dbType = null
+			f.typeName = null
+
+			if (f.type == Field.Type.TEXT) f.type = Field.Type.STRING
+		}
+
+        assertEquals(origFields, dsFields)
     }
 
     private void insertData() {
@@ -136,6 +163,20 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         }
         assertEquals(countRows, count)
         validCount()
+
+		table.eachRow(order: ['id1']) { r ->
+			assertNotNull(r.id1)
+			assertNotNull(r.id2)
+			assertNotNull(r.name)
+			assertNotNull(r.value)
+			assertNotNull(r.double)
+			assertNotNull(r.date)
+			assertNotNull(r.time)
+			assertNotNull(r.flag)
+			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
+			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
+			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
+		}
     }
 
     private void updateData() {
@@ -152,6 +193,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 nr.flag = GenerationUtils.GenerateBoolean()
                 nr.text = GenerationUtils.GenerateString(1024)
                 nr.data = GenerationUtils.GenerateString(512).bytes
+				nr.uniqueid = UUID.randomUUID().toString()
 
                 updater(nr)
             }
@@ -159,14 +201,19 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         assertEquals(countRows, count)
         validCount()
 
-        def i = 0
+		def i = 0
         table.eachRow(order: ['id1']) { r ->
             assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' update', r.name)
             assertEquals(rows[i].value + 1, r.value)
-            assertEquals(rows[i].double + 1.00, r.double)
+			assertNotNull(r.double)
             assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
             assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
-            i++
+			assertNotNull(r.flag)
+			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
+			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
+			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
+
+			i++
         }
     }
 
@@ -184,6 +231,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 nr.flag = GenerationUtils.GenerateBoolean()
                 nr.text = GenerationUtils.GenerateString(1024)
                 nr.data = GenerationUtils.GenerateString(512).bytes
+				nr.uniqueid = UUID.randomUUID().toString()
 
                 updater(nr)
             }
@@ -191,14 +239,19 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         assertEquals(countRows, count)
         validCount()
 
-        def i = 0
+		def i = 0
         table.eachRow(order: ['id1']) { r ->
             assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' merge', r.name)
             assertEquals(rows[i].value + 1, r.value)
-            assertEquals(rows[i].double + 1.00, r.double)
+			assertNotNull(r.double)
             assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
             assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
-            i++
+			assertNotNull(r.flag)
+			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
+			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
+			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
+
+			i++
         }
     }
 
@@ -233,10 +286,10 @@ abstract class JDBCDriverProto extends GroovyTestCase {
 
     private void runCommandUpdate() {
         con.startTran()
-        def count = con.executeCommand(command: "UPDATE ${table.fullNameDataset()} SET double = double + 1", isUpdate: true)
+        def count = con.executeCommand(command: "UPDATE ${table.fullNameDataset()} SET ${table.sqlObjectName('double')} = ${table.sqlObjectName('double')} + 1", isUpdate: true)
         assertEquals(countRows, count)
         con.commitTran()
-        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE double IS NULL")
+        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('double')} IS NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
     }

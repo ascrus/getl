@@ -89,13 +89,13 @@ class OracleDriver extends JDBCDriver {
 	 * @return
 	 */
 	@Override
-	public String prepareObjectNameWithPrefix(String name, String prefix) {
+	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null) {
 		if (name == null) return null
 		
 		String res
 		
 		def m = name =~ /([^a-zA-Z0-9_])/
-		if (m.size() > 0) res = prefix + name + prefix else res = prefix + name.toUpperCase() + prefix
+		if (m.size() > 0) res = prefix + name + prefixEnd?:prefix else res = prefix + name.toUpperCase() + (prefixEnd?:prefix)
 		
 		return res
 	}
@@ -185,7 +185,7 @@ class OracleDriver extends JDBCDriver {
 			if (field.typeName.matches("(?i)NCLOB")) {
 				field.type = Field.Type.TEXT
 				field.dbType = java.sql.Types.NCLOB
-//				return
+				return
 			}
 		}
 	}

@@ -160,7 +160,8 @@ class JDBCDriver extends Driver {
 				res = Field.Type.NUMERIC
 				break
 				
-			case java.sql.Types.BLOB: case java.sql.Types.VARBINARY: case java.sql.Types.LONGVARBINARY:   
+			case java.sql.Types.BLOB: case java.sql.Types.VARBINARY:
+			case java.sql.Types.LONGVARBINARY: case java.sql.Types.BINARY:
 				res = Field.Type.BLOB
 				break
 				
@@ -233,6 +234,9 @@ class JDBCDriver extends Driver {
 			case Field.Type.ROWID:
 				result = java.sql.Types.ROWID
 				break
+			case Field.Type.UUID:
+				result = java.sql.Types.VARCHAR
+				break
 			default:
 				throw new ExceptionGETL("Not supported type ${type}")
 		}
@@ -258,6 +262,7 @@ class JDBCDriver extends Driver {
 			DATETIME: [name: 'timestamp'],
 			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
 			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
+			UUID: [name: 'uuid'],
 			OBJECT: [name: 'object']
 		]
 	}
@@ -700,6 +705,7 @@ ${extend}'''
 	protected String sqlAutoIncrement = null
 	
 	protected boolean commitDDL = false
+	protected boolean transactionalDDL = false
 	
 	protected String caseObjectName = "NONE" // LOWER OR UPPER
 	protected String defaultDBName = null
@@ -765,7 +771,7 @@ ${extend}'''
 
 		String createTableCode = '"""' + sqlCreateTable + '"""'
 		
-		if (commitDDL) startTran()
+		if (commitDDL && transactionalDDL) startTran()
 		try {
 			def varsCT = [  temporary: temporary, 
 							ifNotExists: ifNotExists, 
@@ -776,7 +782,7 @@ ${extend}'''
 			def sqlCodeCT = GenerationUtils.EvalGroovyScript(createTableCode, varsCT)
 	//		println sqlCodeCT
 			executeCommand(sqlCodeCT, p)
-			
+
 			if (params.indexes != null && !params.indexes.isEmpty()) {
 				if (!isSupport(Driver.Support.INDEX)) throw new ExceptionGETL("Driver not support indexes")
 				params.indexes.each { name, value ->
@@ -793,16 +799,30 @@ ${extend}'''
 									columns: idxCols.join(",")
 									]
 					def sqlCodeCI = GenerationUtils.EvalGroovyScript(createIndexCode, varsCI)
+
+					if (commitDDL) {
+						if (transactionalDDL) {
+							commitTran()
+							startTran()
+						} else {
+							executeCommand('COMMIT')
+						}
+					}
+
 					executeCommand(sqlCodeCI, p)
 				}
 			}
 		}
 		catch (Throwable e) {
-			if (commitDDL) rollbackTran()
+			if (commitDDL) {
+				if (transactionalDDL) rollbackTran()
+			}
 			throw e
 		}
 		
-		if (commitDDL) commitTran()
+		if (commitDDL) {
+			if (transactionalDDL) commitTran() else executeCommand('COMMIT')
+		}
 	}
 
 	/**
@@ -836,13 +856,15 @@ ${extend}'''
 	 * Prefix for tables name
 	 */
 	public String tablePrefix = '"'
+	public String tableEndPrefix
 
 	/**
 	 * Prefix for fields name
 	 */
 	public String fieldPrefix = '"'
+	public String fieldEndPrefix
 
-	public String prepareObjectNameWithPrefix(String name, String prefix) {
+	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null) {
 		if (name == null) return null
 		String res
 		switch (caseObjectName) {
@@ -856,7 +878,7 @@ ${extend}'''
 				res = name
 		}
 		
-		return prefix + res + prefix
+		return prefix + res + (prefixEnd?:prefix)
 	}
 	
 	/**
@@ -869,15 +891,15 @@ ${extend}'''
 	}
 	
 	public String prepareObjectNameForSQL(String name) {
-		return prepareObjectNameWithPrefix(name, fieldPrefix)
+		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix)
 	}
 	
 	public String prepareFieldNameForSQL(String name) {
-		return prepareObjectNameWithPrefix(name, fieldPrefix)
+		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix)
 	}
 	
 	public String prepareTableNameForSQL(String name) {
-		return prepareObjectNameWithPrefix(name, tablePrefix)
+		return prepareObjectNameWithPrefix(name, tablePrefix, tableEndPrefix)
 	}
 	
 	public String prepareObjectNameWithEval(String name) {
@@ -895,9 +917,19 @@ ${extend}'''
         JDBCDataset ds = dataset as JDBCDataset
 		
 		def r = prepareTableNameForSQL(ds.params.tableName as String)
-		if (ds.schemaName != null) r = prepareTableNameForSQL(ds.schemaName) +'.' + r
+
+		def schemaName = ds.schemaName
+		if (schemaName == null &&
+				(dataset.sysParams.type as JDBCDataset.Type) == JDBCDataset.Type.TABLE && defaultSchemaName != null) {
+			schemaName = defaultSchemaName
+		}
+
+		if (schemaName != null) {
+			r = prepareTableNameForSQL(schemaName) +'.' + r
+		}
+
 		if (ds.dbName != null) {
-			if (ds.schemaName != null) {
+			if (schemaName != null) {
 				r = prepareTableNameForSQL(ds.dbName) + '.' + r
 			}
 			else {
@@ -1194,6 +1226,10 @@ ${extend}'''
 			if (rowCopy != null) Logs.Dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
 			throw e
 		}
+		catch (Exception e) {
+			if (rowCopy != null) Logs.Dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
+			throw e
+		}
 		
 		if (fetchSize != null) {
 			sqlConnect.withStatement { Statement stmt ->
@@ -1239,7 +1275,7 @@ $sql
 	}
 
 	@Override
-	public long executeCommand(String command, Map params) {
+	public long executeCommand(String command, Map params = [:]) {
 		def result = 0
 		
 		if (command == null || command.trim().length() == 0) return result

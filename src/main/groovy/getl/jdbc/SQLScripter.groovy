@@ -176,7 +176,7 @@ public class SQLScripter {
 			sql = sql.substring(4).trim()
 			typeSql = TypeCommand.FOR
 		} else if (sql.matches("(?is)if(\\s|\\n|\\t).*")) {
-			sql = "SELECT true AS result WHERE " + sql.substring(3).trim()
+			sql = "SELECT 1 AS result WHERE " + sql.substring(3).trim()
 			typeSql = TypeCommand.IF
 		} else if (sql.matches("(?is)error(\\s|\\t).*")) {
 			sql = sql.substring(6).trim()

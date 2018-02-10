@@ -16,7 +16,7 @@ class DateUtilsTest extends GroovyTestCase {
         def date2 = DateUtils.Now()
         def hour2 = DateUtils.PartOfDate('hour', date2)
 
-        assertEquals(hour1, hour2 + 3)
+        assertEquals(hour1, (hour2 + 3 < 24)?(hour2 + 3):(hour2 + 3 - 24))
 
         DateUtils.castTimeZone = true
         DateUtils.defaultTimeZone = 'Europe/Moscow'
