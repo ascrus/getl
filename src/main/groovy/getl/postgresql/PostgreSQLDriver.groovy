@@ -25,6 +25,7 @@
 package getl.postgresql
 
 import getl.data.Dataset
+import getl.data.Field
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
 import groovy.transform.InheritConstructors
@@ -44,7 +45,8 @@ class PostgreSQLDriver extends JDBCDriver {
 	public List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.LOCAL_TEMPORARY,
-				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
+				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX,
+				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
 	}
 
     @Override
@@ -62,6 +64,15 @@ class PostgreSQLDriver extends JDBCDriver {
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} TO {value}' }
 
 	@Override
+	protected String sessionID() {
+		String res = null
+		def rows = sqlConnect.rows('SELECT pg_backend_pid() AS session_id')
+		if (!rows.isEmpty()) res = rows[0].session_id.toString()
+
+		return res
+	}
+
+	@Override
 	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		def res = (List<String>)[]
 		if (params.limit != null) {
@@ -74,4 +85,80 @@ class PostgreSQLDriver extends JDBCDriver {
 			dir.afterOrderBy = res.join('\n')
 		}
 	}
+
+	@Override
+	public Map getSqlType () {
+		Map res = super.getSqlType()
+		res.BLOB.name = 'bytea'
+		res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER
+		res.TEXT.name = 'text'
+		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
+
+		return res
+	}
+
+	@Override
+	public void prepareField (Field field) {
+		super.prepareField(field)
+
+		if (field.type == Field.Type.BLOB) {
+			field.length = null
+			field.precision = null
+			return
+		}
+
+		if (field.typeName != null) {
+			if (field.typeName.matches("(?i)UUID")) {
+				field.type = Field.Type.UUID
+				field.dbType = java.sql.Types.OTHER
+				field.length = 36
+				field.precision = null
+//				field.getMethod = '{field}.toString()'
+				return
+			}
+
+			if (field.typeName.matches("(?i)TEXT")) {
+				field.type = Field.Type.TEXT
+				field.dbType = java.sql.Types.CLOB
+				field.length = null
+				field.precision = null
+				return
+			}
+		}
+	}
+
+	@Override
+	public boolean blobReadAsObject () { return false }
+
+	@Override
+	public String blobMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.BLOB) 
+	}
+	else {
+		def stream = new ByteArrayInputStream(value)
+		stat.setBinaryStream(paramNum, stream, value.length)
+		stream.close()
+	}
+}"""
+	}
+
+	@Override
+	public boolean textReadAsObject() { return false }
+
+	@Override
+	public String textMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.CLOB) 
+	}
+	else {
+		stat.setString(paramNum, value)
+	} 
+}"""
+	}
+
+	@Override
+	public boolean uuidReadAsObject() { return true }
 }

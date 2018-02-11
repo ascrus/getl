@@ -60,7 +60,7 @@ class H2Driver extends JDBCDriver {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.LOCAL_TEMPORARY, Driver.Support.MEMORY,
 				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX,
-				 Driver.Support.UUID]
+				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
 	}
 
 	@Override
@@ -250,6 +250,20 @@ VALUES(${GenerationUtils.SqlFields(dataset.connection as JDBCConnection, fields,
 				field.type = Field.Type.UUID
 				field.dbType = java.sql.Types.VARCHAR
 				field.length = 36
+				field.precision = null
+				return
+			}
+
+			if (field.typeName.matches("(?i)BLOB")) {
+				field.type = Field.Type.BLOB
+				field.dbType = java.sql.Types.BLOB
+				field.precision = null
+				return
+			}
+
+			if (field.typeName.matches("(?i)CLOB")) {
+				field.type = Field.Type.TEXT
+				field.dbType = java.sql.Types.CLOB
 				field.precision = null
 				return
 			}

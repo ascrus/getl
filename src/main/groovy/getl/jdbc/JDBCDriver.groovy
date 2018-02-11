@@ -82,23 +82,53 @@ class JDBCDriver extends Driver {
 	}
 	
 	/**
-	 * Class name for generate write data to blob field
+	 * Script for write array of bytes to serial blob object
 	 * @return
 	 */
-	public String blobClosureWrite() { '{ byte[] value -> new javax.sql.rowset.serial.SerialBlob(value) }' }
-	
+	public String blobMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.BLOB) 
+	}
+	else {
+		stat.setBlob(paramNum, new javax.sql.rowset.serial.SerialBlob(value))
+	} 
+}"""
+	}
+
 	/**
 	 * Blob field return value as Blob interface
 	 * @return
 	 */
-	public boolean blobReadAsObject() { true }
+	public boolean blobReadAsObject() { return true }
 	
 	/**
 	 * Class name for generate write data to clob field
 	 * @return
 	 */
-	public String clobClosureWrite() { '{ String value -> new javax.sql.rowset.serial.SerialClob(value.toCharArray()) }' }
-	
+	public String textMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.CLOB) 
+	}
+	else {
+		stat.setClob(paramNum, new javax.sql.rowset.serial.SerialClob(value.toCharArray()))
+	} 
+}"""
+	}
+
+	/**
+	 * Clob field return value as Clob interface
+	 * @return
+	 */
+	public boolean textReadAsObject() { return true }
+
+	/**
+	 * UUID field return value as UUID interface
+	 * @return
+	 */
+	public boolean uuidReadAsObject() { return false }
+
 	/**
 	 * Java field type association
 	 */
@@ -114,7 +144,7 @@ class JDBCDriver extends Driver {
 			TEXT: [java.sql.Types.CLOB, java.sql.Types.NCLOB, java.sql.Types.LONGNVARCHAR, java.sql.Types.LONGVARCHAR],
 			DATE: [java.sql.Types.DATE],
 			TIME: [java.sql.Types.TIME/*, java.sql.Types.TIME_WITH_TIMEZONE*/],
-			TIMESTAMP: [java.sql.Types.TIMESTAMP/*, java.sql.Types.TIMESTAMP_WITH_TIMEZONE*/]
+			TIMESTAMP: [java.sql.Types.TIMESTAMP/*, java.sql.Types.TIMESTAMP_WITH_TIMEZONE*/],
 		]
 	}
 	
@@ -129,7 +159,7 @@ class JDBCDriver extends Driver {
 	void prepareField (Field field) {
 		if (field.dbType == null) return
 		if (field.type != null && field.type != Field.Type.STRING) return
-		
+
 		Field.Type res
 		
 		Integer t = (Integer)field.dbType
@@ -235,7 +265,7 @@ class JDBCDriver extends Driver {
 				result = java.sql.Types.ROWID
 				break
 			case Field.Type.UUID:
-				result = java.sql.Types.VARCHAR
+				result = java.sql.Types.OTHER
 				break
 			default:
 				throw new ExceptionGETL("Not supported type ${type}")
@@ -255,7 +285,7 @@ class JDBCDriver extends Driver {
 			INTEGER: [name: 'int'],
 			BIGINT: [name: 'bigint'],
 			NUMERIC: [name: 'decimal', useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.SOMETIMES],
-			DOUBLE: [name: 'double'],
+			DOUBLE: [name: 'double precision'],
 			BOOLEAN: [name: 'boolean'],
 			DATE: [name: 'date'],
 			TIME: [name: 'time'],
@@ -715,6 +745,11 @@ ${extend}'''
 	protected String localTemporaryTablePrefix = 'LOCAL TEMPORARY'
 	protected String memoryTablePrefix = 'MEMORY'
 
+	/**
+	 * Name dual system table
+	 */
+	public String getSysDualTable() { return null }
+
 	@Override
 	public void createDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
@@ -749,6 +784,10 @@ ${extend}'''
 		def defPrimary = GenerationUtils.SqlKeyFields(connection as JDBCConnection, dataset.field, null, null)
 		dataset.field.each { Field f ->
 			try {
+				if (f.type == Field.Type.BOOLEAN && !isSupport(Driver.Support.BOOLEAN)) throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")")
+				if (f.type == Field.Type.DATE && !isSupport(Driver.Support.DATE)) throw new ExceptionGETL("Driver not support date fields (field \"${f.name}\")")
+				if (f.type == Field.Type.TIME && !isSupport(Driver.Support.TIME)) throw new ExceptionGETL("Driver not support time fields (field \"${f.name}\")")
+				if (f.type == Field.Type.UUID && !isSupport(Driver.Support.UUID)) throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")")
                 if (f.type == Field.Type.BLOB && !isSupport(Driver.Support.BLOB)) throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")")
                 if (f.type == Field.Type.TEXT && !isSupport(Driver.Support.CLOB)) throw new ExceptionGETL("Driver not support clob fields (field \"${f.name}\")")
 
@@ -969,9 +1008,25 @@ ${extend}'''
 		if (t == null) throw new ExceptionGETL("Can not support type object \"${dataset.sysParams.type}\"")
 		def e = (params.ifExists != null && params.ifExists)?"IF EXISTS ":""
 		def q = "DROP ${t} ${e}${n}"
-		
-		executeCommand(q, [:])
-		if (commitDDL) sqlConnect.commit()
+
+		if (commitDDL && transactionalDDL) startTran()
+		try {
+			executeCommand(q, [:])
+		}
+		catch (Throwable err) {
+			if (commitDDL) {
+				if (transactionalDDL) rollbackTran()
+			}
+			throw err
+		}
+
+		if (commitDDL) {
+			if (transactionalDDL) {
+				commitTran()
+			} else {
+				executeCommand('COMMIT')
+			}
+		}
 	}
 	
 	public static boolean isTable(Dataset dataset) {
@@ -1368,6 +1423,14 @@ $sql
 		(1..countMethod).each { sb << "	method_${it}(_getl_driver, _getl_con, _getl_stat, _getl_row)\n" }
 		sb << "}\n"
 
+		def isExistsBlob = false
+		def isExistsClob = false
+		procFields.each { Field f ->
+			if (f.type == Field.Type.BLOB) isExistsBlob = true else if (f.type == Field.Type.TEXT) isExistsClob = true
+		}
+		if (isExistsBlob) sb  << blobMethodWrite('blobWrite'); sb << '\n'
+		if (isExistsClob) sb  << textMethodWrite('clobWrite'); sb << '\n'
+
 		// PreparedStatement stat
 		def curField = 0
 		procFields.each { Field f ->
@@ -1380,13 +1443,13 @@ $sql
 			if (fieldMethod != curMethod) {
 				if (curMethod > 0) sb << "}\n"
 				curMethod = fieldMethod
-				sb << "\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
+				sb << "\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection _getl_con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
 			}
 
 			def fn = f.name.toLowerCase()
 			def dbType = (f.dbType != null)?f.dbType:type2dbType(f.type)
 
-			sb << GenerationUtils.GenerateSetParam(this, statIndex + 1, dbType as Integer, new String("_getl_row.'${fn}'"))
+			sb << GenerationUtils.GenerateSetParam(this, statIndex + 1, f, dbType as Integer, new String("_getl_row.'${fn}'"))
 			sb << "\n"
 		}
 		sb << "}"

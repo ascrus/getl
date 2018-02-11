@@ -42,7 +42,7 @@ class OracleDriver extends JDBCDriver {
 	OracleDriver () {
 		super()
 		caseObjectName = 'UPPER'
-		sqlType.BIGINT.name = 'number'
+		commitDDL = true
 
 		methodParams.register("eachRow", ["scn", "timestamp", "hints", "usePartition"])
 	}
@@ -50,35 +50,57 @@ class OracleDriver extends JDBCDriver {
 	@Override
 	public List<Driver.Support> supported() {
 		return super.supported() +
-				[Driver.Support.GLOBAL_TEMPORARY,
-                 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
+				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB,
+				 Driver.Support.CLOB, Driver.Support.INDEX]
 	}
 	
 	@Override
 	public List<Driver.Operation> operations() {
         return super.operations() +
-                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
-                 Driver.Operation.BULKLOAD]
+                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
 	
 	@Override
-	public String blobClosureWrite () {
-        return
-            '{ byte[] value -> def blob = _getl_con.createBlob(); def stream = blob.getBinaryOutputStream(); stream.write(value); stream.close(); blob }'
+	public String blobMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.BLOB) 
+	}
+	else {
+		def blob = con.createBlob()
+		def stream = blob.getBinaryOutputStream()
+		stream.write(value)
+		stream.close()
+		stat.setBlob(paramNum, /*new javax.sql.rowset.serial.SerialBlob(blob)*/blob)
+	}
+}"""
     }
 	
 	@Override
 	public boolean blobReadAsObject () { return false }
 	
 	@Override
-	public String clobClosureWrite () { return '{ String value -> def clob = _getl_con.createClob(); clob.setString(1, value); clob }' }
+	public String textMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.CLOB) 
+	}
+	else {
+		def clob = con.createClob()
+		clob.setString(1, value)
+		stat.setClob(paramNum, /*new javax.sql.rowset.serial.SerialClob(clob)*/clob)
+	} 
+}"""
+	}
 	
 	@Override
 	public Map getSqlType () {
 		Map res = super.getSqlType()
+		res.BIGINT.name = 'number'
+		res.BIGINT.useLength = JDBCDriver.sqlTypeUse.NEVER
 		res.BLOB.name = 'raw'
 		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
-		
+
 		return res
 	}
 	
@@ -197,4 +219,15 @@ class OracleDriver extends JDBCDriver {
 
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'ALTER SESSION SET {name} = \'{value}\'' }
+
+	@Override
+	public String generateColumnDefinition(Field f, boolean useNativeDBType) {
+		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" +
+				((isSupport(Driver.Support.DEFAULT_VALUE) && f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
+				((isSupport(Driver.Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
+				((isSupport(Driver.Support.COMPUTE_FIELD) && f.compute != null)?" COMPUTED BY ${f.compute}":"")
+	}
+
+	@Override
+	public String getSysDualTable() { return 'DUAL' }
 }

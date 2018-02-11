@@ -49,8 +49,8 @@ class DB2Driver extends JDBCDriver {
 	@Override
 	public List<Driver.Support> supported() {
 		return super.supported() +
-				[Driver.Support.GLOBAL_TEMPORARY,
-				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
+				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
+				 Driver.Support.INDEX, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
 	}
 	
 	@Override

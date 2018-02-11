@@ -1147,10 +1147,16 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = _getl_temp_var_${i}.getBytes((long)1, (int)(_getl_temp_var_${i}.length()))
 """
 			}
-			else if (f.type == getl.data.Field.Type.TEXT) {
+			else if (f.type == getl.data.Field.Type.TEXT && driver.textReadAsObject()) {
 			 i++
 			 sb << """def _getl_temp_var_$i = $methodGetValue
 if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = _getl_temp_var_${i}.getSubString((long)1, (int)(_getl_temp_var_${i}.length()))
+			 """
+			}
+			else if (f.type == getl.data.Field.Type.UUID && driver.uuidReadAsObject()) {
+				i++
+				sb << """def _getl_temp_var_$i = $methodGetValue
+if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = _getl_temp_var_${i}.toString()
 			 """
 			}
 			else {
@@ -1181,7 +1187,7 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
         return result
 	}
 	
-	public static String GenerateSetParam(JDBCDriver driver, int paramNum, int fieldType, String value) {
+	public static String GenerateSetParam(JDBCDriver driver, int paramNum, Field field, int fieldType, String value) {
 		String res
 		Map types = driver.javaTypes()
 		switch (fieldType) {
@@ -1210,13 +1216,11 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 				break
 				
 			case types.BLOB:
-				def bc = "def blobWrite_$paramNum = ${driver.blobClosureWrite()}"
-				res = "$bc\nif ($value != null) _getl_stat.setBlob($paramNum, blobWrite_$paramNum($value)) else _getl_stat.setNull($paramNum, java.sql.Types.BLOB)"
+				res = "blobWrite(_getl_con, _getl_stat, $paramNum, $value)"
 				break
 				
 			case types.TEXT:
-				def bc = "def clobWrite_$paramNum = ${driver.clobClosureWrite()}"
-				res = "$bc\nif ($value != null) _getl_stat.setClob($paramNum, clobWrite_$paramNum($value)) else _getl_stat.setNull($paramNum, java.sql.Types.CLOB)"
+				res = "clobWrite(_getl_con, _getl_stat, $paramNum, $value)"
 				break
 				
 			case types.DATE:
@@ -1230,9 +1234,18 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 			case types.TIMESTAMP:
 				res = "if ($value != null) _getl_stat.setTimestamp($paramNum, new java.sql.Timestamp(${value}.getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP)"
 				break
-				
+
 			default:
-				res = "if ($value != null) _getl_stat.setObject($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.OBJECT)"
+				if (field.type == Field.Type.UUID) {
+					if (driver.uuidReadAsObject()) {
+						res = "if ($value != null) _getl_stat.setObject($paramNum, UUID.fromString($value), java.sql.Types.OTHER) else _getl_stat.setNull($paramNum, java.sql.Types.OTHER)"
+					} else {
+						res = "if ($value != null) _getl_stat.setString($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
+					}
+				}
+				else {
+					res = "if ($value != null) _getl_stat.setObject($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.OBJECT)"
+				}
 		}
 
         return res
