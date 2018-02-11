@@ -7,15 +7,22 @@ import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.proc.Flow
 import getl.tfs.TDS
+import getl.utils.Config
 import getl.utils.DateUtils
+import getl.utils.FileUtils
 import getl.utils.GenerationUtils
 
 /**
  * Created by ascru on 21.11.2016.
  */
 class H2DriverTest extends JDBCDriverProto {
+	static final def configName = 'tests/h2/h2.conf'
+
     @Override
-    protected JDBCConnection newCon() { return new TDS(/*sqlHistoryFile: 'c:/tmp/getl.test/h2.sql'*/) }
+    protected JDBCConnection newCon() {
+		if (FileUtils.ExistsFile(configName)) Config.LoadConfig(configName)
+		return new TDS()
+	}
 
     public void testVersion() {
         def q = new QueryDataset(connection: con, query: 'SELECT H2Version() AS version')

@@ -42,12 +42,12 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 new Field(name: 'id2', type: 'DATETIME', isKey: true, ordKey: 2),
                 new Field(name: 'name', type: 'STRING', length: 50, isNull: false),
                 new Field(name: 'value', type: 'NUMERIC', length: 12, precision: 2, isNull: false),
-                new Field(name: 'double', type: 'DOUBLE', isNull: false),
-                new Field(name: 'date', type: 'DATE', isNull: false),
-                new Field(name: 'time', type: 'TIME', isNull: false),
-                new Field(name: 'flag', type: 'BOOLEAN', isNull: false, defaultValue: 1)
+                new Field(name: 'double', type: 'DOUBLE', isNull: false, defaultValue: 0),
             ]
 
+		if (con != null && con.driver.isSupport(Driver.Support.BOOLEAN)) res << new Field(name: 'flag', type: 'BOOLEAN', isNull: false)
+		if (con != null && con.driver.isSupport(Driver.Support.DATE)) res << new Field(name: 'date', type: 'DATE', isNull: false)
+		if (con != null && con.driver.isSupport(Driver.Support.TIME)) res << new Field(name: 'time', type: 'TIME', isNull: false)
         if (con != null && con.driver.isSupport(Driver.Support.BLOB)) res << new Field(name: 'data', type: 'BLOB', length: 1024, isNull: false)
         if (con != null && con.driver.isSupport(Driver.Support.CLOB)) res << new Field(name: 'text', type: 'TEXT', length: 1024, isNull: false)
 		if (con != null && con.driver.isSupport(Driver.Support.UUID)) res << new Field(name: 'uniqueid', type: 'UUID', isNull: false)
@@ -74,10 +74,9 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         table.field = fields
         if (table.exists) table.drop()
         if (con.driver.isSupport(Driver.Support.INDEX)) {
-            table.create(indexes: [
-                    _getl_test_idx_1: [columns: ['id1', 'date'], unique: true],
-                    _getl_test_idx_2: [columns: ['id2', 'name']]
-            ])
+			def indexes = [_getl_test_idx_1: [columns: ['id2', 'name']]]
+			if (con != null && con.driver.isSupport(Driver.Support.DATE)) indexes << [_getl_test_idx_2: [columns: ['id1', 'date'], unique: true]]
+            table.create(indexes: indexes)
         }
         else {
             table.create()
@@ -94,15 +93,12 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         def tempTable = new TableDataset(connection: con, tableName: '_getl_local_temp_test', type: JDBCDataset.Type.LOCAL_TEMPORARY)
         tempTable.field = fields
         if (con.driver.isSupport(Driver.Support.INDEX)) {
-            tempTable.create(indexes: [
-                    _getl_local_temp_test_idx_1: [columns: ['id1', 'date'], unique: true],
-                    _getl_local_temp_test_idx_2: [columns: ['id2', 'name']]
-            ])
+            tempTable.create(indexes: [_getl_local_temp_test_idx_1: [columns: ['id2', 'name']]])
         }
         else {
             tempTable.create()
         }
-        tempTable.drop(ifExists: true)
+        tempTable.drop()
     }
 
     public void testGlobalTable() {
@@ -112,17 +108,14 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         }
         def tempTable = new TableDataset(connection: con, tableName: '_getl_global_temp_test', type: JDBCDataset.Type.GLOBAL_TEMPORARY)
         tempTable.field = fields
-        tempTable.drop(ifExists: true)
+//        tempTable.drop(ifExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
-            tempTable.create(indexes: [
-                    _getl_global_temp_test_idx_1: [columns: ['id1', 'date'], unique: true],
-                    _getl_global_temp_test_idx_2: [columns: ['id2', 'name']]
-            ])
+            tempTable.create(indexes: [_getl_global_temp_test_idx_1: [columns: ['id2', 'name']]])
         }
         else {
             tempTable.create()
         }
-        tempTable.drop(ifExists: true)
+        tempTable.drop()
     }
 
     private void dropTable() {
@@ -134,16 +127,51 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         table.field.clear()
         table.retrieveFields()
 
-		def origFields = fields.clone()
-		origFields.each {Field f ->
+		def origFields = [] as List<Field>
+		fields.each {Field of ->
+			def f = of.copy()
+			origFields << f
+
+			f.name = f.name.toLowerCase()
 			f.defaultValue = null
+
+			if (f.type == Field.Type.BIGINT && (con.driver as JDBCDriver).sqlType.BIGINT.name.toUpperCase() == 'NUMBER') {
+				f.type = Field.Type.NUMERIC
+				f.length = null
+			}
+
+			if (f.type != Field.Type.NUMERIC) {
+				f.precision = null
+			}
+
+			if (!(f.type in [Field.Type.STRING, Field.Type.NUMERIC])) {
+				if ((f.type != Field.Type.TEXT || (con.driver as JDBCDriver).sqlType.TEXT.useLength == JDBCDriver.sqlTypeUse.NEVER) &&
+						(f.type != Field.Type.BLOB || (con.driver as JDBCDriver).sqlType.BLOB.useLength == JDBCDriver.sqlTypeUse.NEVER))
+					f.length = null
+			}
+
 			if (f.type == Field.Type.TEXT) f.type = Field.Type.STRING
+
 		}
-		def dsFields = table.field.clone()
-		dsFields.each {Field f ->
+		def dsFields = [] as List<Field>
+		table.field.each {Field of ->
+			def f = of.copy()
+			dsFields << f
+
+			f.name = f.name.toLowerCase()
 			f.defaultValue = null
 			f.dbType = null
 			f.typeName = null
+
+			if (f.type != Field.Type.NUMERIC) {
+				f.precision = null
+			}
+
+			if (!(f.type in [Field.Type.STRING, Field.Type.NUMERIC])) {
+				if ((f.type != Field.Type.TEXT || (con.driver as JDBCDriver).sqlType.TEXT.useLength == JDBCDriver.sqlTypeUse.NEVER) &&
+						(f.type != Field.Type.BLOB || (con.driver as JDBCDriver).sqlType.BLOB.useLength == JDBCDriver.sqlTypeUse.NEVER))
+					f.length = null
+			}
 
 			if (f.type == Field.Type.TEXT) f.type = Field.Type.STRING
 		}
@@ -170,9 +198,9 @@ abstract class JDBCDriverProto extends GroovyTestCase {
 			assertNotNull(r.name)
 			assertNotNull(r.value)
 			assertNotNull(r.double)
-			assertNotNull(r.date)
-			assertNotNull(r.time)
-			assertNotNull(r.flag)
+			if (con.driver.isSupport(Driver.Support.DATE)) assertNotNull(r.date)
+			if (con.driver.isSupport(Driver.Support.TIME)) assertNotNull(r.time)
+			if (con.driver.isSupport(Driver.Support.BOOLEAN)) assertNotNull(r.flag)
 			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
 			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
 			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
@@ -188,12 +216,12 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 nr.name = StringUtils.LeftStr(r.name, 40) + ' update'
                 nr.value = r.value + 1
                 nr.double = r.double + 1.00
-                nr.date = DateUtils.AddDate('dd', 1, r.date)
-                nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
-                nr.flag = GenerationUtils.GenerateBoolean()
-                nr.text = GenerationUtils.GenerateString(1024)
-                nr.data = GenerationUtils.GenerateString(512).bytes
-				nr.uniqueid = UUID.randomUUID().toString()
+				if (con.driver.isSupport(Driver.Support.DATE)) nr.date = DateUtils.AddDate('dd', 1, r.date)
+				if (con.driver.isSupport(Driver.Support.TIME)) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
+				if (con.driver.isSupport(Driver.Support.BOOLEAN)) nr.flag = GenerationUtils.GenerateBoolean()
+				if (con.driver.isSupport(Driver.Support.CLOB)) nr.text = GenerationUtils.GenerateString(1024)
+				if (con.driver.isSupport(Driver.Support.BLOB)) nr.data = GenerationUtils.GenerateString(512).bytes
+				if (con.driver.isSupport(Driver.Support.UUID)) nr.uniqueid = UUID.randomUUID().toString()
 
                 updater(nr)
             }
@@ -206,9 +234,9 @@ abstract class JDBCDriverProto extends GroovyTestCase {
             assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' update', r.name)
             assertEquals(rows[i].value + 1, r.value)
 			assertNotNull(r.double)
-            assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
-            assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
-			assertNotNull(r.flag)
+			if (con.driver.isSupport(Driver.Support.DATE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
+			if (con.driver.isSupport(Driver.Support.TIME)) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
+			if (con.driver.isSupport(Driver.Support.BOOLEAN)) assertNotNull(r.flag)
 			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
 			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
 			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
@@ -226,12 +254,12 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 nr.name = StringUtils.LeftStr(r.name, 40) + ' merge'
                 nr.value = r.value + 1
                 nr.double = r.double + 1.00
-                nr.date = DateUtils.AddDate('dd', 1, r.date)
-                nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
-                nr.flag = GenerationUtils.GenerateBoolean()
-                nr.text = GenerationUtils.GenerateString(1024)
-                nr.data = GenerationUtils.GenerateString(512).bytes
-				nr.uniqueid = UUID.randomUUID().toString()
+				if (con.driver.isSupport(Driver.Support.DATE)) nr.date = DateUtils.AddDate('dd', 1, r.date)
+				if (con.driver.isSupport(Driver.Support.TIME)) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
+				if (con.driver.isSupport(Driver.Support.BOOLEAN)) nr.flag = GenerationUtils.GenerateBoolean()
+				if (con.driver.isSupport(Driver.Support.CLOB)) nr.text = GenerationUtils.GenerateString(1024)
+				if (con.driver.isSupport(Driver.Support.BLOB)) nr.data = GenerationUtils.GenerateString(512).bytes
+				if (con.driver.isSupport(Driver.Support.UUID)) nr.uniqueid = UUID.randomUUID().toString()
 
                 updater(nr)
             }
@@ -244,9 +272,9 @@ abstract class JDBCDriverProto extends GroovyTestCase {
             assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' merge', r.name)
             assertEquals(rows[i].value + 1, r.value)
 			assertNotNull(r.double)
-            assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
-            assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
-			assertNotNull(r.flag)
+			if (con.driver.isSupport(Driver.Support.DATE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
+			if (con.driver.isSupport(Driver.Support.TIME)) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
+			if (con.driver.isSupport(Driver.Support.BOOLEAN)) assertNotNull(r.flag)
 			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
 			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
 			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
