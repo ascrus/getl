@@ -70,11 +70,11 @@ class DB2Driver extends JDBCDriver {
 		
 		if (field.typeName?.matches('(?i)CLOB')) {
 			field.type= Field.Type.STRING
-			field.getMethod = '(({field} != null)?{field}.getSubString(1, (int){field}.length()):null)'
+			field.getMethod = '{field}.getSubString(1, (int){field}.length())'
 		}
 		else if (field.typeName?.matches('(?i)XML')) {
 			field.type= Field.Type.STRING
-			field.getMethod = '(({field} != null)?{field}.getString():null)'
+			field.getMethod = '{field}.getString()'
 		} 
 	}
 

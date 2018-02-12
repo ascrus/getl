@@ -3,6 +3,7 @@ package getl.jdbc
 import getl.data.*
 import getl.driver.Driver
 import getl.proc.Flow
+import getl.stat.ProcessTime
 import getl.tfs.TFS
 import getl.utils.Config
 import getl.utils.DateUtils
@@ -11,6 +12,7 @@ import getl.utils.GenerationUtils
 import getl.utils.Logs
 import getl.utils.NumericUtils
 import getl.utils.StringUtils
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 import java.sql.Time
@@ -369,4 +371,48 @@ END FOR;
         dropTable()
         disconnect()
     }
+
+	@CompileStatic
+	public void testPerfomance() {
+		def c = newCon()
+		if (c == null) return
+		if (Config.content.perfomanceRows == null) return
+		def perfomanceRows = Config.content.perfomanceRows as Integer
+		def perfomanceCols = (Config.content.perfomanceCols as Integer)?:100
+		Logs.Finest("Test ${c.driverName} perfomance write from $perfomanceRows rows with ${perfomanceCols+2} cols ...")
+		TableDataset t = new TableDataset(connection: c, tableName: '_GETL_TEST_PERFOMANCE')
+		t.field << new Field(name: 'id', type: Field.Type.INTEGER, isKey: true)
+		t.field << new Field(name: 'name', length: 50, isNull: false)
+		(1..perfomanceCols).each { num ->
+			t.field << new Field(name: "value_$num", type: Field.Type.DOUBLE)
+		}
+		if (t.exists) t.drop()
+		t.create()
+		try {
+			def pt = new ProcessTime(name: "${c.driverName} perfomance write")
+			new Flow().writeTo(dest: t, dest_batchSize: 1000) { Closure updater ->
+				(1..perfomanceRows).each { Integer cur ->
+					cur++
+					def r = [:] as Map<String, Object>
+					r.id = cur
+					r.name = "name $cur"
+					(1..perfomanceCols).each { Integer num ->
+						r.put("value_$num".toString(), cur)
+					}
+					updater(r)
+				}
+			}
+			pt.finish(perfomanceRows as Long)
+
+			pt = new ProcessTime(name: "${c.driverName} perfomance read")
+			def count = 0
+			new Flow().process(source: t) { Map<String, Object> r ->
+				count++
+			}
+			pt.finish(count as Long)
+		}
+		finally {
+			t.drop()
+		}
+	}
 }

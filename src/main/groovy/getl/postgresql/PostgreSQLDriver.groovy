@@ -113,7 +113,6 @@ class PostgreSQLDriver extends JDBCDriver {
 				field.dbType = java.sql.Types.OTHER
 				field.length = 36
 				field.precision = null
-//				field.getMethod = '{field}.toString()'
 				return
 			}
 

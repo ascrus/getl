@@ -570,13 +570,13 @@ class GenerationUtils {
 				result = GenerateDouble()
 				break
 			case getl.data.Field.Type.DATE:
-				result = GenerateDate()
+				result = new java.sql.Timestamp(GenerateDate().time)
 				break
 			case getl.data.Field.Type.TIME:
-				result = GenerateDate()
+				result = new java.sql.Timestamp(GenerateDate().time)
 				break
 			case getl.data.Field.Type.DATETIME:
-				result = GenerateDateTime()
+				result = new java.sql.Timestamp(GenerateDateTime().time)
 				break
             case getl.data.Field.Type.TEXT:
 //                result = new SerialClob(GenerateString(l).chars)
@@ -1125,25 +1125,63 @@ sb << """
 	 * @param fields
 	 * @return
 	 */
-	public static Map GenerateRowCopy(JDBCDriver driver, List<Field> fields) {
+	public static Map GenerateRowCopy(JDBCDriver driver, List<Field> fields, boolean sourceIsMap = false) {
 		StringBuilder sb = new StringBuilder()
-		sb << "{ java.sql.Connection connection, inRow, Map outRow ->\n"
+		sb << "{ java.sql.Connection connection, ${(sourceIsMap)?'Map<String, Object>':'groovy.sql.GroovyResultSet'} inRow, Map<String, Object> outRow -> methodRowCopy(connection, inRow, outRow) }\n"
+		sb << '\n@groovy.transform.CompileStatic\n'
+		sb << "void methodRowCopy(java.sql.Connection connection, ${(sourceIsMap)?'Map<String, Object>':'groovy.sql.GroovyResultSet'} inRow, Map<String, Object> outRow) {\n"
 		def i = 0
 		fields.each { Field f ->
-			String methodGetValue = ((f.getMethod?:"{field}").replace("{field}", "inRow.'${f.name.toLowerCase()}'"))
-			
+			i++
+			sb << "	def _getl_temp_var_$i = inRow.getAt('${f.name.toLowerCase()}')\n"
+			sb << "	if (_getl_temp_var_$i == null) outRow.put('${f.name.toLowerCase()}', null) else {\n"
+			if (f.getMethod != null) sb << "		_getl_temp_var_$i = ${f.getMethod.replace("{field}", "_getl_temp_var_$i")}\n"
+
+			switch (f.type) {
+				case getl.data.Field.Type.DATE:
+					sb << "		outRow.put('${f.name.toLowerCase()}', getl.utils.DateUtils.ClearTime((_getl_temp_var_${i}) as Date))"
+					break
+				case getl.data.Field.Type.DATETIME:
+					sb << "		outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i} as java.sql.Timestamp)"
+					break
+				case getl.data.Field.Type.BLOB:
+					if (driver.blobReadAsObject()) {
+						sb << "	outRow.put('${f.name.toLowerCase()}', (_getl_temp_var_${i} as java.sql.Blob).getBytes((long)1, (int)((_getl_temp_var_${i} as java.sql.Blob).length())))"
+					}
+					else {
+						sb << "	outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i})"
+					}
+					break
+				case getl.data.Field.Type.TEXT:
+					if (driver.textReadAsObject()) {
+						sb << "		outRow.put('${f.name.toLowerCase()}', (_getl_temp_var_${i} as java.sql.NClob).getSubString((Long)1, ((Integer)(_getl_temp_var_${i} as java.sql.NClob).length())))"
+					}
+					else {
+						sb << "		outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i})"
+					}
+					break
+				case getl.data.Field.Type.UUID:
+					sb << "		outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i}.toString())"
+					break
+				default:
+					sb << "		outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i})"
+			}
+
+			sb << '\n	}\n'
+
+			/*
 			if (f.type == getl.data.Field.Type.DATE) {
-				sb << "outRow.'${f.name.toLowerCase()}' = getl.utils.DateUtils.ClearTime($methodGetValue)\n"
+				sb << "outRow.put('${f.name.toLowerCase()}', getl.utils.DateUtils.ClearTime(($methodGetValue) as Date))\n"
 			}
 			else if (f.type == getl.data.Field.Type.DATETIME) {
 				i++
-				sb << """def _getl_temp_var_$i = $methodGetValue
+				sb << """def _getl_temp_var_$i = ($methodGetValue) as Date
 if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = new Date(_getl_temp_var_${i}.time)  
 """
 			}
 			else if (f.type == getl.data.Field.Type.BLOB && driver.blobReadAsObject()) {
 				i++
-				sb << """def _getl_temp_var_$i = $methodGetValue
+				sb << """def _getl_temp_var_$i = $methodGetValue as java.sql.Blob
 if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = _getl_temp_var_${i}.getBytes((long)1, (int)(_getl_temp_var_${i}.length()))
 """
 			}
@@ -1162,6 +1200,7 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 			else {
 				sb << "outRow.'${f.name.toLowerCase()}' = $methodGetValue\n"
 			}
+			*/
 		}
 		sb << "}"
 		def statement = sb.toString()
@@ -1170,7 +1209,7 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 
         return [statement: statement, code: code]
 	}
-	
+
 	/**
 	 * Generation field copy by fields
 	 * @param fields
@@ -1178,9 +1217,12 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 	 */
 	public static Closure GenerateFieldCopy(List<Field> fields) {
 		StringBuilder sb = new StringBuilder()
-		sb << "{ Map inRow, outRow ->\n"
+		sb << "{ Map<String, Object> inRow, Map<String, Object> outRow -> methodCopy(inRow, outRow) }"
+		sb << '\n@groovy.transform.CompileStatic\n'
+		sb << 'void methodCopy(Map<String, Object> inRow, Map<String, Object> outRow) {\n'
 		fields.each { Field f ->
-			sb << "outRow.'${f.name.toLowerCase()}' = inRow.'${f.name.toLowerCase()}'\n"
+//			sb << "outRow.'${f.name.toLowerCase()}' = inRow.'${f.name.toLowerCase()}'\n"
+			sb << "outRow.put('${f.name.toLowerCase()}', inRow.get('${f.name.toLowerCase()}'))\n"
 		}
 		sb << "}"
 		Closure result = GenerationUtils.EvalGroovyClosure(sb.toString())
@@ -1192,55 +1234,55 @@ if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outR
 		Map types = driver.javaTypes()
 		switch (fieldType) {
 			case types.BIGINT:
-				res = "if ($value != null) _getl_stat.setLong($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.BIGINT)"
+				res = "if ($value != null) _getl_stat.setLong($paramNum, ($value) as Long) else _getl_stat.setNull($paramNum, java.sql.Types.BIGINT)"
 				break
 				 
 			case types.INTEGER:
-				res = "if ($value != null) _getl_stat.setInt($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.INTEGER)"
+				res = "if ($value != null) _getl_stat.setInt($paramNum, ($value) as Integer) else _getl_stat.setNull($paramNum, java.sql.Types.INTEGER)"
 				break
 			
 			case types.STRING:
-				res = "if ($value != null) _getl_stat.setString($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
+				res = "if ($value != null) _getl_stat.setString($paramNum, ($value) as String) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
 				break
 			
 			case types.BOOLEAN: case types.BIT:
-				res = "if ($value != null) _getl_stat.setBoolean($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.BOOLEAN)"
+				res = "if ($value != null) _getl_stat.setBoolean($paramNum, ($value) as Boolean) else _getl_stat.setNull($paramNum, java.sql.Types.BOOLEAN)"
 				break
 				
 			case types.DOUBLE:
-				res = "if ($value != null) _getl_stat.setDouble($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.DOUBLE)"
+				res = "if ($value != null) _getl_stat.setDouble($paramNum, ($value) as Double) else _getl_stat.setNull($paramNum, java.sql.Types.DOUBLE)"
 				break
 				
 			case types.NUMERIC:
-				res = "if ($value != null) _getl_stat.setBigDecimal($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.DECIMAL)"
+				res = "if ($value != null) _getl_stat.setBigDecimal($paramNum, ($value) as BigDecimal) else _getl_stat.setNull($paramNum, java.sql.Types.DECIMAL)"
 				break
 				
 			case types.BLOB:
-				res = "blobWrite(_getl_con, _getl_stat, $paramNum, $value)"
+				res = "blobWrite(_getl_con, _getl_stat, $paramNum, ($value) as byte[])"
 				break
 				
 			case types.TEXT:
-				res = "clobWrite(_getl_con, _getl_stat, $paramNum, $value)"
+				res = "clobWrite(_getl_con, _getl_stat, $paramNum, ($value) as String)"
 				break
 				
 			case types.DATE:
-				res = "if ($value != null) _getl_stat.setDate($paramNum, new java.sql.Date(${value}.getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.DATE)"
+				res = "if ($value != null) _getl_stat.setDate($paramNum, new java.sql.Date(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.DATE)"
 				break
 				
 			case types.TIME:
-				res = "if ($value != null) _getl_stat.setTime($paramNum, new java.sql.Time(${value}.getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIME)"
+				res = "if ($value != null) _getl_stat.setTime($paramNum, new java.sql.Time(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIME)"
 				break
 				
 			case types.TIMESTAMP:
-				res = "if ($value != null) _getl_stat.setTimestamp($paramNum, new java.sql.Timestamp(${value}.getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP)"
+				res = "if ($value != null) _getl_stat.setTimestamp($paramNum, new java.sql.Timestamp(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP)"
 				break
 
 			default:
 				if (field.type == Field.Type.UUID) {
 					if (driver.uuidReadAsObject()) {
-						res = "if ($value != null) _getl_stat.setObject($paramNum, UUID.fromString($value), java.sql.Types.OTHER) else _getl_stat.setNull($paramNum, java.sql.Types.OTHER)"
+						res = "if ($value != null) _getl_stat.setObject($paramNum, UUID.fromString(($value) as String), java.sql.Types.OTHER) else _getl_stat.setNull($paramNum, java.sql.Types.OTHER)"
 					} else {
-						res = "if ($value != null) _getl_stat.setString($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
+						res = "if ($value != null) _getl_stat.setString($paramNum, ($value) as String) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
 					}
 				}
 				else {

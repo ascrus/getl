@@ -1,6 +1,8 @@
 package getl.utils
 
 import getl.data.*
+import getl.jdbc.TableDataset
+import getl.proc.Flow
 import getl.tfs.TDS
 
 import javax.sql.rowset.serial.SerialBlob
@@ -218,7 +220,7 @@ class GenerationUtilsTest extends GroovyTestCase {
         }
     }
 
-    void testGenerateRowCopy() {
+    void testGenerateRowCopyWithMap() {
         def t = Field.Type.values() - [Field.Type.OBJECT, Field.Type.ROWID]
         def c = new TDS()
         def l = []
@@ -239,13 +241,39 @@ class GenerationUtilsTest extends GroovyTestCase {
             }
             r.put("field_${it.toString().toLowerCase()}".toString(), v)
         }
-        def stat = GenerationUtils.GenerateRowCopy(c.driver, l)
+        def stat = GenerationUtils.GenerateRowCopy(c.driver, l, true)
         def d = [:]
         c.connected = true
         stat.code.call(c.javaConnection, r, d)
         r."field_text" = r."field_text".getSubString(1L, r."field_text".length() as Integer)
         r."field_blob" = r."field_blob".getBytes(1L, r."field_blob".length() as Integer)
         assertEquals(r, d)
+    }
+
+    void testGenerateRowCopyWithJDBC() {
+		def c = new TDS()
+		def t = new TableDataset(connection: c, tableName: 'testRowCopy')
+		t.field << new Field(name: 'id', type: 'INTEGER', isKey: true)
+		t.field << new Field(name: 'name', length: 50, isNull: false)
+		t.field << new Field(name: 'value', length: 12, precision: 2)
+		t.create()
+		def n = new TableDataset(connection: c, tableName: 'testRowCopyNew', field: t.field)
+		n.create()
+		try {
+			new Flow().writeTo(dest: t) { update ->
+				(1..100).each { num ->
+					Map r = [id: num, name: "name $num", value: num]
+					update(r)
+				}
+			}
+
+			new Flow().copy(source: t, dest: n)
+		}
+		finally {
+			t.drop()
+			n.drop()
+		}
+
     }
 
     void testGenerateFieldCopy() {

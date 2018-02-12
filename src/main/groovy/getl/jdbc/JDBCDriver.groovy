@@ -1254,7 +1254,7 @@ ${extend}'''
 		try {
 			java.sql.Connection con = sqlConnect.connection
 			if (sqlParams == null) {
-				sqlConnect.eachRow(sql, getFields, offs, max) { row ->
+				sqlConnect.eachRow(sql, getFields, offs, max) { groovy.sql.GroovyResultSet row ->
 					Map outRow = [:]
 					copyToMap(con, row, outRow)
 					
@@ -1428,8 +1428,16 @@ $sql
 		procFields.each { Field f ->
 			if (f.type == Field.Type.BLOB) isExistsBlob = true else if (f.type == Field.Type.TEXT) isExistsClob = true
 		}
-		if (isExistsBlob) sb  << blobMethodWrite('blobWrite'); sb << '\n'
-		if (isExistsClob) sb  << textMethodWrite('clobWrite'); sb << '\n'
+		if (isExistsBlob) {
+			sb << '@groovy.transform.CompileStatic\n'
+			sb  << blobMethodWrite('blobWrite')
+			sb << '\n'
+		}
+		if (isExistsClob) {
+			sb << '@groovy.transform.CompileStatic\n'
+			sb  << textMethodWrite('clobWrite')
+			sb << '\n'
+		}
 
 		// PreparedStatement stat
 		def curField = 0
@@ -1443,7 +1451,7 @@ $sql
 			if (fieldMethod != curMethod) {
 				if (curMethod > 0) sb << "}\n"
 				curMethod = fieldMethod
-				sb << "\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection _getl_con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
+				sb << "\n@groovy.transform.CompileStatic\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection _getl_con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
 			}
 
 			def fn = f.name.toLowerCase()

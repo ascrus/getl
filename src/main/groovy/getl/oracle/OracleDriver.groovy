@@ -67,7 +67,7 @@ class OracleDriver extends JDBCDriver {
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
 	}
 	else {
-		def blob = con.createBlob()
+		oracle.sql.BLOB blob = con.createBlob() as oracle.sql.BLOB
 		def stream = blob.getBinaryOutputStream()
 		stream.write(value)
 		stream.close()
@@ -158,7 +158,7 @@ class OracleDriver extends JDBCDriver {
 		}
 		
 		if (field.type == Field.Type.ROWID) {
-			field.getMethod = "(({field} != null)?new String({field}.bytes):null)"
+			field.getMethod = "new String({field}.bytes)"
 			return
 		}
 		
@@ -166,21 +166,21 @@ class OracleDriver extends JDBCDriver {
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)]") || 
 					field.typeName.matches("(?i)TIMESTAMP")) {
 				field.type = Field.Type.DATETIME
-				field.getMethod = "(({field} != null)?new java.sql.Timestamp({field}.timestampValue().getTime()):null)"
+				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue().getTime())"
 				return
 			}
 			
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH TIME ZONE") ||
 					field.typeName.matches("(?i)TIMESTAMP WITH TIME ZONE")) {
 				field.type = Field.Type.DATETIME
-				field.getMethod = "(({field} != null)?new java.sql.Timestamp({field}.timestampValue(connection).getTime()):null)"
+				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue(connection).getTime())"
 				return
 			}
 			
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH LOCAL TIME ZONE") ||
 					field.typeName.matches("(?i)TIMESTAMP WITH LOCAL TIME ZONE")) {
 				field.type = Field.Type.DATETIME
-				field.getMethod = "(({field} != null)?new java.sql.Timestamp({field}.timestampValue(connection, Calendar.getInstance()).getTime()):null)"
+				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue(connection, Calendar.getInstance()).getTime())"
 				return
 			}
 			
