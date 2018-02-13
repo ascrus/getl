@@ -153,260 +153,360 @@ class GenerationUtils {
 	 * @param source
 	 * @param dataformat
 	 * @param sourceValue
-	 * @param nullValue
 	 * @return
 	 */
-	public static String GenerateConvertValue(Field dest, Field source, String dataformat, String sourceValue, String nullValue) {
-		if (dest.type == source.type) {
-			return "(${sourceValue} != null)?${sourceValue}:${nullValue}"
-		}
-		
-		String r
-		
-		switch (dest.type) {
-			case getl.data.Field.Type.STRING:
-				if (source.type == getl.data.Field.Type.DATE || source.type == getl.data.Field.Type.TIME || source.type == getl.data.Field.Type.DATETIME) {
-					dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(source.type)
-					r =  "${sourceValue}.format(\"${dataformat}\")"
-				}
-				else {
-					r = "(${sourceValue} != null)?String.valueOf(${sourceValue}):${nullValue}"
-				}
-				
-				break
-			case getl.data.Field.Type.BOOLEAN:
-				if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.BIGINT)
-					r = "(${sourceValue} != null)?Boolean.valueOf(${sourceValue} == 1):${nullValue}"
-				else if (source.type == getl.data.Field.Type.STRING) {
-					String[] bf = ["true", "false"]
-					if (dataformat != null) {
-						bf = dataformat.toLowerCase().split("[|]")
-					}
-					r =  "(${sourceValue} != null)?(${sourceValue}.toLowerCase() == \"${bf[0]}\"):${nullValue}"
-				}
-				else
-					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				
-				break
-			case getl.data.Field.Type.INTEGER:
-				if (source.type == getl.data.Field.Type.STRING)
-					r =  "(${sourceValue} != null)?new Integer(${sourceValue}):${nullValue}"
-				else if (source.type == getl.data.Field.Type.DOUBLE || source.type == getl.data.Field.Type.NUMERIC || source.type == getl.data.Field.Type.BIGINT)
-					r = "(${sourceValue} != null)?Integer.valueOf(${sourceValue}.intValue()):${nullValue}"
-				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "(${sourceValue} != null)?Integer.valueOf((${sourceValue})?1:0):${nullValue}"
-				else
-					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				
-				break
-				
-			case getl.data.Field.Type.BIGINT:
-				if (source.type == getl.data.Field.Type.STRING)
-					r =  "(${sourceValue} != null)?new Long(${sourceValue}):${nullValue}"
-				else if (source.type == getl.data.Field.Type.INTEGER)
-					r = "(${sourceValue} != null)?Long.valueOf(${sourceValue}):${nullValue}"
-				else if (source.type == getl.data.Field.Type.DOUBLE || source.type == getl.data.Field.Type.NUMERIC)
-					r = "(${sourceValue} != null)?Long.valueOf(${sourceValue}.longValue()):${nullValue}"
-				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "(${sourceValue} != null)?Long.valueOf((${sourceValue})?1:0):${nullValue}"
-				else
-					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				
-				break
-				
-			case getl.data.Field.Type.NUMERIC:
-				if (source.type == getl.data.Field.Type.STRING)
-					r = "(${sourceValue} != null)?new BigDecimal(${sourceValue}):${nullValue}"
-				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "(${sourceValue} != null)?BigDecimal.valueOf((${sourceValue})?1:0):${nullValue}"
-				else if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.DOUBLE || source.type == getl.data.Field.Type.BIGINT)
-					r =  "(${sourceValue} != null)?BigDecimal.valueOf(${sourceValue}):${nullValue}"
-				else
-					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-
-				break
-			case getl.data.Field.Type.DOUBLE:
-				if (source.type == getl.data.Field.Type.STRING)
-					r =  "(${sourceValue} != null)?new Double(${sourceValue}):${nullValue}"
-				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "(${sourceValue} != null)?Double.valueOf((${sourceValue})?1:0):${nullValue}"
-				else if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.NUMERIC || source.type == getl.data.Field.Type.BIGINT)
-					r =  "(${sourceValue} != null)?Double.valueOf(${sourceValue}):${nullValue}"
-				else
-					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				
-				break
-			case getl.data.Field.Type.DATE:
-				if (source.type != getl.data.Field.Type.STRING && source.type != getl.data.Field.Type.DATETIME) throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				if (source.type == getl.data.Field.Type.STRING) {
-					dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(dest.type)
-					r =  "(${sourceValue} != null)?getl.utils.DateUtils.ParseDate(\"${dataformat}\", ${sourceValue}):${nullValue}"
-				}
-				else {
-					r = "(${sourceValue} != null)?org.codehaus.groovy.runtime.DateGroovyMethods.clearTime(${sourceValue}):${nullValue}"
-				}
-				
-				break
-				
-			case getl.data.Field.Type.DATETIME:
-				if (source.type != getl.data.Field.Type.STRING && source.type != getl.data.Field.Type.DATE) throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				
-				if (source.type == getl.data.Field.Type.STRING) {
-					dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(dest.type)
-					r =  "(${sourceValue} != null)?getl.utils.DateUtils.ParseDate(\"${dataformat}\", ${sourceValue}):${nullValue}"
-				}
-				else {
-					r = "${sourceValue}"
-				}
-				
-				break
-				
-			case getl.data.Field.Type.TIME:
-				if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.BIGINT) {
-					r = "(${sourceValue} != null)?new Time(${sourceValue}):${nullValue}"
-				}
-				else if (source.type == getl.data.Field.Type.STRING) {
-					r = "(${sourceValue} != null)?Time.valueOf(${sourceValue}):${nullValue}"
-				}
-				else {
-                    throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-                }
-				break
-				
-			case getl.data.Field.Type.OBJECT: case getl.data.Field.Type.BLOB: case getl.data.Field.Type.TEXT:
-				throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				
-				break
-			default:
-				throw new ExceptionGETL("Type ${dest.type} not supported (${dest.name})")
-		}
-
-		return r
-	}
-	
 	public static String GenerateConvertValue(Field dest, Field source, String dataformat, String sourceValue) {
-		if (dest.type == source.type) {
-			return "${sourceValue}"
-		}
-		
 		String r
 		
 		switch (dest.type) {
-			case getl.data.Field.Type.STRING:
-				if (source.type == getl.data.Field.Type.DATE || source.type == getl.data.Field.Type.TIME || source.type == getl.data.Field.Type.DATETIME) {
-					dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(source.type)
-					r =  "getl.utils.DateUtils.FormatDate(\"${dataformat}\", (Date)${sourceValue})"
+			case Field.Type.STRING: case getl.data.Field.Type.TEXT:
+				switch (source.type) {
+					case Field.Type.STRING: case Field.Type.INTEGER: case Field.Type.BIGINT: case Field.Type.NUMERIC:
+					case Field.Type.DOUBLE: case Field.Type.UUID: case Field.Type.OBJECT: case Field.Type.ROWID:
+					case Field.Type.TEXT:
+						r = "$sourceValue?.toString()"
+
+						break
+
+					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME:
+						dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(source.type)
+						r =  "getl.utils.DateUtils.FormatDate('${StringUtils.EscapeJava(dataformat)}', (Date)$sourceValue)"
+
+						break
+
+					case Field.Type.BOOLEAN:
+						def values = ['TRUE', 'FALSE']
+						if (dest.format != null) {
+							values = dest.format.split("[|]")
+						}
+						r = "($sourceValue != null)?(((Boolean)$sourceValue)?'${values[0]}':'${values[1]}'):null as String"
+
+						break
+
+					case Field.Type.BLOB:
+						r = "(((byte[])$sourceValue)?.length > 0)?new String((byte[])$sourceValue):null as String"
+
+						break
+
+					default:
+						throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
 				}
-				else {
-					r = "getl.utils.ConvertUtils.Object2String(${sourceValue})"
-				}
-				
-				break
-			case getl.data.Field.Type.BOOLEAN:
-				if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.BIGINT)
-					r = "getl.utils.ConvertUtils.Int2Boolean((Integer){sourceValue}?.intValue())"
-				else if (source.type == getl.data.Field.Type.STRING) {
-					String[] bf = ["true", "false"]
-					if (dataformat != null) {
-						bf = dataformat.toLowerCase().split("[|]")
-					}
-					r =  "getl.utils.ConvertUtils.String2Boolean((String)${sourceValue}, \"${bf[0]}\")"
-				}
-				else
-					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				
-				break
-			case getl.data.Field.Type.INTEGER:
-				if (source.type == getl.data.Field.Type.STRING)
-					r =  "getl.utils.ConvertUtils.Object2Int(${sourceValue})"
-				else if (source.type == getl.data.Field.Type.DOUBLE || source.type == getl.data.Field.Type.NUMERIC || source.type == getl.data.Field.Type.BIGINT)
-					r = "${sourceValue}?.intValue()"
-				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "getl.utils.ConvertUtils.Boolean2Int((Boolean)${sourceValue})"
-				else
-					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				
-				break
-				
-			case getl.data.Field.Type.BIGINT:
-				if (source.type == getl.data.Field.Type.STRING)
-					r =  "getl.utils.ConvertUtils.Object2Long(${sourceValue})"
-				else if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.DOUBLE || source.type == getl.data.Field.Type.NUMERIC)
-					r = "${sourceValue}?.longValue()"
-				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "getl.utils.ConvertUtils.Boolean2Int((Boolean)${sourceValue})?.longValue()"
-				else
-					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				
-				break
-				
-			case getl.data.Field.Type.NUMERIC:
-				if (source.type == getl.data.Field.Type.STRING)
-					r =  "getl.utils.ConvertUtils.Object2BigDecimal(${sourceValue})" 
-				else if (source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.DOUBLE || source.type == getl.data.Field.Type.BIGINT)
-					r = "getl.utils.ConvertUtils.Object2BigDecimal(${sourceValue})"
-				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "getl.utils.ConvertUtils.Boolean2BigDecimal((Boolean)${sourceValue})"
-				else
-					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
 
 				break
-			case getl.data.Field.Type.DOUBLE:
-				if (source.type == getl.data.Field.Type.STRING || source.type == getl.data.Field.Type.INTEGER || source.type == getl.data.Field.Type.NUMERIC || source.type == getl.data.Field.Type.BIGINT)
-						r =  "getl.utils.ConvertUtils.Object2Double(${sourceValue})"
-				else if (source.type == getl.data.Field.Type.BOOLEAN)
-					r = "getl.utils.ConvertUtils.Boolean2Double((Boolean)${sourceValue})"
-				else
-					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				
+
+			case Field.Type.BOOLEAN:
+				switch (source.type) {
+					case Field.Type.BOOLEAN:
+						r = "($sourceValue != null)?new Boolean((Boolean)$sourceValue):null as Boolean"
+
+						break
+
+					case Field.Type.INTEGER:
+						r = "($sourceValue != null)?((Integer)$sourceValue)?:0 != 0:null as Boolean"
+
+						break
+
+					case Field.Type.BIGINT:
+						r = "($sourceValue != null)?((Long)$sourceValue)?:0 != 0:null as Boolean"
+
+						break
+
+					case Field.Type.NUMERIC:
+						r = "($sourceValue != null)?((java.math.BigDecimal)$sourceValue)?.toDouble()?:0 != 0:null as Boolean"
+
+						break
+
+					case Field.Type.STRING:
+						def trueValue = 'true'
+						if (dataformat != null) {
+							def bf = dataformat.toLowerCase().split("[|]")
+							trueValue = bf[0]
+						}
+						else {
+							r = "($sourceValue != null)?((String)$sourceValue).toLowerCase() == '$trueValue'):null as Boolean"
+						}
+
+						break
+
+					default:
+						throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
+				}
+
 				break
-			case getl.data.Field.Type.DATE:
-				if (source.type != getl.data.Field.Type.STRING && source.type != getl.data.Field.Type.DATETIME) throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				if (source.type == getl.data.Field.Type.STRING) {
-					dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(dest.type)
-					r =  "getl.utils.DateUtils.ParseDate(\"${dataformat}\", (String)${sourceValue})"
+
+			case Field.Type.INTEGER:
+				switch (source.type) {
+					case Field.Type.INTEGER:
+						r = "($sourceValue != null)?new Integer((Integer)$sourceValue):null as Integer"
+
+						break
+
+					case Field.Type.STRING:
+						r = "($sourceValue != null)?Integer.valueOf((String)$sourceValue):null as Integer"
+
+						break
+
+					case Field.Type.BIGINT:
+						r = "((Long)$sourceValue)?.intValue()"
+
+						break
+
+					case Field.Type.DOUBLE:
+						r = "((Double)$sourceValue)?.intValue()"
+
+						break
+
+					case Field.Type.NUMERIC:
+						r = "((java.math.BigDecimal)$sourceValue)?.intValue()"
+
+						break
+
+					case Field.Type.BOOLEAN:
+						r = "($sourceValue != null)?(((Boolean)$sourceValue == true)?1:0):null as Integer"
+
+						break
+
+					default:
+						throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
 				}
-				else {
-					r = "getl.utils.DateUtils.ClearTime((Date)${sourceValue})"
-				}
+
+				break
 				
+			case Field.Type.BIGINT:
+				switch (source.type) {
+					case Field.Type.BIGINT:
+						r = "($sourceValue != null)?new Long((Long)$sourceValue):null as Long"
+
+						break
+
+					case Field.Type.STRING:
+						r = "($sourceValue != null)?Long.valueOf((String)$sourceValue):null as Long"
+
+						break
+
+					case Field.Type.INTEGER:
+						r = "($sourceValue != null)?Long.valueOf((Integer)$sourceValue):null as Long"
+
+						break
+
+					case Field.Type.DOUBLE:
+						r = "((Double)$sourceValue)?.longValue()"
+
+						break
+
+					case Field.Type.NUMERIC:
+						r = "((java.math.BigDecimal)$sourceValue)?.longValue()"
+
+						break
+
+					case Field.Type.BOOLEAN:
+						r = "($sourceValue != null)?new Long(((Boolean)$sourceValue == true)?1:0):null as Long"
+
+						break
+
+					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME:
+						r = "((Date)$sourceValue)?.time"
+
+						break
+
+					default:
+						throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
+				}
+
+				break
+				
+			case Field.Type.NUMERIC:
+				switch (source.type) {
+					case Field.Type.NUMERIC:
+						r = "($sourceValue != null)?new java.math.BigDecimal(((BigDecimal)$sourceValue).toString()):null as BigDecimal"
+
+						break
+
+					case Field.Type.STRING:
+						r = "($sourceValue != null)?new java.math.BigDecimal((String)$sourceValue):null as BigDecimal"
+
+						break
+
+					case Field.Type.INTEGER:
+						r = "($sourceValue != null)?new java.math.BigDecimal((Integer)$sourceValue):null as BigDecimal"
+
+						break
+
+					case Field.Type.BIGINT:
+						r = "($sourceValue != null)?new java.math.BigDecimal((Long)$sourceValue):null as BigDecimal"
+
+						break
+
+					case Field.Type.DOUBLE:
+						r = "($sourceValue != null)?new java.math.BigDecimal((Double)$sourceValue):null as BigDecimal"
+
+						break
+
+					case Field.Type.BOOLEAN:
+						r = "($sourceValue != null)?new BigDecimal(((Boolean)$sourceValue)?1:0):null as BigDecimal"
+
+						break
+
+					default:
+						throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
+				}
+
+				break
+
+			case getl.data.Field.Type.DOUBLE:
+				switch (source.type) {
+					case Field.Type.DOUBLE:
+						r = "($sourceValue != null)?new Double((Double)$sourceValue):null as Double"
+
+						break
+
+					case Field.Type.STRING:
+						r = "($sourceValue != null)?Double.valueOf((String)$sourceValue):null as Double"
+
+						break
+
+					case Field.Type.INTEGER:
+						r = "($sourceValue != null)?Double.valueOf((Integer)$sourceValue):null as Double"
+
+						break
+
+					case Field.Type.BIGINT:
+						r = "($sourceValue != null)?Double.valueOf((Long)$sourceValue):null as Double"
+
+						break
+
+					case Field.Type.NUMERIC:
+						r = "((java.math.BigDecimal)$sourceValue)?.doubleValue()"
+
+						break
+
+					case Field.Type.BOOLEAN:
+						r = "($sourceValue != null)?new Double(((Boolean)$sourceValue == true)?1:0):null as Double"
+
+						break
+
+					default:
+						throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
+				}
+
+				break
+
+			case getl.data.Field.Type.DATE:
+				dataformat = dataformat?:GenerationUtils.DateFormat(dest.type)
+
+				switch (source.type) {
+					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME:
+						r = "($sourceValue != null)?new java.sql.Date(((Date)$sourceValue).time):null as java.sql.Date"
+
+						break
+
+					case Field.Type.STRING:
+						r =  "getl.utils.DateUtils.ParseSQLDate('$dataformat', (String)$sourceValue)"
+
+						break
+
+					case Field.Type.BIGINT:
+						r =  "($sourceValue != null)?new java.sql.Date((Long)$sourceValue):null as java.sql.Date"
+
+						break
+
+					default:
+						throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
+				}
+
 				break
 				
 			case getl.data.Field.Type.DATETIME:
-				if (source.type != getl.data.Field.Type.STRING && source.type != getl.data.Field.Type.DATE) throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
-				
-				if (source.type == getl.data.Field.Type.STRING) {
-					dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(dest.type)
-					r =  "getl.utils.DateUtils.ParseDate(\"${dataformat}\", (String)${sourceValue})"
+				dataformat = dataformat?:GenerationUtils.DateFormat(dest.type)
+
+				switch (source.type) {
+					case Field.Type.DATETIME: case Field.Type.DATE: case Field.Type.TIME:
+						r = "($sourceValue != null)?new java.sql.Timestamp(((Date)$sourceValue).time):null as java.sql.Timestamp"
+
+						break
+
+					case Field.Type.STRING:
+						r =  "getl.utils.DateUtils.ParseSQLTimestamp('$dataformat', (String)$sourceValue)"
+
+						break
+
+					case Field.Type.BIGINT:
+						r =  "($sourceValue != null)?new java.sql.Timestamp((Long)$sourceValue):null as java.sql.Timestamp"
+
+						break
+
+					default:
+						throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
 				}
-				else {
-					r = "${sourceValue}"
-				}
-				
+
 				break
 				
 			case getl.data.Field.Type.TIME:
-				if (source.type == getl.data.Field.Type.BIGINT)
-					r = "getl.utils.ConvertUtils.Long2Time((Long)${sourceValue})"
-				else if (source.type == getl.data.Field.Type.STRING)
-					r = "getl.utils.ConvertUtils.String2Time((String)${sourceValue})"
-				else
-					throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
+				dataformat = dataformat?:GenerationUtils.DateFormat(dest.type)
+
+				switch (source.type) {
+					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME:
+						r = "($sourceValue != null)?new java.sql.Time(((Date)$sourceValue).time):null as java.sql.Time"
+
+						break
+
+					case Field.Type.STRING:
+						r =  "getl.utils.DateUtils.ParseSQLTime('$dataformat', (String)$sourceValue)"
+
+						break
+
+					case Field.Type.BIGINT:
+						r =  "($sourceValue != null)?new java.sql.Time((Long)$sourceValue):null as java.sql.Time"
+
+						break
+
+					default:
+						throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
+				}
+
+				break
+
+			case getl.data.Field.Type.BLOB:
+				switch (source.type) {
+					case Field.Type.BLOB:
+						r = "($sourceValue != null)?((byte[])$sourceValue).clone():null as byte[]"
+
+						break
+
+					case Field.Type.STRING:
+						r = "($sourceValue != null)?((String)$sourceValue).bytes):null as byte[]"
+
+						break
+
+					default:
+						throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
+				}
+
+				break
+
+			case Field.Type.UUID:
+				switch (source.type) {
+					case Field.Type.UUID:
+						r = "($sourceValue != null)?java.util.UUID.fromString(((java.util.UUID)$sourceValue).toString()):null as java.util.UUID"
+
+						break
+
+					case Field.Type.STRING:
+						r = "($sourceValue != null)?java.util.UUID.fromString((String)$sourceValue):null as java.util.UUID"
+
+						break
+
+					default:
+						throw new ExceptionGETL("Unknown how convert type ${source.type} to ${dest.type} (${source.name}->${dest.name})")
+				}
+
+				break
+
+			case Field.Type.OBJECT:
+				r = "($sourceValue instanceof Cloneable)?${sourceValue}.clone():$sourceValue"
 				
 				break
-				
-			case getl.data.Field.Type.TEXT:
-				if (source.type == getl.data.Field.Type.STRING)
-					r = "new javax.sql.rowset.serial.SerialClob(((String)${sourceValue}).chars)"
-				else
-					r = "${sourceValue}"
-				
-				break
-				
-			case getl.data.Field.Type.OBJECT: case getl.data.Field.Type.BLOB: 
-				r = "${sourceValue}"
-				
-				break
+
 			default:
 				throw new ExceptionGETL("Type ${dest.type} not supported (${dest.name})")
 		}
@@ -1138,12 +1238,14 @@ sb << """
 			if (f.getMethod != null) sb << "		_getl_temp_var_$i = ${f.getMethod.replace("{field}", "_getl_temp_var_$i")}\n"
 
 			switch (f.type) {
+				/*
 				case getl.data.Field.Type.DATE:
-					sb << "		outRow.put('${f.name.toLowerCase()}', getl.utils.DateUtils.ClearTime((_getl_temp_var_${i}) as Date))"
+					sb << "		outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i} as java.sql.Date)"
 					break
 				case getl.data.Field.Type.DATETIME:
 					sb << "		outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i} as java.sql.Timestamp)"
 					break
+				*/
 				case getl.data.Field.Type.BLOB:
 					if (driver.blobReadAsObject()) {
 						sb << "	outRow.put('${f.name.toLowerCase()}', (_getl_temp_var_${i} as java.sql.Blob).getBytes((long)1, (int)((_getl_temp_var_${i} as java.sql.Blob).length())))"
@@ -1169,42 +1271,12 @@ sb << """
 
 			sb << '\n	}\n'
 
-			/*
-			if (f.type == getl.data.Field.Type.DATE) {
-				sb << "outRow.put('${f.name.toLowerCase()}', getl.utils.DateUtils.ClearTime(($methodGetValue) as Date))\n"
-			}
-			else if (f.type == getl.data.Field.Type.DATETIME) {
-				i++
-				sb << """def _getl_temp_var_$i = ($methodGetValue) as Date
-if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = new Date(_getl_temp_var_${i}.time)  
-"""
-			}
-			else if (f.type == getl.data.Field.Type.BLOB && driver.blobReadAsObject()) {
-				i++
-				sb << """def _getl_temp_var_$i = $methodGetValue as java.sql.Blob
-if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = _getl_temp_var_${i}.getBytes((long)1, (int)(_getl_temp_var_${i}.length()))
-"""
-			}
-			else if (f.type == getl.data.Field.Type.TEXT && driver.textReadAsObject()) {
-			 i++
-			 sb << """def _getl_temp_var_$i = $methodGetValue
-if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = _getl_temp_var_${i}.getSubString((long)1, (int)(_getl_temp_var_${i}.length()))
-			 """
-			}
-			else if (f.type == getl.data.Field.Type.UUID && driver.uuidReadAsObject()) {
-				i++
-				sb << """def _getl_temp_var_$i = $methodGetValue
-if (_getl_temp_var_$i == null) outRow.'${f.name.toLowerCase()}' = null else outRow.'${f.name.toLowerCase()}' = _getl_temp_var_${i}.toString()
-			 """
-			}
-			else {
-				sb << "outRow.'${f.name.toLowerCase()}' = $methodGetValue\n"
-			}
-			*/
 		}
 		sb << "}"
 		def statement = sb.toString()
+
 //		println statement
+
 		Closure code = EvalGroovyClosure(statement)
 
         return [statement: statement, code: code]

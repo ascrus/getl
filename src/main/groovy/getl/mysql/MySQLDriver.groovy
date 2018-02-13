@@ -155,4 +155,13 @@ class MySQLDriver extends JDBCDriver {
 
 	@Override
 	public String getSysDualTable() { return 'DUAL' }
+
+	@Override
+	protected String sessionID() {
+		String res = null
+		def rows = sqlConnect.rows('SELECT connection_id() as session_id')
+		if (!rows.isEmpty()) res = rows[0].session_id.toString()
+
+		return res
+	}
 }

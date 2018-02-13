@@ -230,4 +230,13 @@ class OracleDriver extends JDBCDriver {
 
 	@Override
 	public String getSysDualTable() { return 'DUAL' }
+
+	@Override
+	protected String sessionID() {
+		String res = null
+		def rows = sqlConnect.rows("select sys_context('userenv','sid') as session_id from dual")
+		if (!rows.isEmpty()) res = rows[0].session_id.toString()
+
+		return res
+	}
 }
