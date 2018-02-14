@@ -6,16 +6,25 @@ import getl.jdbc.JDBCDriverProto
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.proc.Flow
+import getl.stat.ProcessTime
 import getl.tfs.TDS
-import getl.utils.DateUtils
-import getl.utils.GenerationUtils
+import getl.utils.BoolUtils
+import getl.utils.Config
+import getl.utils.FileUtils
+import getl.utils.Logs
+import groovy.transform.CompileStatic
 
 /**
  * Created by ascru on 21.11.2016.
  */
 class H2DriverTest extends JDBCDriverProto {
+	static final def configName = 'tests/h2/h2.conf'
+
     @Override
-    protected JDBCConnection newCon() { return new TDS() }
+    protected JDBCConnection newCon() {
+		if (FileUtils.ExistsFile(configName)) Config.LoadConfig(configName)
+		return new TDS()
+	}
 
     public void testVersion() {
         def q = new QueryDataset(connection: con, query: 'SELECT H2Version() AS version')
@@ -33,5 +42,7 @@ class H2DriverTest extends JDBCDriverProto {
 
         c.exclusive = 0
         assertEquals('FALSE', q.rows().get(0).value)
+
+		c.connected = false
     }
 }

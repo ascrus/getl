@@ -42,7 +42,7 @@ class OracleDriver extends JDBCDriver {
 	OracleDriver () {
 		super()
 		caseObjectName = 'UPPER'
-		sqlType.BIGINT.name = 'number'
+		commitDDL = true
 
 		methodParams.register("eachRow", ["scn", "timestamp", "hints", "usePartition"])
 	}
@@ -50,35 +50,57 @@ class OracleDriver extends JDBCDriver {
 	@Override
 	public List<Driver.Support> supported() {
 		return super.supported() +
-				[Driver.Support.GLOBAL_TEMPORARY,
-                 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
+				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB,
+				 Driver.Support.CLOB, Driver.Support.INDEX]
 	}
 	
 	@Override
 	public List<Driver.Operation> operations() {
         return super.operations() +
-                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
-                 Driver.Operation.BULKLOAD]
+                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
 	
 	@Override
-	public String blobClosureWrite () {
-        return
-            '{ byte[] value -> def blob = _getl_con.createBlob(); def stream = blob.getBinaryOutputStream(); stream.write(value); stream.close(); blob }'
+	public String blobMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.BLOB) 
+	}
+	else {
+		oracle.sql.BLOB blob = con.createBlob() as oracle.sql.BLOB
+		def stream = blob.getBinaryOutputStream()
+		stream.write(value)
+		stream.close()
+		stat.setBlob(paramNum, /*new javax.sql.rowset.serial.SerialBlob(blob)*/blob)
+	}
+}"""
     }
 	
 	@Override
 	public boolean blobReadAsObject () { return false }
 	
 	@Override
-	public String clobClosureWrite () { return '{ String value -> def clob = _getl_con.createClob(); clob.setString(1, value); clob }' }
+	public String textMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.CLOB) 
+	}
+	else {
+		def clob = con.createClob()
+		clob.setString(1, value)
+		stat.setClob(paramNum, /*new javax.sql.rowset.serial.SerialClob(clob)*/clob)
+	} 
+}"""
+	}
 	
 	@Override
 	public Map getSqlType () {
 		Map res = super.getSqlType()
+		res.BIGINT.name = 'number'
+		res.BIGINT.useLength = JDBCDriver.sqlTypeUse.NEVER
 		res.BLOB.name = 'raw'
 		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
-		
+
 		return res
 	}
 	
@@ -89,13 +111,13 @@ class OracleDriver extends JDBCDriver {
 	 * @return
 	 */
 	@Override
-	public String prepareObjectNameWithPrefix(String name, String prefix) {
+	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null) {
 		if (name == null) return null
 		
 		String res
 		
 		def m = name =~ /([^a-zA-Z0-9_])/
-		if (m.size() > 0) res = prefix + name + prefix else res = prefix + name.toUpperCase() + prefix
+		if (m.size() > 0) res = prefix + name + prefixEnd?:prefix else res = prefix + name.toUpperCase() + (prefixEnd?:prefix)
 		
 		return res
 	}
@@ -136,7 +158,7 @@ class OracleDriver extends JDBCDriver {
 		}
 		
 		if (field.type == Field.Type.ROWID) {
-			field.getMethod = "(({field} != null)?new String({field}.bytes):null)"
+			field.getMethod = "new String({field}.bytes)"
 			return
 		}
 		
@@ -144,21 +166,21 @@ class OracleDriver extends JDBCDriver {
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)]") || 
 					field.typeName.matches("(?i)TIMESTAMP")) {
 				field.type = Field.Type.DATETIME
-				field.getMethod = "(({field} != null)?new java.sql.Timestamp({field}.timestampValue().getTime()):null)"
+				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue().getTime())"
 				return
 			}
 			
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH TIME ZONE") ||
 					field.typeName.matches("(?i)TIMESTAMP WITH TIME ZONE")) {
 				field.type = Field.Type.DATETIME
-				field.getMethod = "(({field} != null)?new java.sql.Timestamp({field}.timestampValue(connection).getTime()):null)"
+				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue(connection).getTime())"
 				return
 			}
 			
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH LOCAL TIME ZONE") ||
 					field.typeName.matches("(?i)TIMESTAMP WITH LOCAL TIME ZONE")) {
 				field.type = Field.Type.DATETIME
-				field.getMethod = "(({field} != null)?new java.sql.Timestamp({field}.timestampValue(connection, Calendar.getInstance()).getTime()):null)"
+				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue(connection, Calendar.getInstance()).getTime())"
 				return
 			}
 			
@@ -185,7 +207,7 @@ class OracleDriver extends JDBCDriver {
 			if (field.typeName.matches("(?i)NCLOB")) {
 				field.type = Field.Type.TEXT
 				field.dbType = java.sql.Types.NCLOB
-//				return
+				return
 			}
 		}
 	}
@@ -197,4 +219,24 @@ class OracleDriver extends JDBCDriver {
 
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'ALTER SESSION SET {name} = \'{value}\'' }
+
+	@Override
+	public String generateColumnDefinition(Field f, boolean useNativeDBType) {
+		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" +
+				((isSupport(Driver.Support.DEFAULT_VALUE) && f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
+				((isSupport(Driver.Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
+				((isSupport(Driver.Support.COMPUTE_FIELD) && f.compute != null)?" COMPUTED BY ${f.compute}":"")
+	}
+
+	@Override
+	public String getSysDualTable() { return 'DUAL' }
+
+	@Override
+	protected String sessionID() {
+		String res = null
+		def rows = sqlConnect.rows("select sys_context('userenv','sid') as session_id from dual")
+		if (!rows.isEmpty()) res = rows[0].session_id.toString()
+
+		return res
+	}
 }

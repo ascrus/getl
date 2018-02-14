@@ -82,23 +82,53 @@ class JDBCDriver extends Driver {
 	}
 	
 	/**
-	 * Class name for generate write data to blob field
+	 * Script for write array of bytes to serial blob object
 	 * @return
 	 */
-	public String blobClosureWrite() { '{ byte[] value -> new javax.sql.rowset.serial.SerialBlob(value) }' }
-	
+	public String blobMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.BLOB) 
+	}
+	else {
+		stat.setBlob(paramNum, new javax.sql.rowset.serial.SerialBlob(value))
+	} 
+}"""
+	}
+
 	/**
 	 * Blob field return value as Blob interface
 	 * @return
 	 */
-	public boolean blobReadAsObject() { true }
+	public boolean blobReadAsObject() { return true }
 	
 	/**
 	 * Class name for generate write data to clob field
 	 * @return
 	 */
-	public String clobClosureWrite() { '{ String value -> new javax.sql.rowset.serial.SerialClob(value.toCharArray()) }' }
-	
+	public String textMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.CLOB) 
+	}
+	else {
+		stat.setClob(paramNum, new javax.sql.rowset.serial.SerialClob(value.toCharArray()))
+	} 
+}"""
+	}
+
+	/**
+	 * Clob field return value as Clob interface
+	 * @return
+	 */
+	public boolean textReadAsObject() { return true }
+
+	/**
+	 * UUID field return value as UUID interface
+	 * @return
+	 */
+	public boolean uuidReadAsObject() { return false }
+
 	/**
 	 * Java field type association
 	 */
@@ -114,7 +144,7 @@ class JDBCDriver extends Driver {
 			TEXT: [java.sql.Types.CLOB, java.sql.Types.NCLOB, java.sql.Types.LONGNVARCHAR, java.sql.Types.LONGVARCHAR],
 			DATE: [java.sql.Types.DATE],
 			TIME: [java.sql.Types.TIME/*, java.sql.Types.TIME_WITH_TIMEZONE*/],
-			TIMESTAMP: [java.sql.Types.TIMESTAMP/*, java.sql.Types.TIMESTAMP_WITH_TIMEZONE*/]
+			TIMESTAMP: [java.sql.Types.TIMESTAMP/*, java.sql.Types.TIMESTAMP_WITH_TIMEZONE*/],
 		]
 	}
 	
@@ -129,7 +159,7 @@ class JDBCDriver extends Driver {
 	void prepareField (Field field) {
 		if (field.dbType == null) return
 		if (field.type != null && field.type != Field.Type.STRING) return
-		
+
 		Field.Type res
 		
 		Integer t = (Integer)field.dbType
@@ -160,7 +190,8 @@ class JDBCDriver extends Driver {
 				res = Field.Type.NUMERIC
 				break
 				
-			case java.sql.Types.BLOB: case java.sql.Types.VARBINARY: case java.sql.Types.LONGVARBINARY:   
+			case java.sql.Types.BLOB: case java.sql.Types.VARBINARY:
+			case java.sql.Types.LONGVARBINARY: case java.sql.Types.BINARY:
 				res = Field.Type.BLOB
 				break
 				
@@ -233,6 +264,9 @@ class JDBCDriver extends Driver {
 			case Field.Type.ROWID:
 				result = java.sql.Types.ROWID
 				break
+			case Field.Type.UUID:
+				result = java.sql.Types.OTHER
+				break
 			default:
 				throw new ExceptionGETL("Not supported type ${type}")
 		}
@@ -251,13 +285,14 @@ class JDBCDriver extends Driver {
 			INTEGER: [name: 'int'],
 			BIGINT: [name: 'bigint'],
 			NUMERIC: [name: 'decimal', useLength: sqlTypeUse.SOMETIMES, usePrecision: sqlTypeUse.SOMETIMES],
-			DOUBLE: [name: 'double'],
+			DOUBLE: [name: 'double precision'],
 			BOOLEAN: [name: 'boolean'],
 			DATE: [name: 'date'],
 			TIME: [name: 'time'],
 			DATETIME: [name: 'timestamp'],
 			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
 			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
+			UUID: [name: 'uuid'],
 			OBJECT: [name: 'object']
 		]
 	}
@@ -700,6 +735,7 @@ ${extend}'''
 	protected String sqlAutoIncrement = null
 	
 	protected boolean commitDDL = false
+	protected boolean transactionalDDL = false
 	
 	protected String caseObjectName = "NONE" // LOWER OR UPPER
 	protected String defaultDBName = null
@@ -708,6 +744,11 @@ ${extend}'''
 	protected String globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
 	protected String localTemporaryTablePrefix = 'LOCAL TEMPORARY'
 	protected String memoryTablePrefix = 'MEMORY'
+
+	/**
+	 * Name dual system table
+	 */
+	public String getSysDualTable() { return null }
 
 	@Override
 	public void createDataset(Dataset dataset, Map params) {
@@ -743,6 +784,10 @@ ${extend}'''
 		def defPrimary = GenerationUtils.SqlKeyFields(connection as JDBCConnection, dataset.field, null, null)
 		dataset.field.each { Field f ->
 			try {
+				if (f.type == Field.Type.BOOLEAN && !isSupport(Driver.Support.BOOLEAN)) throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")")
+				if (f.type == Field.Type.DATE && !isSupport(Driver.Support.DATE)) throw new ExceptionGETL("Driver not support date fields (field \"${f.name}\")")
+				if (f.type == Field.Type.TIME && !isSupport(Driver.Support.TIME)) throw new ExceptionGETL("Driver not support time fields (field \"${f.name}\")")
+				if (f.type == Field.Type.UUID && !isSupport(Driver.Support.UUID)) throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")")
                 if (f.type == Field.Type.BLOB && !isSupport(Driver.Support.BLOB)) throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")")
                 if (f.type == Field.Type.TEXT && !isSupport(Driver.Support.CLOB)) throw new ExceptionGETL("Driver not support clob fields (field \"${f.name}\")")
 
@@ -765,7 +810,7 @@ ${extend}'''
 
 		String createTableCode = '"""' + sqlCreateTable + '"""'
 		
-		if (commitDDL) startTran()
+		if (commitDDL && transactionalDDL) startTran()
 		try {
 			def varsCT = [  temporary: temporary, 
 							ifNotExists: ifNotExists, 
@@ -776,7 +821,7 @@ ${extend}'''
 			def sqlCodeCT = GenerationUtils.EvalGroovyScript(createTableCode, varsCT)
 	//		println sqlCodeCT
 			executeCommand(sqlCodeCT, p)
-			
+
 			if (params.indexes != null && !params.indexes.isEmpty()) {
 				if (!isSupport(Driver.Support.INDEX)) throw new ExceptionGETL("Driver not support indexes")
 				params.indexes.each { name, value ->
@@ -793,16 +838,30 @@ ${extend}'''
 									columns: idxCols.join(",")
 									]
 					def sqlCodeCI = GenerationUtils.EvalGroovyScript(createIndexCode, varsCI)
+
+					if (commitDDL) {
+						if (transactionalDDL) {
+							commitTran()
+							startTran()
+						} else {
+							executeCommand('COMMIT')
+						}
+					}
+
 					executeCommand(sqlCodeCI, p)
 				}
 			}
 		}
 		catch (Throwable e) {
-			if (commitDDL) rollbackTran()
+			if (commitDDL) {
+				if (transactionalDDL) rollbackTran()
+			}
 			throw e
 		}
 		
-		if (commitDDL) commitTran()
+		if (commitDDL) {
+			if (transactionalDDL) commitTran() else executeCommand('COMMIT')
+		}
 	}
 
 	/**
@@ -836,13 +895,15 @@ ${extend}'''
 	 * Prefix for tables name
 	 */
 	public String tablePrefix = '"'
+	public String tableEndPrefix
 
 	/**
 	 * Prefix for fields name
 	 */
 	public String fieldPrefix = '"'
+	public String fieldEndPrefix
 
-	public String prepareObjectNameWithPrefix(String name, String prefix) {
+	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null) {
 		if (name == null) return null
 		String res
 		switch (caseObjectName) {
@@ -856,7 +917,7 @@ ${extend}'''
 				res = name
 		}
 		
-		return prefix + res + prefix
+		return prefix + res + (prefixEnd?:prefix)
 	}
 	
 	/**
@@ -869,15 +930,15 @@ ${extend}'''
 	}
 	
 	public String prepareObjectNameForSQL(String name) {
-		return prepareObjectNameWithPrefix(name, fieldPrefix)
+		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix)
 	}
 	
 	public String prepareFieldNameForSQL(String name) {
-		return prepareObjectNameWithPrefix(name, fieldPrefix)
+		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix)
 	}
 	
 	public String prepareTableNameForSQL(String name) {
-		return prepareObjectNameWithPrefix(name, tablePrefix)
+		return prepareObjectNameWithPrefix(name, tablePrefix, tableEndPrefix)
 	}
 	
 	public String prepareObjectNameWithEval(String name) {
@@ -895,9 +956,19 @@ ${extend}'''
         JDBCDataset ds = dataset as JDBCDataset
 		
 		def r = prepareTableNameForSQL(ds.params.tableName as String)
-		if (ds.schemaName != null) r = prepareTableNameForSQL(ds.schemaName) +'.' + r
+
+		def schemaName = ds.schemaName
+		if (schemaName == null &&
+				(dataset.sysParams.type as JDBCDataset.Type) == JDBCDataset.Type.TABLE && defaultSchemaName != null) {
+			schemaName = defaultSchemaName
+		}
+
+		if (schemaName != null) {
+			r = prepareTableNameForSQL(schemaName) +'.' + r
+		}
+
 		if (ds.dbName != null) {
-			if (ds.schemaName != null) {
+			if (schemaName != null) {
 				r = prepareTableNameForSQL(ds.dbName) + '.' + r
 			}
 			else {
@@ -937,9 +1008,25 @@ ${extend}'''
 		if (t == null) throw new ExceptionGETL("Can not support type object \"${dataset.sysParams.type}\"")
 		def e = (params.ifExists != null && params.ifExists)?"IF EXISTS ":""
 		def q = "DROP ${t} ${e}${n}"
-		
-		executeCommand(q, [:])
-		if (commitDDL) sqlConnect.commit()
+
+		if (commitDDL && transactionalDDL) startTran()
+		try {
+			executeCommand(q, [:])
+		}
+		catch (Throwable err) {
+			if (commitDDL) {
+				if (transactionalDDL) rollbackTran()
+			}
+			throw err
+		}
+
+		if (commitDDL) {
+			if (transactionalDDL) {
+				commitTran()
+			} else {
+				executeCommand('COMMIT')
+			}
+		}
 	}
 	
 	public static boolean isTable(Dataset dataset) {
@@ -1167,7 +1254,7 @@ ${extend}'''
 		try {
 			java.sql.Connection con = sqlConnect.connection
 			if (sqlParams == null) {
-				sqlConnect.eachRow(sql, getFields, offs, max) { row ->
+				sqlConnect.eachRow(sql, getFields, offs, max) { groovy.sql.GroovyResultSet row ->
 					Map outRow = [:]
 					copyToMap(con, row, outRow)
 					
@@ -1191,6 +1278,10 @@ ${extend}'''
 		}
 		catch (SQLException e) {
 			Logs.Dump(e, getClass().name + ".sql", dataset.objectName, sql)
+			if (rowCopy != null) Logs.Dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
+			throw e
+		}
+		catch (Exception e) {
 			if (rowCopy != null) Logs.Dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
 			throw e
 		}
@@ -1239,7 +1330,7 @@ $sql
 	}
 
 	@Override
-	public long executeCommand(String command, Map params) {
+	public long executeCommand(String command, Map params = [:]) {
 		def result = 0
 		
 		if (command == null || command.trim().length() == 0) return result
@@ -1332,6 +1423,22 @@ $sql
 		(1..countMethod).each { sb << "	method_${it}(_getl_driver, _getl_con, _getl_stat, _getl_row)\n" }
 		sb << "}\n"
 
+		def isExistsBlob = false
+		def isExistsClob = false
+		procFields.each { Field f ->
+			if (f.type == Field.Type.BLOB) isExistsBlob = true else if (f.type == Field.Type.TEXT) isExistsClob = true
+		}
+		if (isExistsBlob) {
+			sb << '@groovy.transform.CompileStatic\n'
+			sb  << blobMethodWrite('blobWrite')
+			sb << '\n'
+		}
+		if (isExistsClob) {
+			sb << '@groovy.transform.CompileStatic\n'
+			sb  << textMethodWrite('clobWrite')
+			sb << '\n'
+		}
+
 		// PreparedStatement stat
 		def curField = 0
 		procFields.each { Field f ->
@@ -1344,13 +1451,13 @@ $sql
 			if (fieldMethod != curMethod) {
 				if (curMethod > 0) sb << "}\n"
 				curMethod = fieldMethod
-				sb << "\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
+				sb << "\n@groovy.transform.CompileStatic\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection _getl_con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
 			}
 
 			def fn = f.name.toLowerCase()
 			def dbType = (f.dbType != null)?f.dbType:type2dbType(f.type)
 
-			sb << GenerationUtils.GenerateSetParam(this, statIndex + 1, dbType as Integer, new String("_getl_row.'${fn}'"))
+			sb << GenerationUtils.GenerateSetParam(this, statIndex + 1, f, dbType as Integer, new String("_getl_row.'${fn}'"))
 			sb << "\n"
 		}
 		sb << "}"

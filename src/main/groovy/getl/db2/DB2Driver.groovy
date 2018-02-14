@@ -49,8 +49,8 @@ class DB2Driver extends JDBCDriver {
 	@Override
 	public List<Driver.Support> supported() {
 		return super.supported() +
-				[Driver.Support.GLOBAL_TEMPORARY,
-				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
+				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
+				 Driver.Support.INDEX, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
 	}
 	
 	@Override
@@ -70,11 +70,11 @@ class DB2Driver extends JDBCDriver {
 		
 		if (field.typeName?.matches('(?i)CLOB')) {
 			field.type= Field.Type.STRING
-			field.getMethod = '(({field} != null)?{field}.getSubString(1, (int){field}.length()):null)'
+			field.getMethod = '{field}.getSubString(1, (int){field}.length())'
 		}
 		else if (field.typeName?.matches('(?i)XML')) {
 			field.type= Field.Type.STRING
-			field.getMethod = '(({field} != null)?{field}.getString():null)'
+			field.getMethod = '{field}.getString()'
 		} 
 	}
 

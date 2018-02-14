@@ -176,7 +176,8 @@ public class SQLScripter {
 			sql = sql.substring(4).trim()
 			typeSql = TypeCommand.FOR
 		} else if (sql.matches("(?is)if(\\s|\\n|\\t).*")) {
-			sql = "SELECT true AS result WHERE " + sql.substring(3).trim()
+			def from = ((connection.driver as JDBCDriver).sysDualTable != null)?"FROM ${(connection.driver as JDBCDriver).sysDualTable}":''
+			sql = "SELECT 1 AS result $from WHERE " + sql.substring(3).trim()
 			typeSql = TypeCommand.IF
 		} else if (sql.matches("(?is)error(\\s|\\t).*")) {
 			sql = sql.substring(6).trim()

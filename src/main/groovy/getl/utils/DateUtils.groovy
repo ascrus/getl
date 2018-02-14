@@ -127,16 +127,6 @@ class DateUtils {
 			def sdf = new SimpleDateFormat(format)
 			sdf.setLenient(false)
 			result = sdf.parse(value.toString())
-
-			/*
-			DateTimeFormatter dtf = DateTimeFormatter.ofPattern(format) //.withZone(ZoneId.of('Z'))
-			LocalDate ldt = LocalDate.parse(value.toString(), dtf)
-			Calendar calendar = Calendar.getInstance(TimeZone.default)
-			calendar.clear()
-			calendar.set(ldt.year, ldt.month.value - 1, ldt.dayOfMonth, ldt.hour, ldt.minute, ldt.second)
-			calendar.clearTime()
-			result = calendar.time
-			*/
 		}
 		catch (Exception  e) {
 			if (ignoreError) return null
@@ -166,6 +156,75 @@ class DateUtils {
 	
 	public static Date ParseDateTime (def value) {
 		return ParseDate(defaultDateTimeMask, value, true)
+	}
+
+	/**
+	 * Parse string to sql date with format
+	 * @param format
+	 * @param value
+	 * @param ignoreError
+	 * @return
+	 */
+	public static java.sql.Date ParseSQLDate(String format, def value, boolean ignoreError = true) {
+		java.sql.Date result = null
+		if (value == null) return result
+		try {
+			def sdf = new SimpleDateFormat(format)
+			sdf.setLenient(false)
+			result = new java.sql.Date(sdf.parse(value.toString()).time)
+		}
+		catch (Exception  e) {
+			if (ignoreError) return null
+			throw e
+		}
+
+		return result
+	}
+
+	/**
+	 * Parse string to sql time with format
+	 * @param format
+	 * @param value
+	 * @param ignoreError
+	 * @return
+	 */
+	public static java.sql.Time ParseSQLTime(String format, def value, boolean ignoreError = true) {
+		java.sql.Time result = null
+		if (value == null) return result
+		try {
+			def sdf = new SimpleDateFormat(format)
+			sdf.setLenient(false)
+			result = new java.sql.Time(sdf.parse(value.toString()).time)
+		}
+		catch (Exception  e) {
+			if (ignoreError) return null
+			throw e
+		}
+
+		return result
+	}
+
+	/**
+	 * Parse string to sql timestamp with format
+	 * @param format
+	 * @param value
+	 * @param ignoreError
+	 * @return
+	 */
+	public static java.sql.Timestamp ParseSQLTimestamp(String format, def value, boolean ignoreError = true) {
+		java.sql.Timestamp result = null
+		if (value == null) return result
+		try {
+			def sdf = new SimpleDateFormat(format)
+			sdf.setLenient(false)
+			result = new java.sql.Timestamp(sdf.parse(value.toString()).time)
+		}
+		catch (Exception  e) {
+			if (ignoreError) return null
+			throw e
+		}
+
+		return result
 	}
 	
 	public static Date SQLDate2Date (java.sql.Timestamp value) {

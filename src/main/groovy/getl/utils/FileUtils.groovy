@@ -606,7 +606,9 @@ class FileUtils {
 		Closure convertCode
 		if (rules != null && !rules.isEmpty()) {
 			StringBuilder sb = new StringBuilder()
-			sb << "{ String line ->\n"
+			sb << "{ String line -> methodConvertText(line) }\n"
+			sb << "@groovy.transform.CompileStatic\n"
+			sb << "String methodConvertText(String line) {\n"
 			rules.each { rule ->
 				if (rule == null) throw new ExceptionGETL("Required rule section for convertation rules")
 				def type = (rule."type"?:"REPLACE")?.toUpperCase()
@@ -628,7 +630,7 @@ class FileUtils {
 				}
 				sb << "\n"
 			}
-			sb << "	line\n}"
+			sb << "	return line\n}"
 //			println sb.toString()
 			convertCode = GenerationUtils.EvalGroovyClosure(sb.toString())
 		}
@@ -647,7 +649,7 @@ class FileUtils {
 			line = reader.readLine()
 		}
 		
-		res
+		return res
 	}
 	
 	/**

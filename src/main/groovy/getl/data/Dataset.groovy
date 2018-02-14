@@ -643,6 +643,9 @@ class Dataset {
 	 * @return
 	 */
 	private Closure generateSetErrorValue (Closure processCode) {
+		return GenerationUtils.GenerateFieldCopy(field)
+
+		/*
 		StringBuilder ef = new StringBuilder()
 		field.each { ef << "	errorRow.'${it.name}' = row.'${it.name}'\n" }
 		
@@ -653,6 +656,7 @@ ${ef.toString()}
 		Closure result = GenerationUtils.EvalGroovyClosure(s)
 
 		return result
+		*/
 	}
 	
 	/**

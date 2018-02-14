@@ -3,12 +3,16 @@ package getl.csv
 import getl.data.Dataset
 import getl.data.Field
 import getl.proc.Flow
+import getl.stat.ProcessTime
 import getl.tfs.TFS
+import getl.utils.Config
 import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.GenerationUtils
+import getl.utils.Logs
 import getl.utils.NumericUtils
+import groovy.transform.CompileStatic
 
 import java.sql.Time
 
@@ -29,7 +33,7 @@ class CSVDriverTest extends GroovyTestCase {
             new Field(name: 'Blob', type: 'BLOB', length: 100)
     ]
 
-    static def conParams = [path: "${TFS.systemPath}/test_csv", createPath: true, extension: 'csv', codePage: 'utf-8']
+    static Map<String, Object> conParams = [path: "${TFS.systemPath}/test_csv", createPath: true, extension: 'csv', codePage: 'utf-8']
 
     static {
         FileUtils.ValidPath(conParams.path)
@@ -232,4 +236,48 @@ class CSVDriverTest extends GroovyTestCase {
         con = new CSVConnection(conParams + [escaped: true, header: true, isGzFile: false])
         validReadWrite(con, 'unix')
     }
+
+	@CompileStatic
+	public void testPerfomance() {
+		def perfomanceRows = 1000
+		def perfomanceCols = 1000
+
+		Logs.Finest("Test CSV perfomance write from $perfomanceRows rows with ${perfomanceCols+2} cols ...")
+
+		def c = new CSVConnection(conParams + (Map<String, Object>)([autoSchema: (Object)false]))
+		def t = new CSVDataset(connection: c, fileName: 'test_perfomance')
+
+		t.field << new Field(name: 'id', type: Field.Type.INTEGER, isKey: true)
+		t.field << new Field(name: 'name', length: 50, isNull: false)
+		(1..perfomanceCols).each { num ->
+			t.field << new Field(name: "value_$num", type: Field.Type.DOUBLE)
+		}
+
+		try {
+			def pt = new ProcessTime(name: "CSV perfomance write")
+			new Flow().writeTo(dest: t, dest_batchSize: 1000) { Closure updater ->
+				(1..perfomanceRows).each { Integer cur ->
+					cur++
+					def r = [:] as Map<String, Object>
+					r.id = cur
+					r.name = "name $cur"
+					(1..perfomanceCols).each { Integer num ->
+						r.put("value_$num".toString(), cur)
+					}
+					updater(r)
+				}
+			}
+			pt.finish(perfomanceRows as Long)
+
+			pt = new ProcessTime(name: "CSV perfomance read")
+			def count = 0
+			new Flow().process(source: t) { Map<String, Object> r ->
+				count++
+			}
+			pt.finish(count as Long)
+		}
+		finally {
+			t.drop()
+		}
+	}
 }

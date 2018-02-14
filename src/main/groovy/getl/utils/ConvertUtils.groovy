@@ -48,9 +48,9 @@ class ConvertUtils {
 	 * @return
 	 */
 	public static BigDecimal Object2BigDecimal(def value) {
-		if (value == null) return null
+		if (value == null) return (BigDecimal)null
 		//noinspection GroovyAssignabilityCheck
-		return new BigDecimal(value)
+		return new BigDecimal(value.toString())
 	}
 	
 	/**
@@ -123,7 +123,7 @@ class ConvertUtils {
 	 * @return
 	 */
 	public static BigDecimal Boolean2BigDecimal(Boolean value) {
-		if (value == null) return null
+		if (value == null) return (BigDecimal)null
 		(value)?1:0
 	}
 	

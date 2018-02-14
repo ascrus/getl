@@ -69,8 +69,9 @@ class VerticaDriver extends JDBCDriver {
     @Override
     public List<Driver.Support> supported() {
         return super.supported() +
-				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.GLOBAL_TEMPORARY,
-				 Driver.Support.SEQUENCE, Driver.Support.CLOB]
+				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE,
+				 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.UUID,
+				 Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
     }
 
     @Override
@@ -325,5 +326,37 @@ RECORD TERMINATOR $rowDelimiter
         if (!res.isEmpty()) {
             dir.afterOrderBy = res.join('\n')
         }
+	}
+
+	@Override
+	public void prepareField (Field field) {
+		super.prepareField(field)
+
+		if (field.typeName != null) {
+			if (field.typeName.matches("(?i)UUID")) {
+				field.type = Field.Type.UUID
+				field.dbType = java.sql.Types.VARCHAR
+				field.length = 36
+				field.precision = null
+				return
+			}
+		}
+	}
+
+	@Override
+	public boolean blobReadAsObject () { return false }
+
+	@Override
+	public String blobMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.BLOB) 
+	}
+	else {
+		def stream = new ByteArrayInputStream(value)
+		stat.setBinaryStream(paramNum, stream, value.length)
+		stream.close()
+	}
+}"""
 	}
 }

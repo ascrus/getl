@@ -222,13 +222,14 @@ class SavePointManager {
 		
 		JDBCDriver driver = connection.driver as JDBCDriver
 		def fp = driver.fieldPrefix
+		def fpe = driver.fieldEndPrefix?:fp
 		
 		def sql
 		if (saveMethod == "MERGE") {
-			sql = "SELECT ${fp}${map.type}${fp} AS type, ${fp}${map.value}${fp} AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fp = '${source}'"
+			sql = "SELECT ${fp}${map.type}${fpe} AS type, ${fp}${map.value}${fpe} AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fpe = '${source}'"
 		}
 		else {
-			sql = "SELECT ${fp}${map.type}${fp} AS type, Max(${fp}${map.value}${fp}) AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fp = '${source}' GROUP BY ${fp}${map.type}${fp}"
+			sql = "SELECT ${fp}${map.type}${fpe} AS type, Max(${fp}${map.value}${fpe}) AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fpe = '${source}' GROUP BY ${fp}${map.type}${fpe}"
 		}
 		
 		QueryDataset query = new QueryDataset(connection: connection, query: sql)

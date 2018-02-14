@@ -28,3 +28,9 @@ out/
 tests/vertica/
 tests/hive/
 tests/filemanager/
+tests/postgresql/
+tests/oracle/
+tests/mysql/
+tests/jdbc/
+tests/mssql/
+tests/h2/

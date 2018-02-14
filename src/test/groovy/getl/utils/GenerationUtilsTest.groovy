@@ -1,6 +1,8 @@
 package getl.utils
 
 import getl.data.*
+import getl.jdbc.TableDataset
+import getl.proc.Flow
 import getl.tfs.TDS
 
 import javax.sql.rowset.serial.SerialBlob
@@ -111,31 +113,31 @@ class GenerationUtilsTest extends GroovyTestCase {
         t.each { GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'STRING'), new Field(name: 'test', type: it), null, 'var') }
         t.each {
             if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.BLOB, Field.Type.TEXT,
-                         Field.Type.OBJECT, Field.Type.ROWID])) {
+                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'INTEGER'), new Field(name: 'test', type: it), null, 'var')
             }
         }
         t.each {
             if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.BLOB, Field.Type.TEXT,
-                         Field.Type.OBJECT, Field.Type.ROWID])) {
+                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'BIGINT'), new Field(name: 'test', type: it), null, 'var')
             }
         }
         t.each {
             if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.BLOB, Field.Type.TEXT,
-                         Field.Type.OBJECT, Field.Type.ROWID])) {
+                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'DOUBLE'), new Field(name: 'test', type: it), null, 'var')
             }
         }
         t.each {
             if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.BLOB, Field.Type.TEXT,
-                         Field.Type.NUMERIC, Field.Type.DOUBLE, Field.Type.OBJECT, Field.Type.ROWID])) {
+                         Field.Type.NUMERIC, Field.Type.DOUBLE, Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'BOOLEAN'), new Field(name: 'test', type: it), null, 'var')
             }
         }
         t.each {
             if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.BLOB, Field.Type.TEXT,
-                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.BOOLEAN])) {
+                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.BOOLEAN, Field.Type.UUID])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'NUMERIC'), new Field(name: 'test', type: it), null, 'var')
             }
         }
@@ -157,7 +159,9 @@ class GenerationUtilsTest extends GroovyTestCase {
         }
         t.each {
             GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'OBJECT'), new Field(name: 'test', type: it), null, 'var')
-            GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'BLOB'), new Field(name: 'test', type: it), null, 'var')
+			if ((it in [Field.Type.BLOB, Field.Type.STRING])) {
+				GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'BLOB'), new Field(name: 'test', type: it), null, 'var')
+			}
         }
     }
 
@@ -218,7 +222,7 @@ class GenerationUtilsTest extends GroovyTestCase {
         }
     }
 
-    void testGenerateRowCopy() {
+    void testGenerateRowCopyWithMap() {
         def t = Field.Type.values() - [Field.Type.OBJECT, Field.Type.ROWID]
         def c = new TDS()
         def l = []
@@ -239,13 +243,67 @@ class GenerationUtilsTest extends GroovyTestCase {
             }
             r.put("field_${it.toString().toLowerCase()}".toString(), v)
         }
-        def stat = GenerationUtils.GenerateRowCopy(c.driver, l)
+        def stat = GenerationUtils.GenerateRowCopy(c.driver, l, true)
         def d = [:]
         c.connected = true
         stat.code.call(c.javaConnection, r, d)
         r."field_text" = r."field_text".getSubString(1L, r."field_text".length() as Integer)
         r."field_blob" = r."field_blob".getBytes(1L, r."field_blob".length() as Integer)
         assertEquals(r, d)
+    }
+
+    void testGenerateRowCopyWithJDBC() {
+		def c = new TDS()
+
+		def t = new TableDataset(connection: c, tableName: 'testRowCopy')
+		t.field << new Field(name: 'id', type: 'INTEGER', isKey: true)
+		t.field << new Field(name: 'name', length: 50, isNull: false)
+		t.field << new Field(name: 'value', type: 'NUMERIC', length: 12, precision: 2, isNull: false)
+		t.field << new Field(name: 'value_float', type: 'DOUBLE', isNull: false)
+        t.field << new Field(name: 'date', type: 'DATE', isNull: false)
+		t.field << new Field(name: 'time', type: 'TIME', isNull: false)
+		t.field << new Field(name: 'datetime', type: 'DATETIME', isNull: false)
+		t.field << new Field(name: 'data', type: 'BLOB', length: 50, isNull: false)
+		t.field << new Field(name: 'text', type: 'TEXT', length: 50, isNull: false)
+		t.field << new Field(name: 'uuid', type: 'UUID', isNull: false)
+		t.create()
+
+		def n = new TableDataset(connection: c, tableName: 'testRowCopyNew')
+		n.field << new Field(name: 'id', type: 'STRING', length: 20, isKey: true)
+		n.field << new Field(name: 'name', type: 'TEXT', length: 50, isNull: false)
+		n.field << new Field(name: 'value', type: 'DOUBLE', isNull: false)
+		n.field << new Field(name: 'value_float', type: 'NUMERIC', length: 12, precision: 2, isNull: false)
+		n.field << new Field(name: 'date', type: 'DATETIME', isNull: false)
+		n.field << new Field(name: 'time', type: 'DATETIME', isNull: false)
+		n.field << new Field(name: 'datetime', type: 'DATE', isNull: false)
+		n.field << new Field(name: 'data', type: 'STRING', length: 50, isNull: false)
+		n.field << new Field(name: 'text', type: 'STRING', length: 50, isNull: false)
+		n.field << new Field(name: 'uuid', type: 'STRING', length: 36, isNull: false)
+		n.create()
+
+		try {
+			new Flow().writeTo(dest: t) { update ->
+				(1..100).each { num ->
+					Map r = [
+							id: num, name: "name $num", value: num, value_float: num.toDouble(),
+							date: GenerationUtils.GenerateDate(),
+							time: DateUtils.ClearTime(GenerationUtils.GenerateDateTime()),
+							datetime: GenerationUtils.GenerateDateTime(),
+							data: GenerationUtils.GenerateString(20).bytes,
+							text: GenerationUtils.GenerateString(50),
+							uuid: UUID.randomUUID()
+					]
+					update(r)
+				}
+			}
+
+			new Flow().copy(source: t, dest: n)
+		}
+		finally {
+			t.drop()
+			n.drop()
+		}
+
     }
 
     void testGenerateFieldCopy() {

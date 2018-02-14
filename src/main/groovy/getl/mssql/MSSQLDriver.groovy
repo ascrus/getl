@@ -24,6 +24,8 @@
 
 package getl.mssql
 
+import getl.data.Field
+
 import java.sql.PreparedStatement
 import getl.data.Dataset
 import getl.driver.Driver
@@ -42,18 +44,42 @@ class MSSQLDriver extends JDBCDriver {
 		super()
 		
 		methodParams.register('eachRow', ['with'])
+
+		defaultSchemaName = "dbo"
+		fieldPrefix = '['
+		fieldEndPrefix = ']'
+		tablePrefix = '['
+		tableEndPrefix = ']'
+		commitDDL = true
 	}
 
 	@Override
 	public List<Driver.Support> supported() {
 		return super.supported() +
-				[Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
+				[Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
+				 Driver.Support.INDEX, Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE,
+				 Driver.Support.BOOLEAN]
 	}
 
 	@Override
 	public List<Driver.Operation> operations() {
 		return super.operations() +
 				[Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
+	}
+
+	@Override
+	public Map getSqlType () {
+		Map res = super.getSqlType()
+		res.DOUBLE.name = 'float'
+		res.BOOLEAN.name = 'bit'
+		res.BLOB.name = 'varbinary'
+		res.BLOB.useLength = JDBCDriver.sqlTypeUse.ALWAYS
+		res.TEXT.name = 'varchar'
+		res.TEXT.useLength = JDBCDriver.sqlTypeUse.ALWAYS
+		res.DATETIME.name = 'datetime'
+		res.UUID.name = 'uniqueidentifier'
+
+		return res
 	}
 
 	@Override
@@ -79,4 +105,28 @@ class MSSQLDriver extends JDBCDriver {
 
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} {value}' }
+
+	@Override
+	public void prepareField (Field field) {
+		super.prepareField(field)
+
+		if (field.typeName != null) {
+			if (field.typeName.matches("(?i)TEXT")) {
+				field.type = Field.Type.TEXT
+				field.dbType = java.sql.Types.CLOB
+				return
+			}
+
+			if (field.typeName.matches("(?i)UNIQUEIDENTIFIER")) {
+				field.type = Field.Type.UUID
+				field.dbType = java.sql.Types.VARCHAR
+				field.length = 36
+				field.precision = null
+				return
+			}
+		}
+	}
+
+	@Override
+	public boolean blobReadAsObject () { return false }
 }

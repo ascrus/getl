@@ -140,14 +140,9 @@ class Flow {
 		StringBuilder sb = new StringBuilder()
 		sb << "{ Map inRow, Map outRow ->\n"
 		
-		if (countMethod > 1) {
-			(1..countMethod).each { sb << "	method_${it}(inRow, outRow)\n" }
-			sb << "}\n"
-		}
-		else {
-			sb << "\n"
-		}
-		
+		(1..countMethod).each { sb << "	method_${it}(inRow, outRow)\n" }
+		sb << "}\n"
+
 		def map = convertFieldMap(fieldMap)
 		List<String> destFields = []
 		List<String> sourceFields = []
@@ -156,16 +151,14 @@ class Flow {
 		dest.field.each { Field d ->
 			c++
 			
-			if (countMethod > 1) {
-				def fieldMethod = new BigDecimal(c / 100).intValue() + 1
-				if (fieldMethod != curMethod) {
-					if (curMethod > 0) sb << "}\n"
-					curMethod = fieldMethod
-					sb << "\nvoid method_${curMethod} (Map inRow, Map outRow) {\n"
-					sb << "\n"
-				}
+			def fieldMethod = new BigDecimal(c / 100).intValue() + 1
+			if (fieldMethod != curMethod) {
+				if (curMethod > 0) sb << "}\n"
+				curMethod = fieldMethod
+				sb << '\n@groovy.transform.CompileStatic'
+				sb << "\nvoid method_${curMethod} (Map inRow, Map outRow) {\n"
 			}
-			
+
 			if (d.name.toLowerCase() in excludeFields) {
 				sb << "// Exclude field ${d.name}\n\n"
 				return
@@ -232,11 +225,14 @@ class Flow {
 				sourceFields << sn
 			}
 			
-			sb << "\n\n"
+			sb << "\n"
 		}
 		
 		sb << "\n}"
 		scriptMap = sb.toString()
+
+//		println scriptMap
+
 		result.code = GenerationUtils.EvalGroovyScript(scriptMap)
 		result.sourceFields = sourceFields
 		result.destFields = destFields

@@ -41,27 +41,28 @@ import getl.utils.*
  */
 @InheritConstructors
 class H2Driver extends JDBCDriver {
-	H2Driver () {
+	H2Driver() {
 		super()
 		sqlAutoIncrement = "auto_increment"
 		commitDDL = false
-		
+
 		caseObjectName = "UPPER"
 		defaultSchemaName = "PUBLIC"
 		connectionParamBegin = ";"
 		connectionParamJoin = ";"
 
 		methodParams.register("createDataset", ["transactional", "not_persistent"])
-        methodParams.register('bulkLoadFile', ['expression'])
+		methodParams.register('bulkLoadFile', ['expression'])
 	}
-	
+
 	@Override
 	public List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.LOCAL_TEMPORARY, Driver.Support.MEMORY,
-				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX]
+				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX,
+				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
 	}
-	
+
 	@Override
 	public List<Driver.Operation> operations() {
 		return super.operations() +
@@ -70,20 +71,19 @@ class H2Driver extends JDBCDriver {
 	}
 
 	@Override
-	public String defaultConnectURL () {
+	public String defaultConnectURL() {
 		def con = connection as H2Connection
-        def url
+		def url
 		if (con.inMemory) {
-			url = (con.connectHost != null)?"jdbc:h2:tcp://{host}/mem:{database}":"jdbc:h2:mem:{database}"
+			url = (con.connectHost != null) ? "jdbc:h2:tcp://{host}/mem:{database}" : "jdbc:h2:mem:{database}"
 			if (con.connectDatabase == null) url = url.replace('{database}', 'memory_database')
+		} else {
+			url = (con.connectHost != null) ? "jdbc:h2:tcp://{host}/{database}" : "jdbc:h2://{database}"
 		}
-		else {
-            url = (con.connectHost != null)?"jdbc:h2:tcp://{host}/{database}":"jdbc:h2://{database}"
-        }
 
-        return url
+		return url
 	}
-	
+
 	/**
 	 * Prepare object name by prefix
 	 * @param name
@@ -91,68 +91,67 @@ class H2Driver extends JDBCDriver {
 	 * @return
 	 */
 	@Override
-	public String prepareObjectNameWithPrefix(String name, String prefix) {
+	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null) {
 		if (name == null) return null
-		
+
 		String res
-		
+
 		def m = name =~ /([^a-zA-Z0-9_])/
-		if (m.size() > 0) res = prefix + name + prefix else res = prefix + name.toUpperCase() + prefix
-		
+		if (m.size() > 0) res = prefix + name + prefix else res = prefix + name.toUpperCase() + (prefixEnd ?: prefix)
+
 		return res
 	}
-	
+
 	@Override
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		String result = ""
 		def temporary = ((dataset.sysParams.type as JDBCDataset.Type) in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
 		if (BoolUtils.IsValue(params."not_persistent")) result += "NOT PERSISTENT "
 		if (temporary && params.transactional != null && params.transactional) result += "TRANSACTIONAL "
-		
+
 		return result
 	}
-	
-	@Override
-    public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-		if (params.compressed != null) throw new ExceptionGETL("H2 bulk load dont support compression files")
-		
-		params = bulkLoadFilePrepare(source, dest as JDBCDataset, params, prepareCode)
-		
-		List<Map> map = params.map
-		boolean autoCommit = (params.autoCommit != null)?params.autoCommit:(dest.connection.tranCount == 0 && !dest.connection.autoCommit)
 
-        Map<String, String> expression = params.expression?:[:]
-        expression.each { String fieldName, String expr ->
-            if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
-        }
-		
+	@Override
+	public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+		if (params.compressed != null) throw new ExceptionGETL("H2 bulk load dont support compression files")
+
+		params = bulkLoadFilePrepare(source, dest as JDBCDataset, params, prepareCode)
+
+		List<Map> map = params.map
+		boolean autoCommit = (params.autoCommit != null) ? params.autoCommit : (dest.connection.tranCount == 0 && !dest.connection.autoCommit)
+
+		Map<String, String> expression = params.expression ?: [:]
+		expression.each { String fieldName, String expr ->
+			if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
+		}
+
 		StringBuilder sb = new StringBuilder()
 		List<String> columns = []
-        List<String> fields = []
+		List<String> fields = []
 		List<String> headers = []
 		List<String> fparm = []
 		map.each { Map<String, Object> m ->
-            Field f = m.field as Field
+			Field f = m.field as Field
 			if (f != null && !f.isReadOnly) {
 				headers << f.name.toUpperCase()
-                columns << fieldPrefix + f.name.toUpperCase() + fieldPrefix
-                def expr = expression.get(f.name.toLowerCase())
-                if (expr == null) {
-                    fields << fieldPrefix + f.name.toUpperCase() + fieldPrefix
-                }
-                else {
-                    fields << expr
-                }
+				columns << fieldPrefix + f.name.toUpperCase() + fieldPrefix
+				def expr = expression.get(f.name.toLowerCase())
+				if (expr == null) {
+					fields << fieldPrefix + f.name.toUpperCase() + fieldPrefix
+				} else {
+					fields << expr
+				}
 			}
 		}
 		def cols = columns.join(', ')
-        def flds = fields.join(', ')
-		def heads = (!source.header)?"'" + headers.join(source.fieldDelimiter) + "'":"null"
+		def flds = fields.join(', ')
+		def heads = (!source.header) ? "'" + headers.join(source.fieldDelimiter) + "'" : "null"
 		fparm << "charset=${source.codePage}"
 		fparm << "fieldSeparator=${source.fieldDelimiter}"
 		if (source.quoteStr != null) fparm << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr)}"
-		def functionParms = fparm.join(" ") 
-		
+		def functionParms = fparm.join(" ")
+
 		sb <<
 """INSERT INTO ${fullNameDataset(dest)} (
 $cols
@@ -240,5 +239,34 @@ VALUES(${GenerationUtils.SqlFields(dataset.connection as JDBCConnection, fields,
 """
 		
 		return res
+	}
+
+	@Override
+	public void prepareField (Field field) {
+		super.prepareField(field)
+
+		if (field.typeName != null) {
+			if (field.typeName.matches("(?i)UUID")) {
+				field.type = Field.Type.UUID
+				field.dbType = java.sql.Types.VARCHAR
+				field.length = 36
+				field.precision = null
+				return
+			}
+
+			if (field.typeName.matches("(?i)BLOB")) {
+				field.type = Field.Type.BLOB
+				field.dbType = java.sql.Types.BLOB
+				field.precision = null
+				return
+			}
+
+			if (field.typeName.matches("(?i)CLOB")) {
+				field.type = Field.Type.TEXT
+				field.dbType = java.sql.Types.CLOB
+				field.precision = null
+				return
+			}
+		}
 	}
 }
