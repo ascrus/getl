@@ -7,31 +7,50 @@ import getl.utils.Logs
 
 class NetsuiteDriverTest extends GroovyTestCase {
 	static final def configName = 'tests/jdbc/netsuite.json'
-	private NetsuiteConnection netsuiteConnection
+	private NetsuiteConnection netsuiteConnectionUrl
+	private NetsuiteConnection netsuiteConnectionHost
 
 	void setUp() {
 		if (!FileUtils.ExistsFile(configName)) return
 		Config.LoadConfig(configName)
 		Logs.Init()
-
-		netsuiteConnection = new NetsuiteConnection(config: 'netsuite')
+		netsuiteConnectionUrl = new NetsuiteConnection(config: 'netsuite_url')
+		netsuiteConnectionHost = new NetsuiteConnection(config: 'netsuite_host')
 	}
 
-	void testConnect() {
-		netsuiteConnection.connected = true
-		assertTrue(netsuiteConnection.connected)
+	void testConnectByUrl() {
+		netsuiteConnectionUrl.connected = true
+		assertTrue(netsuiteConnectionUrl.connected)
 	}
 
-	void testGetData() {
-		QueryDataset dataset = new QueryDataset(connection: netsuiteConnection)
+	void testConnectByHost() {
+		netsuiteConnectionHost.connected = true
+		assertTrue(netsuiteConnectionHost.connected)
+	}
+
+	void testGetDataUrl() {
+		QueryDataset dataset = new QueryDataset(connection: netsuiteConnectionUrl)
 
 		dataset.query = 'select 1 rnd_row'
 
 		assertEquals(dataset.rows()[0].rnd_row, 1)
 	}
 
-	void testDisconnect() {
-		netsuiteConnection.connected = false
-		assertFalse(netsuiteConnection.connected)
+	void testGetDataHost() {
+		QueryDataset dataset = new QueryDataset(connection: netsuiteConnectionHost)
+
+		dataset.query = 'select 1 rnd_row'
+
+		assertEquals(dataset.rows()[0].rnd_row, 1)
+	}
+
+	void testDisconnectUrl() {
+		netsuiteConnectionUrl.connected = false
+		assertFalse(netsuiteConnectionUrl.connected)
+	}
+
+	void testDisconnectHost() {
+		netsuiteConnectionHost.connected = false
+		assertFalse(netsuiteConnectionHost.connected)
 	}
 }

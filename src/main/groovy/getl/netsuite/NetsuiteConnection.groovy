@@ -40,18 +40,51 @@ class NetsuiteConnection extends JDBCConnection {
 
 	NetsuiteConnection(Map params) {
 		super(new HashMap([driver: NetsuiteDriver]) + params)
-		if (this.getClass().name == 'getl.netsuite.NetsuiteConnection') methodParams.validation("Super", params)
+		if (this.getClass().name == 'getl.netsuite.NetsuiteConnection') methodParams.validation('Super', params)
 	}
 	
 	@Override
 	protected void onLoadConfig (Map configSection) {
 		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.netsuite.NetsuiteConnection') methodParams.validation("Super", params)
+
+		methodParams.register('Super', ['host', 'port', 'serverDataSource', 'ciphersuites', 'accountId'])
+
+		if (this.getClass().name == 'getl.netsuite.NetsuiteConnection') methodParams.validation('Super', params)
 	}
 	
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()
-		driverName = "com.netsuite.jdbc.openaccess.OpenAccessDriver"
+		driverName = 'com.netsuite.jdbc.openaccess.OpenAccessDriver'
 	}
+
+	/**
+	 * Server Data Source
+	 */
+	public String getServerDataSource () { params.serverDataSource }
+	public void setServerDataSource (String value) { params.serverDataSource = value }
+
+	/**
+	 * Ciphersuites
+	 */
+	public String getCiphersuites () { params.ciphersuites }
+	public void setCiphersuites (String value) { params.ciphersuites = value }
+
+	/**
+	 * Account ID
+	 */
+	public Integer getAccountId () { params.accountId }
+	public void setAccountId (Integer value) { params.accountId = value }
+
+	/**
+	 * Account ID
+	 */
+	public String getHost () { params.host }
+	public void setHost (String value) { params.host = value }
+
+	/**
+	 * Account ID
+	 */
+	public Integer getPort () { params.port }
+	public void setHost (Integer value) { params.port = value }
 }
