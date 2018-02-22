@@ -34,3 +34,4 @@ tests/mysql/
 tests/jdbc/
 tests/mssql/
 tests/h2/
+tests/netsuite/
