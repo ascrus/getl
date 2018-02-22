@@ -40,14 +40,17 @@ class NetsuiteConnection extends JDBCConnection {
 
 	NetsuiteConnection(Map params) {
 		super(new HashMap([driver: NetsuiteDriver]) + params)
-		if (this.getClass().name == 'getl.netsuite.NetsuiteConnection') methodParams.validation('Super', params)
+	}
+
+	@Override
+	protected void registerParameters () {
+		super.registerParameters()
+		methodParams.register('Super', ['serverDataSource', 'ciphersuites', 'accountId'])
 	}
 	
 	@Override
 	protected void onLoadConfig (Map configSection) {
 		super.onLoadConfig(configSection)
-
-		methodParams.register('Super', ['host', 'port', 'serverDataSource', 'ciphersuites', 'accountId'])
 
 		if (this.getClass().name == 'getl.netsuite.NetsuiteConnection') methodParams.validation('Super', params)
 	}
@@ -75,16 +78,4 @@ class NetsuiteConnection extends JDBCConnection {
 	 */
 	public Integer getAccountId () { params.accountId }
 	public void setAccountId (Integer value) { params.accountId = value }
-
-	/**
-	 * Account ID
-	 */
-	public String getHost () { params.host }
-	public void setHost (String value) { params.host = value }
-
-	/**
-	 * Account ID
-	 */
-	public Integer getPort () { params.port }
-	public void setHost (Integer value) { params.port = value }
 }

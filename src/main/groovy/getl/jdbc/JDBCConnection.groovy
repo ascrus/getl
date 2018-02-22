@@ -104,7 +104,7 @@ class JDBCConnection extends Connection {
 	public String currentConnectURL () { sysParams."currentConnectURL" }
 	
 	/**
-	 * Server host for connection url
+	 * Server host and port for connection url
 	 * @return
 	 */
 	public String getConnectHost () { params."connectHost" }

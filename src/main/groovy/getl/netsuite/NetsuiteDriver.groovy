@@ -41,8 +41,11 @@ class NetsuiteDriver extends JDBCDriver {
 	NetsuiteDriver() {
 		super()
 		
-		methodParams.register('eachRow', [])
+		methodParams.unregister('eachRow', ['onlyFields', 'excludeFields', 'where', 'order', 'offset',
+											'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
 
+		connectionParamBegin = ';'
+		connectionParamJoin = ';'
 		defaultSchemaName = 'Administrator'
 		fieldPrefix = '['
 		fieldEndPrefix = ']'
@@ -53,15 +56,17 @@ class NetsuiteDriver extends JDBCDriver {
 	@Override
 	public List<Driver.Support> supported() {
 		return super.supported() + [
-				Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BLOB,
-				Driver.Support.CLOB, Driver.Support.BOOLEAN
+				Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN/*,
+				Driver.Support.BLOB, Driver.Support.CLOB*/
 		]
 	}
 
+	/*
 	@Override
 	public List<Driver.Operation> operations() {
 		return super.operations()
 	}
+	*/
 
 	@Override
 	public Map getSqlType () {
@@ -79,14 +84,9 @@ class NetsuiteDriver extends JDBCDriver {
 
 	@Override
 	public String defaultConnectURL () {
-		return 'jdbc:ns://{host}:{port};ServerDataSource={serverDataSource};' +
+		return 'jdbc:ns://{host};ServerDataSource={serverDataSource};' +
                 'encrypted=1;Ciphersuites={ciphersuites};' +
                 'CustomProperties=(AccountID={accountId};RoleID=3)'
-	}
-
-	@Override
-	public void prepareField (Field field) {
-		super.prepareField(field)
 	}
 
 	/**
@@ -95,35 +95,19 @@ class NetsuiteDriver extends JDBCDriver {
 	 */
 	@Override
     protected String buildConnectURL () {
-		NetsuiteConnection con = connection as NetsuiteConnection
-
-		def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()
+		def url = super.buildConnectURL()
 		if (url == null) return null
 
-		if (url.indexOf('{host}') != -1) {
-			if (con.host == null) throw new ExceptionGETL('Need set property "host"')
-			url = url.replace("{host}", con.host)
-		}
+		NetsuiteConnection con = connection as NetsuiteConnection
 
-        if (url.indexOf('{port}') != -1) {
-            if (con.port == null) throw new ExceptionGETL('Need set property "port"')
-            url = url.replace("{port}", String.valueOf(con.port))
-        }
+		if (con.serverDataSource == null) throw new ExceptionGETL('Need set property "serverDataSource"')
+		url = url.replace("{serverDataSource}", con.serverDataSource)
 
-        if (url.indexOf('{serverDataSource}') != -1) {
-            if (con.serverDataSource == null) throw new ExceptionGETL('Need set property "serverDataSource"')
-            url = url.replace("{serverDataSource}", con.serverDataSource)
-        }
+		if (con.ciphersuites == null) throw new ExceptionGETL('Need set property "ciphersuites"')
+		url = url.replace("{ciphersuites}", con.ciphersuites)
 
-        if (url.indexOf('{ciphersuites}') != -1) {
-            if (con.ciphersuites == null) throw new ExceptionGETL('Need set property "ciphersuites"')
-            url = url.replace("{ciphersuites}", con.ciphersuites)
-        }
-
-        if (url.indexOf('{accountId}') != -1) {
-            if (con.accountId == null) throw new ExceptionGETL('Need set property "accountId"')
-            url = url.replace("{accountId}", String.valueOf(con.accountId))
-        }
+		if (con.accountId == null) throw new ExceptionGETL('Need set property "accountId"')
+		url = url.replace("{accountId}", String.valueOf(con.accountId))
 
 		return url
 	}
