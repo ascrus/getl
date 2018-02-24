@@ -4,6 +4,10 @@ import getl.data.Connection
 import getl.data.Dataset
 import groovy.transform.InheritConstructors
 
+/**
+ * SalesForce Dataset class
+ * @author Dmitry Shaldin
+ */
 @InheritConstructors
 class SalesForceDataset extends Dataset {
 	@Override
@@ -28,11 +32,4 @@ class SalesForceDataset extends Dataset {
 	String getObjectFullName() {
 		return sfObjectName
 	}
-
-	/**
-	 * Limit rows to return
-	 * @return
-	 */
-//	Integer getLimit() { params.limit }
-//	void setLimit(final Integer value) { params.limit = value }
 }

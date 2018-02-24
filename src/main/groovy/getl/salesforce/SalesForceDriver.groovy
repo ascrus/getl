@@ -21,7 +21,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
- * Excel Dataset class
+ * SalesForce Driver class
  * @author Dmitry Shaldin
  */
 @InheritConstructors

@@ -4,7 +4,7 @@ import getl.data.Connection
 import groovy.transform.InheritConstructors
 
 /**
- * Excel Dataset class
+ * SalesForce Connection class
  * @author Dmitry Shaldin
  */
 @InheritConstructors
