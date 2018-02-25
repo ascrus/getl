@@ -111,7 +111,7 @@ class OracleDriver extends JDBCDriver {
 	 * @return
 	 */
 	@Override
-	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null) {
+	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null, Dataset dataset = null) {
 		if (name == null) return null
 		
 		String res

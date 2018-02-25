@@ -22,8 +22,6 @@ class ExcelDriverTest extends GroovyTestCase {
     void testEachRow() {
         def counter = 0
         excelDataset.eachRow { Map row ->
-			println row
-
 			assertNotNull(row.a)
 			assertTrue(row.a instanceof Integer)
 

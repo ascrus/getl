@@ -91,7 +91,7 @@ class H2Driver extends JDBCDriver {
 	 * @return
 	 */
 	@Override
-	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null) {
+	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null, Dataset dataset = null) {
 		if (name == null) return null
 
 		String res
@@ -234,8 +234,8 @@ FROM CSVREAD('{file_name}', ${heads}, '${functionParms}')
 		}
 
 		String res = """
-MERGE INTO ${dataset.fullNameDataset()} (${GenerationUtils.SqlFields(dataset.connection as JDBCConnection, fields, null, excludeFields).join(", ")})
-VALUES(${GenerationUtils.SqlFields(dataset.connection as JDBCConnection, fields, "?", excludeFields).join(", ")})
+MERGE INTO ${dataset.fullNameDataset()} (${GenerationUtils.SqlFields(dataset, fields, null, excludeFields).join(", ")})
+VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", ")})
 """
 		
 		return res

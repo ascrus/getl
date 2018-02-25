@@ -198,7 +198,7 @@ class VerticaDriver extends JDBCDriver {
 		List options = []
 		map.each { Map f ->
 			if (f.field != null) {
-				def fieldName = dest.sqlObjectName(f.field.name)
+				def fieldName = (dest as JDBCDataset).sqlObjectName(f.field.name)
 				columns << fieldName
 				switch (f.field.type) {
 					case Field.Type.BLOB:
