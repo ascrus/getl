@@ -4,6 +4,7 @@ import getl.csv.CSVConnection
 import getl.csv.CSVDataset
 import getl.proc.Flow
 import getl.stat.ProcessTime
+import getl.tfs.TFS
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
@@ -49,8 +50,7 @@ class SalesForceConnectionTest extends GroovyTestCase {
         if (connection == null) return
         SalesForceDataset source = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
 
-        CSVConnection csvConnection = new CSVConnection(path: 'tests/salesforce')
-        CSVDataset dest = new CSVDataset(connection: csvConnection, fileName: 'test.csv')
+		def dest = TFS.dataset()
 
         source.retrieveFields()
         source.field.removeAll { !(it.name in ['Id', 'Name']) }
@@ -60,6 +60,19 @@ class SalesForceConnectionTest extends GroovyTestCase {
         def count = new Flow().copy(source: source, dest: dest, source_limit: 100)
         pt.finish(count)
     }
+
+	void testFlowCopyWithInherit() {
+		if (connection == null) return
+		SalesForceDataset source = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
+
+		def dest = TFS.dataset()
+
+		def pt = new ProcessTime(name: 'Copy data from SalesForce')
+		def count = new Flow().copy(source: source, dest: dest, source_limit: 100, inheritFields: true, excludeFields: ['name'])
+		pt.finish(count)
+
+		assertEquals(source.field.size() - 1, dest.field.size())
+	}
 
 	void testDisconnect() {
 		if (connection == null) return
