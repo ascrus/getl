@@ -159,13 +159,14 @@ class Flow {
 				sb << "\nvoid method_${curMethod} (Map inRow, Map outRow) {\n"
 			}
 
-			if (d.name.toLowerCase() in excludeFields) {
+			// Dest field name
+			def dn = d.name.toLowerCase()
+
+			if (dn in excludeFields) {
 				sb << "// Exclude field ${d.name}\n\n"
 				return
 			}
 			
-			// Dest field name			
-			def dn = d.name.toLowerCase()
 			// Map field name
 			def mn = dn
 			
@@ -204,7 +205,7 @@ class Flow {
 			if (s == null) {
 				if (!d.isAutoincrement && !d.isReadOnly) {
 					sb << "outRow.'${dn}' = getl.utils.GenerationUtils.EMPTY_${d.type.toString().toUpperCase()}"
-					destFields << dn
+					destFields << d.name
 				}
 				else {
 					sb << "// $dn: NOT VALUE REQUIRED"
@@ -221,8 +222,8 @@ class Flow {
 					sb << "outRow.'${dn}' = "
 					sb << GenerationUtils.GenerateConvertValue(d, s, mapFormat, "inRow.'${sn}'")
 				}
-				destFields << dn
-				sourceFields << sn
+				destFields << d.name
+				sourceFields << s.name
 			}
 			
 			sb << "\n"

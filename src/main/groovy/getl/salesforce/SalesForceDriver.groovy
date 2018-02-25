@@ -183,7 +183,7 @@ class SalesForceDriver extends Driver {
 
 		if (dataset.field.isEmpty()) dataset.retrieveFields()
 		List<String> fields = dataset.field*.name
-		if (prepareCode != null) fields = prepareCode(dataset.field)
+		if (prepareCode != null) fields = (ArrayList<String>)prepareCode.call(dataset.field)
 
 		String soqlQuery = "SELECT ${fields.join(', ')} FROM $sfObjectName"
 		if (limit > 0) soqlQuery += " limit ${limit.toString()}"
