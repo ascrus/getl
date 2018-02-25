@@ -140,7 +140,7 @@ class SalesForceDriver extends Driver {
 
 			case [ FieldType.url, FieldType.address, FieldType.id,
 				   FieldType.reference, FieldType.reference, FieldType.multipicklist,
-				   FieldType.phone, FieldType.picklist ]:
+				   FieldType.phone, FieldType.picklist, FieldType.anyType ]:
 				field.type = Field.Type.STRING
 				break
 
@@ -169,10 +169,6 @@ class SalesForceDriver extends Driver {
 			case FieldType._boolean:
 				field.type = Field.Type.BOOLEAN
 				break
-
-			case FieldType.anyType:
-				field.type = Field.Type.STRING
-				break
 		}
 	}
 
@@ -200,7 +196,7 @@ class SalesForceDriver extends Driver {
 					records.each { SObject record ->
 						Map row = [:]
 						fields.each {
-							row[it] = record.getSObjectField(it)
+							row[it.toLowerCase()] = record.getSObjectField(it)
 						}
 
 						code(row)
