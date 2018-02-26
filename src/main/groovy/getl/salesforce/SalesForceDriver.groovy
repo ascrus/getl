@@ -1,5 +1,15 @@
 package getl.salesforce
 
+import com.sforce.async.AsyncApiException
+import com.sforce.async.BatchInfo
+import com.sforce.async.BatchStateEnum
+import com.sforce.async.BulkConnection
+import com.sforce.async.ConcurrencyMode
+import com.sforce.async.ContentType
+import com.sforce.async.JobInfo
+import com.sforce.async.JobStateEnum
+import com.sforce.async.OperationEnum
+import com.sforce.async.QueryResultList
 import com.sforce.soap.partner.Connector
 import com.sforce.soap.partner.Field as sfField
 import com.sforce.soap.partner.DescribeGlobalResult
@@ -19,6 +29,7 @@ import getl.exception.ExceptionGETL
 import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.ListUtils
+import getl.utils.Logs
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
@@ -30,12 +41,14 @@ import groovy.transform.InheritConstructors
 class SalesForceDriver extends Driver {
 	private ConnectorConfig config
 	private PartnerConnection partnerConnection
+    private BulkConnection bulkConnection
 	private boolean connected = false
+    private boolean isBulkConnected = false
 
 	SalesForceDriver () {
-		methodParams.register('eachRow', ['limit'])
+		methodParams.register('eachRow', ['limit', 'where'])
 		methodParams.register('retrieveObjects', [])
-		methodParams.register('rows', ['limit'])
+		methodParams.register('rows', ['limit', 'where'])
 	}
 
 	@Override
@@ -53,12 +66,16 @@ class SalesForceDriver extends Driver {
 	void connect() {
 		SalesForceConnection con = connection as SalesForceConnection
 		try {
-			config = new ConnectorConfig()
-			config.setUsername(con.login)
-			config.setPassword(con.password)
-			config.setAuthEndpoint(con.connectURL)
+            this.config = new ConnectorConfig()
+            this.config.setUsername(con.login)
+            this.config.setPassword(con.password)
+            this.config.setAuthEndpoint(con.connectURL)
+            // This should only be false when doing debugging.
+            this.config.setCompression(true)
+            // Set this to true to see HTTP requests and responses on stdout
+            this.config.setTraceMessage(false)
 
-			partnerConnection = Connector.newConnection(config)
+            this.partnerConnection = Connector.newConnection(config)
 			this.connected = true
 		} catch (ConnectionException ce) {
 			ce.printStackTrace()
@@ -178,13 +195,16 @@ class SalesForceDriver extends Driver {
 	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		String sfObjectName = dataset.params.sfObjectName
 		Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
+        String where = (params.where) ?: ''
 
 		if (dataset.field.isEmpty()) dataset.retrieveFields()
 		List<String> fields = dataset.field*.name
 		if (prepareCode != null) fields = (ArrayList<String>)prepareCode.call(dataset.field)
 
-		String soqlQuery = "SELECT ${fields.join(', ')} FROM $sfObjectName"
-		if (limit > 0) soqlQuery += " limit ${limit.toString()}"
+        // SOQL Query generation
+		String soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
+        if (where.size() > 0) soqlQuery += "\nwhere $where"
+		if (limit > 0) soqlQuery += "\nlimit ${limit.toString()}"
 
 		long countRec = 0
 		try {
@@ -214,6 +234,120 @@ class SalesForceDriver extends Driver {
 		}
 
 		return countRec
+	}
+
+    private void initBulkConnection() {
+        if (!connected) connect()
+        try {
+            String restEndpoint = config.serviceEndpoint.substring(0, config.serviceEndpoint.indexOf('Soap/') - 1)
+            String apiVersion = connection.params.connectURL.substring(connection.params.connectURL.lastIndexOf('/') + 1)
+            this.config.setRestEndpoint("$restEndpoint/async/$apiVersion")
+            this.bulkConnection = new BulkConnection(config)
+            this.isBulkConnected = true
+        } catch (AsyncApiException aae) {
+            aae.printStackTrace()
+        }
+    }
+
+    @CompileStatic
+    protected void bulkUnload(Dataset dataset, Map params) {
+        if (!isBulkConnected) initBulkConnection()
+
+        String fileName = "${params.fileName}.getltemp"
+        List<InputStream> inputStreams = getBulkData(dataset, params)
+
+        inputStreams.each { InputStream currentStream ->
+            try {
+                new File(fileName).withOutputStream { outputStream ->
+                    outputStream.write(currentStream.bytes)
+                }
+            } finally {
+                currentStream.close()
+            }
+        }
+
+        new File(fileName).renameTo(params.fileName as String)
+    }
+
+    @CompileStatic
+    private List<InputStream> getBulkData(Dataset dataset, Map params) {
+        String sfObjectName = dataset.params.sfObjectName
+        Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
+        String where = (params.where) ?: ''
+
+        if (dataset.field.isEmpty()) dataset.retrieveFields()
+        List<String> fields = dataset.field*.name
+
+        JobInfo job = createJob(bulkConnection, sfObjectName)
+
+        List<InputStream> result = []
+
+        try {
+            job = bulkConnection.getJobStatus(job.getId())
+
+            // SOQL Query generation
+            String soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
+            if (where.size() > 0) soqlQuery += "\nwhere $where"
+            if (limit > 0) soqlQuery += "\nlimit ${limit.toString()}"
+
+            BatchInfo info
+            ByteArrayInputStream bout = new ByteArrayInputStream(soqlQuery.getBytes())
+            info = bulkConnection.createBatchFromStream(job, bout)
+
+            String[] queryResults = null
+
+            for (int i = 0; i < 10000; i++) {
+                Thread.sleep(30000) //30 sec
+                info = bulkConnection.getBatchInfo(job.getId(), info.getId())
+
+                if (info.getState() == BatchStateEnum.Completed) {
+                    QueryResultList list = bulkConnection.getQueryResultList(job.getId(), info.getId())
+                    queryResults = list.getResult()
+                    break
+                } else if (info.getState() == BatchStateEnum.Failed) {
+                    throw new ExceptionGETL(info.toString())
+                } else {
+                    Logs.Info("Batch ID: ${info.getId()}, Batch Status: ${info.getState()}")
+                }
+            }
+
+            queryResults.each { String resultId ->
+                result.add(bulkConnection.getQueryResultStream(job.getId(), info.getId(), resultId))
+            }
+        } catch (AsyncApiException aae) {
+            aae.printStackTrace()
+        } catch (InterruptedException ie) {
+            ie.printStackTrace()
+        } finally {
+            closeJob(bulkConnection, job.getId())
+        }
+
+        return result
+    }
+
+    @CompileStatic
+    private static JobInfo createJob(BulkConnection connection, String sfObjectName) {
+        JobInfo job = new JobInfo()
+
+        job.with {
+            object = sfObjectName
+            operation = OperationEnum.query
+            concurrencyMode = ConcurrencyMode.Parallel
+            contentType = ContentType.CSV
+        }
+
+        job = connection.createJob(job)
+        assert job.getId() != null
+
+        return job
+    }
+
+	@CompileStatic
+	private static void closeJob(BulkConnection connection, String jobId) {
+		JobInfo job = new JobInfo()
+		job.setId(jobId)
+		job.setState(JobStateEnum.Closed)
+		connection.updateJob(job)
 	}
 
 	@CompileStatic

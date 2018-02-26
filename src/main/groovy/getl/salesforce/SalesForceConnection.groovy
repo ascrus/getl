@@ -52,6 +52,7 @@ class SalesForceConnection extends Connection {
 
 	/**
 	 * SalesForce SOAP Auth Endpoint
+	 * Example: https://login.salesforce.com/services/Soap/u/40.0
 	 */
 	public String getConnectURL () { params.connectURL }
 	public void setConnectURL (String value) { params.connectURL = value }

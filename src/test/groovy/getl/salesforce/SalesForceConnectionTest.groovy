@@ -44,6 +44,18 @@ class SalesForceConnectionTest extends GroovyTestCase {
 		assertTrue(dataset.rows(limit: 10).size() == 10)
 	}
 
+    void testRowsWithWhere() {
+        if (connection == null) return
+        SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
+        assertEquals(dataset.rows(where: "Id = '0013200001IrlAEAAZ'").size(), 1)
+    }
+
+    void testRowsWithWhereAndLimit() {
+        if (connection == null) return
+        SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
+        assertEquals(dataset.rows(where: "", limit: 10).size(), 10)
+    }
+
     void testFlowCopy() {
         if (connection == null) return
         SalesForceDataset source = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
@@ -71,6 +83,21 @@ class SalesForceConnectionTest extends GroovyTestCase {
 
 		assertEquals(source.field.size() - 1, dest.field.size())
 	}
+
+    void testBulkConnection() {
+        if (!connection) return
+        SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
+
+		def file = TFS.dataset()
+
+        dataset.retrieveFields()
+        dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
+        dataset.bulkUnload(fileName: file.fullFileName(), limit: 1000)
+
+		def resultFile = new File(file.fullFileName())
+
+		assertTrue(resultFile.exists() && resultFile.size() > 0)
+    }
 
 	void testDisconnect() {
 		if (connection == null) return
