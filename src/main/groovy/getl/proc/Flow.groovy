@@ -239,14 +239,15 @@ class Flow {
 		result.destFields = destFields
 	}
 	
-	protected static void assignFieldToTemp (Dataset source, Dataset dest, Map map) {
+	protected static void assignFieldToTemp (Dataset source, Dataset dest, Map map, List<String> excludeFields) {
 		map = convertFieldMap(map)
 		dest.field = source.field
+		if (!excludeFields.isEmpty()) dest.field.removeAll { it.name.toLowerCase() in excludeFields }
         dest.field.each { Field f -> f.isReadOnly = false }
 		map.each { k, v ->
 			Field f = dest.fieldByName(v.name as String)
 			if (f != null) {
-				if (k != null && k != "") f.name = k else dest.removeField(f)
+				if (k != null && k != '') f.name = k else dest.removeField(f)
 			}
 		}
 	}
@@ -316,8 +317,8 @@ class Flow {
 	 * <li>boolean autoTran				- auto starting and finishing transaction for copy process
 	 * <li>boolean clear				- clearing destination dataset before copy
 	 * <li>boolean saveErrors			- save assert errors to temporary dataset "errorsDataset"
-	 * <li>List<String> excludeFields	- list of fields that do not need to use
-	 * <li>List<String> notConverted	- list of fields that do not need to converted
+	 * <li>List<String> excludeFields	- list of fields destination that do not need to use
+	 * <li>List<String> notConverted	- list of fields destination that do not need to converted
 	 * <li>String mirrorCSV				- filename  of mirror CSV dataset
 	 * <li>boolean bulkLoad				- load to destination as bulk load (only is supported)
 	 * <li>boolean bulkEscaped			- convert bulk file to escaped format
@@ -439,7 +440,7 @@ class Flow {
 			if (prepareSource != null) prepareSource()
 			
 			if (inheritFields) {
-				assignFieldToTemp(source, writer, map)
+				assignFieldToTemp(source, writer, map, excludeFields)
 			}
 
 			if (initCode != null) initCode(source, writer)
