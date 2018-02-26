@@ -16,6 +16,8 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.utils.ConvertUtils
+import getl.utils.DateUtils
 import getl.utils.ListUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
@@ -196,7 +198,7 @@ class SalesForceDriver extends Driver {
 					records.each { SObject record ->
 						Map row = [:]
 						fields.each {
-							row[it.toLowerCase()] = record.getSObjectField(it)
+							row[it.toLowerCase()] = parseTypes(record.getSObjectField(it), dataset.fieldByName(it))
 						}
 
 						code(row)
@@ -212,6 +214,44 @@ class SalesForceDriver extends Driver {
 		}
 
 		return countRec
+	}
+
+	@CompileStatic
+	private static Object parseTypes(Object value, final Field field) {
+		switch (field.type) {
+			case 'STRING':
+				value = ConvertUtils.Object2String(value)
+				break
+
+			case 'BOOLEAN':
+				value = ConvertUtils.String2Boolean(value as String, 'false')
+				break
+
+			case 'INTEGER':
+				value = ConvertUtils.Object2Int(value)
+				break
+
+			case 'TEXT':
+				value = ConvertUtils.Object2String(value)
+				break
+
+			case 'DOUBLE':
+				value = ConvertUtils.Object2Double(value)
+				break
+
+			case 'DATETIME':
+				value = DateUtils.ParseDate("yyyy-MM-dd'T'HH:mm:ss", value)
+				break
+
+			case 'DATE':
+				value = DateUtils.ParseDate("yyyy-MM-dd", value)
+				break
+
+			case 'TIME':
+				break
+		}
+
+		return value
 	}
 
 	@Override

@@ -1,7 +1,5 @@
 package getl.salesforce
 
-import getl.csv.CSVConnection
-import getl.csv.CSVDataset
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TFS
