@@ -251,7 +251,7 @@ class CSVDriver extends FileDriver {
 			if (v[1] == null) v[1] = '0'
 			
 			if (!isWrite) {
-				cp = new ParseBool(v[0], v[1])
+				if (field.format != null) cp = new ParseBool(v[0], v[1]) else cp = new ParseBool()
 			}
 			else {
 				cp = new FmtBool(v[0], v[1])

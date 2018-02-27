@@ -59,6 +59,7 @@ task copyDeps(type: Copy) {
 
 signing {
 	sign configurations.archives
+	required { gradle.taskGraph.hasTask("uploadArchives") }
 }
 
 jar {
