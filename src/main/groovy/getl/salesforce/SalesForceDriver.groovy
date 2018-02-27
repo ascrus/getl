@@ -83,6 +83,7 @@ class SalesForceDriver extends Driver {
             this.config.setTraceMessage(false)
 
             this.partnerConnection = Connector.newConnection(config)
+            this.partnerConnection.setQueryOptions(con.batchSize)
 			this.connected = true
 		} catch (ConnectionException ce) {
 			ce.printStackTrace()
@@ -230,7 +231,7 @@ class SalesForceDriver extends Driver {
 
             bulkUnload(dataset, params + [fileName: csv.fullFileName()])
 
-            csv.eachRow { row ->
+            csv.eachRow { Map row ->
                 code(row)
                 countRec++
             }

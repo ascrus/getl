@@ -109,6 +109,37 @@ class SalesForceConnectionTest extends GroovyTestCase {
 		assertTrue(resultFile.exists() && resultFile.size() > 0)
     }
 
+    void testBulkConnectionWithBatch() {
+        if (!connection) return
+        connection.connected = false
+        connection = new SalesForceConnection(config: 'salesforce', batchSize: 50000)
+
+        SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
+
+        def file = TFS.dataset()
+
+        dataset.retrieveFields()
+        dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
+        dataset.bulkUnload(fileName: file.fullFileName(), limit: 200000)
+
+        def resultFile = new File(file.fullFileName())
+
+        assertTrue(resultFile.exists() && resultFile.size() > 0)
+    }
+
+    void testRowsWithBatch() {
+        if (!connection) return
+        connection.connected = false
+        connection = new SalesForceConnection(config: 'salesforce', batchSize: 2000)
+
+        SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
+        dataset.retrieveFields()
+        dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
+
+        def rows = dataset.rows(limit: 10000)
+        assertEquals(10000, rows.size())
+    }
+
 	void testDisconnect() {
 		if (connection == null) return
 		connection.connected = false

@@ -9,7 +9,7 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class SalesForceConnection extends Connection {
-	SalesForceConnection () {
+    SalesForceConnection () {
 		super(driver: SalesForceDriver)
 	}
 
@@ -24,7 +24,7 @@ class SalesForceConnection extends Connection {
 	@Override
 	protected void registerParameters () {
 		super.registerParameters()
-		methodParams.register('Super', ['login', 'password', 'connectURL'])
+		methodParams.register('Super', ['login', 'password', 'connectURL', 'batchSize'])
 	}
 
 	@Override
@@ -56,4 +56,12 @@ class SalesForceConnection extends Connection {
 	 */
 	public String getConnectURL () { params.connectURL }
 	public void setConnectURL (String value) { params.connectURL = value }
+
+	/**
+	 * Batch Size for SalesForce connection
+     * This param do nothing for readAsBulk.
+	 * @return
+	 */
+	public int getBatchSize () { params.batchSize ?: 200 }
+	public void setBatchSize (int value) { params.batchSize =value }
 }
