@@ -1065,10 +1065,22 @@ sb << """
 	 * @param name
 	 * @return
 	 */
+	public static String SqlObjectName (JDBCDataset dataset, String name) {
+		JDBCDriver drv = dataset.connection.driver as JDBCDriver
+
+        return drv.prepareObjectNameForSQL(name, dataset)
+	}
+
+	/**
+	 * Return object name with SQL syntax
+	 * @param connection
+	 * @param name
+	 * @return
+	 */
 	public static String SqlObjectName (JDBCConnection connection, String name) {
 		JDBCDriver drv = connection.driver as JDBCDriver
 
-        return drv.prepareObjectNameForSQL(name)
+		return drv.prepareObjectNameForSQL(name)
 	}
 	
 	/**
@@ -1077,12 +1089,12 @@ sb << """
 	 * @param listNames
 	 * @return
 	 */
-	public static List<String> SqlListObjectName (JDBCConnection connection, List<String> listNames) {
+	public static List<String> SqlListObjectName (JDBCDataset dataset, List<String> listNames) {
 		List<String> res = []
-		JDBCDriver drv = connection.driver as JDBCDriver
+		JDBCDriver drv = dataset.connection.driver as JDBCDriver
 
 		listNames.each { name ->
-			res << drv.prepareObjectNameForSQL(name)
+			res << drv.prepareObjectNameForSQL(name, dataset)
 		}
 
         return res
@@ -1104,7 +1116,7 @@ sb << """
 	 * @param expr - string expression with {field} and {orig} macros
 	 * @return
 	 */
-	public static List<String> SqlKeyFields (JDBCConnection connection, List<Field> fields, String expr, List<String> excludeFields) {
+	public static List<String> SqlKeyFields (JDBCDataset dataset, List<Field> fields, String expr, List<String> excludeFields) {
 		excludeFields = (excludeFields != null)?excludeFields*.toLowerCase():[]
 		def kf = []
 		fields.each { Field f ->
@@ -1115,10 +1127,10 @@ sb << """
 		List<String> res = []
 		kf.each { Field f ->
 			if (expr == null) {
-				res << SqlObjectName(connection, f.name) 
+				res << SqlObjectName(dataset, f.name)
 			} 
 			else {
-				res << expr.replace("{orig}", f.name.toLowerCase()).replace("{field}", SqlObjectName(connection, f.name)).replace("{param}", "${Field2ParamName(f.name)}")
+				res << expr.replace("{orig}", f.name.toLowerCase()).replace("{field}", SqlObjectName(dataset, f.name)).replace("{param}", "${Field2ParamName(f.name)}")
 			}
 		}
 
@@ -1130,17 +1142,17 @@ sb << """
 	 * @param expr - string expression with {field} macros
 	 * @return
 	 */
-	public static List<String> SqlFields (JDBCConnection connection, List<Field> fields, String expr, List<String> excludeFields) {
+	public static List<String> SqlFields (JDBCDataset dataset, List<Field> fields, String expr, List<String> excludeFields) {
 		excludeFields = (excludeFields != null)?excludeFields*.toLowerCase():[]
 		
 		List<String> res = []
 		fields.each { Field f ->
 			if (!(f.name.toLowerCase() in excludeFields)) {
 				if (expr == null) {
-					res << SqlObjectName(connection, f.name)
+					res << SqlObjectName(dataset, f.name)
 				} 
 				else {
-					res << expr.replace("{orig}", f.name.toLowerCase()).replace("{field}", SqlObjectName(connection, f.name)).replace("{param}", "${Field2ParamName(f.name)}")
+					res << expr.replace("{orig}", f.name.toLowerCase()).replace("{field}", SqlObjectName(dataset, f.name)).replace("{param}", "${Field2ParamName(f.name)}")
 				}
 			}
 		}

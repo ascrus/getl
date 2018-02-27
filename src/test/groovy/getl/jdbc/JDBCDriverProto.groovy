@@ -40,15 +40,15 @@ abstract class JDBCDriverProto extends GroovyTestCase {
     List<Field> getFields () {
         def res =
             [
-                new Field(name: 'id1', type: 'BIGINT', isKey: true, ordKey: 1),
-                new Field(name: 'id2', type: 'DATETIME', isKey: true, ordKey: 2),
-                new Field(name: 'name', type: 'STRING', length: 50, isNull: false),
+                new Field(name: 'ID1', type: 'BIGINT', isKey: true, ordKey: 1),
+                new Field(name: 'ID2', type: 'DATETIME', isKey: true, ordKey: 2),
+                new Field(name: 'Name', type: 'STRING', length: 50, isNull: false),
                 new Field(name: 'value', type: 'NUMERIC', length: 12, precision: 2, isNull: false),
-                new Field(name: 'double', type: 'DOUBLE', isNull: false, defaultValue: 0),
+                new Field(name: 'DOuble', type: 'DOUBLE', isNull: false, defaultValue: 0),
             ]
 
-		if (con != null && con.driver.isSupport(Driver.Support.BOOLEAN)) res << new Field(name: 'flag', type: 'BOOLEAN', isNull: false)
 		if (con != null && con.driver.isSupport(Driver.Support.DATE)) res << new Field(name: 'date', type: 'DATE', isNull: false)
+		if (con != null && con.driver.isSupport(Driver.Support.BOOLEAN)) res << new Field(name: 'flag', type: 'BOOLEAN', isNull: false)
 		if (con != null && con.driver.isSupport(Driver.Support.TIME)) res << new Field(name: 'time', type: 'TIME', isNull: false)
         if (con != null && con.driver.isSupport(Driver.Support.BLOB)) res << new Field(name: 'data', type: 'BLOB', length: 1024, isNull: false)
         if (con != null && con.driver.isSupport(Driver.Support.CLOB)) res << new Field(name: 'text', type: 'TEXT', length: 1024, isNull: false)
@@ -76,8 +76,11 @@ abstract class JDBCDriverProto extends GroovyTestCase {
         table.field = fields
         if (table.exists) table.drop()
         if (con.driver.isSupport(Driver.Support.INDEX)) {
-			def indexes = [_getl_test_idx_1: [columns: ['id2', 'name']]]
-			if (con != null && con.driver.isSupport(Driver.Support.DATE)) indexes << [_getl_test_idx_2: [columns: ['id1', 'date'], unique: true]]
+			def indexes = [
+					_getl_test_idx_1:
+							[columns: ['id2', 'name']]]
+			if (con != null && con.driver.isSupport(Driver.Support.DATE))
+				indexes << [_getl_test_idx_2: [columns: ['id1', 'date'], unique: true]]
             table.create(indexes: indexes)
         }
         else {
@@ -286,14 +289,14 @@ abstract class JDBCDriverProto extends GroovyTestCase {
     }
 
     private void validCount() {
-        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE id1 IS NOT NULL")
+        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('name')} IS NOT NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
         assertEquals(countRows, rows[0].count_rows)
     }
 
     private void deleteData() {
-        def rows = table.rows(onlyFields: ['ID1', 'ID2'])
+        def rows = table.rows(onlyFields: ['id1', 'id2'])
         def count = new Flow().writeTo(dest: table, dest_operation: 'DELETE') { updater ->
             rows.each { r ->
                 updater(r)
@@ -342,10 +345,10 @@ ECHO Run sql script ...
 IF EXISTS(SELECT * FROM $table_name); -- test IF operator
 ECHO Table has rows -- test ECHO 
 END IF;
-SET SELECT id2 FROM $table_name WHERE id1 = 1; -- test SET operator
+SET SELECT ${table.sqlObjectName('id2')} FROM $table_name WHERE ${table.sqlObjectName('id1')} = 1; -- test SET operator
 ECHO For id1=1 then id2={id2}
 
-FOR SELECT id1, id2 FROM $table_name WHERE id1 BETWEEN 2 AND 3; -- test FOR operator
+FOR SELECT ${table.sqlObjectName('id1')}, ${table.sqlObjectName('id2')} FROM $table_name WHERE ${table.sqlObjectName('id1')} BETWEEN 2 AND 3; -- test FOR operator
 ECHO For id1={id1} then id2={id2}
 END FOR;
 """

@@ -781,7 +781,7 @@ ${extend}'''
 		def extend = createDatasetExtend(dataset, p)
 		
 		def defFields = []
-		def defPrimary = GenerationUtils.SqlKeyFields(connection as JDBCConnection, dataset.field, null, null)
+		def defPrimary = GenerationUtils.SqlKeyFields(dataset, dataset.field, null, null)
 		dataset.field.each { Field f ->
 			try {
 				if (f.type == Field.Type.BOOLEAN && !isSupport(Driver.Support.BOOLEAN)) throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")")
@@ -828,7 +828,7 @@ ${extend}'''
 					String createIndexCode = '"""' + sqlCreateIndex + '"""'
 					
 					def idxCols = []
-					value.columns?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol):nameCol) }
+					value.columns?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset):nameCol) }
 					
 					def varsCI = [  indexName: prepareTableNameForSQL(name as String),
 									unique: (value.unique != null && value.unique == true)?"UNIQUE":"",
@@ -903,7 +903,7 @@ ${extend}'''
 	public String fieldPrefix = '"'
 	public String fieldEndPrefix
 
-	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null) {
+	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null, Dataset dataset = null) {
 		if (name == null) return null
 		String res
 		switch (caseObjectName) {
@@ -914,9 +914,20 @@ ${extend}'''
 				res = name.toUpperCase()
 				break
 			default:
-				res = name
+				if (dataset != null) {
+					def f = dataset.fieldByName(name)
+					if (f != null) {
+						res = f.name
+					}
+					else {
+						res = name
+					}
+				}
+				else {
+					res = name
+				}
 		}
-		
+
 		return prefix + res + (prefixEnd?:prefix)
 	}
 	
@@ -925,24 +936,24 @@ ${extend}'''
 	 * @param name
 	 * @return
 	 */
-	public String prepareObjectName(String name) {
-		return prepareObjectNameWithPrefix(name, '')
+	public String prepareObjectName(String name, JDBCDataset dataset = null) {
+		return prepareObjectNameWithPrefix(name, '', '', dataset)
 	}
 	
-	public String prepareObjectNameForSQL(String name) {
-		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix)
+	public String prepareObjectNameForSQL(String name, JDBCDataset dataset = null) {
+		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix, dataset)
 	}
 	
-	public String prepareFieldNameForSQL(String name) {
-		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix)
+	public String prepareFieldNameForSQL(String name, JDBCDataset dataset = null) {
+		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix, dataset)
 	}
 	
-	public String prepareTableNameForSQL(String name) {
-		return prepareObjectNameWithPrefix(name, tablePrefix, tableEndPrefix)
+	public String prepareTableNameForSQL(String name, JDBCDataset dataset = null) {
+		return prepareObjectNameWithPrefix(name, tablePrefix, tableEndPrefix, dataset)
 	}
 	
-	public String prepareObjectNameWithEval(String name) {
-		return prepareObjectName(name)?.replace("\$", "\\\$")
+	public String prepareObjectNameWithEval(String name, JDBCDataset dataset= null) {
+		return prepareObjectName(name, dataset)?.replace("\$", "\\\$")
 	}
 	
 	/**
@@ -1112,7 +1123,7 @@ ${extend}'''
             List<Field> useFields = (params.useFields != null && params.useFields.size() > 0)?params.useFields:dataset.field
 
             useFields.each { Field f ->
-				fields << prepareFieldNameForSQL(f.name)
+				fields << prepareFieldNameForSQL(f.name, dataset)
 			}
 			
 			if (fields.isEmpty()) throw new ExceptionGETL("Required fields by dataset $dataset") 
@@ -1125,7 +1136,7 @@ ${extend}'''
 				if (!(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
 				List<String> orderFields = []
 				order.each { String col ->
-					if (dataset.fieldByName(col) != null) orderFields << prepareFieldNameForSQL(col) else orderFields << col
+					if (dataset.fieldByName(col) != null) orderFields << prepareFieldNameForSQL(col, dataset) else orderFields << col
 				}
 				orderBy = orderFields.join(", ")
 			}
@@ -2019,7 +2030,7 @@ $sql
 			if (field.name == null || field.name.length() == 0) throw new ExceptionGETL("Target dataset has fields by empty name")
 			
 			// Destination field
-			def targetField = prepareObjectName(field.name)
+			def targetField = prepareObjectName(field.name, target)
 			
 			// Mapping source field
 			def sourceField = map."${targetField.toLowerCase()}"  as String

@@ -247,17 +247,16 @@ class CSVDriverTest extends GroovyTestCase {
 		def c = new CSVConnection(conParams + (Map<String, Object>)([autoSchema: (Object)false]))
 		def t = new CSVDataset(connection: c, fileName: 'test_perfomance')
 
-		t.field << new Field(name: 'id', type: Field.Type.INTEGER, isKey: true)
-		t.field << new Field(name: 'name', length: 50, isNull: false)
+		t.field << new Field(name: 'Id', type: Field.Type.INTEGER, isKey: true)
+		t.field << new Field(name: 'Name', length: 50, isNull: false)
 		(1..perfomanceCols).each { num ->
-			t.field << new Field(name: "value_$num", type: Field.Type.DOUBLE)
+			t.field << new Field(name: "Value_$num", type: Field.Type.DOUBLE)
 		}
 
 		try {
 			def pt = new ProcessTime(name: "CSV perfomance write")
 			new Flow().writeTo(dest: t, dest_batchSize: 1000) { Closure updater ->
 				(1..perfomanceRows).each { Integer cur ->
-					cur++
 					def r = [:] as Map<String, Object>
 					r.id = cur
 					r.name = "name $cur"
@@ -270,11 +269,25 @@ class CSVDriverTest extends GroovyTestCase {
 			pt.finish(perfomanceRows as Long)
 
 			pt = new ProcessTime(name: "CSV perfomance read")
-			def count = 0
+			def cur = 0
 			new Flow().process(source: t) { Map<String, Object> r ->
-				count++
+				cur++
+				assertEquals(cur, r.id)
+				assertEquals("name $cur", r.name)
 			}
-			pt.finish(count as Long)
+			pt.finish(cur as Long)
+			assertEquals(perfomanceRows, cur)
+
+			def n = TFS.dataset()
+			new Flow().copy(source: t, dest: n, inheritFields: true, excludeFields: t.field*.name - ['Id', 'Name'])
+			assertEquals(2, n.field.size())
+			cur  = 0
+			n.eachRow { Map<String, Object> r ->
+				cur++
+				assertEquals(cur, r.id)
+				assertEquals("name $cur", r.name)
+			}
+			assertEquals(perfomanceRows, cur)
 		}
 		finally {
 			t.drop()

@@ -35,3 +35,4 @@ tests/jdbc/
 tests/mssql/
 tests/h2/
 tests/netsuite/
+tests/salesforce/

@@ -99,11 +99,11 @@ class JDBCDataset extends Dataset {
 	 * @return
 	 */
 	public String sqlObjectName (String name) {
-		GenerationUtils.SqlObjectName(connection as JDBCConnection, name)
+		GenerationUtils.SqlObjectName(this, name)
 	}
 	
 	public List<String> sqlListObjectName (List<String> listNames) {
-		GenerationUtils.SqlListObjectName(connection as JDBCConnection, listNames)
+		GenerationUtils.SqlListObjectName(this, listNames)
 	}
 	
 	/**
@@ -112,7 +112,7 @@ class JDBCDataset extends Dataset {
 	 * @return
 	 */
 	public List<String> sqlKeyFields (String expr, List<String> excludeFields) {
-		GenerationUtils.SqlKeyFields(connection as JDBCConnection, field, expr, excludeFields)
+		GenerationUtils.SqlKeyFields(this, field, expr, excludeFields)
 	}
 	
 	/**
@@ -147,7 +147,7 @@ class JDBCDataset extends Dataset {
 	 * @return
 	 */
 	public List<String> sqlFields (String expr, List<String> excludeFields) {
-		GenerationUtils.SqlFields(connection as JDBCConnection, field, expr, excludeFields)
+		GenerationUtils.SqlFields(this, field, expr, excludeFields)
 	}
 	
 	/**
@@ -157,7 +157,7 @@ class JDBCDataset extends Dataset {
 	 * @return
 	 */
 	public List<String> sqlFieldsFrom (List<Field> fields, String expr) {
-		GenerationUtils.SqlFields(connection as JDBCConnection, fields, expr, null)
+		GenerationUtils.SqlFields(this, fields, expr, null)
 	}
 	
 	/**

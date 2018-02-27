@@ -19,16 +19,19 @@ class NetsuiteDriverTest extends GroovyTestCase {
 	}
 
 	void testConnectByUrl() {
+		if (netsuiteConnectionUrl == null) return
 		netsuiteConnectionUrl.connected = true
 		assertTrue(netsuiteConnectionUrl.connected)
 	}
 
 	void testConnectByHost() {
+		if (netsuiteConnectionHost == null) return
 		netsuiteConnectionHost.connected = true
 		assertTrue(netsuiteConnectionHost.connected)
 	}
 
 	void testGetDataUrl() {
+		if (netsuiteConnectionUrl == null) return
 		QueryDataset dataset = new QueryDataset(connection: netsuiteConnectionUrl)
 
 		dataset.query = 'select 1 rnd_row'
@@ -37,6 +40,7 @@ class NetsuiteDriverTest extends GroovyTestCase {
 	}
 
 	void testGetDataHost() {
+		if (netsuiteConnectionHost == null) return
 		QueryDataset dataset = new QueryDataset(connection: netsuiteConnectionHost)
 
 		dataset.query = 'select 1 rnd_row'
@@ -45,11 +49,13 @@ class NetsuiteDriverTest extends GroovyTestCase {
 	}
 
 	void testDisconnectUrl() {
+		if (netsuiteConnectionUrl == null) return
 		netsuiteConnectionUrl.connected = false
 		assertFalse(netsuiteConnectionUrl.connected)
 	}
 
 	void testDisconnectHost() {
+		if (netsuiteConnectionHost == null) return
 		netsuiteConnectionHost.connected = false
 		assertFalse(netsuiteConnectionHost.connected)
 	}

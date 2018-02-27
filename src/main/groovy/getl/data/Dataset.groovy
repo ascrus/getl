@@ -838,7 +838,7 @@ ${ef.toString()}
 
 		def prepareFields = { List<Field> sourceFields ->
 			doInitFields(sourceFields)
-			List<String> result = []
+			List<String> result = sourceFields*.name
 			if (prepareCode != null) result = prepareCode() as List<String>
 
 			return result
