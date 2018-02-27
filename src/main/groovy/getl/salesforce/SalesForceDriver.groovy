@@ -26,6 +26,9 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.tfs.TFS
+import getl.tfs.TFSDataset
+import getl.utils.BoolUtils
 import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.ListUtils
@@ -43,12 +46,12 @@ class SalesForceDriver extends Driver {
 	private PartnerConnection partnerConnection
     private BulkConnection bulkConnection
 	private boolean connected = false
-    private boolean isBulkConnected = false
 
 	SalesForceDriver () {
-		methodParams.register('eachRow', ['limit', 'where'])
+		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk'])
 		methodParams.register('retrieveObjects', [])
-		methodParams.register('rows', ['limit', 'where'])
+        methodParams.register('bulkUnload', ['where', 'limit', 'fileName'])
+		methodParams.register('rows', ['limit', 'where', 'readAsBulk'])
 	}
 
 	@Override
@@ -61,6 +64,10 @@ class SalesForceDriver extends Driver {
 	boolean isConnected() {
 		return connected
 	}
+
+    boolean getIsBulkConnected() {
+        return bulkConnection != null
+    }
 
 	@Override
 	void connect() {
@@ -87,8 +94,10 @@ class SalesForceDriver extends Driver {
 		try {
 			partnerConnection.logout()
 			this.connected = false
+            this.bulkConnection = null
 		} catch (ConnectionException ce) {
 			ce.printStackTrace()
+            throw new ExceptionGETL(ce.toString())
 		}
 	}
 
@@ -175,10 +184,12 @@ class SalesForceDriver extends Driver {
 
 			case FieldType.datetime:
 				field.type = Field.Type.DATETIME
+                field.format = "yyyy-MM-dd'T'HH:mm:ss"
 				break
 
 			case FieldType.date:
 				field.type = Field.Type.DATE
+                field.format = 'yyyy-MM-dd'
 				break
 
 			case FieldType.time:
@@ -187,6 +198,7 @@ class SalesForceDriver extends Driver {
 
 			case FieldType._boolean:
 				field.type = Field.Type.BOOLEAN
+                field.format = 'true|false'
 				break
 		}
 	}
@@ -196,6 +208,8 @@ class SalesForceDriver extends Driver {
 		String sfObjectName = dataset.params.sfObjectName
 		Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
         String where = (params.where) ?: ''
+
+        Boolean readAsBulk = BoolUtils.IsValue(params.readAsBulk)
 
 		if (dataset.field.isEmpty()) dataset.retrieveFields()
 		List<String> fields = dataset.field*.name
@@ -207,31 +221,49 @@ class SalesForceDriver extends Driver {
 		if (limit > 0) soqlQuery += "\nlimit ${limit.toString()}"
 
 		long countRec = 0
-		try {
-			QueryResult qr = partnerConnection.query(soqlQuery)
-			if (qr.size > 0) {
-				Boolean done = false
 
-				while (!done) {
-					SObject[] records = qr.records
+        if (readAsBulk) {
+            TFSDataset csv = TFS.dataset()
+            csv.fieldDelimiter = ','
+            csv.quoteStr = '"'
+            csv.field = dataset.field
 
-					records.each { SObject record ->
-						Map row = [:]
-						fields.each {
-							row[it.toLowerCase()] = parseTypes(record.getSObjectField(it), dataset.fieldByName(it))
-						}
+            bulkUnload(dataset, params + [fileName: csv.fullFileName()])
 
-						code(row)
-						countRec++
-					}
+            csv.eachRow { row ->
+                code(row)
+                countRec++
+            }
 
-					if (qr.done) done = true
-					else qr = partnerConnection.queryMore(qr.queryLocator)
-				}
-			}
-		} catch (ConnectionException ce) {
-			ce.printStackTrace()
-		}
+            csv.drop()
+        } else {
+            try {
+                QueryResult qr = partnerConnection.query(soqlQuery)
+                if (qr.size > 0) {
+                    Boolean done = false
+
+                    while (!done) {
+                        SObject[] records = qr.records
+
+                        records.each { SObject record ->
+                            Map row = [:]
+                            fields.each {
+                                row[it.toLowerCase()] = parseTypes(record.getSObjectField(it), dataset.fieldByName(it))
+                            }
+
+                            code(row)
+                            countRec++
+                        }
+
+                        if (qr.done) done = true
+                        else qr = partnerConnection.queryMore(qr.queryLocator)
+                    }
+                }
+            } catch (ConnectionException ce) {
+                ce.printStackTrace()
+            }
+        }
+
 
 		return countRec
 	}
@@ -239,13 +271,14 @@ class SalesForceDriver extends Driver {
     private void initBulkConnection() {
         if (!connected) connect()
         try {
+            String connectURL = connection.params.connectURL
             String restEndpoint = config.serviceEndpoint.substring(0, config.serviceEndpoint.indexOf('Soap/') - 1)
-            String apiVersion = connection.params.connectURL.substring(connection.params.connectURL.lastIndexOf('/') + 1)
+            String apiVersion = connectURL.substring(connectURL.lastIndexOf('/') + 1)
             this.config.setRestEndpoint("$restEndpoint/async/$apiVersion")
             this.bulkConnection = new BulkConnection(config)
-            this.isBulkConnected = true
         } catch (AsyncApiException aae) {
             aae.printStackTrace()
+            throw new ExceptionGETL(aae.toString())
         }
     }
 
@@ -254,23 +287,8 @@ class SalesForceDriver extends Driver {
         if (!isBulkConnected) initBulkConnection()
 
         String fileName = "${params.fileName}.getltemp"
-        List<InputStream> inputStreams = getBulkData(dataset, params)
+        File tmpFile = new File(fileName)
 
-        inputStreams.each { InputStream currentStream ->
-            try {
-                new File(fileName).withOutputStream { outputStream ->
-                    outputStream.write(currentStream.bytes)
-                }
-            } finally {
-                currentStream.close()
-            }
-        }
-
-        new File(fileName).renameTo(params.fileName as String)
-    }
-
-    @CompileStatic
-    private List<InputStream> getBulkData(Dataset dataset, Map params) {
         String sfObjectName = dataset.params.sfObjectName
         Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
         String where = (params.where) ?: ''
@@ -279,8 +297,6 @@ class SalesForceDriver extends Driver {
         List<String> fields = dataset.field*.name
 
         JobInfo job = createJob(bulkConnection, sfObjectName)
-
-        List<InputStream> result = []
 
         try {
             job = bulkConnection.getJobStatus(job.getId())
@@ -312,17 +328,24 @@ class SalesForceDriver extends Driver {
             }
 
             queryResults.each { String resultId ->
-                result.add(bulkConnection.getQueryResultStream(job.getId(), info.getId(), resultId))
+                InputStream inputStream = bulkConnection.getQueryResultStream(job.getId(), info.getId(), resultId)
+                try {
+                    tmpFile.withOutputStream { outputStream ->
+                        inputStream.eachByte(1024 * 8) { byte[] data, int len ->
+                            outputStream.write(data, 0, len)
+                        }
+                    }
+                } finally {
+                    inputStream.close()
+                }
             }
-        } catch (AsyncApiException aae) {
-            aae.printStackTrace()
-        } catch (InterruptedException ie) {
-            ie.printStackTrace()
+        } catch (e) {
+            tmpFile.delete()
+            throw new ExceptionGETL(e)
         } finally {
             closeJob(bulkConnection, job.getId())
+            tmpFile.renameTo(params.fileName as String)
         }
-
-        return result
     }
 
     @CompileStatic

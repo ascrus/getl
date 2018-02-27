@@ -44,6 +44,16 @@ class SalesForceConnectionTest extends GroovyTestCase {
 		assertTrue(dataset.rows(limit: 10).size() == 10)
 	}
 
+    void testRowsAsBulk() {
+        if (connection == null) return
+        SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
+        dataset.retrieveFields()
+        dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
+        def result = dataset.rows(limit: 100, readAsBulk: true)
+
+        assertEquals(result.size(), 100)
+    }
+
     void testRowsWithWhere() {
         if (connection == null) return
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')

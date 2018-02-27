@@ -14,7 +14,9 @@ class SalesForceDataset extends Dataset {
 	SalesForceDataset() {
 		super()
 
-		methodParams.register('bulkUnload', ['pathToFile', 'limit', 'where'])
+		methodParams.register('bulkUnload', ['fileName', 'limit', 'where'])
+		methodParams.register('rows', ['limit', 'where', 'readAsBulk'])
+		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk'])
 	}
 
 	@Override
