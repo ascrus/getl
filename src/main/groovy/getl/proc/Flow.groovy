@@ -197,13 +197,15 @@ class Flow {
 					mn = null
 				}
 			}
-			
-			Field s 
+
+			Field s
 			// Use field is mapping
 			if (mn != null) s = source.fieldByName(mn)
+
 			// Not use
 			if (s == null) {
 				if (!d.isAutoincrement && !d.isReadOnly) {
+					dn = dn.replace("'", "\\'")
 					sb << "outRow.'${dn}' = getl.utils.GenerationUtils.EMPTY_${d.type.toString().toUpperCase()}"
 					destFields << d.name
 				}
@@ -213,8 +215,8 @@ class Flow {
 			}
 			else {
 				// Assign value
-				String sn = s.name.toLowerCase()
-//				println "${d.type} == ${s.type} || !${convert}"
+				String sn = s.name.toLowerCase().replace("'", "\\'")
+				dn = dn.replace("'", "\\'")
 				if (d.type == s.type || !convert) {
 					sb << "outRow.'${dn}' = inRow.'${sn}'"
 				}

@@ -1465,10 +1465,10 @@ $sql
 				sb << "\n@groovy.transform.CompileStatic\nvoid method_${curMethod} (getl.jdbc.JDBCDriver _getl_driver, java.sql.Connection _getl_con, java.sql.PreparedStatement _getl_stat, Map<String, Object> _getl_row) {\n"
 			}
 
-			def fn = f.name.toLowerCase()
+			def fn = f.name.toLowerCase().replace("'", "\\'")
 			def dbType = (f.dbType != null)?f.dbType:type2dbType(f.type)
 
-			sb << GenerationUtils.GenerateSetParam(this, statIndex + 1, f, dbType as Integer, new String("_getl_row.'${fn}'"))
+			sb << GenerationUtils.GenerateSetParam(this, statIndex + 1, f, dbType as Integer, new String("_getl_row.'$fn'"))
 			sb << "\n"
 		}
 		sb << "}"

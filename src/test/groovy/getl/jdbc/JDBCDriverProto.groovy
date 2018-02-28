@@ -43,6 +43,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 new Field(name: 'ID1', type: 'BIGINT', isKey: true, ordKey: 1),
                 new Field(name: 'ID2', type: 'DATETIME', isKey: true, ordKey: 2),
                 new Field(name: 'Name', type: 'STRING', length: 50, isNull: false),
+				new Field(name: "desc'ription", type: 'STRING', length: 250, isNull: false),
                 new Field(name: 'value', type: 'NUMERIC', length: 12, precision: 2, isNull: false),
                 new Field(name: 'DOuble', type: 'DOUBLE', isNull: false, defaultValue: 0),
             ]
@@ -201,6 +202,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
 			assertNotNull(r.id1)
 			assertNotNull(r.id2)
 			assertNotNull(r.name)
+			assertNotNull(r."desc'ription")
 			assertNotNull(r.value)
 			assertNotNull(r.double)
 			if (con.driver.isSupport(Driver.Support.DATE)) assertNotNull(r.date)
@@ -219,6 +221,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 Map nr = [:]
                 nr.putAll(r)
                 nr.name = StringUtils.LeftStr(r.name, 40) + ' update'
+				nr."desc'ription" = StringUtils.LeftStr(r."desc'ription", 200) + ' update'
                 nr.value = r.value + 1
                 nr.double = r.double + 1.00
 				if (con.driver.isSupport(Driver.Support.DATE)) nr.date = DateUtils.AddDate('dd', 1, r.date)
@@ -237,6 +240,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
 		def i = 0
         table.eachRow(order: ['id1']) { r ->
             assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' update', r.name)
+			assertEquals(StringUtils.LeftStr(rows[i]."desc'ription", 200) + ' update', r."desc'ription")
             assertEquals(rows[i].value + 1, r.value)
 			assertNotNull(r.double)
 			if (con.driver.isSupport(Driver.Support.DATE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
@@ -257,6 +261,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
                 Map nr = [:]
                 nr.putAll(r)
                 nr.name = StringUtils.LeftStr(r.name, 40) + ' merge'
+				nr."desc'ription" = StringUtils.LeftStr(r."desc'ription", 200) + ' merge'
                 nr.value = r.value + 1
                 nr.double = r.double + 1.00
 				if (con.driver.isSupport(Driver.Support.DATE)) nr.date = DateUtils.AddDate('dd', 1, r.date)
@@ -275,6 +280,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
 		def i = 0
         table.eachRow(order: ['id1']) { r ->
             assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' merge', r.name)
+			assertEquals(StringUtils.LeftStr(rows[i]."desc'ription", 200) + ' merge', r."desc'ription")
             assertEquals(rows[i].value + 1, r.value)
 			assertNotNull(r.double)
 			if (con.driver.isSupport(Driver.Support.DATE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
@@ -289,7 +295,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
     }
 
     private void validCount() {
-        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('name')} IS NOT NULL")
+        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('name')} IS NOT NULL AND ${table.sqlObjectName("desc'ription")} IS NOT NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
         assertEquals(countRows, rows[0].count_rows)
@@ -386,6 +392,7 @@ END FOR;
 		TableDataset t = new TableDataset(connection: c, tableName: '_GETL_TEST_PERFOMANCE')
 		t.field << new Field(name: 'id', type: Field.Type.INTEGER, isKey: true)
 		t.field << new Field(name: 'name', length: 50, isNull: false)
+		t.field << new Field(name: 'desc\'cription', length: 50, isNull: false)
 		(1..perfomanceCols).each { num ->
 			t.field << new Field(name: "value_$num", type: Field.Type.DOUBLE)
 		}
@@ -399,6 +406,7 @@ END FOR;
 					def r = [:] as Map<String, Object>
 					r.id = cur
 					r.name = "name $cur"
+					r."desc'cription" = "description $cur"
 					(1..perfomanceCols).each { Integer num ->
 						r.put("value_$num".toString(), cur)
 					}

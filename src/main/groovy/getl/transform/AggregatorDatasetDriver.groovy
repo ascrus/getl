@@ -149,10 +149,10 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 """
 		num = 0
 		fieldCalc.each { String name, Map mp ->
-			name = name.toLowerCase()
+			name = name.toLowerCase().replace("'", "\\'")
 			String method = (mp.method != null)?mp.method.toUpperCase():"SUM"
 			Closure filter = mp.filter
-			def source = mp.fieldName
+			def source = mp.fieldName?.replace("'", "\\'")
 			if (source == null && method != "COUNT") throw new ExceptionGETL("Required fieldName in parameters by field \"${name}\"")
 			
 			if (filter != null) {

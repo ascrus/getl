@@ -84,24 +84,6 @@ class H2Driver extends JDBCDriver {
 		return url
 	}
 
-	/**
-	 * Prepare object name by prefix
-	 * @param name
-	 * @param prefix
-	 * @return
-	 */
-	@Override
-	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null, Dataset dataset = null) {
-		if (name == null) return null
-
-		String res
-
-		def m = name =~ /([^a-zA-Z0-9_])/
-		if (m.size() > 0) res = prefix + name + prefix else res = prefix + name.toUpperCase() + (prefixEnd ?: prefix)
-
-		return res
-	}
-
 	@Override
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		String result = ""
