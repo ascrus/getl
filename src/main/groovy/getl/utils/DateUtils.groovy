@@ -55,7 +55,7 @@ class DateUtils {
 	 */
 	public static String defaultDateTimeMask = "yyyy-MM-dd HH:mm:ss.SSS"
 
-	public final static String origTimeZone = TimeZone.default.displayName
+	public final static String origTimeZone = TimeZone.default.toZoneId().id
 
 	/**
 	 * Init time zone offset at milliseconds
@@ -67,29 +67,28 @@ class DateUtils {
 	 */
 	public static int defaultTimeZoneOffs = TimeZone.default.rawOffset
 
+	/**
+	 * Offset between machine and need time zone
+	 */
 	public static int offsTimeZone = 0
 
 	/**
-	 * Cast current date time from current time zone to original zone
+	 * Init class
 	 */
-	public static boolean castTimeZone = false
-
 	public static void init () {
 		if (Config.content.timeZone != null) init(Config.content.timeZone as Map)
 	}
 
+	/**
+	 * Init class
+	 * @param timeZone
+	 */
 	public static void init (Map timeZone) {
 		if (timeZone == null || timeZone.isEmpty()) return
 
 		if (timeZone.name != null) {
 			setDefaultTimeZone(timeZone.name as String)
-		}
-		if (timeZone.cast != null) {
-			castTimeZone = BoolUtils.IsValue(timeZone.cast)
-		}
-		if (timeZone.name != null) {
-			Logs.Finest("getl: use time zone ${timeZone.name}")
-			if (castTimeZone) Logs.Finest("getl: use cast machine time to original time zone $origTimeZone")
+			Logs.Finest("getl: use time zone $origTimeZone")
 		}
 	}
 
@@ -236,18 +235,13 @@ class DateUtils {
 	 * @return
 	 */
 	public static Date Now() {
-		Date result = new Date()
-		if (castTimeZone && offsTimeZone != 0) {
-			result = AddDate('sss', offsTimeZone, result)
-		}
-
-		return result
+		return new Date()
 	}
 
-	public static ToOrigTimeZoneDate(Date date) {
+	public static Date ToOrigTimeZoneDate(Date date) {
 		if (date != null) {
-			if (castTimeZone && offsTimeZone != 0) {
-				date = AddDate('sss', offsTimeZone, date)
+			if (offsTimeZone != 0) {
+				date = AddDate('sss', -offsTimeZone, date)
 			}
 		}
 
@@ -556,10 +550,6 @@ class DateUtils {
 	public static BigDecimal Timestamp2Value(java.sql.Timestamp value) {
 		if ((Object)value == null) return null as BigDecimal
 
-		int offset = TimeZone.default.rawOffset
-		if (offset != 0) value = new java.sql.Timestamp(AddDate('sss', -offset, value).time)
-
-//		def t = value.time.intdiv(1000)
         def t = Long.divideUnsigned(value.time, 1000)
 		def n = new BigDecimal(value.nanos).divide(BigDecimal.valueOf(1000000000), 9, RoundingMode.UNNECESSARY)
 		def res = t + n

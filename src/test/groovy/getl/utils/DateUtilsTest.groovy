@@ -8,28 +8,21 @@ import java.time.format.DateTimeFormatter
  */
 class DateUtilsTest extends GroovyTestCase {
     void testNow() {
+		def date = DateUtils.Now()
+		def hour_orig = DateUtils.PartOfDate('hour', date)
+
         DateUtils.defaultTimeZone = 'Europe/Moscow'
-        def date1 = DateUtils.Now()
-        def hour1 = DateUtils.PartOfDate('hour', date1)
+        def hour1 = DateUtils.PartOfDate('hour', date)
 
         DateUtils.defaultTimeZone = 'UTC'
-        def date2 = DateUtils.Now()
-        def hour2 = DateUtils.PartOfDate('hour', date2)
+        def hour2 = DateUtils.PartOfDate('hour', date)
 
         assertEquals(hour1, (hour2 + 3 < 24)?(hour2 + 3):(hour2 + 3 - 24))
 
-        DateUtils.castTimeZone = true
-        DateUtils.defaultTimeZone = 'Europe/Moscow'
-        date1 = DateUtils.Now()
-        hour1 = DateUtils.PartOfDate('hour', date1)
-
-        DateUtils.defaultTimeZone = 'UTC'
-        date2 = DateUtils.Now()
-        hour2 = DateUtils.PartOfDate('hour', date2)
-
-        assertEquals(hour1, hour2)
-
         DateUtils.RestoreOrigDefaultTimeZone()
+		hour1 = DateUtils.PartOfDate('hour', date)
+		assertEquals(hour_orig, hour1)
+
     }
 
     void testParseDate() {
