@@ -38,6 +38,16 @@ class SalesForceConnectionTest extends GroovyTestCase {
 		assertTrue(dataset.field.find { it.name == 'Id' } != null)
 	}
 
+    void testFieldsExtended() {
+        if (connection == null) return
+        SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
+        dataset.retrieveFields()
+
+        def field = dataset.field.find { it.name == 'Id' }
+
+        assertEquals(1, field.extended.ordinalPosition)
+    }
+
 	void testRows() {
 		if (connection == null) return
 		SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')

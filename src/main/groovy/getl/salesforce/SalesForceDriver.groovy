@@ -127,7 +127,7 @@ class SalesForceDriver extends Driver {
 
 		DescribeSObjectResult describeSObjectResults = partnerConnection.describeSObject((dataset as SalesForceDataset).params.sfObjectName as String)
 
-		describeSObjectResults.fields.each { sfField field ->
+		describeSObjectResults.fields.eachWithIndex { sfField field, int idx ->
 			Field f = new Field()
 
 			f.name = field.name
@@ -150,6 +150,10 @@ class SalesForceDriver extends Driver {
 			f.isAutoincrement = field.autoNumber
 			f.description = field.label
 			if (f.description == '') f.description = null
+
+			f.extended.ordinalPosition = idx + 1
+			f.extended.calculatedFormula = field.calculatedFormula
+			f.extended.referenceTo = field.referenceTo.size() > 0 ? field.referenceTo.toList().join(', ') : null
 
 			result << f
 		}
