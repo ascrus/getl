@@ -206,7 +206,7 @@ class Flow {
 			if (s == null) {
 				if (!d.isAutoincrement && !d.isReadOnly) {
 					dn = dn.replace("'", "\\'")
-					sb << "outRow.'${dn}' = getl.utils.GenerationUtils.EMPTY_${d.type.toString().toUpperCase()}"
+					sb << "outRow.put('${dn}', getl.utils.GenerationUtils.EMPTY_${d.type.toString().toUpperCase()})"
 					destFields << d.name
 				}
 				else {
@@ -218,11 +218,12 @@ class Flow {
 				String sn = s.name.toLowerCase().replace("'", "\\'")
 				dn = dn.replace("'", "\\'")
 				if (d.type == s.type || !convert) {
-					sb << "outRow.'${dn}' = inRow.'${sn}'"
+					sb << "outRow.put('${dn}', inRow.get('${sn}'))"
 				}
 				else {
-					sb << "outRow.'${dn}' = "
-					sb << GenerationUtils.GenerateConvertValue(d, s, mapFormat, "inRow.'${sn}'")
+					sb << "outRow.put('${dn}', "
+					sb << GenerationUtils.GenerateConvertValue(d, s, mapFormat, "inRow.get('${sn}')")
+					sb << ')'
 				}
 				destFields << d.name
 				sourceFields << s.name

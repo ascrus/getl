@@ -50,7 +50,7 @@ class ManagerListProcessClosure extends ManagerListProcessing {
 	@Override
 	@groovy.transform.CompileStatic
 	public boolean prepare(Map file) {
-		if (runCode != null) return runCode(file)
+		if (runCode != null) return runCode.call(file)
 		
 		true
 	}
