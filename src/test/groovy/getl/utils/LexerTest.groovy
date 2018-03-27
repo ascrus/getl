@@ -220,4 +220,11 @@ static public int test (def param1, def param2) {
         lexer.parse()
         assertEquals('<>', lexer.tokens[1].value)
     }
+
+    void testEmptyQuotes() {
+        def example = "test=''"
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+        assertEquals('', lexer.tokens[2].value)
+    }
 }

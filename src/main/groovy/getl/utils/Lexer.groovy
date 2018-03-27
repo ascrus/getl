@@ -290,7 +290,7 @@ class Lexer {
 		}
 		input.reset()
 
-		if (sb.length() > 0) tokens << [type: TokenType.QUOTED_TEXT, quote: ((char)(c as int)).toString(), value: sb.toString()]
+		if (sb.length() >= 0) tokens << [type: TokenType.QUOTED_TEXT, quote: ((char)(c as int)).toString(), value: sb.toString()]
 		command = commands.pop()
 		sb = new StringBuilder()
 	}
