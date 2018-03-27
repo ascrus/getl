@@ -227,4 +227,11 @@ static public int test (def param1, def param2) {
         lexer.parse()
         assertEquals('', lexer.tokens[2].value)
     }
+
+    void testSingleWord() {
+        def example = "test"
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+        assertEquals('test', lexer.tokens[0].value)
+    }
 }

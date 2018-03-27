@@ -184,6 +184,8 @@ class Lexer {
 
 			c = input.read()
 		}
+
+        if (tokens.size() == 0 && sb.length() > 0) gap(c)
 	}
 
 	private void addChar(int c) {
