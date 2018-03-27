@@ -34,22 +34,22 @@ import getl.exception.ExceptionGETL
 @groovy.transform.CompileStatic
 class Lexer {
 	public static enum TokenType {SINGLE_WORD, QUOTED_TEXT, LIST, COMMA, SEMICOLON, FUNCTION, OBJECT_NAME}
-	
+
 	/**
 	 * Type of use parse command
 	 */
-	private static enum CommandType {NONE, WORD, QUOTE, BRACKET, OBJECT_NAME}
+	private static enum CommandType {NONE, WORD, QUOTE, BRACKET, OBJECT_NAME, MATH_SYMBOL}
 
 	/**
 	 * Input text stream
 	 */
 	public Reader input
-	
+
 	/**
 	 * Result tokens
 	 */
 	public List<Map> tokens
-	
+
 	/**
 	 * Parameter of command
 	 * @author owner
@@ -61,37 +61,37 @@ class Lexer {
 		Integer start
 		Integer finish
 	}
-	
+
 	/**
 	 * Current parse command
 	 */
 	private CommandParam command
-	
+
 	/**
 	 * Stack running of commands
 	 */
 	private Stack<CommandParam> commands
-	
+
 	/**
-	 * Current text 
+	 * Current text
 	 */
 	private StringBuilder sb
-	
+
 	/**
 	 * Stack tokens by lists
 	 */
 	private Stack<List> stackTokens
-	
+
 	/**
-	 * Current column number in line 
+	 * Current column number in line
 	 */
 	private int curNum
-	
+
 	/**
 	 * Current line
 	 */
 	private int curLine
-	
+
 	/**
 	 * Parse input stream
 	 */
@@ -102,29 +102,37 @@ class Lexer {
 		commands = new Stack<CommandParam>()
 		stackTokens = new Stack<List>()
 		sb = new StringBuilder()
-		
+
 		curNum = 0
 		curLine = 1
-		
+
 		int c = input.read()
 		while (c != -1) {
 			curNum++
 			switch (c) {
 				// Tab
 				case 9:
-					curNum += 3 
+					curNum += 3
 					if (command.type == CommandType.QUOTE) addChar(c) else gap(c)
 					break
 				// Space
-				case 32:  
+				case 32:
 					if (command.type == CommandType.QUOTE) addChar(c) else gap(c)
 					break
+                case { Character.getType(c) == Character.MATH_SYMBOL }: // for math chars, such as: +, -, >, <, =
+                case 33: // for ! char
+                    if (command.type == CommandType.QUOTE) addChar(c)
+                    else {
+                        gap(c)
+                        math(c)
+                    }
+                    break
 				// Single and double quote <'">
 				case 39: case 34:
 					quote(c)
 					break
 				// opening bracket <(>
-				case 40: 
+				case 40:
 					level_start(c, 41)
 					break
 				// opening bracket <[>
@@ -140,7 +148,7 @@ class Lexer {
 					level_finish(40, c)
 					break
 				// closing bracket <]>
-				case 93: 
+				case 93:
 					level_finish(91, c)
 					break
 				// closing bracket <}>
@@ -173,39 +181,65 @@ class Lexer {
 					}
 					addChar(c)
 			}
-			
+
 			c = input.read()
 		}
 	}
-	
+
 	private void addChar(int c) {
 		sb << (char)(c as int)
 	}
-	
+
 	/**
 	 * Gap current word
 	 * @param c
 	 * @return
 	 */
 	private boolean gap (int c) {
-		if (command.type == CommandType.WORD) {
+		if (command.type in [CommandType.WORD, CommandType.MATH_SYMBOL]) {
 			if (sb.length() > 0) tokens << [type: TokenType.SINGLE_WORD, value: sb.toString()]
 			command = commands.pop()
 			sb = new StringBuilder()
-		
+
 			return true
 		}
 		else if (command.type == CommandType.OBJECT_NAME) {
 			if (sb.length() > 0) tokens << [type: TokenType.OBJECT_NAME, value: sb.toString()]
 			command = commands.pop()
 			sb = new StringBuilder()
-		
+
 			return true
 		}
-		
+
 		return false
 	}
-	
+
+    /**
+     * Check math chars
+     * @param c
+     * @param type
+     */
+    private void math(int c) {
+        if (command.type != CommandType.MATH_SYMBOL) {
+            commands.push(command)
+            command = new CommandParam()
+            command.type = CommandType.MATH_SYMBOL
+            command.value = c
+            addChar(c)
+        }
+
+        input.mark(1)
+        int n = input.read()
+        if (Character.getType(n) == Character.MATH_SYMBOL) {
+            curNum++
+            addChar(n)
+        } else input.reset()
+
+        if (sb.length() > 0) tokens << [type: TokenType.SINGLE_WORD, value: sb.toString()]
+        command = commands.pop()
+        sb = new StringBuilder()
+    }
+
 	/**
 	 * Valid quoted text
 	 * @param c
@@ -215,18 +249,18 @@ class Lexer {
 		if (command.type == CommandType.WORD) {
 			if (sb.length() > 0 && sb.substring(sb.length() - 1) == ".") {
 				command.type = CommandType.OBJECT_NAME
-				
+
 				return
 			}
 			else {
 				error("unexpectedly found quote in the word")
 			}
 		}
-		
+
 		if (command.type == CommandType.OBJECT_NAME) {
 			return
 		}
-		
+
 		if (command.type != CommandType.QUOTE) {
 			commands.push(command)
 			command = new CommandParam()
@@ -234,12 +268,12 @@ class Lexer {
 			command.value = c
 			return
 		}
-		
+
 		if (c != command.value) {
 			addChar(c)
 			return
 		}
-		
+
 		input.mark(1)
 		int n = input.read()
 		if (c == n) {
@@ -255,12 +289,12 @@ class Lexer {
 			return
 		}
 		input.reset()
-		
+
 		if (sb.length() > 0) tokens << [type: TokenType.QUOTED_TEXT, quote: ((char)(c as int)).toString(), value: sb.toString()]
 		command = commands.pop()
 		sb = new StringBuilder()
 	}
-	
+
 	/**
 	 * Start bracket level
 	 * @param c
@@ -271,16 +305,16 @@ class Lexer {
 			addChar(c1)
 			return
 		}
-		
+
 		gap(c1)
-		
+
 		if (tokens.size() > 0) {
 			Map token = (Map)tokens[tokens.size() - 1]
 			if (token."type" == TokenType.SINGLE_WORD) {
 				token."type" = TokenType.FUNCTION
 			}
 		}
-		
+
 		commands.push(command)
 		command = new CommandParam()
 		command.type = CommandType.BRACKET
@@ -290,17 +324,17 @@ class Lexer {
 		stackTokens.push(tokens)
 		tokens = []
 	}
-	
+
 	private void level_finish (int c1, int c2) {
 		if (command.type == CommandType.QUOTE) {
 			addChar(c2)
 			return
 		}
-		
+
 		gap(c2)
 
 		if (command.type != CommandType.BRACKET || command.start != c1 || command.finish != c2) error("opening bracket not found")
-		
+
 		List curTokens = tokens
 		tokens = stackTokens.pop()
 		if (tokens.size() > 0 && ((Map)(tokens[tokens.size() - 1]))."type" == TokenType.FUNCTION) {
@@ -312,10 +346,10 @@ class Lexer {
 		else {
 			tokens << [type: TokenType.LIST, start: ((char)(c1 as int)).toString(), finish: ((char)(c2 as int)).toString(), list: curTokens]
 		}
-		
+
 		command = commands.pop()
 	}
-	
+
 	private void comma(int c) {
 		if (command.type == CommandType.QUOTE) {
 			addChar(c)
@@ -326,7 +360,7 @@ class Lexer {
 		Map m = [type: TokenType.COMMA, value: ((char)(c as int)).toString()]
 		tokens[tokens.size() - 1]."delimiter" = m
 	}
-	
+
 	private void semicolon(int c) {
 		if (command.type == CommandType.QUOTE) {
 			addChar(c)
@@ -334,19 +368,19 @@ class Lexer {
 		}
 
 		gap(c)
-		
+
 		tokens << [type: TokenType.SEMICOLON, value: ((char)(c as int)).toString()]
 	}
-	
+
 	protected error(String message) {
 		throw new ExceptionGETL("Syntax error line $curLine, col $curNum: $message, current command: type=${command.type};value=${command.value};start=${command.start};finish=${command.finish};buffer=${sb.toString()}")
 	}
-	
+
 	@Override
 	public String toString() {
 		MapUtils.ToJson([tokens: tokens])
 	}
-	
+
 	/**
 	 * Return list of statements separated by a semicolon
 	 * @return
@@ -360,10 +394,10 @@ class Lexer {
 			cur = pos + 1
 			pos = findByType(tokens, TokenType.SEMICOLON, cur)
 		}
-		
+
 		res
 	}
-	
+
 	/**
 	 * Return key words for start token while words is single word
 	 * @param start
@@ -378,10 +412,10 @@ class Lexer {
 			sb << " "
 			start++
 		}
-		
+
 		(sb.length() > 0)?sb.substring(0, sb.length() - 1):""
 	}
-	
+
 	/**
 	 * Return list for position token
 	 * @param position
@@ -390,9 +424,9 @@ class Lexer {
 	public static List<Map> list (List<Map> tokens, int position) {
 		(List<Map>)((tokens[position]."type" == TokenType.LIST)?tokens[position]."list":null)
 	}
-	
+
 	/**
-	 * Return function name and parameters for position token 
+	 * Return function name and parameters for position token
 	 * @param tokens
 	 * @param position
 	 * @return
@@ -403,7 +437,7 @@ class Lexer {
 
 		token
 	}
-	
+
 	/**
 	 * Return object name for start token while has single or double quoted word delimiters by point
 	 * @param start
@@ -417,16 +451,16 @@ class Lexer {
 
 		((String)tokens[start]."value").split("[.]").toList()
 	}
-	
+
 	/**
-	 * Return token type 
+	 * Return token type
 	 * @param position
 	 * @return
 	 */
 	public static TokenType type (List<Map> tokens, int position) {
 		(TokenType)((position < tokens.size())?tokens[position]."type":null)
 	}
-	
+
 	/**
 	 * Find token by type
 	 * @param type
@@ -439,8 +473,8 @@ class Lexer {
 		}
 		return -1
 	}
-	
-	
+
+
 	/**
 	 * Convert tokens with comma sepatate to list
 	 * @param tokens
@@ -459,14 +493,14 @@ class Lexer {
 				res << cur
 				cur = new ArrayList<Map>()
 			}
-			
+
 			start++
 		}
 		if (!cur.isEmpty()) res << cur
-		
+
 		res
 	}
-	
+
 	/**
 	 * Convert tokens with key word delimiter to list
 	 * @param tokens
@@ -488,16 +522,16 @@ class Lexer {
 			else {
 				cur << token
 			}
-			
+
 			start++
 		}
 		if (!cur.isEmpty()) res << cur
-		
+
 		res
 	}
-	
+
 	/**
-	 * Return position key word by start position 
+	 * Return position key word by start position
 	 * @param tokens
 	 * @param start
 	 * @param keyWord
@@ -507,9 +541,9 @@ class Lexer {
 		keyWord = keyWord.toUpperCase()
 		for (int i = start; i < tokens.size(); i++) {
 			def token = tokens[i]
-			if (token."type" == TokenType.SINGLE_WORD && ((String)token."value").toUpperCase() == keyWord) return i 
-		} 
-		
+			if (token."type" == TokenType.SINGLE_WORD && ((String)token."value").toUpperCase() == keyWord) return i
+		}
+
 		return -1
-	} 
+	}
 }

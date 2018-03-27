@@ -193,4 +193,31 @@ static public int test (def param1, def param2) {
 
         assertEquals(res, lexer.toString())
     }
+
+    void testMath() {
+        def example = "test+=t"
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+        assertEquals('+=', lexer.tokens[1].value)
+
+        example = "test != 't'"
+        lexer.input = new StringReader(example)
+        lexer.parse()
+        assertEquals('!=', lexer.tokens[1].value)
+
+        example = "test != 't!=0'"
+        lexer.input = new StringReader(example)
+        lexer.parse()
+        assertEquals('t!=0', lexer.tokens[2].value)
+
+        example = "test>='t!=0'"
+        lexer.input = new StringReader(example)
+        lexer.parse()
+        assertEquals('>=', lexer.tokens[1].value)
+
+        example = "test<>'t!=0'"
+        lexer.input = new StringReader(example)
+        lexer.parse()
+        assertEquals('<>', lexer.tokens[1].value)
+    }
 }
