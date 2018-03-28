@@ -33,12 +33,12 @@ import getl.exception.ExceptionGETL
  */
 @groovy.transform.CompileStatic
 class Lexer {
-	public static enum TokenType {SINGLE_WORD, QUOTED_TEXT, LIST, COMMA, SEMICOLON, FUNCTION, OBJECT_NAME}
+	public static enum TokenType {SINGLE_WORD, QUOTED_TEXT, LIST, COMMA, SEMICOLON, FUNCTION, OBJECT_NAME, OPERATOR}
 
 	/**
 	 * Type of use parse command
 	 */
-	private static enum CommandType {NONE, WORD, QUOTE, BRACKET, OBJECT_NAME, MATH_SYMBOL}
+	private static enum CommandType {NONE, WORD, QUOTE, BRACKET, OBJECT_NAME, OPERATOR}
 
 	/**
 	 * Input text stream
@@ -119,12 +119,12 @@ class Lexer {
 				case 32:
 					if (command.type == CommandType.QUOTE) addChar(c) else gap(c)
 					break
-                case { Character.getType(c) == Character.MATH_SYMBOL }: // for math chars, such as: +, -, >, <, =
-                case 33: // for ! char
+                case { Character.getType(c) == Character.MATH_SYMBOL }: // for operator chars, such as: +, -, >, <, =
+                case [33, 37, 38, 42]: // for !, %, &, * chars
                     if (command.type == CommandType.QUOTE) addChar(c)
                     else {
                         gap(c)
-                        math(c)
+                        operator(c)
                     }
                     break
 				// Single and double quote <'">
@@ -174,7 +174,7 @@ class Lexer {
 					if (command.type == CommandType.QUOTE) addChar(c) else gap(c)
 					break
 				default:
-					if (!(command.type in [CommandType.QUOTE, CommandType.WORD, CommandType.OBJECT_NAME])) {
+					if (!(command.type in [CommandType.QUOTE, CommandType.WORD, CommandType.OBJECT_NAME, CommandType.OPERATOR])) {
 						commands.push(command)
 						command = new CommandParam()
 						command.type = CommandType.WORD
@@ -198,7 +198,7 @@ class Lexer {
 	 * @return
 	 */
 	private boolean gap (int c) {
-		if (command.type in [CommandType.WORD, CommandType.MATH_SYMBOL]) {
+		if (command.type in [CommandType.WORD]) {
 			if (sb.length() > 0) tokens << [type: TokenType.SINGLE_WORD, value: sb.toString()]
 			command = commands.pop()
 			sb = new StringBuilder()
@@ -217,27 +217,35 @@ class Lexer {
 	}
 
     /**
-     * Check math chars
+     * Check operator chars
      * @param c
      * @param type
      */
-    private void math(int c) {
-        if (command.type != CommandType.MATH_SYMBOL) {
+    private void operator(int c) {
+        if (command.type != CommandType.OPERATOR) {
             commands.push(command)
             command = new CommandParam()
-            command.type = CommandType.MATH_SYMBOL
+            command.type = CommandType.OPERATOR
             command.value = c
             addChar(c)
         }
 
-        input.mark(1)
+        input.mark(2)
         int n = input.read()
-        if (Character.getType(n) == Character.MATH_SYMBOL) {
+        if (Character.getType(n) == Character.MATH_SYMBOL || n in [37, 38, 42]) {
             curNum++
             addChar(n)
         } else input.reset()
 
-        if (sb.length() > 0) tokens << [type: TokenType.SINGLE_WORD, value: sb.toString()]
+        if (n == 42) {
+            n = input.read()
+            if (Character.getType(n) == Character.MATH_SYMBOL || n in [37, 38, 42]) {
+                curNum++
+                addChar(n)
+            } else input.reset()
+        }
+
+        if (sb.length() > 0) tokens << [type: TokenType.OPERATOR, value: sb.toString()]
         command = commands.pop()
         sb = new StringBuilder()
     }

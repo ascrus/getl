@@ -49,7 +49,7 @@ static public int test (def param1, def param2) {
                     "value": "res"
                 },
                 {
-                    "type": "SINGLE_WORD",
+                    "type": "OPERATOR",
                     "value": "="
                 },
                 {
@@ -69,8 +69,13 @@ static public int test (def param1, def param2) {
                             "value": "list"
                         },
                         {
-                            "type": "FUNCTION",
-                            "value": "=",
+                            "type": "OPERATOR",
+                            "value": "="
+                        },
+                        {
+                            "type": "LIST",
+                            "start": "[",
+                            "finish": "]",
                             "list": [
                                 {
                                     "type": "SINGLE_WORD",
@@ -84,16 +89,14 @@ static public int test (def param1, def param2) {
                                     "type": "SINGLE_WORD",
                                     "value": "param2"
                                 }
-                            ],
-                            "start": "[",
-                            "finish": "]"
+                            ]
                         },
                         {
                             "type": "SINGLE_WORD",
                             "value": "res"
                         },
                         {
-                            "type": "SINGLE_WORD",
+                            "type": "OPERATOR",
                             "value": "="
                         },
                         {
@@ -105,7 +108,7 @@ static public int test (def param1, def param2) {
                                     "value": "it"
                                 },
                                 {
-                                    "type": "SINGLE_WORD",
+                                    "type": "OPERATOR",
                                     "value": "=="
                                 },
                                 {
@@ -133,7 +136,7 @@ static public int test (def param1, def param2) {
                                     "value": "param2"
                                 },
                                 {
-                                    "type": "SINGLE_WORD",
+                                    "type": "OPERATOR",
                                     "value": "!="
                                 },
                                 {
@@ -141,7 +144,7 @@ static public int test (def param1, def param2) {
                                     "value": "null"
                                 },
                                 {
-                                    "type": "SINGLE_WORD",
+                                    "type": "OPERATOR",
                                     "value": "&&"
                                 },
                                 {
@@ -149,7 +152,7 @@ static public int test (def param1, def param2) {
                                     "value": "param2"
                                 },
                                 {
-                                    "type": "SINGLE_WORD",
+                                    "type": "OPERATOR",
                                     "value": "=="
                                 },
                                 {
@@ -165,7 +168,7 @@ static public int test (def param1, def param2) {
                             "value": "res"
                         },
                         {
-                            "type": "SINGLE_WORD",
+                            "type": "OPERATOR",
                             "value": "="
                         },
                         {
@@ -233,5 +236,12 @@ static public int test (def param1, def param2) {
         def lexer = new Lexer(input: new StringReader(example))
         lexer.parse()
         assertEquals('test', lexer.tokens[0].value)
+    }
+
+    void testOperatorWithThreeChars() {
+        def example = "test**=t"
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+        assertEquals('**=', lexer.tokens[1].value)
     }
 }
