@@ -201,47 +201,62 @@ static public int test (def param1, def param2) {
         def example = "test+=t"
         def lexer = new Lexer(input: new StringReader(example))
         lexer.parse()
-        assertEquals('+=', lexer.tokens[1].value)
+        assertEquals(['test', '+=', 't'], lexer.tokens*.value)
 
         example = "test != 't'"
         lexer.input = new StringReader(example)
         lexer.parse()
-        assertEquals('!=', lexer.tokens[1].value)
+        assertEquals(['test', '!=', 't'], lexer.tokens*.value)
 
         example = "test != 't!=0'"
         lexer.input = new StringReader(example)
         lexer.parse()
-        assertEquals('t!=0', lexer.tokens[2].value)
+        assertEquals(['test', '!=', 't!=0'], lexer.tokens*.value)
 
         example = "test>='t!=0'"
         lexer.input = new StringReader(example)
         lexer.parse()
-        assertEquals('>=', lexer.tokens[1].value)
+        assertEquals(['test', '>=', 't!=0'], lexer.tokens*.value)
 
         example = "test<>'t!=0'"
         lexer.input = new StringReader(example)
         lexer.parse()
-        assertEquals('<>', lexer.tokens[1].value)
+        assertEquals(['test', '<>', 't!=0'], lexer.tokens*.value)
     }
 
     void testEmptyQuotes() {
         def example = "test=''"
         def lexer = new Lexer(input: new StringReader(example))
         lexer.parse()
-        assertEquals('', lexer.tokens[2].value)
+        assertEquals(['test','=', ''], lexer.tokens*.value)
     }
 
     void testSingleWord() {
-        def example = "test"
+        def example = "test=1"
         def lexer = new Lexer(input: new StringReader(example))
         lexer.parse()
-        assertEquals('test', lexer.tokens[0].value)
+        assertEquals(['test','=', '1'], lexer.tokens*.value)
+
+        example = "test"
+        lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+        assertEquals(['test'], lexer.tokens*.value)
+
+        example = "test=test"
+        lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+        assertEquals(['test', '=', 'test'], lexer.tokens*.value)
+
+        example = "test=test\n"
+        lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+        assertEquals(['test', '=', 'test'], lexer.tokens*.value)
     }
 
     void testOperatorWithThreeChars() {
         def example = "test**=t"
         def lexer = new Lexer(input: new StringReader(example))
         lexer.parse()
-        assertEquals('**=', lexer.tokens[1].value)
+        assertEquals(['test','**=', 't'], lexer.tokens*.value)
     }
 }
