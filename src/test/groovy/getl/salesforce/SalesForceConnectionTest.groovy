@@ -30,6 +30,12 @@ class SalesForceConnectionTest extends GroovyTestCase {
 		assertTrue(connection.retrieveObjects().find { it.objectName == 'Account' } != null)
 	}
 
+    void testOrderBy() {
+        if (connection == null) return
+        SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
+        assertEquals(10, dataset.rows(limit: 10, orderBy: [SystemModstamp: 'desc']).size())
+    }
+
 	void testGetFields() {
 		if (connection == null) return
 		SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')

@@ -48,10 +48,10 @@ class SalesForceDriver extends Driver {
 	private boolean connected = false
 
 	SalesForceDriver () {
-		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk'])
+		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy'])
 		methodParams.register('retrieveObjects', [])
-        methodParams.register('bulkUnload', ['where', 'limit', 'fileName'])
-		methodParams.register('rows', ['limit', 'where', 'readAsBulk'])
+        methodParams.register('bulkUnload', ['where', 'limit', 'fileName', 'orderBy'])
+		methodParams.register('rows', ['limit', 'where', 'readAsBulk', 'orderBy'])
 	}
 
 	@Override
@@ -213,6 +213,7 @@ class SalesForceDriver extends Driver {
 		String sfObjectName = dataset.params.sfObjectName
 		Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
         String where = (params.where) ?: ''
+        Map<String, String> orderBy = ((params.orderBy) ?: [:]) as Map<String, String>
 
         Boolean readAsBulk = BoolUtils.IsValue(params.readAsBulk)
 
@@ -222,8 +223,17 @@ class SalesForceDriver extends Driver {
 
         // SOQL Query generation
 		String soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
-        if (where.size() > 0) soqlQuery += "\nwhere $where"
-		if (limit > 0) soqlQuery += "\nlimit ${limit.toString()}"
+        if (where.size() > 0) soqlQuery += "\nWHERE $where"
+        if (orderBy.size() > 0) {
+            soqlQuery += '\nORDER BY '
+            List<String> result = []
+            orderBy.each { k, v ->
+                result.add("$k $v".toString())
+            }
+
+            soqlQuery += result.join(', ')
+        }
+		if (limit > 0) soqlQuery += "\nLIMIT ${limit.toString()}"
 
 		long countRec = 0
 
