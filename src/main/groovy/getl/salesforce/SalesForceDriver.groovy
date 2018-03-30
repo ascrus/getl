@@ -224,15 +224,7 @@ class SalesForceDriver extends Driver {
         // SOQL Query generation
 		String soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
         if (where.size() > 0) soqlQuery += "\nWHERE $where"
-        if (orderBy.size() > 0) {
-            soqlQuery += '\nORDER BY '
-            List<String> result = []
-            orderBy.each { k, v ->
-                result.add("$k $v".toString())
-            }
-
-            soqlQuery += result.join(', ')
-        }
+        if (orderBy.size() > 0) soqlQuery += "\nORDER BY ${orderBy.collect { k, v -> "$k $v".toString() }.join(', ')}"
 		if (limit > 0) soqlQuery += "\nLIMIT ${limit.toString()}"
 
 		long countRec = 0
@@ -307,6 +299,7 @@ class SalesForceDriver extends Driver {
         String sfObjectName = dataset.params.sfObjectName
         Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
         String where = (params.where) ?: ''
+        Map<String, String> orderBy = ((params.orderBy) ?: [:]) as Map<String, String>
 
         if (dataset.field.isEmpty()) dataset.retrieveFields()
         List<String> fields = dataset.field*.name
@@ -318,8 +311,9 @@ class SalesForceDriver extends Driver {
 
             // SOQL Query generation
             String soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
-            if (where.size() > 0) soqlQuery += "\nwhere $where"
-            if (limit > 0) soqlQuery += "\nlimit ${limit.toString()}"
+            if (where.size() > 0) soqlQuery += "\nWHERE $where"
+            if (orderBy.size() > 0) soqlQuery += "\nORDER BY ${orderBy.collect { k, v -> "$k $v".toString() }.join(', ')}"
+            if (limit > 0) soqlQuery += "\nLIMIT ${limit.toString()}"
 
             BatchInfo info
             ByteArrayInputStream bout = new ByteArrayInputStream(soqlQuery.getBytes())
