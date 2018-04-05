@@ -154,6 +154,8 @@ class SalesForceDriver extends Driver {
 			f.extended.ordinalPosition = idx + 1
 			f.extended.calculatedFormula = field.calculatedFormula
 			f.extended.referenceTo = field.referenceTo.size() > 0 ? field.referenceTo.toList().join(', ') : null
+			f.extended.referenceAlias = field.relationshipName
+			f.extended.referenceOrder = field.relationshipOrder
 
 			result << f
 		}
