@@ -1245,40 +1245,35 @@ sb << """
 		def i = 0
 		fields.each { Field f ->
 			i++
-			sb << "	def _getl_temp_var_$i = inRow.getAt('${f.name.toLowerCase()}')\n"
-			sb << "	if (_getl_temp_var_$i == null) outRow.put('${f.name.toLowerCase()}', null) else {\n"
+
+			def fName = f.name.toLowerCase().replace("'", "\\'")
+
+			sb << "	def _getl_temp_var_$i = inRow.getAt('$fName')\n"
+			sb << "	if (_getl_temp_var_$i == null) outRow.put('$fName', null) else {\n"
 			if (f.getMethod != null) sb << "		_getl_temp_var_$i = ${f.getMethod.replace("{field}", "_getl_temp_var_$i")}\n"
 
 			switch (f.type) {
-				/*
-				case getl.data.Field.Type.DATE:
-					sb << "		outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i} as java.sql.Date)"
-					break
-				case getl.data.Field.Type.DATETIME:
-					sb << "		outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i} as java.sql.Timestamp)"
-					break
-				*/
 				case getl.data.Field.Type.BLOB:
 					if (driver.blobReadAsObject()) {
-						sb << "	outRow.put('${f.name.toLowerCase()}', (_getl_temp_var_${i} as java.sql.Blob).getBytes((long)1, (int)((_getl_temp_var_${i} as java.sql.Blob).length())))"
+						sb << "	outRow.put('$fName', (_getl_temp_var_${i} as java.sql.Blob).getBytes((long)1, (int)((_getl_temp_var_${i} as java.sql.Blob).length())))"
 					}
 					else {
-						sb << "	outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i})"
+						sb << "	outRow.put('$fName', _getl_temp_var_${i})"
 					}
 					break
 				case getl.data.Field.Type.TEXT:
 					if (driver.textReadAsObject()) {
-						sb << "		outRow.put('${f.name.toLowerCase()}', (_getl_temp_var_${i} as java.sql.NClob).getSubString((Long)1, ((Integer)(_getl_temp_var_${i} as java.sql.NClob).length())))"
+						sb << "		outRow.put('$fName', (_getl_temp_var_${i} as java.sql.NClob).getSubString((Long)1, ((Integer)(_getl_temp_var_${i} as java.sql.NClob).length())))"
 					}
 					else {
-						sb << "		outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i})"
+						sb << "		outRow.put('$fName', _getl_temp_var_${i})"
 					}
 					break
 				case getl.data.Field.Type.UUID:
-					sb << "		outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i}.toString())"
+					sb << "		outRow.put('$fName', _getl_temp_var_${i}.toString())"
 					break
 				default:
-					sb << "		outRow.put('${f.name.toLowerCase()}', _getl_temp_var_${i})"
+					sb << "		outRow.put('$fName', _getl_temp_var_${i})"
 			}
 
 			sb << '\n	}\n'
@@ -1305,8 +1300,8 @@ sb << """
 		sb << '\n@groovy.transform.CompileStatic\n'
 		sb << 'void methodCopy(Map<String, Object> inRow, Map<String, Object> outRow) {\n'
 		fields.each { Field f ->
-//			sb << "outRow.'${f.name.toLowerCase()}' = inRow.'${f.name.toLowerCase()}'\n"
-			sb << "outRow.put('${f.name.toLowerCase()}', inRow.get('${f.name.toLowerCase()}'))\n"
+			def fName = f.name.toLowerCase().replace("'", "\\'")
+			sb << "outRow.put('$fName', inRow.get('$fName'))\n"
 		}
 		sb << "}"
 		Closure result = GenerationUtils.EvalGroovyClosure(sb.toString())

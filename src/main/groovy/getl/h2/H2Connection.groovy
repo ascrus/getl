@@ -41,11 +41,13 @@ class H2Connection extends JDBCConnection {
 	H2Connection () {
 		super(driver: H2Driver)
 		if (connectProperty.LOCK_TIMEOUT == null) connectProperty.LOCK_TIMEOUT = 10000
+		connectProperty.DATABASE_TO_UPPER = true
 	}
 	
 	H2Connection (Map params) {
 		super(new HashMap([driver: H2Driver]) + params)
 		if (connectProperty.LOCK_TIMEOUT == null) connectProperty.LOCK_TIMEOUT = 10000
+        connectProperty.DATABASE_TO_UPPER = true
 		if (this.getClass().name == 'getl.h2.H2Connection') methodParams.validation('Super', params)
 	}
 	

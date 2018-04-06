@@ -48,10 +48,10 @@ class SalesForceDriver extends Driver {
 	private boolean connected = false
 
 	SalesForceDriver () {
-		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk'])
+		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy'])
 		methodParams.register('retrieveObjects', [])
-        methodParams.register('bulkUnload', ['where', 'limit', 'fileName'])
-		methodParams.register('rows', ['limit', 'where', 'readAsBulk'])
+        methodParams.register('bulkUnload', ['where', 'limit', 'fileName', 'orderBy'])
+		methodParams.register('rows', ['limit', 'where', 'readAsBulk', 'orderBy'])
 	}
 
 	@Override
@@ -127,7 +127,7 @@ class SalesForceDriver extends Driver {
 
 		DescribeSObjectResult describeSObjectResults = partnerConnection.describeSObject((dataset as SalesForceDataset).params.sfObjectName as String)
 
-		describeSObjectResults.fields.each { sfField field ->
+		describeSObjectResults.fields.eachWithIndex { sfField field, int idx ->
 			Field f = new Field()
 
 			f.name = field.name
@@ -150,6 +150,12 @@ class SalesForceDriver extends Driver {
 			f.isAutoincrement = field.autoNumber
 			f.description = field.label
 			if (f.description == '') f.description = null
+
+			f.extended.ordinalPosition = idx + 1
+			f.extended.calculatedFormula = field.calculatedFormula
+			f.extended.referenceTo = field.referenceTo.size() > 0 ? field.referenceTo.toList().join(', ') : null
+			f.extended.referenceAlias = field.relationshipName
+			f.extended.referenceOrder = field.relationshipOrder
 
 			result << f
 		}
@@ -209,6 +215,7 @@ class SalesForceDriver extends Driver {
 		String sfObjectName = dataset.params.sfObjectName
 		Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
         String where = (params.where) ?: ''
+        Map<String, String> orderBy = ((params.orderBy) ?: [:]) as Map<String, String>
 
         Boolean readAsBulk = BoolUtils.IsValue(params.readAsBulk)
 
@@ -218,8 +225,9 @@ class SalesForceDriver extends Driver {
 
         // SOQL Query generation
 		String soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
-        if (where.size() > 0) soqlQuery += "\nwhere $where"
-		if (limit > 0) soqlQuery += "\nlimit ${limit.toString()}"
+        if (where.size() > 0) soqlQuery += "\nWHERE $where"
+        if (orderBy.size() > 0) soqlQuery += "\nORDER BY ${orderBy.collect { k, v -> "$k $v".toString() }.join(', ')}"
+		if (limit > 0) soqlQuery += "\nLIMIT ${limit.toString()}"
 
 		long countRec = 0
 
@@ -293,6 +301,7 @@ class SalesForceDriver extends Driver {
         String sfObjectName = dataset.params.sfObjectName
         Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
         String where = (params.where) ?: ''
+        Map<String, String> orderBy = ((params.orderBy) ?: [:]) as Map<String, String>
 
         if (dataset.field.isEmpty()) dataset.retrieveFields()
         List<String> fields = dataset.field*.name
@@ -304,8 +313,9 @@ class SalesForceDriver extends Driver {
 
             // SOQL Query generation
             String soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
-            if (where.size() > 0) soqlQuery += "\nwhere $where"
-            if (limit > 0) soqlQuery += "\nlimit ${limit.toString()}"
+            if (where.size() > 0) soqlQuery += "\nWHERE $where"
+            if (orderBy.size() > 0) soqlQuery += "\nORDER BY ${orderBy.collect { k, v -> "$k $v".toString() }.join(', ')}"
+            if (limit > 0) soqlQuery += "\nLIMIT ${limit.toString()}"
 
             BatchInfo info
             ByteArrayInputStream bout = new ByteArrayInputStream(soqlQuery.getBytes())

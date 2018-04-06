@@ -614,11 +614,11 @@ class FileUtils {
 				def type = (rule."type"?:"REPLACE")?.toUpperCase()
 				if (!(type in ["REPLACE", "REGEXPR"])) throw new ExceptionGETL("Invalid rule type \"$type\", allowed REPLACE and REGEXPR")
 				
-				def oldValue = rule."old"
+				def oldValue = rule."old"?.replace("'", "\\'")
 				if (oldValue == null) throw new ExceptionGETL("Required \"old\" parameter from rule $rule")
 				oldValue = StringUtils.EscapeJava(oldValue as String)
 				
-				def newValue = rule."new"
+				def newValue = rule."new"?.replace("'", "\\'")
 				if (newValue == null) throw new ExceptionGETL("Required \"new\" parameter from rule $rule")
 				newValue = StringUtils.EscapeJava(newValue as String)
 				

@@ -152,7 +152,7 @@ class SQLParser {
 		valueList.each { List<Map> setToken ->
 			if (setToken.size() != 3) throw new ExceptionParser("Invalid set operator", setToken)
 			def token = setToken[1]
-			if (token."type" != Lexer.TokenType.SINGLE_WORD || token."value" != "=") throw new ExceptionParser("Invalid field in set operator", setToken)
+			if (token."type" != Lexer.TokenType.OPERATOR || token."value" != "=") throw new ExceptionParser("Invalid field in set operator", setToken)
 			token = setToken[0]
 			if (!(token."type" == Lexer.TokenType.SINGLE_WORD || (token."type" == Lexer.TokenType.QUOTED_TEXT && token.quote == '"'))) throw new ExceptionParser("Invalid set operator", setToken)
 			values.put(token."value", setToken[2])
@@ -168,7 +168,7 @@ class SQLParser {
 			
 			token = whereToken[1]
 			def value
-			if (token."type" == Lexer.TokenType.SINGLE_WORD && token."value" == "=") {
+			if (token."type" == Lexer.TokenType.OPERATOR && token."value" == "=") {
 				value = whereToken.subList(2, whereToken.size())
 			} 
 			else {
@@ -213,7 +213,7 @@ class SQLParser {
 			
 			token = whereToken[1]
 			def value
-			if (token."type" == Lexer.TokenType.SINGLE_WORD && token."value" == "=") {
+			if (token."type" == Lexer.TokenType.OPERATOR && token."value" == "=") {
 				value = whereToken.subList(2, whereToken.size())
 			}
 			else {

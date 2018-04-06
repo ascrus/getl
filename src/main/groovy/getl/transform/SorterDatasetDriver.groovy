@@ -94,6 +94,8 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 		StringBuilder sb = new StringBuilder()
 		sb << "{ Map row1, Map row2 ->\n	def eq\n"
 		fieldOrderBy.each { field ->
+			field = field.toLowerCase().replace("'", "\\'")
+
 			sb << """
 	eq = (row1.'$field' <=> row2.'$field')
 	if (eq == 1) return 1
