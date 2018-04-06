@@ -2,6 +2,7 @@ package getl.h2
 
 import getl.data.Field
 import getl.jdbc.JDBCConnection
+import getl.jdbc.JDBCDriver
 import getl.jdbc.JDBCDriverProto
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
@@ -30,7 +31,7 @@ class H2DriverTest extends JDBCDriverProto {
         def q = new QueryDataset(connection: con, query: 'SELECT H2Version() AS version')
         def r = q.rows()
         assertEquals(1, r.size())
-        assertEquals('1.4.196', r[0].version)
+        assertEquals('1.4.197', r[0].version)
     }
 
     public void testSessionProperties() {
@@ -44,5 +45,10 @@ class H2DriverTest extends JDBCDriverProto {
         assertEquals('FALSE', q.rows().get(0).value)
 
 		c.connected = false
+    }
+
+    public void testCaseName () {
+        con.executeCommand(command: 'CREATE SCHEMA test; CREATE TABLE test."$Test_Chars" (Id int NOT NULL, name varchar(50));')
+        assertFalse((con.driver as JDBCDriver).retrieveObjects(schemaName: 'test', tableName: '$Test_Chars', null).isEmpty())
     }
 }

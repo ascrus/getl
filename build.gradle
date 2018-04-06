@@ -23,10 +23,10 @@ repositories {
 }
 
 dependencies {
-	compile 'org.codehaus.groovy:groovy-all:2.4.14'
+	compile 'org.codehaus.groovy:groovy-all:2.4.15'
 	compile 'com.jcraft:jsch:0.1.54'
 	compile 'net.sf.supercsv:super-csv:2.4.0'
-	compile 'com.h2database:h2:1.4.196'
+	compile 'com.h2database:h2:1.4.197'
 	compile ('org.apache.poi:poi-ooxml:3.15') {
 		exclude group: 'stax'
 	}

@@ -34,6 +34,8 @@ import getl.files.FileManager
 import getl.jdbc.*
 import getl.utils.*
 
+import java.sql.ResultSet
+
 /**
  * H2 driver class
  * @author Alexsey Konstantinov
@@ -251,4 +253,34 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 			}
 		}
 	}
+
+    @Override
+    public List<Object> retrieveObjects (Map params, Closure filter) {
+        String catalog = prepareObjectName(params."dbName" as String)?:defaultDBName
+        String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
+        String tableNamePattern = prepareObjectName(params."tableName" as String)
+        String[] types
+        if (params."type" != null) types = params."type" as String[] else types = ['TABLE', 'GLOBAL_TEMPORARY', 'LOCAL_TEMPORARY', 'ALIAS', 'SYNONYM', 'VIEW'] as String[]
+
+        List<Map> tables = []
+        ResultSet rs = sqlConnect.connection.metaData.getTables(catalog, schemaPattern, null, types)
+        try {
+            while (rs.next()) {
+                def t = [:]
+                t.dbName = prepareObjectName(rs.getString("TABLE_CAT"))
+                t.schemaName = prepareObjectName(rs.getString("TABLE_SCHEM"))
+                t.tableName = prepareObjectName(rs.getString("TABLE_NAME"))
+                t.type = rs.getString("TABLE_TYPE")
+                t.description = rs.getString("REMARKS")
+                if (tableNamePattern == null || (tableNamePattern == t.tableName)) {
+                    if (filter == null || filter(t)) tables << t
+                }
+            }
+        }
+        finally {
+            rs.close()
+        }
+
+        return tables
+    }
 }

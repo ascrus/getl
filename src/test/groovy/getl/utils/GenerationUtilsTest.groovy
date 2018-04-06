@@ -198,14 +198,14 @@ class GenerationUtilsTest extends GroovyTestCase {
     }
 
     void testEvalGroovyScript() {
-        def s = '"test " + var + " script"'
-        assertEquals('test groovy script', GenerationUtils.EvalGroovyScript(s, [var: 'groovy']))
+        def s = '"test " + \'\\"\' + var + \'\\"\' + " script"'
+        assertEquals('test "groovy" script', GenerationUtils.EvalGroovyScript(s, [var: 'groovy']))
     }
 
     void testEvalGroovyClosure() {
-        def s = '{ var -> "test " + var + " script" }'
+        def s = '{ var -> "test " + \'\\"\' + var + \'\\"\' + " script" }'
         def c = GenerationUtils.EvalGroovyClosure(s, [var: 'groovy'])
-        assertEquals('test groovy script', c('groovy'))
+        assertEquals('test "groovy" script', c('groovy'))
     }
 
     void testEvalText() {

@@ -541,7 +541,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 	}
 
 	String eval(String val) {
-		return GenerationUtils.EvalGroovyScript('"""' + val.replace('"', '\\"') + '"""', Config.vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
+		return GenerationUtils.EvalGroovyScript('"""' + val.replace('\\', '\\\\').replace('"', '\\"') + '"""', Config.vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
 	}
 
 	/**
