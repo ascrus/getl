@@ -93,7 +93,7 @@ class Dataset {
 		if (datasetClass == null) throw new ExceptionGETL("Required parameter \"dataset\"")
 		
 		def dataset = Class.forName(datasetClass).newInstance() as Dataset
-		dataset.connection = params.connection
+		dataset.connection = params.connection as Connection
 		if (params.containsKey("config")) dataset.setConfig(params.config as String)
 		if (params.containsKey("field")) dataset.setField(params.field as List<Field>)
 		dataset.setParams(MapUtils.CleanMap(params, ["dataset", "connection", "config", "field"]))
@@ -296,8 +296,8 @@ class Dataset {
 	* Remove field by list of name
 	* @param name
 	*/
-   public void removeFields(List fieldList) {
-	   def rf = []
+   public void removeFields(List<String> fieldList) {
+	   List<Field> rf = []
 	   fieldList?.each { String name ->
 		   def f = fieldByName(name)
 		   if (f != null) rf << f

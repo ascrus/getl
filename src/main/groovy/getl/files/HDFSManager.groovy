@@ -55,7 +55,7 @@ class HDFSManager extends Manager {
     /**
      * Server port
      */
-    public Integer getPort () { (params.port != null)?params.port:8022 }
+    public Integer getPort () { (params.port != null)?(params.port as Integer):8022 }
     public void setPort (Integer value) { params.port = value }
 
     /**

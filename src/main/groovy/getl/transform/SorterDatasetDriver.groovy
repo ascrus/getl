@@ -68,7 +68,7 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 	@Override
 	public
 	void doneWrite(Dataset dataset) {
-		List data = dataset.params.sorter_data
+		List<Map> data = dataset.params.sorter_data
 		Closure code = dataset.params.sorter_code
 		data.sort(true, code)
 		

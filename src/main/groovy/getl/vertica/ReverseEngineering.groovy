@@ -220,7 +220,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 	String stat(String pattern, def value, boolean quote) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
-		if (quote) value = '\'' + value + '\''
+		if (quote) value = '\'' + value.toString() + '\''
 		return StringUtils.EvalMacroString(pattern, [val: value])
 	}
 
@@ -240,7 +240,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 	String statln(String pattern, def value, boolean quote) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
-		if (quote) value = '\'' + value + '\''
+		if (quote) value = '\'' + value.toString() + '\''
 		return StringUtils.EvalMacroString(pattern, [val: value]) + '\n'
 	}
 
@@ -264,8 +264,8 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 	String par(String param, def value, boolean quote) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
-		if (quote) value = '\'' + value + '\''
-		return param + ' ' + value
+		if (quote) value = '\'' + value.toString() + '\''
+		return param + ' ' + value.toString()
 	}
 
 	/**
@@ -288,8 +288,8 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 	String parln(String param, def value, boolean quote) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
-		if (quote) value = '\'' + value + '\''
-		return param + ' ' + value + '\n'
+		if (quote) value = '\'' + value.toString() + '\''
+		return param + ' ' + value.toString() + '\n'
 	}
 
 	/**
@@ -321,7 +321,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		if (list != '') {
 
 			def l = list.split(',')
-			List<String> n = []
+//			List<String> n = []
 			l.each { String s ->
 				s = s.trim()
 				if (valid == null || valid(s)) {
@@ -415,8 +415,8 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 			else if (projMatcher != null && projMatcher.count == 1) {
 				if (projectionKsafe != null) startProj = true
 				if (projectionAnalyzeSuper) {
-					def projSchema = projMatcher[0][1] as String
-					def projName = projMatcher[0][2] as String
+					def projSchema = (projMatcher[0] as List)[1] as String
+					def projName = (projMatcher[0] as List)[2] as String
 					if (projName == object && !projName.matches('.+ \\/[*][+].+[*]\\/')) {
 						create << "CREATE PROJECTION \"${projSchema}\".\"${projName}\" /*+createtype(A)*/"
 						create << '\n'
@@ -435,7 +435,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 				def m = line =~ /(?i).*KSAFE (\d+);/
 				if (m.count == 1) {
 					startProj = false
-					def ksafe = Integer.valueOf(m[0][1] as String)
+					def ksafe = Integer.valueOf((m[0] as List)[1] as String)
 					if (ksafe > projectionKsafe) {
 						create << line.substring(0, m.start(1)) + projectionKsafe.toString() + line.substring(m.end(1))
 						create << '\n'
@@ -494,7 +494,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 	/**
 	 * Current parameters for write
 	 */
-	def currentVars = [:]
+	Map<String, String> currentVars = [:]
 
 	/**
 	 * File has write data
@@ -582,7 +582,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 
 		// Read projection params
 		projectionTables = BoolUtils.IsValue(sectionCreate.projection_tables, true)
-		projectionKsafe = (sectionCreate.projection_ksafe != null)?Integer.valueOf(sectionCreate.projection_ksafe):null
+		projectionKsafe = (sectionCreate.projection_ksafe != null)?Integer.valueOf(sectionCreate.projection_ksafe.toString()):null
 		projectionAnalyzeSuper = sectionCreate.projection_analyze_super
 
 		// Read column params
@@ -596,7 +596,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		def schemas_where = default_where
 		def sequences_where = default_where
 		def tables_where = default_where
-		def aggr_projections_where = default_where
+//		def aggr_projections_where = default_where
 		def views_where = default_where
 		def sql_functions_where = default_where
 		def grants_where = default_where
@@ -635,7 +635,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		cVertica.executeCommand(command: sqlPrepare)
 
 		Logs.Fine("Read object model ...")
-		def count = 0
+		Long count
 
 		count = new Flow().copy(source: tPools, source_where: (pools_where && pools_where != 'false')?'1=1':'0=1',dest: hPools, inheritFields: true, createDest: true)
 		Logs.Fine("$count pools found")
@@ -812,13 +812,13 @@ Example:
 			return
 		}
 
-		scriptPath = FileUtils.ConvertToDefaultOSPath(jobArgs.script_path)
+		scriptPath = FileUtils.ConvertToDefaultOSPath(jobArgs.script_path as String)
 		Logs.Info("Write script to \"$scriptPath\" directory")
 		FileUtils.ValidPath(scriptPath)
 
 		if (BoolUtils.IsValue(jobArgs.clear)) {
 			Logs.Info("Clearing the destination directory \"$scriptPath\"")
-			if (!FileUtils.DeleteFolder(jobArgs.script_path, false)) {
+			if (!FileUtils.DeleteFolder(jobArgs.script_path as String, false)) {
 				Logs.Severe("Can not clearing destination directory \"$scriptPath\"")
 				return
 			}
@@ -920,7 +920,7 @@ Example:
 			}
 		   if (isWriteln) writeln ";"
 
-			def defaultRoles = procList(r.default_roles)
+			def defaultRoles = procList(r.default_roles as String)
 			if (!defaultRoles.withoutGrant.isEmpty()) {
 			   writeln "\nALTER USER \"${r.user_name}\" DEFAULT ROLE ${ListUtils.QuoteList(defaultRoles.withoutGrant, '"').join(', ')};"
 			}
@@ -946,7 +946,7 @@ Example:
 		}
 		if (isWriteln) writeln ''
 		hUsers.eachRow(order: ['Lower(user_name)']) { Map r ->
-			def p = procList(r.search_path, { return !(it in ['v_catalog', 'v_monitor', 'v_internal', 'public', '"$user"', ''])})
+			def p = procList(r.search_path as String, { return !(it in ['v_catalog', 'v_monitor', 'v_internal', 'public', '"$user"', ''])})
 			if (!p.withoutGrant.isEmpty()) {
 				if (!isOneFile) setWrite('USERS', fileNameUsers, [user: r.user_name])
 				writeln "ALTER USER \"${r.user_name}\" SEARCH_PATH ${ListUtils.QuoteList(p.withoutGrant, '"').join(', ')};"
@@ -964,11 +964,11 @@ Example:
 		hSequences.eachRow(order: ['Lower(sequence_schema)', 'Lower(sequence_name)']) { Map r ->
 			setWrite('SEQUENCES', fileNameSequences, [schema: r.sequence_schema, sequence: r.sequence_name])
 
-			def name = objectName(r.sequence_schema, r.sequence_name)
+			def name = objectName(r.sequence_schema as String, r.sequence_name as String)
 			if (BoolUtils.IsValue(sectionDrop.sequences)) {
 			   writeln "DROP SEQUENCE \"$name\";"
 			}
-		   writeln ddl(r.sequence_schema, r.sequence_name)
+		   writeln ddl(r.sequence_schema as String, r.sequence_name as String)
 			if (sequenceCurrent && r.current_value != null && r.current_value > 0)writeln "ALTER SEQUENCE $name RESTART WITH ${r.current_value};"
 			if (r.owner_name != curUser)writeln "\nALTER SEQUENCE \"$name\" OWNER TO ${r.owner_name};"
 			if (isWriteln) writeln ''
@@ -986,11 +986,11 @@ Example:
 		hTables.eachRow(order: ['Lower(table_schema)', 'Lower(table_name)']) { Map r ->
 			setWrite('TABLES', fileNameTables, [schema: r.table_schema, table: r.table_name])
 
-			def name = objectName(r.table_schema, r.table_name)
+			def name = objectName(r.table_schema as String, r.table_name as String)
 			if (BoolUtils.IsValue(sectionDrop.tables)) {
 			   writeln "\nDROP TABLE IF EXISTS $name CASCADE;"
 			}
-			def stat = ddlTable(r.table_schema, r.table_name)
+			def stat = ddlTable(r.table_schema as String, r.table_name as String)
 		   writeln stat.create
 			if (r.owner_name != curUser && !r.is_temp_table) writeln "\nALTER TABLE $name OWNER TO \"${r.owner_name}\";"
 			if (stat.alter != '') {
@@ -1017,8 +1017,8 @@ Example:
 		hViews.eachRow(order: ['table_id']) { Map r ->
 			setWrite('VIEWS', fileNameViews, [schema: r.table_schema, view: r.table_name])
 
-			def name = objectName(r.table_schema, r.table_name)
-			def sql = ddl(r.table_schema, r.table_name)
+			def name = objectName(r.table_schema as String, r.table_name as String)
+			def sql = ddl(r.table_schema as String, r.table_name as String)
 			if (BoolUtils.IsValue(sectionDrop.views)) {
 				def i = sql.indexOf(' VIEW')
 				sql = 'CREATE OR REPLACE' + sql.substring(i)
@@ -1037,8 +1037,8 @@ Example:
 		hSQLFunctions.eachRow(order: ['schema_name', 'function_name']) { Map r ->
 			setWrite('SQL_FUNCTIONS', fileNameSQLFunctions, [schema: r.schema_name, sql_function: r.function_name])
 
-			def name = objectName(r.schema_name, r.function_name)
-			def sql = ddl(r.schema_name, r.function_name)
+			def name = objectName(r.schema_name as String, r.function_name as String)
+			def sql = ddl(r.schema_name as String, r.function_name as String)
 			if (BoolUtils.IsValue(sectionDrop.sql_functions)) {
 				def i = sql.indexOf(' FUNCTION')
 				sql = 'CREATE OR REPLACE' + sql.substring(i)
@@ -1057,7 +1057,7 @@ Example:
 		hGrants.eachRow(order: ['Lower(object_type)', 'Lower(object_schema)', 'Lower(object_name)', 'Lower(grantee)', 'Lower(function_argument_type)', 'Lower(privileges_description)']) { Map r ->
 			if (fileNameGrants != null) setWrite('GRANTS', fileNameGrants)
 
-			def priveleges = procList(r.privileges_description)
+			def priveleges = procList(r.privileges_description as String)
 			switch (r.object_type) {
 				case 'RESOURCEPOOL':
 					if (fileNameGrants == null) setWrite('POOLS', fileNamePools, [pool: r.object_name])
@@ -1071,23 +1071,23 @@ Example:
 					break
 				case 'SEQUENCE':
 					if (fileNameGrants == null) setWrite('SEQUENCES', fileNameSequences, [schema: r.object_schema, sequence: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON SEQUENCE ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\";"
-					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON SEQUENCE ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\" WITH GRANT OPTION;"
+					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON SEQUENCE ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\";"
+					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON SEQUENCE ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'TABLE':
 					if (fileNameGrants == null) setWrite('TABLES', fileNameTables, [schema: r.object_schema, table: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\";"
-					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\" WITH GRANT OPTION;"
+					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\";"
+					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'VIEW':
 					if (fileNameGrants == null) setWrite('VIEWS', fileNameViews, [schema: r.object_schema, view: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\";"
-					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON ${objectName(r.object_schema, r.object_name)} TO \"${r.grantee}\" WITH GRANT OPTION;"
+					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\";"
+					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'PROCEDURE':
 					if (fileNameGrants == null) setWrite('SQL_FUNCTIONS', fileNameSQLFunctions, [schema: r.object_schema, sql_function: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON FUNCTION ${objectName(r.object_schema, r.object_name)}($r.function_argument_type) TO \"${r.grantee}\";"
-					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON FUNCTION ${objectName(r.object_schema, r.object_name)}($r.function_argument_type) TO \"${r.grantee}\" WITH GRANT OPTION;"
+					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON FUNCTION ${objectName(r.object_schema as String, r.object_name as String)}($r.function_argument_type) TO \"${r.grantee}\";"
+					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON FUNCTION ${objectName(r.object_schema as String, r.object_name as String)}($r.function_argument_type) TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'ROLE':
 					def grantee = r.grantee.toLowerCase()

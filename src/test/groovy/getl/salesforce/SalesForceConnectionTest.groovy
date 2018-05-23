@@ -13,7 +13,7 @@ class SalesForceConnectionTest extends GroovyTestCase {
 
 	void setUp() {
 		if (!FileUtils.ExistsFile(configName)) return
-		Config.LoadConfig(configName)
+		Config.LoadConfig(fileName: configName)
 		Logs.Init()
 
 		connection = new SalesForceConnection(config: 'salesforce')

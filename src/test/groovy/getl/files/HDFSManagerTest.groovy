@@ -12,7 +12,7 @@ class HDFSManagerTest extends ManagerTest {
         if (manager == null) {
             def confName = 'tests/filemanager/hdfs.conf'
             if (FileUtils.ExistsFile(confName)) {
-                Config.LoadConfig(confName)
+                Config.LoadConfig(fileName: confName)
                 if (Config.ContainsSection('files.test_hdfs_filemanager')) {
                     manager = new HDFSManager(config: 'test_hdfs_filemanager')
                 }

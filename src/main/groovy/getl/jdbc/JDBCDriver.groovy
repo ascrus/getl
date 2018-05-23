@@ -387,7 +387,7 @@ class JDBCDriver extends Driver {
 		if (!prop.isEmpty()) {
 			List<String> listParams = []
 			prop.each { k, v ->
-				listParams << "${k}=${v}"
+				listParams << "${k}=${v}".toString()
 			}
 			conParams = connectionParamBegin + listParams.join(connectionParamJoin) + (connectionParamFinish?:'')
 		}
@@ -537,7 +537,7 @@ class JDBCDriver extends Driver {
      * Init session properties after connected to database
      */
     protected void initSessionProperties() {
-        (connection as JDBCConnection).sessionProperty.each { String name, def value -> changeSessionProperty(name, value) }
+        (connection as JDBCConnection).sessionProperty.each { name, value -> changeSessionProperty(name as String, value) }
     }
 
 	@Override
@@ -597,7 +597,7 @@ class JDBCDriver extends Driver {
 		if (dataset.sysParams.cacheDataset != null && dataset.sysParams.cacheRetrieveFields == null) {
 			dataset.sysParams.cacheRetrieveFields = true
 			try {
-				CacheDataset cds = dataset.sysParams.cacheDataset
+				CacheDataset cds = dataset.sysParams.cacheDataset as CacheDataset
 				if (cds.field.isEmpty()) cds.retrieveFields()
 				if (!cds.field.isEmpty()) return cds.field
 			}
@@ -781,7 +781,7 @@ ${extend}'''
 		def extend = createDatasetExtend(dataset, p)
 		
 		def defFields = []
-		def defPrimary = GenerationUtils.SqlKeyFields(dataset, dataset.field, null, null)
+		def defPrimary = GenerationUtils.SqlKeyFields(dataset as JDBCDataset, dataset.field, null, null)
 		dataset.field.each { Field f ->
 			try {
 				if (f.type == Field.Type.BOOLEAN && !isSupport(Driver.Support.BOOLEAN)) throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")")
@@ -828,7 +828,7 @@ ${extend}'''
 					String createIndexCode = '"""' + sqlCreateIndex + '"""'
 					
 					def idxCols = []
-					value.columns?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset):nameCol) }
+					value.columns?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol) }
 					
 					def varsCI = [  indexName: prepareTableNameForSQL(name as String),
 									unique: (value.unique != null && value.unique == true)?"UNIQUE":"",
@@ -1123,20 +1123,20 @@ ${extend}'''
             List<Field> useFields = (params.useFields != null && params.useFields.size() > 0)?params.useFields:dataset.field
 
             useFields.each { Field f ->
-				fields << prepareFieldNameForSQL(f.name, dataset)
+				fields << prepareFieldNameForSQL(f.name, dataset as JDBCDataset)
 			}
 			
 			if (fields.isEmpty()) throw new ExceptionGETL("Required fields by dataset $dataset") 
 			
 			def selectFields = fields.join(",")
 
-			def order = params.order
-			String orderBy
+			def order = params.order as List<String>
+			String orderBy = null
 			if (order != null) { 
 				if (!(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
 				List<String> orderFields = []
 				order.each { String col ->
-					if (dataset.fieldByName(col) != null) orderFields << prepareFieldNameForSQL(col, dataset) else orderFields << col
+					if (dataset.fieldByName(col) != null) orderFields << prepareFieldNameForSQL(col, dataset as JDBCDataset) else orderFields << col
 				}
 				orderBy = orderFields.join(", ")
 			}
@@ -1704,14 +1704,14 @@ $sql
 					if (!syntaxPartitionKeyInColumns && f.isPartition) return
 
 					if (f.isKey) {
-						k << "${prepareFieldNameForSQL(f.name)} = ?"
+						k << "${prepareFieldNameForSQL(f.name)} = ?".toString()
 						sk << f.name
 					}
 					else {
 						if (f.isAutoincrement || f.isReadOnly) return
 
 						if (updateField.find { it.toLowerCase() == f.name.toLowerCase() } != null) {
-							v << "${prepareFieldNameForSQL(f.name)} = ?"
+							v << "${prepareFieldNameForSQL(f.name)} = ?".toString()
 							sv << f.name
 						}
 					}
@@ -1819,7 +1819,7 @@ $sql
 		WriterParams wp = dataset.driver_params
 		
 		if (er.length == 0) return
-		List<Integer> el = []
+		List<Long> el = []
 		for (int i = 0; i < er.length; i++) {
 			if (er[i] == -3) el << (wp.batchCount - 1) * wp.batchSize + i + 1
 		}
@@ -1829,12 +1829,12 @@ $sql
 	@groovy.transform.CompileStatic
 	private void saveBatch (Dataset dataset, WriterParams wp) {
 		long countComplete = 0
-		long countError = 0
+//		long countError = 0
 		wp.batchCount++
 		if (wp.batchSize > 1) {
 			try {
 				int[] resUpdate = wp.stat.executeBatch()
-				resUpdate.each { int res -> if (res > 0) countComplete++ else if (res < 0) countError++ }
+				resUpdate.each { int res -> if (res > 0) countComplete++ /*else if (res < 0) countError++*/ }
 			}
 			catch (BatchUpdateException e) {
                 validRejects(dataset, e.getUpdateCounts())
@@ -1853,7 +1853,7 @@ $sql
 				countComplete++
 			}
 			catch (SQLException e) {
-				countError++
+				/*countError++*/
 				Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
 				throw e
 			}
@@ -1938,7 +1938,6 @@ $sql
 	protected Map unionDatasetMergeParams (JDBCDataset source, JDBCDataset target, Map procParams) { return [:] }
 	
 	protected String unionDatasetMergeSyntax () {
-		return
 		'''MERGE INTO {target} t
   USING {source} s ON ({join})
   WHEN MATCHED THEN UPDATE SET 

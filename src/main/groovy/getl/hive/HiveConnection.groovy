@@ -49,7 +49,7 @@ class HiveConnection extends JDBCConnection {
     protected void onLoadConfig (Map configSection) {
         super.onLoadConfig(configSection)
         if (this.getClass().name == 'getl.hive.HiveConnection') methodParams.validation('Super', params)
-        if (params.vendor != null) setVendor(params.vendor)
+        if (params.vendor != null) setVendor(params.vendor as String)
     }
 
     @Override

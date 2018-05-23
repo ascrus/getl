@@ -165,7 +165,7 @@ class HiveDriver extends JDBCDriver {
             def onCols = [] as List<String>
             on.each { onCol ->
                 if (!(onCol instanceof List)) throw new ExceptionGETL('Required list type for item by "skewed.on"')
-                onCols << "(${(onCol as List).join(', ')})"
+                onCols << "(${(onCol as List).join(', ')})".toString()
             }
             sb << " ON ${onCols.join(', ')}"
 
@@ -206,7 +206,7 @@ class HiveDriver extends JDBCDriver {
             def tblproperties = params.tblproperties as Map
             def props = [] as List<String>
             tblproperties.each { k, v ->
-                props << "\"$k\"=\"$v\""
+                props << "\"$k\"=\"$v\"".toString()
             }
             sb << "TBLPROPERTIES(${props.join(', ')})"
 
@@ -234,12 +234,12 @@ class HiveDriver extends JDBCDriver {
 
     @Override
     public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
-        def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
+        bulkParams = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
         def conHive = dest.connection as HiveConnection
 
-        def overwrite = BoolUtils.IsValue(bulkParams.overwrite)
+//        def overwrite = BoolUtils.IsValue(bulkParams.overwrite)
         def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, conHive.hdfsHost])
-        def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, conHive.hdfsPort])
+        def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, conHive.hdfsPort]) as Integer
         def hdfsLogin = ListUtils.NotNullValue([bulkParams.hdfsLogin, conHive.hdfsLogin])
         def hdfsDir = ListUtils.NotNullValue([bulkParams.hdfsDir, conHive.hdfsDir])
         def processRow = bulkParams.processRow as Closure
@@ -253,15 +253,15 @@ class HiveDriver extends JDBCDriver {
         if (hdfsLogin == null) throw new ExceptionGETL('Required parameter "hdfsLogin"')
         if (hdfsDir == null) throw new ExceptionGETL('Required parameter "hdfsDir"')
 
-        def files = [] as List<String>
+        List<String> files = []
         if (bulkParams.files != null) {
-            files.addAll(bulkParams.files)
+            files.addAll(bulkParams.files as List)
         }
         else if (bulkParams.fileMask != null) {
             def fm = new FileManager(rootPath: (source.connection as CSVConnection).path)
             fm.connect()
             try {
-                fm.list(bulkParams.fileMask).each { Map f -> files << f.filename }
+                fm.list(bulkParams.fileMask as String).each { Map f -> files.add(f.filename as String)}
             }
             finally {
                 fm.disconnect()
@@ -380,7 +380,7 @@ class HiveDriver extends JDBCDriver {
                 case 'columns':
                     def m = value =~ /.+([\\{].+[\\}])/
                     if (m.size() != 1) {
-                        value = null
+//                        value = null
                         return
                     }
                     def descCols = (m[0] as List)[1] as String
@@ -405,7 +405,7 @@ class HiveDriver extends JDBCDriver {
                 case 'partitionColumns':
                     def m = value =~ /.+([\\{].+[\\}])/
                     if (m.size() != 1) {
-                        value = null
+//                        value = null
                         return
                     }
                     def descCols = (m[0] as List)[1] as String
@@ -414,12 +414,13 @@ class HiveDriver extends JDBCDriver {
                     cols.each { String col ->
                         col = col.trim()
                         def x = col.indexOf(' ')
-                        String colName, colType
+                        String colName = '', colType = ''
                         if (x != -1) {
                             colName = col.substring(x + 1)
                             colType = col.substring(0, x)
                         }
                         Map<String, String> cr = [name: colName, type: colType]
+
                         pc << cr
                     }
                     value = pc

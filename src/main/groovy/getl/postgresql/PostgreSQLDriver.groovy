@@ -76,10 +76,10 @@ class PostgreSQLDriver extends JDBCDriver {
 	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		def res = (List<String>)[]
 		if (params.limit != null) {
-			res << "LIMIT ${params.limit}"
+			res << "LIMIT ${params.limit}".toString()
 		}
 		if (params.offset != null) {
-			res << "OFFSET ${params.offset}"
+			res << "OFFSET ${params.offset}".toString()
 		}
 		if (!res.isEmpty()) {
 			dir.afterOrderBy = res.join('\n')
@@ -121,7 +121,7 @@ class PostgreSQLDriver extends JDBCDriver {
 				field.dbType = java.sql.Types.CLOB
 				field.length = null
 				field.precision = null
-				return
+//				return
 			}
 		}
 	}

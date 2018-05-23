@@ -189,7 +189,7 @@ class OracleDriver extends JDBCDriver {
 			if (field.typeName.matches("(?i)NCLOB")) {
 				field.type = Field.Type.TEXT
 				field.dbType = java.sql.Types.NCLOB
-				return
+//				return
 			}
 		}
 	}

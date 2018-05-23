@@ -25,7 +25,7 @@ abstract class JDBCDriverProto extends GroovyTestCase {
 	def static configName = 'tests/jdbc/setup.conf'
 	void setUp() {
 		if (!FileUtils.ExistsFile(configName)) return
-		Config.LoadConfig(configName)
+		Config.LoadConfig(fileName: configName)
 		Logs.Init()
 	}
 

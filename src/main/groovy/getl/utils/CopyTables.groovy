@@ -93,7 +93,7 @@ class CopyTables extends Job {
         def copyParams = Config.content.copyParams as Map<String, Object>?:[:]
         def destParams = [:] as Map<String, Object>
         copyParams.each { name, value ->
-            destParams.put("dest_$name", value)
+            destParams.put("dest_$name".toString(), value)
         }
 
         Logs.Info("Used parameters for copy: $destParams")

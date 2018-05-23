@@ -25,7 +25,7 @@ class CloneUtilsTest extends GroovyTestCase {
 }
 '''
 
-        return parser.parseText(s)
+        return parser.parseText(s) as Map
     }
 
     private Map exampleObjectByMap() {

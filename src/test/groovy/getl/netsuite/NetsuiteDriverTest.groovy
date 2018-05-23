@@ -12,7 +12,7 @@ class NetsuiteDriverTest extends GroovyTestCase {
 
 	void setUp() {
 		if (!FileUtils.ExistsFile(configName)) return
-		Config.LoadConfig(configName)
+		Config.LoadConfig(fileName: configName)
 		Logs.Init()
 		netsuiteConnectionUrl = new NetsuiteConnection(config: 'netsuite_url')
 		netsuiteConnectionHost = new NetsuiteConnection(config: 'netsuite_host')

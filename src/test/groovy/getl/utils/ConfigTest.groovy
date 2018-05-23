@@ -19,7 +19,7 @@ class ConfigTest extends GroovyTestCase {
             var '${test_var}'
         }
         Config.content.putAll(conf.root)
-        Config.SaveConfig(configFile)
+        Config.SaveConfig(fileName: configFile)
         assertTrue(configFile.exists())
 
         Config.ClearConfig()
@@ -28,7 +28,7 @@ class ConfigTest extends GroovyTestCase {
         Config.SetValue('vars.test_var', 'variable value')
         assertEquals(Config.vars.test_var, 'variable value')
 
-        Config.LoadConfigFile(configFile)
+        Config.LoadConfig(fileName: configFile)
         assertEquals(Config.content.var, 'variable value')
     }
 }

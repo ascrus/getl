@@ -50,7 +50,10 @@ class ProcessTime {
 	public long rowInSec
 	public BigDecimal avgSpeed
 	public String avgSpeedStr
-	
+
+    /**
+     * Init function
+     */
 	private void init () {
 		start = DateUtils.Now()
 		
@@ -66,11 +69,18 @@ class ProcessTime {
 			Logs.Write(logLevel, msg)
 		}
 	}
-	
+
+    /**
+     * Constructor
+     */
 	ProcessTime () {
 		init()
 	}
-	
+
+    /**
+     * Constructor
+     * @param params
+     */
 	ProcessTime(Map params) {
 		if (params.name != null) {
 			this.name = params.name
@@ -94,36 +104,65 @@ class ProcessTime {
 		
 		init()
 	}
-	
+
+    /**
+     * Start process time
+     */
 	public Date getStart() { start }
+
+    /**
+     * Finish process time
+     */
 	public Date getFinish() { finish }
+
+    /**
+     * Duration time process
+     */
 	public TimeDuration getTime() { time }
+
+    /**
+     * Total rows processed
+     */
+
 	public long GetCountRow() { countRow }
+
+    /**
+     * Count rows processed by second
+     */
 	public long getRowInSec() { rowInSec }
-	
+
+    /**
+     * Finish process
+     */
+	public void finish() {
+		this.finish((Long)null)
+	}
+
+    /**
+     * Finish process
+     * @param procRow
+     */
 	public void finish(Long procRow) {
-		finish = DateUtils.Now()
-		time = TimeCategory.minus(finish, start)
-		countRow = procRow
-		if (countRow != null) {
-			rowInSec = (time.toMilliseconds() / 1000 > 0)?countRow / (time.toMilliseconds() / 1000):countRow
-			avgSpeed = (countRow > 0)?(time.toMilliseconds() / 1000) / countRow:0
-			avgSpeedStr = String.format("%20.6f", avgSpeed).trim().replace(",", ".")
+		this.finish = DateUtils.Now()
+		this.time = TimeCategory.minus(finish, start)
+		this.countRow = procRow
+		if (this.countRow != null) {
+			this.rowInSec = (this.time.toMilliseconds() / 1000 > 0)?this.countRow / (this.time.toMilliseconds() / 1000):this.countRow
+			this.avgSpeed = (this.countRow > 0)?(this.time.toMilliseconds() / 1000) / this.countRow:0
+			this.avgSpeedStr = String.format("%20.6f", this.avgSpeed).trim().replace(",", ".")
 		}
-		
 
 		if (logLevel != Level.OFF) {
-			def msg = "${name}: ${lastStat()}"
+			def msg = "${name}: ${lastStat()}".toString()
 			if (debug) msg = "<STAT FINISH> " + msg else msg = "<STAT> " + msg  
 			Logs.Write(logLevel, msg)
 		}
 	}
-	
+
+    /**
+     * Return last status process
+     */
 	public String lastStat () {
 		"time ${time}" + ((countRow!= null)?", $countRow ${objectName}s, $rowInSec ${objectName}s per second, ${avgSpeedStr} seconds per $objectName":"")
-	}
-	
-	public void finish() {
-		finish(null)
 	}
 }

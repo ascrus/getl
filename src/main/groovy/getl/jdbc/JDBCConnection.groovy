@@ -459,7 +459,7 @@ class JDBCConnection extends Connection {
             def m = connectURL =~ /jdbc:.+:\/\/(.+)/
             if (m.count == 1) {
                 def p = (driver as JDBCDriver).connectionParamBegin
-                def h = m[0][1] as String
+                def h = (m[0] as List)[1] as String
                 def i = h.indexOf(p)
                 str = (i != -1)?h.substring(0, i):h
             }

@@ -131,9 +131,9 @@ class H2Driver extends JDBCDriver {
 		def cols = columns.join(', ')
 		def flds = fields.join(', ')
 		def heads = (!source.header) ? "'" + headers.join(source.fieldDelimiter) + "'" : "null"
-		fparm << "charset=${source.codePage}"
-		fparm << "fieldSeparator=${source.fieldDelimiter}"
-		if (source.quoteStr != null) fparm << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr)}"
+		fparm << "charset=${source.codePage}".toString()
+		fparm << "fieldSeparator=${source.fieldDelimiter}".toString()
+		if (source.quoteStr != null) fparm << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr)}".toString()
 		def functionParms = fparm.join(" ")
 
 		sb <<
@@ -147,15 +147,15 @@ FROM CSVREAD('{file_name}', ${heads}, '${functionParms}')
 		//println sb.toString()
 
         def sourceConnection = source.connection as CSVConnection
-        def files = [] as List<String>
+		List<String> files = []
         if (params.files != null) {
-            files.addAll(params.files)
+            files.addAll(params.files as List<String>)
         }
         else if (params.fileMask != null) {
             def fm = new FileManager(rootPath: sourceConnection.path)
             fm.connect()
             try {
-                fm.list(params.fileMask).each { Map f -> files << f.filename }
+                fm.list(params.fileMask as String).each { Map f -> files << (f.filename as String)}
             }
             finally {
                 fm.disconnect()
@@ -186,7 +186,6 @@ FROM CSVREAD('{file_name}', ${heads}, '${functionParms}')
 	
 	@Override
 	protected String unionDatasetMergeSyntax () {
-        return
 '''MERGE INTO {target} ({fields})
   KEY ({keys})
     SELECT {values}
@@ -249,7 +248,7 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 				field.type = Field.Type.TEXT
 				field.dbType = java.sql.Types.CLOB
 				field.precision = null
-				return
+//				return
 			}
 		}
 	}

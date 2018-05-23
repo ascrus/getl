@@ -47,7 +47,7 @@ class JDBCDataset extends Dataset {
 	 * Type dataset
 	 * @return
 	 */
-	public Type getType () { sysParams.type }
+	public Type getType () { sysParams.type as Type}
 	public void setType(Type value) { sysParams.type = value }
 	
 	/**
