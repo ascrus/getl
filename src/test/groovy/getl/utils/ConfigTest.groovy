@@ -1,5 +1,6 @@
 package getl.utils
 
+import getl.h2.H2Connection
 import getl.tfs.TFS
 import groovy.json.JsonBuilder
 
@@ -7,6 +8,8 @@ import groovy.json.JsonBuilder
  * @author Alexsey Konstantinov
  */
 class ConfigTest extends GroovyTestCase {
+    def h2 = new H2Connection(config: 'h2')
+
     void testSaveLoadConfig() {
         def configPath = new TFS()
         def configFile = new File("${configPath.path}/test_config.conf")
@@ -17,6 +20,17 @@ class ConfigTest extends GroovyTestCase {
                 list 'a', 1, null
             }
             var '${test_var}'
+
+            connections {
+                h2 {
+                    connectURL 'jdbc:h2:tcp://localhost/test'
+                    login 'sa'
+                    password 'test'
+                    connectProperty {
+                        db_close_delay "-1"
+                    }
+                }
+            }
         }
         Config.content.putAll(conf.root)
         Config.SaveConfig(fileName: configFile)
@@ -30,5 +44,10 @@ class ConfigTest extends GroovyTestCase {
 
         Config.LoadConfig(fileName: configFile)
         assertEquals(Config.content.var, 'variable value')
+
+        assertEquals('jdbc:h2:tcp://localhost/test', h2.connectURL)
+        assertEquals('sa', h2.login)
+        assertEquals('test', h2.password)
+        assertEquals('-1', h2.connectProperty.db_close_delay)
     }
 }

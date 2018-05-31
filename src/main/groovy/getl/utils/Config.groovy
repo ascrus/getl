@@ -131,7 +131,8 @@ class Config {
 	 */
 	@groovy.transform.Synchronized
 	public static void LoadConfig (Map<String, Object> readParams = [:]) {
-        if (configClassManager.loadConfig(readParams)) DoInitEvent()
+        configClassManager.loadConfig(readParams)
+		DoInitEvent()
 	}
 
     public static void MergeConfig (Map<String, Object> data) {
