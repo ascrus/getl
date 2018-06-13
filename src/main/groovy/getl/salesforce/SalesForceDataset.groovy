@@ -3,6 +3,7 @@ package getl.salesforce
 import getl.data.Connection
 import getl.data.Dataset
 import getl.exception.ExceptionGETL
+import getl.tfs.TFSDataset
 import groovy.transform.InheritConstructors
 
 /**
@@ -14,9 +15,9 @@ class SalesForceDataset extends Dataset {
 	SalesForceDataset() {
 		super()
 
-		methodParams.register('bulkUnload', ['fileName', 'limit', 'where', 'orderBy'])
-		methodParams.register('rows', ['limit', 'where', 'readAsBulk', 'orderBy'])
-		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy'])
+		methodParams.register('bulkUnload', ['limit', 'where', 'orderBy', 'chunkSize'])
+		methodParams.register('rows', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
+		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
 	}
 
 	@Override
@@ -46,14 +47,12 @@ class SalesForceDataset extends Dataset {
 	 * Get data from SalesForce via bulk api
 	 * <p><b>Parameters:</b><p>
 	 * <ul>
-	 * <li>String fileName		- Path to file, where data should be placed
 	 * <li>Integer limit        - Limit of loaded rows
 	 * <li>String where         - Where condition for query
 	 * </ul>
 	 * @param params	- dynamic parameters
 	 */
-	void bulkUnload(Map params) {
-		if (!(params.fileName)) throw new ExceptionGETL('Parameter \'fileName\' is missing.')
-		(connection.driver as SalesForceDriver).bulkUnload(this, params)
+	List<TFSDataset> bulkUnload(Map params) {
+		return (connection.driver as SalesForceDriver).bulkUnload(this, params)
 	}
 }

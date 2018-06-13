@@ -40,18 +40,18 @@ import groovy.transform.InheritConstructors
  * SalesForce Driver class
  * @author Dmitry Shaldin
  */
-@InheritConstructors
+@InheritConstructors @CompileStatic
 class SalesForceDriver extends Driver {
 	private ConnectorConfig config
 	private PartnerConnection partnerConnection
     private BulkConnection bulkConnection
 	private boolean connected = false
 
-	SalesForceDriver () {
-		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy'])
+    SalesForceDriver () {
+		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
 		methodParams.register('retrieveObjects', [])
-        methodParams.register('bulkUnload', ['where', 'limit', 'fileName', 'orderBy'])
-		methodParams.register('rows', ['limit', 'where', 'readAsBulk', 'orderBy'])
+        methodParams.register('bulkUnload', ['where', 'limit', 'orderBy', 'chunkSize'])
+		methodParams.register('rows', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
 	}
 
 	@Override
@@ -102,7 +102,7 @@ class SalesForceDriver extends Driver {
 		}
 	}
 
-	@Override @CompileStatic
+	@Override
 	List<Object> retrieveObjects(Map params, Closure filter) {
 		DescribeGlobalResult describeGlobalResult = partnerConnection.describeGlobal()
 		DescribeGlobalSObjectResult[] sobjectResults = describeGlobalResult.sobjects
@@ -121,7 +121,7 @@ class SalesForceDriver extends Driver {
 		return objects as List<Object>
 	}
 
-	@Override @CompileStatic
+	@Override
 	List<Field> fields(Dataset dataset) {
 		List<Field> result = []
 
@@ -163,7 +163,7 @@ class SalesForceDriver extends Driver {
 		return result
 	}
 
-	@Override @CompileStatic
+	@Override
 	void prepareField (Field field) {
 		if (field.dbType == null) return
 		if (field.type != null && field.type != Field.Type.STRING) return
@@ -210,7 +210,7 @@ class SalesForceDriver extends Driver {
 		}
 	}
 
-	@Override @CompileStatic
+	@Override
 	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		String sfObjectName = dataset.params.sfObjectName
 		Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
@@ -232,19 +232,15 @@ class SalesForceDriver extends Driver {
 		long countRec = 0
 
         if (readAsBulk) {
-            TFSDataset csv = TFS.dataset()
-            csv.fieldDelimiter = ','
-            csv.quoteStr = '"'
-            csv.field = dataset.field
+            List<TFSDataset> tfsDatasetList = bulkUnload(dataset, params)
+            tfsDatasetList.each { TFSDataset tDataset ->
+                tDataset.eachRow { Map row ->
+                    code(row)
+                    countRec++
+                }
 
-            bulkUnload(dataset, params + [fileName: csv.fullFileName()])
-
-            csv.eachRow { Map row ->
-                code(row)
-                countRec++
+                tDataset.drop()
             }
-
-            csv.drop()
         } else {
             try {
                 QueryResult qr = partnerConnection.query(soqlQuery)
@@ -291,25 +287,31 @@ class SalesForceDriver extends Driver {
         }
     }
 
-    @CompileStatic
-    protected void bulkUnload(Dataset dataset, Map params) {
+    protected List<TFSDataset> bulkUnload(Dataset dataset, Map params) {
         if (!isBulkConnected) initBulkConnection()
-
-        String fileName = "${params.fileName}.getltemp"
-        File tmpFile = new File(fileName)
 
         String sfObjectName = dataset.params.sfObjectName
         Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
         String where = (params.where) ?: ''
         Map<String, String> orderBy = ((params.orderBy) ?: [:]) as Map<String, String>
 
+        Integer chunkSize = ListUtils.NotNullValue([params.chunkSize, dataset.params.chunkSize, 0]) as Integer
+
+        if (chunkSize > 0) {
+            this.bulkConnection.addHeader("Sforce-Enable-PKChunking","chunkSize=$chunkSize")
+
+            if (where.size() > 0 || orderBy.size() > 0 || limit > 0)
+                throw new ExceptionGETL('Limit, where, orderBy is not allowed with chunk size')
+        }
+
         if (dataset.field.isEmpty()) dataset.retrieveFields()
         List<String> fields = dataset.field*.name
 
         JobInfo job = createJob(bulkConnection, sfObjectName)
+        List<TFSDataset> tfsDatasetList = []
 
         try {
-            job = bulkConnection.getJobStatus(job.getId())
+            job = bulkConnection.getJobStatus(job.id)
 
             // SOQL Query generation
             String soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
@@ -317,74 +319,105 @@ class SalesForceDriver extends Driver {
             if (orderBy.size() > 0) soqlQuery += "\nORDER BY ${orderBy.collect { k, v -> "$k $v".toString() }.join(', ')}"
             if (limit > 0) soqlQuery += "\nLIMIT ${limit.toString()}"
 
-            BatchInfo info
-            ByteArrayInputStream bout = new ByteArrayInputStream(soqlQuery.getBytes())
-            info = bulkConnection.createBatchFromStream(job, bout)
+            ByteArrayInputStream bout = new ByteArrayInputStream(soqlQuery.bytes)
+            BatchInfo mainBatch = bulkConnection.createBatchFromStream(job, bout)
 
-            String[] queryResults = null
-
-            for (int i = 0; i < 10000; i++) {
-                Thread.sleep(30000) //30 sec
-                info = bulkConnection.getBatchInfo(job.getId(), info.getId())
-
-                if (info.getState() == BatchStateEnum.Completed) {
-                    QueryResultList list = bulkConnection.getQueryResultList(job.getId(), info.getId())
-                    queryResults = list.getResult()
-                    break
-                } else if (info.getState() == BatchStateEnum.Failed) {
-                    throw new ExceptionGETL(info.toString())
-                } else {
-                    Logs.Info("Batch ID: ${info.getId()}, Batch Status: ${info.getState()}")
+            // Trick to get the real number of batches because of async API
+            if (chunkSize > 0) {
+                int batchCounter = 0
+                while (bulkConnection.getBatchInfo(job.id, mainBatch.id).state != BatchStateEnum.NotProcessed) {
+                    batchCounter++
                 }
             }
 
-            queryResults.each { String resultId ->
-                InputStream inputStream = bulkConnection.getQueryResultStream(job.getId(), info.getId(), resultId)
-                try {
-                    tmpFile.withOutputStream { outputStream ->
-                        inputStream.eachByte(1024 * 8) { byte[] data, int len ->
-                            outputStream.write(data, 0, len)
-                        }
-                    }
-                } finally {
-                    inputStream.close()
+            BatchInfo[] batchInfos = bulkConnection.getBatchInfoList(job.id).batchInfo
+
+            TFS tfsArea = new TFS()
+            tfsArea.fieldDelimiter = ','
+            tfsArea.quoteStr = '"'
+            tfsArea.path += "/${job.id}"
+            new File(tfsArea.path).deleteOnExit()
+
+            if (batchInfos.length > 1) {
+                for (int bn = 0; bn < batchInfos.length; bn++) {
+                    BatchInfo info = batchInfos[bn]
+                    if (info.id == mainBatch.id) continue
+
+                    TFSDataset tDataset = new TFSDataset(connection: tfsArea, fileName: info.id)
+                    tDataset.field = dataset.field
+                    processBatch(job, info, tDataset.fullFileName())
+                    tfsDatasetList.add(tDataset)
                 }
+            } else {
+                BatchInfo info = batchInfos[0]
+                TFSDataset tDataset = new TFSDataset(connection: tfsArea, fileName: info.id)
+                tDataset.field = dataset.field
+                processBatch(job, info, tDataset.fullFileName())
+                tfsDatasetList.add(tDataset)
             }
         } catch (e) {
-            tmpFile.delete()
             throw new ExceptionGETL(e)
         } finally {
             closeJob(bulkConnection, job.getId())
-            tmpFile.renameTo(params.fileName as String)
+        }
+
+        return tfsDatasetList
+    }
+
+    private void processBatch(JobInfo job, BatchInfo info, String pathToFile) {
+        String[] queryResults = null
+
+        for (int i = 0; i < 10000; i++) {
+            info = bulkConnection.getBatchInfo(job.id, info.id)
+
+            if (info.state == BatchStateEnum.Completed) {
+                QueryResultList list = bulkConnection.getQueryResultList(job.id, info.id)
+                queryResults = list.result
+                Logs.Info("Batch ID: ${info.id}, Batch Status: ${info.state}")
+                break
+            } else if (info.state == BatchStateEnum.Failed) {
+                throw new ExceptionGETL(info.toString())
+            } else {
+                Logs.Info("Batch ID: ${info.id}, Batch Status: ${info.state}")
+                Thread.sleep(10000) // 10 sec
+            }
+        }
+
+        queryResults.each { String resultId ->
+            InputStream inputStream = bulkConnection.getQueryResultStream(job.id, info.id, resultId)
+            try {
+                new File(pathToFile).withOutputStream { outputStream ->
+                    inputStream.eachByte(1024 * 8) { byte[] data, int len ->
+                        outputStream.write(data, 0, len)
+                    }
+                }
+            } finally {
+                inputStream.close()
+            }
         }
     }
 
-    @CompileStatic
     private static JobInfo createJob(BulkConnection connection, String sfObjectName) {
         JobInfo job = new JobInfo()
 
-        job.with {
-            object = sfObjectName
-            operation = OperationEnum.query
-            concurrencyMode = ConcurrencyMode.Parallel
-            contentType = ContentType.CSV
-        }
+        job.object = sfObjectName
+        job.operation = OperationEnum.query
+        job.concurrencyMode = ConcurrencyMode.Parallel
+        job.contentType = ContentType.CSV
 
         job = connection.createJob(job)
-        assert job.getId() != null
+        assert job.id != null
 
         return job
     }
 
-	@CompileStatic
 	private static void closeJob(BulkConnection connection, String jobId) {
 		JobInfo job = new JobInfo()
-		job.setId(jobId)
-		job.setState(JobStateEnum.Closed)
+		job.id = jobId
+		job.state = JobStateEnum.Closed
 		connection.updateJob(job)
 	}
 
-	@CompileStatic
 	private static Object parseTypes(Object value, final Field field) {
 		switch (field.type) {
 			case 'STRING':

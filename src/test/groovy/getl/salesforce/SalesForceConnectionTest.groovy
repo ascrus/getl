@@ -3,6 +3,7 @@ package getl.salesforce
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TFS
+import getl.tfs.TFSDataset
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
@@ -70,6 +71,16 @@ class SalesForceConnectionTest extends GroovyTestCase {
         assertEquals(result.size(), 100)
     }
 
+    void testRowsAsBulkWithChunk() {
+        if (connection == null) return
+        SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
+        dataset.retrieveFields()
+        dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
+        def result = dataset.rows(chunkSize: 200000, readAsBulk: true)
+
+        assertNotSame(0, result.size())
+    }
+
     void testRowsWithWhere() {
         if (connection == null) return
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
@@ -114,15 +125,11 @@ class SalesForceConnectionTest extends GroovyTestCase {
         if (!connection) return
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
 
-		def file = TFS.dataset()
-
         dataset.retrieveFields()
         dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
-        dataset.bulkUnload(fileName: file.fullFileName(), limit: 1000)
+        List<TFSDataset> tfsDatasetList = dataset.bulkUnload(limit: 1000)
 
-		def resultFile = new File(file.fullFileName())
-
-		assertTrue(resultFile.exists() && resultFile.size() > 0)
+		assertTrue(tfsDatasetList[0].rows().size() == 1000 && tfsDatasetList.size() == 1)
     }
 
     void testBulkConnectionWithBatch() {
@@ -131,16 +138,11 @@ class SalesForceConnectionTest extends GroovyTestCase {
         connection = new SalesForceConnection(config: 'salesforce', batchSize: 50000)
 
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
-
-        def file = TFS.dataset()
-
         dataset.retrieveFields()
         dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
-        dataset.bulkUnload(fileName: file.fullFileName(), limit: 200000)
+        List<TFSDataset> tfsDatasetList = dataset.bulkUnload(limit: 200000)
 
-        def resultFile = new File(file.fullFileName())
-
-        assertTrue(resultFile.exists() && resultFile.size() > 0)
+        assertTrue(tfsDatasetList[0].rows().size() == 200000 && tfsDatasetList.size() == 1)
     }
 
     void testRowsWithBatch() {
