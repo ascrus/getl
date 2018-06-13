@@ -27,6 +27,7 @@ package getl.utils
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
+import groovy.json.internal.LazyMap
 
 /**
  * Map library functions class
@@ -403,6 +404,21 @@ class MapUtils {
 		}
 
 		return res
+	}
+
+    /**
+     * Convert lazy map to hash map
+     * @param value
+     * @return
+     */
+	public static HashMap Lazy2HashMap(Map data) {
+        def res = [:] as HashMap
+        data.each { key, value ->
+            if (value instanceof LazyMap) value = Lazy2HashMap((Map)value)
+            res.put(key, value)
+        }
+
+        return res
 	}
 
 	/**

@@ -75,11 +75,21 @@ class Config {
 	public static final Map<String, Object> params = [:]
 
     /**
+     * Evaluate variables where load configuration
+     */
+    public static boolean evalVars = true
+
+    /**
      * Class used for configuration management
      */
     public static ConfigManager configClassManager = new ConfigFiles()
 
     public static void Init(Map<String, Object> initParams) {
+		if (initParams.config?.manager != null) {
+            configClassManager = Class.forName(initParams.config.manager as String).newInstance() as ConfigManager
+            Logs.Config("config: use ${configClassManager.getClass().name} class for config manager")
+        }
+
         configClassManager.init(initParams)
     }
 
@@ -142,7 +152,7 @@ class Config {
         if (data.vars != null) MapUtils.MergeMap(currentVars, (Map<String, Object>)(data.vars))
         if (!(Job.jobArgs.vars as Map)?.isEmpty()) MapUtils.MergeMap(currentVars, (Map<String, Object>)(Job.jobArgs.vars))
 
-        if (!currentVars.isEmpty() && !data.isEmpty()) {
+        if (evalVars && !currentVars.isEmpty() && !data.isEmpty()) {
             try {
                 data = MapUtils.EvalMacroValues(data, currentVars)
             }
@@ -207,15 +217,7 @@ class Config {
         configClassManager.saveConfig(content, saveParams)
 	}
 	
-	/**
-	 * Evaluation macros in the configuration values 
-	 */
-    /*
-	@groovy.transform.Synchronized
-	public static void EvalConfig () {
-		def evalContent = MapUtils.EvalMacroValues(Config.content, this.vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
-		Config.content.clear()
-		Config.content.putAll(evalContent)
-	}
-	*/
+	public static boolean IsEmpty() {
+        return (content.size() == 1 && vars.isEmpty())
+    }
 }

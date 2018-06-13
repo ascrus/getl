@@ -1,18 +1,21 @@
-package getl.utils
+package getl.config
 
 import getl.h2.H2Connection
 import getl.tfs.TFS
+import getl.utils.Config
+import getl.utils.MapUtils
 import groovy.json.JsonBuilder
 
-/**
- * @author Alexsey Konstantinov
- */
-class ConfigTest extends GroovyTestCase {
+class ConfigStoresTest extends GroovyTestCase {
     def h2 = new H2Connection(config: 'h2')
 
     void testSaveLoadConfig() {
-        def configPath = new TFS()
-        def configFile = new File("${configPath.path}/test_config.conf")
+        Config.configClassManager = new ConfigStores()
+
+        def configPath = 'c:/tmp/test mvstore' //new TFS()
+        def configFile = new File("${configPath}/test_config.store")
+        def configSection = 'test_config'
+        def configKey = 'test key'
 
         def builder = new JsonBuilder()
         def conf = builder.root {
@@ -32,8 +35,9 @@ class ConfigTest extends GroovyTestCase {
                 }
             }
         }
+
         Config.content.putAll(conf.root)
-        Config.SaveConfig(fileName: configFile)
+        Config.SaveConfig(fileName: configFile, section: configSection, secretKey: configKey)
         assertTrue(configFile.exists())
 
         Config.ClearConfig()
@@ -42,7 +46,7 @@ class ConfigTest extends GroovyTestCase {
         Config.SetValue('vars.test_var', 'variable value')
         assertEquals(Config.vars.test_var, 'variable value')
 
-        Config.LoadConfig(fileName: configFile)
+        Config.LoadConfig(fileName: configFile, section: configSection, secretKey: configKey)
         assertEquals(Config.content.var, 'variable value')
 
         assertEquals('jdbc:h2:tcp://localhost/test', h2.connectURL)

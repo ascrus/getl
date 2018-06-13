@@ -85,8 +85,8 @@ class FileUtils {
 		fullPath = ConvertToDefaultOSPath(fullPath)
 		int sepPos = fullPath.lastIndexOf(File.separator)
 		String nameAndExt = fullPath.substring(sepPos + 1, fullPath.length())
-		int dotPos = nameAndExt.lastIndexOf(".")
-		(dotPos != -1)?nameAndExt.substring(dotPos + 1):""
+		int dotPos = nameAndExt.lastIndexOf('.')
+		return (dotPos != -1)?nameAndExt.substring(dotPos + 1):''
 	}
 	
 	/** 

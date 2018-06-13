@@ -50,7 +50,6 @@ class ConfigFiles extends ConfigManager {
             def fn = config.filename as String
             if (fn.indexOf(";") == -1) {
                 this.fileName = fn
-                if (!(new File(configPath + this.fileName).exists())) throw new ExceptionGETL("Can not find config file \"${this.fileName}\"")
                 Logs.Config("config: use file ${this.fileName}")
             }
             else {
@@ -68,13 +67,16 @@ class ConfigFiles extends ConfigManager {
 	/**
 	 * Path for configuration files
 	 */
-	public String getPath () { Config.params.path as String}
+	public String getPath () { Config.params.path as String }
 
     /**
      * Set path for configuration files
      * @param value
      */
-	public void setPath (String value) { Config.params.path = value }
+	public void setPath (String value) {
+        if (value.trim() == '') throw new ExceptionGETL('The path can not have empty value')
+        Config.params.path = value?.trim()
+    }
 
 	/**
 	 * Configuration file name
@@ -85,7 +87,10 @@ class ConfigFiles extends ConfigManager {
      * Set configuration file name
      * @param value
      */
-	public void setFileName (String value) { Config.params.fileName = value }
+	public void setFileName (String value) {
+        if (value.trim() == '') throw new ExceptionGETL('The file name can not have empty value')
+        Config.params.fileName = value?.trim()
+    }
 
 	/**
 	 * List of configuration files
@@ -97,13 +102,19 @@ class ConfigFiles extends ConfigManager {
      * @param value
      */
 	public void setFiles (List<String> value) {
+        value.each {
+            if (it == null || it.trim() == '') {
+                throw new ExceptionGETL('The file name can not have empty value')
+            }
+        }
+
         List<String>  f = files
         if (f == null) {
             f = new ArrayList<String>()
             Config.params.files = f
         }
         this.files.clear()
-        this.files.addAll(value)
+        this.files.addAll(value*.trim())
 	}
 	
 	/**
@@ -116,14 +127,17 @@ class ConfigFiles extends ConfigManager {
      * Set configuration files code page
      * @param value
      */
-	public void setCodePage (String value) { Config.params.codePage = value }
+	public void setCodePage (String value) {
+        if (value.trim() == '') throw new ExceptionGETL('Code page value can not have empty value')
+        Config.params.codePage = value
+    }
 
     /**
      * Evaluate file path for specified configuration file
      * @param value
      * @return
      */
-    public String fullConfigName (String pathFile, String value) { ((pathFile != null)?FileUtils.ConvertToUnixPath(pathFile) + "/":"") + value }
+    public static String fullConfigName (String pathFile, String value) { ((pathFile != null)?FileUtils.ConvertToUnixPath(pathFile) + "/":"") + value }
 
     /**
      * Return file path for current configuration file
@@ -141,14 +155,14 @@ class ConfigFiles extends ConfigManager {
         Map<String, Object> data = null
 		if (fn != null) {
             def ff = new File(fullConfigName(fp, fn))
-			data = loadConfigFile(ff, cp)
+			data = LoadConfigFile(ff, cp)
             Config.MergeConfig(data)
 		}
 		
 		if (fl != null) {
 			fl.each { String name ->
                 def ff = new File(fullConfigName(fp, name))
-    			data = loadConfigFile(ff, cp)
+    			data = LoadConfigFile(ff, cp)
                 Config.MergeConfig(data)
 			}
 		}
@@ -159,7 +173,7 @@ class ConfigFiles extends ConfigManager {
 	 * @param file
 	 * @param codePage
 	 */
-	public Map<String, Object> loadConfigFile (File file, String codePage) {
+	public static Map<String, Object> LoadConfigFile (File file, String codePage) {
 		if (!file.exists()) throw new ExceptionGETL("Config file \"$file\" not found")
 		Logs.Config("Load config file \"${file.absolutePath}\"")
         def data = null
@@ -180,13 +194,23 @@ class ConfigFiles extends ConfigManager {
         return data as Map<String, Object>
 	}
 
+    @Override
+    public void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
+        def fp = (saveParams?.path as String)?:this.path
+        def fn = (saveParams?.fileName as String)?:this.fileName
+        def cp = (saveParams?.codePage as String)?:this.codePage
+
+        if (fn == null) throw new ExceptionGETL('Required parameter "fileName"')
+        SaveConfigFile(content, new File(fullConfigName(fp, fn)), cp)
+    }
+
     /**
      * Save config to file
      * @param data
      * @param file
      * @param codePage
      */
-	public void saveConfigFile (Map<String, Object> data, File file, String codePage) {
+	public static void SaveConfigFile (Map<String, Object> data, File file, String codePage) {
         JsonBuilder b = new JsonBuilder()
         try {
             b.call(data)
@@ -209,15 +233,5 @@ class ConfigFiles extends ConfigManager {
         finally {
             writer.close()
         }
-	}
-	
-	@Override
-	public void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
-        def fp = (saveParams?.path as String)?:this.path
-        def fn = (saveParams?.fileName as String)?:this.fileName
-        def cp = (saveParams?.codePage as String)?:this.codePage
-
-        if (fn == null) throw new ExceptionGETL('Required parameter "fileName"')
-		saveConfigFile(content, new File(fullConfigName(fp, fn)), cp)
 	}
 }
