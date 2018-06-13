@@ -35,20 +35,19 @@ import getl.utils.ListUtils
 import getl.utils.Logs
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 
 /**
  * SalesForce Driver class
  * @author Dmitry Shaldin
  */
-@InheritConstructors
+@InheritConstructors @CompileStatic
 class SalesForceDriver extends Driver {
 	private ConnectorConfig config
 	private PartnerConnection partnerConnection
     private BulkConnection bulkConnection
 	private boolean connected = false
 
-	SalesForceDriver () {
+    SalesForceDriver () {
 		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
 		methodParams.register('retrieveObjects', [])
         methodParams.register('bulkUnload', ['where', 'limit', 'orderBy', 'chunkSize'])
@@ -103,7 +102,7 @@ class SalesForceDriver extends Driver {
 		}
 	}
 
-	@Override @CompileStatic
+	@Override
 	List<Object> retrieveObjects(Map params, Closure filter) {
 		DescribeGlobalResult describeGlobalResult = partnerConnection.describeGlobal()
 		DescribeGlobalSObjectResult[] sobjectResults = describeGlobalResult.sobjects
@@ -122,7 +121,7 @@ class SalesForceDriver extends Driver {
 		return objects as List<Object>
 	}
 
-	@Override @CompileStatic
+	@Override
 	List<Field> fields(Dataset dataset) {
 		List<Field> result = []
 
@@ -164,7 +163,7 @@ class SalesForceDriver extends Driver {
 		return result
 	}
 
-	@Override @CompileStatic
+	@Override
 	void prepareField (Field field) {
 		if (field.dbType == null) return
 		if (field.type != null && field.type != Field.Type.STRING) return
@@ -211,7 +210,7 @@ class SalesForceDriver extends Driver {
 		}
 	}
 
-	@Override @CompileStatic
+	@Override
 	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		String sfObjectName = dataset.params.sfObjectName
 		Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
@@ -288,7 +287,6 @@ class SalesForceDriver extends Driver {
         }
     }
 
-    @CompileStatic
     protected List<TFSDataset> bulkUnload(Dataset dataset, Map params) {
         if (!isBulkConnected) initBulkConnection()
 
@@ -334,24 +332,25 @@ class SalesForceDriver extends Driver {
 
             BatchInfo[] batchInfos = bulkConnection.getBatchInfoList(job.id).batchInfo
 
-            TFS t = new TFS()
-            t.fieldDelimiter = ','
-            t.quoteStr = '"'
-            t.path += "/${job.id}"
+            TFS tfsArea = new TFS()
+            tfsArea.fieldDelimiter = ','
+            tfsArea.quoteStr = '"'
+            tfsArea.path += "/${job.id}"
+            new File(tfsArea.path).deleteOnExit()
 
             if (batchInfos.length > 1) {
                 for (int bn = 0; bn < batchInfos.length; bn++) {
                     BatchInfo info = batchInfos[bn]
                     if (info.id == mainBatch.id) continue
 
-                    TFSDataset tDataset = new TFSDataset(connection: t, fileName: info.id)
+                    TFSDataset tDataset = new TFSDataset(connection: tfsArea, fileName: info.id)
                     tDataset.field = dataset.field
                     processBatch(job, info, tDataset.fullFileName())
                     tfsDatasetList.add(tDataset)
                 }
             } else {
                 BatchInfo info = batchInfos[0]
-                TFSDataset tDataset = new TFSDataset(connection: t, fileName: info.id)
+                TFSDataset tDataset = new TFSDataset(connection: tfsArea, fileName: info.id)
                 tDataset.field = dataset.field
                 processBatch(job, info, tDataset.fullFileName())
                 tfsDatasetList.add(tDataset)
@@ -374,6 +373,7 @@ class SalesForceDriver extends Driver {
             if (info.state == BatchStateEnum.Completed) {
                 QueryResultList list = bulkConnection.getQueryResultList(job.id, info.id)
                 queryResults = list.result
+                Logs.Info("Batch ID: ${info.id}, Batch Status: ${info.state}")
                 break
             } else if (info.state == BatchStateEnum.Failed) {
                 throw new ExceptionGETL(info.toString())
@@ -397,16 +397,13 @@ class SalesForceDriver extends Driver {
         }
     }
 
-    @CompileStatic
     private static JobInfo createJob(BulkConnection connection, String sfObjectName) {
         JobInfo job = new JobInfo()
 
-        job.with {
-            object = sfObjectName
-            operation = OperationEnum.query
-            concurrencyMode = ConcurrencyMode.Parallel
-            contentType = ContentType.CSV
-        }
+        job.object = sfObjectName
+        job.operation = OperationEnum.query
+        job.concurrencyMode = ConcurrencyMode.Parallel
+        job.contentType = ContentType.CSV
 
         job = connection.createJob(job)
         assert job.id != null
@@ -414,7 +411,6 @@ class SalesForceDriver extends Driver {
         return job
     }
 
-	@CompileStatic
 	private static void closeJob(BulkConnection connection, String jobId) {
 		JobInfo job = new JobInfo()
 		job.id = jobId
@@ -422,7 +418,6 @@ class SalesForceDriver extends Driver {
 		connection.updateJob(job)
 	}
 
-	@CompileStatic
 	private static Object parseTypes(Object value, final Field field) {
 		switch (field.type) {
 			case 'STRING':
