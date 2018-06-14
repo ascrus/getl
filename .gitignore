@@ -25,6 +25,7 @@ out/
 *.class
 
 ### Config files for test modules
+tests/.svn
 tests/vertica/
 tests/hive/
 tests/filemanager/
