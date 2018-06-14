@@ -67,7 +67,7 @@ class FTPManager extends Manager {
 	/**
 	 * Server port
 	 */
-	public Integer getPort () { (params.port != null)?params.port:21 }
+	public Integer getPort () { (params.port != null)?(params.port as Integer):21 }
 	public void setPort (Integer value) { params.port = value }
 	
 	/**
@@ -100,7 +100,7 @@ class FTPManager extends Manager {
 	/**
 	 * Auto noop timeout in seconds 
 	 */
-	public Integer getAutoNoopTimeout () { params.autoNoopTimeout }
+	public Integer getAutoNoopTimeout () { params.autoNoopTimeout as Integer }
 	public void setAutoNoopTimeout (Integer value) { 
 		if (client.connected) client.setAutoNoopTimeout(value * 1000)
 		params.autoNoopTimeout = value
@@ -109,7 +109,7 @@ class FTPManager extends Manager {
 	/**
 	 * Close timeout
 	 */
-	public Integer getCloseTimeout () { params.closeTimeout }
+	public Integer getCloseTimeout () { params.closeTimeout as Integer }
 	public void setCloseTimeout (Integer value) {
 		if (client.connected) client.connector.closeTimeout = value
 		params.closeTimeout = value
@@ -118,7 +118,7 @@ class FTPManager extends Manager {
 	/**
 	 * Connection timeout
 	 */
-	public Integer getConnectionmTimeout () { params.connectionTimeout }
+	public Integer getConnectionmTimeout () { params.connectionTimeout as Integer }
 	public void setConnectionTimeout (Integer value) {
 		if (client.connected) client.connector.connectionTimeout = value
 		params.connectionTimeout = value
@@ -127,7 +127,7 @@ class FTPManager extends Manager {
 	/**
 	 * Read timeout
 	 */
-	public Integer getReadTimeout () { params.readTimeout }
+	public Integer getReadTimeout () { params.readTimeout as Integer }
 	public void setReadTimeout (Integer value) {
 		if (client.connected) client.connector.readTimeout = value
 		params.readTimeout = value
@@ -136,7 +136,7 @@ class FTPManager extends Manager {
     /**
      * FTP server time zone
      */
-    public Integer getTimeZone () { params.timeZone?:0 }
+    public Integer getTimeZone () { (params.timeZone as Integer)?:0 }
     public void setTimeZone (Integer value) { params.timeZone = value }
 	
 	@Override

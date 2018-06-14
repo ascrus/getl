@@ -1,0 +1,319 @@
+{
+    "fields": [
+		{
+            "name": "OPERATION",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+			"length": 1
+        },
+		{
+            "name": "TIMESTAMP",
+            "type": "DATETIME",
+            "typeName": "DATE",
+			"format": "yyyy-MM-dd HH:mm:ss.SSS"
+        },
+		{
+            "name": "SCN",
+            "type": "BIGINT",
+            "typeName": "NUMERIC"
+        },
+		{
+            "name": "FILE_NUM",
+            "type": "BIGINT",
+            "typeName": "NUMERIC"
+        },
+		{
+            "name": "FILE_ROW",
+            "type": "BIGINT",
+            "typeName": "NUMERIC"
+        },
+		{
+            "name": "_SYS_FIELD_1",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+			"length": 100
+        },
+	
+        {
+            "name": "N_BLK",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "UP",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "SRV_A",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "SRV_B",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "IND_B",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "STRT",
+            "type": "DATETIME",
+            "typeName": "DATE"
+        },
+        {
+            "name": "PTT",
+            "type": "DOUBLE",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "AIR",
+            "type": "DOUBLE",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "NUM",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+            "length": 2000
+        },
+        {
+            "name": "DUR",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "SERVICES",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+            "length": 240
+        },
+        {
+            "name": "STATUS",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+            "length": 1
+        },
+        {
+            "name": "DSC",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+            "length": 240
+        },
+        {
+            "name": "INCOMING",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "OUTGOING",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "BILLPAR",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "AIR_SUB",
+            "type": "DOUBLE",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "NUM_A",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+            "length": 2000
+        },
+        {
+            "name": "PTT_SUB",
+            "type": "DOUBLE",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "DIR",
+            "type": "STRING",
+            "typeName": "CHAR",
+            "length": 1
+        },
+        {
+            "name": "TA",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+            "length": 5
+        },
+        {
+            "name": "PTT_TOLL",
+            "type": "DOUBLE",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "R_ROAMFILE_SEQ",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "CELL_ID",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "SRV_TOLL",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "PTT_TOLL2",
+            "type": "DOUBLE",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "SRV_TOLL2",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "IMEI",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+            "length": 50
+        },
+        {
+            "name": "RTYPE",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+            "length": 10
+        },
+        {
+            "name": "R_MSCID",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "R_CALLS_LOG",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "UTC",
+            "type": "DOUBLE",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "TRANSAC",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "SRC_SEQN",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "FWD_TYPE",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "TM_EVENTS",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "DST",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+            "length": 20
+        },
+        {
+            "name": "ACCUM",
+            "type": "TEXT",
+            "typeName": "RAW",
+            "length": 2000
+        },
+        {
+            "name": "UTTYPE",
+            "type": "STRING",
+            "typeName": "CHAR",
+            "length": 1
+        },
+        {
+            "name": "TM_MODIFIERS",
+            "type": "BLOB",
+            "typeName": "RAW",
+            "length": 2000
+        },
+        {
+            "name": "AIR_TAX_MASK",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "PTT_TAX_MASK",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "SERVICE_USAGE",
+            "type": "BLOB",
+            "typeName": "RAW",
+            "length": 2000
+        },
+        {
+            "name": "PLATFORM",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "R_DIALING_CODE_A",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "R_DIALING_CODE_B",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "R_TARIF_ZONE",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "MSISDN",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+            "length": 2000
+        },
+        {
+            "name": "SESSION_ID",
+            "type": "STRING",
+            "typeName": "VARCHAR2",
+            "length": 50
+        },
+        {
+            "name": "DATA_VOL_IN",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "DATA_VOL_OUT",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "SESSION_DUR",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        },
+        {
+            "name": "ORIGIN_TYPE",
+            "type": "NUMERIC",
+            "typeName": "NUMBER"
+        }
+    ]
+}

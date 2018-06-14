@@ -343,7 +343,7 @@ class Flow {
 		
 		methodParams.validation("copy", params)
 		
-		Dataset source = params.source
+		Dataset source = params.source as Dataset
 		String sourceDescription
 		if (source == null && params.tempSource != null) {
 			source = TFS.dataset(params.tempSource as String, true)
@@ -352,7 +352,7 @@ class Flow {
 		if (source == null) new ExceptionGETL("Required parameter \"source\"")
 		if (sourceDescription == null) sourceDescription = source.objectName
 		
-		Dataset dest = params.dest
+		Dataset dest = params.dest as Dataset
 		String destDescription
 		boolean isDestTemp = false
 		if (dest == null && params.tempDest != null) {
@@ -376,7 +376,7 @@ class Flow {
 		
 		boolean bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:false
 		
-		Map map = (params.map != null)?params.map:[:]
+		Map map = (params.map != null)?(params.map as Map):[:]
 		Map sourceParams = MapUtils.GetLevel(params, "source_")
 		Closure prepareSource = sourceParams.prepare 
 		
@@ -392,9 +392,9 @@ class Flow {
 		List<String> excludeFields = (params.excludeFields != null)?params.excludeFields*.toLowerCase():[]
 		List<String> notConverted = (params.notConverted != null)?params.notConverted*.toLowerCase():[]
 		
-		Closure writeCode = (params.onWrite != null)?params.onWrite:null
-		Closure initCode = (params.onInit != null)?params.onInit:null
-		Closure doneCode = (params.onDone != null)?params.onDone:null
+		Closure writeCode = (params.onWrite != null)?(params.onWrite as Closure):null
+		Closure initCode = (params.onInit != null)?(params.onInit as Closure):null
+		Closure doneCode = (params.onDone != null)?(params.onDone as Closure):null
 		
 		boolean debug = (params.debug != null)?params.debug:false
 		
@@ -591,7 +591,7 @@ class Flow {
 		
 		methodParams.validation("writeTo", params)
 		
-		Dataset dest = params.dest
+		Dataset dest = params.dest as Dataset
 		String destDescription
 		if (dest == null && params.tempDest != null) {
 			if (params.tempFields == null) throw new ExceptionGETL("Required parameter \"tempFields\" from temp storage \"${params.tempDest}\"")
@@ -728,15 +728,15 @@ class Flow {
 		
 		methodParams.validation("writeAllTo", params)
 		
-		Map<String, Dataset> dest = params.dest
+		Map<String, Dataset> dest = params.dest as Map<String, Dataset>
 		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
 		
 		boolean autoTran = (params.autoTran != null)?params.autoTran:true
 		
 		boolean writeSynch = BoolUtils.IsValue(params."writeSynch", false)
 		
-		List bulkLoad = (params.bulkLoad != null)?params.bulkLoad:null
-		List bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:null
+		List bulkLoad = (params.bulkLoad != null)?(params.bulkLoad as List):null
+		List bulkAsGZIP = (params.bulkAsGZIP != null)?(params.bulkAsGZIP as List):null
 		boolean bulkEscaped = (params.bulkEscaped != null)?params.bulkEscaped:false
 		
 		Map<Connection, String> destAutoTran = [:]

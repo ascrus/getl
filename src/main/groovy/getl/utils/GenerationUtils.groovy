@@ -175,7 +175,7 @@ class GenerationUtils {
 						break
 
 					case Field.Type.BOOLEAN:
-						def values = ['TRUE', 'FALSE']
+						List<String> values = ['TRUE', 'FALSE']
 						if (dest.format != null) {
 							values = dest.format.split("[|]")
 						}
@@ -222,9 +222,9 @@ class GenerationUtils {
 							def bf = dataformat.toLowerCase().split("[|]")
 							trueValue = bf[0]
 						}
-						else {
+//						else {
 							r = "($sourceValue != null)?((String)$sourceValue).toLowerCase() == '$trueValue'):null as Boolean"
-						}
+//						}
 
 						break
 
@@ -1118,7 +1118,7 @@ sb << """
 	 */
 	public static List<String> SqlKeyFields (JDBCDataset dataset, List<Field> fields, String expr, List<String> excludeFields) {
 		excludeFields = (excludeFields != null)?excludeFields*.toLowerCase():[]
-		def kf = []
+		List<Field> kf = []
 		fields.each { Field f ->
 			if ((!(f.name.toLowerCase() in excludeFields)) && f.isKey) kf << f
 		}

@@ -114,13 +114,13 @@ abstract class Manager {
 	/**
 	 * Set noop time (use in list operation)
 	 */
-	public Integer getNoopTime () { params.noopTime }
+	public Integer getNoopTime () { params.noopTime as Integer }
 	public void setNoopTime (Integer value) { params.noopTime = value }
 	
 	/**
 	 * Count thread for build list files 
 	 */
-	public Integer getBuildListThread () { params.buildListThread }
+	public Integer getBuildListThread () { params.buildListThread as Integer }
 	public void setBuildListThread (Integer value) {
 		if (value != null && value <= 0) throw new ExceptionGETL("buildListThread been must great zero") 
 		params.buildListThread = value
@@ -700,11 +700,12 @@ abstract class Manager {
 		newFiles.clearKeys()
 		
 		newFiles.drop(ifExists: true)
+		Map<String, Object> indexes = [:]
+		indexes.put("idx_${newFiles.tableName}_filename".toString(), [columns: ['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID']])
+        indexes.put("idx_${newFiles.tableName}_id".toString(), [columns: ['ID']])
+
 		newFiles.create(onCommit: true, 
-						indexes: [
-							"idx_${newFiles.tableName}_filename": [columns: ['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID']],
-							"idx_${newFiles.tableName}_id": [columns: ['ID']]
-						])
+						indexes: indexes)
 		
 		TableDataset doubleFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
 		doubleFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])

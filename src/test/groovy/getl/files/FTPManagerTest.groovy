@@ -12,7 +12,7 @@ class FTPManagerTest extends ManagerTest {
         if (manager == null) {
             def confName = 'tests/filemanager/ftp.conf'
             if (FileUtils.ExistsFile(confName)) {
-                Config.LoadConfig(confName)
+                Config.LoadConfig(fileName: confName)
                 if (Config.ContainsSection('files.test_ftp_filemanager')) {
                     manager = new FTPManager(config: 'test_ftp_filemanager')
                 }

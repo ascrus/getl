@@ -244,7 +244,7 @@ class SavePointManager {
 		}
 		connection.commitTran()
 		
-		Map<String, Object> res = [type: null, value: null]
+		Map<String, Object> res = [type: null as Object, value: null as Object]
 		rows.each { row ->
 			def type = row.type?.toUpperCase()
 			if (!(type in ["D", "N", "F"])) throw new ExceptionGETL("Unknown type value \"$type\" from source $source")

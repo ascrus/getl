@@ -45,7 +45,7 @@ abstract class Job {
 	public static Map<String, Object> getArgs() { return jobArgs }
 	
 	private void processConfigArgs (def args) {
-		def m = MapUtils.ProcessArguments(args)
+		Map<String, Object> m = MapUtils.ProcessArguments(args)
 		if (m.errout != null) Logs.RedirectErrOut(m.errout as String)
 		if (m.stdout != null) {
 			Logs.RedirectStdOut(m.stdout as String)
@@ -56,28 +56,7 @@ abstract class Job {
 		}
 
 		// Set job parameters from arguments
-		if (m.config != null) {
-			Map config = m.config 
-			if (config.path != null) {
-				Config.path = config.path
-				if (!(new File(Config.path).exists())) throw new ExceptionGETL("Can not find config path \"${Config.path}\"")
-			}
-			def configPath = (Config.path != null)?"${Config.path}${File.separator}":""
-			if (config.filename != null) {
-				def fn = config.filename as String
-				if (fn.indexOf(";") == -1) {
-					Config.fileName = fn
-					if (!(new File(configPath + Config.fileName).exists())) throw new ExceptionGETL("Can not find config file \"${Config.fileName}\"")
-				}
-				else {
-					def fs = fn.split(";")
-					fs.each {
-						if (!(new File(configPath + it).exists())) throw new ExceptionGETL("Can not find config file \"${it}\"")
-					}
-					Config.files.addAll(fs)
-				}
-			}
-		}
+		Config.Init(m)
 		jobArgs.clear()
 		jobArgs.putAll(MapUtils.Copy(m, ['stdout', 'stderr', 'stdcodepage']))
 		if (jobArgs.vars == null) jobArgs.vars = [:]
@@ -103,20 +82,6 @@ abstract class Job {
 		processConfigArgs(args)
 		init()
 		Config.LoadConfig()
-		doRun()
-	}
-	
-	/**
-	 * Run job with class name configuration and arguments of command line
-	 * @param jobClass
-	 * @param codePage
-	 * @param args
-	 */
-	public void run (Class jobClass, String codePage, def args) {
-		Config.ClearConfig()
-		processConfigArgs(args)
-		init()
-		Config.LoadConfigClass(jobClass, codePage)
 		doRun()
 	}
 	

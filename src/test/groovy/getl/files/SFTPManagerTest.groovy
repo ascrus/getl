@@ -13,7 +13,7 @@ class SFTPManagerTest extends ManagerTest {
         if (manager == null) {
             def confName = 'tests/filemanager/sftp.conf'
             if (FileUtils.ExistsFile(confName)) {
-                Config.LoadConfig(confName)
+                Config.LoadConfig(fileName: confName)
                 if (Config.ContainsSection('files.test_sftp_filemanager')) {
                     manager = new SFTPManager(config: 'test_sftp_filemanager')
                 }

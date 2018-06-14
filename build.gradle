@@ -4,7 +4,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = "2.0.3"
+version = "2.1.0"
 //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
@@ -91,7 +91,7 @@ uploadArchives {
 
 	repositories.mavenDeployer {
 		//noinspection
-		beforeDeployment { /*MavenDeployment*/ deployment -> signing.signPom(deployment) }
+		beforeDeployment { deployment -> signing.signPom(deployment) }
 
 		configuration = configurations.deployerJars
 
@@ -104,7 +104,7 @@ uploadArchives {
 		}
 
 		pom.project {
-			inceptionYear '2016'
+			inceptionYear '2018'
 			packaging 'jar'
 			name 'getl'
 			artifactId 'getl'
@@ -138,16 +138,14 @@ uploadArchives {
 
 //noinspection GroovyMissingReturnStatement
 //uploadArchives {
-//	repositories {
-//		mavenDeployer {
-//			beforeDeployment {
-//MavenDeployment
-// deployment -> signing.signPom(deployment) }
-//			configuration = configurations.deployerJars
-//			repository(url: mavenLocal().url)
-//			pom.groupId = rootProject.group
-//			pom.artifactId = project.name
-//			pom.version = rootProject.version
-//		}
-//	}
+//    repositories {
+//        mavenDeployer {
+//            beforeDeployment { /*MavenDeployment*/ deployment -> signing.signPom(deployment) }
+//            configuration = configurations.deployerJars
+//            repository(url: mavenLocal().url)
+//            pom.groupId = rootProject.group
+//            pom.artifactId = project.name
+//            pom.version = rootProject.version
+//        }
+//    }
 //}

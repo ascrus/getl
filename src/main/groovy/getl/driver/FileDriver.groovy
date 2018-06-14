@@ -312,9 +312,8 @@ abstract class FileDriver extends Driver {
 	protected Writer getFileWriter (Dataset dataset, Map params, Integer portion) {
 		def wp = getDatasetParams(dataset, params, portion)
 		
-		def fn = wp.fn 
-		/*if (!BoolUtils.IsValue([params.append, dataset.append], false))*/ fn = "${wp.fn}.getltemp"
-		dataset.sysParams.writeFiles.put(wp.fn, fn)
+		def fn = "${wp.fn}.getltemp"
+		(dataset.sysParams.writeFiles as Map).put(wp.fn, fn)
 		
 		if (wp.createPath) createPath(fn)
 		

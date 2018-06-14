@@ -27,6 +27,7 @@ package getl.utils
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
+import groovy.json.internal.LazyMap
 
 /**
  * Map library functions class
@@ -48,13 +49,7 @@ class MapUtils {
 		def str = ToJson(map)
 		
 		def json = new JsonSlurper()
-//		try {
-			res = (Map)(json.parseText(str))
-//		}
-		/*catch (Exception e) {
-			Logs.Dump(e, "String", "DeepCopy", str)
-			throw e
-		}*/
+		res = (Map)(json.parseText(str))
 
 		return res
 	}
@@ -71,7 +66,8 @@ class MapUtils {
 		m.each { String k, v ->
 			r.put(k.toLowerCase(), v)
 		}
-		r
+
+		return r
 	}
 	
 	/**
@@ -88,7 +84,8 @@ class MapUtils {
 		keys.each {
 			result.remove(it)
 		}
-		result
+
+		return result
 	}
 	
 	/**
@@ -110,18 +107,19 @@ class MapUtils {
 	 * @param level
 	 * @return
 	 */
-	public static Map GetLevel (Map <String, Object> map, String level) {
+	public static Map GetLevel (Map map, String level) {
 		if (map == null) return null
 		
 		Map result = [:]
 		int lengthLevel = level.length()
-		map.each { String k, v ->
-			if (level.length() < k.length() && level == k.toLowerCase().substring(0, lengthLevel)) {
-				result.put(k.substring(lengthLevel), v)
+		map.each { k, v ->
+			def s = k.toString()
+			if (level.length() < s.length() && level == s.toLowerCase().substring(0, lengthLevel)) {
+				result.put(s.substring(lengthLevel), v)
 			}
 			
 		}
-		result
+		return result
 	}
 	
 	/**
@@ -135,7 +133,7 @@ class MapUtils {
 		Map m = [:]
 		m.putAll(map)
 		
-		m
+		return m
 	}
 	
 	/**
@@ -151,7 +149,7 @@ class MapUtils {
 		m.putAll(map)
 		if (!excludeKeys.isEmpty()) m = CleanMap(m, excludeKeys)
 		
-		m
+		return m
 	}
 	
 	/**
@@ -170,7 +168,7 @@ class MapUtils {
 			if (keys.find { it == k.toLowerCase()} ) res.put(k, v)
 		}
 		
-		res
+		return res
 	}
 	
 	/**
@@ -195,7 +193,8 @@ class MapUtils {
 			}
 			if (o == null) res << k
 		}
-		res
+
+		return res
 	}
 	
 	/**
@@ -205,7 +204,7 @@ class MapUtils {
 	 * @return
 	 */
 	public static List<String> Unknown(Map map, List<String> definedKey) {
-		 Unknown(map, definedKey, false)
+		 return Unknown(map, definedKey, false)
 	}
 	
 	/**
@@ -229,7 +228,8 @@ class MapUtils {
 				}
 			}
 		}
-		(cur != content)?cur:null
+
+		return (cur != content)?cur:null
 	}
 	
 	/**
@@ -239,7 +239,7 @@ class MapUtils {
 	 * @return
 	 */
 	public static boolean ContainsSection (Map content, String section) {
-		(FindSection(content, section) != null)
+		return (FindSection(content, section) != null)
 	}
 	
 	/**
@@ -296,23 +296,12 @@ class MapUtils {
 		}
 	}
 
-	/*private static void MergeMapChildren (Map source, def added, String section) {
-		if (!(added instanceof Map)) {
-			SetValue(source, section, added)
-			return
-		}
-		Map c = (Map)added
-		c.each { key, value ->
-			MergeMapChildren(source, value, "${section}.${key}")
-		}
-	}*/
-	
 	/**
 	 * Process arguments to Map
 	 * @param args
 	 * @return
 	 */
-	public static Map ProcessArguments (def args) {
+	public static Map<String, Object> ProcessArguments (def args) {
 		List<String> la
 		if (args instanceof List) {
 			la = (List<String>)args
@@ -326,17 +315,14 @@ class MapUtils {
 		else {
 			throw new ExceptionGETL("Invalid arguments for processing")
 		}
-		def res = [:]
+		Map<String, Object> res = [:]
 		if (args != null) {
 			for (int i = 0; i < la.size(); i++) {
 				def str = la[i]
 				def le = str.indexOf('=')
-//				def p = la[i] =~ /(?i)(.+)=(.+)/
 				String name
 				String value
 				if (le != -1) {
-//					ArrayList pm = (ArrayList)p[0]
-//					name = ((String)pm[1])
 					name = str.substring(0, le)
 					def c = name.indexOf('.')
 					if (c == -1) {
@@ -345,7 +331,6 @@ class MapUtils {
 					else {
 						name = name.substring(0, c + 1).toLowerCase() + name.substring(c + 1) 
 					}
-//					value = pm[2]
 					value = str.substring(le + 1)
 				}
 				else {
@@ -371,7 +356,8 @@ class MapUtils {
 				SetValue(res, name, value)
 			}
 		}
-		res
+
+		return res
 	}
 	
 	/**
@@ -384,15 +370,9 @@ class MapUtils {
 		
 		JsonBuilder b = new JsonBuilder()
 		def res
-//		try {
-			b.call(value)
-			res = b.toPrettyString()
-//		}
-		/*catch (Exception e) {
-			Logs.Dump(e, "Map", "ToJson", value)
-			throw e
-		}*/
-		
+		b.call(value)
+		res = b.toPrettyString()
+
 		return res
 	}
 	
@@ -426,6 +406,21 @@ class MapUtils {
 		return res
 	}
 
+    /**
+     * Convert lazy map to hash map
+     * @param value
+     * @return
+     */
+	public static HashMap Lazy2HashMap(Map data) {
+        def res = [:] as HashMap
+        data.each { key, value ->
+            if (value instanceof LazyMap) value = Lazy2HashMap((Map)value)
+            res.put(key, value)
+        }
+
+        return res
+	}
+
 	/**
 	 * Convert map structure to url parameters
 	 * @param m
@@ -437,6 +432,6 @@ class MapUtils {
             l << "$k=${v.toString()}"
         }
 
-        l.join('&')
+        return l.join('&')
     }
 }

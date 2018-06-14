@@ -10,7 +10,7 @@ class MySQLDriverTest extends JDBCDriverProto {
 	@Override
 	protected JDBCConnection newCon() {
 		if (!FileUtils.ExistsFile(configName)) return null
-		Config.LoadConfig(configName)
+		Config.LoadConfig(fileName: configName)
 		return new MySQLConnection(config: 'mysql')
 	}
 }

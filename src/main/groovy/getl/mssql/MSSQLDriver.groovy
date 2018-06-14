@@ -122,7 +122,7 @@ class MSSQLDriver extends JDBCDriver {
 				field.dbType = java.sql.Types.VARCHAR
 				field.length = 36
 				field.precision = null
-				return
+//				return
 			}
 		}
 	}

@@ -60,6 +60,7 @@ class ListUtils {
 		
 		def res = []
 		list.each { if (it != null && it != '') res << "${quote}${it}${quote}" }
+
 		return res
 	}
 	

@@ -79,7 +79,7 @@ class SFTPManager extends Manager {
 	/**
 	 * Server port
 	 */
-	public Integer getPort () { (params.port != null)?params.port:22 }
+	public Integer getPort () { (params.port != null)?(params.port as Integer):22 }
 	public void setPort (Integer value) { params.port = value }
 	
 	/**
@@ -117,13 +117,13 @@ class SFTPManager extends Manager {
 	/**
 	 * Alive interval (in seconds)
 	 */
-	public Integer getAliveInterval () { params."aliveInterval" }
+	public Integer getAliveInterval () { params."aliveInterval" as Integer }
 	public void setAliveInterval (Integer value) { params."aliveInterval" = value }
 	
 	/**
 	 * Alive retry count max
 	 */
-	public Integer getAliveCountMax () { params."aliveCountMax" }
+	public Integer getAliveCountMax () { params."aliveCountMax" as Integer }
 	public void setAliveCountMax (Integer value) { params."aliveCountMax" = value }
 	
 	@Override

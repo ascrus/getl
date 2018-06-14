@@ -80,7 +80,7 @@ class TableDataset extends JDBCDataset {
 	 * Cache dataset
 	 * Is used to monitor changes in the structure or data
 	 */
-	private CacheDataset getCacheDataset () { sysParams.cacheDataset }
+	private CacheDataset getCacheDataset () { sysParams.cacheDataset as CacheDataset}
 	private void setCacheDataset (CacheDataset value) { sysParams.cacheDataset = value }
 	
 	public String getDescription () { params.description }

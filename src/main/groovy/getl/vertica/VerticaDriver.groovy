@@ -198,7 +198,7 @@ class VerticaDriver extends JDBCDriver {
 		List options = []
 		map.each { Map f ->
 			if (f.field != null) {
-				def fieldName = (dest as JDBCDataset).sqlObjectName(f.field.name)
+				def fieldName = (dest as JDBCDataset).sqlObjectName((f.field as Field).name)
 				columns << fieldName
 				switch (f.field.type) {
 					case Field.Type.BLOB:
@@ -318,10 +318,10 @@ RECORD TERMINATOR $rowDelimiter
 
         def res = (List<String>)[]
 		if (params.limit != null) {
-            res << "LIMIT ${params.limit}"
+            res << "LIMIT ${params.limit}".toString()
         }
         if (params.offset != null) {
-            res << "OFFSET ${params.offset}"
+            res << "OFFSET ${params.offset}".toString()
         }
         if (!res.isEmpty()) {
             dir.afterOrderBy = res.join('\n')
@@ -338,7 +338,7 @@ RECORD TERMINATOR $rowDelimiter
 				field.dbType = java.sql.Types.VARCHAR
 				field.length = 36
 				field.precision = null
-				return
+//				return
 			}
 		}
 	}

@@ -23,7 +23,7 @@ class H2DriverTest extends JDBCDriverProto {
 
     @Override
     protected JDBCConnection newCon() {
-		if (FileUtils.ExistsFile(configName)) Config.LoadConfig(configName)
+		if (FileUtils.ExistsFile(configName)) Config.LoadConfig(fileName: configName)
 		return new TDS()
 	}
 
