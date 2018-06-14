@@ -104,7 +104,7 @@ uploadArchives {
 		}
 
 		pom.project {
-			inceptionYear '2016'
+			inceptionYear '2018'
 			packaging 'jar'
 			name 'getl'
 			artifactId 'getl'
