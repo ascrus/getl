@@ -24,6 +24,8 @@
 
 package getl.oracle
 
+import getl.exception.ExceptionGETL
+import getl.jdbc.JDBCConnection
 import groovy.transform.InheritConstructors
 import getl.data.Dataset
 import getl.data.Field
@@ -220,5 +222,25 @@ class OracleDriver extends JDBCDriver {
 		if (!rows.isEmpty()) res = rows[0].session_id.toString()
 
 		return res
+	}
+
+    @Override
+	protected String buildConnectURL () {
+        JDBCConnection con = connection as JDBCConnection
+
+        def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()
+        if (url == null) return null
+
+        if (url.indexOf('{host}') != -1) {
+            if (con.connectHost == null) throw new ExceptionGETL('Need set property "connectHost"')
+            def host = (con.connectHost.indexOf(':') == -1)?(con.connectHost + ':1521'):con.connectHost
+            url = url.replace("{host}", host)
+        }
+        if (url.indexOf('{database}') != -1) {
+            if (con.connectDatabase == null) throw new ExceptionGETL('Need set property "connectDatabase"')
+            url = url.replace("{database}", con.connectDatabase)
+        }
+
+        return url
 	}
 }
