@@ -120,7 +120,7 @@ abstract class ManagerTest extends GroovyTestCase {
         manager.changeDirectoryToRoot()
         def p = new Path(mask: 'catalog_{catalog}/subdir_{subdir}/*.txt', vars: [catalog: [type: 'INTEGER'], subdir: [type: 'INTEGER']])
         manager.buildList(path: p, recursive: true)
-        assertEquals(9, manager.fileList.rows(where: "filename = '$subdirFileName'").size())
+        assertEquals(9, manager.fileList.rows().size())
     }
 
     private void download() {
