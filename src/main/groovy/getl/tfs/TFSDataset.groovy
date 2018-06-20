@@ -50,8 +50,10 @@ class TFSDataset extends CSVDataset {
 	@Override
 	public void openWrite (Map procParams) {
 		super.openWrite(procParams)
-		
+
 		if (connection.deleteOnExit) {
+            new File(fullFileName()).deleteOnExit()
+
 			if (autoSchema) {
 				File s = new File(fullFileSchemaName())
 				if (s.exists()) s.deleteOnExit()
