@@ -43,17 +43,17 @@ class Dataset {
 	/**
 	 * How field update with retrieve from metadata
 	 */
-	public enum UpdateFieldType {NONE, CLEAR, APPEND, MERGE, MERGE_EXISTS}
+	public static enum UpdateFieldType {NONE, CLEAR, APPEND, MERGE, MERGE_EXISTS}
 	
 	/**
 	 * How lookup find key
 	 */
-	public enum LookupStrategy {HASH, ORDER}
+	public static enum LookupStrategy {HASH, ORDER}
 	
 	/**
 	 * Type status of dataset
 	 */
-	public enum Status {AVAIBLE, READ, WRITE}
+	public static enum Status {AVAIBLE, READ, WRITE}
 	
 	
 	public Dataset () {

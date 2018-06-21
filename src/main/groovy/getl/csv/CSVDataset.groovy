@@ -37,7 +37,7 @@ import getl.utils.*
  */
 @InheritConstructors
 class CSVDataset extends FileDataset {
-	public enum QuoteMode {ALWAYS, NORMAL, COLUMN} 
+	public static enum QuoteMode {ALWAYS, NORMAL, COLUMN}
 
 	/**
 	 * Quote delimiter string	

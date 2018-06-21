@@ -44,7 +44,7 @@ public class SQLScripter {
 	/** 
 	 * Type of script command 
 	 */
-	public enum TypeCommand {
+	public static enum TypeCommand {
 		UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR, EXIT, LOAD_POINT, SAVE_POINT, BLOCK
 	}
 	

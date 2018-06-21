@@ -33,7 +33,7 @@ import getl.utils.*
  *
  */
 class Field implements Serializable {
-	public enum Type {
+	public static enum Type {
 		STRING, INTEGER, BIGINT, NUMERIC, DOUBLE, BOOLEAN, DATE, TIME, DATETIME, BLOB, TEXT, OBJECT, ROWID, UUID
 	}
 

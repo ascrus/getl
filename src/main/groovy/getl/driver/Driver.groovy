@@ -50,7 +50,7 @@ abstract class Driver {
 	
 	protected Connection connection
 	
-	public enum Support {
+	public static enum Support {
 		CONNECT, TRANSACTIONAL, SQL, LOCAL_TEMPORARY, GLOBAL_TEMPORARY, BATCH, EACHROW, WRITE, SEQUENCE,
 		AUTOLOADSCHEMA, AUTOSAVESCHEMA, INDEX, DATE, TIME, BOOLEAN, BLOB, CLOB, MEMORY, NOT_NULL_FIELD, PRIMARY_KEY,
 		DEFAULT_VALUE, COMPUTE_FIELD, UUID}
@@ -59,7 +59,7 @@ abstract class Driver {
 		(supported().indexOf(feature) != -1)
 	}
 	
-	public enum Operation {CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS, MERGE}
+	public static enum Operation {CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS, MERGE}
 	public abstract List<Driver.Operation> operations ()
 	public boolean isOperation(Driver.Operation operation) {
 		(operations().indexOf(operation) != -1)
