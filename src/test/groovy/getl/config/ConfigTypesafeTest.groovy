@@ -7,13 +7,8 @@ import getl.utils.Config
 
 class ConfigTypesafeTest extends GroovyTestCase {
 	void setUp() {
-		Config.configClassManager = new ConfigTypesafe()
+		Config.configClassManager = new ConfigTypesafe(path: "typesafe/application.conf")
 		Config.LoadConfig()
-	}
-
-	void testMain() {
-		TypeSafeConfig config = ConfigFactory.load()
-		assertEquals 'jdbc:h2:mem:test_mem', config.getString("connections.h2.connectURL")
 	}
 
 	void testDbConnection() {
