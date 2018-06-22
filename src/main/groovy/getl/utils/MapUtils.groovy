@@ -434,4 +434,50 @@ class MapUtils {
 
         return l.join('&')
     }
+
+    /**
+     * Convert XML node data to Map object
+     * @param node
+     * @return
+     */
+	@groovy.transform.CompileDynamic
+	public static Map<String, Object> Xml2Map(def node) {
+		def res = [:] as Map<String, Object>
+
+		if (node.attributes().size() > 0)
+			res.putAll(node.attributes())
+
+		if (node.children().size() > 0)
+			res.putAll(XmlChildren2Map(node.children()))
+
+		return res
+	}
+
+    /**
+     * Convert XML list of node data to Map object
+     * @param childrens
+     * @return
+     */
+	@groovy.transform.CompileDynamic
+	public static Map<String, Object> XmlChildren2Map(def childrens) {
+		def res = [:] as Map<String, Object>
+
+		childrens.each { def node ->
+			def name = node.name().localPart
+
+			List<Map> values
+			if (!res.containsKey(name)) {
+				values = [] as List<Map>
+				res."$name" = values
+			}
+			else {
+				values = res."$name" as List<Map>
+			}
+
+			def nodeMap = Xml2Map(node)
+			values << nodeMap
+		}
+
+		return res
+	}
 }
