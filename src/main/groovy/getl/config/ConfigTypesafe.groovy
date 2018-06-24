@@ -13,11 +13,11 @@ import getl.utils.Logs
  */
 class ConfigTypesafe extends ConfigManager {
 	public String getPath() {
-		return GETLConfig.params.path as String
+		return params.path as String
 	}
 
 	public void setPath(String value) {
-		GETLConfig.params.path = value
+		params.path = value
 	}
 
 	@Override

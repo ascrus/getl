@@ -54,7 +54,7 @@ class ConfigStores extends ConfigManager {
     /**
      * Configuration file name
      */
-    public String getFileName () { Config.params.fileName as String }
+    public String getFileName () { params.fileName as String }
 
     /**
      * Set configuration file name
@@ -62,13 +62,13 @@ class ConfigStores extends ConfigManager {
      */
     public void setFileName (String value) {
         if (value == null || value.trim() == '') throw new ExceptionGETL('The file name can not have empty value')
-        Config.params.fileName = value.trim()
+        params.fileName = value.trim()
     }
 
     /**
      * Configuration section name
      */
-    public String getSection () { (Config.params.section as String)?:'config' }
+    public String getSection () { (params.section as String)?:'config' }
 
     /**
      * Set configuration section name
@@ -76,13 +76,13 @@ class ConfigStores extends ConfigManager {
      */
     public void setSection (String value) {
         if (value == null || value.trim() == '') throw new ExceptionGETL('The section name can not have empty value')
-        Config.params.section = value.trim()
+        params.section = value.trim()
     }
 
     /**
      * Configuration secret key
      */
-    public String getSecretKey () { (Config.params.secretKey as String) }
+    public String getSecretKey () { (params.secretKey as String) }
 
     /**
      * Set configuration secret key
@@ -90,7 +90,7 @@ class ConfigStores extends ConfigManager {
      */
     public void setSecretKey (String value) {
         if (value == '') throw new ExceptionGETL('The secret key can not have empty value')
-        Config.params.secretKey = value
+        params.secretKey = value
     }
 
     @Override

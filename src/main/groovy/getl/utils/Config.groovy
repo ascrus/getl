@@ -72,7 +72,7 @@ class Config {
 	/**
 	 *  Parameters
 	 */
-	public static final Map<String, Object> params = [:]
+	public static Map<String, Object> getParams() { configClassManager.params }
 
     /**
      * Evaluate variables where load configuration
@@ -82,7 +82,11 @@ class Config {
     /**
      * Class used for configuration management
      */
-    public static ConfigManager configClassManager = new ConfigFiles()
+    private static ConfigManager configClassManager = new ConfigFiles()
+	public static getConfigClassManager() { configClassManager }
+    public static void setConfigClassManager(ConfigManager value) {
+        configClassManager = value
+    }
 
     public static void Init(Map<String, Object> initParams) {
 		if (initParams.config?.manager != null) {

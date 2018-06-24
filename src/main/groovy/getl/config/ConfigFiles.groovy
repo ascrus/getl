@@ -67,7 +67,7 @@ class ConfigFiles extends ConfigManager {
 	/**
 	 * Path for configuration files
 	 */
-	public String getPath () { Config.params.path as String }
+	public String getPath () { params.path as String }
 
     /**
      * Set path for configuration files
@@ -75,13 +75,13 @@ class ConfigFiles extends ConfigManager {
      */
 	public void setPath (String value) {
         if (value.trim() == '') throw new ExceptionGETL('The path can not have empty value')
-        Config.params.path = value?.trim()
+        params.path = value?.trim()
     }
 
 	/**
 	 * Configuration file name
 	 */
-	public String getFileName () { Config.params.fileName as String}
+	public String getFileName () { params.fileName as String}
 
     /**
      * Set configuration file name
@@ -89,13 +89,13 @@ class ConfigFiles extends ConfigManager {
      */
 	public void setFileName (String value) {
         if (value.trim() == '') throw new ExceptionGETL('The file name can not have empty value')
-        Config.params.fileName = value?.trim()
+        params.fileName = value?.trim()
     }
 
 	/**
 	 * List of configuration files
 	 */
-	public List<String> getFiles () { Config.params.files as List<String>}
+	public List<String> getFiles () { params.files as List<String>}
 
     /**
      * Set list of configuration files
@@ -111,7 +111,7 @@ class ConfigFiles extends ConfigManager {
         List<String>  f = files
         if (f == null) {
             f = new ArrayList<String>()
-            Config.params.files = f
+            params.files = f
         }
         this.files.clear()
         this.files.addAll(value*.trim())
@@ -121,7 +121,7 @@ class ConfigFiles extends ConfigManager {
 	 * Configuration files code page
 	 * @return
 	 */
-	public String getCodePage () { (Config.params.codePage as String)?:'UTF-8' }
+	public String getCodePage () { (params.codePage as String)?:'UTF-8' }
 
     /**
      * Set configuration files code page
@@ -129,7 +129,7 @@ class ConfigFiles extends ConfigManager {
      */
 	public void setCodePage (String value) {
         if (value.trim() == '') throw new ExceptionGETL('Code page value can not have empty value')
-        Config.params.codePage = value
+        params.codePage = value
     }
 
     /**

@@ -10,6 +10,7 @@ class MSSQLDriverTest extends JDBCDriverProto {
 	protected JDBCConnection newCon() {
 		if (!FileUtils.ExistsFile(configName)) return null
 		Config.LoadConfig(fileName: configName)
+		println Config.content.connections
 		return new MSSQLConnection(config: 'mssql')
 	}
 }
