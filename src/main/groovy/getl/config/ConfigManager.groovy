@@ -26,6 +26,19 @@
 package getl.config
 
 abstract class ConfigManager {
+    ConfigManager() {
+
+    }
+
+    ConfigManager(Map<String, Object> params) {
+        this.params.putAll(params)
+    }
+
+    /**
+     * Parameters of configuration
+     */
+    public final Map<String, Object> params = [:]
+
     /**
      * Load configuration
      * @readParams

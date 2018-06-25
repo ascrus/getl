@@ -86,7 +86,7 @@ abstract class Manager {
 	/**
 	 * Type of file in list
 	 */
-	public enum TypeFile {FILE, DIRECTORY, LINK, ALL}
+	public static enum TypeFile {FILE, DIRECTORY, LINK, ALL}
 	
 	/**
 	 * Parameters

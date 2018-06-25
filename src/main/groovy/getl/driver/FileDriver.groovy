@@ -43,8 +43,8 @@ import getl.utils.*
  */
 @InheritConstructors
 abstract class FileDriver extends Driver {
-	public enum RetrieveObjectType {FILE, DIR}
-	public enum RetrieveObjectSort {NONE, NAME, DATE, SIZE}
+	public static enum RetrieveObjectType {FILE, DIR}
+	public static enum RetrieveObjectSort {NONE, NAME, DATE, SIZE}
 	
 	FileDriver () {
 		super()

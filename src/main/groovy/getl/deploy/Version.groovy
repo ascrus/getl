@@ -32,12 +32,12 @@ class Version {
 	/**
 	 * GETL version
 	 */
-	public static version = "2.1.0"
+	public static version = "2.1.1"
 	
 	/**
 	 * GETL version as numeric
 	 */
-	public static versionNum = 2.0100
+	public static versionNum = 2.0101
 
 	/**
 	 * Compatibility GETL version
@@ -56,5 +56,5 @@ class Version {
 	/**
 	 * Years development
 	 */
-	public static years = "2014-2017"
+	public static years = "2014-2018"
 }

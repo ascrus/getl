@@ -190,4 +190,71 @@ class ListUtils {
 		
 		return sb.toString()
 	}
+
+    /**
+     * Convert an array of elements into a text list with a comma separator
+     * @param list
+     * @return
+     */
+    @groovy.transform.CompileDynamic
+	public static String List2StrArray(List list) {
+        if (list == null) return null
+        if (list.size() == 0) return ''
+        if (list.size() == 1) return "${list[0]}".toString()
+		list = list.sort(false)
+
+		def array = [] as List<List>
+
+        def firstElement = list[0]
+        def lastElement = list[0]
+        for (int i = 1; i < list.size(); i++) {
+            def elem = list[i]
+
+            if (lastElement.next() == elem) {
+                lastElement = elem
+            }
+            else {
+                array << [firstElement, lastElement]
+                firstElement = elem
+                lastElement = elem
+            }
+        }
+        array << [firstElement, lastElement]
+
+        def strList = [] as List<String>
+        array.each { List elem ->
+            if (elem[0] == elem[1])
+                strList << elem[0]
+            else
+                strList << "${elem[0]}-${elem[1]}"
+        }
+
+        return strList.join(',')
+	}
+
+    /**
+     * Convert a comma-delimited text list into an array of elements with the specified type
+     * @param strList
+     * @param elemClass
+     * @return
+     */
+    @groovy.transform.CompileDynamic
+    public static List StrArray2List(String strList, Class elemClass) {
+        if (strList == null) return null
+        def list = strList.split(',')
+        def result = []
+        list.each { String elem ->
+            if (elem == '') return
+            def i = elem.indexOf('-')
+            if (i == -1)
+                result << elemClass.newInstance(elem)
+            else {
+                def firstElem = elemClass.newInstance(elem.substring(0, i))
+                def lastElem = elemClass.newInstance(elem.substring(i + 1))
+                (firstElem..lastElem).each { subElem -> result << subElem}
+            }
+        }
+
+        return result
+    }
 }

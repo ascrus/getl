@@ -274,7 +274,7 @@ class JDBCDriver extends Driver {
 		result
 	}
 	
-	public enum sqlTypeUse {ALWAYS, SOMETIMES, NEVER} 
+	public static enum sqlTypeUse {ALWAYS, SOMETIMES, NEVER}
 	
 	/**
 	 * SQL type mapper

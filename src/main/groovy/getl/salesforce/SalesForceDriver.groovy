@@ -334,9 +334,9 @@ class SalesForceDriver extends Driver {
 
             TFS tfsArea = new TFS()
             tfsArea.fieldDelimiter = ','
+            tfsArea.deleteOnExit = true
             tfsArea.quoteStr = '"'
             tfsArea.path += "/${job.id}"
-            new File(tfsArea.path).deleteOnExit()
 
             if (batchInfos.length > 1) {
                 for (int bn = 0; bn < batchInfos.length; bn++) {
