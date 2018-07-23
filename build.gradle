@@ -83,67 +83,67 @@ build.dependsOn sourcesJar
 build.dependsOn javadocJar
 
 //noinspection GroovyMissingReturnStatement
-//uploadArchives {
-//	def login = project.properties."ossrhUsername"
-//	def password = project.properties."ossrhPassword"
-//
-//	repositories.mavenDeployer {
-//		//noinspection
-//		beforeDeployment { deployment -> signing.signPom(deployment) }
-//
-//		configuration = configurations.deployerJars
-//
-//		repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2/') {
-//			authentication(userName: login, password: password)
-//		}
-//
-//		snapshotRepository(url: 'https://oss.sonatype.org/content/repositories/snapshots/') {
-//			authentication(userName: login, password: password)
-//		}
-//
-//		pom.project {
-//			inceptionYear '2018'
-//			packaging 'jar'
-//			name 'getl'
-//			artifactId 'getl'
-//			groupId 'net.sourceforge.getl'
-//			description 'GETL - based package in Groovy, which automates the work of loading and transforming data'
-//			url 'https://sourceforge.net/projects/getl/'
-//
-//			licenses {
-//				license {
-//					name 'GNU GENERAL PUBLIC LICENSE, Version 3'
-//					url 'http://www.gnu.org/licenses/gpl.txt'
-//					distribution 'repo'
-//				}
-//			}
-//
-//			scm {
-//				url 'svn://svn.code.sf.net/p/getl/source/trunk'
-//			}
-//
-//			developers {
-//				developer {
-//					id 'owner'
-//					name 'Aleksey Konstantinov'
-//					email 'ascrus@easydata.ru'
-//					timezone 'UTC+3'
-//				}
-//			}
-//		}
-//	}
-//}
+uploadArchives {
+	def login = project.properties."ossrhUsername"
+	def password = project.properties."ossrhPassword"
+
+	repositories.mavenDeployer {
+		//noinspection
+		beforeDeployment { deployment -> signing.signPom(deployment) }
+
+		configuration = configurations.deployerJars
+
+		repository(url: 'https://oss.sonatype.org/service/local/staging/deploy/maven2/') {
+			authentication(userName: login, password: password)
+		}
+
+		snapshotRepository(url: 'https://oss.sonatype.org/content/repositories/snapshots/') {
+			authentication(userName: login, password: password)
+		}
+
+		pom.project {
+			inceptionYear '2018'
+			packaging 'jar'
+			name 'getl'
+			artifactId 'getl'
+			groupId 'net.sourceforge.getl'
+			description 'GETL - based package in Groovy, which automates the work of loading and transforming data'
+			url 'https://sourceforge.net/projects/getl/'
+
+			licenses {
+				license {
+					name 'GNU GENERAL PUBLIC LICENSE, Version 3'
+					url 'http://www.gnu.org/licenses/gpl.txt'
+					distribution 'repo'
+				}
+			}
+
+			scm {
+				url 'svn://svn.code.sf.net/p/getl/source/trunk'
+			}
+
+			developers {
+				developer {
+					id 'owner'
+					name 'Aleksey Konstantinov'
+					email 'ascrus@easydata.ru'
+					timezone 'UTC+3'
+				}
+			}
+		}
+	}
+}
 
 //noinspection GroovyMissingReturnStatement
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { /*MavenDeployment*/ deployment -> signing.signPom(deployment) }
-            configuration = configurations.deployerJars
-            repository(url: mavenLocal().url)
-            pom.groupId = rootProject.group
-            pom.artifactId = project.name
-            pom.version = rootProject.version
-        }
-    }
-}
+//uploadArchives {
+//    repositories {
+//        mavenDeployer {
+//            beforeDeployment { /*MavenDeployment*/ deployment -> signing.signPom(deployment) }
+//            configuration = configurations.deployerJars
+//            repository(url: mavenLocal().url)
+//            pom.groupId = rootProject.group
+//            pom.artifactId = project.name
+//            pom.version = rootProject.version
+//        }
+//    }
+//}
