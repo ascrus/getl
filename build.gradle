@@ -4,7 +4,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = "2.1.1"
+version = "2.1.2"
 //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
@@ -51,8 +51,8 @@ tasks.withType(GroovyCompile) {
 }
 
 task copyDeps(type: Copy) {
-  from configurations.runtime
-  into 'libs'
+    from configurations.runtime
+     into "${project.buildDir}/libs.jar"
 }
 
 signing {

@@ -221,11 +221,16 @@ class MapUtils {
 		Map cur = content
 		sections.each {
 			if (cur != null) {
-				if (!cur.containsKey(it)) {
+                if (it == '*') {
+                    def next = cur.get(cur.keySet().toArray()[0])
+                    if (next instanceof Map) cur = next else cur = null
+                }
+                else if (!cur.containsKey(it)) {
 					cur = null
 				}
 				else {
-					cur = (Map)(cur.get(it))
+                    def next = (cur.get(it))
+                    if (next instanceof Map) cur = next else cur = null
 				}
 			}
 		}
@@ -610,14 +615,13 @@ class MapUtils {
         if (map.isEmpty()) 
             throw new ExceptionGETL('Parameter "map" is empty!')
 
-        def tableFields = map.schema.complexType?."$objectTypeName"?.all?.element as Map<String, Object>
+        def tableFields = FindSection(map, "schema.complexType.${objectTypeName}.*.element") as Map<String, Object>
         if (tableFields == null || tableFields.isEmpty())
             throw new ExceptionGETL("Invalid or not found the complex type \"$objectTypeName\"!")
 
         def fieldList = [] as List<Field>
 
         tableFields.each { String fieldName, Map<String, Object> fieldParams ->
-//            println fieldName + ': ' + fieldParams
             def field = new Field(name: fieldName)
 
             def typeName = fieldParams.type as String
@@ -625,9 +629,29 @@ class MapUtils {
                 throw new ExceptionGETL("Required type for field \"$fieldName\"")
 
             XsdType2FieldType(map, typeName, field)
-            if (fieldParams.minOccurs == 0 && fieldParams.maxOccurs == 1) field.isNull = true
-
-            fieldList << field
+			if (field.type == Field.Type.OBJECT) {
+                if (field.extended.all?.element?.size() > 0 /*|| field.extended.sequence?.element?.size() > 1*/) {
+                    def childFields = XsdMap2Fields(map, typeName)
+                    childFields.each { Field childField ->
+                        childField.name = "${field.name}.${childField.name}"
+                        childField.extended.useType = typeName
+                        fieldList << childField
+                    }
+				}
+                else if (field.extended.sequence?.element?.size() > 0) {
+                    field.extended.sequenceType = typeName
+                    if (field.extended.sequence?.element.size() == 1)
+						field.extended.itemType = FindSection(field.extended, 'sequence.element.*').type
+                    fieldList << field
+                }
+                else {
+                    throw new ExceptionGETL("Unknown XSD description for \"$typeName\" type!")
+                }
+			}
+            else {
+                if (fieldParams.minOccurs == 0 && fieldParams.maxOccurs == 1) field.isNull = true
+                fieldList << field
+            }
         }
 
         return fieldList
@@ -643,16 +667,16 @@ class MapUtils {
         switch (res.typeName) {
             case 'string': case 'token': case 'XMLLiteral': case 'NMTOKEN':
                 field.type = Field.Type.STRING
-                field.length = res.length?:255
+                field.length = res.length?:1024
                 break
             case 'anyURI':
                 field.type = Field.Type.STRING
-                field.length = res.length?:500
+                field.length = res.length?:512
                 break
             case 'decimal':
                 field.type = Field.Type.NUMERIC
                 field.precision = res.precision?:4
-                field.length = res.length?:(res.precision + 18)
+                field.length = res.length?:(field.precision + 18)
                 break
             case 'float': case 'double':
                 field.type = Field.Type.DOUBLE

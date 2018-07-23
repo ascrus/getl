@@ -38,4 +38,33 @@ class MapUtilsTest extends GroovyTestCase {
 }'''
         assertEquals(req, MapUtils.ToJson(map))
     }
+
+    void testFindSection() {
+        def m = [a: 1, b: [d: [f: 5], e: 4, g:[h: [i: [j: 6]]]], c: 3]
+
+        assertNull(MapUtils.FindSection(m, 'a'))
+        assertEquals(4, MapUtils.FindSection(m, 'b').e)
+        assertEquals(5, MapUtils.FindSection(m, 'b.d').f)
+        assertEquals(5, MapUtils.FindSection(m, 'b.*').f)
+        assertEquals(6, MapUtils.FindSection(m, 'b.g.*.*').j)
+    }
+
+    void testXsdApi() {
+        if (!FileUtils.ExistsFile('tests/xero/xero-accounting-api-schema-0.1.2.jar')) return
+        FileUtils.AddJarToClassPath(this, 'tests/xero/xero-accounting-api-schema-0.1.2.jar')
+
+        def m = MapUtils.XsdFromResource('/XeroSchemas/v2.00', 'Items.xsd')
+        def f = MapUtils.XsdMap2Fields(m, 'Item')
+        assertEquals(26, f.size())
+        def unitPrice = f.find {it.name == 'PurchaseDetails.UnitPrice'}
+        assertNotNull(unitPrice)
+        assertEquals(20, unitPrice.length)
+        assertEquals(2, unitPrice.precision)
+
+        /*
+        def m = MapUtils.XsdFromResource('/XeroSchemas/v2.00', 'Contact.xsd')
+        def f = MapUtils.XsdMap2Fields(m, 'Contact')
+        f.each { println it.name + '(' + it.type + '): ' + it.extended }
+        */
+    }
 }
