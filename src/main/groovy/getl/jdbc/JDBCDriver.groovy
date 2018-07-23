@@ -1276,7 +1276,7 @@ ${extend}'''
 				}
 			}
 			else {
-				sqlConnect.eachRow(sqlParams, sql, getFields, offs, max) { row ->
+				sqlConnect.eachRow(sqlParams as Map, sql, getFields, offs, max) { row ->
 					Map outRow = [:]
 					copyToMap(con, row, outRow)
 					

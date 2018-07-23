@@ -24,9 +24,6 @@
 
 package getl.utils
 
-import getl.exception.ExceptionGETL
-import groovy.json.internal.LazyMap
-
 /**
  * Clone objects utilite library
  * @author Alexsey Konstantinov

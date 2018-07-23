@@ -4,7 +4,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = "2.1.2"
+version = "2.2.0"
 //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-	compile 'org.codehaus.groovy:groovy-all:2.4.15'
+	compile 'org.codehaus.groovy:groovy-all:2.5.1'
 	compile 'com.jcraft:jsch:0.1.54'
 	compile 'net.sf.supercsv:super-csv:2.4.0'
 	compile 'com.h2database:h2:1.4.197'

@@ -28,7 +28,7 @@ import getl.data.Field
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
-import groovy.json.internal.LazyMap
+import org.apache.groovy.json.internal.LazyMap
 
 /**
  * Map library functions class
