@@ -3,6 +3,7 @@ package getl.utils
 import getl.proc.Executor
 import getl.tfs.TFS
 import groovy.transform.Synchronized
+import net.lingala.zip4j.util.Zip4jConstants
 
 /**
  * @author Alexsey Konstantinov
@@ -187,5 +188,20 @@ class FileUtilsTest extends GroovyTestCase {
         else {
             FileUtils.Run('ls', TFS.systemPath, 'utf-8', sout, serr)
         }
+    }
+
+    void testCompressToZip() {
+        def fileName = "${TFS.systemPath}/${FileUtils.UniqueFileName()}"
+
+        new File(fileName + '.txt').text = 'test zip archive'
+        FileUtils.CompressToZip(fileName + '.zip', fileName + '.txt',
+                [compressionMethod: Zip4jConstants.COMP_DEFLATE,
+                 compressionLevel: Zip4jConstants.DEFLATE_LEVEL_MAXIMUM,
+                 encryptFiles: true,
+                 encryptionMethod: Zip4jConstants.ENC_METHOD_AES,
+                 aesKeyStrength: Zip4jConstants.AES_STRENGTH_256,
+                 password: 'TEST GETL ZIP'])
+
+        assertTrue(FileUtils.ExistsFile(fileName + '.zip'))
     }
 }
