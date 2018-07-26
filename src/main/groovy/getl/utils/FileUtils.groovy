@@ -746,23 +746,40 @@ class FileUtils {
 	 * @param zipName
 	 * @param path
 	 */
-	public static void CompressToZip(String zipName, String path) {
-		CompressToZip(zipName, path, null)
+	public static void CompressToZip(String zipName, String path, Map params = null) {
+		CompressToZip(zipName, path, params, null)
 	}
+
+    /**
+     * Compress directories and files by path to zip file
+     * @param zipName
+     * @param path
+     * @param validMask
+     */
+    public static void CompressToZip(String zipName, String path, Closure validFile) {
+        CompressToZip(zipName, path, null, validFile)
+    }
 	
 	/**
 	 * Compress directories and files by path to zip file
 	 * @param zipName
 	 * @param path
+     * @param params
 	 * @param validMask
 	 */
-	public static void CompressToZip(String zipName, String path, Closure validFile) {
+	public static void CompressToZip(String zipName, String path, Map params, Closure validFile) {
 		zipName = new File(zipName).absolutePath
 		ZipFile zipFile = new ZipFile(zipName)
+        params = params?:[:]
+
 		ZipParameters parameters = new ZipParameters()
-		parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE)
-		parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_NORMAL)
-		
+		parameters.setCompressionMethod((params.compressionMethod != null)?params.compressionMethod:Zip4jConstants.COMP_DEFLATE)
+		parameters.setCompressionLevel((params.compressionLevel != null)?params.compressionLevel:Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+        if (params.encryptFiles != null) parameters.setEncryptFiles(params.encryptFiles)
+        if (params.encryptionMethod != null) parameters.setEncryptionMethod(params.encryptionMethod)
+        if (params.aesKeyStrength != null) parameters.setAesKeyStrength(params.aesKeyStrength)
+        if (params.password != null) parameters.setPassword(params.password.toString())
+
 		String fileMask = MaskFile(path)
 		if (fileMask == null) {
 			if (new File(path).directory) {
