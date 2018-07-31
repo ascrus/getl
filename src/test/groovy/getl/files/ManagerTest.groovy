@@ -15,7 +15,7 @@ abstract class ManagerTest extends GroovyTestCase {
     final def initLocalDir = 'init'
     final def downloadLocalDir = 'download'
     final def rootDirName = 'getl_test_manager'
-    final def rootFileName = 'root_file.txt'
+    final def rootFileName = 'root$file.txt'
     final def catalogDirName = 'catalog'
     final def catalogFileName = 'catalog_file.txt'
     final def subdirDirName = 'subdir'

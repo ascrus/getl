@@ -808,7 +808,12 @@ class FileUtils {
 	}
 
     public static String FileMaskToMathExpression(String fileMask) {
-        return fileMask.replace(".", "[.]").replace("*", ".*").replace("+", "\\+").replace("-", "\\-")
+        return fileMask.replace('.', '[.]')
+                .replace('*', '.*')
+				.replace('+', '\\+')
+				.replace('-', '\\-')
+                .replace('$', '[$]')
+				.replace('^', '[^]')
     }
 
     /**
