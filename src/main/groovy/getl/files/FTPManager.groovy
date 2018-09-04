@@ -157,6 +157,8 @@ class FTPManager extends Manager {
 		if (login == null) throw new ExceptionGETL('Required login for connect')
 		
 		if (connectionmTimeout != null) client.connector.connectionTimeout = connectionmTimeout
+		if (closeTimeout != null) client.connector.closeTimeout = closeTimeout
+		if (readTimeout != null) client.connector.readTimeout = readTimeout
 		try {
 			client.connect(server, port)
 		}
@@ -171,12 +173,9 @@ class FTPManager extends Manager {
 			if (writeErrorsToLog) Logs.Severe("Invalid login or password for $server:$port")
 			throw e
 		}
-		
+        if (autoNoopTimeout != null) client.setAutoNoopTimeout(autoNoopTimeout * 1000)
 		client.setType(FTPClient.TYPE_BINARY)
 		client.setPassive(passive)
-		if (autoNoopTimeout != null) client.setAutoNoopTimeout(autoNoopTimeout * 1000)
-		if (closeTimeout != null) client.connector.closeTimeout = closeTimeout
-		if (readTimeout != null) client.connector.readTimeout = readTimeout
 
         supportCommands.clear()
         client.sendCustomCommand('FEAT').messages.each { String cmd ->
