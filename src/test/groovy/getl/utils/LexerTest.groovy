@@ -53,8 +53,12 @@ static public int test (def param1, def param2) {
                     "value": "="
                 },
                 {
+                    "type": "OPERATOR",
+                    "value": "-"
+                },
+                {
                     "type": "SINGLE_WORD",
-                    "value": "-1"
+                    "value": "1"
                 },
                 {
                     "type": "FUNCTION",
@@ -314,6 +318,7 @@ IF(MOD(YEAR(EndDate) + FLOOR((MONTH(EndDate) + 3)/12), 400) = 0 || (MOD(YEAR(End
 """
         def lexer = new Lexer(input: new StringReader(example))
         lexer.parse()
+        println lexer.toString()
 
         assertNotNull(lexer.tokens)
     }
@@ -332,6 +337,37 @@ Linked_Reseller__r.Name
         def lexer = new Lexer(input: new StringReader(example))
         lexer.parse()
 
-        assertNotNull(lexer.tokens)
+        def res = '''{
+    "tokens": [
+        {
+            "type": "COMMENT",
+            "comment_start": "/*",
+            "comment_finish": "*/",
+            "value": "IF(ISBLANK( Linked_Reseller__r.ParentId), Linked_Reseller__r.Name, left(Linked_Reseller__r.Parent_Account_Name__c,len(Linked_Reseller__r.Parent_Account_Name__c)-7))"
+        },
+        {
+            "type": "FUNCTION",
+            "value": "blankvalue",
+            "list": [
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "Linked_Reseller__r.MasterParentId__r.Name",
+                    "delimiter": {
+                        "type": "COMMA",
+                        "value": ","
+                    }
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "Linked_Reseller__r.Name"
+                }
+            ],
+            "start": "(",
+            "finish": ")"
+        }
+    ]
+}'''
+
+        assertEquals(res, lexer.toString())
     }
 }
