@@ -53,8 +53,12 @@ static public int test (def param1, def param2) {
                     "value": "="
                 },
                 {
+                    "type": "OPERATOR",
+                    "value": "-"
+                },
+                {
                     "type": "SINGLE_WORD",
-                    "value": "-1"
+                    "value": "1"
                 },
                 {
                     "type": "FUNCTION",
@@ -329,6 +333,26 @@ Linked_Reseller__r.Name
 )
 """
 
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+
+        assertNotNull(lexer.tokens)
+    }
+
+    void testFunctionWithLineBreak() {
+        def example = """
+Date(
+
+    /*
+    YEAR
+    */ 
+
+    NewYear(),
+    
+    /*MONTH*/
+    NewMonth() 
+)
+"""
         def lexer = new Lexer(input: new StringReader(example))
         lexer.parse()
 
