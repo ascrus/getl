@@ -370,4 +370,24 @@ Linked_Reseller__r.Name
 
         assertEquals(res, lexer.toString())
     }
+
+    void testFunctionWithLineBreak() {
+        def example = """
+Date(
+
+    /*
+    YEAR
+    */ 
+
+    NewYear(),
+    
+    /*MONTH*/
+    NewMonth() 
+)
+"""
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+
+        assertNotNull(lexer.tokens)
+    }
 }

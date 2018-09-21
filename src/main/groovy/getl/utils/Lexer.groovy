@@ -204,7 +204,7 @@ class Lexer {
 				case 10:
 					curNum = 0
 					curLine++
-					if (command.type == CommandType.QUOTE) addChar(c) else gap(c)
+					if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) addChar(c) else gap(c)
 					break
 				default:
 					if (!(command.type in [CommandType.QUOTE, CommandType.WORD, CommandType.OBJECT_NAME, CommandType.OPERATOR, CommandType.COMMENT])) {
@@ -351,29 +351,17 @@ class Lexer {
 			return
 		}
 
-		gap(c)
-
 		commands.push(command)
 		command = new CommandParam()
 		command.type = CommandType.COMMENT
 		command.start = c
 		command.finish = c
-
-		stackTokens.push(tokens)
-		tokens = []
 	}
 
 	/**
 	 * Finish comments block
 	 */
 	private void comment_finish(int c) {
-		if (command.type == CommandType.QUOTE) {
-			addChar(c)
-			return
-		}
-
-		gap(c)
-
 		if (sb.length() >= 0) tokens << [type: TokenType.COMMENT, comment_start: "/*", comment_finish: "*/", value: sb.toString()]
 		command = commands.pop()
 		sb = new StringBuilder()
