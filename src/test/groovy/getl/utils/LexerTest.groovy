@@ -53,8 +53,12 @@ static public int test (def param1, def param2) {
                     "value": "="
                 },
                 {
+                    "type": "OPERATOR",
+                    "value": "-"
+                },
+                {
                     "type": "SINGLE_WORD",
-                    "value": "-1"
+                    "value": "1"
                 },
                 {
                     "type": "FUNCTION",
@@ -231,6 +235,34 @@ static public int test (def param1, def param2) {
         assertEquals(['test','=', ''], lexer.tokens*.value)
     }
 
+    void testQuotesWithLineBreak() {
+        def example = """println("
+YEAR
+")"""
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+
+        def res = '''{
+    "tokens": [
+        {
+            "type": "FUNCTION",
+            "value": "println",
+            "list": [
+                {
+                    "type": "QUOTED_TEXT",
+                    "quote": "\\"",
+                    "value": "\\nYEAR\\n"
+                }
+            ],
+            "start": "(",
+            "finish": ")"
+        }
+    ]
+}'''
+
+        assertEquals(res.toString(), lexer.toString())
+    }
+
     void testSingleWord() {
         def example = "test=1"
         def lexer = new Lexer(input: new StringReader(example))
@@ -258,5 +290,132 @@ static public int test (def param1, def param2) {
         def lexer = new Lexer(input: new StringReader(example))
         lexer.parse()
         assertEquals(['test','**=', 't'], lexer.tokens*.value)
+    }
+
+    void testBracketsAfterOperator() {
+        String example = "if(var = 1, or(val = 1, var = 2, (value_1 = 1 and value_2 = 2 and something = 3), onemore = 3), false)"
+
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+
+        lexer.tokens.each { token ->
+            List<Map> list = token.list
+            list.each {
+                if (it.value == 'or') {
+                    assertEquals(10, (it.list as List).size())
+                }
+            }
+        }
+
+        example = "var(2), (value_1 = 1 and value_2 = 2 and something = 3)"
+
+        lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+
+        lexer.tokens.each { token ->
+            List<Map> list = token.list
+            list.each {
+                if (it.type == 'LIST') {
+                    assertEquals(4, (it.list as List).size())
+                }
+            }
+        }
+    }
+
+    void testOneMore() {
+        String example = """
+DATE ( 
+
+/*YEAR*/ 
+
+YEAR(EndDate) + FLOOR((MONTH(EndDate) + 3 - 1)/12), 
+
+/*MONTH*/ 
+
+CASE 
+
+(MOD(MONTH(EndDate) + 3, 12 ), 0, 12, MOD(MONTH(EndDate)+ 3, 12 )), 
+
+/*DAY*/ 
+
+(MIN(DAY(EndDate), CASE(MOD(MONTH(EndDate) + 3,12), 9, 30, 4, 30, 6, 30, 11, 30, 2, 
+
+/* return max days for February dependent on if end date is leap year */ 
+IF(MOD(YEAR(EndDate) + FLOOR((MONTH(EndDate) + 3)/12), 400) = 0 || (MOD(YEAR(EndDate) + FLOOR((MONTH(EndDate) + 3)/12), 4) = 0 && MOD(YEAR(EndDate) + FLOOR((MONTH(EndDate) + 3)/12), 100) <> 0 ), 29,28), 31)) ))
+
+"""
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+//        println lexer.toString()
+
+        assertNotNull(lexer.tokens)
+    }
+
+    void testComments() {
+        def example = """
+/*IF(ISBLANK( Linked_Reseller__r.ParentId), Linked_Reseller__r.Name, left(Linked_Reseller__r.Parent_Account_Name__c,len(Linked_Reseller__r.Parent_Account_Name__c)-7))
+*/
+
+blankvalue(
+Linked_Reseller__r.MasterParentId__r.Name,
+Linked_Reseller__r.Name
+)
+"""
+
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+
+        def res = '''{
+    "tokens": [
+        {
+            "type": "COMMENT",
+            "comment_start": "/*",
+            "comment_finish": "*/",
+            "value": "IF(ISBLANK( Linked_Reseller__r.ParentId), Linked_Reseller__r.Name, left(Linked_Reseller__r.Parent_Account_Name__c,len(Linked_Reseller__r.Parent_Account_Name__c)-7))\\n"
+        },
+        {
+            "type": "FUNCTION",
+            "value": "blankvalue",
+            "list": [
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "Linked_Reseller__r.MasterParentId__r.Name",
+                    "delimiter": {
+                        "type": "COMMA",
+                        "value": ","
+                    }
+                },
+                {
+                    "type": "SINGLE_WORD",
+                    "value": "Linked_Reseller__r.Name"
+                }
+            ],
+            "start": "(",
+            "finish": ")"
+        }
+    ]
+}'''
+
+        assertEquals(res, lexer.toString())
+    }
+
+    void testFunctionWithLineBreak() {
+        def example = """
+Date(
+
+    /*
+    YEAR
+    */ 
+
+    NewYear(),
+    
+    /*MONTH*/
+    NewMonth() 
+)
+"""
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+
+        assertNotNull(lexer.tokens)
     }
 }

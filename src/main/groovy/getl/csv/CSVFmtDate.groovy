@@ -85,7 +85,7 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 			throw new SuperCsvCellProcessorException(Date.class, value, context, this)
 		}
 		
-		final SimpleDateFormat formatter
+		SimpleDateFormat formatter
 		try {
 			if (locale == null) {
 				formatter = new SimpleDateFormat(dateFormat)
@@ -97,6 +97,9 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 		catch(IllegalArgumentException e) {
 			throw new SuperCsvCellProcessorException(String.format("'%s' is not a valid date format", dateFormat),
 				context, this, e)
+		}
+		catch (Exception e) {
+			throw e
 		}
 		
 		String result = formatter.format((Date) value)

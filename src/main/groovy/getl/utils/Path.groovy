@@ -313,7 +313,7 @@ class Path {
 			}
 		}
 		
-		maskFile = maskStr
+		maskFile = maskStr.replace('$', '\\$')
 		likeFile = maskStr
 		vars.each { key, value ->
 			def vo = "(?i)(\\{${key}\\})"
@@ -321,7 +321,7 @@ class Path {
 			
 			likeFile = likeFile.replace("{$key}", "%")
 		}
-		likeFile = likeFile.replace('*', '%').replace('.', '\\.')
+		likeFile = likeFile.replace('*', '%').replace('.', '\\.').replace('$', '\\$')
 	}
 	
 	/**
