@@ -204,7 +204,10 @@ class Lexer {
 				case 10:
 					curNum = 0
 					curLine++
-					if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) addChar(c) else gap(c)
+					if (command.type in [CommandType.QUOTE, CommandType.COMMENT])
+						addChar(c)
+					else
+						gap(c)
 					break
 				default:
 					if (!(command.type in [CommandType.QUOTE, CommandType.WORD, CommandType.OBJECT_NAME, CommandType.OPERATOR, CommandType.COMMENT])) {

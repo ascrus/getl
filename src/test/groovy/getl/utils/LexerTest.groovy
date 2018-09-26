@@ -235,6 +235,34 @@ static public int test (def param1, def param2) {
         assertEquals(['test','=', ''], lexer.tokens*.value)
     }
 
+    void testQuotesWithLineBreak() {
+        def example = """println("
+YEAR
+")"""
+        def lexer = new Lexer(input: new StringReader(example))
+        lexer.parse()
+
+        def res = '''{
+    "tokens": [
+        {
+            "type": "FUNCTION",
+            "value": "println",
+            "list": [
+                {
+                    "type": "QUOTED_TEXT",
+                    "quote": "\\"",
+                    "value": "\\nYEAR\\n"
+                }
+            ],
+            "start": "(",
+            "finish": ")"
+        }
+    ]
+}'''
+
+        assertEquals(res.toString(), lexer.toString())
+    }
+
     void testSingleWord() {
         def example = "test=1"
         def lexer = new Lexer(input: new StringReader(example))
@@ -318,7 +346,7 @@ IF(MOD(YEAR(EndDate) + FLOOR((MONTH(EndDate) + 3)/12), 400) = 0 || (MOD(YEAR(End
 """
         def lexer = new Lexer(input: new StringReader(example))
         lexer.parse()
-        println lexer.toString()
+//        println lexer.toString()
 
         assertNotNull(lexer.tokens)
     }
@@ -343,7 +371,7 @@ Linked_Reseller__r.Name
             "type": "COMMENT",
             "comment_start": "/*",
             "comment_finish": "*/",
-            "value": "IF(ISBLANK( Linked_Reseller__r.ParentId), Linked_Reseller__r.Name, left(Linked_Reseller__r.Parent_Account_Name__c,len(Linked_Reseller__r.Parent_Account_Name__c)-7))"
+            "value": "IF(ISBLANK( Linked_Reseller__r.ParentId), Linked_Reseller__r.Name, left(Linked_Reseller__r.Parent_Account_Name__c,len(Linked_Reseller__r.Parent_Account_Name__c)-7))\\n"
         },
         {
             "type": "FUNCTION",
