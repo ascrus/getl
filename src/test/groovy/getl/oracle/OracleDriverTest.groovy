@@ -11,6 +11,7 @@ class OracleDriverTest extends JDBCDriverProto {
 	protected JDBCConnection newCon() {
 		if (!FileUtils.ExistsFile(configName)) return null
 		Config.LoadConfig(fileName: configName)
+		Locale.setDefault(new Locale('en','EN'));
 		return new OracleConnection(config: 'oracle')
 	}
 }

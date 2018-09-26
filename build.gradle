@@ -82,7 +82,7 @@ artifacts {
 build.dependsOn sourcesJar
 build.dependsOn javadocJar
 
-/*noinspection GroovyMissingReturnStatement
+//noinspection GroovyMissingReturnStatement
 uploadArchives {
 	def login = project.properties."ossrhUsername"
 	def password = project.properties."ossrhPassword"
@@ -132,13 +132,13 @@ uploadArchives {
 			}
 		}
 	}
-}*/
+}
 
 //noinspection GroovyMissingReturnStatement
-uploadArchives {
+/*uploadArchives {
     repositories {
         mavenDeployer {
-            beforeDeployment { /*MavenDeployment*/ deployment -> signing.signPom(deployment) }
+            beforeDeployment { deployment -> signing.signPom(deployment) }
             configuration = configurations.deployerJars
             repository(url: mavenLocal().url)
             pom.groupId = rootProject.group
@@ -146,4 +146,4 @@ uploadArchives {
             pom.version = rootProject.version
         }
     }
-}
+}*/

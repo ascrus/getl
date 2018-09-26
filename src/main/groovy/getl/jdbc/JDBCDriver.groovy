@@ -405,6 +405,9 @@ class JDBCDriver extends Driver {
             if (login != null) prop.user = login
             if (password != null) prop.password = password
             def javaCon = javaDriver.connect(url, prop)
+			if (javaCon == null) {
+				throw new ExceptionGETL("Can not create driver \"$drvName\" for \"$url\" URL")
+			}
             sql = new Sql(javaCon)
 		}
 		catch (SQLException e) {
