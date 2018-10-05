@@ -53,5 +53,10 @@ class ConfigFilesTest extends GroovyTestCase {
         assertEquals('sa', h2.login)
         assertEquals('test', h2.password)
         assertEquals('-1', h2.connectProperty.db_close_delay)
+
+        Config.ClearConfig()
+        Config.SetValue('vars.test_var', 'variable value')
+        Config.LoadConfig(path: configPath, fileName: 'test_config.conf')
+        assertEquals(Config.content.var, 'variable value')
     }
 }
