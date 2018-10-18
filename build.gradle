@@ -83,6 +83,7 @@ artifacts {
 build.dependsOn sourcesJar
 build.dependsOn javadocJar
 
+
 //noinspection GroovyMissingReturnStatement
 uploadArchives {
 	def login = project.properties."ossrhUsername"
@@ -135,8 +136,10 @@ uploadArchives {
 	}
 }
 
+
 //noinspection GroovyMissingReturnStatement
-/*uploadArchives {
+/*
+uploadArchives {
     repositories {
         mavenDeployer {
             beforeDeployment { deployment -> signing.signPom(deployment) }
@@ -147,4 +150,5 @@ uploadArchives {
             pom.version = rootProject.version
         }
     }
-}*/
+}
+*/

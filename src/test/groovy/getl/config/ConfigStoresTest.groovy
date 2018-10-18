@@ -34,6 +34,10 @@ class ConfigStoresTest extends GroovyTestCase {
                             db_close_delay "-1"
                         }
                     }
+                    csv {
+                        path '.'
+                        rowDelimiter '\r\n'
+                    }
                 }
             }
 
