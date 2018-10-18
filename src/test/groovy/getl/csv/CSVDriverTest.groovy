@@ -237,6 +237,23 @@ class CSVDriverTest extends GroovyTestCase {
         validReadWrite(con, 'unix')
     }
 
+    void testRowDelimiter() {
+        def con = new CSVConnection(conParams + [header: false, rowDelimiter: '\r\n'])
+        def ds = new CSVDataset(connection: con, fileName: 'test_row_delimiter')
+        ds.field << new Field(name: 'Id', type: Field.Type.INTEGER, isKey: true)
+        ds.field << new Field(name: 'Name', length: 50, isNull: false)
+        new Flow().writeTo(dest: ds) { updater ->
+            (1..3).each { num ->
+                Map row = [id: num, name: "name $num"]
+                updater(row)
+            }
+        }
+
+        def text = new File(ds.fullFileName()).text
+        assertEquals('1,name 1\r\n2,name 2\r\n3,name 3\r\n', text)
+        ds.drop()
+    }
+
 	@CompileStatic
 	public void testPerfomance() {
 		def perfomanceRows = 1000
