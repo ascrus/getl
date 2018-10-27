@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-	compile 'org.codehaus.groovy:groovy-all:2.5.1'
+	compile 'org.codehaus.groovy:groovy-all:2.5.3'
 	compile 'com.jcraft:jsch:0.1.54'
 	compile 'net.sf.supercsv:super-csv:2.4.0'
 	compile 'com.h2database:h2:1.4.197'
@@ -85,6 +85,7 @@ build.dependsOn javadocJar
 
 
 //noinspection GroovyMissingReturnStatement
+/*
 uploadArchives {
 	def login = project.properties."ossrhUsername"
 	def password = project.properties."ossrhPassword"
@@ -135,10 +136,9 @@ uploadArchives {
 		}
 	}
 }
-
+*/
 
 //noinspection GroovyMissingReturnStatement
-/*
 uploadArchives {
     repositories {
         mavenDeployer {
@@ -151,4 +151,3 @@ uploadArchives {
         }
     }
 }
-*/
