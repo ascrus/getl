@@ -154,14 +154,28 @@ class ConfigFiles extends ConfigManager {
 
         Map<String, Object> data = null
 		if (fn != null) {
-            def ff = new File(fullConfigName(fp, fn))
+            def rp = FileUtils.RelativePathFromFile(fn)
+            if (rp == '.') {
+                rp = fp
+            }
+            else {
+                fn = FileUtils.FileName(fn)
+            }
+            def ff = new File(fullConfigName(rp, fn))
 			data = LoadConfigFile(ff, cp)
             Config.MergeConfig(data)
 		}
 		
 		if (fl != null) {
 			fl.each { String name ->
-                def ff = new File(fullConfigName(fp, name))
+                def rp = FileUtils.RelativePathFromFile(name)
+                if (rp == '.') {
+                    rp = fp
+                }
+                else {
+                    name = FileUtils.FileName(name)
+                }
+                def ff = new File(fullConfigName(rp, name))
     			data = LoadConfigFile(ff, cp)
                 Config.MergeConfig(data)
 			}

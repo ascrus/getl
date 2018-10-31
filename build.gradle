@@ -4,7 +4,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = "2.2.0"
+version = "2.2.1"
 //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
@@ -14,14 +14,15 @@ configurations {
 }
 
 repositories {
-	jcenter()
-	
+	mavenLocal()
+    //maven { url 'http://repo.novus.com/releases/' }
+	//maven { url = 'https://raw.github.com/bastengao/mvn-repository/master/releases' }
+	//jcenter()
 	mavenCentral()
-	maven { url 'http://repo.novus.com/releases/' }
 }
 
 dependencies {
-	compile 'org.codehaus.groovy:groovy-all:2.5.1'
+	compile 'org.codehaus.groovy:groovy-all:2.5.3'
 	compile 'com.jcraft:jsch:0.1.54'
 	compile 'net.sf.supercsv:super-csv:2.4.0'
 	compile 'com.h2database:h2:1.4.197'
@@ -32,7 +33,8 @@ dependencies {
 	compile 'org.apache.poi:ooxml-schemas:1.3'
 	compile 'org.apache.hadoop:hadoop-hdfs:2.7.3'
 	compile 'org.apache.hadoop:hadoop-common:2.7.3'
-	compile 'it.sauronsoftware:ftp4j:1.6'
+	//compile group: 'it.sauronsoftware.ftp4j', name: 'ftp4j', version: '1.7.2'
+	addJars files('file:/libs/ftp4j-1.7.2.jar')
     compile 'net.lingala.zip4j:zip4j:1.3.2'
 	compile group: 'com.force.api', name: 'force-partner-api', version: '42.0.0'
 
@@ -81,6 +83,7 @@ artifacts {
 
 build.dependsOn sourcesJar
 build.dependsOn javadocJar
+
 
 //noinspection GroovyMissingReturnStatement
 uploadArchives {
@@ -135,7 +138,8 @@ uploadArchives {
 }
 
 //noinspection GroovyMissingReturnStatement
-/*uploadArchives {
+/*
+uploadArchives {
     repositories {
         mavenDeployer {
             beforeDeployment { deployment -> signing.signPom(deployment) }
@@ -146,4 +150,5 @@ uploadArchives {
             pom.version = rootProject.version
         }
     }
-}*/
+}
+*/

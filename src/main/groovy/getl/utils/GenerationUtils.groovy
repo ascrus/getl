@@ -960,8 +960,9 @@ sb << """
 	 * @return
 	 */
 	@groovy.transform.CompileStatic
-	public static def EvalGroovyScript(String value, Map<String, Object> vars) {
+	public static def EvalGroovyScript(String value, Map<String, Object> vars, Boolean convertReturn = false) {
 		if (value == null) return null
+		if (convertReturn) value = value.replace('\r', '\u0001')
 		
 		Binding bind = new Binding()
 		vars?.each { String key, Object val ->
@@ -973,6 +974,7 @@ sb << """
 		def res
 		try {
 			res = sh.evaluate(value)
+			if (convertReturn && res != null) res = (res as String).replace('\u0001', '\r')
 		}
 		catch (Exception e) {
 			Logs.Severe("Error parse [${StringUtils.CutStr(value, 1000)}]")
