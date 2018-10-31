@@ -14,10 +14,11 @@ configurations {
 }
 
 repositories {
-	maven { url = 'https://raw.github.com/bastengao/mvn-repository/master/releases' }
-	jcenter()
+	mavenLocal()
+    //maven { url 'http://repo.novus.com/releases/' }
+	//maven { url = 'https://raw.github.com/bastengao/mvn-repository/master/releases' }
+	//jcenter()
 	mavenCentral()
-	//maven { url 'http://repo.novus.com/releases/' }
 }
 
 dependencies {
@@ -32,8 +33,8 @@ dependencies {
 	compile 'org.apache.poi:ooxml-schemas:1.3'
 	compile 'org.apache.hadoop:hadoop-hdfs:2.7.3'
 	compile 'org.apache.hadoop:hadoop-common:2.7.3'
-	//compile 'it.sauronsoftware:ftp4j:1.6'
-	compile group: 'it.sauronsoftware.ftp4j', name: 'ftp4j', version: '1.7.2'
+	//compile group: 'it.sauronsoftware.ftp4j', name: 'ftp4j', version: '1.7.2'
+	addJars files('file:/libs/ftp4j-1.7.2.jar')
     compile 'net.lingala.zip4j:zip4j:1.3.2'
 	compile group: 'com.force.api', name: 'force-partner-api', version: '42.0.0'
 
