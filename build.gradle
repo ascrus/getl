@@ -86,7 +86,6 @@ build.dependsOn javadocJar
 
 
 //noinspection GroovyMissingReturnStatement
-/*
 uploadArchives {
 	def login = project.properties."ossrhUsername"
 	def password = project.properties."ossrhPassword"
@@ -137,9 +136,9 @@ uploadArchives {
 		}
 	}
 }
-*/
 
 //noinspection GroovyMissingReturnStatement
+/*
 uploadArchives {
     repositories {
         mavenDeployer {
@@ -152,3 +151,4 @@ uploadArchives {
         }
     }
 }
+*/
