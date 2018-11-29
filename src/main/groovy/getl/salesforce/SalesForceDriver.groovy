@@ -219,6 +219,8 @@ class SalesForceDriver extends Driver {
 
         Boolean readAsBulk = BoolUtils.IsValue(params.readAsBulk)
 
+		Boolean isCustomQuery = (dataset.params.query as String).length() > 0
+
 		if (dataset.field.isEmpty()) dataset.retrieveFields()
 		List<String> fields = dataset.field*.name
 		if (prepareCode != null) fields = (ArrayList<String>)prepareCode.call(dataset.field)

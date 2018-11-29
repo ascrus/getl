@@ -158,9 +158,20 @@ class SalesForceConnectionTest extends GroovyTestCase {
         assertEquals(10000, rows.size())
     }
 
-	void testDisconnect() {
-		if (connection == null) return
-		connection.connected = false
-		assertFalse(connection.connected)
-	}
+    void testQueryDataset() {
+        if (!connection) return
+        connection.connected = false
+        connection = new SalesForceConnection(config: 'salesforce', batchSize: 2000)
+
+        SalesForceQueryDataset queryDataset = new SalesForceQueryDataset(connection: connection, sfObjectName: 'Organization')
+        queryDataset.query = "select count(1) as cnt from Organization"
+
+        println queryDataset.rows()
+    }
+
+    void testDisconnect() {
+        if (connection == null) return
+        connection.connected = false
+        assertFalse(connection.connected)
+    }
 }
