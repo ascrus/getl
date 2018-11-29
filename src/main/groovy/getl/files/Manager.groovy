@@ -168,7 +168,9 @@ abstract class Manager {
 			if (Config.ContainsSection("files.${this.config}")) {
 				doInitConfig()
 			}
-			Config.RegisterOnInit(doInitConfig)
+			else {
+				Config.RegisterOnInit(doInitConfig)
+			}
 		}
 	}
 	

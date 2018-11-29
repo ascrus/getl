@@ -6,7 +6,7 @@ import getl.data.Field
 /**
  * Created by ascru on 10.10.2016.
  */
-class TFSTest extends GroovyTestCase {
+class TFSTest extends getl.test.GetlTest {
     void testTFSStaticPath() {
         def f = TFS.dataset()
         assertNotNull(f.connection.path)

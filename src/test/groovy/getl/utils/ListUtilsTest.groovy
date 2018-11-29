@@ -1,6 +1,6 @@
 package getl.utils
 
-class ListUtilsTest extends GroovyTestCase {
+class ListUtilsTest extends getl.test.GetlTest {
 
     private void list2str(List list) {
         def str = ListUtils.List2StrArray(list)

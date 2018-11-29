@@ -3,7 +3,7 @@ package getl.utils
 /**
  * @author Alexsey Konstantinov
  */
-class StringUtilsTest extends GroovyTestCase {
+class StringUtilsTest extends getl.test.GetlTest {
     void testToSnakeCase() {
         assertEquals('test_snake_case', StringUtils.ToSnakeCase('TestSnakeCase'))
     }

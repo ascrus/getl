@@ -9,7 +9,7 @@ import org.apache.poi.ss.usermodel.DateUtil
 /**
  * @author Alexsey Konstantinov
  */
-abstract class ManagerTest extends GroovyTestCase {
+abstract class ManagerTest extends getl.test.GetlTest {
     abstract protected Manager getManager()
 
     final def initLocalDir = 'init'

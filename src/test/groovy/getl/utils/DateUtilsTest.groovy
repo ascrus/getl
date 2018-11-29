@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 /**
  * @author Alexsey Konstantinov
  */
-class DateUtilsTest extends GroovyTestCase {
+class DateUtilsTest extends getl.test.GetlTest {
     void testNow() {
 		def date = DateUtils.Now()
 		def hour_orig = DateUtils.PartOfDate('hour', date)

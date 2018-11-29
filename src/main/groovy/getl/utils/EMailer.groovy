@@ -51,7 +51,9 @@ class EMailer {
 			if (Config.ContainsSection("emailers.${this.config}")) {
 				doInitConfig()
 			}
-			Config.RegisterOnInit(doInitConfig)
+			else {
+				Config.RegisterOnInit(doInitConfig)
+			}
 		}
 	}
 

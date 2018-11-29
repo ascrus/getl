@@ -8,7 +8,7 @@ import net.lingala.zip4j.util.Zip4jConstants
 /**
  * @author Alexsey Konstantinov
  */
-class FileUtilsTest extends GroovyTestCase {
+class FileUtilsTest extends getl.test.GetlTest {
     void testFileExtension() {
         assertEquals('txt', FileUtils.FileExtension('test.txt'))
         assertEquals('txt', FileUtils.FileExtension('/tmp/test.getl/test.txt'))

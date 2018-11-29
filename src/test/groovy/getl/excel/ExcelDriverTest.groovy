@@ -3,14 +3,16 @@ package getl.excel
 import getl.data.Dataset
 import getl.data.Field
 
-class ExcelDriverTest extends GroovyTestCase {
+class ExcelDriverTest extends getl.test.GetlTest {
     private static final String path = 'tests/excel'
     private static final String fileName = 'test.xlsx'
     private static ExcelConnection connection = new ExcelConnection(path: path, fileName: fileName)
     private static ExcelDataset excelDataset
     private static final String listName = 'test'
 
+    @Override
     void setUp() {
+        super.setUp()
         excelDataset = new ExcelDataset(connection: connection, header: true)
         excelDataset.field << new Field(name: 'a', type: Field.Type.INTEGER)
         excelDataset.field << new Field(name: 'b', type: Field.Type.INTEGER)

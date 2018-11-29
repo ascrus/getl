@@ -3,7 +3,7 @@ package getl.utils
 /**
  * @author Alexsey Konstantinov
  */
-class PathTest extends GroovyTestCase {
+class PathTest extends getl.test.GetlTest {
     static final def maskPath = '/root/{group}/{subgroup}/test_{date}_{num}.txt'
 
     void testCompile() {

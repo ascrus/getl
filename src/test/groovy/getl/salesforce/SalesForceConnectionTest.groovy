@@ -8,11 +8,13 @@ import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
 
-class SalesForceConnectionTest extends GroovyTestCase {
+class SalesForceConnectionTest extends getl.test.GetlTest {
 	static final def configName = 'tests/salesforce/config.json'
 	private SalesForceConnection connection
 
+    @Override
 	void setUp() {
+        super.setUp()
 		if (!FileUtils.ExistsFile(configName)) return
 		Config.LoadConfig(fileName: configName)
 		Logs.Init()

@@ -3,7 +3,7 @@ package getl.utils
 /**
  * @author Alexsey Konstantinov
  */
-class LexerTest extends GroovyTestCase {
+class LexerTest extends getl.test.GetlTest {
     void testParse() {
         def example = '''
 static public int test (def param1, def param2) {

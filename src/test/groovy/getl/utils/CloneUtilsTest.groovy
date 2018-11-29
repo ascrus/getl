@@ -5,7 +5,7 @@ import groovy.json.*
 /**
  * @author Alexsey Konstantinov
  */
-class CloneUtilsTest extends GroovyTestCase {
+class CloneUtilsTest extends getl.test.GetlTest {
     private Map exampleObjectByJson() {
         def parser = new JsonSlurper()
         def s = '''

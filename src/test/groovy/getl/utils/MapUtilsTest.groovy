@@ -1,6 +1,6 @@
 package getl.utils
 
-class MapUtilsTest extends GroovyTestCase {
+class MapUtilsTest extends getl.test.GetlTest {
     void testMergeMap() {
         def map = [a: 1, b: 0, c: [ca: 1, cb: 2], d: [1, 2, 3], e: [[ea: 1, eb: 2], [ec: 3, ed: 4]]]
         def added = [b: 2, f: 3, g: 4, c: [cc: 3], d: [4, 5], e: [[ee: 5]]]

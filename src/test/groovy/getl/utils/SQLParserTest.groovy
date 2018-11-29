@@ -5,7 +5,7 @@ import getl.exception.ExceptionParser
 /**
  * @author Alexsey Konstantinov
  */
-class SQLParserTest extends GroovyTestCase {
+class SQLParserTest extends getl.test.GetlTest {
     void testInsertStatement() {
         def sql = '''
 INSERT INTO "Schema"."table" ("field1", field2, field3, field4, Field5) VALUES (1, '123', TO_DATE('2016-10-15'), null, DEFAULT);

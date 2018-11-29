@@ -21,9 +21,12 @@ import java.sql.Time
  * Created by ascru on 21.11.2016.
  */
 @InheritConstructors
-abstract class JDBCDriverProto extends GroovyTestCase {
+abstract class JDBCDriverProto extends getl.test.GetlTest {
 	def static configName = 'tests/jdbc/setup.conf'
+
+    @Override
 	void setUp() {
+        super.setUp()
 		if (!FileUtils.ExistsFile(configName)) return
 		Config.LoadConfig(fileName: configName)
 		Logs.Init()

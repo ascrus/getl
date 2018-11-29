@@ -122,17 +122,42 @@ class Config {
 	}
 	
 	/**
-	 * Initialization code on load config
+	 * List of initialization object code on load config
 	 */
 	public static final List<Closure> init = []
-	
+
+	/**
+	 * Re-initialization class
+	 */
+	@groovy.transform.Synchronized
+	public static void ReInit() {
+		init.clear()
+		ClearConfig()
+		configClassManager = new ConfigFiles()
+	}
+
+	/**
+	 * Registration object code closure on load of the configuration files
+	 * @param code
+	 */
 	@groovy.transform.Synchronized
 	public static void RegisterOnInit(Closure code) {
 		if (init.find { it == code } == null) {
 			init << code
 		}
 	}
-	
+
+	/**
+	 * Unregistration object code closure on load of the configuration files
+	 * @param code
+	 */
+	@groovy.transform.Synchronized
+	public static void UnregisterOnInit(Closure code) {
+		if (init.find { it == code } != null) {
+			init.remove(code)
+		}
+	}
+
 	/**
 	 * Clear all configurations
 	 */

@@ -19,7 +19,7 @@ import java.sql.Time
 /**
  * Created by ascru on 10.11.2016.
  */
-class CSVDriverTest extends GroovyTestCase {
+class CSVDriverTest extends getl.test.GetlTest {
     static def fields = [
             new Field(name: 'ID', type: 'BIGINT', isKey: true),
             new Field(name: 'Name', type: 'STRING', isNull: false, length: 50),
