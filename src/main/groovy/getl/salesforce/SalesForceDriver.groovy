@@ -219,7 +219,7 @@ class SalesForceDriver extends Driver {
 
         Boolean readAsBulk = BoolUtils.IsValue(params.readAsBulk)
 
-		Boolean isCustomQuery = (dataset.params.query as String).length() > 0
+		Boolean isCustomQuery = (dataset.params?.query as String)?.length() > 0
         String soqlQuery
         List<String> fields = []
 

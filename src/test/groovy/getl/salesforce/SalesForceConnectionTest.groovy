@@ -183,9 +183,7 @@ group by CALENDAR_YEAR(CreatedDate), CALENDAR_MONTH(CreatedDate)
         queryDataset.field << new Field(name: 'cnt')
 
         def rows = queryDataset.rows()
-        rows.sort { it.year_id }.each {
-            println it
-        }
+        assertTrue(rows.size() > 0)
     }
 
     void testDisconnect() {
