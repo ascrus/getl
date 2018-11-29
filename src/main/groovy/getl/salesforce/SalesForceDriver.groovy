@@ -220,16 +220,27 @@ class SalesForceDriver extends Driver {
         Boolean readAsBulk = BoolUtils.IsValue(params.readAsBulk)
 
 		Boolean isCustomQuery = (dataset.params.query as String).length() > 0
+        String soqlQuery
+        List<String> fields = []
 
-		if (dataset.field.isEmpty()) dataset.retrieveFields()
-		List<String> fields = dataset.field*.name
-		if (prepareCode != null) fields = (ArrayList<String>)prepareCode.call(dataset.field)
+        if (isCustomQuery) {
+            if (readAsBulk) throw new ExceptionGETL("Custom Query isn't supported with bulk API.")
 
-        // SOQL Query generation
-		String soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
-        if (where.size() > 0) soqlQuery += "\nWHERE $where"
-        if (orderBy.size() > 0) soqlQuery += "\nORDER BY ${orderBy.collect { k, v -> "$k $v".toString() }.join(', ')}"
-		if (limit > 0) soqlQuery += "\nLIMIT ${limit.toString()}"
+            if (dataset.field.isEmpty()) throw new ExceptionGETL("Field names must be declared when custom query is used.")
+            else fields = dataset.field*.name
+
+            soqlQuery = dataset.params.query
+        } else {
+            if (dataset.field.isEmpty()) dataset.retrieveFields()
+            fields = dataset.field*.name
+            if (prepareCode != null) fields = (ArrayList<String>)prepareCode.call(dataset.field)
+
+            // SOQL Query generation
+            soqlQuery = "SELECT ${fields.join(', ')}\nFROM $sfObjectName"
+            if (where.size() > 0) soqlQuery += "\nWHERE $where"
+            if (orderBy.size() > 0) soqlQuery += "\nORDER BY ${orderBy.collect { k, v -> "$k $v".toString() }.join(', ')}"
+            if (limit > 0) soqlQuery += "\nLIMIT ${limit.toString()}"
+        }
 
 		long countRec = 0
 
