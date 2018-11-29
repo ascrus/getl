@@ -1,5 +1,6 @@
 package getl.salesforce
 
+import getl.data.Field
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TFS
@@ -7,6 +8,8 @@ import getl.tfs.TFSDataset
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
+
+import static getl.data.Field.Type.*
 
 class SalesForceConnectionTest extends getl.test.GetlTest {
 	static final def configName = 'tests/salesforce/config.json'
@@ -160,9 +163,34 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
         assertEquals(10000, rows.size())
     }
 
-	void testDisconnect() {
-		if (connection == null) return
-		connection.connected = false
-		assertFalse(connection.connected)
-	}
+    void testQueryDataset() {
+        if (!connection) return
+        connection.connected = false
+        connection = new SalesForceConnection(config: 'salesforce')
+
+        SalesForceQueryDataset queryDataset = new SalesForceQueryDataset(connection: connection, sfObjectName: 'Lead')
+        queryDataset.query = """
+select
+  CALENDAR_YEAR(CreatedDate) year_id,
+  CALENDAR_MONTH(CreatedDate) month_id,
+  count(Id) cnt
+from Lead
+where CreatedDate >= 2018-10-01T00:00:00.000Z
+group by CALENDAR_YEAR(CreatedDate), CALENDAR_MONTH(CreatedDate)
+"""
+        queryDataset.field << new Field(name: 'year_id')
+        queryDataset.field << new Field(name: 'month_id')
+        queryDataset.field << new Field(name: 'cnt')
+
+        def rows = queryDataset.rows()
+        rows.sort { it.year_id }.each {
+            println it
+        }
+    }
+
+    void testDisconnect() {
+        if (connection == null) return
+        connection.connected = false
+        assertFalse(connection.connected)
+    }
 }
