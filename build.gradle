@@ -34,7 +34,7 @@ dependencies {
 	compile 'org.apache.hadoop:hadoop-hdfs:2.7.3'
 	compile 'org.apache.hadoop:hadoop-common:2.7.3'
 	//compile group: 'it.sauronsoftware.ftp4j', name: 'ftp4j', version: '1.7.2'
-	addJars files('file:/libs/ftp4j-1.7.2.jar')
+	addJars files('file:libs/ftp4j-1.7.2.jar')
     compile 'net.lingala.zip4j:zip4j:1.3.2'
 	compile group: 'com.force.api', name: 'force-partner-api', version: '42.0.0'
 
