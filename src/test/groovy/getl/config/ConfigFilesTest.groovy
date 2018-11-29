@@ -15,6 +15,10 @@ class ConfigFilesTest extends GroovyTestCase {
     def h2 = new H2Connection(config: 'h2')
     def csv = new CSVConnection(config: 'csv')
 
+    void setUp() {
+        Config.ClearConfig()
+    }
+
     void testSaveLoadConfig() {
         Config.configClassManager = new ConfigFiles()
 

@@ -140,9 +140,7 @@ public class Connection {
 			if (Config.ContainsSection("connections.${this.config}")) {
 				doInitConfig()
 			}
-			else {
-				Config.RegisterOnInit(doInitConfig)
-			}
+			Config.RegisterOnInit(doInitConfig)
 		}
 	}
 	

@@ -128,7 +128,9 @@ class Config {
 	
 	@groovy.transform.Synchronized
 	public static void RegisterOnInit(Closure code) {
-		init << code
+		if (init.find { it == code } == null) {
+			init << code
+		}
 	}
 	
 	/**

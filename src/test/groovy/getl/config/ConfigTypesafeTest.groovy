@@ -7,6 +7,7 @@ import getl.utils.Config
 
 class ConfigTypesafeTest extends GroovyTestCase {
 	void setUp() {
+		Config.ClearConfig()
 		Config.configClassManager = new ConfigTypesafe(path: "typesafe/application.conf")
         try {
             Config.LoadConfig()

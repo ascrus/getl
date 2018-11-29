@@ -119,9 +119,7 @@ class Dataset {
 			if (Config.ContainsSection("datasets.${this.config}")) {
 				doInitConfig()
 			}
-			else {
-				Config.RegisterOnInit(doInitConfig)
-			}
+			Config.RegisterOnInit(doInitConfig)
 		}
 	}
 	

@@ -9,6 +9,10 @@ import groovy.json.JsonBuilder
 class ConfigStoresTest extends GroovyTestCase {
     def h2 = new H2Connection(config: 'h2')
 
+    void setUp() {
+        Config.ClearConfig()
+    }
+
     void testSaveLoadConfig() {
         Config.configClassManager = new ConfigStores()
 
