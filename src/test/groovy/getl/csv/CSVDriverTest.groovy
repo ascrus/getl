@@ -259,9 +259,6 @@ class CSVDriverTest extends getl.test.GetlTest {
         def text2 = new File(ds2.fullFileName()).text
         assertEquals('1,name 1\r\n2,name 2\r\n3,name 3\r\n', text2)
 
-        FileUtils.CopyToDir(ds1.fullFileName(), 'c:/tmp')
-        FileUtils.CopyToDir(ds2.fullFileName(), 'c:/tmp')
-
         ds1.drop()
         ds2.drop()
     }
