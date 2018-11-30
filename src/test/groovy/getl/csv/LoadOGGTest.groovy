@@ -4,7 +4,7 @@ import getl.utils.DateUtils
 
 import java.sql.Timestamp
 
-class LoadOGGTest extends GroovyTestCase {
+class LoadOGGTest extends getl.test.GetlTest {
     void testReadOGG() {
         def con = new CSVConnection(path: 'tests/csv', extension: 'dsv', autoSchema: true, fieldDelimiter: '|',
                                     escaped: false, nullAsValue: '<NULL>', header: false,

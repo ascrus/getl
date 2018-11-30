@@ -5,12 +5,14 @@ import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
 
-class NetsuiteDriverTest extends GroovyTestCase {
+class NetsuiteDriverTest extends getl.test.GetlTest {
 	static final def configName = 'tests/jdbc/netsuite.json'
 	private NetsuiteConnection netsuiteConnectionUrl
 	private NetsuiteConnection netsuiteConnectionHost
 
+	@Override
 	void setUp() {
+		super.setUp()
 		if (!FileUtils.ExistsFile(configName)) return
 		Config.LoadConfig(fileName: configName)
 		Logs.Init()

@@ -19,7 +19,7 @@ import java.sql.Time
 /**
  * Created by ascru on 10.11.2016.
  */
-class CSVDriverTest extends GroovyTestCase {
+class CSVDriverTest extends getl.test.GetlTest {
     static def fields = [
             new Field(name: 'ID', type: 'BIGINT', isKey: true),
             new Field(name: 'Name', type: 'STRING', isNull: false, length: 50),
@@ -258,9 +258,6 @@ class CSVDriverTest extends GroovyTestCase {
 
         def text2 = new File(ds2.fullFileName()).text
         assertEquals('1,name 1\r\n2,name 2\r\n3,name 3\r\n', text2)
-
-        FileUtils.CopyToDir(ds1.fullFileName(), 'c:/tmp')
-        FileUtils.CopyToDir(ds2.fullFileName(), 'c:/tmp')
 
         ds1.drop()
         ds2.drop()

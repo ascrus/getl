@@ -3,7 +3,7 @@ package getl.utils
 /**
  * @author Alexsey Konstantinov
  */
-class BoolUtilsTest extends GroovyTestCase {
+class BoolUtilsTest extends getl.test.GetlTest {
     void testIsValue() {
         assertTrue(BoolUtils.IsValue(true, false))
         assertTrue(BoolUtils.IsValue(null, true))

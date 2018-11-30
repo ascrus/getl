@@ -1,19 +1,14 @@
 package getl.config
 
-import com.typesafe.config.Config as TypeSafeConfig
-import com.typesafe.config.ConfigFactory
 import getl.h2.H2Connection
 import getl.utils.Config
 
-class ConfigTypesafeTest extends GroovyTestCase {
+class ConfigTypesafeTest extends getl.test.GetlTest {
+	@Override
 	void setUp() {
+		super.setUp()
 		Config.configClassManager = new ConfigTypesafe(path: "typesafe/application.conf")
-        try {
-            Config.LoadConfig()
-        }
-        finally {
-            Config.configClassManager = new ConfigFiles()
-        }
+        Config.LoadConfig()
 	}
 
 	void testDbConnection() {

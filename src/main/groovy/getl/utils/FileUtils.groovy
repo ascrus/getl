@@ -847,4 +847,36 @@ class FileUtils {
             fileMan.disconnect()
         }
     }
+
+	/**
+	 * Parse arguments from the command line with quotation marks
+	 * @param args
+	 * @return
+	 */
+	public static List<String> ParseArguments(String args) {
+		def list = args.split(' ')
+		def res = [] as List<String>
+		String tmp
+		list.each { String s ->
+			if (tmp == null) {
+				if (s.length() == 0) return
+				if (s[0] != '"') {
+					res << s
+				} else {
+					tmp = s
+				}
+			}
+			else {
+				tmp += ' ' + s
+				if (s.length() == 0) return
+				if (s[s.length() - 1] == '"') {
+					res << tmp
+					tmp = null
+				}
+			}
+		}
+		if (tmp != null) throw new ExceptionGETL("Invalid arguments [$args] from command line")
+
+		return res
+	}
 }

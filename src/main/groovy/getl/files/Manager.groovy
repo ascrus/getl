@@ -599,7 +599,7 @@ abstract class Manager {
 					String newDir = "$curPath/$dirName"
 					newMan.changeDirectory(newDir)
 					try {
-						TableDataset newDest = (TableDataset)(dest.cloneDataset())
+						TableDataset newDest = (dest.cloneDataset(null)) as TableDataset
 						newDest.openWrite(batchSize: 100)
 						try {
 							processList(newMan, newDest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, newCode)

@@ -11,7 +11,7 @@ import javax.sql.rowset.serial.SerialClob
 /**
  * Created by ascru on 22.11.2016.
  */
-class GenerationUtilsTest extends GroovyTestCase {
+class GenerationUtilsTest extends getl.test.GetlTest {
     void testGenerateInt() {
         def r = GenerationUtils.GenerateInt()
         assertTrue(r instanceof Integer)

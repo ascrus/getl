@@ -8,7 +8,7 @@ import net.lingala.zip4j.util.Zip4jConstants
 /**
  * @author Alexsey Konstantinov
  */
-class FileUtilsTest extends GroovyTestCase {
+class FileUtilsTest extends getl.test.GetlTest {
     void testFileExtension() {
         assertEquals('txt', FileUtils.FileExtension('test.txt'))
         assertEquals('txt', FileUtils.FileExtension('/tmp/test.getl/test.txt'))
@@ -203,5 +203,15 @@ class FileUtilsTest extends GroovyTestCase {
                  password: 'TEST GETL ZIP'])
 
         assertTrue(FileUtils.ExistsFile(fileName + '.zip'))
+    }
+
+    void testParseArguments() {
+        assertEquals(['1', '2', '3'], FileUtils.ParseArguments('1 2 3'))
+        assertEquals(['1', '2', '3'], FileUtils.ParseArguments('1  2  3'))
+        assertEquals(['"1 2 3"', '4', '5'], FileUtils.ParseArguments('"1 2 3" 4 5'))
+        assertEquals(['1', '"2 3 4"', '5'], FileUtils.ParseArguments('1 "2 3 4" 5'))
+        assertEquals(['1', '2', '"3 4 5"'], FileUtils.ParseArguments('1 2 "3 4 5"'))
+        assertEquals(['1', '2', '" 3  4  5 "'], FileUtils.ParseArguments('1 2 " 3  4  5 "'))
+        shouldFail { FileUtils.ParseArguments('1 2 "3 4 5') }
     }
 }

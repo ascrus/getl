@@ -972,7 +972,7 @@ class Flow {
 			errorsDataset.field = source.field
 			errorsDataset.resetFieldToDefault()
 			errorsDataset.field << new Field(name: "error")
-			errorsDataset.openWrite()
+			errorsDataset.openWrite([:])
 		}
 		
 		boolean isSaveErrors = (params.saveErrors != null)?params.saveErrors:false

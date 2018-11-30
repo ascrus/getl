@@ -5,7 +5,7 @@ import getl.h2.H2Connection
 /**
  * Created by ascru on 01.11.2016.
  */
-class TDSTest extends GroovyTestCase {
+class TDSTest extends getl.test.GetlTest {
     void testConnectToStaticInMemory () {
         def d = TDS.dataset()
         H2Connection con = d.connection
