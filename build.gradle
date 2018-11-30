@@ -4,7 +4,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = "2.2.2"
+version = "2.2.3"
 //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
