@@ -27,7 +27,7 @@ package getl.utils
 import getl.exception.ExceptionGETL
 
 import java.math.RoundingMode
-import org.codehaus.groovy.runtime.DateGroovyMethods
+import org.apache.groovy.dateutil.extensions.DateUtilExtensions
 import java.text.SimpleDateFormat
 
 /**
@@ -253,7 +253,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static Date CurrentDate() {
-		return DateGroovyMethods.clearTime(Now())
+		return DateUtilExtensions.clearTime(Now())
 	}
 	
 	public static String CurrentDateStr() {
@@ -265,7 +265,7 @@ class DateUtils {
 	 * @return
 	 */
 	public static String CurrentTime() {
-		return DateGroovyMethods.getTimeString(Now())
+		return DateUtilExtensions.getTimeString(Now())
 	}
 	
 	/**
@@ -276,7 +276,7 @@ class DateUtils {
 	public static Date ClearTime(Date date) {
 		if (date == null) return null
 		Date res = new Date(date.time)
-		return DateGroovyMethods.clearTime(res)
+		return DateUtilExtensions.clearTime(res)
 	}
 	
 	/**
@@ -313,7 +313,7 @@ class DateUtils {
 	 */
 	public static String FormatDate(String format, Date date) {
 		if (date == null) return null
-		return DateGroovyMethods.format(date, format)
+		return DateUtilExtensions.format(date, format)
 	}
 	
 	/**
