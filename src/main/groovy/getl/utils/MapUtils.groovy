@@ -592,20 +592,32 @@ class MapUtils {
      */
     @groovy.transform.CompileDynamic
     public static Map<String, Object> XsdFromResource(String path, String fileName) {
-        def xml = new XmlParser()
-
-        def reader = { xsdFileName ->
-            def xsdPath = "$path/$xsdFileName".toString()
-            Logs.Config("Read resource xsd file \"$xsdPath\"")
-            def input = ClassLoader.getResourceAsStream(xsdPath)
-            if (input == null)
-                throw new ExceptionGETL("Xsd resource \"$xsdPath\" not found!")
-
-            return xml.parse(input)
-        }
-
-        return Xsd2Map(fileName, null, reader)
+        return XsdFromResource(ClassLoader.systemClassLoader, path, fileName)
     }
+
+	@groovy.transform.CompileDynamic
+	/**
+	 * Process XSD file with resource and convert to Map
+	 * @classLoader - class loader for resource
+	 * @param path - path from resource
+	 * @param fileName - xsd file name
+	 * @return
+	 */
+	public static Map<String, Object> XsdFromResource(ClassLoader classLoader, String path, String fileName) {
+		def xml = new XmlParser()
+
+		def reader = { xsdFileName ->
+			def xsdPath = "$path/$xsdFileName".toString()
+			Logs.Config("Read resource xsd file \"$xsdPath\"")
+			def input = classLoader.getResourceAsStream(xsdPath)
+			if (input == null)
+				throw new ExceptionGETL("Xsd resource \"$xsdPath\" not found!")
+
+			return xml.parse(input)
+		}
+
+		return Xsd2Map(fileName, null, reader)
+	}
 
 	@groovy.transform.CompileDynamic
 	public static List<Field> XsdMap2Fields(Map<String, Object> map, String objectTypeName) {

@@ -824,7 +824,6 @@ class FileUtils {
         ClassLoader classLoader = ClassLoader.systemClassLoader
         def pathFile = new File(path)
         if (pathFile.isFile()) {
-//            Logs.Fine("FileUtils: load jar file \"${pathFile}\"")
             classLoader.addURL(pathFile.toURI().toURL())
             return
         }
@@ -839,7 +838,6 @@ class FileUtils {
         try {
             fileMan.list(mask) { Map file ->
                 def fileName = "${fileMan.rootPath}/${file.filename}"
-//                Logs.Fine("FileUtils: load jar file \"$fileName\"")
                 classLoader.addURL(new File(fileName).toURI().toURL())
             }
         }
@@ -847,6 +845,39 @@ class FileUtils {
             fileMan.disconnect()
         }
     }
+
+	/**
+	 * Generate URL class loader from specified path
+	 * @param path
+	 * @return class loader for use in Class.forName method
+	 */
+	public static URLClassLoader ClassLoaderFromPath(String path) {
+		File pathFile = new File(path)
+		List<URL> urls = []
+		if (pathFile.isFile()) {
+			urls << pathFile.toURI().toURL()
+			return new URLClassLoader(urls.toArray(URL[]) as URL[], ClassLoader.systemClassLoader /*(ClassLoader)null*/)
+		}
+		String mask = '*.jar'
+		if (!pathFile.isDirectory()) {
+			pathFile = new File(PathFromFile(path))
+			if (!pathFile.exists()) throw new ExceptionGETL("Path $path not found")
+			mask = FileName(path)
+		}
+		FileManager fileMan = new FileManager(rootPath: pathFile.absolutePath)
+		fileMan.connect()
+		try {
+			fileMan.list(mask) { Map file ->
+				String fileName = "${fileMan.rootPath}/${file.filename}"
+				urls << new File(fileName).toURI().toURL()
+			}
+		}
+		finally {
+			fileMan.disconnect()
+		}
+
+		return new URLClassLoader(urls.toArray(URL[]) as URL[], ClassLoader.systemClassLoader)
+	}
 
 	/**
 	 * Parse arguments from the command line with quotation marks

@@ -202,7 +202,7 @@ class CSVDriver extends FileDriver {
 				if (field.precision != null || field.format != null || decimalSeparator != null) {
 					def ds = ListUtils.NotNullValue([field.decimalSeparator, decimalSeparator]) as String
 					DecimalFormatSymbols dfs = new DecimalFormatSymbols()
-					dfs.setDecimalSeparator(ds.value[0])
+					dfs.setDecimalSeparator(ds.chars[0])
 					cp = new ParseBigDecimal(dfs)
 				}
 				else {
@@ -214,7 +214,7 @@ class CSVDriver extends FileDriver {
 					def ds = ListUtils.NotNullValue([field.decimalSeparator, decimalSeparator]) as String
 
 					DecimalFormatSymbols dfs = new DecimalFormatSymbols()
-					dfs.setDecimalSeparator(ds.value[0])
+					dfs.setDecimalSeparator(ds.chars[0])
 					
 					def p = (field.precision != null)?field.precision:0
 					def f = field.format
@@ -454,7 +454,7 @@ class CSVDriver extends FileDriver {
 			else {
 				header = fields2header(dataset.field, null)
 			}
-			header = header*.toLowerCase()
+			header = (header*.toLowerCase()).toArray(new String()[])
 
 			ArrayList<String> listFields = new ArrayList<String>()
 			if (prepareCode != null) {
@@ -553,8 +553,7 @@ class CSVDriver extends FileDriver {
 	}
 	
 	@Override
-	public
-	void openWrite (Dataset dataset, Map params, Closure prepareCode) {
+	public void openWrite (Dataset dataset, Map params, Closure prepareCode) {
 		if (dataset.fileName == null) throw new ExceptionGETL('Dataset required fileName')
 		
 		WriterParams wp = new WriterParams()

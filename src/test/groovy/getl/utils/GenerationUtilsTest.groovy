@@ -1,6 +1,7 @@
 package getl.utils
 
 import getl.data.*
+import getl.jdbc.JDBCDriver
 import getl.jdbc.TableDataset
 import getl.proc.Flow
 import getl.tfs.TDS
@@ -223,9 +224,9 @@ class GenerationUtilsTest extends getl.test.GetlTest {
     }
 
     void testGenerateRowCopyWithMap() {
-        def t = Field.Type.values() - [Field.Type.OBJECT, Field.Type.ROWID]
+        def t = Field.Type.values() - [Field.Type.OBJECT, Field.Type.ROWID/*, Field.Type.TEXT*/]
         def c = new TDS()
-        def l = []
+        def l = [] as List<Field>
         def r = [:]
         t.each {
             def f = new Field(name: "field_${it.toString()}", type: it, isNull: false)
@@ -243,7 +244,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
             }
             r.put("field_${it.toString().toLowerCase()}".toString(), v)
         }
-        def stat = GenerationUtils.GenerateRowCopy(c.driver, l, true)
+        def stat = GenerationUtils.GenerateRowCopy(c.driver as JDBCDriver, l, true)
         def d = [:]
         c.connected = true
         stat.code.call(c.javaConnection, r, d)
