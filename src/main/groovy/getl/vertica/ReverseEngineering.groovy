@@ -37,6 +37,8 @@ import getl.utils.FileUtils
 import getl.utils.GenerationUtils
 import getl.utils.ListUtils
 import getl.utils.Logs
+import getl.utils.MapUtils
+import getl.utils.NumericUtils
 import getl.utils.StringUtils
 
 import java.util.regex.Matcher
@@ -46,7 +48,10 @@ import java.util.regex.Matcher
  * @author Aleksey Konstantinov
  */
 class ReverseEngineering extends Job {
+	final static version = 1.1
+
 	VerticaConnection cVertica = new VerticaConnection(config: "vertica")
+	def tVersion = new QueryDataset(connection: cVertica, query: 'SELECT Version() AS version')
 	def tCurUser = new QueryDataset(connection: cVertica, query: 'SELECT CURRENT_USER')
 	def tPools = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_pools')
 	def tRoles = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_roles')
@@ -73,6 +78,7 @@ class ReverseEngineering extends Job {
 	def statFilesFind = 'SELECT FILENAME FROM FILES WHERE FILENAME = ?'
 	def statFilesInsert = 'INSERT INTO FILES (FILENAME) VALUES (?)'
 
+	BigDecimal verticaVersion
 	String scriptPath
 	String curUser
 	Map sectionCreate
@@ -105,7 +111,8 @@ class ReverseEngineering extends Job {
 
 		users: [table: 'v_catalog.users', name: 'USER_NAME', where: '1 = 1'],
 
-		schemas: [table: 'v_catalog.schemata', name: 'SCHEMA_NAME',
+		schemas: [name: 'SCHEMA_NAME',
+				  table: 'v_catalog.schemata s INNER JOIN v_internal.vs_schemata vs ON vs.oid = s.schema_id',
 				  where: '''NOT is_system_schema AND Lower(schema_name) NOT IN ('txtindex', 'v_idol', 'v_txtindex', 'v_temp_schema')'''],
 
 		sequences: [table: 'v_catalog.sequences', schema: 'SEQUENCE_SCHEMA', name: 'SEQUENCE_NAME',
@@ -164,7 +171,7 @@ ORDER BY Lower(user_name);
 
 -- Get schemas
 CREATE LOCAL TEMPORARY TABLE getl_schemas ON COMMIT PRESERVE ROWS AS
-SELECT schema_name, schema_owner
+SELECT schema_name, schema_owner, defaultinheritprivileges
 FROM ${sqlObjects.schemas.table}
 WHERE 
 	${sqlObjects.schemas.where}
@@ -207,6 +214,22 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 """
 
 	static main(args) {
+		def a = MapUtils.ProcessArguments(args)
+		if (a.config?.filename == null || (a.size() == 1 && (a.containsKey('help') || a.containsKey('/help') || a.containsKey('/?')))) {
+			println "### Reverse engineering Vertica tool, version $version, EasyData company (www.easydata.ru)"
+			println '''
+Syntax:
+  getl.vertica.ReverseEngineering config.filename=<config file name> [list=<NONE|PRINT>] [clear=<true|false>] [script_path=<sql files path>]
+	
+list: print list of used objects (pools, roles, users, schemas, sequences, tables, views, sql_functions and grants)
+clear: clearing all scripts in destination directory before processing
+  
+Example:
+  java -cp "libs/*" getl.vertica.ReverseEngineering config.filename=demo.conf list=print clear=false script_path=../sql/demo 
+'''
+			return
+		}
+
 		new ReverseEngineering().run(args)
 	}
 
@@ -464,13 +487,22 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 		return [create: create.toString().trim(), alter: alter.toString().trim()]
 	}
 
+	void readVerticaVersion() {
+		def r = tVersion.rows()
+		def s = r[0].version
+		def m = s =~ /(?i)Vertica Analytic Database v([0-9]+[.][0-9]+)[.].*/
+		if (m.size() != 1) throw new ExceptionGETL("Can not parse the version of Vertica for value \"$s\"")
+		verticaVersion = new BigDecimal(m[0][1])
+		Logs.Info("Detected \"$verticaVersion\" version Vertica")
+	}
+
 	/**
 	 * Read cur user information
 	 */
 	void readCurUser() {
 		def r = tCurUser.rows()
 		curUser = r[0].current_user
-		Logs.Info("Current user $curUser")
+		Logs.Info("Login as \"$curUser\" user")
 	}
 
 	/**
@@ -548,8 +580,6 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 	 * Init reverse objects
 	 */
 	public void initReverse() {
-		readCurUser()
-
 		// Read drop parameters section
 		sectionDrop = (Map)Config.content.drop?:[:]
 
@@ -733,20 +763,17 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 	 */
 	@Override
 	void process() {
-		Logs.Info("### Reverse engineering Vertica tool, version 1.0, EasyData company (www.easydata.ru)")
-		if (!jobArgs.containsKey('list') && !jobArgs.containsKey('script_path')) {
-			println '''
-Syntax:
-  getl.vertica.ReverseEngineering config.filename=<config file name> [list=<NONE|PRINT>] [clear=<true|false>] [script_path=<sql files path>]
-	
-list: print list of used objects (pools, roles, users, schemas, sequences, tables, views, sql_functions and grants)
-clear: clearing all scripts in destination directory before processing
-  
-Example:
-  java -cp "libs/*" getl.vertica.ReverseEngineering config.filename=demo.conf list=print clear=false script_path=../sql/demo 
-'''
+		Logs.Info("### Reverse engineering Vertica tool, version $version, EasyData company (www.easydata.ru)")
+
+		// Vertica version
+		readVerticaVersion()
+		if (verticaVersion < 8.1) {
+			Logs.Severe("Vertica version $verticaVersion not supported, required version 8.1 or greater!")
 			return
 		}
+
+		// Current user
+		readCurUser()
 
 		try {
 			initReverse()
@@ -800,25 +827,20 @@ Example:
 			}
 		}
 
-		if (jobArgs.containsKey('script_path')) {
-			if (jobArgs.script_path == null) {
-				Logs.Severe('Required value from parameter "script_path"')
-				doneReverse()
-				return
-			}
-		}
-		else {
+		scriptPath = (jobArgs.script_path?:Config.content.script_path) as String
+		if (scriptPath == null) {
+			Logs.Severe('Required value for "script_path" parameter')
 			doneReverse()
 			return
 		}
 
-		scriptPath = FileUtils.ConvertToDefaultOSPath(jobArgs.script_path as String)
+		scriptPath = FileUtils.ConvertToDefaultOSPath(scriptPath)
 		Logs.Info("Write script to \"$scriptPath\" directory")
 		FileUtils.ValidPath(scriptPath)
 
 		if (BoolUtils.IsValue(jobArgs.clear)) {
 			Logs.Info("Clearing the destination directory \"$scriptPath\"")
-			if (!FileUtils.DeleteFolder(jobArgs.script_path as String, false)) {
+			if (!FileUtils.DeleteFolder(scriptPath, false)) {
 				Logs.Severe("Can not clearing destination directory \"$scriptPath\"")
 				return
 			}
@@ -920,12 +942,12 @@ Example:
 			}
 		   if (isWriteln) writeln ";"
 
-			def defaultRoles = procList(r.default_roles as String)
+/*			def defaultRoles = procList(r.default_roles as String)
 			if (!defaultRoles.withoutGrant.isEmpty()) {
 			   writeln "\nALTER USER \"${r.user_name}\" DEFAULT ROLE ${ListUtils.QuoteList(defaultRoles.withoutGrant, '"').join(', ')};"
 			}
 
-			if (isWriteln) writeln ''
+			if (isWriteln) writeln ''*/
 		}
 		Logs.Info("${hUsers.readRows} users generated")
 	}
@@ -942,7 +964,8 @@ Example:
 			if (BoolUtils.IsValue(sectionDrop.schemas)) {
 			   writeln "DROP SCHEMA \"${r.schema_name}\" CASCADE;"
 			}
-		   writeln "CREATE SCHEMA \"${r.schema_name}\" AUTHORIZATION ${r.schema_owner};\n"
+			def priv = (r.defaultinheritprivileges == true)?'INCLUDE':'EXCLUDE'
+		   	writeln "CREATE SCHEMA \"${r.schema_name}\" AUTHORIZATION \"${r.schema_owner}\" DEFAULT $priv SCHEMA PRIVILEGES;\n"
 		}
 		if (isWriteln) writeln ''
 		hUsers.eachRow(order: ['Lower(user_name)']) { Map r ->
@@ -966,11 +989,18 @@ Example:
 
 			def name = objectName(r.sequence_schema as String, r.sequence_name as String)
 			if (BoolUtils.IsValue(sectionDrop.sequences)) {
-			   writeln "DROP SEQUENCE \"$name\";"
+			   writeln "DROP SEQUENCE $name;"
 			}
-		   writeln ddl(r.sequence_schema as String, r.sequence_name as String)
+			def sql = ddl(r.sequence_schema as String, r.sequence_name as String)
+			if (verticaVersion >= 9.2) {
+				def i = sql.indexOf(' SEQUENCE ')
+				if (i > -1) {
+					sql = sql.substring(0, i + 10) + 'IF NOT EXISTS ' + sql.substring(i + 10)
+				}
+			}
+		   	writeln sql
 			if (sequenceCurrent && r.current_value != null && r.current_value > 0)writeln "ALTER SEQUENCE $name RESTART WITH ${r.current_value};"
-			if (r.owner_name != curUser)writeln "\nALTER SEQUENCE \"$name\" OWNER TO ${r.owner_name};"
+			if (r.owner_name != curUser) writeln "\nALTER SEQUENCE $name OWNER TO ${r.owner_name};"
 			if (isWriteln) writeln ''
 		}
 		Logs.Info("${hSequences.readRows} sequences generated")
@@ -1101,6 +1131,12 @@ Example:
 						if (!rows.isEmpty()) {
 							if (fileNameGrants == null) setWrite('USERS', fileNameUsers, [user: r.grantee])
 							writeln "\nGRANT \"${r.object_name}\" TO \"${r.grantee}\";"
+
+							def ur = rows[0]
+							def defaultRoles = procList(ur.default_roles as String)
+							if (!defaultRoles.withoutGrant.isEmpty()) {
+								writeln "\nALTER USER \"${ur.user_name}\" DEFAULT ROLE ${ListUtils.QuoteList(defaultRoles.withoutGrant, '"').join(', ')};"
+							}
 						}
 					}
 					break
