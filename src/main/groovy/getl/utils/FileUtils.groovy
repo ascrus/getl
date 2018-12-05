@@ -820,6 +820,7 @@ class FileUtils {
      * Add jars files from specified path with current process
      * @param path
      */
+	/*
 	public static void AddJarToClassPath(Object owner, String path) {
         ClassLoader classLoader = ClassLoader.systemClassLoader
         def pathFile = new File(path)
@@ -845,6 +846,7 @@ class FileUtils {
             fileMan.disconnect()
         }
     }
+    */
 
 	/**
 	 * Generate URL class loader from specified path
