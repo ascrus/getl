@@ -51,7 +51,6 @@ class MapUtilsTest extends getl.test.GetlTest {
 
     void testXsdApi() {
         if (!FileUtils.ExistsFile('tests/xero/xero-accounting-api-schema-0.1.2.jar')) return
-        //FileUtils.AddJarToClassPath(this, 'tests/xero/xero-accounting-api-schema-0.1.2.jar')
 
         def classLoader = FileUtils.ClassLoaderFromPath('tests/xero/xero-accounting-api-schema-0.1.2.jar')
         Class.forName('com.xero.model.Item', true, classLoader)

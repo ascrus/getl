@@ -445,7 +445,6 @@ class JDBCDriver extends Driver {
                 jdbcClass = Class.forName(drvName)
             }
             else {
-//				FileUtils.AddJarToClassPath(this, drvPath)
                 jdbcClass = Class.forName(drvName, true, FileUtils.ClassLoaderFromPath(drvPath))
             }
 
