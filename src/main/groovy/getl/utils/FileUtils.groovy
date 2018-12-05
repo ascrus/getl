@@ -816,38 +816,6 @@ class FileUtils {
 				.replace('^', '[^]')
     }
 
-    /**
-     * Add jars files from specified path with current process
-     * @param path
-     */
-	/*
-	public static void AddJarToClassPath(Object owner, String path) {
-        ClassLoader classLoader = ClassLoader.systemClassLoader
-        def pathFile = new File(path)
-        if (pathFile.isFile()) {
-            classLoader.addURL(pathFile.toURI().toURL())
-            return
-        }
-        def mask = '*.jar'
-        if (!pathFile.isDirectory()) {
-            pathFile = new File(PathFromFile(path))
-            if (!pathFile.exists()) throw new ExceptionGETL("Path $path not found")
-            mask = FileName(path)
-        }
-        def fileMan = new FileManager(rootPath: pathFile.absolutePath)
-        fileMan.connect()
-        try {
-            fileMan.list(mask) { Map file ->
-                def fileName = "${fileMan.rootPath}/${file.filename}"
-                classLoader.addURL(new File(fileName).toURI().toURL())
-            }
-        }
-        finally {
-            fileMan.disconnect()
-        }
-    }
-    */
-
 	/**
 	 * Generate URL class loader from specified path
 	 * @param path
