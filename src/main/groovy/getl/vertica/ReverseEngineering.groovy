@@ -1131,12 +1131,6 @@ Example:
 						if (!rows.isEmpty()) {
 							if (fileNameGrants == null) setWrite('USERS', fileNameUsers, [user: r.grantee])
 							writeln "\nGRANT \"${r.object_name}\" TO \"${r.grantee}\";"
-
-							def ur = rows[0]
-							def defaultRoles = procList(ur.default_roles as String)
-							if (!defaultRoles.withoutGrant.isEmpty()) {
-								writeln "\nALTER USER \"${ur.user_name}\" DEFAULT ROLE ${ListUtils.QuoteList(defaultRoles.withoutGrant, '"').join(', ')};"
-							}
 						}
 					}
 					break
@@ -1145,6 +1139,15 @@ Example:
 			}
 		}
 		Logs.Info("${hGrants.readRows} grants generated")
+
+		hUsers.eachRow(order: ['Lower(user_name)']) { r->
+			def defaultRoles = procList(r.default_roles as String)
+			if (!defaultRoles.withoutGrant.isEmpty()) {
+				setWrite('USERS', fileNameUsers, [user: r.user_name])
+				writeln "\nALTER USER \"${r.user_name}\" DEFAULT ROLE ${ListUtils.QuoteList(defaultRoles.withoutGrant, '"').join(', ')};"
+			}
+		}
+		Logs.Info("${hUsers.readRows} user default roles generated")
 	}
 
 	public List<Map<String, Object>> listPools() {
