@@ -214,4 +214,12 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertEquals(['1', '2', '" 3  4  5 "'], FileUtils.ParseArguments('1 2 " 3  4  5 "'))
         shouldFail { FileUtils.ParseArguments('1 2 "3 4 5') }
     }
+
+    void testClassLoaser() {
+        if (!FileUtils.ExistsFile('tests/xero/demo.jar')) return
+        def classLoader = FileUtils.ClassLoaderFromPath('tests/xero/demo.jar')
+        def url = classLoader.getResource('xero.conf')
+        assertNotNull(url)
+        assertNotNull(url.text)
+    }
 }

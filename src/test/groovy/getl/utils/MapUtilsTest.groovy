@@ -52,10 +52,7 @@ class MapUtilsTest extends getl.test.GetlTest {
     void testXsdApi() {
         if (!FileUtils.ExistsFile('tests/xero/xero-accounting-api-schema-0.1.2.jar')) return
 
-        def classLoader = FileUtils.ClassLoaderFromPath('tests/xero/xero-accounting-api-schema-0.1.2.jar')
-        Class.forName('com.xero.model.Item', true, classLoader)
-
-        def m = MapUtils.XsdFromResource( classLoader,'XeroSchemas/v2.00', 'Items.xsd')
+        def m = MapUtils.XsdFromResource( /*classLoader,*/'XeroSchemas/v2.00', 'Items.xsd')
         def f = MapUtils.XsdMap2Fields(m, 'Item')
         assertEquals(26, f.size())
         def unitPrice = f.find {it.name == 'PurchaseDetails.UnitPrice'}
