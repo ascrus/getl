@@ -284,7 +284,7 @@ class XeroDriver extends Driver {
             row.put('balances.accountsreceivable.overdue', child.getOverdue())
         }
 
-        assert countChild <= 2, "Invalid \"balances\" field for \"" + master.getContactID() + "\" Contact Xero Object!"
+        assert countChild <= 2, "Invalid \\"balances\\" field for \\"" + master.getContactID() + "\\" Contact Xero Object!"
         if (countChild > 0) {
             row.put('contactid', master.getContactID())
             row.put('updateddateutc', (master.getUpdatedDateUTC() as Calendar)?.time)
