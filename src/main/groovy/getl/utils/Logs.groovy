@@ -25,10 +25,6 @@
 package getl.utils
 
 import getl.exception.ExceptionGETL
-import groovy.util.logging.*
-
-import org.codehaus.groovy.runtime.DateGroovyMethods
-
 import java.util.logging.*
 
 /**
@@ -128,12 +124,12 @@ class Logs {
 		public String format(LogRecord record)  {
 			StringBuilder sb = new StringBuilder()
 			Date d = DateUtils.ToOrigTimeZoneDate(new Date(record.millis))
-			sb << DateGroovyMethods.format(d, "yyyy-MM-dd HH:mm:ss")
-			sb << " ["
+			sb << DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', d)
+			sb << ' ['
 			sb << record.level
-			sb << "]:	"
+			sb << ']:	'
 			sb << record.message
-			sb << "\n"
+			sb << '\n'
 			
 			sb.toString()
 		}

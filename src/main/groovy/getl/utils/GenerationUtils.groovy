@@ -1265,7 +1265,8 @@ sb << """
 					break
 				case getl.data.Field.Type.TEXT:
 					if (driver.textReadAsObject()) {
-						sb << "		outRow.put('$fName', (_getl_temp_var_${i} as java.sql.NClob).getSubString((Long)1, ((Integer)(_getl_temp_var_${i} as java.sql.NClob).length())))"
+						sb << "		String clob_value = (_getl_temp_var_${i} as java.sql.Clob).getSubString((long)1, ((int)(_getl_temp_var_${i} as java.sql.Clob).length()))\n"
+						sb << "		outRow.put('$fName', clob_value)"
 					}
 					else {
 						sb << "		outRow.put('$fName', _getl_temp_var_${i})"

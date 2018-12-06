@@ -36,20 +36,20 @@ import  groovy.json.StringEscapeUtils
 @groovy.transform.CompileStatic
 class StringUtils {
 	public static final MACROS = [
-		'date': DateUtils.NowDate(),		//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "yyyy-MM-dd")', 
-		'time': DateUtils.NowTime(),		//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "HH-mm-ss")',
-		'datetime': DateUtils.NowDateTime()	//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "yyyy-MM-dd HH:mm:ss")',
+		'date': DateUtils.NowDate(),		//yyyy-MM-dd
+		'time': DateUtils.NowTime(),		//HH-mm-ss
+		'datetime': DateUtils.NowDateTime()	//yyyy-MM-dd HH:mm:ss
 	]
 	
 	public static final MACROS_FILE = [
-		'date': DateUtils.FormatDate("yyyy-MM-dd", DateUtils.Now()), 				//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "yyyy-MM-dd")',
-		'monthdate': DateUtils.FormatDate("yyyy-MM", DateUtils.Now()), 				//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "yyyy-MM")',
-		'yeardate': DateUtils.FormatDate("yyyy", DateUtils.Now()), 					//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "yyyy")',
-		'time': DateUtils.FormatDate("HH-mm-ss", DateUtils.Now()), 					//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "HH-mm-ss")',
-		'shorttime': DateUtils.FormatDate("HH-mm", DateUtils.Now()), 				//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "HH-mm")',
-		'hourtime': DateUtils.FormatDate("HH", DateUtils.Now()), 					//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "HH")',
-		'datetime': DateUtils.FormatDate("yyyy-MM-dd_HH-mm-ss", DateUtils.Now()),	//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "yyyy-MM-dd_HH-mm-ss")',
-		'shortdatetime': DateUtils.FormatDate("yyyy-MM-dd_HH", DateUtils.Now()) 	//'org.codehaus.groovy.runtime.DateGroovyMethods.format(new Date(), "yyyy-MM-dd_HH")'
+		'date': DateUtils.FormatDate("yyyy-MM-dd", DateUtils.Now()), 				//yyyy-MM-dd
+		'monthdate': DateUtils.FormatDate("yyyy-MM", DateUtils.Now()), 				//yyyy-MM
+		'yeardate': DateUtils.FormatDate("yyyy", DateUtils.Now()), 					//yyyy
+		'time': DateUtils.FormatDate("HH-mm-ss", DateUtils.Now()), 					//HH-mm-ss
+		'shorttime': DateUtils.FormatDate("HH-mm", DateUtils.Now()), 				//HH-mm
+		'hourtime': DateUtils.FormatDate("HH", DateUtils.Now()), 					//HH
+		'datetime': DateUtils.FormatDate("yyyy-MM-dd_HH-mm-ss", DateUtils.Now()),	//yyyy-MM-dd_HH-mm-ss
+		'shortdatetime': DateUtils.FormatDate("yyyy-MM-dd_HH", DateUtils.Now()) 	//yyyy-MM-dd_HH
 	]
 
 	/**

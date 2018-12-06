@@ -4,8 +4,8 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+
+ Copyright (C) 2013-2018  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -22,39 +22,46 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.deploy
+package getl.xero
+
+import getl.data.Connection
+import getl.data.Dataset
+import groovy.transform.InheritConstructors
 
 /**
- * Version manager
- * @author Aleksey Konstantinov
+ * Xero dataset
+ * @author Alexsey Konstantinov
+ *
  */
-class Version {
-	/**
-	 * GETL version
-	 */
-	public static version = "3.0.0"
-	
-	/**
-	 * GETL version as numeric
-	 */
-	public static versionNum = 3.0000
+@InheritConstructors
+class XeroDataset extends Dataset {
+    /*
+    XeroDataset() {
+        super()
+    }
+    */
 
-	/**
-	 * Compatibility GETL version
-	 */
-	public static versionNumCompatibility = 3.0000
-	
-	/**
-	 * Valid compatibility version
-	 * @param ver
-	 * @return
-	 */
-	public static boolean IsCompatibility (def ver) { 
-		ver >= versionNumCompatibility && ver <= versionNum 
-	}
-	
-	/**
-	 * Years development
-	 */
-	public static years = "2014-2018"
+    @Override
+    void setConnection(Connection value) {
+        assert value == null || value instanceof XeroConnection
+        super.setConnection(value)
+    }
+
+    /**
+     * Object name by Xero
+     */
+    public String getXeroObjectName () { params.xeroObjectName }
+    public void setXeroObjectName (String value) {
+        params.xeroObjectName = value
+    }
+
+    @Override
+    String getObjectName() {
+        return xeroObjectName
+    }
+
+    @Override
+    String getObjectFullName() {
+        return (connection as XeroConnection).configInResource?:'' +'.' + xeroObjectName
+    }
 }

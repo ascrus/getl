@@ -445,8 +445,7 @@ class JDBCDriver extends Driver {
                 jdbcClass = Class.forName(drvName)
             }
             else {
-				FileUtils.AddJarToClassPath(this, drvPath)
-                jdbcClass = Class.forName(drvName)
+                jdbcClass = Class.forName(drvName, true, FileUtils.ClassLoaderFromPath(drvPath))
             }
 
 			def loginTimeout = con.loginTimeout?:30
@@ -1249,7 +1248,7 @@ ${extend}'''
 			sqlParams = new HashMap<String, Object>()
 			sp.each { name, value ->
 				if (value instanceof GString) value = String.valueOf(value)
-				sqlParams.put(name, value)
+				sqlParams.put(name as String, value)
 			}
 		}
 		
