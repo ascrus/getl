@@ -37,3 +37,4 @@ tests/mssql/
 tests/h2/
 tests/netsuite/
 tests/salesforce/
+tests/xero/demo.jar
