@@ -24,6 +24,8 @@
 
 package getl.utils
 
+import com.sun.mail.util.MailSSLSocketFactory
+
 import javax.mail.*
 import javax.mail.internet.*
 
@@ -71,7 +73,7 @@ class EMailer {
 		if (starttls != null && starttls) return 587
 		if (ssl != null && ssl) return 465
 
-		25
+		return 25
 	}
 	public void setPort(int value) { params.port = value }
 
@@ -162,14 +164,18 @@ class EMailer {
 			if (toAddress == null) toAddress = this.toAddress else toAddress = this.toAddress + "," + toAddress
 		}
 		Properties mprops = new Properties()
-		mprops.setProperty("mail.transport.protocol", "smtp")
+		mprops.setProperty('mail.transport.protocol', 'smtp')
 		mprops.setProperty('mail.host', host)
-		mprops.setProperty("mail.smtp.port", String.valueOf(port))
+		mprops.setProperty('mail.smtp.port', String.valueOf(port))
+		if (ssl) {
+			mprops.setProperty('mail.smtp.socketFactory.port', String.valueOf(port))
+			mprops.setProperty('mail.smtp.ssl.trust', host)
+			mprops.setProperty('mail.smtp.ssl.enable', ssl.toString())
+		}
 		if (auth != null) mprops.setProperty('mail.smtp.auth', auth.toString())
 		if (starttls != null) mprops.setProperty('mail.smtp.starttls.enable', starttls.toString())
-		if (ssl != null) mprops.setProperty('mail.smtp.ssl', ssl.toString())
-		if (socketFactoryClass != null) mprops.setProperty("mail.smtp.socketFactory.class", socketFactoryClass)
-		if (socketFactoryFallback != null) mprops.setProperty("mail.smtp.socketFactory.fallback", socketFactoryFallback.toString())
+		if (socketFactoryClass != null) mprops.setProperty('mail.smtp.socketFactory.class', socketFactoryClass)
+		if (socketFactoryFallback != null) mprops.setProperty('mail.smtp.socketFactory.fallback', socketFactoryFallback.toString())
 
 		def u = user
 		def p = password
@@ -185,13 +191,13 @@ class EMailer {
 
 		msg.setFrom(new InternetAddress(fromAddress))
 		msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toAddress, true))
-		msg.setSubject(subject, "utf-8")
-//		msg.setText(message, "utf-8")
+		msg.setSubject(subject, 'utf-8')
+//		msg.setText(message, 'utf-8')
 
 		BodyPart messageBodyPart = new MimeBodyPart()
 
 		if (attachment) {
-			messageBodyPart.setText(message,"text/html")
+			messageBodyPart.setText(message,'text/html')
 
 			Multipart multipart = new MimeMultipart()
 			multipart.addBodyPart(messageBodyPart)
@@ -219,18 +225,11 @@ class EMailer {
 			}
 
 			msg.setContent(multipart)
-		} else if (isHtml) msg.setContent(message, "text/html")
-		else msg.setContent(message, "text/plain; charset=UTF-8")
+		} else if (isHtml) msg.setContent(message, 'text/html')
+		else msg.setContent(message, 'text/plain; charset=UTF-8')
 
 		try {
-			Transport transporter = lSession.getTransport("smtp")
-			transporter.connect()
-			try {
-				transporter.send(msg)
-			}
-			finally {
-				transporter.close()
-			}
+			Transport.send(msg)
 		}
 		catch (javax.mail.MessagingException e) {
 			Logs.Severe("emailer: failed send message for param $mprops")
