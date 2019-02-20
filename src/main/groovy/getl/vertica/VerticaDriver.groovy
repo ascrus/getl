@@ -111,7 +111,7 @@ class VerticaDriver extends JDBCDriver {
 	public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
 		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
 
-		String parserText = ''
+		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = ''
 		if (params.parser != null) {
 			String parserFunc = params.parser.function
 			if (parserFunc == null) throw new ExceptionGETL('Required parser function name')
@@ -131,17 +131,21 @@ class VerticaDriver extends JDBCDriver {
 			else {
 				parserText = "\nWITH PARSER $parserFunc()"
 			}
+			if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
+			if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
+			if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
+			if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
 		}
 		else {
 			if (source.fieldDelimiter == null || source.fieldDelimiter.length() != 1) throw new ExceptionGETL('Required one char field delimiter')
 			if (source.rowDelimiter == null || source.rowDelimiter.length() != 1) throw new ExceptionGETL('Required one char row delimiter')
 			if (source.quoteStr == null || source.quoteStr.length() != 1) throw new ExceptionGETL('Required one char quote str')
-		}
 
-		def fieldDelimiter = (params.parser == null || source.params.fieldDelimiter != null)?"\nDELIMITER AS E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'":''
-		def rowDelimiter = (params.parser == null || source.params.rowDelimiter != null)?"\nRECORD TERMINATOR E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'":''
-		def quoteStr = (params.parser == null || source.params.quoteStr != null)?"\nENCLOSED BY E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'":''
-		def nullAsValue = (params.parser == null || source.params.nullAsValue != null)?"\nNULL AS '${source.nullAsValue}'":''
+			if (source.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
+			if (source.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
+			if (source.quoteStr != null) quoteStr = "\nENCLOSED BY E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
+			if (source.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
+		}
 
 		def header = source.header
 		def isGzFile = source.isGzFile
