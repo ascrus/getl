@@ -19,8 +19,8 @@ repositories {
 }
 
 dependencies {
-	compile 'org.codehaus.groovy:groovy-all:2.5.4'
-	compile 'org.codehaus.groovy:groovy-dateutil:2.5.4'
+	compile 'org.codehaus.groovy:groovy-all:2.5.6'
+	compile 'org.codehaus.groovy:groovy-dateutil:2.5.6'
 	
 	compile 'com.jcraft:jsch:0.1.54'
 	compile 'net.sf.supercsv:super-csv:2.4.0'

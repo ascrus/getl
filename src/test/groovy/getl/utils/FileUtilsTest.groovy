@@ -1,6 +1,5 @@
 package getl.utils
 
-import getl.proc.Executor
 import getl.tfs.TFS
 import groovy.transform.Synchronized
 import net.lingala.zip4j.util.Zip4jConstants

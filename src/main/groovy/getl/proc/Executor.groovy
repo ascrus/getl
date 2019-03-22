@@ -109,6 +109,8 @@ class Executor {
 	 * Main code (is executed while running threads)
 	 */
 	public Closure mainCode
+
+	public final List<Map> threadList = []
 	
 	private boolean isInterrupt = false
 
@@ -154,12 +156,16 @@ class Executor {
 		hasError = false
 		isInterrupt = false
 		exceptions.clear()
+		threadList.clear()
 		
-		def runCode = { num, element -> 
+		def runCode = { Map m ->
+			def num = m.num + 1
+			def element = m.element
 			try {
 				if (limit == 0 || num <= limit) {
 					if ((!isError || !abortOnError) && !isInterrupt) {
 						//noinspection GroovyAssignabilityCheck
+						m.start = new Date()
 						code(element)
 					}
 				}
@@ -178,41 +184,59 @@ class Executor {
 				catch (Throwable ignored) { }
 			}
 		}
-		
-		if (allowThread && countProc > 1) {
-			def threadPool = Executors.newFixedThreadPool(countProc)
-			def threadSubmit = []
-			def num = 0
-			list.each { n ->
-				num++
-				def t = threadPool.submit({ -> runCode(num, n)} as Callable)
-				threadSubmit << t
-			} 
-			threadPool.shutdown()
-			
-			while (!threadPool.isTerminated()) {
-				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
-					try {
-						mainCode()
+
+		try {
+			if (allowThread && countProc > 1) {
+				def threadPool = Executors.newFixedThreadPool(countProc)
+				def num = 0
+				list.each { n ->
+					Map r = [:]
+					r.num = num
+					r.element = n
+					r.threadSubmit = threadPool.submit({ -> runCode(r) } as Callable)
+					threadList << r
+
+					num++
+				}
+				threadPool.shutdown()
+
+				while (!threadPool.isTerminated()) {
+					if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
+						try {
+							mainCode()
+						}
+						catch (Throwable e) {
+							setError(null, e)
+							threadList.each {
+								it.threadSubmit.cancel(true)
+							}
+							threadPool.shutdownNow()
+							throw e
+						}
 					}
-					catch (Throwable e) {
-						setError(null, e)
-						threadSubmit.each { it.cancel(true) }
-						threadPool.shutdownNow()
-						throw e
+					threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
+				}
+			} else {
+				def num = 0
+				list.each {
+					Map r = [:]
+					r.num = num
+					r.element = it
+					r.threadSubmit = null
+					r.start = new Date()
+					threadList << r
+
+					if (!isInterrupt && (!isError || !abortOnError)) {
+						runCode(r)
+						num++
 					}
 				}
-				threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
 			}
 		}
-		else {
-			def num = 0
-			list.each {
-				num++ 
-				if (!isInterrupt && (!isError || !abortOnError)) runCode(num, it) 
-			}
+		finally {
+			threadList.clear()
 		}
-		
+
 		if (isError && abortOnError) {
 			def objects = []
 			def num = 0
@@ -224,13 +248,6 @@ class Executor {
 				else {
 					objects << "[${num}] ${e.message}"
 				}
-				
-				/*
-				Logs.Dump(e, getClass().name, elem, "LIST: ${ListUtils.ToJson(list)}")
-				
-				org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
-				e.printStackTrace()
-				*/
 			}
 			throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
 		}
@@ -268,7 +285,6 @@ class Executor {
 		
 		runBackgroundService = true
 		threadBackground = Executors.newSingleThreadExecutor()
-//		threadBackground = Executors.newFixedThreadPool(1)
 		threadBackground.execute(runCode)
 	}
 	
