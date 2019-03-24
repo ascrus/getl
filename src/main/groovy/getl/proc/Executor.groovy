@@ -110,8 +110,19 @@ class Executor {
 	 */
 	public Closure mainCode
 
+	/**
+	 * List of all threads
+	 */
 	public final List<Map> threadList = []
-	
+
+	/**
+	 * List of active threads
+	 */
+	public final List<Map> threadActive = []
+
+	/**
+	 * Interrupt flag
+	 */
 	private boolean isInterrupt = false
 
 	/**
@@ -151,12 +162,28 @@ class Executor {
 		def l = (1..countList)
 		run(l, countProc, code)
 	}
+
+	@groovy.transform.Synchronized
+	private void putThreadListElement(Map m, Map values) {
+		m.putAll(values)
+	}
+
+	@groovy.transform.Synchronized
+	private addActiveThread(Map m) {
+		threadActive.add(m)
+	}
+
+	@groovy.transform.Synchronized
+	private void removeActiveThread(Map m) {
+		threadActive.remove(m)
+	}
 	
 	public void run(List list, int countProc, Closure code) {
 		hasError = false
 		isInterrupt = false
 		exceptions.clear()
 		threadList.clear()
+		threadActive.clear()
 		
 		def runCode = { Map m ->
 			def num = m.num + 1
@@ -165,14 +192,20 @@ class Executor {
 				if (limit == 0 || num <= limit) {
 					if ((!isError || !abortOnError) && !isInterrupt) {
 						//noinspection GroovyAssignabilityCheck
+						putThreadListElement(m, [start: new Date()])
 						m.start = new Date()
+						addActiveThread(m)
 						code(element)
+						removeActiveThread(m)
+						putThreadListElement(m, [finish: new Date(), threadSubmit: null])
 					}
 				}
 			}
 			catch (Throwable e) {
 				try {
 //					org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
+					removeActiveThread(m)
+					putThreadListElement(m, [finish: new Date(), threadSubmit: null])
 					setError(element, e)
 					def errObject = (debugElementOnError)?"[${num}]: ${element}":"Element ${num}"
 					if (dumpErrors) Logs.Dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: list])}")
@@ -185,56 +218,50 @@ class Executor {
 			}
 		}
 
-		try {
-			if (allowThread && countProc > 1) {
-				def threadPool = Executors.newFixedThreadPool(countProc)
-				def num = 0
-				list.each { n ->
-					Map r = [:]
-					r.num = num
-					r.element = n
-					r.threadSubmit = threadPool.submit({ -> runCode(r) } as Callable)
-					threadList << r
+		if (allowThread && countProc > 1) {
+			def threadPool = Executors.newFixedThreadPool(countProc)
+			def num = 0
+			list.each { n ->
+				Map r = [:]
+				r.num = num
+				r.element = n
+				r.threadSubmit = threadPool.submit({ -> runCode(r) } as Callable)
+				threadList << r
 
+				num++
+			}
+			threadPool.shutdown()
+
+			while (!threadPool.isTerminated()) {
+				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
+					try {
+						mainCode()
+					}
+					catch (Throwable e) {
+						setError(null, e)
+						threadActive.each {
+							it.threadSubmit?.cancel(true)
+						}
+						threadPool.shutdownNow()
+						throw e
+					}
+				}
+				threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
+			}
+		} else {
+			def num = 0
+			list.each {
+				Map r = [:]
+				r.num = num
+				r.element = it
+				r.threadSubmit = null
+				threadList << r
+
+				if (!isInterrupt && (!isError || !abortOnError)) {
+					runCode(r)
 					num++
 				}
-				threadPool.shutdown()
-
-				while (!threadPool.isTerminated()) {
-					if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
-						try {
-							mainCode()
-						}
-						catch (Throwable e) {
-							setError(null, e)
-							threadList.each {
-								it.threadSubmit.cancel(true)
-							}
-							threadPool.shutdownNow()
-							throw e
-						}
-					}
-					threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
-				}
-			} else {
-				def num = 0
-				list.each {
-					Map r = [:]
-					r.num = num
-					r.element = it
-					r.threadSubmit = null
-					r.start = new Date()
-					threadList << r
-
-					if (!isInterrupt && (!isError || !abortOnError)) {
-						runCode(r)
-						num++
-					}
-				}
 			}
-		}
-		finally {
-			threadList.clear()
 		}
 
 		if (isError && abortOnError) {
