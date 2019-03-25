@@ -19,7 +19,9 @@ class ExecutorTest extends getl.test.GetlTest {
     void testMainCode() {
         def e = new Executor(countProc: 3, list: list, waitTime: 100)
         e.mainCode = {
-            Logs.Fine("${DateUtils.FormatDate('HH:mm:ss.SSS', new Date())}: list $e.threadActive")
+            synchronized (e.threadActive) {
+                Logs.Fine("${DateUtils.FormatDate('HH:mm:ss.SSS', new Date())}: active: $e.threadActive")
+            }
         }
         e.run { println("${DateUtils.FormatDate('HH:mm:ss.SSS', new Date())}: child $it ... "); sleep(200) }
         Logs.Fine("list: ${e.threadList}")

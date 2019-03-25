@@ -113,12 +113,12 @@ class Executor {
 	/**
 	 * List of all threads
 	 */
-	public final List<Map> threadList = []
+	public final List<Map> threadList = Collections.synchronizedList(new ArrayList());
 
 	/**
 	 * List of active threads
 	 */
-	public final List<Map> threadActive = []
+	public final List<Map> threadActive = Collections.synchronizedList(new ArrayList());
 
 	/**
 	 * Interrupt flag
@@ -191,7 +191,6 @@ class Executor {
 			try {
 				if (limit == 0 || num <= limit) {
 					if ((!isError || !abortOnError) && !isInterrupt) {
-						//noinspection GroovyAssignabilityCheck
 						putThreadListElement(m, [start: new Date()])
 						m.start = new Date()
 						addActiveThread(m)
@@ -203,7 +202,6 @@ class Executor {
 			}
 			catch (Throwable e) {
 				try {
-//					org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
 					removeActiveThread(m)
 					putThreadListElement(m, [finish: new Date(), threadSubmit: null])
 					setError(element, e)
@@ -222,7 +220,7 @@ class Executor {
 			def threadPool = Executors.newFixedThreadPool(countProc)
 			def num = 0
 			list.each { n ->
-				Map r = [:]
+				Map r = Collections.synchronizedMap(new HashMap())
 				r.num = num
 				r.element = n
 				r.threadSubmit = threadPool.submit({ -> runCode(r) } as Callable)
