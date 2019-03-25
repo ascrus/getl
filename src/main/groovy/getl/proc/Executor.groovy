@@ -163,6 +163,7 @@ class Executor {
 		run(l, countProc, code)
 	}
 
+	/*
 	@groovy.transform.Synchronized
 	private void putThreadListElement(Map m, Map values) {
 		m.putAll(values)
@@ -177,6 +178,7 @@ class Executor {
 	private void removeActiveThread(Map m) {
 		threadActive.remove(m)
 	}
+	*/
 	
 	public void run(List list, int countProc, Closure code) {
 		hasError = false
@@ -191,12 +193,20 @@ class Executor {
 			try {
 				if (limit == 0 || num <= limit) {
 					if ((!isError || !abortOnError) && !isInterrupt) {
-						putThreadListElement(m, [start: new Date()])
-						m.start = new Date()
-						addActiveThread(m)
+						synchronized (m) {
+							m.put('start',  new Date())
+						}
+						synchronized (threadActive) {
+							threadActive.add(m)
+						}
 						code(element)
-						removeActiveThread(m)
-						putThreadListElement(m, [finish: new Date(), threadSubmit: null])
+						synchronized (threadActive) {
+							threadActive.remove(m)
+						}
+						synchronized (m) {
+							m.put('finish', new Date())
+							m.remove('threadSubmit')
+						}
 					}
 				}
 			}
