@@ -34,12 +34,13 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
     private static final countRows = 100
     private JDBCConnection _con
+    protected String defaultSchema
     abstract protected JDBCConnection newCon()
     public JDBCConnection getCon() {
         if (_con == null) _con = newCon()
         return _con
     }
-    final def table = new TableDataset(connection: con, tableName: '_getl_test')
+    final def table = new TableDataset(connection: con, schemaName: defaultSchema, tableName: '_getl_test')
     List<Field> getFields () {
         def res =
             [
@@ -319,6 +320,21 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         table.truncate(truncate: true)
     }
 
+    private void queryData() {
+        def drv = (con.driver as JDBCDriver)
+        def fieldName = drv.prepareFieldNameForSQL('ID1', table)
+
+        def q1 = new QueryDataset(connection: con, query: "SELECT * FROM ${table.objectFullName} WHERE $fieldName = :param1")
+        def r1 = q1.rows(sqlParams: [param1: 1])
+        assertEquals(1, r1.size())
+        assertEquals(1, r1[0].id1)
+
+        def q2 = new QueryDataset(connection: con, query: "SELECT * FROM ${table.objectFullName} WHERE $fieldName = {param1}")
+        def r2 = q2.rows(queryParams: [param1: 2])
+        assertEquals(1, r2.size())
+        assertEquals(2, r2[0].id1)
+    }
+
     private void validCountZero() {
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()}")
         def rows = q.rows()
@@ -371,6 +387,7 @@ END FOR;
         retrieveFields()
         insertData()
         updateData()
+        queryData()
         if (con.driver.isOperation(Driver.Operation.MERGE)) {
             mergeData()
         }

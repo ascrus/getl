@@ -109,7 +109,20 @@ class Executor {
 	 * Main code (is executed while running threads)
 	 */
 	public Closure mainCode
-	
+
+	/**
+	 * List of all threads
+	 */
+	public final List<Map> threadList = Collections.synchronizedList(new ArrayList());
+
+	/**
+	 * List of active threads
+	 */
+	public final List<Map> threadActive = Collections.synchronizedList(new ArrayList());
+
+	/**
+	 * Interrupt flag
+	 */
 	private boolean isInterrupt = false
 
 	/**
@@ -149,24 +162,58 @@ class Executor {
 		def l = (1..countList)
 		run(l, countProc, code)
 	}
+
+	/*
+	@groovy.transform.Synchronized
+	private void putThreadListElement(Map m, Map values) {
+		m.putAll(values)
+	}
+
+	@groovy.transform.Synchronized
+	private addActiveThread(Map m) {
+		threadActive.add(m)
+	}
+
+	@groovy.transform.Synchronized
+	private void removeActiveThread(Map m) {
+		threadActive.remove(m)
+	}
+	*/
 	
 	public void run(List list, int countProc, Closure code) {
 		hasError = false
 		isInterrupt = false
 		exceptions.clear()
+		threadList.clear()
+		threadActive.clear()
 		
-		def runCode = { num, element -> 
+		def runCode = { Map m ->
+			def num = m.num + 1
+			def element = m.element
 			try {
 				if (limit == 0 || num <= limit) {
 					if ((!isError || !abortOnError) && !isInterrupt) {
-						//noinspection GroovyAssignabilityCheck
+						synchronized (m) {
+							m.put('start',  new Date())
+						}
+						synchronized (threadActive) {
+							threadActive.add(m)
+						}
 						code(element)
+						synchronized (threadActive) {
+							threadActive.remove(m)
+						}
+						synchronized (m) {
+							m.put('finish', new Date())
+							m.remove('threadSubmit')
+						}
 					}
 				}
 			}
 			catch (Throwable e) {
 				try {
-//					org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
+					removeActiveThread(m)
+					putThreadListElement(m, [finish: new Date(), threadSubmit: null])
 					setError(element, e)
 					def errObject = (debugElementOnError)?"[${num}]: ${element}":"Element ${num}"
 					if (dumpErrors) Logs.Dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: list])}")
@@ -178,18 +225,21 @@ class Executor {
 				catch (Throwable ignored) { }
 			}
 		}
-		
+
 		if (allowThread && countProc > 1) {
 			def threadPool = Executors.newFixedThreadPool(countProc)
-			def threadSubmit = []
 			def num = 0
 			list.each { n ->
+				Map r = Collections.synchronizedMap(new HashMap())
+				r.num = num
+				r.element = n
+				r.threadSubmit = threadPool.submit({ -> runCode(r) } as Callable)
+				threadList << r
+
 				num++
-				def t = threadPool.submit({ -> runCode(num, n)} as Callable)
-				threadSubmit << t
-			} 
+			}
 			threadPool.shutdown()
-			
+
 			while (!threadPool.isTerminated()) {
 				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
 					try {
@@ -197,22 +247,31 @@ class Executor {
 					}
 					catch (Throwable e) {
 						setError(null, e)
-						threadSubmit.each { it.cancel(true) }
+						threadActive.each {
+							it.threadSubmit?.cancel(true)
+						}
 						threadPool.shutdownNow()
 						throw e
 					}
 				}
 				threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
 			}
-		}
-		else {
+		} else {
 			def num = 0
 			list.each {
-				num++ 
-				if (!isInterrupt && (!isError || !abortOnError)) runCode(num, it) 
+				Map r = [:]
+				r.num = num
+				r.element = it
+				r.threadSubmit = null
+				threadList << r
+
+				if (!isInterrupt && (!isError || !abortOnError)) {
+					runCode(r)
+					num++
+				}
 			}
 		}
-		
+
 		if (isError && abortOnError) {
 			def objects = []
 			def num = 0
@@ -224,13 +283,6 @@ class Executor {
 				else {
 					objects << "[${num}] ${e.message}"
 				}
-				
-				/*
-				Logs.Dump(e, getClass().name, elem, "LIST: ${ListUtils.ToJson(list)}")
-				
-				org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
-				e.printStackTrace()
-				*/
 			}
 			throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
 		}
@@ -268,7 +320,6 @@ class Executor {
 		
 		runBackgroundService = true
 		threadBackground = Executors.newSingleThreadExecutor()
-//		threadBackground = Executors.newFixedThreadPool(1)
 		threadBackground.execute(runCode)
 	}
 	

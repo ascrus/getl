@@ -11,6 +11,8 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 	protected JDBCConnection newCon() {
 		if (!FileUtils.ExistsFile(configName)) return null
 		Config.LoadConfig(fileName: configName)
-		return new PostgreSQLConnection(config: 'postgresql')
+		def con = new PostgreSQLConnection(config: 'postgresql')
+		defaultSchema = 'public'
+		return con
 	}
 }

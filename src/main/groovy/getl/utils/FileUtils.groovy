@@ -833,6 +833,7 @@ class FileUtils {
 			pathFile = new File(PathFromFile(path))
 			if (!pathFile.exists()) throw new ExceptionGETL("Path $path not found")
 			mask = FileName(path)
+			if (mask.indexOf('*') == -1 && mask.indexOf('?') == -1) throw new ExceptionGETL("File \"$path\" not found")
 		}
 		FileManager fileMan = new FileManager(rootPath: pathFile.absolutePath)
 		fileMan.connect()

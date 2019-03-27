@@ -111,18 +111,7 @@ class VerticaDriver extends JDBCDriver {
 	public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
 		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
 
-		if (source.fieldDelimiter == null || source.fieldDelimiter.length() != 1) throw new ExceptionGETL('Required one char field delimiter')
-		if (source.rowDelimiter == null || source.rowDelimiter.length() != 1) throw new ExceptionGETL('Required one char row delimiter')
-		if (source.quoteStr == null || source.quoteStr.length() != 1) throw new ExceptionGETL('Required one char quote str')
-
-		def fieldDelimiter = "E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
-		def rowDelimiter = "E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
-		def quoteStr = "E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
-		def header = source.header
-		def nullAsValue = (source.nullAsValue != null)?"\nNULL AS '${source.nullAsValue}'":''
-		def isGzFile = source.isGzFile
-
-		String parserText = ''
+		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = ''
 		if (params.parser != null) {
 			String parserFunc = params.parser.function
 			if (parserFunc == null) throw new ExceptionGETL('Required parser function name')
@@ -142,7 +131,24 @@ class VerticaDriver extends JDBCDriver {
 			else {
 				parserText = "\nWITH PARSER $parserFunc()"
 			}
+			if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
+			if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
+			if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
+			if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
 		}
+		else {
+			if (source.fieldDelimiter == null || source.fieldDelimiter.length() != 1) throw new ExceptionGETL('Required one char field delimiter')
+			if (source.rowDelimiter == null || source.rowDelimiter.length() != 1) throw new ExceptionGETL('Required one char row delimiter')
+			if (source.quoteStr == null || source.quoteStr.length() != 1) throw new ExceptionGETL('Required one char quote str')
+
+			if (source.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
+			if (source.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
+			if (source.quoteStr != null) quoteStr = "\nENCLOSED BY E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
+			if (source.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
+		}
+
+		def header = source.header
+		def isGzFile = source.isGzFile
 
 		List<Map> map = params.map
 		Map<String, String> expressions = params.expression?:[:]
@@ -248,10 +254,7 @@ class VerticaDriver extends JDBCDriver {
 			sb << '\n)\n'
 		}
 
-		sb << """FROM ${(location == null)?"LOCAL ":""}$fileName $parserText
-DELIMITER AS $fieldDelimiter$nullAsValue
-ENCLOSED BY $quoteStr
-RECORD TERMINATOR $rowDelimiter
+		sb << """FROM ${(location == null)?"LOCAL ":""}$fileName $parserText $fieldDelimiter$nullAsValue$quoteStr$rowDelimiter
 """
 		if (header) sb << 'SKIP 1\n'
 		if (rejectMax != null) sb << "REJECTMAX ${rejectMax}\n"

@@ -7,6 +7,14 @@ import java.time.format.DateTimeFormatter
  * @author Alexsey Konstantinov
  */
 class DateUtilsTest extends getl.test.GetlTest {
+    final def textDate = '2016-12-31'
+    final def textDateTime = '2016-12-31 23:58:59.000'
+
+    Date getExampleDate() { DateUtils.ParseDate(textDate) }
+    Date getExampleDateTime() { DateUtils.ParseDateTime(textDateTime) }
+    Date getExampleDateHour() { DateUtils.ParseDateTime(textDateTime.substring(0, 13) + ':00:00.000') }
+    Date getExampleDateHourMinute() { DateUtils.ParseDateTime(textDateTime.substring(0, 16) + ':00.000') }
+
     void testNow() {
 		def date = DateUtils.Now()
 		def hour_orig = DateUtils.PartOfDate('hour', date)
@@ -118,11 +126,30 @@ class DateUtilsTest extends getl.test.GetlTest {
         assertEquals([start: DateUtils.ParseDate('2016-01-01'), finish: DateUtils.ParseDate('2016-01-06')], DateUtils.PeriodCrossing(p))
     }
 
-    final def textDate = '2016-12-31'
-    final def textDateTime = '2016-12-31 23:58:59.000'
+    void testDateAdd() {
+        def d = DateUtils.ParseDateTime('2019-01-01 00:00:00.000')
+        def nss = DateUtils.AddDate('SSS', 10, d)
+        assertEquals('2019-01-01 00:00:00.010', DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', nss))
+        def ns = DateUtils.AddDate('ss', 10, d)
+        assertEquals('2019-01-01 00:00:10', DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', ns))
+        def nm = DateUtils.AddDate('mm', 10, d)
+        assertEquals('2019-01-01 00:10:00', DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', nm))
+        def nh = DateUtils.AddDate('HH', 10, d)
+        assertEquals('2019-01-01 10:00:00', DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', nh))
+        def nd = DateUtils.AddDate('dd', 10, d)
+        assertEquals('2019-01-11 00:00:00', DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', nd))
+        def nmm = DateUtils.AddDate('MM', 10, d)
+        assertEquals('2019-11-01 00:00:00', DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', nmm))
+        def ny = DateUtils.AddDate('yyyy', 10, d)
+        assertEquals('2029-01-01 00:00:00', DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', ny))
+    }
 
-    Date getExampleDate() { DateUtils.ParseDate(textDate) }
-    Date getExampleDateTime() { DateUtils.ParseDateTime(textDateTime) }
-    Date getExampleDateHour() { DateUtils.ParseDateTime(textDateTime.substring(0, 13) + ':00:00.000') }
-    Date getExampleDateHourMinute() { DateUtils.ParseDateTime(textDateTime.substring(0, 16) + ':00.000') }
+    void testDateDiff() {
+        def d1 = DateUtils.ParseDateTime('2019-01-01 00:00:00.000')
+        def d2 = DateUtils.ParseDateTime('2020-02-02 01:01:01.000')
+        assertEquals(397, DateUtils.DiffDate(d2, d1, 'dd', false))
+        assertEquals(9529, DateUtils.DiffDate(d2, d1, 'HH', false))
+        assertEquals(571741, DateUtils.DiffDate(d2, d1, 'mm', false))
+        assertEquals(34304461, DateUtils.DiffDate(d2, d1, 'ss', false))
+    }
 }
