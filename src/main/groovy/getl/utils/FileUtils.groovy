@@ -864,7 +864,10 @@ class FileUtils {
 				if (s.length() == 0) return
 				if (s[0] != '"') {
 					res << s
-				} else {
+				} else if (s.length() > 1 && s[0] == '"' && s[s.length() - 1] == '"') {
+					res << s
+				}
+				else {
 					tmp = s
 				}
 			}

@@ -207,6 +207,9 @@ class FileUtilsTest extends getl.test.GetlTest {
     void testParseArguments() {
         assertEquals(['1', '2', '3'], FileUtils.ParseArguments('1 2 3'))
         assertEquals(['1', '2', '3'], FileUtils.ParseArguments('1  2  3'))
+        assertEquals(['"1"', '2', '3', '4', '5'], FileUtils.ParseArguments('"1" 2 3 4 5'))
+        assertEquals(['1', '2', '"3"', '4', '5'], FileUtils.ParseArguments('1 2 "3" 4 5'))
+        assertEquals(['1', '2', '3', '4', '"5"'], FileUtils.ParseArguments('1 2 3 4 "5"'))
         assertEquals(['"1 2 3"', '4', '5'], FileUtils.ParseArguments('"1 2 3" 4 5'))
         assertEquals(['1', '"2 3 4"', '5'], FileUtils.ParseArguments('1 "2 3 4" 5'))
         assertEquals(['1', '2', '"3 4 5"'], FileUtils.ParseArguments('1 2 "3 4 5"'))
