@@ -347,6 +347,7 @@ class MapUtils {
 		if (args != null) {
 			for (int i = 0; i < la.size(); i++) {
 				def str = la[i]
+				if (str.trim().length() == 0) continue
 				def le = str.indexOf('=')
 				String name
 				String value
@@ -354,15 +355,15 @@ class MapUtils {
 					name = str.substring(0, le)
 					def c = name.indexOf('.')
 					if (c == -1) {
-						 name = name.toLowerCase()
+						 name = name.toLowerCase().trim()
 					}
 					else {
-						name = name.substring(0, c + 1).toLowerCase() + name.substring(c + 1) 
+						name = name.substring(0, c + 1).toLowerCase() + name.substring(c + 1).trim()
 					}
 					value = str.substring(le + 1)
 				}
 				else {
-					name = la[i]
+					name = la[i].trim()
 					if (i < la.size() - 1) {
 						if (la[i + 1].substring(0, 1) != '-') {
 							i++
@@ -371,7 +372,7 @@ class MapUtils {
 					} 
 				}
 
-				if (name.substring(0, 1) == '-') name = name.substring(1)
+				if (name.substring(0, 1) == '-') name = name.substring(1).trim()
 				if (value != null) {
 					value = value.trim()
 					def p = value =~ /"(.+)"/

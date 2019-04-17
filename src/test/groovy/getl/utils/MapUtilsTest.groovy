@@ -66,4 +66,24 @@ class MapUtilsTest extends getl.test.GetlTest {
         f.each { println it.name + '(' + it.type + '): ' + it.extended }
         */
     }
+
+    void testProcessArguments() {
+        String[] a1 = ['a=1', '', 'b=2', ' ', 'c=3']
+        assertEquals([a:1, b:2, c:3].toString(), MapUtils.ProcessArguments(a1).toString())
+
+        String[] a2 = ['-a', '1', '-b', '2', ' ', '-c', '3']
+        assertEquals([a:1, b:2, c:3].toString(), MapUtils.ProcessArguments(a2).toString())
+
+        List<String> l1 = ['a=1', '', 'b=2', ' ', 'c=3']
+        assertEquals([a:1, b:2, c:3].toString(), MapUtils.ProcessArguments(l1).toString())
+
+        List<String> l2 = ['-a', '1', '-b', '2', ' ', '-c', '3']
+        assertEquals([a:1, b:2, c:3].toString(), MapUtils.ProcessArguments(l2).toString())
+
+        String s1 = ' a=1 2  3 '
+        assertEquals([a:'1 2  3'].toString(), MapUtils.ProcessArguments(s1).toString())
+
+        String s2 = ' -a 1 2  3 '
+        assertEquals(['a 1 2  3':null].toString(), MapUtils.ProcessArguments(s2).toString())
+    }
 }
