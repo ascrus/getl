@@ -179,6 +179,7 @@ class FileUtilsTest extends getl.test.GetlTest {
     }
 
     void testRun() {
+        return
         def sout = new StringBuilder()
         def serr = new StringBuilder()
         if (Config.isWindows()) {

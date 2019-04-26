@@ -3,10 +3,6 @@ package getl.lang
 class GetlTest extends getl.test.GetlTest {
     void testJdbc() {
         Getl.run {
-            log {
-                logFileName = "$tempPath.systemPath/getl.script.log"
-            }
-
             def table1 = table {
                 connection = tempdb
                 tableName = 'table1'
