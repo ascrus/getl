@@ -49,11 +49,21 @@ class TableDataset extends JDBCDataset {
 	 * @return
 	 */
 	public String getTableName () { params.tableName }
-	public void setTableName (String value) { 
-		if (params.tableName == value) return
-		params.tableName = value
-		//if (!manualSchema && !field.isEmpty()) field.clear()
-	}
+	public void setTableName (String value) { params.tableName = value }
+
+	/**
+	 * Filter expression
+	 * @return
+	 */
+	public String getWhere () { params.where }
+	public void setWhere(String value) { params.where = value }
+
+	/**
+	 * Order expression list
+	 * @return
+	 */
+	public List<String> getOrder () { params.order }
+	public void setOrder(List<String> value) { params.order = value }
 	
 	/**
 	 * Cache manager
@@ -101,7 +111,7 @@ class TableDataset extends JDBCDataset {
 		def ds = ((JDBCConnection)connection).retrieveDatasets(dbName: dbName, schemaName: schemaName, 
 					tableName: tableName)
 		
-		(!ds.isEmpty())
+		return (!ds.isEmpty())
 	}
 	
 	/**
@@ -113,7 +123,7 @@ class TableDataset extends JDBCDataset {
 		if (procParams == null) procParams = [:]
 		methodParams.validation("unionDataset", procParams, [connection.driver.methodParams.params("unionDataset")])
 		
-		((JDBCDriver)connection.driver).unionDataset(this, procParams)
+		return ((JDBCDriver)connection.driver).unionDataset(this, procParams)
 	}
 	
 	/**
@@ -124,10 +134,10 @@ class TableDataset extends JDBCDataset {
 	public Map findKey (Map procParams) {
 		def keys = fieldKeys
 		if (keys.isEmpty()) throw new ExceptionGETL("Required key fields")
-		def r = rows(procParams + [onlyFields: keys, limit: 1])
+		def r = rows(procParams?:[:] + [onlyFields: keys, limit: 1])
 		if (r.isEmpty()) return null
 		
-		r[0]
+		return r[0]
 	}
 	
 	/**
@@ -136,13 +146,14 @@ class TableDataset extends JDBCDataset {
 	 * @param procParams
 	 * @return
 	 */
-	public long countRows (String where, Map procParams) {
+	public long countRows (String where = null, Map procParams) {
 		if (procParams == null) procParams = [:] 
 		QueryDataset q = new QueryDataset(connection: connection, query: "SELECT Count(*) AS count FROM ${fullNameDataset()}")
+		where = where?:this.where
 		if (where != null && where != '') q.query += " WHERE " + where
 		def r = q.rows(procParams)
 		
-		r[0]."count"
+		return r[0]."count"
 	}
 	
 	/**
@@ -158,8 +169,8 @@ class TableDataset extends JDBCDataset {
 	 * @param where
 	 * @return
 	 */
-	public long deleteRows (String where) {
-		String sql = "DELETE FROM ${fullNameDataset()}" + ((where != null)?" WHERE $where":"")
+	public long deleteRows (String where = null) {
+		String sql = "DELETE FROM ${fullNameDataset()}" + ((where != null)?" WHERE $where":'')
 		
 		long count
 		boolean isAutoCommit = !connection.isTran()
@@ -173,6 +184,6 @@ class TableDataset extends JDBCDataset {
 		}
 		if (isAutoCommit) connection.commitTran()
 		
-		count
+		return count
 	}
 }

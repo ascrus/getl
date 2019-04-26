@@ -4,8 +4,8 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+
+ Copyright (C) 2013-2019  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -22,50 +22,26 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.deploy
+package getl.lang
 
-import getl.utils.Logs
+import getl.utils.*
+import java.util.logging.*
 
 /**
- * Version manager
- * @author Aleksey Konstantinov
+ * Log specification class
+ * @author Alexsey Konstantinov
+ *
  */
-class Version {
-	/**
-	 * GETL version
-	 */
-	public static version = "4.0.0"
-	
-	/**
-	 * GETL version as numeric
-	 */
-	public static versionNum = 4.0000
-
-	/**
-	 * Compatibility GETL version
-	 */
-	public static versionNumCompatibility = 4.0000
-	
-	/**
-	 * Valid compatibility version
-	 * @param ver
-	 * @return
-	 */
-	public static boolean IsCompatibility (def ver) { 
-		ver >= versionNumCompatibility && ver <= versionNum 
-	}
-	
-	/**
-	 * Years development
-	 */
-	public static years = "2014-2019"
-
-	private static boolean sayInfo = false
-	public static void SayInfo() {
-		if (sayInfo) return
-		sayInfo = true
-		Logs.Init()
-		Logs.Finest("### GETL / version ${getl.deploy.Version.version} created by ${getl.deploy.Version.years} / All right reserved for EasyData company")
-		Logs.Info("### Job start")
-	}
+class LogSpec {
+    public Logger getLogLogger() { Logs.logger  }
+    public Logs.LogFormatter getLogFormatter() { Logs.formatter }
+    public Boolean getLogPrintConfigMessage() { Logs.printConfigMessage }
+    public void setLogPrintConfigMessage(Boolean value) { Logs.printConfigMessage = value }
+    public String getLogFileNameHandler() { Logs.fileNameHandler }
+    public FileHandler getLogFileHandler() { Logs.file }
+    public void setLogFileHandler(FileHandler value) { Logs.file = value }
+    public String getLogFileName() { Logs.logFileName }
+    public void setLogFileName(String value) { Logs.logFileName = value; Logs.Init() }
+    public Boolean getLogPrintStackTraceError() { Logs.printStackTraceError }
+    public Boolean setLogPrintStackTraceError(Boolean value) { Logs.printStackTraceError = value }
 }

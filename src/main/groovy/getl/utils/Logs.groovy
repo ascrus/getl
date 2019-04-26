@@ -171,11 +171,14 @@ class Logs {
 	 * Init log file
 	 * @param name
 	 */
-	protected static void InitFile (String name) {
+	public static void InitFile (String name) {
 		if (name != null) {
+			if (file != null) logger.removeHandler(file)
+
 			name = name.replace("\\", "\\\\")
 			def f = StringUtils.EvalMacroString(name, StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(f)
+
 			file = new FileHandler(f, true)
 			file.level = Level.INFO
 			file.setFormatter(formatter)

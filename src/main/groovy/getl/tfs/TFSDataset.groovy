@@ -28,10 +28,6 @@ import groovy.transform.InheritConstructors
 
 import getl.csv.CSVDataset
 import getl.data.*
-import getl.utils.*
-import getl.exception.ExceptionGETL
-import java.util.zip.GZIPInputStream
-import java.util.zip.GZIPOutputStream
 
 /**
  * Temporary file storage dataset class
@@ -61,15 +57,9 @@ class TFSDataset extends CSVDataset {
         }
     }
 	
-//	@Override
-//	public void setField(List<Field> value) {
-//		super.setField(value)
-//		resetFieldToDefault()
-//	}
-
 	@Override
 	public void setConnection(Connection value) {
-		assert value == null || value instanceof TFS
+		assert value == null || value.getClass().name == 'getl.tfs.TFS'
 		super.setConnection(value)
 	}
 }

@@ -1118,22 +1118,25 @@ ${extend}'''
 	public String sqlForDataset (Dataset dataset, Map params) {
 		String query
 		if (isTable(dataset)) {
-			validTableName(dataset)
-			def fn = fullNameDataset(dataset)
+			def table = dataset as TableDataset
+			validTableName(table)
+			def fn = fullNameDataset(table)
 			
 			List<String> fields = []
-            List<Field> useFields = (params.useFields != null && params.useFields.size() > 0)?params.useFields:dataset.field
+            List<Field> useFields = (params.useFields != null && params.useFields.size() > 0)?params.useFields:table.field
 
             useFields.each { Field f ->
-				fields << prepareFieldNameForSQL(f.name, dataset as JDBCDataset)
+				fields << prepareFieldNameForSQL(f.name, table as JDBCDataset)
 			}
 			
-			if (fields.isEmpty()) throw new ExceptionGETL("Required fields by dataset $dataset") 
+			if (fields.isEmpty()) throw new ExceptionGETL("Required fields by dataset $table")
 			
 			def selectFields = fields.join(",")
 
-			def order = params.order as List<String>
-			String orderBy = null
+			def where = params.where?:table.where
+
+			def order = (params.order as List<String>)?:table.order
+			String orderBy
 			if (order != null) { 
 				if (!(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
 				List<String> orderFields = []
@@ -1143,7 +1146,7 @@ ${extend}'''
 				orderBy = orderFields.join(", ")
 			}
 
-			query = sqlTableBuildSelect(dataset, params + [selectFields: selectFields, table: fn, orderBy: orderBy])
+			query = sqlTableBuildSelect(dataset, params + [selectFields: selectFields, table: fn, where: where, orderBy: orderBy])
 		} 
 		else {
 			assert dataset.params.query != null, "Required value in \"query\" from dataset"

@@ -25,7 +25,6 @@
 package getl.proc
 
 import getl.data.*
-import getl.data.Dataset.Status
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.utils.*
@@ -40,14 +39,18 @@ class Flow {
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 	
 	Flow () {
-		methodParams.register("copy", ["source", "tempSource", "dest", "tempDest", "inheritFields", "createDest", "tempFields", "map",
-			"source_*", "dest_*", "autoMap", "autoConvert", "autoTran", "clear", "saveErrors", "excludeFields", "mirrorCSV", "notConverted",
-			"bulkLoad", "bulkAsGZIP", "bulkEscaped", "onInit", "onWrite", "onDone", "debug", "writeSynch"])
+		methodParams.register("copy", ["source", "tempSource", "dest", "tempDest", "inheritFields",
+			"createDest", "tempFields", "map", "source_*", "dest_*", "autoMap", "autoConvert", "autoTran", "clear",
+			"saveErrors", "excludeFields", "mirrorCSV", "notConverted", "bulkLoad", "bulkAsGZIP", "bulkEscaped",
+			"onInit", "onWrite", "onDone", "debug", "writeSynch"])
 		
-		methodParams.register("writeTo", ["dest", "dest_*", "autoTran", "tempDest", "tempFields", "bulkLoad", "bulkAsGZIP", "bulkEscaped", "clear", "writeSynch"])
-		methodParams.register("writeAllTo", ["dest", "dest_*", "autoTran", "bulkLoad", "bulkAsGZIP", "bulkEscaped", "writeSynch"])
+		methodParams.register("writeTo", ["dest", "dest_*", "autoTran", "tempDest", "tempFields",
+			"bulkLoad", "bulkAsGZIP", "bulkEscaped", "clear", "writeSynch", "onInit", "onDone"])
+		methodParams.register("writeAllTo", ["dest", "dest_*", "autoTran", "bulkLoad", "bulkAsGZIP",
+			"bulkEscaped", "writeSynch", "onInit", "onDone"])
 		
-		methodParams.register("process", ["source", "source_*", "tempSource", "saveErrors"])
+		methodParams.register("process", ["source", "source_*", "tempSource", "saveErrors",
+			"onInit", "onDone"])
 	}
 	
 	/**
@@ -85,8 +88,8 @@ class Flow {
 	/**
 	 * Dataset public parameters
 	 */
-	public final Map params = [:]
-	
+	public final Map<String, Object> params = [:]
+
 	protected static Map convertFieldMap(Map<String, String> map) {
 		def result = [:]
 		map.each { k, v ->
@@ -256,41 +259,8 @@ class Flow {
 	}
 	
 	/**
-	 * Error rows for "copy" process 
-	 */
-	public TFSDataset errorsDataset
-	
-	/**
 	 * Copy rows from dataset to other dataset
-	 * 
-	 * <p><b>Dynamic parameters:</b></p>
-	 * <ul>
-	 * <li>Dataset source				- source dataset
-	 * <li>String tempSource			- name temporary dataset for source use 
-	 * <li>Dataset dest					- destination dataset
-	 * <li>boolean inheritFields		- destinition fields inherit from source fields
-     * <li>boolean createDest		    - create destination before copy
-	 * <li>String tempDest				- name temporary dataset for dest use
-	 * <li>List<Field> tempFields		- list of field from destination dataset
-	 * <li>Map map						- map card columns with syntax: [<destination field>:"<source field>:<convert format>"]
-	 * <li>Map source_*					- parameters for source read process
-	 * <li>Map dest_*					- parameters for destination write process
-	 * <li>boolean writeSynch			- write with synchronize main thread
-	 * <li>boolean autoMap				- auto mapping value from source fields to destination fields 
-	 * <li>boolean autoConvert			- auto converting type value from source fields to destination fields
-	 * <li>boolean autoTran				- auto starting and finishing transaction for copy process
-	 * <li>boolean clear				- clearing destination dataset before copy
-	 * <li>boolean saveErrors			- save assert errors to temporary dataset "errorsDataset"
-	 * <li>List<String> excludeFields	- list of fields that do not need to use
-	 * <li>List<String> notConverted	- list of fields that do not need to converted
-	 * <li>String mirrorCSV				- filename  of mirror CSV dataset
-	 * <li>boolean bulkLoad				- load to destinition as bulk load (if supported)
-	 * <li>boolean bulkAsGZIP			- generate bulk CSV file in GZIP format (you need set parameter for destination bulk gzip format) 
-	 * <li>Closure onInit(source, dest)	- initialization code on start process copying
-	 * <li>Closure onWrite(inRow, outRow) - code executed before writing to destination dataset
-	 * <li>Closure onDone()				- code to complete process copying
-	 * </ul>   
-	 * 
+	 *
 	 * @param params	- Dynamic parameters (required)
 	 * @return - Count of process rows
 	 */
@@ -301,37 +271,7 @@ class Flow {
 	
 	/**
 	 * Copy rows from dataset to other dataset
-	 * 
-	 * <p><b>Dynamic parameters:</b></p>
-	 * <ul>
-	 * <li>Dataset source				- source dataset
-	 * <li>String tempSource			- name temporary dataset for source use 
-	 * <li>Dataset dest					- destination dataset
-	 * <li>boolean inheritFields		- destination fields inherit from source fields
-     * <li>boolean createDest		    - create destination before copy
-	 * <li>String tempDest				- name temporary dataset for dest use
-	 * <li>List<Field> tempFields		- list of field from destination dataset
-	 * <li>Map map						- map card columns with syntax: [<destination field>:"<source field>:<convert format>"]
-	 * <li>Map source_*					- parameters for source read process
-	 * <li>Map dest_*					- parameters for destination write process
-	 * <li>boolean writeSynch			- write with synchronize main thread
-	 * <li>boolean autoMap				- auto mapping value from source fields to destination fields 
-	 * <li>boolean autoConvert			- auto converting type value from source fields to destination fields
-	 * <li>boolean autoTran				- auto starting and finishing transaction for copy process
-	 * <li>boolean clear				- clearing destination dataset before copy
-	 * <li>boolean saveErrors			- save assert errors to temporary dataset "errorsDataset"
-	 * <li>List<String> excludeFields	- list of fields destination that do not need to use
-	 * <li>List<String> notConverted	- list of fields destination that do not need to converted
-	 * <li>String mirrorCSV				- filename  of mirror CSV dataset
-	 * <li>boolean bulkLoad				- load to destination as bulk load (only is supported)
-	 * <li>boolean bulkEscaped			- convert bulk file to escaped format
-	 * <li>boolean bulkAsGZIP			- compress bulk file from GZIP algorithm
-	 * <li>Closure onInit()				- initialization code on start process copying
-	 * <li>Closure onWrite(inRow, outRow)	- code executed before writing to destination dataset
-	 * <li>Closure onDone()				- code to complete process copying
-	 * <li>boolean debug				- save transformation code to dumn (default false)
-	 * </ul>   
-	 * 
+	 *
 	 * @param params	- Dynamic parameters (required)
 	 * @param map_code	- Processing code  (not required)
 	 * @return - Count of process rows
@@ -340,24 +280,44 @@ class Flow {
 		if (!this.params.isEmpty()) {
 			params = this.params + params
 		}
-		
+
 		methodParams.validation("copy", params)
-		
-		Dataset source = params.source as Dataset
+
+		def p = new FlowCopySpec(params)
+		p.process = map_code
+
+		copy(p)
+	}
+
+	/**
+	 * Copy rows from dataset to other dataset
+	 *
+	 * @param params	- Dynamic parameters (required)
+	 * @return - Count of process rows
+	 */
+	public long copy (FlowCopySpec params) {
+		params.errorsDataset = null
+		params.countRow = 0
+		Closure map_code = params.process
+
+		Dataset source = params.source
+		if (source == null) throw new ExceptionGETL("Required parameter \"source\"")
+
 		String sourceDescription
-		if (source == null && params.tempSource != null) {
-			source = TFS.dataset(params.tempSource as String, true)
-			sourceDescription = "temp.${params.tempSource}"
+		if (source == null && params.tempSourceName != null) {
+			source = TFS.dataset(params.tempSourceName as String, true)
+			sourceDescription = "temp.${params.tempSourceName}"
 		}
 		if (source == null) new ExceptionGETL("Required parameter \"source\"")
 		if (sourceDescription == null) sourceDescription = source.objectName
 		
-		Dataset dest = params.dest as Dataset
+		Dataset dest = params.dest
+		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
 		String destDescription
 		boolean isDestTemp = false
-		if (dest == null && params.tempDest != null) {
-			dest = (Dataset)TFS.dataset(params.tempDest as String)
-			destDescription = "temp.${params.tempDest}"
+		if (dest == null && params.tempDestName != null) {
+			dest = (Dataset)TFS.dataset(params.tempDestName as String)
+			destDescription = "temp.${params.tempDestName}"
 			if (params.tempFields!= null) dest.setField((List<Field>)params.tempFields) else isDestTemp = true
 		}
 		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
@@ -377,8 +337,8 @@ class Flow {
 		boolean bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:false
 		
 		Map map = (params.map != null)?(params.map as Map):[:]
-		Map sourceParams = MapUtils.GetLevel(params, "source_")
-		Closure prepareSource = sourceParams.prepare 
+		Map sourceParams = params.sourceParams?:[:]
+		Closure prepareSource = sourceParams.prepare
 		
 		boolean autoMap = (params.autoMap != null)?params.autoMap:true
 		boolean autoConvert = (params.autoConvert != null)?params.autoConvert:true
@@ -392,18 +352,19 @@ class Flow {
 		List<String> excludeFields = (params.excludeFields != null)?params.excludeFields*.toLowerCase():[]
 		List<String> notConverted = (params.notConverted != null)?params.notConverted*.toLowerCase():[]
 		
-		Closure writeCode = (params.onWrite != null)?(params.onWrite as Closure):null
-		Closure initCode = (params.onInit != null)?(params.onInit as Closure):null
-		Closure doneCode = (params.onDone != null)?(params.onDone as Closure):null
+		Closure writeCode = params.onWrite
+		Closure initCode = params.onInit
+		Closure doneCode = params.onDone
 		
 		boolean debug = (params.debug != null)?params.debug:false
-		
-		if (isSaveErrors) errorsDataset = TFS.dataset() else errorsDataset = null
+
+		TFSDataset errorsDataset
+		if (isSaveErrors) errorsDataset = TFS.dataset(); params.errorsDataset = errorsDataset
 		
 		Dataset writer
 		TFSDataset bulkDS = null
 		
-		Map destParams = MapUtils.GetLevel(params, "dest_")
+		Map destParams = params.destParams?:[:]
 		Map bulkParams = null
 		if (isBulkLoad) {
 			bulkParams = destParams
@@ -480,7 +441,6 @@ class Flow {
 			dest.connection.startTran()
 		}
 		
-		long count = 0
 		try {
 			try {
 				source.eachRow(sourceParams) { inRow ->
@@ -512,7 +472,7 @@ class Flow {
 						if (!writeSynch) writer.write(outRow) else writer.writeSynch(outRow)
 						if (writeCode != null) writeCode(inRow, outRow)
 					}
-					count++
+					params.countRow++
 				}
 				
 				writer.doneWrite()
@@ -548,8 +508,7 @@ class Flow {
 		}
 		catch (Throwable e) {
 			Logs.Exception(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}")
-//			Logs.Dump(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}", scriptMap)
-			
+
 			if (autoTran) {
 				dest.connection.rollbackTran()
 			}
@@ -563,40 +522,49 @@ class Flow {
 		if (autoTran) {
 			dest.connection.commitTran()
 		}
-		
-		count
+
+		return params.countRow
 	}
-	
+
 	/**
 	 * Write user data to dataset
-	 * <p><b>Dynamic parameters:</b></p>
-	 * <ul>
-	 * <li>Dataset dest					- destination dataset
-	 * <li>boolean autoTran				- auto starting and finishing transaction for copy process
-	 * <li>boolean writeSynch			- write with synchronize main thread
-	 * <li>String tempDest				- name temporary dataset for dest use
-	 * <li>List<Field> tempFields		- list of field from destination dataset
-	 * <li>boolean bulkLoad				- load to destination as bulk load (only is supported)
-	 * <li>boolean bulkEscaped			- convert bulk file to escaped format
-	 * <li>boolean bulkAsGZIP			- compress bulk file from GZIP algorithm	 * 
-	 * </ul>
 	 *
 	 * @param params	- parameters
 	 * @param code		- user code generation rows
 	 */
+
 	public long writeTo(Map params, Closure code) {
 		if (!this.params.isEmpty()) {
 			params = this.params + params
 		}
-		
+
 		methodParams.validation("writeTo", params)
+
+		def p = new FlowWriteSpec(params)
+		p.process = code
+
+		writeTo(p)
+	}
+	
+	/**
+	 * Write user data to dataset
+	 *
+	 * @param params - parameters
+	 */
+	public long writeTo(FlowWriteSpec params) {
+		params.countRow = 0
+
+		Closure code = params.process
+		if (code == null) throw new ExceptionGETL("Required process code for write to destination dataset")
 		
-		Dataset dest = params.dest as Dataset
+		Dataset dest = params.dest
+		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
+
 		String destDescription
-		if (dest == null && params.tempDest != null) {
-			if (params.tempFields == null) throw new ExceptionGETL("Required parameter \"tempFields\" from temp storage \"${params.tempDest}\"")
-			dest = TFS.dataset(params.tempDest as String)
-			destDescription = "temp.${params.tempDest}"
+		if (dest == null && params.tempDestName != null) {
+			if (params.tempFields == null) throw new ExceptionGETL("Required parameter \"tempFields\" from temp storage \"${params.tempDestName}\"")
+			dest = TFS.dataset(params.tempDestName as String)
+			destDescription = "temp.${params.tempDestName}"
 			dest.setField((List<Field>)params.tempFields)
 		}
 		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
@@ -614,12 +582,17 @@ class Flow {
 		boolean clear = (params.clear != null)?params.clear:false
 		
 		boolean writeSynch = BoolUtils.IsValue(params."writeSynch", false)
+
+		Closure initCode = params.onInit
+		Closure doneCode = params.onDone
 		
-		Map destParams = MapUtils.GetLevel(params, "dest_")
+		Map destParams = params.destParams?:[:]
 		Map bulkParams = null
 		
 		TFSDataset bulkDS = null
 		Dataset writer
+
+		if (initCode != null) initCode()
 		
 		if (isBulkLoad) {
 			bulkDS = TFS.dataset()
@@ -642,11 +615,9 @@ class Flow {
 			writer = dest
 		}
 
-//		SynchronizeObject counter = new SynchronizeObject()
-		long counter = 0		
 		def updateCode = { Map row ->
 			if (!writeSynch) writer.write(row) else writer.writeSynch(row)
-			counter++
+			params.countRow++
 		}
 		
 		if (autoTran && !isBulkLoad) {
@@ -703,20 +674,14 @@ class Flow {
 			}
 			counter = dest.updateRows
 		}
-		
-		counter
+
+		if (doneCode != null) doneCode()
+
+		return params.countRow
 	}
-	
+
 	/**
 	 * Write user data to list of dataset
-	 * <p><b>Dynamic parameters:</b></p>
-	 * <ul>
-	 * <li>Map<Name, Dataset> dest		- list of destination datasets
-	 * <li>boolean writeSynch			- write with synchronize main thread
-	 * <li>boolean autoTran				- auto starting and finishing transaction for copy process
-	 * <li>List bulkLoad				- list of destination dataset must load as bulk load (only is supported)
-	 * <li>boolean bulkEscaped			- convert bulk file to escaped format
-	 * <li>boolean bulkAsGZIP			- compress bulk file from GZIP algorithm	 * </ul>
 	 *
 	 * @param params	- parameters
 	 * @param code		- user code generation rows
@@ -725,19 +690,35 @@ class Flow {
 		if (!this.params.isEmpty()) {
 			params = this.params + params
 		}
-		
+
 		methodParams.validation("writeAllTo", params)
-		
-		Map<String, Dataset> dest = params.dest as Map<String, Dataset>
-		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
+
+		def p = new FlowWriteManySpec(params)
+		p.process = code
+
+		writeAllTo(p)
+	}
+	
+	/**
+	 * Write user data to list of dataset
+	 *
+	 * @param params	- parameters
+	 */
+	public void writeAllTo(FlowWriteManySpec params) {
+		Closure code = params.process
+
+		Map<String, Dataset> dest = params.dest
+		if (dest == null || dest.isEmpty()) throw new ExceptionGETL("Required parameter \"dest\"")
 		
 		boolean autoTran = (params.autoTran != null)?params.autoTran:true
-		
 		boolean writeSynch = BoolUtils.IsValue(params."writeSynch", false)
-		
-		List bulkLoad = (params.bulkLoad != null)?(params.bulkLoad as List):null
-		List bulkAsGZIP = (params.bulkAsGZIP != null)?(params.bulkAsGZIP as List):null
+
+		boolean isBulkLoad = (params.bulkLoad != null)?params.bulkLoad:false
+		boolean bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:false
 		boolean bulkEscaped = (params.bulkEscaped != null)?params.bulkEscaped:false
+
+		Closure initCode = params.onInit
+		Closure doneCode = params.onDone
 		
 		Map<Connection, String> destAutoTran = [:]
 		def destParams = [:]
@@ -745,13 +726,9 @@ class Flow {
 		Map<String, Dataset> bulkLoadDS = [:]
 		Map<String, Dataset> writer = [:]
 		dest.each { String n, Dataset d ->
-			// Define is required bulk load use
-			def isBulk = bulkLoad?.find { it == n} != null
-			def isBulkGZip = bulkAsGZIP?.find { it == n} != null
-			
 			// Get destination params
-			Map p = MapUtils.GetLevel(params, "dest_${n}_")
-			destParams."${n}" = p
+			Map p = params.destParams?.get(n)?:[:]
+			destParams.put(n, p)
 			
 			// Valid auto transaction
 			def isAutoTran = autoTran &&
@@ -763,13 +740,13 @@ class Flow {
 				def at = destAutoTran.get(d.connection)
 				if (at == null || at != "ALL") {
 					def tr = at
-					if (at == null && !isBulk) {
+					if (at == null && !isBulkLoad) {
 						tr = "COPY"
 					}
-					else if (at == null && isBulk) {
+					else if (at == null && isBulkLoad) {
 						tr = "BULK"
 					}
-					else if (at != null && ((at == "COPY" && isBulk) || (at == "BULK" && !isBulk))) {
+					else if (at != null && ((at == "COPY" && isBulkLoad) || (at == "BULK" && !isBulkLoad))) {
 						tr = "ALL"
 					}
 					if (at != tr) destAutoTran.put(d.connection, tr)
@@ -777,7 +754,7 @@ class Flow {
 			} 
 			
 			// Valid support bulk load
-			if (isBulk) {
+			if (isBulkLoad) {
 				if (!d.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destination dataset \"${n}\" not support bulk load")
 				d.retrieveFields()
 				TFSDataset bulkDS = TFS.dataset()
@@ -785,7 +762,7 @@ class Flow {
 				bulkLoadDS."${n}" = bulkDS
 				
 				def bp = destParams."${n}"
-				if (isBulkGZip) bp.compressed = "GZIP"
+				if (bulkAsGZIP) bp.compressed = "GZIP"
 				if (isAutoTran) bp.autoCommit = false
 				if (bulkAsGZIP) bulkDS.isGzFile = true
 				bp.source = bulkDS
@@ -822,8 +799,9 @@ class Flow {
 			
 			
 		}
-		
-//		SynchronizeObject curUpdater = new SynchronizeObject()
+
+		if (initCode != null) initCode()
+
 		String curUpdater = null
 		
 		def updateCode = { String name, Map row ->
@@ -936,60 +914,88 @@ class Flow {
 		bulkLoadDS.each { String n, Dataset d ->
 			Executor.RunIgnoreErrors { d.drop() }
 		}
+
+		if (doneCode != null) doneCode()
 	}
-	
+
 	/**
 	 * Read and proccessed data from dataset
 	 * <p><b>Dynamic parameters:</b></p>
 	 * <ul>
 	 * <li>Dataset source				- source dataset
 	 * <li>String tempSource			- name temporary dataset for source use
-	 * <li>boolean saveErrors			- save assert errors to temporary dataset "errorsDataset" 
+	 * <li>boolean saveErrors			- save assert errors to temporary dataset "errorsDataset"
 	 * </ul>
-	 * 
+	 *
 	 * @param params		- Flow parameters
 	 * @param fields		- List of result fields
 	 * @param code			- User code with proccess row
-	 * @return 				- Count proccessed rows 
+	 * @return 				- Count proccessed rows
 	 */
-	@groovy.transform.CompileStatic
 	public long process(Map params, Closure code) {
 		if (!this.params.isEmpty()) {
 			params = this.params + params
 		}
-		
+
 		methodParams.validation("process", params)
+
+		def p = new FlowProcessSpec(params)
+		p.process = code
+
+		process(p)
+	}
+	
+	/**
+	 * Read and proccessed data from dataset
+	 *
+	 * @param params		- Flow parameters
+	 * @return 				- Count proccessed rows
+	 */
+	@groovy.transform.CompileStatic
+	public long process(FlowProcessSpec params) {
+		params.errorsDataset = null
+		params.countRow = 0
+
+		Closure code = params.process
+		if (code == null) throw new ExceptionGETL('Required \"process\" code closure')
 		
-		Dataset source = (Dataset)(params.source)
-		if (source == null && params.tempSource != null) {
-			source = TFS.dataset((String)(params.tempSource), true)
+		Dataset source = params.source
+		if (source == null) throw new ExceptionGETL("Required parameter \"source\"")
+
+		if (source == null && params.tempSourceName != null) {
+			source = TFS.dataset((String)(params.tempSourceName), true)
 		}
 		if (source == null) new ExceptionGETL("Required parameter \"source\"")
 		
-		Map sourceParams = MapUtils.GetLevel(params, "source_")
-		
-		def onInitSource = {
-			errorsDataset.field = source.field
-			errorsDataset.resetFieldToDefault()
-			errorsDataset.field << new Field(name: "error")
-			errorsDataset.openWrite([:])
-		}
+		Map sourceParams = params.sourceParams?:[:]
+
+		Closure initCode = params.onInit
+		Closure doneCode = params.onDone
 		
 		boolean isSaveErrors = (params.saveErrors != null)?params.saveErrors:false
-		if (isSaveErrors) {
-			errorsDataset = TFS.dataset()
-			sourceParams.prepare = onInitSource
-		}
-		else {
-			errorsDataset = null
-		}
+		TFSDataset errorsDataset
+		if (isSaveErrors) errorsDataset = TFS.dataset(); params.errorsDataset = errorsDataset
 
-		long count = 0
+		def onInitSource = {
+			if (initCode != null) initCode(source)
+
+			if (isSaveErrors) {
+				errorsDataset.field = source.field
+				errorsDataset.resetFieldToDefault()
+				errorsDataset.field << new Field(name: "error")
+				errorsDataset.openWrite([:])
+			}
+
+			List<String> result = []
+			return result
+		}
+		sourceParams.prepare = onInitSource
+
 		try {
 			source.eachRow (sourceParams) { Map row ->
 				try {
 					code(row)
-					count++
+					params.countRow++
 				}
 				catch (AssertionError e) {
 					if (!isSaveErrors) {
@@ -1001,6 +1007,7 @@ class Flow {
 					errorsDataset.write(errorRow)
 				}
 			}
+			if (doneCode != null) doneCode()
 		}
 		finally {
 			if (isSaveErrors) {
@@ -1011,6 +1018,6 @@ class Flow {
 			}
 		}
 
-		count
+		params.countRow
 	}
 }
