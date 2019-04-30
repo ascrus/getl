@@ -25,11 +25,8 @@
 package getl.jdbc
 
 import groovy.transform.InheritConstructors
-import getl.data.Connection
-import getl.data.Dataset
-import getl.data.Field
+import getl.data.*
 import getl.utils.*
-import getl.exception.ExceptionGETL
 
 /**
  * Base JDBC dataset class 
@@ -78,13 +75,13 @@ class JDBCDataset extends Dataset {
 	public String getObjectFullName() { fullNameDataset() }
 	
 	public String nameDataset () {
-		JDBCDriver drv = connection.driver as JDBCDriver
-		drv.nameDataset(this)
+		JDBCDriver drv = connection?.driver as JDBCDriver
+		(drv != null)?drv.nameDataset(this):getClass().name
 	}
 	
 	public String fullNameDataset () {
-		JDBCDriver drv = connection.driver as JDBCDriver
-		drv.fullNameDataset(this)
+		JDBCDriver drv = connection?.driver as JDBCDriver
+		(drv != null)?drv.fullNameDataset(this):getClass().name
 	}
 	
 	@Override

@@ -359,7 +359,10 @@ class Flow {
 		boolean debug = (params.debug != null)?params.debug:false
 
 		TFSDataset errorsDataset
-		if (isSaveErrors) errorsDataset = TFS.dataset(); params.errorsDataset = errorsDataset
+		if (isSaveErrors) {
+			errorsDataset = TFS.dataset()
+			params.errorsDataset = errorsDataset
+		}
 		
 		Dataset writer
 		TFSDataset bulkDS = null
@@ -974,7 +977,10 @@ class Flow {
 		
 		boolean isSaveErrors = (params.saveErrors != null)?params.saveErrors:false
 		TFSDataset errorsDataset
-		if (isSaveErrors) errorsDataset = TFS.dataset(); params.errorsDataset = errorsDataset
+		if (isSaveErrors) {
+			errorsDataset = TFS.dataset()
+			params.errorsDataset = errorsDataset
+		}
 
 		def onInitSource = {
 			if (initCode != null) initCode(source)

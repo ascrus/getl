@@ -10,7 +10,7 @@ class FlowCopySpec {
         super()
     }
 
-    FlowCopySpec(Map<String, Object> params) {
+    FlowCopySpec(Map params) {
         super()
         ImportFromMap(params, this)
     }
@@ -28,7 +28,7 @@ class FlowCopySpec {
     /**
      * List of destination dataset
      */
-    Map<String, Dataset> destList
+    Map<Object, Dataset> destList
 
     /**
      * Temporary source name
@@ -58,22 +58,17 @@ class FlowCopySpec {
     /**
      * Map card columns with syntax: [<destination field>:"<source field>:<convert format>"]
      */
-    Map<String, String> map
+    Map map
 
     /**
      * Parameters for source read process
      */
-    Map<String, Object> sourceParams
+    Map sourceParams
 
     /**
      * Parameters for destination write process
      */
-    Map<String, Object> destParams
-
-    /**
-     * Parameters for list of destination write process
-     */
-    Map<String, Map<String,Object>> destListParams
+    Map destParams
 
     /**
      * Write with synchronize main thread
@@ -164,15 +159,15 @@ class FlowCopySpec {
      * Last count row
      */
     private Long countRow = 0
-    public Long getCountRow() { countRow }
+    Long getCountRow() { countRow }
     protected void setCountRow (Long value) { countRow = value }
 
     /**
      * Error rows for "copy" process
      */
     private TFSDataset errorsDataset
-    public TFSDataset getErrorsDataset() { errorsDataset }
-    protected void setErrorsDataset(TFSDataset value) { errorsDataset = null }
+    TFSDataset getErrorsDataset() { errorsDataset }
+    protected void setErrorsDataset(TFSDataset value) { errorsDataset = value }
 
     /**
      * Import from map parameters

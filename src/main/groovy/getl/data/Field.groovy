@@ -206,6 +206,21 @@ class Field implements Serializable {
 	 * Get value method
 	 */
 	public String getMethod
+
+	public Field.Type getIntegerFieldType() { Field.Type.INTEGER}
+	public Field.Type getBigintFieldType() { Field.Type.BIGINT}
+	public Field.Type getNumericFieldType() { Field.Type.NUMERIC}
+	public Field.Type getDoubleFieldType() { Field.Type.DOUBLE}
+	public Field.Type getStringFieldType() { Field.Type.STRING}
+	public Field.Type getTextFieldType() { Field.Type.TEXT}
+	public Field.Type getDateFieldType() { Field.Type.DATE}
+	public Field.Type getTimeFieldType() { Field.Type.TIME}
+	public Field.Type getDatetimeFieldType() { Field.Type.DATETIME}
+	public Field.Type getBooleanFieldType() { Field.Type.BOOLEAN}
+	public Field.Type getBlobFieldType() { Field.Type.BLOB}
+	public Field.Type getUuidFieldType() { Field.Type.UUID}
+	public Field.Type getRowidFieldType() { Field.Type.ROWID}
+	public Field.Type getObjectFieldType() { Field.Type.OBJECT}
 	
 	/**
 	 * Allow length for field

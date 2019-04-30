@@ -183,7 +183,7 @@ class Config {
         if (data.vars != null) MapUtils.MergeMap(currentVars, (Map<String, Object>)(data.vars))
         if (!(Job.jobArgs.vars as Map)?.isEmpty()) MapUtils.MergeMap(currentVars, (Map<String, Object>)(Job.jobArgs.vars))
 
-        if (evalVars && !currentVars.isEmpty() && !data.isEmpty()) {
+        if (evalVars && configClassManager.evalVars && !currentVars.isEmpty() && !data.isEmpty()) {
             try {
                 data = MapUtils.EvalMacroValues(data, currentVars)
             }

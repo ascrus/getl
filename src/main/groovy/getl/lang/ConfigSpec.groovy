@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2018 Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2019  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -22,47 +22,49 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
+package getl.lang
 
-package getl.config
+import getl.config.*
+import getl.utils.*
 
 /**
- * Configuration manager class
+ * Config specification class
  * @author Alexsey Konstantinov
  *
  */
-abstract class ConfigManager {
-    ConfigManager() { }
-
-    ConfigManager(Map<String, Object> params) {
-        this.params.putAll(params)
-    }
+class ConfigSpec {
+    /**
+     * Configuration manager
+     */
+    ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper}
 
     /**
-     * Evaluate variables where load configuration
+     * Configuration files path
      */
-    static boolean getEvalVars() { false }
+    String getPath() { manager.path }
+    void setPath(String value) { manager.path = value }
 
     /**
-     * Parameters of configuration
+     * Code page in configuration files
      */
-    final Map<String, Object> params = [:]
+    String getCodePage() { manager.codePage }
+    void setCodePage(String value) { manager.codePage = value }
 
     /**
-     * Load configuration
-     * @readParams
+     * Load configuration file
+     * @param fileName
+     * @param codePage
+     * @return
      */
-    abstract void loadConfig(Map<String, Object> readParams = [:])
+    void load(String fileName, String codePage = null) { Config.LoadConfig(fileName: fileName, codePage: codePage) }
 
     /**
-     * Save configuration
-     * @param content
-     * @param saveParams
+     * Save configuration file
+     * @param fileName
+     * @param codePage
+     * @return
      */
-    abstract void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = [:])
+    void save(String fileName, String codePage = null) { Config.SaveConfig(fileName: fileName, codePage: codePage)}
 
-    /**
-     * Init manager
-     * @param initParams
-     */
-    abstract void init(Map<String, Object> initParams)
+    void clear() { Config.ClearConfig() }
 }

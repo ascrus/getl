@@ -1,11 +1,35 @@
 package getl.lang
 
+import getl.tfs.TFS
+
 class GetlTest extends getl.test.GetlTest {
-    void testJdbc() {
+    void testEtl() {
+        def tempPath = new TFS()
+        def tempConfig = new File("$tempPath/getl.conf")
+        tempConfig.deleteOnExit()
+        tempConfig.setText('''
+datasets {
+    table1 {
+        tableName = 'table1'
+    }
+    
+    csv {
+        fileName = 'getl.lang.csv\'
+    }
+}
+''', 'UTF-8')
+
         Getl.run {
+            config {
+                path = tempPath
+                load('getl.conf')
+            }
+            assertEquals('getl.lang.csv', configContent.datasets?.csv?.fileName)
+            assertEquals('table1', configContent.datasets?.table1?.tableName)
+
             def table1 = table {
+                config = 'table1'
                 connection = tempdb
-                tableName = 'table1'
 
                 field = [
                         field { name = 'id'; type = integerFieldType; isKey = true },
@@ -16,6 +40,7 @@ class GetlTest extends getl.test.GetlTest {
                 create()
                 logInfo 'table1 created'
             }
+            assertEquals('table1', table1.tableName)
 
             rowsTo {
                 dest = table1
@@ -28,11 +53,12 @@ class GetlTest extends getl.test.GetlTest {
 
 
             def file1 = tempFile {
-                fileName = 'getl.lang.csv'
+                config = 'csv'
                 fieldDelimiter = ','
                 codePage = 'UTF-8'
                 isGzFile = true
             }
+            assertEquals('getl.lang.csv', file1.fileName)
 
             copyRows {
                 inheritFields = true

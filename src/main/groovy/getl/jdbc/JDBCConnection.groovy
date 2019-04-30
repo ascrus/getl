@@ -27,7 +27,6 @@ package getl.jdbc
 import getl.data.Connection
 import getl.data.Dataset
 import getl.exception.ExceptionGETL
-import getl.jdbc.JDBCDataset.Type
 import getl.utils.*
 import groovy.sql.Sql
 import groovy.transform.InheritConstructors

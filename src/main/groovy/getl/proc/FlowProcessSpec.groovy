@@ -66,7 +66,7 @@ class FlowProcessSpec {
      */
     private TFSDataset errorsDataset
     public TFSDataset getErrorsDataset() { errorsDataset }
-    protected void setErrorsDataset(TFSDataset value) { errorsDataset = null }
+    protected void setErrorsDataset(TFSDataset value) { errorsDataset = value }
 
     /**
      * Import from map parameters

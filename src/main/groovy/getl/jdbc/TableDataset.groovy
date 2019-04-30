@@ -26,7 +26,6 @@ package getl.jdbc
 
 import groovy.transform.InheritConstructors
 import getl.cache.*
-import getl.data.Dataset.UpdateFieldType
 import getl.exception.ExceptionGETL
 
 /**

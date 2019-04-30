@@ -24,6 +24,7 @@
 
 package getl.lang
 
+import getl.config.ConfigSlurper
 import getl.csv.*
 import getl.data.*
 import getl.db2.*
@@ -55,12 +56,17 @@ import groovy.transform.InheritConstructors
 class Getl extends Script {
     protected Getl() {
         super()
-        getl.deploy.Version.SayInfo()
+        init()
     }
 
     protected Getl(Binding binding) {
         super(binding)
+        init()
+    }
+
+    private void init() {
         getl.deploy.Version.SayInfo()
+        Config.configClassManager = new ConfigSlurper()
     }
 
     @Override
@@ -75,6 +81,11 @@ class Getl extends Script {
         code()
     }
 
+    /**
+     * Current configuration content
+     */
+    Map<String, Object> getConfigContent() { Config.content }
+
     public void logInfo(String msg) { Logs.Info(msg) }
     public void logWarn(String msg) { Logs.Warning(msg) }
     public void logError(String msg) { Logs.Severe(msg) }
@@ -83,22 +94,19 @@ class Getl extends Script {
     public void logFinest(String msg) { Logs.Finest(msg) }
     public void logConfig(String msg) { Logs.Config(msg) }
 
+    /**
+     * Current date time
+     * @return
+     */
     public Date getNow() { DateUtils.Now() }
 
-    public Field.Type getIntegerFieldType() { Field.Type.INTEGER}
-    public Field.Type getBigintFieldType() { Field.Type.BIGINT}
-    public Field.Type getNumericFieldType() { Field.Type.NUMERIC}
-    public Field.Type getDoubleFieldType() { Field.Type.DOUBLE}
-    public Field.Type getStringFieldType() { Field.Type.STRING}
-    public Field.Type getTextFieldType() { Field.Type.TEXT}
-    public Field.Type getDateFieldType() { Field.Type.DATE}
-    public Field.Type getTimeFieldType() { Field.Type.TIME}
-    public Field.Type getDatetimeFieldType() { Field.Type.DATETIME}
-    public Field.Type getBooleanFieldType() { Field.Type.BOOLEAN}
-    public Field.Type getBlobFieldType() { Field.Type.BLOB}
-    public Field.Type getUuidFieldType() { Field.Type.UUID}
-    public Field.Type getRowidFieldType() { Field.Type.ROWID}
-    public Field.Type getObjectFieldType() { Field.Type.OBJECT}
+    ConfigSpec config(ConfigSpec parent = null, @DelegatesTo(ConfigSpec) Closure cl) {
+        if (parent == null) parent = new ConfigSpec()
+        def code = cl.rehydrate(parent, this, this)
+        code.resolveStrategy = Closure.DELEGATE_FIRST
+        code()
+        return parent
+    }
 
     LogSpec log(LogSpec parent = null, @DelegatesTo(LogSpec) Closure cl) {
         if (parent == null) parent = new LogSpec()
