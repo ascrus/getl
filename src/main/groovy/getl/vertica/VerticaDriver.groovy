@@ -99,7 +99,7 @@ class VerticaDriver extends JDBCDriver {
 		def result = ''
 		def temporary = ((dataset.sysParams.type as JDBCDataset.Type)in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
 		if (temporary && params.onCommit != null && params.onCommit) result += 'ON COMMIT PRESERVE ROWS '
-		if (params.orderBy != null && !params.orderBy.isEmpty()) result += "ORDER BY ${params.orderBy.join(", ")} "
+		if (params.orderBy != null && !(params.orderBy as List).isEmpty()) result += "ORDER BY ${(params.orderBy as List).join(", ")} "
 		if (params.segmentedBy != null) result += "SEGMENTED BY ${params.segmentedBy} "
 		if (params.unsegmented != null && params.unsegmented) result += "UNSEGMENTED ALL NODES "
 		if (params.partitionBy != null) result += "PARTITION BY ${params.partitionBy} "
@@ -113,9 +113,9 @@ class VerticaDriver extends JDBCDriver {
 
 		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = ''
 		if (params.parser != null) {
-			String parserFunc = params.parser.function
+			String parserFunc = (params.parser as Map).function
 			if (parserFunc == null) throw new ExceptionGETL('Required parser function name')
-			Map<String, Object> parserOptions = params.parser.options
+			Map<String, Object> parserOptions = (params.parser as Map).options
 			if (parserOptions != null) {
 				def ol = []
 				parserOptions.each { String name, def value ->
@@ -206,7 +206,7 @@ class VerticaDriver extends JDBCDriver {
 			if (f.field != null) {
 				def fieldName = (dest as JDBCDataset).sqlObjectName((f.field as Field).name)
 				columns << fieldName
-				switch (f.field.type) {
+				switch ((f.field as Field).type) {
 					case Field.Type.BLOB:
 						options << "$fieldName format 'hex'"
 						break

@@ -33,7 +33,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
 
 	void testRetrieveObjects() {
 		if (connection == null) return
-		assertTrue(connection.retrieveObjects().find { it.objectName == 'Account' } != null)
+		assertTrue(connection.retrieveObjects().find { Map r -> r.objectName == 'Account' } != null)
 	}
 
     void testOrderBy() {

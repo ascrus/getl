@@ -205,10 +205,10 @@ class ListUtils {
 
 		def array = [] as List<List>
 
-        def firstElement = list[0]
-        def lastElement = list[0]
+        String firstElement = list[0]
+        String lastElement = list[0]
         for (int i = 1; i < list.size(); i++) {
-            def elem = list[i]
+            String elem = list[i]
 
             if (lastElement.next() == elem) {
                 lastElement = elem

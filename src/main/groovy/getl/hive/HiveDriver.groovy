@@ -237,7 +237,7 @@ class HiveDriver extends JDBCDriver {
         bulkParams = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
         def conHive = dest.connection as HiveConnection
 
-//        def overwrite = BoolUtils.IsValue(bulkParams.overwrite)
+        def overwrite = BoolUtils.IsValue(bulkParams.overwrite)
         def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, conHive.hdfsHost])
         def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, conHive.hdfsPort]) as Integer
         def hdfsLogin = ListUtils.NotNullValue([bulkParams.hdfsLogin, conHive.hdfsLogin])

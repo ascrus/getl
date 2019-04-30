@@ -125,7 +125,7 @@ class Flow {
 //			}
 //		}
 
-        def fr = map.find { String key, Map value -> value.name?.toLowerCase() == field }
+        def fr = map.find { String key, Map value -> (value.name as String)?.toLowerCase() == field }
         if (fr != null) result = fr.key
 
 		return result
@@ -189,7 +189,7 @@ class Flow {
 					Field sf = source.fieldByName(mapName.name as String)
 					if (sf == null) throw new ExceptionGETL("Not found field \"${mapName.name}\" in source dataset")
 					mn = sf.name.toLowerCase()
-					if (mapName.convert != null) convert = (mapName.convert.trim().toLowerCase() == "true")
+					if (mapName.convert != null) convert = ((mapName.convert as String).trim().toLowerCase() == "true")
 					if (mapName.format != null) mapFormat = mapName.format
 				}
 			}
@@ -250,7 +250,7 @@ class Flow {
 		dest.field = source.field
 		if (!excludeFields.isEmpty()) dest.field.removeAll { it.name.toLowerCase() in excludeFields }
         dest.field.each { Field f -> f.isReadOnly = false }
-		map.each { k, v ->
+		map.each { String k, Map v ->
 			Field f = dest.fieldByName(v.name as String)
 			if (f != null) {
 				if (k != null && k != '') f.name = k else dest.removeField(f)
@@ -350,7 +350,7 @@ class Flow {
 		boolean isSaveErrors = (params.saveErrors != null)?params.saveErrors:false
 		
 		List<String> excludeFields = (params.excludeFields != null)?params.excludeFields*.toLowerCase():[]
-		List<String> notConverted = (params.notConverted != null)?params.notConverted*.toLowerCase():[]
+		List<String> notConverted = (params.notConverted != null)?(params.notConverted as List<String>)*.toLowerCase():[]
 		
 		Closure writeCode = params.onWrite
 		Closure initCode = params.onInit
@@ -421,8 +421,8 @@ class Flow {
 				errorsDataset.field = writer.field
 				errorsDataset.resetFieldToDefault()
 				if (autoMap) {
-					errorsDataset.removeFields { f ->
-						generateResult.destFields.find { it.toLowerCase() == f.name.toLowerCase() } == null
+					errorsDataset.removeFields { Field f ->
+						generateResult.destFields.find { String n -> n.toLowerCase() == f.name.toLowerCase() } == null
 					}
 				}
 				errorsDataset.field << new Field(name: "error")
@@ -675,7 +675,7 @@ class Flow {
 			if (autoTran) {
 				dest.connection.commitTran()
 			}
-			counter = dest.updateRows
+			params.countRow = dest.updateRows
 		}
 
 		if (doneCode != null) doneCode()

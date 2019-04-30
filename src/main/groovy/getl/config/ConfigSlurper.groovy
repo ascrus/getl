@@ -196,17 +196,21 @@ class ConfigSlurper extends ConfigManager {
 		SaveMap(vars, writer)
 		text = writer.toString() + '\n\n' + text
 
-		Map<String, Object> data
+		Map<String, Object> res
 		try {
-			data = cfg.parse(text)
+			def data = cfg.parse(text)
 			CheckDataMap(data, [vars: data.vars?:[:]])
+			res = MapUtils.DeepCopy(data)
+			if ((res.vars as Map)?.isEmpty()) {
+				res.remove('vars')
+			}
 		}
 		catch (Exception e) {
 			Logs.Severe("Error parse configuration file \"$file\", error: ${e.message}!")
 			throw e
 		}
 
-		return data
+		return res
 	}
 
 	/**
@@ -243,7 +247,7 @@ class ConfigSlurper extends ConfigManager {
 	 * @param vars
 	 */
 	private static void CheckDataList(List data, Map<String, Object> vars) {
-		def cfg = new groovy.util.ConfigSlurper()
+		groovy.util.ConfigSlurper cfg = new groovy.util.ConfigSlurper()
 
 		int i = 0
 		data.each { Object value ->
@@ -255,11 +259,10 @@ class ConfigSlurper extends ConfigManager {
 			}
 			else  if (value instanceof Closure) {
 				Map<String, Object> res = MapUtils.Copy(vars)
-				def code = (value as Closure).rehydrate(res, cfg, this)
+				Closure code = (value as Closure).rehydrate(res, cfg, this)
 				code.resolveStrategy = Closure.DELEGATE_FIRST
 
 				cfg.parse(code)
-//				res.remove('config')
 				res.remove('vars')
 				data[i] = res
 			}
@@ -321,23 +324,29 @@ class ConfigSlurper extends ConfigManager {
 	}
 
 	@CompileStatic
-	static void SaveMap(Map<String, Object> data, Writer writer, Boolean convertVars = false, Integer tab = 0) {
+	static void SaveMap(Map<String, Object> data, Writer writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
+		int i = 0
+		int count = data.size()
 		data.each { key, value ->
+			i++
 			if (value instanceof Map) {
-				writer.println("${tabStr}${key} {")
+				def eqStr = (isListMap)?':':''
+				writer.println("${tabStr}${key}${eqStr} {")
 				SaveMap(value as Map, writer, convertVars, tab + 1)
-				writer.println("${tabStr}}")
+				writer.print("${tabStr}}")
 			}
 			else if (value instanceof List) {
-				writer.println("${tabStr}${key} = [")
+				def eqStr = (isListMap)?':':' ='
+				writer.println("${tabStr}${key}${eqStr} [")
 				SaveList(value as List, writer, convertVars, tab + 1)
-				writer.println("${tabStr}]")
+				writer.print("${tabStr}]")
 			}
 			else {
-				SaveObject(key, value, writer, convertVars, tab)
-				writer.println()
+				SaveObject(key, value, writer, convertVars, tab, isListMap)
 			}
+
+			if (isListMap && i < count) writer.println(',') else writer.println()
 		}
 	}
 
@@ -345,12 +354,13 @@ class ConfigSlurper extends ConfigManager {
 	static void SaveList(List data, Writer writer, Boolean convertVars = false, Integer tab = 0) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		int i = 0
+		int count = data.size()
 		data.each { value ->
 			i++
 			if (value instanceof Map) {
-				writer.println("${tabStr}{")
-				SaveMap(value as Map, writer, convertVars, tab + 1)
-				writer.print("${tabStr}}")
+				writer.println("${tabStr}[")
+				SaveMap(value as Map, writer, convertVars, tab + 1, true)
+				writer.print("${tabStr}]")
 			}
 			else if (value instanceof List) {
 				writer.println("${tabStr}[")
@@ -360,14 +370,15 @@ class ConfigSlurper extends ConfigManager {
 			else {
 				SaveObject(null, value, writer, convertVars, tab)
 			}
-			if (i < data.size()) writer.println(',') else writer.println()
+			if (i < count) writer.println(',') else writer.println()
 		}
 	}
 
 	@CompileStatic
-	static void SaveObject(def key, def value, Writer writer, Boolean convertVars = false, Integer tab = 0) {
+	static void SaveObject(def key, def value, Writer writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
-		def keyStr = (key != null)?"$key = ":''
+		def eqStr = (isListMap)?':':' ='
+		def keyStr = (key != null)?"$key$eqStr ":''
 		if (value instanceof Date) {
 			writer.print("${tabStr}${keyStr}new java.sql.Timestamp(Date.parse('yyyy-MM-dd HH:mm:ss.SSS', '${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', value as Date)}').time)")
 		}
@@ -388,13 +399,24 @@ class ConfigSlurper extends ConfigManager {
 		def a = MapUtils.ProcessArguments(args)
 		def l = a.keySet().toList()
 		if (!('source' in l) || !('dest' in l) || ('help' in l) || ('/help' in l) || ('/?' in l) || ('?' in l) ||
-				(l - ['source', 'dest', 'codepage']).size() > 0) {
+				(l - ['source', 'dest', 'codepage', 'convert_vars', 'rules']).size() > 0) {
 			println '''### Convert configuration files tool, EasyData company (www.easydata.ru)
 Syntax:
-  getl.config.ConfigSlurper source=<json file> dest=<groovy config file> [codepage=<code page text>]
+  getl.config.ConfigSlurper source=<json file> dest=<groovy config file> [options]
   
+Options:
+codepage=<code page text>
+convert_vars=<true|false>
+rules=<rules config file>
+
+Rule file structure:
+rules=[
+	'<mask>': '<new item name>',
+	...
+]
+
 Example:
-  java -cp "libs/*" getl.config.ConfigSlurper source=demo.jspn dest=demo.conf codepage=UTF-8
+  java -cp "libs/*" getl.config.ConfigSlurper source=demo.json dest=demo.conf codepage=UTF-8 rule=convert_rules.conf
 '''
 			return
 		}
@@ -402,8 +424,19 @@ Example:
 		String sourceName = a.source
 		String destName = a.dest
 		String copePage = a.codepage?:'UTF-8'
+		Boolean convertVars = BoolUtils.IsValue(a.convert_vars, false)
+		String ruleFileName = a.rules
+
 		assert new File(a.source).exists(), "Source file \"$sourceName\" not found!"
 		assert a.source != a.dest, 'Source and destination file must have different names!'
+
+		Map<String, String> rules
+		if (ruleFileName != null) {
+			def ruleFile = new File(ruleFileName)
+			assert ruleFile.exists(), "Rule config file \"$ruleFileName\" not found!"
+			rules = LoadConfigFile(ruleFile, copePage)
+			assert (rules.rules as Map)?.size() > 0, "Rules not found in config file \"$ruleFileName\"!"
+		}
 
 		Config.evalVars = false
 		Config.LoadConfig(fileName: sourceName, codePage: copePage)
@@ -411,11 +444,20 @@ Example:
 			println "Configuration JSON file is empty!"
 			return
 		}
+
+		if (rules != null) {
+			rules.rules.each { source, dest ->
+				MapUtils.FindKeys(Config.content, source) { Map map, String key, item ->
+					map.put(dest, map.remove(key))
+				}
+			}
+		}
+
 		Config.configClassManager = new ConfigSlurper()
-		if (Config.content.vars?.size() == 0) {
+		if ((Config.content.vars as Map)?.size() == 0) {
 			Config.content.remove('vars')
 		}
-		Config.SaveConfig(fileName: destName, codePage: copePage, convertVars: true)
+		Config.SaveConfig(fileName: destName, codePage: copePage, convertVars: convertVars)
 		println "Convert \"$sourceName\" to \"$destName\" complete."
 	}
 }

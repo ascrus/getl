@@ -77,9 +77,9 @@ public class Connection {
 	public Connection(Map parameters) {
 		registerParameters()
 		
-		def driverClass = parameters.driver
+		Class driverClass = parameters.driver
 		if (driverClass == null) throw new ExceptionGETL("Required parameter \"driver\" (driver class name)")
-		this.driver = driverClass.newInstance()
+		this.driver = driverClass.newInstance() as Driver
 		this.driver.connection = this
 		def load_config = (String)parameters.config
 		if (load_config != null) setConfig(load_config)

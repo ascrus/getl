@@ -91,14 +91,14 @@ ORDER BY name
 		Logs.Info("Found ${rows.size()} recommendation for database")
 		
 		rows.each { row ->
-			if (row.tuning_description.substring(0, 18).toLowerCase() == 'analyze statistics') {
-				def t = row.tuning_parameter.toLowerCase()
+			if ((row.tuning_description as String).substring(0, 18).toLowerCase() == 'analyze statistics') {
+				def t = (row.tuning_parameter as String).toLowerCase()
 				if (t.matches(".*[.].*[.].*")) {
 					t = t.substring(0, t.lastIndexOf("."))
 				}
 				if (tables.indexOf(t) != -1) {
 					def ptw = new ProcessTime(name: row.tuning_description, debug: true)
-					def queryStat = row.tuning_command.replace('"', '')
+					def queryStat = (row.tuning_command as String).replace('"', '')
 					try {
 						cVertica.executeCommand(command: queryStat)
 						ptw.finish()

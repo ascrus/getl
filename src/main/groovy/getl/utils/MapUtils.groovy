@@ -28,6 +28,7 @@ import getl.data.Field
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
+import groovy.transform.CompileStatic
 import org.apache.groovy.json.internal.LazyMap
 
 /**
@@ -263,7 +264,7 @@ class MapUtils {
 		for (int i = 0; i < sections.length - 1; i++) {
 			String s = sections[i]
 			if (cur.get(s) == null) {
-				def m = [:]
+				def m = [:] as Map <String, Object>
 				cur.put(s, m)
 				cur = m
 			}
@@ -297,7 +298,7 @@ class MapUtils {
 	private static void MergeMapChildren (Map source, def added, String key, boolean existUpdate, boolean mergeList) {
 		if (!(added instanceof Map)) {
 			if (mergeList && added instanceof List) {
-                List origList = source.get(key)
+                List origList = source.get(key) as List
                 if (origList != null) {
                     List newList = origList + (added as List)
                     source.put(key, newList.unique())
@@ -450,6 +451,60 @@ class MapUtils {
         return res
 	}
 
+	@CompileStatic
+	static void FindKeys(Map<String, Object> map, String expression, Closure closure) {
+		if (map == null || map.isEmpty() || expression == null || expression.length() == 0) return
+
+		def keys = expression.split('[.]')
+		FindKeysProcess(map, keys, 0, closure)
+	}
+
+	@CompileStatic
+	private static void FindKeysProcess(Map<String, Object> map, String[] keys, int cur, Closure closure) {
+		def key = keys[cur]
+		def len = keys.length - 1
+		if (key != '*') {
+			if (!map.containsKey(key)) return
+			def item = map.get(key)
+			if (cur == len) {
+				closure.call(map, key, item)
+			}
+			else if (item instanceof Map) {
+				FindKeysProcess(item as Map<String, Object>, keys, cur + 1, closure)
+			}
+			else if (item instanceof List) {
+				FindKeysProcess(item as List, keys, cur + 1, closure)
+			}
+		}
+		else {
+			map.each { String name, item ->
+				if (cur == len) {
+					closure.call(map, name, item)
+				}
+				else if (item instanceof Map) {
+					FindKeysProcess(item as Map<String, Object>, keys, cur + 1, closure)
+				}
+				else if (item instanceof List) {
+					FindKeysProcess(item as List, keys, cur + 1, closure)
+				}
+			}
+		}
+	}
+
+	@CompileStatic
+	private static void FindKeysProcess(List list, String[] keys, int cur, Closure closure) {
+		def key = keys[cur]
+		if (key != '*') throw new ExceptionGETL('Invalid format mask for list item!')
+		list.each { item ->
+			if (item instanceof Map) {
+				FindKeysProcess(item as Map<String, Object>, keys, cur + 1, closure)
+			}
+			else if (item instanceof List) {
+				FindKeysProcess(item as List, keys, cur + 1, closure)
+			}
+		}
+	}
+
 	/**
 	 * Convert map structure to url parameters
 	 * @param m
@@ -569,7 +624,7 @@ class MapUtils {
         def map = Xml2Map(data)
         if (exclude == null) exclude = [] as List<String>
         exclude << xsdName
-        map.schema.include?.each { Map includeXsd ->
+		(map.schema as Map).include?.each { Map includeXsd ->
             String schemaLocation = includeXsd.schemaLocation
             if (schemaLocation == null)
                 throw new ExceptionGETL("Invalid XSD include section: $includeXsd!")
@@ -653,7 +708,7 @@ class MapUtils {
 				}
                 else if (field.extended.sequence?.element?.size() > 0) {
                     field.extended.sequenceType = typeName
-                    if (field.extended.sequence?.element.size() == 1)
+                    if ((field.extended.sequence as Map)?.element?.size() == 1)
 						field.extended.itemType = FindSection(field.extended, 'sequence.element.*').type
                     fieldList << field
                 }

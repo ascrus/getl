@@ -87,7 +87,7 @@ class ProcessTime {
 		}
 		else
 		if (params.className != null) {
-			this.name = params.className.name
+			this.name = params.className
 		}
 		
 		if (params.logLevel != null) {

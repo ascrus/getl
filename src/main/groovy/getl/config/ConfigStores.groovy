@@ -36,6 +36,9 @@ import org.h2.mvstore.MVStore
 
 class ConfigStores extends ConfigManager {
     @Override
+    boolean getEvalVars() { true }
+
+    @Override
     void init(Map<String, Object> initParams) {
         if (initParams?.config == null) return
         Map config = initParams.config as Map<String, Object>

@@ -103,7 +103,7 @@ class H2Driver extends JDBCDriver {
 		params = bulkLoadFilePrepare(source, dest as JDBCDataset, params, prepareCode)
 
 		List<Map> map = params.map
-		boolean autoCommit = (params.autoCommit != null) ? params.autoCommit : (dest.connection.tranCount == 0 && !dest.connection.autoCommit)
+		boolean autoCommit = (params.autoCommit != null) ? params.autoCommit : (dest.connection.tranCount == 0 && !(dest.connection as JDBCConnection).autoCommit)
 
 		Map<String, String> expression = params.expression ?: [:]
 		expression.each { String fieldName, String expr ->

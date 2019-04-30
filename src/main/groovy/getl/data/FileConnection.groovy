@@ -97,7 +97,7 @@ abstract class FileConnection extends Connection {
 	 * Size of read/write buffer size
 	 */
 	public Integer getBufferSize () { params.bufferSize?:1*1024*1024 }
-	public void setBufferSize()  { params.bufferSize = value }
+	public void setBufferSize(Integer value)  { params.bufferSize = value }
 
 	/**
 	 * Exists path for connection

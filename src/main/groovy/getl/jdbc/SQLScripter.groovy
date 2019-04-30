@@ -139,7 +139,7 @@ public class SQLScripter {
 			vn = m.group()
 			vn = vn.substring(1, vn.length() - 1).trim().toLowerCase()
 			
-			def varName = varNames.find { vn == it.toLowerCase() }
+			def varName = varNames.find { String s -> vn == s.toLowerCase() }
 			
 			if (varName == null) continue
 			def val = vars.get(varName)

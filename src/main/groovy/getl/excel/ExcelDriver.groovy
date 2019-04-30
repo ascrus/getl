@@ -84,7 +84,7 @@ class ExcelDriver extends Driver {
         def header = BoolUtils.IsValue([params.header, datasetParams.header], false)
         if (dataset.field.isEmpty() && !header) throw new ExceptionGETL("Required fields description with dataset")
 		
-		def offset = params.offset?:datasetParams.offset
+		def offset = (params.offset?:datasetParams.offset) as Map
 
         Number offsetRows = offset?.rows?:0
         Number offsetCells = offset?.cells?:0

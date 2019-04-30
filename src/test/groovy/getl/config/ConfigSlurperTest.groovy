@@ -12,7 +12,7 @@ import groovy.json.JsonBuilder
  * @author Alexsey Konstantinov
  */
 class ConfigSlurperTest extends getl.test.GetlTest {
-    def test = false
+    def test = true
 
     def h2 = new H2Connection(config: 'h2')
     def csv = new CSVConnection(config: 'csv')
@@ -29,7 +29,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
                 list=['a', 1, "${vars.test_var}", null]
             }
             var1="${vars.test_var}"
-            var2=Date.parse('yyyy-MM-dd HH:mm:ss', '2019-02-01 01:02:03')
+            var2=new java.sql.Timestamp(Date.parse('yyyy-MM-dd HH:mm:ss', '2019-02-01 01:02:03').time)
             var3=[
                 {
                     a=1
@@ -77,7 +77,9 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         assertEquals('\r\n', csv.rowDelimiter)
 
         assertEquals('variable value', Config.content.var1)
-        assertEquals(Date.parse('yyyy-MM-dd HH:mm:ss', '2019-02-01 01:02:03'), Config.content.var2)
+        println new java.sql.Timestamp(Date.parse('yyyy-MM-dd HH:mm:ss', '2019-02-01 01:02:03').time)
+        println Config.content.var2.getClass().name
+        assertEquals(new java.sql.Timestamp(Date.parse('yyyy-MM-dd HH:mm:ss', '2019-02-01 01:02:03').time), Config.content.var2)
 
         assertEquals([a:1,b:2,c:3,d:'variable value'], Config.content.var3[0])
         assertEquals([a:4,b:5,c:6,d:'variable value'], Config.content.var3[1])
@@ -96,7 +98,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         Config.SetValue('vars.config_var', 'variable value')
         Config.LoadConfig(fileName: configPath.path + '/' + 'test_config.groovy')
         assertEquals(Config.content.var1, 'variable value')
-        assertEquals(Date.parse('yyyy-MM-dd HH:mm:ss', '2019-02-01 01:02:03'), Config.content.var2)
+        assertEquals(new java.sql.Timestamp(Date.parse('yyyy-MM-dd HH:mm:ss', '2019-02-01 01:02:03').time), Config.content.var2)
         assertEquals([a:1,b:2,c:3,d:'variable value'], Config.content.var3[0])
         assertEquals([a:4,b:5,c:6,d:'variable value'], Config.content.var3[1])
     }

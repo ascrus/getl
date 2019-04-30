@@ -192,8 +192,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     private void insertData() {
         def count = new Flow().writeTo(dest: table) { updater ->
             (1..countRows).each { num ->
-                def r = [:]
-                r = GenerationUtils.GenerateRowValues(table.field, num)
+                Map r = GenerationUtils.GenerateRowValues(table.field, num)
                 r.id1 = num
 
                 updater(r)

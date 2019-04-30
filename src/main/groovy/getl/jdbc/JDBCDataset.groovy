@@ -51,14 +51,14 @@ class JDBCDataset extends Dataset {
 	 * Database name
 	 * @return
 	 */
-	public String getDbName () { ListUtils.NotNullValue([params.dbName, connection.dbName]) }
+	public String getDbName () { ListUtils.NotNullValue([params.dbName, (connection as JDBCConnection).dbName]) }
 	public void setDbName (String value) { params.dbName = value }
 
 	/**
 	 * Schema name
 	 * @return
 	 */
-	public String getSchemaName () { ListUtils.NotNullValue([params.schemaName, connection.schemaName]) }
+	public String getSchemaName () { ListUtils.NotNullValue([params.schemaName, (connection as JDBCConnection).schemaName]) }
 	public void setSchemaName (String value) { params.schemaName = value }
 
 	/**

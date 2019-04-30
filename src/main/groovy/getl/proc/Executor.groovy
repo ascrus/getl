@@ -27,6 +27,7 @@ package getl.proc
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import getl.exception.ExceptionGETL
 import getl.utils.*
@@ -163,7 +164,6 @@ class Executor {
 		run(l, countProc, code)
 	}
 
-	/*
 	@groovy.transform.Synchronized
 	private void putThreadListElement(Map m, Map values) {
 		m.putAll(values)
@@ -178,8 +178,7 @@ class Executor {
 	private void removeActiveThread(Map m) {
 		threadActive.remove(m)
 	}
-	*/
-	
+
 	public void run(List list, int countProc, Closure code) {
 		hasError = false
 		isInterrupt = false
@@ -247,8 +246,8 @@ class Executor {
 					}
 					catch (Throwable e) {
 						setError(null, e)
-						threadActive.each {
-							it.threadSubmit?.cancel(true)
+						threadActive.each { Map serv ->
+							(serv.threadSubmit as Future)?.cancel(true)
 						}
 						threadPool.shutdownNow()
 						throw e

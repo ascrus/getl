@@ -57,7 +57,7 @@ class Path {
 	/**
 	 * Change from process path Windows file separator to Unix separator  
 	 */
-	public boolean changeSeparator = (File.separatorChar != '/')
+	public boolean changeSeparator = (File.separatorChar != '/'.charAt(0))
 	
 	/**
 	 * Ignoring converting error and set null value
@@ -259,7 +259,7 @@ class Path {
 					}
 					
 					if (p.vars.find { it == vn} != null) throw new ExceptionGETL("Duplicate variable \"${vn}\"")
-					p.vars.add(vn)
+					(p.vars as List).add(vn)
 					
 					f = e + 1
 				}
@@ -269,11 +269,11 @@ class Path {
 				b.append(d[i].substring(f))
 			}
 			
-			p.mask = (p.vars.size() == 0)?d[i]:b.toString()
-			p.like = (p.vars.size() == 0)?d[i]:'%'
+			p.mask = ((p.vars as List).size() == 0)?d[i]:b.toString()
+			p.like = ((p.vars as List).size() == 0)?d[i]:'%'
 			elements.add(p)
 			
-			if (p.vars.size() == 0) {
+			if ((p.vars as List).size() == 0) {
 				if (numLocalPath == -1 && i < d.length - 1)
 					rb.append("/" + d[i])
 			}
@@ -345,7 +345,7 @@ class Path {
 			mp.append("(?i)")
 			for (int i = 0; i < elements.size() - 1; i++) {
 				mp.append(elements[i].mask + "/")
-				lp.append(elements[i].like.replace('.', '\\.') + "/")
+				lp.append((elements[i].like as String).replace('.', '\\.') + "/")
 			}
 			maskFolder = mp.toString() + "(.+)"
 			likeFolder = lp.toString()
@@ -587,7 +587,7 @@ class Path {
 	 */
 	@groovy.transform.CompileStatic
 	public String generateFileName(Map<String, Object> varValues, boolean formatValue) {
-		def v = [:]
+		def v = [:] as Map<String, Object>
 		if (formatValue) {
 			vars.each { key, value ->
 				def val = formatVariable(key, varValues.get(key))

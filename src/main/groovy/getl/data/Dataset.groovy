@@ -1101,7 +1101,7 @@ ${ef.toString()}
 			reader.close()
 		}
 		
-		if (useParams && l.params != null) params.putAll(l.params as Map)
+		if (useParams && (l as Map).params != null) params.putAll((l as Map).params as Map)
 		List<Field> fl = GenerationUtils.Map2Fields(l as Map)
 		if (fl == null || fl.isEmpty()) throw new ExceptionGETL("Fields not found in json schema")
 		

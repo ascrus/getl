@@ -609,16 +609,16 @@ class FileUtils {
 			sb << "{ String line -> methodConvertText(line) }\n"
 			sb << "@groovy.transform.CompileStatic\n"
 			sb << "String methodConvertText(String line) {\n"
-			rules.each { rule ->
+			rules.each { Map rule ->
 				if (rule == null) throw new ExceptionGETL("Required rule section for convertation rules")
-				def type = (rule."type"?:"REPLACE")?.toUpperCase()
+				def type = ((rule."type" as String)?:'REPLACE')?.toUpperCase()
 				if (!(type in ["REPLACE", "REGEXPR"])) throw new ExceptionGETL("Invalid rule type \"$type\", allowed REPLACE and REGEXPR")
 				
-				def oldValue = rule."old"?.replace("'", "\\'")
+				def oldValue = (rule.old as String)?.replace("'", "\\'")
 				if (oldValue == null) throw new ExceptionGETL("Required \"old\" parameter from rule $rule")
 				oldValue = StringUtils.EscapeJava(oldValue as String)
 				
-				def newValue = rule."new"?.replace("'", "\\'")
+				def newValue = (rule.new as String)?.replace("'", "\\'")
 				if (newValue == null) throw new ExceptionGETL("Required \"new\" parameter from rule $rule")
 				newValue = StringUtils.EscapeJava(newValue as String)
 				

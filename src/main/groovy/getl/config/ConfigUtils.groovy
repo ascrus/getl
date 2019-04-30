@@ -33,7 +33,7 @@ class ConfigUtils extends Job {
             return
         }
 
-        if (jobArgs.dest.manager == null) {
+        if ((jobArgs.dest as Map).manager == null) {
             println 'Required parameters "dest.manager" for destination manager'
             return
         }
@@ -45,7 +45,7 @@ class ConfigUtils extends Job {
 
         Logs.Info("config: load ${Config.content.size()} parameters for source")
 
-        def destMan = Class.forName(jobArgs.dest.manager).newInstance() as ConfigManager
+        def destMan = Class.forName((jobArgs.dest as Map).manager).newInstance() as ConfigManager
         Config.params.clear()
         Config.configClassManager = destMan
         def destParams = [config: jobArgs.dest]

@@ -215,7 +215,7 @@ ORDER BY object_type, Lower(object_schema), Lower(object_name), Lower(grantor), 
 
 	static main(args) {
 		def a = MapUtils.ProcessArguments(args)
-		if (a.config?.filename == null || (a.size() == 1 && (a.containsKey('help') || a.containsKey('/help') || a.containsKey('/?')))) {
+		if ((a.config as Map)?.filename == null || (a.size() == 1 && (a.containsKey('help') || a.containsKey('/help') || a.containsKey('/?')))) {
 			println "### Reverse engineering Vertica tool, version $version, EasyData company (www.easydata.ru)"
 			println '''
 Syntax:
@@ -389,7 +389,7 @@ Example:
 		def qExportObjects = new QueryDataset(connection: cVertica, query: "SELECT EXPORT_OBJECTS('', '$name', false)")
 		def r = qExportObjects.rows()
 		assert r.size() == 1, "Object \"$name\" not found"
-		String s = r[0].export_objects.replace('\r', '')
+		String s = (r[0].export_objects as String).replace('\r', '')
 		return s.trim()
 	}
 
@@ -406,7 +406,7 @@ Example:
 		def finishAnalyze = false
 		def startProj = false
 		sql.eachLine { String line ->
-			if (finishAnalyze || line.trim() == '\n') return
+			if (finishAnalyze || line.trim() == '\n') return [:]
 
 			Matcher projMatcher
 			if (!projectionTables || projectionAnalyzeSuper || projectionKsafe != null) {
@@ -414,7 +414,7 @@ Example:
 
 				if (!projectionTables && projMatcher.count == 1) {
 					finishAnalyze = true
-					return
+					return [:]
 				}
 			}
 
@@ -784,7 +784,7 @@ Example:
 		}
 
 		if (jobArgs.list != null) {
-			def l = jobArgs.list.toLowerCase()
+			def l = (jobArgs.list as String).toLowerCase()
 			if (!(l in ['none', 'print'])) {
 				Logs.Severe("Unknown list option \"$l\"")
 				doneReverse()
@@ -924,7 +924,7 @@ Example:
 		hUsers.eachRow(order: ['Lower(user_name)']) { Map r ->
 			setWrite('USERS', fileNameUsers, [user: r.user_name])
 
-			if (r.user_name.toLowerCase() != 'dbadmin') {
+			if ((r.user_name as String).toLowerCase() != 'dbadmin') {
 				if (BoolUtils.IsValue(sectionDrop.users)) {
 				   writeln "DROP USER \"${r.user_name}\" CASCADE;"
 				}
@@ -1120,7 +1120,7 @@ Example:
 					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON FUNCTION ${objectName(r.object_schema as String, r.object_name as String)}($r.function_argument_type) TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'ROLE':
-					def grantee = r.grantee.toLowerCase()
+					def grantee = (r.grantee as String).toLowerCase()
 					def rows = hRoles.rows(where: "Lower(name) = '$grantee'")
 					if (!rows.isEmpty()) {
 						if (fileNameGrants == null) setWrite('ROLES', fileNameRoles, [role: r.grantee])

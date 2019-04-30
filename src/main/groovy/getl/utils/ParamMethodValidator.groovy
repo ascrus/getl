@@ -155,7 +155,7 @@ class ParamMethodValidator {
 				def subContent = methodParams."$subContentName"
 				if (subContent != null) {
 					value.each { subValue ->
-						if (!(subValue instanceof Map)) throw new ExceptionGETL("Invalid parameter \"${contentName}.${key}.${subKey}\", map expected")
+						if (!(subValue instanceof Map)) throw new ExceptionGETL("Invalid parameter \"${contentName}.${key}.*\", map expected")
 						validationSub(subValue, subContentName, "${contentName}.${key}[]", excludeSections)
 					}
 				}

@@ -98,7 +98,7 @@ class CSVDriver extends FileDriver {
 		p.quoteStr = p.quote.charAt(0)
 		
 		def fieldDelimiter = ListUtils.NotNullValue([params.fieldDelimiter, ds.fieldDelimiter])
-		p.fieldDelimiter = fieldDelimiter.charAt(0)
+		p.fieldDelimiter = (fieldDelimiter as String).charAt(0)
 		
 		p.rowDelimiter = ListUtils.NotNullValue([params.rowDelimiter, ds.rowDelimiter])
 		p.isHeader = BoolUtils.IsValue(params.header as Boolean, ds.header)
@@ -111,7 +111,7 @@ class CSVDriver extends FileDriver {
 	
 	protected static QuoteMode datasetQuoteMode(Dataset dataset) {
 		def QuoteMode qMode
-		switch (dataset.quoteMode) {
+		switch ((dataset as CSVDataset).quoteMode) {
 			case CSVDataset.QuoteMode.COLUMN:
 				boolean[] b = new boolean[dataset.field.size()]
                 for (int i = 0; i < dataset.field.size(); i++) {
@@ -135,7 +135,7 @@ class CSVDriver extends FileDriver {
 		def p = readParamDataset(dataset, [:]) 
 		
 		def csvfile = new File(p.path)
-		if (!csvfile.exists()) throw new ExceptionGETL("File \"${dataset.fileName}\" not found or invalid path \"${dataset.connection.params.path}\"")
+		if (!csvfile.exists()) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" not found or invalid path \"${dataset.connection.params.path}\"")
 		Reader fileReader = getFileReader(dataset, [:])
 		
 		def CsvPreference pref = new CsvPreference.Builder(p.quoteStr as char, (p.fieldDelimiter) as int, p.rowDelimiter as String).useQuoteMode(p.qMode as QuoteMode).build()
@@ -144,11 +144,11 @@ class CSVDriver extends FileDriver {
 		try {
 			if (p.isHeader)  {
 				header = reader.getHeader(true)
-				if (header == null) throw new ExceptionGETL("File \"${dataset.fileName}\" is empty")
+				if (header == null) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" is empty")
 			}
 			else {
 				def row = reader.read()
-				if (row == null) throw new ExceptionGETL("File \"${dataset.fileName}\" is empty")
+				if (row == null) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" is empty")
 				def c = 0
 				row.each {
 					c++
@@ -342,7 +342,7 @@ class CSVDriver extends FileDriver {
 		String formatTime = ListUtils.NotNullValue([fParams.formatTime, dataset.formatTime]) as String
 		String formatDateTime = ListUtils.NotNullValue([fParams.formatDateTime, dataset.formatDateTime]) as String
 		
-		if (fields == null) fields = []
+		if (fields == null) fields = [] as ArrayList<String>
 //		def quoteStr = dataset.quoteStr
 		
 		def cp = new ArrayList<CellProcessor>()
@@ -410,9 +410,9 @@ class CSVDriver extends FileDriver {
 		def fileMask = fileMaskDataset(cds, (boolean)p.isSplit)
 		def vars = [:]
 		if (p.isSplit) {
-			vars << [number: [type: Field.Type.INTEGER, len: 4]]
+			vars.put('number', [type: Field.Type.INTEGER, len: 4])
 		}
-		def filePath = new Path(mask: fileMask, vars: vars)
+		def filePath = new Path([mask: fileMask, vars: vars])
 		
 		fm.buildList(path: filePath)
 		def filesParams = (p.isSplit)?[order: ['number']]:[:]
@@ -421,7 +421,7 @@ class CSVDriver extends FileDriver {
 		Integer portion = 0
 		Reader bufReader = getFileReader(dataset, params, (Integer)files[portion].number)
 		
-		Closure processError = (params.processError != null)?params.processError:null
+		Closure processError = (params.processError != null)?params.processError as Closure:null
 		boolean isValid = BoolUtils.IsValue(params.isValid, false)
 		CsvPreference pref = new CsvPreference.Builder((char)p.quoteStr, (int)p.fieldDelimiter, (String)p.rowDelimiter).useQuoteMode((QuoteMode)p.qMode).build()
 		ICsvMapReader reader
@@ -554,14 +554,13 @@ class CSVDriver extends FileDriver {
 	
 	@Override
 	public void openWrite (Dataset dataset, Map params, Closure prepareCode) {
-		if (dataset.fileName == null) throw new ExceptionGETL('Dataset required fileName')
+		CSVDataset csv_ds = dataset as CSVDataset
+		if (csv_ds.fileName == null) throw new ExceptionGETL('Dataset required fileName')
 		
 		WriterParams wp = new WriterParams()
 		dataset.driver_params = wp
-		wp.formatOutput = dataset.formatOutput
+		wp.formatOutput = csv_ds.formatOutput
 
-        CSVDataset csv_ds = dataset as CSVDataset
-		
 		ReadParams p = readParamDataset(csv_ds, params)
 		boolean isAppend = p.params.isAppend
 		boolean isValid = (params.isValid != null)?params.isValid:false
@@ -578,7 +577,7 @@ class CSVDriver extends FileDriver {
 		
 		ArrayList<String> listFields = new ArrayList<String>()
 		if (prepareCode != null) {
-			listFields = prepareCode([])
+			listFields = prepareCode([]) as ArrayList
 		}
 		
 		def header = fields2header(csv_ds.field, listFields)
@@ -753,7 +752,7 @@ class CSVDriver extends FileDriver {
 		if (source.field.isEmpty() && source.autoSchema) source.loadDatasetMetadata()
 		//if (source.field.isEmpty()) throw new ExceptionGETL('Required fields from source dataset')
 		
-		target.connection.validPath()
+		(target.connection as CSVConnection).validPath()
 
 		if (!source.field.isEmpty()) target.setField(source.field) else target.field.clear()
 		target.header = source.header
@@ -937,7 +936,7 @@ class CSVDriver extends FileDriver {
 		if (source.field.isEmpty() && source.autoSchema) source.loadDatasetMetadata()
 		if (!source.field.isEmpty()) target.setField(source.field)
 		
-		target.connection.validPath()
+		(target.connection as CSVConnection).validPath()
 		
 		target.header = source.header
 		target.nullAsValue = source.nullAsValue

@@ -66,9 +66,9 @@ class Field implements Serializable {
 	/**
 	 * Value can not be null
 	 */
-	private boolean isNull = true
-	public boolean getIsNull() { return this.isNull }
-	public void setIsNull(boolean value) { this.isNull = value }
+	private Boolean isNull = true
+	public Boolean getIsNull() { return this.isNull }
+	public void setIsNull(Boolean value) { this.isNull = value }
 	
 	/**
 	 * Length of value
@@ -87,9 +87,9 @@ class Field implements Serializable {
 	/**
 	 * Field is primary key
 	 */
-	private boolean isKey = false
-	public boolean getIsKey() { return this.isKey }
-	public void setIsKey(boolean value) {
+	private Boolean isKey = false
+	public Boolean getIsKey() { return this.isKey }
+	public void setIsKey(Boolean value) {
 		this.isKey = value
 		if (this.isKey) this.isNull = false else this.ordKey = null
 	}

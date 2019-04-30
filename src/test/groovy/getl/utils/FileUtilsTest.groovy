@@ -158,7 +158,6 @@ class FileUtilsTest extends getl.test.GetlTest {
         f.deleteOnExit()
         f.text = 'test'
 
-        boolean res
         def lf = FileUtils.LockFile(fileName, 'rw', false)
         assertTrue(FileUtils.IsLockFileForRead(fileName))
         lf.release()

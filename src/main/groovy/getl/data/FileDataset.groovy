@@ -51,44 +51,44 @@ class FileDataset extends Dataset {
 	/**
 	 * Code page for file
 	 */
-	public String getCodePage () { ListUtils.NotNullValue([params.codePage, connection.codePage, "utf-8"]) }
+	public String getCodePage () { ListUtils.NotNullValue([params.codePage, (connection as FileConnection).codePage, "utf-8"]) }
 	public void setCodePage (String value) { params.codePage = value }
 	
 	/**
 	 * Append if file exists
 	 */
-	public boolean getAppend () { BoolUtils.IsValue([params.append, connection.append], false) }
+	public boolean getAppend () { BoolUtils.IsValue([params.append, (connection as FileConnection).append], false) }
 	public void setAppend (boolean value) { params.append = value }
 	
 	/**
 	 * Auto create path for connection
 	 */
-	public boolean getCreatePath () { BoolUtils.IsValue([params.createPath, connection.createPath], false) }
+	public boolean getCreatePath () { BoolUtils.IsValue([params.createPath, (connection as FileConnection).createPath], false) }
 	public void setCreatePath (boolean value) { params.createPath = value }
 	
 	/**
 	 * Delete file if empty after write
 	 */
-	public boolean getDeleteOnEmpty () { BoolUtils.IsValue([params.deleteOnEmpty, connection.deleteOnEmpty], false) }
+	public boolean getDeleteOnEmpty () { BoolUtils.IsValue([params.deleteOnEmpty, (connection as FileConnection).deleteOnEmpty], false) }
 	public void setDeleteOnEmpty (boolean value) { params.deleteOnEmpty = value }
 	
 	/**
 	 * File is pack of GZIP
 	 */
-	public boolean getIsGzFile() { BoolUtils.IsValue([params.isGzFile, connection.isGzFile], false) }
+	public boolean getIsGzFile() { BoolUtils.IsValue([params.isGzFile, (connection as FileConnection).isGzFile], false) }
 	public void setIsGzFile (boolean value) { params.isGzFile = value }
 	
 	/**
 	 * Extenstion for file
 	 */
-	public String getExtension () { ListUtils.NotNullValue([params.extension, connection.extension]) }
+	public String getExtension () { ListUtils.NotNullValue([params.extension, (connection as FileConnection).extension]) }
 	public void setExtension (String value) { params.extension = value }
 	
 	/**
 	 * Size of read/write buffer size
 	 */
-	public Integer getBufferSize () { ListUtils.NotNullValue([params.bufferSize, connection.bufferSize, 1*1024*1024]) as Integer }
-	public void setBufferSize()  { params.bufferSize = value }
+	public Integer getBufferSize () { ListUtils.NotNullValue([params.bufferSize, (connection as FileConnection).bufferSize, 1*1024*1024]) as Integer }
+	public void setBufferSize(Integer value)  { params.bufferSize = value }
 	
 	@Override
 	public String getObjectName() { fileName }

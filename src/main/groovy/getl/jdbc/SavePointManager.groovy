@@ -85,8 +85,8 @@ class SavePointManager {
 	 */
 	public Map getFields () { params.fields }
 	public void setFields (Map value) {
-		params.fields.clear()
-		params.fields.putAll(value)
+		(params.fields as Map).clear()
+		(params.fields as Map).putAll(value)
 		map.clear()
 	}
 	
@@ -94,7 +94,7 @@ class SavePointManager {
 	 * Save value method (INSERT OR MERGE)
 	 * @return
 	 */
-	public String getSaveMethod () { params.saveMethod?.toUpperCase()?:"MERGE" }
+	public String getSaveMethod () { (params.saveMethod as String)?.toUpperCase()?:"MERGE" }
 	public void setSaveMethod(String value) {
 		assert value != null, "Save method can not be NULL and allowed only values \"INSERT\" and \"MERGE\""
 		assert value.toUpperCase() in ["INSERT", "MERGE"], "Unknown save method \"$value\", allowed only values \"INSERT\" and \"MERGE\""
@@ -246,7 +246,7 @@ class SavePointManager {
 		
 		Map<String, Object> res = [type: null as Object, value: null as Object]
 		rows.each { row ->
-			def type = row.type?.toUpperCase()
+			def type = (row.type as String)?.toUpperCase()
 			if (!(type in ["D", "N", "F"])) throw new ExceptionGETL("Unknown type value \"$type\" from source $source")
 			res.type = row.type
 			if (type == "D") {
@@ -284,7 +284,7 @@ class SavePointManager {
 	public static String value2String(Map value, boolean quote, String format) {
 		if (value == null) return null
 		
-		def type = value.type?.toUpperCase()
+		def type = (value.type as String)?.toUpperCase()
 		
 		def res
 		if (type in ["N", "F"]) {
@@ -352,10 +352,10 @@ class SavePointManager {
 		def operation = (saveMethod == "MERGE")?"UPDATE":"INSERT"
 		
 		def row = [:]
-		row."${map.source.toLowerCase()}" = source.toUpperCase()
-		row."${map.type.toLowerCase()}" = type
-		row."${map.time.toLowerCase()}" = DateUtils.Now()
-		row."${map.value.toLowerCase()}" = value
+		row.put((map.source as String).toLowerCase(), source.toUpperCase())
+		row.put((map.type as String).toLowerCase(), type)
+		row.put((map.time as String).toLowerCase(), DateUtils.Now())
+		row.put((map.value as String).toLowerCase(), value)
 		
 		def save = { oper ->
 			new Flow().writeTo(dest: table, dest_operation: oper) { updater ->
@@ -429,7 +429,7 @@ class SavePointManager {
 		
 		connection.startTran()
 		try {
-			def sql = "DELETE FROM ${table.fullNameDataset()} WHERE ${map.source.toLowerCase()} = '${source.toUpperCase()}'"
+			def sql = "DELETE FROM ${table.fullNameDataset()} WHERE ${(map.source as String).toLowerCase()} = '${source.toUpperCase()}'"
 			connection.executeCommand(command: sql)
 		}
 		catch (Exception e) {

@@ -46,8 +46,8 @@ class XMLDataset extends StructureFileDataset {
 	 */
 	public Map<String, Boolean> getFeatures () { params."features" }
 	public void setFeatures(Map<String, Boolean> values) {
-		params."features".clear()
-		params."features".putAll(values)
+		(params.features as Map).clear()
+		(params.features as Map).putAll(values)
 	}
 	
 	@Override

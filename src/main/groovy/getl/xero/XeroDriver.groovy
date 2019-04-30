@@ -88,7 +88,7 @@ class XeroDriver extends Driver {
             if (!FileUtils.ExistsFile(con.useResourceFile))
                 throw new ExceptionGETL("Resource file \"${con.useResourceFile}\" not found!")
             saveToHistory("Loading jar file \"${con.useResourceFile}\"")
-            ClassLoader.systemClassLoader.addURL(new File(con.useResourceFile).toURI().toURL())
+//            ClassLoader.systemClassLoader.addURL(new File(con.useResourceFile).toURI().toURL())
         }
 
         if (con.configInResource == null)
@@ -471,16 +471,16 @@ class XeroDriver extends Driver {
         def listName = dsParams.listName as String
         def parentName = dsParams.parentName as String
         def parentColumn = dsParams.parentColumn as String
-        def parentOnly = dsParams.parentOnly as List<String>
-        def childOnly = dsParams.childOnly as List<String>
+//        def parentOnly = dsParams.parentOnly as List<String>
+//        def childOnly = dsParams.childOnly as List<String>
         def childClass = dsParams.childClass
         def childMethod = dsParams.childMethod?:childClass
         def clientParams = dsParams.clientParams?:'modifiedAfter, where, order'
         def includeArchived = BoolUtils.IsValue(dsParams.includeArchived)
 
         def mainClass = parentName?:objectName
-        if (parentOnly != null) parentOnly = parentOnly*.toLowerCase()
-        if (childOnly != null) childOnly = childOnly*.toLowerCase()
+//        if (parentOnly != null) parentOnly = parentOnly*.toLowerCase()
+//        if (childOnly != null) childOnly = childOnly*.toLowerCase()
 
         def pb = new StringBuilder()
         def cb = new StringBuilder()
@@ -564,9 +564,9 @@ ${cb.toString()}
 }"""
         def closure = GenerationUtils.EvalGroovyClosure(sb.toString())
 
-        Long res = 0
+        Long res
         try {
-            res = closure.call(client, modifiedAfter, where, order, limit, includeArchived, filter, code)
+            res = closure.call(client, modifiedAfter, where, order, limit, includeArchived, filter, code) as Long
         }
         catch (Exception e) {
             Logs.Severe("Error read Xero object \"$ds.objectName\"")

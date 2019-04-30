@@ -58,8 +58,8 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		def fieldCalc = getFieldCalc(dataset)
 		def algorithm = dataset.params.algorithm
 		if (algorithm == null) throw new ExceptionGETL("Required parameter \"algorithm\" in dataset")
-		algorithm = algorithm.toUpperCase()
-		if (!(algorithm in ["HASH", "TREE"])) throw new ExceptionGETL("Unknown algorithm \"${value}\"")
+		algorithm = (algorithm as String).toUpperCase()
+		if (!(algorithm in ["HASH", "TREE"])) throw new ExceptionGETL("Unknown algorithm \"${algorithm}\"")
 		Closure aggregateCode = generateAggrCode(fieldByGroup, fieldCalc)
 		Map filter = [:]
 		fieldCalc.each { name, value ->
@@ -150,9 +150,9 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		num = 0
 		fieldCalc.each { String name, Map mp ->
 			name = name.toLowerCase().replace("'", "\\'")
-			String method = (mp.method != null)?mp.method.toUpperCase():"SUM"
+			String method = (mp.method != null)?(mp.method as String).toUpperCase():"SUM"
 			Closure filter = mp.filter
-			def source = mp.fieldName?.replace("'", "\\'")
+			def source = (mp.fieldName as String)?.replace("'", "\\'")
 			if (source == null && method != "COUNT") throw new ExceptionGETL("Required fieldName in parameters by field \"${name}\"")
 			
 			if (filter != null) {

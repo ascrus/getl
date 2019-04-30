@@ -158,7 +158,7 @@ class JDBCConnection extends Connection {
 	public boolean getAutoCommit () { BoolUtils.IsValue(params.autoCommit, false) }
 	public void setAutoCommit (boolean value) { 
 		params.autoCommit = value
-		if (connected) driver.setAutoCommit(value)
+		if (connected) (driver as JDBCConnection).setAutoCommit(value)
 	}
 	
 	/**
@@ -301,17 +301,17 @@ class JDBCConnection extends Connection {
 		if (params == null) params = [:]
 		List<TableDataset> result = []
 		def o = retrieveObjects(params, code)
-		o.each { row ->
+		o.each { Map row ->
 			TableDataset d = new TableDataset(connection: this, type: JDBCDataset.Type.UNKNOWN)
 			d.with {
 				d.autoSchema = true
 				d.dbName = row.dbName
 				d.schemaName = row.schemaName
 				d.tableName = row.tableName
-				if (row.type?.toUpperCase() == "TABLE") {
+				if ((row.type as String)?.toUpperCase() == "TABLE") {
 					d.type = JDBCDataset.Type.TABLE
 				}
-				else if (row.type?.toUpperCase() == "VIEW") {
+				else if ((row.type as String)?.toUpperCase() == "VIEW") {
 					d.type = JDBCDataset.Type.VIEW
 				}
 				

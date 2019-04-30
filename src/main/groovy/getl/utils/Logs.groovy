@@ -161,8 +161,8 @@ class Logs {
 	 * Init log on load config
 	 */
 	public static void Init () {
-		if (printConfigMessage == null) printConfigMessage = (Config.content.log?.printConfig != null)?Config.content.log.printConfig:false
-		InitFile(logFileName?:Config.content.log?.file)
+		if (printConfigMessage == null) printConfigMessage = ((Config.content.log as Map)?.printConfig != null)?(Config.content.log as Map).printConfig:false
+		InitFile(logFileName?:(Config.content.log as Map)?.file)
 		InitMessages.each { Config(it) }
 		InitMessages = []
 	}

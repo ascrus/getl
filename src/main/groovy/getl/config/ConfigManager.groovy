@@ -40,7 +40,7 @@ abstract class ConfigManager {
     /**
      * Evaluate variables where load configuration
      */
-    static boolean getEvalVars() { false }
+    boolean getEvalVars() { false }
 
     /**
      * Parameters of configuration

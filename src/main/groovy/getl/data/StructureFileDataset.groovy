@@ -51,7 +51,7 @@ class StructureFileDataset extends FileDataset {
 		if (configSection.containsKey("attributes")) {
 			List l = configSection.attributes
 			List<Field> fl = []
-			l.each {
+			l.each { Map it ->
 				String name = it.name
 				if (it.name == null) throw new ExceptionGETL("Required field name: ${it}")
 				Field.Type type = it.type?:Field.Type.STRING
@@ -72,7 +72,7 @@ class StructureFileDataset extends FileDataset {
 				
 				Field f = new Field(name: name, type: type, isNull: isNull, length: length, precision: precision,
 									isKey: isKey, isAutoincrement: isAutoincrement, isReadOnly: isReadOnly,
-									defaultValue: defaultValue, compute: compute, description: description,
+									/*defaultValue: defaultValue, */compute: compute, description: description,
 									format: format, alias: alias, trim: trim,
 									decimalSeparator: decimalSeparator, extended: extended)
 				fl << f

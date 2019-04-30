@@ -824,13 +824,13 @@ ${extend}'''
 	//		println sqlCodeCT
 			executeCommand(sqlCodeCT, p)
 
-			if (params.indexes != null && !params.indexes.isEmpty()) {
+			if (params.indexes != null && !(params.indexes as Map).isEmpty()) {
 				if (!isSupport(Driver.Support.INDEX)) throw new ExceptionGETL("Driver not support indexes")
-				params.indexes.each { name, value ->
+				(params.indexes as Map).each { String name, Map value ->
 					String createIndexCode = '"""' + sqlCreateIndex + '"""'
 					
 					def idxCols = []
-					value.columns?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol) }
+					(value.columns as List)?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol) }
 					
 					def varsCI = [  indexName: prepareTableNameForSQL(name as String),
 									unique: (value.unique != null && value.unique == true)?"UNIQUE":"",
@@ -1123,7 +1123,7 @@ ${extend}'''
 			def fn = fullNameDataset(table)
 			
 			List<String> fields = []
-            List<Field> useFields = (params.useFields != null && params.useFields.size() > 0)?params.useFields:table.field
+            List<Field> useFields = (params.useFields != null && (params.useFields as List).size() > 0)?params.useFields:table.field
 
             useFields.each { Field f ->
 				fields << prepareFieldNameForSQL(f.name, table as JDBCDataset)
@@ -1388,7 +1388,7 @@ $sql
 			}
 			warn = warn.nextWarning
 		}
-		if (!connection.sysParams.warnings.isEmpty()) {
+		if (!((connection as JDBCConnection).sysParams.warnings as List).isEmpty()) {
 			if (BoolUtils.IsValue(con.outputServerWarningToLog)) Logs.Warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
             saveToHistory("-- Server warning ${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
 		}
@@ -1502,7 +1502,7 @@ $sql
 		
 		List<String> listFields = []
 		if (prepareCode != null) {
-			listFields = prepareCode(tableFields)
+			listFields = prepareCode(tableFields) as List
 		}
 		
 		List<Field> fields = []
@@ -1636,7 +1636,7 @@ $sql
 		
 		validTableName(dataset)
 		def fn = fullNameDataset(dataset)
-		def operation = (params.operation != null)?params.operation.toUpperCase():"INSERT"
+		def operation = (params.operation != null)?(params.operation as String).toUpperCase():"INSERT"
 		if (!(operation.toUpperCase() in ["INSERT", "UPDATE", "DELETE", "MERGE"])) throw new ExceptionGETL("Unknown operation \"$operation\"")
 		def batchSize = (!isSupport(Driver.Support.BATCH)?1:((params.batchSize != null)?params.batchSize:1000L))
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch
@@ -2013,7 +2013,7 @@ $sql
 		if (!source instanceof JDBCDataset) throw new ExceptionGETL("Source dataset must be \"JDBCDataset\"")
 		
 		if (procParams.operation == null) throw new ExceptionGETL("Required \"operation\" parameter")
-		def oper = procParams.operation.toUpperCase()
+		def oper = (procParams.operation as String).toUpperCase()
 		if (!(oper in ["INSERT", "UPDATE", "DELETE", "MERGE"])) throw new ExceptionGETL("Unknown \"$oper\" operation")
 		
 		if (target.connection != source.connection) throw new ExceptionGETL("Required one identical the connection by datasets")

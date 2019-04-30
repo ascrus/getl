@@ -37,7 +37,7 @@ import groovy.json.JsonSlurper
  */
 class ConfigFiles extends ConfigManager {
     @Override
-    static boolean getEvalVars() { true }
+    boolean getEvalVars() { true }
 
     @Override
     public void init(Map<String, Object> initParams) {

@@ -29,10 +29,8 @@ import groovy.transform.InheritConstructors
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
-import getl.data.FileConnection
-import getl.data.FileDataset
+import getl.data.*
 import getl.csv.CSVDataset
-import getl.data.Dataset
 import getl.exception.ExceptionGETL
 import getl.utils.*
 
@@ -58,7 +56,7 @@ abstract class FileDriver extends Driver {
 		def path = (connection as FileConnection).path
 		if (path == null) throw new ExceptionGETL("Path not setting")
 		
-		if (params.directory != null) path += connection.fileSeparator + params.directory
+		if (params.directory != null) path += (connection as FileConnection).fileSeparator + params.directory
 		def match = (params.mask != null)?params.mask:".*"
 		RetrieveObjectType type = (params.type == null)?RetrieveObjectType.FILE:params.type
 		RetrieveObjectSort sort = (params.sort == null)?RetrieveObjectSort.NONE:params.sort
@@ -90,13 +88,13 @@ abstract class FileDriver extends Driver {
 		if (sort != RetrieveObjectSort.NONE) {
 			switch (sort) {
 				case RetrieveObjectSort.NAME:
-					list = list.sort { it.name }
+					list = list.sort { (it as File).name }
 					break
 				case RetrieveObjectSort.DATE:
-					list = list.sort { it.lastModified() }
+					list = list.sort { (it as File).lastModified() }
 					break
 				case RetrieveObjectSort.SIZE:
-					list = list.sort { it.length() }
+					list = list.sort { (it as File).length() }
 					break
 			}
 		} 
@@ -112,8 +110,10 @@ abstract class FileDriver extends Driver {
 	public String fullFileNameDatasetWithoutGZ (Dataset dataset) {
 		String fn = fileNameWithoutExtension(dataset)
 		if (fn == null) return null
-		if (dataset.extension != null) fn += ".${dataset.extension}"
-		if (dataset.connection.path != null) fn = "${dataset.connection.path}${connection.fileSeparator}${fn}"
+		FileDataset ds = dataset
+		FileConnection con = ds.connection
+		if (ds.extension != null) fn += ".${ds.extension}"
+		if (con.path != null) fn = "${con.path}${con.fileSeparator}${fn}"
 
 		return fn
 	}
@@ -133,11 +133,12 @@ abstract class FileDriver extends Driver {
 	 * @return
 	 */
 	public static String fileNameWithoutExtension(Dataset dataset) {
-		String fn = dataset.fileName
+		FileDataset ds = dataset
+		String fn = ds.fileName
 		if (fn == null) return null
 		
-		if (dataset.isGzFile && FileUtils.FileExtension(fn)?.toLowerCase() == "gz") fn = FileUtils.ExcludeFileExtension(fn)
-		if (dataset.extension != null && FileUtils.FileExtension(fn)?.toLowerCase() == dataset.extension.toLowerCase()) fn = FileUtils.ExcludeFileExtension(fn)
+		if (ds.isGzFile && FileUtils.FileExtension(fn)?.toLowerCase() == "gz") fn = FileUtils.ExcludeFileExtension(fn)
+		if (ds.extension != null && FileUtils.FileExtension(fn)?.toLowerCase() == ds.extension.toLowerCase()) fn = FileUtils.ExcludeFileExtension(fn)
 
 		//println "${dataset.fileName}, gz=${dataset.isGzFile}, ext=${dataset.extension}, exclude: ${FileUtils.ExcludeFileExtension(fn)} => $fn"
 		
@@ -153,10 +154,12 @@ abstract class FileDriver extends Driver {
 	public String fullFileNameDataset(Dataset dataset, Integer portion) {
 		String fn = fileNameWithoutExtension(dataset)
 		if (fn == null) return null
-		if (dataset.connection.path != null) fn = "${dataset.connection.path}${connection.fileSeparator}${fn}"
+		FileDataset ds = dataset
+		FileConnection con = ds.connection
+		if (con.path != null) fn = "${con.path}${con.fileSeparator}${fn}"
 		if (portion != null) fn = "${fn}.${StringUtils.AddLedZeroStr(portion.toString(), 4)}"
-		if (dataset.extension != null) fn += ".${dataset.extension}"
-		if (dataset.isGzFile) fn += ".gz"
+		if (ds.extension != null) fn += ".${ds.extension}"
+		if (ds.isGzFile) fn += ".gz"
 		
 		return fn
 	}
@@ -179,11 +182,13 @@ abstract class FileDriver extends Driver {
 	 */
 	public static String fileMaskDataset(Dataset dataset, boolean isSplit) {
 		String fn = fileNameWithoutExtension(dataset)
-		
+
+		FileDataset ds = dataset
+
 		if (isSplit) fn += ".{number}"
-		if (dataset.extension != null) fn += ".${dataset.extension}"
+		if (ds.extension != null) fn += ".${ds.extension}"
 		
-		def isGzFile = dataset.isGzFile
+		def isGzFile = ds.isGzFile
 		if (isGzFile) fn += ".gz"
 
 		return fn

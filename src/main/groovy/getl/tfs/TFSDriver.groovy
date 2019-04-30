@@ -33,7 +33,7 @@ class TFSDriver extends CSVDriver {
 	@Override
 	protected void processWriteFile(String fileName, File fileTemp) {
 		super.processWriteFile(fileName, fileTemp)
-		if (connection.deleteOnExit) {
+		if ((connection as TFS).deleteOnExit) {
 			new File(fileName).deleteOnExit()
 		}
 	}
