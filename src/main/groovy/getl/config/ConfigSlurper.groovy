@@ -230,11 +230,11 @@ class ConfigSlurper extends ConfigManager {
 			}
 			else  if (value instanceof Closure) {
 				Map<String, Object> res = MapUtils.Copy(vars)
-				def code = (value as Closure).rehydrate(res, this, this)
+				Closure cl = value
+				def code = cl.rehydrate(res, cfg, cl.thisObject)
 				code.resolveStrategy = Closure.DELEGATE_FIRST
 
 				cfg.parse(code)
-//				res.remove('config')
 				res.remove('vars')
 				data.put(key, res)
 			}
@@ -259,7 +259,8 @@ class ConfigSlurper extends ConfigManager {
 			}
 			else  if (value instanceof Closure) {
 				Map<String, Object> res = MapUtils.Copy(vars)
-				Closure code = (value as Closure).rehydrate(res, cfg, this)
+				Closure cl = value
+				Closure code = cl.rehydrate(res, cfg, cl.thisObject)
 				code.resolveStrategy = Closure.DELEGATE_FIRST
 
 				cfg.parse(code)

@@ -4,8 +4,8 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+
+ Copyright (C) 2013-2019  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -22,41 +22,56 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.jdbc
+package getl.jdbc.opts
 
+import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
-import getl.utils.StringUtils
 
 /**
- * Query dataset class
+ * Index options for creating table
  * @author Alexsey Konstantinov
  *
  */
 @InheritConstructors
-class QueryDataset extends JDBCDataset {
-	/**
-	 * SQL query text
-	 */
-	public String getQuery () { params.query }
-	/**
-	 * SQL query text
-	 */
-	public void setQuery (String value) { params.query = value }
-	
-	/**
-	 * Query parameters
-	 */
-	public Map getQueryParams () { 
-		if (params.queryParams == null) params.queryParams = [:]
-		params.queryParams
-	}
-	/**
-	 * Query parameters
-	 */
-	public void setQueryParams (Map value) { params.queryParams = value }
-	
-	@Override
-	public String getObjectName() {
-		"query"
-	}
+class IndexSpec extends BaseSpec {
+    IndexSpec() {
+        super()
+        params.columns = [] as List<String>
+    }
+
+    /**
+     * List of column by index
+     */
+    List<String> getColumns() { params.columns }
+    /**
+     * List of column by index
+     */
+    void setColumns(List<String> value) { params.columns = value }
+
+    /**
+     * Create unique index
+     */
+    Boolean getUnique() { params.unique }
+    /**
+     * Create unique index
+     */
+    void setUnique(Boolean value) { params.unique = value }
+
+    /**
+     * Create hash index
+     */
+    Boolean getHash() { params.hash }
+    /**
+     * Create hash index
+     */
+    void setHash(Boolean value) { params.hash = value }
+
+    /**
+     * Create index if not exists
+     */
+    Boolean getIfNotExists() { params.ifNotExists }
+    /**
+     * Create index if not exists
+     */
+    void setIfNotExists(Boolean value) { params.ifNotExists = value }
 }

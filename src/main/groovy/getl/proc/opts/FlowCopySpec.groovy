@@ -1,7 +1,30 @@
-package getl.proc
+/*
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
+
+ GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
+ transform and load data into programs written in Groovy, or Java, as well as from any software that supports
+ the work with Java classes.
+
+ Copyright (C) 2013-2019  Alexsey Konstantonov (ASCRUS)
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License and
+ GNU Lesser General Public License along with this program.
+ If not, see <http://www.gnu.org/licenses/>.
+*/
+
+package getl.proc.opts
 
 import getl.data.*
-import getl.exception.ExceptionGETL
 import getl.tfs.TFSDataset
 import getl.utils.MapUtils
 
@@ -18,156 +41,152 @@ class FlowCopySpec {
     /**
      * Source dataset
      */
-    Dataset source
+    public Dataset source
 
     /**
      * Destination dataset
      */
-    Dataset dest
+    public Dataset dest
 
     /**
      * List of destination dataset
      */
-    Map<Object, Dataset> destList
+    public Map<Object, Dataset> destList
 
     /**
      * Temporary source name
      */
-    String tempSourceName
+    public String tempSourceName
 
     /**
      * Temporary destination name
      */
-    String tempDestName
+    public String tempDestName
 
     /**
      * Destination fields inherit from source fields
      */
-    Boolean inheritFields
+    public Boolean inheritFields
 
     /**
      * Create destination
      */
-    Boolean createDest
+    public Boolean createDest
 
     /**
      * List of field from destination dataset
      */
-    List<Field> tempFields
+    public List<Field> tempFields
 
     /**
      * Map card columns with syntax: [<destination field>:"<source field>:<convert format>"]
      */
-    Map map
+    public Map map
 
     /**
      * Parameters for source read process
      */
-    Map sourceParams
+    public Map sourceParams
 
     /**
      * Parameters for destination write process
      */
-    Map destParams
+    public Map destParams
 
     /**
      * Write with synchronize main thread
      */
-    Boolean writeSynch
+    public Boolean writeSynch
 
     /**
      * Auto mapping value from source fields to destination fields
      */
-    Boolean autoMap
+    public Boolean autoMap
 
     /**
      * Auto converting type value from source fields to destination fields
      */
-    Boolean autoConvert
+    public Boolean autoConvert
 
     /**
      * Auto starting and finishing transaction for copy process
      */
-    Boolean autoTran
+    public Boolean autoTran
 
     /**
      * Clearing destination dataset before copy
      */
-    Boolean clear
+    public Boolean clear
 
     /**
      * Save assert errors to temporary dataset "errorsDataset"
      */
-    Boolean saveErrors
+    public Boolean saveErrors
 
     /**
      * List of fields destination that do not need to use
      */
-    List<String> excludeFields
+    public List<String> excludeFields
 
     /**
      * List of fields destination that do not need to converted
      */
-    Boolean notConverted
+    public Boolean notConverted
 
     /**
      * Filename  of mirror CSV dataset
      */
-    String mirrorCSV
+    public String mirrorCSV
 
     /**
      * Load to destination as bulk load (only is supported)
      */
-    Boolean bulkLoad
+    public Boolean bulkLoad
 
     /**
      * Convert bulk file to escaped format
      */
-    Boolean bulkEscaped
+    public Boolean bulkEscaped
 
     /**
      * Compress bulk file from GZIP algorithm
      */
-    Boolean bulkAsGZIP
+    public Boolean bulkAsGZIP
 
     /**
      * Initialization code on start process copying
      */
-    Closure onInit
+    public Closure onInit
 
     /**
      * Code executed before writing to destination dataset
      */
-    Closure onWrite
+    public Closure onWrite
 
     /**
      * Code to complete process copying
      */
-    Closure onDone
+    public Closure onDone
 
     /**
      * save transformation code to dumn (default false)
      */
-    Boolean debug
+    public Boolean debug
 
     /**
      * Closure code process row
      */
-    Closure process
+    public Closure process
 
     /**
      * Last count row
      */
-    private Long countRow = 0
-    Long getCountRow() { countRow }
-    protected void setCountRow (Long value) { countRow = value }
+    public Long countRow = 0
 
     /**
      * Error rows for "copy" process
      */
-    private TFSDataset errorsDataset
-    TFSDataset getErrorsDataset() { errorsDataset }
-    protected void setErrorsDataset(TFSDataset value) { errorsDataset = value }
+    public TFSDataset errorsDataset
 
     /**
      * Import from map parameters

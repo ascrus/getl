@@ -201,8 +201,10 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(countRows, count)
         validCount()
 
-		table.eachRow(order: ['id1']) { r ->
-			assertNotNull(r.id1)
+        def counter = 9
+		table.eachRow(order: ['id1'], limit: 10, offs: 10) { r ->
+            counter++
+			assertEquals(counter, r.id1)
 			assertNotNull(r.id2)
 			assertNotNull(r.name)
 			assertNotNull(r."desc'ription")
@@ -215,6 +217,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
 			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
 		}
+        assertEquals(10, table.readRows)
     }
 
     private void updateData() {

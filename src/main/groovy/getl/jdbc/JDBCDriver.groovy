@@ -56,7 +56,7 @@ class JDBCDriver extends Driver {
 		methodParams.register('dropDataset', ['ifExists'])
 		methodParams.register('openWrite', ['operation', 'batchSize', 'updateField', 'logRows',
                                             'onSaveBatch'])
-		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order', 'offset',
+		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order', 'offset', 'limit',
                                           'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
 		methodParams.register('bulkLoadFile', ['allowMapAlias', 'files', 'fileMask'])
 		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
@@ -1058,22 +1058,32 @@ ${extend}'''
 	 * <li>afterfor
 	 * <li>aftertable
 	 * <li>afteralias
+	 * <li>where
+	 * <li>orderBy
+	 * <li>afterOrderBy
+	 * <li>forUpdate
 	 * <li>finish
 	 * </ul> 
-	 * @param dataset
-	 * @param params
 	 */
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) { }
+	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+		def table = dataset as TableDataset
+		def whereList = [] as List<String>
+		if (table.where != null) whereList << ('(' + table.where + ')')
+		if (params.where != null) whereList << ('(' + params.where + ')')
+		if (!whereList.isEmpty()) dir.where = whereList.join(' AND ')
+
+		def orderBy = ListUtils.NotNullValue([params.orderBy, table.order?.join(', ')])
+		if (orderBy != null) dir.orderBy = orderBy
+
+		dir.forUpdate = BoolUtils.IsValue([params.forUpdate, table.forUpdate])
+	}
 
     /**
      * Build sql select statement for read rows in table
-     * @param dataset
-     * @param params
-     * @return
      */
     public String sqlTableBuildSelect(Dataset dataset, Map params) {
         // Load statement directive by driver
-        def dir = (Map<String, String>)[:]
+        def dir = [:] as Map<String, String>
         sqlTableDirective(dataset, params, dir)
 
         StringBuilder sb = new StringBuilder()
@@ -1096,13 +1106,13 @@ ${extend}'''
         if (dir.afteralias != null) sb << ' ' + dir.afteralias
         sb << '\n'
 
-        if (params.where != null) sb << "\nWHERE ${params.where}"
+        if (dir.where != null) sb << "\nWHERE ${dir.where}"
 
-        if (params.orderBy != null) sb << "\nORDER BY ${params.orderBy}"
+        if (dir.orderBy != null) sb << "\nORDER BY ${dir.orderBy}"
 
         if (dir.afterOrderBy != null) sb << "\n${dir.afterOrderBy}"
 
-        if (params.forUpdate != null && params.forUpdate) sb << '\nFOR UPDATE'
+        if (dir.forUpdate) sb << '\nFOR UPDATE'
 
         if (dir.finish != null) sb << '\n' + dir.finish
 
@@ -1243,7 +1253,7 @@ ${extend}'''
 			rowCopy = GenerationUtils.GenerateRowCopy(this, fields)
 			copyToMap = (Closure)(rowCopy.code)
 		}
-		int offs = (params.start != null)?(int)(params.start):0
+		int offs = (params.offs != null)?(int)(params.offs):0
 		int max = (params.limit != null)?(int)(params.limit):0
 		Map<String, Object> sp = (Map)(params."sqlParams")
 		Map<String, Object> sqlParams

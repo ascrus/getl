@@ -46,7 +46,7 @@ import org.apache.poi.ss.usermodel.Workbook
 @groovy.transform.InheritConstructors
 class ExcelDriver extends Driver {
     ExcelDriver () {
-        methodParams.register("eachRow", ["header", "offset", "limit", "showWarnings", "rows", "cells"])
+        methodParams.register("eachRow", ["header", "offset", "limit", "showWarnings"])
     }
 
     @Override

@@ -1,6 +1,7 @@
 package getl.lang
 
-import getl.tfs.TFS
+import getl.h2.*
+import getl.tfs.*
 
 class GetlTest extends getl.test.GetlTest {
     void testEtl() {
@@ -14,7 +15,7 @@ datasets {
     }
     
     csv {
-        fileName = 'getl.lang.csv\'
+        fileName = 'getl.lang.csv'
     }
 }
 ''', 'UTF-8')
@@ -27,9 +28,13 @@ datasets {
             assertEquals('getl.lang.csv', configContent.datasets?.csv?.fileName)
             assertEquals('table1', configContent.datasets?.table1?.tableName)
 
-            def table1 = table {
+            log {
+                logFileName = "$tempPath/getl.lang.{date}.log"
+            }
+
+            def table1 = h2table { H2Table table ->
                 config = 'table1'
-                connection = tempdb
+                connection = tempdb { sqlHistoryFile = "$tempPath/getl.lang.h2.sql" }
 
                 field = [
                         field { name = 'id'; type = integerFieldType; isKey = true },
@@ -37,22 +42,52 @@ datasets {
                         field { name = 'dt'; type = datetimeFieldType; defaultValue = 'Now()'; isNull = false }
                 ]
 
-                create()
-                logInfo 'table1 created'
-            }
-            assertEquals('table1', table1.tableName)
-
-            rowsTo {
-                dest = table1
-
-                process = { append ->
-                    (1..3).each { append id: it, name: "test $it", dt: now }
+                createTable {
+                    type = isTemporary
+                    transactional = true
+                    ifNotExists = false
+                    hashPrimaryKey = true
+                    indexes.index_1 = index {
+                        ifNotExists = true
+                        columns = ['dt']
+                        unique = false
+                    }
+                    onDone = {
+                        assertEquals('table1', table.tableName)
+                        logInfo "$table created"
+                    }
                 }
-                onDone = { logInfo "$countRow rows appended to table1" }
+
+                rowsTo {
+                    dest = table
+
+                    process = { append ->
+                        (1..3).each { append id: it, name: "test $it", dt: now }
+                    }
+                    onDone = {
+                        assertEquals(3, table.countRows())
+                        logInfo "$countRow rows appended to $table"
+                    }
+                }
+
+                copyRows {
+                    inheritFields = true
+
+                    source = table
+                    dest = csvTemp {
+                        config = 'csv'
+                        fieldDelimiter = ','
+                        codePage = 'UTF-8'
+                        isGzFile = true
+                    }
+
+                    onDone = {
+                        assertEquals(3, countRow)
+                        logInfo "copied $countRow rows from $source to $dest" }
+                }
             }
 
-
-            def file1 = tempFile {
+            def file1 = csvTemp {
                 config = 'csv'
                 fieldDelimiter = ','
                 codePage = 'UTF-8'
@@ -60,26 +95,20 @@ datasets {
             }
             assertEquals('getl.lang.csv', file1.fileName)
 
-            copyRows {
-                inheritFields = true
-
-                source = table1
-                dest = file1
-
-                onDone = {
-                    assertEquals(3, countRow)
-                    logInfo "copied $countRow rows from table1 to file1" }
-            }
-
             rowsToMany {
                 dest = [
                         table1: table(table1) { truncate() },
-                        table2: table {
+                        table2: h2table { table ->
                             connection = table1.connection
                             tableName = 'table2'
                             field = table1.field
-                            create()
-                            logInfo 'table2 created'
+                            createTable {
+                                type = isTemporary
+                                transactional = true
+                                ifNotExists = false
+                                hashPrimaryKey = true
+                            }
+                            logInfo "$table created"
                         }
                 ]
 
@@ -100,7 +129,8 @@ datasets {
 
                 onDone = {
                     assertEquals(3, readRows);
-                    logInfo "load $readRows rows from file1 to table1 and table2" }
+                    logInfo "load $readRows rows from $file1 to ${dest.table1} and ${dest.table2}"
+                }
             }
 
             rowProcess {
@@ -130,9 +160,11 @@ ORDER BY t1.id'''
                 process = { assertTrue(it.id < 3) }
                 onDone = {
                     assertEquals(2, countRow)
-                    logInfo("readed $countRow from table1 with filter")
+                    logInfo("readed $countRow from $source with filter")
                 }
             }
+
+//            println new File((table1.connection as H2Connection).sqlHistoryFile).text
         }
     }
 }

@@ -4,8 +4,8 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+
+ Copyright (C) 2013-2019  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -22,41 +22,28 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.jdbc
-
-import groovy.transform.InheritConstructors
-import getl.utils.StringUtils
+package getl.lang.opts
 
 /**
- * Query dataset class
+ * Base options class
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
-class QueryDataset extends JDBCDataset {
-	/**
-	 * SQL query text
-	 */
-	public String getQuery () { params.query }
-	/**
-	 * SQL query text
-	 */
-	public void setQuery (String value) { params.query = value }
-	
-	/**
-	 * Query parameters
-	 */
-	public Map getQueryParams () { 
-		if (params.queryParams == null) params.queryParams = [:]
-		params.queryParams
-	}
-	/**
-	 * Query parameters
-	 */
-	public void setQueryParams (Map value) { params.queryParams = value }
-	
-	@Override
-	public String getObjectName() {
-		"query"
-	}
+class BaseSpec {
+    public final Map<String, Object> params = [:]
+
+    /**
+     * User code before create table
+     */
+    public Closure onInit
+
+    /**
+     * User code after create table
+     */
+    public Closure onDone
+
+    /**
+     * Preparing options before run process
+     */
+    void prepare() { }
 }

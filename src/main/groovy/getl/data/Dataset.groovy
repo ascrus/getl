@@ -58,14 +58,14 @@ class Dataset {
 	
 	public Dataset () {
 		params.manualSchema = false
-		
-		methodParams.register("create", [])
-		methodParams.register("drop", [])
-		methodParams.register("truncate", ["autoTran"])
-		methodParams.register("bulkLoadFile", ["source", "prepare", "map", "autoMap", "autoCommit", "abortOnError", "inheritFields"])
-		methodParams.register("eachRow", ["prepare", "start", "limit", "saveErrors", "autoSchema"])
-		methodParams.register("openWrite", ["prepare", "autoSchema"])
-		methodParams.register("lookup", ["key", "strategy"])
+
+		methodParams.register('create', [])
+		methodParams.register('drop', [])
+		methodParams.register('truncate', ['autoTran'])
+		methodParams.register('bulkLoadFile', ['source', 'prepare', 'map', 'autoMap', 'autoCommit', 'abortOnError', 'inheritFields'])
+		methodParams.register('eachRow', ['prepare', 'offs', 'limit', 'saveErrors', 'autoSchema'])
+		methodParams.register('openWrite', ['prepare', 'autoSchema'])
+		methodParams.register('lookup', ['key', 'strategy'])
 	}
 	
 	/**
@@ -101,18 +101,25 @@ class Dataset {
 		return dataset
 	}
 	
+
+	private Connection connection
 	/**
 	 * Connection
 	 */
-	private Connection connection
 	public Connection getConnection() { return this.connection }
+	/**
+	 * Connection
+	 */
 	public void setConnection(Connection value) { this.connection = value }
 
-	/**
-	 * Name in config from section "datasets" 
-	 */
 	private String config
+	/**
+	 * Name in config from section "datasets"
+	 */
 	public String getConfig () { return this.config }
+	/**
+	 * Name in config from section "datasets"
+	 */
 	public void setConfig (String value) {
 		this.config = value
 		if (config != null) {
@@ -125,21 +132,28 @@ class Dataset {
 		}
 	}
 	
+	private final Map params = [:]
 	/**
 	 * Dataset public parameters
 	 */
-	private final Map params = [:]
 	public Map getParams () { return this.params }
+	/**
+	 * Dataset public parameters
+	 */
 	public void setParams(Map value) {
 		this.params.clear()
 		this.params.putAll(value)
 	}
 	
+
+	private final List<Field> field = []
 	/**
 	 * Fields of dataset
 	 */
-	private final List<Field> field = []
 	public List<Field> getField() { return this.field }
+	/**
+	 * Fields of dataset
+	 */
 	public void setField(List<Field> value) {
 		assignFields(value)
 		manualSchema = true
@@ -147,7 +161,6 @@ class Dataset {
 	
 	/**
 	 * Assigned fields from source list
-	 * @param value
 	 */
 	protected void assignFields (List<Field> value) {
 		this.field.clear()
@@ -160,7 +173,6 @@ class Dataset {
 	
 	/**
 	 * Add list of fields
-	 * @param fields
 	 */
 	public void addFields (List<Field> fields) {
 		fields.each { Field f -> this.field << f.copy() }
@@ -168,34 +180,43 @@ class Dataset {
 	
 	/**
 	 * Auto load schema with meta file
-	 * @return
 	 */
 	public boolean getAutoSchema () { return BoolUtils.IsValue([params.autoSchema, connection.autoSchema]) }
+	/**
+	 * Auto load schema with meta file
+	 */
 	public void setAutoSchema (boolean value) {
 		params.autoSchema = value
 		if (value) params.manualSchema = true
 	}
 	
 	/**
-	 * Deny load schema from metadata source
-	 * @return
+	 * Use manual schema for dataset
 	 */
 	public boolean getManualSchema () { return params.manualSchema }
+	/**
+	 * Use manual schema for dataset
+	 */
 	public void setManualSchema (boolean value) {
 		params.manualSchema = value
 	}
 	
 	/**
 	 * Schema file name
-	 * @return
 	 */
 	public String getSchemaFileName () { return params.schemaFileName }
+	/**
+	 * Schema file name
+	 */
 	public void setSchemaFileName (String value) { params.schemaFileName = value }
-	
+
 	/**
 	 * Print write rows to console
 	 */
 	public boolean getLogWriteToConsole () { return BoolUtils.IsValue([params.logWriteToConsole, connection.logWriteToConsole], false) }
+	/**
+	 * Print write rows to console
+	 */
 	public void setLogWriteToConsole (boolean value) { params.logWriteToConsole = value }
 
 	/**
@@ -234,18 +255,23 @@ class Dataset {
 		onLoadConfig(cp)
 		Logs.Config("Load config \"datasets\".\"${config}\" for object \"${this.getClass().name}.${objectName}\"")
 	}
-	
+
+	/**
+	 * Added extend connection options
+	 */
 	public List<String> inheriteConnectionParams () {
 		return [] as List<String>
 	}
-	
+
+	/**
+	 * The ignore list of connection options
+	 */
 	public List<String> excludeSaveParams () {
 		return ['manualSchema', 'autoSchema', 'schemaFileName']
 	}
 	
 	/**
 	 * Return parameters from save schema
-	 * @param map
 	 */
 	public Map saveParams() {
 		def res = [:]
@@ -263,7 +289,6 @@ class Dataset {
 
 	/**
 	 * Clone fields to other list
-	 * @return
 	 */
 	public List<Field> fieldClone () {
 		List<Field> result = []
@@ -280,7 +305,6 @@ class Dataset {
 	
 	/**
 	 * Remove field by name
-	 * @param name
 	 */
 	public void removeField(String name) {
 		def i = indexOfField(name)
@@ -294,7 +318,6 @@ class Dataset {
 	
 	/**
 	* Remove field by list of name
-	* @param name
 	*/
    public void removeFields(List<String> fieldList) {
 	   List<Field> rf = []
@@ -309,7 +332,6 @@ class Dataset {
 	
 	/**
 	 * Remove fields by user filter
-	 * @param where
 	 */
 	public void removeFields(Closure where) {
 		def l = []
@@ -330,7 +352,6 @@ class Dataset {
 	
 	/**
 	 * Prepare attributes of fields
-	 * @param fields
 	 */
 	public void prepareFields (List<Field> fieldList) {
 		fieldList.each { Field v ->
@@ -340,7 +361,6 @@ class Dataset {
 	
 	/**
 	 * Read fields from dataset schema
-	 * @return
 	 */
 	public List<Field> readFields () {
 		validConnection()
@@ -352,9 +372,6 @@ class Dataset {
 	
 	/**
 	 * Find field by name from list array
-	 * @param fields
-	 * @param fieldName
-	 * @return
 	 */
 	public static int findField(List<Field> fieldList, String fieldName) {
 		fieldName = fieldName.toLowerCase()
@@ -363,9 +380,6 @@ class Dataset {
 	
 	/**
 	 * Update data set fields with new
-	 * @param updateFieldType
-	 * @param sourceFields
-	 * @param prepare
 	 */
 	public void updateFields (UpdateFieldType updateFieldType, List<Field> sourceFields, Closure prepare = null) {
 		if (updateFieldType == UpdateFieldType.NONE) return
@@ -407,9 +421,6 @@ class Dataset {
 	
 	/**
 	 * Retrieve fields from dataset
-	 * @param dataset
-	 * @param clearExists
-	 * @return
 	 */
 	public void retrieveFields (UpdateFieldType updateFieldType, Closure prepare = null) {
 		if (!connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS)) throw new ExceptionGETL("Driver not supported retrieve fields")
@@ -421,24 +432,17 @@ class Dataset {
 
 	/**
 	 * Retrieve fields from dataset
-	 * @param dataset
-	 * @param prepare
-	 * @return
 	 */
 	public void retrieveFields (Closure prepare) { retrieveFields(UpdateFieldType.CLEAR, prepare) }
 	
 	/**
 	 * Retrieve fields from dataset
-	 * @param dataset
-	 * @return
 	 */
 	public void retrieveFields () { retrieveFields(UpdateFieldType.CLEAR, null) }
 
 	
 	/**
 	 * Find field by name
-	 * @param name
-	 * @return
 	 */
 	public int indexOfField (String name) {
 		if (name == null) return -1
@@ -448,8 +452,6 @@ class Dataset {
 	
 	/**
 	 * Return field by name
-	 * @param name
-	 * @return Field
 	 */
 	public Field fieldByName (String name) {
 		def i = indexOfField(name)
@@ -462,7 +464,10 @@ class Dataset {
 	 * Current status of dataset
 	 */
 	public Status status = Status.AVAIBLE
-	
+
+	/**
+	 * Initialization list of fields
+	 */
 	protected void doInitFields (List<Field> sourceFields) {
 		if (!sourceFields.isEmpty() && !manualSchema) { 
 			updateFields(UpdateFieldType.CLEAR, sourceFields)
@@ -476,7 +481,6 @@ class Dataset {
 	
 	/**
 	 * Create new dataset container
-	 * @param params
 	 */
 	public void create (Map procParams = [:]) {
 		validConnection()
@@ -491,7 +495,6 @@ class Dataset {
 	
 	/**
 	 * Drop exists dataset container
-	 * @param params
 	 */
 	public void drop (Map procParams = [:]) {
 		validConnection()
@@ -506,7 +509,6 @@ class Dataset {
 
 	/**
 	 * Clear data of dataset
-	 * @param dataset
 	 */
 	public void truncate (Map procParams) {
 		validConnection()
@@ -631,7 +633,6 @@ class Dataset {
 	
 	/**
 	 * Process each row dataset with user code
-	 * @param code
 	 */
 	public void eachRow (Closure code) {
 		eachRow([:], code)
@@ -639,24 +640,9 @@ class Dataset {
 	
 	/**
 	 * Generation closure code from process rows
-	 * @param processCode
-	 * @return
 	 */
 	private Closure generateSetErrorValue (Closure processCode) {
 		return GenerationUtils.GenerateFieldCopy(field)
-
-		/*
-		StringBuilder ef = new StringBuilder()
-		field.each { ef << "	errorRow.'${it.name}' = row.'${it.name}'\n" }
-		
-		String s = """{ row, errorRow ->
-${ef.toString()}
-}"""
-
-		Closure result = GenerationUtils.EvalGroovyClosure(s)
-
-		return result
-		*/
 	}
 	
 	/**
@@ -675,8 +661,6 @@ ${ef.toString()}
 	
 	/***
 	 * Return key fields as string list
-	 * @param excludeFields
-	 * @return
 	 */
 	public List<String> getFieldKeys (List<String> excludeFields = null) {
 		def fk = fieldListKeys
@@ -692,7 +676,6 @@ ${ef.toString()}
 	
 	/**
 	 * Return key fields as field list
-	 * @return
 	 */
 	public List<Field> getFieldListKeys () {
 		def res = []
@@ -707,7 +690,6 @@ ${ef.toString()}
 
 	/**
 	 * Return partition fields as field list
-	 * @return
 	 */
 	public List<Field> getFieldListPartitions () {
 		def res = []
@@ -722,7 +704,6 @@ ${ef.toString()}
 	
 	/**
 	 * Return list of name fields
-	 * @return
 	 */
 	public List<String> getFieldNames () {
 		def res = []
@@ -733,8 +714,6 @@ ${ef.toString()}
 	
 	/**
 	 * Return list of fields by name fields
-	 * @param names
-	 * @return
 	 */
 	public List<Field> getFields (List<String> names) {
 		List<Field> res = []
@@ -749,7 +728,6 @@ ${ef.toString()}
 	
 	/**
 	 * Generate temporary dataset with errors
-	 * @return
 	 */
 	protected void openErrorsDataset () {
 		errorsDataset = TFS.dataset()
@@ -916,8 +894,6 @@ ${ef.toString()}
 	
 	/**
 	 * Write row
-	 * @param row
-	 * @return
 	 */
 	public void write (Map row) {
 		if (status != Dataset.Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
@@ -934,7 +910,6 @@ ${ef.toString()}
 	
 	/**
 	 * Write list of row
-	 * @param rows
 	 */
 	public void writeList (List<Map> rows) {
 		if (status != Dataset.Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
@@ -953,7 +928,6 @@ ${ef.toString()}
 	
 	/**
 	 * Write row with synchronized
-	 * @param row
 	 */
 	@groovy.transform.Synchronized
 	public void writeSynch (Map row) {
@@ -962,18 +936,23 @@ ${ef.toString()}
 	
 	/**
 	 * Write list of row with synchronized
-	 * @param rows
 	 */
 	@groovy.transform.Synchronized
 	public void writeListSynch (List<Map> rows) {
 		writeList(rows)
 	}
-	
+
+	/**
+	 * Finalization code after write to dataset
+	 */
 	public void doneWrite () {
 		if (status != Dataset.Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
 		connection.driver.doneWrite(this)
 	}
-	
+
+	/**
+	 * Close dataset
+	 */
 	public void closeWrite () {
 		if (status != Dataset.Status.WRITE) return
 		try {
@@ -993,8 +972,6 @@ ${ef.toString()}
 
 	/**
 	 * Save fields structure to metadata JSON file
-	 * @param writer
-	 * @param fieldList
 	 */
 	public void saveDatasetMetadataToJSON (Writer writer, List<String> fieldList, boolean useParams) {
 		List<Field> fl = []
@@ -1030,8 +1007,6 @@ ${ef.toString()}
 	
 	/**
 	 * Return prepared map structure for lookup operation by keys
-	 * @param params Parameters
-	 * @return Map object
 	 *
 	 * <p><b>Parameters:</b></p>
 	 * <ul>
@@ -1084,8 +1059,6 @@ ${ef.toString()}
 	
 	/**
 	 * Load fields structure from metadata JSON file
-	 * @param reader
-	 * @params loadParams
 	 */
 	public void loadDatasetMetadataFromJSON (Reader reader, boolean useParams = true) {
 		def b = new JsonSlurper()
@@ -1111,7 +1084,6 @@ ${ef.toString()}
 	
 	/**
 	 * Full file schema name with path
-	 * @return
 	 */
 	public String fullFileSchemaName() {
 		return connection.driver.fullFileNameSchema(this)
@@ -1133,7 +1105,6 @@ ${ef.toString()}
 	
 	/**
 	 * Save fields structure to metadata JSON file
-	 * @param fieldList
 	 */
 	public void saveDatasetMetadata (List<String> fieldList) {
 		saveDatasetMetadata(fieldList, true)
@@ -1157,9 +1128,6 @@ ${ef.toString()}
 	
 	/**
 	 * Return values only key fields from row
-	 * @param row
-	 * @param excludeFields
-	 * @return
 	 */
 	public Map rowKeyMapValues(Map row, List excludeFields = null) {
 		return GenerationUtils.RowKeyMapValues(field, row, excludeFields)
@@ -1167,8 +1135,6 @@ ${ef.toString()}
 	
 	/**
 	 * Return values only key fields from row
-	 * @param row
-	 * @return
 	 */
 	public List RowListValues(Map row) {
 		return GenerationUtils.RowListValues(fieldNames, row)
@@ -1176,9 +1142,6 @@ ${ef.toString()}
 	
 	/**
 	 * Return list of field name by fields list 
-	 * @param fields
-	 * @param excludeFields
-	 * @return
 	 */
 	public static List<String> Fields2List (List<Field> fields, List<String> excludeFields = null) {
 		if (fields == null) return null
@@ -1211,8 +1174,6 @@ ${ef.toString()}
 	
 	/**
 	 * Clone current dataset on specified connection
-	 * @param newConnection
-	 * @return
 	 */
 	public Dataset cloneDataset (Connection newConnection = null) {
 		if (newConnection == null) newConnection = this.connection
@@ -1228,7 +1189,6 @@ ${ef.toString()}
 
 	/**
 	 * Clone current dataset and hear connection
-	 * @return
 	 */
 	public Dataset cloneDatasetConnection () {
 		Connection con = this.connection.cloneConnection()
@@ -1237,8 +1197,6 @@ ${ef.toString()}
 
     /**
      * Equal by other fields array with all property
-     * @param eqFields
-     * @return
      */
 	public Boolean equalsFields(List<Field> eqFields) {
         if (eqFields == null) return false

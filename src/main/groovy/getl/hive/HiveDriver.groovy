@@ -129,12 +129,13 @@ class HiveDriver extends JDBCDriver {
             if (clustered.by == null) throw new ExceptionGETL('Required value for parameter "clustered.by"')
             if (!(clustered.by instanceof List)) throw new ExceptionGETL('Required list type for parameter "clustered.by"')
             def by = clustered.by as List
+            if (by.isEmpty()) throw new ExceptionGETL('Required value for parameter "clustered.by"')
             sb << "CLUSTERED BY (${by.join(', ')})"
 
             if (clustered.sortedBy != null) {
                 if (!(clustered.sortedBy instanceof List)) throw new ExceptionGETL('Required list type for parameter "clustered.sorterBy"')
                 def sortedBy = clustered.sortedBy as List
-                sb << " SORTED BY (${sortedBy.join(', ')})"
+                if (!sortedBy.isEmpty()) sb << " SORTED BY (${sortedBy.join(', ')})"
             }
 
             if (clustered.intoBuckets != null) {
@@ -156,12 +157,14 @@ class HiveDriver extends JDBCDriver {
 
             if (skewed.by == null) throw new ExceptionGETL('Required value for parameter "skewed.by"')
             if (!(skewed.by instanceof List)) throw new ExceptionGETL('Required list type for parameter "skewed.by"')
+            if (by.isEmpty()) throw new ExceptionGETL('Required value for parameter "skewed.by"')
             def by = skewed.by as List
             sb << "SKEWED BY (${by.join(', ')})"
 
             if (skewed.on == null) throw new ExceptionGETL('Required value for parameter "skewed.on"')
             if (!(skewed.on instanceof List)) throw new ExceptionGETL('Required list type for parameter "skewed.on"')
             def on = skewed.on as List
+            if (on.isEmpty()) throw new ExceptionGETL('Required value for parameter "skewed.on"')
             def onCols = [] as List<String>
             on.each { onCol ->
                 if (!(onCol instanceof List)) throw new ExceptionGETL('Required list type for item by "skewed.on"')
@@ -204,13 +207,15 @@ class HiveDriver extends JDBCDriver {
         if (params.tblproperties != null) {
             if (!(params.tblproperties instanceof Map)) throw new ExceptionGETL('Required map type for parameter "tblproperties"')
             def tblproperties = params.tblproperties as Map
-            def props = [] as List<String>
-            tblproperties.each { k, v ->
-                props << "\"$k\"=\"$v\"".toString()
-            }
-            sb << "TBLPROPERTIES(${props.join(', ')})"
+            if (!tblproperties.isEmpty()) {
+                def props = [] as List<String>
+                tblproperties.each { k, v ->
+                    props << "\"$k\"=\"$v\"".toString()
+                }
+                sb << "TBLPROPERTIES(${props.join(', ')})"
 
-            sb << '\n'
+                sb << '\n'
+            }
         }
 
         if (params.select != null) {
@@ -226,7 +231,9 @@ class HiveDriver extends JDBCDriver {
 
     @Override
     protected String syntaxInsertStatement(Dataset dataset, Map params) {
-        String into = (BoolUtils.IsValue(params.overwrite))?'OVERWRITE':'INTO'
+
+
+        String into = (BoolUtils.IsValue([params.overwrite, (dataset as HiveTable).overwrite]))?'OVERWRITE':'INTO'
         return ((dataset.fieldListPartitions.isEmpty()))?
                 "INSERT $into {table} ({columns}) VALUES({values})":
                 "INSERT $into {table} PARTITION ({partition}) VALUES({values})"
@@ -234,10 +241,10 @@ class HiveDriver extends JDBCDriver {
 
     @Override
     public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
-        bulkParams = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
+        bulkParams = bulkLoadFilePrepare(source, (dest as HiveTable), bulkParams, prepareCode)
         def conHive = dest.connection as HiveConnection
 
-        def overwrite = BoolUtils.IsValue(bulkParams.overwrite)
+        def overwrite = BoolUtils.IsValue([bulkParams.overwrite, (dest as HiveTable).overwrite])
         def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, conHive.hdfsHost])
         def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, conHive.hdfsPort]) as Integer
         def hdfsLogin = ListUtils.NotNullValue([bulkParams.hdfsLogin, conHive.hdfsLogin])

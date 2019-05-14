@@ -24,6 +24,8 @@
 
 package getl.jdbc
 
+import getl.jdbc.opts.CreateTableSpec
+import getl.jdbc.opts.IndexSpec
 import groovy.transform.InheritConstructors
 import getl.cache.*
 import getl.exception.ExceptionGETL
@@ -39,37 +41,80 @@ class TableDataset extends JDBCDataset {
 		super()
 		type = JDBCDataset.Type.TABLE
 		sysParams.isTable = true
+		if (params.directive == null) params.directive = [:] as Map<String, Object>
 		
 		methodParams.register("unionDataset", [])
 	}
 
 	/**
 	 * Table name
-	 * @return
 	 */
 	public String getTableName () { params.tableName }
+	/**
+	 * Table name
+	 */
 	public void setTableName (String value) { params.tableName = value }
 
 	/**
 	 * Filter expression
-	 * @return
 	 */
 	public String getWhere () { params.where }
+	/**
+	 * Filter expression
+	 */
 	public void setWhere(String value) { params.where = value }
 
 	/**
 	 * Order expression list
-	 * @return
 	 */
 	public List<String> getOrder () { params.order }
+	/**
+	 * Order expression list
+	 */
 	public void setOrder(List<String> value) { params.order = value }
-	
+
+	/**
+	 * Read and write directive
+	 */
+	public Map<String, Object> getDirective() { params.directive }
+
+	/**
+	 * Read table as update locking
+	 */
+	public Boolean getForUpdate() { params.forUpdate }
+	/**
+	 * Read table as update locking
+	 */
+	public void setForUpdate(Boolean value) { params.forUpdate = value }
+
+	/**
+	 * Read offset row
+	 */
+	public Long getOffs() { params.offs }
+	/**
+	 * Read offset row
+	 */
+	public void setOffs(Long value) { params.offs = value }
+
+	/**
+	 * Read limit row
+	 */
+	public Long getLimit() { params.limit }
+	/**
+	 * Read limit row
+	 */
+	public void setLimit(Long value) { params.limit = value }
+
+	private CacheManager cacheManager
 	/**
 	 * Cache manager
 	 * Is used to monitor changes in the structure or data
 	 */
-	private CacheManager cacheManager
 	public CacheManager getCacheManager () { cacheManager }
+	/**
+	 * Cache manager
+	 * Is used to monitor changes in the structure or data
+	 */
 	public void setCacheManager (CacheManager value) {
 		if (cacheDataset != null && value != cacheManager) {
 			cacheDataset.connection = null
@@ -84,27 +129,29 @@ class TableDataset extends JDBCDataset {
 			cacheDataset = new CacheDataset(connection: cacheManager, dataset: this)
 		}
 	}
-	
+
 	/**
 	 * Cache dataset
 	 * Is used to monitor changes in the structure or data
 	 */
 	private CacheDataset getCacheDataset () { sysParams.cacheDataset as CacheDataset}
+	/**
+	 * Cache dataset
+	 * Is used to monitor changes in the structure or data
+	 */
 	private void setCacheDataset (CacheDataset value) { sysParams.cacheDataset = value }
-	
+
+	/**
+	 * Description table
+	 */
 	public String getDescription () { params.description }
+	/**
+	 * Description table
+	 */
 	public void setDescription (String value) { params.description = value }
-	
-	/*
-	@Override
-	public void loadDatasetMetadata() {
-		retrieveFields(Dataset.UpdateFieldType.MERGE)
-	}
-	*/
 	
 	/**
 	 * Validation exists table
-	 * @return
 	 */
 	public boolean isExists() {
 		def ds = ((JDBCConnection)connection).retrieveDatasets(dbName: dbName, schemaName: schemaName, 
@@ -115,8 +162,6 @@ class TableDataset extends JDBCDataset {
 	
 	/**
 	 * Insert/Update/Delete/Merge records from other dataset
-	 * @param params
-	 * @return
 	 */
 	public long unionDataset (Map procParams) {
 		if (procParams == null) procParams = [:]
@@ -127,7 +172,7 @@ class TableDataset extends JDBCDataset {
 	
 	/**
 	 * Find key by filter
-	 * @param where
+	 * @param procParams - parameters for query
 	 * @return - values of key field or null is not found
 	 */
 	public Map findKey (Map procParams) {
@@ -141,9 +186,6 @@ class TableDataset extends JDBCDataset {
 	
 	/**
 	 * Return count rows from table
-	 * @param where
-	 * @param procParams
-	 * @return
 	 */
 	public long countRows (String where = null, Map procParams) {
 		if (procParams == null) procParams = [:] 
@@ -157,7 +199,6 @@ class TableDataset extends JDBCDataset {
 	
 	/**
 	 * Return count rows from table
-	 * @return
 	 */
 	public long countRows () {
 		countRows(null, [:])
@@ -165,8 +206,6 @@ class TableDataset extends JDBCDataset {
 	
 	/**
 	 * Delete rows for condition
-	 * @param where
-	 * @return
 	 */
 	public long deleteRows (String where = null) {
 		String sql = "DELETE FROM ${fullNameDataset()}" + ((where != null)?" WHERE $where":'')
@@ -184,5 +223,34 @@ class TableDataset extends JDBCDataset {
 		if (isAutoCommit) connection.commitTran()
 		
 		return count
+	}
+
+	/**
+	 * Create new parameters object for create table
+	 */
+	protected CreateTableSpec newCreateTableParams() { new CreateTableSpec() }
+
+	/**
+	 * Generate new parameters object for create table
+	 */
+	protected CreateTableSpec genCreateTable(CreateTableSpec parent, Closure cl) {
+		if (parent == null) parent = newCreateTableParams()
+		def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
+		code.resolveStrategy = Closure.DELEGATE_FIRST
+		code(parent)
+
+		parent.prepare()
+		if (parent.onInit != null) parent.onInit.call(this)
+		create(parent.params)
+		if (parent.onDone != null) parent.onDone.call(this)
+
+		return parent
+	}
+
+	/**
+	 * Generate create table of specified parameters
+	 */
+	CreateTableSpec createTable(CreateTableSpec parent = null, @DelegatesTo(CreateTableSpec) Closure cl) {
+		genCreateTable(parent, cl)
 	}
 }

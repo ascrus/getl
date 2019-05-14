@@ -27,6 +27,10 @@ package getl.proc
 import getl.data.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.proc.opts.FlowCopySpec
+import getl.proc.opts.FlowProcessSpec
+import getl.proc.opts.FlowWriteManySpec
+import getl.proc.opts.FlowWriteSpec
 import getl.utils.*
 import getl.tfs.*
 

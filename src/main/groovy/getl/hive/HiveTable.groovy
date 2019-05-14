@@ -22,49 +22,30 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.lang
+package getl.hive
 
-import getl.config.*
-import getl.utils.*
+import getl.hive.opts.HiveCreateTableSpec
+import getl.jdbc.TableDataset
+import getl.jdbc.opts.CreateTableSpec
+import groovy.transform.InheritConstructors
 
 /**
- * Config specification class
+ * Hive database table
  * @author Alexsey Konstantinov
  *
  */
-class ConfigSpec {
+@InheritConstructors
+class HiveTable extends TableDataset {
     /**
-     * Configuration manager
+     * Overwrite append data to table
      */
-    ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper}
+    Boolean getOverwrite() { params.overwrite }
+    void setOverwrite(Boolean value) { params.overwrite = value }
 
-    /**
-     * Configuration files path
-     */
-    String getPath() { manager.path }
-    void setPath(String value) { manager.path = value }
+    @Override
+    protected CreateTableSpec newCreateTableParams() { new HiveCreateTableSpec() }
 
-    /**
-     * Code page in configuration files
-     */
-    String getCodePage() { manager.codePage }
-    void setCodePage(String value) { manager.codePage = value }
-
-    /**
-     * Load configuration file
-     * @param fileName
-     * @param codePage
-     * @return
-     */
-    void load(String fileName, String codePage = null) { Config.LoadConfig(fileName: fileName, codePage: codePage) }
-
-    /**
-     * Save configuration file
-     * @param fileName
-     * @param codePage
-     * @return
-     */
-    void save(String fileName, String codePage = null) { Config.SaveConfig(fileName: fileName, codePage: codePage)}
-
-    void clear() { Config.ClearConfig() }
+    HiveCreateTableSpec createTable(HiveCreateTableSpec parent = null, @DelegatesTo(HiveCreateTableSpec) Closure cl) {
+        genCreateTable(parent, cl)
+    }
 }

@@ -315,19 +315,10 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
-        if (params.label != null) {
-            dir."afterselect" = "/*+label(${params.label})*/"
-        }
-
-        def res = (List<String>)[]
-		if (params.limit != null) {
-            res << "LIMIT ${params.limit}".toString()
-        }
-        if (params.offset != null) {
-            res << "OFFSET ${params.offset}".toString()
-        }
-        if (!res.isEmpty()) {
-            dir.afterOrderBy = res.join('\n')
+		super.sqlTableDirective(dataset, params, dir)
+		Map<String, Object> dl = (dataset as TableDataset).directive + params
+        if (dl.label != null) {
+            dir.afterselect = "/*+label(${dl.label})*/"
         }
 	}
 

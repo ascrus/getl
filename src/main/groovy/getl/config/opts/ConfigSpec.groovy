@@ -22,26 +22,55 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.lang
+package getl.config.opts
 
+import getl.config.*
+import getl.lang.opts.BaseSpec
 import getl.utils.*
-import java.util.logging.*
+import groovy.transform.InheritConstructors
 
 /**
- * Log specification class
+ * Config specification class
  * @author Alexsey Konstantinov
  *
  */
-class LogSpec {
-    public Logger getLogLogger() { Logs.logger  }
-    public Logs.LogFormatter getLogFormatter() { Logs.formatter }
-    public Boolean getLogPrintConfigMessage() { Logs.printConfigMessage }
-    public void setLogPrintConfigMessage(Boolean value) { Logs.printConfigMessage = value }
-    public String getLogFileNameHandler() { Logs.fileNameHandler }
-    public FileHandler getLogFileHandler() { Logs.file }
-    public void setLogFileHandler(FileHandler value) { Logs.file = value }
-    public String getLogFileName() { Logs.logFileName }
-    public void setLogFileName(String value) { Logs.logFileName = value; Logs.Init() }
-    public Boolean getLogPrintStackTraceError() { Logs.printStackTraceError }
-    public Boolean setLogPrintStackTraceError(Boolean value) { Logs.printStackTraceError = value }
+@InheritConstructors
+class ConfigSpec extends BaseSpec {
+    /**
+     * Configuration manager
+     */
+    ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper}
+
+    /**
+     * Configuration files path
+     */
+    String getPath() { manager.path }
+    /**
+     * Configuration files path
+     */
+    void setPath(String value) { manager.path = value }
+
+    /**
+     * Code page in configuration files
+     */
+    String getCodePage() { manager.codePage }
+    /**
+     * Code page in configuration files
+     */
+    void setCodePage(String value) { manager.codePage = value }
+
+    /**
+     * Load configuration file
+     */
+    void load(String fileName, String codePage = null) { Config.LoadConfig(fileName: fileName, codePage: codePage) }
+
+    /**
+     * Save configuration file
+     */
+    void save(String fileName, String codePage = null) { Config.SaveConfig(fileName: fileName, codePage: codePage)}
+
+    /**
+     * Clear configuration content
+     */
+    void clear() { Config.ClearConfig() }
 }

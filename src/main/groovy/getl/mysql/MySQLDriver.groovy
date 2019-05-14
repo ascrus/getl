@@ -28,6 +28,7 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
+import getl.jdbc.TableDataset
 import groovy.transform.InheritConstructors
 
 /**
@@ -74,20 +75,6 @@ class MySQLDriver extends JDBCDriver {
 
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} = {value}' }
-
-	@Override
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
-		def res = (List<String>)[]
-		if (params.limit != null) {
-			res << "LIMIT ${params.limit}".toString()
-		}
-		if (params.offset != null) {
-			res << "OFFSET ${params.offset}".toString()
-		}
-		if (!res.isEmpty()) {
-			dir.afterOrderBy = res.join('\n')
-		}
-	}
 
 	@Override
 	public Map getSqlType () {

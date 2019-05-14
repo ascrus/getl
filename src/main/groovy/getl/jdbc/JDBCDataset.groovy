@@ -41,31 +41,39 @@ class JDBCDataset extends Dataset {
 	public static enum Type {TABLE, VIEW, QUERY, PROCEDURE, ALIAS, SYNONYM, MEMORY, GLOBAL_TEMPORARY, LOCAL_TEMPORARY, SYSTEM_TABLE, UNKNOWN}
 	
 	/**
-	 * Type dataset
-	 * @return
+	 * Type of dataset
 	 */
 	public Type getType () { sysParams.type as Type}
+	/**
+	 * Type of dataset
+	 */
 	public void setType(Type value) { sysParams.type = value }
 	
 	/**
 	 * Database name
-	 * @return
 	 */
 	public String getDbName () { ListUtils.NotNullValue([params.dbName, (connection as JDBCConnection).dbName]) }
+	/**
+	 * Database name
+	 */
 	public void setDbName (String value) { params.dbName = value }
 
 	/**
 	 * Schema name
-	 * @return
 	 */
 	public String getSchemaName () { ListUtils.NotNullValue([params.schemaName, (connection as JDBCConnection).schemaName]) }
+	/**
+	 * Schema name
+	 */
 	public void setSchemaName (String value) { params.schemaName = value }
 
 	/**
 	 * Event on retrieve list of field 	
-	 * @return
 	 */
 	public Closure getOnUpdateFields () { params.onUpdateFields }
+	/**
+	 * Event on retrieve list of field
+	 */
 	public void setOnUpdateFields (Closure value) { params.onUpdateFields = value }
 	
 	@Override
@@ -73,12 +81,18 @@ class JDBCDataset extends Dataset {
 	
 	@Override
 	public String getObjectFullName() { fullNameDataset() }
-	
+
+	/**
+	 * Name of dataset
+	 */
 	public String nameDataset () {
 		JDBCDriver drv = connection?.driver as JDBCDriver
 		(drv != null)?drv.nameDataset(this):getClass().name
 	}
-	
+
+	/**
+	 * Full name of dataset
+	 */
 	public String fullNameDataset () {
 		JDBCDriver drv = connection?.driver as JDBCDriver
 		(drv != null)?drv.fullNameDataset(this):getClass().name
@@ -91,14 +105,15 @@ class JDBCDataset extends Dataset {
 	}
 	
 	/**
-	 * Return object name with SQL syntax
-	 * @param name
-	 * @return
+	 * Object name with SQL syntax
 	 */
 	public String sqlObjectName (String name) {
 		GenerationUtils.SqlObjectName(this, name)
 	}
-	
+
+	/**
+	 * Objects name for SQL syntax
+	 */
 	public List<String> sqlListObjectName (List<String> listNames) {
 		GenerationUtils.SqlListObjectName(this, listNames)
 	}
@@ -106,7 +121,7 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Return key fields name by sql syntax with expression and exclude fields list
 	 * @param expr - string expression with {field} and {orig} macros
-	 * @return
+	 * @return - generated list
 	 */
 	public List<String> sqlKeyFields (String expr, List<String> excludeFields) {
 		GenerationUtils.SqlKeyFields(this, field, expr, excludeFields)
@@ -114,7 +129,6 @@ class JDBCDataset extends Dataset {
 	
 	/**
 	 * Return key fields name by sql syntax
-	 * @return
 	 */
 	public List<String> sqlKeyFields () {
 		sqlKeyFields(null, null)
@@ -123,7 +137,7 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Return key fields name by sql syntax with expression and exclude fields list
 	 * @param expr - string expression with {field} macros
-	 * @return
+	 * @return - generated list
 	 */
 	public List<String> sqlKeyFields (String expr) {
 		sqlKeyFields(expr, null)
@@ -131,8 +145,6 @@ class JDBCDataset extends Dataset {
 	
 	/**
 	 * Return key fields name by sql syntax with expression and exclude fields list
-	 * @param excludeFields
-	 * @return
 	 */
 	public List<String> sqlKeyFields (List<String> excludeFields) {
 		sqlKeyFields(null, excludeFields)
@@ -141,7 +153,7 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Return fields name by sql syntax with expression and exclude fields list
 	 * @param expr - string expression with {field} macros 
-	 * @return
+	 * @return - generated list
 	 */
 	public List<String> sqlFields (String expr, List<String> excludeFields) {
 		GenerationUtils.SqlFields(this, field, expr, excludeFields)
@@ -149,9 +161,6 @@ class JDBCDataset extends Dataset {
 	
 	/**
 	 * Return fields name by sql syntax with expression and exclude fields list
-	 * @param fields
-	 * @param expr
-	 * @return
 	 */
 	public List<String> sqlFieldsFrom (List<Field> fields, String expr) {
 		GenerationUtils.SqlFields(this, fields, expr, null)
@@ -159,7 +168,6 @@ class JDBCDataset extends Dataset {
 	
 	/**
 	 * Return fields name by sql syntax
-	 * @return
 	 */
 	public List<String> sqlFields () {
 		sqlFields(null, null)
@@ -168,7 +176,7 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Return fields name by sql syntax with expression
 	 * @param expr - string expression with {field} macros
-	 * @return
+	 * @return - generated list
 	 */
 	public List<String> sqlFields (String expr) {
 		sqlFields(expr, null)
@@ -176,8 +184,6 @@ class JDBCDataset extends Dataset {
 	
 	/**
 	 * Return fields name by sql syntax with exclude fields list
-	 * @param excludeFields
-	 * @return
 	 */
 	public List<String> sqlFields (List<String> excludeFields) {
 		sqlFields(null, excludeFields)

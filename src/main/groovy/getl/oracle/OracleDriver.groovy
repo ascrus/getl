@@ -26,6 +26,7 @@ package getl.oracle
 
 import getl.exception.ExceptionGETL
 import getl.jdbc.JDBCConnection
+import getl.jdbc.TableDataset
 import groovy.transform.InheritConstructors
 import getl.data.Dataset
 import getl.data.Field
@@ -108,24 +109,26 @@ class OracleDriver extends JDBCDriver {
 	
 	@Override
 	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
-		if (params."scn" != null) {
+		super.sqlTableDirective(dataset, params, dir)
+		Map<String, Object> dl = (dataset as TableDataset).directive + params
+		if (dl.scn != null) {
 			Long scn
-			if (params."scn" instanceof String) scn = ConvertUtils.Object2Long(params."scn") else scn = params."scn"
-			dir."afteralias" = "AS OF SCN $scn"
+			if (dl.scn instanceof String) scn = ConvertUtils.Object2Long(dl.scn) else scn = dl.scn
+			dir.afteralias = "AS OF SCN $scn"
 		}
-		else if (params."timestamp" != null) {
+		else if (dl.timestamp != null) {
 			Date timestamp 
-			if (params."timestamp" instanceof String) timestamp = DateUtils.ParseDate("yyyy-MM-dd HH:mm:ss", params."timestamp") else timestamp = params."timestamp"
+			if (dl.timestamp instanceof String) timestamp = DateUtils.ParseDate("yyyy-MM-dd HH:mm:ss", dl.timestamp) else timestamp = dl.timestamp
 			def ts = DateUtils.FormatDate("yyyy-MM-dd HH:mm:ss.sss", timestamp)
-			dir."afteralias" = "AS OF TIMESTAMP TO_TIMESTAMP('$ts', 'YYYY-MM-DD HH24:MI:SS.FF')"
+			dir.afteralias = "AS OF TIMESTAMP TO_TIMESTAMP('$ts', 'YYYY-MM-DD HH24:MI:SS.FF')"
 		}
 		
-		if (params."hints" != null) {
-			dir."afterselect" = "/*+ ${params."hints"} */"
+		if (dl.hints != null) {
+			dir.afterselect = "/*+ ${dl.hints} */"
 		}
 		
-		if (params."usePartition" != null) {
-			dir."aftertable" = "PARTITION (${params."usePartition"})"
+		if (dl.usePartition != null) {
+			dir.aftertable = "PARTITION (${dl.usePartition})"
 		}
 	}
 	
