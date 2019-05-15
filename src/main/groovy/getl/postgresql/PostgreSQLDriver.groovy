@@ -40,6 +40,8 @@ import groovy.transform.InheritConstructors
 class PostgreSQLDriver extends JDBCDriver {
     PostgreSQLDriver() {
         super()
+		commitDDL = true
+		transactionalDDL = true
     }
 
 	@Override

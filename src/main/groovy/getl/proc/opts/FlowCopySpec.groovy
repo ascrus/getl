@@ -25,10 +25,11 @@
 package getl.proc.opts
 
 import getl.data.*
+import getl.lang.opts.BaseSpec
 import getl.tfs.TFSDataset
 import getl.utils.MapUtils
 
-class FlowCopySpec {
+class FlowCopySpec extends BaseSpec {
     FlowCopySpec() {
         super()
     }

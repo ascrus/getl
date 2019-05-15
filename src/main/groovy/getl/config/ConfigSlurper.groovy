@@ -219,7 +219,7 @@ class ConfigSlurper extends ConfigManager {
 	 * @param vars
 	 */
 	private static void CheckDataMap(Map<String, Object> data, Map<String, Object> vars) {
-		def cfg = new groovy.util.ConfigSlurper()
+		groovy.util.ConfigSlurper cfg = new groovy.util.ConfigSlurper()
 
 		data.each { String key, Object value ->
 			if (value instanceof Map) {
@@ -231,10 +231,10 @@ class ConfigSlurper extends ConfigManager {
 			else  if (value instanceof Closure) {
 				Map<String, Object> res = MapUtils.Copy(vars)
 				Closure cl = value
-				def code = cl.rehydrate(res, cfg, cl.thisObject)
+				Closure code = cl.rehydrate(res, cfg, cl.thisObject)
 				code.resolveStrategy = Closure.DELEGATE_FIRST
 
-				cfg.parse(code)
+				cfg.parse(code as groovy.lang.Script)
 				res.remove('vars')
 				data.put(key, res)
 			}
@@ -263,7 +263,7 @@ class ConfigSlurper extends ConfigManager {
 				Closure code = cl.rehydrate(res, cfg, cl.thisObject)
 				code.resolveStrategy = Closure.DELEGATE_FIRST
 
-				cfg.parse(code)
+				cfg.parse(code as groovy.lang.Script)
 				res.remove('vars')
 				data[i] = res
 			}

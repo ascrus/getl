@@ -57,7 +57,7 @@ class VerticaDriver extends JDBCDriver {
 	}
 
     @Override
-    public Map getSqlType () {
+    Map getSqlType () {
         Map res = super.getSqlType()
         res.DOUBLE.name = 'double precision'
         res.BLOB.name = 'varbinary'
@@ -67,7 +67,7 @@ class VerticaDriver extends JDBCDriver {
     }
 
     @Override
-    public List<Driver.Support> supported() {
+    List<Driver.Support> supported() {
         return super.supported() +
 				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE,
 				 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.UUID,
@@ -75,14 +75,14 @@ class VerticaDriver extends JDBCDriver {
     }
 
     @Override
-    public List<Driver.Operation> operations() {
+    List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
                  Driver.Operation.BULKLOAD]
     }
 
 	@Override
-	public String defaultConnectURL () {
+	String defaultConnectURL () {
 		return 'jdbc:vertica://{host}/{database}'
 	}
 
@@ -108,7 +108,7 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	@Override
-	public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
+	void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
 		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
 
 		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = ''
@@ -314,16 +314,16 @@ class VerticaDriver extends JDBCDriver {
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} TO {value}' }
 
 	@Override
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
-		Map<String, Object> dl = (dataset as TableDataset).directive + params
+		Map<String, Object> dl = (dataset as TableDataset).directive?:[:] + params
         if (dl.label != null) {
             dir.afterselect = "/*+label(${dl.label})*/"
         }
 	}
 
 	@Override
-	public void prepareField (Field field) {
+	void prepareField (Field field) {
 		super.prepareField(field)
 
 		if (field.typeName != null) {
@@ -338,10 +338,10 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	@Override
-	public boolean blobReadAsObject () { return false }
+	boolean blobReadAsObject () { return false }
 
 	@Override
-	public String blobMethodWrite (String methodName) {
+	String blobMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
@@ -353,4 +353,7 @@ class VerticaDriver extends JDBCDriver {
 	}
 }"""
 	}
+
+	@Override
+	boolean textReadAsObject() { return false }
 }

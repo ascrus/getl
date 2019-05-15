@@ -41,8 +41,7 @@ class TableDataset extends JDBCDataset {
 		super()
 		type = JDBCDataset.Type.TABLE
 		sysParams.isTable = true
-		if (params.directive == null) params.directive = [:] as Map<String, Object>
-		
+
 		methodParams.register("unionDataset", [])
 	}
 

@@ -26,10 +26,11 @@ package getl.proc.opts
 
 
 import getl.data.Dataset
+import getl.lang.opts.BaseSpec
 import getl.tfs.TFSDataset
 import getl.utils.MapUtils
 
-class FlowProcessSpec {
+class FlowProcessSpec extends BaseSpec {
     FlowProcessSpec() {
         super()
     }

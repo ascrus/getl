@@ -43,8 +43,8 @@ class HiveDriver extends JDBCDriver {
     HiveDriver() {
         super()
 
-        tablePrefix = ''
-        fieldPrefix = ''
+        tablePrefix = '`'
+        fieldPrefix = '`'
 
         connectionParamBegin = ';'
         connectionParamJoin = ';'
@@ -66,9 +66,9 @@ class HiveDriver extends JDBCDriver {
     @Override
     public List<Driver.Support> supported() {
         return super.supported() +
-                [Driver.Support.LOCAL_TEMPORARY, Driver.Support.BLOB, Driver.Support.TIME,
+                [Driver.Support.LOCAL_TEMPORARY, /*Driver.Support.BLOB, Driver.Support.TIME,*/
                  Driver.Support.DATE, Driver.Support.BOOLEAN] -
-                [Driver.Support.TRANSACTIONAL, Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD,
+                [Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD,
                  Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD]
     }
 
@@ -76,7 +76,9 @@ class HiveDriver extends JDBCDriver {
     public List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
-                 Driver.Operation.BULKLOAD]
+                 Driver.Operation.BULKLOAD] -
+                [Driver.Operation.READ_METADATA, Driver.Operation.INSERT,
+                 Driver.Operation.UPDATE, Driver.Operation.DELETE]
     }
 
     @Override
@@ -89,7 +91,9 @@ class HiveDriver extends JDBCDriver {
         Map res = super.getSqlType()
         res.STRING.name = 'string'
         res.STRING.useLength = JDBCDriver.sqlTypeUse.NEVER
+        res.DOUBLE.name = 'double'
         res.BLOB.name = 'binary'
+        res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER
 
         return res
     }
@@ -157,7 +161,7 @@ class HiveDriver extends JDBCDriver {
 
             if (skewed.by == null) throw new ExceptionGETL('Required value for parameter "skewed.by"')
             if (!(skewed.by instanceof List)) throw new ExceptionGETL('Required list type for parameter "skewed.by"')
-            if (by.isEmpty()) throw new ExceptionGETL('Required value for parameter "skewed.by"')
+            if ((skewed.by as List).isEmpty()) throw new ExceptionGETL('Required value for parameter "skewed.by"')
             def by = skewed.by as List
             sb << "SKEWED BY (${by.join(', ')})"
 
@@ -231,20 +235,19 @@ class HiveDriver extends JDBCDriver {
 
     @Override
     protected String syntaxInsertStatement(Dataset dataset, Map params) {
-
-
-        String into = (BoolUtils.IsValue([params.overwrite, (dataset as HiveTable).overwrite]))?'OVERWRITE':'INTO'
+        String into = (BoolUtils.IsValue([params.overwrite, (dataset as TableDataset).params.overwrite]))?'OVERWRITE':'INTO'
         return ((dataset.fieldListPartitions.isEmpty()))?
-                "INSERT $into {table} ({columns}) VALUES({values})":
-                "INSERT $into {table} PARTITION ({partition}) VALUES({values})"
+                "INSERT $into TABLE {table} ({columns}) VALUES({values})":
+                "INSERT $into TABLE {table} ({columns}) PARTITION ({partition}) VALUES({values})"
     }
 
     @Override
     public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
-        bulkParams = bulkLoadFilePrepare(source, (dest as HiveTable), bulkParams, prepareCode)
+        def table = dest as TableDataset
+        bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
         def conHive = dest.connection as HiveConnection
 
-        def overwrite = BoolUtils.IsValue([bulkParams.overwrite, (dest as HiveTable).overwrite])
+        def overwrite = BoolUtils.IsValue([bulkParams.overwrite, table.params.overwrite])
         def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, conHive.hdfsHost])
         def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, conHive.hdfsPort]) as Integer
         def hdfsLogin = ListUtils.NotNullValue([bulkParams.hdfsLogin, conHive.hdfsLogin])
@@ -300,7 +303,7 @@ class HiveDriver extends JDBCDriver {
 
             def exprValue = expression.get(n.name.toLowerCase())
             if (exprValue == null) {
-                loadFields << n.name
+                loadFields << fieldPrefix + n.name + fieldPrefix
             }
             else {
                 loadFields << exprValue
@@ -313,11 +316,11 @@ class HiveDriver extends JDBCDriver {
             n.isPartition = false
             tempFile.field << n
 
-            partFields << n.name
+            partFields << fieldPrefix + n.name + fieldPrefix
 
             def exprValue = expression.get(n.name.toLowerCase())
             if (exprValue == null) {
-                loadFields << n.name
+                loadFields << fieldPrefix + n.name + fieldPrefix
             }
             else {
                 loadFields << exprValue
@@ -442,7 +445,7 @@ class HiveDriver extends JDBCDriver {
 
     @Override
     public List<Field> fields(Dataset dataset) {
-        def res = super.fields(dataset)
+        List<Field> res = super.fields(dataset)
         if (dataset instanceof TableDataset) {
             def ext = tableExtendedInfo(dataset)
             if (BoolUtils.IsValue(ext.partitioned) && ext.partitionColumns != null) {

@@ -42,7 +42,7 @@ class HiveConnection extends JDBCConnection {
     @Override
     protected void registerParameters () {
         super.registerParameters()
-        methodParams.register('Super', ['vendor'])
+        methodParams.register('Super', ['vendor', 'version', 'hdfsHost', 'hdfsLogin', 'hdfsDir'])
     }
 
     @Override
@@ -63,14 +63,21 @@ class HiveConnection extends JDBCConnection {
                 driverName = 'org.apache.hive.jdbc.HiveDriver'
                 break
             case 'cloudera':
-                driverName = 'com.cloudera.hive.jdbc41.HS2Driver'
+                def ver = versionDriver?:4
+                driverName = "com.cloudera.hive.jdbc${ver}.HS2Driver"
                 break
             default:
                 throw new ExceptionGETL('Need set vendor name from Hive connection')
         }
     }
 
+    /**
+     * Vendor driver name
+     */
     public String getVendor() { return params.vendor }
+    /**
+     * Vendor driver name
+     */
     public void setVendor(String value) {
         switch (value?.toLowerCase()) {
             case 'apache':
@@ -85,6 +92,15 @@ class HiveConnection extends JDBCConnection {
         }
         params.vendor = value
     }
+
+    /**
+     * Version JDBC driver
+     */
+    public Integer getVersionDriver() { return params.versionDriver }
+    /**
+     * Version JDBC driver
+     */
+    public void setVersionDriver(Integer value) { params.versionDriver = value }
 
     /**
      * HDFS host

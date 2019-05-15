@@ -83,7 +83,7 @@ class Getl extends Script {
     /**
      * Run GETL lang closure
      */
-    def static run(@DelegatesTo(Getl) Closure cl) {
+    static def run(@DelegatesTo(Getl) Closure cl) {
         def lang = new Getl()
         def code = cl.rehydrate(lang, cl.owner, cl.thisObject)
         code.resolveStrategy = Closure.DELEGATE_FIRST

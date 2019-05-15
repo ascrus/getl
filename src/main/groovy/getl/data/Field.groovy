@@ -33,25 +33,32 @@ import getl.utils.*
  *
  */
 class Field implements Serializable {
-	public static enum Type {
+	/**
+	 * Data type
+	 */
+	static enum Type {
 		STRING, INTEGER, BIGINT, NUMERIC, DOUBLE, BOOLEAN, DATE, TIME, DATETIME, BLOB, TEXT, OBJECT, ROWID, UUID
 	}
 
-	/**
-	 * Field name	
-	 * @return
-	 */
 	private String name = null
-	public String getName() { return this.name }
-	public void setName(String value) { this.name = value }
-	
 	/**
-	 * Field type
-	 * @return
+	 * Field name
 	 */
+	String getName() { return this.name }
+	/**
+	 * Field name
+	 */
+	void setName(String value) { this.name = value }
+	
 	private Type type = Type.STRING
-	public Type getType() { return this.type }
-	public void setType(Type value) { this.type = value }
+	/**
+	 * Data type
+	 */
+	Type getType() { return this.type }
+	/**
+	 * Data type
+	 */
+	void setType(Type value) { this.type = value }
 	
 	/**
 	 * Database field type
@@ -63,141 +70,198 @@ class Field implements Serializable {
 	 */
 	public String typeName
 	
+	private Boolean isNull = true
 	/**
 	 * Value can not be null
 	 */
-	private Boolean isNull = true
-	public Boolean getIsNull() { return this.isNull }
-	public void setIsNull(Boolean value) { this.isNull = value }
+	Boolean getIsNull() { return this.isNull }
+	/**
+	 * Value can not be null
+	 */
+	void setIsNull(Boolean value) { this.isNull = value }
 	
+	private Integer length
 	/**
 	 * Length of value
 	 */
-	private Integer length
-	public Integer getLength() { return this.length }
-	public void setLength(Integer value) { this.length = value }
+	Integer getLength() { return this.length }
+	/**
+	 * Length of value
+	 */
+	void setLength(Integer value) { this.length = value }
 	
+	private Integer precision
 	/**
 	 * Precision number of numeric value
 	 */
-	private Integer precision
-	public Integer getPrecision() { return this.precision }
-	public void setPrecision(Integer value) { this.precision = value }
+	Integer getPrecision() { return this.precision }
+	/**
+	 * Precision number of numeric value
+	 */
+	void setPrecision(Integer value) { this.precision = value }
 	
+	private Boolean isKey = false
 	/**
 	 * Field is primary key
 	 */
-	private Boolean isKey = false
-	public Boolean getIsKey() { return this.isKey }
-	public void setIsKey(Boolean value) {
+	Boolean getIsKey() { return this.isKey }
+	/**
+	 * Field is primary key
+	 */
+	void setIsKey(Boolean value) {
 		this.isKey = value
 		if (this.isKey) this.isNull = false else this.ordKey = null
 	}
 	
+	private Integer ordKey
 	/**
 	 * Number order from primary key
 	 */
-	private Integer ordKey
-	public Integer getOrdKey() { return this.ordKey }
-	public void setOrdKey(Integer value) { ordKey = value }
+	Integer getOrdKey() { return this.ordKey }
+	/**
+	 * Number order from primary key
+	 */
+	void setOrdKey(Integer value) { ordKey = value }
 
+	private boolean isPartition = false
 	/**
 	 * Use field in partition key
 	 */
-	private boolean isPartition = false
-	public Boolean getInPartition() { return this.isPartition}
-	public void setIsPartition(Boolean value) { this.isPartition = value }
+	Boolean getInPartition() { return this.isPartition}
+	/**
+	 * Use field in partition key
+	 */
+	void setIsPartition(Boolean value) { this.isPartition = value }
 
+	private Integer ordPartition
 	/**
 	 * Number order if field use in partition key
 	 */
-	private Integer ordPartition
-	public Integer getOrdPartition() { return this.ordPartition }
-	public void setOrdPartition(Integer value) { this.ordPartition = value }
+	Integer getOrdPartition() { return this.ordPartition }
+	/**
+	 * Number order if field use in partition key
+	 */
+	void setOrdPartition(Integer value) { this.ordPartition = value }
 	
+	private boolean isAutoincrement = false
 	/**
 	 * Field is auto increment
 	 */
-	private boolean isAutoincrement = false
-	public boolean getIsAutoincrement() { return this.isAutoincrement }
-	public void setIsAutoincrement(boolean value) { this.isAutoincrement = value }
+	boolean getIsAutoincrement() { return this.isAutoincrement }
+	/**
+	 * Field is auto increment
+	 */
+	void setIsAutoincrement(boolean value) { this.isAutoincrement = value }
 	
+	private boolean isReadOnly = false
 	/**
 	 * Field can not write
 	 */
-	private boolean isReadOnly = false
-	public boolean getIsReadOnly() { return this.isReadOnly }
-	public void setIsReadOnly(boolean value) { this.isReadOnly = value }
+	boolean getIsReadOnly() { return this.isReadOnly }
+	/**
+	 * Field can not write
+	 */
+	void setIsReadOnly(boolean value) { this.isReadOnly = value }
 	
+	private String defaultValue = null
 	/**
 	 * Default value from field (used only creating dataset)
 	 */
-	private String defaultValue = null
-	public String getDefaultValue() { return this.defaultValue }
-	public void setDefaultValue(String value) { this.defaultValue = value }
+	String getDefaultValue() { return this.defaultValue }
+	/**
+	 * Default value from field (used only creating dataset)
+	 */
+	void setDefaultValue(String value) { this.defaultValue = value }
 	
+	private String compute
 	/**
 	 * Compute columns
 	 */
-	private String compute
-	public String getCompute() { return this.compute }
-	public void setCompute(String value) { this.compute = value }
-	
+	String getCompute() { return this.compute }
 	/**
-	 * Minimum value (for validation and generation)
+	 * Compute columns
 	 */
+	void setCompute(String value) { this.compute = value }
+	
 	private def minValue = null
-	public def getMinValue() { return this.minValue }
-	public void setMinValue(def value) { this.minValue = value }
-	
 	/**
 	 * Minimum value (for validation and generation)
 	 */
-	private def maxValue = null
-	public def getMaxValue() { return this.maxValue }
-	public void setMaxValue(def value) { this.maxValue = value }
+	def getMinValue() { return this.minValue }
+	/**
+	 * Minimum value (for validation and generation)
+	 */
+	void setMinValue(def value) { this.minValue = value }
 	
+	private def maxValue = null
+	/**
+	 * Minimum value (for validation and generation)
+	 */
+	def getMaxValue() { return this.maxValue }
+	/**
+	 * Minimum value (for validation and generation)
+	 */
+	void setMaxValue(def value) { this.maxValue = value }
+	
+	private String format
 	/**
 	 * Format pattern on numeric and datetime fields
 	 */
-	private String format
-	public String getFormat () { return this.format }
-	public void setFormat(String value) { this.format = value }
+	String getFormat () { return this.format }
+	/**
+	 * Format pattern on numeric and datetime fields
+	 */
+	void setFormat(String value) { this.format = value }
 	
+	private String alias
 	/**
 	 * Name of the field in the data source (if different from Field name)
 	 */
-	private String alias
-	public String getAlias() { return this.alias }
-	public void setAlias(String value) { this.alias = value }
+	String getAlias() { return this.alias }
+	/**
+	 * Name of the field in the data source (if different from Field name)
+	 */
+	void setAlias(String value) { this.alias = value }
 	
+	private boolean trim = false
 	/**
 	 * Trim space (used for reading datasource)
 	 */
-	private boolean trim = false
-	public boolean getTrim() { return this.trim }
-	public void setTrim(boolean value) { this.trim = value }
+	boolean getTrim() { return this.trim }
+	/**
+	 * Trim space (used for reading datasource)
+	 */
+	void setTrim(boolean value) { this.trim = value }
 	
+	private String decimalSeparator
 	/**
 	 * Decimal separator
 	 */
-	private String decimalSeparator
-	public String getDecimalSeparator() { return this.decimalSeparator }
-	public void setDecimalSeparator (String value) { this.decimalSeparator = value }
+	String getDecimalSeparator() { return this.decimalSeparator }
+	/**
+	 * Decimal separator
+	 */
+	void setDecimalSeparator (String value) { this.decimalSeparator = value }
 	
+	private String description
 	/**
 	 * Field description (comments)
 	 */
-	private String description
-	public String getDescription() { return this.description }
-	public void setDescription(String value) { this.description = value }
+	String getDescription() { return this.description }
+	/**
+	 * Field description (comments)
+	 */
+	void setDescription(String value) { this.description = value }
 	
+	private final Map extended = [:] as Map<String, Object>
 	/**
 	 * Extended attributes
 	 */
-	private final Map extended = [:] as Map<String, Object>
-	public Map getExtended() { return this.extended }
-	public void setExtended (Map value) {
+	Map getExtended() { return this.extended }
+	/**
+	 * Extended attributes
+	 */
+	void setExtended (Map value) {
 		this.extended.clear()
 		if (value != null) this.extended.putAll(value)
 	}
@@ -225,33 +289,28 @@ class Field implements Serializable {
 	/**
 	 * Allow length for field
 	 */
-	public static boolean AllowLength(Field f) {
+	static boolean AllowLength(Field f) {
 		return (f.type in [Field.Type.STRING, Field.Type.NUMERIC, Field.Type.BLOB, Field.Type.TEXT, Field.Type.ROWID])
 	}
 	
 	/**
 	 * Allow precision for field
-	 * @param f
-	 * @return
 	 */
-	public static boolean AllowPrecision(Field f) {
+	static boolean AllowPrecision(Field f) {
 		return (f.type in [Field.Type.NUMERIC])
 	}
 	
 	/**
 	 * Allow create field in table
-	 * @param f
-	 * @return
 	 */
-	public static boolean AllowCreatable(Field f) {
+	static boolean AllowCreatable(Field f) {
 		return !(f.type in [Field.Type.ROWID])
 	}
 	
 	/**
 	 * Build map from field
-	 * @return
 	 */
-	public Map toMap() {
+	Map toMap() {
 		def n = [:]
 		n.name = name
 		n.type = type.toString()
@@ -282,7 +341,7 @@ class Field implements Serializable {
 	 * @param strField
 	 * @return
 	 */
-	public static Field ParseMap(Map strField) {
+	static Field ParseMap(Map strField) {
 		if (strField == null) throw new ExceptionGETL("Can not parse null Map to fields")
 		String name = strField.name
 		if (strField.name == null) throw new ExceptionGETL("Required field name: ${strField}")
@@ -321,7 +380,7 @@ class Field implements Serializable {
 	/**
 	 * Attribute to string
 	 */
-	public String toString() {
+	String toString() {
 		def s = [:]
 		s.name = name
 		s.type = type
@@ -352,9 +411,8 @@ class Field implements Serializable {
 	
 	/**
 	 * Assign from field
-	 * @param f
 	 */
-	public void assign(Field f) {
+	void assign(Field f) {
 		type = (f.type != Type.OBJECT)?f.type:type
 		typeName = f.typeName
 		dbType = f.dbType
@@ -381,9 +439,8 @@ class Field implements Serializable {
 	
 	/**
 	 * Clone field
-	 * @return
 	 */
-	public Field copy() {
+	Field copy() {
 		return new Field(
 				name: this.name, type: this.type, typeName: this.typeName, dbType: this.dbType, isNull: this.isNull,
 				length: this.length, precision: this.precision, isKey: this.isKey, ordKey: this.ordKey,
@@ -394,8 +451,11 @@ class Field implements Serializable {
 				extended: CloneUtils.CloneMap(extended)
 		)
 	}
-	
-	public static boolean IsConvertibleType(Field.Type source, Field.Type dest) {
+
+	/**
+	 * Valid convert one type to another
+	 */
+	static boolean IsConvertibleType(Field.Type source, Field.Type dest) {
 		if (source == dest) return true
 		
 		boolean res = false
@@ -431,14 +491,12 @@ class Field implements Serializable {
 
     /**
      * Valid equal current object by object
-     * @param other
-     * @return
      */
-    public boolean canEqual(java.lang.Object other) {
+    boolean canEqual(java.lang.Object other) {
         return other instanceof Field
     }
 
-	public boolean equalsAll(java.lang.Object other) {
+	boolean equalsAll(java.lang.Object other) {
 		if (other == null) return false
 		if (this.is(other)) return true
 		if (!(other instanceof Field)) return false
@@ -475,7 +533,7 @@ class Field implements Serializable {
 	}
 
     @Override
-	public boolean equals(java.lang.Object other) {
+	boolean equals(java.lang.Object other) {
 		if (other == null) return false
 		if (this.is(other)) return true
 		if (!(other instanceof Field)) return false

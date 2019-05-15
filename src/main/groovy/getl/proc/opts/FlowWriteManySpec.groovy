@@ -27,9 +27,10 @@ package getl.proc.opts
 
 import getl.data.Dataset
 import getl.data.Field
+import getl.lang.opts.BaseSpec
 import getl.utils.MapUtils
 
-class FlowWriteManySpec {
+class FlowWriteManySpec extends BaseSpec {
     FlowWriteManySpec() {
         super()
     }

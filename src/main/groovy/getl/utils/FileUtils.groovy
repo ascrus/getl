@@ -821,12 +821,13 @@ class FileUtils {
 	 * @param path
 	 * @return class loader for use in Class.forName method
 	 */
-	public static URLClassLoader ClassLoaderFromPath(String path) {
+	public static URLClassLoader ClassLoaderFromPath(String path, ClassLoader classLoader = null) {
+		if (classLoader == null) classLoader = ClassLoader.systemClassLoader
 		File pathFile = new File(path)
 		List<URL> urls = []
 		if (pathFile.isFile()) {
 			urls << pathFile.toURI().toURL()
-			return new URLClassLoader(urls.toArray(URL[]) as URL[], ClassLoader.systemClassLoader /*(ClassLoader)null*/)
+			return new URLClassLoader(urls.toArray(URL[]) as URL[], classLoader)
 		}
 		String mask = '*.jar'
 		if (!pathFile.isDirectory()) {
@@ -847,7 +848,7 @@ class FileUtils {
 			fileMan.disconnect()
 		}
 
-		return new URLClassLoader(urls.toArray(URL[]) as URL[], ClassLoader.systemClassLoader)
+		return new URLClassLoader(urls.toArray(URL[]) as URL[], classLoader)
 	}
 
 	/**

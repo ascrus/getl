@@ -926,31 +926,10 @@ sb << """
 	}
 
 	/**
-	 * Run groovy script
-	 * @param value
-	 * @return
-	 */												
-	public static def EvalGroovyScript(String value) {
-        return EvalGroovyScript(value, [:])
-	}
-
-	/**
 	 * Compile groovy script to closure
-	 * @param value
-	 * @return
 	 */
-	public static Closure EvalGroovyClosure(String value) {
-        return (Closure)EvalGroovyScript(value, [:])
-	}
-
-	/**
-	 * Compile groovy script to closure
-	 * @param value
-	 * @param vars
-	 * @return
-	 */
-	public static def EvalGroovyClosure(String value, Map<String, Object> vars) {
-        return (Closure)EvalGroovyScript(value, vars)
+	public static Closure EvalGroovyClosure(String value, Map<String, Object> vars = null, Boolean convertReturn = false, ClassLoader classLoader = null) {
+        return (Closure)EvalGroovyScript(value, vars, convertReturn, classLoader)
 	}
 
 	/**
@@ -960,7 +939,7 @@ sb << """
 	 * @return
 	 */
 	@groovy.transform.CompileStatic
-	public static def EvalGroovyScript(String value, Map<String, Object> vars, Boolean convertReturn = false) {
+	public static def EvalGroovyScript(String value, Map<String, Object> vars = null, Boolean convertReturn = false, ClassLoader classLoader = null) {
 		if (value == null) return null
 		if (convertReturn) value = value.replace('\r', '\u0001')
 		
@@ -969,7 +948,7 @@ sb << """
 			bind.setVariable(key, val)
 		}
 		
-		def sh = new GroovyShell(bind)
+		def sh = (classLoader == null)?new GroovyShell(bind):new GroovyShell(classLoader, bind)
 		
 		def res
 		try {
@@ -979,7 +958,7 @@ sb << """
 		catch (Exception e) {
 			Logs.Severe("Error parse [${StringUtils.CutStr(value, 1000)}]")
 			StringBuilder sb = new StringBuilder("script:\n$value\nvars:")
-			vars.each { varName, varValue -> sb.append("\n	$varName: ${StringUtils.LeftStr(varValue.toString(), 256)}") }
+			vars?.each { varName, varValue -> sb.append("\n	$varName: ${StringUtils.LeftStr(varValue.toString(), 256)}") }
 			Logs.Dump(e, 'GenerationUtils', 'EvalGroovyScript', sb.toString())
 			throw e
 		}
@@ -1240,6 +1219,8 @@ sb << """
 	 * @return
 	 */
 	public static Map GenerateRowCopy(JDBCDriver driver, List<Field> fields, boolean sourceIsMap = false) {
+		if (!driver.isConnected()) driver.connect()
+
 		StringBuilder sb = new StringBuilder()
 		sb << "{ java.sql.Connection connection, ${(sourceIsMap)?'Map<String, Object>':'groovy.sql.GroovyResultSet'} inRow, Map<String, Object> outRow -> methodRowCopy(connection, inRow, outRow) }\n"
 		sb << '\n@groovy.transform.CompileStatic\n'
@@ -1287,7 +1268,7 @@ sb << """
 
 //		println statement
 
-		Closure code = EvalGroovyClosure(statement)
+		Closure code = EvalGroovyClosure(statement, null, false, driver.jdbcClass?.classLoader)
 
         return [statement: statement, code: code]
 	}
@@ -1344,7 +1325,12 @@ sb << """
 				break
 				
 			case types.TEXT:
-				res = "clobWrite(_getl_con, _getl_stat, $paramNum, ($value) as String)"
+				if (driver.textReadAsObject()) {
+					res = "clobWrite(_getl_con, _getl_stat, $paramNum, ($value) as String)"
+				}
+				else {
+					res = "if ($value != null) _getl_stat.setString($paramNum, ($value) as String) else _getl_stat.setNull($paramNum, java.sql.Types.VARCHAR)"
+				}
 				break
 				
 			case types.DATE:

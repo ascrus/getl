@@ -52,10 +52,12 @@ class MSSQLDriver extends JDBCDriver {
 		tablePrefix = '['
 		tableEndPrefix = ']'
 		commitDDL = true
+		transactionalDDL = true
+		dropIfExists = false
 	}
 
 	@Override
-	public List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
 				 Driver.Support.INDEX, Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE,
@@ -63,13 +65,13 @@ class MSSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public List<Driver.Operation> operations() {
+	List<Driver.Operation> operations() {
 		return super.operations() +
 				[Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
 
 	@Override
-	public Map getSqlType () {
+	Map getSqlType () {
 		Map res = super.getSqlType()
 		res.DOUBLE.name = 'float'
 		res.BOOLEAN.name = 'bit'
@@ -84,14 +86,14 @@ class MSSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public String defaultConnectURL () {
+	String defaultConnectURL () {
 		return 'jdbc:sqlserver://{host};databaseName={database}'
 	}
 	
 	@Override
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
-		Map<String, Object> dl = (dataset as TableDataset).directive + params
+		Map<String, Object> dl = (dataset as TableDataset).directive?:[:] + params
 		if (dl.with != null) {
 			dir.afteralias = "with (${dl.with})"
 		}
@@ -110,7 +112,7 @@ class MSSQLDriver extends JDBCDriver {
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} {value}' }
 
 	@Override
-	public void prepareField (Field field) {
+	void prepareField (Field field) {
 		super.prepareField(field)
 
 		if (field.typeName != null) {
@@ -131,5 +133,8 @@ class MSSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public boolean blobReadAsObject () { return false }
+	boolean blobReadAsObject () { return false }
+
+	@Override
+	boolean textReadAsObject() { return false }
 }

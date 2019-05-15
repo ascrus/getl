@@ -1,7 +1,10 @@
 package getl.lang
 
+import getl.config.ConfigFiles
+import getl.config.ConfigSlurper
 import getl.h2.*
 import getl.tfs.*
+import getl.utils.Config
 
 class GetlTest extends getl.test.GetlTest {
     void testEtl() {
@@ -22,6 +25,7 @@ datasets {
 
         Getl.run {
             config {
+                configClassManager = new ConfigSlurper()
                 path = tempPath
                 load('getl.conf')
             }
@@ -29,7 +33,7 @@ datasets {
             assertEquals('table1', configContent.datasets?.table1?.tableName)
 
             log {
-                logFileName = "$tempPath/getl.lang.{date}.log"
+                //logFileName = "$tempPath/getl.lang.{date}.log"
             }
 
             def table1 = h2table { H2Table table ->
@@ -166,5 +170,6 @@ ORDER BY t1.id'''
 
 //            println new File((table1.connection as H2Connection).sqlHistoryFile).text
         }
+        Config.configClassManager = new ConfigFiles()
     }
 }
