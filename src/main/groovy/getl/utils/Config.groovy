@@ -88,7 +88,7 @@ class Config {
         configClassManager = value
     }
 
-    public static void Init(Map<String, Object> initParams) {
+    public static void Init(Map initParams) {
 		if ((initParams.config as Map)?.manager != null) {
             configClassManager = Class.forName((initParams.config as Map).manager as String).newInstance() as ConfigManager
             Logs.Config("config: use ${configClassManager.getClass().name} class for config manager")
@@ -105,13 +105,13 @@ class Config {
 	/**
 	 * Variables
 	 */
-	public static Map<String, Object> getVars() { (Map<String, Object>)Config.content."vars" }
+	public static Map<String, Object> getVars() { Config.content."vars" as Map<String, Object>}
 
     /**
      * Set variables
      * @param value
      */
-	public static void setVars(Map<String, Object> value) {
+	public static void setVars(Map value) {
         if (value == null) throw new ExceptionGETL('Null "value" detected!')
 		def v = content.vars as Map<String, Object>
 		if (v == null) {
@@ -171,12 +171,12 @@ class Config {
 	 * Load configuration
 	 */
 	@groovy.transform.Synchronized
-	public static void LoadConfig (Map<String, Object> readParams = [:]) {
+	public static void LoadConfig (Map readParams = [:]) {
         configClassManager.loadConfig(readParams)
 		DoInitEvent()
 	}
 
-    public static void MergeConfig (Map<String, Object> data) {
+    public static void MergeConfig (Map data) {
         if (data == null) throw new ExceptionGETL('Null "data" detected!')
 
         Map<String, Object> currentVars = this.vars
@@ -193,7 +193,7 @@ class Config {
             }
         }
 
-        MapUtils.MergeMap(content, (Map<String, Object>) data)
+        MapUtils.MergeMap(content, (Map) data)
     }
 	
 	/**
@@ -244,7 +244,7 @@ class Config {
 	 * @param writer
 	 */
 	@groovy.transform.Synchronized
-	public static void SaveConfig (Map<String, Object> saveParams = [:]) {
+	public static void SaveConfig (Map saveParams = [:]) {
         configClassManager.saveConfig(content, saveParams)
 	}
 	

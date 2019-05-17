@@ -74,7 +74,8 @@ class JDBCConnection extends Connection {
             drv.initSessionProperties()
         }
 	}
-	
+
+	@Override
 	protected void doDoneDisconnect () {
 		JDBCDriver drv = driver as JDBCDriver
 		drv.saveToHistory("-- USER DISCONNECT (URL: ${sysParams."currentConnectURL"})${(autoCommit)?' WITH AUTOCOMMIT':''}")
@@ -84,163 +85,199 @@ class JDBCConnection extends Connection {
 	
 	/**
 	 * Use exists JDBC connection 
-	 * @return
 	 */
-	public java.sql.Connection getJavaConnection () { params.javaConnection }
-	public void setJavaConnection (java.sql.Connection value) { params.javaConnection = value }
+	java.sql.Connection getJavaConnection () { params.javaConnection }
+	/**
+	 * Use exists JDBC connection
+	 */
+	void setJavaConnection (java.sql.Connection value) { params.javaConnection = value }
 	
 	/**
 	 * JDBC connection URL
-	 * @return
 	 */
-	public String getConnectURL () { params.connectURL }
-	public void setConnectURL (String value) { params.connectURL = value }
+	String getConnectURL () { params.connectURL }
+	/**
+	 * JDBC connection URL
+	 */
+	void setConnectURL (String value) { params.connectURL = value }
 	
 	/**
 	 * Build jdbc connection url
-	 * @return
 	 */
-	public String currentConnectURL () { sysParams."currentConnectURL" }
+	String currentConnectURL () { sysParams.currentConnectURL }
 	
 	/**
 	 * Server host and port for connection url
-	 * @return
 	 */
-	public String getConnectHost () { params."connectHost" }
-	public void setConnectHost (String value) {
-		params."connectHost" = value
-	}
+	String getConnectHost () { params.connectHost }
+	/**
+	 * Server host and port for connection url
+	 */
+	void setConnectHost (String value) { params.connectHost = value }
 	
 	/**
 	 * Database name for connection url
-	 * @return
 	 */
-	public String getConnectDatabase () { params."connectDatabase" }
-	public void setConnectDatabase (String value) { params."connectDatabase" = value }
+	String getConnectDatabase () { params."connectDatabase" }
+	/**
+	 * Database name for connection url
+	 */
+	void setConnectDatabase (String value) { params.connectDatabase = value }
 	
 	/**
 	 * Connection balancer
-	 * @return
 	 */
-	public Balancer getBalancer () { params."balancer" }
-	public void setBalancer (Balancer value) { params."balancer" = value }
+	Balancer getBalancer () { params."balancer" }
+	/**
+	 * Connection balancer
+	 */
+	void setBalancer (Balancer value) { params.balancer = value }
 	
 	/**
 	 * JDBC driver name
 	 */
-	public String getDriverName() { params.driverName }
-	public void setDriverName(String value) { params.driverName = value }
+	String getDriverName() { params.driverName }
+	/**
+	 * JDBC driver name
+	 */
+	void setDriverName(String value) { params.driverName = value }
 
     /**
      * JDBC driver jar file path
      */
-    public String getDriverPath() { params.driverPath }
-    public void setDriverPath(String value) { params.driverPath = value }
+    String getDriverPath() { params.driverPath }
+	/**
+	 * JDBC driver jar file path
+	 */
+    void setDriverPath(String value) { params.driverPath = value }
 	
 	/**
 	 * Connection login
-	 * @return
 	 */
-	public String getLogin () { params.login }
-	public void setLogin (String value) { params.login = value }
+	String getLogin () { params.login }
+	/**
+	 * Connection login
+	 */
+	void setLogin (String value) { params.login = value }
 	
 	/**
 	 * Connection password
-	 * @return
 	 */
-	public String getPassword () { params.password } 
-	public void setPassword (String value) { params.password = value }
+	String getPassword () { params.password }
+	/**
+	 * Connection password
+	 */
+	void setPassword (String value) { params.password = value }
 	
 	/**
 	 * Auto commit transaction
-	 * @return
 	 */
-	public boolean getAutoCommit () { BoolUtils.IsValue(params.autoCommit, false) }
-	public void setAutoCommit (boolean value) { 
+	boolean getAutoCommit () { BoolUtils.IsValue(params.autoCommit, false) }
+	/**
+	 * Auto commit transaction
+	 */
+	void setAutoCommit (boolean value) {
 		params.autoCommit = value
 		if (connected) (driver as JDBCConnection).setAutoCommit(value)
 	}
 	
 	/**
 	 * Database name from access to objects in datasets
-	 * @return
 	 */
-	public String getDbName () { params.dbName }
-	public void setDbName (String value) { params.dbName = value }
+	String getDbName () { params.dbName }
+	/**
+	 * Database name from access to objects in datasets
+	 */
+	void setDbName (String value) { params.dbName = value }
 
 	/**
 	 * Schema name from access to objects in datasets
-	 * @return
 	 */
-	public String getSchemaName () { params.schemaName }
-	public void setSchemaName (String value) { params.schemaName = value }
+	String getSchemaName () { params.schemaName }
+	/**
+	 * Schema name from access to objects in datasets
+	 */
+	void setSchemaName (String value) { params.schemaName = value }
 	
 	/**
 	 * Extend connection properties
-	 * @return
 	 */
-	public Map getConnectProperty () { 
+	Map getConnectProperty () {
 		if (params.connectProperty == null) params.connectProperty = [:]
 		return params.connectProperty
 	}
-	public void setConnectProperty (Map value) {
+	/**
+	 * Extend connection properties
+	 */
+	void setConnectProperty (Map value) {
 		connectProperty.clear()
 		addConnectionProperty(value)
 	}
 
 	/**
 	 * Merge connection properties
-	 * @param value
 	 */
-	public void addConnectionProperty (Map value) {
+	void addConnectionProperty (Map value) {
 		connectProperty.putAll(value)
 	}
 	
 	/**
 	 * Session properties
-	 * @return
 	 */
-	public Map getSessionProperty () {
+	Map getSessionProperty () {
 		if (params.sessionProperty == null) params.sessionProperty = [:]
 		return params.sessionProperty
 	}
-	public void setSessionProperty (Map value) {
+	/**
+	 * Session properties
+	 */
+	void setSessionProperty (Map value) {
 		sessionProperty.clear()
 		addSessionProperty(value)
 	}
 
 	/**
 	 * Merge session properties
-	 * @param value
-	 * @return
 	 */
-	public addSessionProperty (Map value) {
+	def addSessionProperty (Map value) {
 		sessionProperty.putAll(value)
 	}
 	
 	/**
 	 * Default mask for date values
 	 */
-	public String getMaskDate () { params.maskDate }
-	public void setMaskDate (String value) { params.maskDate = value }
+	String getMaskDate () { params.maskDate }
+	/**
+	 * Default mask for date values
+	 */
+	void setMaskDate (String value) { params.maskDate = value }
 	
 	/**
 	 * Default mask for time values
 	 */
-	public String getMaskTime () { params.maskTime }
-	public void setMaskTime (String value) { params.maskTime = value }
+	String getMaskTime () { params.maskTime }
+	/**
+	 * Default mask for time values
+	 */
+	void setMaskTime (String value) { params.maskTime = value }
 	
 	/**
 	 * Default mask for datetime values
 	 */
-	public String getMaskDateTime () { params.maskDateTime }
-	public void setMaskDateTime (String value) { params.maskDateTime = value }
+	String getMaskDateTime () { params.maskDateTime }
+	/**
+	 * Default mask for datetime values
+	 */
+	void setMaskDateTime (String value) { params.maskDateTime = value }
 	
 	/**
 	 * Name of file history sql commands
 	 */
-	public String getSqlHistoryFile () { params.sqlHistoryFile }
-    public void setSqlHistoryFile (String value) {
+	String getSqlHistoryFile () { params.sqlHistoryFile }
+	/**
+	 * Name of file history sql commands
+	 */
+    void setSqlHistoryFile (String value) {
         params.sqlHistoryFile = value
         fileNameSqlHistory = null
     }
@@ -248,56 +285,64 @@ class JDBCConnection extends Connection {
     /**
      * Output server warning messages to log
      */
-    public Boolean getOutputServerWarningToLog() { params.outputServerWarningToLog }
-    public void setOutputServerWarningToLog(Boolean value) { params.outputServerWarningToLog = value }
+    Boolean getOutputServerWarningToLog() { params.outputServerWarningToLog }
+	/**
+	 * Output server warning messages to log
+	 */
+    void setOutputServerWarningToLog(Boolean value) { params.outputServerWarningToLog = value }
 
     /**
      * Output sql commands to console
      */
-    public Boolean getSqlHistoryOutput () { BoolUtils.IsValue(params.sqlHistoryOutput, false) }
-    public void setSqlHistoryOutput (Boolean value) {
+    Boolean getSqlHistoryOutput () { BoolUtils.IsValue(params.sqlHistoryOutput, false) }
+	/**
+	 * Output sql commands to console
+	 */
+    void setSqlHistoryOutput (Boolean value) {
         params.sqlHistoryOutput = value
     }
 	
 	/**
 	 * Fetch size records for read query 
 	 */
-	public Integer getFetchSize () { params.fetchSize }
-	public void setFetchSize (Integer value) { params.fetchSize = value }
+	Integer getFetchSize () { params.fetchSize }
+	/**
+	 * Fetch size records for read query
+	 */
+	void setFetchSize (Integer value) { params.fetchSize = value }
 	
 	/**
 	 * Set login timeout for connection driver (in seconds) 
-	 * @return
 	 */
-	public Integer getLoginTimeout () { params.loginTimeout }
-	public void setLoginTimeout (Integer value) { params.loginTimeout = value }
+	Integer getLoginTimeout () { params.loginTimeout }
+	/**
+	 * Set login timeout for connection driver (in seconds)
+	 */
+	void setLoginTimeout (Integer value) { params.loginTimeout = value }
 	
 	/**
 	 * Set statement timeout for connection driver (in seconds)
-	 * @return
 	 */
-	public Integer getQueryTimeout () { params.queryTimeout }
-	public void setQueryTimeout (Integer value) { params.queryTimeout = value }
+	Integer getQueryTimeout () { params.queryTimeout }
+	/**
+	 * Set statement timeout for connection driver (in seconds)
+	 */
+	void setQueryTimeout (Integer value) { params.queryTimeout = value }
 	
 	/**
 	 * Return using groovy SQL connection
-	 * @return
 	 */
-	public Sql getSqlConnection () { sysParams.sqlConnect }
+	Sql getSqlConnection () { sysParams.sqlConnect }
 	
 	/**
 	 * Return session ID (if supported RDBMS driver)
-	 * @return
 	 */
-	public String getSessionID () { sysParams.sessionID }
+	String getSessionID () { sysParams.sessionID }
 	
 	/**
 	 * Return datasets list by parameters
-	 * @param params
-	 * @param code
-	 * @return
 	 */
-	public List<TableDataset> retrieveDatasets (Map params, Closure code) {
+	List<TableDataset> retrieveDatasets (Map params, Closure code) {
 		if (params == null) params = [:]
 		List<TableDataset> result = []
 		def o = retrieveObjects(params, code)
@@ -325,65 +370,55 @@ class JDBCConnection extends Connection {
 	
 	/**
 	 * Return datasets list
-	 * @return
 	 */
-	public List<Dataset> retrieveDatasets () {
+	List<Dataset> retrieveDatasets () {
 		retrieveDatasets([:], null)
 	}
 	
 	/**
 	 * Return datasets list
-	 * @param code
-	 * @return
 	 */
-	public List<Dataset> retrieveDatasets (Closure code) {
+	List<Dataset> retrieveDatasets (Closure code) {
 		retrieveDatasets([:], code)
 	}
 	
 	/**
 	 * Return datasets list
-	 * @param params
-	 * @return
 	 */
-	public List<Dataset> retrieveDatasets (Map params) {
+	List<Dataset> retrieveDatasets (Map params) {
 		retrieveDatasets(params, null)
 	}
 	
 	@Override
-	public String getObjectName () { connectURL }
+	String getObjectName () { connectURL }
 	
 	/**
 	 * Save sql to history file
-	 * @param sql
 	 */
-	public void saveToHistory(String sql) {
+	void saveToHistory(String sql) {
 		JDBCDriver drv = driver as JDBCDriver
 		drv.saveToHistory(sql)
 	}
 	
 	/**
 	 * Return used balancer server attributes
-	 * @return
 	 */
-	public Map getBalancerServer () {
+	Map getBalancerServer () {
 		sysParams."balancerServer"
 	}
 	
 	/**
 	 * Build connection params for connect url 
-	 * @return
 	 */
-	public String buildConnectParams () {
+	String buildConnectParams () {
 		JDBCDriver drv = driver as JDBCDriver
 		drv.buildConnectParams()
 	}
 	
 	/**
 	 * Parse connection host and return host name without port
-	 * @param host
-	 * @return
 	 */
-	public static String ConnectHost2HostName(String host) {
+	static String ConnectHost2HostName(String host) {
 		if (host == null) return null
 		def pos = host.indexOf(":")
 		String res = host
@@ -394,10 +429,8 @@ class JDBCConnection extends Connection {
 	
 	/**
 	 * Parse connection host and return port number without host name
-	 * @param host
-	 * @return
 	 */
-	public static Integer ConnectHost2PortNumber(String host) {
+	static Integer ConnectHost2PortNumber(String host) {
 		if (host == null) return null
 		def pos = host.indexOf(":")
 		Integer res = null
@@ -408,11 +441,8 @@ class JDBCConnection extends Connection {
 	
 	/**
 	 * Build connection host
-	 * @param hostName
-	 * @param portNumber
-	 * @return
 	 */
-	public static String BuildConnectHost(String hostName, Integer portNumber) {
+	static String BuildConnectHost(String hostName, Integer portNumber) {
 		if (hostName == null) throw new ExceptionGETL("Required value for \"hostName\" parameter")
 		def res = hostName
 		if (portNumber != null) res += ":$portNumber"
@@ -422,17 +452,15 @@ class JDBCConnection extends Connection {
 	
 	/**
 	 * Current host name
-	 * @return
 	 */
-	public String getConnectHostName () {
+	String getConnectHostName () {
 		ConnectHost2HostName(connectHost)
 	}
 	
 	/**
 	 * Current port number
-	 * @return
 	 */
-	public Integer getConnectPortNumber () {
+	Integer getConnectPortNumber () {
 		ConnectHost2PortNumber(connectHost)
 	}
 	
@@ -452,7 +480,7 @@ class JDBCConnection extends Connection {
 	}
 
 	@Override
-	public String toString() {
+	String toString() {
 		def str
 		if (connectURL != null) {
             def m = connectURL =~ /jdbc:.+:\/\/(.+)/

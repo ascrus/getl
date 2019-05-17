@@ -316,7 +316,7 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
-		Map<String, Object> dl = (dataset as TableDataset).directive?:[:] + params
+		Map<String, Object> dl = (dataset as TableDataset).queryDirective?:[:] + params
         if (dl.label != null) {
             dir.afterselect = "/*+label(${dl.label})*/"
         }

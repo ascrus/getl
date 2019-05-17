@@ -25,8 +25,10 @@
 package getl.config.opts
 
 import getl.config.*
+import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
 import getl.utils.*
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -35,6 +37,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
+@CompileStatic
 class ConfigSpec extends BaseSpec {
     /**
      * Configuration manager
@@ -62,7 +65,7 @@ class ConfigSpec extends BaseSpec {
     /**
      * Load configuration file
      */
-    void load(String fileName, String codePage = null) { Config.LoadConfig(fileName: fileName, codePage: codePage) }
+    void load(String fileName, String codePage = null) { Config.LoadConfig([fileName: fileName, codePage: codePage]) }
 
     /**
      * Save configuration file

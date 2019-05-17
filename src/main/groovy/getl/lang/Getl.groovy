@@ -24,9 +24,8 @@
 
 package getl.lang
 
-import getl.config.ConfigSlurper
-import getl.config.opts.ConfigSpec
-import getl.config.opts.LogSpec
+import getl.config.*
+import getl.config.opts.*
 import getl.csv.*
 import getl.data.*
 import getl.db2.*
@@ -35,22 +34,22 @@ import getl.h2.*
 import getl.hive.*
 import getl.jdbc.*
 import getl.json.*
+import getl.lang.opts.*
 import getl.mssql.*
 import getl.mysql.*
 import getl.netsuite.*
 import getl.oracle.*
 import getl.postgresql.*
 import getl.proc.*
-import getl.proc.opts.FlowCopySpec
-import getl.proc.opts.FlowProcessSpec
-import getl.proc.opts.FlowWriteManySpec
-import getl.proc.opts.FlowWriteSpec
+import getl.proc.opts.*
 import getl.salesforce.*
+import getl.stat.*
 import getl.tfs.*
 import getl.utils.*
 import getl.vertica.*
 import getl.xero.*
 import getl.xml.*
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -59,6 +58,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
+@CompileStatic
 class Getl extends Script {
     protected Getl() {
         super()
@@ -84,16 +84,31 @@ class Getl extends Script {
      * Run GETL lang closure
      */
     static def run(@DelegatesTo(Getl) Closure cl) {
-        def lang = new Getl()
-        def code = cl.rehydrate(lang, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
-        code(lang)
+        def parent = new Getl()
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        code(parent)
     }
+
+    ProcessTime startProcess(String name) {
+        return (langOpts.processTimeTracing)?new ProcessTime(name: name):null
+    }
+
+    void finishProcess(ProcessTime pt) {
+        if (pt != null) pt.finish()
+    }
+
+    private LangSpec langOpts = new LangSpec()
 
     /**
      * Current configuration content
      */
     Map<String, Object> getConfigContent() { Config.content }
+
+    /**
+     * Current configuration vars
+     */
+    Map<String, Object> getConfigVars() { Config.vars }
 
     /**
      * Write message as level the INFO to log
@@ -136,12 +151,23 @@ class Getl extends Script {
     public Date getNow() { DateUtils.Now() }
 
     /**
+     * Languate options
+     */
+    void options(@DelegatesTo(LangSpec) Closure cl) {
+        def code = cl.rehydrate(this, langOpts, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        code()
+    }
+
+    /**
      * Configuration options
      */
     ConfigSpec config(ConfigSpec parent = null, @DelegatesTo(ConfigSpec) Closure cl) {
-        if (parent == null) parent = new ConfigSpec()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        if (parent == null) {
+            parent = ConfigSpec.newInstance()
+        }
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -152,21 +178,20 @@ class Getl extends Script {
      */
     LogSpec log(LogSpec parent = null, @DelegatesTo(LogSpec) Closure cl) {
         if (parent == null) parent = new LogSpec()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
     }
-
 
     /**
      * Field
      */
     Field field(Field parent = null, @DelegatesTo(Field) Closure cl) {
         if (parent == null) parent = new Field()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -177,10 +202,10 @@ class Getl extends Script {
      */
     JDBCConnection jdbcConnection(JDBCConnection parent = null, String conClass = null, @DelegatesTo(JDBCConnection) Closure cl) {
         if (parent == null) {
-            parent = JDBCConnection.CreateConnection(connection: conClass)
+            parent = JDBCConnection.CreateConnection(connection: conClass) as JDBCConnection
         }
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -196,10 +221,10 @@ class Getl extends Script {
     /**
      * H2 database table
      */
-    H2Table h2table(TableDataset parent = null, @DelegatesTo(H2Table) Closure cl) {
+    H2Table h2table(H2Table parent = null, @DelegatesTo(H2Table) Closure cl) {
         if (parent == null) parent = new H2Table()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -222,10 +247,10 @@ class Getl extends Script {
     /**
      * Hive table
      */
-    HiveTable hivetable(TableDataset parent = null, @DelegatesTo(HiveTable) Closure cl) {
+    HiveTable hivetable(HiveTable parent = null, @DelegatesTo(HiveTable) Closure cl) {
         if (parent == null) parent = new HiveTable()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -267,6 +292,18 @@ class Getl extends Script {
     }
 
     /**
+     * Vertica table
+     */
+    VerticaTable verticatable(VerticaTable parent = null, @DelegatesTo(VerticaTable) Closure cl) {
+        if (parent == null) parent = new VerticaTable()
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        code(parent)
+
+        return parent
+    }
+
+    /**
      * NetSuite connection
      */
     NetsuiteConnection netsuiteConnection(NetsuiteConnection parent = null, @DelegatesTo(NetsuiteConnection) Closure cl) {
@@ -278,8 +315,8 @@ class Getl extends Script {
      */
     TDS tempdb(TDS parent = null, @DelegatesTo(TDS) Closure cl) {
         if (parent == null) parent = new TDS()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -295,8 +332,8 @@ class Getl extends Script {
      */
     TableDataset table(TableDataset parent = null, @DelegatesTo(TableDataset) Closure cl) {
         if (parent == null) parent = new TableDataset()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -307,8 +344,8 @@ class Getl extends Script {
      */
     QueryDataset query(QueryDataset parent = null, @DelegatesTo(QueryDataset) Closure cl) {
         if (parent == null) parent = new QueryDataset()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -318,11 +355,9 @@ class Getl extends Script {
      * CSV connection
      */
     CSVConnection csvConnection(CSVConnection parent = null, @DelegatesTo(CSVConnection) Closure cl) {
-        if (parent == null) {
-            parent = new CSVConnection()
-        }
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        if (parent == null) parent = new CSVConnection()
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -333,8 +368,8 @@ class Getl extends Script {
      */
     CSVDataset csv(CSVDataset parent = null, @DelegatesTo(CSVDataset) Closure cl) {
         if (parent == null) parent = new CSVDataset()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -347,8 +382,8 @@ class Getl extends Script {
         if (parent == null) {
             parent = new ExcelConnection()
         }
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -359,8 +394,8 @@ class Getl extends Script {
      */
     ExcelDataset excel(ExcelDataset parent = null, @DelegatesTo(ExcelDataset) Closure cl) {
         if (parent == null) parent = new ExcelDataset()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -373,8 +408,8 @@ class Getl extends Script {
         if (parent == null) {
             parent = new JSONConnection()
         }
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -385,8 +420,8 @@ class Getl extends Script {
      */
     JSONDataset json(JSONDataset parent = null, @DelegatesTo(JSONDataset) Closure cl) {
         if (parent == null) parent = new JSONDataset()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -399,8 +434,8 @@ class Getl extends Script {
         if (parent == null) {
             parent = new XMLConnection()
         }
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -411,8 +446,8 @@ class Getl extends Script {
      */
     XMLDataset xml(XMLDataset parent = null, @DelegatesTo(XMLDataset) Closure cl) {
         if (parent == null) parent = new XMLDataset()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -425,8 +460,8 @@ class Getl extends Script {
         if (parent == null) {
             parent = new SalesForceConnection()
         }
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -437,8 +472,8 @@ class Getl extends Script {
      */
     SalesForceDataset salesforce(SalesForceDataset parent = null, @DelegatesTo(SalesForceDataset) Closure cl) {
         if (parent == null) parent = new SalesForceDataset()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -451,8 +486,8 @@ class Getl extends Script {
         if (parent == null) {
             parent = new XeroConnection()
         }
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -463,8 +498,8 @@ class Getl extends Script {
      */
     XeroDataset xero(XeroDataset parent = null, @DelegatesTo(XeroDataset) Closure cl) {
         if (parent == null) parent = new XeroDataset()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -485,8 +520,8 @@ class Getl extends Script {
      */
     TFSDataset csvTemp(TFSDataset parent = null, @DelegatesTo(TFSDataset) Closure cl) {
         if (parent == null) parent = TFS.dataset()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -497,10 +532,20 @@ class Getl extends Script {
      */
     FlowCopySpec copyRows(FlowCopySpec parent = null, @DelegatesTo(FlowCopySpec) Closure cl) {
         if (parent == null) parent = new FlowCopySpec()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def pt = startProcess('Copy rows from source to destination')
         code(parent)
-        new Flow().copy(parent)
+
+        Flow flow = new Flow()
+        if (parent.onInit) parent.onInit.call(flow)
+        parent.prepare()
+        flow.copy(parent.params)
+        parent.countRow = flow.countRow
+        parent.errorsDataset = flow.errorsDataset
+        if (parent.onDone) parent.onDone.call(flow)
+        finishProcess(pt)
 
         return parent
     }
@@ -510,10 +555,19 @@ class Getl extends Script {
      */
     FlowWriteSpec rowsTo(FlowWriteSpec parent = null, @DelegatesTo(FlowWriteSpec) Closure cl) {
         if (parent == null) parent = new FlowWriteSpec()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def pt = startProcess('Write rows to destination')
         code(parent)
-        new Flow().writeTo(parent)
+
+        Flow flow = new Flow()
+        if (parent.onInit != null) parent.onInit.call(flow)
+        parent.prepare()
+        flow.writeTo(parent.params)
+        parent.countRow = flow.countRow
+        if (parent.onDone != null) parent.onDone.call(flow)
+        finishProcess(pt)
 
         return parent
     }
@@ -523,10 +577,18 @@ class Getl extends Script {
      */
     FlowWriteManySpec rowsToMany(FlowWriteManySpec parent = null, @DelegatesTo(FlowWriteManySpec) Closure cl) {
         if (parent == null) parent = new FlowWriteManySpec()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def pt = startProcess('Write rows to many destinations')
         code(parent)
-        new Flow().writeAllTo(parent)
+
+        Flow flow = new Flow()
+        if (parent.onInit != null) parent.onInit.call(flow)
+        parent.prepare()
+        flow.writeAllTo(parent.params)
+        if (parent.onDone != null) parent.onDone.call(flow)
+        finishProcess(pt)
 
         return parent
     }
@@ -536,10 +598,20 @@ class Getl extends Script {
      */
     FlowProcessSpec rowProcess(FlowProcessSpec parent = null, @DelegatesTo(FlowProcessSpec) Closure cl) {
         if (parent == null) parent = new FlowProcessSpec()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def pt = startProcess('Read rows')
         code(parent)
-        new Flow().process(parent)
+
+        Flow flow = new Flow()
+        if (parent.onInit != null) parent.onInit.call(flow)
+        parent.prepare()
+        flow.process(parent.params)
+        parent.countRow = flow.countRow
+        parent.errorsDataset = flow.errorsDataset
+        if (parent.onDone != null) parent.onDone.call(flow)
+        finishProcess(pt)
 
         return parent
     }

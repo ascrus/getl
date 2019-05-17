@@ -427,6 +427,9 @@ class JDBCDriver extends Driver {
 	 * JDBC class
 	 */
 	Class getJdbcClass() { this.jdbcClass }
+
+	private boolean useLoadedDriver = false
+	public boolean getUseLoadedDriver() { useLoadedDriver }
 	
 	@Override
 	public void connect() {
@@ -447,9 +450,11 @@ class JDBCDriver extends Driver {
             def drvPath = con.params.driverPath as String
             if (drvPath == null) {
                 jdbcClass = Class.forName(drvName)
+				useLoadedDriver = false
             }
             else {
-                jdbcClass = Class.forName(drvName, true, FileUtils.ClassLoaderFromPath(drvPath))
+                jdbcClass = Class.forName(drvName, true, FileUtils.ClassLoaderFromPath(drvPath, this.getClass().classLoader))
+				useLoadedDriver = true
             }
 
 			def loginTimeout = con.loginTimeout?:30
@@ -550,6 +555,8 @@ class JDBCDriver extends Driver {
 	public void disconnect() {
 		if (sqlConnect != null) sqlConnect.close()
 		sqlConnect = null
+		jdbcClass = null
+		useLoadedDriver = false
 		
 		JDBCConnection con = connection as JDBCConnection
 		if (con.balancer != null && con.sysParams."balancerServer" != null) {
@@ -1510,7 +1517,7 @@ $sql
 		sb << "}"
 		wp.statement = sb.toString()
 
-		Closure code = GenerationUtils.EvalGroovyClosure(wp.statement, null, false, jdbcClass.classLoader)
+		Closure code = GenerationUtils.EvalGroovyClosure(wp.statement, null, false, (useLoadedDriver)?jdbcClass.classLoader:null)
 
 		return code
 	}

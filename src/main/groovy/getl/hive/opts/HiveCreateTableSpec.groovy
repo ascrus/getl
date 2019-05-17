@@ -49,9 +49,12 @@ class HiveCreateTableSpec extends CreateTableSpec {
      * Generate new clustered options
      */
     HiveClusteredSpec clustered(HiveClusteredSpec parent = null, @DelegatesTo(HiveClusteredSpec) Closure cl) {
-        if (parent == null) parent = new HiveClusteredSpec()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        if (parent == null) {
+            parent = new HiveClusteredSpec()
+            parent.thisObject = parent.DetectClosureDelegate(cl)
+        }
+        def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
@@ -67,9 +70,12 @@ class HiveCreateTableSpec extends CreateTableSpec {
      * Generate new skewed options
      */
     HiveSkewedSpec skewed(HiveSkewedSpec parent = null, @DelegatesTo(HiveSkewedSpec) Closure cl) {
-        if (parent == null) parent = new HiveSkewedSpec()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        if (parent == null) {
+            parent = new HiveSkewedSpec()
+            parent.thisObject = parent.DetectClosureDelegate(cl)
+        }
+        def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent

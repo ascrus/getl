@@ -24,7 +24,6 @@
 
 package getl.data
 
-import com.sun.org.apache.xpath.internal.operations.Bool
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
 import getl.csv.CSVDataset
@@ -177,6 +176,13 @@ class Dataset {
 	public void addFields (List<Field> fields) {
 		fields.each { Field f -> this.field << f.copy() }
 	}
+
+	/**
+	 * Add field to list of fields dataset
+	 */
+	public void addField (Field added) {
+		field << added
+	}
 	
 	/**
 	 * Auto load schema with meta file
@@ -222,7 +228,7 @@ class Dataset {
 	/**
 	 * System parameters	
 	 */
-	protected final Map<String, Object> sysParams = [:]
+	public final Map<String, Object> sysParams = [:]
 	
 	/**
 	 * Init configuration

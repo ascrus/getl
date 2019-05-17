@@ -5,6 +5,7 @@ import getl.config.ConfigSlurper
 import getl.h2.*
 import getl.tfs.*
 import getl.utils.Config
+import getl.utils.StringUtils
 
 class GetlTest extends getl.test.GetlTest {
     void testEtl() {
@@ -25,15 +26,15 @@ datasets {
 
         Getl.run {
             config {
-                configClassManager = new ConfigSlurper()
                 path = tempPath
                 load('getl.conf')
+                done { logInfo 'Load config' }
             }
             assertEquals('getl.lang.csv', configContent.datasets?.csv?.fileName)
             assertEquals('table1', configContent.datasets?.table1?.tableName)
 
             log {
-                //logFileName = "$tempPath/getl.lang.{date}.log"
+                done { logInfo 'Setting logger' }
             }
 
             def table1 = h2table { H2Table table ->
@@ -55,23 +56,29 @@ datasets {
                         ifNotExists = true
                         columns = ['dt']
                         unique = false
+                        logInfo "Create index_1 in $table"
                     }
-                    onDone = {
+                    done {
                         assertEquals('table1', table.tableName)
                         logInfo "$table created"
                     }
+
+                    logInfo "Create $table"
                 }
 
                 rowsTo {
                     dest = table
 
-                    process = { append ->
+                    process { append ->
                         (1..3).each { append id: it, name: "test $it", dt: now }
+                        logInfo "Append rows to $table"
                     }
-                    onDone = {
+                    done {
                         assertEquals(3, table.countRows())
                         logInfo "$countRow rows appended to $table"
                     }
+
+                    logInfo "Write to $table"
                 }
 
                 copyRows {
@@ -85,10 +92,20 @@ datasets {
                         isGzFile = true
                     }
 
-                    onDone = {
+                    process { t, f ->
+                        f.name = StringUtils.ToCamelCase(t.name)
+                        f.dt = now
+                    }
+
+                    done {
                         assertEquals(3, countRow)
-                        logInfo "copied $countRow rows from $source to $dest" }
+                        logInfo "copied $countRow rows from $source to $dest"
+                    }
+
+                    logInfo "Copy rows from $table to $csvTemp"
                 }
+
+                logInfo "$table processed."
             }
 
             def file1 = csvTemp {
@@ -96,6 +113,7 @@ datasets {
                 fieldDelimiter = ','
                 codePage = 'UTF-8'
                 isGzFile = true
+                logInfo "Csv temporary file"
             }
             assertEquals('getl.lang.csv', file1.fileName)
 
@@ -119,22 +137,27 @@ datasets {
                 bulkLoad = true
 
                 def readRows = 0
-                process = { save ->
+                process { save ->
                     rowProcess {
                         source = file1
-                        process = { row ->
+                        process { row ->
+                            row.dt = now
                             save 'table1', row
                             save 'table2', row
                         }
 
-                        onDone = { readRows = countRow }
+                        done { readRows = countRow; logInfo "Read $file1 processed." }
+
+                        logInfo "Read rows from $file1"
                     }
                 }
 
-                onDone = {
+                done {
                     assertEquals(3, readRows);
                     logInfo "load $readRows rows from $file1 to ${dest.table1} and ${dest.table2}"
                 }
+
+                logInfo "Copy to many destinations"
             }
 
             rowProcess {
@@ -150,25 +173,27 @@ ORDER BY t1.id'''
                 }
 
                 def count
-                onInit = { count = 0 }
-                process = { count++; assertEquals(it.t1_id, it.t2_id) }
-                onDone = {
+                init { count = 0 }
+                process { count++; assertEquals(it.t1_id, it.t2_id); assertTrue(it.t1_dt < now ) }
+                done {
                     assertEquals(3, count)
                     assertEquals(countRow, count)
                     logInfo "read $countRow rows from table1 and table2"
                 }
+
+                logInfo "Read all rows from $table1"
             }
 
             rowProcess {
                 source = table(table1) { where = 'id < 3'; order = ['id ASC'] }
-                process = { assertTrue(it.id < 3) }
-                onDone = {
+                process { assertTrue(it.id < 3); assertTrue(it.t1_dt < now ) }
+                done {
                     assertEquals(2, countRow)
                     logInfo("readed $countRow from $source with filter")
                 }
-            }
 
-//            println new File((table1.connection as H2Connection).sqlHistoryFile).text
+                logInfo "Read rows with filter from $table1"
+            }
         }
         Config.configClassManager = new ConfigFiles()
     }

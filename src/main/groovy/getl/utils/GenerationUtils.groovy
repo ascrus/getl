@@ -29,6 +29,7 @@ import getl.data.Field.Type
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import groovy.json.JsonSlurper
+import org.codehaus.groovy.control.CompilerConfiguration
 
 import javax.sql.rowset.serial.SerialBlob
 import javax.sql.rowset.serial.SerialClob
@@ -947,8 +948,8 @@ sb << """
 		vars?.each { String key, Object val ->
 			bind.setVariable(key, val)
 		}
-		
-		def sh = (classLoader == null)?new GroovyShell(bind):new GroovyShell(classLoader, bind)
+
+		def sh = (classLoader == null)?new GroovyShell(bind):new GroovyShell(classLoader, bind, CompilerConfiguration.DEFAULT)
 		
 		def res
 		try {
@@ -1268,7 +1269,7 @@ sb << """
 
 //		println statement
 
-		Closure code = EvalGroovyClosure(statement, null, false, driver.jdbcClass?.classLoader)
+		Closure code = EvalGroovyClosure(statement, null, false, (driver.useLoadedDriver)?driver.jdbcClass?.classLoader:null)
 
         return [statement: statement, code: code]
 	}

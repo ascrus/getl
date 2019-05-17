@@ -33,6 +33,7 @@ import groovy.transform.CompileStatic
  * @author Alexsey Konstantinov
  *
  */
+@CompileStatic
 class ConfigSlurper extends ConfigManager {
 	@Override
 	void init(Map<String, Object> initParams) {
@@ -97,7 +98,7 @@ class ConfigSlurper extends ConfigManager {
 			params.files = f
 		}
 		this.files.clear()
-		this.files.addAll(value*.trim())
+		this.files.addAll(value*.trim() as List<String>)
 	}
 
 	/**
@@ -105,7 +106,7 @@ class ConfigSlurper extends ConfigManager {
 	 */
 	String getPath() { params.path as String }
 	void setPath(String value) {
-		if (value != null && !new File(value).exists())
+		if (value != null && !(new File(value).exists()))
 			throw new ExceptionGETL("Directory \"$value\" not exists!")
 
 		params.path = value
@@ -190,7 +191,7 @@ class ConfigSlurper extends ConfigManager {
 		}
 
 		def cfg = (environment == null)?new groovy.util.ConfigSlurper():new groovy.util.ConfigSlurper(environment)
-		Map<String, Object> vars = [vars: Config.vars?:[:]]
+		Map<String, Object> vars = [vars: Config.vars?:[:]] as Map<String, Object>
 
 		def writer = new StringWriter()
 		SaveMap(vars, writer)
@@ -198,7 +199,7 @@ class ConfigSlurper extends ConfigManager {
 
 		Map<String, Object> res
 		try {
-			def data = cfg.parse(text)
+			def data = cfg.parse(text) as Map<String, Object>
 			CheckDataMap(data, [vars: data.vars?:[:]])
 			res = MapUtils.DeepCopy(data)
 			if ((res.vars as Map)?.isEmpty()) {
@@ -229,10 +230,10 @@ class ConfigSlurper extends ConfigManager {
 				CheckDataList(value, vars)
 			}
 			else  if (value instanceof Closure) {
-				Map<String, Object> res = MapUtils.Copy(vars)
-				Closure cl = value
+				Map<String, Object> res = MapUtils.Copy(vars) as Map<String, Object>
+				Closure cl = value as Closure
 				Closure code = cl.rehydrate(res, cfg, cl.thisObject)
-				code.resolveStrategy = Closure.DELEGATE_FIRST
+				code.resolveStrategy = Closure.DELEGATE_ONLY
 
 				cfg.parse(code as groovy.lang.Script)
 				res.remove('vars')
@@ -258,10 +259,10 @@ class ConfigSlurper extends ConfigManager {
 				CheckDataList(value, vars)
 			}
 			else  if (value instanceof Closure) {
-				Map<String, Object> res = MapUtils.Copy(vars)
-				Closure cl = value
+				Map<String, Object> res = MapUtils.Copy(vars) as Map<String, Object>
+				Closure cl = value as Closure
 				Closure code = cl.rehydrate(res, cfg, cl.thisObject)
-				code.resolveStrategy = Closure.DELEGATE_FIRST
+				code.resolveStrategy = Closure.DELEGATE_ONLY
 
 				cfg.parse(code as groovy.lang.Script)
 				res.remove('vars')
@@ -397,7 +398,7 @@ class ConfigSlurper extends ConfigManager {
 	}
 
 	static void main(def args) {
-		def a = MapUtils.ProcessArguments(args)
+		def a = MapUtils.ProcessArguments(args) as Map<String, Object>
 		def l = a.keySet().toList()
 		if (!('source' in l) || !('dest' in l) || ('help' in l) || ('/help' in l) || ('/?' in l) || ('?' in l) ||
 				(l - ['source', 'dest', 'codepage', 'convert_vars', 'rules']).size() > 0) {
@@ -428,14 +429,14 @@ Example:
 		Boolean convertVars = BoolUtils.IsValue(a.convert_vars, false)
 		String ruleFileName = a.rules
 
-		assert new File(a.source).exists(), "Source file \"$sourceName\" not found!"
+		assert new File(a.source as String).exists(), "Source file \"$sourceName\" not found!"
 		assert a.source != a.dest, 'Source and destination file must have different names!'
 
 		Map<String, String> rules
 		if (ruleFileName != null) {
 			def ruleFile = new File(ruleFileName)
 			assert ruleFile.exists(), "Rule config file \"$ruleFileName\" not found!"
-			rules = LoadConfigFile(ruleFile, copePage)
+			rules = LoadConfigFile(ruleFile, copePage) as Map<String, String>
 			assert (rules.rules as Map)?.size() > 0, "Rules not found in config file \"$ruleFileName\"!"
 		}
 
@@ -447,7 +448,7 @@ Example:
 		}
 
 		if (rules != null) {
-			rules.rules.each { source, dest ->
+			rules.rules.each { String source, dest ->
 				MapUtils.FindKeys(Config.content, source) { Map map, String key, item ->
 					map.put(dest, map.remove(key))
 				}

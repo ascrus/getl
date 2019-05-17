@@ -28,108 +28,166 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.lang.opts.BaseSpec
 import getl.utils.MapUtils
+import groovy.transform.InheritConstructors
 
+/**
+ * Flow write options
+ * @author Alexsey Konstantinov
+ *
+ */
+@InheritConstructors
 class FlowWriteSpec extends BaseSpec {
-    FlowWriteSpec() {
-        super()
-    }
-
-    FlowWriteSpec(Map<String, Object> params) {
-        super()
-        ImportFromMap(params, this)
-    }
-
     /**
      * Destination dataset
      */
-    public Dataset dest
+    Dataset getDest() { params.dest as Dataset }
+    /**
+     * Destination dataset
+     */
+    void setDest(Dataset value) { params.dest = value }
 
     /**
      * Temporary destination name
      */
-    public String tempDestName
+    String getTempDestName() { params.tempDest }
+    /**
+     * Temporary destination name
+     */
+    void setTempDestName(String value) { params.tempDest = value }
 
     /**
      * List of field from destination dataset
      */
-    public List<Field> tempFields
+    List<Field> getTempFields() { params.tempFields as List<Field> }
+    /**
+     * List of field from destination dataset
+     */
+    void setTempFields(List<Field> value) { params.tempFields = value }
 
     /**
      * Parameters for destination write process
      */
-    public Map<String, Object> destParams
+    Map<String, Object> getDestParams() { params._destParams as Map<String, Object> }
+    /**
+     * Parameters for destination write process
+     */
+    void setDestParams(Map<String, Object> value) { params._destParams = value }
 
     /**
      * Write with synchronize main thread
      */
-    public Boolean writeSynch
+    Boolean getWriteSynch() { params.writeSynch }
+    /**
+     * Write with synchronize main thread
+     */
+    def setWriteSynch(Boolean value) { params.writeSynch = value }
 
     /**
-     * Auto starting and finishing transaction for copy process
+     * Auto starting and finishing transaction for write process
      */
-    public Boolean autoTran
+    Boolean getAutoTran() { params.autoTran }
+    /**
+     * Auto starting and finishing transaction for write process
+     */
+    void setAutoTran(Boolean value) { params.autoTran = value }
 
     /**
-     * Clearing destination dataset before copy
+     * Clearing destination dataset before write
      */
-    public Boolean clear
+    Boolean getClear() { params.clear }
+    /**
+     * Clearing destination dataset before write
+     */
+    def setClear(Boolean value) { params.clear = value }
 
     /**
      * Load to destination as bulk load (only is supported)
      */
-    public Boolean bulkLoad
+    Boolean getBulkLoad() { params.bulkLoad }
+    /**
+     * Load to destination as bulk load (only is supported)
+     */
+    void setBulkLoad(Boolean value) { params.bulkLoad = value }
 
     /**
      * Convert bulk file to escaped format
      */
-    public Boolean bulkEscaped
+    Boolean getBulkEscaped() { params.bulkEscaped }
+    /**
+     * Convert bulk file to escaped format
+     */
+    def setBulkEscaped(Boolean value) { params.bulkEscaped = value }
 
     /**
      * Compress bulk file from GZIP algorithm
      */
-    public Boolean bulkAsGZIP
+    Boolean getBulkAsGZIP() { params.bulkAsGZIP }
+    /**
+     * Compress bulk file from GZIP algorithm
+     */
+    def setBulkAsGZIP(Boolean value) { params.bulkAsGZIP = value }
 
     /**
-     * Initialization code on start process copying
+     * Code executed before process write rows
      */
-    public Closure onInit
+    Closure getOnInitFlow() { params.onInit as Closure }
+    /**
+     * Code executed before process write rows
+     */
+    def setOnInitFlow(Closure value) { params.onInit = value }
+    /**
+     * Code executed before process write rows
+     */
+    void initFlow(Closure cl) { params.onInit = cl }
 
     /**
-     * Code to complete process copying
+     * Code executed after process write rows
      */
-    public Closure onDone
+    Closure getOnDoneFlow() { params.onDone as Closure }
+    /**
+     * Code executed after process write rows
+     */
+    def setOnDoneFlow(Closure value) { params.onDone = value }
+    /**
+     * Code executed after process write rows
+     */
+    void doneFlow(Closure cl) { params.onDone = cl }
 
     /**
      * Closure code process row
      */
-    public Closure process
+    Closure getProcess() { params.process as Closure }
+    /**
+     * Closure code process row
+     */
+    def setProcess(Closure value) { params.process = value }
+    /**
+     * Closure code process row
+     */
+    void process(Closure cl) { params.process = cl }
 
     /**
      * Last count row
      */
     public Long countRow = 0
 
-    /**
-     * Import from map parameters
-     * @param params
-     * @param opt
-     */
-    static void ImportFromMap(Map<String, Object> params, FlowWriteSpec opt) {
-        opt.dest = params.dest as Dataset
-        opt.destParams = MapUtils.GetLevel(params, "dest_") as Map<String, Object>
-        opt.tempDestName = params.tempDest
-        opt.tempFields = params.tempFields as List<Field>
+    @Override
+    protected List<String> ignoreImportKeys(Map<String, Object> importParams) {
+        def dp = MapUtils.GetLevel(importParams, "dest_") as Map<String, Object>
 
-        opt.writeSynch = params.writeSynch
-        opt.autoTran = params.autoTran
+        return dp.keySet().toList()
+    }
 
-        opt.clear = params.clear
+    @Override
+    void importFromMap(Map<String, Object> importParams) {
+        super.importFromMap(importParams)
 
-        opt.bulkAsGZIP = params.bulkAsGZIP
-        opt.bulkEscaped = params.bulkEscaped
-        opt.bulkLoad = params.bulkLoad
+        destParams = MapUtils.GetLevel(importParams, "dest_") as Map<String, Object>
+    }
 
-        opt.onDone = params.onDone as Closure
-        opt.onInit = params.onInit as Closure
+    @Override
+    void prepare() {
+        MapUtils.CleanMap(params, ignoreImportKeys(params))
+        destParams.each { String key, value -> params.put('dest_' + key, value)}
     }
 }

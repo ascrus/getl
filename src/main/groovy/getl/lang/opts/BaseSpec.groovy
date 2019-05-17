@@ -24,23 +24,72 @@
 
 package getl.lang.opts
 
+import getl.utils.MapUtils
+
 /**
  * Base options class
  * @author Alexsey Konstantinov
  *
  */
 class BaseSpec {
+    BaseSpec() { }
+    BaseSpec(Map<String, Object> importParams) { importFromMap(importParams) }
+
+    static Object DetectClosureDelegate(Object obj) {
+        while (obj instanceof Closure) obj = (obj as Closure).delegate
+        return obj
+    }
+
+    def thisObject
+
+    Closure prepareClosure(Closure cl) {
+        if (thisObject == null) return cl
+        def code = cl.rehydrate(thisObject, this, thisObject)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        return code
+    }
+
     public final Map<String, Object> params = [:]
 
+    Closure onInit
     /**
      * User code before create table
      */
-    public Closure onInit
+    Closure getOnInit() { onInit }
+    /**
+     * User code before create table
+     */
+    void setOnInit(Closure value) { onInit = prepareClosure(value) }
+    /**
+     * User code before create table
+     */
+    void init(Closure cl) { setOnInit(cl) }
 
+    public Closure onDone
     /**
      * User code after create table
      */
-    public Closure onDone
+    Closure getOnDone() { onDone }
+    /**
+     * User code after create table
+     */
+    void setOnDone(Closure value) { onDone = prepareClosure(value) }
+    /**
+     * User code after create table
+     */
+    void done(Closure cl) { setOnDone(cl) }
+
+    /**
+     * Detected ignore key map from import
+     */
+    protected List<String> ignoreImportKeys(Map<String, Object> importParams) { [] as List<String> }
+
+    /**
+     * Import options from map
+     */
+    void importFromMap(Map<String, Object> importParams) {
+        params.putAll(MapUtils.Copy(importParams, ignoreImportKeys(importParams)))
+    }
 
     /**
      * Preparing options before run process

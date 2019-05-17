@@ -156,7 +156,7 @@ abstract class FileDriver extends Driver {
 		if (fn == null) return null
 		FileDataset ds = dataset
 		FileConnection con = ds.connection
-		if (con.path != null) fn = "${con.path}${con.fileSeparator}${fn}"
+		if (con.path != null) fn = "${FileUtils.ConvertToDefaultOSPath(con.path)}${con.fileSeparator}${fn}"
 		if (portion != null) fn = "${fn}.${StringUtils.AddLedZeroStr(portion.toString(), 4)}"
 		if (ds.extension != null) fn += ".${ds.extension}"
 		if (ds.isGzFile) fn += ".gz"

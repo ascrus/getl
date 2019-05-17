@@ -29,51 +29,89 @@ import getl.data.Dataset
 import getl.lang.opts.BaseSpec
 import getl.tfs.TFSDataset
 import getl.utils.MapUtils
+import groovy.transform.InheritConstructors
 
+/**
+ * Flow read options
+ * @author Alexsey Konstantinov
+ *
+ */
+@InheritConstructors
 class FlowProcessSpec extends BaseSpec {
-    FlowProcessSpec() {
-        super()
-    }
-
-    FlowProcessSpec(Map<String, Object> params) {
-        super()
-        ImportFromMap(params, this)
-    }
-
     /**
      * Source dataset
      */
-    public Dataset source
+    Dataset getSource() { params.source as Dataset }
+    /**
+     * Source dataset
+     */
+    void setSource(Dataset value) { params.source = value }
 
     /**
      * Temporary source name
      */
-    public String tempSourceName
+    String getTempSourceName() { params.tempSource }
+    /**
+     * Temporary source name
+     */
+    def setTempSourceName(String value) { params.tempSource = value }
 
     /**
      * Parameters for source read process
      */
-    public Map<String, Object> sourceParams
+    Map<String, Object> getSourceParams() { params._sourceParams as Map<String, Object>}
+    /**
+     * Parameters for source read process
+     */
+    void setSourceParams(Map<String, Object> value) { params._sourceParams = value }
 
     /**
      * Save assert errors to temporary dataset "errorsDataset"
      */
-    public Boolean saveErrors
+    Boolean getSaveErrors() { params.saveErrors }
+    /**
+     * Save assert errors to temporary dataset "errorsDataset"
+     */
+    def setSaveErrors(Boolean value) { params.saveErrors = value }
 
     /**
-     * Initialization code on start process copying
+     * Code executed before process read rows
      */
-    public Closure onInit
+    Closure getOnInitFlow() { params.onInit as Closure }
+    /**
+     * Code executed before process read rows
+     */
+    def setOnInitFlow(Closure value) { params.onInit = value }
+    /**
+     * Code executed before process read rows
+     */
+    void initFlow(Closure cl) { params.onInit = cl }
 
     /**
-     * Code to complete process copying
+     * Code executed after process read rows
      */
-    public Closure onDone
+    Closure getOnDoneFlow() { params.onDone as Closure }
+    /**
+     * Code executed after process read rows
+     */
+    def setOnDoneFlow(Closure value) { params.onDone = value }
+    /**
+     * Code executed after process read rows
+     */
+    void doneFlow(Closure cl) { params.onDone = cl }
 
     /**
      * Closure code process row
      */
-    public Closure process
+    Closure getProcess() { params.process as Closure }
+    /**
+     * Closure code process row
+     */
+    def setProcess(Closure value) { params.process = value }
+    /**
+     * Closure code process row
+     */
+    void process(Closure cl) { params.process = cl }
 
     /**
      * Last count row
@@ -81,22 +119,27 @@ class FlowProcessSpec extends BaseSpec {
     public Long countRow = 0
 
     /**
-     * Error rows for "copy" process
+     * Error rows for read process
      */
     public TFSDataset errorsDataset
 
-    /**
-     * Import from map parameters
-     * @param params
-     * @param opt
-     */
-    static void ImportFromMap(Map<String, Object> params, FlowProcessSpec opt) {
-        opt.source = params.source as Dataset
-        opt.sourceParams = MapUtils.GetLevel(params, "source_") as Map<String, Object>
-        opt.tempSourceName = params.tempSource
+    @Override
+    protected List<String> ignoreImportKeys(Map<String, Object> importParams) {
+        def sp = MapUtils.GetLevel(importParams, "source_") as Map<String, Object>
 
-        opt.saveErrors = params.saveErrors
-        opt.onDone = params.onDone as Closure
-        opt.onInit = params.onInit as Closure
+        return sp.keySet().toList()
+    }
+
+    @Override
+    void importFromMap(Map<String, Object> importParams) {
+        super.importFromMap(importParams)
+
+        sourceParams = MapUtils.GetLevel(importParams, "source_") as Map<String, Object>
+    }
+
+    @Override
+    void prepare() {
+        MapUtils.CleanMap(params, ignoreImportKeys(params))
+        sourceParams.each { String key, value -> params.put('source_' + key, value)}
     }
 }

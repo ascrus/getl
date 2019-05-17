@@ -43,7 +43,7 @@ class CreateTableSpec extends BaseSpec {
     /**
      * Create table if not exists
      */
-    Boolean getIfNotExists() { return params.ifNotExists }
+    Boolean getIfNotExists() { params.ifNotExists }
     /**
      * Create table if not exists
      */
@@ -52,7 +52,7 @@ class CreateTableSpec extends BaseSpec {
     /**
      * Create commit preserve rows for temporary table
      */
-    Boolean getOnCommit() { return params.onCommit }
+    Boolean getOnCommit() { params.onCommit }
     /**
      * Create commit preserve rows for temporary table
      */
@@ -105,9 +105,12 @@ class CreateTableSpec extends BaseSpec {
      * Generate new parameters object for create index
      */
     protected IndexSpec genIndex(IndexSpec parent, Closure cl) {
-        if (parent == null) parent = newIndexParams()
-        def code = cl.rehydrate(parent, cl.owner, cl.thisObject)
-        code.resolveStrategy = Closure.DELEGATE_FIRST
+        if (parent == null) {
+            parent = newIndexParams()
+            parent.thisObject = parent.DetectClosureDelegate(cl)
+        }
+        def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+        code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
 
         return parent
