@@ -24,19 +24,19 @@
 
 package getl.vertica.opts
 
-import getl.jdbc.opts.CreateTableSpec
+import getl.jdbc.opts.CreateSpec
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 @InheritConstructors
 @CompileStatic
-class VerticaCreateTableSpec extends CreateTableSpec {
-    VerticaCreateTableSpec() {
+class VerticaCreateSpec extends CreateSpec {
+    VerticaCreateSpec() {
         super()
         params.orderBy = [] as List<String>
     }
 
-    VerticaCreateTableSpec(Map<String, Object> importParams) {
+    VerticaCreateSpec(Map<String, Object> importParams) {
         super(importParams)
         if (params.orderBy == null) params.orderBy = [] as List<String>
     }

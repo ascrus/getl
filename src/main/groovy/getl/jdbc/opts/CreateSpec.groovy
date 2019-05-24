@@ -34,13 +34,13 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class CreateTableSpec extends BaseSpec {
-    CreateTableSpec() {
+class CreateSpec extends BaseSpec {
+    CreateSpec() {
         super()
         params._indexes = [:] as Map<String, IndexSpec>
     }
 
-    CreateTableSpec(Map<String, Object> importParams) {
+    CreateSpec(Map<String, Object> importParams) {
         super(importParams)
         params._indexes = [:] as Map<String, IndexSpec>
     }

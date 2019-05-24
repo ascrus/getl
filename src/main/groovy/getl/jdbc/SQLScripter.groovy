@@ -28,10 +28,6 @@ import getl.data.Field
 import getl.exception.ExceptionGETL
 import getl.exception.ExceptionSQLScripter
 import getl.utils.*
-import java.sql.Connection
-import java.sql.ResultSet
-import java.sql.ResultSetMetaData
-import java.sql.Statement
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -47,8 +43,8 @@ public class SQLScripter {
 	public static enum TypeCommand {
 		UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR, EXIT, LOAD_POINT, SAVE_POINT, BLOCK
 	}
-	
-	/** 
+
+	/**
 	 * Script variables
 	 */
 	public final Map<String, Object> vars = [:]
@@ -108,7 +104,7 @@ public class SQLScripter {
 	 */
 	private String sql
 	public String getSql() {
-		sql
+		return sql
 	}
 	
 	/** 
@@ -131,7 +127,7 @@ public class SQLScripter {
 		Matcher m
 		
 		// Compile vars
-		p = Pattern.compile('(\\{\\w+\\})')
+		p = Pattern.compile('(?i)([{][a-z0-9._-]+[}])')
 		m = p.matcher(script)
 		StringBuffer b = new StringBuffer()
 		String vn
@@ -515,7 +511,7 @@ public class SQLScripter {
 			}
 		}
 	}
-	
+
 	/** 
 	 * Convert batch script to SQL command list
 	 * @param sql

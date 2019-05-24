@@ -24,9 +24,10 @@
 
 package getl.h2
 
-import getl.h2.opts.H2CreateTableSpec
+import getl.h2.opts.H2CreateSpec
 import getl.jdbc.*
-import getl.jdbc.opts.CreateTableSpec
+import getl.jdbc.opts.CreateSpec
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -35,14 +36,15 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
+@CompileStatic
 class H2Table extends TableDataset {
     @Override
-    protected CreateTableSpec newCreateTableParams() { new H2CreateTableSpec() }
+    protected CreateSpec newCreateTableParams(Map<String, Object> opts) { new H2CreateSpec(opts) }
 
     /**
      * Create H2 table
      */
-    H2CreateTableSpec createTable(H2CreateTableSpec parent = null, @DelegatesTo(H2CreateTableSpec) Closure cl) {
-        genCreateTable(parent, cl)
+    H2CreateSpec createOpts(H2CreateSpec parent = null, @DelegatesTo(H2CreateSpec) Closure cl) {
+        genCreateTable(parent, cl) as H2CreateSpec
     }
 }

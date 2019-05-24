@@ -24,9 +24,9 @@
 
 package getl.hive
 
-import getl.hive.opts.HiveCreateTableSpec
+import getl.hive.opts.HiveCreateSpec
 import getl.jdbc.TableDataset
-import getl.jdbc.opts.CreateTableSpec
+import getl.jdbc.opts.CreateSpec
 import groovy.transform.InheritConstructors
 
 /**
@@ -43,9 +43,9 @@ class HiveTable extends TableDataset {
     void setOverwrite(Boolean value) { params.overwrite = value }
 
     @Override
-    protected CreateTableSpec newCreateTableParams() { new HiveCreateTableSpec() }
+    protected CreateSpec newCreateTableParams(Map<String, Object> opts) { new HiveCreateSpec(opts) }
 
-    HiveCreateTableSpec createTable(HiveCreateTableSpec parent = null, @DelegatesTo(HiveCreateTableSpec) Closure cl) {
+    HiveCreateSpec createOpts(HiveCreateSpec parent = null, @DelegatesTo(HiveCreateSpec) Closure cl) {
         genCreateTable(parent, cl)
     }
 }

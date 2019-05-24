@@ -24,7 +24,7 @@
 
 package getl.h2.opts
 
-import getl.jdbc.opts.CreateTableSpec
+import getl.jdbc.opts.CreateSpec
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
@@ -35,7 +35,7 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 @CompileStatic
-class H2CreateTableSpec extends CreateTableSpec {
+class H2CreateSpec extends CreateSpec {
     /**
      * Create transactional table
      */

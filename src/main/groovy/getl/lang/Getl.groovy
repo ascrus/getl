@@ -30,9 +30,14 @@ import getl.csv.*
 import getl.data.*
 import getl.db2.*
 import getl.excel.*
+import getl.files.FTPManager
+import getl.files.FileManager
+import getl.files.HDFSManager
+import getl.files.SFTPManager
 import getl.h2.*
 import getl.hive.*
 import getl.jdbc.*
+import getl.jdbc.opts.ScriptSpec
 import getl.json.*
 import getl.lang.opts.*
 import getl.mssql.*
@@ -513,6 +518,18 @@ class Getl extends Script {
     /**
      * Temporary CSV file
      */
+    TFS csvTempConnection(@DelegatesTo(TFS) Closure cl) {
+        def parent = TFS.storage
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        code(parent)
+
+        return parent
+    }
+
+    /**
+     * Temporary CSV file
+     */
     public TFSDataset getCsvTemp() { TFS.dataset() }
 
     /**
@@ -611,6 +628,99 @@ class Getl extends Script {
         parent.countRow = flow.countRow
         parent.errorsDataset = flow.errorsDataset
         if (parent.onDone != null) parent.onDone.call(flow)
+        finishProcess(pt)
+
+        return parent
+    }
+
+    ScriptSpec sql(ScriptSpec parent = null, @DelegatesTo(ScriptSpec) Closure cl) {
+        if (parent == null) {
+            parent = new ScriptSpec()
+        }
+        parent.countRow = 0
+        parent.importVars(configVars)
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def pt = startProcess('SQL script')
+        code(parent)
+
+        def sqlScripter = new SQLScripter()
+        if (parent.onInit != null) parent.onInit.call(sqlScripter)
+        parent.prepare()
+
+        sqlScripter.logEcho = parent.echoLogLevel
+        sqlScripter.connection = parent.connection
+        sqlScripter.pointConnection = parent.pointConnection
+        sqlScripter.vars.putAll(parent.vars)
+        sqlScripter.script = parent.script
+
+        sqlScripter.runSql()
+        parent.countRow = sqlScripter.rowCount
+        parent.vars.clear()
+        parent.vars.putAll(sqlScripter.vars)
+
+        if (parent.onDone != null) parent.onDone.call(sqlScripter)
+        finishProcess(pt)
+
+        return parent
+    }
+
+    /**
+     * Process local file system
+     */
+    FileManager files(FileManager parent = null, @DelegatesTo(FileManager) Closure cl) {
+        if (parent == null) parent = new FileManager()
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def pt = startProcess('Local file system')
+        code(parent)
+        finishProcess(pt)
+
+        return parent
+    }
+
+    /**
+     * Process ftp file system
+     */
+    FTPManager ftp(FTPManager parent = null, @DelegatesTo(FTPManager) Closure cl) {
+        if (parent == null) parent = new FTPManager()
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def pt = startProcess('FTP file system')
+        code(parent)
+        finishProcess(pt)
+
+        return parent
+    }
+
+    /**
+     * Process sftp file system
+     */
+    SFTPManager sftp(SFTPManager parent = null, @DelegatesTo(SFTPManager) Closure cl) {
+        if (parent == null) parent = new SFTPManager()
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def pt = startProcess('SFTP file system')
+        code(parent)
+        finishProcess(pt)
+
+        return parent
+    }
+
+    /**
+     * Process sftp file system
+     */
+    HDFSManager hdfs(HDFSManager parent = null, @DelegatesTo(HDFSManager) Closure cl) {
+        if (parent == null) parent = new HDFSManager()
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def pt = startProcess('HDFS file system')
+        code(parent)
         finishProcess(pt)
 
         return parent

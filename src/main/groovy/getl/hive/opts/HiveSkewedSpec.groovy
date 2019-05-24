@@ -25,6 +25,7 @@
 package getl.hive.opts
 
 import getl.lang.opts.BaseSpec
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -33,6 +34,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
+@CompileStatic
 class HiveSkewedSpec extends BaseSpec {
     HiveSkewedSpec() {
         super()
@@ -40,21 +42,27 @@ class HiveSkewedSpec extends BaseSpec {
         params.on = [] as List<String>
     }
 
+    HiveSkewedSpec(Map<String, Object> importParams) {
+        super(importParams)
+        if (params.by == null) params.by = [] as List<String>
+        if (params.on == null) params.on = [] as List<String>
+    }
+
     /**
      * List of "by" columns
      */
-    List<String> getBy() { params.by }
+    List<String> getBy() { params.by as List<String> }
     void setBy(List<String> value) { params.by = value }
 
     /**
      * List of "on" columns
      */
-    List<String> getOn() { params.on }
+    List<String> getOn() { params.on as List<String>}
     void setOn(List<String> value) { params.on = value }
 
     /**
      * Stored data as directories
      */
-    Boolean getStoredAsDirectories() { params.storedAsDirectories }
+    Boolean getStoredAsDirectories() { params.storedAsDirectories as Boolean }
     void setStoredAsDirectories(Boolean value) { params.storedAsDirectories = value }
 }

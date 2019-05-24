@@ -24,6 +24,7 @@
 
 package getl.jdbc
 
+import getl.exception.ExceptionGETL
 import groovy.transform.InheritConstructors
 import getl.data.*
 import getl.utils.*
@@ -187,5 +188,18 @@ class JDBCDataset extends Dataset {
 	 */
 	public List<String> sqlFields (List<String> excludeFields) {
 		sqlFields(null, excludeFields)
+	}
+
+	boolean isExists() {
+		if (!(connection.driver as JDBCDriver).isTable(this)) throw new ExceptionGETL("${fullNameDataset()} is not a table!")
+		def con = connection as JDBCConnection
+		def dbName = params.dbName
+		def schemaName = params.schemaName
+		def tableName = params.tableName
+		if (tableName == null) throw new ExceptionGETL("Table name is not specified for ${fullNameDataset()}!")
+		def ds = con.retrieveDatasets(dbName: dbName, schemaName: schemaName,
+				tableName: tableName)
+
+		return (!ds.isEmpty())
 	}
 }

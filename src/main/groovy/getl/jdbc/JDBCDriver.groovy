@@ -681,17 +681,17 @@ class JDBCDriver extends Driver {
 				}
 			}
 		}
-		else if (dataset instanceof TableDataset) {
-			result = fieldsTableWithoutMetadata(dataset as TableDataset)
+		else if (isTable(dataset) && dataset instanceof JDBCDataset) {
+			result = fieldsTableWithoutMetadata(dataset as JDBCDataset)
 		}
-		
+
 		return result
 	}
 
 	/**
 	 * Read table fields from query
 	 */
-	List<Field> fieldsTableWithoutMetadata(TableDataset table) {
+	List<Field> fieldsTableWithoutMetadata(JDBCDataset table) {
 		QueryDataset query = new QueryDataset(connection: table.connection)
 		query.query = "SELECT * FROM ${table.fullNameDataset()} WHERE 0 = 1"
 		if (query.rows().size() > 0) throw new ExceptionGETL("Find bug in \"fieldsTableWithoutMetadata\" method from \"${getClass().name}\" driver!")
@@ -765,6 +765,11 @@ ${extend}'''
 	@Override
 	public void createDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
+
+        params = params?:[:]
+		def createDir = ((dataset.params.directive as Map)?.create as Map)?:[:]
+		params = createDir + params
+
 		def tableName = fullNameDataset(dataset)
 		def tableType = dataset.sysParams.type as JDBCDataset.Type
 		if (!(tableType in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.MEMORY])) {
@@ -1029,6 +1034,11 @@ ${extend}'''
 	@Override
 	public void dropDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
+
+        params = params?:[:]
+		def dropDir = ((dataset.params.directive as Map)?.drop as Map)?:[:]
+		params = dropDir + params
+
 		def n = fullNameDataset(dataset)
 		def t = ((dataset.sysParams.type as JDBCDataset.Type) in
                     [JDBCDataset.Type.TABLE, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.GLOBAL_TEMPORARY,
@@ -1090,16 +1100,9 @@ ${extend}'''
 	 * </ul> 
 	 */
 	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
-		def table = dataset as TableDataset
-		def whereList = [] as List<String>
-		if (table.where != null) whereList << ('(' + table.where + ')')
-		if (params.where != null) whereList << ('(' + params.where + ')')
-		if (!whereList.isEmpty()) dir.where = whereList.join(' AND ')
-
-		def orderBy = ListUtils.NotNullValue([params.orderBy, table.order?.join(', ')])
-		if (orderBy != null) dir.orderBy = orderBy
-
-		dir.forUpdate = BoolUtils.IsValue([params.forUpdate, table.forUpdate])
+		if (params.where != null) dir.where = params.where
+		if (params.orderBy != null) dir.orderBy = params.orderBy
+		dir.forUpdate = BoolUtils.IsValue(params.forUpdate)
 	}
 
     /**
@@ -1128,16 +1131,10 @@ ${extend}'''
         if (dir.aftertable != null) sb << ' ' + dir.aftertable
         sb << ' tab'
         if (dir.afteralias != null) sb << ' ' + dir.afteralias
-        sb << '\n'
-
         if (dir.where != null) sb << "\nWHERE ${dir.where}"
-
         if (dir.orderBy != null) sb << "\nORDER BY ${dir.orderBy}"
-
         if (dir.afterOrderBy != null) sb << "\n${dir.afterOrderBy}"
-
         if (dir.forUpdate) sb << '\nFOR UPDATE'
-
         if (dir.finish != null) sb << '\n' + dir.finish
 
         return sb.toString()
@@ -1167,9 +1164,9 @@ ${extend}'''
 			
 			def selectFields = fields.join(",")
 
-			def where = params.where?:table.where
+			def where = params.where
 
-			def order = (params.order as List<String>)?:table.order
+			def order = params.order as List<String>
 			String orderBy
 			if (order != null) { 
 				if (!(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
@@ -1222,12 +1219,17 @@ ${extend}'''
 	@groovy.transform.CompileStatic
 	@Override
 	public long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		params = params?:[:]
+
 		Integer fetchSize = (Integer)(params."fetchSize")
 		Closure filter = (Closure)(params."filter")
 		List<Field> metaFields = []
 		
 		def isTable = isTable(dataset)
 		if (isTable) {
+			def readDir = ((dataset.params.directive as Map)?.read as Map)?:[:]
+			params = readDir + params
+
 			def onlyFields = ListUtils.ToLowerCase((List)(params.onlyFields))
 			def excludeFields = ListUtils.ToLowerCase((List)(params.excludeFields))
 			
@@ -1250,7 +1252,8 @@ ${extend}'''
 		}
 
 //		dataset.field = metaFields
-		String sql = sqlForDataset(dataset, params + [useFields: metaFields])
+		params.putAll([useFields: metaFields])
+		String sql = sqlForDataset(dataset, params)
 		
 		Map rowCopy
 		Closure copyToMap
@@ -1673,6 +1676,11 @@ $sql
 		dataset.driver_params = wp
 		
 		validTableName(dataset)
+
+        params = params?:[:]
+		def writeDir = ((dataset.params.directive as Map)?.write as Map)?:[:]
+        params = writeDir + params
+
 		def fn = fullNameDataset(dataset)
 		def operation = (params.operation != null)?(params.operation as String).toUpperCase():"INSERT"
 		if (!(operation in ['INSERT', 'UPDATE', 'DELETE', 'MERGE'])) throw new ExceptionGETL("Unknown operation \"$operation\"")
@@ -1793,8 +1801,10 @@ $sql
 					statFields.addAll(l[0] as List<String>)
 				}
 
+				def keys = '(' + k.join(' AND ') + ')'
+
 				sb << statUpdate.replace('{table}', fn).replace('{partition}', p.join(', '))
-						.replace('{keys}', k.join(" AND ")).replace('{values}', v.join(","))
+						.replace('{keys}', keys).replace('{values}', v.join(','))
 
 				break
 				
@@ -1831,8 +1841,10 @@ $sql
 					statFields.addAll(l[0] as List<String>)
 				}
 
+				def keys = '(' + k.join(' AND ') + ')'
+
 				sb << statDelete.replace('{table}', fn).replace('{partition}', p.join(', '))
-						.replace('{keys}', k.join(" AND "))
+						.replace('{keys}', keys)
 
 				break
 			case "MERGE":

@@ -93,7 +93,7 @@ class MSSQLDriver extends JDBCDriver {
 	@Override
 	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
-		Map<String, Object> dl = (dataset as TableDataset).queryDirective?:[:] + params
+		Map<String, Object> dl = (dataset as TableDataset).readDirective?:[:] + params
 		if (dl.with != null) {
 			dir.afteralias = "with (${dl.with})"
 		}

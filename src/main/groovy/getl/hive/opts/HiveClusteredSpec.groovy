@@ -25,6 +25,7 @@
 package getl.hive.opts
 
 import getl.lang.opts.BaseSpec
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -33,6 +34,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
+@CompileStatic
 class HiveClusteredSpec extends BaseSpec {
     HiveClusteredSpec() {
         super()
@@ -40,18 +42,24 @@ class HiveClusteredSpec extends BaseSpec {
         params.sortedBy = [] as List<String>
     }
 
+    HiveClusteredSpec(Map<String, Object> importParams) {
+        super(importParams)
+        if (params.by == null) params.by = [] as List<String>
+        if (params.sortedBy == null) params.sortedBy = [] as List<String>
+    }
+
     /**
      * List of "by" columns
      */
-    List<String> getBy() { params.by }
+    List<String> getBy() { params.by as List<String> }
     void setBy(List<String> value) { params.by = value }
 
     /**
      * List of "sorted by" columns
      */
-    List<String> getSortedBy() { params.sortedBy }
+    List<String> getSortedBy() { params.sortedBy as List<String> }
     void setSortedBy(List<String> value) { params.sortedBy = value }
 
-    Integer getIntoBuckets() { params.intoBuckets }
+    Integer getIntoBuckets() { params.intoBuckets as Integer }
     void setIntoBuckets(Integer value) { params.intoBuckets = value }
 }

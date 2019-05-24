@@ -25,7 +25,6 @@
 package getl.config.opts
 
 import getl.config.*
-import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
 import getl.utils.*
 import groovy.transform.CompileStatic

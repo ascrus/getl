@@ -33,5 +33,5 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class BulkLoadTableSpec extends BaseSpec {
+class BulkLoadSpec extends BaseSpec {
 }

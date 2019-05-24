@@ -24,8 +24,8 @@
 
 package getl.jdbc
 
-import getl.jdbc.opts.CreateTableSpec
-import getl.jdbc.opts.DropTableSpec
+import getl.jdbc.opts.*
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import getl.cache.*
 import getl.exception.ExceptionGETL
@@ -36,12 +36,19 @@ import getl.exception.ExceptionGETL
  *
  */
 @InheritConstructors
+@CompileStatic
 class TableDataset extends JDBCDataset {
 	TableDataset() {
 		super()
 		type = JDBCDataset.Type.TABLE
 		sysParams.isTable = true
-		params.directive = [:] as Map<String, Object>
+		def dirs = [:] as Map<String, Object>
+		params.directive = dirs
+		dirs.create = [:] as Map<String, Object>
+		dirs.drop = [:] as Map<String, Object>
+		dirs.read = [:] as Map<String, Object>
+		dirs.write = [:] as Map<String, Object>
+		dirs.bulk = [:] as Map<String, Object>
 
 		methodParams.register("unionDataset", [])
 	}
@@ -56,32 +63,29 @@ class TableDataset extends JDBCDataset {
 	void setTableName (String value) { params.tableName = value }
 
 	/**
-	 * Filter expression
+	 * Create directive
 	 */
-	String getWhere () { params.where }
-	/**
-	 * Filter expression
-	 */
-	void setWhere(String value) { params.where = value }
+	Map<String, Object> getCreateDirective() { (params.directive as Map<String, Object>).create as Map<String, Object>}
 
 	/**
-	 * Order expression list
+	 * Drop directive
 	 */
-	List<String> getOrder () { params.order as List<String> }
-	/**
-	 * Order expression list
-	 */
-	void setOrder(List<String> value) { params.order = value }
+	Map<String, Object> getDropDirective() { (params.directive as Map<String, Object>).drop as Map<String, Object>}
 
 	/**
-	 * Query directive
+	 * Read directive
 	 */
-	Map<String, Object> getQueryDirective() { params.directive as Map<String, Object> }
+	Map<String, Object> getReadDirective() { (params.directive as Map<String, Object>).read as Map<String, Object>}
 
 	/**
-	 * Query directive
+	 * Write directive
 	 */
-	void setQueryDirective(Map<String, Object> value ) { queryDirective.putAll(value) }
+	Map<String, Object> getWriteDirective() { (params.directive as Map<String, Object>).write as Map<String, Object>}
+
+	/**
+	 * Bulk load directive
+	 */
+	Map<String, Object> getBulkDirective() { (params.directive as Map<String, Object>).bulk as Map<String, Object>}
 
 	/**
 	 * Read table as update locking
@@ -156,16 +160,6 @@ class TableDataset extends JDBCDataset {
 	void setDescription (String value) { params.description = value }
 	
 	/**
-	 * Validation exists table
-	 */
-	boolean isExists() {
-		def ds = ((JDBCConnection)connection).retrieveDatasets(dbName: dbName, schemaName: schemaName, 
-					tableName: tableName)
-		
-		return (!ds.isEmpty())
-	}
-	
-	/**
 	 * Insert/Update/Delete/Merge records from other dataset
 	 */
 	long unionDataset (Map procParams) {
@@ -181,9 +175,10 @@ class TableDataset extends JDBCDataset {
 	 * @return - values of key field or null is not found
 	 */
 	Map findKey (Map procParams) {
-		def keys = fieldKeys
+		def keys = getFieldKeys()
 		if (keys.isEmpty()) throw new ExceptionGETL("Required key fields")
-		def r = rows(procParams?:[:] + [onlyFields: keys, limit: 1])
+		procParams = procParams?:[:]
+		def r = rows(procParams + [onlyFields: keys, limit: 1])
 		if (r.isEmpty()) return null
 		
 		return r[0]
@@ -195,7 +190,7 @@ class TableDataset extends JDBCDataset {
 	long countRows (String where = null, Map procParams) {
 		if (procParams == null) procParams = [:] 
 		QueryDataset q = new QueryDataset(connection: connection, query: "SELECT Count(*) AS count FROM ${fullNameDataset()}")
-		where = where?:this.where
+		where = where?:readDirective.where
 		if (where != null && where != '') q.query += " WHERE " + where
 		def r = q.rows(procParams)
 		
@@ -213,7 +208,7 @@ class TableDataset extends JDBCDataset {
 	 * Delete rows for condition
 	 */
 	long deleteRows (String where = null) {
-		String sql = "DELETE FROM ${fullNameDataset()}" + ((where != null)?" WHERE $where":'')
+		String sql = "DELETE FROM ${fullNameDataset()}" + ((where != null && where.trim().length() > 0)?" WHERE $where":'')
 		
 		long count
 		boolean isAutoCommit = !connection.isTran()
@@ -231,58 +226,67 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/**
-	 * Create new parameters object for create table
+	 * Truncate table
 	 */
-	protected CreateTableSpec newCreateTableParams() { new CreateTableSpec() }
+	void truncate () {
+		String sql = "TRUNCATE TABLE ${fullNameDataset()}"
+		connection.executeCommand(command: sql, isUpdate: true)
+	}
 
 	/**
-	 * Generate new parameters object for create table
+	 * Full table name
 	 */
-	protected CreateTableSpec genCreateTable(CreateTableSpec parent, Closure cl) {
+	String getFullTableName() { fullNameDataset() }
+
+	/**
+	 * Create new options object for create table
+	 */
+	protected CreateSpec newCreateTableParams(Map<String, Object> opts) { new CreateSpec(opts) }
+
+	/**
+	 * Generate new options object for create table
+	 */
+	protected CreateSpec genCreateTable(CreateSpec parent, Closure cl) {
 		if (parent == null) {
-			parent = newCreateTableParams()
+			parent = newCreateTableParams(createDirective)
 			parent.thisObject = parent.DetectClosureDelegate(cl)
 		}
 		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 		code.resolveStrategy = Closure.OWNER_FIRST
 		code(parent)
-
-		if (parent.onInit != null) parent.onInit.call(this)
 		parent.prepare()
-		create(parent.params)
-		if (parent.onDone != null) parent.onDone.call(this)
+		createDirective.clear()
+		createDirective.putAll(parent.params)
 
 		return parent
 	}
 
 	/**
-	 * Generate create table of specified parameters
+	 * Create table of specified options
 	 */
-	CreateTableSpec createTable(CreateTableSpec parent = null, @DelegatesTo(CreateTableSpec) Closure cl) {
+	CreateSpec createOpts(CreateSpec parent = null, @DelegatesTo(CreateSpec) Closure cl) {
 		genCreateTable(parent, cl)
 	}
 
 	/**
-	 * Create new parameters object for drop table
+	 * Create new options object for drop table
 	 */
-	protected DropTableSpec newDropTableParams() { new DropTableSpec() }
+	protected DropSpec newDropTableParams(Map<String, Object> opts) { new DropSpec(opts) }
 
 	/**
-	 * Generate new parameters object for drop table
+	 * Generate new options object for drop table
 	 */
-	protected DropTableSpec genDropTable(DropTableSpec parent, Closure cl) {
+	protected DropSpec genDropTable(DropSpec parent, Closure cl) {
 		if (parent == null) {
-			parent = newDropTableParams()
+			parent = newDropTableParams(dropDirective)
 			parent.thisObject = parent.DetectClosureDelegate(cl)
 		}
 		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 		code.resolveStrategy = Closure.OWNER_FIRST
 		code(parent)
-
-		if (parent.onInit != null) parent.onInit.call(this)
 		parent.prepare()
-		drop(parent.params)
-		if (parent.onDone != null) parent.onDone.call(this)
+		dropDirective.clear()
+		dropDirective.putAll(parent.params)
 
 		return parent
 	}
@@ -290,7 +294,67 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Drop table
 	 */
-	DropTableSpec dropTable(DropTableSpec parent = null, @DelegatesTo(DropTableSpec) Closure cl) {
+	DropSpec dropOpts(DropSpec parent = null, @DelegatesTo(DropSpec) Closure cl) {
 		genDropTable(parent, cl)
+	}
+
+	/**
+	 * Create new options object for reading table
+	 */
+	protected ReadSpec newReadTableParams(Map<String, Object> opts) { new ReadSpec(opts) }
+
+	/**
+	 * Generate new options object for reading table
+	 */
+	protected ReadSpec genReadDirective(ReadSpec parent, Closure cl) {
+		if (parent == null) {
+			parent = newReadTableParams(readDirective)
+			parent.thisObject = parent.DetectClosureDelegate(cl)
+		}
+		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+		code.resolveStrategy = Closure.OWNER_FIRST
+		code(parent)
+		parent.prepare()
+		readDirective.clear()
+		readDirective.putAll(parent.params)
+
+		return parent
+	}
+
+	/**
+	 * Read table options
+	 */
+	ReadSpec readOpts(ReadSpec parent = null, @DelegatesTo(ReadSpec) Closure cl) {
+		genReadDirective(parent, cl)
+	}
+
+	/**
+	 * Create new options object for writing table
+	 */
+	protected WriteSpec newWriteTableParams(Map<String, Object> opts) { new WriteSpec(opts) }
+
+	/**
+	 * Generate new options object for writing table
+	 */
+	protected WriteSpec genWriteDirective(WriteSpec parent, Closure cl) {
+		if (parent == null) {
+			parent = newWriteTableParams(writeDirective)
+			parent.thisObject = parent.DetectClosureDelegate(cl)
+		}
+		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+		code.resolveStrategy = Closure.OWNER_FIRST
+		code(parent)
+		parent.prepare()
+		writeDirective.clear()
+		writeDirective.putAll(parent.params)
+
+		return parent
+	}
+
+	/**
+	 * Write table options
+	 */
+	WriteSpec writeOpts(WriteSpec parent = null, @DelegatesTo(WriteSpec) Closure cl) {
+		genWriteDirective(parent, cl)
 	}
 }

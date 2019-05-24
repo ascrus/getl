@@ -33,7 +33,10 @@ import getl.utils.MapUtils
  */
 class BaseSpec {
     BaseSpec() { }
-    BaseSpec(Map<String, Object> importParams) { importFromMap(importParams) }
+
+    BaseSpec(Map<String, Object> importParams) {
+        importFromMap(importParams)
+    }
 
     static Object DetectClosureDelegate(Object obj) {
         while (obj instanceof Closure) obj = (obj as Closure).delegate

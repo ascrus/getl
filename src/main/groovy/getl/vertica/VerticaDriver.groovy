@@ -49,6 +49,7 @@ class VerticaDriver extends JDBCDriver {
 
 		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy'])
         methodParams.register('eachRow', ['label'])
+		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
 				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
 				 'expression', 'location', 'abortOnError', 'maskDate', 'maskTime', 'maskDateTime',
@@ -98,11 +99,12 @@ class VerticaDriver extends JDBCDriver {
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		def result = ''
 		def temporary = ((dataset.sysParams.type as JDBCDataset.Type)in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
-		if (temporary && params.onCommit != null && params.onCommit) result += 'ON COMMIT PRESERVE ROWS '
-		if (params.orderBy != null && !(params.orderBy as List).isEmpty()) result += "ORDER BY ${(params.orderBy as List).join(", ")} "
-		if (params.segmentedBy != null) result += "SEGMENTED BY ${params.segmentedBy} "
-		if (params.unsegmented != null && params.unsegmented) result += "UNSEGMENTED ALL NODES "
-		if (params.partitionBy != null) result += "PARTITION BY ${params.partitionBy} "
+		if (temporary && params.onCommit != null && params.onCommit) result += 'ON COMMIT PRESERVE ROWS\n'
+		if (params.orderBy != null && !(params.orderBy as List).isEmpty()) result += "ORDER BY ${(params.orderBy as List).join(", ")}\n"
+		if (params.segmentedBy != null && params.unsegmented != null) throw new ExceptionGETL('Invalid segmented options')
+		if (params.segmentedBy != null) result += "SEGMENTED BY ${params.segmentedBy}\n"
+		if (params.unsegmented != null && params.unsegmented) result += "UNSEGMENTED ALL NODES\n"
+		if (params.partitionBy != null) result += "PARTITION BY ${params.partitionBy}\n"
 
 		return result
 	}
@@ -316,7 +318,7 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
-		Map<String, Object> dl = (dataset as TableDataset).queryDirective?:[:] + params
+		Map<String, Object> dl = (dataset as TableDataset).readDirective?:[:] + params
         if (dl.label != null) {
             dir.afterselect = "/*+label(${dl.label})*/"
         }
@@ -332,7 +334,6 @@ class VerticaDriver extends JDBCDriver {
 				field.dbType = java.sql.Types.VARCHAR
 				field.length = 36
 				field.precision = null
-//				return
 			}
 		}
 	}
@@ -356,4 +357,26 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	boolean textReadAsObject() { return false }
+
+	String writeHints(Map params) {
+		def hints = [] as List<String>
+		if (params.direct != null) hints << (params.direct as String).toLowerCase()
+		if (params.label != null) hints << 'label(' + params.label + ')'
+		return (!hints.isEmpty())?('/*+' + hints.join(', ') + '*/'):''
+	}
+
+	@Override
+	protected String syntaxInsertStatement(Dataset dataset, Map params) {
+		return "INSERT ${writeHints(params)} INTO {table} ({columns}) VALUES({values})"
+	}
+
+	@Override
+	protected String syntaxUpdateStatement(Dataset dataset, Map params) {
+		return 'UPDATE ${writeHints(params)} {table} SET {values} WHERE {keys}'
+	}
+
+	@Override
+	protected String syntaxDeleteStatement(Dataset dataset, Map params){
+		return 'DELETE ${writeHints(params)} FROM {table} WHERE {keys}'
+	}
 }

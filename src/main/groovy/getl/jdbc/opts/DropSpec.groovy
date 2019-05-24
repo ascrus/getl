@@ -35,7 +35,7 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 @CompileStatic
-class DropTableSpec extends BaseSpec {
+class DropSpec extends BaseSpec {
     /**
      * Drop table if exists
      */

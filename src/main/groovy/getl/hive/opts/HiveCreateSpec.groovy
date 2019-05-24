@@ -24,7 +24,7 @@
 
 package getl.hive.opts
 
-import getl.jdbc.opts.CreateTableSpec
+import getl.jdbc.opts.CreateSpec
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
@@ -35,13 +35,13 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 @CompileStatic
-class HiveCreateTableSpec extends CreateTableSpec {
-    HiveCreateTableSpec() {
+class HiveCreateSpec extends CreateSpec {
+    HiveCreateSpec() {
         super()
         params.tblproperties = [:] as Map<String, Object>
     }
 
-    HiveCreateTableSpec(Map<String, Object> importParams) {
+    HiveCreateSpec(Map<String, Object> importParams) {
         super(importParams)
         if (params.tblproperties == null) params.tblproperties = [:] as Map<String, Object>
     }
