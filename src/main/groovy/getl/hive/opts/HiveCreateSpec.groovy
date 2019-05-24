@@ -25,6 +25,7 @@
 package getl.hive.opts
 
 import getl.jdbc.opts.CreateTableSpec
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -33,16 +34,22 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
+@CompileStatic
 class HiveCreateTableSpec extends CreateTableSpec {
     HiveCreateTableSpec() {
         super()
         params.tblproperties = [:] as Map<String, Object>
     }
 
+    HiveCreateTableSpec(Map<String, Object> importParams) {
+        super(importParams)
+        if (params.tblproperties == null) params.tblproperties = [:] as Map<String, Object>
+    }
+
     /**
      * Clustered specifications
      */
-    HiveClusteredSpec getClustered() { params._clustered }
+    HiveClusteredSpec getClustered() { params._clustered as HiveClusteredSpec}
     void setClustered(HiveClusteredSpec value) { params._clustered = value }
 
     /**
@@ -50,12 +57,14 @@ class HiveCreateTableSpec extends CreateTableSpec {
      */
     HiveClusteredSpec clustered(HiveClusteredSpec parent = null, @DelegatesTo(HiveClusteredSpec) Closure cl) {
         if (parent == null) {
-            parent = new HiveClusteredSpec()
+            parent = new HiveClusteredSpec(params.clustered as Map<String, Object>)
             parent.thisObject = parent.DetectClosureDelegate(cl)
         }
         def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
         code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
+        parent.prepare()
+        params.clustered = parent.params
 
         return parent
     }
@@ -63,7 +72,7 @@ class HiveCreateTableSpec extends CreateTableSpec {
     /**
      * Skewed specifications
      */
-    HiveSkewedSpec getSkewed() { params._skewed }
+    HiveSkewedSpec getSkewed() { params._skewed as HiveSkewedSpec}
     void setSkewed(HiveSkewedSpec value) { params._skewed = value }
 
     /**
@@ -71,12 +80,14 @@ class HiveCreateTableSpec extends CreateTableSpec {
      */
     HiveSkewedSpec skewed(HiveSkewedSpec parent = null, @DelegatesTo(HiveSkewedSpec) Closure cl) {
         if (parent == null) {
-            parent = new HiveSkewedSpec()
+            parent = new HiveSkewedSpec(params.skewed as Map<String, Object>)
             parent.thisObject = parent.DetectClosureDelegate(cl)
         }
         def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
         code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
+        parent.prepare()
+        params.skewed = parent.params
 
         return parent
     }
@@ -85,54 +96,62 @@ class HiveCreateTableSpec extends CreateTableSpec {
      * Name of type row format
      */
     String getRowFormat() { params.rowFormat }
+    /**
+     * Name of type row format
+     */
     void setRowFormat(String value) { params.rowFormat = value }
 
     /**
      * Field delimiter
      */
     String getFieldsTerminated() { params.fieldsTerminated }
+    /**
+     * Field delimiter
+     */
     void setFieldsTerminated(String value) { params.fieldsTerminated = value }
 
     /**
      * Null value
      */
     String getNullDefined() { params.nullDefined }
+    /**
+     * Null value
+     */
     void setNullDefined(String value) { params.nullDefined = value }
 
     /**
      * Store name
      */
     String getStoredAs() { params.storedAs }
+    /**
+     * Store name
+     */
     void setStoredAs(String value) { params.storedAs = value }
 
     /**
      * Name of location
      */
     String getLocation() { params.location }
+    /**
+     * Name of location
+     */
     void setLocation(String value) { params.location = value }
 
     /**
      * Extend table properties
      */
-    Map<String, Object> getTblproperties() { params.tblproperties }
+    Map<String, Object> getTblproperties() { params.tblproperties as Map<String, Object> }
+    /**
+     * Extend table properties
+     */
     void setTblproperties(Map<String, Object> value) { params.tblproperties = value }
 
     /**
      * Query of select data
      */
     String getSelect() { params.select }
+    /**
+     * Query of select data
+     */
     void setSelect(String value) { params.select = value }
-
-    @Override
-    void prepare() {
-        super.prepare()
-
-        if (clustered != null) {
-            params.clustered = clustered.params
-        }
-
-        if (skewed != null) {
-            params.skedew = skewed.params
-        }
-    }
 }

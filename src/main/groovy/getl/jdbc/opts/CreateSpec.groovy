@@ -40,6 +40,11 @@ class CreateTableSpec extends BaseSpec {
         params._indexes = [:] as Map<String, IndexSpec>
     }
 
+    CreateTableSpec(Map<String, Object> importParams) {
+        super(importParams)
+        params._indexes = [:] as Map<String, IndexSpec>
+    }
+
     /**
      * Create table if not exists
      */
