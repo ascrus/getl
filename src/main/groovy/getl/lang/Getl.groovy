@@ -30,6 +30,7 @@ import getl.csv.*
 import getl.data.*
 import getl.db2.*
 import getl.excel.*
+import getl.exception.ExceptionGETL
 import getl.files.FTPManager
 import getl.files.FileManager
 import getl.files.HDFSManager
@@ -636,9 +637,9 @@ class Getl extends Script {
     ScriptSpec sql(ScriptSpec parent = null, @DelegatesTo(ScriptSpec) Closure cl) {
         if (parent == null) {
             parent = new ScriptSpec()
+            parent.importVars(configVars)
         }
         parent.countRow = 0
-        parent.importVars(configVars)
         def code = cl.rehydrate(this, parent, this)
         code.resolveStrategy = Closure.OWNER_FIRST
 
@@ -659,8 +660,12 @@ class Getl extends Script {
         parent.countRow = sqlScripter.rowCount
         parent.vars.clear()
         parent.vars.putAll(sqlScripter.vars)
-
         if (parent.onDone != null) parent.onDone.call(sqlScripter)
+
+        parent.vars.each { String name, value ->
+            if (!configVars.containsKey(name)) configVars.put(name, value)
+        }
+
         finishProcess(pt)
 
         return parent
@@ -690,7 +695,12 @@ class Getl extends Script {
         code.resolveStrategy = Closure.OWNER_FIRST
 
         def pt = startProcess('FTP file system')
-        code(parent)
+        try {
+            code(parent)
+        }
+        finally {
+            parent.disconnect()
+        }
         finishProcess(pt)
 
         return parent
@@ -705,7 +715,12 @@ class Getl extends Script {
         code.resolveStrategy = Closure.OWNER_FIRST
 
         def pt = startProcess('SFTP file system')
-        code(parent)
+        try {
+            code(parent)
+        }
+        finally {
+            parent.disconnect()
+        }
         finishProcess(pt)
 
         return parent
@@ -720,7 +735,12 @@ class Getl extends Script {
         code.resolveStrategy = Closure.OWNER_FIRST
 
         def pt = startProcess('HDFS file system')
-        code(parent)
+        try {
+            code(parent)
+        }
+        finally {
+            parent.disconnect()
+        }
         finishProcess(pt)
 
         return parent

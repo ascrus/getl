@@ -45,13 +45,12 @@ class VerticaCreateSpec extends CreateSpec {
      * Order of columns
      */
     List<String> getOrderBy() { params.orderBy as List<String> }
-
     /**
      * Order of columns
      */
     void setOrderBy(List<String> value) {
         orderBy.clear()
-        orderBy.addAll(value)
+        if (value != null) orderBy.addAll(value)
     }
 
     /**

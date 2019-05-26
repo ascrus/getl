@@ -42,14 +42,6 @@ class TableDataset extends JDBCDataset {
 		super()
 		type = JDBCDataset.Type.TABLE
 		sysParams.isTable = true
-		def dirs = [:] as Map<String, Object>
-		params.directive = dirs
-		dirs.create = [:] as Map<String, Object>
-		dirs.drop = [:] as Map<String, Object>
-		dirs.read = [:] as Map<String, Object>
-		dirs.write = [:] as Map<String, Object>
-		dirs.bulk = [:] as Map<String, Object>
-
 		methodParams.register("unionDataset", [])
 	}
 
@@ -63,29 +55,64 @@ class TableDataset extends JDBCDataset {
 	void setTableName (String value) { params.tableName = value }
 
 	/**
-	 * Create directive
+	 * Create table options
 	 */
 	Map<String, Object> getCreateDirective() { (params.directive as Map<String, Object>).create as Map<String, Object>}
+	/**
+	 * Create table options
+	 */
+	void setCreateDirective(Map<String, Object> value) {
+		createDirective.clear()
+		createDirective.putAll(value)
+	}
 
 	/**
-	 * Drop directive
+	 * Drop table options
 	 */
 	Map<String, Object> getDropDirective() { (params.directive as Map<String, Object>).drop as Map<String, Object>}
+	/**
+	 * Drop table options
+	 */
+	void setDropDirective(Map<String, Object> value) {
+		dropDirective.clear()
+		dropDirective.putAll(value)
+	}
 
 	/**
-	 * Read directive
+	 * Read table options
 	 */
 	Map<String, Object> getReadDirective() { (params.directive as Map<String, Object>).read as Map<String, Object>}
+	/**
+	 * Read table options
+	 */
+	void setReadDirective(Map<String, Object> value) {
+		readDirective.clear()
+		readDirective.putAll(value)
+	}
 
 	/**
-	 * Write directive
+	 * Write table options
 	 */
 	Map<String, Object> getWriteDirective() { (params.directive as Map<String, Object>).write as Map<String, Object>}
+	/**
+	 * Write table options
+	 */
+	void setWriteDirective(Map<String, Object> value) {
+		writeDirective.clear()
+		writeDirective.putAll(value)
+	}
 
 	/**
-	 * Bulk load directive
+	 * Bulk load CSV file options
 	 */
-	Map<String, Object> getBulkDirective() { (params.directive as Map<String, Object>).bulk as Map<String, Object>}
+	Map<String, Object> getBulkLoadDirective() { (params.directive as Map<String, Object>).bulkLoad as Map<String, Object>}
+	/**
+	 * Bulk load CSV file options
+	 */
+	void setBulkLoadDirective(Map<String, Object> value) {
+		bulkLoadDirective.clear()
+		bulkLoadDirective.putAll(value)
+	}
 
 	/**
 	 * Read table as update locking
@@ -246,26 +273,22 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Generate new options object for create table
 	 */
-	protected CreateSpec genCreateTable(CreateSpec parent, Closure cl) {
-		if (parent == null) {
-			parent = newCreateTableParams(createDirective)
-			parent.thisObject = parent.DetectClosureDelegate(cl)
-		}
+	protected void genCreateTable(Closure cl) {
+		def parent = newCreateTableParams(createDirective)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
 		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 		code.resolveStrategy = Closure.OWNER_FIRST
 		code(parent)
 		parent.prepare()
 		createDirective.clear()
 		createDirective.putAll(parent.params)
-
-		return parent
 	}
 
 	/**
 	 * Create table of specified options
 	 */
-	CreateSpec createOpts(CreateSpec parent = null, @DelegatesTo(CreateSpec) Closure cl) {
-		genCreateTable(parent, cl)
+	void createOpts(@DelegatesTo(CreateSpec) Closure cl) {
+		genCreateTable(cl)
 	}
 
 	/**
@@ -276,26 +299,22 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Generate new options object for drop table
 	 */
-	protected DropSpec genDropTable(DropSpec parent, Closure cl) {
-		if (parent == null) {
-			parent = newDropTableParams(dropDirective)
-			parent.thisObject = parent.DetectClosureDelegate(cl)
-		}
+	protected void genDropTable(Closure cl) {
+		def parent = newDropTableParams(dropDirective)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
 		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 		code.resolveStrategy = Closure.OWNER_FIRST
 		code(parent)
 		parent.prepare()
 		dropDirective.clear()
 		dropDirective.putAll(parent.params)
-
-		return parent
 	}
 
 	/**
 	 * Drop table
 	 */
-	DropSpec dropOpts(DropSpec parent = null, @DelegatesTo(DropSpec) Closure cl) {
-		genDropTable(parent, cl)
+	void dropOpts(@DelegatesTo(DropSpec) Closure cl) {
+		genDropTable(cl)
 	}
 
 	/**
@@ -306,26 +325,22 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Generate new options object for reading table
 	 */
-	protected ReadSpec genReadDirective(ReadSpec parent, Closure cl) {
-		if (parent == null) {
-			parent = newReadTableParams(readDirective)
-			parent.thisObject = parent.DetectClosureDelegate(cl)
-		}
+	protected void genReadDirective(Closure cl) {
+		def parent = newReadTableParams(readDirective)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
 		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 		code.resolveStrategy = Closure.OWNER_FIRST
 		code(parent)
 		parent.prepare()
 		readDirective.clear()
 		readDirective.putAll(parent.params)
-
-		return parent
 	}
 
 	/**
 	 * Read table options
 	 */
-	ReadSpec readOpts(ReadSpec parent = null, @DelegatesTo(ReadSpec) Closure cl) {
-		genReadDirective(parent, cl)
+	void readOpts(@DelegatesTo(ReadSpec) Closure cl) {
+		genReadDirective(cl)
 	}
 
 	/**
@@ -336,25 +351,47 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Generate new options object for writing table
 	 */
-	protected WriteSpec genWriteDirective(WriteSpec parent, Closure cl) {
-		if (parent == null) {
-			parent = newWriteTableParams(writeDirective)
-			parent.thisObject = parent.DetectClosureDelegate(cl)
-		}
+	protected void genWriteDirective(Closure cl) {
+		def parent = newWriteTableParams(writeDirective)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
 		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 		code.resolveStrategy = Closure.OWNER_FIRST
 		code(parent)
 		parent.prepare()
 		writeDirective.clear()
 		writeDirective.putAll(parent.params)
-
-		return parent
 	}
 
 	/**
 	 * Write table options
 	 */
-	WriteSpec writeOpts(WriteSpec parent = null, @DelegatesTo(WriteSpec) Closure cl) {
-		genWriteDirective(parent, cl)
+	void writeOpts(@DelegatesTo(WriteSpec) Closure cl) {
+		genWriteDirective(cl)
+	}
+
+	/**
+	 * Create new options object for writing table
+	 */
+	protected BulkLoadSpec newBulkLoadTableParams(Map<String, Object> opts) { new BulkLoadSpec(opts) }
+
+	/**
+	 * Generate new options object for writing table
+	 */
+	protected void genBulkLoadDirective(Closure cl) {
+		def parent = newBulkLoadTableParams(bulkLoadDirective)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
+		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+		code.resolveStrategy = Closure.OWNER_FIRST
+		code(parent)
+		parent.prepare()
+		bulkLoadDirective.clear()
+		bulkLoadDirective.putAll(parent.params)
+	}
+
+	/**
+	 * Write table options
+	 */
+	void bulkLoadOpts(@DelegatesTo(BulkLoadSpec) Closure cl) {
+		genBulkLoadDirective(cl)
 	}
 }

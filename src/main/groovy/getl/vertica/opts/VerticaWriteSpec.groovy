@@ -48,7 +48,7 @@ class VerticaWriteSpec extends WriteSpec {
     final static DIRECT = 'direct'
 
     /**
-     * Write rows to ROS
+     * Write rows to WOS
      */
     final static TRICKLE = 'trickle'
 
@@ -65,7 +65,6 @@ class VerticaWriteSpec extends WriteSpec {
      * Direct vertica hint (AUTO, DIRECT, TRICKLE)
      */
     String getDirect() { params.direct as String }
-
     /**
      * Direct vertica hint (AUTO, DIRECT, TRICKLE)
      */
@@ -73,7 +72,7 @@ class VerticaWriteSpec extends WriteSpec {
         if (value != null) {
             value = value.trim().toUpperCase()
             if (!(value in ['AUTO', 'DIRECT', 'TRICKLE']))
-                throw new ExceptionGETL("Invalid direct option \"$value\", allowed: AUTO, DIRECT AND TRICKLE")
+                throw new ExceptionGETL("Invalid direct option \"$value\", allowed: AUTO, DIRECT AND TRICKLE!")
         }
 
         params.direct = value

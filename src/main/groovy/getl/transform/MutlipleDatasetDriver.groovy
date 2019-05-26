@@ -152,8 +152,7 @@ class MutlipleDatasetDriver extends Driver {
 	}
 
 	@Override
-    public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-	}
+    public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) { }
 
 	@Override
     public void clearDataset(Dataset dataset, Map params) { }

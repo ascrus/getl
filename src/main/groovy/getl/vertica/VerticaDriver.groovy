@@ -24,6 +24,7 @@
 
 package getl.vertica
 
+import com.sun.org.apache.xpath.internal.operations.Bool
 import groovy.transform.InheritConstructors
 
 import getl.csv.CSVDataset
@@ -52,7 +53,7 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
 				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
-				 'expression', 'location', 'abortOnError', 'maskDate', 'maskTime', 'maskDateTime',
+				 'expression', 'location', 'maskDate', 'maskTime', 'maskDateTime',
 				 'parser', 'streamName'])
 		methodParams.register('unionDataset', ['direct'])
 	}
@@ -118,7 +119,7 @@ class VerticaDriver extends JDBCDriver {
 			String parserFunc = (params.parser as Map).function
 			if (parserFunc == null) throw new ExceptionGETL('Required parser function name')
 			Map<String, Object> parserOptions = (params.parser as Map).options
-			if (parserOptions != null) {
+			if (parserOptions != null && !parserOptions.isEmpty()) {
 				def ol = []
 				parserOptions.each { String name, def value ->
 					if (value instanceof String) {
@@ -133,10 +134,13 @@ class VerticaDriver extends JDBCDriver {
 			else {
 				parserText = "\nWITH PARSER $parserFunc()"
 			}
-			if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
-			if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
-			if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
-			if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
+			boolean useCsvOptions = BoolUtils.IsValue((params.parser as Map).useCsvOptions, true)
+			if (useCsvOptions) {
+				if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
+				if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
+				if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
+				if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
+			}
 		}
 		else {
 			if (source.fieldDelimiter == null || source.fieldDelimiter.length() != 1) throw new ExceptionGETL('Required one char field delimiter')
@@ -160,7 +164,7 @@ class VerticaDriver extends JDBCDriver {
 		String compressed = ListUtils.NotNullValue([params.compressed, (isGzFile?'GZIP':null)])
 		String exceptionPath = params.exceptionPath
 		String rejectedPath = params.rejectedPath
-		Integer rejectMax = params.rejectMax
+		Long rejectMax = params.rejectMax
 		boolean abortOnError = ListUtils.NotNullValue([BoolUtils.IsValue(params.abortOnError, null),
 													   (!(rejectedPath != null || exceptionPath != null))])
 		String location = params.location

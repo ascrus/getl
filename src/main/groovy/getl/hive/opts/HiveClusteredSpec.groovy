@@ -52,14 +52,32 @@ class HiveClusteredSpec extends BaseSpec {
      * List of "by" columns
      */
     List<String> getBy() { params.by as List<String> }
-    void setBy(List<String> value) { params.by = value }
+    /**
+     * List of "by" columns
+     */
+    void setBy(List<String> value) {
+        by.clear()
+        if (value != null) by.addAll(value)
+    }
 
     /**
      * List of "sorted by" columns
      */
     List<String> getSortedBy() { params.sortedBy as List<String> }
-    void setSortedBy(List<String> value) { params.sortedBy = value }
+    /**
+     * List of "sorted by" columns
+     */
+    void setSortedBy(List<String> value) {
+        sortedBy.clear()
+        if (value != null) sortedBy.addAll(value)
+    }
 
+    /**
+     * Into buckers
+     */
     Integer getIntoBuckets() { params.intoBuckets as Integer }
+    /**
+     * Into buckers
+     */
     void setIntoBuckets(Integer value) { params.intoBuckets = value }
 }

@@ -56,7 +56,7 @@ class JDBCDriver extends Driver {
 		methodParams.register('dropDataset', ['ifExists'])
 		methodParams.register('openWrite', ['operation', 'batchSize', 'updateField', 'logRows',
                                             'onSaveBatch'])
-		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order', 'offset', 'limit',
+		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order',
                                           'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
 		methodParams.register('bulkLoadFile', ['allowMapAlias', 'files', 'fileMask'])
 		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
@@ -1168,11 +1168,11 @@ ${extend}'''
 
 			def order = params.order as List<String>
 			String orderBy
-			if (order != null) { 
-				if (!(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
-				List<String> orderFields = []
+			if (order != null && !order.isEmpty()) {
+				def orderFields = [] as List<String>
 				order.each { String col ->
-					if (dataset.fieldByName(col) != null) orderFields << prepareFieldNameForSQL(col, dataset as JDBCDataset) else orderFields << col
+					if (dataset.fieldByName(col) != null)
+						orderFields << prepareFieldNameForSQL(col, dataset as JDBCDataset) else orderFields << col
 				}
 				orderBy = orderFields.join(", ")
 			}
@@ -1227,9 +1227,6 @@ ${extend}'''
 		
 		def isTable = isTable(dataset)
 		if (isTable) {
-			def readDir = ((dataset.params.directive as Map)?.read as Map)?:[:]
-			params = readDir + params
-
 			def onlyFields = ListUtils.ToLowerCase((List)(params.onlyFields))
 			def excludeFields = ListUtils.ToLowerCase((List)(params.excludeFields))
 			
@@ -1597,7 +1594,7 @@ $sql
 			Map mc = [:]
 			mc.column = cn
 			
-			def m = map."${cn}"
+			def m = map.get(cn)
 			if (m != null){
 				def df = fields.find { it.name.toLowerCase() == m.toLowerCase() }
 				if (df != null) {
@@ -1677,9 +1674,9 @@ $sql
 		
 		validTableName(dataset)
 
-        params = params?:[:]
+        /*params = params?:[:]
 		def writeDir = ((dataset.params.directive as Map)?.write as Map)?:[:]
-        params = writeDir + params
+        params = writeDir + params*/
 
 		def fn = fullNameDataset(dataset)
 		def operation = (params.operation != null)?(params.operation as String).toUpperCase():"INSERT"
@@ -1705,7 +1702,7 @@ $sql
 		def fields = prepareFieldFromWrite(dataset, prepareCode)
 		
 		def updateField = [] as List<String>
-		if (params.updateField != null) {
+		if (params.updateField != null && !(params.updateField as List).isEmpty()) {
 			updateField = params.updateField
 		}
 		else {

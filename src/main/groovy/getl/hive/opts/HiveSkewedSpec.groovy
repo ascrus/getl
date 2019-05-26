@@ -52,17 +52,32 @@ class HiveSkewedSpec extends BaseSpec {
      * List of "by" columns
      */
     List<String> getBy() { params.by as List<String> }
-    void setBy(List<String> value) { params.by = value }
+    /**
+     * List of "by" columns
+     */
+    void setBy(List<String> value) {
+        by.clear()
+        if (value != null) by.addAll(value)
+    }
 
     /**
      * List of "on" columns
      */
     List<String> getOn() { params.on as List<String>}
-    void setOn(List<String> value) { params.on = value }
+    /**
+     * List of "on" columns
+     */
+    void setOn(List<String> value) {
+        on.clear()
+        if (value != null) on.addAll(value)
+    }
 
     /**
      * Stored data as directories
      */
     Boolean getStoredAsDirectories() { params.storedAsDirectories as Boolean }
+    /**
+     * Stored data as directories
+     */
     void setStoredAsDirectories(Boolean value) { params.storedAsDirectories = value }
 }

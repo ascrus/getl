@@ -44,7 +44,7 @@ class H2Table extends TableDataset {
     /**
      * Create H2 table
      */
-    H2CreateSpec createOpts(H2CreateSpec parent = null, @DelegatesTo(H2CreateSpec) Closure cl) {
-        genCreateTable(parent, cl) as H2CreateSpec
+    void createOpts(H2CreateSpec parent = null, @DelegatesTo(H2CreateSpec) Closure cl) {
+        genCreateTable(cl) as H2CreateSpec
     }
 }

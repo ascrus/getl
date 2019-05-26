@@ -38,6 +38,7 @@ class ScriptSpec extends BaseSpec {
      * SQL script
      */
     public void script(Closure cl) {
+        cl = prepareClosure(cl)
         script = cl.call(this)
     }
 

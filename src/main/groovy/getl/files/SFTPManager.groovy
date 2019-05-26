@@ -98,8 +98,21 @@ class SFTPManager extends Manager {
 	 * Known hosts file name
 	 * <i>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
-	public String getKnownHostsFile () { params.knownHostsFile }
-	public void setKnownHostsFile (String value) { params.knownHostsFile = value }
+	String getKnownHostsFile () { params.knownHostsFile }
+	/**
+	 * Known hosts file name
+	 * <i>use "ssh-keyscan -t rsa <IP address>" for get key
+	 */
+	void setKnownHostsFile (String value) { params.knownHostsFile = value }
+
+	/**
+	 * Host key
+	 */
+	String getHostKey() { params.hostKey }
+	/**
+	 * Host key
+	 */
+	void setHostKey(String value) { params.hostKey = value }
 	
 	/**
 	 * Identity file name
@@ -137,6 +150,11 @@ class SFTPManager extends Manager {
 			if (knownHostsFile != null) {
 				h += ", hosts file \"$knownHostsFile\""
 				client.setKnownHosts(knownHostsFile)
+			}
+
+			if (hostKey != null) {
+				byte[] key = Base64.decoder.decode(hostKey)
+				client.getHostKeyRepository().add(new HostKey(server, key ), null)
 			}
 			
 			if (identityFile != null) {

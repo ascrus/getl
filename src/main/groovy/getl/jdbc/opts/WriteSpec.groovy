@@ -48,6 +48,28 @@ class WriteSpec extends BaseSpec {
     }
 
     /**
+     * Preparing code
+     */
+    Closure getOnPrepare() { params.prepare as Closure }
+    /**
+     * Preparing code
+     */
+    void setOnPrepare(Closure value) { params.prepare = prepareClosure(value) }
+    /**
+     * Preparing code
+     */
+    void prepare(Closure cl) { onPrepare = cl }
+
+    /**
+     * Use schemata file for reading dataset structure
+     */
+    Boolean getAutoSchema() { params.autoSchema as Boolean }
+    /**
+     * Use schemata file for reading dataset structure
+     */
+    void setAutoSchema(Boolean value) { params.autoSchema = value }
+
+    /**
      * Operation type
      * allow: INSERT, UPDATE, DELETE and MERGE
      */
@@ -89,7 +111,10 @@ class WriteSpec extends BaseSpec {
      * List of update fields
      * P.S. By default used all table fields
      */
-    void setUpdateField(List<String> value) { params.updateField = value }
+    void setUpdateField(List<String> value) {
+        updateField.clear()
+        if (value != null) updateField.addAll(value)
+    }
 
     /**
      * CSV log file name

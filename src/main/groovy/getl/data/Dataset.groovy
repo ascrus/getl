@@ -37,26 +37,16 @@ import getl.tfs.*
  *
  */
 class Dataset {
-	protected ParamMethodValidator methodParams = new ParamMethodValidator()
-	
-	/**
-	 * How field update with retrieve from metadata
-	 */
-	public static enum UpdateFieldType {NONE, CLEAR, APPEND, MERGE, MERGE_EXISTS}
-	
-	/**
-	 * How lookup find key
-	 */
-	public static enum LookupStrategy {HASH, ORDER}
-	
-	/**
-	 * Type status of dataset
-	 */
-	public static enum Status {AVAIBLE, READ, WRITE}
-	
-	
 	public Dataset () {
 		params.manualSchema = false
+
+		def dirs = [:] as Map<String, Object>
+		params.directive = dirs
+		dirs.create = [:] as Map<String, Object>
+		dirs.drop = [:] as Map<String, Object>
+		dirs.read = [:] as Map<String, Object>
+		dirs.write = [:] as Map<String, Object>
+		dirs.bulkLoad = [:] as Map<String, Object>
 
 		methodParams.register('create', [])
 		methodParams.register('drop', [])
@@ -66,7 +56,28 @@ class Dataset {
 		methodParams.register('openWrite', ['prepare', 'autoSchema'])
 		methodParams.register('lookup', ['key', 'strategy'])
 	}
-	
+
+	/**
+	 * Dynamic method parameters
+	 */
+	protected ParamMethodValidator methodParams = new ParamMethodValidator()
+
+	/**
+	 * How field update with retrieve from metadata
+	 */
+	public static enum UpdateFieldType {NONE, CLEAR, APPEND, MERGE, MERGE_EXISTS}
+
+	/**
+	 * How lookup find key
+	 */
+	public static enum LookupStrategy {HASH, ORDER}
+
+	/**
+	 * Type status of dataset
+	 */
+	public static enum Status {AVAIBLE, READ, WRITE}
+
+
 	/**
 	 * <p>Create new dataset with name of class dataset</p>
 	 * <b>Dynamic parameters:</b>
@@ -559,7 +570,7 @@ class Dataset {
 	 * </ul>
 	 * @param params
 	 */
-	public void bulkLoadFile (Map procParams) {
+	public void bulkLoadFile (Map procParams = [:]) {
 		readRows = 0
         writeRows = 0
         updateRows = 0
@@ -569,6 +580,8 @@ class Dataset {
 		
 		if (procParams == null) procParams = [:]
 		methodParams.validation("bulkLoadFile", procParams, [connection.driver.methodParams.params("bulkLoadFile")])
+		def bulkLoadDir = ((params.directive as Map)?.bulkLoad as Map)?:[:]
+		procParams = bulkLoadDir + procParams
 		
 		if (field.size() == 0) {
 			if (BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
@@ -796,6 +809,8 @@ class Dataset {
 		
 		if (procParams == null) procParams = [:]
 		methodParams.validation("eachRow", procParams, [connection.driver.methodParams.params("eachRow")])
+		def readDir = ((params.directive as Map)?.read as Map)?:[:]
+		procParams = readDir + procParams
 		
 		// Save parse and assert errors to file
 		boolean saveErrors = (procParams.saveErrors != null)?procParams.saveErrors:false
@@ -869,10 +884,12 @@ class Dataset {
 		validConnection()
 		if (!connection.driver.isSupport(Driver.Support.WRITE)) throw new ExceptionGETL("Driver is not support write operation")
 		if (status != Dataset.Status.AVAIBLE) throw new ExceptionGETL("Dataset is not avaible for write operation (current status is ${status})")
-		
-		if (procParams == null) procParams = [:]
+
+		procParams = procParams?:[:]
 		methodParams.validation("openWrite", procParams, [connection.driver.methodParams.params("openWrite")])
-		
+		def writeDir = ((params.directive as Map)?.write as Map)?:[:]
+		procParams = writeDir + procParams
+
 		def saveSchema = BoolUtils.IsValue(procParams.autoSchema, autoSchema) 
 		if (saveSchema && !connection.driver.isSupport(Driver.Support.AUTOSAVESCHEMA)) throw new ExceptionGETL("Can not auto save schema from dataset")
 		

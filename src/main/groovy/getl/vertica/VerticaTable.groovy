@@ -44,8 +44,8 @@ class VerticaTable extends TableDataset {
     /**
      * Create H2 table
      */
-    VerticaCreateSpec createOpts(VerticaCreateSpec parent = null, @DelegatesTo(VerticaCreateSpec) Closure cl) {
-        genCreateTable(parent, cl) as VerticaCreateSpec
+    void createOpts(@DelegatesTo(VerticaCreateSpec) Closure cl) {
+        genCreateTable(cl)
     }
 
     @Override
@@ -54,8 +54,8 @@ class VerticaTable extends TableDataset {
     /**
      * Read table options
      */
-    VerticaReadSpec readOpts(VerticaReadSpec parent = null, @DelegatesTo(VerticaReadSpec) Closure cl) {
-        genReadDirective(parent, cl) as VerticaReadSpec
+    void readOpts(@DelegatesTo(VerticaReadSpec) Closure cl) {
+        genReadDirective(cl)
     }
 
     @Override
@@ -64,7 +64,17 @@ class VerticaTable extends TableDataset {
     /**
      * Read table options
      */
-    VerticaWriteSpec writeOpts(VerticaWriteSpec parent = null, @DelegatesTo(VerticaWriteSpec) Closure cl) {
-        genWriteDirective(parent, cl) as VerticaWriteSpec
+    void writeOpts(@DelegatesTo(VerticaWriteSpec) Closure cl) {
+        genWriteDirective(cl)
+    }
+
+    @Override
+    protected BulkLoadSpec newBulkLoadTableParams(Map<String, Object> opts) { new VerticaBulkLoadSpec(opts) }
+
+    /**
+     * Read table options
+     */
+    void bulkLoadOpts(@DelegatesTo(VerticaBulkLoadSpec) Closure cl) {
+        genBulkLoadDirective(cl)
     }
 }

@@ -2,6 +2,7 @@
 
 import getl.csv.CSVDataset
 import getl.utils.GenerationUtils
+import getl.vertica.VerticaTable
 import groovy.transform.BaseScript
 
 def table1_rows = 10000
@@ -16,19 +17,15 @@ Configuration options
 
 Create config file in ./tests/vertica/vertica.dsl with syntax:
 vars {
-    workPath = '<work directory>'
-    vertica {
-        connectDatabase = '<vertica database name>'
-        connectHost = '<vertica node host>'
-        login = '<vertica user name>'
-        password = '<vertica user password>'
-    }
-    ftp {
-        server = '<ftp server host>'
-        rootPath = '<ftp root directory>'
-        login = '<ftp user name>'
-        password = '<ftp user password>'
-    }
+    workPath = '<log and history files directory>'
+    driverPath = '<vertica jdbc file path>'
+    connectDatabase = '<vertica database name>'
+    connectHost = '<vertica node host>'
+    login = '<vertica user name>'
+    password = '<vertica user password>'
+    ssh_login = '<ssh login on Vertica host>
+    ssh_password = '<ssh password on Vertica host>
+    ssh_rsakey = '<ssh rsa string key for host>' // use "ssh-keyscan -t rsa <host-name>"
 }
 */
 config {
@@ -48,15 +45,17 @@ log {
 }
 
 // Define Vertica table
-def table1 = verticatable {
+def table1 = verticatable { VerticaTable table ->
     // Define Vertica connection with using configuration parameters
     connection = verticaConnection {
-        driverPath = '../jdbc/vertica-jdbc-9.1.1-0.jar'
-        connectDatabase = configVars.vertica.connectDatabase
-        connectHost = configVars.vertica.connectHost
-        login = configVars.vertica.login
-        password = configVars.vertica.password
+        driverPath = configVars.driverPath
+        connectHost = configVars.connectHost
+        connectDatabase = configVars.connectDatabase
+        login = configVars.login
+        password = configVars.password
         sqlHistoryFile = "${configVars.workPath}/vertica.sql"
+
+        configVars.session = currentSession
     }
 
     // Table name
@@ -118,11 +117,11 @@ def file1 = csv { CSVDataset file ->
         codePage = 'UTF8'
 
         // Use GZIP copression
-        isGzFile = false
+        isGzFile = true
     }
 
     // File name
-    fileName = 'file1.csv'
+    fileName = 'file1.csv.gz'
 
     // Define fields as table fields
     field = table1.field
@@ -170,10 +169,10 @@ rowProcess {
     }
     done {
         assert countRow == i
+        assert table1.readRows == table1_rows
+        logInfo "Readed ${table1.readRows} rows from ${table1.fullTableName} table."
     }
 }
-assert table1.readRows == table1_rows
-logInfo "Readed ${table1.readRows} rows from ${table1.fullTableName} table."
 
 sql {
     connection = table1.connection
@@ -188,15 +187,44 @@ ECHO Found {table1_rows} rows in ${table1.fullTableName} on {tran_time} transact
     }
 }
 
-ftp {
-    server = configVars.ftp.server
-    rootPath = configVars.ftp.rootPath
+sftp {
+    server = configVars.connectHost
+    rootPath = '/tmp'
     localDirectory = csvTempConnection.path
-    login = configVars.ftp.login
-    password = configVars.ftp.password
+    login = configVars.ssh_login
+    password = configVars.ssh_password
+    hostKey = configVars.ssh_rsakey
     connect()
-    if (!existsDirectory('archive')) createDir 'archive'
-    changeDirectory 'archive'
+    if (!existsDirectory('vertica')) createDir 'vertica'
+    changeDirectory 'vertica'
     upload file1.fileName
     logInfo "Copyed file \"${file1.fullFileName()}\" to \"${currentDir()}\" directory from \"${server}\" host."
 }
+
+verticatable(table1) {
+    truncate()
+    bulkLoadOpts {
+        def dir = '/tmp/vertica'
+        source = file1
+        files = ["$dir/${file1.fileName}"]
+
+        parser {
+            function = 'fcsvparser'
+            options = [type: 'traditional', delimiter: '|', record_terminator: '\n']
+            useCsvOptions = false
+        }
+        autoCommit = true
+        loadMethod = DIRECT
+        enforceLength = true
+        compressed = GZIP
+        exceptionPath = "$dir/vertica.exeptions.txt"
+        rejectedPath = "$dir/vertica.reject.txt"
+        rejectMax = 100
+        location = configVars.session.node_name
+        streamName = 'GETL LOAD'
+
+    }
+    bulkLoadFile()
+}
+
+assert table1.countRows() == table1_rows

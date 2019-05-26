@@ -26,6 +26,7 @@ package getl.jdbc.opts
 
 import getl.jdbc.JDBCDataset
 import getl.lang.opts.BaseSpec
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -34,21 +35,22 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
+@CompileStatic
 class CreateSpec extends BaseSpec {
     CreateSpec() {
         super()
-        params._indexes = [:] as Map<String, IndexSpec>
+        params.indexes = [:] as Map<String, Object>
     }
 
     CreateSpec(Map<String, Object> importParams) {
         super(importParams)
-        params._indexes = [:] as Map<String, IndexSpec>
+        params.indexes = [:] as Map<String, Object>
     }
 
     /**
      * Create table if not exists
      */
-    Boolean getIfNotExists() { params.ifNotExists }
+    Boolean getIfNotExists() { params.ifNotExists as Boolean }
     /**
      * Create table if not exists
      */
@@ -57,7 +59,7 @@ class CreateSpec extends BaseSpec {
     /**
      * Create commit preserve rows for temporary table
      */
-    Boolean getOnCommit() { params.onCommit }
+    Boolean getOnCommit() { params.onCommit as Boolean }
     /**
      * Create commit preserve rows for temporary table
      */
@@ -66,12 +68,19 @@ class CreateSpec extends BaseSpec {
     /**
      * List of indexes by table
      */
-    Map<String, IndexSpec> getIndexes() { params._indexes }
+    Map<String, Object> getIndexes() { params.indexes as Map<String, Object> }
+    /**
+     * List of indexes by table
+     */
+    void setIndexes(Map<String, Object> value) {
+        indexes.clear()
+        if (value != null) indexes.putAll(value)
+    }
 
     /**
      * Create hash primary key
      */
-    Boolean getHashPrimaryKey() { params.hashPrimaryKey }
+    Boolean getHashPrimaryKey() { params.hashPrimaryKey as Boolean }
     /**
      * Create hash primary key
      */
@@ -80,7 +89,7 @@ class CreateSpec extends BaseSpec {
     /**
      * Create field by name of native database type
      */
-    Boolean getUseNativeDBType() { params.useNativeDBType }
+    Boolean getUseNativeDBType() { params.useNativeDBType as Boolean }
     /**
      * Create field by name of native database type
      */
@@ -104,39 +113,25 @@ class CreateSpec extends BaseSpec {
     /**
      * Create new parameters object for create index
      */
-    protected IndexSpec newIndexParams() { new IndexSpec() }
+    protected IndexSpec newIndexParams(Map<String, Object> opts) { new IndexSpec(opts) }
 
     /**
      * Generate new parameters object for create index
      */
-    protected IndexSpec genIndex(IndexSpec parent, Closure cl) {
-        if (parent == null) {
-            parent = newIndexParams()
-            parent.thisObject = parent.DetectClosureDelegate(cl)
-        }
+    protected void genIndex(String name, Closure cl) {
+        def indexOpts = (indexes.get(name)?:[:]) as  Map<String, Object>
+        def parent = newIndexParams(indexOpts)
+        parent.thisObject = parent.DetectClosureDelegate(cl)
         def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
         code.resolveStrategy = Closure.OWNER_FIRST
         code(parent)
-
-        return parent
+        indexes.put(name, parent.params)
     }
 
     /**
      * Generate index of specified parameters
      */
-    IndexSpec index(IndexSpec parent = null, @DelegatesTo(IndexSpec) Closure cl) {
-        genIndex(parent, cl)
-    }
-
-    @Override
-    void prepare() {
-        if (!indexes.isEmpty()) {
-            def i = [:] as Map<String, Object>
-            params.indexes = i
-            indexes.each { String name, IndexSpec idx ->
-                idx.prepare()
-                i.put(name, idx.params)
-            }
-        }
+    void index(String name, @DelegatesTo(IndexSpec) Closure cl) {
+        genIndex(name, cl)
     }
 }
