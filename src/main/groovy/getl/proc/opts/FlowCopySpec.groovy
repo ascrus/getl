@@ -243,7 +243,7 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Code executed before process copy rows
      */
-    def setOnInitFlow(Closure value) { params.onInit = value }
+    def setOnInitFlow(Closure value) { params.onInit = prepareClosure(value) }
     /**
      * Code executed before process copy rows
      */
@@ -256,7 +256,7 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Code executed before writing to destination dataset
      */
-    def setOnWriteFlow(Closure value) { params.onWrite = value }
+    def setOnWriteFlow(Closure value) { params.onWrite = prepareClosure(value) }
     /**
      * Code executed before writing to destination dataset
      */
@@ -269,7 +269,7 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Code executed after process copy rows
      */
-    def setOnDoneFlow(Closure value) { params.onDone = value }
+    def setOnDoneFlow(Closure value) { params.onDone = prepareClosure(value) }
     /**
      * Code executed after process copy rows
      */
@@ -291,7 +291,7 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Closure code process row
      */
-    def setProcess(Closure value) { params.process = value }
+    def setProcess(Closure value) { params.process = prepareClosure(value) }
     /**
      * Closure code process row
      */

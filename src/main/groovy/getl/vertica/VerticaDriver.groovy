@@ -24,7 +24,6 @@
 
 package getl.vertica
 
-import com.sun.org.apache.xpath.internal.operations.Bool
 import groovy.transform.InheritConstructors
 
 import getl.csv.CSVDataset
@@ -115,7 +114,7 @@ class VerticaDriver extends JDBCDriver {
 		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
 
 		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = ''
-		if (params.parser != null) {
+		if (params.parser != null && !(params.parser as Map).isEmpty()) {
 			String parserFunc = (params.parser as Map).function
 			if (parserFunc == null) throw new ExceptionGETL('Required parser function name')
 			Map<String, Object> parserOptions = (params.parser as Map).options
@@ -165,6 +164,7 @@ class VerticaDriver extends JDBCDriver {
 		String exceptionPath = params.exceptionPath
 		String rejectedPath = params.rejectedPath
 		Long rejectMax = params.rejectMax
+		/** TODO: check load from table with left field */
 		boolean abortOnError = ListUtils.NotNullValue([BoolUtils.IsValue(params.abortOnError, null),
 													   (!(rejectedPath != null || exceptionPath != null))])
 		String location = params.location
@@ -173,7 +173,7 @@ class VerticaDriver extends JDBCDriver {
 		String streamName = params.streamName
 
 		List fileList
-		if (params.files != null) {
+		if (params.files != null && !(params.files as List).isEmpty()) {
 			fileList = []
 			params.files.each { String fileName ->
 				fileList << "'${fileName.replace("\\", "/")}'$onNode"

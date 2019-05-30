@@ -441,14 +441,32 @@ class MapUtils {
      * @param value
      * @return
      */
-	public static HashMap Lazy2HashMap(Map data) {
+	static HashMap Lazy2HashMap(Map data) {
         def res = [:] as HashMap
         data.each { key, value ->
-            if (value instanceof LazyMap) value = Lazy2HashMap((Map)value)
+			if (value instanceof LazyMap)
+				value = Lazy2HashMap((Map)value)
+			else if (value instanceof List)
+				value = Lazy2HashMapList(value)
+
             res.put(key, value)
         }
 
         return res
+	}
+
+	static private List Lazy2HashMapList(List data) {
+		def res = []
+		data.each { value ->
+			if (value instanceof LazyMap)
+				value = Lazy2HashMap((Map)value)
+			else if (value instanceof List)
+				value = Lazy2HashMapList(value)
+
+			res << value
+		}
+
+		return res
 	}
 
 	@CompileStatic

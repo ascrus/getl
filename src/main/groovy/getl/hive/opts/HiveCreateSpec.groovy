@@ -43,20 +43,16 @@ class HiveCreateSpec extends CreateSpec {
         params.skewed = [:] as Map<String, Object>
     }
 
-    HiveCreateSpec(Map<String, Object> importParams) {
-        super(importParams)
+    HiveCreateSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        super(useExternalParams, importParams)
         if (params.tblproperties == null) params.tblproperties = [:] as Map<String, Object>
         if (params.clustered == null) params.clustered = [:] as Map<String, Object>
         if (params.skewed == null) params.skewed = [:] as Map<String, Object>
     }
 
-    /**
-     * Clustered specifications
-     */
+    /** Clustered specifications */
     Map<String, Object> getClustered() { params.clustered as Map<String, Object> }
-    /**
-     * Clustered specifications
-     */
+    /** Clustered specifications */
     void setClustered(Map<String, Object> value) {
         clustered.clear()
         if (value != null) clustered.putAll(value)
@@ -65,14 +61,17 @@ class HiveCreateSpec extends CreateSpec {
     /**
      * Generate new clustered options
      */
-    void clustered(@DelegatesTo(HiveClusteredSpec) Closure cl) {
-        def parent = new HiveClusteredSpec(clustered)
-        parent.thisObject = parent.DetectClosureDelegate(cl)
-        def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-        code.resolveStrategy = Closure.OWNER_FIRST
-        code(parent)
-        parent.prepare()
-        params.clustered = parent.params
+    HiveClusteredSpec clustered(@DelegatesTo(HiveClusteredSpec) Closure cl = null) {
+        def parent = new HiveClusteredSpec(true, clustered)
+        if (cl != null) {
+            parent.thisObject = parent.DetectClosureDelegate(cl)
+            def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+            code.resolveStrategy = Closure.OWNER_FIRST
+            code(parent)
+            parent.prepare()
+        }
+
+        return parent
     }
 
     /**
@@ -87,14 +86,17 @@ class HiveCreateSpec extends CreateSpec {
     /**
      * Generate new skewed options
      */
-    void skewed(@DelegatesTo(HiveSkewedSpec) Closure cl) {
-        def parent = new HiveSkewedSpec(skewed)
-        parent.thisObject = parent.DetectClosureDelegate(cl)
-        def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-        code.resolveStrategy = Closure.OWNER_FIRST
-        code(parent)
-        parent.prepare()
-        params.skewed = parent.params
+    HiveSkewedSpec skewed(@DelegatesTo(HiveSkewedSpec) Closure cl = null) {
+        def parent = new HiveSkewedSpec(true, skewed)
+        if (cl != null) {
+            parent.thisObject = parent.DetectClosureDelegate(cl)
+            def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+            code.resolveStrategy = Closure.OWNER_FIRST
+            code(parent)
+            parent.prepare()
+        }
+
+        return parent
     }
 
     /**

@@ -34,17 +34,25 @@ import getl.utils.MapUtils
 class BaseSpec {
     BaseSpec() { }
 
-    BaseSpec(Map<String, Object> importParams) {
-        importFromMap(importParams)
+    BaseSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        if (useExternalParams) {
+            _params = importParams
+        }
+        else {
+            importFromMap(importParams)
+        }
     }
 
+    /** Detect delegeta object for closure code */
     static Object DetectClosureDelegate(Object obj) {
         while (obj instanceof Closure) obj = (obj as Closure).delegate
         return obj
     }
 
+    /** This object for this object */
     def thisObject
 
+    /** Preparing closure code for this object */
     Closure prepareClosure(Closure cl) {
         if (thisObject == null) return cl
         def code = cl.rehydrate(thisObject, this, thisObject)
@@ -52,7 +60,9 @@ class BaseSpec {
         return code
     }
 
-    public final Map<String, Object> params = [:]
+    Map<String, Object> _params = [:]
+    /** Object parameters */
+    Map<String, Object> getParams() { _params }
 
     Closure onInit
     /**

@@ -24,6 +24,7 @@
 
 package getl.data
 
+import getl.data.opts.LookupSpec
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
 import getl.csv.CSVDataset
@@ -40,13 +41,7 @@ class Dataset {
 	public Dataset () {
 		params.manualSchema = false
 
-		def dirs = [:] as Map<String, Object>
-		params.directive = dirs
-		dirs.create = [:] as Map<String, Object>
-		dirs.drop = [:] as Map<String, Object>
-		dirs.read = [:] as Map<String, Object>
-		dirs.write = [:] as Map<String, Object>
-		dirs.bulkLoad = [:] as Map<String, Object>
+		initParams()
 
 		methodParams.register('create', [])
 		methodParams.register('drop', [])
@@ -55,6 +50,17 @@ class Dataset {
 		methodParams.register('eachRow', ['prepare', 'offs', 'limit', 'saveErrors', 'autoSchema'])
 		methodParams.register('openWrite', ['prepare', 'autoSchema'])
 		methodParams.register('lookup', ['key', 'strategy'])
+	}
+
+	/** Initialization dataset parameters */
+	private void initParams() {
+		def dirs = [:] as Map<String, Object>
+		params.directive = dirs
+		dirs.create = [:] as Map<String, Object>
+		dirs.drop = [:] as Map<String, Object>
+		dirs.read = [:] as Map<String, Object>
+		dirs.write = [:] as Map<String, Object>
+		dirs.bulkLoad = [:] as Map<String, Object>
 	}
 
 	/**
@@ -103,11 +109,11 @@ class Dataset {
 		if (datasetClass == null) throw new ExceptionGETL("Required parameter \"dataset\"")
 		
 		def dataset = Class.forName(datasetClass).newInstance() as Dataset
-		dataset.connection = params.connection as Connection
+		if (params.containsKey("connection")) dataset.connection = params.connection as Connection
 		if (params.containsKey("config")) dataset.setConfig(params.config as String)
 		if (params.containsKey("field")) dataset.setField(params.field as List<Field>)
-		dataset.setParams(MapUtils.CleanMap(params, ["dataset", "connection", "config", "field"]))
-		
+		dataset.params.putAll(MapUtils.CleanMap(params, ["dataset", "connection", "config", "field"]))
+
 		return dataset
 	}
 	
@@ -143,27 +149,20 @@ class Dataset {
 	}
 	
 	private final Map params = [:]
-	/**
-	 * Dataset public parameters
-	 */
+	/** Dataset public parameters */
 	public Map getParams () { return this.params }
-	/**
-	 * Dataset public parameters
-	 */
+	/** Dataset public parameters */
 	public void setParams(Map value) {
 		this.params.clear()
+		initParams()
 		this.params.putAll(value)
 	}
 	
 
 	private final List<Field> field = []
-	/**
-	 * Fields of dataset
-	 */
+	/** Fields of dataset */
 	public List<Field> getField() { return this.field }
-	/**
-	 * Fields of dataset
-	 */
+	/** Fields of dataset */
 	public void setField(List<Field> value) {
 		assignFields(value)
 		manualSchema = true
@@ -439,23 +438,25 @@ class Dataset {
 	/**
 	 * Retrieve fields from dataset
 	 */
-	public void retrieveFields (UpdateFieldType updateFieldType, Closure prepare = null) {
+	public List<String> retrieveFields (UpdateFieldType updateFieldType, Closure prepare = null) {
 		if (!connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS)) throw new ExceptionGETL("Driver not supported retrieve fields")
 		validConnection()
 		connection.tryConnect()
 		List<Field> sourceFields = connection.driver.fields(this)
 		updateFields(updateFieldType, sourceFields, prepare)
+
+		return field
 	}
 
 	/**
 	 * Retrieve fields from dataset
 	 */
-	public void retrieveFields (Closure prepare) { retrieveFields(UpdateFieldType.CLEAR, prepare) }
+	public List<String> retrieveFields (Closure prepare) { retrieveFields(UpdateFieldType.CLEAR, prepare) }
 	
 	/**
 	 * Retrieve fields from dataset
 	 */
-	public void retrieveFields () { retrieveFields(UpdateFieldType.CLEAR, null) }
+	public List<String> retrieveFields () { retrieveFields(UpdateFieldType.CLEAR, null) }
 
 	
 	/**
@@ -466,7 +467,23 @@ class Dataset {
 		name = name.toLowerCase()
 		return field.findIndexOf { f -> (f.name?.toLowerCase() == name) }
 	}
-	
+
+	/** Create or update dataset field */
+	Field field(String name, @DelegatesTo(Field) Closure cl = null) {
+		Field parent = fieldByName(name)
+		if (parent == null) {
+			parent = new Field(name: name)
+			field << parent
+		}
+		if (cl != null) {
+			def code = cl.rehydrate(this, parent, this)
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code(parent)
+		}
+
+		return parent
+	}
+
 	/**
 	 * Return field by name
 	 */
@@ -987,16 +1004,9 @@ class Dataset {
 	}
 	
 	/**
-	 * Save fields structure to metadata
-	 */
-	public void saveDatasetMetadata (boolean useParams = true) {
-		saveDatasetMetadata(null, useParams)
-	}
-
-	/**
 	 * Save fields structure to metadata JSON file
 	 */
-	public void saveDatasetMetadataToJSON (Writer writer, List<String> fieldList, boolean useParams) {
+	public void saveDatasetMetadataToJSON (Writer writer, List<String> fieldList = null) {
 		List<Field> fl = []
 		if (fieldList == null || fieldList.isEmpty()) {
 			field.each { Field f ->
@@ -1011,7 +1021,7 @@ class Dataset {
 		}
 		
 		Map p = [:]
-		if (useParams) p.params = saveParams()
+		//if (useParams) p.params = saveParams()
 		p.putAll(GenerationUtils.Fields2Map(fl))
 		
 		def json = MapUtils.ToJson(p)
@@ -1023,11 +1033,7 @@ class Dataset {
 			writer.close()
 		}
 	}
-	
-	public void saveDatasetMetadataToJSON (Writer writer, List<String> fieldList = null) {
-		saveDatasetMetadataToJSON(writer, fieldList, true)
-	}
-	
+
 	/**
 	 * Return prepared map structure for lookup operation by keys
 	 *
@@ -1040,18 +1046,18 @@ class Dataset {
 	 * Strategy must be next values: HASH or SORT (default HASH).
 	 * Use hash value for fast seek values in small datasets and sort value for seek values in large datasets
 	 */
-	public Map lookup(Map procParams) {
+	Map lookup(Map procParams) {
 		if (procParams == null) procParams = [:]
 		methodParams.validation("lookup", procParams)
 		
-		String key = procParams.key
-		if (key == null) throw new ExceptionGETL("Required parameter \"key\"")
+		String key = procParams.key as String
+		if (key == null) throw new ExceptionGETL("Required parameter \"key\"!")
 		
 		if (field.isEmpty()) retrieveFields()
-		def keyField = fieldByName(key) 
-		if (keyField == null) throw new ExceptionGETL("Field \"key\" not found")
+		def keyField = fieldByName(key)
+		if (keyField == null) throw new ExceptionGETL("Key field \"$key\" not found!")
 		key = keyField.name.toLowerCase()
-		
+
 		Map result
 		LookupStrategy strategy = procParams.strategy
 		if (strategy == null || strategy == LookupStrategy.HASH) {
@@ -1064,20 +1070,28 @@ class Dataset {
 		else {
 			throw new ExceptionGETL("Unknown strategy value \"${procParams.strategy}\"")
 		}
-		procParams = MapUtils.CleanMap(procParams, ["key", "strategy"])
-		
-		//def assignCode = generateLookupAssignFields()
+		procParams = MapUtils.CleanMap(procParams, ['key', 'strategy'])
 		
 		eachRow(procParams) { Map row ->
-			/*
-			Map outRow = [:]
-			assignCode(row, outRow)*/
 			def k = row.get(key)
 			if (k == null) throw new ExceptionGETL("Can not support null in key field value with row: ${row}")
 			result.put(k, row)
 		}
 
 		return result
+	}
+
+	Map lookup(@DelegatesTo(LookupSpec) Closure cl) {
+		def parent = new LookupSpec()
+		if (cl != null) {
+			parent.thisObject = parent.DetectClosureDelegate(cl)
+			def code = cl.rehydrate(this, parent, this)
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code(parent)
+			parent.prepare()
+		}
+
+		return lookup(parent.params)
 	}
 	
 	/**
@@ -1096,8 +1110,14 @@ class Dataset {
 		finally {
 			reader.close()
 		}
-		
-		if (useParams && (l as Map).params != null) params.putAll((l as Map).params as Map)
+
+		/**
+		if (useParams && (l as Map).params != null) {
+			def p = MapUtils.Lazy2HashMap((l as Map).params as Map)
+			MapUtils.MergeMap(params, p, true, false)
+		}
+		*/
+
 		List<Field> fl = GenerationUtils.Map2Fields(l as Map)
 		if (fl == null || fl.isEmpty()) throw new ExceptionGETL("Fields not found in json schema")
 		
@@ -1119,18 +1139,11 @@ class Dataset {
 	/**
 	 * Save fields structure to metadata JSON file
 	 */
-	public void saveDatasetMetadata (List<String> fieldList, boolean useParams) {
+	public void saveDatasetMetadata (List<String> fieldList = null) {
 		def fn = fullFileSchemaName()
 		if (fn == null) throw new ExceptionGETL("Required \"schemaFileName\" for save dataset schema")
 		FileUtils.ValidFilePath(fn)
-		saveDatasetMetadataToJSON(new File(fn).newWriter("UTF-8"), fieldList, useParams)
-	}
-	
-	/**
-	 * Save fields structure to metadata JSON file
-	 */
-	public void saveDatasetMetadata (List<String> fieldList) {
-		saveDatasetMetadata(fieldList, true)
+		saveDatasetMetadataToJSON(new File(fn).newWriter("UTF-8"), fieldList)
 	}
 	
 	/**
@@ -1230,4 +1243,20 @@ class Dataset {
 
         return true
     }
+
+	TFSDataset csvTempFile
+	/** Create new csv temporary file for this dataset */
+	void createCsvTempFile() {
+		this.csvTempFile = TFS.dataset()
+		if (field.isEmpty()) retrieveFields()
+		if (field.isEmpty()) throw new ExceptionGETL("Dataset can not be generate temp file while not specified the fields")
+		this.csvTempFile.field = field
+	}
+	/** Csv temporary file for use in download and upload data from this dataset */
+	TFSDataset getCsvTempFile() {
+		if (this.csvTempFile == null) createCsvTempFile()
+		return csvTempFile
+	}
+	/** This dataset use csv temporary file */
+	boolean isUseCsvTempFile() { this.csvTempFile != null }
 }

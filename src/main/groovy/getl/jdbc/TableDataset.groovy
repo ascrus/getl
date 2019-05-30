@@ -268,130 +268,140 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Create new options object for create table
 	 */
-	protected CreateSpec newCreateTableParams(Map<String, Object> opts) { new CreateSpec(opts) }
+	protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) { new CreateSpec(useExternalParams, opts) }
 
 	/**
 	 * Generate new options object for create table
 	 */
-	protected void genCreateTable(Closure cl) {
-		def parent = newCreateTableParams(createDirective)
-		parent.thisObject = parent.DetectClosureDelegate(cl)
-		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-		code.resolveStrategy = Closure.OWNER_FIRST
-		code(parent)
-		parent.prepare()
-		createDirective.clear()
-		createDirective.putAll(parent.params)
+	protected CreateSpec genCreateTable(Closure cl) {
+		def parent = newCreateTableParams(true, createDirective)
+		if (cl != null) {
+			parent.thisObject = parent.DetectClosureDelegate(cl)
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code(parent)
+			parent.prepare()
+		}
+
+		return parent
 	}
 
 	/**
 	 * Create table of specified options
 	 */
-	void createOpts(@DelegatesTo(CreateSpec) Closure cl) {
+	CreateSpec createOpts(@DelegatesTo(CreateSpec) Closure cl = null) {
 		genCreateTable(cl)
 	}
 
 	/**
 	 * Create new options object for drop table
 	 */
-	protected DropSpec newDropTableParams(Map<String, Object> opts) { new DropSpec(opts) }
+	protected DropSpec newDropTableParams(Boolean useExternalParams, Map<String, Object> opts) { new DropSpec(useExternalParams, opts) }
 
 	/**
 	 * Generate new options object for drop table
 	 */
-	protected void genDropTable(Closure cl) {
-		def parent = newDropTableParams(dropDirective)
-		parent.thisObject = parent.DetectClosureDelegate(cl)
-		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-		code.resolveStrategy = Closure.OWNER_FIRST
-		code(parent)
-		parent.prepare()
-		dropDirective.clear()
-		dropDirective.putAll(parent.params)
+	protected DropSpec genDropTable(Closure cl) {
+		def parent = newDropTableParams(true, dropDirective)
+		if (cl != null) {
+			parent.thisObject = parent.DetectClosureDelegate(cl)
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code(parent)
+			parent.prepare()
+		}
+
+		return parent
 	}
 
 	/**
 	 * Drop table
 	 */
-	void dropOpts(@DelegatesTo(DropSpec) Closure cl) {
+	DropSpec dropOpts(@DelegatesTo(DropSpec) Closure cl = null) {
 		genDropTable(cl)
 	}
 
 	/**
 	 * Create new options object for reading table
 	 */
-	protected ReadSpec newReadTableParams(Map<String, Object> opts) { new ReadSpec(opts) }
+	protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) { new ReadSpec(useExternalParams, opts) }
 
 	/**
 	 * Generate new options object for reading table
 	 */
-	protected void genReadDirective(Closure cl) {
-		def parent = newReadTableParams(readDirective)
+	protected ReadSpec genReadDirective(Closure cl) {
+		def parent = newReadTableParams(true, readDirective)
 		parent.thisObject = parent.DetectClosureDelegate(cl)
-		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-		code.resolveStrategy = Closure.OWNER_FIRST
-		code(parent)
-		parent.prepare()
-		readDirective.clear()
-		readDirective.putAll(parent.params)
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code(parent)
+			parent.prepare()
+		}
+
+		return parent
 	}
 
 	/**
 	 * Read table options
 	 */
-	void readOpts(@DelegatesTo(ReadSpec) Closure cl) {
+	ReadSpec readOpts(@DelegatesTo(ReadSpec) Closure cl = null) {
 		genReadDirective(cl)
 	}
 
 	/**
 	 * Create new options object for writing table
 	 */
-	protected WriteSpec newWriteTableParams(Map<String, Object> opts) { new WriteSpec(opts) }
+	protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) { new WriteSpec(useExternalParams, opts) }
 
 	/**
 	 * Generate new options object for writing table
 	 */
-	protected void genWriteDirective(Closure cl) {
-		def parent = newWriteTableParams(writeDirective)
+	protected WriteSpec genWriteDirective(Closure cl) {
+		def parent = newWriteTableParams(true, writeDirective)
 		parent.thisObject = parent.DetectClosureDelegate(cl)
-		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-		code.resolveStrategy = Closure.OWNER_FIRST
-		code(parent)
-		parent.prepare()
-		writeDirective.clear()
-		writeDirective.putAll(parent.params)
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code(parent)
+			parent.prepare()
+		}
+
+		return parent
 	}
 
 	/**
 	 * Write table options
 	 */
-	void writeOpts(@DelegatesTo(WriteSpec) Closure cl) {
+	WriteSpec writeOpts(@DelegatesTo(WriteSpec) Closure cl = null) {
 		genWriteDirective(cl)
 	}
 
 	/**
 	 * Create new options object for writing table
 	 */
-	protected BulkLoadSpec newBulkLoadTableParams(Map<String, Object> opts) { new BulkLoadSpec(opts) }
+	protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) { new BulkLoadSpec(useExternalParams, opts) }
 
 	/**
 	 * Generate new options object for writing table
 	 */
-	protected void genBulkLoadDirective(Closure cl) {
-		def parent = newBulkLoadTableParams(bulkLoadDirective)
+	protected BulkLoadSpec genBulkLoadDirective(Closure cl) {
+		def parent = newBulkLoadTableParams(true, bulkLoadDirective)
 		parent.thisObject = parent.DetectClosureDelegate(cl)
-		def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-		code.resolveStrategy = Closure.OWNER_FIRST
-		code(parent)
-		parent.prepare()
-		bulkLoadDirective.clear()
-		bulkLoadDirective.putAll(parent.params)
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code(parent)
+			parent.prepare()
+		}
+
+		return parent
 	}
 
 	/**
 	 * Write table options
 	 */
-	void bulkLoadOpts(@DelegatesTo(BulkLoadSpec) Closure cl) {
+	BulkLoadSpec bulkLoadOpts(@DelegatesTo(BulkLoadSpec) Closure cl = null) {
 		genBulkLoadDirective(cl)
 	}
 }

@@ -39,12 +39,18 @@ import groovy.transform.InheritConstructors
 @CompileStatic
 class H2Table extends TableDataset {
     @Override
-    protected CreateSpec newCreateTableParams(Map<String, Object> opts) { new H2CreateSpec(opts) }
+    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) { new H2CreateSpec(useExternalParams, opts) }
 
     /**
      * Create H2 table
      */
-    void createOpts(H2CreateSpec parent = null, @DelegatesTo(H2CreateSpec) Closure cl) {
+    H2CreateSpec createOpts(H2CreateSpec parent = null, @DelegatesTo(H2CreateSpec) Closure cl = null) {
         genCreateTable(cl) as H2CreateSpec
+    }
+
+    @Override
+    void createCsvTempFile() {
+        super.createCsvTempFile()
+        csvTempFile.escaped = true
     }
 }

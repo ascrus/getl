@@ -30,7 +30,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
- * Options for bulk loading table
+ * Bulk loading table options
  * @author Alexsey Konstantinov
  *
  */
@@ -42,8 +42,8 @@ class BulkLoadSpec extends BaseSpec {
         params.files = [] as List<String>
     }
 
-    BulkLoadSpec(Map<String, Object> importParams) {
-        super(importParams)
+    BulkLoadSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        super(useExternalParams, importParams)
         if (params.files == null) params.files = [] as List<String>
     }
 

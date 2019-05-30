@@ -41,7 +41,7 @@ class Executor {
 	/**
 	 * Count thread process
 	 */
-	public int countProc = 1
+	public Integer countProc
 	
 	/**
 	 * Limit elements for executed (0-unlimited)
@@ -90,9 +90,7 @@ class Executor {
 	@groovy.transform.Synchronized
 	public boolean getIsError () { hasError }
 	
-	/**
-	 * How exceptions in process stopping execute
-	 */
+	/** How exceptions in process stopping execute */
 	public final Map<Object, Throwable> exceptions = [:]
 	
 	@groovy.transform.Synchronized
@@ -101,10 +99,15 @@ class Executor {
 		if (obj != null) exceptions.put(obj, except)
 	}
 	
-	/**
-	 * List of processes
-	 */
-	public def list = []
+	/** List of processes */
+	public List list = []
+
+	/** List closure code for thread run */
+	final List<Closure> listCode = [] as List<Closure>
+	/** Adding thread code for run */
+	void addThread(Closure cl) { listCode << cl }
+	/** Clear current list of registered thread code */
+	void clearListThread() { listCode.clear() }
 	
 	/**
 	 * Main code (is executed while running threads)
@@ -132,15 +135,7 @@ class Executor {
 	 */
 	@groovy.transform.Synchronized
 	public void setInterrupt(boolean value) { isInterrupt = true }   
-	
-	/**
-	 * Start processing the specified code list items
-	 * @param code
-	 */
-	public void run(Closure code) {
-		run(list, countProc, code)
-	}
-	
+
 	/**
 	 * Launches a single code
 	 * @param code
@@ -159,9 +154,9 @@ class Executor {
 		run(l, countList, code)
 	}
 	
-	public void runMany(int countList, int countProc, Closure code) {
+	public void runMany(int countList, int countThread, Closure code) {
 		def l = (1..countList)
-		run(l, countProc, code)
+		run(l, countThread, code)
 	}
 
 	@groovy.transform.Synchronized
@@ -179,12 +174,15 @@ class Executor {
 		threadActive.remove(m)
 	}
 
-	public void run(List list, int countProc, Closure code) {
+	/** Run thread code with list elements */
+	void run(List elements = list, Integer countThread = countProc, Closure code) {
 		hasError = false
 		isInterrupt = false
 		exceptions.clear()
 		threadList.clear()
 		threadActive.clear()
+
+		if (countThread == null) countThread = elements.size()
 		
 		def runCode = { Map m ->
 			def num = m.num + 1
@@ -215,20 +213,19 @@ class Executor {
 					putThreadListElement(m, [finish: new Date(), threadSubmit: null])
 					setError(element, e)
 					def errObject = (debugElementOnError)?"[${num}]: ${element}":"Element ${num}"
-					if (dumpErrors) Logs.Dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: list])}")
+					if (dumpErrors) Logs.Dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: elements])}")
 					if (logErrors) {
 						Logs.Exception(e, this.toString(), errObject)
-//						e.printStackTrace()
 					}
 				}
 				catch (Throwable ignored) { }
 			}
 		}
 
-		if (allowThread && countProc > 1) {
-			def threadPool = Executors.newFixedThreadPool(countProc)
+		if (allowThread && countThread > 1) {
+			def threadPool = Executors.newFixedThreadPool(countThread)
 			def num = 0
-			list.each { n ->
+			elements.each { n ->
 				Map r = Collections.synchronizedMap(new HashMap())
 				r.num = num
 				r.element = n
@@ -257,7 +254,7 @@ class Executor {
 			}
 		} else {
 			def num = 0
-			list.each {
+			elements.each {
 				Map r = [:]
 				r.num = num
 				r.element = it
@@ -288,17 +285,126 @@ class Executor {
 		
 		if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode()
 	}
-	
+
+	/** Run thread code with list elements */
+	void exec(List<Closure> elements = listCode, Integer countThread = countProc) {
+		hasError = false
+		isInterrupt = false
+		exceptions.clear()
+		threadList.clear()
+		threadActive.clear()
+
+		if (countThread == null) countThread = elements.size()
+
+		def runCode = { Map m ->
+			def num = m.num + 1
+			def element = m.element as Closure
+			try {
+				if (limit == 0 || num <= limit) {
+					if ((!isError || !abortOnError) && !isInterrupt) {
+						synchronized (m) {
+							m.put('start',  new Date())
+						}
+						synchronized (threadActive) {
+							threadActive.add(m)
+						}
+						element.call()
+						synchronized (threadActive) {
+							threadActive.remove(m)
+						}
+						synchronized (m) {
+							m.put('finish', new Date())
+							m.remove('threadSubmit')
+						}
+					}
+				}
+			}
+			catch (Throwable e) {
+				try {
+					removeActiveThread(m)
+					putThreadListElement(m, [finish: new Date(), threadSubmit: null])
+					setError(element, e)
+					def errObject = "Element ${num}"
+					if (dumpErrors) Logs.Dump(e, getClass().name, errObject, null)
+					if (logErrors) {
+						Logs.Exception(e, this.toString(), errObject)
+					}
+				}
+				catch (Throwable ignored) { }
+			}
+		}
+
+		if (allowThread && countThread > 1) {
+			def threadPool = Executors.newFixedThreadPool(countThread)
+			def num = 0
+			elements.each { n ->
+				Map r = Collections.synchronizedMap(new HashMap())
+				r.num = num
+				r.element = n
+				r.threadSubmit = threadPool.submit({ -> runCode(r) } as Callable)
+				threadList << r
+
+				num++
+			}
+			threadPool.shutdown()
+
+			while (!threadPool.isTerminated()) {
+				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
+					try {
+						mainCode()
+					}
+					catch (Throwable e) {
+						setError(null, e)
+						threadActive.each { Map serv ->
+							(serv.threadSubmit as Future)?.cancel(true)
+						}
+						threadPool.shutdownNow()
+						throw e
+					}
+				}
+				threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
+			}
+		} else {
+			def num = 0
+			elements.each {
+				Map r = [:]
+				r.num = num
+				r.element = it
+				r.threadSubmit = null
+				threadList << r
+
+				if (!isInterrupt && (!isError || !abortOnError)) {
+					runCode(r)
+					num++
+				}
+			}
+		}
+
+		if (isError && abortOnError) {
+			def objects = []
+			def num = 0
+			exceptions.each { obj, Throwable e ->
+				num++
+				if (debugElementOnError) {
+					objects << "[${num}] ${e.message}: ${obj.toString()}"
+				}
+				else {
+					objects << "[${num}] ${e.message}"
+				}
+			}
+			throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
+		}
+
+		if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode()
+	}
+
 	private ExecutorService threadBackground
 	private boolean runBackgroundService = false
 	
 	@groovy.transform.Synchronized
 	public boolean isRunBackground () { runBackgroundService }
 	
-	/**
-	 * Start background process
-	 * @param code
-	 */
+	/** Start background process */
 	public void startBackground(Closure code) {
 		if (isRunBackground()) throw new ExceptionGETL("Background process already running")
 		def runCode = {
@@ -312,7 +418,6 @@ class Executor {
 				if (logErrors) {
 					Logs.Exception(e, this.toString(), null)
 					org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
-//					e.printStackTrace()
 				}
 			}
 		}
@@ -322,9 +427,7 @@ class Executor {
 		threadBackground.execute(runCode)
 	}
 	
-	/**
-	 * Finish background process
-	 */
+	/** Finish background process */
 	public void stopBackground () {
 		if (!isRunBackground()) throw new ExceptionGETL("Not Background process running")
 		runBackgroundService = false
@@ -338,8 +441,9 @@ class Executor {
 			}
 		}
 	}
-	
-	public static boolean RunIgnoreErrors (Closure code) {
+
+	/** Run code with ignore runtime errors */
+	static boolean RunIgnoreErrors (Closure code) {
 		try {
 			code()
 		} 

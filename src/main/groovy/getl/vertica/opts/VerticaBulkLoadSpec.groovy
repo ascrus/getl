@@ -43,8 +43,8 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
         params.expression = [:] as Map<String, String>
     }
 
-    VerticaBulkLoadSpec(Map<String, Object> importParams) {
-        super(importParams)
+    VerticaBulkLoadSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        super(useExternalParams, importParams)
         if (params.parser == null) params.parser = [:] as Map<String, String>
         if (params.expression == null) params.expression = [:] as Map<String, String>
     }

@@ -512,6 +512,16 @@ public class SQLScripter {
 		}
 	}
 
+	/** Run SQL script */
+	void exec(Closure cl = null) {
+		if (cl != null) {
+			def code = cl.rehydrate(this, this, this)
+			code.resolveStrategy = Closure.OWNER_FIRST
+			script = cl.call() as String
+		}
+		runSql()
+	}
+
 	/** 
 	 * Convert batch script to SQL command list
 	 * @param sql

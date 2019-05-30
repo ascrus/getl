@@ -42,9 +42,9 @@ class CreateSpec extends BaseSpec {
         params.indexes = [:] as Map<String, Object>
     }
 
-    CreateSpec(Map<String, Object> importParams) {
-        super(importParams)
-        params.indexes = [:] as Map<String, Object>
+    CreateSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        super(useExternalParams, importParams)
+        if (params.indexes == null) params.indexes = [:] as Map<String, Object>
     }
 
     /**
@@ -113,25 +113,33 @@ class CreateSpec extends BaseSpec {
     /**
      * Create new parameters object for create index
      */
-    protected IndexSpec newIndexParams(Map<String, Object> opts) { new IndexSpec(opts) }
+    protected IndexSpec newIndexParams(Boolean useExternalParams, Map<String, Object> opts) { new IndexSpec(useExternalParams, opts) }
 
     /**
      * Generate new parameters object for create index
      */
-    protected void genIndex(String name, Closure cl) {
-        def indexOpts = (indexes.get(name)?:[:]) as  Map<String, Object>
-        def parent = newIndexParams(indexOpts)
-        parent.thisObject = parent.DetectClosureDelegate(cl)
-        def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-        code.resolveStrategy = Closure.OWNER_FIRST
-        code(parent)
-        indexes.put(name, parent.params)
+    protected IndexSpec genIndex(String name, Closure cl) {
+        def indexOpts = indexes.get(name) as  Map<String, Object>
+        if (indexOpts == null) {
+            indexOpts = [:] as  Map<String, Object>
+            indexes.put(name, indexOpts)
+        }
+        def parent = newIndexParams(true, indexOpts)
+        if (cl != null) {
+            parent.thisObject = parent.DetectClosureDelegate(cl)
+            def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+            code.resolveStrategy = Closure.OWNER_FIRST
+            code(parent)
+            parent.prepare()
+        }
+
+        return parent
     }
 
     /**
      * Generate index of specified parameters
      */
-    void index(String name, @DelegatesTo(IndexSpec) Closure cl) {
+    IndexSpec index(String name, @DelegatesTo(IndexSpec) Closure cl = null) {
         genIndex(name, cl)
     }
 }

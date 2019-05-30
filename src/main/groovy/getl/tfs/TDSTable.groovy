@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2019  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -22,32 +22,30 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.hive
+package getl.tfs
 
-import getl.hive.opts.HiveCreateSpec
+import getl.data.Connection
 import getl.jdbc.TableDataset
-import getl.jdbc.opts.CreateSpec
+import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
- * Hive database table
+ * Table with temp database
  * @author Alexsey Konstantinov
  *
  */
 @InheritConstructors
-@CompileStatic
-class HiveTable extends TableDataset {
-    /**
-     * Overwrite append data to table
-     */
-    Boolean getOverwrite() { params.overwrite }
-    void setOverwrite(Boolean value) { params.overwrite = value }
+class TDSTable extends TableDataset {
+    TDSTable() {
+        super()
+        connection = new TDS()
+        tableName = "TDS_" + StringUtils.RandomStr().replace("-", "_").toUpperCase()
+    }
 
     @Override
-    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) { new HiveCreateSpec(useExternalParams, opts) }
-
-    HiveCreateSpec createOpts(HiveCreateSpec parent = null, @DelegatesTo(HiveCreateSpec) Closure cl = null) {
-        genCreateTable(cl) as HiveCreateSpec
+    public void setConnection(Connection value) {
+        assert value == null || value.getClass().name == 'getl.tfs.TDS'
+        super.setConnection(value)
     }
 }

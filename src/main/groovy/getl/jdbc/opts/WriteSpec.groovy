@@ -42,8 +42,8 @@ class WriteSpec extends BaseSpec {
         params.updateField = [] as List<String>
     }
 
-    WriteSpec(Map<String, Object> importParams) {
-        super(importParams)
+    WriteSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        super(useExternalParams, importParams)
         if (params.updateField == null) params.updateField = [] as List<String>
     }
 

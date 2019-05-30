@@ -42,8 +42,8 @@ class HiveClusteredSpec extends BaseSpec {
         params.sortedBy = [] as List<String>
     }
 
-    HiveClusteredSpec(Map<String, Object> importParams) {
-        super(importParams)
+    HiveClusteredSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        super(useExternalParams, importParams)
         if (params.by == null) params.by = [] as List<String>
         if (params.sortedBy == null) params.sortedBy = [] as List<String>
     }

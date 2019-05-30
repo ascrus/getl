@@ -264,7 +264,7 @@ class HiveDriver extends JDBCDriver {
         if (hdfsDir == null) throw new ExceptionGETL('Required parameter "hdfsDir"')
 
         List<String> files = []
-        if (bulkParams.files != null) {
+        if (bulkParams.files != null && !(bulkParams.files as List).isEmpty()) {
             files.addAll(bulkParams.files as List)
         }
         else if (bulkParams.fileMask != null) {

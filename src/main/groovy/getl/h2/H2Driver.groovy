@@ -148,7 +148,7 @@ FROM CSVREAD('{file_name}', ${heads}, '${functionParms}')
 
         def sourceConnection = source.connection as CSVConnection
 		List<String> files = []
-        if (params.files != null) {
+        if (params.files != null && !(params.files as List).isEmpty()) {
             files.addAll(params.files as List<String>)
         }
         else if (params.fileMask != null) {

@@ -41,8 +41,8 @@ class ReadSpec extends BaseSpec {
         params.order = [] as List<String>
     }
 
-    ReadSpec(Map<String, Object> importParams) {
-        super(importParams)
+    ReadSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        super(useExternalParams, importParams)
         if (params.order == null ) params.order = [] as List<String>
     }
 

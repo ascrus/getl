@@ -22,63 +22,32 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.jdbc.opts
+package getl.data.opts
 
 import getl.lang.opts.BaseSpec
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
- * Index options for creating table
+ * Dataset lookup options
  * @author Alexsey Konstantinov
  *
  */
 @InheritConstructors
 @CompileStatic
-class IndexSpec extends BaseSpec {
-    IndexSpec() {
-        super()
-        params.columns = [] as List<String>
-    }
+class LookupSpec extends BaseSpec {
+    /** Hashmap lookup result */
+    final def HASH_STRATEGY = 'HASH'
+    /** Treemap lookup result */
+    final def ORDER_STRATEGY = 'ORDER'
 
-    IndexSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
-        if (params.columns == null) params.columns = [] as List<String>
-    }
+    /** Lookup key field name */
+    String getKey() { params.key }
+    /** Lookup key field name */
+    void setKey(String value) { params.key = value }
 
-    /**
-     * List of column by index
-     */
-    List<String> getColumns() { params.columns as List<String> }
-    /**
-     * List of column by index
-     */
-    void setColumns(List<String> value) { params.columns = value }
-
-    /**
-     * Create unique index
-     */
-    Boolean getUnique() { params.unique as Boolean }
-    /**
-     * Create unique index
-     */
-    void setUnique(Boolean value) { params.unique = value }
-
-    /**
-     * Create hash index
-     */
-    Boolean getHash() { params.hash as Boolean }
-    /**
-     * Create hash index
-     */
-    void setHash(Boolean value) { params.hash = value }
-
-    /**
-     * Create index if not exists
-     */
-    Boolean getIfNotExists() { params.ifNotExists as Boolean}
-    /**
-     * Create index if not exists
-     */
-    void setIfNotExists(Boolean value) { params.ifNotExists = value }
+    /** Result lookup strategy */
+    String getStrategy() { params.strategy }
+    /** Result lookup strategy */
+    void setStrategy(String value) { params.strategy = value }
 }

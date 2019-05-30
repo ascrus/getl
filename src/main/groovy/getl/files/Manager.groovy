@@ -54,22 +54,25 @@ abstract class Manager {
 		
 		initMethods()
 	}
+
+	static Manager CreateManager(Map params) {
+		def className = params.manager as String
+		if (className == null) throw new ExceptionGETL("Reqired class name as \"manager\" property!")
+		Manager manager = Class.forName(className).newInstance() as Manager
+		manager.params.putAll(MapUtils.CleanMap(params, ['manager']))
+		manager.validateParams()
+
+		return manager
+	}
 	
 	/**
 	 * Build new manager from configuration file
 	 * @param name - config name
 	 * @return
 	 */
-	public static Manager BuildManager (String name) {
+	static Manager BuildManager (String name) {
 		Map fileParams = Config.content."files"?."$name"
-		if (fileParams == null) throw new ExceptionGETL("File manager \"$name\" not found in \"files\" section by config")
-		def className = fileParams.manager as String
-		if (className == null) throw new ExceptionGETL("Reqired class name as \"manager\" property in \"files.$name\" file server")
-		Manager manager = Class.forName(className).newInstance() as Manager
-		manager.params.putAll(MapUtils.CleanMap(fileParams, ['manager']))
-		manager.validateParams()
-
-		return manager
+		CreateManager(fileParams)
 	}
 	
 	/**

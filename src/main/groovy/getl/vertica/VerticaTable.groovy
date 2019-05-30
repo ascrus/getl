@@ -39,42 +39,51 @@ import groovy.transform.InheritConstructors
 @CompileStatic
 class VerticaTable extends TableDataset {
     @Override
-    protected CreateSpec newCreateTableParams(Map<String, Object> opts) { new VerticaCreateSpec(opts) }
+    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) { new VerticaCreateSpec(useExternalParams, opts) }
 
     /**
      * Create H2 table
      */
-    void createOpts(@DelegatesTo(VerticaCreateSpec) Closure cl) {
-        genCreateTable(cl)
+    VerticaCreateSpec createOpts(@DelegatesTo(VerticaCreateSpec) Closure cl = null) {
+        genCreateTable(cl) as VerticaCreateSpec
     }
 
     @Override
-    protected ReadSpec newReadTableParams(Map<String, Object> opts) { new VerticaReadSpec(opts) }
+    protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) { new VerticaReadSpec(useExternalParams, opts) }
 
     /**
      * Read table options
      */
-    void readOpts(@DelegatesTo(VerticaReadSpec) Closure cl) {
-        genReadDirective(cl)
+    VerticaReadSpec readOpts(@DelegatesTo(VerticaReadSpec) Closure cl = null) {
+        genReadDirective(cl) as VerticaReadSpec
     }
 
     @Override
-    protected WriteSpec newWriteTableParams(Map<String, Object> opts) { new VerticaWriteSpec(opts) }
+    protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) { new VerticaWriteSpec(useExternalParams, opts) }
 
     /**
      * Read table options
      */
-    void writeOpts(@DelegatesTo(VerticaWriteSpec) Closure cl) {
-        genWriteDirective(cl)
+    VerticaWriteSpec writeOpts(@DelegatesTo(VerticaWriteSpec) Closure cl = null) {
+        genWriteDirective(cl) as VerticaWriteSpec
     }
 
     @Override
-    protected BulkLoadSpec newBulkLoadTableParams(Map<String, Object> opts) { new VerticaBulkLoadSpec(opts) }
+    protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) { new VerticaBulkLoadSpec(useExternalParams, opts) }
 
     /**
      * Read table options
      */
-    void bulkLoadOpts(@DelegatesTo(VerticaBulkLoadSpec) Closure cl) {
-        genBulkLoadDirective(cl)
+    VerticaBulkLoadSpec bulkLoadOpts(@DelegatesTo(VerticaBulkLoadSpec) Closure cl = null) {
+        genBulkLoadDirective(cl) as VerticaBulkLoadSpec
+    }
+
+    @Override
+    void createCsvTempFile() {
+        super.createCsvTempFile()
+        csvTempFile.escaped = true
+        csvTempFile.codePage = 'UTF-8'
+        csvTempFile.nullAsValue = '<NULL>'
+        csvTempFile.isGzFile = true
     }
 }

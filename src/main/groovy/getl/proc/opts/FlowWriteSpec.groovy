@@ -134,7 +134,7 @@ class FlowWriteSpec extends BaseSpec {
     /**
      * Code executed before process write rows
      */
-    def setOnInitFlow(Closure value) { params.onInit = value }
+    def setOnInitFlow(Closure value) { params.onInit = prepareClosure(value) }
     /**
      * Code executed before process write rows
      */
@@ -147,7 +147,7 @@ class FlowWriteSpec extends BaseSpec {
     /**
      * Code executed after process write rows
      */
-    def setOnDoneFlow(Closure value) { params.onDone = value }
+    def setOnDoneFlow(Closure value) { params.onDone = prepareClosure(value) }
     /**
      * Code executed after process write rows
      */
@@ -160,7 +160,7 @@ class FlowWriteSpec extends BaseSpec {
     /**
      * Closure code process row
      */
-    def setProcess(Closure value) { params.process = value }
+    def setProcess(Closure value) { params.process = prepareClosure(value) }
     /**
      * Closure code process row
      */
