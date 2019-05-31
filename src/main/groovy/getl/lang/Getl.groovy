@@ -783,6 +783,21 @@ class Getl extends Script {
         return parent
     }
 
+    /** CSV file with exists dataset */
+    CSVDataset csvWithDataset(String name = null, Dataset sourceDataset, @DelegatesTo(CSVDataset) Closure cl = null) {
+        if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
+        def parent = registerDataset(CSVDATASET, name) as CSVDataset
+        parent.field = sourceDataset.field
+
+        if (cl != null) {
+            def code = cl.rehydrate(this, parent, this)
+            code.resolveStrategy = Closure.OWNER_FIRST
+            code.call(parent)
+        }
+
+        return parent
+    }
+
     /** Excel connection */
     ExcelConnection excelConnection(String name = null, @DelegatesTo(ExcelConnection) Closure cl = null) {
         def parent = registerConnection(EXCELCONNECTION, name) as ExcelConnection
