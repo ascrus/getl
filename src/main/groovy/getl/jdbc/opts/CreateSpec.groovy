@@ -129,7 +129,7 @@ class CreateSpec extends BaseSpec {
             parent.thisObject = parent.DetectClosureDelegate(cl)
             def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
             code.resolveStrategy = Closure.OWNER_FIRST
-            code(parent)
+            code.call(parent.thisObject)
             parent.prepare()
         }
 

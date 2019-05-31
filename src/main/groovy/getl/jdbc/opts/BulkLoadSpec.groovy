@@ -48,15 +48,6 @@ class BulkLoadSpec extends BaseSpec {
     }
 
     /**
-     * Source CSV file
-     */
-    CSVDataset getSource() { params.source as CSVDataset }
-    /**
-     * Source CSV file
-     */
-    void setSource(CSVDataset value) { params.source = value }
-
-    /**
      * Preparing code
      */
     Closure getOnPrepare() { params.prepare as Closure }

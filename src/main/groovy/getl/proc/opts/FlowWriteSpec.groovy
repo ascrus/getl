@@ -38,15 +38,6 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class FlowWriteSpec extends BaseSpec {
     /**
-     * Destination dataset
-     */
-    Dataset getDest() { params.dest as Dataset }
-    /**
-     * Destination dataset
-     */
-    void setDest(Dataset value) { params.dest = value }
-
-    /**
      * Temporary destination name
      */
     String getTempDestName() { params.tempDest }

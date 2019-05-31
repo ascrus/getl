@@ -38,24 +38,6 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class FlowCopySpec extends BaseSpec {
     /**
-     * Source dataset
-     */
-    Dataset getSource() { params.source as Dataset }
-    /**
-     * Source dataset
-     */
-    void setSource(Dataset value) { params.source = value }
-
-    /**
-     * Destination dataset
-     */
-    Dataset getDest() { params.dest as Dataset }
-    /**
-     * Destination dataset
-     */
-    void setDest(Dataset value) { params.dest = value }
-
-    /**
      * Temporary source name
      */
     String getTempSourceName() { params.tempSource }

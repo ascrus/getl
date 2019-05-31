@@ -513,12 +513,8 @@ public class SQLScripter {
 	}
 
 	/** Run SQL script */
-	void exec(Closure cl = null) {
-		if (cl != null) {
-			def code = cl.rehydrate(this, this, this)
-			code.resolveStrategy = Closure.OWNER_FIRST
-			script = cl.call() as String
-		}
+	void exec(String sql) {
+		script = sql
 		runSql()
 	}
 

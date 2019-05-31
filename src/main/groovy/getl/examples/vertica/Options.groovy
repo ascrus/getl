@@ -20,7 +20,7 @@ vars {
 */
 config {
     // Directory of configuration file
-    path = 'tests/vertica'
+    path = configVars.configPath?:'tests/vertica'
 
     // Load configuration file
     load'vertica.dsl'

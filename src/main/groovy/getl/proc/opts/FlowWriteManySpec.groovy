@@ -39,15 +39,6 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class FlowWriteManySpec extends BaseSpec {
     /**
-     * List of destination dataset
-     */
-    Map<String, Dataset> getDest() { params.dest as Map<String, Dataset> }
-    /**
-     * List of destination dataset
-     */
-    void setDest(Map<String, Dataset> value) { params.dest = value }
-
-    /**
      * Temporary destination name
      */
     String getTempDestName() { params.tempDest }
@@ -175,20 +166,12 @@ class FlowWriteManySpec extends BaseSpec {
     }
 
     @Override
-    void importFromMap(Map<String, Object> importParams) {
-        super.importFromMap(importParams)
-
-        dest.keySet().each { String destName ->
-            Map<String, Object> dp = MapUtils.GetLevel(importParams, "dest_${destName}_") as Map<String, Object>
-            destParams.put(destName, dp)
-        }
-    }
-
-    @Override
     void prepare() {
         MapUtils.CleanMap(params, ignoreImportKeys(params))
         destParams.each { String destName, Map<String, Object> opts ->
             opts.each { String key, value -> params.put('dest_' + destName + '_' + key, value) }
         }
+
+        MapUtils.CleanMap(params, ['_destParams'])
     }
 }
