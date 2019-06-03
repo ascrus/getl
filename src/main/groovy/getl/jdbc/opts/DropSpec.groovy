@@ -25,7 +25,6 @@
 package getl.jdbc.opts
 
 import getl.lang.opts.BaseSpec
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -34,7 +33,6 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-@CompileStatic
 class DropSpec extends BaseSpec {
     /**
      * Drop table if exists

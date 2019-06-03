@@ -25,7 +25,6 @@
 package getl.vertica.opts
 
 import getl.jdbc.opts.ReadSpec
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -34,7 +33,6 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-@CompileStatic
 class VerticaReadSpec extends ReadSpec {
     /**
      * Label vertica hint

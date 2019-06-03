@@ -25,7 +25,6 @@
 package getl.hive.opts
 
 import getl.jdbc.opts.CreateSpec
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -34,7 +33,6 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-@CompileStatic
 class HiveCreateSpec extends CreateSpec {
     HiveCreateSpec() {
         super()

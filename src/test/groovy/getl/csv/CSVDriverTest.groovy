@@ -5,16 +5,10 @@ import getl.data.Field
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TFS
-import getl.utils.Config
-import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.FileUtils
-import getl.utils.GenerationUtils
 import getl.utils.Logs
 import getl.utils.NumericUtils
-import groovy.transform.CompileStatic
-
-import java.sql.Time
 
 /**
  * Created by ascru on 10.11.2016.
@@ -263,7 +257,6 @@ class CSVDriverTest extends getl.test.GetlTest {
         ds2.drop()
     }
 
-	@CompileStatic
 	public void testPerfomance() {
 		def perfomanceRows = 1000
 		def perfomanceCols = 1000

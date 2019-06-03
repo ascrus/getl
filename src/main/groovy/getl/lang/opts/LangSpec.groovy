@@ -24,7 +24,6 @@
 package getl.lang.opts
 
 import getl.utils.BoolUtils
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -33,7 +32,6 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-@CompileStatic
 class LangSpec extends BaseSpec {
     /** Fixing the execution time of processes in the log */
     boolean getProcessTimeTracing() { BoolUtils.IsValue(params.processTimeTracing) }

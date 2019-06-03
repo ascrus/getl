@@ -6,7 +6,6 @@ import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TFS
 import getl.utils.*
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 import java.sql.Time
@@ -437,7 +436,6 @@ END FOR;
         return t
     }
 
-	@CompileStatic
 	public void testPerfomance() {
 		def c = newCon()
         if (!c.driver.isOperation(Driver.Operation.INSERT)) return

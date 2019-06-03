@@ -33,7 +33,6 @@ import getl.jdbc.*
 import getl.proc.Flow
 import getl.tfs.TFS
 import getl.utils.*
-import groovy.transform.CompileStatic
 
 /**
  * Hive driver class
@@ -355,11 +354,11 @@ class HiveDriver extends JDBCDriver {
             try {
                 dest.readRows = tempTable.connection
                         .executeCommand(isUpdate: true, command: "LOAD DATA INPATH '${fileMan.rootPath}/${tempFile.fileName}' INTO TABLE ${tempTable.tableName}")
-                def countRows = tempTable.connection
+                def countRow = tempTable.connection
                         .executeCommand(isUpdate: true, command: "FROM ${tempTable.tableName} INSERT ${(overwrite) ? 'OVERWRITE' : 'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
                         (!partFields.isEmpty() ? " PARTITION(${partFields.join(', ')})" : '') + " SELECT ${loadFields.join(', ')}")
-                dest.writeRows = countRows
-                dest.updateRows = countRows
+                dest.writeRows = countRow
+                dest.updateRows = countRow
             }
             finally {
                 tempTable.drop()
@@ -373,7 +372,6 @@ class HiveDriver extends JDBCDriver {
         }
     }
 
-    @CompileStatic
     public static Map<String, Object> tableExtendedInfo(TableDataset table) {
         Map<String, Object> res = [:]
         def sql = 'SHOW TABLE EXTENDED'

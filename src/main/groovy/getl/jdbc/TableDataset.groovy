@@ -25,7 +25,6 @@
 package getl.jdbc
 
 import getl.jdbc.opts.*
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import getl.cache.*
 import getl.exception.ExceptionGETL
@@ -36,7 +35,6 @@ import getl.exception.ExceptionGETL
  *
  */
 @InheritConstructors
-@CompileStatic
 class TableDataset extends JDBCDataset {
 	TableDataset() {
 		super()
@@ -214,21 +212,13 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Return count rows from table
 	 */
-	long countRows (String where = null, Map procParams) {
-		if (procParams == null) procParams = [:] 
+	long countRow(String where = null, Map procParams = [:]) {
 		QueryDataset q = new QueryDataset(connection: connection, query: "SELECT Count(*) AS count FROM ${fullNameDataset()}")
 		where = where?:readDirective.where
 		if (where != null && where != '') q.query += " WHERE " + where
 		def r = q.rows(procParams)
 		
 		return r[0].count as long
-	}
-	
-	/**
-	 * Return count rows from table
-	 */
-	long countRows () {
-		countRows(null, [:])
 	}
 	
 	/**

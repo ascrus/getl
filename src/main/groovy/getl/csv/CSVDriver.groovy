@@ -62,12 +62,12 @@ class CSVDriver extends FileDriver {
 	}
 	
 	@Override
-	public List<Driver.Support> supported() { 
+	List<Driver.Support> supported() {
 		[Driver.Support.WRITE, Driver.Support.AUTOLOADSCHEMA, Driver.Support.AUTOSAVESCHEMA, Driver.Support.EACHROW] 
 	}
 
 	@Override
-	public List<Driver.Operation> operations () { 
+	List<Driver.Operation> operations () {
 		[Driver.Operation.DROP] 
 	}
 
@@ -130,8 +130,8 @@ class CSVDriver extends FileDriver {
 	}
 	
 	@Override
-    public
-    List<Field> fields(Dataset dataset) {
+
+	List<Field> fields(Dataset dataset) {
 		def p = readParamDataset(dataset, [:]) 
 		
 		def csvfile = new File(p.path)
@@ -231,7 +231,7 @@ class CSVDriver extends FileDriver {
 						}
 					}
 					
-					DecimalFormat df = new DecimalFormat(f, dfs);
+					DecimalFormat df = new DecimalFormat(f, dfs)
 					cp = new FmtNumber(df)
 				}
 				else {
@@ -327,8 +327,7 @@ class CSVDriver extends FileDriver {
 		cp
 	}
 	
-	@groovy.transform.CompileStatic
-	public static CellProcessor[] fields2cellProcessor(Map fParams) {
+	static CellProcessor[] fields2cellProcessor(Map fParams) {
 		CSVDataset dataset = (CSVDataset)fParams.dataset
 		ArrayList<String> fields = (ArrayList<String>)fParams.filds
 		String[] header = (String[])fParams.header
@@ -385,9 +384,7 @@ class CSVDriver extends FileDriver {
 		return header.toArray()
 	}
 	
-	@groovy.transform.CompileStatic
 	@Override
-	public
 	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (code == null) throw new ExceptionGETL('Required process code')
 		
@@ -510,7 +507,7 @@ class CSVDriver extends FileDriver {
 						continue
 					} 
 
-					code(row)
+					code.call(row)
 					if (cur == count) break
 				}
 			}
@@ -553,7 +550,7 @@ class CSVDriver extends FileDriver {
 	}
 	
 	@Override
-	public void openWrite (Dataset dataset, Map params, Closure prepareCode) {
+	void openWrite (Dataset dataset, Map params, Closure prepareCode) {
 		CSVDataset csv_ds = dataset as CSVDataset
 		if (csv_ds.fileName == null) throw new ExceptionGETL('Dataset required fileName')
 		
@@ -571,9 +568,9 @@ class CSVDriver extends FileDriver {
 		String formatDateTime = ListUtils.NotNullValue([params.formatDateTime, csv_ds.formatDateTime])
 		String escapeProcessLineChar = ListUtils.NotNullValue([params.escapeProcessLineChar, csv_ds.escapeProcessLineChar])
 		
-		if (params.batchSize != null) wp.batchSize = params.batchSize
-		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch
-		if (params.onSplitFile != null) wp.onSplitFile = params.onSplitFile
+		if (params.batchSize != null) wp.batchSize = params.batchSize as Long
+		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch as Closure
+		if (params.onSplitFile != null) wp.onSplitFile = params.onSplitFile as Closure
 		
 		ArrayList<String> listFields = new ArrayList<String>()
 		if (prepareCode != null) {
@@ -597,7 +594,7 @@ class CSVDriver extends FileDriver {
 		wp.nullAsValue = p.nullAsValue
 		wp.escaped = escaped
 		wp.escapeProcessLineChar = escapeProcessLineChar
-		wp.splitSize = params.splitSize
+		wp.splitSize = params.splitSize as Long
 		if (wp.splitSize != null) wp.portion = 1
 
         csv_ds.params.writeCharacters = null
@@ -622,7 +619,6 @@ class CSVDriver extends FileDriver {
 	 * @param dataset
 	 * @param wp
 	 */
-	@groovy.transform.CompileStatic
 	protected void writeRows (Dataset dataset, WriterParams wp) {
 		wp.batch++
 		
@@ -682,9 +678,8 @@ class CSVDriver extends FileDriver {
 		if (wp.onSaveBatch) wp.onSaveBatch.call(wp.batch)
 	}
 	
-	@groovy.transform.CompileStatic
 	@Override
-	public void write(Dataset dataset, Map row) {
+	void write(Dataset dataset, Map row) {
 		WriterParams wp = (WriterParams)dataset.driver_params
 		wp.rows << row
 		wp.current++
@@ -693,14 +688,14 @@ class CSVDriver extends FileDriver {
 	}
 	
 	@Override
-	public
+
 	void doneWrite (Dataset dataset) {
 		WriterParams wp = dataset.driver_params
 		if (!wp.rows.isEmpty()) writeRows(dataset, wp)
 	}
 	
 	@Override
-	public
+
 	void closeWrite (Dataset dataset) {
 		WriterParams wp = dataset.driver_params
 		
@@ -744,8 +739,8 @@ class CSVDriver extends FileDriver {
 		
 		count - ((dataset.header)?1:0)
 	}
-	
-	public static long prepareCSVForBulk(CSVDataset target, CSVDataset source, Map<String, String> encodeTable, Closure code) {
+
+	static long prepareCSVForBulk(CSVDataset target, CSVDataset source, Map<String, String> encodeTable, Closure code) {
 		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
 		if (!(source.rowDelimiter in ['\n', '\r\n'])) throw new ExceptionGETL('Allow convert CSV files only standart row delimiter')
 
@@ -929,8 +924,8 @@ class CSVDriver extends FileDriver {
 
 		if (code != null) code(values)
 	}
-	
-	public static long decodeBulkCSV (CSVDataset target, CSVDataset source) {
+
+	static long decodeBulkCSV (CSVDataset target, CSVDataset source) {
 		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
 		
 		if (source.field.isEmpty() && source.autoSchema) source.loadDatasetMetadata()

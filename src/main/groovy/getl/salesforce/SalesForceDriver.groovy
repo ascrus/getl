@@ -33,14 +33,13 @@ import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.ListUtils
 import getl.utils.Logs
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
  * SalesForce Driver class
  * @author Dmitry Shaldin
  */
-@InheritConstructors @CompileStatic
+@InheritConstructors
 class SalesForceDriver extends Driver {
 	private ConnectorConfig config
 	private PartnerConnection partnerConnection

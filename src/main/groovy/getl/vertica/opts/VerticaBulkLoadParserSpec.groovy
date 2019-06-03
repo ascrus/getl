@@ -25,7 +25,6 @@
 package getl.vertica.opts
 
 import getl.lang.opts.BaseSpec
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -34,7 +33,6 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-@CompileStatic
 class VerticaBulkLoadParserSpec extends BaseSpec {
     VerticaBulkLoadParserSpec() {
         super()

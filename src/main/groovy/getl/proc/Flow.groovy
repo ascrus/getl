@@ -29,7 +29,6 @@ import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import getl.tfs.*
-import groovy.transform.CompileStatic
 
 /**
  * Data flow manager class 
@@ -107,8 +106,7 @@ class Flow {
 	 */
 	Long getCountRow() { countRow }
 
-	@CompileStatic
-	protected static Map<String, Map> convertFieldMap(Map<String, String> map) {
+	protected static Map<String, Map> ConvertFieldMap(Map<String, String> map) {
 		def result = [:] as Map<String, Map>
 		map.each { k, v ->
 			def m = [:]
@@ -132,7 +130,6 @@ class Flow {
 		return result
 	}
 
-	@CompileStatic
 	protected static String findFieldInFieldMap (Map<String, Map> map, String field) {
 		String result = null
 		field = field.toLowerCase()
@@ -148,8 +145,7 @@ class Flow {
 	 */
 	public String scriptMap
 
-	@CompileStatic
-	protected void generateMap(Dataset source, Dataset dest, Map fieldMap, Boolean autoConvert, List<String> excludeFields, List<String> notConverted, Map result) {
+	protected static String GenerateMap(Dataset source, Dataset dest, Map fieldMap, Boolean autoConvert, List<String> excludeFields, List<String> notConverted, Map result) {
 		def countMethod = (dest.field.size() / 100).intValue() + 1
 		def curMethod = 0
 
@@ -159,7 +155,7 @@ class Flow {
 		(1..countMethod).each { sb << "	method_${it}(inRow, outRow)\n" }
 		sb << "}\n"
 
-		Map<String, Map> map = convertFieldMap(fieldMap) as Map<String, Map>
+		Map<String, Map> map = ConvertFieldMap(fieldMap) as Map<String, Map>
 		List<String> destFields = []
 		List<String> sourceFields = []
 		
@@ -249,18 +245,19 @@ class Flow {
 		}
 		
 		sb << "\n}"
-		scriptMap = sb.toString()
+		def scriptMap = sb.toString()
 
 //		println scriptMap
 
 		result.code = GenerationUtils.EvalGroovyScript(scriptMap)
 		result.sourceFields = sourceFields
 		result.destFields = destFields
+
+		return scriptMap
 	}
 
-	@CompileStatic
 	protected static void assignFieldToTemp (Dataset source, Dataset dest, Map<String, String> map, List<String> excludeFields) {
-		def fieldMap = convertFieldMap(map)
+		def fieldMap = ConvertFieldMap(map)
 		dest.field = source.field
 		if (!excludeFields.isEmpty()) dest.field.removeAll { it.name.toLowerCase() in excludeFields }
         dest.field.each { Field f -> f.isReadOnly = false }
@@ -275,7 +272,6 @@ class Flow {
 	/**
 	 * Copy rows from dataset to other dataset
 	 */
-	@CompileStatic
 	long copy (Map params, Closure map_code = null) {
 		methodParams.validation("copy", params)
 
@@ -378,7 +374,7 @@ class Flow {
 		def initDest = {
 			List<String> result = []
 			if (autoMap) {
-				generateMap(source, writer, map, autoConvert, excludeFields, notConverted, generateResult)
+				scriptMap = GenerateMap(source, writer, map, autoConvert, excludeFields, notConverted, generateResult)
 				auto_map_code = generateResult.code as Closure
 				result = generateResult.destFields as List<String>
 			}
@@ -387,13 +383,13 @@ class Flow {
 		}
 		
 		def initSource = {
-			if (prepareSource != null) prepareSource()
+			if (prepareSource != null) prepareSource.call()
 			
 			if (inheritFields) {
 				assignFieldToTemp(source, writer, map, excludeFields)
 			}
 
-			if (initCode != null) initCode(source, writer)
+			if (initCode != null) initCode.call(source, writer)
             if (createDest) dest.create()
 
 			if (clear) dest.truncate()
@@ -435,7 +431,7 @@ class Flow {
 					if (auto_map_code != null) auto_map_code(inRow, outRow)
 					if (map_code != null) {
 						try {
-							map_code(inRow, outRow)
+							map_code.call(inRow, outRow)
 						}
 						catch (AssertionError e) {
 							if (!isSaveErrors) {
@@ -456,7 +452,7 @@ class Flow {
 					} 
 					if (!isError) {
 						if (!writeSynch) writer.write(outRow) else writer.writeSynch(outRow)
-						if (writeCode != null) writeCode(inRow, outRow)
+						if (writeCode != null) writeCode.call(inRow, outRow)
 					}
 					countRow++
 				}
@@ -490,7 +486,7 @@ class Flow {
 				}
 			}
 			
-			if (doneCode != null) doneCode()
+			if (doneCode != null) doneCode.call()
 		}
 		catch (Throwable e) {
 			Logs.Exception(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}")
@@ -517,7 +513,6 @@ class Flow {
 	 *
 	 * @param params - parameters
 	 */
-	@CompileStatic
 	long writeTo(Map params, Closure code = null) {
 		methodParams.validation("writeTo", params)
 
@@ -562,7 +557,7 @@ class Flow {
 		TFSDataset bulkDS = null
 		Dataset writer
 
-		if (initCode != null) initCode()
+		if (initCode != null) initCode.call()
 		
 		if (isBulkLoad) {
 			bulkDS = TFS.dataset()
@@ -599,7 +594,7 @@ class Flow {
 		def isError = false
 		try {
 			writer.openWrite(destParams)
-			code(updateCode)
+			code.call(updateCode)
 			writer.doneWrite()
 		}
 		catch (Throwable e) {
@@ -645,7 +640,7 @@ class Flow {
 			countRow = dest.updateRows
 		}
 
-		if (doneCode != null) doneCode()
+		if (doneCode != null) doneCode.call()
 
 		return countRow
 	}
@@ -653,7 +648,6 @@ class Flow {
 	/**
 	 * Write user data to list of dataset
 	 */
-	@CompileStatic
 	void writeAllTo(Map params, Closure code = null) {
 		methodParams.validation("writeAllTo", params)
 
@@ -755,7 +749,7 @@ class Flow {
 			
 		}
 
-		if (initCode != null) initCode()
+		if (initCode != null) initCode.call()
 
 		String curUpdater = null
 		
@@ -814,7 +808,7 @@ class Flow {
 		}
 		
 		try {
-			code(updateCode)
+			code.call(updateCode)
 		}
 		catch (Throwable e) {
 			writer.each { String n, Dataset d ->
@@ -870,13 +864,12 @@ class Flow {
 			Executor.RunIgnoreErrors { d.drop() }
 		}
 
-		if (doneCode != null) doneCode()
+		if (doneCode != null) doneCode.call()
 	}
 
 	/**
 	 * Read and proccessed data from dataset
 	 */
-	@CompileStatic
 	long process(Map params, Closure code = null) {
 		methodParams.validation("process", params)
 
@@ -904,7 +897,7 @@ class Flow {
 		if (isSaveErrors) errorsDataset = TFS.dataset()
 
 		def onInitSource = {
-			if (initCode != null) initCode(source)
+			if (initCode != null) initCode.call(source)
 
 			if (isSaveErrors) {
 				errorsDataset.field = source.field
@@ -921,7 +914,7 @@ class Flow {
 		try {
 			source.eachRow (sourceParams) { Map row ->
 				try {
-					code(row)
+					code.call(row)
 					countRow++
 				}
 				catch (AssertionError e) {
@@ -934,7 +927,7 @@ class Flow {
 					errorsDataset.write(errorRow)
 				}
 			}
-			if (doneCode != null) doneCode()
+			if (doneCode != null) doneCode.call()
 		}
 		finally {
 			if (isSaveErrors) {

@@ -469,7 +469,6 @@ class MapUtils {
 		return res
 	}
 
-	@CompileStatic
 	static void FindKeys(Map<String, Object> map, String expression, Closure closure) {
 		if (map == null || map.isEmpty() || expression == null || expression.length() == 0) return
 
@@ -477,7 +476,6 @@ class MapUtils {
 		FindKeysProcess(map, keys, 0, closure)
 	}
 
-	@CompileStatic
 	private static void FindKeysProcess(Map<String, Object> map, String[] keys, int cur, Closure closure) {
 		def key = keys[cur]
 		def len = keys.length - 1
@@ -509,7 +507,6 @@ class MapUtils {
 		}
 	}
 
-	@CompileStatic
 	private static void FindKeysProcess(List list, String[] keys, int cur, Closure closure) {
 		def key = keys[cur]
 		if (key != '*') throw new ExceptionGETL('Invalid format mask for list item!')

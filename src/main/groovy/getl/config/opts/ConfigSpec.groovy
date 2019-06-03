@@ -27,7 +27,6 @@ package getl.config.opts
 import getl.config.*
 import getl.lang.opts.BaseSpec
 import getl.utils.*
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -36,7 +35,6 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-@CompileStatic
 class ConfigSpec extends BaseSpec {
     /**
      * Configuration manager

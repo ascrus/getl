@@ -26,7 +26,6 @@ package getl.jdbc.opts
 
 import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -35,7 +34,6 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-@CompileStatic
 class WriteSpec extends BaseSpec {
     WriteSpec() {
         super()

@@ -26,14 +26,12 @@ package getl.config
 
 import getl.exception.ExceptionGETL
 import getl.utils.*
-import groovy.transform.CompileStatic
 
 /**
  * Slurper configuration manager class
  * @author Alexsey Konstantinov
  *
  */
-@CompileStatic
 class ConfigSlurper extends ConfigManager {
 	@Override
 	void init(Map<String, Object> initParams) {
@@ -299,7 +297,6 @@ class ConfigSlurper extends ConfigManager {
 	 * @param file
 	 * @param codePage
 	 */
-	@CompileStatic
 	static void SaveConfigFile (Map<String, Object> data, File file, String codePage = 'UTF-8', Boolean convertVars = false) {
 		Writer writer
 		try {
@@ -325,7 +322,6 @@ class ConfigSlurper extends ConfigManager {
 		}
 	}
 
-	@CompileStatic
 	static void SaveMap(Map<String, Object> data, Writer writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		int i = 0
@@ -352,7 +348,6 @@ class ConfigSlurper extends ConfigManager {
 		}
 	}
 
-	@CompileStatic
 	static void SaveList(List data, Writer writer, Boolean convertVars = false, Integer tab = 0) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		int i = 0
@@ -376,7 +371,6 @@ class ConfigSlurper extends ConfigManager {
 		}
 	}
 
-	@CompileStatic
 	static void SaveObject(def key, def value, Writer writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def eqStr = (isListMap)?':':' ='

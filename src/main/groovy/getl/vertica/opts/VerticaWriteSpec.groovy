@@ -26,7 +26,6 @@ package getl.vertica.opts
 
 import getl.exception.ExceptionGETL
 import getl.jdbc.opts.WriteSpec
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -35,7 +34,6 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-@CompileStatic
 class VerticaWriteSpec extends WriteSpec {
     /**
      * Auto detect how write rows

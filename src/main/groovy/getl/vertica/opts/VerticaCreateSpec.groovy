@@ -25,11 +25,9 @@
 package getl.vertica.opts
 
 import getl.jdbc.opts.CreateSpec
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 @InheritConstructors
-@CompileStatic
 class VerticaCreateSpec extends CreateSpec {
     VerticaCreateSpec() {
         super()

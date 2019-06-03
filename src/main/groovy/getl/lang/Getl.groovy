@@ -53,7 +53,6 @@ import getl.vertica.*
 import getl.vertica.opts.VerticaBulkLoadSpec
 import getl.xero.*
 import getl.xml.*
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 import java.util.concurrent.ConcurrentHashMap
@@ -64,7 +63,6 @@ import java.util.concurrent.ConcurrentHashMap
  *
  */
 @InheritConstructors
-@CompileStatic
 class Getl extends Script {
     protected Getl() {
         super()
@@ -590,10 +588,10 @@ class Getl extends Script {
         }
 
         def pt = startProcess("Bulk load file $source to $dest")
-        if (parent.onInit != null) parent.onInit.call(source, dest)
+        if (parent.onInit != null) parent.onInit.call()
         parent.prepareParams()
         dest.bulkLoadFile([source: source])
-        if (parent.onDone != null) parent.onDone.call(source, dest)
+        if (parent.onDone != null) parent.onDone.call()
         finishProcess(pt, dest.updateRows)
     }
 
@@ -999,13 +997,13 @@ class Getl extends Script {
 
         def pt = startProcess("Copy rows from ${source} to ${dest}")
         Flow flow = new Flow()
-        if (parent.onInit) parent.onInit.call(source, dest)
+        if (parent.onInit) parent.onInit.call()
         parent.prepareParams()
         def flowParams = (([source: source, dest: dest]) as Map<String, Object>) + parent.params
         flow.copy(flowParams)
         parent.countRow = flow.countRow
         parent.errorsDataset = flow.errorsDataset
-        if (parent.onDone) parent.onDone.call(source, dest)
+        if (parent.onDone) parent.onDone.call()
         finishProcess(pt, parent.countRow)
     }
 
@@ -1020,12 +1018,12 @@ class Getl extends Script {
 
         def pt = startProcess("Write rows to $dataset")
         Flow flow = new Flow()
-        if (parent.onInit != null) parent.onInit.call(dataset)
+        if (parent.onInit != null) parent.onInit.call()
         parent.prepareParams()
         def flowParams = (([dest: dataset]) as Map<String, Object>) + parent.params
         flow.writeTo(flowParams)
         parent.countRow = flow.countRow
-        if (parent.onDone != null) parent.onDone.call(dataset)
+        if (parent.onDone != null) parent.onDone.call()
         finishProcess(pt, parent.countRow)
     }
 
@@ -1042,11 +1040,11 @@ class Getl extends Script {
         datasets.each { String destName, Dataset ds -> destNames.add("$destName: ${ds.toString()}".toString())}
         def pt = startProcess("Write rows to $destNames")
         Flow flow = new Flow()
-        if (parent.onInit != null) parent.onInit.call(datasets)
+        if (parent.onInit != null) parent.onInit.call()
         parent.prepareParams()
         def flowParams = (([dest: datasets]) as Map<String, Object>) + parent.params
         flow.writeAllTo(flowParams)
-        if (parent.onDone != null) parent.onDone.call(datasets)
+        if (parent.onDone != null) parent.onDone.call()
         finishProcess(pt)
     }
 
@@ -1061,13 +1059,13 @@ class Getl extends Script {
 
         def pt = startProcess("Read rows from ${parent.source}")
         Flow flow = new Flow()
-        if (parent.onInit != null) parent.onInit.call(dataset)
+        if (parent.onInit != null) parent.onInit.call()
         parent.prepareParams()
         def flowParams = (([source: dataset]) as Map<String, Object>) + parent.params
         flow.process(flowParams)
         parent.countRow = flow.countRow
         parent.errorsDataset = flow.errorsDataset
-        if (parent.onDone != null) parent.onDone.call(dataset)
+        if (parent.onDone != null) parent.onDone.call()
         finishProcess(pt, parent.countRow)
     }
 

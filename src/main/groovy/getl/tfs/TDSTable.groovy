@@ -27,7 +27,6 @@ package getl.tfs
 import getl.data.Connection
 import getl.jdbc.TableDataset
 import getl.utils.StringUtils
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**

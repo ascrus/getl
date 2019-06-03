@@ -27,7 +27,6 @@ package getl.vertica
 import getl.jdbc.*
 import getl.jdbc.opts.*
 import getl.vertica.opts.*
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -36,7 +35,6 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-@CompileStatic
 class VerticaTable extends TableDataset {
     @Override
     protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) { new VerticaCreateSpec(useExternalParams, opts) }
