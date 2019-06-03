@@ -376,11 +376,11 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	protected String syntaxUpdateStatement(Dataset dataset, Map params) {
-		return 'UPDATE ${writeHints(params)} {table} SET {values} WHERE {keys}'
+		return "UPDATE ${writeHints(params)} {table} SET {values} WHERE {keys}"
 	}
 
 	@Override
 	protected String syntaxDeleteStatement(Dataset dataset, Map params){
-		return 'DELETE ${writeHints(params)} FROM {table} WHERE {keys}'
+		return "DELETE ${writeHints(params)} FROM {table} WHERE {keys}"
 	}
 }
