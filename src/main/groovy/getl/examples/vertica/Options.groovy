@@ -45,4 +45,7 @@ options {
 
     // Save sql from temp database to file
     tempDBSQLHistoryFile = "${configVars.workPath}/tempdb.{date}.sql"
+
+    // Auto create CSV temp dataset for JDBC tables
+    autoCSVTempForJDBDTables = true
 }

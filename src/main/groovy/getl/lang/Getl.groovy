@@ -295,6 +295,15 @@ class Getl extends Script {
         }
     }
 
+    /** Check dataset registration in repository */
+    protected boolean isRegisteredDataset(String className, String name) {
+        if (name ==  null) throw new ExceptionGETL('Name cannot be null!')
+        if (className ==  null) throw new ExceptionGETL('Class name cannot be null!')
+        def sect = repDatasets.get(className) as Map<String, Dataset>
+        if (sect == null) return false
+        return sect.containsKey(name)
+    }
+
     /** Register JDBC table in repository */
     protected Dataset registerDataset(String className, String name) {
         Dataset obj
@@ -335,6 +344,14 @@ class Getl extends Script {
         def repName = repObjectName(name)
         if (validExist && sect.containsKey(repName)) throw new ExceptionGETL("Dataset object \"$name\" already registered in repository!")
         sect.put(repName, obj)
+    }
+
+    /** Create CSV temporary dataset for dataset */
+    void createCsvTemp(String name, Dataset dataset) {
+        if (name ==  null) throw new ExceptionGETL('Name cannot be null!')
+        if (dataset ==  null) throw new ExceptionGETL('Dataset cannot be null!')
+        TFSDataset csvTemp = dataset.csvTempFile
+        registerDataset(csvTemp, name, true)
     }
 
     /** File managers repository */
@@ -542,12 +559,14 @@ class Getl extends Script {
 
     /** JDBC table */
     TableDataset table(String name, @DelegatesTo(TableDataset) Closure cl = null) {
+        def isRegistered = isRegisteredDataset(TABLEDATASET, name)
         def parent = registerDataset(TABLEDATASET, name) as TableDataset
         if (cl != null) {
             def code = cl.rehydrate(this, parent, this)
             code.resolveStrategy = Closure.OWNER_FIRST
             code.call(parent)
         }
+        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
 
         return parent
     }
@@ -571,10 +590,10 @@ class Getl extends Script {
         }
 
         def pt = startProcess("Bulk load file $source to $dest")
-        if (parent.onInit != null) parent.onInit.call(dest)
-        parent.prepare()
+        if (parent.onInit != null) parent.onInit.call(source, dest)
+        parent.prepareParams()
         dest.bulkLoadFile([source: source])
-        if (parent.onDone != null) parent.onDone.call(dest)
+        if (parent.onDone != null) parent.onDone.call(source, dest)
         finishProcess(pt, dest.updateRows)
     }
 
@@ -585,12 +604,14 @@ class Getl extends Script {
 
     /** H2 database table */
     H2Table h2table(String name = null, @DelegatesTo(H2Table) Closure cl = null) {
+        def isRegistered = isRegisteredDataset(H2TABLE, name)
         def parent = registerDataset(H2TABLE, name) as H2Table
         if (cl != null) {
             def code = cl.rehydrate(this, parent, this)
             code.resolveStrategy = Closure.OWNER_FIRST
             code.call(parent)
         }
+        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
 
         return parent
     }
@@ -617,12 +638,14 @@ class Getl extends Script {
 
     /** Hive table */
     HiveTable hivetable(String name, @DelegatesTo(HiveTable) Closure cl = null) {
+        def isRegistered = isRegisteredDataset(HIVETABLE, name)
         def parent = registerDataset(HIVETABLE, name) as HiveTable
         if (cl != null) {
             def code = cl.rehydrate(this, parent, this)
             code.resolveStrategy = Closure.OWNER_FIRST
             code.call(parent)
         }
+        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
 
         return parent
     }
@@ -664,12 +687,14 @@ class Getl extends Script {
 
     /** Vertica table */
     VerticaTable verticatable(String name = null, @DelegatesTo(VerticaTable) Closure cl = null) {
+        def isRegistered = isRegisteredDataset(VERTICATABLE, name)
         def parent = registerDataset(VERTICATABLE, name) as VerticaTable
         if (cl != null) {
             def code = cl.rehydrate(this, parent, this)
             code.resolveStrategy = Closure.OWNER_FIRST
             code.call(parent)
         }
+        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
 
         return parent
     }
@@ -744,12 +769,14 @@ class Getl extends Script {
 
     /** JDBC query */
     QueryDataset queryDataset(String name = null, @DelegatesTo(QueryDataset) Closure cl = null) {
+        def isRegistered = isRegisteredDataset(QUERYDATASET, name)
         def parent = registerDataset(QUERYDATASET, name) as QueryDataset
         if (cl != null) {
             def code = cl.rehydrate(this, parent, this)
             code.resolveStrategy = Closure.OWNER_FIRST
             code.call(parent)
         }
+        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
 
         return parent
     }
@@ -972,13 +999,13 @@ class Getl extends Script {
 
         def pt = startProcess("Copy rows from ${source} to ${dest}")
         Flow flow = new Flow()
-        if (parent.onInit) parent.onInit.call(flow)
-        parent.prepare()
+        if (parent.onInit) parent.onInit.call(source, dest)
+        parent.prepareParams()
         def flowParams = (([source: source, dest: dest]) as Map<String, Object>) + parent.params
         flow.copy(flowParams)
         parent.countRow = flow.countRow
         parent.errorsDataset = flow.errorsDataset
-        if (parent.onDone) parent.onDone.call(flow)
+        if (parent.onDone) parent.onDone.call(source, dest)
         finishProcess(pt, parent.countRow)
     }
 
@@ -993,12 +1020,12 @@ class Getl extends Script {
 
         def pt = startProcess("Write rows to $dataset")
         Flow flow = new Flow()
-        if (parent.onInit != null) parent.onInit.call(flow)
-        parent.prepare()
+        if (parent.onInit != null) parent.onInit.call(dataset)
+        parent.prepareParams()
         def flowParams = (([dest: dataset]) as Map<String, Object>) + parent.params
         flow.writeTo(flowParams)
         parent.countRow = flow.countRow
-        if (parent.onDone != null) parent.onDone.call(flow)
+        if (parent.onDone != null) parent.onDone.call(dataset)
         finishProcess(pt, parent.countRow)
     }
 
@@ -1015,11 +1042,11 @@ class Getl extends Script {
         datasets.each { String destName, Dataset ds -> destNames.add("$destName: ${ds.toString()}".toString())}
         def pt = startProcess("Write rows to $destNames")
         Flow flow = new Flow()
-        if (parent.onInit != null) parent.onInit.call(flow)
-        parent.prepare()
+        if (parent.onInit != null) parent.onInit.call(datasets)
+        parent.prepareParams()
         def flowParams = (([dest: datasets]) as Map<String, Object>) + parent.params
         flow.writeAllTo(flowParams)
-        if (parent.onDone != null) parent.onDone.call(flow)
+        if (parent.onDone != null) parent.onDone.call(datasets)
         finishProcess(pt)
     }
 
@@ -1034,13 +1061,13 @@ class Getl extends Script {
 
         def pt = startProcess("Read rows from ${parent.source}")
         Flow flow = new Flow()
-        if (parent.onInit != null) parent.onInit.call(flow)
-        parent.prepare()
+        if (parent.onInit != null) parent.onInit.call(dataset)
+        parent.prepareParams()
         def flowParams = (([source: dataset]) as Map<String, Object>) + parent.params
         flow.process(flowParams)
         parent.countRow = flow.countRow
         parent.errorsDataset = flow.errorsDataset
-        if (parent.onDone != null) parent.onDone.call(flow)
+        if (parent.onDone != null) parent.onDone.call(dataset)
         finishProcess(pt, parent.countRow)
     }
 

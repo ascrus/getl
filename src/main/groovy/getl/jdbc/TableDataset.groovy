@@ -280,7 +280,7 @@ class TableDataset extends JDBCDataset {
 			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 			code.resolveStrategy = Closure.OWNER_FIRST
 			code.call(this)
-			parent.prepare()
+			parent.prepareParams()
 		}
 
 		return parent
@@ -308,7 +308,7 @@ class TableDataset extends JDBCDataset {
 			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 			code.resolveStrategy = Closure.OWNER_FIRST
 			code.call(this)
-			parent.prepare()
+			parent.prepareParams()
 		}
 
 		return parent
@@ -336,7 +336,7 @@ class TableDataset extends JDBCDataset {
 			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 			code.resolveStrategy = Closure.OWNER_FIRST
 			code.call(this)
-			parent.prepare()
+			parent.prepareParams()
 		}
 
 		return parent
@@ -364,7 +364,7 @@ class TableDataset extends JDBCDataset {
 			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 			code.resolveStrategy = Closure.OWNER_FIRST
 			code.call(this)
-			parent.prepare()
+			parent.prepareParams()
 		}
 
 		return parent
@@ -392,7 +392,7 @@ class TableDataset extends JDBCDataset {
 			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 			code.resolveStrategy = Closure.OWNER_FIRST
 			code.call(this)
-			parent.prepare()
+			parent.prepareParams()
 		}
 
 		return parent

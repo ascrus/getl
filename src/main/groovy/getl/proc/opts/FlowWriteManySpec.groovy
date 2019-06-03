@@ -166,7 +166,7 @@ class FlowWriteManySpec extends BaseSpec {
     }
 
     @Override
-    void prepare() {
+    void prepareParams() {
         MapUtils.CleanMap(params, ignoreImportKeys(params))
         destParams.each { String destName, Map<String, Object> opts ->
             opts.each { String key, value -> params.put('dest_' + destName + '_' + key, value) }

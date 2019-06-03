@@ -107,5 +107,5 @@ class BaseSpec {
     /**
      * Preparing options before run process
      */
-    void prepare() { }
+    void prepareParams() { }
 }

@@ -306,7 +306,7 @@ class FlowCopySpec extends BaseSpec {
     }
 
     @Override
-    void prepare() {
+    void prepareParams() {
         MapUtils.CleanMap(params, ignoreImportKeys(params))
         sourceParams.each { String key, value -> params.put('source_' + key, value)}
         destParams.each { String key, value -> params.put('dest_' + key, value)}

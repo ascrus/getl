@@ -177,7 +177,7 @@ class FlowWriteSpec extends BaseSpec {
     }
 
     @Override
-    void prepare() {
+    void prepareParams() {
         MapUtils.CleanMap(params, ignoreImportKeys(params))
         destParams.each { String key, value -> params.put('dest_' + key, value)}
     }

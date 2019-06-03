@@ -36,10 +36,3 @@ verticatable('sales') {
         segmentedBy = 'hash(id) all nodes'
     }
 }
-
-processRepDatasets(VERTICATABLE) { tableName ->
-    verticatable(tableName) {
-        // Define csv temp table from this table
-        csvTempWithDataset(tableName, it)
-    }
-}

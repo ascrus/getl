@@ -1088,7 +1088,7 @@ class Dataset {
 			def code = cl.rehydrate(this, parent, this)
 			code.resolveStrategy = Closure.OWNER_FIRST
 			code.call(this)
-			parent.prepare()
+			parent.prepareParams()
 		}
 
 		return lookup(parent.params)
