@@ -100,7 +100,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         assertEquals(200, csv.readRows)
         assertEquals(200, csvCountRows)
 
-		def csv_without_fields = new CSVDataset(connection: con, fileName: name, formatDateTime: DateUtils.defaultDateTimeMask, header: true)
+		def csv_without_fields = new CSVDataset(connection: con, fileName: name, formatDateTime: DateUtils.defaultDateTimeMask)
 		csvCountRows = 0
 		csv_without_fields.eachRow { Map row ->
 			assertNotNull(row.id)

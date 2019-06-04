@@ -24,29 +24,27 @@
 
 package getl.utils
 
-import com.sun.mail.util.MailSSLSocketFactory
-
+import javax.activation.DataHandler
+import javax.activation.FileDataSource
 import javax.mail.*
 import javax.mail.internet.*
 
 import getl.exception.ExceptionGETL
 
 class EMailer {
-	/**
-	 * Parameters
-	 */
 	private final Map params = [:]
-	public Map getParams () { params }
-	public void setParams(Map value) {
+	/** Parameters */
+	Map getParams () { params }
+	/** Parameters */
+	void setParams(Map value) {
 		params.clear()
 		params.putAll(value)
 	}
 
-	/**
-	 * Name in config from section "emailers"
-	 */
 	private String config
+	/** Name in config from section "emailers" */
 	public String getConfig () { config }
+	/** Name in config from section "emailers" */
 	public void setConfig (String value) {
 		config = value
 		if (config != null) {
@@ -59,89 +57,102 @@ class EMailer {
 		}
 	}
 
-	/**
-	 * Host server
-	 */
-	public String getHost () { params."host" }
-	public void setHost (String value) { params."host" = value }
+	/** Host server */
+	String getHost () { params.host }
+	/** Host server */
+	void setHost (String value) { params.host = value }
 
-	/**
-	 * Port server
-	 */
-	public int getPort () {
-		if (params."port" != null) return params."port"
-		if (starttls != null && starttls) return 587
-		if (ssl != null && ssl) return 465
+	/** Port server */
+	Integer getPort () {
+		if (params.port != null) return params.port as Integer
+		if (tls) return 587
+		if (ssl) return 465
 
 		return 25
 	}
-	public void setPort(int value) { params.port = value }
+	/** Port server */
+	void setPort(Integer value) { params.port = value }
 
-	/**
-	 * User name
-	 */
+	/** User name */
+	String getUser () { params.user as String }
+	/** User name */
+	void setUser(String value) { params.user = value }
 
-	public String getUser () { params."user" }
-	public void setUser(String value) { params."user" = value }
+	/** Password */
+	String getPassword () { params.password as String }
+	/** Password */
+	void setPassword (String value) { params.password = value }
 
-	/**
-	 * Password
-	 */
-	public String getPassword () { params."password" }
-	public void setPassword (String value) { params."password" = value }
+	/** Use debug mode */
+	Boolean getDebug () { BoolUtils.IsValue(params.debug) }
+	/** Use debug mode */
+	void setDebug (Boolean value) { params.debug = value }
 
-	/**
-	 * Required authorization
-	 */
-	public Boolean getAuth () { params."auth" }
-	public void setAuth (Boolean value) { params."auth" = value }
+	/** Required authorization */
+	Boolean getAuth () { (user != null) }
 
-	/**
-	 * Use ssl
-	 */
-	public Boolean getSsl () { params."ssl" }
-	public void setSsl (Boolean value) { params."ssl" = value }
+	/** Use ssl */
+	Boolean getSsl () { BoolUtils.IsValue(params.ssl) }
+	/** Use ssl */
+	void setSsl (Boolean value) { params.ssl = value }
 
-	/**
-	 * Use starttls for auth
-	 */
-	public Boolean getStarttls () { params."starttls" }
-	public void setStarttls (Boolean value) { params."starttls" = value }
+	/** Use tls for authentication */
+	Boolean getTls () { BoolUtils.IsValue(params.tls) }
+	/** Use tls for authentication */
+	void setTls (Boolean value) { params.tls = value }
 
-	/**
-	 * Socket factory fallback
-	 */
-	public Boolean getSocketFactoryFallback () { params."socketFactoryFallback" }
-	public void setSocketFactoryFallback (Boolean value) { params."socketFactoryFallback" = value }
+	/** Socket factory fallback */
+	Boolean getSocketFactoryFallback () { BoolUtils.IsValue(params.socketFactoryFallback) }
+	/** Socket factory fallback */
+	void setSocketFactoryFallback (Boolean value) { params.socketFactoryFallback = value }
 
 	/**
 	 * Use SSL socket factory
-	 * Example: javax.net.ssl.SSLSocketFactory
+	 * Default: javax.net.ssl.SSLSocketFactory
 	 */
-	public String getSocketFactoryClass () { params."socketFactoryClass" }
-	public void setSocketFactoryClass (String value) { params."socketFactoryClass" = value }
-
+	String getSocketFactoryClass () { (params.socketFactoryClass as String)?:'javax.net.ssl.SSLSocketFactory' }
 	/**
-	 * From address
+	 * Use SSL socket factory
+	 * Default: javax.net.ssl.SSLSocketFactory
 	 */
-	public String getFromAddress () { params."fromAddress"?:"anonimus@getl.com" }
-	public void setFromAddress (String value) { params."fromAddress" = value }
+	void setSocketFactoryClass (String value) { params.socketFactoryClass = value }
 
-	/**
-	 * To address
-	 */
-	public String getToAddress () { params."toAddress" }
-	public void setToAddress (String value) { params."toAddress" = value }
+	/** From address */
+	String getFromAddress () { (params.fromAddress as String)?:'anonimus@getl.com' }
+	/** From address */
+	void setFromAddress (String value) { params.fromAddress = value }
 
-	/**
-	 * Active emailer
-	 */
-	public Boolean getActive () { BoolUtils.IsValue(params."active", true) }
-	public void setActive (boolean value) { params."active" = value }
+	/** To address */
+	String getToAddress () { params.toAddress as String }
+	/** To address */
+	void setToAddress (String value) { params.toAddress = value }
 
-	/**
-	 * Call init configuraion
-	 */
+	/** Emailer enabled */
+	Boolean getActive () { BoolUtils.IsValue(params.active, true) }
+	/** Emailer enabled */
+	void setActive (boolean value) { params.active = value }
+
+	/** Subject for mail */
+	String getSubject() { params.subject as String }
+	/** Subject for mail */
+	void setSubject(String value) { params.subject = value }
+
+	/** Body for mail */
+	String getMessage() { params.message as String }
+	/** Body for mail */
+	void setMessage(String value) { params.message = value }
+
+	/** Body for mail has html format */
+	Boolean getIsHtml() { BoolUtils.IsValue(params.isHtml) }
+	/** Body for mail has html format */
+	void setIsHtml(Boolean value) { params.isHtml = value }
+
+	/** Attachment for mail */
+	Object getAttachment() { params.attachment }
+	/** Attachment for mail */
+	void setAttachment(Object value) { params.attachment = value }
+
+	/** Call init configuraion */
 	private final Closure doInitConfig = {
 		if (config == null) return
 		Map cp = Config.FindSection("emailers.${config}")
@@ -150,83 +161,90 @@ class EMailer {
 		Logs.Config("Load config \"emailers\".\"${config}\" for object \"${this.getClass().name}\"")
 	}
 
-	/**
-	 * Init configuration
-	 */
+	/** Init configuration */
 	protected void onLoadConfig (Map configSection) {
 		MapUtils.MergeMap(params, configSection)
 	}
 
-    public void sendMail(String toAddress, String subject, String message, boolean isHtml = false, Object attachment = null) {
+	/** Send mail message */
+	void send() {
+		sendMail(toAddress, subject, message, isHtml, attachment)
+	}
+
+    /** Send mail message with specified parameters*/
+	void sendMail(String toAddress, String subject, String message, boolean isHtml = false, Object attachment = null) {
 		if (!active) return
 
 		if (this.toAddress != null) {
 			if (toAddress == null) toAddress = this.toAddress else toAddress = this.toAddress + "," + toAddress
 		}
 		Properties mprops = new Properties()
-		mprops.setProperty('mail.transport.protocol', 'smtp')
-		mprops.setProperty('mail.host', host)
-		mprops.setProperty('mail.smtp.port', String.valueOf(port))
+		mprops.put('mail.transport.protocol', 'smtp')
+		mprops.put('mail.smtp.host', host)
+		mprops.put('mail.smtp.port', String.valueOf(port))
 		if (ssl) {
-			mprops.setProperty('mail.smtp.socketFactory.port', String.valueOf(port))
-			mprops.setProperty('mail.smtp.ssl.trust', host)
-			mprops.setProperty('mail.smtp.ssl.enable', ssl.toString())
+			mprops.put('mail.smtp.socketFactory.port', String.valueOf(port))
+			mprops.put('mail.smtp.ssl.trust', '*')
+			mprops.put('mail.smtp.ssl.enable', 'true')
+			mprops.put("mail.smtp.socketFactory.class", socketFactoryClass);
+			if (socketFactoryFallback) mprops.put('mail.smtp.socketFactory.fallback', 'true')
 		}
-		if (auth != null) mprops.setProperty('mail.smtp.auth', auth.toString())
-		if (starttls != null) mprops.setProperty('mail.smtp.starttls.enable', starttls.toString())
-		if (socketFactoryClass != null) mprops.setProperty('mail.smtp.socketFactory.class', socketFactoryClass)
-		if (socketFactoryFallback != null) mprops.setProperty('mail.smtp.socketFactory.fallback', socketFactoryFallback.toString())
-
-		def u = user
-		def p = password
-
-		def authenticator = new javax.mail.Authenticator() {
-			protected PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication(u, p)
-			}
+		if (tls) {
+			mprops.put('mail.smtp.starttls.enable', 'true')
+			mprops.put('mail.smtp.starttls.required', 'true')
 		}
+		mprops.put('mail.debug', debug.toString())
 
-		Session lSession = Session.getInstance(mprops, authenticator)
+		Session lSession
+		if (auth) {
+			if (user == null || user.trim().length() == 0 || password == null || password.trim().length() == 0)
+				throw new ExceptionGETL("User and password cannot be null for authorisation mail!")
+			mprops.put('mail.smtp.auth', 'true')
+			lSession = Session.getDefaultInstance(mprops, new EMailerAuth(user: user, password: password))
+		}
+		else {
+			lSession = Session.getDefaultInstance(mprops)
+		}
 		MimeMessage msg = new MimeMessage(lSession)
 
 		msg.setFrom(new InternetAddress(fromAddress))
 		msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toAddress, true))
 		msg.setSubject(subject, 'utf-8')
-//		msg.setText(message, 'utf-8')
+		def mimeTextType = (isHtml)?'html':'plain'
 
-		BodyPart messageBodyPart = new MimeBodyPart()
+		if (attachment != null) {
+			def multipart = new MimeMultipart()
 
-		if (attachment) {
-			messageBodyPart.setText(message,'text/html')
-
-			Multipart multipart = new MimeMultipart()
+			def messageBodyPart = new MimeBodyPart()
+			messageBodyPart.setText(message, 'UTF-8', mimeTextType)
 			multipart.addBodyPart(messageBodyPart)
 
+			def mimeBodyPart = new MimeBodyPart()
 			if (attachment instanceof List<String>) {
 				(attachment as List<String>).each { String att ->
-					messageBodyPart = new MimeBodyPart()
-					messageBodyPart.attachFile(att)
-					multipart.addBodyPart(messageBodyPart)
+					mimeBodyPart.attachFile(att)
+					multipart.addBodyPart(mimeBodyPart)
 				}
 			} else if (attachment instanceof List<File>) {
 				(attachment as List<File>).each { File att ->
-					messageBodyPart = new MimeBodyPart()
-					messageBodyPart.attachFile(att)
-					multipart.addBodyPart(messageBodyPart)
+					mimeBodyPart.attachFile(att)
+					multipart.addBodyPart(mimeBodyPart)
 				}
 			} else if (attachment instanceof String) {
-				messageBodyPart = new MimeBodyPart()
-				messageBodyPart.attachFile(attachment as String)
-				multipart.addBodyPart(messageBodyPart)
+				mimeBodyPart.attachFile(attachment as String)
+				multipart.addBodyPart(mimeBodyPart)
 			} else if (attachment instanceof File) {
-				messageBodyPart = new MimeBodyPart()
-				messageBodyPart.attachFile(attachment as File)
-				multipart.addBodyPart(messageBodyPart)
+				mimeBodyPart.attachFile(attachment as File)
+				multipart.addBodyPart(mimeBodyPart)
+			}
+			else {
+				throw new ExceptionGETL("Unsupported attachment type \"${attachment.getClass().name}\"!")
 			}
 
 			msg.setContent(multipart)
-		} else if (isHtml) msg.setContent(message, 'text/html')
-		else msg.setContent(message, 'text/plain; charset=UTF-8')
+		} else {
+			msg.setContent(message, "text/$mimeTextType; charset=UTF-8")
+		}
 
 		try {
 			Transport.send(msg)

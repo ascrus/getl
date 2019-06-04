@@ -1174,4 +1174,15 @@ class Getl extends Script {
         code.call(parent)
         finishProcess(pt)
     }
+
+    /** Run code in multithread mode */
+    EMailer mail(@DelegatesTo(EMailer) Closure cl) {
+        def parent = new EMailer()
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def pt = startProcess('Mailer')
+        code.call(parent)
+        finishProcess(pt)
+    }
 }
