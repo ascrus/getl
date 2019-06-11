@@ -595,7 +595,7 @@ class CSVDriver extends FileDriver {
 		wp.escaped = escaped
 		wp.escapeProcessLineChar = escapeProcessLineChar
 		wp.splitSize = params.splitSize as Long
-		if (wp.splitSize != null) wp.portion = 1
+		if (wp.splitSize != null || wp.onSplitFile != null) wp.portion = 1
 
         csv_ds.params.writeCharacters = null
 		
@@ -609,7 +609,7 @@ class CSVDriver extends FileDriver {
 		wp.pref = new CsvPreference.Builder(p.quoteStr as char, (p.fieldDelimiter) as int, p.rowDelimiter as String).useQuoteMode(p.qMode as QuoteMode).useEncoder(wp.encoder).build()
 		wp.writer = new CsvMapWriter(wp.bufWriter, wp.pref)
 
-		if ((!isAppend || !isExistsFile || wp.splitSize != null) && wp.isHeader) {
+		if ((!isAppend || !isExistsFile || wp.splitSize != null || wp.onSplitFile != null) && wp.isHeader) {
 			wp.writer.writeHeader(header)
 		}
 	}
@@ -629,7 +629,7 @@ class CSVDriver extends FileDriver {
 					dataset.writeRows++
 					dataset.updateRows++
 					
-					if (wp.splitSize != null && wp.encoder.writeSize >= wp.splitSize) {
+					if ((wp.splitSize != null && wp.encoder.writeSize >= wp.splitSize) || (wp.splitSize == null && wp.onSplitFile != null)) {
 						boolean splitFile = true
 						if (wp.onSplitFile != null) {
 							splitFile = wp.onSplitFile.call(row)
@@ -651,8 +651,8 @@ class CSVDriver extends FileDriver {
 					wp.writer.write(row, wp.header)
 					dataset.writeRows++
 					dataset.updateRows++
-					
-					if (wp.splitSize != null && wp.encoder.writeSize >= wp.splitSize) {
+
+					if ((wp.splitSize != null && wp.encoder.writeSize >= wp.splitSize) || (wp.splitSize == null && wp.onSplitFile != null)) {
 						boolean splitFile = true
 						if (wp.onSplitFile != null) {
 							splitFile = wp.onSplitFile.call(row)

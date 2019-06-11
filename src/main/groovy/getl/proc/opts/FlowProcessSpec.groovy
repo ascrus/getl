@@ -38,6 +38,16 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class FlowProcessSpec extends BaseSpec {
+    FlowProcessSpec() {
+        super()
+        params.sourceParams = [:] as Map<String, Object>
+    }
+
+    FlowProcessSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        super(useExternalParams, importParams)
+        if (params.sourceParams == null) params.sourceParams = [:] as Map<String, Object>
+    }
+
     /**
      * Source dataset
      */
@@ -59,11 +69,14 @@ class FlowProcessSpec extends BaseSpec {
     /**
      * Parameters for source read process
      */
-    Map<String, Object> getSourceParams() { params._sourceParams as Map<String, Object>}
+    Map<String, Object> getSourceParams() { params.sourceParams as Map<String, Object>}
     /**
      * Parameters for source read process
      */
-    void setSourceParams(Map<String, Object> value) { params._sourceParams = value }
+    void setSourceParams(Map<String, Object> value) {
+        sourceParams.clear()
+        if (value != null) sourceParams.putAll(value)
+    }
 
     /**
      * Save assert errors to temporary dataset "errorsDataset"
@@ -122,24 +135,4 @@ class FlowProcessSpec extends BaseSpec {
      * Error rows for read process
      */
     public TFSDataset errorsDataset
-
-    @Override
-    protected List<String> ignoreImportKeys(Map<String, Object> importParams) {
-        def sp = MapUtils.GetLevel(importParams, "source_") as Map<String, Object>
-
-        return sp.keySet().toList()
-    }
-
-    @Override
-    void importFromMap(Map<String, Object> importParams) {
-        super.importFromMap(importParams)
-
-        sourceParams = MapUtils.GetLevel(importParams, "source_") as Map<String, Object>
-    }
-
-    @Override
-    void prepareParams() {
-        MapUtils.CleanMap(params, ignoreImportKeys(params))
-        sourceParams.each { String key, value -> params.put('source_' + key, value)}
-    }
 }

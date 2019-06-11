@@ -127,7 +127,7 @@ class CSVDriverTest extends getl.test.GetlTest {
                 updater(generate_row(id))
             }
         }
-        assertEquals(2, csv.countWritePortions())
+        assertEquals(2, csv.countWritePortions)
         assertEquals(100, csv.writeRows)
 
         con.autoSchema = true
@@ -157,7 +157,7 @@ class CSVDriverTest extends getl.test.GetlTest {
             assertEquals("text \"$id\"\tand\nnew line", row.text)
             assertEquals('abcdef'.bytes, row.blob)
         }
-        assertEquals(2, new_csv.countReadPortions())
+        assertEquals(2, new_csv.countReadPortions)
         assertEquals(100, new_csv.readRows)
 
         def unwrite_csv = new CSVDataset(connection: con, fileName: "${name}_unwrite", formatDateTime: DateUtils.defaultDateTimeMask, schemaFileName: csv.fullFileSchemaName(), deleteOnEmpty: true)
@@ -214,7 +214,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         assertTrue((errors.get('5') as String).indexOf('invalid date') != -1)
 
         con.autoSchema = true
-        csv.drop(portions: csv.countWritePortions())
+        csv.drop(portions: csv.countWritePortions)
 
         shouldFail() { unwrite_csv.drop(validExist: true) }
         bad_csv.drop()

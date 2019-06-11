@@ -39,19 +39,19 @@ class Flow {
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 	
 	Flow () {
-		methodParams.register('copy', ['source', 'tempSource', 'dest', 'tempDest', 'inheritFields',
-									   'createDest', 'tempFields', 'map', 'source_*', 'dest_*', 'autoMap',
-									   'autoConvert', 'autoTran', 'clear', 'saveErrors', 'excludeFields', 'mirrorCSV',
-									   'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', 'onWrite',
-									   'onDone', 'process', 'debug', 'writeSynch'])
+		methodParams.register('copy',
+				['source', 'tempSource', 'dest', 'tempDest', 'inheritFields', 'createDest', 'tempFields', 'map',
+				 'source_*', 'sourceParams', 'dest_*', 'destParams', 'autoMap', 'autoConvert', 'autoTran', 'clear',
+				 'saveErrors', 'excludeFields', 'mirrorCSV', 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped',
+				 'onInit', 'onWrite', 'onDone', 'process', 'debug', 'writeSynch'])
 
-		methodParams.register('writeTo', ['dest', 'dest_*', 'autoTran', 'tempDest', 'tempFields',
-										  'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'clear', 'writeSynch',
+		methodParams.register('writeTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'tempDest',
+										  'tempFields', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'clear', 'writeSynch',
 										  'onInit', 'onDone', 'process'])
-		methodParams.register('writeAllTo', ['dest', 'dest_*', 'autoTran', 'bulkLoad', 'bulkAsGZIP',
-											 'bulkEscaped', 'writeSynch', 'onInit', 'onDone', 'process'])
+		methodParams.register('writeAllTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'bulkLoad',
+											 'bulkAsGZIP', 'bulkEscaped', 'writeSynch', 'onInit', 'onDone', 'process'])
 
-		methodParams.register('process', ['source', 'source_*', 'tempSource', 'saveErrors',
+		methodParams.register('process', ['source', 'source_*', 'sourceParams', 'tempSource', 'saveErrors',
 										  'onInit', 'onDone', 'process'])
 	}
 	
@@ -320,7 +320,15 @@ class Flow {
 		boolean bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:false
 		
 		Map<String, String> map = (params.map != null)?(params.map as Map<String, String>):[:]
-		Map sourceParams = (MapUtils.GetLevel(params, "source_") as Map)?:[:]
+
+		Map<String, Object> sourceParams
+		if (params.sourceParams != null && !(params.sourceParams as Map).isEmpty()) {
+			sourceParams = params.sourceParams as Map<String, Object>
+		}
+		else {
+			sourceParams = ((MapUtils.GetLevel(params, "source_") as Map<String, Object>)?:[:]) as Map<String, Object>
+		}
+
 		Closure prepareSource = sourceParams.prepare as Closure
 		
 		boolean autoMap = (params.autoMap != null)?params.autoMap:true
@@ -345,8 +353,15 @@ class Flow {
 
 		Dataset writer
 		TFSDataset bulkDS = null
-		
-		Map destParams = (MapUtils.GetLevel(params, "dest_") as Map)?:[:]
+
+		Map<String, Object> destParams
+		if (params.destParams != null && !(params.destParams as Map).isEmpty()) {
+			destParams = params.destParams as Map<String, Object>
+		}
+		else {
+			destParams = ((MapUtils.GetLevel(params, "dest_") as Map<String, Object>)?:[:]) as Map<String, Object>
+		}
+
 		Map bulkParams = null
 		if (isBulkLoad) {
 			bulkParams = destParams
@@ -551,7 +566,14 @@ class Flow {
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
 		
-		Map destParams = (MapUtils.GetLevel(params, "dest_") as Map<String, Object>)?:[:]
+		Map<String, Object> destParams
+		if (params.destParams != null && !(params.destParams as Map).isEmpty()) {
+			destParams = params.destParams as Map<String, Object>
+		}
+		else {
+			destParams = ((MapUtils.GetLevel(params, "dest_") as Map<String, Object>)?:[:]) as Map<String, Object>
+		}
+
 		Map bulkParams = null
 		
 		TFSDataset bulkDS = null
@@ -674,8 +696,13 @@ class Flow {
 		Map<String, Dataset> writer = [:]
 		dest.each { String n, Dataset d ->
 			// Get destination params
-			Map<String, Object> p = (MapUtils.GetLevel(params, "dest_${n}_") as Map<String, Object>)?:[:]
-			destParams.put(n, p)
+			if (params.destParams != null && (params.destParams as Map).get(n) != null) {
+				destParams.put(n, (params.destParams as Map).get(n) as Map<String, Object>)
+			}
+			else {
+				Map<String, Object> p = (MapUtils.GetLevel(params, "dest_${n}_") as Map<String, Object>) ?: [:]
+				destParams.put(n, p)
+			}
 
 			if (d.connection == null) throw new ExceptionGETL("Required specify a connection for the \"$n\" destination!")
 			
@@ -888,7 +915,13 @@ class Flow {
 		}
 		if (source == null) new ExceptionGETL("Required parameter \"source\"")
 		
-		Map<String, Object> sourceParams = (MapUtils.GetLevel(params, "source_") as Map<String, Object>)?:[:]
+		Map<String, Object> sourceParams
+		if (params.sourceParams != null && !(params.sourceParams as Map).isEmpty()) {
+			sourceParams = params.sourceParams as Map<String, Object>
+		}
+		else {
+			sourceParams = ((MapUtils.GetLevel(params, "source_") as Map<String, Object>)?:[:]) as Map<String, Object>
+		}
 
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure

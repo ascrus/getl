@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) 2013-2019  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -22,30 +22,39 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.tfs
+package getl.h2.opts
 
-import getl.data.Connection
-import getl.h2.H2Table
-import getl.jdbc.TableDataset
-import getl.utils.StringUtils
+import getl.jdbc.opts.BulkLoadSpec
 import groovy.transform.InheritConstructors
 
 /**
- * Table with temp database
+ * H2 table bulk load options
  * @author Alexsey Konstantinov
  *
  */
 @InheritConstructors
-class TDSTable extends H2Table {
-    TDSTable() {
+class H2BulkLoadSpec extends BulkLoadSpec {
+    H2BulkLoadSpec() {
         super()
-        connection = new TDS()
-        tableName = "TDS_" + StringUtils.RandomStr().replace("-", "_").toUpperCase()
+        params.expression = [:] as Map<String, String>
     }
 
-    @Override
-    public void setConnection(Connection value) {
-        assert value == null || value.getClass().name == 'getl.tfs.TDS'
-        super.setConnection(value)
+    H2BulkLoadSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        super(useExternalParams, importParams)
+        if (params.expression == null) params.expression = [:] as Map<String, String>
+    }
+
+    /**
+     * Describes the SQL expression of loading file columns into table fields
+     * <br>Example: [table_field1: 'Upper(file_column1)']
+     */
+    Map<String, String> getExpression() { params.expression as Map<String, String> }
+    /**
+     * Describes the SQL expression of loading file columns into table fields
+     * <br>Example: [table_field1: 'Upper(file_column1)']
+     */
+    void setExpression(Map<String, String> value) {
+        expression.clear()
+        if (value != null) expression.putAll(value)
     }
 }

@@ -24,7 +24,7 @@ datasets {
 ''', 'UTF-8')
 
         Getl.Dsl {
-            config {
+            configuration {
                 path = tempPath
                 load('getl.conf')
                 done { logInfo 'Load config' }
@@ -32,15 +32,15 @@ datasets {
             assertEquals('getl.lang.csv', configContent.datasets?.file1?.fileName)
             assertEquals('table1', configContent.datasets?.table1?.tableName)
 
-            log {
+            logging {
                 logFileName = csvTempConnection().path + '/getl.dsl.logs'
             }
 
             options {
-                useJDBCConnection tempDBConnection('h2') { sqlHistoryFile = "$tempPath/getl.lang.h2.sql" }
+                useJDBCConnection embeddedConnection('h2') { sqlHistoryFile = "$tempPath/getl.lang.h2.sql" }
             }
 
-            h2table('table1') { H2Table table ->
+            h2Table('table1') { H2Table table ->
                 config = 'table1'
 
                 field = [
@@ -58,7 +58,6 @@ datasets {
                         ifNotExists = true
                         columns = ['dt']
                         unique = false
-                        logInfo "Create index_1 in $table"
                     }
                 }
                 assertEquals('table1', table.tableName)
@@ -74,8 +73,8 @@ datasets {
                     }
                 }
 
-                csvTempWithDataset('file1', h2table('table1')) { config = 'file1' }
-                copyRows(h2table('table1'), csvTemp('file1')) { source, dest ->
+                csvTempWithDataset('file1', h2Table('table1')) { config = 'file1' }
+                copyRows(h2Table('table1'), csvTemp('file1')) { source, dest ->
                     process { t, f ->
                         f.name = StringUtils.ToCamelCase(t.name)
                         f.dt = now
@@ -89,10 +88,10 @@ datasets {
             }
 
             rowsToMany([
-                        table1: h2table('table1') { truncate() },
-                        table2: h2table('table2') { table ->
+                        table1: h2Table('table1') { truncate() },
+                        table2: h2Table('table2') { table ->
                             tableName = 'table2'
-                            field = h2table('table1').field
+                            field = h2Table('table1').field
                             createOpts {
                                 type = isTemporary
                                 transactional = true
@@ -142,7 +141,7 @@ ORDER BY t1.id'''
                 }
             }
 
-            rowProcess(h2table('table1') { readOpts { where = 'id < 3'; order = ['id ASC'] } }) {
+            rowProcess(h2Table('table1') { readOpts { where = 'id < 3'; order = ['id ASC'] } }) {
                 process { assertTrue(it.id < 3); assertTrue(it.t1_dt < now ) }
                 done {
                     assertEquals(2, countRow)

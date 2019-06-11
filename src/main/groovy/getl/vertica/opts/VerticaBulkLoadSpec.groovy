@@ -140,8 +140,8 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     void setEnforceLength(Boolean value) { params.enforceLength = value }
 
     /**
-     * Describes the expression of loading file columns into table fields.
-     * <br>Example: [file_column_1: 'FILLER varchar(50)', field_in_table: 'Upper(col1)']
+     * Describes the SQL expression of loading file columns into table fields.
+     * <br>Example: [table_field1: 'Upper(file_col1)']
      */
     Map<String, String> getExpression() { params.expression as Map<String, String> }
     /**

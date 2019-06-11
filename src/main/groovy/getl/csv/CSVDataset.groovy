@@ -24,6 +24,10 @@
 
 package getl.csv
 
+import getl.csv.opts.CSVReadSpec
+import getl.csv.opts.CSVWriteSpec
+import getl.jdbc.opts.ReadSpec
+import getl.vertica.opts.VerticaReadSpec
 import groovy.transform.InheritConstructors
 import getl.data.Connection
 import getl.data.FileDataset
@@ -168,17 +172,17 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Length of the recorded file
 	 */
-	public Long countWriteCharacters() { params.countWriteCharacters }
+	public Long getCountWriteCharacters() { params.countWriteCharacters }
 	
 	/**
 	 * the number of recorded files
 	 */
-	public Integer countWritePortions() { params.countWritePortions }
+	public Integer getCountWritePortions() { params.countWritePortions }
 	
 	/**
 	 * The number of read files
 	 */
-	public Integer countReadPortions() { params.countReadPortions }
+	public Integer getCountReadPortions() { params.countReadPortions }
 	
 	@Override
 	public void setConnection(Connection value) {
@@ -191,7 +195,7 @@ class CSVDataset extends FileDataset {
 		super.inheriteConnectionParams() + 
 				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 
 					'escaped', 'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime', 'ignoreHeader', 
-					'escapeProcessLineChar']
+					'escapeProcessLineChar', 'nullAsValue']
 	}
 
 	/**
@@ -256,5 +260,61 @@ class CSVDataset extends FileDataset {
 		CSVDriver drv = connection.driver as CSVDriver
 		
 		drv.readLinesCount(this)
+	}
+
+	/**
+	 * Read file options
+	 */
+	Map<String, Object> getReadDirective() { (params.directive as Map<String, Object>).read as Map<String, Object>}
+	/**
+	 * Read file options
+	 */
+	void setReadDirective(Map<String, Object> value) {
+		readDirective.clear()
+		readDirective.putAll(value)
+	}
+
+	/**
+	 * Write file options
+	 */
+	Map<String, Object> getWriteDirective() { (params.directive as Map<String, Object>).write as Map<String, Object>}
+	/**
+	 * Write file options
+	 */
+	void setWriteDirective(Map<String, Object> value) {
+		writeDirective.clear()
+		writeDirective.putAll(value)
+	}
+
+	/**
+	 * Read file options
+	 */
+	CSVReadSpec readOpts(@DelegatesTo(CSVReadSpec) Closure cl = null) {
+		def parent = new CSVReadSpec(true, readDirective)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code.call(this)
+			parent.prepareParams()
+		}
+
+		return parent
+	}
+
+	/**
+	 * Write file options
+	 */
+	CSVWriteSpec writeOpts(@DelegatesTo(CSVWriteSpec) Closure cl = null) {
+		def parent = new CSVWriteSpec(true, writeDirective)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code.call(this)
+			parent.prepareParams()
+		}
+
+		return parent
 	}
 }

@@ -88,7 +88,7 @@ class EMailer {
 	/** Use debug mode */
 	void setDebug (Boolean value) { params.debug = value }
 
-	/** Required authorization */
+	/** Required authentication */
 	Boolean getAuth () { (user != null) }
 
 	/** Use ssl */

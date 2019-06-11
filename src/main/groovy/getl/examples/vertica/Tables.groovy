@@ -2,19 +2,19 @@
 
 import groovy.transform.BaseScript
 
-// Vertica database connection (using config variables)
+// Vertica database connection (using config content variables)
 useJDBCConnection verticaConnection('demo') {
-    driverPath = configVars.driverPath
-    connectHost = configVars.connectHost
-    connectDatabase = configVars.connectDatabase
+    driverPath = configContent.driverPath
+    connectHost = configContent.connectHost
+    connectDatabase = configContent.connectDatabase
     schemaName = 'getl_demo'
-    login = configVars.login
-    password = configVars.password
-    sqlHistoryFile = "${configVars.workPath}/vertica.{date}.sql"
+    login = configContent.login
+    password = configContent.password
+    sqlHistoryFile = "${configContent.workPath}/vertica.{date}.sql"
 }
 
 // Vertica price table
-verticatable('price') {
+verticaTable('price') {
     tableName = 'price'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { type = stringFieldType; isNull = false; length = 50 }
@@ -24,7 +24,7 @@ verticatable('price') {
 }
 
 // Vertica sales table
-verticatable('sales') {
+verticaTable('sales') {
     tableName = 'sales'
     field('id') { type = bigintFieldType; isKey = true }
     field('price_id') { type = integerFieldType; isNull = false }

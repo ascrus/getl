@@ -36,22 +36,28 @@ import java.util.regex.Pattern
  * @author Alexsey Konstantinov
  *
  */
-public class SQLScripter {
+class SQLScripter {
 	/** 
 	 * Type of script command 
 	 */
-	public static enum TypeCommand {
+	static enum TypeCommand {
 		UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR, EXIT, LOAD_POINT, SAVE_POINT, BLOCK
 	}
 
-	/**
-	 * Script variables
-	 */
-	public final Map<String, Object> vars = [:]
-	public void setVars(Map<String, Object> value) { 
+	/** Local variables */
+	final Map<String, Object> vars = [:] as Map<String, Object>
+	/** Local variables */
+	Map<String, Object> getVars() { vars }
+	/** Local variables */
+	void setVars(Map<String, Object> value) {
 		vars.clear()
-		vars.putAll(value)
+		if (value != null) vars.putAll(value)
 	}
+
+	/** External variables */
+	public Map<String, Object> extVars
+	/** All variables */
+	Map<String, Object> getAllVars() { (extVars != null)?((vars + extVars) as Map<String, Object>):vars }
 	
 	/** 
 	 * Current type script command 
@@ -62,15 +68,19 @@ public class SQLScripter {
 	 * JDBC connection 
 	 */
 	private JDBCConnection connection
-	public JDBCConnection getConnection() { connection }
-	public void setConnection(JDBCConnection value) { connection = value }
+
+	JDBCConnection getConnection() { connection }
+
+	void setConnection(JDBCConnection value) { connection = value }
 	
 	/*
 	 * Connection for point manager
 	 */
 	private JDBCConnection pointConnection
-	public JDBCConnection getPointConnection () { pointConnection }
-	public void setPointConnection(JDBCConnection value) {
+
+	JDBCConnection getPointConnection () { pointConnection }
+
+	void setPointConnection(JDBCConnection value) {
 		pointConnection = value
 	}
 	
@@ -83,19 +93,23 @@ public class SQLScripter {
 	 * Script 
 	 */
 	private String script
-	public String getScript() { script }
-	public void setScript(String value) { script = (value == null)?null:((value.trim().length() == 0)?null:value) }
+
+	String getScript() { script }
+
+	void setScript(String value) { script = (value == null)?null:((value.trim().length() == 0)?null:value) }
 	
 	private java.util.logging.Level logEcho = java.util.logging.Level.FINE
-	public String getLogEcho () {  logEcho.toString() }
-	public void setLogEcho (String level) {  logEcho = Logs.StrToLevel(level) }
+
+	String getLogEcho () {  logEcho.toString() }
+
+	void setLogEcho (String level) {  logEcho = Logs.StrToLevel(level) }
 	
 	/** 
 	 * Load script from file
 	 * @param filename
 	 * @param charset
 	 */
-	public void loadFile (String filename, String charset) {
+	void loadFile (String filename, String charset) {
 		setScript(new File(filename).getText(charset))
 	}
 
@@ -103,7 +117,8 @@ public class SQLScripter {
 	 * SQL generated script 
 	 */
 	private String sql
-	public String getSql() {
+
+	String getSql() {
 		return sql
 	}
 	
@@ -120,8 +135,9 @@ public class SQLScripter {
 		if (script == null) 
 			throw new ExceptionGETL("SQLScripter: need script in prepareSql method")
 			
-		List varNames = []
-		vars.keySet().toArray().each { varNames << it }
+		def varNames = [] as List<String>
+		def locVars = allVars
+		locVars.keySet().toArray().each { varNames << it }
 		
 		Pattern p
 		Matcher m
@@ -138,7 +154,7 @@ public class SQLScripter {
 			def varName = varNames.find { String s -> vn == s.toLowerCase() }
 			
 			if (varName == null) continue
-			def val = vars.get(varName)
+			def val = locVars.get(varName)
 			String valStr
 			if (val == null) {
 				valStr = "null"
@@ -243,7 +259,7 @@ public class SQLScripter {
 		def point = m[0][2] as String
 		//noinspection GroovyAssignabilityCheck
 		def varName = m[0][5] as String
-		def value = vars.get(varName)
+		def value = allVars.get(varName)
 		if (value == null) throw new ExceptionGETL("SQLScripter: variable \"$varName\" has empty value for SAVE_POINT operator")
 		
 		def pointList = point.split('[.]').toList()
@@ -345,7 +361,8 @@ public class SQLScripter {
 		List<Map> rows = []
 		query.eachRow { Map row -> rows << row }
 		
-		SQLScripter ns = new SQLScripter(connection: connection, script: b.toString(), logEcho: logEcho, vars: vars)
+		SQLScripter ns = new SQLScripter(connection: connection, script: b.toString(), logEcho: logEcho,
+				vars: vars, extVars: extVars)
 		boolean isExit = false
 		rows.each { row ->
 			if (isExit) return
@@ -355,7 +372,6 @@ public class SQLScripter {
                 def fieldValue = row.get(fieldName)
                 if (fieldValue instanceof Date) fieldValue = new java.sql.Timestamp((fieldValue as Date).time)
                 ns.vars.put(fieldName, fieldValue)
-//				ns.vars."${f.name.toLowerCase()}" = row."${f.name.toLowerCase()}"
 			}
 			try {
 				ns.runSql()
@@ -404,10 +420,8 @@ public class SQLScripter {
 			return fe
 		} 
 		
-		SQLScripter ns = new SQLScripter(connection: connection, script: b.toString(), logEcho: logEcho, vars: vars)
-		/*ns.setScript(b.toString())
-		ns.connection = this.connection
-		ns.vars.putAll(vars)*/
+		SQLScripter ns = new SQLScripter(connection: connection, script: b.toString(), logEcho: logEcho,
+				vars: vars, extVars: extVars)
 		try {
 			ns.runSql()
 			if (ns.isRequiredExit()) {
@@ -452,19 +466,20 @@ public class SQLScripter {
 		}
 		if (fe == -1) throw new ExceptionGETL("SQLScripter: can not find END BLOCK construction")
 
-		sql = StringUtils.EvalMacroString(b.toString(), vars)
+		sql = StringUtils.EvalMacroString(b.toString(), allVars)
 		connection.executeCommand(command: sql)
 		
 		return fe
 	}
 	
 	private boolean requiredExit
-	public boolean isRequiredExit() { requiredExit }
+
+	boolean isRequiredExit() { requiredExit }
 	
 	/** 
 	 * Run script as SQL
 	 */ 
-	public void runSql () {
+	void runSql () {
 		requiredExit = false
 		def st = BatchSQL2List(script, ";")
 		rowCount = 0
@@ -524,7 +539,7 @@ public class SQLScripter {
 	 * @param delim
 	 * @return
 	 */
-	public static List<String> BatchSQL2List (String sql, String delim) {
+	static List<String> BatchSQL2List (String sql, String delim) {
 		if (sql == null) throw new ExceptionGETL("SQLScripter: required sql for BatchSQL2List method")
 		
 		// Delete multi comment

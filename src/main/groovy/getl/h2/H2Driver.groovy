@@ -105,7 +105,7 @@ class H2Driver extends JDBCDriver {
 		List<Map> map = params.map
 		boolean autoCommit = (params.autoCommit != null) ? params.autoCommit : (dest.connection.tranCount == 0 && !(dest.connection as JDBCConnection).autoCommit)
 
-		Map<String, String> expression = params.expression ?: [:]
+		Map<String, String> expression = (params.expression?:[:]) as Map<String, String>
 		expression.each { String fieldName, String expr ->
 			if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
 		}

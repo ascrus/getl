@@ -24,9 +24,9 @@
 
 package getl.h2
 
-import getl.h2.opts.H2CreateSpec
+import getl.h2.opts.*
 import getl.jdbc.*
-import getl.jdbc.opts.CreateSpec
+import getl.jdbc.opts.*
 import groovy.transform.InheritConstructors
 
 /**
@@ -47,8 +47,18 @@ class H2Table extends TableDataset {
     }
 
     @Override
+    protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) { new H2BulkLoadSpec(useExternalParams, opts) }
+
+    /**
+     * Read table options
+     */
+    H2BulkLoadSpec bulkLoadOpts(@DelegatesTo(H2BulkLoadSpec) Closure cl = null) {
+        genBulkLoadDirective(cl) as H2BulkLoadSpec
+    }
+
+    @Override
     void createCsvTempFile() {
         super.createCsvTempFile()
-        csvTempFile.escaped = true
+        csvTempFile.escaped = false
     }
 }

@@ -37,6 +37,18 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class FlowCopySpec extends BaseSpec {
+    FlowCopySpec() {
+        super()
+        params.sourceParams = [:] as Map<String, Object>
+        params.destParams = [:] as Map<String, Object>
+    }
+
+    FlowCopySpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        super(useExternalParams, importParams)
+        if (params.sourceParams == null) params.sourceParams = [:] as Map<String, Object>
+        if (params.destParams == null) params.destParams = [:] as Map<String, Object>
+    }
+
     /**
      * Temporary source name
      */
@@ -95,20 +107,26 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Parameters for source read process
      */
-    Map<String, Object> getSourceParams() { params._sourceParams as Map<String, Object> }
+    Map<String, Object> getSourceParams() { params.sourceParams as Map<String, Object> }
     /**
      * Parameters for source read process
      */
-    void setSourceParams(Map<String, Object> value) { params._sourceParams = value }
+    void setSourceParams(Map<String, Object> value) {
+        sourceParams.clear()
+        if (value != null) sourceParams.putAll(value)
+    }
 
     /**
      * Parameters for destination write process
      */
-    Map<String, Object> getDestParams() { params._destParams as Map<String, Object> }
+    Map<String, Object> getDestParams() { params.destParams as Map<String, Object> }
     /**
      * Parameters for destination write process
      */
-    void setDestParams(Map<String, Object> value) { params._destParams = value }
+    void setDestParams(Map<String, Object> value) {
+        destParams.clear()
+        if (value != null) destParams.putAll(value)
+    }
 
     /**
      * Write with synchronize main thread
@@ -288,27 +306,4 @@ class FlowCopySpec extends BaseSpec {
      * Error rows for "copy" process
      */
     public TFSDataset errorsDataset
-
-    @Override
-    protected List<String> ignoreImportKeys(Map<String, Object> importParams) {
-        def sp = MapUtils.GetLevel(importParams, "source_") as Map<String, Object>
-        def dp = MapUtils.GetLevel(importParams, "dest_") as Map<String, Object>
-
-        return (sp.keySet().toList() + dp.keySet().toList())
-    }
-
-    @Override
-    void importFromMap(Map<String, Object> importParams) {
-        super.importFromMap(importParams)
-
-        sourceParams = MapUtils.GetLevel(importParams, "source_") as Map<String, Object>
-        destParams = MapUtils.GetLevel(importParams, "dest_") as Map<String, Object>
-    }
-
-    @Override
-    void prepareParams() {
-        MapUtils.CleanMap(params, ignoreImportKeys(params))
-        sourceParams.each { String key, value -> params.put('source_' + key, value)}
-        destParams.each { String key, value -> params.put('dest_' + key, value)}
-    }
 }

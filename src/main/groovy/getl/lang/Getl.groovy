@@ -33,9 +33,10 @@ import getl.excel.*
 import getl.exception.ExceptionGETL
 import getl.files.*
 import getl.h2.*
+import getl.h2.opts.*
 import getl.hive.*
 import getl.jdbc.*
-import getl.jdbc.opts.BulkLoadSpec
+import getl.jdbc.opts.*
 import getl.json.*
 import getl.lang.opts.*
 import getl.mssql.*
@@ -50,11 +51,10 @@ import getl.stat.*
 import getl.tfs.*
 import getl.utils.*
 import getl.vertica.*
-import getl.vertica.opts.VerticaBulkLoadSpec
+import getl.vertica.opts.*
 import getl.xero.*
 import getl.xml.*
 import groovy.transform.InheritConstructors
-
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -93,9 +93,7 @@ class Getl extends Script {
     /** Run GETL lang closure */
     static def Dsl(@DelegatesTo(Getl) Closure cl) {
         def parent = new Getl()
-        def code = cl.rehydrate(this, parent, this)
-        code.resolveStrategy = Closure.OWNER_FIRST
-        code.call(parent)
+        parent.runClosure(parent, cl)
     }
 
     Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
@@ -115,7 +113,7 @@ class Getl extends Script {
     public final String ORACLECONNECTION = 'getl.oracle.OracleConnection'
     public final String POSTGRESQLCONNECTION = 'getl.postgresql.PostgreSQLConnection'
     public final String SALESFORCECONNECTION = 'getl.salesforce.SalesForceConnection'
-    public final String TEMPDBCONNECTION = 'getl.tfs.TDS'
+    public final String EMBEDDEDCONNECTION = 'getl.tfs.TDS'
     public final String VERTICACONNECTION = 'getl.vertica.VerticaConnection'
     public final String XEROCONNECTION = 'getl.xero.XeroConnection'
     public final String XMLCONNECTION = 'getl.xml.XMLConnection'
@@ -129,7 +127,7 @@ class Getl extends Script {
     public final String QUERYDATASET = 'getl.jdbc.QueryDataset'
     public final String SALESFORCEDATASET = 'getl.salesforce.SalesForceDataset'
     public final String TABLEDATASET = 'getl.jdbc.TableDataset'
-    public final String TEMPDBTABLE = 'getl.tfs.TDSTable'
+    public final String EMBEDDEDTABLE = 'getl.tfs.TDSTable'
     public final String VERTICATABLE = 'getl.vertica.VerticaTable'
     public final String XERODATASET = 'getl.xero.XeroDataset'
     public final String XMLDATASET = 'getl.xml.XMLDataset'
@@ -152,10 +150,8 @@ class Getl extends Script {
     /** GETL DSL options */
     void profile(String name, @DelegatesTo(ProfileSpec) Closure cl) {
         def stat = new ProfileSpec(profileName: name)
-        def code = cl.rehydrate(this, stat, this)
-        code.resolveStrategy = Closure.OWNER_FIRST
         stat.startProfile()
-        code.call(stat)
+        runClosure(stat, cl)
         stat.finishProfile()
     }
 
@@ -429,6 +425,42 @@ class Getl extends Script {
         script.run()
     }
 
+    /** Load and run groovy script file */
+    void runGroovyScript(String className, Map vars = [:]) {
+        def groovyClass = Class.forName(className)
+        def script = (GroovyObject)groovyClass.newInstance() as Script
+        configVars.putAll(vars)
+        if (script instanceof Getl) {
+            def scriptGetl = script as Getl
+            scriptGetl.setGetlParams(_params)
+        }
+        script.run()
+    }
+
+    /** Run closure with call parent parameter */
+    protected void runClosure(Object parent, Closure cl) {
+        if (cl == null) return
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        code.call(parent)
+    }
+
+    /** Run closure with call one parameter */
+    protected void runClosure(Object parent, Closure cl, Object param) {
+        if (cl == null) return
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        code.call(param)
+    }
+
+    /** Run closure with call two parameters */
+    protected void runClosure(Object parent, Closure cl, Object param1, Object param2) {
+        if (cl == null) return
+        def code = cl.rehydrate(this, parent, this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        code.call(param1, param2)
+    }
+
     /** Current configuration content */
     Map<String, Object> getConfigContent() { Config.content }
 
@@ -496,42 +528,30 @@ class Getl extends Script {
     public Double getRandomDouble() { GenerationUtils.GenerateDouble() }
 
     /** Random string value */
-    public Boolean getRandomString() { GenerationUtils.GenerateString(255) }
+    public String getRandomString() { GenerationUtils.GenerateString(255) }
 
     /** Random string value */
-    public Boolean randomString(int len) { GenerationUtils.GenerateString(len) }
+    public String randomString(int len) { GenerationUtils.GenerateString(len) }
 
     /** GETL DSL options */
     LangSpec options(@DelegatesTo(LangSpec) Closure cl = null) {
-        if (cl != null) {
-            def code = cl.rehydrate(this, langOpts, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code(langOpts)
-        }
+        runClosure(langOpts, cl)
 
         return langOpts
     }
 
     /** Configuration options */
-    ConfigSpec config(@DelegatesTo(ConfigSpec) Closure cl = null) {
+    ConfigSpec configuration(@DelegatesTo(ConfigSpec) Closure cl = null) {
         def parent = new ConfigSpec()
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
 
     /** Log options */
-    LogSpec log(@DelegatesTo(LogSpec) Closure cl = null) {
+    LogSpec logging(@DelegatesTo(LogSpec) Closure cl = null) {
         def parent = new LogSpec()
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -546,11 +566,7 @@ class Getl extends Script {
     /** JDBC connection */
     JDBCConnection jdbcConnection(String name = null, String className = null, @DelegatesTo(JDBCConnection) Closure cl = null) {
         def parent = registerConnection(className?:JDBCCONNECTION, name) as JDBCConnection
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -559,11 +575,7 @@ class Getl extends Script {
     TableDataset table(String name, @DelegatesTo(TableDataset) Closure cl = null) {
         def isRegistered = isRegisteredDataset(TABLEDATASET, name)
         def parent = registerDataset(TABLEDATASET, name) as TableDataset
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
         if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
 
         return parent
@@ -601,27 +613,23 @@ class Getl extends Script {
     }
 
     /** H2 database table */
-    H2Table h2table(String name = null, @DelegatesTo(H2Table) Closure cl = null) {
+    H2Table h2Table(String name = null, @DelegatesTo(H2Table) Closure cl = null) {
         def isRegistered = isRegisteredDataset(H2TABLE, name)
         def parent = registerDataset(H2TABLE, name) as H2Table
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
         if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
 
         return parent
     }
 
     /** Bulk load CSV file to H2 database table */
-    void h2BulkLoad(String name, CSVDataset source, @DelegatesTo(BulkLoadSpec) Closure cl = null) {
-        bulkLoadTableDataset(name, h2table(name), source, cl)
+    void h2BulkLoad(String name, CSVDataset source, @DelegatesTo(H2BulkLoadSpec) Closure cl = null) {
+        bulkLoadTableDataset(name, h2Table(name), source, cl)
     }
 
     /** Bulk load CSV file to H2 database table */
-    void h2BulkLoad(String name, @DelegatesTo(BulkLoadSpec) Closure cl = null) {
-        bulkLoadTableDataset(name, h2table(name), null, cl)
+    void h2BulkLoad(String name, @DelegatesTo(H2BulkLoadSpec) Closure cl = null) {
+        bulkLoadTableDataset(name, h2Table(name), null, cl)
     }
 
     /** DB2 connection */
@@ -635,14 +643,10 @@ class Getl extends Script {
     }
 
     /** Hive table */
-    HiveTable hivetable(String name, @DelegatesTo(HiveTable) Closure cl = null) {
+    HiveTable hiveTable(String name, @DelegatesTo(HiveTable) Closure cl = null) {
         def isRegistered = isRegisteredDataset(HIVETABLE, name)
         def parent = registerDataset(HIVETABLE, name) as HiveTable
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
         if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
 
         return parent
@@ -650,12 +654,12 @@ class Getl extends Script {
 
     /** Bulk load CSV file to Hive table */
     void hiveBulkLoad(String name, CSVDataset source, @DelegatesTo(BulkLoadSpec) Closure cl = null) {
-        bulkLoadTableDataset(name, hivetable(name), source, cl)
+        bulkLoadTableDataset(name, hiveTable(name), source, cl)
     }
 
     /** Bulk load CSV file to Hive table */
     void hiveBulkLoad(String name, @DelegatesTo(BulkLoadSpec) Closure cl = null) {
-        bulkLoadTableDataset(name, hivetable(name), null, cl)
+        bulkLoadTableDataset(name, hiveTable(name), null, cl)
     }
 
     /** MSSQL connection */
@@ -684,14 +688,10 @@ class Getl extends Script {
     }
 
     /** Vertica table */
-    VerticaTable verticatable(String name = null, @DelegatesTo(VerticaTable) Closure cl = null) {
+    VerticaTable verticaTable(String name = null, @DelegatesTo(VerticaTable) Closure cl = null) {
         def isRegistered = isRegisteredDataset(VERTICATABLE, name)
         def parent = registerDataset(VERTICATABLE, name) as VerticaTable
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
         if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
 
         return parent
@@ -699,12 +699,12 @@ class Getl extends Script {
 
     /** Bulk load CSV file to Vertica table */
     void verticaBulkLoad(String name, CSVDataset source, @DelegatesTo(VerticaBulkLoadSpec) Closure cl = null) {
-        bulkLoadTableDataset(name, verticatable(name), source, cl)
+        bulkLoadTableDataset(name, verticaTable(name), source, cl)
     }
 
     /** Bulk load CSV file to Vertica table */
     void verticaBulkLoad(String name, @DelegatesTo(VerticaBulkLoadSpec) Closure cl = null) {
-        bulkLoadTableDataset(name, verticatable(name), null, cl)
+        bulkLoadTableDataset(name, verticaTable(name), null, cl)
     }
 
     /** NetSuite connection */
@@ -713,36 +713,31 @@ class Getl extends Script {
     }
 
     /** Temporary DB connection */
-    TDS tempDBConnection(String name = null, @DelegatesTo(TDS) Closure cl = null) {
-        def parent = registerConnection(TEMPDBCONNECTION, name) as TDS
+    TDS embeddedConnection(String name = null, @DelegatesTo(TDS) Closure cl = null) {
+        def parent = registerConnection(EMBEDDEDCONNECTION, name) as TDS
         if (parent.sqlHistoryFile == null) parent.sqlHistoryFile = langOpts.tempDBSQLHistoryFile
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
 
     /** Table with temporary database */
-    TDSTable tempDBTable(String name = null, @DelegatesTo(TDSTable) Closure cl = null) {
-        def parent = registerDataset(TEMPDBTABLE, name) as TDSTable
+    TDSTable embeddedTable(String name = null, @DelegatesTo(TDSTable) Closure cl = null) {
+        def isRegistered = isRegisteredDataset(EMBEDDEDTABLE, name)
+        def parent = registerDataset(EMBEDDEDTABLE, name) as TDSTable
         if ((parent.connection as TDS).sqlHistoryFile == null)
             (parent.connection as TDS).sqlHistoryFile = langOpts.tempDBSQLHistoryFile
 
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
+
+        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
 
         return parent
     }
 
     /** Table with temporary database */
-    TDSTable tempDBTableWithDataset(String name = null, Dataset sourceDataset, @DelegatesTo(TDSTable) Closure cl = null) {
-        if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
+    TDSTable embeddedTableWithDataset(String name = null, Dataset sourceDataset, @DelegatesTo(TDSTable) Closure cl = null) {
+        if (sourceDataset == null) throw new ExceptionGETL("Source dataset cannot be null!")
         if (sourceDataset.field.isEmpty()) {
             sourceDataset.retrieveFields()
             if (sourceDataset.field.isEmpty()) throw new ExceptionGETL("Required field from dataset $sourceDataset")
@@ -755,25 +750,26 @@ class Getl extends Script {
         if (!parent.exists) parent.create()
 
         if (name != null) registerDataset(parent, name, false)
-
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
 
+    /** Bulk load CSV file to temporary database table */
+    void embeddedTableBulkLoad(String name, CSVDataset source, @DelegatesTo(BulkLoadSpec) Closure cl = null) {
+        bulkLoadTableDataset(name, embeddedTable(name), source, cl)
+    }
+
+    /** Bulk load CSV file to H2 database table */
+    void embeddedTableBulkLoad(String name, @DelegatesTo(H2BulkLoadSpec) Closure cl = null) {
+        bulkLoadTableDataset(name, embeddedTable(name), null, cl)
+    }
+
     /** JDBC query */
-    QueryDataset queryDataset(String name = null, @DelegatesTo(QueryDataset) Closure cl = null) {
+    QueryDataset query(String name = null, @DelegatesTo(QueryDataset) Closure cl = null) {
         def isRegistered = isRegisteredDataset(QUERYDATASET, name)
         def parent = registerDataset(QUERYDATASET, name) as QueryDataset
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
         if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
 
         return parent
@@ -787,11 +783,7 @@ class Getl extends Script {
     /** CSV connection */
     CSVConnection csvConnection(String name = null, @DelegatesTo(CSVConnection) Closure cl = null) {
         def parent = registerConnection(CSVCONNECTION, name) as CSVConnection
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -799,11 +791,7 @@ class Getl extends Script {
     /** CSV delimiter file */
     CSVDataset csv(String name = null, @DelegatesTo(CSVDataset) Closure cl = null) {
         def parent = registerDataset(CSVDATASET, name) as CSVDataset
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -814,11 +802,7 @@ class Getl extends Script {
         def parent = registerDataset(CSVDATASET, name) as CSVDataset
         parent.field = sourceDataset.field
 
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -826,11 +810,7 @@ class Getl extends Script {
     /** Excel connection */
     ExcelConnection excelConnection(String name = null, @DelegatesTo(ExcelConnection) Closure cl = null) {
         def parent = registerConnection(EXCELCONNECTION, name) as ExcelConnection
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -838,11 +818,7 @@ class Getl extends Script {
     /** Excel file */
     ExcelDataset excel(String name = null, @DelegatesTo(ExcelDataset) Closure cl = null) {
         def parent = registerDataset(EXCELDATASET, name) as ExcelDataset
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -850,11 +826,7 @@ class Getl extends Script {
     /** JSON connection */
     JSONConnection jsonConnection(String name = null, @DelegatesTo(JSONConnection) Closure cl = null) {
         def parent = registerConnection(JSONCONNECTION, name) as JSONConnection
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -862,11 +834,7 @@ class Getl extends Script {
     /** JSON file */
     JSONDataset json(String name = null, @DelegatesTo(JSONDataset) Closure cl = null) {
         def parent = registerDataset(JSONDATASET, name) as JSONDataset
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -874,11 +842,7 @@ class Getl extends Script {
     /** XML connection */
     XMLConnection xmlConnection(String name = null, @DelegatesTo(XMLConnection) Closure cl = null) {
         def parent = registerConnection(XMLCONNECTION, name) as XMLConnection
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -886,11 +850,7 @@ class Getl extends Script {
     /** XML file */
     XMLDataset xml(String name = null, @DelegatesTo(XMLDataset) Closure cl = null) {
         def parent = registerDataset(XMLDATASET, name) as XMLDataset
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -898,11 +858,7 @@ class Getl extends Script {
     /** SalesForce connection */
     SalesForceConnection salesforceConnection(String name = null, @DelegatesTo(SalesForceConnection) Closure cl = null) {
         def parent = registerConnection(SALESFORCECONNECTION, name) as SalesForceConnection
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -910,11 +866,7 @@ class Getl extends Script {
     /** SalesForce table */
     SalesForceDataset salesforce(String name, @DelegatesTo(SalesForceDataset) Closure cl = null) {
         def parent = registerDataset(SALESFORCEDATASET, name) as SalesForceDataset
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -922,11 +874,7 @@ class Getl extends Script {
     /** Xero connection */
     XeroConnection xeroConnection(String name = null, @DelegatesTo(XeroConnection) Closure cl = null) {
         def parent = registerConnection(XEROCONNECTION, name) as XeroConnection
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -934,11 +882,7 @@ class Getl extends Script {
     /** Xero table */
     XeroDataset xero(String name = null, @DelegatesTo(XeroDataset) Closure cl = null) {
         def parent = registerDataset(XERODATASET, name) as XeroDataset
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -946,11 +890,7 @@ class Getl extends Script {
     /** Temporary CSV file connection */
     TFS csvTempConnection(@DelegatesTo(TFS) Closure cl = null) {
         def parent = TFS.storage
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -958,12 +898,7 @@ class Getl extends Script {
     /** Temporary CSV file */
     TFSDataset csvTemp(String name = null, @DelegatesTo(TFSDataset) Closure cl = null) {
         TFSDataset parent = registerDataset(CSVTEMPDATASET, name) as TFSDataset
-
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
@@ -973,29 +908,19 @@ class Getl extends Script {
         if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
         TFSDataset parent = sourceDataset.csvTempFile
         if (name != null) registerDataset(parent, name, false)
-
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent)
-        }
+        runClosure(parent, cl)
 
         return parent
     }
 
     /** Copy rows from source to destination dataset */
-    void copyRows(Dataset source, Dataset dest, @DelegatesTo(FlowCopySpec) Closure cl = null) {
+    Flow copyRows(Dataset source, Dataset dest, @DelegatesTo(FlowCopySpec) Closure cl = null) {
         if (source == null) throw new ExceptionGETL('Source dataset cannot be null!')
         if (dest == null) throw new ExceptionGETL('Dest dataset cannot be null!')
         def parent = new FlowCopySpec()
-        if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
+        runClosure(parent, cl, source, dest)
 
-            code.call(source, dest)
-        }
-
-        def pt = startProcess("Copy rows from ${source} to ${dest}")
+        def pt = startProcess("Copy rows from $source to $dest")
         Flow flow = new Flow()
         if (parent.onInit) parent.onInit.call()
         parent.prepareParams()
@@ -1005,85 +930,76 @@ class Getl extends Script {
         parent.errorsDataset = flow.errorsDataset
         if (parent.onDone) parent.onDone.call()
         finishProcess(pt, parent.countRow)
+
+        return flow
     }
 
     /** Write rows to destination dataset */
-    void rowsTo(Dataset dataset, @DelegatesTo(FlowWriteSpec) Closure cl) {
-        if (dataset == null) throw new ExceptionGETL('Dataset cannot be null!')
+    Flow rowsTo(Dataset dest, @DelegatesTo(FlowWriteSpec) Closure cl) {
+        if (dest == null) throw new ExceptionGETL('Destination dataset cannot be null!')
         def parent = new FlowWriteSpec()
-        def code = cl.rehydrate(this, parent, this)
-        code.resolveStrategy = Closure.OWNER_FIRST
+        runClosure(parent, cl, dest)
 
-        code.call(dataset)
-
-        def pt = startProcess("Write rows to $dataset")
+        def pt = startProcess("Write rows to $dest")
         Flow flow = new Flow()
         if (parent.onInit != null) parent.onInit.call()
         parent.prepareParams()
-        def flowParams = (([dest: dataset]) as Map<String, Object>) + parent.params
+        def flowParams = (([dest: dest]) as Map<String, Object>) + parent.params
         flow.writeTo(flowParams)
         parent.countRow = flow.countRow
         if (parent.onDone != null) parent.onDone.call()
         finishProcess(pt, parent.countRow)
+
+        return flow
     }
 
     /** Write rows to many destination datasets */
-    void rowsToMany(Map<String, Dataset> datasets, @DelegatesTo(FlowWriteManySpec) Closure cl) {
-        if (datasets == null || datasets.isEmpty()) throw new ExceptionGETL('Dataset cannot be null or empty!')
+    Flow rowsToMany(Map<String, Dataset> dest, @DelegatesTo(FlowWriteManySpec) Closure cl) {
+        if (dest == null || dest.isEmpty()) throw new ExceptionGETL('Destination datasets cannot be null or empty!')
         def parent = new FlowWriteManySpec()
-        def code = cl.rehydrate(this, parent, this)
-        code.resolveStrategy = Closure.OWNER_FIRST
-
-        code.call(datasets)
+        runClosure(parent, cl, dest)
 
         def destNames = [] as List<String>
-        datasets.each { String destName, Dataset ds -> destNames.add("$destName: ${ds.toString()}".toString())}
+        dest.each { String destName, Dataset ds -> destNames.add("$destName: ${ds.toString()}".toString())}
         def pt = startProcess("Write rows to $destNames")
         Flow flow = new Flow()
         if (parent.onInit != null) parent.onInit.call()
         parent.prepareParams()
-        def flowParams = (([dest: datasets]) as Map<String, Object>) + parent.params
+        def flowParams = (([dest: dest]) as Map<String, Object>) + parent.params
         flow.writeAllTo(flowParams)
         if (parent.onDone != null) parent.onDone.call()
         finishProcess(pt)
+
+        return flow
     }
 
     /** Process rows from source dataset */
-    void rowProcess(Dataset dataset, @DelegatesTo(FlowProcessSpec) Closure cl) {
-        if (dataset == null) throw new ExceptionGETL('Dataset cannot be null!')
+    Flow rowProcess(Dataset source, @DelegatesTo(FlowProcessSpec) Closure cl) {
+        if (source == null) throw new ExceptionGETL('Source dataset cannot be null!')
         def parent = new FlowProcessSpec()
-        def code = cl.rehydrate(this, parent, this)
-        code.resolveStrategy = Closure.OWNER_FIRST
+        runClosure(parent, cl, source)
 
-        code.call(dataset)
-
-        def pt = startProcess("Read rows from ${parent.source}")
+        def pt = startProcess("Read rows from $source")
         Flow flow = new Flow()
         if (parent.onInit != null) parent.onInit.call()
         parent.prepareParams()
-        def flowParams = (([source: dataset]) as Map<String, Object>) + parent.params
+        def flowParams = (([source: source]) as Map<String, Object>) + parent.params
         flow.process(flowParams)
         parent.countRow = flow.countRow
         parent.errorsDataset = flow.errorsDataset
         if (parent.onDone != null) parent.onDone.call()
         finishProcess(pt, parent.countRow)
+
+        return flow
     }
 
     /** SQL scripter */
-    SQLScripter sql(SQLScripter parent = null, @DelegatesTo(SQLScripter) Closure cl) {
-        if (parent == null) {
-            parent = new SQLScripter()
-            parent.connection = getDefaultJDBCConnection()
-        }
-        parent.vars.putAll(configVars)
-        def code = cl.rehydrate(this, parent, this)
-        code.resolveStrategy = Closure.OWNER_FIRST
-
+    SQLScripter sql(@DelegatesTo(SQLScripter) Closure cl) {
+        def parent = new SQLScripter()
+        parent.connection = getDefaultJDBCConnection()
+        parent.extVars = configContent
         def pt = startProcess('Execution SQL script')
-        code.call(parent)
-        parent.vars.each { String name, value ->
-            if (!configVars.containsKey(name)) configVars.put(name, value)
-        }
+        runClosure(parent, cl)
         finishProcess(pt, parent.rowCount)
 
         return parent
@@ -1092,28 +1008,29 @@ class Getl extends Script {
     /** Process local file system */
     FileManager files(String name, @DelegatesTo(FileManager) Closure cl = null) {
         def parent = registerFileManager(FILEMANAGER, name) as FileManager
+        parent.rootPath = TFS.storage.path
+        parent.connect()
         if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-
-            def pt = startProcess('Work from local file system')
-            code.call(parent)
+            def pt = startProcess('Process local file system')
+            runClosure(parent, cl)
             finishProcess(pt)
         }
 
         return parent
     }
 
+    /** Process local file system */
+    FileManager files(@DelegatesTo(FileManager) Closure cl = null) {
+        files(null, cl)
+    }
+
     /** Process ftp file system */
     FTPManager ftp(String name = null, @DelegatesTo(FTPManager) Closure cl = null) {
         def parent = registerFileManager(FTPMANAGER, name) as FTPManager
         if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-
-            def pt = startProcess('Work from FTP file system')
+            def pt = startProcess('Process ftp file system')
             try {
-                code.call(parent)
+                runClosure(parent, cl)
             }
             finally {
                 parent.disconnect()
@@ -1128,12 +1045,9 @@ class Getl extends Script {
     SFTPManager sftp(String name = null, @DelegatesTo(SFTPManager) Closure cl = null) {
         def parent = registerFileManager(SFTPMANAGER, name) as SFTPManager
         if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-
-            def pt = startProcess('Work from SFTP file system')
+            def pt = startProcess('Process sftp file system')
             try {
-                code.call(parent)
+                runClosure(parent, cl)
             }
             finally {
                 parent.disconnect()
@@ -1148,12 +1062,9 @@ class Getl extends Script {
     HDFSManager hdfs(String name = null, @DelegatesTo(HDFSManager) Closure cl = null) {
         def parent = registerFileManager(HDFSMANAGER, name) as HDFSManager
         if (cl != null) {
-            def code = cl.rehydrate(this, parent, this)
-            code.resolveStrategy = Closure.OWNER_FIRST
-
-            def pt = startProcess('Work from HDFS file system')
+            def pt = startProcess('Process hdfs file system')
             try {
-                code.call(parent)
+                runClosure(parent, cl)
             }
             finally {
                 parent.disconnect()
@@ -1165,24 +1076,32 @@ class Getl extends Script {
     }
 
     /** Run code in multithread mode */
-    void thread(@DelegatesTo(Executor) Closure cl) {
+    Executor thread(@DelegatesTo(Executor) Closure cl) {
         def parent = new Executor()
-        def code = cl.rehydrate(this, parent, this)
-        code.resolveStrategy = Closure.OWNER_FIRST
-
         def pt = startProcess('Execution threads')
-        code.call(parent)
+        runClosure(parent, cl)
         finishProcess(pt)
+
+        return parent
     }
 
     /** Run code in multithread mode */
     EMailer mail(@DelegatesTo(EMailer) Closure cl) {
         def parent = new EMailer()
-        def code = cl.rehydrate(this, parent, this)
-        code.resolveStrategy = Closure.OWNER_FIRST
-
         def pt = startProcess('Mailer')
-        code.call(parent)
+        runClosure(parent, cl)
         finishProcess(pt)
+
+        return parent
+    }
+
+    /** Copy file to directory */
+    void copyFileToDir(String sourceFileName, String destDirName, boolean createDir = false) {
+        FileUtils.CopyToDir(sourceFileName, destDirName, createDir)
+    }
+
+    /** Copy file to another file */
+    void copyFileTo(String sourceFileName, String destFileName, boolean createDir = false) {
+        FileUtils.CopyToFile(sourceFileName, destFileName, createDir)
     }
 }

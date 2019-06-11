@@ -1,0 +1,83 @@
+/*
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
+
+ GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
+ transform and load data into programs written in Groovy, or Java, as well as from any software that supports
+ the work with Java classes.
+
+ Copyright (C) 2013-2019  Alexsey Konstantonov (ASCRUS)
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License and
+ GNU Lesser General Public License along with this program.
+ If not, see <http://www.gnu.org/licenses/>.
+*/
+
+package getl.csv.opts
+
+import getl.lang.opts.BaseSpec
+import groovy.transform.InheritConstructors
+
+/**
+ * Options for reading CSV file
+ * @author Alexsey Konstantinov
+ *
+ */
+@InheritConstructors
+class CSVReadSpec extends BaseSpec {
+    /** Check constraints while reading a file */
+    Boolean getIsValid() { params.isValid as Boolean }
+    /** Check constraints while reading a file */
+    void setIsValid(Boolean value) { params.isValid = value }
+
+    /** Read chunked files */
+    Boolean getIsSplit() { params.isSplit as Boolean }
+    /** Read chunked files */
+    void setIsSplit(Boolean value) { params.isSplit = value }
+
+    /** Read all columns as text type */
+    Boolean getReadAsText() { params.readAsText as Boolean }
+    /** Read all columns as text type */
+    void setReadAsText(Boolean value) { params.readAsText = value }
+
+    /**
+     * Processing write parsing error and return the need to read the following rows of file
+     * <br>Closure parameters: Map row, Long numberRow
+     */
+    Closure<Boolean> getOnProcessError() { params.processError as Closure<Boolean> }
+    /**
+     * Processing write parsing error and return the need to read the following rows of file
+     * <br>Closure parameters: Map row, Long numberRow
+     */
+    void setOnProcessError(Closure<Boolean> value) { params.processError = prepareClosure(value) }
+    /**
+     * Processing write parsing error and return the need to read the following rows of file
+     * <br>Closure parameters: Map row, Long numberRow
+     */
+    void processError(Closure<Boolean> cl) { onProcessError = cl }
+
+    /**
+     * Filter reading file records
+     * <br>Closure parameters: Map row
+     */
+    Closure<Boolean> getOnFilter() { params.filter as Closure<Boolean> }
+    /**
+     * Filter reading file records
+     * <br>Closure parameters: Map row
+     */
+    void setOnFilter(Closure<Boolean> value) { params.filter = prepareClosure(value) }
+    /**
+     * Filter reading file records
+     * <br>Closure parameters: Map row
+     */
+    void filter(Closure<Boolean> cl) { onFilter = cl }
+}

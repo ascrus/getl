@@ -38,6 +38,16 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class FlowWriteManySpec extends BaseSpec {
+    FlowWriteManySpec() {
+        super()
+        params.destParams = [:] as Map<String, Map<String, Object>>
+    }
+
+    FlowWriteManySpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
+        super(useExternalParams, importParams)
+        if (params.destParams == null) params.destParams = [:] as Map<String, Map<String, Object>>
+    }
+
     /**
      * Temporary destination name
      */
@@ -59,11 +69,14 @@ class FlowWriteManySpec extends BaseSpec {
     /**
      * Parameters for list of destination write process
      */
-    Map<String, Map<String,Object>> getDestParams() { params._destParams as Map<String, Map<String,Object>> }
+    Map<String, Map<String,Object>> getDestParams() { params.destParams as Map<String, Map<String,Object>> }
     /**
      * Parameters for list of destination write process
      */
-    void setDestParams(Map<String, Map<String,Object>> value) { params._destParams = value }
+    void setDestParams(Map<String, Map<String,Object>> value) {
+        destParams.clear()
+        if (value != null)  destParams.putAll(value)
+    }
 
     /**
      * Write with synchronize main thread
@@ -157,21 +170,4 @@ class FlowWriteManySpec extends BaseSpec {
      * Closure code process row
      */
     void process(Closure cl) { params.process = cl }
-
-    @Override
-    protected List<String> ignoreImportKeys(Map<String, Object> importParams) {
-        def dp = MapUtils.GetLevel(importParams, "dest_") as Map<String, Object>
-
-        return dp.keySet().toList()
-    }
-
-    @Override
-    void prepareParams() {
-        MapUtils.CleanMap(params, ignoreImportKeys(params))
-        destParams.each { String destName, Map<String, Object> opts ->
-            opts.each { String key, value -> params.put('dest_' + destName + '_' + key, value) }
-        }
-
-        MapUtils.CleanMap(params, ['_destParams'])
-    }
 }
