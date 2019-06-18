@@ -138,11 +138,7 @@ class FlowWriteSpec extends BaseSpec {
     /**
      * Code executed before process write rows
      */
-    def setOnInitFlow(Closure value) { params.onInit = prepareClosure(value) }
-    /**
-     * Code executed before process write rows
-     */
-    void initFlow(Closure cl) { params.onInit = cl }
+    void initFlow(Closure value) { params.onInit = prepareClosure(value) }
 
     /**
      * Code executed after process write rows
@@ -151,24 +147,16 @@ class FlowWriteSpec extends BaseSpec {
     /**
      * Code executed after process write rows
      */
-    def setOnDoneFlow(Closure value) { params.onDone = prepareClosure(value) }
-    /**
-     * Code executed after process write rows
-     */
-    void doneFlow(Closure cl) { params.onDone = cl }
+    void doneFlow(Closure value) { params.onDone = prepareClosure(value) }
 
     /**
      * Closure code process row
      */
-    Closure getProcess() { params.process as Closure }
+    Closure getOnProcess() { params.process as Closure }
     /**
      * Closure code process row
      */
-    def setProcess(Closure value) { params.process = prepareClosure(value) }
-    /**
-     * Closure code process row
-     */
-    void process(Closure cl) { params.process = cl }
+    void process(Closure value) { params.process = prepareClosure(value) }
 
     /**
      * Last count row

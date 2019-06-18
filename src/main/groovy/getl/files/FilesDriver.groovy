@@ -49,30 +49,30 @@ class FilesDriver extends FileDriver {
 	@Override
     public
     List<Field> fields(Dataset dataset) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
     public
     long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
     public
     void openWrite(Dataset dataset, Map params, Closure prepareCode) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
     public
     void write(Dataset dataset, Map row) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
     public
     void closeWrite(Dataset dataset) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 }

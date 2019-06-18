@@ -60,11 +60,11 @@ class ExcelDriver extends Driver {
     }
 
     @Override
-    public List<Object> retrieveObjects(Map params, Closure filter) { throw new ExceptionGETL("Not supported") }
+    public List<Object> retrieveObjects(Map params, Closure filter) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
     public
-    List<Field> fields(Dataset dataset) { throw new ExceptionGETL("Not supported") }
+    List<Field> fields(Dataset dataset) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
     public
@@ -270,92 +270,92 @@ class ExcelDriver extends Driver {
     @Override
     public
     void doneWrite (Dataset dataset) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
     public
     void closeWrite(Dataset dataset) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
     public
     void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
     public
     void openWrite(Dataset dataset, Map params, Closure prepareCode) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
     public
     void write(Dataset dataset, Map row) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
     public
     long executeCommand (String command, Map params) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
     public long getSequence(String sequenceName) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
     public
     void clearDataset(Dataset dataset, Map params) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
 
     }
 
     @Override
     public
     void createDataset(Dataset dataset, Map params) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
 
     }
 
     @Override
     public
     void startTran() {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
 
     }
 
     @Override
     public
     void commitTran() {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
 
     }
 
     @Override
     public
     void rollbackTran() {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
     public
     void connect () {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
     public
     void disconnect () {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
     public boolean isConnected() {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 }

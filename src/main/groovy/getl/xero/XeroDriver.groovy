@@ -400,40 +400,40 @@ class XeroDriver extends Driver {
     }
 
     @Override
-    void startTran() { throw new ExceptionGETL("Not supported") }
+    void startTran() { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void commitTran() { throw new ExceptionGETL("Not supported") }
+    void commitTran() { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void rollbackTran() { throw new ExceptionGETL("Not supported") }
+    void rollbackTran() { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void createDataset(Dataset dataset, Map params) { throw new ExceptionGETL("Not supported") }
+    void createDataset(Dataset dataset, Map params) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void openWrite(Dataset dataset, Map params, Closure prepareCode) { throw new ExceptionGETL("Not supported") }
+    void openWrite(Dataset dataset, Map params, Closure prepareCode) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void write(Dataset dataset, Map row) { throw new ExceptionGETL("Not supported") }
+    void write(Dataset dataset, Map row) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void doneWrite(Dataset dataset) { throw new ExceptionGETL("Not supported") }
+    void doneWrite(Dataset dataset) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void closeWrite(Dataset dataset) { throw new ExceptionGETL("Not supported") }
+    void closeWrite(Dataset dataset) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) { throw new ExceptionGETL("Not supported") }
+    void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void clearDataset(Dataset dataset, Map params) { throw new ExceptionGETL("Not supported") }
+    void clearDataset(Dataset dataset, Map params) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    long executeCommand(String command, Map params) { throw new ExceptionGETL("Not supported") }
+    long executeCommand(String command, Map params) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    long getSequence(String sequenceName) { throw new ExceptionGETL("Not supported") }
+    long getSequence(String sequenceName) { throw new ExceptionGETL('Not support this features!') }
 
     private static String ConvertFieldName(Field.Type type, String name, boolean isChild = false) {
         def list = name.split('[.]')

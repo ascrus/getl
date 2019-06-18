@@ -72,11 +72,7 @@ class BaseSpec {
     /**
      * User code before create table
      */
-    void setOnInit(Closure value) { onInit = prepareClosure(value) }
-    /**
-     * User code before create table
-     */
-    void init(Closure cl) { setOnInit(cl) }
+    void init(Closure value) { onInit = prepareClosure(value) }
 
     public Closure onDone
     /**
@@ -86,11 +82,7 @@ class BaseSpec {
     /**
      * User code after create table
      */
-    void setOnDone(Closure value) { onDone = prepareClosure(value) }
-    /**
-     * User code after create table
-     */
-    void done(Closure cl) { setOnDone(cl) }
+    void done(Closure value) { onDone = prepareClosure(value) }
 
     /**
      * Detected ignore key map from import

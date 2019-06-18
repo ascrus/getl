@@ -51,15 +51,8 @@ class BulkLoadSpec extends BaseSpec {
     Closure getOnPrepare() { params.prepare as Closure }
     /**
      * Preparing code
-     * TODO: added prepareClosure
      */
-    void setOnPrepare(Closure value) { params.prepare = prepareClosure(value) }
-    /**
-     * Preparing code
-     */
-    void prepare(Closure cl) {
-        onPrepare = cl
-    }
+    void prepare(Closure value) { params.prepare = prepareClosure(value) }
 
     /**
      * Automatic linking by the file and table field names

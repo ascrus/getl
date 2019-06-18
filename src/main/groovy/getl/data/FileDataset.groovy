@@ -38,92 +38,95 @@ import getl.utils.*
 @InheritConstructors
 class FileDataset extends Dataset {
 	FileDataset () {
-		methodParams.register("openWrite", ["deleteOnEmpty"])
-		methodParams.register("drop", ["validExist", "portions"])
+		methodParams.register('openWrite', ['deleteOnEmpty', 'append'])
+		methodParams.register('drop', ['validExist', 'portions'])
 	}
+
+	/** Current file connection */
+	FileConnection getFileConnection() { connection as FileConnection }
 	
 	/**
 	 * File name	
 	 */
-	public String getFileName () { params.fileName }
+	String getFileName () { params.fileName }
 	/**
 	 * File name
 	 */
-	public void setFileName (String value) { params.fileName = value }
+	void setFileName (String value) { params.fileName = value }
 	
 	/**
 	 * Code page for file
 	 */
-	public String getCodePage () { ListUtils.NotNullValue([params.codePage, (connection as FileConnection).codePage, "utf-8"]) }
+	String getCodePage () { ListUtils.NotNullValue([params.codePage, (connection as FileConnection).codePage, 'utf-8']) }
 	/**
 	 * Code page for file
 	 */
-	public void setCodePage (String value) { params.codePage = value }
+	void setCodePage (String value) { params.codePage = value }
 	
 	/**
 	 * Append if file exists
 	 */
-	public boolean getAppend () { BoolUtils.IsValue([params.append, (connection as FileConnection).append], false) }
+	boolean getAppend () { BoolUtils.IsValue([params.append, (connection as FileConnection).append], false) }
 	/**
 	 * Append if file exists
 	 */
-	public void setAppend (boolean value) { params.append = value }
+	void setAppend (boolean value) { params.append = value }
 	
 	/**
 	 * Auto create path for connection
 	 */
-	public boolean getCreatePath () { BoolUtils.IsValue([params.createPath, (connection as FileConnection).createPath], false) }
+	boolean getCreatePath () { BoolUtils.IsValue([params.createPath, (connection as FileConnection).createPath], false) }
 	/**
 	 * Auto create path for connection
 	 */
-	public void setCreatePath (boolean value) { params.createPath = value }
+	void setCreatePath (boolean value) { params.createPath = value }
 	
 	/**
 	 * Delete file if empty after write
 	 */
-	public boolean getDeleteOnEmpty () { BoolUtils.IsValue([params.deleteOnEmpty, (connection as FileConnection).deleteOnEmpty], false) }
+	boolean getDeleteOnEmpty () { BoolUtils.IsValue([params.deleteOnEmpty, (connection as FileConnection).deleteOnEmpty], false) }
 	/**
 	 * Delete file if empty after write
 	 */
-	public void setDeleteOnEmpty (boolean value) { params.deleteOnEmpty = value }
+	void setDeleteOnEmpty (boolean value) { params.deleteOnEmpty = value }
 	
 	/**
 	 * File is pack of GZIP
 	 */
-	public boolean getIsGzFile() { BoolUtils.IsValue([params.isGzFile, (connection as FileConnection).isGzFile], false) }
+	boolean getIsGzFile() { BoolUtils.IsValue([params.isGzFile, (connection as FileConnection).isGzFile], false) }
 	/**
 	 * File is pack of GZIP
 	 */
-	public void setIsGzFile (boolean value) { params.isGzFile = value }
+	void setIsGzFile (boolean value) { params.isGzFile = value }
 	
 	/**
 	 * Extenstion for file
 	 */
-	public String getExtension () { ListUtils.NotNullValue([params.extension, (connection as FileConnection).extension]) }
+	String getExtension () { ListUtils.NotNullValue([params.extension, (connection as FileConnection).extension]) }
 	/**
 	 * Extenstion for file
 	 */
-	public void setExtension (String value) { params.extension = value }
+	void setExtension (String value) { params.extension = value }
 	
 	/**
 	 * Size of read/write buffer size
 	 */
-	public Integer getBufferSize () { ListUtils.NotNullValue([params.bufferSize, (connection as FileConnection).bufferSize, 1*1024*1024]) as Integer }
+	Integer getBufferSize () { ListUtils.NotNullValue([params.bufferSize, (connection as FileConnection).bufferSize, 1*1024*1024]) as Integer }
 	/**
 	 * Size of read/write buffer size
 	 */
-	public void setBufferSize(Integer value)  { params.bufferSize = value }
+	void setBufferSize(Integer value)  { params.bufferSize = value }
 	
 	@Override
-	public String getObjectName() { fileName }
+	String getObjectName() { fileName }
 	
 	@Override
-	public String getObjectFullName() { fullFileName() }
+	String getObjectFullName() { fullFileName() }
 	
 	/**
 	 * Full file name with path
 	 */
-	public String fullFileName() {
+	String fullFileName() {
 		if (connection == null) throw new ExceptionGETL("Required connection for dataset \"$objectName\"")
 		FileDriver drv = connection.driver as FileDriver
 		
@@ -133,7 +136,7 @@ class FileDataset extends Dataset {
 	/**
 	 * Full file name with path and portion with split files
 	 */
-	public String fullFileName(Integer portion) {
+	String fullFileName(Integer portion) {
 		FileDriver drv = connection.driver as FileDriver
 		
 		drv.fullFileNameDataset(this, portion)
@@ -142,7 +145,7 @@ class FileDataset extends Dataset {
 	/**
 	 * Return file mask 
 	 */
-	public String fileMaskDataset(Dataset dataset, boolean isSplit) {
+	String fileMaskDataset(Dataset dataset, boolean isSplit) {
 		FileDriver drv = connection.driver as FileDriver
 		
 		drv.fileMaskDataset(this, isSplit)
@@ -151,7 +154,7 @@ class FileDataset extends Dataset {
 	/**
 	 * Return dataset fileName without extension
 	 */
-	public String fileNameWithoutExtension(Dataset dataset) {
+	String fileNameWithoutExtension(Dataset dataset) {
 		FileDriver drv = connection.driver as FileDriver
 		
 		drv.fileNameWithoutExtension(this)
@@ -160,14 +163,14 @@ class FileDataset extends Dataset {
 	/**
 	 * Valid existing file
 	 */
-	public boolean existsFile() {
+	boolean existsFile() {
 		File f = new File(fullFileName())
 		
 		f.exists()
 	}
 	
 	@Override
-	public void openWrite (Map procParams) {
+	void openWrite (Map procParams) {
 		sysParams.deleteOnEmpty = BoolUtils.IsValue(procParams.deleteOnEmpty, deleteOnEmpty)
 		sysParams.writeFiles = [:]
 		sysParams.append = procParams.append
@@ -175,30 +178,28 @@ class FileDataset extends Dataset {
 	}
 	
 	@Override
-	public void closeWrite () {
+	void closeWrite () {
 		super.closeWrite()
-		/*if (!BoolUtils.IsValue([sysParams.append, append], false)) {*/
 		if (isWriteError || (sysParams.deleteOnEmpty && writeRows == 0)) {
 			(connection.driver as FileDriver).fixTempFiles(this, true)
 		} else {
 			(connection.driver as FileDriver).fixTempFiles(this, false)
 		}
-		/*}*/
 	}
 	
 	@Override
-	public void setConnection(Connection value) {
+	void setConnection(Connection value) {
 		assert value == null || value instanceof FileConnection
 		super.setConnection(value)
 	}
 	
 	@Override
-	public List<String> inheriteConnectionParams () {
-		super.inheriteConnectionParams() + ["codePage", "isGzFile", "extension", "append"]
+	List<String> inheriteConnectionParams () {
+		super.inheriteConnectionParams() + ['codePage', 'isGzFile', 'extension', 'append']
 	}
 	
 	@Override
-	public List<String> excludeSaveParams () {
-		super.excludeSaveParams() + ["fileName"]
+	List<String> excludeSaveParams () {
+		super.excludeSaveParams() + ['fileName']
 	}
 }

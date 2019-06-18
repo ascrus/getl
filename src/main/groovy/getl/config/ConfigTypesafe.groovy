@@ -53,7 +53,7 @@ class ConfigTypesafe extends ConfigManager {
 
 	@Override
 	void saveConfig(Map<String, Object> content, Map<String, Object> saveParams) {
-		throw new ExceptionGETL('Not supported')
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override

@@ -48,9 +48,7 @@ class WriteSpec extends BaseSpec {
     /** Preparing code */
     Closure getOnPrepare() { params.prepare as Closure }
     /** Preparing code */
-    void setOnPrepare(Closure value) { params.prepare = prepareClosure(value) }
-    /** Preparing code */
-    void prepare(Closure cl) { onPrepare = cl }
+    void prepare(Closure value) { params.prepare = prepareClosure(value) }
 
     /** Use schemata file for reading dataset structure */
     Boolean getAutoSchema() { params.autoSchema as Boolean }

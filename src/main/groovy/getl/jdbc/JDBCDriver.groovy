@@ -1633,7 +1633,7 @@ $sql
 	
 	@Override
 	public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	/**

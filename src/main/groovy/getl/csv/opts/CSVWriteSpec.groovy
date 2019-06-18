@@ -53,12 +53,7 @@ class CSVWriteSpec extends BaseSpec {
      * Run after save batch records
      * <br>Closure parameters: Long numberOfBatch
      */
-    void setOnSaveBatch(Closure value) { params.onSaveBatch = prepareClosure(value) }
-    /**
-     * Run after save batch records
-     * <br>Closure parameters: Long numberOfBatch
-     */
-    void saveBatch(Closure cl) { onSaveBatch = cl }
+    void saveBatch(Closure value) { params.onSaveBatch = prepareClosure(value) }
 
     /** Maximum size of the portion of the recorded file (use 0 or null for no size limit) */
     Long getSplitSize() { params.splitSize as Long }
@@ -74,10 +69,5 @@ class CSVWriteSpec extends BaseSpec {
      * Checking row for need to write current and next rows to the new file
      * <br>Closure parameters: Map row
      */
-    void setOnSplitFile(Closure<Boolean> value) { params.onSplitFile = prepareClosure(value) }
-    /**
-     * Checking row for need to write current and next rows to the new file
-     * <br>Closure parameters: Map row
-     */
-    void splitFile(Closure<Boolean> cl) { onSplitFile = cl }
+    void splitFile(Closure<Boolean> value) { params.onSplitFile = prepareClosure(value) }
 }

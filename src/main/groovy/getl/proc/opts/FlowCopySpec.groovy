@@ -243,11 +243,7 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Code executed before process copy rows
      */
-    def setOnInitFlow(Closure value) { params.onInit = prepareClosure(value) }
-    /**
-     * Code executed before process copy rows
-     */
-    void initFlow(Closure cl) { params.onInit = cl }
+    void initFlow(Closure value) { params.onInit = prepareClosure(value) }
 
     /**
      * Code executed before writing to destination dataset
@@ -256,11 +252,7 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Code executed before writing to destination dataset
      */
-    def setOnWriteFlow(Closure value) { params.onWrite = prepareClosure(value) }
-    /**
-     * Code executed before writing to destination dataset
-     */
-    void writeFlow(Closure cl) { params.onWrite = cl }
+    void writeFlow(Closure value) { params.onWrite = prepareClosure(value) }
 
     /**
      * Code executed after process copy rows
@@ -269,11 +261,7 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Code executed after process copy rows
      */
-    def setOnDoneFlow(Closure value) { params.onDone = prepareClosure(value) }
-    /**
-     * Code executed after process copy rows
-     */
-    void doneFlow(Closure cl) { params.onDone = cl }
+    void doneFlow(Closure value) { params.onDone = prepareClosure(value) }
 
     /**
      * save transformation code to dumn (default false)
@@ -287,15 +275,11 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Closure code process row
      */
-    Closure getProcess() { params.process as Closure }
+    Closure getOnProcess() { params.process as Closure }
     /**
      * Closure code process row
      */
-    def setProcess(Closure value) { params.process = prepareClosure(value) }
-    /**
-     * Closure code process row
-     */
-    void process(Closure cl) { params.process = cl }
+    void process(Closure value) { params.process = prepareClosure(value) }
 
     /**
      * Last count row

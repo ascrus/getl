@@ -24,7 +24,7 @@
 
 package getl.data
 
-import getl.data.opts.LookupSpec
+import getl.data.opts.DatasetLookupSpec
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
 import getl.csv.CSVDataset
@@ -1081,8 +1081,8 @@ class Dataset {
 		return result
 	}
 
-	Map lookup(@DelegatesTo(LookupSpec) Closure cl) {
-		def parent = new LookupSpec()
+	Map lookup(@DelegatesTo(DatasetLookupSpec) Closure cl) {
+		def parent = new DatasetLookupSpec()
 		if (cl != null) {
 			parent.thisObject = parent.DetectClosureDelegate(cl)
 			def code = cl.rehydrate(this, parent, this)

@@ -59,7 +59,7 @@ abstract class VirtualDatasetDriver extends Driver {
 
 	@Override
 	public List<Object> retrieveObjects(Map params, Closure filter) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 	
 	protected static Dataset getDestinition(Dataset dataset) {
@@ -72,65 +72,65 @@ abstract class VirtualDatasetDriver extends Driver {
 	@Override
 	public
 	List<Field> fields(Dataset dataset) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 	public
 	void startTran() {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 	public
 	void commitTran() {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 	public
 	void rollbackTran() {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 	public
 	void createDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 	public
 	void dropDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 	public
 	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 	
 	@Override
 	public
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 	public
 	void clearDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 	public
 	long executeCommand(String command, Map params) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 	public long getSequence(String sequenceName) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 }

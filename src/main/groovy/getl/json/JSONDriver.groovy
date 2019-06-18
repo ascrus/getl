@@ -238,20 +238,20 @@ class JSONDriver extends FileDriver {
 	@Override
 	public
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 
 	}
 
 	@Override
 	public
 	void write(Dataset dataset, Map row) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 
 	}
 
 	@Override
 	public
 	void closeWrite(Dataset dataset) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 }

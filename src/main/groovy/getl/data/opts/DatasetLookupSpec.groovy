@@ -33,7 +33,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class LookupSpec extends BaseSpec {
+class DatasetLookupSpec extends BaseSpec {
     /** Hashmap lookup result */
     final def HASH_STRATEGY = 'HASH'
     /** Treemap lookup result */
