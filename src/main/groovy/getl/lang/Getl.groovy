@@ -24,6 +24,7 @@
 
 package getl.lang
 
+import com.sun.org.apache.xpath.internal.operations.Bool
 import getl.config.*
 import getl.config.opts.*
 import getl.csv.*
@@ -102,7 +103,7 @@ class Getl extends Script {
 
     public final String CSVCONNECTION = 'getl.csv.CSVConnection'
     public final String DB2CONNECTION = 'getl.db2.DB2Connection'
-    public final String EXCELCONNECTION = 'getl.Excel.Connection'
+    public final String EXCELCONNECTION = 'getl.excel.ExcelConnection'
     public final String H2CONNECTION = 'getl.h2.H2Connection'
     public final String HIVECONNECTION = 'getl.hive.HiveConnection'
     public final String JDBCCONNECTION = 'getl.jdbc.JDBCConnection'
@@ -290,8 +291,8 @@ class Getl extends Script {
     }
 
     /** Check dataset registration in repository */
-    protected boolean isRegisteredDataset(String className, String name) {
-        if (name ==  null) throw new ExceptionGETL('Name cannot be null!')
+    protected Boolean isRegisteredDataset(String className, String name) {
+        if (name ==  null) return null
         if (className ==  null) throw new ExceptionGETL('Class name cannot be null!')
         def sect = repDatasets.get(className) as Map<String, Dataset>
         if (sect == null) return false
@@ -468,25 +469,25 @@ class Getl extends Script {
     Map<String, Object> getConfigVars() { Config.vars }
 
     /** Write message as level the INFO to log */
-    public void logInfo(String msg) { Logs.Info(msg) }
+    public void logInfo(def msg) { Logs.Info(msg.toString()) }
 
     /** Write message as level the WARNING to log */
-    public void logWarn(String msg) { Logs.Warning(msg) }
+    public void logWarn(def msg) { Logs.Warning(msg.toString()) }
 
     /** Write message as level the SEVERE to log */
-    public void logError(String msg) { Logs.Severe(msg) }
+    public void logError(def msg) { Logs.Severe(msg.toString()) }
 
     /** Write message as level the FINE to log */
-    public void logFine(String msg) { Logs.Fine(msg) }
+    public void logFine(def msg) { Logs.Fine(msg.toString()) }
 
     /** Write message as level the FINER to log */
-    public void logFiner(String msg) { Logs.Finer(msg) }
+    public void logFiner(def msg) { Logs.Finer(msg.toString()) }
 
     /** Write message as level the FINEST to log */
-    public void logFinest(String msg) { Logs.Finest(msg) }
+    public void logFinest(def msg) { Logs.Finest(msg.toString()) }
 
     /** Write message as level the CONFIG to log */
-    public void logConfig(String msg) { Logs.Config(msg) }
+    public void logConfig(def msg) { Logs.Config(msg.toString()) }
 
     /** Current date and time */
     public Date getNow() { DateUtils.Now() }
@@ -576,9 +577,14 @@ class Getl extends Script {
         def isRegistered = isRegisteredDataset(TABLEDATASET, name)
         def parent = registerDataset(TABLEDATASET, name) as TableDataset
         runClosure(parent, cl)
-        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
+        if (langOpts.autoCSVTempForJDBDTables && !BoolUtils.IsValue(isRegistered)) createCsvTemp(name, parent)
 
         return parent
+    }
+
+    /** JDBC table */
+    TableDataset table(@DelegatesTo(TableDataset) Closure cl = null) {
+        table(null, cl)
     }
 
     /** Bulk load CSV file to JDBC table */
@@ -608,18 +614,28 @@ class Getl extends Script {
     }
 
     /** H2 database connection */
-    H2Connection h2Connection(String name = null, @DelegatesTo(H2Connection) Closure cl = null) {
+    H2Connection h2Connection(String name, @DelegatesTo(H2Connection) Closure cl = null) {
         jdbcConnection(name, H2CONNECTION, cl) as H2Connection
     }
 
+    /** H2 database connection */
+    H2Connection h2Connection(@DelegatesTo(H2Connection) Closure cl = null) {
+        h2Connection(null, cl)
+    }
+
     /** H2 database table */
-    H2Table h2Table(String name = null, @DelegatesTo(H2Table) Closure cl = null) {
+    H2Table h2Table(String name, @DelegatesTo(H2Table) Closure cl = null) {
         def isRegistered = isRegisteredDataset(H2TABLE, name)
         def parent = registerDataset(H2TABLE, name) as H2Table
         runClosure(parent, cl)
-        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
+        if (langOpts.autoCSVTempForJDBDTables && !BoolUtils.IsValue(isRegistered)) createCsvTemp(name, parent)
 
         return parent
+    }
+
+    /** H2 database table */
+    H2Table h2Table(@DelegatesTo(H2Table) Closure cl = null) {
+        h2Table(null, cl)
     }
 
     /** Bulk load CSV file to H2 database table */
@@ -633,13 +649,23 @@ class Getl extends Script {
     }
 
     /** DB2 connection */
-    DB2Connection db2Connection(String name = null, @DelegatesTo(DB2Connection) Closure cl = null) {
+    DB2Connection db2Connection(String name, @DelegatesTo(DB2Connection) Closure cl = null) {
         jdbcConnection(name, DB2CONNECTION, cl) as DB2Connection
     }
 
+    /** DB2 connection */
+    DB2Connection db2Connection(@DelegatesTo(DB2Connection) Closure cl = null) {
+        db2Connection(null, cl)
+    }
+
     /** Hive connection */
-    HiveConnection hiveConnection(String name = null, @DelegatesTo(HiveConnection) Closure cl = null) {
+    HiveConnection hiveConnection(String name, @DelegatesTo(HiveConnection) Closure cl = null) {
         jdbcConnection(name, HIVECONNECTION, cl) as HiveConnection
+    }
+
+    /** Hive connection */
+    HiveConnection hiveConnection(@DelegatesTo(HiveConnection) Closure cl = null) {
+        hiveConnection(null, cl)
     }
 
     /** Hive table */
@@ -647,9 +673,14 @@ class Getl extends Script {
         def isRegistered = isRegisteredDataset(HIVETABLE, name)
         def parent = registerDataset(HIVETABLE, name) as HiveTable
         runClosure(parent, cl)
-        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
+        if (langOpts.autoCSVTempForJDBDTables && !BoolUtils.IsValue(isRegistered)) createCsvTemp(name, parent)
 
         return parent
+    }
+
+    /** Hive table */
+    HiveTable hiveTable(@DelegatesTo(HiveTable) Closure cl = null) {
+        hiveTable(null, cl)
     }
 
     /** Bulk load CSV file to Hive table */
@@ -663,38 +694,68 @@ class Getl extends Script {
     }
 
     /** MSSQL connection */
-    MSSQLConnection mssqlConnection(String name = null, @DelegatesTo(MSSQLConnection) Closure cl = null) {
+    MSSQLConnection mssqlConnection(String name, @DelegatesTo(MSSQLConnection) Closure cl = null) {
         jdbcConnection(name, MSSQLCONNECTION, cl) as MSSQLConnection
     }
 
+    /** MSSQL connection */
+    MSSQLConnection mssqlConnection(@DelegatesTo(MSSQLConnection) Closure cl = null) {
+        mssqlConnection(null, cl)
+    }
+
     /** MySQL connection */
-    MySQLConnection mysqlConnection(String name = null, @DelegatesTo(MySQLConnection) Closure cl = null) {
+    MySQLConnection mysqlConnection(String name, @DelegatesTo(MySQLConnection) Closure cl = null) {
         jdbcConnection(name, MYSQLCONNECTION, cl) as MySQLConnection
     }
 
+    /** MySQL connection */
+    MySQLConnection mysqlConnection(@DelegatesTo(MySQLConnection) Closure cl = null) {
+        mysqlConnection(null, cl)
+    }
+
     /** Oracle connection */
-    OracleConnection oracleConnection(String name = null, @DelegatesTo(OracleConnection) Closure cl = null) {
+    OracleConnection oracleConnection(String name, @DelegatesTo(OracleConnection) Closure cl = null) {
         jdbcConnection(name, ORACLECONNECTION, cl) as OracleConnection
     }
 
+    /** Oracle connection */
+    OracleConnection oracleConnection(@DelegatesTo(OracleConnection) Closure cl = null) {
+        oracleConnection(null, cl)
+    }
+
     /** PostgreSQL connection */
-    PostgreSQLConnection postgresqlConnection(String name = null, @DelegatesTo(PostgreSQLConnection) Closure cl = null) {
+    PostgreSQLConnection postgresqlConnection(String name, @DelegatesTo(PostgreSQLConnection) Closure cl = null) {
         jdbcConnection(name, POSTGRESQLCONNECTION, cl) as PostgreSQLConnection
     }
 
+    /** PostgreSQL connection */
+    PostgreSQLConnection postgresqlConnection(@DelegatesTo(PostgreSQLConnection) Closure cl = null) {
+        postgresqlConnection(null, cl)
+    }
+
     /** Vertica connection */
-    VerticaConnection verticaConnection(String name = null, @DelegatesTo(VerticaConnection) Closure cl = null) {
+    VerticaConnection verticaConnection(String name, @DelegatesTo(VerticaConnection) Closure cl = null) {
         jdbcConnection(name, VERTICACONNECTION, cl) as VerticaConnection
     }
 
+    /** Vertica connection */
+    VerticaConnection verticaConnection(@DelegatesTo(VerticaConnection) Closure cl = null) {
+        verticaConnection(null, cl)
+    }
+
     /** Vertica table */
-    VerticaTable verticaTable(String name = null, @DelegatesTo(VerticaTable) Closure cl = null) {
+    VerticaTable verticaTable(String name, @DelegatesTo(VerticaTable) Closure cl = null) {
         def isRegistered = isRegisteredDataset(VERTICATABLE, name)
         def parent = registerDataset(VERTICATABLE, name) as VerticaTable
         runClosure(parent, cl)
-        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
+        if (langOpts.autoCSVTempForJDBDTables && !BoolUtils.IsValue(isRegistered)) createCsvTemp(name, parent)
 
         return parent
+    }
+
+    /** Vertica table */
+    VerticaTable verticaTable(@DelegatesTo(VerticaTable) Closure cl = null) {
+        verticaTable(null, cl)
     }
 
     /** Bulk load CSV file to Vertica table */
@@ -708,12 +769,17 @@ class Getl extends Script {
     }
 
     /** NetSuite connection */
-    NetsuiteConnection netsuiteConnection(String name = null, @DelegatesTo(NetsuiteConnection) Closure cl = null) {
+    NetsuiteConnection netsuiteConnection(String name, @DelegatesTo(NetsuiteConnection) Closure cl = null) {
         jdbcConnection(name, NETSUITECONNECTION, cl) as NetsuiteConnection
     }
 
+    /** NetSuite connection */
+    NetsuiteConnection netsuiteConnection(@DelegatesTo(NetsuiteConnection) Closure cl = null) {
+        netsuiteConnection(null, cl)
+    }
+
     /** Temporary DB connection */
-    TDS embeddedConnection(String name = null, @DelegatesTo(TDS) Closure cl = null) {
+    TDS embeddedConnection(String name, @DelegatesTo(TDS) Closure cl = null) {
         def parent = registerConnection(EMBEDDEDCONNECTION, name) as TDS
         if (parent.sqlHistoryFile == null) parent.sqlHistoryFile = langOpts.tempDBSQLHistoryFile
         runClosure(parent, cl)
@@ -721,8 +787,13 @@ class Getl extends Script {
         return parent
     }
 
+    /** Temporary DB connection */
+    TDS embeddedConnection(@DelegatesTo(TDS) Closure cl = null) {
+        embeddedConnection(null, cl)
+    }
+
     /** Table with temporary database */
-    TDSTable embeddedTable(String name = null, @DelegatesTo(TDSTable) Closure cl = null) {
+    TDSTable embeddedTable(String name, @DelegatesTo(TDSTable) Closure cl = null) {
         def isRegistered = isRegisteredDataset(EMBEDDEDTABLE, name)
         def parent = registerDataset(EMBEDDEDTABLE, name) as TDSTable
         if ((parent.connection as TDS).sqlHistoryFile == null)
@@ -730,13 +801,18 @@ class Getl extends Script {
 
         runClosure(parent, cl)
 
-        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
+        if (langOpts.autoCSVTempForJDBDTables && !BoolUtils.IsValue(isRegistered)) createCsvTemp(name, parent)
 
         return parent
     }
 
     /** Table with temporary database */
-    TDSTable embeddedTableWithDataset(String name = null, Dataset sourceDataset, @DelegatesTo(TDSTable) Closure cl = null) {
+    TDSTable embeddedTable(@DelegatesTo(TDSTable) Closure cl = null) {
+        embeddedTable(null, cl)
+    }
+
+    /** Table with temporary database */
+    TDSTable embeddedTableWithDataset(String name, Dataset sourceDataset, @DelegatesTo(TDSTable) Closure cl = null) {
         if (sourceDataset == null) throw new ExceptionGETL("Source dataset cannot be null!")
         if (sourceDataset.field.isEmpty()) {
             sourceDataset.retrieveFields()
@@ -755,6 +831,11 @@ class Getl extends Script {
         return parent
     }
 
+    /** Table with temporary database */
+    TDSTable embeddedTableWithDataset(Dataset sourceDataset, @DelegatesTo(TDSTable) Closure cl = null) {
+        embeddedTableWithDataset(null, sourceDataset, cl)
+    }
+
     /** Bulk load CSV file to temporary database table */
     void embeddedTableBulkLoad(String name, CSVDataset source, @DelegatesTo(BulkLoadSpec) Closure cl = null) {
         bulkLoadTableDataset(name, embeddedTable(name), source, cl)
@@ -766,13 +847,18 @@ class Getl extends Script {
     }
 
     /** JDBC query */
-    QueryDataset query(String name = null, @DelegatesTo(QueryDataset) Closure cl = null) {
+    QueryDataset query(String name, @DelegatesTo(QueryDataset) Closure cl = null) {
         def isRegistered = isRegisteredDataset(QUERYDATASET, name)
         def parent = registerDataset(QUERYDATASET, name) as QueryDataset
         runClosure(parent, cl)
-        if (langOpts.autoCSVTempForJDBDTables && !isRegistered) createCsvTemp(name, parent)
+        if (langOpts.autoCSVTempForJDBDTables && !BoolUtils.IsValue(isRegistered)) createCsvTemp(name, parent)
 
         return parent
+    }
+
+    /** JDBC query */
+    QueryDataset query(@DelegatesTo(QueryDataset) Closure cl = null) {
+        query(null, cl)
     }
 
     /** Default CSV connection */
@@ -781,23 +867,34 @@ class Getl extends Script {
     void useCSVConnection(CSVConnection value) { _params.defaultCSVConnection = value }
 
     /** CSV connection */
-    CSVConnection csvConnection(String name = null, @DelegatesTo(CSVConnection) Closure cl = null) {
+    CSVConnection csvConnection(String name, @DelegatesTo(CSVConnection) Closure cl = null) {
         def parent = registerConnection(CSVCONNECTION, name) as CSVConnection
         runClosure(parent, cl)
 
         return parent
     }
 
+    /** CSV connection */
+    CSVConnection csvConnection(@DelegatesTo(CSVConnection) Closure cl = null) {
+        csvConnection(null, cl)
+    }
+
     /** CSV delimiter file */
-    CSVDataset csv(String name = null, @DelegatesTo(CSVDataset) Closure cl = null) {
+    CSVDataset csv(String name, @DelegatesTo(CSVDataset) Closure cl = null) {
         def parent = registerDataset(CSVDATASET, name) as CSVDataset
+        if (parent.connection == null) parent.connection = new CSVConnection()
         runClosure(parent, cl)
 
         return parent
     }
 
+    /** CSV delimiter file */
+    CSVDataset csv(@DelegatesTo(CSVDataset) Closure cl = null) {
+        csv(null, cl)
+    }
+
     /** CSV file with exists dataset */
-    CSVDataset csvWithDataset(String name = null, Dataset sourceDataset, @DelegatesTo(CSVDataset) Closure cl = null) {
+    CSVDataset csvWithDataset(String name, Dataset sourceDataset, @DelegatesTo(CSVDataset) Closure cl = null) {
         if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
         def parent = registerDataset(CSVDATASET, name) as CSVDataset
         parent.field = sourceDataset.field
@@ -807,60 +904,103 @@ class Getl extends Script {
         return parent
     }
 
+    /** CSV file with exists dataset */
+    CSVDataset csvWithDataset(Dataset sourceDataset, @DelegatesTo(CSVDataset) Closure cl = null) {
+        csvWithDataset(null, sourceDataset, cl)
+    }
+
     /** Excel connection */
-    ExcelConnection excelConnection(String name = null, @DelegatesTo(ExcelConnection) Closure cl = null) {
+    ExcelConnection excelConnection(String name, @DelegatesTo(ExcelConnection) Closure cl = null) {
         def parent = registerConnection(EXCELCONNECTION, name) as ExcelConnection
         runClosure(parent, cl)
 
         return parent
     }
 
+    /** Excel connection */
+    ExcelConnection excelConnection(@DelegatesTo(ExcelConnection) Closure cl) {
+        excelConnection(null, cl)
+    }
+
     /** Excel file */
-    ExcelDataset excel(String name = null, @DelegatesTo(ExcelDataset) Closure cl = null) {
+    ExcelDataset excel(String name, @DelegatesTo(ExcelDataset) Closure cl = null) {
         def parent = registerDataset(EXCELDATASET, name) as ExcelDataset
+        if (parent.connection == null) parent.connection = new ExcelConnection()
         runClosure(parent, cl)
 
         return parent
     }
 
+    /** Excel file */
+    ExcelDataset excel(@DelegatesTo(ExcelDataset) Closure cl = null) {
+        excel(null, cl)
+    }
+
     /** JSON connection */
-    JSONConnection jsonConnection(String name = null, @DelegatesTo(JSONConnection) Closure cl = null) {
+    JSONConnection jsonConnection(String name, @DelegatesTo(JSONConnection) Closure cl = null) {
         def parent = registerConnection(JSONCONNECTION, name) as JSONConnection
         runClosure(parent, cl)
 
         return parent
     }
 
+    /** JSON connection */
+    JSONConnection jsonConnection(@DelegatesTo(JSONConnection) Closure cl = null) {
+        jsonConnection(null, cl)
+    }
+
     /** JSON file */
-    JSONDataset json(String name = null, @DelegatesTo(JSONDataset) Closure cl = null) {
+    JSONDataset json(String name, @DelegatesTo(JSONDataset) Closure cl = null) {
         def parent = registerDataset(JSONDATASET, name) as JSONDataset
+        if (parent.connection == null) parent.connection = new JSONConnection()
         runClosure(parent, cl)
 
         return parent
     }
 
+    /** JSON file */
+    JSONDataset json(@DelegatesTo(JSONDataset) Closure cl = null) {
+        json(null, cl)
+    }
+
     /** XML connection */
-    XMLConnection xmlConnection(String name = null, @DelegatesTo(XMLConnection) Closure cl = null) {
+    XMLConnection xmlConnection(String name, @DelegatesTo(XMLConnection) Closure cl = null) {
         def parent = registerConnection(XMLCONNECTION, name) as XMLConnection
         runClosure(parent, cl)
 
         return parent
     }
 
+    /** XML connection */
+    XMLConnection xmlConnection(@DelegatesTo(XMLConnection) Closure cl = null) {
+        xmlConnection(null, cl)
+    }
+
     /** XML file */
-    XMLDataset xml(String name = null, @DelegatesTo(XMLDataset) Closure cl = null) {
+    XMLDataset xml(String name, @DelegatesTo(XMLDataset) Closure cl = null) {
         def parent = registerDataset(XMLDATASET, name) as XMLDataset
+        if (parent.connection == null) parent.connection = new XMLConnection()
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** XML file */
+    XMLDataset xml(@DelegatesTo(XMLDataset) Closure cl = null) {
+        xml(null, cl)
+    }
+
+    /** SalesForce connection */
+    SalesForceConnection salesforceConnection(String name, @DelegatesTo(SalesForceConnection) Closure cl = null) {
+        def parent = registerConnection(SALESFORCECONNECTION, name) as SalesForceConnection
         runClosure(parent, cl)
 
         return parent
     }
 
     /** SalesForce connection */
-    SalesForceConnection salesforceConnection(String name = null, @DelegatesTo(SalesForceConnection) Closure cl = null) {
-        def parent = registerConnection(SALESFORCECONNECTION, name) as SalesForceConnection
-        runClosure(parent, cl)
-
-        return parent
+    SalesForceConnection salesforceConnection(@DelegatesTo(SalesForceConnection) Closure cl = null) {
+        salesforceConnection(null, cl)
     }
 
     /** SalesForce table */
@@ -871,20 +1011,35 @@ class Getl extends Script {
         return parent
     }
 
+    /** SalesForce table */
+    SalesForceDataset salesforce(@DelegatesTo(SalesForceDataset) Closure cl = null) {
+        salesforce(null, cl)
+    }
+
     /** Xero connection */
-    XeroConnection xeroConnection(String name = null, @DelegatesTo(XeroConnection) Closure cl = null) {
+    XeroConnection xeroConnection(String name, @DelegatesTo(XeroConnection) Closure cl = null) {
         def parent = registerConnection(XEROCONNECTION, name) as XeroConnection
         runClosure(parent, cl)
 
         return parent
     }
 
+    /** Xero connection */
+    XeroConnection xeroConnection(@DelegatesTo(XeroConnection) Closure cl = null) {
+        xeroConnection(null, cl)
+    }
+
     /** Xero table */
-    XeroDataset xero(String name = null, @DelegatesTo(XeroDataset) Closure cl = null) {
+    XeroDataset xero(String name, @DelegatesTo(XeroDataset) Closure cl = null) {
         def parent = registerDataset(XERODATASET, name) as XeroDataset
         runClosure(parent, cl)
 
         return parent
+    }
+
+    /** Xero table */
+    XeroDataset xero(@DelegatesTo(XeroDataset) Closure cl = null) {
+        xero(null, cl)
     }
 
     /** Temporary CSV file connection */
@@ -896,7 +1051,7 @@ class Getl extends Script {
     }
 
     /** Temporary CSV file */
-    TFSDataset csvTemp(String name = null, @DelegatesTo(TFSDataset) Closure cl = null) {
+    TFSDataset csvTemp(String name, @DelegatesTo(TFSDataset) Closure cl = null) {
         TFSDataset parent = registerDataset(CSVTEMPDATASET, name) as TFSDataset
         runClosure(parent, cl)
 
@@ -904,7 +1059,12 @@ class Getl extends Script {
     }
 
     /** Temporary CSV file */
-    TFSDataset csvTempWithDataset(String name = null, Dataset sourceDataset, @DelegatesTo(TFSDataset) Closure cl = null) {
+    TFSDataset csvTemp(@DelegatesTo(TFSDataset) Closure cl = null) {
+        csvTemp(null, cl)
+    }
+
+    /** Temporary CSV file */
+    TFSDataset csvTempWithDataset(String name, Dataset sourceDataset, @DelegatesTo(TFSDataset) Closure cl = null) {
         if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
         TFSDataset parent = sourceDataset.csvTempFile
         if (name != null) registerDataset(parent, name, false)
@@ -913,7 +1073,15 @@ class Getl extends Script {
         return parent
     }
 
-    /** Copy rows from source to destination dataset */
+    /** Temporary CSV file */
+    TFSDataset csvTempWithDataset(Dataset sourceDataset, @DelegatesTo(TFSDataset) Closure cl = null) {
+        csvTempWithDataset(null, sourceDataset, cl)
+    }
+
+    /**
+     * Copy rows from source to destination dataset
+     * <br>Closure gets two parameters: source and destination datasets
+     */
     Flow copyRows(Dataset source, Dataset dest, @DelegatesTo(FlowCopySpec) Closure cl = null) {
         if (source == null) throw new ExceptionGETL('Source dataset cannot be null!')
         if (dest == null) throw new ExceptionGETL('Dest dataset cannot be null!')
@@ -994,15 +1162,20 @@ class Getl extends Script {
     }
 
     /** SQL scripter */
-    SQLScripter sql(@DelegatesTo(SQLScripter) Closure cl) {
+    SQLScripter sql(JDBCConnection connection, @DelegatesTo(SQLScripter) Closure cl) {
         def parent = new SQLScripter()
-        parent.connection = getDefaultJDBCConnection()
+        parent.connection = connection?:getDefaultJDBCConnection()
         parent.extVars = configContent
         def pt = startProcess('Execution SQL script')
         runClosure(parent, cl)
         finishProcess(pt, parent.rowCount)
 
         return parent
+    }
+
+    /** SQL scripter */
+    SQLScripter sql(@DelegatesTo(SQLScripter) Closure cl) {
+        sql(null, cl)
     }
 
     /** Process local file system */
@@ -1025,7 +1198,7 @@ class Getl extends Script {
     }
 
     /** Process ftp file system */
-    FTPManager ftp(String name = null, @DelegatesTo(FTPManager) Closure cl = null) {
+    FTPManager ftp(String name, @DelegatesTo(FTPManager) Closure cl = null) {
         def parent = registerFileManager(FTPMANAGER, name) as FTPManager
         if (cl != null) {
             def pt = startProcess('Process ftp file system')
@@ -1041,8 +1214,13 @@ class Getl extends Script {
         return parent
     }
 
+    /** Process ftp file system */
+    FTPManager ftp(@DelegatesTo(FTPManager) Closure cl = null) {
+        ftp(null, cl)
+    }
+
     /** Process sftp file system */
-    SFTPManager sftp(String name = null, @DelegatesTo(SFTPManager) Closure cl = null) {
+    SFTPManager sftp(String name, @DelegatesTo(SFTPManager) Closure cl = null) {
         def parent = registerFileManager(SFTPMANAGER, name) as SFTPManager
         if (cl != null) {
             def pt = startProcess('Process sftp file system')
@@ -1059,7 +1237,12 @@ class Getl extends Script {
     }
 
     /** Process sftp file system */
-    HDFSManager hdfs(String name = null, @DelegatesTo(HDFSManager) Closure cl = null) {
+    SFTPManager sftp(@DelegatesTo(SFTPManager) Closure cl = null) {
+        sftp(null, cl)
+    }
+
+    /** Process sftp file system */
+    HDFSManager hdfs(String name, @DelegatesTo(HDFSManager) Closure cl = null) {
         def parent = registerFileManager(HDFSMANAGER, name) as HDFSManager
         if (cl != null) {
             def pt = startProcess('Process hdfs file system')
@@ -1073,6 +1256,11 @@ class Getl extends Script {
         }
 
         return parent
+    }
+
+    /** Process sftp file system */
+    HDFSManager hdfs(@DelegatesTo(HDFSManager) Closure cl = null) {
+        hdfs(null, cl)
     }
 
     /** Run code in multithread mode */
@@ -1095,6 +1283,15 @@ class Getl extends Script {
         return parent
     }
 
+    FileTextSpec textFile(@DelegatesTo(FileTextSpec) Closure cl) {
+        def parent = new FileTextSpec()
+        def pt = startProcess('Write to text file')
+        runClosure(parent, cl)
+        finishProcess(pt)
+
+        return parent
+    }
+
     /** Copy file to directory */
     void copyFileToDir(String sourceFileName, String destDirName, boolean createDir = false) {
         FileUtils.CopyToDir(sourceFileName, destDirName, createDir)
@@ -1103,5 +1300,24 @@ class Getl extends Script {
     /** Copy file to another file */
     void copyFileTo(String sourceFileName, String destFileName, boolean createDir = false) {
         FileUtils.CopyToFile(sourceFileName, destFileName, createDir)
+    }
+
+    /** Find parent directory by nearest specified name in path elements */
+    String findParentPath(String path, String find) {
+        FileUtils.FindParentPath(path, find)
+    }
+
+    /** Valid exists directory */
+    Boolean existDir(String dirName) {
+        FileUtils.ExistsFile(dirName, true)
+    }
+
+    /** Valid exists file */
+    Boolean existFile(String dirName) {
+        FileUtils.ExistsFile(dirName)
+    }
+
+    String extractPath(String fileName) {
+        FileUtils.RelativePathFromFile(fileName)
     }
 }

@@ -271,20 +271,20 @@ class Field implements Serializable {
 	 */
 	public String getMethod
 
-	public Field.Type getIntegerFieldType() { Field.Type.INTEGER}
-	public Field.Type getBigintFieldType() { Field.Type.BIGINT}
-	public Field.Type getNumericFieldType() { Field.Type.NUMERIC}
-	public Field.Type getDoubleFieldType() { Field.Type.DOUBLE}
-	public Field.Type getStringFieldType() { Field.Type.STRING}
-	public Field.Type getTextFieldType() { Field.Type.TEXT}
-	public Field.Type getDateFieldType() { Field.Type.DATE}
-	public Field.Type getTimeFieldType() { Field.Type.TIME}
-	public Field.Type getDatetimeFieldType() { Field.Type.DATETIME}
-	public Field.Type getBooleanFieldType() { Field.Type.BOOLEAN}
-	public Field.Type getBlobFieldType() { Field.Type.BLOB}
-	public Field.Type getUuidFieldType() { Field.Type.UUID}
-	public Field.Type getRowidFieldType() { Field.Type.ROWID}
-	public Field.Type getObjectFieldType() { Field.Type.OBJECT}
+	static Field.Type getIntegerFieldType() { Field.Type.INTEGER}
+	static Field.Type getBigintFieldType() { Field.Type.BIGINT}
+	static Field.Type getNumericFieldType() { Field.Type.NUMERIC}
+	static Field.Type getDoubleFieldType() { Field.Type.DOUBLE}
+	static Field.Type getStringFieldType() { Field.Type.STRING}
+	static Field.Type getTextFieldType() { Field.Type.TEXT}
+	static Field.Type getDateFieldType() { Field.Type.DATE}
+	static Field.Type getTimeFieldType() { Field.Type.TIME}
+	static Field.Type getDatetimeFieldType() { Field.Type.DATETIME}
+	static Field.Type getBooleanFieldType() { Field.Type.BOOLEAN}
+	static Field.Type getBlobFieldType() { Field.Type.BLOB}
+	static Field.Type getUuidFieldType() { Field.Type.UUID}
+	static Field.Type getRowidFieldType() { Field.Type.ROWID}
+	static Field.Type getObjectFieldType() { Field.Type.OBJECT}
 	
 	/**
 	 * Allow length for field

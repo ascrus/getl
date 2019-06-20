@@ -226,4 +226,9 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertNotNull(url)
         assertNotNull(url.text)
     }
+
+    void testFindParentPath() {
+        assertNotNull(FileUtils.FindParentPath('.','getl\\.'))
+        assertTrue(FileUtils.ExistsFile(FileUtils.FindParentPath('.', 'getl\\.') + 'getl/src'))
+    }
 }

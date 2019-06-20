@@ -24,6 +24,8 @@
 
 package getl.json
 
+import getl.json.opts.JSONReadSpec
+
 import java.util.Map;
 
 import getl.data.Connection
@@ -42,24 +44,34 @@ class JSONDataset extends StructureFileDataset {
 		params.convertToList = false
 	}
 	
-	/**
-	 * Added root {...} for JSON text
-	 * @return
-	 */
-	public boolean getConvertToList () { params.convertToList }
-	public void setConvertToList (boolean value) { params.convertToList = value }
+	/** Added root {...} for JSON text */
+	boolean getConvertToList () { params.convertToList }
+	void setConvertToList (boolean value) { params.convertToList = value }
 	
 	@Override
-	public void setConnection(Connection value) {
+	void setConnection(Connection value) {
 		assert value == null || value instanceof JSONConnection
 		super.setConnection(value)
 	}
 	
-	/**
-	 * Read JSON dataset attributes
-	 * @param params
-	 */
-	public void readAttrs (Map params) {
+	/** Read JSON dataset attributes */
+	void readAttrs (Map params) {
 		((JSONDriver)(connection.driver)).readAttrs(this, params)
+	}
+
+	/**
+	 * Read file options
+	 */
+	JSONReadSpec readOpts(@DelegatesTo(JSONReadSpec) Closure cl = null) {
+		def parent = new JSONReadSpec(true, readDirective)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code.call(this)
+			parent.prepareParams()
+		}
+
+		return parent
 	}
 }

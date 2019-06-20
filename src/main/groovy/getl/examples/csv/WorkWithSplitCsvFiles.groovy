@@ -1,3 +1,7 @@
+/**
+ *  This example shows how to write data divided into portions of files and then read such files as a single data set.
+ */
+
 package getl.examples.csv
 
 @BaseScript getl.lang.Getl getl

@@ -24,16 +24,19 @@
 
 package getl.utils
 
-import java.util.UUID
 import getl.exception.ExceptionGETL
 import  groovy.json.StringEscapeUtils
+import groovy.transform.CompileStatic
+
+import javax.xml.bind.DatatypeConverter
+import java.util.regex.Matcher
 
 /**
  * String functions
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.CompileStatic
+@CompileStatic
 class StringUtils {
 	public static final MACROS = [
 		'date': DateUtils.NowDate(),		//yyyy-MM-dd
@@ -58,7 +61,7 @@ class StringUtils {
 	 * @param vars
 	 * @return
 	 */
-	public static String SetValueString(String value, Map vars) {
+	static String SetValueString(String value, Map vars) {
 		vars.each { k, v ->
 			if (v == null) throw new ExceptionGETL("Invalid value null in variable \"$k\"")
 			value = value.replace('{' + k + '}', (String)v)
@@ -72,7 +75,7 @@ class StringUtils {
 	 * @param value
 	 * @return
 	 */
-	public static String EvalString(String value) {
+	static String EvalString(String value) {
 		return Eval.me(value)
 	}
 	
@@ -82,7 +85,7 @@ class StringUtils {
 	 * @param vars
 	 * @return
 	 */
-	public static String EvalMacroString(String value, Map vars) {
+	static String EvalMacroString(String value, Map vars) {
 		if (value == null) return null
 		if (vars == null) throw new ExceptionGETL("Null vars parameter")
 		vars.each { k, v ->
@@ -101,13 +104,13 @@ class StringUtils {
 	 * @param len
 	 * @return
 	 */
-	public static String AddLedZeroStr (def s, int len) {
-		if (s == null) return null;
+	static String AddLedZeroStr (def s, int len) {
+		if (s == null) return null
 		return s.toString().padLeft(len, '0')
 	}
 	
 	/** Replicate character */
-	public static String Replicate(String c, int len) {
+	static String Replicate(String c, int len) {
 		if (len == 0) return ""
 		return c.multiply(len)
 	}
@@ -118,12 +121,12 @@ class StringUtils {
 	 * @param len
 	 * @return
 	 */
-	public static String LeftStr(String s, int len) {
+	static String LeftStr(String s, int len) {
 		if (s == null) return null
 		return (s.length() <= len)?s:s.substring(0, len)
 	}
-	
-	public static String CutStr(String s, int len) {
+
+	static String CutStr(String s, int len) {
 		if (s == null) return null
 		return (s.length() <= len)?s:s.substring(0, len) + ' ...'
 	}
@@ -134,7 +137,7 @@ class StringUtils {
 	 * @param len
 	 * @return
 	 */
-	public static String RightStr(String s, int len) {
+	static String RightStr(String s, int len) {
 		if (s == null) return null
 		return (s.length() <= len)?s:s.substring(s.length() - len)
 	}
@@ -145,7 +148,7 @@ class StringUtils {
 	 * @param params
 	 * @return
 	 */
-	public static String ProcessParams(String value, Map params) {
+	static String ProcessParams(String value, Map params) {
         if (params.isEmpty()) return value
 		
 		def res = GenerationUtils.EvalGroovyScript('"""' + value.replace('"', '\\"') + '"""', params)
@@ -157,7 +160,7 @@ class StringUtils {
 	 * @param e
 	 * @return
 	 */
-	public static String ProcessAssertionError(AssertionError e) {
+	static String ProcessAssertionError(AssertionError e) {
 		if (e == null) return null
 		int i = e.message.indexOf("\n")
 		def res = (i == -1)?e.message:e.message.substring(0, i)
@@ -170,7 +173,7 @@ class StringUtils {
 	 * @param str
 	 * @return
 	 */
-	public static String EscapeJava(String str) {
+	static String EscapeJava(String str) {
 		if (str == null) return null
 		return StringEscapeUtils.escapeJava(str)
 	}
@@ -180,7 +183,7 @@ class StringUtils {
 	 * @param str
 	 * @return
 	 */
-	public static String UnescapeJava(String str) {
+	static String UnescapeJava(String str) {
 		if (str == null) return null
 		return StringEscapeUtils.unescapeJava(str)
 	}
@@ -191,7 +194,7 @@ class StringUtils {
 	 * @param procLineChar
 	 * @return
 	 */
-	public static String UnescapeJavaWithProcLineChar(String str, String procLineChar) {
+	static String UnescapeJavaWithProcLineChar(String str, String procLineChar) {
 		if (str == null) return null
 		str = str.replace(procLineChar, '\n')
 		return StringEscapeUtils.unescapeJava(str)
@@ -202,7 +205,7 @@ class StringUtils {
 	 * @param str
 	 * @return
 	 */
-	public static String EscapeJavaWithoutUTF(String str) {
+	static String EscapeJavaWithoutUTF(String str) {
 		if (str == null) return null
 		return str.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\b', '\\b').replace('\t', '\\t').replace('\f', '\\f').replace("'", "\\'").replace('"', '\\"')
 	}
@@ -212,7 +215,7 @@ class StringUtils {
 	 * @param str
 	 * @return
 	 */
-	public static String TransformObjectName (String str) {
+	static String TransformObjectName (String str) {
 		if (str == null) return null
 		return str.replace('.', '_').replace('-', '_').replace(' ', '_').replace('(', '_').replace(')', '_').replace('[', '_').replace(']', '_').replace('"', '').replace("'", "")
 	}
@@ -221,8 +224,8 @@ class StringUtils {
 	 * Generate randomize string 
 	 * @return
 	 */
-	public static String RandomStr () {
-		return java.util.UUID.randomUUID().toString()
+	static String RandomStr () {
+		return UUID.randomUUID().toString()
 	}
 	
 	/**
@@ -230,7 +233,7 @@ class StringUtils {
 	 * @param value
 	 * @return
 	 */
-	public static String Delimiter2SplitExpression(String value) {
+	static String Delimiter2SplitExpression(String value) {
         String res = ""
         value.each { String c ->
             if (c in ['|', '^', '\\', '$', '*', '.', '+', '?', '[', ']', '{', '}', '(', ')']) res += '\\' + c else res += c
@@ -244,8 +247,8 @@ class StringUtils {
 	 * @param bytes
 	 * @return
 	 */
-	public static String RawToHex(byte[] bytes) {
-		return javax.xml.bind.DatatypeConverter.printHexBinary(bytes)
+	static String RawToHex(byte[] bytes) {
+		return DatatypeConverter.printHexBinary(bytes)
 	}
 	
 	/**
@@ -253,9 +256,9 @@ class StringUtils {
 	 * @param str
 	 * @return
 	 */
-	public static byte[] HexToRaw(String str) {
+	static byte[] HexToRaw(String str) {
 		if (str == null) return null
-		return javax.xml.bind.DatatypeConverter.parseHexBinary(str/*.substring(2)*/);
+		return DatatypeConverter.parseHexBinary(str)
 	}
 	
 	/**
@@ -263,7 +266,7 @@ class StringUtils {
 	 * @param locale - Language-Country 
 	 * @return
 	 */
-	public static Locale NewLocale(String locale) {
+	static Locale NewLocale(String locale) {
 		if (locale == null) return null
 		def s = locale.split('-')
 		if (s.length == 1) return new Locale(s[0])
@@ -276,7 +279,7 @@ class StringUtils {
 	 * @param text
 	 * @return
 	 */
-	public static String ToSnakeCase(String text) {
+	static String ToSnakeCase(String text) {
         //return text.replaceAll( /([A-Z])/, /_$1/ ).toLowerCase().replaceAll( /^_/, '' )
 		return text.replaceAll('((?<=[a-z0-9])[A-Z]|(?!^)(?<!_)[A-Z](?=[a-z]))','_$1').toLowerCase()
     }
@@ -287,7 +290,7 @@ class StringUtils {
 	 * @param capitalize
 	 * @return
 	 */
-	public static String ToCamelCase(String text, boolean capitalized = false) {
+	static String ToCamelCase(String text, boolean capitalized = false) {
 		text = text.replaceAll( "(_)([A-Za-z0-9])", { List<String> it -> it[2].toUpperCase() } )
 		return (capitalized)? text.capitalize() : text
     }
@@ -297,7 +300,31 @@ class StringUtils {
      * @param length
      * @return
      */
-	public static String GeneratePassword(int length) {
+	static String GeneratePassword(int length) {
     	return (('A'..'Z') + ('a'..'z') + ('0'..'9')).with { Collections.shuffle(it);it }.take(length).join('')
+	}
+
+	/** Convert the string as regular expression */
+	static String String2RegExp(String expr) {
+		return expr.replace('(', '[(]').replace(')', '[)]').
+				replace('.', '[.]').replace('+', '[+]').
+				replace('*', '[*]').replace('~', '[~]').
+				replace('^', '[^]').replace('-', '[-]').
+				replace('$', '[$]').replace('%', '[%]').
+				replace('_', '[_]').replace('\\', '\\\\')
+	}
+
+	/** Extract from the string the parent path relative to the specified part of the string */
+	static String ExtractParentFromChild(String path, String findPath, boolean ignoreCase = false) {
+		findPath = String2RegExp(findPath)
+		def ic = (ignoreCase)?'(?i)':''
+		def pattern = ~(ic + '(' + findPath + ')')
+		def matcher = pattern.matcher(path)
+		def index = -1
+		while (matcher.find()) index = matcher.start()
+		if (index == -1) return null
+		def res = path.substring(0, index)
+
+		return res
 	}
 }

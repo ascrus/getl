@@ -24,6 +24,7 @@
 
 package getl.tfs
 
+import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 
 import getl.csv.CSVDataset
@@ -42,10 +43,11 @@ class TFSDataset extends CSVDataset {
 		sysParams.inheriteFields = true
 		manualSchema = true
 		connection = TFS.storage
+		if (fileName == null) fileName = FileUtils.UniqueFileName()
 	}
 
 	@Override
-    public void openWrite (Map procParams) {
+    void openWrite (Map procParams) {
         super.openWrite(procParams)
 
         if ((connection as TFS).deleteOnExit) {
@@ -59,7 +61,7 @@ class TFSDataset extends CSVDataset {
     }
 	
 	@Override
-	public void setConnection(Connection value) {
+	void setConnection(Connection value) {
 		assert value == null || value.getClass().name == 'getl.tfs.TFS'
 		super.setConnection(value)
 	}

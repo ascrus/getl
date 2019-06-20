@@ -202,4 +202,20 @@ class FileDataset extends Dataset {
 	List<String> excludeSaveParams () {
 		super.excludeSaveParams() + ['fileName']
 	}
+
+	/** Read file options */
+	Map<String, Object> getReadDirective() { (params.directive as Map<String, Object>).read as Map<String, Object>}
+	/** Read file options */
+	void setReadDirective(Map<String, Object> value) {
+		readDirective.clear()
+		readDirective.putAll(value)
+	}
+
+	/** Write file options */
+	Map<String, Object> getWriteDirective() { (params.directive as Map<String, Object>).write as Map<String, Object>}
+	/** Write file options */
+	void setWriteDirective(Map<String, Object> value) {
+		writeDirective.clear()
+		writeDirective.putAll(value)
+	}
 }

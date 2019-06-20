@@ -1248,8 +1248,10 @@ class Dataset {
 	/** Create new csv temporary file for this dataset */
 	void createCsvTempFile() {
 		this.csvTempFile = TFS.dataset()
-		if (field.isEmpty()) retrieveFields()
-		if (field.isEmpty()) throw new ExceptionGETL("Dataset can not be generate temp file while not specified the fields")
+		if (field.isEmpty() && Driver.Operation.RETRIEVEFIELDS in connection.driver.operations()) {
+			retrieveFields()
+			if (field.isEmpty()) throw new ExceptionGETL("Dataset can not be generate temp file while not specified the fields")
+		}
 		this.csvTempFile.field = field
 	}
 	/** Csv temporary file for use in download and upload data from this dataset */

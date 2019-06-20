@@ -31,6 +31,8 @@ import org.codehaus.groovy.tools.RootLoader
 
 import java.nio.file.*
 import java.nio.channels.*
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import net.lingala.zip4j.core.ZipFile
@@ -49,7 +51,7 @@ class FileUtils {
 	 * Create path is not exists
 	 * @param fileName
 	 */
-	public static void ValidFilePath (String fileName) {
+	static void ValidFilePath (String fileName) {
 		fileName = ConvertToDefaultOSPath(fileName)
 		ValidFilePath(new File(fileName))
 	}
@@ -58,7 +60,7 @@ class FileUtils {
 	 * Create path is not exists
 	 * @param file
 	 */
-	public static void ValidFilePath (File file) {
+	static void ValidFilePath (File file) {
 		if (file == null || file.parentFile == null) return
 		if (!file.isDirectory()) file.parentFile.mkdirs()
 	}
@@ -67,12 +69,12 @@ class FileUtils {
 	 * Create path is not exists
 	 * @param path
 	 */
-	public static void ValidPath(String path) {
+	static void ValidPath(String path) {
 		path = ConvertToDefaultOSPath(path)
 		ValidPath(new File(path))
 	}
-	
-	public static void ValidPath(File path) {
+
+	static void ValidPath(File path) {
 		path.mkdirs()
 	}
 	
@@ -81,7 +83,7 @@ class FileUtils {
 	 * @param fullPath
 	 * @return
 	 */
-	public static String FileExtension (String fullPath) {
+	static String FileExtension (String fullPath) {
 		fullPath = ConvertToDefaultOSPath(fullPath)
 		int sepPos = fullPath.lastIndexOf(File.separator)
 		String nameAndExt = fullPath.substring(sepPos + 1, fullPath.length())
@@ -94,7 +96,7 @@ class FileUtils {
 	 * @param fullPath
 	 * @return
 	 */
-	public static String ExcludeFileExtension (String fullPath) {
+	static String ExcludeFileExtension (String fullPath) {
 		fullPath = ConvertToDefaultOSPath(fullPath)
 		
 		int sepPos = fullPath.lastIndexOf(File.separator)
@@ -108,7 +110,7 @@ class FileUtils {
 	 * @param fileName
 	 * @param newName
 	 */
-	public static void RenameTo(String fileName, String newName) {
+	static void RenameTo(String fileName, String newName) {
         fileName = ConvertToDefaultOSPath(fileName)
         newName = ConvertToDefaultOSPath(newName)
 		File f = new File(fileName)
@@ -125,7 +127,7 @@ class FileUtils {
 	 * @param path
 	 * @param createPath
 	 */
-	public static void MoveTo(String fileName, String path, boolean createPath) {
+	static void MoveTo(String fileName, String path, boolean createPath) {
 		def source = new File(fileName)
 		
 		if (createPath) ValidPath(path)
@@ -140,7 +142,7 @@ class FileUtils {
 	 * @param fileName
 	 * @param path
 	 */
-	public static void MoveTo(String fileName, String path) {
+	static void MoveTo(String fileName, String path) {
 		MoveTo(fileName, path, true)
 	}
 	
@@ -150,7 +152,7 @@ class FileUtils {
 	 * @param path
 	 * @param createPath
 	 */
-	public static void CopyToDir(String fileName, String path, boolean createPath) {
+	static void CopyToDir(String fileName, String path, boolean createPath) {
 		def source = new File(fileName)
 		if (!source.exists()) throw new ExceptionGETL("File \"${fileName}\" not found")
 		
@@ -166,7 +168,7 @@ class FileUtils {
 	 * @param fileName
 	 * @param path
 	 */
-	public static void CopyToDir(String fileName, String path) {
+	static void CopyToDir(String fileName, String path) {
 		CopyToDir(fileName, path, true)
 	}
 	
@@ -176,7 +178,7 @@ class FileUtils {
 	 * @param destName
 	 * @param createPath
 	 */
-	public static void CopyToFile(String sourceName, String destName, boolean createPath) {
+	static void CopyToFile(String sourceName, String destName, boolean createPath) {
 		def source = new File(sourceName)
 		if (!source.exists()) throw new ExceptionGETL("File \"${sourceName}\" not found")
 		
@@ -192,7 +194,7 @@ class FileUtils {
 	 * @param sourceName
 	 * @param destName
 	 */
-	public static void CopyToFile(String sourceName, String destName) {
+	static void CopyToFile(String sourceName, String destName) {
 		CopyToFile(sourceName, destName, true)
 	}
 	
@@ -202,7 +204,7 @@ class FileUtils {
 	 * @param deleteRoot
 	 * @param onDelete
 	 */
-	public static void DeleteEmptyFolder(String rootFolder, boolean deleteRoot, Closure onDelete) {
+	static void DeleteEmptyFolder(String rootFolder, boolean deleteRoot, Closure onDelete) {
 		if (rootFolder == null) return
 		File root = new File(rootFolder)
 		if (!root.exists()) return
@@ -235,7 +237,7 @@ class FileUtils {
 	 * Delete empty sub-folders
 	 * @param rootFolder
 	 */
-	public static void DeleteEmptyFolder(String rootFolder) {
+	static void DeleteEmptyFolder(String rootFolder) {
 		DeleteEmptyFolder(rootFolder, true, null)
 	}
 	
@@ -244,7 +246,7 @@ class FileUtils {
 	 * @param rootFolder
 	 * @param deleteRoot
 	 */
-	public static void DeleteEmptyFolder(String rootFolder, boolean deleteRoot) {
+	static void DeleteEmptyFolder(String rootFolder, boolean deleteRoot) {
 		DeleteEmptyFolder(rootFolder, deleteRoot, null)
 	}
 	
@@ -253,7 +255,7 @@ class FileUtils {
 	 * @param rootFolder
 	 * @param onDelete
 	 */
-	public static void DeleteEmptyFolder(String rootFolder, Closure onDelete) {
+	static void DeleteEmptyFolder(String rootFolder, Closure onDelete) {
 		DeleteEmptyFolder(rootFolder, true, onDelete)
 	}
 	
@@ -262,7 +264,7 @@ class FileUtils {
 	 * @param fileName
 	 * @return
 	 */
-	public static boolean DeleteFile(String fileName) {
+	static boolean DeleteFile(String fileName) {
 		new File(fileName).delete()
 	}
 
@@ -272,7 +274,7 @@ class FileUtils {
 	 * @param deleteRoot
 	 * @param onDelete
 	 */
-	public static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, boolean throwError, Closure onDelete) {
+	static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, boolean throwError, Closure onDelete) {
 		if (rootFolder == null) return null
 		File root = new File(rootFolder)
 		if (!root.exists()) {
@@ -329,11 +331,11 @@ class FileUtils {
      * @param deleteRoot
      * @param onDelete
      */
-    public static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, Closure onDelete) {
+    static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, Closure onDelete) {
         return DeleteFolder(rootFolder, deleteRoot, true, onDelete)
     }
 
-    public static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, boolean throwError) {
+	static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, boolean throwError) {
         return DeleteFolder(rootFolder, deleteRoot, throwError, null)
     }
 
@@ -342,7 +344,7 @@ class FileUtils {
 	 * @param rootFolder
 	 * @param deleteRoot
 	 */
-	public static Boolean DeleteFolder(String rootFolder, boolean deleteRoot) {
+	static Boolean DeleteFolder(String rootFolder, boolean deleteRoot) {
 		return DeleteFolder(rootFolder, deleteRoot, true, null)
 	}
 	
@@ -350,7 +352,7 @@ class FileUtils {
 	 * Delete directory with all recursive objects
 	 * @param rootFolder
 	 */
-	public static Boolean DeleteFolder(String rootFolder) {
+	static Boolean DeleteFolder(String rootFolder) {
 		return DeleteFolder(rootFolder, true, true, null)
 	}
 	
@@ -359,7 +361,7 @@ class FileUtils {
 	 * @param rootFolder
 	 * @param onDelete
 	 */
-	public static Boolean DeleteFolder(String rootFolder, Closure onDelete) {
+	static Boolean DeleteFolder(String rootFolder, Closure onDelete) {
 		return DeleteFolder(rootFolder, true, true, onDelete)
 	}
 	
@@ -368,7 +370,7 @@ class FileUtils {
 	 * @param path
 	 * @return
 	 */
-	public static boolean DeleteDir(String path) {
+	static boolean DeleteDir(String path) {
 		new File(path).deleteDir()
 	}
 	
@@ -377,8 +379,11 @@ class FileUtils {
 	 * @param fileName
 	 * @return
 	 */
-	public static boolean ExistsFile(String fileName) {
-		new File(fileName).exists()
+	static boolean ExistsFile(String fileName, boolean findDirectory = false) {
+		def file = new File(fileName)
+		def res = file.exists()
+		if (res && findDirectory && !file.isDirectory()) return false
+		return res
 	}
 	
 	/**
@@ -386,7 +391,7 @@ class FileUtils {
 	 * @param path
 	 * @return
 	 */
-	public static String ConvertToUnixPath(String path) {
+	static String ConvertToUnixPath(String path) {
 		path?.replace("\\", "/")
 	}
 	
@@ -395,7 +400,7 @@ class FileUtils {
 	 * @param path
 	 * @return
 	 */
-	public static String ConvertToWindowsPath(String path) {
+	static String ConvertToWindowsPath(String path) {
 		path?.replace("/", "\\")
 	}
 	
@@ -404,7 +409,7 @@ class FileUtils {
 	 * @param path
 	 * @return
 	 */
-	public static String ConvertToDefaultOSPath(String path) {
+	static String ConvertToDefaultOSPath(String path) {
 		(File.separator == "\\")?ConvertToWindowsPath(path):ConvertToUnixPath(path) 
 	}
 	
@@ -413,7 +418,7 @@ class FileUtils {
 	 * @param path
 	 * @return
 	 */
-	public static String lastDirFromPath(String path) {
+	static String lastDirFromPath(String path) {
         if (path == null) return null
 		path = ConvertToUnixPath(path)
 		def l = path.split("/")
@@ -426,7 +431,7 @@ class FileUtils {
 	 * @param file
 	 * @return
 	 */
-	public static String lastDirFromPath(File path) {
+	static String lastDirFromPath(File path) {
 		lastDirFromPath(path.path)
 	}
 	
@@ -435,7 +440,7 @@ class FileUtils {
 	 * @param filePath
 	 * @return
 	 */
-	public static String lastDirFromFile(String file) {
+	static String lastDirFromFile(String file) {
         if (file == null) return null
 		lastDirFromPath(new File(file).parent)
 	}
@@ -445,7 +450,7 @@ class FileUtils {
 	 * @param file
 	 * @return
 	 */
-	public static String lastDirFromFile(File file) {
+	static String lastDirFromFile(File file) {
 		lastDirFromPath(file.parent)
 	}
 	
@@ -453,7 +458,7 @@ class FileUtils {
 	 * Return unique file name
 	 * @return
 	 */
-	public static String UniqueFileName() {
+	static String UniqueFileName() {
 		StringUtils.RandomStr().replace("-", "").toUpperCase()
 	}
 	
@@ -461,7 +466,7 @@ class FileUtils {
 	 * Return current user temporary directory
 	 * @return
 	 */
-	public static String SystemTempDir() {
+	static String SystemTempDir() {
 		def f = new File(System.getProperty("java.io.tmpdir"))
 		ConvertToUnixPath(f.path)
 	}
@@ -470,7 +475,7 @@ class FileUtils {
 	 * Return current user home directory
 	 * @return
 	 */
-	public static String UserHomeDir() {
+	static String UserHomeDir() {
 		def f = new File(System.getProperty("user.home"))
 		ConvertToUnixPath(f.path)
 	}
@@ -480,7 +485,7 @@ class FileUtils {
 	 * @param file
 	 * @return
 	 */
-	public static String MaskFile(String file) {
+	static String MaskFile(String file) {
 		if (file == null) return null
 		file = ConvertToDefaultOSPath(file)
 		if (!file.matches('.*([?]|[*]).*')) return null
@@ -496,7 +501,7 @@ class FileUtils {
 	 * @param file
 	 * @return
 	 */
-	public static String PathFromFile(String file) {
+	static String PathFromFile(String file) {
 		if (file == null) return null
 		file = ConvertToDefaultOSPath(file)
 		String res
@@ -517,7 +522,7 @@ class FileUtils {
 	 * @param file
 	 * @return
 	 */
-	public static String RelativePathFromFile(String file) {
+	static String RelativePathFromFile(String file) {
 		if (file == null) return null
 		file = ConvertToDefaultOSPath(file)
 		String res
@@ -532,7 +537,7 @@ class FileUtils {
 	 * @param file
 	 * @return
 	 */
-	public static String FileName(String file) {
+	static String FileName(String file) {
 		if (file == null) return null
 		
 		file = ConvertToDefaultOSPath(file)
@@ -553,7 +558,7 @@ class FileUtils {
      * @param fileName
      * @return
      */
-	public static Boolean IsLockFileForRead(String fileName) {
+	static Boolean IsLockFileForRead(String fileName) {
         if (fileName == null) return null
 
 		def res = false
@@ -585,7 +590,7 @@ class FileUtils {
 	 * @param mode (r, rw, rws, rwd)
 	 * @return
 	 */
-	public static FileLock LockFile(String fileName, String mode, Boolean share) {
+	static FileLock LockFile(String fileName, String mode, Boolean share) {
 		def file = new File(fileName)
 		if (!file.exists()) throw new ExceptionGETL("File \"$fileName\" not found")
 		FileChannel channel = new RandomAccessFile(file, mode).channel
@@ -602,7 +607,7 @@ class FileUtils {
 	 * @param convertBuffer
 	 * @return
 	 */
-	public static long ConvertText (Reader reader, Writer writer, List rules, Closure convertLine, def convertBuffer) {
+	static long ConvertText (Reader reader, Writer writer, List rules, Closure convertLine, def convertBuffer) {
 		Closure convertCode
 		if (rules != null && !rules.isEmpty()) {
 			StringBuilder sb = new StringBuilder()
@@ -664,7 +669,7 @@ class FileUtils {
 	 * @param convertLine - Closure convertLine(String line, def convertBuffer) { return line }
 	 * @return
 	 */
-	public static long ConvertTextFile (String sourceFileName, String sourceCodePage, boolean isSourceGz, 
+	static long ConvertTextFile (String sourceFileName, String sourceCodePage, boolean isSourceGz,
 										String destFileName, String destCodePage, boolean isDestGz, List rules,
 										Closure convertLine, def convertBuffer) {
 		long res = 0
@@ -709,7 +714,7 @@ class FileUtils {
 	 * @param err
 	 * @return
 	 */
-	public static int Run(String command, String dir, String codePage, StringBuilder out, StringBuilder err) {
+	static int Run(String command, String dir, String codePage, StringBuilder out, StringBuilder err) {
 		Process p
 		try {
 			String[] env = []
@@ -746,7 +751,7 @@ class FileUtils {
 	 * @param zipName
 	 * @param path
 	 */
-	public static void CompressToZip(String zipName, String path, Map params = null) {
+	static void CompressToZip(String zipName, String path, Map params = null) {
 		CompressToZip(zipName, path, params, null)
 	}
 
@@ -756,7 +761,7 @@ class FileUtils {
      * @param path
      * @param validMask
      */
-    public static void CompressToZip(String zipName, String path, Closure validFile) {
+    static void CompressToZip(String zipName, String path, Closure validFile) {
         CompressToZip(zipName, path, null, validFile)
     }
 	
@@ -767,7 +772,7 @@ class FileUtils {
      * @param params
 	 * @param validMask
 	 */
-	public static void CompressToZip(String zipName, String path, Map params, Closure validFile) {
+	static void CompressToZip(String zipName, String path, Map params, Closure validFile) {
 		zipName = new File(zipName).absolutePath
 		ZipFile zipFile = new ZipFile(zipName)
         params = params?:[:]
@@ -807,7 +812,7 @@ class FileUtils {
 		}
 	}
 
-    public static String FileMaskToMathExpression(String fileMask) {
+	static String FileMaskToMathExpression(String fileMask) {
         return fileMask.replace('.', '[.]')
                 .replace('*', '.*')
 				.replace('+', '\\+')
@@ -821,7 +826,7 @@ class FileUtils {
 	 * @param path
 	 * @return class loader for use in Class.forName method
 	 */
-	public static URLClassLoader ClassLoaderFromPath(String path, ClassLoader classLoader = null) {
+	static URLClassLoader ClassLoaderFromPath(String path, ClassLoader classLoader = null) {
 		if (classLoader == null) classLoader = ClassLoader.systemClassLoader
 		File pathFile = new File(path)
 		List<URL> urls = []
@@ -856,7 +861,7 @@ class FileUtils {
 	 * @param args
 	 * @return
 	 */
-	public static List<String> ParseArguments(String args) {
+	static List<String> ParseArguments(String args) {
 		def list = args.split(' ')
 		def res = [] as List<String>
 		String tmp
@@ -881,8 +886,22 @@ class FileUtils {
 				}
 			}
 		}
-		if (tmp != null) throw new ExceptionGETL("Invalid arguments [$args] from command line")
+		if (tmp != null) throw new ExceptionGETL("Invalid arguments [$args] from command line!")
 
 		return res
+	}
+
+	/** Convert specified path to list */
+	static List<String> Path2List(String path) {
+		if (path == null) throw new ExceptionGETL('Path parameter is required!')
+		def absolutePath = new File(path).absolutePath
+		return absolutePath.split('[' + StringUtils.EscapeJavaWithoutUTF(File.separator) + ']').toList() as List<String>
+	}
+
+	/** Find parent directory by nearest specified elements in path */
+	static String FindParentPath(String path, String findPath) {
+		path = new File(path).absolutePath
+		findPath = ConvertToDefaultOSPath(findPath)
+		return StringUtils.ExtractParentFromChild(path, findPath, Config.isWindows())
 	}
 }

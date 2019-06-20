@@ -121,7 +121,7 @@ datasets {
                 }
             }
 
-            queryDataset('query1') {
+            query('query1') {
                 query = '''
 SELECT
     t1.id as t1_id, t1.name as t1_name, t1.dt as t1_dt,
@@ -131,7 +131,7 @@ FROM table1 t1
 ORDER BY t1.id'''
             }
 
-            rowProcess(queryDataset('query1')) {
+            rowProcess(query('query1')) {
                 def count
                 init { count = 0 }
                 process { count++; assertEquals(it.t1_id, it.t2_id); assertTrue(it.t1_dt < now ) }

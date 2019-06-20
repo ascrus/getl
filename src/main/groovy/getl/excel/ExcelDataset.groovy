@@ -33,59 +33,42 @@ import getl.utils.*
  */
 @groovy.transform.InheritConstructors
 class ExcelDataset extends Dataset {
-    ExcelDataset () {
-        super()
-        params.header = true
-        params.showWarnings = false
-    }
-
     @Override
     void setConnection(Connection value) {
         assert value == null || value instanceof ExcelConnection
         super.setConnection(value)
     }
 
-    /**
-     * List name
-     * @return
-     */
-    String getListName () { params.listName }
+    /** List name */
+    String getListName () { params.listName as String }
+    /** List name */
     void setListName (final String value) { params.listName = value }
 
-    /**
-     * Offset param
-     * @return
-     */
-    Map<String, Integer> getOffset() { params.offset }
+    /** Offset param */
+    Map<String, Integer> getOffset() { params.offset as Map<String, Integer> }
+    /** Offset param */
     void setOffset(final Map<String, Integer> value) { params.offset = value }
 
-    /**
-     * Limit rows to return
-     * @return
-     */
-    Integer getLimit() { params.limit }
+    /** Limit rows to return */
+    Integer getLimit() { params.limit as Integer }
+    /** Limit rows to return */
     void setLimit(final Integer value) { params.limit = value }
 
-    /**
-     * Header row
-     * @return
-     */
-    boolean getHeader() { BoolUtils.IsValue(params.header, true) }
+    /** Header row */
+    Boolean getHeader() { params.header }
+    /** Header row */
     void setHeader(final boolean value) { params.header = value }
 
-    /**
-     * Warnings from Dataset (e.g. show warning when list not found)
-     * @return
-     */
-
-    boolean getShowWarnings() { BoolUtils.IsValue(params.showWarnings, false) }
-    void setShowWarnings(final boolean value) { params.showWarnings = value}
+    /** Warnings from Dataset (e.g. show warning when list not found) */
+    Boolean getShowWarnings() { params.showWarnings }
+    /** Warnings from Dataset (e.g. show warning when list not found) */
+    void setShowWarnings(final Boolean value) { params.showWarnings = value}
 
     @Override
-	public String getObjectName() { listName }
+	String getObjectName() { listName }
     
 	@Override
-	public String getObjectFullName() { 
+	String getObjectFullName() {
 		FileUtils.ConvertToDefaultOSPath(((ExcelConnection)connection).path + File.separator + ((ExcelConnection)connection).fileName + ' [' + objectName + ']')
 	}
 }

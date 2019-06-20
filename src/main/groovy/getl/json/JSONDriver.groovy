@@ -38,23 +38,23 @@ import getl.utils.*
  */
 @InheritConstructors
 class JSONDriver extends FileDriver {
-	public JSONDriver () {
+	JSONDriver () {
 		methodParams.register("eachRow", ["fields", "filter"])
 	}
 
 	@Override
-	public List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		[Driver.Support.EACHROW, Driver.Support.AUTOLOADSCHEMA]
 	}
 
 	@Override
-	public List<Driver.Operation> operations() {
+	List<Driver.Operation> operations() {
 		[Driver.Operation.DROP]
 	}
 
 	@Override
-    public
-    List<Field> fields(Dataset dataset) {
+
+	List<Field> fields(Dataset dataset) {
 		return null
 	}
 	
@@ -65,7 +65,7 @@ class JSONDriver extends FileDriver {
 	 * @param sb
 	 */
 	private static void generateAttrRead (Dataset dataset, Closure initAttr, StringBuilder sb) {
-		List<Field> attrs = (dataset.params.attributeField != null)?dataset.params.attributeField:[]
+		List<Field> attrs = (dataset.params.attributeField != null)?(dataset.params.attributeField as List<Field>):[]
 		if (attrs.isEmpty()) return
 		
 		sb << "Map<String, Object> attrValue = [:]\n"
@@ -97,7 +97,7 @@ class JSONDriver extends FileDriver {
 	 * @param initAttr
 	 * @param code
 	 */
-	private void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure initAttr, Closure code) {
+	static void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
 		generateAttrRead(dataset, initAttr, sb)
 		
@@ -140,7 +140,7 @@ class JSONDriver extends FileDriver {
 	 * @param dataset
 	 * @param params
 	 */
-	public void readAttrs (Dataset dataset, Map params) {
+	static void readAttrs (Dataset dataset, Map params) {
 		params = params?:[:]
 //		String rootNode = dataset.params.rootNode
 		def data = readData(dataset, params)
@@ -164,7 +164,7 @@ class JSONDriver extends FileDriver {
 	 * @param params
 	 * @return
 	 */
-	private def readData (Dataset dataset, Map params) {
+	static def readData (Dataset dataset, Map params) {
 		boolean convertToList = (dataset.params.convertToList != null)?dataset.params.convertToList:false
 		
 		def json = new JsonSlurper()
@@ -195,7 +195,7 @@ class JSONDriver extends FileDriver {
 		return data
 	}
 	
-	private void doRead(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	static void doRead(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
 		if (dataset.params.rootNode == null) throw new ExceptionGETL("Required \"rootNode\" parameter with dataset")
 		String rootNode = dataset.params.rootNode
@@ -205,7 +205,7 @@ class JSONDriver extends FileDriver {
 		File f = new File(fn)
 		if (!f.exists()) throw new ExceptionGETL("File \"${fn}\" not found")
 		
-		long limit = (params.limit != null)?params.limit:0
+		Long limit = (params.limit != null)?(params.limit as Long):0
 
 		def data = readData(dataset, params)
 		
@@ -213,44 +213,42 @@ class JSONDriver extends FileDriver {
 		if (prepareCode != null) {
 			prepareCode(fields)
 		}
-		else if (params.fields != null) fields = params.fields
+		else if (params.fields != null) fields = params.fields as List<String>
 		
 		readRows(dataset, fields, rootNode, limit, data, params.initAttr as Closure, code)
 	}
 	
 	@Override
-	public long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		Closure filter = params."filter"
+	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		Closure<Boolean> filter = params."filter" as Closure<Boolean>
 		
 		long countRec = 0
-		doRead(dataset, params, prepareCode) { row ->
-			//noinspection GroovyAssignabilityCheck
-			if (filter != null && !filter(row)) return
+		doRead(dataset, params, prepareCode) { Map row ->
+			if (filter != null && !(filter.call(row))) return
 			
 			countRec++
-			//noinspection GroovyAssignabilityCheck
-			code(row)
+			code.call(row)
 		}
 		
 		countRec
 	}
 
 	@Override
-	public
+
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		throw new ExceptionGETL('Not support this features!')
 
 	}
 
 	@Override
-	public
+
 	void write(Dataset dataset, Map row) {
 		throw new ExceptionGETL('Not support this features!')
 
 	}
 
 	@Override
-	public
+
 	void closeWrite(Dataset dataset) {
 		throw new ExceptionGETL('Not support this features!')
 	}
