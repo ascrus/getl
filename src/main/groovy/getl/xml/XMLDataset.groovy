@@ -24,6 +24,8 @@
 
 package getl.xml
 
+import getl.exception.ExceptionGETL
+import getl.xml.opts.XMLReadSpec
 import groovy.transform.InheritConstructors
 import getl.data.*
 
@@ -38,29 +40,63 @@ class XMLDataset extends StructureFileDataset {
 		super()
 		
 		Map<String, Boolean> m = [:]
-		params."features" = m
+		params.features = m
 	}
 	
-	/**
-	 * Feature parsing options
-	 */
-	public Map<String, Boolean> getFeatures () { params."features" }
-	public void setFeatures(Map<String, Boolean> values) {
+	/** Feature parsing options */
+	Map<String, Boolean> getFeatures () { params."features" as Map<String, Boolean> }
+	/** Feature parsing options */
+	void setFeatures(Map<String, Boolean> values) {
 		(params.features as Map).clear()
-		(params.features as Map).putAll(values)
+		if (values != null) (params.features as Map).putAll(values)
 	}
 	
 	@Override
-	public void setConnection(Connection value) {
+	void setConnection(Connection value) {
 		assert value == null || value instanceof XMLConnection
 		super.setConnection(value)
 	}
-	
+
+	/** Use default the attribute access method (default) */
+	static final DEFAULT_ATTRIBUTE_ACCESS = 0
+	/** Use default the node access method */
+	static final DEFAULT_NODE_ACCESS = 1
+
+	/** How read field if not specified the alias property
+	 * <br>default: DEFAULT_ATTRIBUTE_ACCESS
+	 */
+	Integer getDefaultAccessMethod() {
+		(params.defaultAccessMethod) as Integer?:(connection as XMLConnection).defaultAccessMethod
+	}
+	/** How read field if not specified the alias property
+	 * <br>default: DEFAULT_ATTRIBUTE_ACCESS
+	 */
+	void setDefaultAccessMethod(Integer value) {
+		if (!(value in [DEFAULT_NODE_ACCESS, DEFAULT_ATTRIBUTE_ACCESS]))
+			throw new ExceptionGETL('Invalid default access method property!')
+		params.defaultAccessMethod = value
+	}
+
 	/**
 	 * Read XML dataset attributes
-	 * @param params
 	 */
-	public void readAttrs (Map params) {
+	void readAttrs (Map params) {
 		((XMLDriver)(connection.driver)).readAttrs(this, params)
+	}
+
+	/**
+	 * Read file options
+	 */
+	XMLReadSpec readOpts(@DelegatesTo(XMLReadSpec) Closure cl = null) {
+		def parent = new XMLReadSpec(true, readDirective)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code.call(this)
+			parent.prepareParams()
+		}
+
+		return parent
 	}
 }

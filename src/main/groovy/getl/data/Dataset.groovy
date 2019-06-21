@@ -692,6 +692,7 @@ class Dataset {
 			f.isReadOnly = false
 			f.trim = false
 			f.compute = null
+			f.alias = null
 		}
 	}
 	

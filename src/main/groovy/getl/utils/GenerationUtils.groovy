@@ -504,7 +504,7 @@ class GenerationUtils {
 				break
 
 			case Field.Type.OBJECT:
-				r = "($sourceValue instanceof Cloneable)?${sourceValue}.clone():$sourceValue"
+				r = "($sourceValue instanceof Cloneable)?${sourceValue}?.clone():$sourceValue"
 				
 				break
 

@@ -22,24 +22,24 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.json.opts
+package getl.xml.opts
 
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 
 /**
- * Options for reading JSON file
+ * Options for reading XML file
  * @author Alexsey Konstantinov
  *
  */
 @InheritConstructors
-class JSONReadSpec extends BaseSpec {
-    JSONReadSpec() {
+class XMLReadSpec extends BaseSpec {
+    XMLReadSpec() {
         super()
         params.fields = [] as List<String>
     }
 
-    JSONReadSpec(Boolean useExternalParams, Map<String, Object> importParams) {
+    XMLReadSpec(Boolean useExternalParams, Map<String, Object> importParams) {
         super(useExternalParams, importParams)
         if (params.fields == null) params.fields = [] as List<String>
     }
@@ -66,4 +66,15 @@ class JSONReadSpec extends BaseSpec {
      * <br>A readable record is passed as parameter (Map object)
      */
     void filter(Closure<Boolean> value) { params.filter = prepareClosure(value) }
+
+    /**
+     * Filtering readable records
+     * <br>A readable record is passed as parameter (Map object)
+     */
+    Closure<Boolean> getInitAttr() { params.initAttr as Closure<Boolean> }
+    /**
+     * Filtering readable records
+     * <br>A readable record is passed as parameter (Map object)
+     */
+    void initAttr(Closure<Boolean> value) { params.initAttr = prepareClosure(value) }
 }

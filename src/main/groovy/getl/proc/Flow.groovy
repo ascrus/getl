@@ -27,6 +27,7 @@ package getl.proc
 import getl.data.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.transform.*
 import getl.utils.*
 import getl.tfs.*
 
@@ -305,10 +306,12 @@ class Flow {
 		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
 		if (destDescription == null) destDescription = dest.objectName
 		Map destSysParams = dest.sysParams as Map
-		if (destSysParams.isTFSFile != null && destSysParams.isTFSFile && dest.field.isEmpty() && !isDestTemp) isDestTemp = true
-		def isDestVirtual = (destSysParams.isVirtual != null && destSysParams.isVirtual)
+		if (dest instanceof TFSDataset && dest.field.isEmpty() && !isDestTemp) isDestTemp = true
+		def isDestVirtual = (dest instanceof VirtualDataset || dest instanceof MultipleDataset)
 		
-		boolean inheritFields = BoolUtils.IsValue([params.inheritFields, destSysParams.inheriteFields], false)
+		boolean inheritFields = BoolUtils.IsValue(params.inheritFields)
+		if ((dest instanceof  TFSDataset || dest instanceof AggregatorDataset) && dest.field.isEmpty())
+			inheritFields = true
         boolean createDest = BoolUtils.IsValue([params.createDest, destSysParams.createDest], false)
 		boolean writeSynch = BoolUtils.IsValue(params.writeSynch, false)
 		

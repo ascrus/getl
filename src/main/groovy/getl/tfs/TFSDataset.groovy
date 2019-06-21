@@ -39,8 +39,6 @@ import getl.data.*
 class TFSDataset extends CSVDataset {
 	TFSDataset () {
 		super()
-		sysParams.isTFSFile = true
-		sysParams.inheriteFields = true
 		manualSchema = true
 		connection = TFS.storage
 		if (fileName == null) fileName = FileUtils.UniqueFileName()

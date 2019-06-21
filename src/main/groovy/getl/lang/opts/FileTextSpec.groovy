@@ -59,8 +59,11 @@ class FileTextSpec extends BaseSpec {
     void write(boolean append = false) {
         if (fileName == null && !temporaryFile) throw new ExceptionGETL("Required \"fileName\" value!")
         def file = (!temporaryFile)?new File(fileName):
-                File.createTempFile('getl.', '.temp', new File(TFS.storage.path))
-        if (temporaryFile) fileName = file.absolutePath
+                File.createTempFile('text.', '.getltemp', new File(TFS.storage.path))
+        if (temporaryFile) {
+            fileName = file.absolutePath
+            file.deleteOnExit()
+        }
         def writer = file.newWriter(codePage?:'UTF-8', append, false)
         try {
             writer.write(buffer.toString())

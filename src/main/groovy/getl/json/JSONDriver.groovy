@@ -60,9 +60,6 @@ class JSONDriver extends FileDriver {
 	
 	/**
 	 * Read only attributes from dataset
-	 * @param dataset
-	 * @param initAttr
-	 * @param sb
 	 */
 	private static void generateAttrRead (Dataset dataset, Closure initAttr, StringBuilder sb) {
 		List<Field> attrs = (dataset.params.attributeField != null)?(dataset.params.attributeField as List<Field>):[]
@@ -76,7 +73,7 @@ class JSONDriver extends FileDriver {
 			Field s = d.copy()
 			if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
 			
-			String path = GenerationUtils.Field2Alias(d)
+			String path = GenerationUtils.Field2Alias(d, true)
 			sb << "attrValue.'${d.name.toLowerCase()}' = "
 			sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}")
 			
@@ -89,13 +86,6 @@ class JSONDriver extends FileDriver {
 	
 	/**
 	 * Read attributes and rows from dataset
-	 * @param dataset
-	 * @param listFields
-	 * @param rootNode
-	 * @param limit
-	 * @param data
-	 * @param initAttr
-	 * @param code
 	 */
 	static void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
@@ -130,19 +120,15 @@ class JSONDriver extends FileDriver {
 			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
 		}
 		catch (Exception e) {
-//			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
 			throw e
 		}
 	}
 	
 	/**
 	 * Read only attributes from dataset
-	 * @param dataset
-	 * @param params
 	 */
 	static void readAttrs (Dataset dataset, Map params) {
 		params = params?:[:]
-//		String rootNode = dataset.params.rootNode
 		def data = readData(dataset, params)
 		
 		StringBuilder sb = new StringBuilder()
@@ -153,16 +139,12 @@ class JSONDriver extends FileDriver {
 			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
 		}
 		catch (Exception e) {
-//			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
 			throw e
 		}
 	}
 	
 	/**
 	 * Read JSON data from file
-	 * @param dataset
-	 * @param params
-	 * @return
 	 */
 	static def readData (Dataset dataset, Map params) {
 		boolean convertToList = (dataset.params.convertToList != null)?dataset.params.convertToList:false
@@ -234,21 +216,18 @@ class JSONDriver extends FileDriver {
 	}
 
 	@Override
-
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		throw new ExceptionGETL('Not support this features!')
 
 	}
 
 	@Override
-
 	void write(Dataset dataset, Map row) {
 		throw new ExceptionGETL('Not support this features!')
 
 	}
 
 	@Override
-
 	void closeWrite(Dataset dataset) {
 		throw new ExceptionGETL('Not support this features!')
 	}

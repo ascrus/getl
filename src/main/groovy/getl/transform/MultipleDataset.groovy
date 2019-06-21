@@ -44,9 +44,6 @@ class MultipleDataset extends Dataset {
 		
 		Map<String, Closure> cond = [:]
 		params.condition = cond
-		
-		sysParams.isVirtual = true
-		
 		connection = new Connection(driver: MutlipleDatasetDriver)
 	}
 	

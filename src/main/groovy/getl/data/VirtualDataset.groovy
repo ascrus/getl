@@ -34,12 +34,6 @@ import getl.utils.*
  */
 @InheritConstructors
 class VirtualDataset extends Dataset {
-	VirtualDataset () {
-		super()
-		
-		sysParams.isVirtual = true
-	}
-	
 	/**
 	 * Destinition dataset
 	 * @return

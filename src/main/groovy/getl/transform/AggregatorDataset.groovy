@@ -39,8 +39,6 @@ class AggregatorDataset extends VirtualDataset {
 	AggregatorDataset () {
 		super()
 		
-		sysParams.inheriteFields = true
-		
 		connection = new Connection(driver: AggregatorDatasetDriver)
 		
 		List<String> fieldByGroup = []

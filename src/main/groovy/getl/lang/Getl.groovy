@@ -24,7 +24,6 @@
 
 package getl.lang
 
-import com.sun.org.apache.xpath.internal.operations.Bool
 import getl.config.*
 import getl.config.opts.*
 import getl.csv.*
