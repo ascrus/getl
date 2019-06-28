@@ -1,5 +1,5 @@
 /**
- * This example shows how to read data from a JSON file and write it into two csv files master-detail.
+ * This example shows how to read data from a JSON file and write it into two csv temporary files as master-detail.
  */
 
 package getl.examples.json

@@ -25,6 +25,7 @@
 package getl.proc.opts
 
 import getl.data.*
+import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
 import getl.tfs.TFSDataset
 import getl.utils.MapUtils
@@ -41,13 +42,25 @@ class FlowCopySpec extends BaseSpec {
         super()
         params.sourceParams = [:] as Map<String, Object>
         params.destParams = [:] as Map<String, Object>
+        params._childs = [:] as Map<String, FlowCopyChildSpec>
     }
 
     FlowCopySpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
         super(useExternalParams, importParams)
         if (params.sourceParams == null) params.sourceParams = [:] as Map<String, Object>
         if (params.destParams == null) params.destParams = [:] as Map<String, Object>
+        if (params._childs == null) params._childs = [:] as Map<String, FlowCopyChildSpec>
     }
+
+    /**
+     * Last count row
+     */
+    public Long countRow
+
+    /**
+     * Error rows for "copy" process
+     */
+    public TFSDataset errorsDataset
 
     /**
      * Temporary source name
@@ -281,13 +294,34 @@ class FlowCopySpec extends BaseSpec {
      */
     void process(Closure value) { params.process = prepareClosure(value) }
 
-    /**
-     * Last count row
-     */
-    public Long countRow
+    /** List of child datasets */
+    private Map<String, FlowCopyChildSpec> getChilds() { params._childs as Map<String, FlowCopyChildSpec> }
 
-    /**
-     * Error rows for "copy" process
-     */
-    public TFSDataset errorsDataset
+    /** Set child dataset options */
+    void childs(String name, @DelegatesTo(FlowCopyChildSpec) Closure cl) {
+        def parent = childs.get(name)
+        if (parent == null) {
+            parent = new FlowCopyChildSpec()
+            childs.put(name, parent)
+        }
+        if (cl == null) throw new ExceptionGETL("Child dataset \"$name\" required processing code")
+        parent.thisObject = parent.DetectClosureDelegate(cl)
+        def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+        code.resolveStrategy = Closure.OWNER_FIRST
+        code.call(parent.thisObject)
+        parent.prepareParams()
+    }
+
+    @Override
+    void prepareParams() {
+        params.destChild = [:] as Map<String, Dataset>
+        params.destChildParams = [:] as Map<String, Map>
+        params.processChild = [:] as Map<String, Closure>
+        childs.each { String name, FlowCopyChildSpec opts ->
+            (params.destChild as Map).put(name, opts.dataset)
+            (params.destChildParams as Map).put(name, opts.datasetParams)
+            if (opts.params.process != null) (params.processChild as Map).put(name, opts.params.process)
+        }
+        MapUtils.RemoveKeys(params, ['_childs'])
+    }
 }

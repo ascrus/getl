@@ -1286,6 +1286,7 @@ class Getl extends Script {
         def parent = new FileTextSpec()
         def pt = startProcess('Write to text file')
         runClosure(parent, cl)
+        pt.name = "Write to text file \"${parent.fileName}\""
         finishProcess(pt)
 
         return parent

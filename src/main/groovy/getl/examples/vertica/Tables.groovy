@@ -14,8 +14,8 @@ useJDBCConnection verticaConnection('demo') {
 }
 
 // Vertica price table
-verticaTable('price') {
-    tableName = 'price'
+verticaTable('prices') {
+    tableName = 'prices'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { type = stringFieldType; isNull = false; length = 50 }
     field('create_date') { type = datetimeFieldType; isNull = false }

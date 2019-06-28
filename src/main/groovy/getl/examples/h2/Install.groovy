@@ -13,9 +13,9 @@ options {
     processTimeTracing = true
 }
 
-// Temp database price table
-embeddedTable('price') { table ->
-    tableName = 'price'
+// Price table
+embeddedTable('prices') { table ->
+    tableName = 'prices'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { type = stringFieldType; isNull = false; length = 50 }
     field('create_date') { type = datetimeFieldType; isNull = false }
@@ -23,9 +23,9 @@ embeddedTable('price') { table ->
     field('description') { type = textFieldType }
 
     create()
-    logInfo "Created temporary table $table"
+    logInfo "Created h2 table $table"
 
-    logFine"Generating data to $table ..."
+    logFine"Generating data to h2 table $table ..."
     rowsTo(table) {
         // User code
         process { add -> // writer object
@@ -38,12 +38,12 @@ embeddedTable('price') { table ->
             add id: 7, name: 'Blueberries', create_date: now, price: 85.00, description: null
         }
         done {
-            logInfo"$countRow rows saved to temporary table $table"
+            logInfo"$countRow rows saved to h2 table $table"
         }
     }
 }
 
-// Temp database sales table
+// Sales table
 embeddedTable('sales') { table ->
     tableName = 'sales'
     field('id') { type = bigintFieldType; isKey = true }
@@ -54,12 +54,12 @@ embeddedTable('sales') { table ->
     field('description') { type = stringFieldType; length = 50 }
 
     create()
-    logInfo "Created temporary table $table"
+    logInfo "Created h2 table $table"
 
-    logFine"Generating data to $table ..."
+    logFine"Generating data to h2 table $table ..."
     rowsTo(table) {
         // Lookup price map structure
-        def priceLookup = embeddedTable('price').lookup { key = 'id'; strategy = ORDER_STRATEGY }
+        def priceLookup = embeddedTable('prices').lookup { key = 'id'; strategy = ORDER_STRATEGY }
 
         // Size of batch saving rows
         destParams.batchSize = 10000
@@ -82,7 +82,31 @@ embeddedTable('sales') { table ->
             }
         }
         done {
-            logInfo"$countRow rows saved to temporary table $table"
+            logInfo"$countRow rows saved to h2 table $table"
         }
     }
 }
+
+// Customers table
+embeddedTable('customers') { table ->
+    tableName = 'customers'
+    field('id') { type = integerFieldType; isKey = true }
+    field('name') { length = 50 }
+    field('customer_type') { length = 10 }
+
+    create()
+    logInfo "Created h2 table $table"
+}
+
+// Customer phones table
+embeddedTable('customers.phones') { table ->
+    tableName = 'customer_phones'
+    field('customer_id') { type = integerFieldType; isKey = true }
+    field('phone') { length = 50; isKey = true }
+
+    create()
+    logInfo "Created h2 table $table"
+}
+
+// Load customers data from generated XML file
+runGroovyScript 'getl.examples.xml.LoadXmlToH2'

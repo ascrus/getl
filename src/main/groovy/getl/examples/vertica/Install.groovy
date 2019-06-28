@@ -7,7 +7,7 @@ import groovy.transform.BaseScript
 // Count sale rows
 def count_sale_rows = 100000
 
-// Generate data in temporary database
+// Generate sample data in a H2  database
 runGroovyScript 'getl.examples.h2.Install'
 
 // Load configuration file
@@ -38,7 +38,7 @@ profile("Create Vertica objects") {
 }
 
 // Copy rows of pricing list from the embedded table to the Vertica table
-copyRows(embeddedTable('price'), verticaTable('price')) { source, dest ->
+copyRows(embeddedTable('prices'), verticaTable('prices')) { source, dest ->
     done { logInfo "Copied $countRow rows of pricing list from the embedded table to the Vertica table" }
 }
 

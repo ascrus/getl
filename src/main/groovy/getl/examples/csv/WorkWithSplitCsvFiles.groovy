@@ -8,7 +8,7 @@ package getl.examples.csv
 
 import groovy.transform.BaseScript
 
-// Generate sample data in a H2 temporary database
+// Generate sample data in a H2  database
 runGroovyScript 'getl.examples.h2.Install'
 
 // Create csv temporary dataset based on sales
