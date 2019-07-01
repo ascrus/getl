@@ -193,8 +193,8 @@ class JDBCDataset extends Dataset {
 	boolean isExists() {
 		if (!(connection.driver as JDBCDriver).isTable(this)) throw new ExceptionGETL("${fullNameDataset()} is not a table!")
 		def con = connection as JDBCConnection
-		def dbName = params.dbName
-		def schemaName = params.schemaName
+		def dbName = dbName
+		def schemaName = schemaName
 		def tableName = params.tableName
 		if (tableName == null) throw new ExceptionGETL("Table name is not specified for ${fullNameDataset()}!")
 		def ds = con.retrieveDatasets(dbName: dbName, schemaName: schemaName,

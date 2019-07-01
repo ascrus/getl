@@ -41,7 +41,7 @@ class Executor {
 	/**
 	 * Count thread process
 	 */
-	public Integer countProc
+	public Integer countProc = 1
 	
 	/**
 	 * Limit elements for executed (0-unlimited)
@@ -175,15 +175,16 @@ class Executor {
 	}
 
 	/** Run thread code with list elements */
-	void run(List elements = list, Integer countThread = countProc, Closure code) {
+	void run(List elements, Integer countThread, Closure code) {
 		hasError = false
 		isInterrupt = false
 		exceptions.clear()
 		threadList.clear()
 		threadActive.clear()
 
-		if (countThread == null) countThread = elements.size()
-		
+		if (elements == null) elements = list
+		if (countThread == null) countThread = countProc
+
 		def runCode = { Map m ->
 			def num = m.num + 1
 			def element = m.element
@@ -284,6 +285,11 @@ class Executor {
 		}
 		
 		if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode()
+	}
+
+	/** Run thread code with list elements */
+	void run(Closure code) {
+		run(list, countProc, code)
 	}
 
 	/** Run thread code with list elements */

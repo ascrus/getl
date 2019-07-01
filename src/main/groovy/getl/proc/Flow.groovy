@@ -24,6 +24,7 @@
 
 package getl.proc
 
+import getl.csv.CSVDataset
 import getl.data.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
@@ -42,10 +43,12 @@ class Flow {
 	Flow () {
 		methodParams.register('copy',
 				['source', 'tempSource', 'dest', 'destChild', 'tempDest', 'inheritFields', 'createDest',
-				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams', 'destChildParams',
+				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams',
 				 'autoMap', 'autoConvert', 'autoTran', 'clear', 'saveErrors', 'excludeFields', 'mirrorCSV',
 				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', 'onWrite', 'onDone',
-				 'process', 'processChild', 'debug', 'writeSynch'])
+				 'process', 'debug', 'writeSynch'])
+		methodParams.register('copy.destChild',
+				['dataset', 'datasetParams', 'process', 'init', 'done'])
 
 		methodParams.register('writeTo', ['dest', 'dest_*', 'destParams', 'autoTran', 'tempDest',
 										  'tempFields', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'clear', 'writeSynch',
@@ -310,24 +313,20 @@ class Flow {
 		if (dest instanceof TFSDataset && dest.field.isEmpty() && !isDestTemp) isDestTemp = true
 		def isDestVirtual = (dest instanceof VirtualDataset || dest instanceof MultipleDataset)
 
-		Map<String, Dataset> destChild = params.destChild as Map<String, Dataset>?:[:]
-		destChild.each { String name, Dataset dataset ->
+		Map<String, Map<String, Object>> destChild = params.destChild as Map<String, Map<String, Object>>?:[:]
+		destChild.each { String name, Map<String, Object> childParams ->
+			def dataset = childParams.dataset as Dataset
+			if (dataset == null)
+				throw new ExceptionGETL("No set dataset property for the children dataset \"$name\"!")
 			if (dataset.connection == null)
 				throw new ExceptionGETL("No set connection property for the children dataset \"$name\"!")
 			if (!dataset.connection.driver.isSupport(Driver.Support.WRITE))
 				throw new ExceptionGETL("The children dataset \"$name\" does not support writing data!")
+
+			if (childParams.process == null || !(childParams.process instanceof Closure))
+				throw new ExceptionGETL("No set process closure for the children dataset \"$name\"!")
 		}
-		Map<String, Map<String, Object>> destChildParams = params.destChildParams as Map<String, Map<String, Object>>?:[:]
-		destChildParams.each { String name, Map childParams ->
-			if (!destChild.containsKey(name))
-				throw new ExceptionGETL("Parameters for not described dataset \"$name\" are specified!")
-		}
-		Map<String, Closure> destChildProcess = params.destChildProcess as Map<String, Closure>?:[:]
-		destChildProcess.each { String name, Closure childProcess ->
-			if (!destChild.containsKey(name))
-				throw new ExceptionGETL("Process for not described dataset \"$name\" are specified!")
-		}
-		
+
 		boolean inheritFields = BoolUtils.IsValue(params.inheritFields)
 		if ((dest instanceof  TFSDataset || dest instanceof AggregatorDataset) && dest.field.isEmpty())
 			inheritFields = true
@@ -335,13 +334,13 @@ class Flow {
 		boolean writeSynch = BoolUtils.IsValue(params.writeSynch, false)
 		
 		boolean isBulkLoad = BoolUtils.IsValue(params.bulkLoad, false)
-		boolean bulkEscaped = BoolUtils.IsValue(params.bulkEscaped, false)
-		boolean bulkAsGZIP = BoolUtils.IsValue(params.bulkAsGZIP, false)
+		Boolean bulkEscaped = params.bulkEscaped
+		Boolean bulkAsGZIP = params.bulkAsGZIP
 		if (isBulkLoad) {
 			if (isDestTemp || isDestVirtual) throw new ExceptionGETL("Is not possible to start the process BulkLoad for a given destination dataset!")
 			if (!dest.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destination dataset not support bulk load!")
-			destChild.each { String name, Dataset dataset ->
-				if (!dataset.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destination children dataset \"$name\" not support bulk load!")
+			destChild.each { String name, Map<String, Object> childParams ->
+				if (!(childParams.dataset as Dataset).connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destination children dataset \"$name\" not support bulk load!")
 			}
 		}
 
@@ -363,12 +362,13 @@ class Flow {
 		def autoTran = autoTranParams &&
 					dest.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) &&
 							BoolUtils.IsValue(dest.connection.params.autoCommit)
-		Map<String, Boolean> autoTranChild = [:]
-		destChild.each { String name, Dataset dataset ->
-			autoTranChild.put(name, autoTranParams &&
+		destChild.each { String name, Map<String, Object> childParams ->
+			def dataset = childParams.dataset as Dataset
+			def datasetParams = childParams.datasetParams as Map
+			childParams.put('autoTran', autoTranParams &&
 					dataset.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) &&
 					!dataset.connection.isTran() &&
-					BoolUtils.IsValue([destChildParams.get(name)?.get('autoCommit'),
+					BoolUtils.IsValue([datasetParams?.get('autoCommit'),
 									   dataset.connection.params.autoCommit]))
 		}
 
@@ -387,9 +387,6 @@ class Flow {
 		if (isSaveErrors) errorsDataset = TFS.dataset()
 
 		Dataset writer
-		def writerChild = [:] as Map<String, Dataset>
-		TFSDataset bulkDS
-		def bulkChildDS = [:] as Map<String, TFSDataset>
 
 		Map<String, Object> destParams
 		if (params.destParams != null && !(params.destParams as Map).isEmpty()) {
@@ -400,47 +397,46 @@ class Flow {
 		}
 
 		Map<String, Object> bulkParams = [:]
-		Map<String, Map<String, Object>> bulkChildParams = [:]
 		if (isBulkLoad) {
 			bulkParams.putAll(destParams?:[:])
 			if (bulkAsGZIP) bulkParams.compressed = "GZIP"
 			if (autoTran) bulkParams.autoCommit = false
 			destParams = [:]
 
-			bulkDS = TFS.dataset()
-			bulkDS.escaped = bulkEscaped
-			if (bulkAsGZIP) {
-				bulkDS.isGzFile = true
-			}
+			def bulkDS = dest.csvTempFile
+			if (bulkEscaped != null) bulkDS.escaped = bulkEscaped
+			if (bulkAsGZIP != null) bulkDS.isGzFile = bulkAsGZIP
 			if (dest.field.isEmpty()) dest.retrieveFields()
 			bulkDS.field = dest.field
 			writer = bulkDS
+			bulkParams.source = bulkDS
 			writeSynch = false
 
-			destChild.each { String name, Dataset dataset ->
-				bulkChildParams.put(name, [:])
-				Map<String, Object> childParams = bulkChildParams.get(name)
-				childParams.putAll(destChildParams.get(name)?:[:])
-				if (bulkAsGZIP) childParams.compressed = "GZIP"
-				if (autoTran) childParams.autoCommit = false
-				destChildParams.get(name).clear()
+			destChild.each { String name, Map<String, Object> childParams ->
+				def dataset = childParams.dataset as Dataset
 
-				def childDS = TFS.dataset()
-				childDS.escaped = bulkEscaped
-				if (bulkAsGZIP) {
-					childDS.isGzFile = true
-				}
+				def bulkChildParams = [:] as Map<String, Object>
+				childParams.put('bulkParams', bulkChildParams)
+				bulkChildParams.putAll((childParams.datasetParams as Map)?:[:])
+
+				if (bulkAsGZIP) bulkChildParams.compressed = "GZIP"
+				if (autoTran) bulkChildParams.autoCommit = false
+				(childParams.datasetParams as Map).clear()
+
+				def childDS = dataset.csvTempFile
+				if (bulkEscaped != null) childDS.escaped = bulkEscaped
+				if (bulkAsGZIP != null) childDS.isGzFile = bulkAsGZIP
 				if (dataset.field.isEmpty()) dataset.retrieveFields()
 				childDS.field = dataset.field
 
-				bulkChildDS.put(name, childDS)
-				writerChild.put(name, childDS)
+				bulkChildParams.source = childDS
+				childParams.writer = childDS
 			}
 		}
 		else {
 			writer = dest
-			destChild.each { String name, Dataset dataset ->
-				writerChild.put(name, dataset)
+			destChild.each { String name, Map<String, Object> childParams ->
+				childParams.writer = childParams.dataset as Dataset
 			}
 		}
 		
@@ -465,16 +461,23 @@ class Flow {
 				assignFieldToTemp(source, writer, map, excludeFields)
 			}
 
-			if (initCode != null) initCode.call(source, writer)
+			if (initCode != null) initCode.call()
+			destChild.each { String name, Map<String, Object> childParams ->
+				if (childParams.onInit != null) {
+					(childParams.onInit as Closure).call()
+				}
+			}
+
             if (createDest) dest.create()
 
 			if (clear) dest.truncate()
 			destParams.prepare = initDest
 			writer.openWrite(destParams)
 
-			writerChild.each { String name, Dataset dataset ->
-				Map<String, Object> childParams = destChildParams.get(name)
-				dataset.openWrite(childParams)
+			destChild.each { String name, Map<String, Object> childParams ->
+				def childWriter = childParams.writer as Dataset
+				def datasetParams = childParams.datasetParams as Map
+				childWriter.openWrite(datasetParams)
 			}
 			
 			if (isSaveErrors) {
@@ -503,11 +506,10 @@ class Flow {
 		if (autoTran) {
 			dest.connection.startTran()
 		}
-		autoTranChild.each { String name, Boolean useTran ->
-			if (BoolUtils.IsValue(useTran)) {
-				Dataset dataset = destChild.get(name)
-				dataset.connection.startTran()
-			}
+		destChild.each { String name, Map<String, Object> childParams ->
+			def dataset = childParams.dataset as Dataset
+			def autoTranChild = BoolUtils.IsValue(childParams.autoTran)
+			if (autoTranChild) dataset.connection.startTran()
 		}
 
 		try {
@@ -541,11 +543,12 @@ class Flow {
 						if (!writeSynch) writer.write(outRow) else writer.writeSynch(outRow)
 						if (writeCode != null) writeCode.call(inRow, outRow)
 
-						writerChild.each { String name, Dataset dataset ->
-							def procChild = destChildProcess.get(name)
+						destChild.each { String name, Map<String, Object> childParams ->
+							def childWriter = childParams.writer as Dataset
+							def procChild = childParams.process as Closure
 							if (procChild != null) {
 								def updateCode = { Map row ->
-									if (!writeSynch) dataset.write(row) else dataset.writeSynch(row)
+									if (!writeSynch) childWriter.write(row) else childWriter.writeSynch(row)
 									countRow++
 								}
 								procChild.call(updateCode, inRow)
@@ -556,8 +559,9 @@ class Flow {
 				}
 				
 				writer.doneWrite()
-				writerChild.each { String name, Dataset dataset ->
-					dataset.doneWrite()
+				destChild.each { String name, Map<String, Object> childParams ->
+					def childWriter = childParams.writer as Dataset
+					childWriter.doneWrite()
 				}
 				if (isSaveErrors) errorsDataset.doneWrite()
 			}
@@ -567,15 +571,15 @@ class Flow {
 			}
 			finally {
 				writer.closeWrite()
-				writerChild.each { String name, Dataset dataset ->
-					dataset.closeWrite()
+				destChild.each { String name, Map<String, Object> childParams ->
+					def childWriter = childParams.writer as Dataset
+					childWriter.closeWrite()
 				}
 				if (isSaveErrors) errorsDataset.closeWrite()
 				
 			}
 			
 			if (isBulkLoad) {
-				bulkParams.source = bulkDS 
 				try {
 					dest.bulkLoadFile(bulkParams)
 				}
@@ -583,23 +587,23 @@ class Flow {
 					if (debug && Logs.fileNameHandler != null) {
 						def dn = "${Logs.DumpFolder()}/${dest.objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
 						if (bulkAsGZIP) dn += ".gz"
-						FileUtils.CopyToFile(bulkDS.fullFileName(), dn, true)
+						FileUtils.CopyToFile((bulkParams.source as CSVDataset).fullFileName(), dn, true)
 					}
 					throw e
 				}
 
-				writerChild.each { String name, Dataset dataset ->
-					def childParams = bulkChildParams.get(name)
-					childParams.source = dataset
-					def childDataset = destChild.get(name)
+				destChild.each { String name, Map<String, Object> childParams ->
+					def dataset = childParams.dataset as Dataset
+					def bulkChildParams = childParams.bulkParams as Map
+
 					try {
-						childDataset.bulkLoadFile(childParams)
+						dataset.bulkLoadFile(bulkChildParams)
 					}
 					catch (Throwable e) {
 						if (debug && Logs.fileNameHandler != null) {
-							def dn = "${Logs.DumpFolder()}/${childDataset.objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
+							def dn = "${Logs.DumpFolder()}/${(bulkChildParams.source as Dataset).objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
 							if (bulkAsGZIP) dn += ".gz"
-							FileUtils.CopyToFile(dataset.fullFileName(), dn, true)
+							FileUtils.CopyToFile((bulkChildParams.source as CSVDataset).fullFileName(), dn, true)
 						}
 						throw e
 					}
@@ -607,35 +611,38 @@ class Flow {
 			}
 			
 			if (doneCode != null) doneCode.call()
+			destChild.each { String name, Map<String, Object> childParams ->
+				if (childParams.onDone != null) {
+					(childParams.onDone as Closure).call()
+				}
+			}
 		}
 		catch (Throwable e) {
 			Logs.Exception(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}")
 
 			if (autoTran) dest.connection.rollbackTran()
-			autoTranChild.each { String name, Boolean useTran ->
-				if (BoolUtils.IsValue(useTran)) {
-					Dataset dataset = destChild.get(name)
-					dataset.connection.rollbackTran()
-				}
+			destChild.each { String name, Map<String, Object> childParams ->
+				def dataset = childParams.dataset as Dataset
+				def autoTranChild = BoolUtils.IsValue(childParams.autoTran)
+				if (autoTranChild) dataset.connection.rollbackTran()
 			}
-			
 			throw e
 		}
 		finally {
 			if (isBulkLoad) {
-				bulkDS.drop()
-				bulkChildDS.each { String name, Dataset dataset ->
-					dataset.drop()
+				(bulkParams.source as CSVDataset).drop()
+				destChild.each { String name, Map<String, Object> childParams ->
+					def bulkChildParams = childParams.bulkParams as Map
+					(bulkChildParams.source as Dataset).drop()
 				}
 			}
 		}
 		
 		if (autoTran) dest.connection.commitTran()
-		autoTranChild.each { String name, Boolean useTran ->
-			if (BoolUtils.IsValue(useTran)) {
-				Dataset dataset = destChild.get(name)
-				dataset.connection.commitTran()
-			}
+		destChild.each { String name, Map<String, Object> childParams ->
+			def dataset = childParams.dataset as Dataset
+			def autoTranChild = BoolUtils.IsValue(childParams.autoTran)
+			if (autoTranChild) dataset.connection.commitTran()
 		}
 
 		return countRow
@@ -1048,7 +1055,7 @@ class Flow {
 		if (isSaveErrors) errorsDataset = TFS.dataset()
 
 		def onInitSource = {
-			if (initCode != null) initCode.call(source)
+			if (initCode != null) initCode.call()
 
 			if (isSaveErrors) {
 				errorsDataset.field = source.field

@@ -58,5 +58,11 @@ class FlowCopyChildSpec extends BaseSpec {
     }
 
     /** The code for write to child dataset (parameters passed to the writer and the original source row) */
-    void processRow(Closure value) { params.process = prepareClosure {value} }
+    void processRow(Closure value) { params.process = prepareClosure(value) }
+
+    /** Initialization code before processing */
+    void childInit(Closure value) { params.onInit = prepareClosure(value) }
+
+    /** Done code after processing */
+    void childDone(Closure value) { params.onDone = prepareClosure(value) }
 }

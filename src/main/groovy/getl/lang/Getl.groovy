@@ -1263,13 +1263,19 @@ class Getl extends Script {
     }
 
     /** Run code in multithread mode */
-    Executor thread(@DelegatesTo(Executor) Closure cl) {
+    Executor thread(List elements, @DelegatesTo(Executor) Closure cl) {
         def parent = new Executor()
+        if (elements != null) parent.list = elements
         def pt = startProcess('Execution threads')
         runClosure(parent, cl)
         finishProcess(pt)
 
         return parent
+    }
+
+    /** Run code in multithread mode */
+    Executor thread(@DelegatesTo(Executor) Closure cl) {
+        thread(null, cl)
     }
 
     /** Run code in multithread mode */
@@ -1286,7 +1292,7 @@ class Getl extends Script {
         def parent = new FileTextSpec()
         def pt = startProcess('Write to text file')
         runClosure(parent, cl)
-        pt.name = "Write to text file \"${parent.fileName}\""
+        pt?.name = "Write to text file \"${parent.fileName}\""
         finishProcess(pt)
 
         return parent

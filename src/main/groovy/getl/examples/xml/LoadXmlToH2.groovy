@@ -62,13 +62,11 @@ xml('customers') { xml ->
 }
 
 // Copy customers rows from xml file to h2 tables customers and customers_phones
-copyRows(xml('customers'), embeddedTable('customers')) { xml, table ->
+copyRows(xml('customers'), embeddedTable('customers')) { xml, customers ->
     bulkLoad = true
 
     // Adding an write to the child table customers_phones
-    childs('customers.phones') {
-        dataset = embeddedTable('customers.phones')
-
+    childs('customers.phones', embeddedTable('customers.phones')) { phones ->
         // Processing the child structure phones
         processRow { addPhone, row ->
             // Copying phones array to the writer in h2 table phones customers
@@ -76,15 +74,10 @@ copyRows(xml('customers'), embeddedTable('customers')) { xml, table ->
                 addPhone customer_id: row.id, phone: phone?.text()
             }
         }
+        childDone { logInfo "${phones.updateRows} customer phones loaded" }
     }
+    doneFlow { logInfo "${customers.updateRows} customers loaded" }
 }
 
-println 'Customers:'
-rowProcess(embeddedTable('customers')) {
-    process { println it}
-}
-
-println 'Customers phones:'
-rowProcess(embeddedTable('customers.phones')) {
-    process { println it }
-}
+assert embeddedTable('customers').countRow() == 3
+assert embeddedTable('customers.phones').countRow() == 7

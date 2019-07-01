@@ -22,8 +22,8 @@ profile("Create Vertica objects") {
         logInfo'Created schema getl_demo.'
     }
 
-    processRepDatasets(VERTICATABLE) {
-        verticaTable(it) { table ->
+    processRepDatasets(VERTICATABLE) { tableName ->
+        verticaTable(tableName) { table ->
             if (!table.exists) {
                 // Create table in database
                 create ifNotExists: true
@@ -37,13 +37,13 @@ profile("Create Vertica objects") {
     }
 }
 
-// Copy rows of pricing list from the embedded table to the Vertica table
-copyRows(embeddedTable('prices'), verticaTable('prices')) { source, dest ->
-    done { logInfo "Copied $countRow rows of pricing list from the embedded table to the Vertica table" }
-}
-
-// Copy rows of sales fact from the embedded table to the Vertica table
-copyRows(embeddedTable('sales'), verticaTable('sales')) { source, dest ->
-    bulkLoad = true
-    done { logInfo "Copied $countRow rows of sales fact from the embedded table to the Vertica table" }
+thread(listRepDatasets(VERTICATABLE)) {
+    countProc = 3
+    run { tableName ->
+        // Copy rows from the embedded table to the Vertica table
+        copyRows(embeddedTable(tableName), verticaTable(tableName)) { source, dest ->
+            bulkLoad = true
+            done { logInfo "Copied $countRow rows of $tableName from the embedded table to the Vertica table" }
+        }
+    }
 }

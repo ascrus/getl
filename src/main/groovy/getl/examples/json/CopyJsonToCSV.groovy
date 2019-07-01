@@ -78,20 +78,20 @@ csvTemp('customers.phones') {
 }
 
 // Generate writer the phones customers to temporary file
-rowsTo(csvTemp('customers.phones')) { csv_phones  ->
-    // Write processing
-    process { addPhone -> // Writer object
-        // Generate copy the customers from json file to temporary file
-        copyRows(json('customers'), csvTemp('customers')) { json, csv ->
-            // Copy processing
-            process { source, dest ->
-                // Copying phones array to the writer in temporary file phones customers
-                source.phones.each { phone ->
-                    addPhone customer_id: source.id, phone: phone.phone
-                }
+copyRows(json('customers'), csvTemp('customers')) { json, customers ->
+    // Adding an write to the child table customers_phones
+    childs('customers.phones', csvTemp('customers.phones')) { phones ->
+        // Processing the child structure phones
+        processRow { addPhone, row ->
+            // Copying phones array to the writer in h2 table phones customers
+            row.phones?.each { phone ->
+                addPhone customer_id: row.id, phone: phone.phone
             }
         }
+        childDone { logInfo "${phones.updateRows} customer phones loaded" }
     }
+
+    doneFlow { logInfo "${customers.updateRows} customers loaded" }
 }
 
 println 'Customers:'

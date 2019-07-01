@@ -298,29 +298,35 @@ class FlowCopySpec extends BaseSpec {
     private Map<String, FlowCopyChildSpec> getChilds() { params._childs as Map<String, FlowCopyChildSpec> }
 
     /** Set child dataset options */
-    void childs(String name, @DelegatesTo(FlowCopyChildSpec) Closure cl) {
+    void childs(String name, Dataset dataset, @DelegatesTo(FlowCopyChildSpec) Closure cl) {
+        if (name == null) throw new ExceptionGETL("For the child dataset, you must specify a name!")
+        if (cl == null) throw new ExceptionGETL("Child dataset \"$name\" required processing code!")
+
         def parent = childs.get(name)
         if (parent == null) {
             parent = new FlowCopyChildSpec()
+            parent.dataset = dataset
             childs.put(name, parent)
         }
-        if (cl == null) throw new ExceptionGETL("Child dataset \"$name\" required processing code")
+        if (parent.dataset == null) throw new ExceptionGETL("Child dataset \"$name\" required dataset!")
+
         parent.thisObject = parent.DetectClosureDelegate(cl)
         def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
         code.resolveStrategy = Closure.OWNER_FIRST
-        code.call(parent.thisObject)
+        code.call(parent.dataset)
         parent.prepareParams()
+    }
+
+    /** Set child dataset options */
+    void childs(String name, @DelegatesTo(FlowCopyChildSpec) Closure cl) {
+        childs(name, null, cl)
     }
 
     @Override
     void prepareParams() {
         params.destChild = [:] as Map<String, Dataset>
-        params.destChildParams = [:] as Map<String, Map>
-        params.processChild = [:] as Map<String, Closure>
         childs.each { String name, FlowCopyChildSpec opts ->
-            (params.destChild as Map).put(name, opts.dataset)
-            (params.destChildParams as Map).put(name, opts.datasetParams)
-            if (opts.params.process != null) (params.processChild as Map).put(name, opts.params.process)
+            (params.destChild as Map).put(name, opts.params)
         }
         MapUtils.RemoveKeys(params, ['_childs'])
     }
