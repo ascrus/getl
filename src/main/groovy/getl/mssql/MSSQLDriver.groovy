@@ -54,6 +54,10 @@ class MSSQLDriver extends JDBCDriver {
 		commitDDL = true
 		transactionalDDL = true
 		dropIfExists = false
+
+		transactionalDDL = true
+		commitDDL = true
+		transactionalTruncate = true
 	}
 
 	@Override
@@ -77,8 +81,8 @@ class MSSQLDriver extends JDBCDriver {
 		res.BOOLEAN.name = 'bit'
 		res.BLOB.name = 'varbinary'
 		res.BLOB.useLength = JDBCDriver.sqlTypeUse.ALWAYS
-		res.TEXT.name = 'varchar'
-		res.TEXT.useLength = JDBCDriver.sqlTypeUse.ALWAYS
+		res.TEXT.name = 'text'
+		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
 		res.DATETIME.name = 'datetime'
 		res.UUID.name = 'uniqueidentifier'
 

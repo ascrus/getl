@@ -91,7 +91,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
             println "Skip test local temporary table: ${con.driver.getClass().name} not support this futures"
             return
         }
-        def tempTable = new TableDataset(connection: con, tableName: '_getl_local_temp_test', type: JDBCDataset.Type.LOCAL_TEMPORARY)
+        def tempTable = new TableDataset(connection: con, schemaName: '_getl_test',
+                tableName: '_getl_local_temp_test', type: JDBCDataset.Type.LOCAL_TEMPORARY)
         tempTable.field = fields
         if (con.driver.isSupport(Driver.Support.INDEX)) {
             tempTable.create(indexes: [_getl_local_temp_test_idx_1: [columns: ['id2', 'name']]])

@@ -12,17 +12,15 @@ import groovy.json.JsonBuilder
  * @author Alexsey Konstantinov
  */
 class ConfigSlurperTest extends getl.test.GetlTest {
-    def test = true
-
     def h2 = new H2Connection(config: 'h2')
     def csv = new CSVConnection(config: 'csv')
 
     void testLoadConfig() {
         Config.configClassManager = new ConfigSlurper()
 
-        def configPath = new TFS(path: (test)?'c:/tmp':null)
+        def configPath = new TFS()
         def configFile = new File("${configPath.path}/test_config.conf")
-        if (!test) configFile.deleteOnExit()
+        configFile.deleteOnExit()
 
         def conf = '''
             map {
@@ -90,7 +88,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         Config.content.var3[1].d = '${vars.config_var}'
         Config.SaveConfig(fileName: 'test_config.groovy')
         def groovyFile = new File("${configPath.path}/test_config.groovy")
-        if (!test) groovyFile.deleteOnExit()
+        groovyFile.deleteOnExit()
 
         Config.ClearConfig()
         Config.SetValue('vars.config_var', 'variable value')

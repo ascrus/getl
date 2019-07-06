@@ -37,7 +37,9 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class VerticaTable extends TableDataset {
     @Override
-    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) { new VerticaCreateSpec(useExternalParams, opts) }
+    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new VerticaCreateSpec(useExternalParams, opts)
+    }
 
     /**
      * Create H2 table
@@ -47,7 +49,9 @@ class VerticaTable extends TableDataset {
     }
 
     @Override
-    protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) { new VerticaReadSpec(useExternalParams, opts) }
+    protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new VerticaReadSpec(useExternalParams, opts)
+    }
 
     /**
      * Read table options
@@ -57,7 +61,9 @@ class VerticaTable extends TableDataset {
     }
 
     @Override
-    protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) { new VerticaWriteSpec(useExternalParams, opts) }
+    protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new VerticaWriteSpec(useExternalParams, opts)
+    }
 
     /**
      * Read table options
@@ -67,7 +73,9 @@ class VerticaTable extends TableDataset {
     }
 
     @Override
-    protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) { new VerticaBulkLoadSpec(useExternalParams, opts) }
+    protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new VerticaBulkLoadSpec(useExternalParams, opts)
+    }
 
     /**
      * Read table options

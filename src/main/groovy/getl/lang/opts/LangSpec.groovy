@@ -39,9 +39,9 @@ class LangSpec extends BaseSpec {
     void setProcessTimeTracing(boolean value) {params.processTimeTracing = value }
 
     /** Use the multithreaded JDBC connection model */
-    boolean getUseThreadModelJDBCConnection() { BoolUtils.IsValue(params.useThreadModelJDBCConnection) }
+    boolean getUseThreadModelConnection() { BoolUtils.IsValue(params.useThreadModelJDBCConnection, true) }
     /** Use the multithreaded JDBC connection model */
-    void setUseThreadModelJDBCConnection(boolean value) { params.useThreadModelJDBCConnection = value }
+    void setUseThreadModelConnection(boolean value) { params.useThreadModelJDBCConnection = value }
 
     /** Write SQL command from temporary database connection to history file */
     String getTempDBSQLHistoryFile() { params.tempDBSQLHistoryFile as String }

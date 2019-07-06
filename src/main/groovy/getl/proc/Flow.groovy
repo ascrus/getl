@@ -360,16 +360,17 @@ class Flow {
 		boolean autoConvert = BoolUtils.IsValue(params.autoConvert, true)
 		boolean autoTranParams = BoolUtils.IsValue(params.autoTran, true)
 		def autoTran = autoTranParams &&
-					dest.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) &&
-							BoolUtils.IsValue(dest.connection.params.autoCommit)
+                dest.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) &&
+                !dest.connection.isTran() &&
+                !BoolUtils.IsValue(dest.connection.params.autoCommit, false)
 		destChild.each { String name, Map<String, Object> childParams ->
 			def dataset = childParams.dataset as Dataset
 			def datasetParams = childParams.datasetParams as Map
 			childParams.put('autoTran', autoTranParams &&
 					dataset.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) &&
 					!dataset.connection.isTran() &&
-					BoolUtils.IsValue([datasetParams?.get('autoCommit'),
-									   dataset.connection.params.autoCommit]))
+					!BoolUtils.IsValue([datasetParams?.get('autoCommit'),
+									   dataset.connection.params.autoCommit], false))
 		}
 
 		boolean clear = BoolUtils.IsValue(params.clear, false)
@@ -676,8 +677,8 @@ class Flow {
 		if (destDescription == null) destDescription = dest.objectName
 		
 		boolean autoTran = (params.autoTran != null)?params.autoTran:true
-		autoTran = autoTran && (dest.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) && 
-								(dest.connection.params.autoCommit == null || !dest.connection.params.autoCommit))
+		autoTran = autoTran && dest.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) &&
+								!BoolUtils.IsValue(dest.connection.params.autoCommit, false)
 		
 		boolean isBulkLoad = (params.bulkLoad != null)?params.bulkLoad:false
 		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destinataion dataset not support bulk load")
@@ -833,8 +834,9 @@ class Flow {
 			
 			// Valid auto transaction
 			def isAutoTran = autoTran &&
-									(d.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) && !d.connection.isTran() &&
-									(d.connection.params.autoCommit == null || !d.connection.params.autoCommit))
+                    d.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) &&
+                    !d.connection.isTran() &&
+					!BoolUtils.IsValue(d.connection.params.autoCommit, false)
 						
 			// Define auto transaction condition
 			if (isAutoTran) {

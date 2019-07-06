@@ -1,22 +1,21 @@
-package getl.examples.vertica
+package getl.examples.oracle
 
 @BaseScript getl.lang.Getl getl
 
 import groovy.transform.BaseScript
 
-// Vertica database connection (using config content variables)
-useVerticaConnection verticaConnection('demo') {
+// Oracle database connection (using config content variables)
+useOracleConnection oracleConnection('demo') {
     driverPath = configContent.driverPath
     connectHost = configContent.connectHost
     connectDatabase = configContent.connectDatabase
-    schemaName = 'getl_demo'
     login = configContent.login
     password = configContent.password
-    sqlHistoryFile = "${configContent.workPath}/vertica.{date}.sql"
+    sqlHistoryFile = "${configContent.workPath}/oracle.{date}.sql"
 }
 
 // Price table
-verticaTable('prices') {
+oracleTable('prices') {
     tableName = 'prices'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { type = stringFieldType; isNull = false; length = 50 }
@@ -26,7 +25,7 @@ verticaTable('prices') {
 }
 
 // Customers table
-verticaTable('customers') { table ->
+oracleTable('customers') { table ->
     tableName = 'customers'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { length = 50 }
@@ -34,14 +33,14 @@ verticaTable('customers') { table ->
 }
 
 // Customer phones table
-verticaTable('customers.phones') { table ->
+oracleTable('customers.phones') { table ->
     tableName = 'customer_phones'
     field('customer_id') { type = integerFieldType; isKey = true }
     field('phone') { length = 50; isKey = true }
 }
 
 // Sales table
-verticaTable('sales') {
+oracleTable('sales') {
     tableName = 'sales'
     field('id') { type = bigintFieldType; isKey = true }
     field('price_id') { type = integerFieldType; isNull = false }
@@ -49,8 +48,8 @@ verticaTable('sales') {
     field('sale_date') { type = datetimeFieldType; isNull = false }
     field('sale_count') { type = bigintFieldType; isNull = false }
     field('sale_sum') { type = numericFieldType; isNull = false; length = 12; precision = 2 }
-    createOpts {
-        orderBy = ['sale_date', 'price_id', 'customer_id']
-        segmentedBy = 'hash(id) all nodes'
+
+    readOpts {
+        hints = 'PARALLEL'
     }
 }

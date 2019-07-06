@@ -1,3 +1,5 @@
+package getl.examples.vertica
+
 @BaseScript getl.lang.Getl getl
 
 import groovy.transform.BaseScript
@@ -21,7 +23,7 @@ configuration {
     clear()
 
     // Directory of configuration file
-    path = configContent.configPath?:'../../../../../../tests/vertica'
+    path = (findParentPath('.', 'src/main/groovy/getl')?:'') + 'tests/vertica'
 
     // Load configuration file
     load'vertica.dsl'

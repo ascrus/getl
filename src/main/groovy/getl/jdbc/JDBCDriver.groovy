@@ -748,6 +748,7 @@ ${extend}'''
 	
 	protected boolean commitDDL = false
 	protected boolean transactionalDDL = false
+	protected boolean transactionalTruncate = false
 	
 	protected String caseObjectName = "NONE" // LOWER OR UPPER
 	protected String defaultDBName = null
@@ -826,8 +827,10 @@ ${extend}'''
 		}
 
 		String createTableCode = '"""' + sqlCreateTable + '"""'
+
+		def jdbcConnect = connection as JDBCConnection
 		
-		if (commitDDL && transactionalDDL) startTran()
+		if (commitDDL && transactionalDDL) jdbcConnect.startTran()
 		try {
 			def varsCT = [  temporary: temporary, 
 							ifNotExists: ifNotExists, 
@@ -858,8 +861,8 @@ ${extend}'''
 
 					if (commitDDL) {
 						if (transactionalDDL) {
-							commitTran()
-							startTran()
+							jdbcConnect.commitTran()
+							jdbcConnect.startTran()
 						} else {
 							executeCommand('COMMIT')
 						}
@@ -871,13 +874,13 @@ ${extend}'''
 		}
 		catch (Throwable e) {
 			if (commitDDL) {
-				if (transactionalDDL) rollbackTran()
+				if (transactionalDDL) jdbcConnect.rollbackTran()
 			}
 			throw e
 		}
 		
 		if (commitDDL) {
-			if (transactionalDDL) commitTran() else executeCommand('COMMIT')
+			if (transactionalDDL) jdbcConnect.commitTran() else executeCommand('COMMIT')
 		}
 	}
 
@@ -985,22 +988,24 @@ ${extend}'''
 		
 		def r = prepareTableNameForSQL(ds.params.tableName as String)
 
-		def schemaName = ds.schemaName
-		if (schemaName == null &&
-				(dataset.sysParams.type as JDBCDataset.Type) == JDBCDataset.Type.TABLE && defaultSchemaName != null) {
-			schemaName = defaultSchemaName
-		}
-
-		if (schemaName != null) {
-			r = prepareTableNameForSQL(schemaName) +'.' + r
-		}
-
-		if (ds.dbName != null) {
-			if (schemaName != null) {
-				r = prepareTableNameForSQL(ds.dbName) + '.' + r
+		def tableType = dataset.sysParams.type as JDBCDataset.Type
+		if (tableType == null || tableType != JDBCDataset.Type.LOCAL_TEMPORARY) {
+			def schemaName = ds.schemaName
+			if (schemaName == null &&
+					(dataset.sysParams.type as JDBCDataset.Type) == JDBCDataset.Type.TABLE && defaultSchemaName != null) {
+				schemaName = defaultSchemaName
 			}
-			else {
-				r = prepareTableNameForSQL(ds.dbName) + '..' + r
+
+			if (schemaName != null) {
+				r = prepareTableNameForSQL(schemaName) + '.' + r
+			}
+
+			if (ds.dbName != null) {
+				if (schemaName != null) {
+					r = prepareTableNameForSQL(ds.dbName) + '.' + r
+				} else {
+					r = prepareTableNameForSQL(ds.dbName) + '..' + r
+				}
 			}
 		}
 
@@ -1350,12 +1355,22 @@ ${extend}'''
 	@Override
 	public void clearDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
-		def truncate = (params.truncate != null)?params.truncate:false
+		def truncate = BoolUtils.IsValue(params.truncate)
 		
 		def fn = fullNameDataset(dataset)
 		String q = (truncate)?"TRUNCATE TABLE $fn":"DELETE FROM $fn"
-		def count = executeCommand(q, params + [isUpdate: (!truncate)])
-		dataset.updateRows = count
+
+		try {
+			if (transactionalTruncate) connection.startTran()
+			def count = executeCommand(q, params + [isUpdate: (!truncate)])
+			dataset.updateRows = count
+
+			if (transactionalTruncate) connection.commitTran()
+		}
+		catch (Exception e) {
+			if (transactionalTruncate) connection.rollbackTran()
+			throw e
+		}
 	}
 	
 	protected void saveToHistory(String sql) {

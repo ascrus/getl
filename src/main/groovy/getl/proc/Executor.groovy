@@ -24,16 +24,15 @@
 
 package getl.proc
 
-import java.util.concurrent.Callable
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
+import groovy.transform.Synchronized
+import org.codehaus.groovy.runtime.StackTraceUtils
+
+import java.util.concurrent.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
 
 /**
- * Thread execution manager class
+ * Execution service class
  * @author Alexsey Konstantinov
  *
  */
@@ -41,7 +40,7 @@ class Executor {
 	/**
 	 * Count thread process
 	 */
-	public Integer countProc = 1
+	public Integer countProc
 	
 	/**
 	 * Limit elements for executed (0-unlimited)
@@ -87,13 +86,13 @@ class Executor {
 	 * Run has errors
 	 * @return
 	 */
-	@groovy.transform.Synchronized
-	public boolean getIsError () { hasError }
+	@Synchronized
+	boolean getIsError () { hasError }
 	
 	/** How exceptions in process stopping execute */
 	public final Map<Object, Throwable> exceptions = [:]
 	
-	@groovy.transform.Synchronized
+	@Synchronized
 	protected void setError (Object obj, Throwable except) {
 		hasError = true
 		if (obj != null) exceptions.put(obj, except)
@@ -117,12 +116,12 @@ class Executor {
 	/**
 	 * List of all threads
 	 */
-	public final List<Map> threadList = Collections.synchronizedList(new ArrayList());
+	public final List<Map> threadList = Collections.synchronizedList(new ArrayList())
 
 	/**
 	 * List of active threads
 	 */
-	public final List<Map> threadActive = Collections.synchronizedList(new ArrayList());
+	public final List<Map> threadActive = Collections.synchronizedList(new ArrayList())
 
 	/**
 	 * Interrupt flag
@@ -133,14 +132,14 @@ class Executor {
 	 * Set interrupt flag for current thread processes	
 	 * @param value
 	 */
-	@groovy.transform.Synchronized
-	public void setInterrupt(boolean value) { isInterrupt = true }   
+	@Synchronized
+	void setInterrupt(boolean value) { isInterrupt = true }
 
 	/**
 	 * Launches a single code
 	 * @param code
 	 */
-	public void runSingle(Closure code) {
+	void runSingle(Closure code) {
 		run([1], 2, code)
 	}
 	
@@ -149,33 +148,43 @@ class Executor {
 	 * @param count
 	 * @param code
 	 */
-	public void runMany(int countList, Closure code) {
+	void runMany(int countList, Closure code) {
 		def l = (1..countList)
 		run(l, countList, code)
 	}
-	
-	public void runMany(int countList, int countThread, Closure code) {
+
+	void runMany(int countList, int countThread, Closure code) {
 		def l = (1..countList)
 		run(l, countThread, code)
 	}
 
-	@groovy.transform.Synchronized
-	private void putThreadListElement(Map m, Map values) {
+	@Synchronized
+	static private void putThreadListElement(Map m, Map values) {
 		m.putAll(values)
 	}
 
-	@groovy.transform.Synchronized
+	@Synchronized
 	private addActiveThread(Map m) {
 		threadActive.add(m)
 	}
 
-	@groovy.transform.Synchronized
+	@Synchronized
 	private void removeActiveThread(Map m) {
 		threadActive.remove(m)
 	}
 
+	/** Code on dispose resource after run the thread */
+	private List<Closure> listDisposeThreadResource = [] as List<Closure>
+	/** Added code on dispose resource after run the thread */
+	void disposeThreadResource(Closure cl) { listDisposeThreadResource << cl }
+
 	/** Run thread code with list elements */
-	void run(List elements, Integer countThread, Closure code) {
+	void run(Integer countThread, Closure code) {
+		run(list, countThread, code)
+	}
+
+	/** Run thread code with list elements */
+	void run(List elements = list, Integer countThread = countProc, Closure code) {
 		hasError = false
 		isInterrupt = false
 		exceptions.clear()
@@ -183,7 +192,7 @@ class Executor {
 		threadActive.clear()
 
 		if (elements == null) elements = list
-		if (countThread == null) countThread = countProc
+		if (countThread == null) countThread = countProc?:elements?.size()
 
 		def runCode = { Map m ->
 			def num = m.num + 1
@@ -197,7 +206,26 @@ class Executor {
 						synchronized (threadActive) {
 							threadActive.add(m)
 						}
-						code(element)
+						try {
+							code.call(element)
+						}
+						finally {
+							def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
+							try {
+								listDisposeThreadResource.each { Closure disposeCode ->
+									disposeCode.call(cloneObjects)
+								}
+							}
+							finally {
+								cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
+									objects?.each { ExecutorThread.CloneObject obj ->
+										obj.origObject = null
+										obj.cloneObject = null
+									}
+								}
+								cloneObjects.clear()
+							}
+						}
 						synchronized (threadActive) {
 							threadActive.remove(m)
 						}
@@ -224,7 +252,7 @@ class Executor {
 		}
 
 		if (allowThread && countThread > 1) {
-			def threadPool = Executors.newFixedThreadPool(countThread)
+			def threadPool = Executors.newFixedThreadPool(countThread, new ExecutorFactory())
 			def num = 0
 			elements.each { n ->
 				Map r = Collections.synchronizedMap(new HashMap())
@@ -288,8 +316,8 @@ class Executor {
 	}
 
 	/** Run thread code with list elements */
-	void run(Closure code) {
-		run(list, countProc, code)
+	void exec(Integer countThread) {
+		exec(listCode, countThread)
 	}
 
 	/** Run thread code with list elements */
@@ -300,7 +328,7 @@ class Executor {
 		threadList.clear()
 		threadActive.clear()
 
-		if (countThread == null) countThread = elements.size()
+		if (countThread == null) countThread = countProc?:elements.size()
 
 		def runCode = { Map m ->
 			def num = m.num + 1
@@ -314,7 +342,33 @@ class Executor {
 						synchronized (threadActive) {
 							threadActive.add(m)
 						}
-						element.call()
+						try {
+							element.call()
+						}
+						finally {
+							def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
+							try {
+								listDisposeThreadResource.each { Closure disposeCode ->
+									disposeCode.call(cloneObjects)
+								}
+							}
+							finally {
+								cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
+									objects?.each { ExecutorThread.CloneObject obj ->
+										obj.origObject = null
+										obj.cloneObject = null
+									}
+								}
+								cloneObjects.clear()
+							}
+						}
+						synchronized (threadActive) {
+							threadActive.remove(m)
+						}
+						synchronized (m) {
+							m.put('finish', new Date())
+							m.remove('threadSubmit')
+						}
 						synchronized (threadActive) {
 							threadActive.remove(m)
 						}
@@ -341,7 +395,7 @@ class Executor {
 		}
 
 		if (allowThread && countThread > 1) {
-			def threadPool = Executors.newFixedThreadPool(countThread)
+			def threadPool = Executors.newFixedThreadPool(countThread, new ExecutorFactory())
 			def num = 0
 			elements.each { n ->
 				Map r = Collections.synchronizedMap(new HashMap())
@@ -407,11 +461,11 @@ class Executor {
 	private ExecutorService threadBackground
 	private boolean runBackgroundService = false
 	
-	@groovy.transform.Synchronized
-	public boolean isRunBackground () { runBackgroundService }
+	@Synchronized
+	boolean isRunBackground () { runBackgroundService }
 	
 	/** Start background process */
-	public void startBackground(Closure code) {
+	void startBackground(Closure code) {
 		if (isRunBackground()) throw new ExceptionGETL("Background process already running")
 		def runCode = {
 			try {
@@ -423,7 +477,7 @@ class Executor {
 			catch (Throwable e) {
 				if (logErrors) {
 					Logs.Exception(e, this.toString(), null)
-					org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
+					StackTraceUtils.sanitize(e)
 				}
 			}
 		}
@@ -434,7 +488,7 @@ class Executor {
 	}
 	
 	/** Finish background process */
-	public void stopBackground () {
+	void stopBackground () {
 		if (!isRunBackground()) throw new ExceptionGETL("Not Background process running")
 		runBackgroundService = false
 		if (threadBackground != null) {

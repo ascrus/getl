@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
+
  Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
 
  This program is free software: you can redistribute it and/or modify
@@ -22,48 +22,20 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.mysql
+package getl.proc
 
-import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
-import getl.jdbc.JDBCConnection
+
+import java.util.concurrent.ThreadFactory
 
 /**
- * MySQL connection class
+ * Thread factory class for execution service
  * @author Alexsey Konstantinov
- *
  */
 @InheritConstructors
-class MySQLConnection extends JDBCConnection {
-	MySQLConnection() {
-		super(driver: MySQLDriver)
-	}
-	
-	MySQLConnection(Map params) {
-		super(new HashMap([driver: MySQLDriver]) + params)
-		if (this.getClass().name == 'getl.mysql.MySQLConnection') methodParams.validation("Super", params)
-	}
-
-	@Override
-	protected void registerParameters () {
-		super.registerParameters()
-		methodParams.register('Super', ['usedOldDriver'])
-	}
-	
-	@Override
-	protected void onLoadConfig (Map configSection) {
-		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.mysql.MySQLConnection') methodParams.validation("Super", params)
-	}
-
-	/** Enable if a driver under version 6 is used. */
-	Boolean getUsedOldDriver() { params.usedOldDriver as Boolean }
-	/** Enable if a driver under version 6 is used. */
-	void setUsedOldDriver(Boolean value) { params.usedOldDriver = value }
-	
-	@Override
-	protected void doInitConnection () {
-		super.doInitConnection()
-		driverName = (!BoolUtils.IsValue(usedOldDriver))?'com.mysql.cj.jdbc.Driver':'com.mysql.jdbc.Driver'
-	}
+class ExecutorFactory implements ThreadFactory {
+    @Override
+    Thread newThread(Runnable r) {
+        return new ExecutorThread(r)
+    }
 }

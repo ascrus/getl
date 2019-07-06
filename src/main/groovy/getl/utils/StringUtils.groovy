@@ -87,10 +87,10 @@ class StringUtils {
 	 */
 	static String EvalMacroString(String value, Map vars) {
 		if (value == null) return null
-		if (vars == null) throw new ExceptionGETL("Null vars parameter")
+		if (vars == null) throw new ExceptionGETL("Variables can not be null!")
 		vars.each { k, v ->
 			if (v instanceof Date) v = DateUtils.FormatDateTime((Date)v)
-			if (v != null) value = value.replace('{' + k + '}', (String)v)
+			if (v != null && !(v instanceof Map) && !(v instanceof List)) value = value.replace('{' + k + '}', (String)v)
 		}
 		
 		if (value.matches("(?i).*([{][a-z0-9-_]+[}]).*")) throw new ExceptionGETL("Unknown variable in \"$value\", known vars: $vars")

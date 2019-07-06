@@ -17,7 +17,7 @@ vars {
     toAddress = '<comma separated destination addresses example a@google.com, b@yandex.ru>
 }
 */
-config {
+configuration {
     // Directory of configuration file
     path = configVars.configPath?:'tests/emailer'
 

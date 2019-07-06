@@ -36,9 +36,7 @@ datasets {
                 logFileName = csvTempConnection().path + '/getl.dsl.logs'
             }
 
-            options {
-                useJDBCConnection embeddedConnection('h2') { sqlHistoryFile = "$tempPath/getl.lang.h2.sql" }
-            }
+            useH2Connection embeddedConnection('h2') { sqlHistoryFile = "$tempPath/getl.lang.h2.sql" }
 
             h2Table('table1') { H2Table table ->
                 config = 'table1'

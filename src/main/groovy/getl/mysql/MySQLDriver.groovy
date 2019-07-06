@@ -65,7 +65,8 @@ class MySQLDriver extends JDBCDriver {
 
 	@Override
 	protected Map getConnectProperty() {
-		return [zeroDateTimeBehavior: 'convertToNull']
+		return [zeroDateTimeBehavior: 'convertToNull', useServerPrepStmts: false, rewriteBatchedStatements: true,
+				serverTimezone: 'UTC']
 	}
 
 	@Override

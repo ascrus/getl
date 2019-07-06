@@ -65,7 +65,7 @@ embeddedTable('customers.phones') { table ->
 }
 
 // Load customers data from generated XML file
-runGroovyScript 'getl.examples.xml.LoadXmlToH2'
+runGroovyClass getl.examples.xml.LoadXmlToH2
 
 // Sales table
 embeddedTable('sales') { table ->

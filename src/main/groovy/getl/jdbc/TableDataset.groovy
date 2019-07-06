@@ -246,8 +246,7 @@ class TableDataset extends JDBCDataset {
 	 * Truncate table
 	 */
 	void truncate () {
-		String sql = "TRUNCATE TABLE ${fullNameDataset()}"
-		connection.executeCommand(command: sql, isUpdate: true)
+		(connection.driver as JDBCDriver).clearDataset(this, [truncate: true])
 	}
 
 	/**

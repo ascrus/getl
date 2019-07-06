@@ -464,7 +464,7 @@ class SQLScripter {
 			}
 			b.append(st[fs].replace('\r', '') + ";\n")
 		}
-		if (fe == -1) throw new ExceptionGETL("SQLScripter: can not find END BLOCK construction")
+		if (fe == -1) throw new ExceptionGETL("SQLScripter: can not find END BLOCK construction!")
 
 		sql = StringUtils.EvalMacroString(b.toString(), allVars)
 		connection.executeCommand(command: sql)
