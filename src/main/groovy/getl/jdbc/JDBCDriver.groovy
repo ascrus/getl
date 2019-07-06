@@ -603,6 +603,16 @@ class JDBCDriver extends Driver {
 		if (dataset.params.tableName == null) throw new ExceptionGETL("Required table name from dataset")
 	}
 
+	/** Prepare database, schema and table name for retrieve field operation */
+	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
+		def names = [:] as Map<String, String>
+		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, defaultDBName]) as String)
+		names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)
+		names.tableName = prepareObjectName(dataset.tableName as String)
+
+		return names
+	}
+
 	@Override
 	public List<Field> fields(Dataset dataset) {
 		validTableName(dataset)
@@ -626,16 +636,14 @@ class JDBCDriver extends Driver {
 		if (Driver.Operation.READ_METADATA in operations()) {
 			JDBCDataset ds = dataset as JDBCDataset
 
-			String dbName = prepareObjectName(ListUtils.NotNullValue([ds.dbName, defaultDBName]) as String)
-			String schemaName = prepareObjectName(ListUtils.NotNullValue([ds.schemaName, defaultSchemaName]) as String)
-			String tableName = prepareObjectName(ds.params.tableName as String)
+			def names = prepareForRetrieveFields(ds)
 
-			saveToHistory("-- READ METADATA WITH DB=[$dbName], SCHEMA=[$schemaName], TABLE=[$tableName]")
-			ResultSet rs = sqlConnect.connection.metaData.getColumns(dbName, schemaName, tableName, null)
+			saveToHistory("-- READ METADATA WITH DB=[${names.dbName}], SCHEMA=[${names.schemaName}], TABLE=[${names.tableName}]")
+			ResultSet rs = sqlConnect.connection.metaData.getColumns(names.dbName, names.schemaName, names.tableName, null)
 
 			try {
 				while (rs.next()) {
-					//				println "> ${rs.getString("COLUMN_NAME")}: ${rs.getInt("DATA_TYPE")}:${rs.getString("TYPE_NAME")}"
+					// println "> ${rs.getString("COLUMN_NAME")}: ${rs.getInt("DATA_TYPE")}:${rs.getString("TYPE_NAME")}"
 					Field f = new Field()
 
 					f.name = prepareObjectName(rs.getString("COLUMN_NAME"))
@@ -662,7 +670,7 @@ class JDBCDriver extends Driver {
 			}
 
 			if (dataset.sysParams.type == JDBCDataset.Type.TABLE) {
-				rs = sqlConnect.connection.metaData.getPrimaryKeys(dbName, schemaName, tableName)
+				rs = sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, names.schemaName, names.tableName)
 				def ord = 0
 				try {
 					while (rs.next()) {

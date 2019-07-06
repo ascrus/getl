@@ -29,6 +29,7 @@ import getl.data.Field
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
 import getl.jdbc.TableDataset
+import getl.utils.ListUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -151,5 +152,15 @@ class MySQLDriver extends JDBCDriver {
 		if (!rows.isEmpty()) res = rows[0].session_id.toString()
 
 		return res
+	}
+
+	@Override
+	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
+		def names = [:] as Map<String, String>
+		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, (dataset.connection as MySQLConnection).connectDatabase, defaultDBName]) as String)
+		names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)
+		names.tableName = prepareObjectName(dataset.tableName as String)
+
+		return names
 	}
 }
