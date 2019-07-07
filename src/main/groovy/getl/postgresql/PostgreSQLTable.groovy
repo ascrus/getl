@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
+
  Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
@@ -22,44 +22,16 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.transform
+package getl.postgresql
 
+import getl.jdbc.TableDataset
 import groovy.transform.InheritConstructors
-import getl.data.Connection
-import getl.data.VirtualDataset
-import getl.exception.ExceptionGETL
 
 /**
- * Aggregation dataset class
+ * PostgreSQL table
  * @author Alexsey Konstantinov
  *
  */
 @InheritConstructors
-class AggregatorDataset extends VirtualDataset {
-	AggregatorDataset () {
-		super()
-		
-		connection = new Connection(driver: AggregatorDatasetDriver)
-		
-		List<String> fieldByGroup = []
-		params.fieldByGroup = fieldByGroup
-		
-		Map<String, Map> fieldCalc = [:]
-		params.fieldCalc = fieldCalc
-		
-		params.algorithm = "HASH"
-	}
-	
-	public List<String> getFieldByGroup () { params.fieldByGroup }
-	public void setFieldByGroup (List<String> value) { params.fieldByGroup = value } 
-	
-	public Map<String, Map> getFieldCalc () { params.fieldCalc }
-	public void setFieldCalc (Map<String, Map> value) { params.fieldCalc = value }
-	
-	public String getAlgorithm () { params.algorithm }
-	public void setAlgorithm (String value) {
-		value = value.toUpperCase()
-		if (!(value in ["HASH", "TREE"])) throw new ExceptionGETL("Unknown algorithm \"${value}\"") 
-		params.algorithm = value 
-	}
+class PostgreSQLTable extends TableDataset {
 }

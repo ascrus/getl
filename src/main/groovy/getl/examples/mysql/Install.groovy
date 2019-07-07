@@ -12,6 +12,11 @@ runGroovyClass getl.examples.mysql.Config
 // Define object as MySQL tables
 runGroovyClass getl.examples.mysql.Tables
 
+options {
+    // Enabled chech on exists objects
+    validObjectExist = true
+}
+
 profile("Create MySQL objects") {
     // Run sql script for create schemata and tables
     sql {

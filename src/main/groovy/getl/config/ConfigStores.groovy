@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2018  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -34,6 +34,11 @@ import groovy.json.JsonSlurper
 import org.h2.mvstore.MVMap
 import org.h2.mvstore.MVStore
 
+/**
+ * Configuration security store manager class
+ * @author Alexsey Konstantinov
+ *
+ */
 class ConfigStores extends ConfigManager {
     @Override
     boolean getEvalVars() { true }

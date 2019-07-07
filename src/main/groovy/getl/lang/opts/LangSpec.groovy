@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2019  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -52,4 +52,9 @@ class LangSpec extends BaseSpec {
     Boolean getAutoCSVTempForJDBDTables() { BoolUtils.IsValue(params.autoCSVTempForJDBDTables) }
     /** Auto create CSV temp dataset for JDBC tables */
     void setAutoCSVTempForJDBDTables(Boolean value) { params.autoCSVTempForJDBDTables = value }
+
+    /** Check on connection registration */
+    Boolean getValidObjectExist() { BoolUtils.IsValue(params.validObjectExist, false) }
+    /** Check on connection registration */
+    void setValidObjectExist(Boolean value) { params.validObjectExist = value }
 }

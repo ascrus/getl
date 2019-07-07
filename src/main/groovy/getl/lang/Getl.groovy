@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2019  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -257,6 +257,9 @@ class Getl extends Script {
         def repName = repObjectName(name)
         def obj = sect.get(repName)
         if (obj == null) {
+            if (langOpts.validObjectExist || Thread.currentThread() instanceof ExecutorThread)
+                throw new ExceptionGETL("Connection \"$name\" with type \"$connectionClassName\" is not exist!")
+
             obj = Connection.CreateConnection(connection: connectionClassName) as Connection
             sect.put(repName, obj)
         }
@@ -417,6 +420,9 @@ class Getl extends Script {
             def repName = repObjectName(name)
             obj = sect.get(repName)
             if (obj == null) {
+                if (langOpts.validObjectExist || Thread.currentThread() instanceof ExecutorThread)
+                    throw new ExceptionGETL("Dataset \"$name\" with type \"$datasetClassName\" is not exist!")
+
                 obj = Dataset.CreateDataset(dataset: datasetClassName) as Dataset
                 setDefaultConnection(datasetClassName, obj)
                 sect.put(repName, obj)
@@ -533,8 +539,17 @@ class Getl extends Script {
         def repName = repObjectName(name)
         def obj = sect.get(repName)
         if (obj == null) {
+            if (langOpts.validObjectExist || Thread.currentThread() instanceof ExecutorThread)
+                throw new ExceptionGETL("File manager \"$name\" with type \"$fileManagerClassName\" is not exist!")
+
             obj = Manager.CreateManager(connection: fileManagerClassName) as Manager
             sect.put(repName, obj)
+        }
+
+        if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+            def thread = Thread.currentThread() as ExecutorThread
+            obj = thread.registerCloneObject('filemanagers', obj,
+                    { (it as FileManager).cloneManager() } )
         }
 
         return obj
@@ -970,6 +985,21 @@ class Getl extends Script {
     /** PostgreSQL connection */
     PostgreSQLConnection postgresqlConnection(@DelegatesTo(PostgreSQLConnection) Closure cl = null) {
         postgresqlConnection(null, cl)
+    }
+
+    /** Use default PostgreSQL connection for new datasets */
+    void usePostgreSQLConnection(PostgreSQLConnection connection) {
+        useJDBCConnection(POSTGRESQLTABLE, connection)
+    }
+
+    /** MySQL database table */
+    PostgreSQLTable postgresqlTable(String name, @DelegatesTo(PostgreSQLTable) Closure cl = null) {
+        def isRegistered = isRegisteredDataset(POSTGRESQLTABLE, name)
+        def parent = registerDataset(POSTGRESQLTABLE, name) as PostgreSQLTable
+        runClosure(parent, cl)
+        if (langOpts.autoCSVTempForJDBDTables && !BoolUtils.IsValue(isRegistered)) createCsvTemp(name, parent)
+
+        return parent
     }
 
     /** Vertica connection */
@@ -1536,6 +1566,11 @@ class Getl extends Script {
             (list?.connections as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
                 def con = cloneObject.cloneObject as Connection
                 if (con != null) con.connected = false
+            }
+
+            (list?.filemanagers as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
+                def man = cloneObject.cloneObject as FileManager
+                if (man != null) man.connected = false
             }
         }
 

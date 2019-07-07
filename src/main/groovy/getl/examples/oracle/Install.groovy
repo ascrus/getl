@@ -12,6 +12,11 @@ runGroovyClass getl.examples.oracle.Config
 // Define object as Oracle tables
 runGroovyClass getl.examples.oracle.Tables
 
+options {
+    // Enabled chech on exists objects
+    validObjectExist = true
+}
+
 profile("Create Oracle objects") {
     processDatasets(ORACLETABLE) { tableName ->
         oracleTable(tableName) { table ->
