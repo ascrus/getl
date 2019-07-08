@@ -29,10 +29,8 @@ import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import org.apache.hadoop.fs.*
 import org.apache.hadoop.conf.*
-
 import getl.utils.Logs
 import org.apache.hadoop.security.UserGroupInformation
-
 import java.security.PrivilegedExceptionAction
 
 /**
@@ -101,6 +99,10 @@ class HDFSManager extends Manager {
                     Configuration conf = new Configuration()
                     conf.set("fs.defaultFS", "hdfs://$server:$port")
                     conf.set("hadoop.job.ugi", login)
+
+
+//                    conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.getClass().name)
+//                    conf.set("fs.file.impl",org.apache.hadoop.fs.LocalFileSystem.getClass().name)
                     try {
                         client = FileSystem.get(conf)
                     }

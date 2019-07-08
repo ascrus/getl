@@ -35,8 +35,10 @@ dependencies {
 		exclude group: 'stax'
 	}
 	compile 'org.apache.poi:ooxml-schemas:1.4'
-	compile 'org.apache.hadoop:hadoop-hdfs:3.2.0'
+	compile 'org.apache.hadoop:hadoop-auth:3.2.0'
+	compile 'org.apache.hadoop:hadoop-hdfs-client:3.2.0'
 	compile 'org.apache.hadoop:hadoop-common:3.2.0'
+	
 	implementation 'com.fasterxml:aalto-xml:1.2.1'
 	
 	compile group: 'com.force.api', name: 'force-partner-api', version: '44.0.0'

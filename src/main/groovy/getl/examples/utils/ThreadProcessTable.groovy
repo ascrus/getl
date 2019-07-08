@@ -5,6 +5,4 @@ import groovy.transform.BaseScript
 
 @BaseScript Getl getl
 
-def table = tableName
-
-logInfo "Table $table:" + embeddedTable(table).countRow()
+logInfo "Table ${scriptArgs.tableName} has " + embeddedTable(scriptArgs.tableName).countRow() + " rows."

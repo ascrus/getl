@@ -5,7 +5,7 @@ package getl.examples.postgresql
 import groovy.transform.BaseScript
 
 // PostgreSQL database connection (using config content variables)
-usePostgreSQLConnection postgresqlConnection('demo') {
+usePostgresqlConnection postgresqlConnection('demo') {
     driverPath = configContent.driverPath
     connectHost = configContent.connectHost
     connectDatabase = configContent.connectDatabase

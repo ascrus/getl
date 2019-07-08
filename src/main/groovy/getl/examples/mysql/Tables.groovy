@@ -5,7 +5,7 @@ package getl.examples.mysql
 import groovy.transform.BaseScript
 
 // Oracle database connection (using config content variables)
-useMySQLConnection mysqlConnection('demo') {
+useMysqlConnection mysqlConnection('demo') {
     driverPath = configContent.driverPath
     connectHost = configContent.connectHost
     connectDatabase = configContent.connectDatabase

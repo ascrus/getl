@@ -53,8 +53,8 @@ class HiveConnection extends JDBCConnection {
     }
 
     @Override
-    protected void doInitConnection () {
-        super.doInitConnection()
+    protected void doBeforeConnect () {
+        super.doBeforeConnect()
         switch (vendor?.toLowerCase()) {
             case 'apache':
                 driverName = 'org.apache.hive.jdbc.HiveDriver'

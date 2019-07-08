@@ -14,7 +14,7 @@ runGroovyClass getl.examples.oracle.Tables
 
 options {
     // Enabled chech on exists objects
-    validObjectExist = true
+    validRegisterObjects = true
 }
 
 profile("Create Oracle objects") {

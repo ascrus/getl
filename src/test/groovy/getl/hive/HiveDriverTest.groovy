@@ -7,11 +7,10 @@ import getl.lang.Getl
 
 class HiveDriverTest extends JDBCDriverProto {
     static final def configName = 'tests/hive/hive.conf'
-    static def runTest = false
 
     @Override
     protected JDBCConnection newCon() {
-        if ((!runTest) || (!FileUtils.ExistsFile(configName))) return null
+        if (!FileUtils.ExistsFile(configName)) return null
         Config.LoadConfig(fileName: configName)
         return new HiveConnection(config: 'hive')
     }

@@ -23,6 +23,7 @@
 */
 package getl.db2
 
+import getl.jdbc.TableDataset
 import groovy.transform.InheritConstructors
 
 /**
@@ -31,5 +32,5 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class DB2Table {
+class DB2Table extends TableDataset {
 }

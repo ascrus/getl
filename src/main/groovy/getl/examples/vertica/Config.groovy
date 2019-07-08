@@ -14,8 +14,8 @@ connectDatabase = '<vertica database name>'
 connectHost = '<vertica node host>'
 login = '<vertica user name>'
 password = '<vertica user password>'
-ssh_login = '<ssh login on Vertica host>
-ssh_password = '<ssh password on Vertica host>
+ssh_login = '<ssh login on Vertica host>'
+ssh_password = '<ssh password on Vertica host>'
 ssh_rsakey = '<ssh rsa string key for host>' // use "ssh-keyscan -t rsa <host-name>"
 */
 configuration {

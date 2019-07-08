@@ -54,7 +54,7 @@ class LangSpec extends BaseSpec {
     void setAutoCSVTempForJDBDTables(Boolean value) { params.autoCSVTempForJDBDTables = value }
 
     /** Check on connection registration */
-    Boolean getValidObjectExist() { BoolUtils.IsValue(params.validObjectExist, false) }
+    Boolean getValidRegisterObjects() { BoolUtils.IsValue(params.validObjectExist, false) }
     /** Check on connection registration */
-    void setValidObjectExist(Boolean value) { params.validObjectExist = value }
+    void setValidRegisterObjects(Boolean value) { params.validObjectExist = value }
 }

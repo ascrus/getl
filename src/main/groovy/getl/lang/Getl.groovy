@@ -87,6 +87,7 @@ class Getl extends Script {
 
         _params.defaultJDBCConnection = new ConcurrentHashMap<String, Map<String, JDBCConnection>>()
         _params.defaultFileConnection = new ConcurrentHashMap<String, Map<String, FileConnection>>()
+        _params.defaultOtherConnection = new ConcurrentHashMap<String, Map<String, FileConnection>>()
     }
 
     @Override
@@ -168,7 +169,7 @@ class Getl extends Script {
     }
 
     /** Fix finish process */
-    void finishProcess(ProcessTime pt, Long countRow = null) {
+    static void finishProcess(ProcessTime pt, Long countRow = null) {
         if (pt != null) pt.finish(countRow)
     }
 
@@ -184,7 +185,7 @@ class Getl extends Script {
     protected LangSpec getLangOpts() { _params.langOpts as LangSpec }
 
     /** Repository object name */
-    protected String repObjectName(String name) { name.toLowerCase() }
+    protected static String repObjectName(String name) { name.toLowerCase() }
 
     /** Connections repository */
     protected Map<String, Map<String, Connection>> getConnections() {
@@ -203,7 +204,7 @@ class Getl extends Script {
         def sect = connections.get(connectionClassName) as Map<String, Connection>
         if (sect != null && !sect.isEmpty())  {
             sect.each { String name, Connection connection ->
-                if (cl == null || cl.call(name, connection) == true) res << name
+                if (cl == null || BoolUtils.IsValue(cl.call(name, connection))) res << name
             }
         }
 
@@ -216,7 +217,7 @@ class Getl extends Script {
             throw new ExceptionGETL('Process required closure code!')
 
         def list = listConnections(connectionClassName)
-        list?.each { String name
+        list?.each { String name ->
             cl.call(name)
         }
     }
@@ -257,7 +258,7 @@ class Getl extends Script {
         def repName = repObjectName(name)
         def obj = sect.get(repName)
         if (obj == null) {
-            if (langOpts.validObjectExist || Thread.currentThread() instanceof ExecutorThread)
+            if (langOpts.validRegisterObjects || Thread.currentThread() instanceof ExecutorThread)
                 throw new ExceptionGETL("Connection \"$name\" with type \"$connectionClassName\" is not exist!")
 
             obj = Connection.CreateConnection(connection: connectionClassName) as Connection
@@ -309,7 +310,7 @@ class Getl extends Script {
         def sect = datasets.get(datasetClassName) as Map<String, Dataset>
         if (sect != null && !sect.isEmpty())  {
             sect.each { String name, Dataset dataset ->
-                if (cl == null || cl.call(name, dataset) == true) res << name
+                if (cl == null || BoolUtils.IsValue(cl.call(name, dataset))) res << name
             }
         }
 
@@ -339,7 +340,7 @@ class Getl extends Script {
         datasets.each { String sectClassName, Map<String, Dataset> section ->
             section.each { String name, Dataset dataset ->
                 if (dataset.connection.getClass().name == connectionClassName) {
-                    if (cl == null || cl.call(name, dataset) == true) res << name
+                    if (cl == null || BoolUtils.IsValue(cl.call(name, dataset))) res << name
                 }
             }
         }
@@ -369,13 +370,110 @@ class Getl extends Script {
         if (ds instanceof TDSTable || ds instanceof TFSDataset) return
 
         if (ds instanceof JDBCDataset) {
-            def con = defaultJDBCConnection(datasetClassName)
+            def con = defaultJdbcConnection(datasetClassName)
             if (con != null) ds.connection = con
         }
-        else if (ds instanceof CSVDataset) {
+        else if (ds instanceof FileDataset) {
             def con = defaultFileConnection(datasetClassName)
-            if (con != null) ds.connection = defaultFileConnection(datasetClassName)
+            if (con != null) ds.connection = con
         }
+        else {
+            def con = defaultOtherConnection(datasetClassName)
+            if (con != null) ds.connection = con
+        }
+    }
+
+    /** Last used JDBC default connection */
+    JDBCConnection getLastJdbcDefaultConnection() { _params.lastJDBCDefaultConnection as JDBCConnection }
+
+    /** Default JDBC connection for datasets */
+    JDBCConnection defaultJdbcConnection(String datasetClassName = null) {
+        JDBCConnection res
+        if (datasetClassName == null)
+            res = lastJdbcDefaultConnection
+        else {
+            if (!(datasetClassName in listDatasetClasses))
+                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+
+            res = (_params.defaultJDBCConnection as Map<String, JDBCConnection>).get(datasetClassName) as JDBCConnection
+            if (res == null && lastJdbcDefaultConnection != null && datasetClassName == QUERYDATASET)
+                res = lastJdbcDefaultConnection
+        }
+
+        return res
+    }
+
+    /** Use specified JDBC connection as default */
+    void useJdbcConnection(String datasetClassName, JDBCConnection value) {
+        if (datasetClassName != null) {
+            if (!(datasetClassName in listDatasetClasses))
+                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+            (_params.defaultJDBCConnection as Map<String, JDBCConnection>).put(datasetClassName, value)
+        }
+        _params.lastJDBCDefaultConnection = value
+    }
+
+    /** Use default H2 connection for new datasets */
+    void useJdbcConnection(JDBCConnection connection) {
+        useJdbcConnection(TABLEDATASET, connection)
+    }
+
+    /** Last used file default connection */
+    FileConnection getLastFileDefaultConnection() { _params.lastFileDefaultConnection as FileConnection }
+
+    /** Default file connection for datasets */
+    FileConnection defaultFileConnection(String datasetClassName = null) {
+        FileConnection res
+        if (datasetClassName == null)
+            res = lastFileDefaultConnection
+        else {
+            if (!(datasetClassName in listDatasetClasses))
+                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+
+            res = (_params.defaultFileConnection as Map<String, FileConnection>).get(datasetClassName) as FileConnection
+        }
+
+        return res
+    }
+
+    /** Use specified file connection as default */
+    void useFileConnection(String datasetClassName, FileConnection value) {
+        if (datasetClassName != null) {
+            if (!(datasetClassName in listDatasetClasses))
+                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+
+            (_params.defaultFileConnection as Map<String, FileConnection>).put(datasetClassName, value)
+        }
+        _params.lastFileDefaultConnection = value
+    }
+
+    /** Last used other type default connection */
+    Connection getLastOtherDefaultConnection() { _params.lastOtherDefaultConnection as Connection }
+
+    /** Default other type connection for datasets */
+    Connection defaultOtherConnection(String datasetClassName = null) {
+        Connection res
+        if (datasetClassName == null)
+            res = lastOtherDefaultConnection
+        else {
+            if (!(datasetClassName in listDatasetClasses))
+                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+
+            res = (_params.defaultOtherConnection as Map<String, Connection>).get(datasetClassName) as Connection
+        }
+
+        return res
+    }
+
+    /** Use specified other type connection as default */
+    void useOtherConnection(String datasetClassName, Connection value) {
+        if (datasetClassName != null) {
+            if (!(datasetClassName in listDatasetClasses))
+                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+
+            (_params.defaultOtherConnection as Map<String, Connection>).put(datasetClassName, value)
+        }
+        _params.lastOtherDefaultConnection = value
     }
 
     /** Check dataset registration in repository */
@@ -404,10 +502,10 @@ class Getl extends Script {
         if (name == null) {
             obj = Dataset.CreateDataset(dataset: datasetClassName) as Dataset
             setDefaultConnection(datasetClassName, obj)
-            if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+            if (obj.connection != null && langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
                 def thread = Thread.currentThread() as ExecutorThread
                 obj.connection = thread.registerCloneObject('connections', obj.connection,
-                        { (it as Connection).cloneConnection() })
+                        { (it as Connection).cloneConnection() }) as Connection
             }
         }
         else {
@@ -420,7 +518,7 @@ class Getl extends Script {
             def repName = repObjectName(name)
             obj = sect.get(repName)
             if (obj == null) {
-                if (langOpts.validObjectExist || Thread.currentThread() instanceof ExecutorThread)
+                if (langOpts.validRegisterObjects || Thread.currentThread() instanceof ExecutorThread)
                     throw new ExceptionGETL("Dataset \"$name\" with type \"$datasetClassName\" is not exist!")
 
                 obj = Dataset.CreateDataset(dataset: datasetClassName) as Dataset
@@ -430,10 +528,16 @@ class Getl extends Script {
 
             if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
                 def thread = Thread.currentThread() as ExecutorThread
-                def connection = thread.registerCloneObject('connections', obj.connection,
-                        { (it as Connection).cloneConnection() } )
-                obj = thread.registerCloneObject('datasets', obj,
-                        { (it as Dataset).cloneDataset(connection) } )
+                if (obj.connection != null) {
+                    def connection = thread.registerCloneObject('connections', obj.connection,
+                            { (it as Connection).cloneConnection() }) as Connection
+                    obj = thread.registerCloneObject('datasets', obj,
+                            { (it as Dataset).cloneDataset(connection) }) as Dataset
+                }
+                else {
+                    obj = thread.registerCloneObject('datasets', obj,
+                            { (it as Dataset).cloneDataset() }) as Dataset
+                }
             }
         }
 
@@ -486,7 +590,7 @@ class Getl extends Script {
         def sect = fileManagers.get(fileManagerClassName) as Map<String, Manager>
         if (sect != null && !sect.isEmpty())  {
             sect.each { String name, Manager manager ->
-                if (cl == null || cl.call(name, manager) == true) res << name
+                if (cl == null || BoolUtils.IsValue(cl.call(name, manager))) res << name
             }
         }
 
@@ -539,7 +643,7 @@ class Getl extends Script {
         def repName = repObjectName(name)
         def obj = sect.get(repName)
         if (obj == null) {
-            if (langOpts.validObjectExist || Thread.currentThread() instanceof ExecutorThread)
+            if (langOpts.validRegisterObjects || Thread.currentThread() instanceof ExecutorThread)
                 throw new ExceptionGETL("File manager \"$name\" with type \"$fileManagerClassName\" is not exist!")
 
             obj = Manager.CreateManager(connection: fileManagerClassName) as Manager
@@ -587,15 +691,18 @@ class Getl extends Script {
         runGroovyClass(groovyClass, vars)
     }
 
+    /** Script call arguments */
+    public Map<String, Object> scriptArgs = [:]
+
     /** Load and run groovy script by class */
-    void runGroovyClass(Class groovyClass, Map vars = [:]) {
+    void runGroovyClass(Class groovyClass, Map<String, Object> vars = [:]) {
         def script = (GroovyObject)groovyClass.newInstance() as Script
         configVars.putAll(vars)
         if (script instanceof Getl) {
             def scriptGetl = script as Getl
             scriptGetl.setGetlParams(_params)
         }
-        script.binding = new Binding(vars)
+        script.binding = new Binding([scriptArgs: MapUtils.DeepCopy(vars)?:([:] as Map<String, Object>)])
         script.run()
     }
 
@@ -624,82 +731,82 @@ class Getl extends Script {
     }
 
     /** Current configuration content */
-    Map<String, Object> getConfigContent() { Config.content }
+    static Map<String, Object> getConfigContent() { Config.content }
 
     /** Current configuration vars */
-    Map<String, Object> getConfigVars() { Config.vars }
+    static Map<String, Object> getConfigVars() { Config.vars }
 
     /** Write message as level the INFO to log */
-    public void logInfo(def msg) { Logs.Info(msg.toString()) }
+    static void logInfo(def msg) { Logs.Info(msg.toString()) }
 
     /** Write message as level the WARNING to log */
-    public void logWarn(def msg) { Logs.Warning(msg.toString()) }
+    static void logWarn(def msg) { Logs.Warning(msg.toString()) }
 
     /** Write message as level the SEVERE to log */
-    public void logError(def msg) { Logs.Severe(msg.toString()) }
+    static void logError(def msg) { Logs.Severe(msg.toString()) }
 
     /** Write message as level the FINE to log */
-    public void logFine(def msg) { Logs.Fine(msg.toString()) }
+    static void logFine(def msg) { Logs.Fine(msg.toString()) }
 
     /** Write message as level the FINER to log */
-    public void logFiner(def msg) { Logs.Finer(msg.toString()) }
+    static void logFiner(def msg) { Logs.Finer(msg.toString()) }
 
     /** Write message as level the FINEST to log */
-    public void logFinest(def msg) { Logs.Finest(msg.toString()) }
+    static void logFinest(def msg) { Logs.Finest(msg.toString()) }
 
     /** Write message as level the CONFIG to log */
-    public void logConfig(def msg) { Logs.Config(msg.toString()) }
+    static void logConfig(def msg) { Logs.Config(msg.toString()) }
 
     /** Current date and time */
-    public Date getNow() { DateUtils.Now() }
+    static Date getNow() { DateUtils.Now() }
 
     /** Random integer value */
-    public int getRandomInt() { GenerationUtils.GenerateInt() }
+    static int getRandomInt() { GenerationUtils.GenerateInt() }
 
     /** Random integer value */
-    public int randomInt(Integer min, Integer max) { GenerationUtils.GenerateInt(min, max) }
+    static int randomInt(Integer min, Integer max) { GenerationUtils.GenerateInt(min, max) }
 
     /** Random long value */
-    public int getRandomLong() { GenerationUtils.GenerateLong() }
+    static int getRandomLong() { GenerationUtils.GenerateLong() }
 
     /** Random date value */
-    public Date getRandomDate() { GenerationUtils.GenerateDate() }
+    static Date getRandomDate() { GenerationUtils.GenerateDate() }
 
     /** Random date value */
-    public Date randomDate(Integer days) { GenerationUtils.GenerateDate(days) }
+    static Date randomDate(Integer days) { GenerationUtils.GenerateDate(days) }
 
     /** Random timestamp value */
-    public Date getRandomDateTime() { GenerationUtils.GenerateDateTime() }
+    static Date getRandomDateTime() { GenerationUtils.GenerateDateTime() }
 
     /** Random date value */
-    public Date randomDateTime(int secs) { GenerationUtils.GenerateDateTime(secs) }
+    static Date randomDateTime(int secs) { GenerationUtils.GenerateDateTime(secs) }
 
     /** Random numeric value */
-    public BigDecimal getRandomNumber() { GenerationUtils.GenerateNumeric() }
+    static BigDecimal getRandomNumber() { GenerationUtils.GenerateNumeric() }
 
     /** Random numeric value */
-    public BigDecimal randomNumber(int prec) { GenerationUtils.GenerateNumeric(prec) }
+    static BigDecimal randomNumber(int prec) { GenerationUtils.GenerateNumeric(prec) }
 
     /** Random numeric value */
-    public BigDecimal randomNumber(int len, int prec) { GenerationUtils.GenerateNumeric(len, prec) }
+    static BigDecimal randomNumber(int len, int prec) { GenerationUtils.GenerateNumeric(len, prec) }
 
     /** Random boolean value */
-    public Boolean getRandomBoolean() { GenerationUtils.GenerateBoolean() }
+    static Boolean getRandomBoolean() { GenerationUtils.GenerateBoolean() }
 
     /** Random double value */
-    public Double getRandomDouble() { GenerationUtils.GenerateDouble() }
+    static Double getRandomDouble() { GenerationUtils.GenerateDouble() }
 
     /** Random string value */
-    public String getRandomString() { GenerationUtils.GenerateString(255) }
+    static String getRandomString() { GenerationUtils.GenerateString(255) }
 
     /** Random string value */
-    public String randomString(int len) { GenerationUtils.GenerateString(len) }
+    static String randomString(int len) { GenerationUtils.GenerateString(len) }
 
     /** GETL DSL options */
     LangSpec options(@DelegatesTo(LangSpec) Closure cl = null) {
         runClosure(langOpts, cl)
 
-        return langOpts
+        return langOpts as LangSpec
     }
 
     /** Configuration options */
@@ -718,46 +825,12 @@ class Getl extends Script {
         return parent
     }
 
-    /** Last used JDBC default connection */
-    JDBCConnection getLastJDBCDefaultConnection() { _params.lastJDBCDefaultConnection as JDBCConnection }
-
-    /** Default JDBC connection for datasets */
-    JDBCConnection defaultJDBCConnection(String datasetClassName = null) {
-        JDBCConnection res
-        if (datasetClassName == null)
-            res = lastJDBCDefaultConnection
-        else {
-            if (!(datasetClassName in listDatasetClasses))
-                throw new ExceptionGETL("$datasetClassName is not dataset class!")
-
-            res = (_params.defaultJDBCConnection as Map<String, JDBCConnection>).get(datasetClassName) as JDBCConnection
-            if (res == null && lastJDBCDefaultConnection != null && datasetClassName == QUERYDATASET)
-                res = lastJDBCDefaultConnection
-        }
-
-        return res
-    }
-    /** Use specified JDBC connection as default */
-    void useJDBCConnection(String datasetClassName, JDBCConnection value) {
-        if (datasetClassName != null) {
-            if (!(datasetClassName in listDatasetClasses))
-                throw new ExceptionGETL("$datasetClassName is not dataset class!")
-            (_params.defaultJDBCConnection as Map<String, JDBCConnection>).put(datasetClassName, value)
-        }
-        _params.lastJDBCDefaultConnection = value
-    }
-
     /** JDBC connection */
     JDBCConnection jdbcConnection(String name = null, String connectionClassName = null, @DelegatesTo(JDBCConnection) Closure cl = null) {
         def parent = registerConnection(connectionClassName?:JDBCCONNECTION, name) as JDBCConnection
         runClosure(parent, cl)
 
         return parent
-    }
-
-    /** Use default H2 connection for new datasets */
-    void useJDBCConnection(JDBCConnection connection) {
-        useJDBCConnection(TABLEDATASET, connection)
     }
 
     /** JDBC table */
@@ -812,6 +885,11 @@ class Getl extends Script {
         h2Connection(null, cl)
     }
 
+    /** Use default H2 connection for new datasets */
+    void useH2Connection(H2Connection connection) {
+        useJdbcConnection(H2TABLE, connection)
+    }
+
     /** H2 database table */
     H2Table h2Table(String name, @DelegatesTo(H2Table) Closure cl = null) {
         def isRegistered = isRegisteredDataset(H2TABLE, name)
@@ -820,11 +898,6 @@ class Getl extends Script {
         if (langOpts.autoCSVTempForJDBDTables && !BoolUtils.IsValue(isRegistered)) createCsvTemp(name, parent)
 
         return parent
-    }
-
-    /** Use default H2 connection for new datasets */
-    void useH2Connection(H2Connection connection) {
-        useJDBCConnection(H2TABLE, connection)
     }
 
     /** H2 database table */
@@ -853,8 +926,8 @@ class Getl extends Script {
     }
 
     /** Use default DB2 connection for new datasets */
-    void useDB2Connection(DB2Connection connection) {
-        useJDBCConnection(DB2TABLE, connection)
+    void useDb2Connection(DB2Connection connection) {
+        useJdbcConnection(DB2TABLE, connection)
     }
 
     /** DB2 database table */
@@ -875,6 +948,11 @@ class Getl extends Script {
     /** Hive connection */
     HiveConnection hiveConnection(@DelegatesTo(HiveConnection) Closure cl = null) {
         hiveConnection(null, cl)
+    }
+
+    /** Use default Hive connection for new datasets */
+    void useHiveConnection(HiveConnection connection) {
+        useJdbcConnection(HIVETABLE, connection)
     }
 
     /** Hive table */
@@ -913,8 +991,8 @@ class Getl extends Script {
     }
 
     /** Use default MSSQL connection for new datasets */
-    void useMSSQLConnection(MSSQLConnection connection) {
-        useJDBCConnection(MSSQLTABLE, connection)
+    void useMssqlConnection(MSSQLConnection connection) {
+        useJdbcConnection(MSSQLTABLE, connection)
     }
 
     /** MSSQL database table */
@@ -938,8 +1016,8 @@ class Getl extends Script {
     }
 
     /** Use default MySQL connection for new datasets */
-    void useMySQLConnection(MySQLConnection connection) {
-        useJDBCConnection(MYSQLTABLE, connection)
+    void useMysqlConnection(MySQLConnection connection) {
+        useJdbcConnection(MYSQLTABLE, connection)
     }
 
     /** MySQL database table */
@@ -964,7 +1042,7 @@ class Getl extends Script {
 
     /** Use default Oracle connection for new datasets */
     void useOracleConnection(OracleConnection connection) {
-        useJDBCConnection(ORACLETABLE, connection)
+        useJdbcConnection(ORACLETABLE, connection)
     }
 
     /** Oracle table */
@@ -988,8 +1066,8 @@ class Getl extends Script {
     }
 
     /** Use default PostgreSQL connection for new datasets */
-    void usePostgreSQLConnection(PostgreSQLConnection connection) {
-        useJDBCConnection(POSTGRESQLTABLE, connection)
+    void usePostgresqlConnection(PostgreSQLConnection connection) {
+        useJdbcConnection(POSTGRESQLTABLE, connection)
     }
 
     /** MySQL database table */
@@ -1014,7 +1092,7 @@ class Getl extends Script {
 
     /** Use default Vertica connection for new datasets */
     void useVerticaConnection(VerticaConnection connection) {
-        useJDBCConnection(VERTICATABLE, connection)
+        useJdbcConnection(VERTICATABLE, connection)
     }
 
     /** Vertica table */
@@ -1050,6 +1128,11 @@ class Getl extends Script {
     /** NetSuite connection */
     NetsuiteConnection netsuiteConnection(@DelegatesTo(NetsuiteConnection) Closure cl = null) {
         netsuiteConnection(null, cl)
+    }
+
+    /** Use default Netsuite connection for new datasets */
+    void useNetsuiteConnection(NetsuiteConnection connection) {
+        useJdbcConnection(NETSUITETABLE, connection)
     }
 
     /** Temporary DB connection */
@@ -1135,34 +1218,6 @@ class Getl extends Script {
         query(null, cl)
     }
 
-    /** Last used file default connection */
-    FileConnection getLastFileDefaultConnection() { _params.lastFileDefaultConnection }
-
-    /** Default file connection for datasets */
-    FileConnection defaultFileConnection(String datasetClassName = null) {
-        FileConnection res
-        if (datasetClassName == null)
-            res = lastFileDefaultConnection
-        else {
-            if (!(datasetClassName in listDatasetClasses))
-                throw new ExceptionGETL("$datasetClassName is not dataset class!")
-
-            res = (_params.defaultFileConnection as Map<String, FileConnection>).get(datasetClassName) as FileConnection
-        }
-
-        return res
-    }
-    /** Use specified file connection as default */
-    void useFileConnection(String datasetClassName, FileConnection value) {
-        if (datasetClassName != null) {
-            if (!(datasetClassName in listDatasetClasses))
-                throw new ExceptionGETL("$datasetClassName is not dataset class!")
-
-            (_params.defaultFileConnection as Map<String, FileConnection>).put(datasetClassName, value)
-        }
-        _params.lastFileDefaultConnection = value
-    }
-
     /** CSV connection */
     CSVConnection csvConnection(String name, @DelegatesTo(CSVConnection) Closure cl = null) {
         def parent = registerConnection(CSVCONNECTION, name) as CSVConnection
@@ -1174,6 +1229,11 @@ class Getl extends Script {
     /** CSV connection */
     CSVConnection csvConnection(@DelegatesTo(CSVConnection) Closure cl = null) {
         csvConnection(null, cl)
+    }
+
+    /** Use default CSV connection for new datasets */
+    void useCsvConnection(CSVConnection connection) {
+        useFileConnection(CSVDATASET, connection)
     }
 
     /** CSV delimiter file */
@@ -1219,6 +1279,11 @@ class Getl extends Script {
         excelConnection(null, cl)
     }
 
+    /** Use default Excel connection for new datasets */
+    void useExcelConnection(ExcelConnection connection) {
+        useOtherConnection(EXCELDATASET, connection)
+    }
+
     /** Excel file */
     ExcelDataset excel(String name, @DelegatesTo(ExcelDataset) Closure cl = null) {
         def parent = registerDataset(EXCELDATASET, name) as ExcelDataset
@@ -1244,6 +1309,11 @@ class Getl extends Script {
     /** JSON connection */
     JSONConnection jsonConnection(@DelegatesTo(JSONConnection) Closure cl = null) {
         jsonConnection(null, cl)
+    }
+
+    /** Use default Json connection for new datasets */
+    void useJsonConnection(JSONConnection connection) {
+        useFileConnection(JSONDATASET, connection)
     }
 
     /** JSON file */
@@ -1273,6 +1343,11 @@ class Getl extends Script {
         xmlConnection(null, cl)
     }
 
+    /** Use default XML connection for new datasets */
+    void useXmlConnection(XMLConnection connection) {
+        useFileConnection(XMLDATASET, connection)
+    }
+
     /** XML file */
     XMLDataset xml(String name, @DelegatesTo(XMLDataset) Closure cl = null) {
         def parent = registerDataset(XMLDATASET, name) as XMLDataset
@@ -1298,6 +1373,11 @@ class Getl extends Script {
     /** SalesForce connection */
     SalesForceConnection salesforceConnection(@DelegatesTo(SalesForceConnection) Closure cl = null) {
         salesforceConnection(null, cl)
+    }
+
+    /** Use default SalesForce connection for new datasets */
+    void useSalesforceConnection(SalesForceConnection connection) {
+        useOtherConnection(SALESFORCEDATASET, connection)
     }
 
     /** SalesForce table */
@@ -1332,6 +1412,11 @@ class Getl extends Script {
         runClosure(parent, cl)
 
         return parent
+    }
+
+    /** Use default Xero connection for new datasets */
+    void useXeroConnection(XeroConnection connection) {
+        useOtherConnection(XERODATASET, connection)
     }
 
     /** Xero table */
@@ -1461,7 +1546,7 @@ class Getl extends Script {
     /** SQL scripter */
     SQLScripter sql(JDBCConnection connection, @DelegatesTo(SQLScripter) Closure cl) {
         def parent = new SQLScripter()
-        parent.connection = connection?:defaultJDBCConnection()
+        parent.connection = connection?:defaultJdbcConnection()
         parent.extVars = configContent
         def pt = startProcess('Execution SQL script')
         runClosure(parent, cl)
@@ -1610,31 +1695,31 @@ class Getl extends Script {
     }
 
     /** Copy file to directory */
-    void copyFileToDir(String sourceFileName, String destDirName, boolean createDir = false) {
+    static void copyFileToDir(String sourceFileName, String destDirName, boolean createDir = false) {
         FileUtils.CopyToDir(sourceFileName, destDirName, createDir)
     }
 
     /** Copy file to another file */
-    void copyFileTo(String sourceFileName, String destFileName, boolean createDir = false) {
+    static void copyFileTo(String sourceFileName, String destFileName, boolean createDir = false) {
         FileUtils.CopyToFile(sourceFileName, destFileName, createDir)
     }
 
     /** Find parent directory by nearest specified name in path elements */
-    String findParentPath(String path, String find) {
+    static String findParentPath(String path, String find) {
         FileUtils.FindParentPath(path, find)
     }
 
     /** Valid exists directory */
-    Boolean existDir(String dirName) {
+    static Boolean existDir(String dirName) {
         FileUtils.ExistsFile(dirName, true)
     }
 
     /** Valid exists file */
-    Boolean existFile(String dirName) {
+    static Boolean existFile(String dirName) {
         FileUtils.ExistsFile(dirName)
     }
 
-    String extractPath(String fileName) {
+    static String extractPath(String fileName) {
         FileUtils.RelativePathFromFile(fileName)
     }
 }

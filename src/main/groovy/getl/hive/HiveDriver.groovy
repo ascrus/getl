@@ -63,7 +63,7 @@ class HiveDriver extends JDBCDriver {
     }
 
     @Override
-    public List<Driver.Support> supported() {
+    List<Driver.Support> supported() {
         return super.supported() +
                 [Driver.Support.LOCAL_TEMPORARY, /*Driver.Support.BLOB, Driver.Support.TIME,*/
                  Driver.Support.DATE, Driver.Support.BOOLEAN] -
@@ -72,7 +72,7 @@ class HiveDriver extends JDBCDriver {
     }
 
     @Override
-    public List<Driver.Operation> operations() {
+    List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
                  Driver.Operation.BULKLOAD] -
@@ -81,12 +81,12 @@ class HiveDriver extends JDBCDriver {
     }
 
     @Override
-    public String defaultConnectURL () {
+    String defaultConnectURL () {
         return 'jdbc:hive2://{host}/{database}'
     }
 
     @Override
-    public Map getSqlType () {
+    Map getSqlType () {
         Map res = super.getSqlType()
         res.STRING.name = 'string'
         res.STRING.useLength = JDBCDriver.sqlTypeUse.NEVER
@@ -121,8 +121,7 @@ class HiveDriver extends JDBCDriver {
             sb << '\n'
         }
 
-        if (params.clustered != null) {
-            if (!(params.clustered instanceof Map)) throw new ExceptionGETL('Required map type for parameter "clustered"')
+        if (params.clustered != null && !(params.clustered as Map).isEmpty()) {
             def clustered = params.clustered as Map
 
             def allowed = ['by', 'sortedBy', 'intoBuckets']
@@ -150,8 +149,7 @@ class HiveDriver extends JDBCDriver {
             sb << '\n'
         }
 
-        if (params.skewed != null) {
-            if (!(params.skewed instanceof Map)) throw new ExceptionGETL('Required map type for parameter "skewed"')
+        if (params.skewed != null && !(params.skewed as Map).isEmpty()) {
             def skewed = params.skewed as Map
 
             def allowed = ['by', 'on', 'storedAsDirectories']
@@ -241,7 +239,7 @@ class HiveDriver extends JDBCDriver {
     }
 
     @Override
-    public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
+    void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
         def table = dest as TableDataset
         bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
         def conHive = dest.connection as HiveConnection
@@ -253,7 +251,7 @@ class HiveDriver extends JDBCDriver {
         def hdfsDir = ListUtils.NotNullValue([bulkParams.hdfsDir, conHive.hdfsDir])
         def processRow = bulkParams.processRow as Closure
 
-        Map<String, String> expression = bulkParams.expression?:[:]
+        Map<String, String> expression = bulkParams.expression as Map<String, String>?:[:]
         expression.each { String fieldName, String expr ->
             if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
         }
@@ -367,12 +365,16 @@ class HiveDriver extends JDBCDriver {
         finally {
             tempFile.drop()
             fileMan.connect()
-            fileMan.removeFile(tempFile.fileName)
-            fileMan.disconnect()
+            try {
+                fileMan.removeFile(tempFile.fileName)
+            }
+            finally {
+                fileMan.disconnect()
+            }
         }
     }
 
-    public static Map<String, Object> tableExtendedInfo(TableDataset table) {
+    static Map<String, Object> tableExtendedInfo(TableDataset table) {
         Map<String, Object> res = [:]
         def sql = 'SHOW TABLE EXTENDED'
         if (table.schemaName != null) sql += " IN ${table.schemaName}"
@@ -442,7 +444,7 @@ class HiveDriver extends JDBCDriver {
     }
 
     @Override
-    public List<Field> fields(Dataset dataset) {
+    List<Field> fields(Dataset dataset) {
         List<Field> res = super.fields(dataset)
         if (dataset instanceof TableDataset) {
             def ext = tableExtendedInfo(dataset)

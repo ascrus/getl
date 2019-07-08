@@ -14,7 +14,7 @@ runGroovyClass getl.examples.mysql.Tables
 
 options {
     // Enabled chech on exists objects
-    validObjectExist = true
+    validRegisterObjects = true
 }
 
 profile("Create MySQL objects") {
