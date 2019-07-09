@@ -271,7 +271,7 @@ class CSVDataset extends FileDataset {
 		if (cl != null) {
 			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call(this)
+			code.call()
 			parent.prepareParams()
 		}
 
@@ -287,7 +287,7 @@ class CSVDataset extends FileDataset {
 		if (cl != null) {
 			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call(this)
+			code.call()
 			parent.prepareParams()
 		}
 

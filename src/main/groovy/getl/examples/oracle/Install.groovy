@@ -33,10 +33,10 @@ profile("Create Oracle objects") {
     }
 }
 
-thread(listDatasets(ORACLETABLE)) {
-    run { tableName ->
+thread {
+    run(listDatasets(ORACLETABLE)) { tableName ->
         // Copy rows from the embedded table to the Oracle table
-        copyRows(embeddedTable(tableName), oracleTable(tableName)) { source, dest ->
+        copyRows(embeddedTable(tableName), oracleTable(tableName)) {
             done { logInfo "Copied $countRow rows of $tableName from the embedded table to the Oracle table" }
         }
     }

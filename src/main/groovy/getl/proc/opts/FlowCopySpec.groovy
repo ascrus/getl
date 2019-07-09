@@ -52,6 +52,16 @@ class FlowCopySpec extends BaseSpec {
         if (params._childs == null) params._childs = [:] as Map<String, FlowCopyChildSpec>
     }
 
+    /** Source dataset */
+    Dataset getSource() { params.source as Dataset }
+    /** Source dataset */
+    void setSource(Dataset value) { params.source = value }
+
+    /** Destination dataset */
+    Dataset getDestination() { params.dest as Dataset }
+    /** Destination dataset */
+    void setDestination(Dataset value) { params.dest = value }
+
     /**
      * Last count row
      */
@@ -313,7 +323,7 @@ class FlowCopySpec extends BaseSpec {
         parent.thisObject = parent.DetectClosureDelegate(cl)
         def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
         code.resolveStrategy = Closure.OWNER_FIRST
-        code.call(parent.dataset)
+        code.call()
         parent.prepareParams()
     }
 

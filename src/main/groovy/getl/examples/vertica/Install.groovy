@@ -1,15 +1,19 @@
 package getl.examples.vertica
 
+import groovy.transform.BaseScript
+
 @BaseScript getl.lang.Getl getl
 
-import groovy.transform.BaseScript
+/**
+ * Create Vertica tables and load data from H2 tables to Vertica
+ */
 
 // Generate sample data in a H2  database
 runGroovyClass getl.examples.h2.Install
 
 // Load configuration file
 runGroovyClass getl.examples.vertica.Config
-// Define object as Vertica tables
+// Define Vertica tables
 runGroovyClass getl.examples.vertica.Tables
 
 options {
@@ -39,10 +43,10 @@ profile("Create Vertica objects") {
     }
 }
 
-thread(listDatasets(VERTICATABLE)) {
-    run { tableName ->
+thread {
+    run(listDatasets(VERTICATABLE)) { tableName ->
         // Copy rows from the embedded table to the Vertica table
-        copyRows(embeddedTable(tableName), verticaTable(tableName)) { source, dest ->
+        copyRows(embeddedTable(tableName), verticaTable(tableName)) {
             bulkLoad = true
             done { logInfo "Copied $countRow rows of $tableName from the embedded table to the Vertica table" }
         }

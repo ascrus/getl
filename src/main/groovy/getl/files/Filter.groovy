@@ -35,6 +35,6 @@ class Filter implements FilenameFilter {
 	
 	@Override
 	public boolean accept(File file, String name) {
-		code(file, name)
+		code.call(file, name)
 	}
 }

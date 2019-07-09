@@ -271,7 +271,7 @@ class SalesForceDriver extends Driver {
             List<TFSDataset> tfsDatasetList = bulkUnload(dataset, params)
             tfsDatasetList.each { TFSDataset tDataset ->
                 tDataset.eachRow { Map row ->
-                    code(row)
+                    code.call(row)
                     countRec++
                 }
 
@@ -292,7 +292,7 @@ class SalesForceDriver extends Driver {
                                 row[it.toLowerCase()] = parseTypes(record.getSObjectField(it), dataset.fieldByName(it))
                             }
 
-                            code(row)
+                            code.call(row)
                             countRec++
                         }
 

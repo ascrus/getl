@@ -1194,15 +1194,14 @@ ${extend}'''
 		} 
 		else {
 			assert dataset.params.query != null, "Required value in \"query\" from dataset"
-			def p = [:]
-			if (dataset.params.queryParams != null) p.putAll(dataset.params.queryParams as Map)
-			if (params.queryParams != null) p.putAll(params.queryParams as Map)
-			if (p.isEmpty()) {
-				query = dataset.params.query
-			}
-			else {
-				query = StringUtils.SetValueString(dataset.params.query as String, p)
-			}
+			query = dataset.params.query
+		}
+
+		def qp = [:] as Map<String, Object>
+		if (dataset.params.queryParams != null) qp.putAll(dataset.params.queryParams as Map)
+		if (params.queryParams != null) qp.putAll(params.queryParams as Map)
+		if (!qp.isEmpty()) {
+			query = StringUtils.SetValueString(query, qp)
 		}
 
 		return query
@@ -1264,6 +1263,7 @@ ${extend}'''
 //		dataset.field = metaFields
 		params.putAll([useFields: metaFields])
 		String sql = sqlForDataset(dataset, params)
+		if (sql == null) throw new ExceptionGETL('Invalid sql query for dataset!')
 		
 		Map rowCopy
 		Closure copyToMap
@@ -1324,7 +1324,7 @@ ${extend}'''
 					if (filter != null && !filter(outRow)) return
 					
 					countRec++
-					code(outRow)
+					code.call(outRow)
 				}
 			}
 			else {
@@ -1335,7 +1335,7 @@ ${extend}'''
 					if (filter != null && !filter(outRow)) return
 					
 					countRec++
-					code(outRow)
+					code.call(outRow)
 				}
 			}
 		}

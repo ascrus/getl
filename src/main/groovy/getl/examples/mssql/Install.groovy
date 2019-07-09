@@ -46,10 +46,10 @@ END BLOCK;"""
     }
 }
 
-thread(listDatasets(MSSQLTABLE)) {
-    run { tableName ->
+thread {
+    run(listDatasets(MSSQLTABLE)) { tableName ->
         // Copy rows from the embedded table to the Oracle table
-        copyRows(embeddedTable(tableName), mssqlTable(tableName)) { source, dest ->
+        copyRows(embeddedTable(tableName), mssqlTable(tableName)) {
             done { logInfo "Copied $countRow rows of $tableName from the embedded table to the MSSQL table" }
         }
     }

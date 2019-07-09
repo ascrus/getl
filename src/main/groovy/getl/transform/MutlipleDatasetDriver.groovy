@@ -110,7 +110,7 @@ class MutlipleDatasetDriver extends Driver {
 			if (dest.field.isEmpty()) dest.field = fields
 			dest.openWrite(params)
 		}
-		if (prepareCode != null) prepareCode(fields)
+		if (prepareCode != null) prepareCode.call(fields)
 	}
 
 	@Override

@@ -66,21 +66,21 @@ class BaseSpec {
 
     Closure onInit
     /**
-     * User code before create table
+     * User code before run process
      */
     Closure getOnInit() { onInit }
     /**
-     * User code before create table
+     * User code before run process
      */
     void init(Closure value) { onInit = prepareClosure(value) }
 
     public Closure onDone
     /**
-     * User code after create table
+     * User code after run process
      */
     Closure getOnDone() { onDone }
     /**
-     * User code after create table
+     * User code after run process
      */
     void done(Closure value) { onDone = prepareClosure(value) }
 

@@ -47,6 +47,11 @@ class FlowWriteSpec extends BaseSpec {
         if (params.destParams == null) params.destParams = [:] as Map<String, Object>
     }
 
+    /** Destination dataset */
+    Dataset getDestination() { params.dest as Dataset }
+    /** Destination dataset */
+    void setDestination(Dataset value) { params.dest = value }
+
     /**
      * Temporary destination name
      */

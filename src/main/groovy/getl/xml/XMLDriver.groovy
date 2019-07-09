@@ -217,7 +217,7 @@ class XMLDriver extends FileDriver {
 		
 		List<String> fields = []
 		if (prepareCode != null) {
-			prepareCode(fields)
+			prepareCode.call(fields)
 		}
 		else if (params.fields != null) fields = params.fields as List<String>
 		
@@ -233,7 +233,7 @@ class XMLDriver extends FileDriver {
 			if (filter != null && !filter.call(row)) return
 			
 			countRec++
-			code(row)
+			code.call(row)
 		}
 		
 		countRec

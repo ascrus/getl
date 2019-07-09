@@ -28,6 +28,7 @@ import getl.data.Field
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.apache.groovy.json.internal.LazyMap
 
@@ -36,14 +37,14 @@ import org.apache.groovy.json.internal.LazyMap
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.CompileStatic
+@CompileStatic
 class MapUtils {
 	/**
 	 * Copy all map items as new objects with Json builder
 	 * @param map
 	 * @return
 	 */
-	public static Map DeepCopy (Map map) {
+	static Map DeepCopy (Map map) {
 		if (map == null) return null
 		
 		Map res
@@ -61,7 +62,7 @@ class MapUtils {
 	 * @param m
 	 * @return
 	 */
-	public static Map MapToLower(Map<String, Object> m) {
+	static Map MapToLower(Map<String, Object> m) {
 		if (m == null) return null
 		
 		def r = [:]
@@ -78,7 +79,7 @@ class MapUtils {
 	 * @param keys
 	 * @return
 	 */
-	public static Map CleanMap (Map m, List<String> keys) {
+	static Map CleanMap (Map m, List<String> keys) {
 		if (m == null) return null
 		
 		Map result = [:]
@@ -95,7 +96,7 @@ class MapUtils {
 	 * @param m
 	 * @param keys
 	 */
-	public static void RemoveKeys (Map m, List<String> keys) {
+	static void RemoveKeys (Map m, List<String> keys) {
 		if (m == null) return
 		
 		keys.each {
@@ -109,7 +110,7 @@ class MapUtils {
 	 * @param level
 	 * @return
 	 */
-	public static Map GetLevel (Map map, String level) {
+	static Map GetLevel (Map map, String level) {
 		if (map == null) return null
 		
 		Map result = [:]
@@ -129,7 +130,7 @@ class MapUtils {
 	 * @param map
 	 * @return
 	 */
-	public static Map Copy(Map map) {
+	static Map Copy(Map map) {
 		if (map == null) return null
 		
 		Map m = [:]
@@ -144,7 +145,7 @@ class MapUtils {
 	 * @param excludeKeys
 	 * @return
 	 */
-	public static Map Copy(Map map, List<String> excludeKeys) {
+	static Map Copy(Map map, List<String> excludeKeys) {
 		if (map == null) return null
 		
 		Map m = [:]
@@ -160,7 +161,7 @@ class MapUtils {
 	 * @param includeKeys
 	 * @return
 	 */
-	public static Map CopyOnly(Map <String, Object> map, List<String> includeKeys) {
+	static Map CopyOnly(Map <String, Object> map, List<String> includeKeys) {
 		if (map == null) return null
 		
 		Map res = [:]
@@ -180,7 +181,7 @@ class MapUtils {
 	 * @param ignoreComments
 	 * @return
 	 */
-	public static List<String> Unknown(Map<String, Object> map, List<String> definedKey, boolean ignoreComments) {
+	static List<String> Unknown(Map<String, Object> map, List<String> definedKey, boolean ignoreComments) {
 		if (map == null) map = [:]
 		
 		List<String> res = []
@@ -205,7 +206,7 @@ class MapUtils {
 	 * @param definedKey
 	 * @return
 	 */
-	public static List<String> Unknown(Map map, List<String> definedKey) {
+	static List<String> Unknown(Map map, List<String> definedKey) {
 		 return Unknown(map, definedKey, false)
 	}
 	
@@ -215,7 +216,7 @@ class MapUtils {
 	 * @param section
 	 * @return
 	 */
-	public static Map FindSection (Map content, String section) {
+	static Map FindSection (Map content, String section) {
 		if (content == null) return null
 		
 		String[] sections = section.split("[.]")
@@ -245,7 +246,7 @@ class MapUtils {
 	 * @param section
 	 * @return
 	 */
-	public static boolean ContainsSection (Map content, String section) {
+	static boolean ContainsSection (Map content, String section) {
 		return (FindSection(content, section) != null)
 	}
 	
@@ -255,7 +256,7 @@ class MapUtils {
 	 * @param name
 	 * @param value
 	 */
-	public static void SetValue(Map<String, Object> content, String name, value) {
+	static void SetValue(Map<String, Object> content, String name, value) {
 		if (content == null) return
 		if (name == null) return
 		
@@ -281,7 +282,7 @@ class MapUtils {
 	 * @param added
      * @param mergeList
 	 */
-	public static void MergeMap (Map<String, Object> source, Map<String, Object> added, boolean existUpdate = true, boolean mergeList = false) {
+	static void MergeMap (Map<String, Object> source, Map<String, Object> added, boolean existUpdate = true, boolean mergeList = false) {
 		if (source == null || added == null) return
 		added.each { String key, value ->
 			MergeMapChildren(source, value, key, existUpdate, mergeList)
@@ -330,7 +331,7 @@ class MapUtils {
 	 * @param args
 	 * @return
 	 */
-	public static Map<String, Object> ProcessArguments (def args) {
+	static Map<String, Object> ProcessArguments (def args) {
 		List<String> la
 		if (args instanceof List) {
 			la = (List<String>)args
@@ -395,7 +396,7 @@ class MapUtils {
 	 * @param value
 	 * @return
 	 */
-	public static String ToJson (Map value) {
+	static String ToJson (Map value) {
 		if (value == null) return null
 		
 		JsonBuilder b = new JsonBuilder()
@@ -412,7 +413,7 @@ class MapUtils {
 	 * @param vars
 	 * @return
 	 */
-	public static Map EvalMacroValues(Map value, Map vars) {
+	static Map EvalMacroValues(Map value, Map vars) {
 		if (value == null) return null
 		
 		def res = [:]
@@ -525,7 +526,7 @@ class MapUtils {
 	 * @param m
 	 * @return
 	 */
-	public static String MapToUrlParams(Map<String, Object> m) {
+	static String MapToUrlParams(Map<String, Object> m) {
         List l = []
         m.each { String k, v ->
             l << "$k=${v.toString()}"
@@ -534,8 +535,8 @@ class MapUtils {
         return l.join('&')
     }
 
-    @groovy.transform.CompileDynamic
-    public static Map<String, Object> Xml2Map(def node) {
+    @CompileDynamic
+	static Map<String, Object> Xml2Map(def node) {
         def rootName = node.name().localPart as String
         def rootMap = Xml2MapAttrs(node)
         def res = [:] as Map<String, Object>
@@ -548,13 +549,13 @@ class MapUtils {
      * @param node
      * @return
      */
-	@groovy.transform.CompileDynamic
+	@CompileDynamic
 	private static Map<String, Object> Xml2MapAttrs(def node) {
 		def res = [:] as Map<String, Object>
 
 		if (node.attributes().size() > 0)
 			try {
-				res.putAll(node.attributes())
+				res.putAll(node.attributes() as Map<String, Object>)
 			}
 			catch (Exception e) {
 				Logs.Severe("Error parse attrubutes for xml node: $node")
@@ -572,13 +573,13 @@ class MapUtils {
      * @param childrens
      * @return
      */
-	@groovy.transform.CompileDynamic
+	@CompileDynamic
 	private static Map<String, Object> XmlChildren2Map(def childrens) {
 		def res = [:] as Map<String, Object>
 
 		childrens.each { def node ->
 			try {
-				def name = node.name().localPart
+				def name = node.name().localPart as String
 
 				if (node.children().size() == 1 && node.children().get(0) instanceof String) {
 					res.put(name, node.children().get(0))
@@ -610,7 +611,7 @@ class MapUtils {
 					def nodeMap = Xml2MapAttrs(node)
 					def nodeName = nodeMap.name
 					if (nodeName != null) {
-						MapUtils.RemoveKeys(nodeMap, ['name'])
+						RemoveKeys(nodeMap, ['name'])
 						values.put(nodeName, nodeMap)
 					}
 					else {
@@ -633,8 +634,8 @@ class MapUtils {
      * @param read
      * @return
      */
-    @groovy.transform.CompileDynamic
-    public static Map<String, Object> Xsd2Map(String xsdName, List<String> exclude, Closure reader) {
+    @CompileDynamic
+	static Map<String, Object> Xsd2Map(String xsdName, List<String> exclude, Closure reader) {
         def data = reader.call(xsdName)
         def map = Xml2Map(data)
         if (exclude == null) exclude = [] as List<String>
@@ -647,7 +648,7 @@ class MapUtils {
             if (schemaLocation in exclude) return
 
             def includeMap = Xsd2Map(schemaLocation, exclude, reader)
-            MapUtils.MergeMap(map, includeMap, false, true)
+			MergeMap(map, includeMap, false, true)
 
             exclude << schemaLocation
         }
@@ -661,12 +662,12 @@ class MapUtils {
      * @param fileName - xsd file name
      * @return
      */
-    @groovy.transform.CompileDynamic
-    public static Map<String, Object> XsdFromResource(String path, String fileName) {
+    @CompileDynamic
+	static Map<String, Object> XsdFromResource(String path, String fileName) {
         return XsdFromResource(ClassLoader.systemClassLoader, path, fileName)
     }
 
-	@groovy.transform.CompileDynamic
+	@CompileDynamic
 	/**
 	 * Process XSD file with resource and convert to Map
 	 * @classLoader - class loader for resource
@@ -674,7 +675,7 @@ class MapUtils {
 	 * @param fileName - xsd file name
 	 * @return
 	 */
-	public static Map<String, Object> XsdFromResource(ClassLoader classLoader, String path, String fileName) {
+	static Map<String, Object> XsdFromResource(ClassLoader classLoader, String path, String fileName) {
 		def xml = new XmlParser()
 
 		def reader = { xsdFileName ->
@@ -690,15 +691,15 @@ class MapUtils {
 		return Xsd2Map(fileName, null, reader)
 	}
 
-	@groovy.transform.CompileDynamic
-	public static List<Field> XsdMap2Fields(Map<String, Object> map, String objectTypeName) {
+	@CompileDynamic
+	static List<Field> XsdMap2Fields(Map<String, Object> map, String objectTypeName) {
 		if (map == null) 
             throw new ExceptionGETL('Parameter "map" required!')
 
         if (map.isEmpty()) 
             throw new ExceptionGETL('Parameter "map" is empty!')
 
-        def tableFields = FindSection(map, "schema.complexType.${objectTypeName}.*.element") as Map<String, Object>
+        def tableFields = FindSection(map, "schema.complexType.${objectTypeName}.*.element") as Map<String, Map>
         if (tableFields == null || tableFields.isEmpty())
             throw new ExceptionGETL("Invalid or not found the complex type \"$objectTypeName\"!")
 
@@ -740,8 +741,8 @@ class MapUtils {
         return fieldList
 	}
 
-    @groovy.transform.CompileDynamic
-    public static void XsdType2FieldType(Map<String, Object> map, String typeName, Field field) {
+    @CompileDynamic
+	static void XsdType2FieldType(Map<String, Object> map, String typeName, Field field) {
         def res = XsdTypeProcess(map, typeName)
 
         if (res.typeName == null) throw new ExceptionGETL("Required base name for \"$typeName\" type")
@@ -750,16 +751,16 @@ class MapUtils {
         switch (res.typeName) {
             case 'string': case 'token': case 'XMLLiteral': case 'NMTOKEN':
                 field.type = Field.Type.STRING
-                field.length = res.length?:1024
+                field.length = res.length as Integer?:1024
                 break
             case 'anyURI':
                 field.type = Field.Type.STRING
-                field.length = res.length?:512
+                field.length = res.length as Integer?:512
                 break
             case 'decimal':
                 field.type = Field.Type.NUMERIC
-                field.precision = res.precision?:4
-                field.length = res.length?:(field.precision + 18)
+                field.precision = res.precision as Integer?:4
+                field.length = res.length as Integer?:((field.precision  as Integer) + 18)
                 break
             case 'float': case 'double':
                 field.type = Field.Type.DOUBLE
@@ -786,14 +787,14 @@ class MapUtils {
                 break
             case 'complex':
                 field.type = Field.Type.OBJECT
-                field.extended.putAll(res.extended)
+                field.extended.putAll(res.extended as Map)
                 break
             default:
                 throw new ExceptionGETL("Unknown primitive XSD type \"${res.typeName}\"")
         }
     }
 
-    @groovy.transform.CompileDynamic
+    @CompileDynamic
     private static Map<String, Object> XsdTypeProcess(Map<String, Object> map, String typeName) {
         if (typeName == null)
             throw new ExceptionGETL('Required \"typeName\" parameter!')
@@ -803,10 +804,10 @@ class MapUtils {
             res.typeName = typeName.substring(typeName.indexOf(':') + 1)
         }
         else {
-            def typeContent = map.schema.simpleType?."$typeName" as Map
+            def typeContent = (map.schema.simpleType?."$typeName") as Map
             if (typeContent != null) {
                 if (typeContent.containsKey("union")) {
-                    def typeParams = typeContent.union[0] as Map
+                    def typeParams = (typeContent.union as List)[0] as Map
                     def includeTypes = typeParams.memberTypes as String
                     if (includeTypes == null)
                         throw new ExceptionGETL("Invalid union operator for \"$typeName\" type!")

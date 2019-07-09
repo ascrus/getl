@@ -40,12 +40,22 @@ import groovy.transform.InheritConstructors
 class FlowWriteManySpec extends BaseSpec {
     FlowWriteManySpec() {
         super()
+        params.dest = [:] as Map<String, Dataset>
         params.destParams = [:] as Map<String, Map<String, Object>>
     }
 
     FlowWriteManySpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
         super(useExternalParams, importParams)
+        if (params.dest == null) params.dest = [:] as Map<String, Dataset>
         if (params.destParams == null) params.destParams = [:] as Map<String, Map<String, Object>>
+    }
+
+    /** Destination datasets */
+    Map<String, Dataset> getDestinations() { params.dest as Map<String, Dataset> }
+    /** Destination datasets */
+    void setDestinations(Map<String, Dataset> value) {
+        destinations.clear()
+        if (value != null) destinations.putAll(value)
     }
 
     /**

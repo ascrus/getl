@@ -199,7 +199,7 @@ class ExcelDriver extends Driver {
                     updater."${dataset.field.get(columnIndex).name}" = getCellValue(cell, dataset, columnIndex)
                 }
 
-                code(updater)
+                code.call(updater)
                 countRec++
             }
         }

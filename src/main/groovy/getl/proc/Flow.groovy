@@ -518,7 +518,7 @@ class Flow {
 				source.eachRow(sourceParams) { inRow ->
 					boolean isError = false
 					def outRow = [:]
-					if (auto_map_code != null) auto_map_code(inRow, outRow)
+					if (auto_map_code != null) auto_map_code.call(inRow, outRow)
 					if (map_code != null) {
 						try {
 							map_code.call(inRow, outRow)

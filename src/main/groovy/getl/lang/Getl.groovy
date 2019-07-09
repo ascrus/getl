@@ -29,6 +29,7 @@ import getl.config.opts.*
 import getl.csv.*
 import getl.data.*
 import getl.db2.*
+import getl.driver.Driver
 import getl.excel.*
 import getl.exception.ExceptionGETL
 import getl.files.*
@@ -697,7 +698,6 @@ class Getl extends Script {
     /** Load and run groovy script by class */
     void runGroovyClass(Class groovyClass, Map<String, Object> vars = [:]) {
         def script = (GroovyObject)groovyClass.newInstance() as Script
-        configVars.putAll(vars)
         if (script instanceof Getl) {
             def scriptGetl = script as Getl
             scriptGetl.setGetlParams(_params)
@@ -801,6 +801,82 @@ class Getl extends Script {
 
     /** Random string value */
     static String randomString(int len) { GenerationUtils.GenerateString(len) }
+
+    /** Copy file to directory */
+    static void copyFileToDir(String sourceFileName, String destDirName, boolean createDir = false) {
+        FileUtils.CopyToDir(sourceFileName, destDirName, createDir)
+    }
+
+    /** Copy file to another file */
+    static void copyFileTo(String sourceFileName, String destFileName, boolean createDir = false) {
+        FileUtils.CopyToFile(sourceFileName, destFileName, createDir)
+    }
+
+    /** Find parent directory by nearest specified name in path elements */
+    static String findParentPath(String path, String find) {
+        FileUtils.FindParentPath(path, find)
+    }
+
+    /** Valid exists directory */
+    static Boolean existDir(String dirName) {
+        FileUtils.ExistsFile(dirName, true)
+    }
+
+    /** Valid exists file */
+    static Boolean existFile(String dirName) {
+        FileUtils.ExistsFile(dirName)
+    }
+
+    /** Extract path from full file path */
+    static String extractPath(String fileName) {
+        FileUtils.RelativePathFromFile(fileName)
+    }
+
+    /** Format date with specified format (default format yyyy-MM-dd HH:mm:ss) */
+    static String formatDate(Date date, String format = 'yyyy-MM-dd HH:mm:ss') {
+        DateUtils.FormatDate(format, date)
+    }
+
+    /** Add the value of the specified part of the date */
+    static Date addDate(String part, Integer value, Date date) {
+        DateUtils.AddDate(part, value, date)
+    }
+
+    /** Remove time from date */
+    static Date removeTime(Date date) {
+        DateUtils.ClearTime(date)
+    }
+
+    /** Current date without time */
+    static Date getCurrentDate() {
+        DateUtils.CurrentDate()
+    }
+
+    /** Parse string to date without time (default format yyyy-MM-dd) */
+    static Date parseDate(String value, String format = 'yyyy-MM-dd', Boolean ignoreError = false) {
+        removeTime(DateUtils.ParseDate(value, format, ignoreError))
+    }
+
+    /** Parse string to date without time (default format yyyy-MM-dd HH:mm:ss) */
+    static Date parseDateTime(String value, String format = 'yyyy-MM-dd HH:mm:ss', Boolean ignoreError = false) {
+        DateUtils.ParseDate(value, format, ignoreError)
+    }
+
+    /** Get the specified part of date
+     * <br>List of part:
+     * <br>YEAR, MONTH, HOUR, MINUTE, SECOND, DAY_OF_WEEK, DAY_OF_MONTH, DAY_OF_YEAR,
+     * <br>WEEK_OF_MONTH, DAY_OF_WEEK_IN_MONTH, WEEK_OF_YEAR, TIMEZONE
+     */
+    static partOfDate(Date date, String part) {
+        DateUtils.PartOfDate(part, date)
+    }
+
+    /** Truncate part of time with specified part
+     * <br>part values: HOUR, MINUTE, SECOND, MILLISECOND
+     */
+    static timeTrunc(Date date, String part) {
+        DateUtils.TruncTime(part, date)
+    }
 
     /** GETL DSL options */
     LangSpec options(@DelegatesTo(LangSpec) Closure cl = null) {
@@ -1203,7 +1279,7 @@ class Getl extends Script {
         bulkLoadTableDataset(name, embeddedTable(name), null, cl)
     }
 
-    /** JDBC query */
+    /** JDBC query dataset */
     QueryDataset query(String name, @DelegatesTo(QueryDataset) Closure cl = null) {
         def isRegistered = isRegisteredDataset(QUERYDATASET, name)
         def parent = registerDataset(QUERYDATASET, name) as QueryDataset
@@ -1213,9 +1289,18 @@ class Getl extends Script {
         return parent
     }
 
-    /** JDBC query */
+    /** JDBC query dataset */
     QueryDataset query(@DelegatesTo(QueryDataset) Closure cl = null) {
         query(null, cl)
+    }
+
+    /** JDBC query dataset */
+    QueryDataset sqlQuery(String sql, Map vars = [:]) {
+        def parent = registerDataset(QUERYDATASET, null) as QueryDataset
+        parent.query = sql
+        parent.queryParams.putAll(vars)
+
+        return parent
     }
 
     /** CSV connection */
@@ -1464,17 +1549,19 @@ class Getl extends Script {
      * Copy rows from source to destination dataset
      * <br>Closure gets two parameters: source and destination datasets
      */
-    Flow copyRows(Dataset source, Dataset dest, @DelegatesTo(FlowCopySpec) Closure cl = null) {
+    Flow copyRows(Dataset source, Dataset destination, @DelegatesTo(FlowCopySpec) Closure cl = null) {
         if (source == null) throw new ExceptionGETL('Source dataset cannot be null!')
-        if (dest == null) throw new ExceptionGETL('Dest dataset cannot be null!')
+        if (destination == null) throw new ExceptionGETL('Destination dataset cannot be null!')
         def parent = new FlowCopySpec()
-        runClosure(parent, cl, source, dest)
+        parent.source = source
+        parent.destination = destination
+        runClosure(parent, cl)
 
-        def pt = startProcess("Copy rows from $source to $dest")
+        def pt = startProcess("Copy rows from $source to $destination")
         Flow flow = new Flow()
         if (parent.onInit) parent.onInit.call()
         parent.prepareParams()
-        def flowParams = (([source: source, dest: dest]) as Map<String, Object>) + parent.params
+        def flowParams = parent.params
         flow.copy(flowParams)
         parent.countRow = flow.countRow
         parent.errorsDataset = flow.errorsDataset
@@ -1485,16 +1572,17 @@ class Getl extends Script {
     }
 
     /** Write rows to destination dataset */
-    Flow rowsTo(Dataset dest, @DelegatesTo(FlowWriteSpec) Closure cl) {
-        if (dest == null) throw new ExceptionGETL('Destination dataset cannot be null!')
+    Flow rowsTo(Dataset destination, @DelegatesTo(FlowWriteSpec) Closure cl) {
+        if (destination == null) throw new ExceptionGETL('Destination dataset cannot be null!')
         def parent = new FlowWriteSpec()
-        runClosure(parent, cl, dest)
+        parent.destination = destination
+        runClosure(parent, cl)
 
-        def pt = startProcess("Write rows to $dest")
+        def pt = startProcess("Write rows to $destination")
         Flow flow = new Flow()
         if (parent.onInit != null) parent.onInit.call()
         parent.prepareParams()
-        def flowParams = (([dest: dest]) as Map<String, Object>) + parent.params
+        def flowParams = parent.params
         flow.writeTo(flowParams)
         parent.countRow = flow.countRow
         if (parent.onDone != null) parent.onDone.call()
@@ -1504,18 +1592,19 @@ class Getl extends Script {
     }
 
     /** Write rows to many destination datasets */
-    Flow rowsToMany(Map<String, Dataset> dest, @DelegatesTo(FlowWriteManySpec) Closure cl) {
-        if (dest == null || dest.isEmpty()) throw new ExceptionGETL('Destination datasets cannot be null or empty!')
+    Flow rowsToMany(Map<String, Dataset> destinations, @DelegatesTo(FlowWriteManySpec) Closure cl) {
+        if (destinations == null || destinations.isEmpty()) throw new ExceptionGETL('Destination datasets cannot be null or empty!')
         def parent = new FlowWriteManySpec()
-        runClosure(parent, cl, dest)
+        parent.destinations = destinations
+        runClosure(parent, cl)
 
         def destNames = [] as List<String>
-        dest.each { String destName, Dataset ds -> destNames.add("$destName: ${ds.toString()}".toString())}
+        destinations.each { String destName, Dataset ds -> destNames.add("$destName: ${ds.toString()}".toString())}
         def pt = startProcess("Write rows to $destNames")
         Flow flow = new Flow()
         if (parent.onInit != null) parent.onInit.call()
         parent.prepareParams()
-        def flowParams = (([dest: dest]) as Map<String, Object>) + parent.params
+        def flowParams = parent.params
         flow.writeAllTo(flowParams)
         if (parent.onDone != null) parent.onDone.call()
         finishProcess(pt)
@@ -1527,13 +1616,14 @@ class Getl extends Script {
     Flow rowProcess(Dataset source, @DelegatesTo(FlowProcessSpec) Closure cl) {
         if (source == null) throw new ExceptionGETL('Source dataset cannot be null!')
         def parent = new FlowProcessSpec()
-        runClosure(parent, cl, source)
+        parent.source = source
+        runClosure(parent, cl)
 
         def pt = startProcess("Read rows from $source")
         Flow flow = new Flow()
         if (parent.onInit != null) parent.onInit.call()
         parent.prepareParams()
-        def flowParams = (([source: source]) as Map<String, Object>) + parent.params
+        def flowParams = parent.params
         flow.process(flowParams)
         parent.countRow = flow.countRow
         parent.errorsDataset = flow.errorsDataset
@@ -1646,11 +1736,11 @@ class Getl extends Script {
     }
 
     /** Run code in multithread mode */
-    Executor thread(List elements, @DelegatesTo(Executor) Closure cl) {
+    Executor thread(@DelegatesTo(Executor) Closure cl) {
         def disposeConnections = { Map<String, List<ExecutorThread.CloneObject>> list ->
             (list?.connections as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
                 def con = cloneObject.cloneObject as Connection
-                if (con != null) con.connected = false
+                if (con != null && con.driver.isSupport(Driver.Support.CONNECT)) con.connected = false
             }
 
             (list?.filemanagers as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
@@ -1661,17 +1751,11 @@ class Getl extends Script {
 
         def parent = new Executor()
         parent.disposeThreadResource(disposeConnections)
-        if (elements != null) parent.list = elements
         def pt = startProcess('Execution threads')
         runClosure(parent, cl)
         finishProcess(pt)
 
         return parent
-    }
-
-    /** Run code in multithread mode */
-    Executor thread(@DelegatesTo(Executor) Closure cl) {
-        thread(null, cl)
     }
 
     /** Run code in multithread mode */
@@ -1692,34 +1776,5 @@ class Getl extends Script {
         finishProcess(pt)
 
         return parent
-    }
-
-    /** Copy file to directory */
-    static void copyFileToDir(String sourceFileName, String destDirName, boolean createDir = false) {
-        FileUtils.CopyToDir(sourceFileName, destDirName, createDir)
-    }
-
-    /** Copy file to another file */
-    static void copyFileTo(String sourceFileName, String destFileName, boolean createDir = false) {
-        FileUtils.CopyToFile(sourceFileName, destFileName, createDir)
-    }
-
-    /** Find parent directory by nearest specified name in path elements */
-    static String findParentPath(String path, String find) {
-        FileUtils.FindParentPath(path, find)
-    }
-
-    /** Valid exists directory */
-    static Boolean existDir(String dirName) {
-        FileUtils.ExistsFile(dirName, true)
-    }
-
-    /** Valid exists file */
-    static Boolean existFile(String dirName) {
-        FileUtils.ExistsFile(dirName)
-    }
-
-    static String extractPath(String fileName) {
-        FileUtils.RelativePathFromFile(fileName)
     }
 }

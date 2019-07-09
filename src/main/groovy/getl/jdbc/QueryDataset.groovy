@@ -37,26 +37,12 @@ class QueryDataset extends JDBCDataset {
 	/**
 	 * SQL query text
 	 */
-	public String getQuery () { params.query }
+	String getQuery () { params.query as String }
 	/**
 	 * SQL query text
 	 */
-	public void setQuery (String value) { params.query = value }
-	
-	/**
-	 * Query parameters
-	 */
-	public Map getQueryParams () { 
-		if (params.queryParams == null) params.queryParams = [:]
-		params.queryParams
-	}
-	/**
-	 * Query parameters
-	 */
-	public void setQueryParams (Map value) { params.queryParams = value }
+	void setQuery (String value) { params.query = value }
 	
 	@Override
-	public String getObjectName() {
-		"query"
-	}
+	String getObjectName() { 'query' }
 }

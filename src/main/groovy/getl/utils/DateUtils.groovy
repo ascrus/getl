@@ -25,9 +25,13 @@
 package getl.utils
 
 import getl.exception.ExceptionGETL
+import groovy.transform.CompileStatic
 
 import java.math.RoundingMode
 import org.apache.groovy.dateutil.extensions.DateUtilExtensions
+
+import java.sql.Time
+import java.sql.Timestamp
 import java.text.SimpleDateFormat
 
 /**
@@ -35,7 +39,7 @@ import java.text.SimpleDateFormat
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.CompileStatic
+@CompileStatic
 class DateUtils {
 	/**
 	 * Zero date
@@ -75,7 +79,7 @@ class DateUtils {
 	/**
 	 * Init class
 	 */
-	public static void init () {
+	static void init () {
 		if (Config.content.timeZone != null) init(Config.content.timeZone as Map)
 	}
 
@@ -83,7 +87,7 @@ class DateUtils {
 	 * Init class
 	 * @param timeZone
 	 */
-	public static void init (Map timeZone) {
+	static void init (Map timeZone) {
 		if (timeZone == null || timeZone.isEmpty()) return
 
 		if (timeZone.name != null) {
@@ -95,7 +99,7 @@ class DateUtils {
 	/**
 	 * Get default time zone name
 	 */
-	public static String getDefaultTimeZone() {
+	static String getDefaultTimeZone() {
 		return TimeZone.default.displayName
 	}
 
@@ -103,13 +107,13 @@ class DateUtils {
 	 * Set new default time zone
 	 * @param timeZone
 	 */
-	public static setDefaultTimeZone(String timeZone) {
+	static setDefaultTimeZone(String timeZone) {
 		TimeZone.setDefault(TimeZone.getTimeZone(timeZone))
 		defaultTimeZoneOffs = TimeZone.default.rawOffset
 		offsTimeZone = origTimeZoneOffs - defaultTimeZoneOffs
 	}
 
-	public static void RestoreOrigDefaultTimeZone() {
+	static void RestoreOrigDefaultTimeZone() {
 		setDefaultTimeZone(origTimeZone)
 	}
 	
@@ -119,7 +123,7 @@ class DateUtils {
 	 * @param value
 	 * @return
 	 */
-	public static Date ParseDate(String format, def value, boolean ignoreError = true) {
+	static Date ParseDate(String format, def value, boolean ignoreError = true) {
 		Date result = null
 		if (value == null) return result
 		try {
@@ -135,7 +139,7 @@ class DateUtils {
 		return result
 	}
 
-	public static Date ParseDate(SimpleDateFormat sdf, def value, boolean ignoreError = true) {
+	static Date ParseDate(SimpleDateFormat sdf, def value, boolean ignoreError = true) {
 		Date result = null
 		if (value == null) return result
 		try {
@@ -148,12 +152,12 @@ class DateUtils {
 
 		return result
 	}
-	
-	public static Date ParseDate(def value) {
+
+	static Date ParseDate(def value) {
 		return ParseDate(defaultDateMask, value, true)
 	}
-	
-	public static Date ParseDateTime (def value) {
+
+	static Date ParseDateTime (def value) {
 		return ParseDate(defaultDateTimeMask, value, true)
 	}
 
@@ -164,7 +168,7 @@ class DateUtils {
 	 * @param ignoreError
 	 * @return
 	 */
-	public static java.sql.Date ParseSQLDate(String format, def value, boolean ignoreError = true) {
+	static java.sql.Date ParseSQLDate(String format, def value, boolean ignoreError = true) {
 		java.sql.Date result = null
 		if (value == null) return result
 		try {
@@ -187,13 +191,13 @@ class DateUtils {
 	 * @param ignoreError
 	 * @return
 	 */
-	public static java.sql.Time ParseSQLTime(String format, def value, boolean ignoreError = true) {
-		java.sql.Time result = null
+	static Time ParseSQLTime(String format, def value, boolean ignoreError = true) {
+		Time result = null
 		if (value == null) return result
 		try {
 			def sdf = new SimpleDateFormat(format)
 			sdf.setLenient(false)
-			result = new java.sql.Time(sdf.parse(value.toString()).time)
+			result = new Time(sdf.parse(value.toString()).time)
 		}
 		catch (Exception  e) {
 			if (ignoreError) return null
@@ -210,13 +214,13 @@ class DateUtils {
 	 * @param ignoreError
 	 * @return
 	 */
-	public static java.sql.Timestamp ParseSQLTimestamp(String format, def value, boolean ignoreError = true) {
-		java.sql.Timestamp result = null
+	static Timestamp ParseSQLTimestamp(String format, def value, boolean ignoreError = true) {
+		Timestamp result = null
 		if (value == null) return result
 		try {
 			def sdf = new SimpleDateFormat(format)
 			sdf.setLenient(false)
-			result = new java.sql.Timestamp(sdf.parse(value.toString()).time)
+			result = new Timestamp(sdf.parse(value.toString()).time)
 		}
 		catch (Exception  e) {
 			if (ignoreError) return null
@@ -225,8 +229,8 @@ class DateUtils {
 
 		return result
 	}
-	
-	public static Date SQLDate2Date (java.sql.Timestamp value) {
+
+	static Date SQLDate2Date (Timestamp value) {
 		return value
 	}
 	
@@ -234,11 +238,11 @@ class DateUtils {
 	 * Current date and time
 	 * @return
 	 */
-	public static Date Now() {
+	static Date Now() {
 		return new Date()
 	}
 
-	public static Date ToOrigTimeZoneDate(Date date) {
+	static Date ToOrigTimeZoneDate(Date date) {
 		if (date != null) {
 			if (offsTimeZone != 0) {
 				date = AddDate('sss', -offsTimeZone, date)
@@ -252,11 +256,11 @@ class DateUtils {
 	 * Current date without time
 	 * @return
 	 */
-	public static Date CurrentDate() {
+	static Date CurrentDate() {
 		return DateUtilExtensions.clearTime(Now())
 	}
-	
-	public static String CurrentDateStr() {
+
+	static String CurrentDateStr() {
 		return FormatDate('yyyyMMdd', CurrentDate())
 	}
 	
@@ -264,7 +268,7 @@ class DateUtils {
 	 * Current datetime
 	 * @return
 	 */
-	public static String CurrentTime() {
+	static String CurrentTime() {
 		return DateUtilExtensions.getTimeString(Now())
 	}
 	
@@ -273,7 +277,7 @@ class DateUtils {
 	 * @param date
 	 * @return
 	 */
-	public static Date ClearTime(Date date) {
+	static Date ClearTime(Date date) {
 		if (date == null) return null
 		Date res = new Date(date.time)
 		return DateUtilExtensions.clearTime(res)
@@ -285,7 +289,7 @@ class DateUtils {
 	 * @param date - date value
 	 * @return
 	 */
-	public static Date TruncTime(int part, Date date) {
+	static Date TruncTime(int part, Date date) {
 		if (date == null) return null
 		Calendar c = Calendar.getInstance()
 		c.setTime((Date)(date.clone()))
@@ -304,6 +308,28 @@ class DateUtils {
 
 		return c.getTime()
 	}
+
+	static Date TruncTime(String part, Date date) {
+		Integer partNum
+		switch (part.toUpperCase()) {
+			case 'HOUR':
+				partNum = Calendar.HOUR
+				break
+			case 'MINUTE':
+				partNum = Calendar.MINUTE
+				break
+			case 'SECOND':
+				partNum = Calendar.SECOND
+				break
+			case 'MILLISECOND':
+				partNum = Calendar.MILLISECOND
+				break
+			default:
+				throw new ExceptionGETL("Unknown part of date \"$part\"")
+		}
+
+		return TruncTime(partNum, date)
+	}
 	
 	/**
 	 * Convert date to string with format
@@ -311,7 +337,7 @@ class DateUtils {
 	 * @param date
 	 * @return
 	 */
-	public static String FormatDate(String format, Date date) {
+	static String FormatDate(String format, Date date) {
 		if (date == null) return null
 		return DateUtilExtensions.format(date, format)
 	}
@@ -321,7 +347,7 @@ class DateUtils {
 	 * @param date
 	 * @return
 	 */
-	public static String FormatDate(Date date) {
+	static String FormatDate(Date date) {
 		return FormatDate(defaultDateMask, date)
 	}
 	
@@ -329,7 +355,7 @@ class DateUtils {
 	 * Return current date with default format
 	 * @return
 	 */
-	public static String NowDate() {
+	static String NowDate() {
 		return FormatDate(Now())
 	}
 	
@@ -338,7 +364,7 @@ class DateUtils {
 	 * @param date
 	 * @return
 	 */
-	public static String FormatDateTime(Date date) {
+	static String FormatDateTime(Date date) {
 		return FormatDate(defaultDateTimeMask, date)
 	}
 	
@@ -347,7 +373,7 @@ class DateUtils {
 	 * @param date
 	 * @return
 	 */
-	public static String FormatTime(Date date) {
+	static String FormatTime(Date date) {
 		return FormatDate(defaultTimeMask, date)
 	}
 	
@@ -355,7 +381,7 @@ class DateUtils {
 	 * Return current date and time with default format
 	 * @return
 	 */
-	public static String NowDateTime() {
+	static String NowDateTime() {
 		return FormatDateTime(Now())
 	}
 	
@@ -363,7 +389,7 @@ class DateUtils {
 	 * Return current time with default format
 	 * @return
 	 */
-	public static String NowTime() {
+	static String NowTime() {
 		return FormatTime(Now())
 	}
 	
@@ -374,33 +400,33 @@ class DateUtils {
 	 * @param date
 	 * @return
 	 */
-	public static Date AddDate(String dateType, int nb, Date date) {
+	static Date AddDate(String dateType, int nb, Date date) {
 		if (dateType == null) throw new ExceptionGETL("Required dateType parameters")
 		
-		if (date == null) return null;
+		if (date == null) return null
 
-		Calendar c1 = Calendar.getInstance();
-		c1.setTime(date);
+		Calendar c1 = Calendar.getInstance()
+		c1.setTime(date)
 
 		if (dateType.equalsIgnoreCase("yyyy")) {
-			c1.add(Calendar.YEAR, nb);
-		} else if (dateType.equals("MM")) {
-			c1.add(Calendar.MONTH, nb);
+			c1.add(Calendar.YEAR, nb)
+		} else if (dateType == "MM") {
+			c1.add(Calendar.MONTH, nb)
 		} else if (dateType.equalsIgnoreCase("dd")) {
-			c1.add(Calendar.DAY_OF_MONTH, nb);
-		} else if (dateType.equals("HH")) {
-			c1.add(Calendar.HOUR, nb);
-		} else if (dateType.equals("mm")) {
-			c1.add(Calendar.MINUTE, nb);
+			c1.add(Calendar.DAY_OF_MONTH, nb)
+		} else if (dateType == "HH") {
+			c1.add(Calendar.HOUR, nb)
+		} else if (dateType == "mm") {
+			c1.add(Calendar.MINUTE, nb)
 		} else if (dateType.equalsIgnoreCase("ss")) {
-			c1.add(Calendar.SECOND, nb);
+			c1.add(Calendar.SECOND, nb)
 		} else if (dateType.equalsIgnoreCase("SSS")) {
-			c1.add(Calendar.MILLISECOND, nb);
+			c1.add(Calendar.MILLISECOND, nb)
 		} else {
-			throw new RuntimeException("Can't support the dateType: " + dateType);
+			throw new RuntimeException("Can't support the dateType: " + dateType)
 		}
 
-		return c1.getTime();
+		return c1.getTime()
 	}
 	
 	/**
@@ -411,56 +437,56 @@ class DateUtils {
 	 * @param ignoreDST
 	 * @return
 	 */
-	public static long DiffDate(Date date1, Date date2, String dateType, boolean ignoreDST) {
+	static long DiffDate(Date date1, Date date2, String dateType, boolean ignoreDST) {
 		if (date1 == null) {
-			date1 = new Date(0);
+			date1 = new Date(0)
 		}
 		if (date2 == null) {
-			date2 = new Date(0);
+			date2 = new Date(0)
 		}
 
 		if (dateType == null) {
-			dateType = "SSS";
+			dateType = "SSS"
 		}
 
 		// ignore DST
-		int addDSTSavings = 0;
+		int addDSTSavings = 0
 		if (ignoreDST) {
-			boolean d1In = TimeZone.getDefault().inDaylightTime(date1);
-			boolean d2In = TimeZone.getDefault().inDaylightTime(date2);
+			boolean d1In = TimeZone.getDefault().inDaylightTime(date1)
+			boolean d2In = TimeZone.getDefault().inDaylightTime(date2)
 			if (d1In != d2In) {
 				if (d1In) {
-					addDSTSavings = TimeZone.getDefault().getDSTSavings();
+					addDSTSavings = TimeZone.getDefault().getDSTSavings()
 				} else if (d2In) {
-					addDSTSavings = -TimeZone.getDefault().getDSTSavings();
+					addDSTSavings = -TimeZone.getDefault().getDSTSavings()
 				}
 			}
 		}
 
-		Calendar c1 = Calendar.getInstance();
-		Calendar c2 = Calendar.getInstance();
-		c1.setTime(date1);
-		c2.setTime(date2);
+		Calendar c1 = Calendar.getInstance()
+		Calendar c2 = Calendar.getInstance()
+		c1.setTime(date1)
+		c2.setTime(date2)
 
 		if (dateType.equalsIgnoreCase("yyyy")) { //$NON-NLS-1$
-			return c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR);
-		} else if (dateType.equals("MM")) { //$NON-NLS-1$
-			return (c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR)) * 12 + (c1.get(Calendar.MONTH) - c2.get(Calendar.MONTH));
+			return c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR)
+		} else if (dateType == "MM") { //$NON-NLS-1$
+			return (c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR)) * 12 + (c1.get(Calendar.MONTH) - c2.get(Calendar.MONTH))
 		} else {
-			long diffTime = date1.getTime() - date2.getTime() + addDSTSavings;
+			long diffTime = date1.getTime() - date2.getTime() + addDSTSavings
 
 			if (dateType.equalsIgnoreCase("HH")) { //$NON-NLS-1$
-				return (Long)diffTime.intdiv(1000 * 60 * 60);
-			} else if (dateType.equals("mm")) { //$NON-NLS-1$
-				return (Long)diffTime.intdiv(1000 * 60);
+				return (Long)diffTime.intdiv(1000 * 60 * 60)
+			} else if (dateType == "mm") { //$NON-NLS-1$
+				return (Long)diffTime.intdiv(1000 * 60)
 			} else if (dateType.equalsIgnoreCase("ss")) { //$NON-NLS-1$
-				return (Long)diffTime.intdiv(1000);
+				return (Long)diffTime.intdiv(1000)
 			} else if (dateType.equalsIgnoreCase("SSS")) { //$NON-NLS-1$
-				return diffTime;
+				return diffTime
 			} else if (dateType.equalsIgnoreCase("dd")) {
-				return (Long)diffTime.intdiv(1000 * 60 * 60 * 24);
+				return (Long)diffTime.intdiv(1000 * 60 * 60 * 24)
 			} else {
-				throw new RuntimeException("Can't support the dateType: " + dateType);
+				throw new RuntimeException("Can't support the dateType: " + dateType)
 			}
 		}
 	}
@@ -472,7 +498,7 @@ class DateUtils {
 	 * @param date the date value.
 	 * @return the specified part value.
 	 */
-	public static int PartOfDate(String partName, Date date) {
+	static int PartOfDate(String partName, Date date) {
 
 		if (partName == null || date == null) return 0
 		partName = partName.toUpperCase()
@@ -480,7 +506,7 @@ class DateUtils {
 		int ret = 0
 		String[] fieldsName = ["YEAR", "MONTH", "HOUR", "MINUTE", "SECOND", "DAY_OF_WEEK", "DAY_OF_MONTH", "DAY_OF_YEAR",
 				"WEEK_OF_MONTH", "DAY_OF_WEEK_IN_MONTH", "WEEK_OF_YEAR", "TIMEZONE" ]
-		java.util.List<String> filedsList = java.util.Arrays.asList(fieldsName)
+		List<String> filedsList = Arrays.asList(fieldsName)
 		Calendar c = Calendar.getInstance()
 		c.setTime(date)
 
@@ -536,10 +562,10 @@ class DateUtils {
 	 * @param value
 	 * @return
 	 */
-	public static BigDecimal Timestamp2Value(Date value) {
+	static BigDecimal Timestamp2Value(Date value) {
 		if (value == null) return null as BigDecimal
 
-		return Timestamp2Value(new java.sql.Timestamp(value.time))
+		return Timestamp2Value(new Timestamp(value.time))
 	}
 	
 	/**
@@ -547,7 +573,7 @@ class DateUtils {
 	 * @param value
 	 * @return
 	 */
-	public static BigDecimal Timestamp2Value(java.sql.Timestamp value) {
+	static BigDecimal Timestamp2Value(Timestamp value) {
 		if ((Object)value == null) return null as BigDecimal
 
         def t = Long.divideUnsigned(value.time, 1000)
@@ -562,12 +588,12 @@ class DateUtils {
 	 * @param value
 	 * @return
 	 */
-	public static java.sql.Timestamp Value2Timestamp(BigDecimal value) {
+	static Timestamp Value2Timestamp(BigDecimal value) {
 		if (value == null) return null
 		
 		def t = value.longValue() * 1000
 		def n = (value - value.longValue()) * 1000000000
-		def res = new java.sql.Timestamp(t)
+		def res = new Timestamp(t)
 		res.nanos = n.intValue()
 
 		return res
@@ -578,7 +604,7 @@ class DateUtils {
 	 * @param intervals - date intervals with start and finish dates
 	 * @return - start and finish dates
 	 */
-	public static Map PeriodCrossing(List<Map> intervals) {
+	static Map PeriodCrossing(List<Map> intervals) {
 		Date start
 		Date finish
 		intervals?.each { Map interval ->

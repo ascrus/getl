@@ -78,9 +78,9 @@ csvTemp('customers.phones') {
 }
 
 // Generate writer the phones customers to temporary file
-copyRows(json('customers'), csvTemp('customers')) { json, customers ->
+copyRows(json('customers'), csvTemp('customers')) {
     // Adding an write to the child table customers_phones
-    childs('customers.phones', csvTemp('customers.phones')) { phones ->
+    childs('customers.phones', csvTemp('customers.phones')) {
         // Processing the child structure phones
         processRow { addPhone, row ->
             // Copying phones array to the writer in h2 table phones customers
@@ -88,10 +88,10 @@ copyRows(json('customers'), csvTemp('customers')) { json, customers ->
                 addPhone customer_id: row.id, phone: phone.phone
             }
         }
-        childDone { logInfo "${phones.updateRows} customer phones loaded" }
+        childDone { logInfo "${dataset.updateRows} customer phones loaded" }
     }
 
-    doneFlow { logInfo "${customers.updateRows} customers loaded" }
+    doneFlow { logInfo "${destination.updateRows} customers loaded" }
 }
 
 println 'Customers:'

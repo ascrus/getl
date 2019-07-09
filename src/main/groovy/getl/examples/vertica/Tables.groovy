@@ -1,8 +1,12 @@
 package getl.examples.vertica
 
+import groovy.transform.BaseScript
+
 @BaseScript getl.lang.Getl getl
 
-import groovy.transform.BaseScript
+/**
+ * Define Vertica connection and tables
+ */
 
 // Vertica database connection (using config content variables)
 useVerticaConnection verticaConnection('demo') {

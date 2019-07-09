@@ -65,7 +65,7 @@ class HiveCreateSpec extends CreateSpec {
             parent.thisObject = parent.DetectClosureDelegate(cl)
             def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
             code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent.thisObject)
+            code.call()
             parent.prepareParams()
         }
 
@@ -90,7 +90,7 @@ class HiveCreateSpec extends CreateSpec {
             parent.thisObject = parent.DetectClosureDelegate(cl)
             def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
             code.resolveStrategy = Closure.OWNER_FIRST
-            code.call(parent.thisObject)
+            code.call()
             parent.prepareParams()
         }
 

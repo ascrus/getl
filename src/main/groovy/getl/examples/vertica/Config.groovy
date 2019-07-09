@@ -1,14 +1,18 @@
 package getl.examples.vertica
 
+import groovy.transform.BaseScript
+
 @BaseScript getl.lang.Getl getl
 
-import groovy.transform.BaseScript
+/**
+ * Load configuration file
+ */
 
 /*
 Configuration options
 
 Create config file in <project path>/tests/vertica/vertica.dsl with syntax:
-workPath = '<log and history files directory>'
+workPath = '<csv, log and history files directory>'
 driverPath = '<vertica jdbc file path>'
 connectDatabase = '<vertica database name>'
 connectHost = '<vertica node host>'

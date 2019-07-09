@@ -52,7 +52,7 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 		def fieldOrderBy = getFieldOrderBy(dataset)
 		
 		ds.openWrite(params)
-		if (prepareCode != null) prepareCode(dataset.field)
+		if (prepareCode != null) prepareCode.call(dataset.field)
 		
 		dataset.params.sorter_code = generateSortCode(fieldOrderBy)
 		dataset.params.sorter_data = []

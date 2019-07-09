@@ -643,7 +643,7 @@ class FileUtils {
 		String line = reader.readLine()
 		long res = 0
 		while (line != null) {
-			if (convertCode != null) line = convertCode(line)
+			if (convertCode != null) line = convertCode.call(line)
 			if (convertLine != null) line = convertLine(line, convertBuffer)
 			if (line != null) {
 				writer.write(line)

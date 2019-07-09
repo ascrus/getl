@@ -478,7 +478,7 @@ class Dataset {
 		if (cl != null) {
 			def code = cl.rehydrate(this, parent, this)
 			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call(parent)
+			code.call()
 		}
 
 		return parent
@@ -1088,7 +1088,7 @@ class Dataset {
 			parent.thisObject = parent.DetectClosureDelegate(cl)
 			def code = cl.rehydrate(this, parent, this)
 			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call(this)
+			code.call()
 			parent.prepareParams()
 		}
 

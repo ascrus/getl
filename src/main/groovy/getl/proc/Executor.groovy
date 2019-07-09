@@ -258,7 +258,7 @@ class Executor {
 				Map r = Collections.synchronizedMap(new HashMap())
 				r.num = num
 				r.element = n
-				r.threadSubmit = threadPool.submit({ -> runCode(r) } as Callable)
+				r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable)
 				threadList << r
 
 				num++
@@ -268,7 +268,7 @@ class Executor {
 			while (!threadPool.isTerminated()) {
 				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
 					try {
-						mainCode()
+						mainCode.call()
 					}
 					catch (Throwable e) {
 						setError(null, e)
@@ -291,7 +291,7 @@ class Executor {
 				threadList << r
 
 				if (!isInterrupt && (!isError || !abortOnError)) {
-					runCode(r)
+					runCode.call(r)
 					num++
 				}
 			}
@@ -312,7 +312,7 @@ class Executor {
 			throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
 		}
 		
-		if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode()
+		if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
 	}
 
 	/** Run thread code with list elements */
@@ -401,7 +401,7 @@ class Executor {
 				Map r = Collections.synchronizedMap(new HashMap())
 				r.num = num
 				r.element = n
-				r.threadSubmit = threadPool.submit({ -> runCode(r) } as Callable)
+				r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable)
 				threadList << r
 
 				num++
@@ -411,7 +411,7 @@ class Executor {
 			while (!threadPool.isTerminated()) {
 				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
 					try {
-						mainCode()
+						mainCode.call()
 					}
 					catch (Throwable e) {
 						setError(null, e)
@@ -434,7 +434,7 @@ class Executor {
 				threadList << r
 
 				if (!isInterrupt && (!isError || !abortOnError)) {
-					runCode(r)
+					runCode.call(r)
 					num++
 				}
 			}
@@ -455,7 +455,7 @@ class Executor {
 			throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
 		}
 
-		if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode()
+		if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
 	}
 
 	private ExecutorService threadBackground
@@ -470,7 +470,7 @@ class Executor {
 		def runCode = {
 			try {
 				while (isRunBackground()) {
-					code()
+					code.call()
 					sleep waitTime
 				}
 			}
@@ -505,7 +505,7 @@ class Executor {
 	/** Run code with ignore runtime errors */
 	static boolean RunIgnoreErrors (Closure code) {
 		try {
-			code()
+			code.call()
 		} 
 		catch (Throwable e) { 
 			Logs.Finest("Ignore error: ${e.message}")

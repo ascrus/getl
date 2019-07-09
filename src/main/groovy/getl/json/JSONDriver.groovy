@@ -112,7 +112,7 @@ class JSONDriver extends FileDriver {
 				sb << "\n"
 			}
 		}
-		sb << "	code(row)\n"
+		sb << "	code.call(row)\n"
 		sb << "}"
 		
 		def vars = [dataset: dataset, initAttr: initAttr, code: code, data: data]
@@ -193,7 +193,7 @@ class JSONDriver extends FileDriver {
 		
 		List<String> fields = []
 		if (prepareCode != null) {
-			prepareCode(fields)
+			prepareCode.call(fields)
 		}
 		else if (params.fields != null) fields = params.fields as List<String>
 		

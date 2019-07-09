@@ -39,10 +39,10 @@ profile("Create PostgreSQL objects") {
     }
 }
 
-thread(listDatasets(POSTGRESQLTABLE)) {
-    run { tableName ->
+thread {
+    run(listDatasets(POSTGRESQLTABLE)) { tableName ->
         // Copy rows from the embedded table to the PostgreSQL table
-        copyRows(embeddedTable(tableName), postgresqlTable(tableName)) { source, dest ->
+        copyRows(embeddedTable(tableName), postgresqlTable(tableName)) {
             done { logInfo "Copied $countRow rows of $tableName from the embedded table to the PostgreSQL table" }
         }
     }

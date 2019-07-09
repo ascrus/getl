@@ -574,7 +574,7 @@ class CSVDriver extends FileDriver {
 		
 		ArrayList<String> listFields = new ArrayList<String>()
 		if (prepareCode != null) {
-			listFields = prepareCode([]) as ArrayList
+			listFields = prepareCode.call([]) as ArrayList
 		}
 		
 		def header = fields2header(csv_ds.field, listFields)
@@ -922,7 +922,7 @@ class CSVDriver extends FileDriver {
 			for (int i = 0; i < values.size(); i++) { values[i] = values[i].replace(oldStr, newStr) }
 		}
 
-		if (code != null) code(values)
+		if (code != null) code.call(values)
 	}
 
 	static long decodeBulkCSV (CSVDataset target, CSVDataset source) {

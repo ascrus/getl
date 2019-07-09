@@ -72,7 +72,7 @@ datasets {
                 }
 
                 csvTempWithDataset('file1', h2Table('table1')) { config = 'file1' }
-                copyRows(h2Table('table1'), csvTemp('file1')) { source, dest ->
+                copyRows(h2Table('table1'), csvTemp('file1')) {
                     process { t, f ->
                         f.name = StringUtils.ToCamelCase(t.name)
                         f.dt = now

@@ -68,7 +68,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 			}
 		}
 
-		if (prepareCode != null) prepareCode(dataset.field)
+		if (prepareCode != null) prepareCode.call(dataset.field)
 		
 		ds.openWrite(params)
 		
@@ -91,7 +91,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		Map data = dataset.params.aggregator_data
 		Closure aggregateCode = dataset.params.aggregator_code
 		Map filter = dataset.params.aggregator_filter
-		aggregateCode(row, data, filter)
+		aggregateCode.call(row, data, filter)
 	}
 
 	@Override

@@ -39,10 +39,10 @@ profile("Create MySQL objects") {
     }
 }
 
-thread(listDatasets(MYSQLTABLE)) {
-    run { tableName ->
+thread {
+    run(listDatasets(MYSQLTABLE)) { tableName ->
         // Copy rows from the embedded table to the MySQL table
-        copyRows(embeddedTable(tableName), mysqlTable(tableName)) { source, dest ->
+        copyRows(embeddedTable(tableName), mysqlTable(tableName)) {
             done { logInfo "Copied $countRow rows of $tableName from the embedded table to the MySQL table" }
         }
     }

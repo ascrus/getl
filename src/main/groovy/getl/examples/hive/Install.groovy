@@ -39,10 +39,10 @@ profile("Create Hive objects") {
     }
 }
 
-thread(listDatasets(HIVETABLE)) {
-    run { tableName ->
+thread {
+    run(listDatasets(HIVETABLE)) { tableName ->
         // Copy rows from the embedded table to the Hive table
-        copyRows(embeddedTable(tableName), hiveTable(tableName)) { source, dest ->
+        copyRows(embeddedTable(tableName), hiveTable(tableName)) {
             bulkLoad = true
             done { logInfo "Copied $countRow rows of $tableName from the embedded table to the Hive table" }
         }

@@ -288,8 +288,8 @@ class XeroDriver extends Driver {
         if (countChild > 0) {
             row.put('contactid', master.getContactID())
             row.put('updateddateutc', (master.getUpdatedDateUTC() as Calendar)?.time)
-            if (filter == null || filter(row)) {
-                code(row)
+            if (filter == null || filter.call(row)) {
+                code.call(row)
                 res++
             }
         }
@@ -532,15 +532,15 @@ class XeroDriver extends Driver {
             }
             if (parentColumn != null) {
                 cb << '''            row.putAll(mainRow)
-            if (filter == null || filter(row)) {
-                code(row)
+            if (filter == null || filter.call(row)) {
+                code.call(row)
                 res++
             }
         }
 '''
             } else {
-                pb << '''        if (filter == null || filter(row)) {
-            code(row)
+                pb << '''        if (filter == null || filter.call(row)) {
+            code.call(row)
             res++
         }
 '''
