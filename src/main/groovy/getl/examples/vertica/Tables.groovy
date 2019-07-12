@@ -9,7 +9,7 @@ import groovy.transform.BaseScript
  */
 
 // Vertica database connection (using config content variables)
-useVerticaConnection verticaConnection('demo') {
+useVerticaConnection verticaConnection('demo', true) {
     driverPath = configContent.driverPath
     connectHost = configContent.connectHost
     connectDatabase = configContent.connectDatabase
@@ -20,7 +20,7 @@ useVerticaConnection verticaConnection('demo') {
 }
 
 // Price table
-verticaTable('prices') {
+verticaTable('prices', true) {
     tableName = 'prices'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { type = stringFieldType; isNull = false; length = 50 }
@@ -30,7 +30,7 @@ verticaTable('prices') {
 }
 
 // Customers table
-verticaTable('customers') { table ->
+verticaTable('customers', true) { table ->
     tableName = 'customers'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { length = 50 }
@@ -38,14 +38,14 @@ verticaTable('customers') { table ->
 }
 
 // Customer phones table
-verticaTable('customers.phones') { table ->
+verticaTable('customers.phones', true) { table ->
     tableName = 'customer_phones'
     field('customer_id') { type = integerFieldType; isKey = true }
     field('phone') { length = 50; isKey = true }
 }
 
 // Sales table
-verticaTable('sales') {
+verticaTable('sales', true) {
     tableName = 'sales'
     field('id') { type = bigintFieldType; isKey = true }
     field('price_id') { type = integerFieldType; isNull = false }

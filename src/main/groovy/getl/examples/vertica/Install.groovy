@@ -16,11 +16,6 @@ runGroovyClass getl.examples.vertica.Config
 // Define Vertica tables
 runGroovyClass getl.examples.vertica.Tables
 
-options {
-    // Enabled chech on exists objects
-    validObjectExist = true
-}
-
 profile("Create Vertica objects") {
     // Run sql script for create schemata and tables
     sql {

@@ -10,7 +10,7 @@ import groovy.transform.BaseScript
 @BaseScript getl.lang.Getl getl
 
 // Define xml file
-xml('customers') { xml ->
+xml('customers', true) { xml ->
     rootNode = 'customer'
     defaultAccessMethod = DEFAULT_NODE_ACCESS // Fields values are stored as node value
 
@@ -60,24 +60,3 @@ xml('customers') { xml ->
         xml.fileName = fileName
     }
 }
-
-// Copy customers rows from xml file to h2 tables customers and customers_phones
-copyRows(xml('customers'), embeddedTable('customers')) {
-    bulkLoad = true
-
-    // Adding an write to the child table customers_phones
-    childs('customers.phones', embeddedTable('customers.phones')) {
-        // Processing the child structure phones
-        processRow { addPhone, row ->
-            // Copying phones array to the writer in h2 table phones customers
-            row.phones?.each { phone ->
-                addPhone customer_id: row.id, phone: phone?.text()
-            }
-        }
-        childDone { logInfo "${dataset.updateRows} customer phones loaded" }
-    }
-    doneFlow { logInfo "${destination.updateRows} customers loaded" }
-}
-
-assert embeddedTable('customers').countRow() == 3
-assert embeddedTable('customers.phones').countRow() == 7

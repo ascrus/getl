@@ -34,7 +34,7 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class LangSpec extends BaseSpec {
     /** Fixing the execution time of processes in the log */
-    boolean getProcessTimeTracing() { BoolUtils.IsValue(params.processTimeTracing) }
+    boolean getProcessTimeTracing() { BoolUtils.IsValue(params.processTimeTracing, true) }
      /** Fixing the execution time of processes in the log */
     void setProcessTimeTracing(boolean value) {params.processTimeTracing = value }
 
@@ -54,7 +54,7 @@ class LangSpec extends BaseSpec {
     void setAutoCSVTempForJDBDTables(Boolean value) { params.autoCSVTempForJDBDTables = value }
 
     /** Check on connection registration */
-    Boolean getValidRegisterObjects() { BoolUtils.IsValue(params.validObjectExist, false) }
+    Boolean getValidRegisterObjects() { BoolUtils.IsValue(params.validObjectExist, true) }
     /** Check on connection registration */
     void setValidRegisterObjects(Boolean value) { params.validObjectExist = value }
 }

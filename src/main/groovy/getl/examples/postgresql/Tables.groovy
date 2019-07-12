@@ -5,7 +5,7 @@ package getl.examples.postgresql
 import groovy.transform.BaseScript
 
 // PostgreSQL database connection (using config content variables)
-usePostgresqlConnection postgresqlConnection('demo') {
+usePostgresqlConnection postgresqlConnection('demo', true) {
     driverPath = configContent.driverPath
     connectHost = configContent.connectHost
     connectDatabase = configContent.connectDatabase
@@ -16,7 +16,7 @@ usePostgresqlConnection postgresqlConnection('demo') {
 }
 
 // Price table
-postgresqlTable('prices') {
+postgresqlTable('prices', true) {
     tableName = 'prices'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { type = stringFieldType; isNull = false; length = 50 }
@@ -26,7 +26,7 @@ postgresqlTable('prices') {
 }
 
 // Customers table
-postgresqlTable('customers') { table ->
+postgresqlTable('customers', true) { table ->
     tableName = 'customers'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { length = 50 }
@@ -34,14 +34,14 @@ postgresqlTable('customers') { table ->
 }
 
 // Customer phones table
-postgresqlTable('customers.phones') { table ->
+postgresqlTable('customers.phones', true) { table ->
     tableName = 'customer_phones'
     field('customer_id') { type = integerFieldType; isKey = true }
     field('phone') { length = 50; isKey = true }
 }
 
 // Sales table
-postgresqlTable('sales') {
+postgresqlTable('sales', true) {
     tableName = 'sales'
     field('id') { type = bigintFieldType; isKey = true }
     field('price_id') { type = integerFieldType; isNull = false }

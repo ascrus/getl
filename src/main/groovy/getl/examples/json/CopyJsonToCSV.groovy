@@ -9,7 +9,7 @@ import groovy.transform.BaseScript
 @BaseScript getl.lang.Getl getl
 
 // Define json file
-json('customers') { json ->
+json('customers', true) { json ->
     rootNode = 'customers'
 
     field('id') { type = integerFieldType }
@@ -64,14 +64,14 @@ json('customers') { json ->
 }
 
 // Define csv temporary file for customers data
-csvTemp('customers') {
+csvTemp('customers', true) {
     // Used the json fields minus the array phones
     field = json('customers').field
     removeField'phones'
 }
 
 // Define csv temporary file for customers phones data
-csvTemp('customers.phones') {
+csvTemp('customers.phones', true) {
     // Adding the customer identification field and him phone
     field('customer_id') { type = integerFieldType }
     field('phone')

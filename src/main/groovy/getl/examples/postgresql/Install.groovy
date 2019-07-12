@@ -12,11 +12,6 @@ runGroovyClass getl.examples.postgresql.Config
 // Define object as PostgreSQL tables
 runGroovyClass getl.examples.postgresql.Tables
 
-options {
-    // Enabled chech on exists objects
-    validRegisterObjects = true
-}
-
 profile("Create PostgreSQL objects") {
     // Run sql script for create schemata and tables
     sql {

@@ -5,7 +5,7 @@ package getl.examples.mssql
 import groovy.transform.BaseScript
 
 // Oracle database connection (using config content variables)
-useMssqlConnection mssqlConnection('demo') {
+useMssqlConnection mssqlConnection('demo', true) {
     driverPath = configContent.driverPath
     connectHost = configContent.connectHost
     connectDatabase = configContent.connectDatabase
@@ -16,7 +16,7 @@ useMssqlConnection mssqlConnection('demo') {
 }
 
 // Price table
-mssqlTable('prices') {
+mssqlTable('prices', true) {
     tableName = 'prices'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { type = stringFieldType; isNull = false; length = 50 }
@@ -26,7 +26,7 @@ mssqlTable('prices') {
 }
 
 // Customers table
-mssqlTable('customers') { table ->
+mssqlTable('customers', true) { table ->
     tableName = 'customers'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { length = 50 }
@@ -34,14 +34,14 @@ mssqlTable('customers') { table ->
 }
 
 // Customer phones table
-mssqlTable('customers.phones') { table ->
+mssqlTable('customers.phones', true) { table ->
     tableName = 'customer_phones'
     field('customer_id') { type = integerFieldType; isKey = true }
     field('phone') { length = 50; isKey = true }
 }
 
 // Sales table
-mssqlTable('sales') {
+mssqlTable('sales', true) {
     tableName = 'sales'
     field('id') { type = bigintFieldType; isKey = true }
     field('price_id') { type = integerFieldType; isNull = false }

@@ -5,7 +5,7 @@ import groovy.transform.BaseScript
 
 @BaseScript getl.lang.Getl getl
 
-excel('demo') { dataset ->
+excel { dataset ->
     connection = excelConnection {
         path = (findParentPath('.', 'src/main/groovy/getl')?:'') + 'tests/excel'
         fileName = 'test.xlsx'

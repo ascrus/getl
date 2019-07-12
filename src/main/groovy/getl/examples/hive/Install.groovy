@@ -12,11 +12,6 @@ runGroovyClass getl.examples.hive.Config
 // Define object as Hive tables
 runGroovyClass getl.examples.hive.Tables
 
-options {
-    // Enabled chech on exists objects
-    validRegisterObjects = true
-}
-
 profile("Create Hive objects") {
     // Run sql script for create schemata and tables
     sql {

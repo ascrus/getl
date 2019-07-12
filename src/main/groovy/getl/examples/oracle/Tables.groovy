@@ -5,7 +5,7 @@ package getl.examples.oracle
 import groovy.transform.BaseScript
 
 // Oracle database connection (using config content variables)
-useOracleConnection oracleConnection('demo') {
+useOracleConnection oracleConnection('demo', true) {
     driverPath = configContent.driverPath
     connectHost = configContent.connectHost
     connectDatabase = configContent.connectDatabase
@@ -15,7 +15,7 @@ useOracleConnection oracleConnection('demo') {
 }
 
 // Price table
-oracleTable('prices') {
+oracleTable('prices', true) {
     tableName = 'prices'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { type = stringFieldType; isNull = false; length = 50 }
@@ -25,7 +25,7 @@ oracleTable('prices') {
 }
 
 // Customers table
-oracleTable('customers') { table ->
+oracleTable('customers', true) { table ->
     tableName = 'customers'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { length = 50 }
@@ -33,14 +33,14 @@ oracleTable('customers') { table ->
 }
 
 // Customer phones table
-oracleTable('customers.phones') { table ->
+oracleTable('customers.phones', true) { table ->
     tableName = 'customer_phones'
     field('customer_id') { type = integerFieldType; isKey = true }
     field('phone') { length = 50; isKey = true }
 }
 
 // Sales table
-oracleTable('sales') {
+oracleTable('sales', true) {
     tableName = 'sales'
     field('id') { type = bigintFieldType; isKey = true }
     field('price_id') { type = integerFieldType; isNull = false }

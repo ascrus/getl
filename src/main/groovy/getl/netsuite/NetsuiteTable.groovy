@@ -22,30 +22,17 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.tfs
+package getl.netsuite
 
-import getl.data.Connection
-import getl.h2.H2Table
 import getl.jdbc.TableDataset
-import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 
 /**
- * Table with temp database
- * @author Alexsey Konstantinov
+ * Netsuite table dataset
+ * @author Dmitry Shaldin
  *
  */
 @InheritConstructors
-class TDSTable extends H2Table {
-    TDSTable() {
-        super()
-        //connection = new TDS()
-        tableName = "TDS_" + StringUtils.RandomStr().replace("-", "_").toUpperCase()
-    }
-
-    @Override
-    public void setConnection(Connection value) {
-        assert value == null || value.getClass().name == 'getl.tfs.TDS'
-        super.setConnection(value)
-    }
+/** TODO: add valid on connection */
+class NetsuiteTable extends TableDataset {
 }

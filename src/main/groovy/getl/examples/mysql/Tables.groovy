@@ -5,7 +5,7 @@ package getl.examples.mysql
 import groovy.transform.BaseScript
 
 // Oracle database connection (using config content variables)
-useMysqlConnection mysqlConnection('demo') {
+useMysqlConnection mysqlConnection('demo', true) {
     driverPath = configContent.driverPath
     connectHost = configContent.connectHost
     connectDatabase = configContent.connectDatabase
@@ -16,7 +16,7 @@ useMysqlConnection mysqlConnection('demo') {
 }
 
 // Price table
-mysqlTable('prices') {
+mysqlTable('prices', true) {
     tableName = 'prices'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { type = stringFieldType; isNull = false; length = 50 }
@@ -26,7 +26,7 @@ mysqlTable('prices') {
 }
 
 // Customers table
-mysqlTable('customers') { table ->
+mysqlTable('customers', true) { table ->
     tableName = 'customers'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { length = 50 }
@@ -34,14 +34,14 @@ mysqlTable('customers') { table ->
 }
 
 // Customer phones table
-mysqlTable('customers.phones') { table ->
+mysqlTable('customers.phones', true) { table ->
     tableName = 'customer_phones'
     field('customer_id') { type = integerFieldType; isKey = true }
     field('phone') { length = 50; isKey = true }
 }
 
 // Sales table
-mysqlTable('sales') {
+mysqlTable('sales', true) {
     tableName = 'sales'
     field('id') { type = bigintFieldType; isKey = true }
     field('price_id') { type = integerFieldType; isNull = false }

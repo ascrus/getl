@@ -5,7 +5,7 @@ package getl.examples.hive
 import groovy.transform.BaseScript
 
 // Hive database connection (using config content variables)
-useHiveConnection hiveConnection('demo') {
+useHiveConnection hiveConnection('demo', true) {
     driverPath = configContent.driverPath
     vendor = configContent.vendor
     connectHost = configContent.connectHost
@@ -21,7 +21,7 @@ useHiveConnection hiveConnection('demo') {
 }
 
 // Price table
-hiveTable('prices') {
+hiveTable('prices', true) {
     tableName = 'prices'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { type = stringFieldType; isNull = false; length = 50 }
@@ -40,7 +40,7 @@ hiveTable('prices') {
 }
 
 // Customers table
-hiveTable('customers') { table ->
+hiveTable('customers', true) { table ->
     tableName = 'customers'
     field('id') { type = integerFieldType; isKey = true }
     field('name') { length = 50 }
@@ -57,7 +57,7 @@ hiveTable('customers') { table ->
 }
 
 // Customer phones table
-hiveTable('customers.phones') { table ->
+hiveTable('customers.phones', true) { table ->
     tableName = 'customer_phones'
     field('customer_id') { type = integerFieldType; isKey = true }
     field('phone') { length = 50; isKey = true }
@@ -73,7 +73,7 @@ hiveTable('customers.phones') { table ->
 }
 
 // Sales table
-hiveTable('sales') {
+hiveTable('sales', true) {
     tableName = 'sales'
     field('id') { type = bigintFieldType; isKey = true }
     field('price_id') { type = integerFieldType; isNull = false }

@@ -21,7 +21,7 @@ useCsvConnection csvConnection {
 }
 
 processDatasets(VERTICATABLE) { tableName -> // Process Vertica table
-    csvWithDataset(tableName, verticaTable(tableName)) { // Define Csv dataset for default connection on Vertica table base
+    csvWithDataset(tableName, verticaTable(tableName), true) { // Define Csv dataset for default connection on Vertica table base
         fileName = tableName
     }
 }

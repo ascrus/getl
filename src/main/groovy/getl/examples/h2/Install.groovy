@@ -7,11 +7,8 @@ import groovy.transform.BaseScript
 // Count sale rows
 def count_sale_rows = 250000
 
-// DSL options
-options {
-    // Enabled process timing
-    processTimeTracing = true
-}
+// Define H2 tables
+runGroovyClass getl.examples.h2.Tables
 
 // Price table
 embeddedTable('prices') { table ->
@@ -65,7 +62,28 @@ embeddedTable('customers.phones') { table ->
 }
 
 // Load customers data from generated XML file
-runGroovyClass getl.examples.xml.LoadXmlToH2
+runGroovyClass getl.examples.xml.CustomersXML
+
+// Copy customers rows from xml file to h2 tables customers and customers_phones
+copyRows(xml('customers'), embeddedTable('customers')) {
+    bulkLoad = true
+
+    // Adding an write to the child table customers_phones
+    childs('customers.phones', embeddedTable('customers.phones')) {
+        // Processing the child structure phones
+        processRow { addPhone, row ->
+            // Copying phones array to the writer in h2 table phones customers
+            row.phones?.each { phone ->
+                addPhone customer_id: row.id, phone: phone?.text()
+            }
+        }
+        childDone { logInfo "${dataset.updateRows} customer phones loaded" }
+    }
+    doneFlow { logInfo "${destination.updateRows} customers loaded" }
+}
+
+assert embeddedTable('customers').countRow() == 3
+assert embeddedTable('customers.phones').countRow() == 7
 
 // Sales table
 embeddedTable('sales') { table ->

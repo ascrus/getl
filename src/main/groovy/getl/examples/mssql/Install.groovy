@@ -12,11 +12,6 @@ runGroovyClass getl.examples.mssql.Config
 // Define object as Oracle tables
 runGroovyClass getl.examples.mssql.Tables
 
-options {
-    // Enabled chech on exists objects
-    validRegisterObjects = true
-}
-
 profile("Create MSSQL objects") {
     // Run sql script for create schemata and tables
     sql {
