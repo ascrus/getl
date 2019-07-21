@@ -24,10 +24,8 @@
 
 package getl.netsuite
 
-import getl.data.Field
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
-import getl.jdbc.JDBCConnection
 import getl.jdbc.JDBCDriver
 import groovy.transform.InheritConstructors
 

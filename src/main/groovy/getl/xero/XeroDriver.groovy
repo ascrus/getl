@@ -38,7 +38,6 @@ import getl.utils.GenerationUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
-import org.codehaus.groovy.tools.RootLoader
 
 /**
  * Xero connection driver
