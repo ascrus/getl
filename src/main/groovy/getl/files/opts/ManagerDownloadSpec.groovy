@@ -51,7 +51,7 @@ class ManagerDownloadSpec extends BaseSpec {
 
     /** Repeat directory structure when downloading files (default true) */
     Boolean getSaveDirectoryStructure() { params.folders as Boolean }
-    /** Skip download errors and continue downloading files (default true) */
+    /** Repeat directory structure when downloading files (default true) */
     void setSaveDirectoryStructure(Boolean value) {params.folders = value }
 
     /** Filtering SQL expression for selecting files from the list */

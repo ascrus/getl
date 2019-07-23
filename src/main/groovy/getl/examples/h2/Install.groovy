@@ -1,5 +1,8 @@
 package getl.examples.h2
 
+import getl.utils.DateUtils
+import getl.utils.GenerationUtils
+
 @BaseScript getl.lang.Getl getl
 
 import groovy.transform.BaseScript
@@ -26,13 +29,13 @@ embeddedTable('prices') { table ->
     rowsTo(table) {
         // User code
         process { add -> // writer object
-            add id: 1, name: 'Apple', create_date: now, price: 60.50, description: 'Not a macintosh.\nThis is fruit.'
-            add id: 2, name: 'Pear', create_date: now, price: 90.00, description: null
-            add id: 3, name: 'Plum', create_date: now, price: 110.00, description: 'Not a Green Plum.\nThis is fruit.'
-            add id: 4, name: 'Cherries', create_date: now, price: 150.10, description: 'Not a china machine.\nThis is fruit.'
-            add id: 5, name: 'Melon', create_date: now, price: 30.00, description: null
-            add id: 6, name: 'Blackberry', create_date: now, price: 70.90, description: 'Not a phone.\nThis is fruit.'
-            add id: 7, name: 'Blueberries', create_date: now, price: 85.00, description: null
+            add id: 1, name: 'Apple', create_date: DateUtils.now, price: 60.50, description: 'Not a macintosh.\nThis is fruit.'
+            add id: 2, name: 'Pear', create_date: DateUtils.now, price: 90.00, description: null
+            add id: 3, name: 'Plum', create_date: DateUtils.now, price: 110.00, description: 'Not a Green Plum.\nThis is fruit.'
+            add id: 4, name: 'Cherries', create_date: DateUtils.now, price: 150.10, description: 'Not a china machine.\nThis is fruit.'
+            add id: 5, name: 'Melon', create_date: DateUtils.now, price: 30.00, description: null
+            add id: 6, name: 'Blackberry', create_date: DateUtils.now, price: 70.90, description: 'Not a phone.\nThis is fruit.'
+            add id: 7, name: 'Blueberries', create_date: DateUtils.now, price: 85.00, description: null
         }
         done {
             logInfo"$countRow rows saved to h2 table $table"
@@ -112,13 +115,13 @@ embeddedTable('sales') { table ->
             def num = 0
             (1..count_sale_rows).each { id ->
                 num++
-                def price = randomInt(1, 7)
-                def customer = randomInt(1, 3)
-                def sale_date = randomDate(90)
-                def count = randomInt(1, 99)
+                def price = GenerationUtils.GenerateInt(1, 7)
+                def customer = GenerationUtils.GenerateInt(1, 3)
+                def sale_date = GenerationUtils.GenerateDate(90)
+                def count = GenerationUtils.GenerateInt(1, 99)
                 def priceRow = priceLookup.get(price) as Map
                 def sum = priceRow.price * count
-                def desc = randomString(50)
+                def desc = GenerationUtils.GenerateString(50)
 
                 // Append row to destination
                 add id: num, price_id: price, customer_id: customer, sale_date: sale_date, sale_count: count, sale_sum: sum,

@@ -1,5 +1,7 @@
 package getl.examples.postgresql
 
+import getl.utils.FileUtils
+
 @BaseScript getl.lang.Getl getl
 
 import groovy.transform.BaseScript
@@ -20,7 +22,7 @@ configuration {
     clear()
 
     // Directory of configuration file
-    path = (findParentPath('.', 'src/main/groovy/getl')?:'') + 'tests/postgresql'
+    path = (FileUtils.FindParentPath('.', 'src/main/groovy/getl')?:'') + 'tests/postgresql'
 
     // Load configuration file
     load'postgresql.dsl'

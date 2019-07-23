@@ -551,114 +551,121 @@ abstract class Manager {
 		String curPath = man.currentDir()
 		long countFiles = 0
 		long countDirs = 0
-		
-		FileManagerList listFiles = man.listDir(maskFile)
-		List<String> threadDirs = null
-		if (threadCount != null) threadDirs = new LinkedList<String>()
-		for (int i = 0; i < listFiles.size(); i++) {
-			Map file = listFiles.item(i)
-			
-			if (file.type == TypeFile.FILE) {
-				String fn = "${((recursive && curPath != '.')?curPath + '/':'')}${file.filename}"
-				Map m = path.analizeFile(fn)
-				if (m != null) {
-					file.filepath = curPath
-					file.filetype = file.type.toString()
-					file.localfilename = file.filename
-					file.filelevel = filelevel
-					m.each { var, value ->
-						file.put(((String)var).toLowerCase(), value)
-					}
-					
-					if (code == null || code.prepare(file)) {
-						dest.write(file)
-						countFiles++
-					}
-				}
-				file.clear()
-			}
-			else if (file.type == TypeFile.DIRECTORY && recursive) {
-				countDirs++
-				if (limit != null && countDirs > limit) break
-				
-				def b = true
-				if (requiredAnalize) {
-					b = false
-					def fn = "${(curPath != '.' && curPath != "")?curPath + '/':''}${file.filename}"
-					def m = path.analizeDir(fn)
+
+		try {
+			FileManagerList listFiles = man.listDir(maskFile)
+			List<String> threadDirs = null
+			if (threadCount != null) threadDirs = new LinkedList<String>()
+			for (int i = 0; i < listFiles.size(); i++) {
+				Map file = listFiles.item(i)
+
+				if (file.type == TypeFile.FILE) {
+					String fn = "${((recursive && curPath != '.') ? curPath + '/' : '')}${file.filename}"
+					Map m = path.analizeFile(fn)
 					if (m != null) {
-						if (code != null) {
-							Map nf = [:]
-							nf.filepath = curPath
-							nf.putAll(file)
-							nf.filetype = file.type.toString()
-							nf.localfilename = nf.filename
-							nf.filelevel = filelevel
-							m.each { var, value ->
-								nf.put(((String)var).toLowerCase(), value)
-							}
-							b = code.prepare(nf)
+						file.filepath = curPath
+						file.filetype = file.type.toString()
+						file.localfilename = file.filename
+						file.filelevel = filelevel
+						m.each { var, value ->
+							file.put(((String) var).toLowerCase(), value)
 						}
-						else {
-							b = true
+
+						if (code == null || code.prepare(file)) {
+							dest.write(file)
+							countFiles++
+						}
+					}
+					file.clear()
+				} else if (file.type == TypeFile.DIRECTORY && recursive) {
+					countDirs++
+					if (limit != null && countDirs > limit) break
+
+					def b = true
+					if (requiredAnalize) {
+						b = false
+						def fn = "${(curPath != '.' && curPath != "") ? curPath + '/' : ''}${file.filename}"
+						def m = path.analizeDir(fn)
+						if (m != null) {
+							if (code != null) {
+								Map nf = [:]
+								nf.filepath = curPath
+								nf.putAll(file)
+								nf.filetype = file.type.toString()
+								nf.localfilename = nf.filename
+								nf.filelevel = filelevel
+								m.each { var, value ->
+									nf.put(((String) var).toLowerCase(), value)
+								}
+								b = code.prepare(nf)
+							} else {
+								b = true
+							}
+						}
+					}
+
+					if (b) {
+						if (threadCount == null || filelevel != threadLevel) {
+							man.changeDirectory((String) (file.filename))
+							processList(man, dest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, code)
+							man.changeDirectory('..')
+						} else {
+							threadDirs << (String) (file.filename)
 						}
 					}
 				}
-				
-				if (b) {
-					if (threadCount == null || filelevel != threadLevel) {
-						man.changeDirectory((String)(file.filename))
-						processList(man, dest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, code)
-						man.changeDirectory('..')
+			}
+			listFiles.clear()
+
+			if (threadCount != null && !threadDirs.isEmpty()) {
+				new Executor().run(threadDirs, threadCount) { String dirName ->
+					ManagerListProcessing newCode = null
+					if (code != null) {
+						newCode = code.newProcessing()
+						newCode.init()
 					}
-					else {
-						threadDirs << (String)(file.filename)
+					try {
+						Manager newMan = cloneManager()
+						int countConnect = 3
+						while (countConnect != 0) {
+							try {
+								newMan.connect()
+								countConnect = 0
+							}
+							catch (Exception e) {
+								countConnect--
+								if (countConnect == 0) throw e
+							}
+						}
+
+						String newDir = "$curPath/$dirName"
+						newMan.changeDirectory(newDir)
+						try {
+							TableDataset newDest = (dest.cloneDataset(null)) as TableDataset
+							newDest.openWrite(batchSize: 100)
+							try {
+								processList(newMan, newDest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, newCode)
+							}
+							finally {
+								newDest.doneWrite()
+								newDest.closeWrite()
+							}
+						}
+						finally {
+							newMan.disconnect()
+						}
+					}
+					finally {
+						if (newCode != null) newCode.done()
 					}
 				}
 			}
 		}
-		listFiles.clear()
-		
-		if (threadCount != null && !threadDirs.isEmpty()) {
-			new Executor().run(threadDirs, threadCount) { String dirName ->
-				ManagerListProcessing newCode = null
-				if (code != null) {
-					newCode = code.newProcessing() 
-					newCode.init()
-				}
-				try {
-					Manager newMan = cloneManager()
-					int countConnect = 3
-					while (countConnect != 0) {
-						try {
-							newMan.connect()
-							countConnect = 0
-						}
-						catch (Exception e) {
-							countConnect--
-							if (countConnect == 0) throw e
-						}
-					}
-					
-					String newDir = "$curPath/$dirName"
-					newMan.changeDirectory(newDir)
-					try {
-						TableDataset newDest = (dest.cloneDataset(null)) as TableDataset
-						newDest.openWrite(batchSize: 100)
-						try {
-							processList(newMan, newDest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, newCode)
-						}
-						finally {
-							newDest.doneWrite()
-							newDest.closeWrite()
-						}
-					}
-					finally {
-						newMan.disconnect()
-					}
-				}
-				finally {
-					if (newCode != null) newCode.done()
+		finally {
+			if (filelevel == 1 && curPath != man.currentDir()) {
+				man.changeDirectoryToRoot()
+				if (curPath != '.') {
+					man.changeDirectory(curPath)
 				}
 			}
 		}
@@ -1007,6 +1014,7 @@ WHERE
 		
 		def ld = currentLocalDir()
 		def curDir = currentDir()
+		def curPath = curDir
 
 		try {
 			TableDataset files = (useStory)?storyFiles:fileList
@@ -1077,10 +1085,20 @@ WHERE
 			throw e
 		}
 		finally {
-			if (useStory) {
-				if (ds.connection.connected) {
-					ds.closeWrite()
-					storyFiles?.drop(ifExists: true)
+			try {
+				if (useStory) {
+					if (ds.connection.connected) {
+						ds.closeWrite()
+						storyFiles?.drop(ifExists: true)
+					}
+				}
+			}
+			finally {
+				if (curPath != currentDir()) {
+					changeDirectoryToRoot()
+					if (curPath != '.') {
+						changeDirectory(curPath)
+					}
 				}
 			}
 		}

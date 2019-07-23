@@ -39,7 +39,7 @@ thread {
             queryParams.month = sale_day.month
         }
         def file = csv('sales') { // Modify sales file definition (set file name)
-            fileName = fileName + '.' + formatDate(sale_day.month, 'yyyyMMdd')
+            fileName = fileName + '.' + DateUtils.FormatDate('yyyyMMdd', sale_day.month)
         }
 
         copyRows(sales, file) { // Copy rows from one month partition to one csv file

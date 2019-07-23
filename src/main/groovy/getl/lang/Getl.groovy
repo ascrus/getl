@@ -785,16 +785,6 @@ class Getl extends Script {
     /** System temporary directory */
     static String systemTempPath() { TFS.systemPath }
 
-    /** File utilite functions */
-    Class<FileUtils> getFileutils() { FileUtils }
-
-    /** Date utilite functions */
-    Class<DateUtils> getDateutils() { DateUtils }
-
-    Class<Field> getFieldfuncs() { Field }
-
-    Class<GenerationUtils> getGenerationutils() { GenerationUtils }
-
     /** GETL DSL options */
     LangSpec options(@DelegatesTo(LangSpec) Closure cl = null) {
         runClosure(langOpts, cl)

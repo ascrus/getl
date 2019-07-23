@@ -1,5 +1,7 @@
 package getl.examples.files
 
+import getl.data.Field
+import getl.utils.FileUtils
 import groovy.transform.BaseScript
 
 @BaseScript getl.lang.Getl getl
@@ -10,9 +12,9 @@ files {
 
     // Build list of files with parent directory
     buildListFiles('{packet}/{file}') {
-        recursive = true
-        historyTable = embeddedTable('history') { tableName = 'download_history' }
-        createHistoryTable = true
+        recursive = true // analyze subdirectories
+        historyTable = embeddedTable('history') { tableName = 'download_history' } // use temporary history table
+        createHistoryTable = true // create history table
     }
 
     // Set local directory to OS temporary directory
@@ -25,19 +27,28 @@ files {
     // Download files to local subdirectory
     downloadListFiles {
         historyTable = embeddedTable('history')
-        saveDirectoryStructure = true
-        filterFiles = "Upper(FILENAME) LIKE '%.GROOVY%'"
-        orderFiles = ['FILEPATH', 'FILENAME']
-        downloadFile { logInfo "Download file ${it.filepath}/${it.filename}"}
+        saveDirectoryStructure = true // create analog subdirectories structure
+        filterFiles = "Upper(FILENAME) LIKE '%.GROOVY%'" // download only groovy files
+        orderFiles = ['FILEPATH', 'FILENAME'] // download as sorted by path and file name
+        downloadFile { logInfo "Download file ${it.filepath}/${it.filename}"} // print downloaded file name to log
     }
 
-    // Build list of files with parent directory
+    // Repeat build list of files with parent directory (validation fixing files to history table)
     buildListFiles('{packet}/{file}') {
         recursive = true
-        historyTable = embeddedTable('history') { tableName = 'download_history' }
-        processFile { logInfo "Found file ${it.filepath}/${it.filename}"; true }
+        historyTable = embeddedTable('history')
     }
 
+    // The file list must be empty because they are in history
+    assert fileList.rows().isEmpty()
+
+    // Change current local directory to root
     changeLocalDirectoryToRoot()
-    fileutils.DeleteFolder(currentLocalDir() + '/process.files')
+    // Remove process temporary files and directory
+    FileUtils.DeleteFolder(currentLocalDir() + '/process.files')
+}
+
+logInfo 'History rows: '
+rowProcess(embeddedTable('history')) {
+    process { logInfo it }
 }

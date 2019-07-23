@@ -1,5 +1,7 @@
 package getl.examples.hive
 
+import getl.utils.FileUtils
+
 @BaseScript getl.lang.Getl getl
 
 import groovy.transform.BaseScript
@@ -25,7 +27,7 @@ configuration {
     clear()
 
     // Directory of configuration file
-    path = (findParentPath('.', 'src/main/groovy/getl')?:'') + 'tests/hive'
+    path = (FileUtils.FindParentPath('.', 'src/main/groovy/getl')?:'') + 'tests/hive'
 
     // Load configuration file
     load'hive.dsl'

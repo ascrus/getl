@@ -1,5 +1,6 @@
 package getl.examples.utils
 
+import getl.data.Field
 import groovy.transform.BaseScript
 
 @BaseScript getl.lang.Getl getl
@@ -7,7 +8,7 @@ import groovy.transform.BaseScript
 filePath {
     mask = '/{group}/{prefix}_{date}_{suffix}.{ext}'
     variable('date') {
-        type = datetimeFieldType
+        type = Field.datetimeFieldType
         format = 'yyyy-MM-dd_HH-mm-ss'
     }
     compile()

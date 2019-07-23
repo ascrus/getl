@@ -236,9 +236,15 @@ class DateUtils {
 	
 	/**
 	 * Current date and time
-	 * @return
 	 */
 	static Date Now() {
+		return new Date()
+	}
+
+	/**
+	 * Current date and time
+	 */
+	static Date getNow() {
 		return new Date()
 	}
 
