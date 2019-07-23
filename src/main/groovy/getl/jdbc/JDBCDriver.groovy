@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -56,7 +56,7 @@ class JDBCDriver extends Driver {
 		methodParams.register('dropDataset', ['ifExists'])
 		methodParams.register('openWrite', ['operation', 'batchSize', 'updateField', 'logRows',
                                             'onSaveBatch'])
-		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order', 'offset',
+		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order',
                                           'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
 		methodParams.register('bulkLoadFile', ['allowMapAlias', 'files', 'fileMask'])
 		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
@@ -78,7 +78,8 @@ class JDBCDriver extends Driver {
 
 	@Override
 	public List<Driver.Operation> operations() {
-		[Driver.Operation.RETRIEVEFIELDS]
+		[Driver.Operation.RETRIEVEFIELDS, Driver.Operation.READ_METADATA, Driver.Operation.INSERT,
+		 Driver.Operation.UPDATE, Driver.Operation.DELETE]
 	}
 	
 	/**
@@ -98,13 +99,11 @@ class JDBCDriver extends Driver {
 
 	/**
 	 * Blob field return value as Blob interface
-	 * @return
 	 */
 	public boolean blobReadAsObject() { return true }
 	
 	/**
 	 * Class name for generate write data to clob field
-	 * @return
 	 */
 	public String textMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
@@ -422,6 +421,15 @@ class JDBCDriver extends Driver {
 	 * Default transaction isolation on connect
 	 */
     protected int defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_COMMITTED
+
+	private Class jdbcClass
+	/**
+	 * JDBC class
+	 */
+	Class getJdbcClass() { this.jdbcClass }
+
+	private boolean useLoadedDriver = false
+	public boolean getUseLoadedDriver() { useLoadedDriver }
 	
 	@Override
 	public void connect() {
@@ -440,12 +448,13 @@ class JDBCDriver extends Driver {
 			if (drvName == null) throw new ExceptionGETL("Required \"driverName\" for connect to server")
 
             def drvPath = con.params.driverPath as String
-            Class jdbcClass
             if (drvPath == null) {
                 jdbcClass = Class.forName(drvName)
+				useLoadedDriver = false
             }
             else {
-                jdbcClass = Class.forName(drvName, true, FileUtils.ClassLoaderFromPath(drvPath))
+                jdbcClass = Class.forName(drvName, true, FileUtils.ClassLoaderFromPath(drvPath, this.getClass().classLoader))
+				useLoadedDriver = true
             }
 
 			def loginTimeout = con.loginTimeout?:30
@@ -546,6 +555,8 @@ class JDBCDriver extends Driver {
 	public void disconnect() {
 		if (sqlConnect != null) sqlConnect.close()
 		sqlConnect = null
+		jdbcClass = null
+		useLoadedDriver = false
 		
 		JDBCConnection con = connection as JDBCConnection
 		if (con.balancer != null && con.sysParams."balancerServer" != null) {
@@ -592,6 +603,16 @@ class JDBCDriver extends Driver {
 		if (dataset.params.tableName == null) throw new ExceptionGETL("Required table name from dataset")
 	}
 
+	/** Prepare database, schema and table name for retrieve field operation */
+	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
+		def names = [:] as Map<String, String>
+		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, defaultDBName]) as String)
+		names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)
+		names.tableName = prepareObjectName(dataset.tableName as String)
+
+		return names
+	}
+
 	@Override
 	public List<Field> fields(Dataset dataset) {
 		validTableName(dataset)
@@ -610,83 +631,80 @@ class JDBCDriver extends Driver {
 		
 		if (dataset.params.onUpdateFields != null) dataset.params.onUpdateFields(dataset)
 
-		JDBCDataset ds = dataset as JDBCDataset
-		
 		List<Field> result = []
-		String dbName = prepareObjectName(ListUtils.NotNullValue([ds.dbName, defaultDBName]) as String)
-		String schemaName = prepareObjectName(ListUtils.NotNullValue([ds.schemaName, defaultSchemaName]) as String)
-		String tableName = prepareObjectName(ds.params.tableName as String)
 
-		/*
-		def meta = sqlConnect.connection.metaData
-		def cols = meta.getColumns(dbName, schemaName, tableName, null)
-		*/
-		/*
-		def metacols = cols.metaData
-		print "columns (${metacols.columnCount}): "
-		(1..metacols.columnCount).each { it -> print "${metacols.getColumnLabel(it)};" }
-		println "\n"
-		*/
-		
-		/*
-		println "GROOVY METADATA:"
-		while (cols.next()) {
-			println """${cols.getString("COLUMN_NAME")} ${cols.getInt("DATA_TYPE")} ${cols.getInt("COLUMN_SIZE")} ${cols.getInt("DECIMAL_DIGITS")} ${cols.getInt("NULLABLE")} ${cols.getString("REMARKS")}"""
-		}
-		println "END GROOVY METADATA\n"
-		*/
-		
-		saveToHistory("-- GET METADATA WITH DB=[$dbName], SCHEMA=[$schemaName], TABLE=[$tableName]")
-		ResultSet rs = sqlConnect.connection.metaData.getColumns(dbName, schemaName, tableName, null)
-		
-		try {
-			while (rs.next()) {
-//				println "${rs.getString("COLUMN_NAME")}: ${rs.getInt("DATA_TYPE")}:${rs.getString("TYPE_NAME")}"
-				Field f = new Field()
-				
-				f.name = prepareObjectName(rs.getString("COLUMN_NAME"))
-				f.dbType = rs.getInt("DATA_TYPE")
-				f.typeName = rs.getString("TYPE_NAME")
-				f.length = rs.getInt("COLUMN_SIZE")
-				if (f.length <= 0) f.length = null
-				f.precision = rs.getInt("DECIMAL_DIGITS")
-				if (f.precision < 0) f.precision = null
-				f.isNull = (rs.getInt("NULLABLE") == java.sql.ResultSetMetaData.columnNullable)
-				try {
-					f.isAutoincrement = (rs.getString("IS_AUTOINCREMENT").toUpperCase() == "YES")
-				}
-				catch (Exception ignored) { }
-				f.description = rs.getString("REMARKS")
-				if (f.description == '') f.description = null
-				
-				result << f
-			}
-		}
-		finally {
-			rs.close()
-		}
-		
-		if (dataset.sysParams.type == JDBCDataset.Type.TABLE) {
-			rs = sqlConnect.connection.metaData.getPrimaryKeys(dbName, schemaName, tableName)
-			def ord = 0
+		if (Driver.Operation.READ_METADATA in operations()) {
+			JDBCDataset ds = dataset as JDBCDataset
+
+			def names = prepareForRetrieveFields(ds)
+
+			saveToHistory("-- READ METADATA WITH DB=[${names.dbName}], SCHEMA=[${names.schemaName}], TABLE=[${names.tableName}]")
+			ResultSet rs = sqlConnect.connection.metaData.getColumns(names.dbName, names.schemaName, names.tableName, null)
+
 			try {
 				while (rs.next()) {
-					def n = prepareObjectName(rs.getString("COLUMN_NAME"))
-					Field pf = result.find { Field f ->
-						(f.name.toLowerCase() == n.toLowerCase())
+					// println "> ${rs.getString("COLUMN_NAME")}: ${rs.getInt("DATA_TYPE")}:${rs.getString("TYPE_NAME")}"
+					Field f = new Field()
+
+					f.name = prepareObjectName(rs.getString("COLUMN_NAME"))
+					f.dbType = rs.getInt("DATA_TYPE")
+					f.typeName = rs.getString("TYPE_NAME")
+					f.length = rs.getInt("COLUMN_SIZE")
+					if (f.length <= 0) f.length = null
+					f.precision = rs.getInt("DECIMAL_DIGITS")
+					if (f.precision < 0) f.precision = null
+					f.isNull = (rs.getInt("NULLABLE") == java.sql.ResultSetMetaData.columnNullable)
+					try {
+						f.isAutoincrement = (rs.getString("IS_AUTOINCREMENT").toUpperCase() == "YES")
 					}
-					if (pf == null) throw new ExceptionGETL("Primary field \"${n}\" not found in fields list on object [${fullNameDataset(dataset)}]")
-					ord++
-					pf.isKey = true
-					pf.ordKey = ord
+					catch (Exception ignored) {
+					}
+					f.description = rs.getString("REMARKS")
+					if (f.description == '') f.description = null
+
+					result << f
 				}
 			}
 			finally {
 				rs.close()
 			}
+
+			if (dataset.sysParams.type == JDBCDataset.Type.TABLE) {
+				rs = sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, names.schemaName, names.tableName)
+				def ord = 0
+				try {
+					while (rs.next()) {
+						def n = prepareObjectName(rs.getString("COLUMN_NAME"))
+						Field pf = result.find { Field f ->
+							(f.name.toLowerCase() == n.toLowerCase())
+						}
+						if (pf == null) throw new ExceptionGETL("Primary field \"${n}\" not found in fields list on object [${fullNameDataset(dataset)}]")
+						ord++
+						pf.isKey = true
+						pf.ordKey = ord
+					}
+				}
+				finally {
+					rs.close()
+				}
+			}
 		}
-		
+		else if (isTable(dataset) && dataset instanceof JDBCDataset) {
+			result = fieldsTableWithoutMetadata(dataset as JDBCDataset)
+		}
+
 		return result
+	}
+
+	/**
+	 * Read table fields from query
+	 */
+	List<Field> fieldsTableWithoutMetadata(JDBCDataset table) {
+		QueryDataset query = new QueryDataset(connection: table.connection)
+		query.query = "SELECT * FROM ${table.fullNameDataset()} WHERE 0 = 1"
+		if (query.rows().size() > 0) throw new ExceptionGETL("Find bug in \"fieldsTableWithoutMetadata\" method from \"${getClass().name}\" driver!")
+		query.field.each { Field f -> f.isReadOnly = false }
+		return query.field
 	}
 
 	@Override
@@ -738,6 +756,7 @@ ${extend}'''
 	
 	protected boolean commitDDL = false
 	protected boolean transactionalDDL = false
+	protected boolean transactionalTruncate = false
 	
 	protected String caseObjectName = "NONE" // LOWER OR UPPER
 	protected String defaultDBName = null
@@ -755,6 +774,11 @@ ${extend}'''
 	@Override
 	public void createDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
+
+        params = params?:[:]
+		def createDir = ((dataset.params.directive as Map)?.create as Map)?:[:]
+		params = createDir + params
+
 		def tableName = fullNameDataset(dataset)
 		def tableType = dataset.sysParams.type as JDBCDataset.Type
 		if (!(tableType in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.MEMORY])) {
@@ -811,8 +835,10 @@ ${extend}'''
 		}
 
 		String createTableCode = '"""' + sqlCreateTable + '"""'
+
+		def jdbcConnect = connection as JDBCConnection
 		
-		if (commitDDL && transactionalDDL) startTran()
+		if (commitDDL && transactionalDDL) jdbcConnect.startTran()
 		try {
 			def varsCT = [  temporary: temporary, 
 							ifNotExists: ifNotExists, 
@@ -824,13 +850,13 @@ ${extend}'''
 	//		println sqlCodeCT
 			executeCommand(sqlCodeCT, p)
 
-			if (params.indexes != null && !params.indexes.isEmpty()) {
+			if (params.indexes != null && !(params.indexes as Map).isEmpty()) {
 				if (!isSupport(Driver.Support.INDEX)) throw new ExceptionGETL("Driver not support indexes")
-				params.indexes.each { name, value ->
+				(params.indexes as Map).each { String name, Map value ->
 					String createIndexCode = '"""' + sqlCreateIndex + '"""'
 					
 					def idxCols = []
-					value.columns?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol) }
+					(value.columns as List)?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol) }
 					
 					def varsCI = [  indexName: prepareTableNameForSQL(name as String),
 									unique: (value.unique != null && value.unique == true)?"UNIQUE":"",
@@ -843,8 +869,8 @@ ${extend}'''
 
 					if (commitDDL) {
 						if (transactionalDDL) {
-							commitTran()
-							startTran()
+							jdbcConnect.commitTran()
+							jdbcConnect.startTran()
 						} else {
 							executeCommand('COMMIT')
 						}
@@ -856,13 +882,13 @@ ${extend}'''
 		}
 		catch (Throwable e) {
 			if (commitDDL) {
-				if (transactionalDDL) rollbackTran()
+				if (transactionalDDL) jdbcConnect.rollbackTran()
 			}
 			throw e
 		}
 		
 		if (commitDDL) {
-			if (transactionalDDL) commitTran() else executeCommand('COMMIT')
+			if (transactionalDDL) jdbcConnect.commitTran() else executeCommand('COMMIT')
 		}
 	}
 
@@ -970,22 +996,24 @@ ${extend}'''
 		
 		def r = prepareTableNameForSQL(ds.params.tableName as String)
 
-		def schemaName = ds.schemaName
-		if (schemaName == null &&
-				(dataset.sysParams.type as JDBCDataset.Type) == JDBCDataset.Type.TABLE && defaultSchemaName != null) {
-			schemaName = defaultSchemaName
-		}
-
-		if (schemaName != null) {
-			r = prepareTableNameForSQL(schemaName) +'.' + r
-		}
-
-		if (ds.dbName != null) {
-			if (schemaName != null) {
-				r = prepareTableNameForSQL(ds.dbName) + '.' + r
+		def tableType = dataset.sysParams.type as JDBCDataset.Type
+		if (tableType == null || tableType != JDBCDataset.Type.LOCAL_TEMPORARY) {
+			def schemaName = ds.schemaName
+			if (schemaName == null &&
+					(dataset.sysParams.type as JDBCDataset.Type) == JDBCDataset.Type.TABLE && defaultSchemaName != null) {
+				schemaName = defaultSchemaName
 			}
-			else {
-				r = prepareTableNameForSQL(ds.dbName) + '..' + r
+
+			if (schemaName != null) {
+				r = prepareTableNameForSQL(schemaName) + '.' + r
+			}
+
+			if (ds.dbName != null) {
+				if (schemaName != null) {
+					r = prepareTableNameForSQL(ds.dbName) + '.' + r
+				} else {
+					r = prepareTableNameForSQL(ds.dbName) + '..' + r
+				}
 			}
 		}
 
@@ -1011,20 +1039,39 @@ ${extend}'''
 		return r
 	}
 
+	/**
+	 * Allow if exists in drop operator
+	 */
+	protected boolean dropIfExists = true
+
 	@Override
 	public void dropDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
+
+        params = params?:[:]
+		def dropDir = ((dataset.params.directive as Map)?.drop as Map)?:[:]
+		params = dropDir + params
+
 		def n = fullNameDataset(dataset)
 		def t = ((dataset.sysParams.type as JDBCDataset.Type) in
                     [JDBCDataset.Type.TABLE, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.GLOBAL_TEMPORARY,
-                     JDBCDataset.Type.MEMORY])?"TABLE":(dataset.sysParams.type == JDBCDataset.Type.VIEW)?"VIEW":null
+                     JDBCDataset.Type.MEMORY])?"TABLE":(dataset.sysParams.type == JDBCDataset.Type.VIEW)?'VIEW':null
 		if (t == null) throw new ExceptionGETL("Can not support type object \"${dataset.sysParams.type}\"")
-		def e = (params.ifExists != null && params.ifExists)?"IF EXISTS ":""
+		def ifExists = BoolUtils.IsValue(params.ifExists)
+		def e = (dropIfExists && ifExists)?'IF EXISTS ':''
 		def q = "DROP ${t} ${e}${n}"
 
 		if (commitDDL && transactionalDDL) startTran()
 		try {
-			executeCommand(q, [:])
+			if (!dropIfExists && ifExists && dataset instanceof TableDataset) {
+				TableDataset table = dataset as TableDataset
+				if (table.exists) {
+					executeCommand(q, [:])
+				}
+			}
+			else {
+				executeCommand(q, [:])
+			}
 		}
 		catch (Throwable err) {
 			if (commitDDL) {
@@ -1058,22 +1105,25 @@ ${extend}'''
 	 * <li>afterfor
 	 * <li>aftertable
 	 * <li>afteralias
+	 * <li>where
+	 * <li>orderBy
+	 * <li>afterOrderBy
+	 * <li>forUpdate
 	 * <li>finish
 	 * </ul> 
-	 * @param dataset
-	 * @param params
 	 */
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) { }
+	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+		if (params.where != null) dir.where = params.where
+		if (params.orderBy != null) dir.orderBy = params.orderBy
+		dir.forUpdate = BoolUtils.IsValue(params.forUpdate)
+	}
 
     /**
      * Build sql select statement for read rows in table
-     * @param dataset
-     * @param params
-     * @return
      */
     public String sqlTableBuildSelect(Dataset dataset, Map params) {
         // Load statement directive by driver
-        def dir = (Map<String, String>)[:]
+        def dir = [:] as Map<String, String>
         sqlTableDirective(dataset, params, dir)
 
         StringBuilder sb = new StringBuilder()
@@ -1094,16 +1144,10 @@ ${extend}'''
         if (dir.aftertable != null) sb << ' ' + dir.aftertable
         sb << ' tab'
         if (dir.afteralias != null) sb << ' ' + dir.afteralias
-        sb << '\n'
-
-        if (params.where != null) sb << "\nWHERE ${params.where}"
-
-        if (params.orderBy != null) sb << "\nORDER BY ${params.orderBy}"
-
+        if (dir.where != null) sb << "\nWHERE ${dir.where}"
+        if (dir.orderBy != null) sb << "\nORDER BY ${dir.orderBy}"
         if (dir.afterOrderBy != null) sb << "\n${dir.afterOrderBy}"
-
-        if (params.forUpdate != null && params.forUpdate) sb << '\nFOR UPDATE'
-
+        if (dir.forUpdate) sb << '\nFOR UPDATE'
         if (dir.finish != null) sb << '\n' + dir.finish
 
         return sb.toString()
@@ -1118,44 +1162,46 @@ ${extend}'''
 	public String sqlForDataset (Dataset dataset, Map params) {
 		String query
 		if (isTable(dataset)) {
-			validTableName(dataset)
-			def fn = fullNameDataset(dataset)
+			def table = dataset as TableDataset
+			validTableName(table)
+			def fn = fullNameDataset(table)
 			
 			List<String> fields = []
-            List<Field> useFields = (params.useFields != null && params.useFields.size() > 0)?params.useFields:dataset.field
+            List<Field> useFields = (params.useFields != null && (params.useFields as List).size() > 0)?params.useFields:table.field
 
             useFields.each { Field f ->
-				fields << prepareFieldNameForSQL(f.name, dataset as JDBCDataset)
+				fields << prepareFieldNameForSQL(f.name, table as JDBCDataset)
 			}
 			
-			if (fields.isEmpty()) throw new ExceptionGETL("Required fields by dataset $dataset") 
+			if (fields.isEmpty()) throw new ExceptionGETL("Required fields by dataset $table")
 			
 			def selectFields = fields.join(",")
 
+			def where = params.where
+
 			def order = params.order as List<String>
-			String orderBy = null
-			if (order != null) { 
-				if (!(order instanceof List)) throw new ExceptionGETL("Order parameters must have List type, but this ${order.getClass().name} type")
-				List<String> orderFields = []
+			String orderBy
+			if (order != null && !order.isEmpty()) {
+				def orderFields = [] as List<String>
 				order.each { String col ->
-					if (dataset.fieldByName(col) != null) orderFields << prepareFieldNameForSQL(col, dataset as JDBCDataset) else orderFields << col
+					if (dataset.fieldByName(col) != null)
+						orderFields << prepareFieldNameForSQL(col, dataset as JDBCDataset) else orderFields << col
 				}
 				orderBy = orderFields.join(", ")
 			}
 
-			query = sqlTableBuildSelect(dataset, params + [selectFields: selectFields, table: fn, orderBy: orderBy])
+			query = sqlTableBuildSelect(dataset, params + [selectFields: selectFields, table: fn, where: where, orderBy: orderBy])
 		} 
 		else {
 			assert dataset.params.query != null, "Required value in \"query\" from dataset"
-			def p = [:]
-			if (dataset.params.queryParams != null) p.putAll(dataset.params.queryParams as Map)
-			if (params.queryParams != null) p.putAll(params.queryParams as Map)
-			if (p.isEmpty()) {
-				query = dataset.params.query
-			}
-			else {
-				query = StringUtils.SetValueString(dataset.params.query as String, p)
-			}
+			query = dataset.params.query
+		}
+
+		def qp = [:] as Map<String, Object>
+		if (dataset.params.queryParams != null) qp.putAll(dataset.params.queryParams as Map)
+		if (params.queryParams != null) qp.putAll(params.queryParams as Map)
+		if (!qp.isEmpty()) {
+			query = StringUtils.SetValueString(query, qp)
 		}
 
 		return query
@@ -1185,6 +1231,8 @@ ${extend}'''
 	@groovy.transform.CompileStatic
 	@Override
 	public long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		params = params?:[:]
+
 		Integer fetchSize = (Integer)(params."fetchSize")
 		Closure filter = (Closure)(params."filter")
 		List<Field> metaFields = []
@@ -1213,7 +1261,9 @@ ${extend}'''
 		}
 
 //		dataset.field = metaFields
-		String sql = sqlForDataset(dataset, params + [useFields: metaFields])
+		params.putAll([useFields: metaFields])
+		String sql = sqlForDataset(dataset, params)
+		if (sql == null) throw new ExceptionGETL('Invalid sql query for dataset!')
 		
 		Map rowCopy
 		Closure copyToMap
@@ -1240,7 +1290,7 @@ ${extend}'''
 			rowCopy = GenerationUtils.GenerateRowCopy(this, fields)
 			copyToMap = (Closure)(rowCopy.code)
 		}
-		int offs = (params.start != null)?(int)(params.start):0
+		int offs = (params.offs != null)?(int)(params.offs):0
 		int max = (params.limit != null)?(int)(params.limit):0
 		Map<String, Object> sp = (Map)(params."sqlParams")
 		Map<String, Object> sqlParams
@@ -1274,7 +1324,7 @@ ${extend}'''
 					if (filter != null && !filter(outRow)) return
 					
 					countRec++
-					code(outRow)
+					code.call(outRow)
 				}
 			}
 			else {
@@ -1285,7 +1335,7 @@ ${extend}'''
 					if (filter != null && !filter(outRow)) return
 					
 					countRec++
-					code(outRow)
+					code.call(outRow)
 				}
 			}
 		}
@@ -1313,12 +1363,22 @@ ${extend}'''
 	@Override
 	public void clearDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
-		def truncate = (params.truncate != null)?params.truncate:false
+		def truncate = BoolUtils.IsValue(params.truncate)
 		
 		def fn = fullNameDataset(dataset)
 		String q = (truncate)?"TRUNCATE TABLE $fn":"DELETE FROM $fn"
-		def count = executeCommand(q, params + [isUpdate: (!truncate)])
-		dataset.updateRows = count
+
+		try {
+			if (transactionalTruncate) connection.startTran()
+			def count = executeCommand(q, params + [isUpdate: (!truncate)])
+			dataset.updateRows = count
+
+			if (transactionalTruncate) connection.commitTran()
+		}
+		catch (Exception e) {
+			if (transactionalTruncate) connection.rollbackTran()
+			throw e
+		}
 	}
 	
 	protected void saveToHistory(String sql) {
@@ -1385,7 +1445,7 @@ $sql
 			}
 			warn = warn.nextWarning
 		}
-		if (!connection.sysParams.warnings.isEmpty()) {
+		if (!((connection as JDBCConnection).sysParams.warnings as List).isEmpty()) {
 			if (BoolUtils.IsValue(con.outputServerWarningToLog)) Logs.Warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
             saveToHistory("-- Server warning ${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
 		}
@@ -1439,7 +1499,11 @@ $sql
 		def isExistsBlob = false
 		def isExistsClob = false
 		procFields.each { Field f ->
-			if (f.type == Field.Type.BLOB) isExistsBlob = true else if (f.type == Field.Type.TEXT) isExistsClob = true
+			if (f.type == Field.Type.BLOB) {
+				isExistsBlob = true
+			} else if (textReadAsObject() && f.type == Field.Type.TEXT) {
+				isExistsClob = true
+			}
 		}
 		if (isExistsBlob) {
 			sb << '@groovy.transform.CompileStatic\n'
@@ -1476,7 +1540,7 @@ $sql
 		sb << "}"
 		wp.statement = sb.toString()
 
-		Closure code = GenerationUtils.EvalGroovyClosure(wp.statement)
+		Closure code = GenerationUtils.EvalGroovyClosure(wp.statement, null, false, (useLoadedDriver)?jdbcClass.classLoader:null)
 
 		return code
 	}
@@ -1499,7 +1563,7 @@ $sql
 		
 		List<String> listFields = []
 		if (prepareCode != null) {
-			listFields = prepareCode(tableFields)
+			listFields = prepareCode(tableFields) as List
 		}
 		
 		List<Field> fields = []
@@ -1553,7 +1617,7 @@ $sql
 			Map mc = [:]
 			mc.column = cn
 			
-			def m = map."${cn}"
+			def m = map.get(cn)
 			if (m != null){
 				def df = fields.find { it.name.toLowerCase() == m.toLowerCase() }
 				if (df != null) {
@@ -1592,7 +1656,7 @@ $sql
 	
 	@Override
 	public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-		throw new ExceptionGETL("Not supported")
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	/**
@@ -1632,16 +1696,36 @@ $sql
 		dataset.driver_params = wp
 		
 		validTableName(dataset)
+
+        /*params = params?:[:]
+		def writeDir = ((dataset.params.directive as Map)?.write as Map)?:[:]
+        params = writeDir + params*/
+
 		def fn = fullNameDataset(dataset)
-		def operation = (params.operation != null)?params.operation.toUpperCase():"INSERT"
-		if (!(operation.toUpperCase() in ["INSERT", "UPDATE", "DELETE", "MERGE"])) throw new ExceptionGETL("Unknown operation \"$operation\"")
+		def operation = (params.operation != null)?(params.operation as String).toUpperCase():"INSERT"
+		if (!(operation in ['INSERT', 'UPDATE', 'DELETE', 'MERGE'])) throw new ExceptionGETL("Unknown operation \"$operation\"")
+		switch (operation) {
+			case 'INSERT':
+				if (!(Operation.INSERT in operations())) throw new ExceptionGETL('Operation INSERT not support!')
+				break
+			case 'UPDATE':
+				if (!(Operation.UPDATE in operations())) throw new ExceptionGETL('Operation UPDATE not support!')
+				break
+			case 'DELETE':
+				if (!(Operation.DELETE in operations())) throw new ExceptionGETL('Operation DELETE not support!')
+				break
+			case 'MERGE':
+				if (!(Operation.MERGE in operations())) throw new ExceptionGETL('Operation MERGE not support!')
+				break
+		}
+
 		def batchSize = (!isSupport(Driver.Support.BATCH)?1:((params.batchSize != null)?params.batchSize:1000L))
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch
 		
 		def fields = prepareFieldFromWrite(dataset, prepareCode)
 		
 		def updateField = [] as List<String>
-		if (params.updateField != null) {
+		if (params.updateField != null && !(params.updateField as List).isEmpty()) {
 			updateField = params.updateField
 		}
 		else {
@@ -1737,8 +1821,10 @@ $sql
 					statFields.addAll(l[0] as List<String>)
 				}
 
+				def keys = '(' + k.join(' AND ') + ')'
+
 				sb << statUpdate.replace('{table}', fn).replace('{partition}', p.join(', '))
-						.replace('{keys}', k.join(" AND ")).replace('{values}', v.join(","))
+						.replace('{keys}', keys).replace('{values}', v.join(','))
 
 				break
 				
@@ -1775,8 +1861,10 @@ $sql
 					statFields.addAll(l[0] as List<String>)
 				}
 
+				def keys = '(' + k.join(' AND ') + ')'
+
 				sb << statDelete.replace('{table}', fn).replace('{partition}', p.join(', '))
-						.replace('{keys}', k.join(" AND "))
+						.replace('{keys}', keys)
 
 				break
 			case "MERGE":
@@ -2010,7 +2098,7 @@ $sql
 		if (!source instanceof JDBCDataset) throw new ExceptionGETL("Source dataset must be \"JDBCDataset\"")
 		
 		if (procParams.operation == null) throw new ExceptionGETL("Required \"operation\" parameter")
-		def oper = procParams.operation.toUpperCase()
+		def oper = (procParams.operation as String).toUpperCase()
 		if (!(oper in ["INSERT", "UPDATE", "DELETE", "MERGE"])) throw new ExceptionGETL("Unknown \"$oper\" operation")
 		
 		if (target.connection != source.connection) throw new ExceptionGETL("Required one identical the connection by datasets")

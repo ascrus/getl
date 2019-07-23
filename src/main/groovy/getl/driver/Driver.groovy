@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -59,7 +59,7 @@ abstract class Driver {
 		(supported().indexOf(feature) != -1)
 	}
 	
-	public static enum Operation {CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS, MERGE}
+	public static enum Operation {CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS, INSERT, UPDATE, DELETE, MERGE, READ_METADATA}
 	public abstract List<Driver.Operation> operations ()
 	public boolean isOperation(Driver.Operation operation) {
 		(operations().indexOf(operation) != -1)

@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -58,8 +58,8 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		def fieldCalc = getFieldCalc(dataset)
 		def algorithm = dataset.params.algorithm
 		if (algorithm == null) throw new ExceptionGETL("Required parameter \"algorithm\" in dataset")
-		algorithm = algorithm.toUpperCase()
-		if (!(algorithm in ["HASH", "TREE"])) throw new ExceptionGETL("Unknown algorithm \"${value}\"")
+		algorithm = (algorithm as String).toUpperCase()
+		if (!(algorithm in ["HASH", "TREE"])) throw new ExceptionGETL("Unknown algorithm \"${algorithm}\"")
 		Closure aggregateCode = generateAggrCode(fieldByGroup, fieldCalc)
 		Map filter = [:]
 		fieldCalc.each { name, value ->
@@ -68,7 +68,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 			}
 		}
 
-		if (prepareCode != null) prepareCode(dataset.field)
+		if (prepareCode != null) prepareCode.call(dataset.field)
 		
 		ds.openWrite(params)
 		
@@ -91,7 +91,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		Map data = dataset.params.aggregator_data
 		Closure aggregateCode = dataset.params.aggregator_code
 		Map filter = dataset.params.aggregator_filter
-		aggregateCode(row, data, filter)
+		aggregateCode.call(row, data, filter)
 	}
 
 	@Override
@@ -150,9 +150,9 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		num = 0
 		fieldCalc.each { String name, Map mp ->
 			name = name.toLowerCase().replace("'", "\\'")
-			String method = (mp.method != null)?mp.method.toUpperCase():"SUM"
+			String method = (mp.method != null)?(mp.method as String).toUpperCase():"SUM"
 			Closure filter = mp.filter
-			def source = mp.fieldName?.replace("'", "\\'")
+			def source = (mp.fieldName as String)?.replace("'", "\\'")
 			if (source == null && method != "COUNT") throw new ExceptionGETL("Required fieldName in parameters by field \"${name}\"")
 			
 			if (filter != null) {

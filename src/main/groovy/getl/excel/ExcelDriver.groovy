@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -29,9 +29,11 @@ import getl.driver.Driver
 import getl.csv.CSVDataset
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.InheritConstructors
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.openxml4j.opc.OPCPackage
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem
+import org.apache.poi.poifs.filesystem.POIFSFileSystem
+import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.ss.usermodel.Cell
 import org.apache.poi.ss.usermodel.Row
@@ -43,10 +45,12 @@ import org.apache.poi.ss.usermodel.Workbook
  * @author Dmitry Shaldin
  *
  */
-@groovy.transform.InheritConstructors
+@InheritConstructors
 class ExcelDriver extends Driver {
     ExcelDriver () {
-        methodParams.register("eachRow", ["header", "offset", "limit", "showWarnings", "rows", "cells"])
+        methodParams.register("eachRow", ["header", "offset", "limit", "showWarnings"])
+
+
     }
 
     @Override
@@ -56,23 +60,30 @@ class ExcelDriver extends Driver {
 
     @Override
     List<Driver.Operation> operations() {
-        [Driver.Operation.DROP]
+        [Driver.Operation.DROP, Driver.Operation.RETRIEVEFIELDS]
     }
 
     @Override
-    public List<Object> retrieveObjects(Map params, Closure filter) { throw new ExceptionGETL("Not supported") }
+    List<Object> retrieveObjects(Map params, Closure filter) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    public
-    List<Field> fields(Dataset dataset) { throw new ExceptionGETL("Not supported") }
+    List<Field> fields(Dataset dataset) {
+        if (!BoolUtils.IsValue([(dataset as ExcelDataset).header,
+                                (dataset.connection as ExcelConnection).header, true])) {
+            throw new ExceptionGETL('Not support this features with no field header!')
+        }
+        dataset.rows(limit: 1)
+        return dataset.field
+    }
 
     @Override
-    public
+
     long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
         String path = dataset.connection.params.path
         String fileName = dataset.connection.params.fileName
         String fullPath = FileUtils.ConvertToDefaultOSPath(path + File.separator + fileName)
-        boolean warnings = params.showWarnings
+        boolean warnings = BoolUtils.IsValue([params.showWarnings, (dataset as ExcelDataset).showWarnings,
+                                              (dataset.connection as ExcelConnection).showWarnings, false])
 
         if (!path) throw new ExceptionGETL("Required \"path\" parameter with connection")
         if (!fileName) throw new ExceptionGETL("Required \"fileName\" parameter with connection")
@@ -81,10 +92,11 @@ class ExcelDriver extends Driver {
         Map datasetParams = dataset.params
 
         def ln = datasetParams.listName?:0
-        def header = BoolUtils.IsValue([params.header, datasetParams.header], false)
+        def header = BoolUtils.IsValue([params.header, datasetParams.header,
+                                        (dataset.connection as ExcelConnection).header], true)
         if (dataset.field.isEmpty() && !header) throw new ExceptionGETL("Required fields description with dataset")
 		
-		def offset = params.offset?:datasetParams.offset
+		def offset = (params.offset?:datasetParams.offset) as Map
 
         Number offsetRows = offset?.rows?:0
         Number offsetCells = offset?.cells?:0
@@ -94,99 +106,108 @@ class ExcelDriver extends Driver {
         if (prepareCode != null) prepareCode([])
 
         Workbook workbook = getWorkbookType(fullPath)
-        Sheet sheet
 
-        if (ln instanceof String) sheet = workbook.getSheet(ln as String)
-        else {
-            sheet = workbook.getSheetAt(ln)
-            dataset.params.listName = workbook.getSheetName(ln)
-            if (warnings) Logs.Warning("Parameter listName not found. Using list name: '${dataset.params.listName}'")
-        }
+        try {
+            Sheet sheet
 
-        def limit = ListUtils.NotNullValue([params.limit, datasetParams.limit, sheet.lastRowNum])
-
-        Iterator rows = sheet.rowIterator()
-
-        if (offsetRows != 0) 1..offsetRows.each { rows.next() }
-        int additionalRows = limit + offsetRows + (header?(1 as int):(0 as int))
-
-		def excelFields = [] as List<String>
-		def requiedParseField = dataset.field.isEmpty()
-		if (header) {
-			Row row = rows.next()
-			if (requiedParseField) {
-				Iterator cells = row.cellIterator()
-				def colNum = 0
-				cells.each { Cell cell ->
-					colNum++
-					if (offsetCells >= colNum) return
-					if (cell.cellType != cell.CELL_TYPE_STRING) throw new ExceptionGETL("Not string field name in header by $colNum col")
-					def fieldName = cell.stringCellValue?.trim()
-					if (fieldName == null || fieldName == '') throw new ExceptionGETL("Required field name in header by $colNum col")
-					excelFields << cell.stringCellValue
-				}
-
-				if (excelFields.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
-			}
-		}
-
-		def rowNum = 0
-        rows.each { Row row ->
-			rowNum++
-            if (row.rowNum >= additionalRows) return
-
-            Iterator cells = row.cellIterator()
-			def colNum = 0
-			if (offsetCells != 0) 1..offsetCells.each {
-				colNum++
-				cells.next()
-			}
-
-			if (requiedParseField) {
-				def types = [] as List<String>
-				cells.each { Cell cell ->
-					colNum++
-					switch (cell.cellType) {
-						case cell.CELL_TYPE_STRING:
-							types << 'STRING'
-							break
-						case cell.CELL_TYPE_BOOLEAN:
-							types << 'BOOLEAN'
-							break
-						case cell.CELL_TYPE_NUMERIC:
-							types << 'NUMERIC'
-							break
-						default:
-							throw new ExceptionGETL("Unknown type cell from $rowNum row $colNum col")
-					}
-				}
-				if (types.size() != excelFields.size()) throw new ExceptionGETL("The number of fields in the header and in the next data line does not match")
-				for (int i = 0; i < excelFields.size(); i++) {
-					dataset.field << new Field(name: excelFields[i], type: types[i])
-				}
-				requiedParseField = false
-
-				cells = row.cellIterator()
-				colNum = 0
-				if (offsetCells != 0) 1..offsetCells.each {
-					colNum++
-					cells.next()
-				}
-			}
-
-            LinkedHashMap<String, Object> updater = [:]
-            cells.each { Cell cell ->
-				colNum++
-                int columnIndex = cell.columnIndex - offsetCells
-                if (columnIndex >= dataset.field.size()) return
-                updater."${dataset.field.get(columnIndex).name}" = getCellValue(cell, dataset, columnIndex)
+            if (ln instanceof String) sheet = workbook.getSheet(ln as String)
+            else {
+                sheet = workbook.getSheetAt(ln) as Sheet
+                dataset.params.listName = workbook.getSheetName(ln)
+                if (warnings) Logs.Warning("Parameter listName not found. Using list name: '${dataset.params.listName}'")
             }
 
-            code(updater)
-            countRec++
+            def limit = ListUtils.NotNullValue([params.limit, datasetParams.limit, sheet.lastRowNum])
+
+            Iterator rows = sheet.rowIterator()
+
+            if (offsetRows != 0) 1..offsetRows.each { rows.next() }
+            int additionalRows = limit + offsetRows + (header ? (1 as int) : (0 as int))
+
+            def excelFields = [] as List<String>
+            def requiedParseField = dataset.field.isEmpty()
+            if (header) {
+                Row row = rows.next()
+                if (requiedParseField) {
+                    Iterator cells = row.cellIterator()
+                    def colNum = 0
+                    cells.each { Cell cell ->
+                        colNum++
+                        if (offsetCells >= colNum) return
+                        if (cell.cellType != CellType.STRING) throw new ExceptionGETL("Not string field name in header by $colNum col")
+                        def fieldName = cell.stringCellValue?.trim()
+                        if (fieldName == null || fieldName == '') throw new ExceptionGETL("Required field name in header by $colNum col")
+                        excelFields << cell.stringCellValue
+                    }
+
+                    if (excelFields.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
+                }
+            }
+
+            def rowNum = 0
+            rows.each { Row row ->
+                rowNum++
+                if (row.rowNum >= additionalRows) {
+                    directive = Closure.DONE
+                    return
+                }
+
+                Iterator cells = row.cellIterator()
+                def colNum = 0
+                if (offsetCells != 0) 1..offsetCells.each {
+                    colNum++
+                    cells.next()
+                }
+
+                if (requiedParseField) {
+                    def types = [] as List<String>
+                    cells.each { Cell cell ->
+                        colNum++
+                        switch (cell.cellType) {
+                            case CellType.STRING:
+                                types << 'STRING'
+                                break
+                            case CellType.BOOLEAN:
+                                types << 'BOOLEAN'
+                                break
+                            case CellType.NUMERIC:
+                                types << 'NUMERIC'
+                                break
+                            default:
+                                throw new ExceptionGETL("Unknown type cell from $rowNum row $colNum col")
+                        }
+                    }
+                    if (types.size() != excelFields.size()) throw new ExceptionGETL("The number of fields in the header and in the next data line does not match")
+                    for (int i = 0; i < excelFields.size(); i++) {
+                        dataset.field << new Field(name: excelFields[i], type: types[i])
+                    }
+                    requiedParseField = false
+
+                    cells = row.cellIterator()
+                    colNum = 0
+                    if (offsetCells != 0) 1..offsetCells.each {
+                        colNum++
+                        cells.next()
+                    }
+                }
+
+                LinkedHashMap<String, Object> updater = [:]
+                cells.each { Cell cell ->
+                    colNum++
+                    int columnIndex = cell.columnIndex - offsetCells
+                    if (columnIndex >= dataset.field.size()) return
+                    updater."${dataset.field.get(columnIndex).name}" = getCellValue(cell, dataset, columnIndex)
+                }
+
+                code.call(updater)
+                countRec++
+            }
+        }
+        finally {
+            workbook.close()
         }
 
-        countRec
+        return countRec
     }
 
     private static def getCellValue(final Cell cell, final Dataset dataset, final int columnIndex) {
@@ -197,7 +218,7 @@ class ExcelDriver extends Driver {
 
             switch (fieldType) {
                 case Field.Type.BIGINT:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING)
+                    if (cell.cellType == CellType.STRING)
 						res = (cell.stringCellValue.toBigInteger())
                     else
 						res = cell.numericCellValue.toBigInteger()
@@ -216,21 +237,21 @@ class ExcelDriver extends Driver {
 
                     break
                 case Field.Type.DOUBLE:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING)
+                    if (cell.cellType == CellType.STRING)
 						res = (cell.stringCellValue.toDouble())
                     else
 						res = cell.numericCellValue
 
                     break
                 case Field.Type.INTEGER:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING)
+                    if (cell.cellType == CellType.STRING)
 						res = (cell.stringCellValue.toInteger())
                     else
 						res = cell.numericCellValue.toInteger()
 
                     break
                 case Field.Type.NUMERIC:
-                    if (cell.cellType == Cell.CELL_TYPE_STRING)
+                    if (cell.cellType == CellType.STRING)
 						res = (cell.stringCellValue.toBigDecimal())
                     else
 						res = cell.numericCellValue.toBigDecimal()
@@ -260,7 +281,7 @@ class ExcelDriver extends Driver {
                 new XSSFWorkbook(OPCPackage.open(new File(fileName)))
                 break
             case {fileName.endsWith(ext) && ext == 'xls'}:
-                new HSSFWorkbook(new NPOIFSFileSystem(new File(fileName)))
+                new HSSFWorkbook(new POIFSFileSystem(new File(fileName)))
                 break
             default:
                 throw new ExceptionGETL("Something went wrong")
@@ -268,94 +289,81 @@ class ExcelDriver extends Driver {
     }
 
     @Override
-    public
     void doneWrite (Dataset dataset) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    public
     void closeWrite(Dataset dataset) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    public
     void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    public
     void openWrite(Dataset dataset, Map params, Closure prepareCode) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    public
     void write(Dataset dataset, Map row) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    public
     long executeCommand (String command, Map params) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    public long getSequence(String sequenceName) {
-        throw new ExceptionGETL("Not supported")
+    long getSequence(String sequenceName) {
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    public
     void clearDataset(Dataset dataset, Map params) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
 
     }
 
     @Override
-    public
     void createDataset(Dataset dataset, Map params) {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
 
     }
 
     @Override
-    public
     void startTran() {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
 
     }
 
     @Override
-    public
     void commitTran() {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
 
     }
 
     @Override
-    public
     void rollbackTran() {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    public
     void connect () {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    public
     void disconnect () {
-        throw new ExceptionGETL("Not supported")
+        throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    public boolean isConnected() {
-        throw new ExceptionGETL("Not supported")
+    boolean isConnected() {
+        throw new ExceptionGETL('Not support this features!')
     }
 }

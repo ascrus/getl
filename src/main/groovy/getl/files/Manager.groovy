@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -26,16 +26,14 @@ package getl.files
 
 import getl.data.*
 import getl.exception.ExceptionGETL
+import getl.files.opts.ManagerBuildListSpec
+import getl.files.opts.ManagerDownloadSpec
 import getl.jdbc.*
 import getl.proc.Executor
 import getl.proc.Flow
 import getl.utils.*
 import getl.tfs.*
-import groovy.sql.Sql
-
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-
+import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 
 /**
@@ -48,11 +46,26 @@ abstract class Manager {
 	protected File localDirFile = new File(TFS.storage.path)
 	
 	Manager () {
-		methodParams.register('super', ['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop', 'sqlHistoryFile', 'saveOriginalDate'])
-		methodParams.register('buildList', ['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel', 'ignoreExistInStory'])
-		methodParams.register('downloadFiles', ['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
+		methodParams.register('super',
+				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
+				 'sqlHistoryFile', 'saveOriginalDate'])
+		methodParams.register('buildList',
+				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel',
+				 'ignoreExistInStory', 'createStory'])
+		methodParams.register('downloadFiles',
+				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
 		
 		initMethods()
+	}
+
+	static Manager CreateManager(Map params) {
+		def className = params.manager as String
+		if (className == null) throw new ExceptionGETL("Reqired class name as \"manager\" property!")
+		Manager manager = Class.forName(className).newInstance() as Manager
+		manager.params.putAll(MapUtils.CleanMap(params, ['manager']))
+		manager.validateParams()
+
+		return manager
 	}
 	
 	/**
@@ -60,23 +73,16 @@ abstract class Manager {
 	 * @param name - config name
 	 * @return
 	 */
-	public static Manager BuildManager (String name) {
+	static Manager BuildManager (String name) {
 		Map fileParams = Config.content."files"?."$name"
-		if (fileParams == null) throw new ExceptionGETL("File manager \"$name\" not found in \"files\" section by config")
-		def className = fileParams.manager as String
-		if (className == null) throw new ExceptionGETL("Reqired class name as \"manager\" property in \"files.$name\" file server")
-		Manager manager = Class.forName(className).newInstance() as Manager
-		manager.params.putAll(MapUtils.CleanMap(fileParams, ['manager']))
-		manager.validateParams()
-
-		return manager
+		CreateManager(fileParams)
 	}
 	
 	/**
 	 * Clone manager
-	 * @return
+	 * @return - new manager object
 	 */
-	public Manager cloneManager () {
+	Manager cloneManager () {
 		Manager res = getClass().newInstance() as Manager
 		res.params.putAll(this.params)
 		
@@ -86,7 +92,7 @@ abstract class Manager {
 	/**
 	 * Type of file in list
 	 */
-	public static enum TypeFile {FILE, DIRECTORY, LINK, ALL}
+	static enum TypeFile {FILE, DIRECTORY, LINK, ALL}
 	
 	/**
 	 * Parameters
@@ -96,16 +102,22 @@ abstract class Manager {
 	/**
 	 * Root path
 	 */
-	public String getRootPath () { params.rootPath }
-	public void setRootPath (String value) {
+	String getRootPath () { params.rootPath }
+	/**
+	 * Root path
+	 */
+	void setRootPath (String value) {
 		params.rootPath = value
 	}
 	
 	/**
 	 * Local directory
 	 */
-	public String getLocalDirectory () { params.localDirectory }
-	public void setLocalDirectory (String value) { 
+	String getLocalDirectory () { params.localDirectory }
+	/**
+	 * Local directory
+	 */
+	void setLocalDirectory (String value) {
 		FileUtils.ValidPath(value)
 		params.localDirectory = value
 		localDirFile = new File(value)
@@ -114,29 +126,41 @@ abstract class Manager {
 	/**
 	 * Set noop time (use in list operation)
 	 */
-	public Integer getNoopTime () { params.noopTime as Integer }
-	public void setNoopTime (Integer value) { params.noopTime = value }
+	Integer getNoopTime () { params.noopTime as Integer }
+	/**
+	 * Set noop time (use in list operation)
+	 */
+	void setNoopTime (Integer value) { params.noopTime = value }
 	
 	/**
 	 * Count thread for build list files 
 	 */
-	public Integer getBuildListThread () { params.buildListThread as Integer }
-	public void setBuildListThread (Integer value) {
-		if (value != null && value <= 0) throw new ExceptionGETL("buildListThread been must great zero") 
+	Integer getBuildListThread () { params.buildListThread as Integer }
+	/**
+	 * Count thread for build list files
+	 */
+	void setBuildListThread (Integer value) {
+		if (value != null && value <= 0) throw new ExceptionGETL("buildListThread been must great zero!")
 		params.buildListThread = value
 	}
 	
 	/**
 	 * Write to log when send noop message
 	 */
-	public boolean getSayNoop () { BoolUtils.IsValue(params.sayNoop, false) }
-	public void setSayNoop (boolean value) { params.sayNoop = value }
+	boolean getSayNoop () { BoolUtils.IsValue(params.sayNoop, false) }
+	/**
+	 * Write to log when send noop message
+	 */
+	void setSayNoop (boolean value) { params.sayNoop = value }
 	
 	/**
 	 * Log script file on running commands 
 	 */
-	public String getScriptHistoryFile () { params.scriptHistoryFile }
-	public void setScriptHistoryFile (String value) { 
+	String getScriptHistoryFile () { params.scriptHistoryFile }
+	/**
+	 * Log script file on running commands
+	 */
+	void setScriptHistoryFile (String value) {
 		params.scriptHistoryFile = value
 		fileNameScriptHistory = null 
 	}
@@ -144,25 +168,35 @@ abstract class Manager {
 	/**
 	 * Log script file on file list connection
 	 */
-	public String getSqlHistoryFile () { params.sqlHistoryFile }
-	public void setSqlHistoryFile (String value) {
+	String getSqlHistoryFile () { params.sqlHistoryFile }
+	/**
+	 * Log script file on file list connection
+	 */
+	void setSqlHistoryFile (String value) {
 		params.sqlHistoryFile = value
 	}
 
     /**
      * Save original date and time from downloading and uploading file
      */
-	public boolean getSaveOriginalDate() { BoolUtils.IsValue(params.saveOriginalDate, false)}
-    public void setSaveOriginalDate(boolean value) { params.saveOriginalDate = value }
+	boolean getSaveOriginalDate() { BoolUtils.IsValue(params.saveOriginalDate, false)}
+	/**
+	 * Save original date and time from downloading and uploading file
+	 */
+	void setSaveOriginalDate(boolean value) { params.saveOriginalDate = value }
 	
+
+	private String config
 	/**
 	 * Name section parameteres value in config file
 	 * Store parameters to config file from section "FTPSERVERS"
 	 */
-	private String config
-	
-	public String getConfig () { config }
-	public void setConfig (String value) {
+	String getConfig () { config }
+	/**
+	 * Name section parameteres value in config file
+	 * Store parameters to config file from section "FTPSERVERS"
+	 */
+	void setConfig (String value) {
 		config = value
 		if (config != null) {
 			if (Config.ContainsSection("files.${this.config}")) {
@@ -197,7 +231,7 @@ abstract class Manager {
 	 * Validate parameters
 	 * @return
 	 */
-	public validateParams () {
+	def validateParams () {
 		methodParams.validation("super", params)
 	}
 	
@@ -219,7 +253,7 @@ abstract class Manager {
 	 * File name is case-sensitive
 	 * @return
 	 */
-	public abstract boolean isCaseSensitiveName ()
+	abstract boolean isCaseSensitiveName ()
 	
 	/**
 	 * Init validator methods
@@ -229,12 +263,12 @@ abstract class Manager {
 	/**
 	 * Connect to server
 	 */
-	public abstract void connect ()
+	abstract void connect ()
 	
 	/**
 	 * Disconnect from server
 	 */
-	public abstract void disconnect ()
+	abstract void disconnect ()
 	
 	/**
 	 * Return list files of current directory from server
@@ -242,11 +276,15 @@ abstract class Manager {
 	 * @param maskFiles
 	 * @return
 	 */
-	public abstract FileManagerList listDir (String maskFiles)
-	
-	@groovy.transform.CompileStatic
+	abstract FileManagerList listDir (String maskFiles)
+
+
+	/**
+	 * Process list files of current directory from server
+	 */
+	@CompileStatic
 	@Synchronized
-	public void list (String maskFiles, Closure processCode) {
+	void list (String maskFiles, Closure processCode) {
 		if (processCode == null) throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager")
 		FileManagerList l = listDir(maskFiles)
 		for (int i = 0; i < l.size(); i++) {
@@ -255,9 +293,9 @@ abstract class Manager {
 	}
 	
 	/**
-	 * Return list files of current directory from server
+	 * Process list files of current directory from server
 	 */
-	public void list (Closure processCode) {
+	void list (Closure processCode) {
 		list(null, processCode)
 	}
 	
@@ -266,7 +304,7 @@ abstract class Manager {
 	 * @param maskFiles
 	 * @return
 	 */
-	public List<Map> list (String maskFiles) {
+	List<Map> list (String maskFiles) {
 		List<Map> res = new LinkedList<Map>()
 		Closure addToList = { Map r -> res << r }
 		list(maskFiles, addToList)
@@ -278,7 +316,7 @@ abstract class Manager {
 	 * Return list files of current directory from server
 	 * @return
 	 */
-	public List<Map> list () {
+	List<Map> list () {
 		List<Map> res = new LinkedList<Map>()
 		Closure addToList = { Map r -> res << r }
 		list(null, addToList)
@@ -289,18 +327,18 @@ abstract class Manager {
 	/**
 	 * Absolute current path
 	 */
-	public abstract String getCurrentPath ()
+	abstract String getCurrentPath ()
 	
 	/**
 	 * Set new absolute current path
 	 */
-	public abstract void setCurrentPath (String path)
+	abstract void setCurrentPath (String path)
 	
 	/**
 	 * Change current server directory
 	 * @param dir
 	 */
-	public void changeDirectory (String dir) {
+	void changeDirectory (String dir) {
 		if (dir == null || dir == '') throw new ExceptionGETL("Null dir not allowed for cd operation")
 		if (dir == '.') return
 		if (dir == '..') {
@@ -342,12 +380,12 @@ abstract class Manager {
 	/**
 	 * Change current directory to parent directory 
 	 */
-	public abstract void changeDirectoryUp ()
+	abstract void changeDirectoryUp ()
 	
 	/**
 	 * Change current directory to root
 	 */
-	public void changeDirectoryToRoot () {
+	void changeDirectoryToRoot () {
 		currentPath = rootPath
 	}
 	
@@ -355,13 +393,13 @@ abstract class Manager {
 	 * Download file from server
 	 * @param fileName
 	 */
-	public abstract void download (String fileName, String path, String localFileName)
+	abstract void download (String fileName, String path, String localFileName)
 	
 	/**
 	 * Download file from server
 	 * @param fileName
 	 */
-	public void download (String fileName) {
+	void download (String fileName) {
 		download(fileName, fileName)
 	}
 	
@@ -370,7 +408,7 @@ abstract class Manager {
 	 * @param fileName
 	 * @param localFileName
 	 */
-	public void download (String fileName, String localFileName) {
+	void download (String fileName, String localFileName) {
 		def ld = currentLocalDir()
 		if (ld != null) FileUtils.ValidPath(ld)
 		download(fileName, ld, localFileName)
@@ -380,13 +418,13 @@ abstract class Manager {
 	 * Upload file to server
 	 * @param fileName
 	 */
-	public abstract void upload (String path, String fileName)
+	abstract void upload (String path, String fileName)
 	
 	/**
 	 * Upload file to server
 	 * @param fileName
 	 */
-	public void upload (String fileName) {
+	void upload (String fileName) {
 		upload(currentLocalDir(), fileName)
 	}
 	
@@ -394,19 +432,19 @@ abstract class Manager {
 	 * Remove file from server
 	 * @param fileName
 	 */
-	public abstract void removeFile (String fileName)
+	abstract void removeFile (String fileName)
 	
 	/**
 	 * Create directory from server
 	 * @param dirName
 	 */
-	public abstract void createDir (String dirName)
+	abstract void createDir (String dirName)
 	
 	/**
 	 * Remove directory from server
 	 * @param dirName
 	 */
-	public void removeDir (String dirName) {
+	void removeDir (String dirName) {
         removeDir(dirName, false)
     }
 
@@ -415,12 +453,12 @@ abstract class Manager {
      * @param dirName
      * @param recursive
      */
-	public abstract void removeDir (String dirName, Boolean recursive)
+	abstract void removeDir (String dirName, Boolean recursive)
 	
 	/**
 	 * Return current directory with full path
 	 */
-	public String currentAbstractDir() {
+	String currentAbstractDir() {
 		currentPath
 	}
 	
@@ -428,7 +466,7 @@ abstract class Manager {
 	 * Return current directory with relative path
 	 * @return
 	 */
-	public String currentDir() {
+	String currentDir() {
 		def cur = currentPath
 		if (cur == null) throw new ExceptionGETL("Current path not set")
 
@@ -456,50 +494,56 @@ abstract class Manager {
 	 * @param fileName
 	 * @param path
 	 */
-	public abstract void rename (String fileName, String path)
+	abstract void rename (String fileName, String path)
 	
+	private TableDataset fileList
 	/**
 	 * File list
 	 */
-	private TableDataset fileList
-	public TableDataset getFileList () { fileList }
+	TableDataset getFileList () { fileList }
 	
+	private String fileListName
 	/**
 	 * Name of table file list
 	 */
-	private String fileListName
-	public String getFileListName () { fileListName }
-	public void setFileListName (String value) {
+	String getFileListName () { fileListName }
+	/**
+	 * Name of table file list
+	 */
+	void setFileListName (String value) {
 		fileListName = value
 	}
 	
+	private JDBCConnection fileListConnection
 	/**
 	 * Connection from table file list (if null, use TDS connection)
 	 */
-	private JDBCConnection fileListConnection
-	public JDBCConnection getFileListConnection () { fileListConnection}
-	public void setFileListConnection (JDBCConnection value) { fileListConnection = value }
+	JDBCConnection getFileListConnection () { fileListConnection}
+	/**
+	 * Connection from table file list (if null, use TDS connection)
+	 */
+	void setFileListConnection (JDBCConnection value) { fileListConnection = value }
 	
 	/**
 	 * Count found files 
 	 */
-	public long getCountFileList () { countFileListSync.count }
+	long getCountFileList () { countFileListSync.count }
 	
 	private final SynchronizeObject countFileListSync = new SynchronizeObject() 
 	
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Synchronized
 	private FileManagerList listDirSync(String mask) {
 		listDir(mask)
 	}
 	
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Synchronized
 	private void changeDirSync(String dir) {
 		changeDirectory(dir)
 	}
 	
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	protected void processList (Manager man, TableDataset dest, Path path, String maskFile, Boolean recursive, Integer filelevel,
 								Boolean requiredAnalize, Integer limit, Integer threadLevel, ManagerListProcessing code) {
 		Integer threadCount = (threadLevel != null)?buildListThread:null
@@ -507,114 +551,121 @@ abstract class Manager {
 		String curPath = man.currentDir()
 		long countFiles = 0
 		long countDirs = 0
-		
-		FileManagerList listFiles = man.listDir(maskFile)
-		List<String> threadDirs = null
-		if (threadCount != null) threadDirs = new LinkedList<String>()
-		for (int i = 0; i < listFiles.size(); i++) {
-			Map file = listFiles.item(i)
-			
-			if (file.type == TypeFile.FILE) {
-				String fn = "${((recursive && curPath != '.')?curPath + '/':'')}${file.filename}"
-				Map m = path.analizeFile(fn)
-				if (m != null) {
-					file.filepath = curPath
-					file.filetype = file.type.toString()
-					file.localfilename = file.filename
-					file.filelevel = filelevel
-					m.each { var, value ->
-						file.put(((String)var).toLowerCase(), value)
-					}
-					
-					if (code == null || code.prepare(file)) {
-						dest.write(file)
-						countFiles++
-					}
-				}
-				file.clear()
-			}
-			else if (file.type == TypeFile.DIRECTORY && recursive) {
-				countDirs++
-				if (limit != null && countDirs > limit) break
-				
-				def b = true
-				if (requiredAnalize) {
-					b = false
-					def fn = "${(curPath != '.' && curPath != "")?curPath + '/':''}${file.filename}"
-					def m = path.analizeDir(fn)
+
+		try {
+			FileManagerList listFiles = man.listDir(maskFile)
+			List<String> threadDirs = null
+			if (threadCount != null) threadDirs = new LinkedList<String>()
+			for (int i = 0; i < listFiles.size(); i++) {
+				Map file = listFiles.item(i)
+
+				if (file.type == TypeFile.FILE) {
+					String fn = "${((recursive && curPath != '.') ? curPath + '/' : '')}${file.filename}"
+					Map m = path.analizeFile(fn)
 					if (m != null) {
-						if (code != null) {
-							Map nf = [:]
-							nf.filepath = curPath
-							nf.putAll(file)
-							nf.filetype = file.type.toString()
-							nf.localfilename = nf.filename
-							nf.filelevel = filelevel
-							m.each { var, value ->
-								nf.put(((String)var).toLowerCase(), value)
-							}
-							b = code.prepare(nf)
+						file.filepath = curPath
+						file.filetype = file.type.toString()
+						file.localfilename = file.filename
+						file.filelevel = filelevel
+						m.each { var, value ->
+							file.put(((String) var).toLowerCase(), value)
 						}
-						else {
-							b = true
+
+						if (code == null || code.prepare(file)) {
+							dest.write(file)
+							countFiles++
+						}
+					}
+					file.clear()
+				} else if (file.type == TypeFile.DIRECTORY && recursive) {
+					countDirs++
+					if (limit != null && countDirs > limit) break
+
+					def b = true
+					if (requiredAnalize) {
+						b = false
+						def fn = "${(curPath != '.' && curPath != "") ? curPath + '/' : ''}${file.filename}"
+						def m = path.analizeDir(fn)
+						if (m != null) {
+							if (code != null) {
+								Map nf = [:]
+								nf.filepath = curPath
+								nf.putAll(file)
+								nf.filetype = file.type.toString()
+								nf.localfilename = nf.filename
+								nf.filelevel = filelevel
+								m.each { var, value ->
+									nf.put(((String) var).toLowerCase(), value)
+								}
+								b = code.prepare(nf)
+							} else {
+								b = true
+							}
+						}
+					}
+
+					if (b) {
+						if (threadCount == null || filelevel != threadLevel) {
+							man.changeDirectory((String) (file.filename))
+							processList(man, dest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, code)
+							man.changeDirectory('..')
+						} else {
+							threadDirs << (String) (file.filename)
 						}
 					}
 				}
-				
-				if (b) {
-					if (threadCount == null || filelevel != threadLevel) {
-						man.changeDirectory((String)(file.filename))
-						processList(man, dest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, code)
-						man.changeDirectory('..')
+			}
+			listFiles.clear()
+
+			if (threadCount != null && !threadDirs.isEmpty()) {
+				new Executor().run(threadDirs, threadCount) { String dirName ->
+					ManagerListProcessing newCode = null
+					if (code != null) {
+						newCode = code.newProcessing()
+						newCode.init()
 					}
-					else {
-						threadDirs << (String)(file.filename)
+					try {
+						Manager newMan = cloneManager()
+						int countConnect = 3
+						while (countConnect != 0) {
+							try {
+								newMan.connect()
+								countConnect = 0
+							}
+							catch (Exception e) {
+								countConnect--
+								if (countConnect == 0) throw e
+							}
+						}
+
+						String newDir = "$curPath/$dirName"
+						newMan.changeDirectory(newDir)
+						try {
+							TableDataset newDest = (dest.cloneDataset(null)) as TableDataset
+							newDest.openWrite(batchSize: 100)
+							try {
+								processList(newMan, newDest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, newCode)
+							}
+							finally {
+								newDest.doneWrite()
+								newDest.closeWrite()
+							}
+						}
+						finally {
+							newMan.disconnect()
+						}
+					}
+					finally {
+						if (newCode != null) newCode.done()
 					}
 				}
 			}
 		}
-		listFiles.clear()
-		
-		if (threadCount != null && !threadDirs.isEmpty()) {
-			new Executor().run(threadDirs, threadCount) { String dirName ->
-				ManagerListProcessing newCode = null
-				if (code != null) {
-					newCode = code.newProcessing() 
-					newCode.init()
-				}
-				try {
-					Manager newMan = cloneManager()
-					int countConnect = 3
-					while (countConnect != 0) {
-						try {
-							newMan.connect()
-							countConnect = 0
-						}
-						catch (Exception e) {
-							countConnect--
-							if (countConnect == 0) throw e
-						}
-					}
-					
-					String newDir = "$curPath/$dirName"
-					newMan.changeDirectory(newDir)
-					try {
-						TableDataset newDest = (dest.cloneDataset(null)) as TableDataset
-						newDest.openWrite(batchSize: 100)
-						try {
-							processList(newMan, newDest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, newCode)
-						}
-						finally {
-							newDest.doneWrite()
-							newDest.closeWrite()
-						}
-					}
-					finally {
-						newMan.disconnect()
-					}
-				}
-				finally {
-					if (newCode != null) newCode.done()
+		finally {
+			if (filelevel == 1 && curPath != man.currentDir()) {
+				man.changeDirectoryToRoot()
+				if (curPath != '.') {
+					man.changeDirectory(curPath)
 				}
 			}
 		}
@@ -627,7 +678,6 @@ abstract class Manager {
 	 * <p><b>Dynamic parameters:</b></p>
 	 * <ul>
 	 * <li>Path path - path processor
-	 * <li>TypeFile type - process type file
 	 * <li>String maskFile - mask processed files
 	 * <li>TableDataset story - story table on file history
 	 * <li>Boolean recursive - find as recursive
@@ -635,7 +685,7 @@ abstract class Manager {
 	 * @param params - parameters
 	 * @param code - processing code for file attributes as boolean code (Map file)
 	 */
-	public void buildList (Map lparams, Closure code) {
+	void buildList (Map lparams, Closure code) {
 		ManagerListProcessClosure p = new ManagerListProcessClosure(code: code)
 		buildList(lparams, p)  
 	}
@@ -645,53 +695,65 @@ abstract class Manager {
 	 * <p><b>Dynamic parameters:</b></p>
 	 * <ul>
 	 * <li>Path path - path processor
-	 * <li>TypeFile type - process type file
 	 * <li>String maskFile - mask processed files
 	 * <li>TableDataset story - story table on file history
+	 * <li>Boolean createStory - create story table if not exist (default false)
 	 * <li>Boolean recursive - find as recursive
+	 * <li>Boolean takePathInStory - save filepath in story table
 	 * <li>Boolean ignoreExistInStory - ignore already loaded file by story (default true)
+	 * <li>Integer limitDirs - limit processing directory
+	 * <li>Integer threadLevel - thread processing directory
 	 * </ul>
 	 * @param params - parameters
 	 * @param code - processing code for file attributes as boolean code (Map file)
 	 */
-	public void buildList (Map lparams, ManagerListProcessing code) {
+	void buildList (Map lparams, ManagerListProcessing code) {
 		lparams = lparams?:[:]
-		methodParams.validation("buildList", lparams)
+		methodParams.validation('buildList', lparams)
 
 		String maskFile = lparams.maskFile?:null
 		Path path = lparams.path?:(new Path(mask: maskFile?:"*.*"))
+		if (!path.isCompile) path.compile()
 		boolean requiredAnalize = !(path.vars.isEmpty())
-		boolean recursive = BoolUtils.IsValue(lparams."recursive", false)
-		boolean takePathInStory =  BoolUtils.IsValue(lparams."takePathInStory", true)
-		boolean ignoreExistInStory = BoolUtils.IsValue(lparams."ignoreExistInStory", true)
+		boolean recursive = BoolUtils.IsValue(lparams.recursive)
+		boolean takePathInStory =  BoolUtils.IsValue(lparams.takePathInStory, true)
+		boolean ignoreExistInStory = BoolUtils.IsValue(lparams.ignoreExistInStory, true)
+		boolean createStory = BoolUtils.IsValue(lparams.createStory)
 		
-		Integer limit = lparams."limitDirs"
-		if (limit != null && limit <= 0) throw new ExceptionGETL("limitDirs parameter must be great zero")
+		Integer limit = lparams.limitDirs
+		if (limit != null && limit <= 0) throw new ExceptionGETL("limitDirs parameter must be great zero!")
 		
-		Integer threadLevel = lparams."threadLevel"
-		if (threadLevel != null && threadLevel <= 0) throw new ExceptionGETL("threadLevel parameter must be great zero")
+		Integer threadLevel = lparams.threadLevel
+		if (threadLevel != null && threadLevel <= 0) throw new ExceptionGETL("threadLevel parameter must be great zero!")
 		
-		if (recursive && maskFile != null) throw new ExceptionGETL("Don't compatibility parameters recursive vs maskFile")
+		if (recursive && maskFile != null) throw new ExceptionGETL("Don't compatibility parameters recursive vs maskFile!")
 
 		countFileListSync.clear()
 
 		// History table		
-		TableDataset story = lparams."story"
+		TableDataset story = lparams.story
 		
 		// Init file list
 		fileList = new TableDataset(connection: fileListConnection?:new TDS(), 
 									tableName: fileListName?:"FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}")
 		if (sqlHistoryFile != null) ((JDBCConnection)fileList.connection).sqlHistoryFile = sqlHistoryFile
-		
+
+		createStory = (createStory && story != null && !story.exists)
+		if (createStory) AddFieldsToDS(story)
+
 		initFileList()
 		path.vars.each { key, attr ->
 			def ft = attr.type?:Field.Type.STRING
 			def length = attr.lenMax?:((ft == Field.Type.STRING)?250:30)
-			fileList.field << new Field(name: key.toUpperCase(), type: ft, length: length, precision: attr.precision?:0)
+			def field = new Field(name: key.toUpperCase(), type: ft, length: length, precision: attr.precision?:0)
+			fileList.field << field
+			if (createStory) story.field << field
 		}
 		fileList.drop(ifExists: true)
 		fileList.create()
-		
+
+		if (createStory) story.create()
+
 		def tableType = (buildListThread == null)?JDBCDataset.Type.LOCAL_TEMPORARY:JDBCDataset.Type.TABLE
 		
 		TableDataset newFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
@@ -832,7 +894,7 @@ FROM ${newFiles.fullNameDataset()} files
 			if (story != null) {
 				sqlCopyFiles += "${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID"
 			}
-			def QueryDataset processFiles = new QueryDataset(connection: fileList.connection, query: sqlCopyFiles)
+			QueryDataset processFiles = new QueryDataset(connection: fileList.connection, query: sqlCopyFiles)
 			countFileListSync.setCount(new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 1000))
 		}
 		finally {
@@ -847,30 +909,44 @@ FROM ${newFiles.fullNameDataset()} files
 	/**
 	 * Download files of list
 	 */
-	public void buildList () {
+	void buildList () {
 		buildList([:], null as Closure)
 	}
 	
 	/**
 	 * Build list files with path processor<br>
-	 * <p><b>Dynamic parameters:</b></p>
-	 * <ul>
-	 * <li>Path path - path processor
-	 * <li>String maskFile - mask processed files
-	 * </ul>
-	 * @param params - parameters
-	 * @return
 	 */
-	public void buildList (Map params) {
-		buildList(params, (ManagerListProcessing)null)
+	void buildList (Map params) {
+		ManagerListProcessClosure p = (params.code != null)?
+				new ManagerListProcessClosure(code: params.code):(ManagerListProcessing)null
+		buildList(MapUtils.Copy(params, ['code']), p)
 	}
 
 	/**
 	 * Download files of list
-	 * @param onDownloadFile - run code after download file as void onDownloadFile (Map file)
 	 */
-	public void buildList (Closure onDownloadFile) {
-		buildList([:], onDownloadFile)
+	void buildList(Closure processFile) {
+		buildList([:], processFile)
+	}
+
+	/** Build list of files */
+	TableDataset buildListFiles(String mask, @DelegatesTo(ManagerBuildListSpec) cl = null) {
+		def parent = new ManagerBuildListSpec()
+		if (mask != null) parent.maskPath = new Path(mask: mask)
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code.call()
+			parent.prepareParams()
+		}
+		buildList(parent.params)
+
+		return fileList
+	}
+
+	/** Build list of files */
+	TableDataset buildListFiles(@DelegatesTo(ManagerBuildListSpec) cl = null) {
+		buildListFiles(null, cl)
 	}
 	
 	/**
@@ -886,21 +962,20 @@ FROM ${newFiles.fullNameDataset()} files
 	 * </ul>
 	 * @param params - parameters
 	 * @param onDownloadFile - run code after download file as void onDownloadFile (Map file)  
-	 * @return - list of download files
 	 */
-	public void downloadFiles(Map params, Closure onDownloadFile) {
-		methodParams.validation("downloadFiles", params)
-		if (fileList == null || fileList.field.isEmpty()) throw new ExceptionGETL("Before download build fileList dataset")
+	void downloadFiles(Map params, Closure onDownloadFile) {
+		methodParams.validation('downloadFiles', params)
+		if (fileList == null || fileList.field.isEmpty()) throw new ExceptionGETL("Before download build fileList dataset!")
 		
-		boolean deleteLoadedFile = (params.deleteLoadedFile != null)?params.deleteLoadedFile:false
-		TableDataset ds = params.story?:null
+		boolean deleteLoadedFile = BoolUtils.IsValue(params.deleteLoadedFile)
+		TableDataset ds = params.story as TableDataset
 		boolean useStory = (ds != null)
-		boolean ignoreError = (params.ignoreError != null)?params.ignoreError:false
-		boolean folders = (params.folders != null)?params.folders:true
-		String sqlWhere = params.filter?:null
-		List<String> sqlOrderBy = params.order?:null
+		boolean ignoreError = BoolUtils.IsValue(params.ignoreError)
+		boolean folders = BoolUtils.IsValue(params.folders, true)
+		String sqlWhere = params.filter as String
+		List<String> sqlOrderBy = params.order as List<String>
 		
-		TableDataset storyFiles = null
+		TableDataset storyFiles
 		
 		if (useStory) {
 			if (ds == null) throw new ExceptionGETL("For use store db required set \"ds\" property")
@@ -939,6 +1014,7 @@ WHERE
 		
 		def ld = currentLocalDir()
 		def curDir = currentDir()
+		def curPath = curDir
 
 		try {
 			TableDataset files = (useStory)?storyFiles:fileList
@@ -1009,10 +1085,20 @@ WHERE
 			throw e
 		}
 		finally {
-			if (useStory) {
-				if (ds.connection.connected) {
-					ds.closeWrite()
-					storyFiles?.drop(ifExists: true)
+			try {
+				if (useStory) {
+					if (ds.connection.connected) {
+						ds.closeWrite()
+						storyFiles?.drop(ifExists: true)
+					}
+				}
+			}
+			finally {
+				if (curPath != currentDir()) {
+					changeDirectoryToRoot()
+					if (curPath != '.') {
+						changeDirectory(curPath)
+					}
 				}
 			}
 		}
@@ -1023,41 +1109,41 @@ WHERE
 	 * @param onDownloadFile - run code after download file as void onDownloadFile (Map file)  
 	 * @return - list of download files
 	 */
-	public void downloadFiles(Closure onDownloadFile) {
+	void downloadFiles(Closure onDownloadFile) {
 		downloadFiles([:], onDownloadFile)
 	}
 	
 	/**
 	 * Download files of list
 	 */
-	public void downloadFiles() {
+	void downloadFiles() {
 		downloadFiles([:], null)
 	}
-	
+
 	/**
-	 * Download files of list<br>
-	 * <p><b>Dynamic parameters:</b></p>
-	 * <ul>
-	 * <li>boolean deleteLoadedFile - delete file after download (default false)
-	 * <li>TableDataset story - save download history and check already downloaded files
-	 * <li>boolean ignoreError - ignore download errors and continue download next files (default false)
-	 * <li>boolean folders - download as original structure folders (default true)
-	 * <li>String filter - SQL filter expression on process file list
-	 * <li>String order - SQL order by expression on process file list
-	 * </ul>
-	 * @param params - parameters
-	 * @return - list of download files
+	 * Download files of list
 	 */
-	public void downloadFiles(Map params) {
-		downloadFiles(params, null)
+	void downloadFiles(Map params) {
+		def code = params.code as Closure
+		downloadFiles(MapUtils.Copy(params, ['code']), code)
+	}
+
+	/** Build list of files */
+	void downloadListFiles(@DelegatesTo(ManagerDownloadSpec) cl = null) {
+		def parent = new ManagerDownloadSpec()
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code.call()
+			parent.prepareParams()
+		}
+		downloadFiles(parent.params)
 	}
 
 	/**
 	 * Adding system fields to dataset for history table operations
-	 * @param dataset
 	 */
-	public static void AddFieldsToDS(Dataset dataset) {
-//		dataset.field = []
+	static void AddFieldsToDS(Dataset dataset) {
 		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 1)
 		dataset.field << new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 2)
 		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
@@ -1073,8 +1159,12 @@ WHERE
 		fileList.field = []
 		AddFieldFileListToDS(fileList)
 	}
-	
-	public static void AddFieldFileListToDS(Dataset dataset) {
+
+	/**
+	 * Add the fields of file and local attributes to dataset
+	 * @param dataset
+	 */
+	static void AddFieldFileListToDS(Dataset dataset) {
 		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 1)
 		dataset.field << new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 2)
 		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
@@ -1083,8 +1173,12 @@ WHERE
 		dataset.field << new Field(name: "LOCALFILENAME", length: 250, isNull: false)
 		dataset.field << new Field(name: "FILEINSTORY", type: "BOOLEAN", isNull: false, defaultValue: false)
 	}
-	
-	public static void AddFieldListToDS(Dataset dataset) {
+
+	/**
+	 * Add the fields of file attributes to dataset
+	 * @param dataset
+	 */
+	static void AddFieldListToDS(Dataset dataset) {
 		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false)
 		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
 		dataset.field << new Field(name: "FILESIZE", type: "BIGINT", isNull: false)
@@ -1096,7 +1190,7 @@ WHERE
 	 * @param path
 	 * @return
 	 */
-	public static File fileFromLocalDir(String path) {
+	static File fileFromLocalDir(String path) {
 		def f = new File(path)
 		if (!f.exists() || !f.file) throw new ExceptionGETL("File \"${path}\" not found")
 		
@@ -1133,7 +1227,7 @@ WHERE
 	 * @param dir
 	 * @param throwError
 	 */
-	public void createLocalDir (String dir, boolean throwError) {
+	void createLocalDir (String dir, boolean throwError) {
 		def fn = "${currentLocalDir()}/${dir}"
 		if (!new File(fn).mkdirs() && throwError) throw new ExceptionGETL("Cannot create local directory \"${fn}\"")
 	}
@@ -1142,7 +1236,7 @@ WHERE
 	 * Create new local directory
 	 * @param dir
 	 */
-	public void createLocalDir (String dir) {
+	void createLocalDir (String dir) {
 		createLocalDir(dir, true)
 	}
 	
@@ -1151,7 +1245,7 @@ WHERE
 	 * @param dir
 	 * @param throwError
 	 */
-	public void removeLocalDir (String dir, boolean throwError) {
+	void removeLocalDir (String dir, boolean throwError) {
 		def fn = "${currentLocalDir()}/${dir}"
 		if (!new File(fn).delete() && throwError) throw new ExceptionGETL("Can not remove local directory \"${fn}\"")
 	}
@@ -1160,7 +1254,7 @@ WHERE
 	 * Remove local directory
 	 * @param dir
 	 */
-	public void removeLocalDir (String dir) {
+	void removeLocalDir (String dir) {
 		removeLocalDir(dir, true)
 	}
 	
@@ -1169,7 +1263,7 @@ WHERE
 	 * @param dirName
 	 * @param throwError
 	 */
-	public Boolean removeLocalDirs (String dirName, boolean throwError) {
+	Boolean removeLocalDirs (String dirName, boolean throwError) {
 //		String[] dirs = dirName.replace("\\", "/").split("/")
 //		dirs.each { dir -> changeLocalDirectory(dir) }
 //		for (int i = dirs.length; i--; i >= 0) {
@@ -1184,7 +1278,7 @@ WHERE
 	 * Remove local directories
 	 * @param dirName
 	 */
-	public Boolean removeLocalDirs (String dirName) {
+	Boolean removeLocalDirs (String dirName) {
 		return removeLocalDirs(dirName, true)
 	}
 	
@@ -1192,7 +1286,7 @@ WHERE
 	 * Remove local file
 	 * @param fileName
 	 */
-	public void removeLocalFile (String fileName) {
+	void removeLocalFile (String fileName) {
 		def fn = "${currentLocalDir()}/$fileName"
 		if (!new File(fn).delete()) throw new ExceptionGETL("Can not remove Local file \"$fn\"")
 	}
@@ -1201,7 +1295,7 @@ WHERE
 	 * Current local directory path	
 	 * @return
 	 */
-	public String currentLocalDir () {
+	String currentLocalDir () {
 		localDirFile.absolutePath.replace("\\", "/")
 	}
 	
@@ -1209,7 +1303,7 @@ WHERE
 	 * Change local directory
 	 * @param dir
 	 */
-	public void changeLocalDirectory (String dir) {
+	void changeLocalDirectory (String dir) {
 		if (dir == '.') return
 		if (dir == '..') {
 			changeLocalDirectoryUp()
@@ -1232,14 +1326,14 @@ WHERE
 	/**
 	 * Change local directory to up
 	 */
-	public void changeLocalDirectoryUp () {
+	void changeLocalDirectoryUp () {
 		setCurrentLocalPath(localDirFile.parent)
 	}
 
 	/**
 	 * 	Change local directory to root
 	 */
-	public void changeLocalDirectoryToRoot () {
+	void changeLocalDirectoryToRoot () {
 		setCurrentLocalPath(localDirectory)
 	}
 	
@@ -1248,7 +1342,7 @@ WHERE
 	 * @param dir
 	 * @return
 	 */
-	public boolean existsLocalDirectory(String dir) {
+	boolean existsLocalDirectory(String dir) {
 		new File(processLocalDirPath(dir)).exists()
 	}
 	
@@ -1257,9 +1351,9 @@ WHERE
 	 * @param dir
 	 * @return
 	 */
-	public abstract boolean existsDirectory (String dirName)
-	
-	public boolean deleteEmptyFolder(String dirName, boolean recursive) {
+	abstract boolean existsDirectory (String dirName)
+
+	boolean deleteEmptyFolder(String dirName, boolean recursive) {
 		deleteEmptyFolder(dirName, recursive, null)
 	}
 	
@@ -1269,7 +1363,7 @@ WHERE
 	 * @param recursive - required recursive deleting
 	 * @return - true if directiry exist files
 	 */
-	public boolean deleteEmptyFolder(String dirName, Boolean recursive, Closure onDelete) {
+	boolean deleteEmptyFolder(String dirName, Boolean recursive, Closure onDelete) {
 		deleteEmptyFolderRecurse(0, dirName, recursive, onDelete)
 	}
 	
@@ -1318,7 +1412,7 @@ WHERE
 	/**
 	 * Remove empty foldes from building list files
 	 */
-	public void deleteEmptyFolders() {
+	void deleteEmptyFolders() {
 		deleteEmptyFolders(false, null)
 	}
 	
@@ -1326,7 +1420,7 @@ WHERE
 	 * Remove empty foldes from building list files
 	 * @param ignoreErrors
 	 */
-	public void deleteEmptyFolders(Boolean ignoreErrors) {
+	void deleteEmptyFolders(Boolean ignoreErrors) {
 		deleteEmptyFolders(ignoreErrors, null)
 	}
 	
@@ -1335,7 +1429,7 @@ WHERE
 	 * @param onDelete
 	 * @return
 	 */
-	public boolean deleteEmptyFolders(Closure onDelete) {
+	boolean deleteEmptyFolders(Closure onDelete) {
 		deleteEmptyFolders(false, onDelete)
 	}
 	
@@ -1343,7 +1437,7 @@ WHERE
 	 * Remove empty foldes from building list files
 	 * @param onDelete
 	 */
-	public boolean deleteEmptyFolders(Boolean ignoreErrors, Closure onDelete) {
+	boolean deleteEmptyFolders(Boolean ignoreErrors, Closure onDelete) {
 		if (fileList == null) throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders')
 		
 		Map dirs = [:]
@@ -1359,6 +1453,7 @@ WHERE
 				else {
 					Map n = [:]
 					c.put(it, n)
+					//noinspection GrReassignedInClosureLocalVar
 					c = n
 				}
 			}
@@ -1375,7 +1470,7 @@ WHERE
 	 * @param onDelete
 	 * @return
 	 */
-	public boolean deleteEmptyDirs(Map<String, Map> dirs, Boolean ignoreErrors, Closure onDelete) {
+	boolean deleteEmptyDirs(Map<String, Map> dirs, Boolean ignoreErrors, Closure onDelete) {
 		boolean res = true
 		dirs.each { String name, Map subDirs ->
 			changeDirectory(name)
@@ -1411,7 +1506,7 @@ WHERE
 	 * Delete empty directories for current directory
 	 * @param recursive
 	 */
-	public void deleteEmptyFolder (boolean recursive) {
+	void deleteEmptyFolder (boolean recursive) {
 		list() { Map file ->
 			if (file.type == TypeFile.DIRECTORY) deleteEmptyFolder(file.filename as String, recursive)
 			true
@@ -1422,14 +1517,14 @@ WHERE
 	 * Delete empty directories for current directory
 	 * @param recursive
 	 */
-	public void deleteEmptyFolder () {
+	void deleteEmptyFolder () {
 		deleteEmptyFolder(true)
 	}
 	
 	/**
 	 * Allow run command on server
 	 */
-	public boolean isAllowCommand() { false }
+	boolean isAllowCommand() { false }
 	
 	/**
 	 * Run command on server
@@ -1438,7 +1533,7 @@ WHERE
 	 * @param err - error console log
 	 * @return - 0 on sucessfull, greater 0 on error, -1 on invalid command
 	 */
-	public Integer command(String command, StringBuilder out, StringBuilder err) {
+	Integer command(String command, StringBuilder out, StringBuilder err) {
 		out.setLength(0)
 		err.setLength(0)
 		
@@ -1498,7 +1593,7 @@ WHERE
 	/**
 	 * Send noop command to server
 	 */
-	public void noop () { 
+	void noop () {
 		if (sayNoop) Logs.Fine("files.manager: NOOP")
 	}
 
@@ -1517,12 +1612,12 @@ WHERE
      * @param fileName file name
      * @return last-modified time, measured in milliseconds since the epoch (00:00:00 GMT, January 1, 1970)
      */
-    public abstract long getLastModified(String fileName)
+    abstract long getLastModified(String fileName)
 
     /**
      * Set last modified date and time for file
      * @param fileName file name
      * @param time last-modified time, measured in milliseconds since the epoch (00:00:00 GMT, January 1, 1970)
      */
-    public abstract void setLastModified(String fileName, long time)
+    abstract void setLastModified(String fileName, long time)
 }

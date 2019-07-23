@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -42,29 +42,25 @@ class XMLDriver extends FileDriver {
 	}
 
 	@Override
-	public List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		[Driver.Support.EACHROW, Driver.Support.AUTOLOADSCHEMA]
 	}
 
 	@Override
-	public List<Driver.Operation> operations() {
+	List<Driver.Operation> operations() {
 		[Driver.Operation.DROP]
 	}
 
 	@Override
-    public
-    List<Field> fields(Dataset dataset) {
+	List<Field> fields(Dataset dataset) {
 		return null
 	}
 	
 	/**
 	 * Generate attribute read code
-	 * @param dataset
-	 * @param initAttr
-	 * @param sb
 	 */
-	private static void generateAttrRead (Dataset dataset, Closure initAttr, StringBuilder sb) {
-		List<Field> attrs = (dataset.params.attributeField != null)?dataset.params.attributeField:[]
+	private static void generateAttrRead (Dataset dataset, Closure<Boolean> initAttr, StringBuilder sb) {
+		List<Field> attrs = (dataset.params.attributeField != null)?(dataset.params.attributeField as List<Field>):[]
 		if (attrs.isEmpty()) return
 		
 		sb << "Map<String, Object> attrValue = [:]\n"
@@ -82,23 +78,58 @@ class XMLDriver extends FileDriver {
 			sb << "\n"
 		}
 		sb << "dataset.params.attributeValue = attrValue\n"
-		if (initAttr != null) sb << "if (!initAttr(dataset)) return\n"
+		if (initAttr != null) sb << "if (!initAttr.call(dataset)) return\n"
 		sb << "\n"
+	}
+
+	/** Generate the default alias for field */
+	static String field2alias(Field field, Integer defaultAccessMethod) {
+		if (field.alias != null && !(field.alias in ['@', '#'])) return field.alias
+		if (field.alias == '@')
+			defaultAccessMethod = XMLDataset.DEFAULT_ATTRIBUTE_ACCESS
+		else if (field.alias == '#')
+			defaultAccessMethod = XMLDataset.DEFAULT_NODE_ACCESS
+
+		String res
+		def fieldName = field.name
+		if (defaultAccessMethod == XMLDataset.DEFAULT_ATTRIBUTE_ACCESS) {
+			res = "\"@$fieldName\""
+		}
+		else {
+			switch (field.type) {
+				case Field.Type.STRING:
+					res = "\"${fieldName}\"[0].text()"
+					break
+				case Field.Type.INTEGER:
+				 	res = "\"${fieldName}\"[0].toInteger()"
+					break
+				case Field.Type.BIGINT:
+					res = "\"${fieldName}\"[0].toBigInteger()"
+					break
+				case Field.Type.NUMERIC:
+					res = "\"${fieldName}\"[0].toBigDecimal()"
+					break
+				case Field.Type.DOUBLE:
+					res = "\"${fieldName}\"[0].toDouble()"
+					break
+				case Field.Type.OBJECT:
+					res = "\"${fieldName}\"[0].value()"
+					break
+				default:
+					throw new ExceptionGETL("Not supported type \"${field.type}\" for XML dataset!")
+			}
+		}
+
+		return res
 	}
 
 	/**
 	 * Read attributes and rows from dataset
-	 * @param dataset
-	 * @param listFields
-	 * @param rootNode
-	 * @param limit
-	 * @param data
-	 * @param initAttr
-	 * @param code
 	 */
-	private void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure initAttr, Closure code) {
+	private void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure<Boolean> initAttr, Closure code) {
+		def xml = dataset as XMLDataset
 		StringBuilder sb = new StringBuilder()
-		generateAttrRead(dataset, initAttr, sb)
+		generateAttrRead(xml, initAttr, sb)
 		
 		if (limit > 0) sb << "long cur = 0\n"
 		sb << "data" + ((rootNode != ".")?"." + rootNode:"") + ".each { struct ->\n"
@@ -108,64 +139,46 @@ class XMLDriver extends FileDriver {
 		}
 		sb << "	Map row = [:]\n"
 		int c = 0
-		dataset.field.each { Field d ->
+		xml.field.each { Field d ->
 			c++
 			if (listFields.isEmpty() || listFields.find { it.toLowerCase() == d.name.toLowerCase() }) {
 				
 				Field s = d.copy()
 				if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
 				
-				String path = GenerationUtils.Field2Alias(d, false)
+				String path = field2alias(d, xml.defaultAccessMethod) //GenerationUtils.Field2Alias(d, false)
 				sb << "	row.'${d.name.toLowerCase()}' = "
 				sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "struct.${path}")
 				
 				sb << "\n"
 			}
 		}
-		sb << "	code(row)\n"
+		sb << "	code.call(row)\n"
 		sb << "}"
 //		println sb.toString()
 		
-		def vars = [dataset: dataset, initAttr: initAttr, code: code, data: data]
-//		try {
-			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
-//		}
-		/*catch (Exception e) {
-			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
-			throw e
-		}*/
+		def vars = [dataset: xml, initAttr: initAttr, code: code, data: data]
+		GenerationUtils.EvalGroovyScript(sb.toString(), vars)
 	}
 	
 	/**
 	 * Read only attributes from dataset
-	 * @param dataset
-	 * @param params
 	 */
-	public void readAttrs (Dataset dataset, Map params) {
+	void readAttrs (Dataset dataset, Map params) {
 		params = params?:[:]
-//		String rootNode = dataset.params.rootNode
 		def data = readData(dataset, params)
 		
 		StringBuilder sb = new StringBuilder()
 		generateAttrRead(dataset, null, sb)
 		
 		def vars = [dataset: dataset, data: data]
-//		try {
-			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
-//		}
-		/*catch (Exception e) {
-			Logs.Dump(e, getClass().name, dataset.toString(), "generate script:\n${sb.toString()}")
-			throw e
-		}*/
+		GenerationUtils.EvalGroovyScript(sb.toString(), vars)
 	}
 	
 	/**
 	 * Read XML data from file
-	 * @param dataset
-	 * @param params
-	 * @return
 	 */
-	public def readData (Dataset dataset, Map params) {
+	def readData (Dataset dataset, Map params) {
 		XMLDataset xmlDataset = dataset as XMLDataset
 		def xml = new XmlParser()
 
@@ -187,10 +200,6 @@ class XMLDriver extends FileDriver {
 
 	/**
 	 * Read dataset attribute and rows
-	 * @param dataset
-	 * @param params
-	 * @param prepareCode
-	 * @param code
 	 */
 	private void doRead (Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
@@ -202,52 +211,46 @@ class XMLDriver extends FileDriver {
 		File f = new File(fn)
 		if (!f.exists()) throw new ExceptionGETL("File \"${fn}\" not found")
 		
-		long limit = (params.limit != null)?params.limit:0
+		Long limit = (params.limit != null)?(params.limit as Long):0
 		
 		def data = readData(dataset, params)
 		
 		List<String> fields = []
 		if (prepareCode != null) {
-			prepareCode(fields)
+			prepareCode.call(fields)
 		}
-		else if (params.fields != null) fields = params.fields
+		else if (params.fields != null) fields = params.fields as List<String>
 		
-//		def initAttr = (params.initAttr != null)?params.initAttr:null
-
-		readRows(dataset, fields, rootNode, limit, data, params.initAttr as Closure, code)
+		readRows(dataset, fields, rootNode, limit, data, params.initAttr as Closure<Boolean>, code)
 	}
 
 	@Override
-    public
-    long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		Closure filter = params."filter"
+	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		Closure<Boolean> filter = params."filter" as Closure<Boolean>
 		
 		long countRec = 0
 		doRead(dataset, params, prepareCode) { Map row ->
-			if (filter != null && !filter(row)) return
+			if (filter != null && !filter.call(row)) return
 			
 			countRec++
-			code(row)
+			code.call(row)
 		}
 		
 		countRec
 	}
 
 	@Override
-    public
-    void openWrite(Dataset dataset, Map params, Closure prepareCode) {
-		throw new ExceptionGETL("Not supported")
+	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-    public
-    void write(Dataset dataset, Map row) {
-		throw new ExceptionGETL("Not supported")
+	void write(Dataset dataset, Map row) {
+		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-    public
-    void closeWrite(Dataset dataset) {
-		throw new ExceptionGETL("Not supported")
+	void closeWrite(Dataset dataset) {
+		throw new ExceptionGETL('Not support this features!')
 	}
 }

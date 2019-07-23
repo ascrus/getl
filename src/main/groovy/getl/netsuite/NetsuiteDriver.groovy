@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,10 +24,8 @@
 
 package getl.netsuite
 
-import getl.data.Field
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
-import getl.jdbc.JDBCConnection
 import getl.jdbc.JDBCDriver
 import groovy.transform.InheritConstructors
 

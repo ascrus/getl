@@ -99,4 +99,9 @@ class StringUtilsTest extends getl.test.GetlTest {
     void testNewLocale() {
         assertEquals('RU', StringUtils.NewLocale('ru-RU').country)
     }
+
+    void testExtractParentFromChild() {
+        assertEquals('\\123-456.~$%789\\_\\123-456',
+                StringUtils.ExtractParentFromChild('\\123-456.~$%789\\_\\123-456.~$%789\\_', '.~$%789\\_'))
+    }
 }

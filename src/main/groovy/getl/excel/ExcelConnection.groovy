@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -40,20 +40,28 @@ class ExcelConnection extends Connection {
     ExcelConnection (Map params) {
         super(new HashMap([driver: ExcelDriver]) + params)
 		
-		methodParams.register("Super", ["path", "fileName"])
+		methodParams.register('Super', ['path', 'fileName', 'header'])
 		
-		if (this.getClass().name == 'getl.excel.ExcelConnection') methodParams.validation("Super", params)
+		if (this.getClass().name == 'getl.excel.ExcelConnection') methodParams.validation('Super', params)
     }
 
-    /**
-     * Connection path
-     */
-    public String getPath () { params.path }
-    public void setPath (String value) { params.path = value }
+    /** Connection path */
+    String getPath () { params.path as String }
+    /** Connection path */
+    void setPath (String value) { params.path = value }
 
-    /**
-     * File name
-     */
-    public String getFileName () { params.fileName }
-    public void setFileName (String value) { params.fileName = value }
+    /** File name */
+    String getFileName () { params.fileName as String }
+    /** File name */
+    void setFileName (String value) { params.fileName = value }
+
+    /** The first entry is the field header */
+    Boolean getHeader() { params.header as Boolean }
+    /** The first entry is the field header */
+    void setHeader(Boolean value) { params.header = value }
+
+    /** Warnings from Dataset (e.g. show warning when list not found) */
+    Boolean getShowWarnings() { params.showWarnings }
+    /** Warnings from Dataset (e.g. show warning when list not found) */
+    void setShowWarnings(final Boolean value) { params.showWarnings = value}
 }

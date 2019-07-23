@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -52,7 +52,7 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 		def fieldOrderBy = getFieldOrderBy(dataset)
 		
 		ds.openWrite(params)
-		if (prepareCode != null) prepareCode(dataset.field)
+		if (prepareCode != null) prepareCode.call(dataset.field)
 		
 		dataset.params.sorter_code = generateSortCode(fieldOrderBy)
 		dataset.params.sorter_data = []

@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2016  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -29,10 +29,8 @@ import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import org.apache.hadoop.fs.*
 import org.apache.hadoop.conf.*
-
 import getl.utils.Logs
 import org.apache.hadoop.security.UserGroupInformation
-
 import java.security.PrivilegedExceptionAction
 
 /**
@@ -101,6 +99,10 @@ class HDFSManager extends Manager {
                     Configuration conf = new Configuration()
                     conf.set("fs.defaultFS", "hdfs://$server:$port")
                     conf.set("hadoop.job.ugi", login)
+
+
+//                    conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.getClass().name)
+//                    conf.set("fs.file.impl",org.apache.hadoop.fs.LocalFileSystem.getClass().name)
                     try {
                         client = FileSystem.get(conf)
                     }

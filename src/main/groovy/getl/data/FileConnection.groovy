@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,18 +24,20 @@
 
 package getl.data
 
+import getl.data.opts.FileDatasetRetrieveObjectsSpec
 import getl.exception.ExceptionGETL
 import getl.driver.FileDriver
 import getl.utils.*
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+import groovy.transform.InheritConstructors
 
 /**
  * File connection class
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.InheritConstructors
+@InheritConstructors
 abstract class FileConnection extends Connection {
 	
 	FileConnection (Map params) {
@@ -45,74 +47,59 @@ abstract class FileConnection extends Connection {
 		methodParams.register("Super", ["path", "codePage", "createPath", "isGzFile", "extension", "append", "deleteOnEmpty", "fileSeparator", "bufferSize"])
 	}
 	
-	/**
-	 * Connection path
-	 */
-	public String getPath () { params.path }
-	public void setPath (String value) { params.path = value }
+	/** Connection path */
+	String getPath () { params.path }
+	/** Connection path */
+	void setPath (String value) { params.path = value }
 	
-	/**
-	 * Code page for connection files
-	 */
-	public String getCodePage () { params.codePage }
-	public void setCodePage (String value) { params.codePage = value }
+	/** Code page for connection files */
+	String getCodePage () { params.codePage }
+	/** Code page for connection files */
+	void setCodePage (String value) { params.codePage = value }
 
-	/**
-	 * Auto create path if not exists
-	 */
-	public Boolean getCreatePath () { params.createPath }
-	public void setCreatePath(boolean value) { params.createPath = value }
+	/** Auto create path if not exists */
+	Boolean getCreatePath () { params.createPath }
+	/** Auto create path if not exists */
+	void setCreatePath(boolean value) { params.createPath = value }
 	
-	/**
-	 * Delete file if empty after write
-	 */
-	public Boolean getDeleteOnEmpty () { params.deleteOnEmpty }
-	public void setDeleteOnEmpty (boolean value) { params.deleteOnEmpty = value }
+	/** Delete file if empty after write */
+	Boolean getDeleteOnEmpty () { params.deleteOnEmpty }
+	/** Delete file if empty after write */
+	void setDeleteOnEmpty (boolean value) { params.deleteOnEmpty = value }
 	
-	/**
-	 * Append to exists connection files
-	 */
-	public Boolean getAppend () { params.append }
-	public void setAppend (boolean value) { params.append = value }
+	/** Append to exists connection files */
+	Boolean getAppend () { params.append }
+	/** Append to exists connection files */
+	void setAppend (boolean value) { params.append = value }
 	
-	/**
-	 * Pack GZIP connection files
-	 */
-	public Boolean getIsGzFile() { params.isGzFile }
-	public void setIsGzFile (boolean value) { params.isGzFile = value }
+	/** Pack GZIP connection files */
+	Boolean getIsGzFile() { params.isGzFile }
+	/** Pack GZIP connection files */
+	void setIsGzFile (boolean value) { params.isGzFile = value }
 	
-	/**
-	 * Extenstion for connection files
-	 */
-	public String getExtension () { params.extension }
-	public void setExtension (String value) { params.extension = value }
+	/** Extenstion for connection files */
+	String getExtension () { params.extension }
+	/** Extenstion for connection files */
+	void setExtension (String value) { params.extension = value }
 
-	/**
-	 * File separator in path	
-	 */
-	public String getFileSeparator () { params."fileSeparator"?:File.separator }
-	public void setFileSeparator (String value ) { params."fileSeparator" = value }
+	/** File separator in path */
+	String getFileSeparator () { params."fileSeparator"?:File.separator }
+	/** File separator in path */
+	void setFileSeparator (String value ) { params."fileSeparator" = value }
 	
-	/**
-	 * Size of read/write buffer size
-	 */
-	public Integer getBufferSize () { params.bufferSize?:1*1024*1024 }
-	public void setBufferSize()  { params.bufferSize = value }
+	/** Size of read/write buffer size */
+	Integer getBufferSize () { (params.bufferSize as Integer)?:1*1024*1024 }
+	/** Size of read/write buffer size */
+	void setBufferSize(Integer value)  { params.bufferSize = value }
 
-	/**
-	 * Exists path for connection
-	 * @return
-	 */
-	public Boolean getExists() { (path != null)?new File(path).exists():null }
-	
+	/** Exists path for connection */
+	Boolean getExists() { (path != null)?new File(path).exists():null }
+	/** Exists path for connection */
 	@Override
-	public String getObjectName () { path }
+	String getObjectName () { path }
 	
-	/**
-	 * Delete path of connection
-	 * @return
-	 */
-	public boolean deletePath () {
+	/** Delete path of connection */
+	boolean deletePath () {
 		if (path == null) return false
 		def p = new File(path)
 		if (!p.exists()) return false
@@ -123,8 +110,23 @@ abstract class FileConnection extends Connection {
 		
 		p.deleteDir()
 	}
-	
-	public void validPath () {
+
+	/** Valid connection path */
+	void validPath () {
 		if (createPath && path != null) FileUtils.ValidPath(path)
+	}
+
+	/** Return the list of files by the specified conditions */
+	List<File> listFiles(@DelegatesTo(FileDatasetRetrieveObjectsSpec) Closure cl) {
+		def parent = new FileDatasetRetrieveObjectsSpec()
+		if (cl != null) {
+			parent.thisObject = parent.DetectClosureDelegate(cl)
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code.call()
+			parent.prepareParams()
+		}
+
+		return retrieveObjects(parent.params) as List<File>
 	}
 }

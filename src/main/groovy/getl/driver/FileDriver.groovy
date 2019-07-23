@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -29,10 +29,8 @@ import groovy.transform.InheritConstructors
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
-import getl.data.FileConnection
-import getl.data.FileDataset
+import getl.data.*
 import getl.csv.CSVDataset
-import getl.data.Dataset
 import getl.exception.ExceptionGETL
 import getl.utils.*
 
@@ -43,26 +41,27 @@ import getl.utils.*
  */
 @InheritConstructors
 abstract class FileDriver extends Driver {
-	public static enum RetrieveObjectType {FILE, DIR}
-	public static enum RetrieveObjectSort {NONE, NAME, DATE, SIZE}
+	static enum RetrieveObjectType {FILE, DIR}
+
+	static enum RetrieveObjectSort {NONE, NAME, DATE, SIZE}
 	
 	FileDriver () {
 		super()
-		methodParams.register("retrieveObjects", ["directory", "mask", "type", "sort", "recursive", "codePage"])
-		methodParams.register("eachRow", ["append", "codePage"])
-		methodParams.register("openWrite", ["append", "codePage", "createPath", "deleteOnEmpty"])
+		methodParams.register('retrieveObjects', ['directory', 'mask', 'type', 'sort', 'recursive'])
+		methodParams.register('eachRow', ['append', 'codePage'])
+		methodParams.register('openWrite', ['append', 'codePage', 'createPath', 'deleteOnEmpty'])
 	}
 	
 	@Override
-	public List<Object> retrieveObjects (Map params, Closure filter) {
+	List<Object> retrieveObjects (Map params, Closure filter) {
 		def path = (connection as FileConnection).path
-		if (path == null) throw new ExceptionGETL("Path not setting")
+		if (path == null) throw new ExceptionGETL('Path not setting!')
 		
-		if (params.directory != null) path += connection.fileSeparator + params.directory
-		def match = (params.mask != null)?params.mask:".*"
-		RetrieveObjectType type = (params.type == null)?RetrieveObjectType.FILE:params.type
-		RetrieveObjectSort sort = (params.sort == null)?RetrieveObjectSort.NONE:params.sort
-		def recursive = (params.recursive != null && params.recursive)
+		if (params.directory != null) path += (connection as FileConnection).fileSeparator + params.directory
+		def match = (params.mask != null)?(params.mask as String):'.*'
+		RetrieveObjectType type = (params.type == null)?RetrieveObjectType.FILE:(params.type as RetrieveObjectType)
+		RetrieveObjectSort sort = (params.sort == null)?RetrieveObjectSort.NONE:(params.sort as RetrieveObjectSort)
+		def recursive = BoolUtils.IsValue(params.recursive)
 		
 		def list = []
 		
@@ -90,13 +89,13 @@ abstract class FileDriver extends Driver {
 		if (sort != RetrieveObjectSort.NONE) {
 			switch (sort) {
 				case RetrieveObjectSort.NAME:
-					list = list.sort { it.name }
+					list = list.sort { (it as File).name }
 					break
 				case RetrieveObjectSort.DATE:
-					list = list.sort { it.lastModified() }
+					list = list.sort { (it as File).lastModified() }
 					break
 				case RetrieveObjectSort.SIZE:
-					list = list.sort { it.length() }
+					list = list.sort { (it as File).length() }
 					break
 			}
 		} 
@@ -105,15 +104,17 @@ abstract class FileDriver extends Driver {
 	}
 	
 	/**
-	 * Fill file name without GZ extenstion
+	 * Fill file name without GZ extension
 	 * @param dataset
 	 * @return
 	 */
-	public String fullFileNameDatasetWithoutGZ (Dataset dataset) {
+	static String fullFileNameDatasetWithoutGZ (Dataset dataset) {
 		String fn = fileNameWithoutExtension(dataset)
 		if (fn == null) return null
-		if (dataset.extension != null) fn += ".${dataset.extension}"
-		if (dataset.connection.path != null) fn = "${dataset.connection.path}${connection.fileSeparator}${fn}"
+		def ds = dataset as FileDataset
+		def con = ds.connection as FileConnection
+		if (ds.extension != null) fn += ".${ds.extension}"
+		if (con.path != null) fn = "${con.path}${con.fileSeparator}${fn}"
 
 		return fn
 	}
@@ -123,7 +124,7 @@ abstract class FileDriver extends Driver {
 	 * @param dataset
 	 * @return
 	 */
-	public String fullFileNameDataset(Dataset dataset) {
+	static String fullFileNameDataset(Dataset dataset) {
 		return fullFileNameDataset(dataset, null)
 	}
 
@@ -132,12 +133,13 @@ abstract class FileDriver extends Driver {
 	 * @param dataset
 	 * @return
 	 */
-	public static String fileNameWithoutExtension(Dataset dataset) {
-		String fn = dataset.fileName
+	static String fileNameWithoutExtension(Dataset dataset) {
+		def ds = dataset as FileDataset
+		def fn = ds.fileName
 		if (fn == null) return null
 		
-		if (dataset.isGzFile && FileUtils.FileExtension(fn)?.toLowerCase() == "gz") fn = FileUtils.ExcludeFileExtension(fn)
-		if (dataset.extension != null && FileUtils.FileExtension(fn)?.toLowerCase() == dataset.extension.toLowerCase()) fn = FileUtils.ExcludeFileExtension(fn)
+		if (ds.isGzFile && FileUtils.FileExtension(fn)?.toLowerCase() == "gz") fn = FileUtils.ExcludeFileExtension(fn)
+		if (ds.extension != null && FileUtils.FileExtension(fn)?.toLowerCase() == ds.extension.toLowerCase()) fn = FileUtils.ExcludeFileExtension(fn)
 
 		//println "${dataset.fileName}, gz=${dataset.isGzFile}, ext=${dataset.extension}, exclude: ${FileUtils.ExcludeFileExtension(fn)} => $fn"
 		
@@ -150,13 +152,15 @@ abstract class FileDriver extends Driver {
 	 * @param portion
 	 * @return
 	 */
-	public String fullFileNameDataset(Dataset dataset, Integer portion) {
+	static String fullFileNameDataset(Dataset dataset, Integer portion) {
 		String fn = fileNameWithoutExtension(dataset)
 		if (fn == null) return null
-		if (dataset.connection.path != null) fn = "${dataset.connection.path}${connection.fileSeparator}${fn}"
+		def ds = dataset as FileDataset
+		def con = ds.connection as FileConnection
+		if (con.path != null) fn = "${FileUtils.ConvertToDefaultOSPath(con.path)}${con.fileSeparator}${fn}"
 		if (portion != null) fn = "${fn}.${StringUtils.AddLedZeroStr(portion.toString(), 4)}"
-		if (dataset.extension != null) fn += ".${dataset.extension}"
-		if (dataset.isGzFile) fn += ".gz"
+		if (ds.extension != null) fn += ".${ds.extension}"
+		if (ds.isGzFile) fn += ".gz"
 		
 		return fn
 	}
@@ -167,7 +171,7 @@ abstract class FileDriver extends Driver {
 	 * @return
 	 */
 	@Override
-	public String fullFileNameSchema(Dataset dataset) {
+	String fullFileNameSchema(Dataset dataset) {
 		return dataset.schemaFileName?:fullFileNameDatasetWithoutGZ(dataset) + ".schema"
 	}
 	
@@ -177,20 +181,22 @@ abstract class FileDriver extends Driver {
 	 * @param isSplit
 	 * @return
 	 */
-	public static String fileMaskDataset(Dataset dataset, boolean isSplit) {
+	static String fileMaskDataset(Dataset dataset, boolean isSplit) {
 		String fn = fileNameWithoutExtension(dataset)
-		
+
+		def ds = dataset as FileDataset
+
 		if (isSplit) fn += ".{number}"
-		if (dataset.extension != null) fn += ".${dataset.extension}"
+		if (ds.extension != null) fn += ".${ds.extension}"
 		
-		def isGzFile = dataset.isGzFile
+		def isGzFile = ds.isGzFile
 		if (isGzFile) fn += ".gz"
 
 		return fn
 	}
 
 	@Override
-	public void dropDataset(Dataset dataset, Map params) {
+	void dropDataset(Dataset dataset, Map params) {
         if (params.portions == null) {
             def f = new File(fullFileNameDataset(dataset))
             if (f.exists()) {
@@ -200,7 +206,7 @@ abstract class FileDriver extends Driver {
             }
         }
         else {
-            (1..params.portions).each { num ->
+            (1..(params.portions as Integer)).each { Integer num ->
                 def f = new File(fullFileNameDataset(dataset, num))
                 if (f.exists()) {
                     f.delete()
@@ -223,23 +229,13 @@ abstract class FileDriver extends Driver {
 	}
 	
 	/**
-	 * Get dataset file parameters
-	 * @param dataset
-	 * @param params
-	 * @return
-	 */
-	protected Map getDatasetParams (Dataset dataset, Map params) {
-        return getDatasetParams(dataset, params, null)
-	}
-	
-	/**
 	 * Get dataset file parameters 
 	 * @param dataset
 	 * @param params
 	 * @param portion
 	 * @return
 	 */
-	protected Map getDatasetParams (Dataset dataset, Map params, Integer portion) {
+	static protected Map getDatasetParams (Dataset dataset, Map params, Integer portion = null) {
 		def res = [:]
 		FileDataset ds = dataset as FileDataset
 		
@@ -258,20 +254,10 @@ abstract class FileDriver extends Driver {
 	 * Get reader file
 	 * @param dataset
 	 * @param params
-	 * @return
-	 */
-	protected Reader getFileReader (Dataset dataset, Map params) {
-        return getFileReader(dataset, params, null)
-	}
-	
-	/**
-	 * Get reader file
-	 * @param dataset
-	 * @param params
 	 * @param portion
 	 * @return
 	 */
-	protected Reader getFileReader (Dataset dataset, Map params, Integer portion) {
+	static protected Reader getFileReader (Dataset dataset, Map params, Integer portion = null) {
 		def wp = getDatasetParams(dataset, params, portion)
 		
 		def fn = wp.fn as String
@@ -379,68 +365,68 @@ abstract class FileDriver extends Driver {
 	}
 	
 	@Override
-	public void doneWrite (Dataset dataset) {
+	void doneWrite (Dataset dataset) {
 		
 	}
 	
 	@Override
-	public long executeCommand (String command, Map params) {
-		throw new ExceptionGETL("Not support this features")
+	long executeCommand (String command, Map params) {
+		throw new ExceptionGETL('Not support this features!')
 	}
 	
 	@Override
-	public long getSequence(String sequenceName) {
-		throw new ExceptionGETL("Not support this features")
+	long getSequence(String sequenceName) {
+		throw new ExceptionGETL('Not support this features!')
 	}
 	
 
 	@Override
-	public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-		throw new ExceptionGETL("Not support this features")
+	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+		throw new ExceptionGETL('Not support this features!')
 
 	}
 
 	@Override
-	public void clearDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL("Not support this features")
-
-	}
-	
-	@Override
-	public void createDataset(Dataset dataset, Map params) {
-		throw new ExceptionGETL("Not support this features")
+	void clearDataset(Dataset dataset, Map params) {
+		throw new ExceptionGETL('Not support this features!')
 
 	}
 	
 	@Override
-	public void startTran() {
-		throw new ExceptionGETL("Not support this features")
+	void createDataset(Dataset dataset, Map params) {
+		throw new ExceptionGETL('Not support this features!')
 
-	}
-
-	@Override
-	public void commitTran() {
-		throw new ExceptionGETL("Not support this features")
-
-	}
-
-	@Override
-	public void rollbackTran() {
-		throw new ExceptionGETL("Not support this features")
 	}
 	
 	@Override
-	public void connect () {
-		throw new ExceptionGETL("Not support this features")
+	void startTran() {
+		throw new ExceptionGETL('Not support this features!')
+
 	}
 
 	@Override
-	public void disconnect () {
-		throw new ExceptionGETL("Not support this features")
+	void commitTran() {
+		throw new ExceptionGETL('Not support this features!')
+
 	}
 
 	@Override
-	public boolean isConnected() {
-		throw new ExceptionGETL("Not support this features")
+	void rollbackTran() {
+		throw new ExceptionGETL('Not support this features!')
+	}
+	
+	@Override
+	void connect () {
+		throw new ExceptionGETL('Not support this features!')
+	}
+
+	@Override
+	void disconnect () {
+		throw new ExceptionGETL('Not support this features!')
+	}
+
+	@Override
+	boolean isConnected() {
+		throw new ExceptionGETL('Not support this features!')
 	}
 }

@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,6 +24,8 @@
 
 package getl.deploy
 
+import getl.utils.Logs
+
 /**
  * Version manager
  * @author Aleksey Konstantinov
@@ -32,17 +34,17 @@ class Version {
 	/**
 	 * GETL version
 	 */
-	public static version = "3.0.1"
+	public static version = "4.0.0"
 	
 	/**
 	 * GETL version as numeric
 	 */
-	public static versionNum = 3.0001
+	public static versionNum = 4.0000
 
 	/**
 	 * Compatibility GETL version
 	 */
-	public static versionNumCompatibility = 3.0000
+	public static versionNumCompatibility = 4.0000
 	
 	/**
 	 * Valid compatibility version
@@ -56,5 +58,14 @@ class Version {
 	/**
 	 * Years development
 	 */
-	public static years = "2014-2018"
+	public static years = "2014-2019"
+
+	private static boolean sayInfo = false
+	public static void SayInfo() {
+		if (sayInfo) return
+		sayInfo = true
+		Logs.Init()
+		Logs.Finest("### GETL / version ${getl.deploy.Version.version} created by ${getl.deploy.Version.years} / All right reserved for EasyData company")
+		Logs.Info("### Job start")
+	}
 }

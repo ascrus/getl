@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -49,15 +49,16 @@ class VerticaDriver extends JDBCDriver {
 
 		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy'])
         methodParams.register('eachRow', ['label'])
+		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
 				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
-				 'expression', 'location', 'abortOnError', 'maskDate', 'maskTime', 'maskDateTime',
+				 'expression', 'location', 'maskDate', 'maskTime', 'maskDateTime',
 				 'parser', 'streamName'])
 		methodParams.register('unionDataset', ['direct'])
 	}
 
     @Override
-    public Map getSqlType () {
+    Map getSqlType () {
         Map res = super.getSqlType()
         res.DOUBLE.name = 'double precision'
         res.BLOB.name = 'varbinary'
@@ -67,7 +68,7 @@ class VerticaDriver extends JDBCDriver {
     }
 
     @Override
-    public List<Driver.Support> supported() {
+    List<Driver.Support> supported() {
         return super.supported() +
 				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE,
 				 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.UUID,
@@ -75,14 +76,14 @@ class VerticaDriver extends JDBCDriver {
     }
 
     @Override
-    public List<Driver.Operation> operations() {
+    List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
                  Driver.Operation.BULKLOAD]
     }
 
 	@Override
-	public String defaultConnectURL () {
+	String defaultConnectURL () {
 		return 'jdbc:vertica://{host}/{database}'
 	}
 
@@ -98,25 +99,26 @@ class VerticaDriver extends JDBCDriver {
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		def result = ''
 		def temporary = ((dataset.sysParams.type as JDBCDataset.Type)in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
-		if (temporary && params.onCommit != null && params.onCommit) result += 'ON COMMIT PRESERVE ROWS '
-		if (params.orderBy != null && !params.orderBy.isEmpty()) result += "ORDER BY ${params.orderBy.join(", ")} "
-		if (params.segmentedBy != null) result += "SEGMENTED BY ${params.segmentedBy} "
-		if (params.unsegmented != null && params.unsegmented) result += "UNSEGMENTED ALL NODES "
-		if (params.partitionBy != null) result += "PARTITION BY ${params.partitionBy} "
+		if (temporary && params.onCommit != null && params.onCommit) result += 'ON COMMIT PRESERVE ROWS\n'
+		if (params.orderBy != null && !(params.orderBy as List).isEmpty()) result += "ORDER BY ${(params.orderBy as List).join(", ")}\n"
+		if (params.segmentedBy != null && params.unsegmented != null) throw new ExceptionGETL('Invalid segmented options')
+		if (params.segmentedBy != null) result += "SEGMENTED BY ${params.segmentedBy}\n"
+		if (params.unsegmented != null && params.unsegmented) result += "UNSEGMENTED ALL NODES\n"
+		if (params.partitionBy != null) result += "PARTITION BY ${params.partitionBy}\n"
 
 		return result
 	}
 
 	@Override
-	public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
+	void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
 		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
 
 		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = ''
-		if (params.parser != null) {
-			String parserFunc = params.parser.function
+		if (params.parser != null && !(params.parser as Map).isEmpty()) {
+			String parserFunc = (params.parser as Map).function
 			if (parserFunc == null) throw new ExceptionGETL('Required parser function name')
-			Map<String, Object> parserOptions = params.parser.options
-			if (parserOptions != null) {
+			Map<String, Object> parserOptions = (params.parser as Map).options
+			if (parserOptions != null && !parserOptions.isEmpty()) {
 				def ol = []
 				parserOptions.each { String name, def value ->
 					if (value instanceof String) {
@@ -131,10 +133,13 @@ class VerticaDriver extends JDBCDriver {
 			else {
 				parserText = "\nWITH PARSER $parserFunc()"
 			}
-			if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
-			if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
-			if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
-			if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
+			boolean useCsvOptions = BoolUtils.IsValue((params.parser as Map).useCsvOptions, true)
+			if (useCsvOptions) {
+				if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
+				if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
+				if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
+				if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
+			}
 		}
 		else {
 			if (source.fieldDelimiter == null || source.fieldDelimiter.length() != 1) throw new ExceptionGETL('Required one char field delimiter')
@@ -158,7 +163,8 @@ class VerticaDriver extends JDBCDriver {
 		String compressed = ListUtils.NotNullValue([params.compressed, (isGzFile?'GZIP':null)])
 		String exceptionPath = params.exceptionPath
 		String rejectedPath = params.rejectedPath
-		Integer rejectMax = params.rejectMax
+		Long rejectMax = params.rejectMax
+		/** TODO: check load from table with left field */
 		boolean abortOnError = ListUtils.NotNullValue([BoolUtils.IsValue(params.abortOnError, null),
 													   (!(rejectedPath != null || exceptionPath != null))])
 		String location = params.location
@@ -167,7 +173,7 @@ class VerticaDriver extends JDBCDriver {
 		String streamName = params.streamName
 
 		List fileList
-		if (params.files != null) {
+		if (params.files != null && !(params.files as List).isEmpty()) {
 			fileList = []
 			params.files.each { String fileName ->
 				fileList << "'${fileName.replace("\\", "/")}'$onNode"
@@ -206,7 +212,7 @@ class VerticaDriver extends JDBCDriver {
 			if (f.field != null) {
 				def fieldName = (dest as JDBCDataset).sqlObjectName((f.field as Field).name)
 				columns << fieldName
-				switch (f.field.type) {
+				switch ((f.field as Field).type) {
 					case Field.Type.BLOB:
 						options << "$fieldName format 'hex'"
 						break
@@ -314,25 +320,16 @@ class VerticaDriver extends JDBCDriver {
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} TO {value}' }
 
 	@Override
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
-        if (params.label != null) {
-            dir."afterselect" = "/*+label(${params.label})*/"
-        }
-
-        def res = (List<String>)[]
-		if (params.limit != null) {
-            res << "LIMIT ${params.limit}".toString()
-        }
-        if (params.offset != null) {
-            res << "OFFSET ${params.offset}".toString()
-        }
-        if (!res.isEmpty()) {
-            dir.afterOrderBy = res.join('\n')
+	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+		super.sqlTableDirective(dataset, params, dir)
+		Map<String, Object> dl = (dataset as TableDataset).readDirective?:[:] + params
+        if (dl.label != null) {
+            dir.afterselect = "/*+label(${dl.label})*/"
         }
 	}
 
 	@Override
-	public void prepareField (Field field) {
+	void prepareField (Field field) {
 		super.prepareField(field)
 
 		if (field.typeName != null) {
@@ -341,16 +338,15 @@ class VerticaDriver extends JDBCDriver {
 				field.dbType = java.sql.Types.VARCHAR
 				field.length = 36
 				field.precision = null
-//				return
 			}
 		}
 	}
 
 	@Override
-	public boolean blobReadAsObject () { return false }
+	boolean blobReadAsObject () { return false }
 
 	@Override
-	public String blobMethodWrite (String methodName) {
+	String blobMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
@@ -361,5 +357,30 @@ class VerticaDriver extends JDBCDriver {
 		stream.close()
 	}
 }"""
+	}
+
+	@Override
+	boolean textReadAsObject() { return false }
+
+	String writeHints(Map params) {
+		def hints = [] as List<String>
+		if (params.direct != null) hints << (params.direct as String).toLowerCase()
+		if (params.label != null) hints << 'label(' + params.label + ')'
+		return (!hints.isEmpty())?('/*+' + hints.join(', ') + '*/'):''
+	}
+
+	@Override
+	protected String syntaxInsertStatement(Dataset dataset, Map params) {
+		return "INSERT ${writeHints(params)} INTO {table} ({columns}) VALUES({values})"
+	}
+
+	@Override
+	protected String syntaxUpdateStatement(Dataset dataset, Map params) {
+		return "UPDATE ${writeHints(params)} {table} SET {values} WHERE {keys}"
+	}
+
+	@Override
+	protected String syntaxDeleteStatement(Dataset dataset, Map params){
+		return "DELETE ${writeHints(params)} FROM {table} WHERE {keys}"
 	}
 }

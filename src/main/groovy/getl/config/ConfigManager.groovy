@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2018 Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -25,36 +25,44 @@
 
 package getl.config
 
+/**
+ * Configuration manager class
+ * @author Alexsey Konstantinov
+ *
+ */
 abstract class ConfigManager {
-    ConfigManager() {
-
-    }
+    ConfigManager() { }
 
     ConfigManager(Map<String, Object> params) {
         this.params.putAll(params)
     }
 
     /**
+     * Evaluate variables where load configuration
+     */
+    boolean getEvalVars() { false }
+
+    /**
      * Parameters of configuration
      */
-    public final Map<String, Object> params = [:]
+    final Map<String, Object> params = [:]
 
     /**
      * Load configuration
      * @readParams
      */
-    abstract public void loadConfig(Map<String, Object> readParams = [:])
+    abstract void loadConfig(Map<String, Object> readParams = [:])
 
     /**
      * Save configuration
      * @param content
      * @param saveParams
      */
-    abstract public void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = [:])
+    abstract void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = [:])
 
     /**
      * Init manager
      * @param initParams
      */
-    abstract public void init(Map<String, Object> initParams)
+    abstract void init(Map<String, Object> initParams)
 }

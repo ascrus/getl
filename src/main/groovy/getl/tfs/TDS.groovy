@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -39,7 +39,7 @@ import org.h2.tools.DeleteDbFiles
  */
 @InheritConstructors
 class TDS extends H2Connection {
-	TDS () {
+	TDS() {
 		super(defaultParams)
 		
 		if (connectURL == null && params."inMemory" == null) inMemory = true
@@ -63,7 +63,7 @@ class TDS extends H2Connection {
 		config = "getl_tds"
 	}
 	
-	TDS (Map initParams) {
+	TDS(Map initParams) {
 		super(defaultParams + initParams)
 		
 		if (this.getClass().name == 'getl.tfs.TDS') methodParams.validation("Super", params)
@@ -97,19 +97,13 @@ class TDS extends H2Connection {
 		if (params."config" == null) config = "getl_tds"
 	}
 
-    /**
-     * Temp path of database file
-     */
+    /** Temp path of database file */
     private String tempPath
 	
-	/**
-	 * Internal name in config section
-	 */
+	/** Internal name in config section */
 	protected String internalConfigName() { "getl_tds" }
 	
-	/**
-	 * Default parameters
-	 */
+	/** Default parameters */
 	public static Map defaultParams = [:]
 	
 	@Override
@@ -136,44 +130,10 @@ class TDS extends H2Connection {
         }
     }
 	
-	/**
-	 * Generate new table from temporary data stage
-	 * @param params
-	 * @return
-	 */
-	public static TableDataset dataset (Map initParams) {
-		TDS con = new TDS()
-		con.newDataset(initParams)
-	}
-	
-	/**
-	 * Generate new table from temporary data stage
-	 * @return
-	 */
-	public static TableDataset dataset () {
-		dataset(null)
-	}
-	
-	/**
-	 * Generate new table
-	 * @param initParams
-	 * @return
-	 */
-	public TableDataset newDataset (Map initParams) {
-		def p = [:]
-		p.connection = this
-		p.tableName = "TDS_" + StringUtils.RandomStr().replace("-", "_").toUpperCase()
-		if (initParams != null) p.putAll(initParams)
-		TableDataset t = new TableDataset(p)
-
-		t
-	}
-	
-	/**
-	 * Generate new table
-	 * @return
-	 */
-	public TableDataset newDataset () {
-		newDataset(null)
+	/** Generate new table from temporary data stage */
+	static TDSTable dataset () {
+		def res = new TDSTable()
+		res.connection = new TDS()
+		return res
 	}
 }

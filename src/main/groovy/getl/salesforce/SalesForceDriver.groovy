@@ -1,3 +1,27 @@
+/*
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
+
+ GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
+ transform and load data into programs written in Groovy, or Java, as well as from any software that supports
+ the work with Java classes.
+
+ Copyright (C) EasyData Company LTD
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Lesser General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License and
+ GNU Lesser General Public License along with this program.
+ If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package getl.salesforce
 
 import com.sforce.async.AsyncApiException
@@ -33,14 +57,13 @@ import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.ListUtils
 import getl.utils.Logs
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
  * SalesForce Driver class
  * @author Dmitry Shaldin
  */
-@InheritConstructors @CompileStatic
+@InheritConstructors
 class SalesForceDriver extends Driver {
 	private ConnectorConfig config
 	private PartnerConnection partnerConnection
@@ -248,7 +271,7 @@ class SalesForceDriver extends Driver {
             List<TFSDataset> tfsDatasetList = bulkUnload(dataset, params)
             tfsDatasetList.each { TFSDataset tDataset ->
                 tDataset.eachRow { Map row ->
-                    code(row)
+                    code.call(row)
                     countRec++
                 }
 
@@ -269,7 +292,7 @@ class SalesForceDriver extends Driver {
                                 row[it.toLowerCase()] = parseTypes(record.getSObjectField(it), dataset.fieldByName(it))
                             }
 
-                            code(row)
+                            code.call(row)
                             countRec++
                         }
 
@@ -469,38 +492,38 @@ class SalesForceDriver extends Driver {
 	}
 
 	@Override
-	void startTran() { throw new ExceptionGETL("Not supported") }
+	void startTran() { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	void commitTran() { throw new ExceptionGETL("Not supported") }
+	void commitTran() { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	void rollbackTran() { throw new ExceptionGETL("Not supported") }
+	void rollbackTran() { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	void createDataset(Dataset dataset, Map params) { throw new ExceptionGETL("Not supported") }
+	void createDataset(Dataset dataset, Map params) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	void openWrite(Dataset dataset, Map params, Closure prepareCode) { throw new ExceptionGETL("Not supported") }
+	void openWrite(Dataset dataset, Map params, Closure prepareCode) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	void write(Dataset dataset, Map row) { throw new ExceptionGETL("Not supported") }
+	void write(Dataset dataset, Map row) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	void doneWrite(Dataset dataset) { throw new ExceptionGETL("Not supported") }
+	void doneWrite(Dataset dataset) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	void closeWrite(Dataset dataset) { throw new ExceptionGETL("Not supported") }
+	void closeWrite(Dataset dataset) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) { throw new ExceptionGETL("Not supported") }
+	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	void clearDataset(Dataset dataset, Map params) { throw new ExceptionGETL("Not supported") }
+	void clearDataset(Dataset dataset, Map params) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	long executeCommand(String command, Map params) { throw new ExceptionGETL("Not supported") }
+	long executeCommand(String command, Map params) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	long getSequence(String sequenceName) { throw new ExceptionGETL("Not supported") }
+	long getSequence(String sequenceName) { throw new ExceptionGETL('Not support this features!') }
 }

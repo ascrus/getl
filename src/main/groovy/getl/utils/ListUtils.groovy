@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -205,10 +205,10 @@ class ListUtils {
 
 		def array = [] as List<List>
 
-        def firstElement = list[0]
-        def lastElement = list[0]
+        String firstElement = list[0]
+        String lastElement = list[0]
         for (int i = 1; i < list.size(); i++) {
-            def elem = list[i]
+            String elem = list[i]
 
             if (lastElement.next() == elem) {
                 lastElement = elem

@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -49,15 +49,15 @@ class StructureFileDataset extends FileDataset {
 	protected void onLoadConfig (Map configSection) {
 		super.onLoadConfig(MapUtils.CleanMap(configSection, ["attributes"]))
 		if (configSection.containsKey("attributes")) {
-			List l = configSection.attributes
+			def l = configSection.attributes as List<Map>
 			List<Field> fl = []
-			l.each {
+			l.each { Map it ->
 				String name = it.name
 				if (it.name == null) throw new ExceptionGETL("Required field name: ${it}")
-				Field.Type type = it.type?:Field.Type.STRING
+				Field.Type type = (it.type as Field.Type)?:Field.Type.STRING
 				boolean isNull = it.isNull?:true
-				Integer length = it.length
-				Integer precision = it.precision
+				Integer length = it.length as Integer
+				Integer precision = it.precision as Integer
 				boolean isKey = it.isKey?:false
 				boolean isAutoincrement = it.isAutoincrement?:false
 				boolean isReadOnly = it.isReadOnly?:false
@@ -68,13 +68,14 @@ class StructureFileDataset extends FileDataset {
 				boolean trim = it.trim?:false
 				String decimalSeparator = it.decimalSeparator
 				String description = it.description
-				Map extended = it.extended
+				Map extended = it.extended as Map
 				
-				Field f = new Field(name: name, type: type, isNull: isNull, length: length, precision: precision,
-									isKey: isKey, isAutoincrement: isAutoincrement, isReadOnly: isReadOnly,
-									defaultValue: defaultValue, compute: compute, description: description,
-									format: format, alias: alias, trim: trim,
-									decimalSeparator: decimalSeparator, extended: extended)
+				Field f = new Field(
+						name: name, type: type, isNull: isNull, length: length, precision: precision,
+						isKey: isKey, isAutoincrement: isAutoincrement, isReadOnly: isReadOnly,
+						compute: compute, description: description, format: format, alias: alias,
+						trim: trim, decimalSeparator: decimalSeparator, extended: extended)
+
 				fl << f
 			}
 			params.attributeField = fl
@@ -85,8 +86,9 @@ class StructureFileDataset extends FileDataset {
 	 * List of attributes for structured file
 	 * @return
 	 */
-	public List<Field> getAttributeField () { params.attributeField }
-	public void setAttributeField (List<Field> value) {
+	List<Field> getAttributeField () { params.attributeField as List<Field> }
+
+	void setAttributeField (List<Field> value) {
 		 List<Field> l = []
 		 value.each { Field f ->
 			 l << f.copy()
@@ -98,8 +100,9 @@ class StructureFileDataset extends FileDataset {
 	 * Attribute value
 	 * @return
 	 */
-	public Map<String, Object> getAttributeValue () { params.attributeValue }
-	public void setAttributeValue (Map<String, Object> value) {
+	Map<String, Object> getAttributeValue () { params.attributeValue as Map<String, Object> }
+
+	void setAttributeValue (Map<String, Object> value) {
 		Map<String, Object> m = [:]
 		m.putAll(value)
 		params.attributeValue = m
@@ -109,6 +112,7 @@ class StructureFileDataset extends FileDataset {
 	 * Name of root node
 	 * @return
 	 */
-	public String getRootNode () { params.rootNode }
-	public void setRootNode (String value) { params.rootNode = value }
+	String getRootNode () { params.rootNode }
+
+	void setRootNode (String value) { params.rootNode = value }
 }

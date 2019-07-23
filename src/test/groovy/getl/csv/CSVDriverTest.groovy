@@ -5,16 +5,10 @@ import getl.data.Field
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TFS
-import getl.utils.Config
-import getl.utils.ConvertUtils
 import getl.utils.DateUtils
 import getl.utils.FileUtils
-import getl.utils.GenerationUtils
 import getl.utils.Logs
 import getl.utils.NumericUtils
-import groovy.transform.CompileStatic
-
-import java.sql.Time
 
 /**
  * Created by ascru on 10.11.2016.
@@ -106,7 +100,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         assertEquals(200, csv.readRows)
         assertEquals(200, csvCountRows)
 
-		def csv_without_fields = new CSVDataset(connection: con, fileName: name, formatDateTime: DateUtils.defaultDateTimeMask, header: true)
+		def csv_without_fields = new CSVDataset(connection: con, fileName: name, formatDateTime: DateUtils.defaultDateTimeMask)
 		csvCountRows = 0
 		csv_without_fields.eachRow { Map row ->
 			assertNotNull(row.id)
@@ -133,7 +127,7 @@ class CSVDriverTest extends getl.test.GetlTest {
                 updater(generate_row(id))
             }
         }
-        assertEquals(2, csv.countWritePortions())
+        assertEquals(2, csv.countWritePortions)
         assertEquals(100, csv.writeRows)
 
         con.autoSchema = true
@@ -163,7 +157,7 @@ class CSVDriverTest extends getl.test.GetlTest {
             assertEquals("text \"$id\"\tand\nnew line", row.text)
             assertEquals('abcdef'.bytes, row.blob)
         }
-        assertEquals(2, new_csv.countReadPortions())
+        assertEquals(2, new_csv.countReadPortions)
         assertEquals(100, new_csv.readRows)
 
         def unwrite_csv = new CSVDataset(connection: con, fileName: "${name}_unwrite", formatDateTime: DateUtils.defaultDateTimeMask, schemaFileName: csv.fullFileSchemaName(), deleteOnEmpty: true)
@@ -220,7 +214,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         assertTrue((errors.get('5') as String).indexOf('invalid date') != -1)
 
         con.autoSchema = true
-        csv.drop(portions: csv.countWritePortions())
+        csv.drop(portions: csv.countWritePortions)
 
         shouldFail() { unwrite_csv.drop(validExist: true) }
         bad_csv.drop()
@@ -263,7 +257,6 @@ class CSVDriverTest extends getl.test.GetlTest {
         ds2.drop()
     }
 
-	@CompileStatic
 	public void testPerfomance() {
 		def perfomanceRows = 1000
 		def perfomanceCols = 1000

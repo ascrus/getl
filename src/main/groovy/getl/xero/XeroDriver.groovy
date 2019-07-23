@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2018  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -38,7 +38,6 @@ import getl.utils.GenerationUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
-import org.codehaus.groovy.tools.RootLoader
 
 /**
  * Xero connection driver
@@ -88,7 +87,7 @@ class XeroDriver extends Driver {
             if (!FileUtils.ExistsFile(con.useResourceFile))
                 throw new ExceptionGETL("Resource file \"${con.useResourceFile}\" not found!")
             saveToHistory("Loading jar file \"${con.useResourceFile}\"")
-            ClassLoader.systemClassLoader.addURL(new File(con.useResourceFile).toURI().toURL())
+//            ClassLoader.systemClassLoader.addURL(new File(con.useResourceFile).toURI().toURL())
         }
 
         if (con.configInResource == null)
@@ -288,8 +287,8 @@ class XeroDriver extends Driver {
         if (countChild > 0) {
             row.put('contactid', master.getContactID())
             row.put('updateddateutc', (master.getUpdatedDateUTC() as Calendar)?.time)
-            if (filter == null || filter(row)) {
-                code(row)
+            if (filter == null || filter.call(row)) {
+                code.call(row)
                 res++
             }
         }
@@ -400,40 +399,40 @@ class XeroDriver extends Driver {
     }
 
     @Override
-    void startTran() { throw new ExceptionGETL("Not supported") }
+    void startTran() { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void commitTran() { throw new ExceptionGETL("Not supported") }
+    void commitTran() { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void rollbackTran() { throw new ExceptionGETL("Not supported") }
+    void rollbackTran() { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void createDataset(Dataset dataset, Map params) { throw new ExceptionGETL("Not supported") }
+    void createDataset(Dataset dataset, Map params) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void openWrite(Dataset dataset, Map params, Closure prepareCode) { throw new ExceptionGETL("Not supported") }
+    void openWrite(Dataset dataset, Map params, Closure prepareCode) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void write(Dataset dataset, Map row) { throw new ExceptionGETL("Not supported") }
+    void write(Dataset dataset, Map row) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void doneWrite(Dataset dataset) { throw new ExceptionGETL("Not supported") }
+    void doneWrite(Dataset dataset) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void closeWrite(Dataset dataset) { throw new ExceptionGETL("Not supported") }
+    void closeWrite(Dataset dataset) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) { throw new ExceptionGETL("Not supported") }
+    void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    void clearDataset(Dataset dataset, Map params) { throw new ExceptionGETL("Not supported") }
+    void clearDataset(Dataset dataset, Map params) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    long executeCommand(String command, Map params) { throw new ExceptionGETL("Not supported") }
+    long executeCommand(String command, Map params) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    long getSequence(String sequenceName) { throw new ExceptionGETL("Not supported") }
+    long getSequence(String sequenceName) { throw new ExceptionGETL('Not support this features!') }
 
     private static String ConvertFieldName(Field.Type type, String name, boolean isChild = false) {
         def list = name.split('[.]')
@@ -471,16 +470,16 @@ class XeroDriver extends Driver {
         def listName = dsParams.listName as String
         def parentName = dsParams.parentName as String
         def parentColumn = dsParams.parentColumn as String
-        def parentOnly = dsParams.parentOnly as List<String>
-        def childOnly = dsParams.childOnly as List<String>
+//        def parentOnly = dsParams.parentOnly as List<String>
+//        def childOnly = dsParams.childOnly as List<String>
         def childClass = dsParams.childClass
         def childMethod = dsParams.childMethod?:childClass
         def clientParams = dsParams.clientParams?:'modifiedAfter, where, order'
         def includeArchived = BoolUtils.IsValue(dsParams.includeArchived)
 
         def mainClass = parentName?:objectName
-        if (parentOnly != null) parentOnly = parentOnly*.toLowerCase()
-        if (childOnly != null) childOnly = childOnly*.toLowerCase()
+//        if (parentOnly != null) parentOnly = parentOnly*.toLowerCase()
+//        if (childOnly != null) childOnly = childOnly*.toLowerCase()
 
         def pb = new StringBuilder()
         def cb = new StringBuilder()
@@ -532,15 +531,15 @@ class XeroDriver extends Driver {
             }
             if (parentColumn != null) {
                 cb << '''            row.putAll(mainRow)
-            if (filter == null || filter(row)) {
-                code(row)
+            if (filter == null || filter.call(row)) {
+                code.call(row)
                 res++
             }
         }
 '''
             } else {
-                pb << '''        if (filter == null || filter(row)) {
-            code(row)
+                pb << '''        if (filter == null || filter.call(row)) {
+            code.call(row)
             res++
         }
 '''
@@ -564,9 +563,9 @@ ${cb.toString()}
 }"""
         def closure = GenerationUtils.EvalGroovyClosure(sb.toString())
 
-        Long res = 0
+        Long res
         try {
-            res = closure.call(client, modifiedAfter, where, order, limit, includeArchived, filter, code)
+            res = closure.call(client, modifiedAfter, where, order, limit, includeArchived, filter, code) as Long
         }
         catch (Exception e) {
             Logs.Severe("Error read Xero object \"$ds.objectName\"")

@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -62,12 +62,12 @@ class CSVDriver extends FileDriver {
 	}
 	
 	@Override
-	public List<Driver.Support> supported() { 
+	List<Driver.Support> supported() {
 		[Driver.Support.WRITE, Driver.Support.AUTOLOADSCHEMA, Driver.Support.AUTOSAVESCHEMA, Driver.Support.EACHROW] 
 	}
 
 	@Override
-	public List<Driver.Operation> operations () { 
+	List<Driver.Operation> operations () {
 		[Driver.Operation.DROP] 
 	}
 
@@ -98,7 +98,7 @@ class CSVDriver extends FileDriver {
 		p.quoteStr = p.quote.charAt(0)
 		
 		def fieldDelimiter = ListUtils.NotNullValue([params.fieldDelimiter, ds.fieldDelimiter])
-		p.fieldDelimiter = fieldDelimiter.charAt(0)
+		p.fieldDelimiter = (fieldDelimiter as String).charAt(0)
 		
 		p.rowDelimiter = ListUtils.NotNullValue([params.rowDelimiter, ds.rowDelimiter])
 		p.isHeader = BoolUtils.IsValue(params.header as Boolean, ds.header)
@@ -111,7 +111,7 @@ class CSVDriver extends FileDriver {
 	
 	protected static QuoteMode datasetQuoteMode(Dataset dataset) {
 		def QuoteMode qMode
-		switch (dataset.quoteMode) {
+		switch ((dataset as CSVDataset).quoteMode) {
 			case CSVDataset.QuoteMode.COLUMN:
 				boolean[] b = new boolean[dataset.field.size()]
                 for (int i = 0; i < dataset.field.size(); i++) {
@@ -130,12 +130,12 @@ class CSVDriver extends FileDriver {
 	}
 	
 	@Override
-    public
-    List<Field> fields(Dataset dataset) {
+
+	List<Field> fields(Dataset dataset) {
 		def p = readParamDataset(dataset, [:]) 
 		
 		def csvfile = new File(p.path)
-		if (!csvfile.exists()) throw new ExceptionGETL("File \"${dataset.fileName}\" not found or invalid path \"${dataset.connection.params.path}\"")
+		if (!csvfile.exists()) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" not found or invalid path \"${dataset.connection.params.path}\"")
 		Reader fileReader = getFileReader(dataset, [:])
 		
 		def CsvPreference pref = new CsvPreference.Builder(p.quoteStr as char, (p.fieldDelimiter) as int, p.rowDelimiter as String).useQuoteMode(p.qMode as QuoteMode).build()
@@ -144,11 +144,11 @@ class CSVDriver extends FileDriver {
 		try {
 			if (p.isHeader)  {
 				header = reader.getHeader(true)
-				if (header == null) throw new ExceptionGETL("File \"${dataset.fileName}\" is empty")
+				if (header == null) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" is empty")
 			}
 			else {
 				def row = reader.read()
-				if (row == null) throw new ExceptionGETL("File \"${dataset.fileName}\" is empty")
+				if (row == null) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" is empty")
 				def c = 0
 				row.each {
 					c++
@@ -231,7 +231,7 @@ class CSVDriver extends FileDriver {
 						}
 					}
 					
-					DecimalFormat df = new DecimalFormat(f, dfs);
+					DecimalFormat df = new DecimalFormat(f, dfs)
 					cp = new FmtNumber(df)
 				}
 				else {
@@ -327,8 +327,7 @@ class CSVDriver extends FileDriver {
 		cp
 	}
 	
-	@groovy.transform.CompileStatic
-	public static CellProcessor[] fields2cellProcessor(Map fParams) {
+	static CellProcessor[] fields2cellProcessor(Map fParams) {
 		CSVDataset dataset = (CSVDataset)fParams.dataset
 		ArrayList<String> fields = (ArrayList<String>)fParams.filds
 		String[] header = (String[])fParams.header
@@ -342,7 +341,7 @@ class CSVDriver extends FileDriver {
 		String formatTime = ListUtils.NotNullValue([fParams.formatTime, dataset.formatTime]) as String
 		String formatDateTime = ListUtils.NotNullValue([fParams.formatDateTime, dataset.formatDateTime]) as String
 		
-		if (fields == null) fields = []
+		if (fields == null) fields = [] as ArrayList<String>
 //		def quoteStr = dataset.quoteStr
 		
 		def cp = new ArrayList<CellProcessor>()
@@ -385,9 +384,7 @@ class CSVDriver extends FileDriver {
 		return header.toArray()
 	}
 	
-	@groovy.transform.CompileStatic
 	@Override
-	public
 	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (code == null) throw new ExceptionGETL('Required process code')
 		
@@ -410,9 +407,9 @@ class CSVDriver extends FileDriver {
 		def fileMask = fileMaskDataset(cds, (boolean)p.isSplit)
 		def vars = [:]
 		if (p.isSplit) {
-			vars << [number: [type: Field.Type.INTEGER, len: 4]]
+			vars.put('number', [type: Field.Type.INTEGER, len: 4])
 		}
-		def filePath = new Path(mask: fileMask, vars: vars)
+		def filePath = new Path([mask: fileMask, vars: vars])
 		
 		fm.buildList(path: filePath)
 		def filesParams = (p.isSplit)?[order: ['number']]:[:]
@@ -421,7 +418,7 @@ class CSVDriver extends FileDriver {
 		Integer portion = 0
 		Reader bufReader = getFileReader(dataset, params, (Integer)files[portion].number)
 		
-		Closure processError = (params.processError != null)?params.processError:null
+		Closure processError = (params.processError != null)?params.processError as Closure:null
 		boolean isValid = BoolUtils.IsValue(params.isValid, false)
 		CsvPreference pref = new CsvPreference.Builder((char)p.quoteStr, (int)p.fieldDelimiter, (String)p.rowDelimiter).useQuoteMode((QuoteMode)p.qMode).build()
 		ICsvMapReader reader
@@ -510,7 +507,7 @@ class CSVDriver extends FileDriver {
 						continue
 					} 
 
-					code(row)
+					code.call(row)
 					if (cur == count) break
 				}
 			}
@@ -553,15 +550,14 @@ class CSVDriver extends FileDriver {
 	}
 	
 	@Override
-	public void openWrite (Dataset dataset, Map params, Closure prepareCode) {
-		if (dataset.fileName == null) throw new ExceptionGETL('Dataset required fileName')
+	void openWrite (Dataset dataset, Map params, Closure prepareCode) {
+		CSVDataset csv_ds = dataset as CSVDataset
+		if (csv_ds.fileName == null) throw new ExceptionGETL('Dataset required fileName')
 		
 		WriterParams wp = new WriterParams()
 		dataset.driver_params = wp
-		wp.formatOutput = dataset.formatOutput
+		wp.formatOutput = csv_ds.formatOutput
 
-        CSVDataset csv_ds = dataset as CSVDataset
-		
 		ReadParams p = readParamDataset(csv_ds, params)
 		boolean isAppend = p.params.isAppend
 		boolean isValid = (params.isValid != null)?params.isValid:false
@@ -572,13 +568,13 @@ class CSVDriver extends FileDriver {
 		String formatDateTime = ListUtils.NotNullValue([params.formatDateTime, csv_ds.formatDateTime])
 		String escapeProcessLineChar = ListUtils.NotNullValue([params.escapeProcessLineChar, csv_ds.escapeProcessLineChar])
 		
-		if (params.batchSize != null) wp.batchSize = params.batchSize
-		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch
-		if (params.onSplitFile != null) wp.onSplitFile = params.onSplitFile
+		if (params.batchSize != null) wp.batchSize = params.batchSize as Long
+		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch as Closure
+		if (params.onSplitFile != null) wp.onSplitFile = params.onSplitFile as Closure
 		
 		ArrayList<String> listFields = new ArrayList<String>()
 		if (prepareCode != null) {
-			listFields = prepareCode([])
+			listFields = prepareCode.call([]) as ArrayList
 		}
 		
 		def header = fields2header(csv_ds.field, listFields)
@@ -598,8 +594,8 @@ class CSVDriver extends FileDriver {
 		wp.nullAsValue = p.nullAsValue
 		wp.escaped = escaped
 		wp.escapeProcessLineChar = escapeProcessLineChar
-		wp.splitSize = params.splitSize
-		if (wp.splitSize != null) wp.portion = 1
+		wp.splitSize = params.splitSize as Long
+		if (wp.splitSize != null || wp.onSplitFile != null) wp.portion = 1
 
         csv_ds.params.writeCharacters = null
 		
@@ -613,7 +609,7 @@ class CSVDriver extends FileDriver {
 		wp.pref = new CsvPreference.Builder(p.quoteStr as char, (p.fieldDelimiter) as int, p.rowDelimiter as String).useQuoteMode(p.qMode as QuoteMode).useEncoder(wp.encoder).build()
 		wp.writer = new CsvMapWriter(wp.bufWriter, wp.pref)
 
-		if ((!isAppend || !isExistsFile || wp.splitSize != null) && wp.isHeader) {
+		if ((!isAppend || !isExistsFile || wp.splitSize != null || wp.onSplitFile != null) && wp.isHeader) {
 			wp.writer.writeHeader(header)
 		}
 	}
@@ -623,7 +619,6 @@ class CSVDriver extends FileDriver {
 	 * @param dataset
 	 * @param wp
 	 */
-	@groovy.transform.CompileStatic
 	protected void writeRows (Dataset dataset, WriterParams wp) {
 		wp.batch++
 		
@@ -634,7 +629,7 @@ class CSVDriver extends FileDriver {
 					dataset.writeRows++
 					dataset.updateRows++
 					
-					if (wp.splitSize != null && wp.encoder.writeSize >= wp.splitSize) {
+					if ((wp.splitSize != null && wp.encoder.writeSize >= wp.splitSize) || (wp.splitSize == null && wp.onSplitFile != null)) {
 						boolean splitFile = true
 						if (wp.onSplitFile != null) {
 							splitFile = wp.onSplitFile.call(row)
@@ -656,8 +651,8 @@ class CSVDriver extends FileDriver {
 					wp.writer.write(row, wp.header)
 					dataset.writeRows++
 					dataset.updateRows++
-					
-					if (wp.splitSize != null && wp.encoder.writeSize >= wp.splitSize) {
+
+					if ((wp.splitSize != null && wp.encoder.writeSize >= wp.splitSize) || (wp.splitSize == null && wp.onSplitFile != null)) {
 						boolean splitFile = true
 						if (wp.onSplitFile != null) {
 							splitFile = wp.onSplitFile.call(row)
@@ -683,9 +678,8 @@ class CSVDriver extends FileDriver {
 		if (wp.onSaveBatch) wp.onSaveBatch.call(wp.batch)
 	}
 	
-	@groovy.transform.CompileStatic
 	@Override
-	public void write(Dataset dataset, Map row) {
+	void write(Dataset dataset, Map row) {
 		WriterParams wp = (WriterParams)dataset.driver_params
 		wp.rows << row
 		wp.current++
@@ -694,14 +688,14 @@ class CSVDriver extends FileDriver {
 	}
 	
 	@Override
-	public
+
 	void doneWrite (Dataset dataset) {
 		WriterParams wp = dataset.driver_params
 		if (!wp.rows.isEmpty()) writeRows(dataset, wp)
 	}
 	
 	@Override
-	public
+
 	void closeWrite (Dataset dataset) {
 		WriterParams wp = dataset.driver_params
 		
@@ -745,15 +739,15 @@ class CSVDriver extends FileDriver {
 		
 		count - ((dataset.header)?1:0)
 	}
-	
-	public static long prepareCSVForBulk(CSVDataset target, CSVDataset source, Map<String, String> encodeTable, Closure code) {
+
+	static long prepareCSVForBulk(CSVDataset target, CSVDataset source, Map<String, String> encodeTable, Closure code) {
 		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
 		if (!(source.rowDelimiter in ['\n', '\r\n'])) throw new ExceptionGETL('Allow convert CSV files only standart row delimiter')
 
 		if (source.field.isEmpty() && source.autoSchema) source.loadDatasetMetadata()
 		//if (source.field.isEmpty()) throw new ExceptionGETL('Required fields from source dataset')
 		
-		target.connection.validPath()
+		(target.connection as CSVConnection).validPath()
 
 		if (!source.field.isEmpty()) target.setField(source.field) else target.field.clear()
 		target.header = source.header
@@ -928,16 +922,16 @@ class CSVDriver extends FileDriver {
 			for (int i = 0; i < values.size(); i++) { values[i] = values[i].replace(oldStr, newStr) }
 		}
 
-		if (code != null) code(values)
+		if (code != null) code.call(values)
 	}
-	
-	public static long decodeBulkCSV (CSVDataset target, CSVDataset source) {
+
+	static long decodeBulkCSV (CSVDataset target, CSVDataset source) {
 		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
 		
 		if (source.field.isEmpty() && source.autoSchema) source.loadDatasetMetadata()
 		if (!source.field.isEmpty()) target.setField(source.field)
 		
-		target.connection.validPath()
+		(target.connection as CSVConnection).validPath()
 		
 		target.header = source.header
 		target.nullAsValue = source.nullAsValue

@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,9 @@
 package getl.utils
 
 import getl.exception.ExceptionGETL
+import groovy.transform.Synchronized
+import org.codehaus.groovy.runtime.StackTraceUtils
+
 import java.util.logging.*
 
 /**
@@ -67,7 +70,8 @@ class Logs {
 	 * @return
 	 */
 	private static String fileNameHandler
-	public static String getFileNameHandler () { fileNameHandler }
+
+	static String getFileNameHandler () { fileNameHandler }
 	
 	/**
 	 * Config messages to be written after initialization log
@@ -89,7 +93,7 @@ class Logs {
 	 * @param eventer
 	 * @return
 	 */
-	public static void registerEventer (Closure eventer) {
+	static void registerEventer (Closure eventer) {
 		if (eventer == null) throw new ExceptionGETL("Eventer must be not null")
 		eventers << eventer
 	}
@@ -99,7 +103,7 @@ class Logs {
 	 * @param eventer
 	 * @return
 	 */
-	public static boolean unregisterEventer (Closure eventer) {
+	static boolean unregisterEventer (Closure eventer) {
 		if (eventer == null) throw new ExceptionGETL("Eventer must be not null")
 		eventers.remove(eventer)
 	}
@@ -110,8 +114,8 @@ class Logs {
 	 * @param time
 	 * @param message
 	 */
-	@groovy.transform.Synchronized
-	protected static void event (java.util.logging.Level level, String message) {
+	@Synchronized
+	protected static void event (Level level, String message) {
 		eventers.each { Closure eventer -> eventer(level.toString(), DateUtils.Now(), message) }
 	}
 	
@@ -121,7 +125,7 @@ class Logs {
 	 *
 	 */
 	static class LogFormatter extends Formatter {
-		public String format(LogRecord record)  {
+		String format(LogRecord record)  {
 			StringBuilder sb = new StringBuilder()
 			Date d = DateUtils.ToOrigTimeZoneDate(new Date(record.millis))
 			sb << DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', d)
@@ -160,9 +164,9 @@ class Logs {
 	/**
 	 * Init log on load config
 	 */
-	public static void Init () {
-		if (printConfigMessage == null) printConfigMessage = (Config.content.log?.printConfig != null)?Config.content.log.printConfig:false
-		InitFile(logFileName?:Config.content.log?.file)
+	static void Init () {
+		if (printConfigMessage == null) printConfigMessage = ((Config.content.log as Map)?.printConfig != null)?(Config.content.log as Map).printConfig:false
+		InitFile(logFileName?:((Config.content.log as Map)?.file as String))
 		InitMessages.each { Config(it) }
 		InitMessages = []
 	}
@@ -171,11 +175,16 @@ class Logs {
 	 * Init log file
 	 * @param name
 	 */
-	protected static void InitFile (String name) {
+	static void InitFile (String name) {
+		if (file != null) {
+			file.close()
+			logger.removeHandler(file)
+		}
 		if (name != null) {
 			name = name.replace("\\", "\\\\")
 			def f = StringUtils.EvalMacroString(name, StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(f)
+
 			file = new FileHandler(f, true)
 			file.level = Level.INFO
 			file.setFormatter(formatter)
@@ -191,7 +200,7 @@ class Logs {
 	/**
 	 * Done on close log
 	 */
-	public static void Done () {
+	static void Done () {
 		if (file == null) return
 		Config("Log file closed")
 		logger.removeHandler(file)
@@ -204,7 +213,7 @@ class Logs {
 	 * @param level
 	 * @return
 	 */
-	public static Level StrToLevel(String level) {
+	static Level StrToLevel(String level) {
 		Level result
 		switch (level.trim().toUpperCase()) {
 			case "ALL":
@@ -254,7 +263,7 @@ class Logs {
 	 * @param message
 	 * @return
 	 */
-	public static String FormatMessage(String message) {
+	static String FormatMessage(String message) {
 		message?.replace("\n", " ")
 	}
 	
@@ -263,105 +272,104 @@ class Logs {
 	 * @param level
 	 * @param message
 	 */
-	@groovy.transform.Synchronized
-	public static void ToOut(Level level, String message) {
-//		if (errStream != null && level == Level.SEVERE) return
+	@Synchronized
+	static void ToOut(Level level, String message) {
 		if (level == Level.OFF) return
 		def lr = new LogRecord(level, FormatMessage(message))
 		print formatter.format(lr)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Fine (String message) {
+	@Synchronized
+	static void Fine (String message) {
 		ToOut(Level.FINE, message)
 		def msg = FormatMessage(message)
 		logger.fine(msg)
 		event(Level.FINE, message)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Finer (String message) {
+	@Synchronized
+	static void Finer (String message) {
 		ToOut(Level.FINER, message)
 		def msg = FormatMessage(message)
 		logger.finer(msg)
 		event(Level.FINER, message)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Finest (String message) {
+	@Synchronized
+	static void Finest (String message) {
 		ToOut(Level.FINEST, message)
 		def msg = FormatMessage(message)
 		logger.finest(msg)
 		event(Level.FINEST, message)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Info (String message) {
+	@Synchronized
+	static void Info (String message) {
 		ToOut(Level.INFO, message)
 		def msg = FormatMessage(message)
 		logger.info(msg)
 		event(Level.INFO, message)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Warning (String message) {
+	@Synchronized
+	static void Warning (String message) {
 		ToOut(Level.WARNING, message)
 		def msg = FormatMessage(message)
 		logger.warning(msg)
 		event(Level.WARNING, message)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Warning (Throwable e) {
+	@Synchronized
+	static void Warning (Throwable e) {
 		ToOut(Level.WARNING, e.message)
-		org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
+		StackTraceUtils.sanitize(e)
 		def t = (e.stackTrace.length > 0)?" => " + e.stackTrace[0]:""
 		def msg = e.getClass().name + ": " + FormatMessage(e.message) + t
 		logger.warning(msg)
 		event(Level.WARNING, e.message)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Severe (String message) {
+	@Synchronized
+	static void Severe (String message) {
 		ToOut(Level.SEVERE, message)
 		def msg = FormatMessage(message)
 		logger.severe(msg)
 		event(Level.SEVERE, message)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Exception (Throwable e) {
+	@Synchronized
+	static void Exception (Throwable e) {
 		ToOut(Level.SEVERE, e.message)
-		org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
+		StackTraceUtils.sanitize(e)
 		def t = (e.stackTrace.length > 0)?" => " + e.stackTrace[0]:""
 		def message = FormatMessage(e.message + t)
 		logger.severe(message)
 		event(Level.SEVERE, e.message)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Exception (Throwable e, String typeObject, String nameObject) {
+	@Synchronized
+	static void Exception (Throwable e, String typeObject, String nameObject) {
 		ToOut(Level.SEVERE, e.message)
 		def t = (e.stackTrace.length > 0)?" => " + e.stackTrace[0]:""
 		def message = "<${typeObject} ${nameObject}> ${e.getClass().name}: ${FormatMessage(e.message)}${t}"
 		logger.severe(message)
 		event(Level.SEVERE, e.message)
-		org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
+		StackTraceUtils.sanitize(e)
 		if (printStackTraceError) e.printStackTrace()
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Entering (String sourceClass, String sourceMethod, Object[] params) {
+	@Synchronized
+	static void Entering (String sourceClass, String sourceMethod, Object[] params) {
 		logger.entering(sourceClass, sourceMethod, params)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Exiting (String sourceClass, String sourceMethod, Object result) {
+	@Synchronized
+	static void Exiting (String sourceClass, String sourceMethod, Object result) {
 		logger.exiting(sourceClass, sourceMethod, result)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Write(Level level, String message) {
+	@Synchronized
+	static void Write(Level level, String message) {
 		if (level == Level.OFF) return
 		ToOut(level, message)
 		def msg = FormatMessage(message)
@@ -369,8 +377,8 @@ class Logs {
 		event(level, message)
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Write(String level, String message) {
+	@Synchronized
+	static void Write(String level, String message) {
 		def l = StrToLevel(level)
 		if (l == Level.OFF) return
 		ToOut(l, message)
@@ -379,16 +387,16 @@ class Logs {
 		event(l, message)
 	}
 	
-	@groovy.transform.Synchronized
-	public static String DumpFolder() {
+	@Synchronized
+	static String DumpFolder() {
 		FileUtils.ConvertToUnixPath("${FileUtils.PathFromFile(fileNameHandler)}/dump/${FileUtils.FileName(fileNameHandler)}")
 	}
 	
-	@groovy.transform.Synchronized
-	public static void Dump (Throwable e, String typeObject, String nameObject, def data) {
+	@Synchronized
+	static void Dump (Throwable e, String typeObject, String nameObject, def data) {
 		if (fileNameHandler == null) {
 			Severe("Can not save dump, required logFileName")
-			println data
+			println data.toString()
 			return
 		}
 		
@@ -396,7 +404,7 @@ class Logs {
 		
 		Fine("Save dump information to ${fn} with error ${e.message}")
 		FileUtils.ValidFilePath(fn)
-		if (e != null) org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
+		if (e != null) StackTraceUtils.sanitize(e)
 		File df = new File(fn)
 		def w
 		try {
@@ -407,12 +415,12 @@ class Logs {
 			if (e != null) {
 				w.println "Error: $e"
 				w.println "Stack trace:"
-				org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
+				StackTraceUtils.sanitize(e)
 				if (printStackTraceError) e.printStackTrace(w)
 			}
 			if (data != null) {
 				w.println "Generated script:"
-				w.println data
+				w.println data.toString()
 			}
 			w.println "\n\n\n"
 		}
@@ -424,8 +432,8 @@ class Logs {
 			if (w != null) w.close()
 		}
 	}
-	
-	public static void Config(String message) {
+
+	static void Config(String message) {
 		if (printConfigMessage)
 			if (logger.handlers.size() == 0) InitMessages << message else Write(Level.CONFIG, message)
 	}
@@ -464,37 +472,37 @@ class Logs {
 	 * Redirect output console to file or standart
 	 * @param fileName
 	 */
-	public static void RedirectStdOut(String fileName) {
+	static void RedirectStdOut(String fileName) {
 		if (fileName != null) {
 			println "Redirect console out to file \"$fileName\""
 			FileUtils.ValidFilePath(fileName)
 			PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(fileName)), true) 
 			System.setOut(ps)
-			this.outFileName = fileName
-			this.outStream = ps
+			outFileName = fileName
+			outStream = ps
 		}
 		else if (outFileName != null) {
 			println "Redirect console out to standart"
 			System.setOut(standartConsole)
-			this.outFileName = null
-			this.outStream = null
+			outFileName = null
+			outStream = null
 		}
 	}
-	
-	public static void RedirectErrOut(String fileName) {
+
+	static void RedirectErrOut(String fileName) {
 		if (fileName != null) {
 			println "Redirect error out to file \"$fileName\""
 			FileUtils.ValidFilePath(fileName)
 			PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(fileName)), true)
 			System.setErr(ps)
-			this.errFileName = fileName
-			this.errStream = ps
+			errFileName = fileName
+			errStream = ps
 		}
 		else if (errFileName != null) {
 			println "Redirect error out to standart"
 			System.setErr(errConsole)
-			this.errFileName = null
-			this.errStream = null
+			errFileName = null
+			errStream = null
 		}
 	}
 }

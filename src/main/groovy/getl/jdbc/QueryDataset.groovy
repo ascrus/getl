@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -36,28 +36,13 @@ import getl.utils.StringUtils
 class QueryDataset extends JDBCDataset {
 	/**
 	 * SQL query text
-	 * @return
 	 */
-	public String getQuery () { params.query }
-	public void setQuery (String value) { params.query = value }
-	
+	String getQuery () { params.query as String }
 	/**
-	 * Query parameters
-	 * @return
+	 * SQL query text
 	 */
-	public Map getQueryParams () { 
-		if (params.queryParams == null) params.queryParams = [:]
-		params.queryParams
-	}
-	public void setQueryParams (Map value) { params.queryParams = value }
+	void setQuery (String value) { params.query = value }
 	
 	@Override
-	public String getObjectName() {
-		"query"
-		/*
-		if (query == null) return "none query"
-		def q = query.replace("\n", " ")
-		StringUtils.LeftStr(q, 250)
-		*/
-	}
+	String getObjectName() { 'query' }
 }

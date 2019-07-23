@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,7 @@
 package getl.xml
 
 import getl.data.FileConnection
+import getl.exception.ExceptionGETL
 
 /**
  * XML connection class 
@@ -41,5 +42,23 @@ class XMLConnection extends FileConnection {
 		super(new HashMap([driver: XMLDriver]) + params)
 		
 		if (this.getClass().name == 'getl.xml.XMLConnection') methodParams.validation("Super", params)
+	}
+
+	/** Use default the attribute access method (default) */
+	static final DEFAULT_ATTRIBUTE_ACCESS = 0
+	/** Use default the node access method */
+	static final DEFAULT_NODE_ACCESS = 1
+
+	/** How read field if not specified the alias property
+	 * <br>default: DEFAULT_ATTRIBUTE_ACCESS
+	 */
+	Integer getDefaultAccessMethod() { (params.defaultAccessMethod as Integer)?:DEFAULT_ATTRIBUTE_ACCESS }
+	/** How read field if not specified the alias property
+	 * <br>default: DEFAULT_ATTRIBUTE_ACCESS
+	 */
+	void setDefaultAccessMethod(Integer value) {
+		if (!(value in [DEFAULT_NODE_ACCESS, DEFAULT_ATTRIBUTE_ACCESS]))
+			throw new ExceptionGETL('Invalid default access method property!')
+		params.defaultAccessMethod = value
 	}
 }

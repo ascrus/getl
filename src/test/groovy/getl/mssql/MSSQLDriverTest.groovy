@@ -6,11 +6,11 @@ import getl.utils.*
 
 class MSSQLDriverTest extends JDBCDriverProto {
 	static final def configName = 'tests/mssql/mssql.conf'
+
 	@Override
 	protected JDBCConnection newCon() {
 		if (!FileUtils.ExistsFile(configName)) return null
 		Config.LoadConfig(fileName: configName)
-		println Config.content.connections
 		return new MSSQLConnection(config: 'mssql')
 	}
 }

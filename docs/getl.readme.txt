@@ -1,4 +1,4 @@
-GETL (c) 2013-2015 EasyData LTD
+GETL (c) 2013-2019 EasyData LTD
 
 *** Installation ***
 Set path to file getl-xxx.jar to CLASSPATH variable for JVM. 

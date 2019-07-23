@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -25,6 +25,7 @@
 package getl.mssql
 
 import getl.data.Field
+import getl.jdbc.TableDataset
 
 import java.sql.PreparedStatement
 import getl.data.Dataset
@@ -51,10 +52,16 @@ class MSSQLDriver extends JDBCDriver {
 		tablePrefix = '['
 		tableEndPrefix = ']'
 		commitDDL = true
+		transactionalDDL = true
+		dropIfExists = false
+
+		transactionalDDL = true
+		commitDDL = true
+		transactionalTruncate = true
 	}
 
 	@Override
-	public List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
 				 Driver.Support.INDEX, Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE,
@@ -62,20 +69,20 @@ class MSSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public List<Driver.Operation> operations() {
+	List<Driver.Operation> operations() {
 		return super.operations() +
 				[Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
 
 	@Override
-	public Map getSqlType () {
+	Map getSqlType () {
 		Map res = super.getSqlType()
 		res.DOUBLE.name = 'float'
 		res.BOOLEAN.name = 'bit'
 		res.BLOB.name = 'varbinary'
 		res.BLOB.useLength = JDBCDriver.sqlTypeUse.ALWAYS
-		res.TEXT.name = 'varchar'
-		res.TEXT.useLength = JDBCDriver.sqlTypeUse.ALWAYS
+		res.TEXT.name = 'text'
+		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
 		res.DATETIME.name = 'datetime'
 		res.UUID.name = 'uniqueidentifier'
 
@@ -83,14 +90,16 @@ class MSSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public String defaultConnectURL () {
+	String defaultConnectURL () {
 		return 'jdbc:sqlserver://{host};databaseName={database}'
 	}
 	
 	@Override
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
-		if (params.with != null) {
-			dir.afteralias = "with (${params."with"})"
+	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+		super.sqlTableDirective(dataset, params, dir)
+		Map<String, Object> dl = (dataset as TableDataset).readDirective?:[:] + params
+		if (dl.with != null) {
+			dir.afteralias = "with (${dl.with})"
 		}
 	}
 	
@@ -107,7 +116,7 @@ class MSSQLDriver extends JDBCDriver {
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} {value}' }
 
 	@Override
-	public void prepareField (Field field) {
+	void prepareField (Field field) {
 		super.prepareField(field)
 
 		if (field.typeName != null) {
@@ -128,5 +137,8 @@ class MSSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public boolean blobReadAsObject () { return false }
+	boolean blobReadAsObject () { return false }
+
+	@Override
+	boolean textReadAsObject() { return false }
 }

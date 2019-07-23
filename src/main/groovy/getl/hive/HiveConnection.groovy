@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -42,7 +42,7 @@ class HiveConnection extends JDBCConnection {
     @Override
     protected void registerParameters () {
         super.registerParameters()
-        methodParams.register('Super', ['vendor'])
+        methodParams.register('Super', ['vendor', 'version', 'hdfsHost', 'hdfsLogin', 'hdfsDir'])
     }
 
     @Override
@@ -53,8 +53,8 @@ class HiveConnection extends JDBCConnection {
     }
 
     @Override
-    protected void doInitConnection () {
-        super.doInitConnection()
+    protected void doBeforeConnect () {
+        super.doBeforeConnect()
         switch (vendor?.toLowerCase()) {
             case 'apache':
                 driverName = 'org.apache.hive.jdbc.HiveDriver'
@@ -63,14 +63,21 @@ class HiveConnection extends JDBCConnection {
                 driverName = 'org.apache.hive.jdbc.HiveDriver'
                 break
             case 'cloudera':
-                driverName = 'com.cloudera.hive.jdbc41.HS2Driver'
+                def ver = versionDriver?:4
+                driverName = "com.cloudera.hive.jdbc${ver}.HS2Driver"
                 break
             default:
                 throw new ExceptionGETL('Need set vendor name from Hive connection')
         }
     }
 
+    /**
+     * Vendor driver name
+     */
     public String getVendor() { return params.vendor }
+    /**
+     * Vendor driver name
+     */
     public void setVendor(String value) {
         switch (value?.toLowerCase()) {
             case 'apache':
@@ -85,6 +92,15 @@ class HiveConnection extends JDBCConnection {
         }
         params.vendor = value
     }
+
+    /**
+     * Version JDBC driver
+     */
+    public Integer getVersionDriver() { return params.versionDriver }
+    /**
+     * Version JDBC driver
+     */
+    public void setVersionDriver(Integer value) { params.versionDriver = value }
 
     /**
      * HDFS host

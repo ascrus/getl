@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -25,15 +25,16 @@
 package getl.utils
 
 import getl.exception.ExceptionGETL
+import groovy.transform.CompileStatic
 
 /**
  * Analize text as lexer
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.CompileStatic
+@CompileStatic
 class Lexer {
-	public static enum TokenType {SINGLE_WORD, QUOTED_TEXT, LIST, COMMA, SEMICOLON, FUNCTION, OBJECT_NAME, OPERATOR, COMMENT}
+	static enum TokenType {SINGLE_WORD, QUOTED_TEXT, LIST, COMMA, SEMICOLON, FUNCTION, OBJECT_NAME, OPERATOR, COMMENT}
 
 	/**
 	 * Type of use parse command
@@ -70,7 +71,7 @@ class Lexer {
 	/**
 	 * Stack running of commands
 	 */
-	private Stack<CommandParam> commands
+	private Stack commands
 
 	/**
 	 * Current text
@@ -80,7 +81,7 @@ class Lexer {
 	/**
 	 * Stack tokens by lists
 	 */
-	private Stack<List> stackTokens
+	private Stack stackTokens
 
 	/**
 	 * Current column number in line
@@ -95,12 +96,12 @@ class Lexer {
 	/**
 	 * Parse input stream
 	 */
-	public void parse () {
+	void parse () {
 		tokens = []
 		command = new CommandParam()
 		command.type = CommandType.NONE
-		commands = new Stack<CommandParam>()
-		stackTokens = new Stack<List>()
+		commands = new Stack()
+		stackTokens = new Stack()
 		sb = new StringBuilder()
 
 		curNum = 0
@@ -236,14 +237,14 @@ class Lexer {
 	private boolean gap (int c) {
 		if (command.type in [CommandType.WORD]) {
 			if (sb.length() > 0) tokens << [type: TokenType.SINGLE_WORD, value: sb.toString()]
-			command = commands.pop()
+			command = commands.pop() as CommandParam
 			sb = new StringBuilder()
 
 			return true
 		}
 		else if (command.type == CommandType.OBJECT_NAME) {
 			if (sb.length() > 0) tokens << [type: TokenType.OBJECT_NAME, value: sb.toString()]
-			command = commands.pop()
+			command = commands.pop() as CommandParam
 			sb = new StringBuilder()
 
 			return true
@@ -282,7 +283,7 @@ class Lexer {
         }
 
         if (sb.length() > 0) tokens << [type: TokenType.OPERATOR, value: sb.toString()]
-        command = commands.pop()
+        command = commands.pop() as CommandParam
         sb = new StringBuilder()
     }
 
@@ -337,7 +338,7 @@ class Lexer {
 		input.reset()
 
 		if (sb.length() >= 0) tokens << [type: TokenType.QUOTED_TEXT, quote: ((char)(c as int)).toString(), value: sb.toString()]
-		command = commands.pop()
+		command = commands.pop() as CommandParam
 		sb = new StringBuilder()
 	}
 
@@ -366,7 +367,7 @@ class Lexer {
 	 */
 	private void comment_finish(int c) {
 		if (sb.length() >= 0) tokens << [type: TokenType.COMMENT, comment_start: "/*", comment_finish: "*/", value: sb.toString()]
-		command = commands.pop()
+		command = commands.pop() as CommandParam
 		sb = new StringBuilder()
 	}
 
@@ -412,7 +413,7 @@ class Lexer {
 		if (command.type != CommandType.BRACKET || command.start != c1 || command.finish != c2) error("opening bracket not found")
 
 		List curTokens = tokens
-		tokens = stackTokens.pop()
+		tokens = stackTokens.pop() as List
 
 		Map prevToken = [:]
 		if (tokens.size() != 0) prevToken = (Map) tokens.get(tokens.size() - 1)
@@ -426,7 +427,7 @@ class Lexer {
 			tokens << [type: TokenType.LIST, start: ((char)(c1 as int)).toString(), finish: ((char)(c2 as int)).toString(), list: curTokens]
 		}
 
-		command = commands.pop()
+		command = commands.pop() as CommandParam
 	}
 
 	private void comma(int c) {
@@ -456,7 +457,7 @@ class Lexer {
 	}
 
 	@Override
-	public String toString() {
+	String toString() {
 		MapUtils.ToJson([tokens: tokens])
 	}
 
@@ -464,7 +465,7 @@ class Lexer {
 	 * Return list of statements separated by a semicolon
 	 * @return
 	 */
-	public List<List<Map>> statements () {
+	List<List<Map>> statements () {
 		List<List<Map>> res = []
 		def cur = 0
 		def pos = findByType(tokens, TokenType.SEMICOLON, 0)
@@ -482,7 +483,7 @@ class Lexer {
 	 * @param start
 	 * @return
 	 */
-	public static String keyWords(List<Map> tokens, int start, Integer max) {
+	static String keyWords(List<Map> tokens, int start, Integer max) {
 		StringBuilder sb = new StringBuilder()
 		int i = 0
 		while (start < tokens.size() && tokens[start]."type" == TokenType.SINGLE_WORD && (max == null || i < max)) {
@@ -500,7 +501,7 @@ class Lexer {
 	 * @param position
 	 * @return
 	 */
-	public static List<Map> list (List<Map> tokens, int position) {
+	static List<Map> list (List<Map> tokens, int position) {
 		(List<Map>)((tokens[position]."type" == TokenType.LIST)?tokens[position]."list":null)
 	}
 
@@ -510,7 +511,7 @@ class Lexer {
 	 * @param position
 	 * @return
 	 */
-	public static Map function (List<Map> tokens, int position) {
+	static Map function (List<Map> tokens, int position) {
 		Map token = tokens[position]
 		if (token."type" != TokenType.FUNCTION) return null
 
@@ -523,8 +524,8 @@ class Lexer {
 	 * @param res
 	 * @return - next token after object name
 	 */
-	public static List object (List<Map> tokens, int start) {
-		if (!(tokens[start]."type" in [TokenType.SINGLE_WORD, TokenType.OBJECT_NAME])) {
+	static List object (List<Map> tokens, int start) {
+		if (!((tokens[start]."type" as TokenType) in [TokenType.SINGLE_WORD, TokenType.OBJECT_NAME])) {
 			return null
 		}
 
@@ -536,7 +537,7 @@ class Lexer {
 	 * @param position
 	 * @return
 	 */
-	public static TokenType type (List<Map> tokens, int position) {
+	static TokenType type (List<Map> tokens, int position) {
 		(TokenType)((position < tokens.size())?tokens[position]."type":null)
 	}
 
@@ -546,7 +547,7 @@ class Lexer {
 	 * @param start
 	 * @return
 	 */
-	public static int findByType (List<Map> tokens, TokenType type, int start) {
+	static int findByType (List<Map> tokens, TokenType type, int start) {
 		for (int i = start; i < tokens.size(); i++) {
 			if (tokens[i]."type" == type) return i
 		}
@@ -561,7 +562,7 @@ class Lexer {
 	 * @param finish
 	 * @return
 	 */
-	public static List<List<Map>> toList (List<Map> tokens, int start, int finish) {
+	static List<List<Map>> toList (List<Map> tokens, int start, int finish) {
 		List<List<Map>> res = new ArrayList<List<Map>>()
 		List<Map> cur = new ArrayList<Map>()
 		while (start <= finish && tokens[start]."type"  != TokenType.SEMICOLON) {
@@ -588,7 +589,7 @@ class Lexer {
 	 * @param delimiter
 	 * @return
 	 */
-	public static List<List<Map>> toList (List<Map> tokens, int start, int finish, String delimiter) {
+	static List<List<Map>> toList (List<Map> tokens, int start, int finish, String delimiter) {
 		delimiter = delimiter.toUpperCase()
 		List<List<Map>> res = new ArrayList<List<Map>>()
 		List<Map> cur = new ArrayList<Map>()
@@ -616,7 +617,7 @@ class Lexer {
 	 * @param keyWord
 	 * @return
 	 */
-	public static int findKeyWord(List<Map> tokens, int start, String keyWord) {
+	static int findKeyWord(List<Map> tokens, int start, String keyWord) {
 		keyWord = keyWord.toUpperCase()
 		for (int i = start; i < tokens.size(); i++) {
 			def token = tokens[i]

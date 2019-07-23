@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -33,7 +33,6 @@ import getl.jdbc.*
 import getl.proc.Flow
 import getl.tfs.TFS
 import getl.utils.*
-import groovy.transform.CompileStatic
 
 /**
  * Hive driver class
@@ -43,8 +42,8 @@ class HiveDriver extends JDBCDriver {
     HiveDriver() {
         super()
 
-        tablePrefix = ''
-        fieldPrefix = ''
+        tablePrefix = '`'
+        fieldPrefix = '`'
 
         connectionParamBegin = ';'
         connectionParamJoin = ';'
@@ -64,32 +63,36 @@ class HiveDriver extends JDBCDriver {
     }
 
     @Override
-    public List<Driver.Support> supported() {
+    List<Driver.Support> supported() {
         return super.supported() +
-                [Driver.Support.LOCAL_TEMPORARY, Driver.Support.BLOB, Driver.Support.TIME,
+                [Driver.Support.LOCAL_TEMPORARY, /*Driver.Support.BLOB, Driver.Support.TIME,*/
                  Driver.Support.DATE, Driver.Support.BOOLEAN] -
-                [Driver.Support.TRANSACTIONAL, Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD,
+                [Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD,
                  Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD]
     }
 
     @Override
-    public List<Driver.Operation> operations() {
+    List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
-                 Driver.Operation.BULKLOAD]
+                 Driver.Operation.BULKLOAD] -
+                [Driver.Operation.READ_METADATA, Driver.Operation.INSERT,
+                 Driver.Operation.UPDATE, Driver.Operation.DELETE]
     }
 
     @Override
-    public String defaultConnectURL () {
+    String defaultConnectURL () {
         return 'jdbc:hive2://{host}/{database}'
     }
 
     @Override
-    public Map getSqlType () {
+    Map getSqlType () {
         Map res = super.getSqlType()
         res.STRING.name = 'string'
         res.STRING.useLength = JDBCDriver.sqlTypeUse.NEVER
+        res.DOUBLE.name = 'double'
         res.BLOB.name = 'binary'
+        res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER
 
         return res
     }
@@ -118,8 +121,7 @@ class HiveDriver extends JDBCDriver {
             sb << '\n'
         }
 
-        if (params.clustered != null) {
-            if (!(params.clustered instanceof Map)) throw new ExceptionGETL('Required map type for parameter "clustered"')
+        if (params.clustered != null && !(params.clustered as Map).isEmpty()) {
             def clustered = params.clustered as Map
 
             def allowed = ['by', 'sortedBy', 'intoBuckets']
@@ -129,12 +131,13 @@ class HiveDriver extends JDBCDriver {
             if (clustered.by == null) throw new ExceptionGETL('Required value for parameter "clustered.by"')
             if (!(clustered.by instanceof List)) throw new ExceptionGETL('Required list type for parameter "clustered.by"')
             def by = clustered.by as List
+            if (by.isEmpty()) throw new ExceptionGETL('Required value for parameter "clustered.by"')
             sb << "CLUSTERED BY (${by.join(', ')})"
 
             if (clustered.sortedBy != null) {
                 if (!(clustered.sortedBy instanceof List)) throw new ExceptionGETL('Required list type for parameter "clustered.sorterBy"')
                 def sortedBy = clustered.sortedBy as List
-                sb << " SORTED BY (${sortedBy.join(', ')})"
+                if (!sortedBy.isEmpty()) sb << " SORTED BY (${sortedBy.join(', ')})"
             }
 
             if (clustered.intoBuckets != null) {
@@ -146,8 +149,7 @@ class HiveDriver extends JDBCDriver {
             sb << '\n'
         }
 
-        if (params.skewed != null) {
-            if (!(params.skewed instanceof Map)) throw new ExceptionGETL('Required map type for parameter "skewed"')
+        if (params.skewed != null && !(params.skewed as Map).isEmpty()) {
             def skewed = params.skewed as Map
 
             def allowed = ['by', 'on', 'storedAsDirectories']
@@ -156,12 +158,14 @@ class HiveDriver extends JDBCDriver {
 
             if (skewed.by == null) throw new ExceptionGETL('Required value for parameter "skewed.by"')
             if (!(skewed.by instanceof List)) throw new ExceptionGETL('Required list type for parameter "skewed.by"')
+            if ((skewed.by as List).isEmpty()) throw new ExceptionGETL('Required value for parameter "skewed.by"')
             def by = skewed.by as List
             sb << "SKEWED BY (${by.join(', ')})"
 
             if (skewed.on == null) throw new ExceptionGETL('Required value for parameter "skewed.on"')
             if (!(skewed.on instanceof List)) throw new ExceptionGETL('Required list type for parameter "skewed.on"')
             def on = skewed.on as List
+            if (on.isEmpty()) throw new ExceptionGETL('Required value for parameter "skewed.on"')
             def onCols = [] as List<String>
             on.each { onCol ->
                 if (!(onCol instanceof List)) throw new ExceptionGETL('Required list type for item by "skewed.on"')
@@ -204,13 +208,15 @@ class HiveDriver extends JDBCDriver {
         if (params.tblproperties != null) {
             if (!(params.tblproperties instanceof Map)) throw new ExceptionGETL('Required map type for parameter "tblproperties"')
             def tblproperties = params.tblproperties as Map
-            def props = [] as List<String>
-            tblproperties.each { k, v ->
-                props << "\"$k\"=\"$v\"".toString()
-            }
-            sb << "TBLPROPERTIES(${props.join(', ')})"
+            if (!tblproperties.isEmpty()) {
+                def props = [] as List<String>
+                tblproperties.each { k, v ->
+                    props << "\"$k\"=\"$v\"".toString()
+                }
+                sb << "TBLPROPERTIES(${props.join(', ')})"
 
-            sb << '\n'
+                sb << '\n'
+            }
         }
 
         if (params.select != null) {
@@ -226,25 +232,26 @@ class HiveDriver extends JDBCDriver {
 
     @Override
     protected String syntaxInsertStatement(Dataset dataset, Map params) {
-        String into = (BoolUtils.IsValue(params.overwrite))?'OVERWRITE':'INTO'
+        String into = (BoolUtils.IsValue([params.overwrite, (dataset as TableDataset).params.overwrite]))?'OVERWRITE':'INTO'
         return ((dataset.fieldListPartitions.isEmpty()))?
-                "INSERT $into {table} ({columns}) VALUES({values})":
-                "INSERT $into {table} PARTITION ({partition}) VALUES({values})"
+                "INSERT $into TABLE {table} ({columns}) VALUES({values})":
+                "INSERT $into TABLE {table} ({columns}) PARTITION ({partition}) VALUES({values})"
     }
 
     @Override
-    public void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
-        bulkParams = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
+    void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
+        def table = dest as TableDataset
+        bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
         def conHive = dest.connection as HiveConnection
 
-//        def overwrite = BoolUtils.IsValue(bulkParams.overwrite)
+        def overwrite = BoolUtils.IsValue([bulkParams.overwrite, table.params.overwrite])
         def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, conHive.hdfsHost])
         def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, conHive.hdfsPort]) as Integer
         def hdfsLogin = ListUtils.NotNullValue([bulkParams.hdfsLogin, conHive.hdfsLogin])
         def hdfsDir = ListUtils.NotNullValue([bulkParams.hdfsDir, conHive.hdfsDir])
         def processRow = bulkParams.processRow as Closure
 
-        Map<String, String> expression = bulkParams.expression?:[:]
+        Map<String, String> expression = bulkParams.expression as Map<String, String>?:[:]
         expression.each { String fieldName, String expr ->
             if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
         }
@@ -254,7 +261,7 @@ class HiveDriver extends JDBCDriver {
         if (hdfsDir == null) throw new ExceptionGETL('Required parameter "hdfsDir"')
 
         List<String> files = []
-        if (bulkParams.files != null) {
+        if (bulkParams.files != null && !(bulkParams.files as List).isEmpty()) {
             files.addAll(bulkParams.files as List)
         }
         else if (bulkParams.fileMask != null) {
@@ -293,7 +300,7 @@ class HiveDriver extends JDBCDriver {
 
             def exprValue = expression.get(n.name.toLowerCase())
             if (exprValue == null) {
-                loadFields << n.name
+                loadFields << fieldPrefix + n.name + fieldPrefix
             }
             else {
                 loadFields << exprValue
@@ -306,11 +313,11 @@ class HiveDriver extends JDBCDriver {
             n.isPartition = false
             tempFile.field << n
 
-            partFields << n.name
+            partFields << fieldPrefix + n.name + fieldPrefix
 
             def exprValue = expression.get(n.name.toLowerCase())
             if (exprValue == null) {
-                loadFields << n.name
+                loadFields << fieldPrefix + n.name + fieldPrefix
             }
             else {
                 loadFields << exprValue
@@ -345,11 +352,11 @@ class HiveDriver extends JDBCDriver {
             try {
                 dest.readRows = tempTable.connection
                         .executeCommand(isUpdate: true, command: "LOAD DATA INPATH '${fileMan.rootPath}/${tempFile.fileName}' INTO TABLE ${tempTable.tableName}")
-                def countRows = tempTable.connection
+                def countRow = tempTable.connection
                         .executeCommand(isUpdate: true, command: "FROM ${tempTable.tableName} INSERT ${(overwrite) ? 'OVERWRITE' : 'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
                         (!partFields.isEmpty() ? " PARTITION(${partFields.join(', ')})" : '') + " SELECT ${loadFields.join(', ')}")
-                dest.writeRows = countRows
-                dest.updateRows = countRows
+                dest.writeRows = countRow
+                dest.updateRows = countRow
             }
             finally {
                 tempTable.drop()
@@ -358,13 +365,16 @@ class HiveDriver extends JDBCDriver {
         finally {
             tempFile.drop()
             fileMan.connect()
-            fileMan.removeFile(tempFile.fileName)
-            fileMan.disconnect()
+            try {
+                fileMan.removeFile(tempFile.fileName)
+            }
+            finally {
+                fileMan.disconnect()
+            }
         }
     }
 
-    @CompileStatic
-    public static Map<String, Object> tableExtendedInfo(TableDataset table) {
+    static Map<String, Object> tableExtendedInfo(TableDataset table) {
         Map<String, Object> res = [:]
         def sql = 'SHOW TABLE EXTENDED'
         if (table.schemaName != null) sql += " IN ${table.schemaName}"
@@ -434,8 +444,8 @@ class HiveDriver extends JDBCDriver {
     }
 
     @Override
-    public List<Field> fields(Dataset dataset) {
-        def res = super.fields(dataset)
+    List<Field> fields(Dataset dataset) {
+        List<Field> res = super.fields(dataset)
         if (dataset instanceof TableDataset) {
             def ext = tableExtendedInfo(dataset)
             if (BoolUtils.IsValue(ext.partitioned) && ext.partitionColumns != null) {

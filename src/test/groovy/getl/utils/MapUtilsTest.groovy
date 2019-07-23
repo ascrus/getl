@@ -66,4 +66,74 @@ class MapUtilsTest extends getl.test.GetlTest {
         f.each { println it.name + '(' + it.type + '): ' + it.extended }
         */
     }
+
+    void testProcessArguments() {
+        String[] a1 = ['a=1', '', 'b=2', ' ', 'c=3']
+        assertEquals([a:1, b:2, c:3].toString(), MapUtils.ProcessArguments(a1).toString())
+
+        String[] a2 = ['-a', '1', '-b', '2', ' ', '-c', '3']
+        assertEquals([a:1, b:2, c:3].toString(), MapUtils.ProcessArguments(a2).toString())
+
+        List<String> l1 = ['a=1', '', 'b=2', ' ', 'c=3']
+        assertEquals([a:1, b:2, c:3].toString(), MapUtils.ProcessArguments(l1).toString())
+
+        List<String> l2 = ['-a', '1', '-b', '2', ' ', '-c', '3']
+        assertEquals([a:1, b:2, c:3].toString(), MapUtils.ProcessArguments(l2).toString())
+
+        String s1 = ' a=1 2  3 '
+        assertEquals([a:'1 2  3'].toString(), MapUtils.ProcessArguments(s1).toString())
+
+        String s2 = ' -a 1 2  3 '
+        assertEquals(['a 1 2  3':null].toString(), MapUtils.ProcessArguments(s2).toString())
+    }
+
+    void testFindKeys() {
+        def m = [a: 1, b: [c: 1, d: 2, e: [f: [1, 2], g: 3], h: [f: [1, 2], g: 3], j: 3], k: 2,
+                 l: [c: 1, d: 2, e: [f: [1, 2], g: 3]]]
+        def count = 0
+        MapUtils.FindKeys(m, '*.*.f') { Map map, String key, item ->
+            count++
+            assertEquals('f', key)
+            assertEquals([1, 2], item)
+            map.put('_' + key, map.remove(key))
+        }
+        assertEquals(3, count)
+
+        def res = '''{
+    "a": 1,
+    "b": {
+        "c": 1,
+        "d": 2,
+        "e": {
+            "g": 3,
+            "_f": [
+                1,
+                2
+            ]
+        },
+        "h": {
+            "g": 3,
+            "_f": [
+                1,
+                2
+            ]
+        },
+        "j": 3
+    },
+    "k": 2,
+    "l": {
+        "c": 1,
+        "d": 2,
+        "e": {
+            "g": 3,
+            "_f": [
+                1,
+                2
+            ]
+        }
+    }
+}'''
+
+        assertEquals(res, MapUtils.ToJson(m))
+    }
 }

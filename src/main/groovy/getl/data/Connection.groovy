@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -28,7 +28,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -56,14 +56,14 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-public class Connection {
+class Connection {
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 	
 	/**
 	 * Not supported
 	 */
-	public Connection() {
-		throw new ExceptionGETL("Basic constructor not supported")
+	Connection() {
+		throw new ExceptionGETL('Basic constructor not supported')
 	}
 	
 	/**
@@ -74,16 +74,17 @@ public class Connection {
 	 * driver - Driver class name
 	 * config - Name in configuration file with "connections" section
 	 */
-	public Connection(Map parameters) {
+	Connection(Map parameters) {
 		registerParameters()
 		
-		def driverClass = parameters.driver
+		Class driverClass = parameters.driver as Class
 		if (driverClass == null) throw new ExceptionGETL("Required parameter \"driver\" (driver class name)")
-		this.driver = driverClass.newInstance()
+		this.driver = driverClass.newInstance() as Driver
 		this.driver.connection = this
 		def load_config = (String)parameters.config
 		if (load_config != null) setConfig(load_config)
-		MapUtils.MergeMap(this.params, MapUtils.CleanMap(parameters, ["driver", "config"]))
+		MapUtils.MergeMap(this.params as Map<String, Object>,
+				MapUtils.CleanMap(parameters, ['driver', 'config']) as Map<String, Object> )
 		doInitConnection()
 	}
 	
@@ -91,9 +92,11 @@ public class Connection {
 	 * Register connection parameters with method validator
 	 */
 	protected void registerParameters () {
-		methodParams.register("Super", ["driver", "config", "autoSchema", "dataset", "connection"])
-		methodParams.register("retrieveObjects", [])
-		methodParams.register("executeCommand", ["command", "queryParams", "isUpdate"])
+		methodParams.register('Super',
+				['driver', 'config', 'autoSchema', 'dataset', 'connection', 'numberConnectionAttempts',
+				 'timeoutConnectionAttempts'])
+		methodParams.register('retrieveObjects', [])
+		methodParams.register('executeCommand', ['command', 'queryParams', 'isUpdate'])
 	}
 	
 	/**
@@ -107,7 +110,7 @@ public class Connection {
 	 * @param params
 	 * @return created connection
 	 */
-	public static Connection CreateConnection (Map params) {
+	static Connection CreateConnection (Map params) {
 		if (params == null) params = [:]
 		def configName = params.config
 		if (configName != null) {
@@ -121,20 +124,30 @@ public class Connection {
 		
 		(Connection)(Class.forName(connectionClass).newInstance(MapUtils.CleanMap(params, ["connection", "config"])))
 	}
-	
-	/**
-	 * Use connection driver 
-	 */
+
+	/** Connection driver manager class*/
 	private Driver driver
-	public Driver getDriver() { driver }
+
+	/** Connection driver manager class*/
+	Driver getDriver() { driver }
 	
 	/**
 	 * Configuration name
 	 * Store parameters to config file from section "CONNECTIONS"
 	 */
 	private String config
-	public String getConfig () { config }
-	public void setConfig (String value) {
+
+	/**
+	 * Configuration name
+	 * Store parameters to config file from section "CONNECTIONS"
+	 */
+	String getConfig () { config }
+
+	/**
+	 * Configuration name
+	 * Store parameters to config file from section "CONNECTIONS"
+	 */
+	void setConfig (String value) {
 		config = value
 		if (config != null) {
 			if (Config.ContainsSection("connections.${this.config}")) {
@@ -185,59 +198,64 @@ public class Connection {
 	 */
 	public final Map sysParams = [:]
 	
-	/**
-	 * Auto load schema with meta file for connection datasets
-	 * @return
-	 */
-	public boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema, false) }
-	public void setAutoSchema (boolean value) { params.autoSchema = value }
-	
-	/**
-	 * Print write rows to console
-	 */
-	public boolean getLogWriteToConsole () { BoolUtils.IsValue(params.logWriteToConsole, false) }
-	public void setLogWriteToConsole (boolean value) { params.logWriteToConsole = value }
-	
-	/**
-	 * Dataset class for auto create by connection
-	 * @return
-	 */
-	public String getDataset () { params.dataset }
-	public void setDataset (String value) { params.dataset = value }
-	
-	/**
-	 * Current transaction count
-	 * @return
-	 */
-	private int tranCount = 0
-	public int getTranCount() { tranCount }
-	
-	/**
-	 * Init parameters connections (use for children) 
-	 */
-	protected void doInitConnection () {
-		
+	/** Auto load schema with meta file for connection datasets */
+	boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema, false) }
+	/** Auto load schema with meta file for connection datasets */
+	void setAutoSchema (boolean value) { params.autoSchema = value }
+
+	/** The number of connection attempts on error (default 1) */
+	Integer getNumberConnectionAttempts() { (params.numberConnectionAttempts as Integer)?:1 }
+	/** The number of connection attempts on error (default 1) */
+	void setNumberConnectionAttempts(Integer value) {
+		if (value == null || value < 1) throw new ExceptionGETL('The number of connection attempts must be greater than zero!')
+		params.numberConnectionAttempts = value
 	}
+
+	/** The timeout seconds of connection attempts on error (default 1) */
+	Integer getTimeoutConnectionAttempts() { (params.timeoutConnectionAttempts as Integer)?:1 }
+	/** The timeout seconds of connection attempts on error (default 1) */
+	void setTimeoutConnectionAttempts(Integer value) {
+		if (value == null || value <= 0) throw new ExceptionGETL('The timeout of connection attempts must be greater than zero!')
+		params.timeoutConnectionAttempts = value
+	}
+	
+	/** Print write rows to console */
+	boolean getLogWriteToConsole () { BoolUtils.IsValue(params.logWriteToConsole, false) }
+	/** Print write rows to console */
+	void setLogWriteToConsole (boolean value) { params.logWriteToConsole = value }
+	
+	/** Dataset class for auto create by connection */
+	String getDataset () { params.dataset }
+	/** Dataset class for auto create by connection */
+	void setDataset (String value) { params.dataset = value }
+
+	/**	 Current transaction count */
+	private int tranCount = 0
+	/**	 Current transaction count */
+	int getTranCount() { tranCount }
+	
+	/** Init parameters connections (use for children) */
+	protected void doInitConnection () { }
 	
 	/**
 	 * Return objects list of connection 
 	 * @return List of objects
 	 */
-	public List<Object> retrieveObjects () { retrieveObjects([:], null) }
+	List<Object> retrieveObjects () { retrieveObjects([:], null) }
 	
 	/**
 	 * Return objects list of connection
 	 * @param params Reading parameters
 	 * @return List of objects
 	 */
-	public List<Object> retrieveObjects (Map params) { retrieveObjects(params, null) }
+	List<Object> retrieveObjects (Map params) { retrieveObjects(params, null) }
 	
 	/**
 	 * Return objects list of connection
 	 * @param filter Filter closure
 	 * @return List of objects
 	 */
-	public List<Object> retrieveObjects (Closure filter) { retrieveObjects([:], filter) }
+	List<Object> retrieveObjects (Closure filter) { retrieveObjects([:], filter) }
 	
 	/**
 	 * Return objects list of connection
@@ -245,7 +263,7 @@ public class Connection {
 	 * @param filter Filter closure
 	 * @return List of objects
 	 */
-	public List<Object> retrieveObjects (Map params, Closure filter) {
+	List<Object> retrieveObjects (Map params, Closure filter) {
 		if (params == null) params = [:]
 		methodParams.validation("retrieveObjects", params, [driver.methodParams.params("retrieveObjects")])
 		
@@ -253,68 +271,87 @@ public class Connection {
 		driver.retrieveObjects(params, filter) 
 	}
 	
-	/**
-	 * Is connected to source
-	 * @return
-	 */
-	public boolean getConnected () { driver.isConnected() }
+	/** Is connected to source */
+	boolean getConnected () { driver.isConnected() }
 	
-	/**
-	 * Set connected to source
-	 * @param c
-	 */
-	public void setConnected (boolean c) {
+	/** Set connected to source */
+	void setConnected (boolean c) {
 		if (!driver.isSupport(Driver.Support.CONNECT)) throw new ExceptionGETL("Driver not support connect method") 
 		if (connected && c) return
 		if (!connected && !c) return
 		if (c) {
-			doBeforeConnect()
-			driver.connect() 
+			def countAttempts = numberConnectionAttempts?:0
+			if (countAttempts <= 0) countAttempts = 1
+
+			def timeoutAttempts = timeoutConnectionAttempts?:0
+			if (timeoutAttempts <= 0) timeoutAttempts = 1
+			timeoutAttempts = timeoutAttempts * 1000
+
+			def success = false
+			def attempt = 0
+			while (!success) {
+				doBeforeConnect()
+				try {
+					driver.connect()
+					success = true
+				}
+				catch (Exception e) {
+					doErrorConnect()
+					attempt++
+					if (attempt >= countAttempts) throw e
+					sleep(timeoutAttempts)
+					Logs.Warning("Error connect to $objectName, attempt number $attempt, error: ${e.message}")
+				}
+			}
 			doDoneConnect()
 		}
 		else {
 			doBeforeDisconnect()
-			driver.disconnect()
+			try {
+				driver.disconnect()
+			}
+			catch (Exception e) {
+				doErrorDisconnect()
+				throw e
+			}
 			doDoneDisconnect()
 		}
 	}
 	
-	/**
-	 * User logic before connected to source
-	 */
-	protected void doBeforeConnect () {}
+	/** User logic before connected to source */
+	protected void doBeforeConnect() {}
 	
-	/**
-	 * User logic after connected to source
-	 */
-	protected void doDoneConnect () {}
+	/** User logic after connected to source */
+	protected void doDoneConnect() {}
+
+	/** User logic if connection error */
+	protected void doErrorConnect() {}
 	
-	/**
-	 * User logic before disconnected from source
-	 */
+	/** User logic before disconnected from source */
 	protected void doBeforeDisconnect() {}
 	
-	/**
-	 * User logic after disconnected from source
-	 */
-	protected void doDoneDisconnect () {}
+	/** User logic after disconnected from source */
+	protected void doDoneDisconnect() {}
+
+	/** User logic if disconnection error */
+	 protected void doErrorDisconnect() {}
 	
 	/**
 	 * Validation  connected is true and connecting if has no
 	 */
-	public void tryConnect () {
+	void tryConnect () {
 		if (driver.isSupport(Driver.Support.CONNECT)) connected = true
 	}
 	
 	/**
 	 * Connection has current transaction  
 	 */
-	public boolean isTran () { (tranCount > 0) }
+	boolean isTran () { (tranCount > 0) }
 	
 	/**
 	 * Start transaction
 	 */
-	public void startTran () {
+	void startTran () {
 		if (!driver.isSupport(Driver.Support.TRANSACTIONAL)) throw new ExceptionGETL("Driver not supported transactional")
 		tryConnect()
 		driver.startTran()
@@ -324,7 +361,7 @@ public class Connection {
 	/** 
 	 * Commit transaction
 	 */
-	public void commitTran () {
+	void commitTran () {
 		if (!driver.isSupport(Driver.Support.TRANSACTIONAL)) throw new ExceptionGETL("Driver not supported transactional")
 		if (!isTran()) throw new ExceptionGETL("Not started transaction for commit operation")
 		driver.commitTran()
@@ -334,7 +371,7 @@ public class Connection {
 	/**
 	 * Rollback transaction
 	 */
-	public void rollbackTran () {
+	void rollbackTran () {
 		if (!driver.isSupport(Driver.Support.TRANSACTIONAL)) throw new ExceptionGETL("Driver not supported transactional")
 		if (!isTran()) throw new ExceptionGETL("Not started transaction for rollback operation")
 		driver.rollbackTran()
@@ -347,7 +384,7 @@ public class Connection {
 	 * @param params	- Parameters
 	 * @return long		- Rows count 
 	 */
-	public long executeCommand (Map params) {
+	long executeCommand (Map params) {
 		if (!driver.isOperation(Driver.Operation.EXECUTE)) throw new ExceptionGETL("Driver not supported execute command")
 		
 		if (params == null) params = [:]
@@ -364,16 +401,16 @@ public class Connection {
 	 * Connect name
 	 * @return
 	 */
-	public String getObjectName() { driver.getClass().name }
+	String getObjectName() { driver.getClass().name }
 
-	@Override	
-	public String toString() { objectName }
+	@Override
+	String toString() { objectName }
 	
 	/**
 	 * Clone current connection
 	 * @return
 	 */
-	public Connection cloneConnection () {
+	Connection cloneConnection () {
 		String className = this.class.name
 		Map p = CloneUtils.CloneMap(this.params)
 		CreateConnection([connection: className] + MapUtils.CleanMap(p, ['sysParams']))

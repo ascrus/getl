@@ -5,14 +5,7 @@ import getl.driver.Driver
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TFS
-import getl.utils.Config
-import getl.utils.DateUtils
-import getl.utils.FileUtils
-import getl.utils.GenerationUtils
-import getl.utils.Logs
-import getl.utils.NumericUtils
-import getl.utils.StringUtils
-import groovy.transform.CompileStatic
+import getl.utils.*
 import groovy.transform.InheritConstructors
 
 import java.sql.Time
@@ -34,13 +27,15 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
     private static final countRows = 100
     private JDBCConnection _con
+    protected String defaultDatabase
     protected String defaultSchema
     abstract protected JDBCConnection newCon()
     public JDBCConnection getCon() {
         if (_con == null) _con = newCon()
         return _con
     }
-    final def table = new TableDataset(connection: con, schemaName: defaultSchema, tableName: '_getl_test')
+    protected String getTableClass() { 'getl.jdbc.TableDataset' }
+    protected final TableDataset table = TableDataset.CreateDataset(dataset: tableClass, connection: con, tableName: 'getl_test')
     List<Field> getFields () {
         def res =
             [
@@ -69,30 +64,26 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
     void connect() {
         con.connected = true
-        assertTrue(con.connected)
     }
 
     void disconnect() {
         con.connected = false
-        assertFalse(con.connected)
     }
 
-    private void createTable() {
+    void createTable() {
         table.field = fields
-        if (table.exists) table.drop()
+        table.drop(ifExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
 			def indexes = [
-					_getl_test_idx_1:
+					getl_test_idx_1:
 							[columns: ['id2', 'name']]]
 			if (con != null && con.driver.isSupport(Driver.Support.DATE))
-				indexes << [_getl_test_idx_2: [columns: ['id1', 'date'], unique: true]]
+				indexes << [getl_test_idx_2: [columns: ['id1', 'date'], unique: true]]
             table.create(indexes: indexes)
         }
         else {
             table.create()
         }
-
-        assertTrue(table.exists)
     }
 
     public void testLocalTable() {
@@ -100,7 +91,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
             println "Skip test local temporary table: ${con.driver.getClass().name} not support this futures"
             return
         }
-        def tempTable = new TableDataset(connection: con, tableName: '_getl_local_temp_test', type: JDBCDataset.Type.LOCAL_TEMPORARY)
+        def tempTable = new TableDataset(connection: con, schemaName: '_getl_test',
+                tableName: '_getl_local_temp_test', type: JDBCDataset.Type.LOCAL_TEMPORARY)
         tempTable.field = fields
         if (con.driver.isSupport(Driver.Support.INDEX)) {
             tempTable.create(indexes: [_getl_local_temp_test_idx_1: [columns: ['id2', 'name']]])
@@ -118,7 +110,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         }
         def tempTable = new TableDataset(connection: con, tableName: '_getl_global_temp_test', type: JDBCDataset.Type.GLOBAL_TEMPORARY)
         tempTable.field = fields
-//        tempTable.drop(ifExists: true)
+        tempTable.drop(ifExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
             tempTable.create(indexes: [_getl_global_temp_test_idx_1: [columns: ['id2', 'name']]])
         }
@@ -129,7 +121,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     private void dropTable() {
-        table.drop()
+        table.drop(ifExists: true)
         assertFalse(table.exists)
     }
 
@@ -162,7 +154,17 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
 			if (f.type == Field.Type.TEXT) f.type = Field.Type.STRING
 
+            if (!(Driver.Support.PRIMARY_KEY in table.connection.driver.supported()) && f.isKey) {
+                f.isKey = false
+                f.isNull = true
+                f.ordKey = null
+            }
+
+            if (!(Driver.Support.NOT_NULL_FIELD in table.connection.driver.supported()) && !f.isNull) {
+                f.isNull = true
+            }
 		}
+
 		def dsFields = [] as List<Field>
 		table.field.each {Field of ->
 			def f = of.copy()
@@ -190,10 +192,10 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     private void insertData() {
+        if (!con.driver.isOperation(Driver.Operation.INSERT)) return
         def count = new Flow().writeTo(dest: table) { updater ->
             (1..countRows).each { num ->
-                def r = [:]
-                r = GenerationUtils.GenerateRowValues(table.field, num)
+                Map r = GenerationUtils.GenerateRowValues(table.field, num)
                 r.id1 = num
 
                 updater(r)
@@ -202,8 +204,10 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(countRows, count)
         validCount()
 
-		table.eachRow(order: ['id1']) { r ->
-			assertNotNull(r.id1)
+        def counter = 9
+		table.eachRow(order: ['id1'], limit: 10, offs: 10) { r ->
+            counter++
+			assertEquals(counter, r.id1)
 			assertNotNull(r.id2)
 			assertNotNull(r.name)
 			assertNotNull(r."desc'ription")
@@ -216,9 +220,11 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
 			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
 		}
+        assertEquals(10, table.readRows)
     }
 
     private void updateData() {
+        if (!con.driver.isOperation(Driver.Operation.UPDATE)) return
         def rows = table.rows(order: ['id1'])
         def count = new Flow().writeTo(dest: table, dest_operation: 'UPDATE') { updater ->
             rows.each { r ->
@@ -259,6 +265,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     private void mergeData() {
+        if (!con.driver.isOperation(Driver.Operation.MERGE)) return
         def rows = table.rows(order: ['id1'])
         def count = new Flow().writeTo(dest: table, dest_operation: 'MERGE') { updater ->
             rows.each { r ->
@@ -306,6 +313,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     private void deleteData() {
+        if (!con.driver.isOperation(Driver.Operation.DELETE)) return
         def rows = table.rows(onlyFields: ['id1', 'id2'])
         def count = new Flow().writeTo(dest: table, dest_operation: 'DELETE') { updater ->
             rows.each { r ->
@@ -353,11 +361,24 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     private void bulkLoad() {
+        if (!con.driver.isOperation(Driver.Operation.BULKLOAD)) return
+
         def file = TFS.dataset()
-        def count = new Flow().copy(source: table, dest: file, inheritFields: true)
+        //def count = new Flow().copy(source: table, dest: file, inheritFields: true)
+        file.field = table.field
+        def count = new Flow().writeTo(dest: file) { updater ->
+            (1..countRows).each { num ->
+                Map r = GenerationUtils.GenerateRowValues(file.field, num)
+                r.id1 = num
+
+                updater(r)
+            }
+        }
         assertEquals(countRows, count)
+
         truncateData()
         validCountZero()
+
         table.bulkLoadFile(source: file)
         validCount()
     }
@@ -383,67 +404,84 @@ END FOR;
 
     public void testOperations() {
         connect()
+        assertTrue(con.connected)
+
         createTable()
-        retrieveFields()
+        assertTrue(table.exists)
+
         insertData()
-        updateData()
-        queryData()
-        if (con.driver.isOperation(Driver.Operation.MERGE)) {
+        if (table.updateRows > 0) {
+            updateData()
+            queryData()
             mergeData()
+            runCommandUpdate()
         }
-        if (con.driver.isOperation(Driver.Operation.BULKLOAD)) {
-            bulkLoad()
-        }
-        runCommandUpdate()
-        runScript()
+        bulkLoad()
+
+        retrieveFields()
+
+        if (table.updateRows > 0) runScript()
+
         deleteData()
         dropTable()
+
         disconnect()
+        assertFalse(con.connected)
     }
 
-	@CompileStatic
+    public TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
+        TableDataset t = new TableDataset(connection: con, tableName: name, field: fields)
+        t.drop(ifExists: true)
+        t.create()
+
+        return t
+    }
+
 	public void testPerfomance() {
 		def c = newCon()
+        if (!c.driver.isOperation(Driver.Operation.INSERT)) return
+
 		if (c == null) return
 		if (Config.content.perfomanceRows == null) return
 		def perfomanceRows = Config.content.perfomanceRows as Integer
 		def perfomanceCols = (Config.content.perfomanceCols as Integer)?:100
 		Logs.Finest("Test ${c.driverName} perfomance write from $perfomanceRows rows with ${perfomanceCols+2} cols ...")
-		TableDataset t = new TableDataset(connection: c, tableName: '_GETL_TEST_PERFOMANCE')
-		t.field << new Field(name: 'id', type: Field.Type.INTEGER, isKey: true)
-		t.field << new Field(name: 'name', length: 50, isNull: false)
-		t.field << new Field(name: 'desc\'cription', length: 50, isNull: false)
-		(1..perfomanceCols).each { num ->
-			t.field << new Field(name: "value_$num", type: Field.Type.DOUBLE)
-		}
-		if (t.exists) t.drop()
-		t.create()
-		try {
-			def pt = new ProcessTime(name: "${c.driverName} perfomance write")
-			new Flow().writeTo(dest: t, dest_batchSize: 1000) { Closure updater ->
-				(1..perfomanceRows).each { Integer cur ->
-					cur++
-					def r = [:] as Map<String, Object>
-					r.id = cur
-					r.name = "name $cur"
-					r."desc'cription" = "description $cur"
-					(1..perfomanceCols).each { Integer num ->
-						r.put("value_$num".toString(), cur)
-					}
-					updater(r)
-				}
-			}
-			pt.finish(perfomanceRows as Long)
 
-			pt = new ProcessTime(name: "${c.driverName} perfomance read")
-			def count = 0
-			new Flow().process(source: t) { Map<String, Object> r ->
-				count++
-			}
-			pt.finish(count as Long)
+        List<Field> fields = []
+        fields << new Field(name: 'id', type: Field.Type.INTEGER, isKey: true)
+        fields << new Field(name: 'name', length: 50, isNull: false)
+        fields << new Field(name: 'desc\'cription', length: 50, isNull: false)
+		(1..perfomanceCols).each { num ->
+            fields << new Field(name: "value_$num", type: Field.Type.DOUBLE)
 		}
-		finally {
-			t.drop()
-		}
+
+        def t = createPerfomanceTable(c, 'GETL_TEST_PERFOMANCE', fields)
+        try {
+            def pt = new ProcessTime(name: "${c.driverName} perfomance write")
+            new Flow().writeTo(dest: t, dest_batchSize: 1000) { Closure updater ->
+                (1..perfomanceRows).each { Integer cur ->
+                    cur++
+                    def r = [:] as Map<String, Object>
+                    r.id = cur
+                    r.name = "name $cur"
+                    r."desc'cription" = "description $cur"
+                    (1..perfomanceCols).each { Integer num ->
+                        r.put("value_$num".toString(), cur)
+                    }
+                    updater(r)
+                }
+            }
+            pt.finish(perfomanceRows as Long)
+
+            pt = new ProcessTime(name: "${c.driverName} perfomance read")
+            def count = 0
+            new Flow().process(source: t) { Map<String, Object> r ->
+                count++
+            }
+            pt.finish(count as Long)
+        }
+        finally {
+            t?.drop()
+        }
 	}
 }

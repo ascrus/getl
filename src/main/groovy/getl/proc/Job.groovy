@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -111,10 +111,8 @@ abstract class Job {
 	 * Run job process
 	 */
 	private void doRun () {
-		Logs.Init()
 		DateUtils.init()
-		Logs.Finest("### GETL / version ${getl.deploy.Version.version} created by ${getl.deploy.Version.years} / All right reserved for EasyData company")
-		Logs.Info("### Job start")
+		getl.deploy.Version.SayInfo()
 		prepareRun()
 		def isError = false
 		try {

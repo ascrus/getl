@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,6 +24,10 @@
 
 package getl.csv
 
+import getl.csv.opts.CSVReadSpec
+import getl.csv.opts.CSVWriteSpec
+import getl.jdbc.opts.ReadSpec
+import getl.vertica.opts.VerticaReadSpec
 import groovy.transform.InheritConstructors
 import getl.data.Connection
 import getl.data.FileDataset
@@ -43,103 +47,142 @@ class CSVDataset extends FileDataset {
 	 * Quote delimiter string	
 	 */
 	public String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, csvConnection()?.quoteStr, '"']) }
+	/**
+	 * Quote delimiter string
+	 */
 	public void setQuoteStr (String value) { params.quoteStr = value }
 	
 	/**
 	 * Field delimiter
 	 */
 	public String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, csvConnection()?.fieldDelimiter, ',']) }
+	/**
+	 * Field delimiter
+	 */
 	public void setFieldDelimiter (String value) { params.fieldDelimiter = value }
 	
 	/**
 	 * Row delimiter
 	 */
 	public String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, csvConnection()?.rowDelimiter,'\n']) }
+	/**
+	 * Row delimiter
+	 */
 	public void setRowDelimiter (String value) { params.rowDelimiter = value }
 	
 	/**
 	 * File has header of fields name
 	 */
 	public boolean getHeader () { BoolUtils.IsValue([params.header, csvConnection()?.header], true) }
+	/**
+	 * File has header of fields name
+	 */
 	public void setHeader (boolean value) { params.header = value }
 	
 	/**
 	 * Ignore header field name
 	 */
 	public boolean getIgnoreHeader () { BoolUtils.IsValue([params.ignoreHeader, csvConnection()?.ignoreHeader], true) }
+	/**
+	 * Ignore header field name
+	 */
 	public void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
 	
 	/**
 	 * Required format values for output to file 
 	 */
 	public boolean getFormatOutput () { BoolUtils.IsValue([params.formatOutput, csvConnection()?.formatOutput], true) }
+	/**
+	 * Required format values for output to file
+	 */
 	public void setFormatOutput (boolean value) { params.formatOutput = value }
 	
 	/**
 	 * Convert NULL to value
 	 */
 	public String getNullAsValue () { ListUtils.NotNullValue([params.nullAsValue, csvConnection()?.nullAsValue]) }
+	/**
+	 * Convert NULL to value
+	 */
 	public void setNullAsValue (String value) { params.nullAsValue = value }
 
 	/**
 	 * Required convert string to escape value 	
 	 */
 	public boolean getEscaped () { BoolUtils.IsValue([params.escaped, csvConnection()?.escaped], false) }
+	/**
+	 * Required convert string to escape value
+	 */
 	public void setEscaped (boolean value) { params.escaped = value }
 	
 	/**
 	 * Convert line feed to custom escape char 
 	 */
 	public String getEscapeProcessLineChar () { ListUtils.NotNullValue([params.escapeProcessLineChar, csvConnection()?.escapeProcessLineChar]) }
+	/**
+	 * Convert line feed to custom escape char
+	 */
 	public void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
 	
 	/**
 	 * Mode of quote value 
 	 */
 	public QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, csvConnection()?.quoteMode, QuoteMode.NORMAL]) as QuoteMode }
+	/**
+	 * Mode of quote value
+	 */
 	public void setQuoteMode (QuoteMode value) { params.quoteMode = value }
 	
 	/**
 	 * Decimal separator for number fields
 	 */
 	public String getDecimalSeparator () { ListUtils.NotNullValue([params.decimalSeparator, csvConnection()?.decimalSeparator, '.']) }
+	/**
+	 * Decimal separator for number fields
+	 */
 	public void setDecimalSeparator (String value) { params.decimalSeparator = value }
 	
 	/**
 	 * Format for date fields
 	 */
 	public String getFormatDate () { ListUtils.NotNullValue([params.formatDate, csvConnection()?.formatDate]) }
+	/**
+	 * Format for date fields
+	 */
 	public void setFormatDate (String value) { params.formatDate = value }
 	
 	/**
 	 * Format for time fields
 	 */
 	public String getFormatTime () { ListUtils.NotNullValue([params.formatTime, csvConnection()?.formatTime]) }
+	/**
+	 * Format for time fields
+	 */
 	public void setFormatTime (String value) { params.formatTime = value }
 	
 	/**
 	 * Format for datetime fields
 	 */
 	public String getFormatDateTime () { ListUtils.NotNullValue([params.formatDateTime, csvConnection()?.formatDateTime]) }
+	/**
+	 * Format for datetime fields
+	 */
 	public void setFormatDateTime (String value) { params.formatDateTime = value }
 		
 	/**
 	 * Length of the recorded file
-	 * @return
 	 */
-	public Long countWriteCharacters() { params.countWriteCharacters }
+	public Long getCountWriteCharacters() { params.countWriteCharacters }
 	
 	/**
 	 * the number of recorded files
-	 * @return
 	 */
-	public Integer countWritePortions() { params.countWritePortions }
+	public Integer getCountWritePortions() { params.countWritePortions }
 	
 	/**
 	 * The number of read files
-	 * @return
 	 */
-	public Integer countReadPortions() { params.countReadPortions }
+	public Integer getCountReadPortions() { params.countReadPortions }
 	
 	@Override
 	public void setConnection(Connection value) {
@@ -152,16 +195,16 @@ class CSVDataset extends FileDataset {
 		super.inheriteConnectionParams() + 
 				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 
 					'escaped', 'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime', 'ignoreHeader', 
-					'escapeProcessLineChar']
+					'escapeProcessLineChar', 'nullAsValue']
 	}
 
+	/**
+	 * Current CSV connection
+	 */
 	public CSVConnection csvConnection() { connection as CSVConnection}
 	
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
-	 * @param source
-	 * @param encodeTable
-	 * @param code
 	 */
 	public long prepareCSVForBulk (CSVDataset source, Map encodeTable, Closure code) {
 		CSVDriver drv = connection.driver as CSVDriver
@@ -171,9 +214,6 @@ class CSVDataset extends FileDataset {
 	
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
-	 * @param source
-	 * @param encodeTable
-	 * @return
 	 */
 	public long prepareCSVForBulk (CSVDataset source, Map encodeTable) {
 		prepareCSVForBulk(source, encodeTable, null)
@@ -181,8 +221,6 @@ class CSVDataset extends FileDataset {
 	
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
-	 * @param source
-	 * @return
 	 */
 	public long prepareCSVForBulk(CSVDataset source) {
 		prepareCSVForBulk(source, null, null)
@@ -190,9 +228,6 @@ class CSVDataset extends FileDataset {
 	
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
-	 * @param source
-	 * @param code
-	 * @return
 	 */
 	public long prepareCSVForBulk (CSVDataset source, Closure code) {
 		prepareCSVForBulk(source, null, code)
@@ -200,8 +235,6 @@ class CSVDataset extends FileDataset {
 	
 	/**
 	 * Decoding prepare for bulk load file
-	 * @param source
-	 * @return
 	 */
 	public long decodeBulkCSV (CSVDataset source) {
 		CSVDriver drv = connection.driver as CSVDriver
@@ -210,8 +243,6 @@ class CSVDataset extends FileDataset {
 	
 	/**
 	 * Count rows of file
-	 * @param limit
-	 * @return
 	 */
 	public long readRowCount (Map params) {
 		long res = 0
@@ -224,11 +255,42 @@ class CSVDataset extends FileDataset {
 	
 	/**
 	 * File lines count 
-	 * @return
 	 */
 	public long readLinesCount () {
 		CSVDriver drv = connection.driver as CSVDriver
 		
 		drv.readLinesCount(this)
+	}
+
+	/**
+	 * Read file options
+	 */
+	CSVReadSpec readOpts(@DelegatesTo(CSVReadSpec) Closure cl = null) {
+		def parent = new CSVReadSpec(true, readDirective)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code.call()
+			parent.prepareParams()
+		}
+
+		return parent
+	}
+
+	/**
+	 * Write file options
+	 */
+	CSVWriteSpec writeOpts(@DelegatesTo(CSVWriteSpec) Closure cl = null) {
+		def parent = new CSVWriteSpec(true, writeDirective)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code.call()
+			parent.prepareParams()
+		}
+
+		return parent
 	}
 }

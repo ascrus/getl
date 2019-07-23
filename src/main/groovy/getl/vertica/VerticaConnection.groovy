@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,6 +24,7 @@
 
 package getl.vertica
 
+import getl.jdbc.QueryDataset
 import groovy.transform.InheritConstructors
 import getl.jdbc.JDBCConnection
 
@@ -53,5 +54,13 @@ class VerticaConnection extends JDBCConnection {
 	protected void doInitConnection () {
 		super.doInitConnection()
 		driverName = 'com.vertica.jdbc.Driver'
+	}
+
+	/**
+	 * Current session parameters
+	 */
+	Map<String, Object> getCurrentSession() {
+		def query = new QueryDataset(connection: this, query: 'SELECT * FROM current_session')
+		return query.rows()[0]
 	}
 }

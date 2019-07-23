@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
 
- Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -28,6 +28,8 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
+import getl.jdbc.TableDataset
+import getl.utils.ListUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -64,7 +66,8 @@ class MySQLDriver extends JDBCDriver {
 
 	@Override
 	protected Map getConnectProperty() {
-		return [zeroDateTimeBehavior: 'convertToNull']
+		return [zeroDateTimeBehavior: 'convertToNull', useServerPrepStmts: false, rewriteBatchedStatements: true,
+				serverTimezone: 'UTC']
 	}
 
 	@Override
@@ -74,20 +77,6 @@ class MySQLDriver extends JDBCDriver {
 
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} = {value}' }
-
-	@Override
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
-		def res = (List<String>)[]
-		if (params.limit != null) {
-			res << "LIMIT ${params.limit}".toString()
-		}
-		if (params.offset != null) {
-			res << "OFFSET ${params.offset}".toString()
-		}
-		if (!res.isEmpty()) {
-			dir.afterOrderBy = res.join('\n')
-		}
-	}
 
 	@Override
 	public Map getSqlType () {
@@ -163,5 +152,15 @@ class MySQLDriver extends JDBCDriver {
 		if (!rows.isEmpty()) res = rows[0].session_id.toString()
 
 		return res
+	}
+
+	@Override
+	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
+		def names = [:] as Map<String, String>
+		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, (dataset.connection as MySQLConnection).connectDatabase, defaultDBName]) as String)
+		names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)
+		names.tableName = prepareObjectName(dataset.tableName as String)
+
+		return names
 	}
 }

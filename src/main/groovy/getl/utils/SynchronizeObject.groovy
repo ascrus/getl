@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,82 +24,114 @@
 
 package getl.utils
 
+import groovy.transform.Synchronized
+
+/**
+ * Synchronized object
+ * @author Alexsey Konstantinov
+ */
 class SynchronizeObject {
 	private long count = 0
-	
-	@groovy.transform.Synchronized
-	public long getCount () { count }
-	
-	@groovy.transform.Synchronized
-	public setCount (long value) { count = value }
-	
-	@groovy.transform.Synchronized
-	public clear  () { count = 0 }
-	
-	@groovy.transform.Synchronized
-	public long nextCount () { 
+
+	/** Current counter value */
+	@Synchronized
+	long getCount () { count }
+
+	/** Set new counter value */
+	@Synchronized
+	setCount (long value) { count = value }
+
+	/** Clear counter value */
+	@Synchronized
+	clear  () { count = 0 }
+
+	/** Increase counter value */
+	@Synchronized
+	long nextCount () {
 		count++
 		
 		count
 	}
-	
-	@groovy.transform.Synchronized
-	public long prevCount () {
+
+	/** Decrease counter value */
+	@Synchronized
+	long prevCount () {
 		count--
 		
 		count
 	}
-	
-	@groovy.transform.Synchronized
-	public void addCount (long value) {
+
+	/** Add number to counter value */
+	@Synchronized
+	void addCount (long value) {
 		count += value
 	}
-	
+
+	/** Text value */
 	private String text
-	
-	@groovy.transform.Synchronized
-	public String getText () { text }
-	
-	@groovy.transform.Synchronized
-	public setText (String value) { text = value }
-	
-	private final List list = []
-	
-	@groovy.transform.Synchronized
-	public def getList(int index) {
+
+	/** Text value */
+	@Synchronized
+	String getText () { text }
+
+	/** Text value */
+	@Synchronized
+	setText (String value) { text = value }
+
+	/** Array list */
+	private final List list = [] as ArrayList
+
+	/** Array list node by index */
+	@Synchronized
+	def getList(int index) {
 		list[index]
 	}
-	
-	@groovy.transform.Synchronized
-	public void addToList (int index, def value) {
+
+	/** Add node to array list by index */
+	@Synchronized
+	void addToList (int index, def value) {
 		list.add(index, value)
 	}
-	
-	@groovy.transform.Synchronized
-	public Boolean addToList (def value) {
+
+	/** Append node to array list */
+	@Synchronized
+	Boolean addToList (def value) {
 		list.add(value)
 	}
-	
-	@groovy.transform.Synchronized
-	public static Boolean addAllToList (List list) {
+
+	/** Append list to array list */
+	@Synchronized
+	static Boolean addAllToList (List list) {
 		return list.addAll(list)
 	}
-	
-	@groovy.transform.Synchronized
-	public static Boolean addAllToList (int index, List list) {
+
+	/** Append list to array list by index */
+	@Synchronized
+	static Boolean addAllToList (int index, List list) {
 		return list.addAll(index, list)
 	}
-	
-	@groovy.transform.Synchronized
-	public void clearList () {
+
+	/** Clear array list */
+	@Synchronized
+	void clearList () {
 		list.clear()
 	}
-	
-	@groovy.transform.Synchronized
-	public Boolean isEmptyList () {
+
+	/** Check empty array list */
+	@Synchronized
+	Boolean isEmptyList () {
 		list.isEmpty()
 	}
-	
-	@groovy.transform.Synchronized
-	public List getList () { list }
+
+	/** Array list */
+	@Synchronized
+	List getList () { list }
+
+	/** Index the item list by value */
+	@Synchronized
+	def indexOfListItem(def item) { list.indexOf(item) }
+
+	/** Find item list */
+	@Synchronized
+	def findListItem(Closure cl) { list.find(cl) }
 }

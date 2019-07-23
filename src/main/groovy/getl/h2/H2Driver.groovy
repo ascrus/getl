@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -103,9 +103,9 @@ class H2Driver extends JDBCDriver {
 		params = bulkLoadFilePrepare(source, dest as JDBCDataset, params, prepareCode)
 
 		List<Map> map = params.map
-		boolean autoCommit = (params.autoCommit != null) ? params.autoCommit : (dest.connection.tranCount == 0 && !dest.connection.autoCommit)
+		boolean autoCommit = (params.autoCommit != null) ? params.autoCommit : (dest.connection.tranCount == 0 && !(dest.connection as JDBCConnection).autoCommit)
 
-		Map<String, String> expression = params.expression ?: [:]
+		Map<String, String> expression = (params.expression?:[:]) as Map<String, String>
 		expression.each { String fieldName, String expr ->
 			if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
 		}
@@ -148,7 +148,7 @@ FROM CSVREAD('{file_name}', ${heads}, '${functionParms}')
 
         def sourceConnection = source.connection as CSVConnection
 		List<String> files = []
-        if (params.files != null) {
+        if (params.files != null && !(params.files as List).isEmpty()) {
             files.addAll(params.files as List<String>)
         }
         else if (params.fileMask != null) {

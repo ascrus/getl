@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -110,7 +110,7 @@ class MutlipleDatasetDriver extends Driver {
 			if (dest.field.isEmpty()) dest.field = fields
 			dest.openWrite(params)
 		}
-		if (prepareCode != null) prepareCode(fields)
+		if (prepareCode != null) prepareCode.call(fields)
 	}
 
 	@Override
@@ -152,8 +152,7 @@ class MutlipleDatasetDriver extends Driver {
 	}
 
 	@Override
-    public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
-	}
+    public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) { }
 
 	@Override
     public void clearDataset(Dataset dataset, Map params) { }

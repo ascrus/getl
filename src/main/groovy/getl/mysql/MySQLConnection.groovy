@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,6 +24,7 @@
 
 package getl.mysql
 
+import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
 import getl.jdbc.JDBCConnection
 
@@ -42,16 +43,27 @@ class MySQLConnection extends JDBCConnection {
 		super(new HashMap([driver: MySQLDriver]) + params)
 		if (this.getClass().name == 'getl.mysql.MySQLConnection') methodParams.validation("Super", params)
 	}
+
+	@Override
+	protected void registerParameters () {
+		super.registerParameters()
+		methodParams.register('Super', ['usedOldDriver'])
+	}
 	
 	@Override
 	protected void onLoadConfig (Map configSection) {
 		super.onLoadConfig(configSection)
 		if (this.getClass().name == 'getl.mysql.MySQLConnection') methodParams.validation("Super", params)
 	}
+
+	/** Enable if a driver under version 6 is used. */
+	Boolean getUsedOldDriver() { params.usedOldDriver as Boolean }
+	/** Enable if a driver under version 6 is used. */
+	void setUsedOldDriver(Boolean value) { params.usedOldDriver = value }
 	
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()
-		driverName = "com.mysql.jdbc.Driver"
+		driverName = (!BoolUtils.IsValue(usedOldDriver))?'com.mysql.cj.jdbc.Driver':'com.mysql.jdbc.Driver'
 	}
 }

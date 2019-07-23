@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2015  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -24,14 +24,11 @@
 
 package getl.tfs
 
+import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 
 import getl.csv.CSVDataset
 import getl.data.*
-import getl.utils.*
-import getl.exception.ExceptionGETL
-import java.util.zip.GZIPInputStream
-import java.util.zip.GZIPOutputStream
 
 /**
  * Temporary file storage dataset class
@@ -42,16 +39,16 @@ import java.util.zip.GZIPOutputStream
 class TFSDataset extends CSVDataset {
 	TFSDataset () {
 		super()
-		sysParams.isTFSFile = true
-		sysParams.inheriteFields = true
 		manualSchema = true
+//		connection = TFS.storage
+		if (fileName == null) fileName = FileUtils.UniqueFileName()
 	}
 
 	@Override
-    public void openWrite (Map procParams) {
+    void openWrite (Map procParams) {
         super.openWrite(procParams)
 
-        if (connection.deleteOnExit) {
+        if ((connection as TFS).deleteOnExit) {
             new File(fullFileName()).deleteOnExit()
 
             if (autoSchema) {
@@ -61,15 +58,9 @@ class TFSDataset extends CSVDataset {
         }
     }
 	
-//	@Override
-//	public void setField(List<Field> value) {
-//		super.setField(value)
-//		resetFieldToDefault()
-//	}
-
 	@Override
-	public void setConnection(Connection value) {
-		assert value == null || value instanceof TFS
+	void setConnection(Connection value) {
+		assert value == null || value.getClass().name == 'getl.tfs.TFS'
 		super.setConnection(value)
 	}
 }

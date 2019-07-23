@@ -158,7 +158,6 @@ class FileUtilsTest extends getl.test.GetlTest {
         f.deleteOnExit()
         f.text = 'test'
 
-        boolean res
         def lf = FileUtils.LockFile(fileName, 'rw', false)
         assertTrue(FileUtils.IsLockFileForRead(fileName))
         lf.release()
@@ -179,6 +178,7 @@ class FileUtilsTest extends getl.test.GetlTest {
     }
 
     void testRun() {
+        return
         def sout = new StringBuilder()
         def serr = new StringBuilder()
         if (Config.isWindows()) {
@@ -207,6 +207,9 @@ class FileUtilsTest extends getl.test.GetlTest {
     void testParseArguments() {
         assertEquals(['1', '2', '3'], FileUtils.ParseArguments('1 2 3'))
         assertEquals(['1', '2', '3'], FileUtils.ParseArguments('1  2  3'))
+        assertEquals(['"1"', '2', '3', '4', '5'], FileUtils.ParseArguments('"1" 2 3 4 5'))
+        assertEquals(['1', '2', '"3"', '4', '5'], FileUtils.ParseArguments('1 2 "3" 4 5'))
+        assertEquals(['1', '2', '3', '4', '"5"'], FileUtils.ParseArguments('1 2 3 4 "5"'))
         assertEquals(['"1 2 3"', '4', '5'], FileUtils.ParseArguments('"1 2 3" 4 5'))
         assertEquals(['1', '"2 3 4"', '5'], FileUtils.ParseArguments('1 "2 3 4" 5'))
         assertEquals(['1', '2', '"3 4 5"'], FileUtils.ParseArguments('1 2 "3 4 5"'))
@@ -222,5 +225,10 @@ class FileUtilsTest extends getl.test.GetlTest {
         def url = classLoader.getResource('xero.conf')
         assertNotNull(url)
         assertNotNull(url.text)
+    }
+
+    void testFindParentPath() {
+        assertNotNull(FileUtils.FindParentPath('.','getl\\.'))
+        assertTrue(FileUtils.ExistsFile(FileUtils.FindParentPath('.', 'getl\\.') + 'getl/src'))
     }
 }

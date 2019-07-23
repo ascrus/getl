@@ -5,7 +5,7 @@
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
  
- Copyright (C) 2013-2017  Alexsey Konstantonov (ASCRUS)
+ Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published by
@@ -28,6 +28,7 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
+import getl.jdbc.TableDataset
 import groovy.transform.InheritConstructors
 
 /**
@@ -39,6 +40,9 @@ import groovy.transform.InheritConstructors
 class PostgreSQLDriver extends JDBCDriver {
     PostgreSQLDriver() {
         super()
+		commitDDL = true
+		transactionalDDL = true
+		transactionalTruncate = true
     }
 
 	@Override
@@ -70,20 +74,6 @@ class PostgreSQLDriver extends JDBCDriver {
 		if (!rows.isEmpty()) res = rows[0].session_id.toString()
 
 		return res
-	}
-
-	@Override
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
-		def res = (List<String>)[]
-		if (params.limit != null) {
-			res << "LIMIT ${params.limit}".toString()
-		}
-		if (params.offset != null) {
-			res << "OFFSET ${params.offset}".toString()
-		}
-		if (!res.isEmpty()) {
-			dir.afterOrderBy = res.join('\n')
-		}
 	}
 
 	@Override
