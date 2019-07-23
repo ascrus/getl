@@ -91,8 +91,8 @@ class FileManager extends Manager {
 		connected = false
 	}
 	
-	private void validConnect () {
-		if (!connected) throw new ExceptionGETL("Client not connected")
+	protected void validConnect () {
+		if (!connected) connect() //throw new ExceptionGETL("Client not connected")
 	}
 	
 	class FilesList extends FileManagerList {

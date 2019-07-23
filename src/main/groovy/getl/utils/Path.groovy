@@ -24,16 +24,16 @@
 
 package getl.utils
 
+import groovy.transform.InheritConstructors
+import groovy.transform.CompileStatic
+import getl.utils.opts.PathVarsSpec
 import java.util.regex.Matcher
 import java.util.regex.Pattern
-import groovy.transform.InheritConstructors
-
 import getl.data.Field
 import getl.exception.ExceptionGETL
 
-
 /**
- * Analize and processing macro path class
+ * Analize and processing path value class
  * @author Alexsey Konstantinov
  *
  */
@@ -63,83 +63,71 @@ class Path {
 	 * Ignoring converting error and set null value
 	 */
 	public boolean ignoreConvertError = false
-	
-	/**
-	 * Original string mask
-	 * @return
-	 */
-	private String maskStr
-	public String getMaskStr () { maskStr }
-	
-	/**
-	 * Path elements
-	 * @return
-	 */
-	private List<Map> elements = []
-	public List<Map> getElements () { elements }
-	
-	/**
-	 * SQL like elements
-	 * @return
-	 */
-	private List<Map> likeElements = []
-	public List<Map> getLikeElements () { likeElements }
-	
-	/**
-	 * Count level for mask 
-	 * @return
-	 */
-	public int getCountLevel () { elements.size() }
-	
-	/**
-	 * Root path with mask
-	 * @return
-	 */
-	private String rootPath
-	public String getRootPath () { this.rootPath }
-	
-	/**
-	 * Count elements in path
-	 * @return
-	 */
-	private int numLocalPath
-	public int getNumLocalPath () { this.numLocalPath }
-	
-	/**
-	 * Expression file path with mask
-	 * @return
-	 */
-	private String maskPath
-	public String getMaskPath () { this.maskPath }
 
-	/**
-	 * Expression folder path with mask		
-	 * @return
-	 */
+	/** Mask file (use {var} for definition variables) */
+	String mask
+	/** Mask file (use {var} for definition variables) */
+	String getMask() { mask }
+	/** Mask file (use {var} for definition variables) */
+	void setMask(String value) {
+		isCompile = false
+		mask = value
+	}
+	
+	/** Original string mask */
+	private String maskStr
+	/** Original string mask */
+	String getMaskStr () { maskStr }
+	
+	/** Path elements */
+	private List<Map> elements = []
+	/** Path elements */
+	List<Map> getElements () { elements }
+	
+	/** SQL like elements */
+	private List<Map> likeElements = []
+	/** SQL like elements */
+	List<Map> getLikeElements () { likeElements }
+	
+	/** Count level for mask */
+	int getCountLevel () { elements.size() }
+	
+	/** Root path with mask */
+	private String rootPath
+	/** Root path with mask */
+	String getRootPath () { this.rootPath }
+	
+	/** Count elements in path */
+	private int numLocalPath
+	/** Count elements in path */
+	int getNumLocalPath () { this.numLocalPath }
+	
+	/** Expression file path with mask */
+	private String maskPath
+	/** Expression file path with mask */
+	String getMaskPath () { this.maskPath }
+
+	/** Expression folder path with mask */
 	private String maskFolder
-	public String getMaskFolder () { this.maskFolder }
+	/** Expression folder path with mask */
+	String getMaskFolder () { this.maskFolder }
 	
-	/**
-	 * Expression mask file
-	 * @return
-	 */
+	/** Expression mask file */
 	private String maskFile
-	public String getMaskFile () { this.maskFile }
+	/** Expression mask file */
+	String getMaskFile () { this.maskFile }
 	
-	/**
-	 * Expression folder path with mask for SQL like
-	 * @return
-	 */
+	/** Expression folder path with mask for SQL like */
 	private String likeFolder
-	public String getLikeFolder () { this.likeFolder }
+	/** Expression folder path with mask for SQL like */
+	String getLikeFolder () { this.likeFolder }
 	
-	/**
-	 * Expression mask file for SQL like
-	 * @return
-	 */
+	/** Expression mask file for SQL like */
 	private String likeFile
-	public String getLikeFile () { this.likeFile }
+	/** Expression mask file for SQL like */
+	String getLikeFile () { this.likeFile }
 	
+	final Map<String, Map> vars = [:]
 	/**
 	 * Used variables in mask<br><br>
 	 * <b>Field for var:</b>
@@ -150,13 +138,39 @@ class Path {
 	 * <li>int lenMin		- minimum length of variable
 	 * <li>int lenMax		- maximum length of variable
 	 * </ul>
-	 * @return
 	 */
-	private final Map<String, Map> vars = [:]
-	public Map<String, Map> getVars () { this.vars }
-	
-	private Pattern maskPathPattern
-		
+	Map<String, Map> getVars () { this.vars }
+
+	/** Mask variables */
+	final Map<String, Map<String, Object>> maskVariables = [:]
+
+	/** Define variable options */
+	Map variable(String name, @DelegatesTo(PathVarsSpec) cl) {
+		if (name == null || name == '') throw new ExceptionGETL('Name required for variable!')
+		def var = maskVariables.get(name) as Map
+		if (var == null) {
+			var = [:]
+			maskVariables.put(name, var)
+		}
+
+		def parent = new PathVarsSpec(true, var)
+		parent.thisObject = parent.DetectClosureDelegate(cl)
+		if (cl != null) {
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
+			code.resolveStrategy = Closure.OWNER_FIRST
+			code.call()
+			parent.prepareParams()
+		}
+
+		return parent.params
+	}
+
+	/** Mask path pattern */
+	Pattern maskPathPattern
+	/** Path already compiled */
+	Boolean isCompile = false
+	Boolean getIsCompile() { isCompile }
+
 	/**
 	 * Compile path mask<br><br>
 	 * <b>Parameters</b>
@@ -166,17 +180,18 @@ class Path {
 	 * <li>Map patterns - pattern of variable for use in generation regular expressions
 	 * <li>Map<String, Map> vars - attributes of variable
 	 * </ul>
-	 * @param params - parameters
 	 */
-	public void compile (Map params) {
+	void compile(Map params = [:]) {
 		if (params == null) params = [:]
 		methodParams.validation("compile", params)
-		maskStr = params.mask
+		maskStr = (params.mask as String)?:mask
 		if (maskStr == null) throw new ExceptionGETL("Required parameter \"mask\"")
-		boolean sysVar = (params.sysVar != null)?params.sysVar:false
-		Map patterns = params.patterns?:[:] 
-		Map<String, Map<String, Object>> varAttr = params.vars?:[:]
-		
+		boolean sysVar = BoolUtils.IsValue(params.sysVar)
+		Map patterns = (params.patterns as Map)?:[:]
+		Map<String, Map<String, Object>> varAttr = [:]
+		varAttr.putAll(maskVariables)
+		if (params.vars != null) MapUtils.MergeMap(varAttr, params.vars as Map<String, Map<String, Object>>)
+
 		elements.clear()
 		likeElements.clear()
 		vars.clear()
@@ -283,7 +298,7 @@ class Path {
 		rootPath = (rb.length() == 0)?".":rb.toString().substring(1)
 
 		for (int i = 0; i < elements.size(); i++) {
-			List<String> v = elements[i].vars
+			List<String> v = elements[i].vars as List<String>
 			for (int x = 0; x < v.size(); x++) {
 				vars.put(v[x] as String, [:])
 			}
@@ -322,12 +337,12 @@ class Path {
 			likeFile = likeFile.replace("{$key}", "%")
 		}
 		likeFile = likeFile.replace('*', '%').replace('.', '\\.').replace('$', '\\$')
+
+		isCompile = true
 	}
 	
-	/**
-	 * Generation mask path pattern on elements
-	 */
-	public void generateMaskPattern () {
+	/** Generation mask path pattern on elements */
+	void generateMaskPattern () {
 		StringBuilder b = new StringBuilder()
 		b.append("(?i)")
 		for (int i = 0; i < elements.size(); i++) {
@@ -344,7 +359,7 @@ class Path {
 			StringBuilder lp = new StringBuilder()
 			mp.append("(?i)")
 			for (int i = 0; i < elements.size() - 1; i++) {
-				mp.append(elements[i].mask + "/")
+				mp.append((elements[i].mask as String) + "/")
 				lp.append((elements[i].like as String).replace('.', '\\.') + "/")
 			}
 			maskFolder = mp.toString() + "(.+)"
@@ -353,12 +368,8 @@ class Path {
 		}
 	}
 	
-	/**
-	 * Generation mask path pattern on elements 
-	 * @param countElements
-	 * @return
-	 */
-	public Pattern generateMaskPattern (int countElements) {
+	/** Generation mask path pattern on elements */
+	Pattern generateMaskPattern (int countElements) {
 		if (countElements > elements.size()) throw new ExceptionGETL("Can not generate pattern on ${countElements} level for ${elements.size()} elements")
 		StringBuilder b = new StringBuilder()
 		b.append("(?i)")
@@ -370,12 +381,8 @@ class Path {
 		Pattern.compile(mp)
 	}
 	
-	/**
-	 * Get all files in specific path
-	 * @param path
-	 * @return
-	 */
-	public List<Map> getFiles(String path) {
+	/** Get all files in specific path */
+	List<Map> getFiles(String path) {
 		File dir = new File(path)
 		File[] f = dir.listFiles()
 		
@@ -402,37 +409,22 @@ class Path {
 		l
 	}
 	
-	/**
-	 * Get all files with root path
-	 * @return
-	 */
-	public List<Map> getFiles() {
+	/** Get all files with root path */
+	List<Map> getFiles() {
 		getFiles(rootPath)
 	}
 	
-	/**
-	 * Analize file with mask and return value of variables 
-	 * @param file
-	 * @return
-	 */
-	public Map analizeFile(String fileName) {
+	/** Analize file with mask and return value of variables */
+	Map analizeFile(String fileName) {
 		analize(fileName, false)
 	}
 	
-	/**
-	 * Analize dir with mask and return value of variables
-	 * @param dirName
-	 * @return
-	 */
-	public Map analizeDir(String dirName) {
+	/** Analize dir with mask and return value of variables */
+	Map analizeDir(String dirName) {
 		analize(dirName, true)
 	}
 	
-	/**
-	 * Analize file or directory
-	 * @param fileName
-	 * @return
-	 */
+	/** Analize file or directory */
 	private Map analize(String fileName, boolean isDir) {
 		def fn = fileName
 		if (fn == null) return null
@@ -489,7 +481,7 @@ class Path {
 					if (type instanceof String) type = Field.Type."$type"
 					switch (type) {
 						case Field.Type.DATE:
-							def format = (value.format != null)?value.format:"yyyy-MM-dd"
+							def format = (value.format != null)?(value.format as String):'yyyy-MM-dd'
 							try {
 								v = DateUtils.ParseDate(format, v, ignoreConvertError)
 							}
@@ -499,7 +491,7 @@ class Path {
                             isError = (v == null)
 							break
 						case Field.Type.DATETIME:
-							def format = (value.format != null)?value.format:"yyyyMMddHHmmss"
+							def format = (value.format != null)?(value.format as String):'yyyyMMddHHmmss'
 							try {
 								v = DateUtils.ParseDate(format, v, ignoreConvertError)
 							}
@@ -545,14 +537,8 @@ class Path {
 		return res
 	}
 	
-	/**
-	 * Filter files with mask
-	 * @param files
-	 * @return
-	 */
-	public List<Map> filterFiles(List<Map> files) {
-//		boolean changeSeparator = (File.separatorChar != '/')
-//		Pattern mask = Pattern.compile(maskPath)
+	/** Filter files with mask */
+	List<Map> filterFiles(List<Map> files) {
 		List<Map> res = []
 		files.each { file ->
 			def m = analizeFile(file.filename as String)
@@ -562,31 +548,19 @@ class Path {
 		return res
 	}
 	
-	/**
-	 * Filter files from root path with mask
-	 * @return 
-	 */
-	public List<Map> filterFiles() {
+	/** Filter files from root path with mask */
+	List<Map> filterFiles() {
 		filterFiles(getFiles())
 	}
 	
-	/**
-	 * Generation file name with variables
-	 * @param varValues
-	 * @return
-	 */
-	public String generateFileName(Map varValues) {
+	/** Generation file name with variables */
+	String generateFileName(Map varValues) {
 		generateFileName(varValues, true)
 	}
 	
-	/**
-	 * Generation file name with variables
-	 * @param varValues - Value of variables
-	 * @param formatValue - format value of variable
-	 * @return
-	 */
-	@groovy.transform.CompileStatic
-	public String generateFileName(Map<String, Object> varValues, boolean formatValue) {
+	/** Generation file name with variables */
+	@CompileStatic
+	String generateFileName(Map<String, Object> varValues, boolean formatValue) {
 		def v = [:] as Map<String, Object>
 		if (formatValue) {
 			vars.each { key, value ->
@@ -605,12 +579,9 @@ class Path {
 	}
 
 	/**
-	 * 		
-	 * @param varName
-	 * @param value
-	 * @return
+	 * Format variable with type of value
 	 */
-	public String formatVariable (String varName, def value) {
+	String formatVariable (String varName, def value) {
 		if (!vars.containsKey(varName)) throw new ExceptionGETL("Variable ${varName} not found")
 		def v = vars.get(varName)
 		def type = v."type"
@@ -623,25 +594,25 @@ class Path {
 		
 		switch (type) {
 			case Field.Type.DATE:
-				def format = v.format?:"yyyy-MM-dd"
+				def format = (v.format as String)?:'yyyy-MM-dd'
 				value = DateUtils.FormatDate(format, value as Date)
 				break
 				
 			case Field.Type.TIME:
-				def format = v.format?:"HH:mm:ss"
+				def format = (v.format as String)?:'HH:mm:ss'
 				value = DateUtils.FormatDate(format, value as Date)
 				break
 				
 			case Field.Type.DATETIME:
-				def format = v.format?:"yyyy-MM-dd HH:mm:ss"
+				def format = (v.format as String)?:'yyyy-MM-dd HH:mm:ss'
 				value = DateUtils.FormatDate(format, value as Date)
 				break
 		}
 		
 		value
 	}
-		
-	public String toString () {
+
+	String toString () {
 		StringBuilder b = new StringBuilder()
 		b.append("""original mask: $maskStr
 root path: $rootPath
@@ -659,7 +630,7 @@ elements:
 			def pe = elements[i]
 			b.append("[${i+1}]:\t")
 			b.append(pe.mask)
-            List vr = pe.vars
+            List vr = pe.vars as List
 			if (vr.size() > 0) b.append(" [")
 			for (int v = 0; v < vr.size(); v++) {
 				b.append(vr.get(v))
@@ -671,4 +642,4 @@ elements:
 		}
 		b.toString()
 	}
-	}
+}

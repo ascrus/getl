@@ -390,7 +390,7 @@ class JDBCConnection extends Connection {
 	}
 	
 	@Override
-	String getObjectName () { connectURL }
+	String getObjectName () { toString() }
 	
 	/**
 	 * Save sql to history file

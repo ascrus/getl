@@ -11,10 +11,8 @@ import groovy.transform.BaseScript
 // Generate sample data in a H2  database
 runGroovyClass getl.examples.h2.Install
 
-// Load configuration file
-runGroovyClass getl.examples.vertica.Config
 // Define Vertica tables
-runGroovyClass getl.examples.vertica.Tables
+runGroovyClass getl.examples.vertica.Tables, true
 
 profile("Create Vertica objects") {
     // Run sql script for create schemata and tables

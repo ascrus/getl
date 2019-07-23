@@ -9,7 +9,7 @@ import groovy.transform.BaseScript
  */
 
 // Connection for Csv files
-useCsvConnection csvConnection {
+useCsvConnection csvConnection('demo', true) {
     fieldDelimiter = '\t' // field delimiter char
     escaped = true // used escape coding for " and \n characters
     codePage = 'UTF-8' // write as utf-8 code page

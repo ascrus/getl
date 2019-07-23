@@ -25,6 +25,7 @@
 package getl.data
 
 import getl.data.opts.DatasetLookupSpec
+import getl.lang.opts.BaseSpec
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
 import getl.csv.CSVDataset
@@ -476,7 +477,7 @@ class Dataset {
 			field << parent
 		}
 		if (cl != null) {
-			def code = cl.rehydrate(this, parent, this)
+			def code = cl.rehydrate(BaseSpec.DetectClosureDelegate(cl), parent, BaseSpec.DetectClosureDelegate(cl))
 			code.resolveStrategy = Closure.OWNER_FIRST
 			code.call()
 		}
@@ -1086,7 +1087,7 @@ class Dataset {
 		def parent = new DatasetLookupSpec()
 		if (cl != null) {
 			parent.thisObject = parent.DetectClosureDelegate(cl)
-			def code = cl.rehydrate(this, parent, this)
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 			code.resolveStrategy = Closure.OWNER_FIRST
 			code.call()
 			parent.prepareParams()

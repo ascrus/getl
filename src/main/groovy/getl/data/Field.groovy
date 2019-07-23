@@ -40,6 +40,35 @@ class Field implements Serializable {
 		STRING, INTEGER, BIGINT, NUMERIC, DOUBLE, BOOLEAN, DATE, TIME, DATETIME, BLOB, TEXT, OBJECT, ROWID, UUID
 	}
 
+	/** Integer field type */
+	static Field.Type getIntegerFieldType() { Field.Type.INTEGER}
+	/** Bigint field type */
+	static Field.Type getBigintFieldType() { Field.Type.BIGINT}
+	/** Numeric (decimal) field type */
+	static Field.Type getNumericFieldType() { Field.Type.NUMERIC}
+	/** Double field type */
+	static Field.Type getDoubleFieldType() { Field.Type.DOUBLE}
+	/** String field type */
+	static Field.Type getStringFieldType() { Field.Type.STRING}
+	/** Text (clob) field type */
+	static Field.Type getTextFieldType() { Field.Type.TEXT}
+	/** Date field type */
+	static Field.Type getDateFieldType() { Field.Type.DATE}
+	/** Time field type */
+	static Field.Type getTimeFieldType() { Field.Type.TIME}
+	/** Date and time field type */
+	static Field.Type getDatetimeFieldType() { Field.Type.DATETIME}
+	/** Boolean field type */
+	static Field.Type getBooleanFieldType() { Field.Type.BOOLEAN}
+	/** Blob field type */
+	static Field.Type getBlobFieldType() { Field.Type.BLOB}
+	/** UUID field type */
+	static Field.Type getUuidFieldType() { Field.Type.UUID}
+	/** RowID field type */
+	static Field.Type getRowidFieldType() { Field.Type.ROWID}
+	/** Object field type */
+	static Field.Type getObjectFieldType() { Field.Type.OBJECT}
+
 	private String name = null
 	/**
 	 * Field name
@@ -271,21 +300,6 @@ class Field implements Serializable {
 	 */
 	public String getMethod
 
-	static Field.Type getIntegerFieldType() { Field.Type.INTEGER}
-	static Field.Type getBigintFieldType() { Field.Type.BIGINT}
-	static Field.Type getNumericFieldType() { Field.Type.NUMERIC}
-	static Field.Type getDoubleFieldType() { Field.Type.DOUBLE}
-	static Field.Type getStringFieldType() { Field.Type.STRING}
-	static Field.Type getTextFieldType() { Field.Type.TEXT}
-	static Field.Type getDateFieldType() { Field.Type.DATE}
-	static Field.Type getTimeFieldType() { Field.Type.TIME}
-	static Field.Type getDatetimeFieldType() { Field.Type.DATETIME}
-	static Field.Type getBooleanFieldType() { Field.Type.BOOLEAN}
-	static Field.Type getBlobFieldType() { Field.Type.BLOB}
-	static Field.Type getUuidFieldType() { Field.Type.UUID}
-	static Field.Type getRowidFieldType() { Field.Type.ROWID}
-	static Field.Type getObjectFieldType() { Field.Type.OBJECT}
-	
 	/**
 	 * Allow length for field
 	 */

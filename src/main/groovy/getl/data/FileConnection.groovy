@@ -121,7 +121,7 @@ abstract class FileConnection extends Connection {
 		def parent = new FileDatasetRetrieveObjectsSpec()
 		if (cl != null) {
 			parent.thisObject = parent.DetectClosureDelegate(cl)
-			def code = cl.rehydrate(this, parent, this)
+			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
 			code.resolveStrategy = Closure.OWNER_FIRST
 			code.call()
 			parent.prepareParams()

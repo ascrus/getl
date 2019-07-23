@@ -24,7 +24,6 @@
 
 package getl.lang
 
-import com.sun.org.apache.xpath.internal.operations.Bool
 import getl.config.*
 import getl.config.opts.*
 import getl.csv.*
@@ -83,6 +82,8 @@ class Getl extends Script {
         Config.configClassManager = new ConfigSlurper()
 
         _params.langOpts = new LangSpec()
+        _params.executedClasses = new SynchronizeObject()
+
         _params.repConnections = new ConcurrentHashMap<String, Map<String, Connection>>()
         _params.repDatasets = new ConcurrentHashMap<String, Map<String, Dataset>>()
         _params.repFileManagers = new ConcurrentHashMap<String, Map<String, Manager>>()
@@ -189,6 +190,9 @@ class Getl extends Script {
 
     /** GETL DSL options */
     protected LangSpec getLangOpts() { _params.langOpts as LangSpec }
+
+    /** list of executed script classes and call parameters */
+    protected SynchronizeObject getExecutedClasses() { _params.executedClasses as SynchronizeObject }
 
     /** Repository object name */
     protected static String repObjectName(String name) { name.toLowerCase() }
@@ -707,14 +711,24 @@ class Getl extends Script {
     public Map<String, Object> scriptArgs = [:]
 
     /** Load and run groovy script by class */
-    void runGroovyClass(Class groovyClass, Map<String, Object> vars = [:]) {
+    void runGroovyClass(Class groovyClass, Boolean runOnce, Map<String, Object> vars = [:]) {
+        def className = groovyClass.name
+        def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
+        if (previouslyRun && BoolUtils.IsValue(runOnce)) return
+
         def script = (GroovyObject)groovyClass.newInstance() as Script
         if (script instanceof Getl) {
             def scriptGetl = script as Getl
             scriptGetl.setGetlParams(_params)
         }
         script.binding = new Binding([scriptArgs: MapUtils.DeepCopy(vars)?:([:] as Map<String, Object>)])
+        if (!previouslyRun) executedClasses.addToList(className)
         script.run()
+    }
+
+    /** Load and run groovy script by class */
+    void runGroovyClass(Class groovyClass, Map<String, Object> vars = [:]) {
+        runGroovyClass(groovyClass, false, vars)
     }
 
     /** Run closure with call parent parameter */
@@ -768,126 +782,18 @@ class Getl extends Script {
     /** Write message as level the CONFIG to log */
     static void logConfig(def msg) { Logs.Config(msg.toString()) }
 
-    /** Current date and time */
-    static Date getNow() { DateUtils.Now() }
+    /** System temporary directory */
+    static String systemTempPath() { TFS.systemPath }
 
-    /** Random integer value */
-    static int getRandomInt() { GenerationUtils.GenerateInt() }
+    /** File utilite functions */
+    Class<FileUtils> getFileutils() { FileUtils }
 
-    /** Random integer value */
-    static int randomInt(Integer min, Integer max) { GenerationUtils.GenerateInt(min, max) }
+    /** Date utilite functions */
+    Class<DateUtils> getDateutils() { DateUtils }
 
-    /** Random long value */
-    static int getRandomLong() { GenerationUtils.GenerateLong() }
+    Class<Field> getFieldfuncs() { Field }
 
-    /** Random date value */
-    static Date getRandomDate() { GenerationUtils.GenerateDate() }
-
-    /** Random date value */
-    static Date randomDate(Integer days) { GenerationUtils.GenerateDate(days) }
-
-    /** Random timestamp value */
-    static Date getRandomDateTime() { GenerationUtils.GenerateDateTime() }
-
-    /** Random date value */
-    static Date randomDateTime(int secs) { GenerationUtils.GenerateDateTime(secs) }
-
-    /** Random numeric value */
-    static BigDecimal getRandomNumber() { GenerationUtils.GenerateNumeric() }
-
-    /** Random numeric value */
-    static BigDecimal randomNumber(int prec) { GenerationUtils.GenerateNumeric(prec) }
-
-    /** Random numeric value */
-    static BigDecimal randomNumber(int len, int prec) { GenerationUtils.GenerateNumeric(len, prec) }
-
-    /** Random boolean value */
-    static Boolean getRandomBoolean() { GenerationUtils.GenerateBoolean() }
-
-    /** Random double value */
-    static Double getRandomDouble() { GenerationUtils.GenerateDouble() }
-
-    /** Random string value */
-    static String getRandomString() { GenerationUtils.GenerateString(255) }
-
-    /** Random string value */
-    static String randomString(int len) { GenerationUtils.GenerateString(len) }
-
-    /** Copy file to directory */
-    static void copyFileToDir(String sourceFileName, String destDirName, boolean createDir = false) {
-        FileUtils.CopyToDir(sourceFileName, destDirName, createDir)
-    }
-
-    /** Copy file to another file */
-    static void copyFileTo(String sourceFileName, String destFileName, boolean createDir = false) {
-        FileUtils.CopyToFile(sourceFileName, destFileName, createDir)
-    }
-
-    /** Find parent directory by nearest specified name in path elements */
-    static String findParentPath(String path, String find) {
-        FileUtils.FindParentPath(path, find)
-    }
-
-    /** Valid exists directory */
-    static Boolean existDir(String dirName) {
-        FileUtils.ExistsFile(dirName, true)
-    }
-
-    /** Valid exists file */
-    static Boolean existFile(String dirName) {
-        FileUtils.ExistsFile(dirName)
-    }
-
-    /** Extract path from full file path */
-    static String extractPath(String fileName) {
-        FileUtils.RelativePathFromFile(fileName)
-    }
-
-    /** Format date with specified format (default format yyyy-MM-dd HH:mm:ss) */
-    static String formatDate(Date date, String format = 'yyyy-MM-dd HH:mm:ss') {
-        DateUtils.FormatDate(format, date)
-    }
-
-    /** Add the value of the specified part of the date */
-    static Date addDate(String part, Integer value, Date date) {
-        DateUtils.AddDate(part, value, date)
-    }
-
-    /** Remove time from date */
-    static Date removeTime(Date date) {
-        DateUtils.ClearTime(date)
-    }
-
-    /** Current date without time */
-    static Date getCurrentDate() {
-        DateUtils.CurrentDate()
-    }
-
-    /** Parse string to date without time (default format yyyy-MM-dd) */
-    static Date parseDate(String value, String format = 'yyyy-MM-dd', Boolean ignoreError = false) {
-        removeTime(DateUtils.ParseDate(value, format, ignoreError))
-    }
-
-    /** Parse string to date without time (default format yyyy-MM-dd HH:mm:ss) */
-    static Date parseDateTime(String value, String format = 'yyyy-MM-dd HH:mm:ss', Boolean ignoreError = false) {
-        DateUtils.ParseDate(value, format, ignoreError)
-    }
-
-    /** Get the specified part of date
-     * <br>List of part:
-     * <br>YEAR, MONTH, HOUR, MINUTE, SECOND, DAY_OF_WEEK, DAY_OF_MONTH, DAY_OF_YEAR,
-     * <br>WEEK_OF_MONTH, DAY_OF_WEEK_IN_MONTH, WEEK_OF_YEAR, TIMEZONE
-     */
-    static partOfDate(Date date, String part) {
-        DateUtils.PartOfDate(part, date)
-    }
-
-    /** Truncate part of time with specified part
-     * <br>part values: HOUR, MINUTE, SECOND, MILLISECOND
-     */
-    static timeTrunc(Date date, String part) {
-        DateUtils.TruncTime(part, date)
-    }
+    Class<GenerationUtils> getGenerationutils() { GenerationUtils }
 
     /** GETL DSL options */
     LangSpec options(@DelegatesTo(LangSpec) Closure cl = null) {
@@ -1440,12 +1346,12 @@ class Getl extends Script {
 
     /** Temporary database connection */
     TDS embeddedConnection(String name, @DelegatesTo(TDS) Closure cl = null) {
-        embeddedConnection(name, false, cl)
+        embeddedConnection(name, true, cl)
     }
 
     /** Temporary database connection */
     TDS embeddedConnection(@DelegatesTo(TDS) Closure cl) {
-        embeddedConnection(null, false, cl)
+        embeddedConnection(null, true, cl)
     }
 
     /** Temporary database default connection */
@@ -1469,7 +1375,7 @@ class Getl extends Script {
 
     /** Table with temporary database */
     TDSTable embeddedTable(String name, @DelegatesTo(TDSTable) Closure cl = null) {
-        embeddedTable(name, false, cl)
+        embeddedTable(name, true, cl)
     }
 
     /** Table with temporary database */
@@ -1520,6 +1426,11 @@ class Getl extends Script {
         if (langOpts.autoCSVTempForJDBDTables && !BoolUtils.IsValue(isRegistered)) createCsvTemp(name, parent)
 
         return parent
+    }
+
+    /** JDBC query dataset */
+    QueryDataset query(String name, Boolean registration, @DelegatesTo(QueryDataset) Closure cl = null) {
+        query(name, null, registration, cl)
     }
 
     /** JDBC query dataset */
@@ -1623,12 +1534,12 @@ class Getl extends Script {
 
     /** CSV file with exists dataset */
     CSVDataset csvWithDataset(String name, Dataset sourceDataset, @DelegatesTo(CSVDataset) Closure cl = null) {
-        csvWithDataset(name, sourceDataset, false, cl)
+        csvWithDataset(name, sourceDataset, true, cl)
     }
 
     /** CSV file with exists dataset */
     CSVDataset csvWithDataset(Dataset sourceDataset, @DelegatesTo(CSVDataset) Closure cl = null) {
-        csvWithDataset(null, sourceDataset, false, cl)
+        csvWithDataset(null, sourceDataset, true, cl)
     }
 
     /** Excel connection */
@@ -1876,7 +1787,7 @@ class Getl extends Script {
 
     /** Temporary CSV file connection */
     TFS csvTempConnection(String name, @DelegatesTo(TFS) Closure cl = null) {
-        csvTempConnection(name, false, cl)
+        csvTempConnection(name, true, cl)
     }
 
     /** Temporary CSV file connection */
@@ -1904,7 +1815,7 @@ class Getl extends Script {
 
     /** Temporary CSV file */
     TFSDataset csvTemp(String name, @DelegatesTo(TFSDataset) Closure cl = null) {
-        csvTemp(name, false, cl)
+        csvTemp(name, true, cl)
     }
 
     /** Temporary CSV file */
@@ -2039,7 +1950,12 @@ class Getl extends Script {
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
             def pt = startProcess('Process local file system')
-            runClosure(parent, cl)
+            try {
+                runClosure(parent, cl)
+            }
+            finally {
+                if (parent.connected) parent.disconnect()
+            }
             finishProcess(pt)
         }
 
@@ -2173,13 +2089,27 @@ class Getl extends Script {
         return parent
     }
 
+    /** Processing text file */
     FileTextSpec textFile(@DelegatesTo(FileTextSpec) Closure cl) {
         def parent = new FileTextSpec()
-        def pt = startProcess('Write to text file')
+        def pt = startProcess('Processing text file')
         runClosure(parent, cl)
-        pt?.name = "Write to text file \"${parent.fileName}\""
+        pt?.name = "Processing text file \"${parent.fileName}\""
         finishProcess(pt)
 
         return parent
+    }
+
+    /** File path parser */
+    Path filePath(@DelegatesTo(Path) Closure cl) {
+        def parent = new Path()
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** File path parser */
+    Path filePath(String mask) {
+        return new Path(mask: mask)
     }
 }

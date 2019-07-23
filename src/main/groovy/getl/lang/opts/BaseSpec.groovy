@@ -24,6 +24,7 @@
 
 package getl.lang.opts
 
+import getl.exception.ExceptionGETL
 import getl.utils.MapUtils
 
 /**
@@ -93,6 +94,7 @@ class BaseSpec {
      * Import options from map
      */
     void importFromMap(Map<String, Object> importParams) {
+        if (importParams == null) throw new ExceptionGETL('Required importMap parameter!')
         params.putAll(MapUtils.Copy(importParams, ignoreImportKeys(importParams)))
     }
 

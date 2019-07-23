@@ -63,7 +63,7 @@ class Connection {
 	 * Not supported
 	 */
 	Connection() {
-		throw new ExceptionGETL("Basic constructor not supported")
+		throw new ExceptionGETL('Basic constructor not supported')
 	}
 	
 	/**
@@ -84,7 +84,7 @@ class Connection {
 		def load_config = (String)parameters.config
 		if (load_config != null) setConfig(load_config)
 		MapUtils.MergeMap(this.params as Map<String, Object>,
-				MapUtils.CleanMap(parameters, ["driver", "config"]) as Map<String, Object> )
+				MapUtils.CleanMap(parameters, ['driver', 'config']) as Map<String, Object> )
 		doInitConnection()
 	}
 	
@@ -92,9 +92,11 @@ class Connection {
 	 * Register connection parameters with method validator
 	 */
 	protected void registerParameters () {
-		methodParams.register("Super", ["driver", "config", "autoSchema", "dataset", "connection"])
-		methodParams.register("retrieveObjects", [])
-		methodParams.register("executeCommand", ["command", "queryParams", "isUpdate"])
+		methodParams.register('Super',
+				['driver', 'config', 'autoSchema', 'dataset', 'connection', 'numberConnectionAttempts',
+				 'timeoutConnectionAttempts'])
+		methodParams.register('retrieveObjects', [])
+		methodParams.register('executeCommand', ['command', 'queryParams', 'isUpdate'])
 	}
 	
 	/**
@@ -122,12 +124,11 @@ class Connection {
 		
 		(Connection)(Class.forName(connectionClass).newInstance(MapUtils.CleanMap(params, ["connection", "config"])))
 	}
-	
-	/**
-	 * Use connection driver 
-	 */
+
+	/** Connection driver manager class*/
 	private Driver driver
 
+	/** Connection driver manager class*/
 	Driver getDriver() { driver }
 	
 	/**
@@ -136,8 +137,16 @@ class Connection {
 	 */
 	private String config
 
+	/**
+	 * Configuration name
+	 * Store parameters to config file from section "CONNECTIONS"
+	 */
 	String getConfig () { config }
 
+	/**
+	 * Configuration name
+	 * Store parameters to config file from section "CONNECTIONS"
+	 */
 	void setConfig (String value) {
 		config = value
 		if (config != null) {
@@ -189,43 +198,44 @@ class Connection {
 	 */
 	public final Map sysParams = [:]
 	
-	/**
-	 * Auto load schema with meta file for connection datasets
-	 * @return
-	 */
+	/** Auto load schema with meta file for connection datasets */
 	boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema, false) }
-
+	/** Auto load schema with meta file for connection datasets */
 	void setAutoSchema (boolean value) { params.autoSchema = value }
-	
-	/**
-	 * Print write rows to console
-	 */
-	boolean getLogWriteToConsole () { BoolUtils.IsValue(params.logWriteToConsole, false) }
 
+	/** The number of connection attempts on error (default 1) */
+	Integer getNumberConnectionAttempts() { (params.numberConnectionAttempts as Integer)?:1 }
+	/** The number of connection attempts on error (default 1) */
+	void setNumberConnectionAttempts(Integer value) {
+		if (value == null || value < 1) throw new ExceptionGETL('The number of connection attempts must be greater than zero!')
+		params.numberConnectionAttempts = value
+	}
+
+	/** The timeout seconds of connection attempts on error (default 1) */
+	Integer getTimeoutConnectionAttempts() { (params.timeoutConnectionAttempts as Integer)?:1 }
+	/** The timeout seconds of connection attempts on error (default 1) */
+	void setTimeoutConnectionAttempts(Integer value) {
+		if (value == null || value <= 0) throw new ExceptionGETL('The timeout of connection attempts must be greater than zero!')
+		params.timeoutConnectionAttempts = value
+	}
+	
+	/** Print write rows to console */
+	boolean getLogWriteToConsole () { BoolUtils.IsValue(params.logWriteToConsole, false) }
+	/** Print write rows to console */
 	void setLogWriteToConsole (boolean value) { params.logWriteToConsole = value }
 	
-	/**
-	 * Dataset class for auto create by connection
-	 * @return
-	 */
+	/** Dataset class for auto create by connection */
 	String getDataset () { params.dataset }
-
+	/** Dataset class for auto create by connection */
 	void setDataset (String value) { params.dataset = value }
-	
-	/**
-	 * Current transaction count
-	 * @return
-	 */
-	private int tranCount = 0
 
+	/**	 Current transaction count */
+	private int tranCount = 0
+	/**	 Current transaction count */
 	int getTranCount() { tranCount }
 	
-	/**
-	 * Init parameters connections (use for children) 
-	 */
-	protected void doInitConnection () {
-		
-	}
+	/** Init parameters connections (use for children) */
+	protected void doInitConnection () { }
 	
 	/**
 	 * Return objects list of connection 
@@ -261,51 +271,70 @@ class Connection {
 		driver.retrieveObjects(params, filter) 
 	}
 	
-	/**
-	 * Is connected to source
-	 * @return
-	 */
+	/** Is connected to source */
 	boolean getConnected () { driver.isConnected() }
 	
-	/**
-	 * Set connected to source
-	 * @param c
-	 */
+	/** Set connected to source */
 	void setConnected (boolean c) {
 		if (!driver.isSupport(Driver.Support.CONNECT)) throw new ExceptionGETL("Driver not support connect method") 
 		if (connected && c) return
 		if (!connected && !c) return
 		if (c) {
-			doBeforeConnect()
-			driver.connect() 
+			def countAttempts = numberConnectionAttempts?:0
+			if (countAttempts <= 0) countAttempts = 1
+
+			def timeoutAttempts = timeoutConnectionAttempts?:0
+			if (timeoutAttempts <= 0) timeoutAttempts = 1
+			timeoutAttempts = timeoutAttempts * 1000
+
+			def success = false
+			def attempt = 0
+			while (!success) {
+				doBeforeConnect()
+				try {
+					driver.connect()
+					success = true
+				}
+				catch (Exception e) {
+					doErrorConnect()
+					attempt++
+					if (attempt >= countAttempts) throw e
+					sleep(timeoutAttempts)
+					Logs.Warning("Error connect to $objectName, attempt number $attempt, error: ${e.message}")
+				}
+			}
 			doDoneConnect()
 		}
 		else {
 			doBeforeDisconnect()
-			driver.disconnect()
+			try {
+				driver.disconnect()
+			}
+			catch (Exception e) {
+				doErrorDisconnect()
+				throw e
+			}
 			doDoneDisconnect()
 		}
 	}
 	
-	/**
-	 * User logic before connected to source
-	 */
-	protected void doBeforeConnect () {}
+	/** User logic before connected to source */
+	protected void doBeforeConnect() {}
 	
-	/**
-	 * User logic after connected to source
-	 */
-	protected void doDoneConnect () {}
+	/** User logic after connected to source */
+	protected void doDoneConnect() {}
+
+	/** User logic if connection error */
+	protected void doErrorConnect() {}
 	
-	/**
-	 * User logic before disconnected from source
-	 */
+	/** User logic before disconnected from source */
 	protected void doBeforeDisconnect() {}
 	
-	/**
-	 * User logic after disconnected from source
-	 */
-	protected void doDoneDisconnect () {}
+	/** User logic after disconnected from source */
+	protected void doDoneDisconnect() {}
+
+	/** User logic if disconnection error */
+	 protected void doErrorDisconnect() {}
 	
 	/**
 	 * Validation  connected is true and connecting if has no

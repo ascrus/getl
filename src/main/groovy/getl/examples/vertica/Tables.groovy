@@ -4,6 +4,9 @@ import groovy.transform.BaseScript
 
 @BaseScript getl.lang.Getl getl
 
+// Load configuration file
+runGroovyClass getl.examples.vertica.Config, true
+
 /**
  * Define Vertica connection and tables
  */

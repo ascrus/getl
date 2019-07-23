@@ -36,9 +36,9 @@ datasets {
                 logFileName = csvTempConnection().path + '/getl.dsl.logs'
             }
 
-            useH2Connection embeddedConnection('h2') { sqlHistoryFile = "$tempPath/getl.lang.h2.sql" }
+            useH2Connection embeddedConnection('h2', true) { sqlHistoryFile = "$tempPath/getl.lang.h2.sql" }
 
-            h2Table('table1') { H2Table table ->
+            h2Table('table1', true) { H2Table table ->
                 config = 'table1'
 
                 field = [
@@ -87,7 +87,7 @@ datasets {
 
             rowsToMany([
                         table1: h2Table('table1') { truncate() },
-                        table2: h2Table('table2') { table ->
+                        table2: h2Table('table2', true) { table ->
                             tableName = 'table2'
                             field = h2Table('table1').field
                             createOpts {
@@ -119,7 +119,7 @@ datasets {
                 }
             }
 
-            query('query1') {
+            query('query1', true) {
                 query = '''
 SELECT
     t1.id as t1_id, t1.name as t1_name, t1.dt as t1_dt,

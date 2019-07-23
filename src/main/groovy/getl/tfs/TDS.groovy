@@ -131,7 +131,9 @@ class TDS extends H2Connection {
     }
 	
 	/** Generate new table from temporary data stage */
-	public static TDSTable dataset () {
-		new TDSTable()
+	static TDSTable dataset () {
+		def res = new TDSTable()
+		res.connection = new TDS()
+		return res
 	}
 }

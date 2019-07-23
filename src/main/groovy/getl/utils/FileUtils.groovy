@@ -24,15 +24,11 @@
 
 package getl.utils
 
-@GrabConfig(systemClassLoader=true)
+//@GrabConfig(systemClassLoader=true)
 
 import getl.files.FileManager
-import org.codehaus.groovy.tools.RootLoader
-
 import java.nio.file.*
 import java.nio.channels.*
-import java.util.regex.Matcher
-import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import net.lingala.zip4j.core.ZipFile
