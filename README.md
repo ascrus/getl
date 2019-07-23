@@ -8,5 +8,6 @@ GETL taken into account when developing ideas and following requirements:
 * All routine work ETL should be automated wherever possible;
 * Compiling the code on the fly bail speed and reserve for the optimization;
 * Sophisticated class hierarchy guarantee easy connection of other open source solutions.
+* Simple DSL scripting language for implementing complex multi-threaded logic to work with data sources and file systems.
 
 Maven URL: http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22net.sourceforge.getl%22
