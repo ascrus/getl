@@ -91,7 +91,6 @@ build.dependsOn javadocJar
 
 
 //noinspection GroovyMissingReturnStatement
-/*
 uploadArchives {
 	def login = project.properties."ossrhUsername"
 	def password = project.properties."ossrhPassword"
@@ -111,7 +110,7 @@ uploadArchives {
 		}
 
 		pom.project {
-			inceptionYear '2018'
+			inceptionYear '2019'
 			packaging 'jar'
 			name 'getl'
 			artifactId 'getl'
@@ -142,9 +141,9 @@ uploadArchives {
 		}
 	}
 }
-*/
 
 //noinspection GroovyMissingReturnStatement
+/*
 uploadArchives {
     repositories {
         mavenDeployer {
@@ -157,3 +156,4 @@ uploadArchives {
         }
     }
 }
+*/

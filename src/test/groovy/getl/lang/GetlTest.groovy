@@ -4,6 +4,7 @@ import getl.config.ConfigFiles
 import getl.h2.*
 import getl.tfs.*
 import getl.utils.Config
+import getl.utils.DateUtils
 import getl.utils.StringUtils
 
 class GetlTest extends getl.test.GetlTest {
@@ -64,7 +65,7 @@ datasets {
 
                 rowsTo(table) {
                     process { append ->
-                        (1..3).each { append id: it, name: "test $it", dt: now }
+                        (1..3).each { append id: it, name: "test $it", dt: DateUtils.now }
                     }
                     done {
                         assertEquals(3, table.countRow())
@@ -75,7 +76,7 @@ datasets {
                 copyRows(h2Table('table1'), csvTemp('file1')) {
                     process { t, f ->
                         f.name = StringUtils.ToCamelCase(t.name)
-                        f.dt = now
+                        f.dt = DateUtils.now
                     }
 
                     done {
@@ -105,7 +106,7 @@ datasets {
                 process { save ->
                     rowProcess(csvTemp('file1')) {
                         process { row ->
-                            row.dt = now
+                            row.dt = DateUtils.now
                             save 'table1', row
                             save 'table2', row
                         }
@@ -132,7 +133,7 @@ ORDER BY t1.id'''
             rowProcess(query('query1')) {
                 def count
                 init { count = 0 }
-                process { count++; assertEquals(it.t1_id, it.t2_id); assertTrue(it.t1_dt < now ) }
+                process { count++; assertEquals(it.t1_id, it.t2_id); assertTrue(it.t1_dt < DateUtils.now ) }
                 done {
                     assertEquals(3, count)
                     assertEquals(countRow, count)
@@ -140,7 +141,7 @@ ORDER BY t1.id'''
             }
 
             rowProcess(h2Table('table1') { readOpts { where = 'id < 3'; order = ['id ASC'] } }) {
-                process { assertTrue(it.id < 3); assertTrue(it.t1_dt < now ) }
+                process { assertTrue(it.id < 3); assertTrue(it.t1_dt < DateUtils.now ) }
                 done {
                     assertEquals(2, countRow)
                 }
