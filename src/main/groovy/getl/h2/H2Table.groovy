@@ -24,6 +24,8 @@
 
 package getl.h2
 
+import getl.data.Connection
+import getl.exception.ExceptionGETL
 import getl.h2.opts.*
 import getl.jdbc.*
 import getl.jdbc.opts.*
@@ -36,6 +38,14 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class H2Table extends TableDataset {
+    @Override
+    void setConnection(Connection value) {
+        if (value != null && !(value instanceof H2Connection))
+            throw new ExceptionGETL('Сonnection to H2Connection class is allowed!')
+
+        super.setConnection(value)
+    }
+
     @Override
     protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) { new H2CreateSpec(useExternalParams, opts) }
 

@@ -506,7 +506,7 @@ class Field implements Serializable {
     /**
      * Valid equal current object by object
      */
-    boolean canEqual(java.lang.Object other) {
+    static boolean canEqual(java.lang.Object other) {
         return other instanceof Field
     }
 

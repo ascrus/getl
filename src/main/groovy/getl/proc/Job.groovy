@@ -42,9 +42,9 @@ abstract class Job {
 	 * Job arguments (backward compatible) 
 	 * @return
 	 */
-	public static Map<String, Object> getArgs() { return jobArgs }
+	static Map<String, Object> getArgs() { return jobArgs }
 	
-	private void processConfigArgs (def args) {
+	private static void processConfigArgs (def args) {
 		Map<String, Object> m = MapUtils.ProcessArguments(args)
 		if (m.errout != null) Logs.RedirectErrOut(m.errout as String)
 		if (m.stdout != null) {
@@ -66,7 +66,7 @@ abstract class Job {
 	/**
 	 * Copy arguments variable to configuration content
 	 */
-	public static void jobVarsToConfig() {
+	static void jobVarsToConfig() {
 		// Set variables from arguments
 		jobArgs.vars?.each { String key, value ->
 			Config.SetValue("vars.$key", value)
@@ -77,7 +77,7 @@ abstract class Job {
 	 * Run job with arguments of command line
 	 * @param args
 	 */
-	public void run (def args) {
+	void run (def args) {
 		Config.ClearConfig()
 		processConfigArgs(args)
 		init()
@@ -88,14 +88,14 @@ abstract class Job {
 	/**
 	 * Place your initialization code here (run after loading configuration files, but before run logic job)
 	 */
-	public void init () {
+	void init () {
 		
 	}
 	
 	/**
 	 * Run vertica without arguments of command line
 	 */
-	public void run () {
+	void run () {
 		Config.ClearConfig()
 		init()
 		Config.LoadConfig()
@@ -137,7 +137,7 @@ abstract class Job {
 	/**
 	 * Place your code before stop job here
 	 */
-	public void done () {
+	void done () {
 		
 	}
 

@@ -35,8 +35,8 @@ class HiveDriverTest extends JDBCDriverProto {
     }
 
     @Override
-    public TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
-        HiveTable t = new HiveTable(connection: con, schema: con.connectDatabase, tableName: name, field: fields)
+    TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
+        HiveTable t = new HiveTable(connection: con, schemaName: con.connectDatabase, tableName: name, field: fields)
         t.drop(ifExists: true)
         t.create(storedAs: 'ORC', clustered: [by: ['id'], intoBuckets: 2], tblproperties: [transactional: true])
         return t

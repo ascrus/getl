@@ -58,8 +58,9 @@ class CacheManager extends H2Connection {
 	/**
 	 * Schema name
 	 */
-	public String getObjectsSchema () { params.objectsSchema?:"_GETL_CACHE" }
-	public void setObjectsSchema (String value) { params.objectsSchema = value }
+	String getObjectsSchema () { params.objectsSchema?:"_GETL_CACHE" }
+
+	void setObjectsSchema (String value) { params.objectsSchema = value }
 	
 	/**
 	 * Table connections name
@@ -114,13 +115,13 @@ class CacheManager extends H2Connection {
 		
 		regDatasets.clear()
 	}
-	
-	public static String datasetName(long connectionid, Dataset dataset) {
+
+	static String datasetName(long connectionid, Dataset dataset) {
 		assert dataset.objectName != null, "Required \"name\" for dataset"
 		"CON${connectionid}_${StringUtils.TransformObjectName(dataset.objectName).toUpperCase()}"
 	}
-	
-	public Map findConnection(Dataset dataset) {
+
+	Map findConnection(Dataset dataset) {
 		def conName = dataset.connection.objectName
 		def conDriver = dataset.connection.driver.getClass().name
 		QueryDataset q = new QueryDataset(connection: this, query: "SELECT * FROM \"${objectsSchema}\".\"${connections.tableName}\" WHERE DRIVER = '${conDriver}' AND NAME = '${conName}' FOR UPDATE")
@@ -128,12 +129,12 @@ class CacheManager extends H2Connection {
 		if (rows.isEmpty()) return null
 		rows[0]
 	}
-	
-	public Map findObject(CacheDataset dataset) {
+
+	Map findObject(CacheDataset dataset) {
 		findObject(dataset.connectionid, dataset.dataset)
 	}
-	
-	public Map findObject(long connectionid, Dataset dataset) {
+
+	Map findObject(long connectionid, Dataset dataset) {
 		def name = datasetName(connectionid, dataset)
 		QueryDataset q = new QueryDataset(connection: this, query: "SELECT * FROM \"${objectsSchema}\".\"${objects.tableName}\" WHERE NAME = '${name}' FOR UPDATE")
 		def rows = q.rows()
@@ -228,7 +229,7 @@ class CacheManager extends H2Connection {
 	}
 	
 	@Synchronized
-	public void unregister (TableDataset dataset) {
+	void unregister (TableDataset dataset) {
 		
 	}
 

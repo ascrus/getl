@@ -257,7 +257,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         ds2.drop()
     }
 
-	public void testPerfomance() {
+    void testPerfomance() {
 		def perfomanceRows = 1000
 		def perfomanceCols = 1000
 

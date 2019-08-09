@@ -47,20 +47,23 @@ class HDFSManager extends Manager {
     /**
      * Server address
      */
-    public String getServer () { params.server }
-    public void setServer (String value) { params.server = value }
+    String getServer () { params.server }
+
+    void setServer (String value) { params.server = value }
 
     /**
      * Server port
      */
-    public Integer getPort () { (params.port != null)?(params.port as Integer):8022 }
-    public void setPort (Integer value) { params.port = value }
+    Integer getPort () { (params.port != null)?(params.port as Integer):8022 }
+
+    void setPort (Integer value) { params.port = value }
 
     /**
      * Login user
      */
-    public String getLogin () { params.login }
-    public void setLogin (String value) { params.login = value }
+    String getLogin () { params.login }
+
+    void setLogin (String value) { params.login = value }
 
     /**
      * Password user
@@ -79,7 +82,8 @@ class HDFSManager extends Manager {
      * Home directory by user
      */
     private String homeDirectory
-    public String getHomeDirectory() { this.homeDirectory }
+
+    String getHomeDirectory() { this.homeDirectory }
 
     @Override
     boolean isCaseSensitiveName() {
@@ -95,7 +99,7 @@ class HDFSManager extends Manager {
         UserGroupInformation ugi = UserGroupInformation.createRemoteUser(login)
         ugi.doAs(
             new PrivilegedExceptionAction<Void>() {
-                public Void run() {
+                Void run() {
                     Configuration conf = new Configuration()
                     conf.set("fs.defaultFS", "hdfs://$server:$port")
                     conf.set("hadoop.job.ugi", login)

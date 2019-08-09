@@ -36,7 +36,7 @@ class SQLParser {
 	/**
 	 * List of type statements
 	 */
-	public static enum StatementType {INSERT, UPDATE, DELETE}
+	static enum StatementType {INSERT, UPDATE, DELETE}
 	
 	/**
 	 * Lexer for parsing
@@ -51,8 +51,8 @@ class SQLParser {
 	
 	private static final int minSizeDeleteStatement = 6
 	private static final String deleteKeyWord = "DELETE FROM"
-	
-	public StatementType statementType(List tokens) {
+
+	StatementType statementType(List tokens) {
 		if (lexer == null) throw new ExceptionParser("Required lexer for parsing", tokens)
 		if (tokens == null) throw new ExceptionParser("NULL token", tokens)
 		
@@ -68,7 +68,7 @@ class SQLParser {
 	 * @param tokens
 	 * @return
 	 */
-	public Map parseInsertStatement(List<Map> tokens) {
+	Map parseInsertStatement(List<Map> tokens) {
 		if (lexer == null) throw new ExceptionParser("Required lexer for parsing", tokens)
 		
 		if (tokens == null || tokens.size() < minSizeInsertStatement) throw new ExceptionParser("Invalid insert DML operator", tokens)
@@ -120,7 +120,7 @@ class SQLParser {
 	 * @param tokens
 	 * @return
 	 */
-	public Map parseUpdateStatement(List<Map> tokens) {
+	Map parseUpdateStatement(List<Map> tokens) {
 		if (lexer == null) throw new ExceptionParser("Required lexer for parsing", tokens)
 		
 		if (tokens == null || tokens.size() < minSizeUpdateStatement) throw new ExceptionParser("Invalid update DML operator", tokens)
@@ -180,8 +180,8 @@ class SQLParser {
 		
 		res
 	}
-	
-	public Map parseDeleteStatement(List<Map> tokens) {
+
+	Map parseDeleteStatement(List<Map> tokens) {
 		if (lexer == null) throw new ExceptionParser("Required lexer for parsing", tokens)
 		
 		if (tokens == null || tokens.size() < minSizeDeleteStatement) throw new ExceptionParser("Invalid delete DML operator", tokens)

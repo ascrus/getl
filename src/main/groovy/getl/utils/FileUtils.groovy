@@ -878,6 +878,7 @@ class FileUtils {
 				if (s.length() == 0) return
 				if (s[s.length() - 1] == '"') {
 					res << tmp
+					//noinspection GrReassignedInClosureLocalVar
 					tmp = null
 				}
 			}

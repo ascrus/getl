@@ -36,7 +36,7 @@ import getl.utils.*
  */
 @InheritConstructors
 class MultipleDataset extends Dataset {
-	public MultipleDataset () {
+	MultipleDataset () {
 		super()
 		
 		Map<String, Dataset> d = [:]
@@ -51,21 +51,23 @@ class MultipleDataset extends Dataset {
 	 * Destinition datasets (alias:dataset)
 	 * @return
 	 */
-	public Map<String, Dataset> getDest () { params.dest }
-	public void setDest (Map<String, Dataset> value) { params.dest = value }
+	Map<String, Dataset> getDest () { params.dest }
+
+    void setDest (Map<String, Dataset> value) { params.dest = value }
 	
 	/**
 	 * Conditions for filter rows to datasets (alias:condition)
 	 * @return
 	 */
-	public Map<String, Closure> getCondition () { params.condition }
-	public void setCondition (Map<String, Closure> value) { params.condition = value } 
+	Map<String, Closure> getCondition () { params.condition }
+
+    void setCondition (Map<String, Closure> value) { params.condition = value }
 	
 	@Override
-	public List<String> excludeSaveParams () {
+    List<String> excludeSaveParams () {
 		super.excludeSaveParams() + ["dest", "condition"]
 	}
 	
 	@Override
-	public String getObjectName() { dest.keySet().toList().join(', ') }
+    String getObjectName() { dest.keySet().toList().join(', ') }
 }

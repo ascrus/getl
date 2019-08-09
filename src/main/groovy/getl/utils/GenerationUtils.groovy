@@ -59,7 +59,7 @@ class GenerationUtils {
 	 * @param value
 	 * @return
 	 */
-	public static String ProcessAlias(String value, boolean quote) {
+	static String ProcessAlias(String value, boolean quote) {
 		List<String> elementsPath = value.split("[.]").toList()
 		for (int i = 0; i < elementsPath.size(); i++) {
 			elementsPath[i] = ((quote)?'"':"") + elementsPath[i] + ((quote)?'"':"") + ((i < elementsPath.size() - 1)?"?":"")
@@ -73,7 +73,7 @@ class GenerationUtils {
 	 * @param quote
 	 * @return
 	 */
-	public static String Field2Alias(Field field, boolean quote) {
+	static String Field2Alias(Field field, boolean quote) {
 		String a = (field.alias != null)?field.alias:field.name
         return ProcessAlias(a, quote)
 	}
@@ -83,7 +83,7 @@ class GenerationUtils {
 	 * @param field
 	 * @return
 	 */
-	public static String Field2Alias(Field field) {
+	static String Field2Alias(Field field) {
         return Field2Alias(field, true)
 	}
 	
@@ -94,7 +94,7 @@ class GenerationUtils {
 	 * @param v
 	 * @return
 	 */
-	public static String GenerateEmptyValue(getl.data.Field.Type type, String variableName) {
+	static String GenerateEmptyValue(getl.data.Field.Type type, String variableName) {
 		String r
 		switch (type) {
 			case getl.data.Field.Type.STRING: case getl.data.Field.Type.UUID:
@@ -132,8 +132,8 @@ class GenerationUtils {
 		}
 		return r
 	}
-	
-	public static String DateFormat(getl.data.Field.Type type) {
+
+	static String DateFormat(getl.data.Field.Type type) {
 		String df
 		
 		if (type == getl.data.Field.Type.DATE)
@@ -156,7 +156,7 @@ class GenerationUtils {
 	 * @param sourceValue
 	 * @return
 	 */
-	public static String GenerateConvertValue(Field dest, Field source, String dataformat, String sourceValue) {
+	static String GenerateConvertValue(Field dest, Field source, String dataformat, String sourceValue) {
 		String r
 		
 		switch (dest.type) {
@@ -518,19 +518,19 @@ class GenerationUtils {
 	public static final Random random = new Random()
 
 	@groovy.transform.CompileStatic
-	public static int GenerateInt () {
+	static int GenerateInt () {
         return random.nextInt()
 	}
 	
 	@groovy.transform.CompileStatic
-	public static int GenerateInt (int minValue, int maxValue) {
+	static int GenerateInt (int minValue, int maxValue) {
 		def res = minValue - 1
 		while (res < minValue) res = random.nextInt(maxValue + 1)
         return res
 	}
 	
 	@groovy.transform.CompileStatic
-	public static String GenerateString (int length) {
+	static String GenerateString (int length) {
 		String result = ""
 		while (result.length() < length) result += ((result.length() > 0)?" ":"") + StringUtils.RandomStr().replace('-', ' ')
 		
@@ -541,22 +541,22 @@ class GenerationUtils {
 	}
 	
 	@groovy.transform.CompileStatic
-	public static long GenerateLong () {
+	static long GenerateLong () {
         return random.nextLong()
 	}
 	
 	@groovy.transform.CompileStatic
-	public static BigDecimal GenerateNumeric () {
+	static BigDecimal GenerateNumeric () {
         return BigDecimal.valueOf(random.nextDouble()) + random.nextInt()
 	}
 	
 	@groovy.transform.CompileStatic
-	public static BigDecimal GenerateNumeric (int precision) {
+	static BigDecimal GenerateNumeric (int precision) {
         return NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextInt(), precision)
 	}
 	
 	@groovy.transform.CompileStatic
-	public static BigDecimal GenerateNumeric (int length, int precision) {
+	static BigDecimal GenerateNumeric (int length, int precision) {
 		BigDecimal res
 		def intSize = length - precision
 		if (intSize == 0) {
@@ -574,37 +574,37 @@ class GenerationUtils {
 	}
 	
 	@groovy.transform.CompileStatic
-	public static double GenerateDouble () {
+	static double GenerateDouble () {
         return random.nextDouble() + random.nextLong()
 	}
 	
 	@groovy.transform.CompileStatic
-	public static boolean GenerateBoolean () {
+	static boolean GenerateBoolean () {
         return random.nextBoolean()
 	}
 	
 	@groovy.transform.CompileStatic
-	public static Date GenerateDate() {
+	static Date GenerateDate() {
         return DateUtils.AddDate("dd", -GenerateInt(0, 365), DateUtils.CurrentDate())
 	}
 	
 	@groovy.transform.CompileStatic
-	public static Date GenerateDate(int days) {
+	static Date GenerateDate(int days) {
         return DateUtils.AddDate("dd", -GenerateInt(0, days), DateUtils.CurrentDate())
 	}
 	
 	@groovy.transform.CompileStatic
-	public static Date GenerateDateTime() {
+	static Date GenerateDateTime() {
         return DateUtils.AddDate("ss", -GenerateInt(0, 525600), DateUtils.Now())
 	}
 	
 	@groovy.transform.CompileStatic
-	public static Date GenerateDateTime(int seconds) {
+	static Date GenerateDateTime(int seconds) {
         return DateUtils.AddDate("ss", -GenerateInt(0, seconds), DateUtils.Now())
 	}
 	
 	@groovy.transform.CompileStatic
-	public static def GenerateValue (Field f) {
+	static def GenerateValue (Field f) {
         return GenerateValue(f, null)
 	}
 	
@@ -615,7 +615,7 @@ class GenerationUtils {
 	 * @return
 	 */
 	@groovy.transform.CompileStatic
-	public static def GenerateValue (Field f, def rowID) {
+	static def GenerateValue (Field f, def rowID) {
 		def result
 		def l = f.length?:1
 		
@@ -698,12 +698,12 @@ class GenerationUtils {
 	}
 	
 	@groovy.transform.CompileStatic
-	public static Map GenerateRowValues (List<Field> field) {
+	static Map GenerateRowValues (List<Field> field) {
         return GenerateRowValues(field, null)
 	}
 	
 	@groovy.transform.CompileStatic
-	public static Map GenerateRowValues (List<Field> field, def rowID) {
+	static Map GenerateRowValues (List<Field> field, def rowID) {
 		Map row = [:]
 		field.each { Field f ->
 			def fieldName = f.name.toLowerCase()
@@ -720,13 +720,13 @@ class GenerationUtils {
 	 * @return
 	 */
 	@groovy.transform.CompileStatic
-	public static String GenerateStringValue (String value) {
+	static String GenerateStringValue (String value) {
 		if (value == null) return "null"
 		return '"' + value.replace('"', '\\"') + '"'
 	}
 	
 	@groovy.transform.CompileStatic
-	public static String GenerateCommand(String command, int numTab, boolean condition) {
+	static String GenerateCommand(String command, int numTab, boolean condition) {
 		if (!condition) return ""
         return StringUtils.Replicate("\t", numTab) + command
 	}
@@ -736,7 +736,7 @@ class GenerationUtils {
 	 * @param fields
 	 * @return
 	 */
-	public static String GenerateScriptAddFields (List<Field> fields) {
+	static String GenerateScriptAddFields (List<Field> fields) {
 		StringBuilder sb = new StringBuilder()
 		sb << "{\nList<Field> res = []\n\n"
 		fields.each { Field f ->
@@ -810,7 +810,7 @@ sb << """
 	 * @param fields
 	 * @return
 	 */
-	public static Map Fields2Map (List<Field> fields) {
+	static Map Fields2Map (List<Field> fields) {
 		if (fields == null) return null
 		
 		def res = [:]
@@ -829,7 +829,7 @@ sb << """
 	 * @param fields
 	 * @return
 	 */
-	public static List<String> Fields2List (JDBCDataset dataset, List<String> excludeFields = null) {
+	static List<String> Fields2List (JDBCDataset dataset, List<String> excludeFields = null) {
 		if (dataset == null) return null
 		
 		def res = []
@@ -847,7 +847,7 @@ sb << """
 	 * @param fields
 	 * @return
 	 */
-	public static String GenerateJsonFields (List<Field> fields) {
+	static String GenerateJsonFields (List<Field> fields) {
         return MapUtils.ToJson(Fields2Map(fields))
 	}
 	
@@ -856,7 +856,7 @@ sb << """
 	 * @param value
 	 * @return
 	 */
-	public static List<Field> Map2Fields (Map value) {
+	static List<Field> Map2Fields (Map value) {
 		List<Field> res = []
 		
 		value.fields?.each { Map f ->
@@ -871,7 +871,7 @@ sb << """
 	 * @param value
 	 * @return
 	 */
-	public static List<Field> ParseJsonFields (String value) {
+	static List<Field> ParseJsonFields (String value) {
 		if (value == null) return null
 		
 		def b = new JsonSlurper()
@@ -885,7 +885,7 @@ sb << """
 	 * @param fields
 	 * @param names
 	 */
-	public static List<Field> RemoveFields (List<Field> fields, List<String> names) {
+	static List<Field> RemoveFields (List<Field> fields, List<String> names) {
 		List<Field> res = []
 		names.each { name ->
 			name = name.toLowerCase()
@@ -907,7 +907,7 @@ sb << """
 	 * @param disableExtended
 	 * @return
 	 */
-	public static List<Field> DisableAttributeField (List<Field> fields, boolean disableNotNull, boolean disableKey, boolean disableAutoincrement, 
+	static List<Field> DisableAttributeField (List<Field> fields, boolean disableNotNull, boolean disableKey, boolean disableAutoincrement,
 														boolean disableExtended, boolean excludeReadOnly) {
 		List<Field> res = []
 		fields.each { Field f -> 
@@ -929,7 +929,7 @@ sb << """
 	/**
 	 * Compile groovy script to closure
 	 */
-	public static Closure EvalGroovyClosure(String value, Map<String, Object> vars = null, Boolean convertReturn = false, ClassLoader classLoader = null) {
+	static Closure EvalGroovyClosure(String value, Map<String, Object> vars = null, Boolean convertReturn = false, ClassLoader classLoader = null) {
         return (Closure)EvalGroovyScript(value, vars, convertReturn, classLoader)
 	}
 
@@ -940,7 +940,7 @@ sb << """
 	 * @return
 	 */
 	@groovy.transform.CompileStatic
-	public static def EvalGroovyScript(String value, Map<String, Object> vars = null, Boolean convertReturn = false, ClassLoader classLoader = null) {
+	static def EvalGroovyScript(String value, Map<String, Object> vars = null, Boolean convertReturn = false, ClassLoader classLoader = null) {
 		if (value == null) return null
 		if (convertReturn) value = value.replace('\r', '\u0001')
 		
@@ -974,7 +974,7 @@ sb << """
 	 * @return
 	 */
 	@groovy.transform.CompileStatic
-	public static String EvalText(String value, Map<String, Object> vars) {
+	static String EvalText(String value, Map<String, Object> vars) {
 		if (value == null) return null
 		vars.each { String key, Object val ->
 			key = '${' + key + '}'
@@ -989,7 +989,7 @@ sb << """
 	 * @param field
 	 * @return
 	 */
-	public static void FieldConvertToString (getl.data.Field field) {
+	static void FieldConvertToString (getl.data.Field field) {
 		def len
 		def type = getl.data.Field.Type.STRING
 		switch (field.type) {
@@ -1038,7 +1038,7 @@ sb << """
 	 * @param dataset
 	 */
 	@groovy.transform.CompileStatic
-	public static void ConvertToStringFields (Dataset dataset) {
+	static void ConvertToStringFields (Dataset dataset) {
 		dataset.field.each { FieldConvertToString(it) }
 	}
 	
@@ -1047,7 +1047,7 @@ sb << """
 	 * @param name
 	 * @return
 	 */
-	public static String SqlObjectName (JDBCDataset dataset, String name) {
+	static String SqlObjectName (JDBCDataset dataset, String name) {
 		JDBCDriver drv = dataset.connection.driver as JDBCDriver
 
         return drv.prepareObjectNameForSQL(name, dataset)
@@ -1059,7 +1059,7 @@ sb << """
 	 * @param name
 	 * @return
 	 */
-	public static String SqlObjectName (JDBCConnection connection, String name) {
+	static String SqlObjectName (JDBCConnection connection, String name) {
 		JDBCDriver drv = connection.driver as JDBCDriver
 
 		return drv.prepareObjectNameForSQL(name)
@@ -1071,7 +1071,7 @@ sb << """
 	 * @param listNames
 	 * @return
 	 */
-	public static List<String> SqlListObjectName (JDBCDataset dataset, List<String> listNames) {
+	static List<String> SqlListObjectName (JDBCDataset dataset, List<String> listNames) {
 		List<String> res = []
 		JDBCDriver drv = dataset.connection.driver as JDBCDriver
 
@@ -1087,7 +1087,7 @@ sb << """
      * @param fieldName
      * @return
      */
-	public static String Field2ParamName(String fieldName) {
+	static String Field2ParamName(String fieldName) {
 		if (fieldName == null) return null
 
         return fieldName.replaceAll("(?i)[^a-z0-9_]", "_").toLowerCase()
@@ -1098,7 +1098,7 @@ sb << """
 	 * @param expr - string expression with {field} and {orig} macros
 	 * @return
 	 */
-	public static List<String> SqlKeyFields (JDBCDataset dataset, List<Field> fields, String expr, List<String> excludeFields) {
+	static List<String> SqlKeyFields (JDBCDataset dataset, List<Field> fields, String expr, List<String> excludeFields) {
 		excludeFields = (excludeFields != null)?excludeFields*.toLowerCase():[]
 		List<Field> kf = []
 		fields.each { Field f ->
@@ -1124,7 +1124,7 @@ sb << """
 	 * @param expr - string expression with {field} macros
 	 * @return
 	 */
-	public static List<String> SqlFields (JDBCDataset dataset, List<Field> fields, String expr, List<String> excludeFields) {
+	static List<String> SqlFields (JDBCDataset dataset, List<Field> fields, String expr, List<String> excludeFields) {
 		excludeFields = (excludeFields != null)?excludeFields*.toLowerCase():[]
 		
 		List<String> res = []
@@ -1149,7 +1149,7 @@ sb << """
 	 * @return
 	 */
 	@groovy.transform.CompileStatic
-	public static Map RowKeyMapValues(List<Field> fields, Map row, List<String> excludeFields) {
+	static Map RowKeyMapValues(List<Field> fields, Map row, List<String> excludeFields) {
 		Map res = [:]
 		if (excludeFields != null) excludeFields = excludeFields*.toLowerCase() else excludeFields = []
 		fields.each { Field f ->
@@ -1168,7 +1168,7 @@ sb << """
 	 * @return
 	 */
 	@groovy.transform.CompileStatic
-	public static List RowListValues (List<String> fields, Map row) {
+	static List RowListValues (List<String> fields, Map row) {
 		def res = new ArrayList()
 		fields.each { String n ->
 			res << row.get(n.toLowerCase())
@@ -1185,7 +1185,7 @@ sb << """
 	 * @return
 	 */
 	@groovy.transform.CompileStatic
-	public static Map RowMapValues (List<String> fields, Map row, boolean toLower) {
+	static Map RowMapValues (List<String> fields, Map row, boolean toLower) {
 		Map res = [:]
 		if (toLower) {
 			fields.each { String n ->
@@ -1210,7 +1210,7 @@ sb << """
 	 * @return
 	 */
 	@groovy.transform.CompileStatic
-	public static Map RowMapValues (List<String> fields, Map row) {
+	static Map RowMapValues (List<String> fields, Map row) {
 		RowMapValues(fields, row, true)
 	}
 	
@@ -1219,7 +1219,7 @@ sb << """
 	 * @param fields
 	 * @return
 	 */
-	public static Map GenerateRowCopy(JDBCDriver driver, List<Field> fields, boolean sourceIsMap = false) {
+	static Map GenerateRowCopy(JDBCDriver driver, List<Field> fields, boolean sourceIsMap = false) {
 		if (!driver.isConnected()) driver.connect()
 
 		StringBuilder sb = new StringBuilder()
@@ -1279,7 +1279,7 @@ sb << """
 	 * @param fields
 	 * @return
 	 */
-	public static Closure GenerateFieldCopy(List<Field> fields) {
+	static Closure GenerateFieldCopy(List<Field> fields) {
 		StringBuilder sb = new StringBuilder()
 		sb << "{ Map<String, Object> inRow, Map<String, Object> outRow -> methodCopy(inRow, outRow) }"
 		sb << '\n@groovy.transform.CompileStatic\n'
@@ -1292,8 +1292,8 @@ sb << """
 		Closure result = GenerationUtils.EvalGroovyClosure(sb.toString())
         return result
 	}
-	
-	public static String GenerateSetParam(JDBCDriver driver, int paramNum, Field field, int fieldType, String value) {
+
+	static String GenerateSetParam(JDBCDriver driver, int paramNum, Field field, int fieldType, String value) {
 		String res
 		Map types = driver.javaTypes()
 		switch (fieldType) {

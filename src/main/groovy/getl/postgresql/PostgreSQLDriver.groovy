@@ -46,7 +46,7 @@ class PostgreSQLDriver extends JDBCDriver {
     }
 
 	@Override
-	public List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.LOCAL_TEMPORARY,
 				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX,
@@ -54,13 +54,13 @@ class PostgreSQLDriver extends JDBCDriver {
 	}
 
     @Override
-    public List<Driver.Operation> operations() {
+	List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
     }
 	
 	@Override
-	public String defaultConnectURL () {
+	String defaultConnectURL () {
 		return 'jdbc:postgresql://{host}/{database}'
 	}
 
@@ -77,7 +77,7 @@ class PostgreSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public Map getSqlType () {
+	Map getSqlType () {
 		Map res = super.getSqlType()
 		res.BLOB.name = 'bytea'
 		res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER
@@ -88,7 +88,7 @@ class PostgreSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public void prepareField (Field field) {
+	void prepareField (Field field) {
 		super.prepareField(field)
 
 		if (field.type == Field.Type.BLOB) {
@@ -117,10 +117,10 @@ class PostgreSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public boolean blobReadAsObject () { return false }
+	boolean blobReadAsObject () { return false }
 
 	@Override
-	public String blobMethodWrite (String methodName) {
+	String blobMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
@@ -134,10 +134,10 @@ class PostgreSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public boolean textReadAsObject() { return false }
+	boolean textReadAsObject() { return false }
 
 	@Override
-	public String textMethodWrite (String methodName) {
+	String textMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.CLOB) 
@@ -149,5 +149,5 @@ class PostgreSQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public boolean uuidReadAsObject() { return true }
+	boolean uuidReadAsObject() { return true }
 }

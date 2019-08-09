@@ -112,7 +112,7 @@ class StringUtils {
 	/** Replicate character */
 	static String Replicate(String c, int len) {
 		if (len == 0) return ""
-		return c.multiply(len)
+		return c * len
 	}
 
 	/**

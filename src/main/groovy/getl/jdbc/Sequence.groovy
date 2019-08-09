@@ -56,7 +56,7 @@ class Sequence {
 	 * Clone sequence as new instance with current connection
 	 * @return
 	 */
-	public Sequence newSequence () {
+	Sequence newSequence () {
 		Sequence res = getClass().newInstance() as Sequence
 		res.connection = this.connection
 		res.name = this.name
@@ -70,7 +70,7 @@ class Sequence {
 	 * @param con
 	 * @return
 	 */
-	public Sequence newSequence (Connection con) {
+	Sequence newSequence (Connection con) {
 		Sequence res = getClass().newInstance() as Sequence
 		res.connection = con
 		res.name = this.name
@@ -84,7 +84,7 @@ class Sequence {
 	 * @return
 	 */
 	@groovy.transform.Synchronized
-	public long getNextValue() {
+	long getNextValue() {
 		nextValueFast
 	}
 
@@ -92,7 +92,7 @@ class Sequence {
 	 * Get next sequence value without synchronized	
 	 * @return
 	 */
-	public long getNextValueFast() {
+	long getNextValueFast() {
 		if (!connection.driver.isSupport(Driver.Support.SEQUENCE)) throw new ExceptionGETL("Driver not support sequences")
 		if ((current == 0) || (offs >= cache)) {
 				connection.tryConnect()
@@ -106,7 +106,7 @@ class Sequence {
 	}
 	
 	@Override
-	public String toString() {
+	String toString() {
 		name
 	}
 }

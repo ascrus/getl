@@ -110,7 +110,7 @@ class CSVDriver extends FileDriver {
 	}
 	
 	protected static QuoteMode datasetQuoteMode(Dataset dataset) {
-		def QuoteMode qMode
+		QuoteMode qMode
 		switch ((dataset as CSVDataset).quoteMode) {
 			case CSVDataset.QuoteMode.COLUMN:
 				boolean[] b = new boolean[dataset.field.size()]
@@ -137,8 +137,8 @@ class CSVDriver extends FileDriver {
 		def csvfile = new File(p.path)
 		if (!csvfile.exists()) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" not found or invalid path \"${dataset.connection.params.path}\"")
 		Reader fileReader = getFileReader(dataset, [:])
-		
-		def CsvPreference pref = new CsvPreference.Builder(p.quoteStr as char, (p.fieldDelimiter) as int, p.rowDelimiter as String).useQuoteMode(p.qMode as QuoteMode).build()
+
+		CsvPreference pref = new CsvPreference.Builder(p.quoteStr as char, (p.fieldDelimiter) as int, p.rowDelimiter as String).useQuoteMode(p.qMode as QuoteMode).build()
 		def reader = new CsvListReader(fileReader, pref)
 		String[] header = null
 		try {

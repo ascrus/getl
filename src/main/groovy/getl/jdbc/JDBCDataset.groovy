@@ -212,9 +212,9 @@ class JDBCDataset extends Dataset {
 	}
 
 	/** Query parameters */
-	Map<String, Object> getQueryParams () { params.queryParams as Map<String, Object> }
+	Map getQueryParams () { params.queryParams as Map<String, Object> }
 	/** Query parameters */
-	void setQueryParams (Map<String, Object> value) {
+	void setQueryParams (Map value) {
 		queryParams.clear()
 		queryParams.putAll(value)
 	}

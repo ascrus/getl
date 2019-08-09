@@ -32,11 +32,11 @@ import getl.utils.*
 class CSVParseBlob extends CellProcessorAdaptor {
 	@groovy.transform.CompileStatic
 	@Override
-	public <T> T execute(final Object value, final CsvContext context) {
+    <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
 		
 		if (!(value instanceof String)) {
-			throw new SuperCsvCellProcessorException(String.class, value, context, this);
+			throw new SuperCsvCellProcessorException(String.class, value, context, this)
 		}
 
 		def result = StringUtils.HexToRaw((String)value)

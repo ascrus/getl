@@ -126,7 +126,7 @@ class XMLDriver extends FileDriver {
 	/**
 	 * Read attributes and rows from dataset
 	 */
-	private void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure<Boolean> initAttr, Closure code) {
+	private static void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure<Boolean> initAttr, Closure code) {
 		def xml = dataset as XMLDataset
 		StringBuilder sb = new StringBuilder()
 		generateAttrRead(xml, initAttr, sb)
@@ -178,7 +178,7 @@ class XMLDriver extends FileDriver {
 	/**
 	 * Read XML data from file
 	 */
-	def readData (Dataset dataset, Map params) {
+	static def readData (Dataset dataset, Map params) {
 		XMLDataset xmlDataset = dataset as XMLDataset
 		def xml = new XmlParser()
 

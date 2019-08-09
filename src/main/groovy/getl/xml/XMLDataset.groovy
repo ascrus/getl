@@ -50,10 +50,12 @@ class XMLDataset extends StructureFileDataset {
 		(params.features as Map).clear()
 		if (values != null) (params.features as Map).putAll(values)
 	}
-	
+
 	@Override
 	void setConnection(Connection value) {
-		assert value == null || value instanceof XMLConnection
+		if (value != null && !(value instanceof XMLConnection))
+			throw new ExceptionGETL('Сonnection to XMLConnection class is allowed!')
+
 		super.setConnection(value)
 	}
 

@@ -82,8 +82,9 @@ class ConfigSlurper extends ConfigManager {
 	/**
 	 * List of configuration files
 	 */
-	public List<String> getFiles () { params.files as List<String> }
-	public void setFiles (List<String> value) {
+	List<String> getFiles () { params.files as List<String> }
+
+	void setFiles (List<String> value) {
 		value.each {
 			if (it == null || it.trim() == '') {
 				throw new ExceptionGETL('The file name can not have empty value')
@@ -271,7 +272,7 @@ class ConfigSlurper extends ConfigManager {
 	}
 
 	@Override
-	public void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
+	void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
 		def fp = (saveParams?.path as String)?:this.path
 		def fn = (saveParams?.fileName as String)?:this.fileName
 		def cp = (saveParams?.codePage as String)?:this.codePage

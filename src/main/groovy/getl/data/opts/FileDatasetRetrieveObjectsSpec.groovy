@@ -51,9 +51,9 @@ class FileDatasetRetrieveObjectsSpec extends BaseSpec {
     void setType(FileDriver.RetrieveObjectType value) { params.type = value }
 
     /** File type search by mask */
-    FileDriver.RetrieveObjectType getFileType() { FileDriver.RetrieveObjectType.FILE }
+    static FileDriver.RetrieveObjectType getFileType() { FileDriver.RetrieveObjectType.FILE }
     /** Catalog type search by mask */
-    FileDriver.RetrieveObjectType getDirectoryType() { FileDriver.RetrieveObjectType.DIR }
+    static FileDriver.RetrieveObjectType getDirectoryType() { FileDriver.RetrieveObjectType.DIR }
 
     /** Way to sort the results */
     FileDriver.RetrieveObjectSort getSort() { params.sort as FileDriver.RetrieveObjectSort }
@@ -61,13 +61,13 @@ class FileDatasetRetrieveObjectsSpec extends BaseSpec {
     void setSort(FileDriver.RetrieveObjectSort value) { params.sort = value }
 
     /** No sorting required */
-    FileDriver.RetrieveObjectSort getNoneSort() { FileDriver.RetrieveObjectSort.NONE }
+    static FileDriver.RetrieveObjectSort getNoneSort() { FileDriver.RetrieveObjectSort.NONE }
     /** Sort by name */
-    FileDriver.RetrieveObjectSort getNameSort() { FileDriver.RetrieveObjectSort.NAME }
+    static FileDriver.RetrieveObjectSort getNameSort() { FileDriver.RetrieveObjectSort.NAME }
     /** Sort by create date of file */
-    FileDriver.RetrieveObjectSort getDateSort() { FileDriver.RetrieveObjectSort.DATE }
+    static FileDriver.RetrieveObjectSort getDateSort() { FileDriver.RetrieveObjectSort.DATE }
     /** Sort by size of file */
-    FileDriver.RetrieveObjectSort getSizeSort() { FileDriver.RetrieveObjectSort.SIZE }
+    static FileDriver.RetrieveObjectSort getSizeSort() { FileDriver.RetrieveObjectSort.SIZE }
 
     /** Recursive directory processing */
     Boolean getRecursive() { params.recursive }

@@ -44,7 +44,7 @@ class TDSTable extends H2Table {
     }
 
     @Override
-    public void setConnection(Connection value) {
+    void setConnection(Connection value) {
         assert value == null || value.getClass().name == 'getl.tfs.TDS'
         super.setConnection(value)
     }

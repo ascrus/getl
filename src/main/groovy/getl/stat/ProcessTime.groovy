@@ -35,7 +35,8 @@ import getl.utils.*
  */
 class ProcessTime {
 	public static java.util.logging.Level LogLevelDefault = Level.FINE
-	public static void SetLogLevelDefault (String level) { LogLevelDefault = Logs.StrToLevel(level) }
+
+    static void SetLogLevelDefault (String level) { LogLevelDefault = Logs.StrToLevel(level) }
 	public static boolean debugDefault = false
 	
 	public String name = "process"
@@ -108,33 +109,33 @@ class ProcessTime {
     /**
      * Start process time
      */
-	public Date getStart() { start }
+	Date getStart() { start }
 
     /**
      * Finish process time
      */
-	public Date getFinish() { finish }
+	Date getFinish() { finish }
 
     /**
      * Duration time process
      */
-	public TimeDuration getTime() { time }
+	TimeDuration getTime() { time }
 
     /**
      * Total rows processed
      */
 
-	public long GetCountRow() { countRow }
+	long GetCountRow() { countRow }
 
     /**
      * Count rows processed by second
      */
-	public long getRowInSec() { rowInSec }
+	long getRowInSec() { rowInSec }
 
     /**
      * Finish process
      */
-	public void finish() {
+	void finish() {
 		this.finish((Long)null)
 	}
 
@@ -142,7 +143,7 @@ class ProcessTime {
      * Finish process
      * @param procRow
      */
-	public void finish(Long procRow) {
+	void finish(Long procRow) {
 		this.finish = DateUtils.Now()
 		this.time = TimeCategory.minus(finish, start)
 		this.countRow = procRow
@@ -162,7 +163,7 @@ class ProcessTime {
     /**
      * Return last status process
      */
-	public String lastStat () {
+	String lastStat () {
 		"time ${time}" + ((countRow!= null)?", $countRow ${objectName}s, $rowInSec ${objectName}s per second, ${avgSpeedStr} seconds per $objectName":"")
 	}
 }

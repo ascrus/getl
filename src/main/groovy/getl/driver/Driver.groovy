@@ -49,43 +49,47 @@ abstract class Driver {
 	}
 	
 	protected Connection connection
-	
-	public static enum Support {
+
+    static enum Support {
 		CONNECT, TRANSACTIONAL, SQL, LOCAL_TEMPORARY, GLOBAL_TEMPORARY, BATCH, EACHROW, WRITE, SEQUENCE,
 		AUTOLOADSCHEMA, AUTOSAVESCHEMA, INDEX, DATE, TIME, BOOLEAN, BLOB, CLOB, MEMORY, NOT_NULL_FIELD, PRIMARY_KEY,
 		DEFAULT_VALUE, COMPUTE_FIELD, UUID}
-	public abstract List<Driver.Support> supported ()
-	public boolean isSupport(Driver.Support feature) {
+
+    abstract List<Driver.Support> supported ()
+
+    boolean isSupport(Driver.Support feature) {
 		(supported().indexOf(feature) != -1)
 	}
-	
-	public static enum Operation {CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS, INSERT, UPDATE, DELETE, MERGE, READ_METADATA}
-	public abstract List<Driver.Operation> operations ()
-	public boolean isOperation(Driver.Operation operation) {
+
+    static enum Operation {CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS, INSERT, UPDATE, DELETE, MERGE, READ_METADATA}
+
+    abstract List<Driver.Operation> operations ()
+
+    boolean isOperation(Driver.Operation operation) {
 		(operations().indexOf(operation) != -1)
 	}
 
-	public void prepareField (Field field) { }
-	
-	public abstract boolean isConnected()
+    void prepareField (Field field) { }
 
-	public abstract void connect ()
+    abstract boolean isConnected()
 
-	public abstract void disconnect ()
-	
-	public abstract List<Object> retrieveObjects (Map params, Closure filter)
+    abstract void connect ()
 
-	public abstract  List<Field> fields (Dataset dataset)
+    abstract void disconnect ()
 
-	public abstract void startTran ()
+    abstract List<Object> retrieveObjects (Map params, Closure filter)
 
-	public abstract void commitTran ()
+    abstract  List<Field> fields (Dataset dataset)
 
-	public abstract void rollbackTran ()
+    abstract void startTran ()
 
-	public abstract void createDataset (Dataset dataset, Map params)
+    abstract void commitTran ()
 
-	public void dropDataset (Dataset dataset, Map params) {
+    abstract void rollbackTran ()
+
+    abstract void createDataset (Dataset dataset, Map params)
+
+    void dropDataset (Dataset dataset, Map params) {
 		if (dataset.autoSchema) {
 			def name = fullFileNameSchema(dataset)
 			if (name != null) {
@@ -95,30 +99,30 @@ abstract class Driver {
 		}
 	}
 
-	public abstract long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code)
+    abstract long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code)
 
-	public abstract void openWrite(Dataset dataset, Map params, Closure prepareCode)
+    abstract void openWrite(Dataset dataset, Map params, Closure prepareCode)
 
-	public abstract void write (Dataset dataset, Map row)
+    abstract void write (Dataset dataset, Map row)
 
-	public abstract void doneWrite (Dataset dataset)
+    abstract void doneWrite (Dataset dataset)
 
-	public abstract void closeWrite (Dataset dataset)
+    abstract void closeWrite (Dataset dataset)
 
-	public abstract void bulkLoadFile (CSVDataset source, Dataset dest, Map params, Closure prepareCode)
+    abstract void bulkLoadFile (CSVDataset source, Dataset dest, Map params, Closure prepareCode)
 
-	public abstract void clearDataset (Dataset dataset, Map params)
+    abstract void clearDataset (Dataset dataset, Map params)
 
-	public abstract long executeCommand (String command, Map params)
-	
-	public abstract long getSequence(String sequenceName)
+    abstract long executeCommand (String command, Map params)
+
+    abstract long getSequence(String sequenceName)
 	
 	/**
 	 * Full file schema name
 	 * @param dataset
 	 * @return
 	 */
-	public String fullFileNameSchema(Dataset dataset) {
+	String fullFileNameSchema(Dataset dataset) {
 		dataset.schemaFileName
 	}
 }

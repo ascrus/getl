@@ -22,7 +22,7 @@ csvTempWithDataset('sales', embeddedTable('sales')) { file ->
     // File writing options
     writeOpts {
         def cur = 0
-        splitFile { cur++; cur.mod(50000) == 0 } // The definition that the data record should be moved to the next file
+        splitFile { cur++; cur % 50000 == 0 } // The definition that the data record should be moved to the next file
     }
 
     // Copy sample data from table to file

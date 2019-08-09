@@ -145,7 +145,7 @@ class Path {
 	final Map<String, Map<String, Object>> maskVariables = [:]
 
 	/** Define variable options */
-	Map variable(String name, @DelegatesTo(PathVarsSpec) cl) {
+	Map variable(String name, @DelegatesTo(PathVarsSpec) Closure cl) {
 		if (name == null || name == '') throw new ExceptionGETL('Name required for variable!')
 		def var = maskVariables.get(name) as Map
 		if (var == null) {
@@ -316,7 +316,7 @@ class Path {
 			vars.put("#file_size", [:])
 		}
 		
-		varAttr.each { name, values ->
+		varAttr.each { String name, values ->
 			def fn = name.toLowerCase()
 			Map<String, Object> attrList = vars.get(fn)
 			if (attrList != null) {

@@ -30,7 +30,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     protected String defaultDatabase
     protected String defaultSchema
     abstract protected JDBCConnection newCon()
-    public JDBCConnection getCon() {
+
+    JDBCConnection getCon() {
         if (_con == null) _con = newCon()
         return _con
     }
@@ -86,7 +87,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         }
     }
 
-    public void testLocalTable() {
+    void testLocalTable() {
         if (!con.driver.isSupport(Driver.Support.LOCAL_TEMPORARY)) {
             println "Skip test local temporary table: ${con.driver.getClass().name} not support this futures"
             return
@@ -103,7 +104,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         tempTable.drop()
     }
 
-    public void testGlobalTable() {
+    void testGlobalTable() {
         if (!con.driver.isSupport(Driver.Support.GLOBAL_TEMPORARY)) {
             println "Skip test global temporary table: ${con.driver.getClass().name} not support this futures"
             return
@@ -402,7 +403,7 @@ END FOR;
         scripter.runSql()
     }
 
-    public void testOperations() {
+    void testOperations() {
         connect()
         assertTrue(con.connected)
 
@@ -429,7 +430,7 @@ END FOR;
         assertFalse(con.connected)
     }
 
-    public TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
+    TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
         TableDataset t = new TableDataset(connection: con, tableName: name, field: fields)
         t.drop(ifExists: true)
         t.create()
@@ -437,7 +438,7 @@ END FOR;
         return t
     }
 
-	public void testPerfomance() {
+    void testPerfomance() {
 		def c = newCon()
         if (!c.driver.isOperation(Driver.Operation.INSERT)) return
 

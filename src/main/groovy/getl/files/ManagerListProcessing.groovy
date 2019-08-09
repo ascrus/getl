@@ -41,7 +41,7 @@ abstract class ManagerListProcessing {
 	 * Clone class for use in thread
 	 */
 	@groovy.transform.Synchronized
-	public ManagerListProcessing newProcessing () {
+	ManagerListProcessing newProcessing () {
 		ManagerListProcessing res = getClass().newInstance() as ManagerListProcessing
 		res.params.putAll(params)
 
@@ -52,18 +52,18 @@ abstract class ManagerListProcessing {
 	 * Init class for build thread
 	 */
 	@groovy.transform.Synchronized
-	public void init () { }
+	void init () { }
 	
 	/**
 	 * Prepare file and return allow use
 	 * @param file
 	 * @return
 	 */
-	abstract public boolean prepare (Map file)
+	abstract boolean prepare (Map file)
 	
 	/**
 	 * Done class after build thread
 	 */
 	@groovy.transform.Synchronized
-	public void done () { }
+	void done () { }
 }

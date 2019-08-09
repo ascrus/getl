@@ -53,7 +53,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public void setRootPath (String value) {
+	void setRootPath (String value) {
 		if (value != null && value.substring(0, 1) != '/') value = '/' + value
 		super.setRootPath(value)
 	}
@@ -61,32 +61,37 @@ class FTPManager extends Manager {
 	/**
 	 * Server address
 	 */
-	public String getServer () { params.server }
-	public void setServer (String value) { params.server = value }
+	String getServer () { params.server }
+
+	void setServer (String value) { params.server = value }
 	
 	/**
 	 * Server port
 	 */
-	public Integer getPort () { (params.port != null)?(params.port as Integer):21 }
-	public void setPort (Integer value) { params.port = value }
+	Integer getPort () { (params.port != null)?(params.port as Integer):21 }
+
+	void setPort (Integer value) { params.port = value }
 	
 	/**
 	 * Login user
 	 */
-	public String getLogin () { params.login }
-	public void setLogin (String value) { params.login = value }
+	String getLogin () { params.login }
+
+	void setLogin (String value) { params.login = value }
 	
 	/**
 	 * Password user
 	 */
-	public String getPassword () { params.password }
-	public void setPassword (String value) { params.password = value }
+	String getPassword () { params.password }
+
+	void setPassword (String value) { params.password = value }
 	
 	/**
 	 * Passive mode
 	 */
-	public boolean getPassive () { (params.passive != null)?params.passive:true }
-	public void setPassive (boolean value) {
+	boolean getPassive () { (params.passive != null)?params.passive:true }
+
+	void setPassive (boolean value) {
 		if (client.connected) client.setPassive(value) 
 		params.passive = value 
 	}
@@ -94,14 +99,16 @@ class FTPManager extends Manager {
 	/**
 	 * Hard disconnect
 	 */
-	public boolean getIsHardDisconnect () { (params.isHardDisconnect != null)?params.isHardDisconnect:false }
-	public void setIsHardDisconnect (boolean value) { params.isHardDisconnect = value }
+	boolean getIsHardDisconnect () { (params.isHardDisconnect != null)?params.isHardDisconnect:false }
+
+	void setIsHardDisconnect (boolean value) { params.isHardDisconnect = value }
 	
 	/**
 	 * Auto noop timeout in seconds 
 	 */
-	public Integer getAutoNoopTimeout () { params.autoNoopTimeout as Integer }
-	public void setAutoNoopTimeout (Integer value) { 
+	Integer getAutoNoopTimeout () { params.autoNoopTimeout as Integer }
+
+	void setAutoNoopTimeout (Integer value) {
 		if (client.connected) client.setAutoNoopTimeout(value * 1000)
 		params.autoNoopTimeout = value
 	}
@@ -109,8 +116,9 @@ class FTPManager extends Manager {
 	/**
 	 * Close timeout
 	 */
-	public Integer getCloseTimeout () { params.closeTimeout as Integer }
-	public void setCloseTimeout (Integer value) {
+	Integer getCloseTimeout () { params.closeTimeout as Integer }
+
+	void setCloseTimeout (Integer value) {
 		if (client.connected) client.connector.closeTimeout = value
 		params.closeTimeout = value
 	}
@@ -118,8 +126,9 @@ class FTPManager extends Manager {
 	/**
 	 * Connection timeout
 	 */
-	public Integer getConnectionmTimeout () { params.connectionTimeout as Integer }
-	public void setConnectionTimeout (Integer value) {
+	Integer getConnectionmTimeout () { params.connectionTimeout as Integer }
+
+	void setConnectionTimeout (Integer value) {
 		if (client.connected) client.connector.connectionTimeout = value
 		params.connectionTimeout = value
 	}
@@ -127,8 +136,9 @@ class FTPManager extends Manager {
 	/**
 	 * Read timeout
 	 */
-	public Integer getReadTimeout () { params.readTimeout as Integer }
-	public void setReadTimeout (Integer value) {
+	Integer getReadTimeout () { params.readTimeout as Integer }
+
+	void setReadTimeout (Integer value) {
 		if (client.connected) client.connector.readTimeout = value
 		params.readTimeout = value
 	}
@@ -136,11 +146,12 @@ class FTPManager extends Manager {
     /**
      * FTP server time zone
      */
-    public Integer getTimeZone () { (params.timeZone as Integer)?:0 }
-    public void setTimeZone (Integer value) { params.timeZone = value }
+    Integer getTimeZone () { (params.timeZone as Integer)?:0 }
+
+	void setTimeZone (Integer value) { params.timeZone = value }
 	
 	@Override
-	public boolean isCaseSensitiveName () { true }
+	boolean isCaseSensitiveName () { true }
 
     final private supportCommands = []
     /**
@@ -148,10 +159,10 @@ class FTPManager extends Manager {
      * @param cmd
      * @return
      */
-    public boolean supportCommand(String cmd) { (cmd.toUpperCase() in supportCommands) }
+    boolean supportCommand(String cmd) { (cmd.toUpperCase() in supportCommands) }
 	
 	@Override
-	public void connect () {
+	void connect () {
 		if (client.connected) throw new ExceptionGETL('FTP already connect to server')
 		if (server == null || port == null) throw new ExceptionGETL('Required server host and port for connect')
 		if (login == null) throw new ExceptionGETL('Required login for connect')
@@ -186,7 +197,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public void disconnect () {
+	void disconnect () {
 		if (client.connected) {
 			try {
 				def numRetry = 0
@@ -212,12 +223,12 @@ class FTPManager extends Manager {
 		public FTPFile[] listFiles
 		
 		@groovy.transform.CompileStatic
-		public Integer size () {
+		Integer size () {
 			listFiles.length
 		}
 		
 		@groovy.transform.CompileStatic
-		public Map item (int index) {
+		Map item (int index) {
 			FTPFile f = listFiles[index]
 
 			Map<String, Object> m = new HashMap<String, Object>()
@@ -242,15 +253,15 @@ class FTPManager extends Manager {
 		  
 			m
 		}
-		
-		public void clear () {
+
+		void clear () {
 			listFiles = []
 		}
 	}
 	
 	@groovy.transform.CompileStatic
 	@Override
-	public FileManagerList listDir(String mask) {
+	FileManagerList listDir(String mask) {
 		FTPFile[] listFiles 
 		try {
 			listFiles = (mask != null)?client.list(mask):client.list()
@@ -267,12 +278,12 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public String getCurrentPath () {
+	String getCurrentPath () {
 		client.currentDirectory()
 	}
 	
 	@Override
-	public void setCurrentPath (String path) {
+	void setCurrentPath (String path) {
 		try {
 			client.changeDirectory(path)
 		}
@@ -283,7 +294,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public void changeDirectoryUp () {
+	void changeDirectoryUp () {
 		try {
 			client.changeDirectoryUp()
 		}
@@ -294,7 +305,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public void download (String fileName, String path, String localFileName) {
+	void download (String fileName, String path, String localFileName) {
 		def fn = ((path != null)?path + '/':'') + localFileName
 		try {
             def f = new File(fn)
@@ -309,7 +320,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public void upload (String path, String fileName) {
+	void upload (String path, String fileName) {
 		def fn = ((path != null)?path + '/':'') + fileName
 		try {
             def f = new File(fn)
@@ -330,7 +341,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public void removeFile(String fileName) {
+	void removeFile(String fileName) {
 		try {
 			client.deleteFile(fileName)
 		}
@@ -341,7 +352,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public void createDir (String dirName) {
+	void createDir (String dirName) {
 		def curDir = client.currentDirectory()
 		String cdDir = null
 		try {
@@ -372,7 +383,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public void removeDir (String dirName, Boolean recursive) {
+	void removeDir (String dirName, Boolean recursive) {
 		try {
 			if (recursive) {
                 def l = client.list()
@@ -414,7 +425,7 @@ class FTPManager extends Manager {
     }
 	
 	@Override
-	public void rename(String fileName, String path) {
+	void rename(String fileName, String path) {
 		try {
 			client.rename(fileName, path)
 		}
@@ -425,7 +436,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public boolean existsDirectory (String dirName) {
+	boolean existsDirectory (String dirName) {
 		def cur = client.currentDirectory()
 		def isExists = true
 		try {
@@ -440,7 +451,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	public void noop () {
+	void noop () {
 		super.noop()
 		client.noop()
 	}

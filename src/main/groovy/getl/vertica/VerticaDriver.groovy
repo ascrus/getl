@@ -362,7 +362,7 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	boolean textReadAsObject() { return false }
 
-	String writeHints(Map params) {
+	static String writeHints(Map params) {
 		def hints = [] as List<String>
 		if (params.direct != null) hints << (params.direct as String).toLowerCase()
 		if (params.label != null) hints << 'label(' + params.label + ')'

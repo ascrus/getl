@@ -44,7 +44,8 @@ class SorterDataset extends VirtualDataset {
 		List<String> fieldOrderBy = []
 		params.fieldOrderBy = fieldOrderBy
 	}
-	
-	public List<String> getFieldOrderBy () { params.fieldOrderBy }
-	public void setFieldOrderBy (List<String> value) { params.fieldOrderBy = value } 
+
+    List<String> getFieldOrderBy () { params.fieldOrderBy }
+
+    void setFieldOrderBy (List<String> value) { params.fieldOrderBy = value }
 }

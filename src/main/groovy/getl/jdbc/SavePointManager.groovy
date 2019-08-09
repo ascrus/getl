@@ -45,8 +45,10 @@ class SavePointManager {
 	 * Connection
 	 */
 	private JDBCConnection connection
-	public JDBCConnection getConnection () { connection }
-	public void setConnection(JDBCConnection value) {
+
+	JDBCConnection getConnection () { connection }
+
+	void setConnection(JDBCConnection value) {
 		assert value != null, "Required created connection"
 		connection = value
 		map.clear()
@@ -55,8 +57,9 @@ class SavePointManager {
 	/**
 	 * Database name for table
 	 */
-	public String getDbName () { params.dbName }
-	public void setDbName (String value) { 
+	String getDbName () { params.dbName }
+
+	void setDbName (String value) {
 		params.dbName = value
 		map.clear()
 	}
@@ -64,8 +67,9 @@ class SavePointManager {
 	/**
 	 * Schema name for table
 	 */
-	public String getSchemaName () { params.schemaName }
-	public void setSchemaName (String value) { 
+	String getSchemaName () { params.schemaName }
+
+	void setSchemaName (String value) {
 		params.schemaName = value
 		map.clear()
 	}
@@ -73,8 +77,9 @@ class SavePointManager {
 	/**
 	 * Table name
 	 */
-	public String getTableName () { params.tableName }
-	public void setTableName (String value) {
+	String getTableName () { params.tableName }
+
+	void setTableName (String value) {
 		assert value != null, "Required table name" 
 		params.tableName = value 
 		map.clear()
@@ -83,8 +88,9 @@ class SavePointManager {
 	/**
 	 * Map fields
 	 */
-	public Map getFields () { params.fields }
-	public void setFields (Map value) {
+	Map getFields () { params.fields }
+
+	void setFields (Map value) {
 		(params.fields as Map).clear()
 		(params.fields as Map).putAll(value)
 		map.clear()
@@ -94,8 +100,9 @@ class SavePointManager {
 	 * Save value method (INSERT OR MERGE)
 	 * @return
 	 */
-	public String getSaveMethod () { (params.saveMethod as String)?.toUpperCase()?:"MERGE" }
-	public void setSaveMethod(String value) {
+	String getSaveMethod () { (params.saveMethod as String)?.toUpperCase()?:"MERGE" }
+
+	void setSaveMethod(String value) {
 		assert value != null, "Save method can not be NULL and allowed only values \"INSERT\" and \"MERGE\""
 		assert value.toUpperCase() in ["INSERT", "MERGE"], "Unknown save method \"$value\", allowed only values \"INSERT\" and \"MERGE\""
 		params.saveMethod = value.toUpperCase()
@@ -127,7 +134,7 @@ class SavePointManager {
 	 * Set fields mapping
 	 * @return
 	 */
-	public void prepareTable () {
+	void prepareTable () {
 		assert connection != null, "Required set value for \"connection\""
 		assert tableName != null, "Required set value for \"tableName\""
 		
@@ -164,7 +171,7 @@ class SavePointManager {
 	 * @return
 	 */
 	@groovy.transform.Synchronized
-	public boolean create(boolean ifNotExists) {
+	boolean create(boolean ifNotExists) {
 		prepareTable()
 		
 		if (ifNotExists && table.exists) return false
@@ -183,7 +190,7 @@ class SavePointManager {
 	 * @return
 	 */
 	@groovy.transform.Synchronized
-	public boolean drop(boolean ifExists) {
+	boolean drop(boolean ifExists) {
 		prepareTable()
 		
 		if (ifExists && !table.exists) return false
@@ -197,14 +204,14 @@ class SavePointManager {
 	 * @return
 	 */
 	@groovy.transform.Synchronized
-	public boolean isExists() {
+	boolean isExists() {
 		prepareTable()
 		
 		table.exists
 	}
 	
 	@groovy.transform.Synchronized
-	public String getFullTableName() {
+	String getFullTableName() {
 		prepareTable()
 		
 		table.fullNameDataset()
@@ -216,7 +223,7 @@ class SavePointManager {
 	 * @return res.type (D and N) and res.value
 	 */
 	@groovy.transform.Synchronized
-	public Map<String, Object> lastValue (String source) {
+	Map<String, Object> lastValue (String source) {
 		prepareTable()
 		source = source.toUpperCase()
 		
@@ -271,7 +278,7 @@ class SavePointManager {
 	 * @param source
 	 * @return
 	 */
-	public static String value2String(Map value) {
+	static String value2String(Map value) {
 		return value2String(value, false, null)
 	}
 	
@@ -281,7 +288,7 @@ class SavePointManager {
 	 * @param quote
 	 * @return
 	 */
-	public static String value2String(Map value, boolean quote, String format) {
+	static String value2String(Map value, boolean quote, String format) {
 		if (value == null) return null
 		
 		def type = (value.type as String)?.toUpperCase()
@@ -307,7 +314,7 @@ class SavePointManager {
 	 * @param source
 	 * @param value
 	 */
-	public void saveValue(String source, def value) {
+	void saveValue(String source, def value) {
 		saveValue(source, value, null)
 	}
 	
@@ -318,7 +325,7 @@ class SavePointManager {
 	 * @param value
 	 */
 	@groovy.transform.Synchronized
-	public void saveValue(String source, def value, String format) {
+	void saveValue(String source, def value, String format) {
 		prepareTable()
 		
 		if (!(value instanceof Date || value instanceof java.sql.Timestamp || 
@@ -375,7 +382,7 @@ class SavePointManager {
 	 * @param value
 	 * @return
 	 */
-	public static Map ConvertValue(Field.Type type, String format, def value) {
+	static Map ConvertValue(Field.Type type, String format, def value) {
 		def res = [:]
 		if (value == null) return res
 		
@@ -424,7 +431,7 @@ class SavePointManager {
 	 * @param source
 	 */
 	@groovy.transform.Synchronized
-	public void clearValue (String source) {
+	void clearValue (String source) {
 		prepareTable()
 		
 		connection.startTran()

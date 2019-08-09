@@ -74,11 +74,11 @@ class HiveConnection extends JDBCConnection {
     /**
      * Vendor driver name
      */
-    public String getVendor() { return params.vendor }
+    String getVendor() { return params.vendor }
     /**
      * Vendor driver name
      */
-    public void setVendor(String value) {
+    void setVendor(String value) {
         switch (value?.toLowerCase()) {
             case 'apache':
                 break
@@ -96,33 +96,37 @@ class HiveConnection extends JDBCConnection {
     /**
      * Version JDBC driver
      */
-    public Integer getVersionDriver() { return params.versionDriver }
+    Integer getVersionDriver() { return params.versionDriver }
     /**
      * Version JDBC driver
      */
-    public void setVersionDriver(Integer value) { params.versionDriver = value }
+    void setVersionDriver(Integer value) { params.versionDriver = value }
 
     /**
      * HDFS host
      */
-    public String getHdfsHost () { return params.hdfsHost }
-    public void setHdfsHost (String value) { params.hdfsHost = value }
+    String getHdfsHost () { return params.hdfsHost }
+
+    void setHdfsHost (String value) { params.hdfsHost = value }
 
     /**
      * HDFS port
      */
-    public Integer getHdfsPort() { return params.hdfsPort }
-    public void setHdfsPort(Integer value) { params.hdfsPort = value }
+    Integer getHdfsPort() { return params.hdfsPort }
+
+    void setHdfsPort(Integer value) { params.hdfsPort = value }
 
     /**
      * HDFS login
      */
-    public String getHdfsLogin () { return params.hdfsLogin }
-    public void setHdfsLogin (String value) { params.hdfsLogin = value }
+    String getHdfsLogin () { return params.hdfsLogin }
+
+    void setHdfsLogin (String value) { params.hdfsLogin = value }
 
     /**
      * HDFS directory for bulkload files
      */
-    public String getHdfsDir () { return params.hdfsDir }
-    public void setHdfsDir (String value) { params.hdfsDir = value }
+    String getHdfsDir () { return params.hdfsDir }
+
+    void setHdfsDir (String value) { params.hdfsDir = value }
 }

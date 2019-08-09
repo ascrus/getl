@@ -43,9 +43,9 @@ class EMailer {
 
 	private String config
 	/** Name in config from section "emailers" */
-	public String getConfig () { config }
+	String getConfig () { config }
 	/** Name in config from section "emailers" */
-	public void setConfig (String value) {
+	void setConfig (String value) {
 		config = value
 		if (config != null) {
 			if (Config.ContainsSection("emailers.${this.config}")) {
@@ -186,7 +186,7 @@ class EMailer {
 			mprops.put('mail.smtp.socketFactory.port', String.valueOf(port))
 			mprops.put('mail.smtp.ssl.trust', '*')
 			mprops.put('mail.smtp.ssl.enable', 'true')
-			mprops.put("mail.smtp.socketFactory.class", socketFactoryClass);
+			mprops.put("mail.smtp.socketFactory.class", socketFactoryClass)
 			if (socketFactoryFallback) mprops.put('mail.smtp.socketFactory.fallback', 'true')
 		}
 		if (tls) {

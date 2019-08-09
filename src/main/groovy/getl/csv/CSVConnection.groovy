@@ -52,84 +52,98 @@ class CSVConnection extends FileConnection {
 	/**
 	 * Quote delimiter string
 	 */
-	public String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, '"']) }
-	public void setQuoteStr (String value) { params.quoteStr = value }
+	String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, '"']) }
+
+    void setQuoteStr (String value) { params.quoteStr = value }
 	
 	/**
 	 * Field delimiter
 	 */
-	public String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, ',']) }
-	public void setFieldDelimiter (String value) { params.fieldDelimiter = value }
+	String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, ',']) }
+
+    void setFieldDelimiter (String value) { params.fieldDelimiter = value }
 	
 	/**
 	 * Row delimiter
 	 */
-	public String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, '\n']) }
-	public void setRowDelimiter (String value) { params.rowDelimiter = value }
+	String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, '\n']) }
+
+    void setRowDelimiter (String value) { params.rowDelimiter = value }
 	
 	/**
 	 * File has header of fields name
 	 */
-	public boolean getHeader () { BoolUtils.IsValue(params.header, true) }
-	public void setHeader (boolean value) { params.header = value }
+	boolean getHeader () { BoolUtils.IsValue(params.header, true) }
+
+    void setHeader (boolean value) { params.header = value }
 	
 	/**
 	 * Ignore header field name
 	 */
-	public boolean getIgnoreHeader () { BoolUtils.IsValue(params.ignoreHeader, true) }
-	public void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
+	boolean getIgnoreHeader () { BoolUtils.IsValue(params.ignoreHeader, true) }
+
+    void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
 	
 	/**
 	 * Required convert string to escape value
 	 */
-	public boolean getEscaped () { BoolUtils.IsValue(params.escaped, false) }
-	public void setEscaped (boolean value) { params.escaped = value }
+	boolean getEscaped () { BoolUtils.IsValue(params.escaped, false) }
+
+    void setEscaped (boolean value) { params.escaped = value }
 	
 	/**
 	 * Convert line feed to custom escape char 
 	 */
-	public String getEscapeProcessLineChar () { params.escapeProcessLineChar }
-	public void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
+	String getEscapeProcessLineChar () { params.escapeProcessLineChar }
+
+    void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
 	
 	/**
 	 * Convert NULL to value
 	 */
-	public String getNullAsValue () { params.nullAsValue }
-	public void setNullAsValue (String value) { params.nullAsValue = value }
+	String getNullAsValue () { params.nullAsValue }
+
+    void setNullAsValue (String value) { params.nullAsValue = value }
 	
 	/**
 	 * Required format values for output to file
 	 */
-	public boolean getFormatOutput () { BoolUtils.IsValue(params.formatOutput, true) }
-	public void setFormatOutput (boolean value) { params.formatOutput = value }
+	boolean getFormatOutput () { BoolUtils.IsValue(params.formatOutput, true) }
+
+    void setFormatOutput (boolean value) { params.formatOutput = value }
 	
 	/**
 	 * Mode of quote value
 	 */
-	public QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, QuoteMode.NORMAL])  as QuoteMode }
-	public void setQuoteMode (QuoteMode value) { params.quoteMode = value }
+	QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, QuoteMode.NORMAL])  as QuoteMode }
+
+    void setQuoteMode (QuoteMode value) { params.quoteMode = value }
 	
 	/**
 	 * Decimal separator for number fields
 	 */
-	public String getDecimalSeparator () { params.decimalSeparator?:'.' }
-	public void setDecimalSeparator (String value) { params.decimalSeparator = value }
+	String getDecimalSeparator () { params.decimalSeparator?:'.' }
+
+    void setDecimalSeparator (String value) { params.decimalSeparator = value }
 	
 	/**
 	 * Format for date fields 
 	 */
-	public String getFormatDate () { params.formatDate }
-	public void setFormatDate (String value) { params.formatDate = value }
+	String getFormatDate () { params.formatDate }
+
+    void setFormatDate (String value) { params.formatDate = value }
 	
 	/**
 	 * Format for time fields
 	 */
-	public String getFormatTime () { params.formatTime }
-	public void setFormatTime (String value) { params.formatTime = value }
+	String getFormatTime () { params.formatTime }
+
+    void setFormatTime (String value) { params.formatTime = value }
 	
 	/**
 	 * Format for datetime fields
 	 */
-	public String getFormatDateTime () { params.formatDateTime }
-	public void setFormatDateTime (String value) { params.formatDateTime = value }
+	String getFormatDateTime () { params.formatDateTime }
+
+    void setFormatDateTime (String value) { params.formatDateTime = value }
 }

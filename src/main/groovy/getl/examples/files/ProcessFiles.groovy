@@ -20,9 +20,9 @@ files {
     // Set local directory to OS temporary directory
     localDirectory = systemTempPath()
     // Create local subdirectory
-    createLocalDir('process.files')
+    createLocalDir'process.files'
     // Cd to local subdirectiry
-    changeLocalDirectory('process.files')
+    changeLocalDirectory'process.files'
 
     // Download files to local subdirectory
     downloadListFiles {
@@ -45,7 +45,7 @@ files {
     // Change current local directory to root
     changeLocalDirectoryToRoot()
     // Remove process temporary files and directory
-    FileUtils.DeleteFolder(currentLocalDir() + '/process.files')
+    FileUtils.DeleteFolder "${currentLocalDir()}/process.files"
 }
 
 logInfo 'History rows: '

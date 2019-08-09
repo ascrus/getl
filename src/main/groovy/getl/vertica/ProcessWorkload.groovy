@@ -44,7 +44,7 @@ class ProcessWorkload extends Job {
 	}
 
 	@Override
-	public void process() {
+	void process() {
 		Logs.Info("### Analyze Vertica workload tool")
 
 		if (Config.content."interval" != null) {

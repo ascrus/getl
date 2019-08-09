@@ -34,7 +34,7 @@ class SQLClient extends Job {
 	}
 
 	@Override
-	public void process() {
+	void process() {
 		println "SQL client, (c) EasyData LTD"
 		if (args."connection" == null && args."script" == null) {
 			println """

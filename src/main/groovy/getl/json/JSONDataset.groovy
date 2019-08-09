@@ -24,9 +24,10 @@
 
 package getl.json
 
+import getl.exception.ExceptionGETL
 import getl.json.opts.JSONReadSpec
 
-import java.util.Map;
+import java.util.Map
 
 import getl.data.Connection
 import getl.data.StructureFileDataset
@@ -47,10 +48,12 @@ class JSONDataset extends StructureFileDataset {
 	/** Added root {...} for JSON text */
 	boolean getConvertToList () { params.convertToList }
 	void setConvertToList (boolean value) { params.convertToList = value }
-	
+
 	@Override
 	void setConnection(Connection value) {
-		assert value == null || value instanceof JSONConnection
+		if (value != null && !(value instanceof JSONConnection))
+			throw new ExceptionGETL('Сonnection to JSONConnection class is allowed!')
+
 		super.setConnection(value)
 	}
 	

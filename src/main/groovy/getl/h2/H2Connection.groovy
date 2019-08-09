@@ -77,14 +77,16 @@ class H2Connection extends JDBCConnection {
 	 * Set inmemory mode
 	 * @return
 	 */
-	public Boolean getInMemory () { BoolUtils.IsValue(params.inMemory, false) }
-	public void setInMemory (Boolean value) { params.inMemory = value }
+	Boolean getInMemory () { BoolUtils.IsValue(params.inMemory, false) }
+
+	void setInMemory (Boolean value) { params.inMemory = value }
 
     /**
      * Exclusive connection
      */
-	public Integer getExclusive() { sessionProperty.exclusive }
-	public void setExclusive(Integer value) {
+	Integer getExclusive() { sessionProperty.exclusive }
+
+	void setExclusive(Integer value) {
         if (connected && exclusive != value) (driver as JDBCDriver).changeSessionProperty('exclusive', value)
         sessionProperty.exclusive = value
     }

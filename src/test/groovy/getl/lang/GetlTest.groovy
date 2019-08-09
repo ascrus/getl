@@ -116,7 +116,7 @@ datasets {
                 }
 
                 done {
-                    assertEquals(3, readRow);
+                    assertEquals(3, readRow)
                 }
             }
 

@@ -37,7 +37,7 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	public static String Object2String(def value) {
+	static String Object2String(def value) {
 		if (value == null) return null
 		String.valueOf(value)
 	}
@@ -47,7 +47,7 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	public static BigDecimal Object2BigDecimal(def value) {
+	static BigDecimal Object2BigDecimal(def value) {
 		if (value == null) return (BigDecimal)null
 		//noinspection GroovyAssignabilityCheck
 		return new BigDecimal(value.toString())
@@ -58,7 +58,7 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	public static Integer Object2Int(def value) {
+	static Integer Object2Int(def value) {
 		if (value == null) return null
 		//noinspection GroovyAssignabilityCheck
 		return Integer.valueOf(value)
@@ -69,7 +69,7 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	public static Long Object2Long(def value) {
+	static Long Object2Long(def value) {
 		if (value == null) return null
 		//noinspection GroovyAssignabilityCheck
 		return Long.valueOf(value)
@@ -80,7 +80,7 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	public static Double Object2Double(def value) {
+	static Double Object2Double(def value) {
 		if (value == null) return null
 		//noinspection GroovyAssignabilityCheck
 		return Double.valueOf(value)
@@ -91,7 +91,7 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	public static Integer Boolean2Int(Boolean value) {
+	static Integer Boolean2Int(Boolean value) {
 		if (value == null) return null
 		(value)?1:0
 	}
@@ -101,7 +101,7 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	public static Boolean Int2Boolean(Integer value) {
+	static Boolean Int2Boolean(Integer value) {
 		if (value == null) return null
 		(value != 0)
 	}
@@ -112,7 +112,7 @@ class ConvertUtils {
 	 * @param falseValue
 	 * @return
 	 */
-	public static Boolean String2Boolean(String value, String falseValue) {
+	static Boolean String2Boolean(String value, String falseValue) {
 		if (value == null) return null
 		(value.toLowerCase() != falseValue)
 	}
@@ -122,7 +122,7 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	public static BigDecimal Boolean2BigDecimal(Boolean value) {
+	static BigDecimal Boolean2BigDecimal(Boolean value) {
 		if (value == null) return (BigDecimal)null
 		(value)?1:0
 	}
@@ -132,7 +132,7 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	public static Double Boolean2Double(Boolean value) {
+	static Double Boolean2Double(Boolean value) {
 		if (value == null) return null
 		(value)?1:0
 	}
@@ -142,7 +142,7 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	public static Time String2Time(String value) {
+	static Time String2Time(String value) {
 		if (value == null) return null
 		Time.valueOf(value)
 	}
@@ -152,7 +152,7 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	public static Time Long2Time(Long value) {
+	static Time Long2Time(Long value) {
 		if (value == null) return null
 		new Time(value)
 	}

@@ -37,42 +37,42 @@ import getl.exception.ExceptionGETL
 class FilesDriver extends FileDriver {
 
 	@Override
-	public List<Support> supported() {
+	List<Support> supported() {
 		[]
 	}
 
 	@Override
-	public List<Operation> operations() {
+	List<Operation> operations() {
 		[Driver.Operation.DROP]
 	}
 
 	@Override
-    public
-    List<Field> fields(Dataset dataset) {
+
+	List<Field> fields(Dataset dataset) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-    public
-    long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+
+	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-    public
-    void openWrite(Dataset dataset, Map params, Closure prepareCode) {
+
+	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-    public
-    void write(Dataset dataset, Map row) {
+
+	void write(Dataset dataset, Map row) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-    public
-    void closeWrite(Dataset dataset) {
+
+	void closeWrite(Dataset dataset) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 }

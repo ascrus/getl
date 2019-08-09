@@ -37,7 +37,7 @@ class ListUtils {
 	 * @param from
 	 * @return
 	 */
-	public static List CopyWhere(List list, Closure from) {
+	static List CopyWhere(List list, Closure from) {
 		if (list == null) return null
 		
 		def result = []
@@ -55,7 +55,7 @@ class ListUtils {
 	 * @param quote
 	 * @return
 	 */
-	public static List<String> QuoteList(List list, String quote) {
+	static List<String> QuoteList(List list, String quote) {
 		if (list == null) return null
 		
 		def res = []
@@ -70,7 +70,7 @@ class ListUtils {
 	 * @param closure
 	 * @return
 	 */
-	public static List SortListTo(List list, Closure closure) {
+	static List SortListTo(List list, Closure closure) {
 		if (list == null) return null
 		
 		return list.sort(false, closure)
@@ -81,7 +81,7 @@ class ListUtils {
 	 * @param list
 	 * @param closure
 	 */
-	public static void SortList(List list, Closure closure) {
+	static void SortList(List list, Closure closure) {
 		if (list == null) return
 		
 		list.sort(true, closure)
@@ -92,7 +92,7 @@ class ListUtils {
 	 * @param list
 	 * @return
 	 */
-	public static List<String> ToLowerCase(List<String> list) {
+	static List<String> ToLowerCase(List<String> list) {
 		if (list == null) return null
 		
 		def res = []
@@ -107,7 +107,7 @@ class ListUtils {
 	 * @param list
 	 * @return
 	 */
-	public static List<String> ToUpperCase(List<String> list) {
+	static List<String> ToUpperCase(List<String> list) {
 		if (list == null) return null
 		
 		def res = []
@@ -123,7 +123,7 @@ class ListUtils {
 	 * @param defaultValue
 	 * @return
 	 */
-	public static def NotNullValue(List value) {
+	static def NotNullValue(List value) {
 		if (value == null) return null
 		
 		def res = value.find { it != null }
@@ -137,7 +137,7 @@ class ListUtils {
 	 * @param vars
 	 * @return
 	 */
-	public static List EvalMacroValues(List value, Map vars) {
+	static List EvalMacroValues(List value, Map vars) {
 		def res = []
 		
 		value.each { v ->
@@ -168,7 +168,7 @@ class ListUtils {
 	 * @param expr
 	 * @return
 	 */
-	public static List Split(String value, String expr) {
+	static List Split(String value, String expr) {
 		if (value == null) return null
 		
 		String[] res = value.split(expr)
@@ -180,7 +180,7 @@ class ListUtils {
      * @param list
      * @return
      */
-	public static String ToJson(List list) {
+	static String ToJson(List list) {
 		if (list == null) return null
 		
 		StringBuilder sb = new StringBuilder()
@@ -197,7 +197,7 @@ class ListUtils {
      * @return
      */
     @groovy.transform.CompileDynamic
-	public static String List2StrArray(List list) {
+	static String List2StrArray(List list) {
         if (list == null) return null
         if (list.size() == 0) return ''
         if (list.size() == 1) return "${list[0]}".toString()
@@ -239,7 +239,7 @@ class ListUtils {
      * @return
      */
     @groovy.transform.CompileDynamic
-    public static List StrArray2List(String strList, Class elemClass) {
+	static List StrArray2List(String strList, Class elemClass) {
         if (strList == null) return null
         def list = strList.split(',')
         def result = []

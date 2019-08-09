@@ -71,7 +71,7 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 
 	@groovy.transform.CompileStatic
 	@Override
-	public String encode(String value, CsvContext context, CsvPreference pref) {
+    String encode(String value, CsvContext context, CsvPreference pref) {
 		String res = (replaceQuote)?value.replace(quote, '\u0007'):value
 		boolean isQuoted = (res.indexOf("\u0007") > -1)
 		if (escaped) {

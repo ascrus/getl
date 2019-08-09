@@ -52,7 +52,7 @@ class NetsuiteDriver extends JDBCDriver {
 	}
 
 	@Override
-	public List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		return super.supported() + [
 				Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN/*,
 				Driver.Support.BLOB, Driver.Support.CLOB*/
@@ -67,7 +67,7 @@ class NetsuiteDriver extends JDBCDriver {
 	*/
 
 	@Override
-	public Map getSqlType () {
+	Map getSqlType () {
 		Map res = super.getSqlType()
 		res.DOUBLE.name = 'float'
 		res.BOOLEAN.name = 'bit'
@@ -81,7 +81,7 @@ class NetsuiteDriver extends JDBCDriver {
 	}
 
 	@Override
-	public String defaultConnectURL () {
+	String defaultConnectURL () {
 		return 'jdbc:ns://{host};ServerDataSource={serverDataSource};' +
                 'encrypted=1;Ciphersuites={ciphersuites};' +
                 'CustomProperties=(AccountID={accountId};RoleID=3)'

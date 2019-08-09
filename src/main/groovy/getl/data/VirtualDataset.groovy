@@ -38,17 +38,18 @@ class VirtualDataset extends Dataset {
 	 * Destinition dataset
 	 * @return
 	 */
-	public Dataset getDest () { params.dest }
-	public void setDest (Dataset value) { params.dest = value }
+    Dataset getDest () { params.dest }
+
+    void setDest (Dataset value) { params.dest = value }
 	
 	@Override
-	public List<String> excludeSaveParams () {
+    List<String> excludeSaveParams () {
 		super.excludeSaveParams() + ["dest"]
 	}
 	
 	@Override
-	public String getObjectName() { dest.objectName }
+    String getObjectName() { dest.objectName }
 	
 	@Override
-	public String getObjectFullName() { dest.objectFullName }
+    String getObjectFullName() { dest.objectFullName }
 }

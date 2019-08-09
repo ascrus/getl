@@ -240,7 +240,7 @@ Example:
 	 * @param quote
 	 * @return
 	 */
-	String stat(String pattern, def value, boolean quote) {
+	static String stat(String pattern, def value, boolean quote) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -260,7 +260,7 @@ Example:
 	/**
 	 * Build reverse statement with feed line
 	 */
-	String statln(String pattern, def value, boolean quote) {
+	static String statln(String pattern, def value, boolean quote) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -284,7 +284,7 @@ Example:
 	 * @param quote
 	 * @return
 	 */
-	String par(String param, def value, boolean quote) {
+	static String par(String param, def value, boolean quote) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -308,7 +308,7 @@ Example:
 	 * @param quote
 	 * @return
 	 */
-	String parln(String param, def value, boolean quote) {
+	static String parln(String param, def value, boolean quote) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -334,7 +334,7 @@ Example:
 	 * @param list
 	 * @return
 	 */
-	Map<String, List<String>> procList(String list, Closure valid) {
+	static Map<String, List<String>> procList(String list, Closure valid) {
 		def res = (HashMap<String, ArrayList<String>>)[:]
 
 		def withoutGrant = [] as ArrayList<String>
@@ -374,7 +374,7 @@ Example:
 	 * @param name
 	 * @return
 	 */
-	String objectName(String schema, String name) {
+	static String objectName(String schema, String name) {
 		return '"' + schema + '"."' + name + '"'
 	}
 
@@ -533,7 +533,7 @@ Example:
 	 */
 	def isWriteln = false
 
-	void setWrite(String object, String filemask, def Map vars = [:]) {
+	void setWrite(String object, String filemask, Map vars = [:]) {
 		assert object != null
 		currentObject = object
 
@@ -572,14 +572,14 @@ Example:
 		write(script + '\n')
 	}
 
-	String eval(String val) {
+	static String eval(String val) {
 		return GenerationUtils.EvalGroovyScript('"""' + val.replace('\\', '\\\\').replace('"', '\\"') + '"""', Config.vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
 	}
 
 	/**
 	 * Init reverse objects
 	 */
-	public void initReverse() {
+	void initReverse() {
 		// Read drop parameters section
 		sectionDrop = (Map)Config.content.drop?:[:]
 
@@ -741,7 +741,7 @@ Example:
 	/**
 	 * Finish reverse and clearing temp data
 	 */
-	public void doneReverse() {
+	void doneReverse() {
 		cVertica.connected = false
 
 		hFiles.drop(ifExists: true)
@@ -1150,47 +1150,47 @@ Example:
 		Logs.Info("${hUsers.readRows} user default roles generated")
 	}
 
-	public List<Map<String, Object>> listPools() {
+	List<Map<String, Object>> listPools() {
 		return new QueryDataset(connection: cCache,
 				query: "SELECT ${sqlObjects.pools.name} AS name FROM ${hPools.fullNameDataset()} ORDER BY Lower(${sqlObjects.pools.name})").rows()
 	}
 
-	public List<Map<String, Object>> listRoles() {
+	List<Map<String, Object>> listRoles() {
 		return new QueryDataset(connection: cCache,
 				query: "SELECT ${sqlObjects.roles.name} AS name FROM ${hRoles.fullNameDataset()} ORDER BY Lower(${sqlObjects.roles.name})").rows()
 	}
 
-	public List<Map<String, Object>> listUsers() {
+	List<Map<String, Object>> listUsers() {
 		return new QueryDataset(connection: cCache,
 				query: "SELECT ${sqlObjects.users.name} AS name FROM ${hUsers.fullNameDataset()} ORDER BY Lower(${sqlObjects.users.name})").rows()
 	}
 
-	public List<Map<String, Object>> listSchemas() {
+	List<Map<String, Object>> listSchemas() {
 		return new QueryDataset(connection: cCache,
 				query: "SELECT ${sqlObjects.schemas.name} AS name FROM ${hSchemas.fullNameDataset()} ORDER BY Lower(${sqlObjects.schemas.name})").rows()
 	}
 
-	public List<Map<String, Object>> listSequences() {
+	List<Map<String, Object>> listSequences() {
 		return new QueryDataset(connection: cCache,
 				query: "SELECT ${sqlObjects.sequences.schema} AS schema, ${sqlObjects.sequences.name} AS name FROM ${hSequences.fullNameDataset()} ORDER BY Lower(${sqlObjects.sequences.schema}), Lower(${sqlObjects.sequences.name})").rows()
 	}
 
-	public List<Map<String, Object>> listTables() {
+	List<Map<String, Object>> listTables() {
 		return new QueryDataset(connection: cCache,
 				query: "SELECT ${sqlObjects.tables.schema} AS schema, ${sqlObjects.tables.name} AS name FROM ${hTables.fullNameDataset()} ORDER BY Lower(${sqlObjects.tables.schema}), Lower(${sqlObjects.tables.name})").rows()
 	}
 
-	public List<Map<String, Object>> listViews() {
+	List<Map<String, Object>> listViews() {
 		return new QueryDataset(connection: cCache,
 				query: "SELECT ${sqlObjects.views.schema} AS schema, ${sqlObjects.views.name} AS name FROM ${hViews.fullNameDataset()} ORDER BY Lower(${sqlObjects.views.schema}), Lower(${sqlObjects.views.name})").rows()
 	}
 
-	public List<Map<String, Object>> listSql_functions() {
+	List<Map<String, Object>> listSql_functions() {
 		return new QueryDataset(connection: cCache,
 				query: "SELECT ${sqlObjects.sql_functions.schema} AS schema, ${sqlObjects.sql_functions.name} AS name FROM ${hSQLFunctions.fullNameDataset()} ORDER BY Lower(${sqlObjects.sql_functions.schema}), Lower(${sqlObjects.sql_functions.name})").rows()
 	}
 
-	public List<Map<String, Object>> listGrants() {
+	List<Map<String, Object>> listGrants() {
 		return new QueryDataset(connection: cCache,
 				query: "SELECT * FROM (SELECT DISTINCT ${sqlObjects.grants.type} AS type, ${sqlObjects.grants.schema} AS schema, ${sqlObjects.grants.name} AS name FROM ${hGrants.fullNameDataset()}) x ORDER BY type, schema, name").rows()
 	}

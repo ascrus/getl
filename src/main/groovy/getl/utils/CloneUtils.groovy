@@ -34,7 +34,7 @@ class CloneUtils {
      * @param obj
      * @return
      */
-    public static Object CloneObject(Object obj) {
+    static Object CloneObject(Object obj) {
         if (obj == null) return null
 
         Object res
@@ -87,7 +87,7 @@ class CloneUtils {
      * @param map
      * @return
      */
-    public static Map CloneMap (Map obj) {
+    static Map CloneMap (Map obj) {
         if (obj == null) return null
 
         def res = obj.getClass().newInstance() as Map
@@ -103,7 +103,7 @@ class CloneUtils {
      * @param list
      * @return
      */
-    public static List CloneList(List obj) {
+    static List CloneList(List obj) {
         if (obj == null) return null
 
         def res = obj.getClass().newInstance() as List
@@ -119,7 +119,7 @@ class CloneUtils {
      * @param obj
      * @return
      */
-    public static Object StreamClone (Object obj) {
+    static Object StreamClone (Object obj) {
         if (obj == null) return null
 
         Object res

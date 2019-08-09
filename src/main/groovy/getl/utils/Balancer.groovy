@@ -42,8 +42,10 @@ class Balancer  {
 	 * Name in config from section "balancers"
 	 */
 	private String config
-	public String getConfig () { config }
-	public void setConfig (String value) {
+
+	String getConfig () { config }
+
+	void setConfig (String value) {
 		config = value
 		if (config != null) {
 			if (Config.ContainsSection("balancers.${this.config}")) {
@@ -59,8 +61,10 @@ class Balancer  {
 	 * Public parameters
 	 */
 	private final Map params = [:]
-	public Map getParams () { params }
-	public void setParams(Map value) {
+
+	Map getParams () { params }
+
+	void setParams(Map value) {
 		params.clear()
 		params.putAll(value)
 	}
@@ -94,10 +98,10 @@ class Balancer  {
 	 * </ul>
 	 * @return
 	 */
-	public List<Map> getServers () { params."servers" }
+	List<Map> getServers () { params."servers" }
 	
 	@Synchronized
-	public void setServers (List<Map> value) {
+	void setServers (List<Map> value) {
 		servers.clear()
 		servers.addAll(value)
 	}
@@ -106,17 +110,17 @@ class Balancer  {
 	 * 
 	 * @return
 	 */
-	public int getCheckTimeErrorServers () { params."checkTimeErrorServers"?:600 }
+	int getCheckTimeErrorServers () { params."checkTimeErrorServers"?:600 }
 	
 	@Synchronized
-	public void setCheckTimeErrorServers (int value) { params."checkTimeErrorServers" = value }
+	void setCheckTimeErrorServers (int value) { params."checkTimeErrorServers" = value }
 	
 	/**
 	 * Get server parameter for connect
 	 * @return
 	 */
 	@Synchronized
-	public Map wantConnect () {
+	Map wantConnect () {
 		if (servers.isEmpty()) throw new ExceptionGETL("Required servers list")
 		
 		servers.each { server ->
@@ -144,7 +148,7 @@ class Balancer  {
 	 * @return
 	 */
 	@Synchronized
-	public boolean didDisconnect (Map server) {
+	boolean didDisconnect (Map server) {
 		if (servers.isEmpty()) throw new ExceptionGETL("Required servers list")
 		def i = servers.indexOf(server)
 		if (i != -1) {
@@ -167,7 +171,7 @@ class Balancer  {
 	 * @return
 	 */
 	@Synchronized
-	public boolean errorDisconnect (Map server) {
+	boolean errorDisconnect (Map server) {
 		if (servers.isEmpty()) throw new ExceptionGETL("Required servers list")
 		def i = servers.indexOf(server)
 		if (i != -1) {

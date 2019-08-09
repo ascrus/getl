@@ -65,19 +65,20 @@ class JDBCDriver extends Driver {
 	}
 	
 	private Date connectDate
-	
-	public Sql getSqlConnect () { connection.sysParams.sqlConnect }
-	public void setSqlConnect(Sql value) { connection.sysParams.sqlConnect = value }
+
+	Sql getSqlConnect () { connection.sysParams.sqlConnect }
+
+	void setSqlConnect(Sql value) { connection.sysParams.sqlConnect = value }
 	
 	@Override
-	public List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		[Driver.Support.CONNECT, Driver.Support.SQL, Driver.Support.EACHROW, Driver.Support.WRITE, Driver.Support.BATCH,
 		 Driver.Support.COMPUTE_FIELD, Driver.Support.DEFAULT_VALUE, Driver.Support.NOT_NULL_FIELD,
 		 Driver.Support.PRIMARY_KEY, Driver.Support.TRANSACTIONAL]
 	}
 
 	@Override
-	public List<Driver.Operation> operations() {
+	List<Driver.Operation> operations() {
 		[Driver.Operation.RETRIEVEFIELDS, Driver.Operation.READ_METADATA, Driver.Operation.INSERT,
 		 Driver.Operation.UPDATE, Driver.Operation.DELETE]
 	}
@@ -86,7 +87,7 @@ class JDBCDriver extends Driver {
 	 * Script for write array of bytes to serial blob object
 	 * @return
 	 */
-	public String blobMethodWrite (String methodName) {
+	String blobMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
@@ -100,12 +101,12 @@ class JDBCDriver extends Driver {
 	/**
 	 * Blob field return value as Blob interface
 	 */
-	public boolean blobReadAsObject() { return true }
+	boolean blobReadAsObject() { return true }
 	
 	/**
 	 * Class name for generate write data to clob field
 	 */
-	public String textMethodWrite (String methodName) {
+	String textMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.CLOB) 
@@ -120,18 +121,18 @@ class JDBCDriver extends Driver {
 	 * Clob field return value as Clob interface
 	 * @return
 	 */
-	public boolean textReadAsObject() { return true }
+	boolean textReadAsObject() { return true }
 
 	/**
 	 * UUID field return value as UUID interface
 	 * @return
 	 */
-	public boolean uuidReadAsObject() { return false }
+	boolean uuidReadAsObject() { return false }
 
 	/**
 	 * Java field type association
 	 */
-	public static Map javaTypes() {
+	static Map javaTypes() {
 		[
 			BIGINT: [java.sql.Types.BIGINT],
 			INTEGER: [java.sql.Types.INTEGER, java.sql.Types.SMALLINT, java.sql.Types.TINYINT],
@@ -151,10 +152,10 @@ class JDBCDriver extends Driver {
 	 * Default connection url
 	 * @return
 	 */
-	public String defaultConnectURL () { null }
+	String defaultConnectURL () { null }
 
 	@Override
-	public
+
 	void prepareField (Field field) {
 		if (field.dbType == null) return
 		if (field.type != null && field.type != Field.Type.STRING) return
@@ -219,8 +220,8 @@ class JDBCDriver extends Driver {
 		}
 		field.type = res
 	}
-	
-	public Object type2dbType (Field.Type type) {
+
+	static Object type2dbType (Field.Type type) {
 		def result
 		
 		switch (type) {
@@ -272,13 +273,13 @@ class JDBCDriver extends Driver {
 		
 		result
 	}
-	
-	public static enum sqlTypeUse {ALWAYS, SOMETIMES, NEVER}
+
+	static enum sqlTypeUse {ALWAYS, SOMETIMES, NEVER}
 	
 	/**
 	 * SQL type mapper
 	 */
-	public Map getSqlType () {
+	Map getSqlType () {
 		[
 			STRING: [name: 'varchar', useLength: sqlTypeUse.ALWAYS],
 			INTEGER: [name: 'int'],
@@ -303,7 +304,7 @@ class JDBCDriver extends Driver {
 	 * @param precision
 	 * @return
 	 */
-	public String type2sqlType (Field field, boolean useNativeDBType) {
+	String type2sqlType (Field field, boolean useNativeDBType) {
 		if (field == null) throw new ExceptionGETL('Required field object')
 		
 		def type = field.type.toString()
@@ -338,7 +339,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	public boolean isConnected() {
+	boolean isConnected() {
 		(sqlConnect != null)
 	}
 	
@@ -375,8 +376,8 @@ class JDBCDriver extends Driver {
 
 		return url
 	}
-	
-	public String buildConnectParams () {
+
+	String buildConnectParams () {
 		JDBCConnection con = connection as JDBCConnection
 		String conParams = ""
 		
@@ -395,7 +396,7 @@ class JDBCDriver extends Driver {
 	}
 	
 	@groovy.transform.Synchronized
-	public static Sql NewSql (Class driverClass, String url, String login, String password, String drvName, int loginTimeout) {
+	static Sql NewSql (Class driverClass, String url, String login, String password, String drvName, int loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
         Sql sql
 		try {
@@ -429,10 +430,11 @@ class JDBCDriver extends Driver {
 	Class getJdbcClass() { this.jdbcClass }
 
 	private boolean useLoadedDriver = false
-	public boolean getUseLoadedDriver() { useLoadedDriver }
+
+	boolean getUseLoadedDriver() { useLoadedDriver }
 	
 	@Override
-	public void connect() {
+	void connect() {
 		Sql sql = null
 		JDBCConnection con = connection as JDBCConnection
 		
@@ -533,7 +535,7 @@ class JDBCDriver extends Driver {
      * @param name
      * @param value
      */
-    public void changeSessionProperty(String name, def value) {
+    void changeSessionProperty(String name, def value) {
         if (changeSessionPropertyQuery == null) throw new ExceptionGETL("Current driver not allowed change session property value")
         try {
             (connection as JDBCConnection).executeCommand(command: StringUtils.EvalMacroString(changeSessionPropertyQuery, [name: name, value: value]))
@@ -552,7 +554,7 @@ class JDBCDriver extends Driver {
     }
 
 	@Override
-	public void disconnect() {
+	void disconnect() {
 		if (sqlConnect != null) sqlConnect.close()
 		sqlConnect = null
 		jdbcClass = null
@@ -567,7 +569,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	public List<Object> retrieveObjects (Map params, Closure filter) {
+	List<Object> retrieveObjects (Map params, Closure filter) {
 		String catalog = prepareObjectName(params."dbName" as String)?:defaultDBName
 		String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
 		String tableNamePattern = prepareObjectName(params."tableName" as String)
@@ -599,7 +601,7 @@ class JDBCDriver extends Driver {
 	 * Valid not null table name
 	 * @param dataset
 	 */
-	public static validTableName (Dataset dataset) {
+	static validTableName (Dataset dataset) {
 		if (dataset.params.tableName == null) throw new ExceptionGETL("Required table name from dataset")
 	}
 
@@ -614,7 +616,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	public List<Field> fields(Dataset dataset) {
+	List<Field> fields(Dataset dataset) {
 		validTableName(dataset)
 		
 		if (dataset.sysParams.cacheDataset != null && dataset.sysParams.cacheRetrieveFields == null) {
@@ -699,7 +701,7 @@ class JDBCDriver extends Driver {
 	/**
 	 * Read table fields from query
 	 */
-	List<Field> fieldsTableWithoutMetadata(JDBCDataset table) {
+	static List<Field> fieldsTableWithoutMetadata(JDBCDataset table) {
 		QueryDataset query = new QueryDataset(connection: table.connection)
 		query.query = "SELECT * FROM ${table.fullNameDataset()} WHERE 0 = 1"
 		if (query.rows().size() > 0) throw new ExceptionGETL("Find bug in \"fieldsTableWithoutMetadata\" method from \"${getClass().name}\" driver!")
@@ -708,7 +710,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	public void startTran() {
+	void startTran() {
 		if (!isSupport(Driver.Support.TRANSACTIONAL)) return
 		if (connection.tranCount == 0) {
 			saveToHistory("START TRAN")
@@ -719,7 +721,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	public void commitTran() {
+	void commitTran() {
         if (!isSupport(Driver.Support.TRANSACTIONAL)) return
 		if (connection == null) throw new ExceptionGETL("Can not commit from disconnected connection")
 		if (connection.tranCount == 1) {
@@ -732,7 +734,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	public void rollbackTran() {
+	void rollbackTran() {
         if (!isSupport(Driver.Support.TRANSACTIONAL)) return
 		if (connection == null) throw new ExceptionGETL("Can not rollback from disconnected connection")
 		if (connection.tranCount == 1) {
@@ -769,10 +771,10 @@ ${extend}'''
 	/**
 	 * Name dual system table
 	 */
-	public String getSysDualTable() { return null }
+	String getSysDualTable() { return null }
 
 	@Override
-	public void createDataset(Dataset dataset, Map params) {
+	void createDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
 
         params = params?:[:]
@@ -898,7 +900,7 @@ ${extend}'''
 	 * @param useNativeDBType - use native type for typeName field property
 	 * @return
 	 */
-	public String generateColumnDefinition(Field f, boolean useNativeDBType) {
+	String generateColumnDefinition(Field f, boolean useNativeDBType) {
 		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((isSupport(Driver.Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
 				((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
 				((isSupport(Driver.Support.DEFAULT_VALUE) && f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
@@ -931,7 +933,7 @@ ${extend}'''
 	public String fieldPrefix = '"'
 	public String fieldEndPrefix
 
-	public String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null, Dataset dataset = null) {
+	String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null, Dataset dataset = null) {
 		if (name == null) return null
 		String res
 		switch (caseObjectName) {
@@ -964,23 +966,23 @@ ${extend}'''
 	 * @param name
 	 * @return
 	 */
-	public String prepareObjectName(String name, JDBCDataset dataset = null) {
+	String prepareObjectName(String name, JDBCDataset dataset = null) {
 		return prepareObjectNameWithPrefix(name, '', '', dataset)
 	}
-	
-	public String prepareObjectNameForSQL(String name, JDBCDataset dataset = null) {
+
+	String prepareObjectNameForSQL(String name, JDBCDataset dataset = null) {
 		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix, dataset)
 	}
-	
-	public String prepareFieldNameForSQL(String name, JDBCDataset dataset = null) {
+
+	String prepareFieldNameForSQL(String name, JDBCDataset dataset = null) {
 		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix, dataset)
 	}
-	
-	public String prepareTableNameForSQL(String name, JDBCDataset dataset = null) {
+
+	String prepareTableNameForSQL(String name, JDBCDataset dataset = null) {
 		return prepareObjectNameWithPrefix(name, tablePrefix, tableEndPrefix, dataset)
 	}
-	
-	public String prepareObjectNameWithEval(String name, JDBCDataset dataset= null) {
+
+	String prepareObjectNameWithEval(String name, JDBCDataset dataset= null) {
 		return prepareObjectName(name, dataset)?.replace("\$", "\\\$")
 	}
 	
@@ -989,7 +991,7 @@ ${extend}'''
 	 * @param dataset	- dataset
 	 * @return String	- full name SQL object
 	 */
-	public String fullNameDataset (Dataset dataset) {
+	String fullNameDataset (Dataset dataset) {
 		if (dataset.sysParams.isTable == null || !dataset.sysParams.isTable) return 'noname'
 
         JDBCDataset ds = dataset as JDBCDataset
@@ -1019,8 +1021,8 @@ ${extend}'''
 
 		return r
 	}
-	
-	public String nameDataset (Dataset dataset) {
+
+	String nameDataset (Dataset dataset) {
 		if (dataset.sysParams.isTable == null || !dataset.sysParams.isTable) return 'noname'
 
         JDBCDataset ds = dataset as JDBCDataset
@@ -1045,7 +1047,7 @@ ${extend}'''
 	protected boolean dropIfExists = true
 
 	@Override
-	public void dropDataset(Dataset dataset, Map params) {
+	void dropDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
 
         params = params?:[:]
@@ -1088,8 +1090,8 @@ ${extend}'''
 			}
 		}
 	}
-	
-	public static boolean isTable(Dataset dataset) {
+
+	static boolean isTable(Dataset dataset) {
 		return (dataset.sysParams.isTable != null && dataset.sysParams.isTable)
 	}
 	
@@ -1112,7 +1114,7 @@ ${extend}'''
 	 * <li>finish
 	 * </ul> 
 	 */
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		if (params.where != null) dir.where = params.where
 		if (params.orderBy != null) dir.orderBy = params.orderBy
 		dir.forUpdate = BoolUtils.IsValue(params.forUpdate)
@@ -1121,7 +1123,7 @@ ${extend}'''
     /**
      * Build sql select statement for read rows in table
      */
-    public String sqlTableBuildSelect(Dataset dataset, Map params) {
+    String sqlTableBuildSelect(Dataset dataset, Map params) {
         // Load statement directive by driver
         def dir = [:] as Map<String, String>
         sqlTableDirective(dataset, params, dir)
@@ -1159,7 +1161,7 @@ ${extend}'''
 	 * @param params
 	 * @return
 	 */
-	public String sqlForDataset (Dataset dataset, Map params) {
+	String sqlForDataset (Dataset dataset, Map params) {
 		String query
 		if (isTable(dataset)) {
 			def table = dataset as TableDataset
@@ -1230,7 +1232,7 @@ ${extend}'''
 	
 	@groovy.transform.CompileStatic
 	@Override
-	public long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		params = params?:[:]
 
 		Integer fetchSize = (Integer)(params."fetchSize")
@@ -1361,7 +1363,7 @@ ${extend}'''
 	}
 	
 	@Override
-	public void clearDataset(Dataset dataset, Map params) {
+	void clearDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
 		def truncate = BoolUtils.IsValue(params.truncate)
 		
@@ -1403,7 +1405,7 @@ $sql
 	}
 
 	@Override
-	public long executeCommand(String command, Map params = [:]) {
+	long executeCommand(String command, Map params = [:]) {
 		def result = 0
 		
 		if (command == null || command.trim().length() == 0) return result
@@ -1617,7 +1619,7 @@ $sql
 			Map mc = [:]
 			mc.column = cn
 			
-			def m = map.get(cn)
+			def m = map.get(cn) as String
 			if (m != null){
 				def df = fields.find { it.name.toLowerCase() == m.toLowerCase() }
 				if (df != null) {
@@ -1655,7 +1657,7 @@ $sql
 	}
 	
 	@Override
-	public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
@@ -1691,7 +1693,7 @@ $sql
 	}
 	
 	@Override
-	public void openWrite (Dataset dataset, Map params, Closure prepareCode) {
+	void openWrite (Dataset dataset, Map params, Closure prepareCode) {
 		def wp = new WriterParams()
 		dataset.driver_params = wp
 		
@@ -1956,7 +1958,7 @@ $sql
 
 	@groovy.transform.CompileStatic
 	@Override
-	public void write(Dataset dataset, Map row) {
+	void write(Dataset dataset, Map row) {
 		WriterParams wp = (WriterParams)(dataset.driver_params)
 		
 		if (wp.saveOut != null) {
@@ -1993,7 +1995,7 @@ $sql
 	}
 	
 	@Override
-	public void doneWrite (Dataset dataset) {
+	void doneWrite (Dataset dataset) {
 		WriterParams wp = dataset.driver_params
 		
 		if (wp.rowProc > 0) {
@@ -2002,7 +2004,7 @@ $sql
 	}
 
 	@Override
-	public void closeWrite(Dataset dataset) {
+	void closeWrite(Dataset dataset) {
 		WriterParams wp = dataset.driver_params
 		try {
 			wp.stat.close()
@@ -2012,8 +2014,8 @@ $sql
 		}
 	}
 	
-	@Override	
-	public long getSequence(String sequenceName) {
+	@Override
+	long getSequence(String sequenceName) {
 		def r = sqlConnect.firstRow("SELECT NextVal(${sequenceName}) AS id")
 		r.id
 	}
@@ -2092,7 +2094,7 @@ $sql
 	 * @param procParams
 	 * @return
 	 */
-	public long unionDataset (JDBCDataset target, Map procParams) {
+	long unionDataset (JDBCDataset target, Map procParams) {
 		JDBCDataset source = procParams.source
 		if (source == null) throw new ExceptionGETL("Required \"source\" parameter")
 		if (!source instanceof JDBCDataset) throw new ExceptionGETL("Source dataset must be \"JDBCDataset\"")

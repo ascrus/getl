@@ -1,3 +1,5 @@
+package getl.examples.utils
+
 @BaseScript getl.lang.Getl getl
 
 import groovy.transform.BaseScript

@@ -39,7 +39,7 @@ class ConfigSpec extends BaseSpec {
     /**
      * Configuration manager
      */
-    ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper}
+    static ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper}
 
     /**
      * Configuration files path
@@ -62,15 +62,15 @@ class ConfigSpec extends BaseSpec {
     /**
      * Load configuration file
      */
-    void load(String fileName, String codePage = null) { Config.LoadConfig([fileName: fileName, codePage: codePage]) }
+    static void load(String fileName, String codePage = null) { Config.LoadConfig([fileName: fileName, codePage: codePage]) }
 
     /**
      * Save configuration file
      */
-    void save(String fileName, String codePage = null) { Config.SaveConfig(fileName: fileName, codePage: codePage)}
+    static void save(String fileName, String codePage = null) { Config.SaveConfig(fileName: fileName, codePage: codePage)}
 
     /**
      * Clear configuration content
      */
-    void clear() { Config.ClearConfig() }
+    static void clear() { Config.ClearConfig() }
 }

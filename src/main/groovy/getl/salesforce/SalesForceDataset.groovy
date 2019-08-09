@@ -45,8 +45,10 @@ class SalesForceDataset extends Dataset {
 	}
 
 	@Override
-	void setConnection(Connection value) {
-		assert value == null || value instanceof SalesForceConnection
+    void setConnection(Connection value) {
+		if (value != null && !(value instanceof SalesForceConnection))
+			throw new ExceptionGETL('Сonnection to SalesForceConnection class is allowed!')
+
 		super.setConnection(value)
 	}
 

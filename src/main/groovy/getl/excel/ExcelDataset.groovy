@@ -25,6 +25,7 @@
 package getl.excel
 
 import getl.data.*
+import getl.exception.ExceptionGETL
 import getl.utils.*
 
 /**
@@ -35,7 +36,9 @@ import getl.utils.*
 class ExcelDataset extends Dataset {
     @Override
     void setConnection(Connection value) {
-        assert value == null || value instanceof ExcelConnection
+        if (value != null && !(value instanceof ExcelConnection))
+            throw new ExceptionGETL('Сonnection to ExcelConnection class is allowed!')
+
         super.setConnection(value)
     }
 

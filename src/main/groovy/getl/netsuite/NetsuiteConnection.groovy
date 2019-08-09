@@ -64,18 +64,21 @@ class NetsuiteConnection extends JDBCConnection {
 	/**
 	 * Server Data Source
 	 */
-	public String getServerDataSource () { params.serverDataSource }
-	public void setServerDataSource (String value) { params.serverDataSource = value }
+	String getServerDataSource () { params.serverDataSource }
+
+    void setServerDataSource (String value) { params.serverDataSource = value }
 
 	/**
 	 * Ciphersuites
 	 */
-	public String getCiphersuites () { params.ciphersuites }
-	public void setCiphersuites (String value) { params.ciphersuites = value }
+	String getCiphersuites () { params.ciphersuites }
+
+    void setCiphersuites (String value) { params.ciphersuites = value }
 
 	/**
 	 * Account ID
 	 */
-	public Integer getAccountId () { params.accountId }
-	public void setAccountId (Integer value) { params.accountId = value }
+	Integer getAccountId () { params.accountId }
+
+    void setAccountId (Integer value) { params.accountId = value }
 }

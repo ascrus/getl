@@ -51,7 +51,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	}
 	
 	@Override
-	public
+
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		Dataset ds = getDestinition(dataset)
 		def fieldByGroup = getFieldByGroup(dataset)
@@ -86,7 +86,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	}
 
 	@Override
-	public
+
 	void write(Dataset dataset, Map row) {
 		Map data = dataset.params.aggregator_data
 		Closure aggregateCode = dataset.params.aggregator_code
@@ -95,7 +95,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	}
 
 	@Override
-	public
+
 	void doneWrite(Dataset dataset) {
 		Dataset ds = getDestinition(dataset)
 		Map<Object, Map> data = dataset.params.aggregator_data
@@ -106,7 +106,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	}
 
 	@Override
-	public
+
 	void closeWrite(Dataset dataset) {
 		Dataset ds = getDestinition(dataset)
 		ds.closeWrite()

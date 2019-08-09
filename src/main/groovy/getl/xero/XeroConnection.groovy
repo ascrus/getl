@@ -35,7 +35,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-public class XeroConnection extends Connection {
+class XeroConnection extends Connection {
     XeroConnection() {
         super(driver: XeroDriver)
     }
@@ -66,24 +66,27 @@ public class XeroConnection extends Connection {
     /**
      * Use resource file with configuration file and certificate file
      */
-    public String getUseResourceFile () { params.useResourceFile }
-    public void setUseResourceFile(String value) {
+    String getUseResourceFile () { params.useResourceFile }
+
+    void setUseResourceFile(String value) {
         params.useResourceFile = value
     }
 
     /**
      * Config file name by resource
      */
-    public String getConfigInResource () { params.configInResource }
-    public void setConfigInResource (String value) {
+    String getConfigInResource () { params.configInResource }
+
+    void setConfigInResource (String value) {
         params.configInResource = value
     }
 
     /**
      * Command history file
      */
-    public String getHistoryFile () { params.historyFile }
-    public void setHistoryFile(String value) { params.historyFile = value }
+    String getHistoryFile () { params.historyFile }
+
+    void setHistoryFile(String value) { params.historyFile = value }
 
     /**
      * Real script history file name

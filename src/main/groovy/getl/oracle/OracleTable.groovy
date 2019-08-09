@@ -24,6 +24,8 @@
 
 package getl.oracle
 
+import getl.data.Connection
+import getl.exception.ExceptionGETL
 import getl.jdbc.TableDataset
 import getl.jdbc.opts.ReadSpec
 import getl.oracle.opts.OracleReadSpec
@@ -36,6 +38,14 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class OracleTable extends TableDataset {
+    @Override
+    void setConnection(Connection value) {
+        if (value != null && !(value instanceof OracleConnection))
+            throw new ExceptionGETL('Сonnection to OracleConnection class is allowed!')
+
+        super.setConnection(value)
+    }
+
     @Override
     protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
         new OracleReadSpec(useExternalParams, opts)
