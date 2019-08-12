@@ -22,6 +22,12 @@ useVerticaConnection verticaConnection('demo', true) {
     sqlHistoryFile = "${configContent.workPath}/vertica.{date}.sql"
 }
 
+historypoint('vertica.demo', true) {
+    schemaName = connection.schemaName
+    tableName = 'demo_history_point'
+    saveMethod = insertSave
+}
+
 // Price table
 verticaTable('prices', true) {
     tableName = 'prices'

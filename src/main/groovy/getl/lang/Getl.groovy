@@ -86,6 +86,7 @@ class Getl extends Script {
 
         _params.repConnections = new ConcurrentHashMap<String, Map<String, Connection>>()
         _params.repDatasets = new ConcurrentHashMap<String, Map<String, Dataset>>()
+        _params.repHistoryPoints = new ConcurrentHashMap<String, SavePointManager>()
         _params.repFileManagers = new ConcurrentHashMap<String, Map<String, Manager>>()
 
         _params.defaultJDBCConnection = new ConcurrentHashMap<String, Map<String, JDBCConnection>>()
@@ -586,6 +587,71 @@ class Getl extends Script {
         if (dataset ==  null) throw new ExceptionGETL('Dataset cannot be null!')
         TFSDataset csvTemp = dataset.csvTempFile
         registerDataset(csvTemp, name, true)
+    }
+
+    /** History points repository */
+    protected Map<String, SavePointManager> getHistoryPoints() {
+        _params.repHistoryPoints as Map<String, SavePointManager>
+    }
+
+    /** Return list of repository history points */
+    @Synchronized
+    List<String> listHistoryPoint(Closure<Boolean> cl = null) {
+        def res = [] as List<String>
+        historyPoints.each { String name, SavePointManager point ->
+            if (cl == null || BoolUtils.IsValue(cl.call(name, point))) res << name
+        }
+
+        return res
+    }
+
+    /** Check history point registration in repository */
+    @Synchronized
+    protected Boolean isRegisteredHistoryPoint(String name) {
+        return historyPoints.containsKey(name)
+    }
+
+    /** Register history point in repository */
+    @Synchronized
+    protected SavePointManager registerHistoryPoint(String name, Boolean registration = false) {
+        SavePointManager obj
+        if (name == null) {
+            obj = new SavePointManager()
+            if (lastJdbcDefaultConnection != null) obj.connection = lastJdbcDefaultConnection
+            if (obj.connection != null && langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+                def thread = Thread.currentThread() as ExecutorThread
+                obj.connection = thread.registerCloneObject('connections', obj.connection,
+                        { (it as Connection).cloneConnection() }) as Connection
+            }
+        }
+        else {
+            def repName = repObjectName(name)
+            obj = historyPoints.get(repName)
+            if (obj == null) {
+                if ((!BoolUtils.IsValue(registration) && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
+                    throw new ExceptionGETL("History point \"$name\" is not exist!")
+
+                obj = new SavePointManager()
+                if (lastJdbcDefaultConnection != null) obj.connection = lastJdbcDefaultConnection
+                historyPoints.put(repName, obj)
+            }
+
+            if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+                def thread = Thread.currentThread() as ExecutorThread
+                if (obj.connection != null) {
+                    def cloneConnection = thread.registerCloneObject('connections', obj.connection,
+                            { (it as Connection).cloneConnection() }) as JDBCConnection
+                    obj = thread.registerCloneObject('historypoints', obj,
+                            { (it as SavePointManager).cloneSavePointManager(cloneConnection) }) as SavePointManager
+                }
+                else {
+                    obj = thread.registerCloneObject('historypoints', obj,
+                            { (it as Dataset).cloneDataset() }) as SavePointManager
+                }
+            }
+        }
+
+        return obj
     }
 
     /** File managers repository */
@@ -2101,5 +2167,23 @@ class Getl extends Script {
     /** File path parser */
     Path filePath(String mask) {
         return new Path(mask: mask)
+    }
+
+    /** Incremenal history point manager */
+    SavePointManager historypoint(String name, Boolean registration, @DelegatesTo(SavePointManager) Closure cl) {
+        def parent = registerHistoryPoint(name, registration) as SavePointManager
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Incremenal history point manager */
+    SavePointManager historypoint(String name, @DelegatesTo(SavePointManager) Closure cl = null) {
+        historypoint(name, false, cl)
+    }
+
+    /** Incremenal history point manager */
+    SavePointManager historypoint(@DelegatesTo(SavePointManager) Closure cl) {
+        historypoint(null, false, cl)
     }
 }

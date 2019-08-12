@@ -41,33 +41,33 @@ class Field implements Serializable {
 	}
 
 	/** Integer field type */
-	static Field.Type getIntegerFieldType() { Field.Type.INTEGER}
+	static public final Field.Type integerFieldType = Field.Type.INTEGER
 	/** Bigint field type */
-	static Field.Type getBigintFieldType() { Field.Type.BIGINT}
+	static public final Field.Type bigintFieldType = Field.Type.BIGINT
 	/** Numeric (decimal) field type */
-	static Field.Type getNumericFieldType() { Field.Type.NUMERIC}
+	static public final Field.Type numericFieldType = Field.Type.NUMERIC
 	/** Double field type */
-	static Field.Type getDoubleFieldType() { Field.Type.DOUBLE}
+	static public final Field.Type doubleFieldType = Field.Type.DOUBLE
 	/** String field type */
-	static Field.Type getStringFieldType() { Field.Type.STRING}
+	static public final Field.Type stringFieldType = Field.Type.STRING
 	/** Text (clob) field type */
-	static Field.Type getTextFieldType() { Field.Type.TEXT}
+	static public final Field.Type textFieldType = Field.Type.TEXT
 	/** Date field type */
-	static Field.Type getDateFieldType() { Field.Type.DATE}
+	static public final Field.Type dateFieldType = Field.Type.DATE
 	/** Time field type */
-	static Field.Type getTimeFieldType() { Field.Type.TIME}
+	static public final Field.Type timeFieldType = Field.Type.TIME
 	/** Date and time field type */
-	static Field.Type getDatetimeFieldType() { Field.Type.DATETIME}
+	static public final Field.Type datetimeFieldType = Field.Type.DATETIME
 	/** Boolean field type */
-	static Field.Type getBooleanFieldType() { Field.Type.BOOLEAN}
+	static public final Field.Type booleanFieldType = Field.Type.BOOLEAN
 	/** Blob field type */
-	static Field.Type getBlobFieldType() { Field.Type.BLOB}
+	static public final Field.Type blobFieldType = Field.Type.BLOB
 	/** UUID field type */
-	static Field.Type getUuidFieldType() { Field.Type.UUID}
+	static public final Field.Type uuidFieldType = Field.Type.UUID
 	/** RowID field type */
-	static Field.Type getRowidFieldType() { Field.Type.ROWID}
+	static public final Field.Type rowidFieldType = Field.Type.ROWID
 	/** Object field type */
-	static Field.Type getObjectFieldType() { Field.Type.OBJECT}
+	static public final Field.Type objectFieldType = Field.Type.OBJECT
 
 	private String name = null
 	/**

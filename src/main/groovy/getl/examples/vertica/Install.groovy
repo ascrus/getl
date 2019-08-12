@@ -21,6 +21,17 @@ profile("Create Vertica objects") {
         logInfo'Created schema getl_demo.'
     }
 
+    historypoint('vertica.demo') {
+        if (!exists) {
+            create(true)
+            logInfo 'History point table created.'
+        }
+        else {
+            truncate()
+            logInfo 'History point table cleared.'
+        }
+    }
+
     processDatasets(VERTICATABLE) { tableName ->
         verticaTable(tableName) { table ->
             if (!table.exists) {
