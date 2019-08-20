@@ -142,7 +142,7 @@ class ConfigSlurper extends ConfigManager {
 		def fp = (readParams?.path as String)?:this.path
 		def fn = (readParams?.fileName as String)?:this.fileName
 		def fl = (readParams?.files as List<String>)?:this.files
-		def env = (readParams?.environment as String)?:this.environment
+		def env = (readParams?.environment as String)?:this.environment?:'prod'
 		def cp = (readParams?.codePage as String)?:this.codePage
 
 		if (fn != null) {
