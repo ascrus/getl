@@ -172,8 +172,9 @@ class CSVDriver extends FileDriver {
 		return fields
 	}
 
-	protected static CellProcessor type2cellProcessor (Field field, Boolean isWrite, Boolean isEscape, String nullAsValue, String decimalSeparator,
-											 			String formatDate, String formatTime, String formatDateTime, Boolean isValid) {
+	protected static CellProcessor type2cellProcessor (Field field, Boolean isWrite, Boolean isEscape, String nullAsValue,
+													   String locale, String decimalSeparator, String formatDate,
+													   String formatTime, String formatDateTime, Boolean isValid) {
 		CellProcessor cp
 		
 		if (field.type == null || (field.type in [Field.Type.STRING, Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
@@ -198,11 +199,14 @@ class CSVDriver extends FileDriver {
 					cp = new Optional()
 				}
 		} else if (field.type == Field.Type.NUMERIC) {
+			def ds = ListUtils.NotNullValue([field.decimalSeparator, decimalSeparator]) as String
+			def fieldLocale = (field.extended.locale as String)?:locale
+
 			if (!isWrite) {
-				if (field.precision != null || field.format != null || decimalSeparator != null) {
-					def ds = ListUtils.NotNullValue([field.decimalSeparator, decimalSeparator]) as String
-					DecimalFormatSymbols dfs = new DecimalFormatSymbols()
-					dfs.setDecimalSeparator(ds.chars[0])
+				if (field.precision != null || field.format != null || ds != null || fieldLocale != null) {
+					DecimalFormatSymbols dfs = (fieldLocale == null)?
+							new DecimalFormatSymbols():new DecimalFormatSymbols(StringUtils.NewLocale(fieldLocale))
+					if (ds != null) dfs.setDecimalSeparator(ds.chars[0])
 					cp = new ParseBigDecimal(dfs)
 				}
 				else {
@@ -210,12 +214,11 @@ class CSVDriver extends FileDriver {
 				}
 			}
 			else {
-				if (field.precision != null || field.format != null || decimalSeparator != null) {
-					def ds = ListUtils.NotNullValue([field.decimalSeparator, decimalSeparator]) as String
+				if (field.precision != null || field.format != null || ds != null || fieldLocale != null) {
+					DecimalFormatSymbols dfs = (fieldLocale == null)?
+							new DecimalFormatSymbols():new DecimalFormatSymbols(StringUtils.NewLocale(fieldLocale))
+					if (ds != null) dfs.setDecimalSeparator(ds.chars[0])
 
-					DecimalFormatSymbols dfs = new DecimalFormatSymbols()
-					dfs.setDecimalSeparator(ds.chars[0])
-					
 					def p = (field.precision != null)?field.precision:0
 					def f = field.format
 					if (f == null) {
@@ -230,7 +233,7 @@ class CSVDriver extends FileDriver {
 							f = '0'
 						}
 					}
-					
+
 					DecimalFormat df = new DecimalFormat(f, dfs)
 					cp = new FmtNumber(df)
 				}
@@ -269,21 +272,21 @@ class CSVDriver extends FileDriver {
 					df = ListUtils.NotNullValue([field.format, formatDateTime, 'yyyy-MM-dd HH:mm:ss'])
 					break
 			}
-			def locale = field.extended.locale as String
+			def fieldLocale = (field.extended.locale as String)?:locale
 			if (!isWrite) {
-				if (locale == null) {
+				if (fieldLocale == null) {
 					cp = new ParseDate(df, true)
 				}
 				else {
-					cp = new ParseDate(df, true, StringUtils.NewLocale(locale))
+					cp = new ParseDate(df, true, StringUtils.NewLocale(fieldLocale))
 				}
 			}
 			else {
-				if (locale == null) {
+				if (fieldLocale == null) {
 					cp = new org.supercsv.cellprocessor.FmtDate(df)
 				}
 				else {
-					cp = new CSVFmtDate(df, locale)
+					cp = new CSVFmtDate(df, fieldLocale)
 				}
 			}
 		} else if (field.type == Field.Type.BLOB) {
@@ -336,6 +339,7 @@ class CSVDriver extends FileDriver {
 		Boolean isValid = fParams.isValid as Boolean
 		Boolean isEscape = fParams.isEscape as Boolean
 		String nullAsValue = fParams.nullAsValue as String
+		String locale = ListUtils.NotNullValue([fParams.locale, dataset.locale]) as String
 		String decimalSeparator = ListUtils.NotNullValue([fParams.decimalSeparator, dataset.decimalSeparator, '.']) as String
 		String formatDate = ListUtils.NotNullValue([fParams.formatDate, dataset.formatDate]) as String
 		String formatTime = ListUtils.NotNullValue([fParams.formatTime, dataset.formatTime]) as String
@@ -359,7 +363,7 @@ class CSVDriver extends FileDriver {
 				else {
 					Field f = dataset.field[i]
 					
-					CellProcessor p = type2cellProcessor(f, isWrite, isEscape, nullAsValue, decimalSeparator,
+					CellProcessor p = type2cellProcessor(f, isWrite, isEscape, nullAsValue, locale, decimalSeparator,
 															formatDate, formatTime, formatDateTime, isValid)
 					cp << p
 				}

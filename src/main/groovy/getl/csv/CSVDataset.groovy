@@ -168,6 +168,15 @@ class CSVDataset extends FileDataset {
 	 * Format for datetime fields
 	 */
 	void setFormatDateTime (String value) { params.formatDateTime = value }
+
+	/** OS locale for parsing date-time fields
+	 * <br>P.S. You can set locale for separately field in Field.extended.locale
+	 */
+	String getLocale() { ListUtils.NotNullValue([params.locale, csvConnection()?.locale]) }
+	/** OS locale for parsing date-time fields
+	 * <br>P.S. You can set locale for separately field in Field.extended.locale
+	 */
+	void setLocale(String value) { params.locale = value }
 		
 	/**
 	 * Length of the recorded file
