@@ -189,7 +189,7 @@ class SavePointManager {
 	 * @return
 	 */
 	@Synchronized
-	boolean create(boolean ifNotExists) {
+	boolean create(boolean ifNotExists = false) {
 		prepareTable()
 		
 		if (ifNotExists && table.exists) return false
@@ -208,7 +208,7 @@ class SavePointManager {
 	 * @return
 	 */
 	@Synchronized
-	boolean drop(boolean ifExists) {
+	boolean drop(boolean ifExists = false) {
 		prepareTable()
 		
 		if (ifExists && !table.exists) return false

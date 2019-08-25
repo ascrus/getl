@@ -106,11 +106,30 @@ class SQLScripter {
 	
 	/** 
 	 * Load script from file
-	 * @param filename
-	 * @param charset
+	 * @param fileName file name sql batch file
+	 * @param codePage file use specified encoding page (default utf-8)
 	 */
-	void loadFile (String filename, String charset) {
-		setScript(new File(filename).getText(charset))
+	void loadFile (String fileName, String codePage = 'utf-8') {
+		setScript(new File(fileName).getText(codePage))
+	}
+
+	/**
+	 * Load script from file in class path or resource directory
+	 * @param fileName file name in resource catalog
+	 * @param codePage file use specified encoding page (default utf-8)
+	 * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
+	 */
+	void loadResource(String fileName, String codePage, def otherPath = null) {
+		setScript(FileUtils.FileFromResources(fileName, otherPath).getText(codePage?:'utf-8'))
+	}
+
+	/**
+	 * Load script from file in class path or resource directory
+	 * @param fileName file name in resource catalog with utf-8 encoding page
+	 * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
+	 */
+	void loadResource(String fileName, def otherPath = null) {
+		loadResource(fileName, 'utf-8', otherPath)
 	}
 
 	/** 
@@ -475,11 +494,17 @@ class SQLScripter {
 	private boolean requiredExit
 
 	boolean isRequiredExit() { requiredExit }
-	
-	/** 
+
+	/**
 	 * Run script as SQL
 	 */ 
-	void runSql () {
+	void runSql(boolean useParsing = true) {
+		if (!useParsing) {
+			sql = StringUtils.EvalMacroString(script, allVars)
+			connection.executeCommand(command: sql)
+			return
+		}
+
 		requiredExit = false
 		def st = BatchSQL2List(script, ";")
 		rowCount = 0

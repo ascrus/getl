@@ -100,10 +100,16 @@ class Getl extends Script {
     @Override
     Object run() { return this }
 
-    /** Run GETL lang closure */
-    static def Dsl(@DelegatesTo(Getl) Closure cl) {
+    /** Run DSL script */
+    static Getl Dsl(@DelegatesTo(Getl) Closure cl) {
         def parent = new Getl()
         parent.runClosure(parent, cl)
+        return parent
+    }
+
+    /** Run DSL script */
+    void runDsl(@DelegatesTo(Getl) Closure cl) {
+        runClosure(this, cl)
     }
 
     Map<String, Object> _params = new ConcurrentHashMap<String, Object>()

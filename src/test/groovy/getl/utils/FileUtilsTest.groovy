@@ -231,4 +231,9 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertNotNull(FileUtils.FindParentPath('.','getl\\.'))
         assertTrue(FileUtils.ExistsFile(FileUtils.FindParentPath('.', 'getl\\.') + 'getl/src'))
     }
+
+    void testReadFileFromResource() {
+        def file = FileUtils.FileFromResources('fileutils/file.txt')
+        assertEquals('1234567890', file.text)
+    }
 }

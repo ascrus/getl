@@ -130,7 +130,7 @@ class FileDataset extends Dataset {
 		if (connection == null) throw new ExceptionGETL("Required connection for dataset \"$objectName\"")
 		FileDriver drv = connection.driver as FileDriver
 		
-		drv.fullFileNameDataset(this)
+		return drv.fullFileNameDataset(this)
 	}
 	
 	/**
@@ -139,7 +139,7 @@ class FileDataset extends Dataset {
 	String fullFileName(Integer portion) {
 		FileDriver drv = connection.driver as FileDriver
 		
-		drv.fullFileNameDataset(this, portion)
+		return drv.fullFileNameDataset(this, portion)
 	}
 	
 	/**
@@ -148,7 +148,7 @@ class FileDataset extends Dataset {
 	String fileMaskDataset(Dataset dataset, boolean isSplit) {
 		FileDriver drv = connection.driver as FileDriver
 		
-		drv.fileMaskDataset(this, isSplit)
+		return drv.fileMaskDataset(this, isSplit)
 	}
 	
 	/**
@@ -157,17 +157,13 @@ class FileDataset extends Dataset {
 	String fileNameWithoutExtension(Dataset dataset) {
 		FileDriver drv = connection.driver as FileDriver
 		
-		drv.fileNameWithoutExtension(this)
+		return drv.fileNameWithoutExtension(this)
 	}
 	
 	/**
 	 * Valid existing file
 	 */
-	boolean existsFile() {
-		File f = new File(fullFileName())
-		
-		f.exists()
-	}
+	boolean existsFile() { new File(fullFileName()).exists() }
 	
 	@Override
 	void openWrite (Map procParams) {

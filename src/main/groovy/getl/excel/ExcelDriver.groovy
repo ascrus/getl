@@ -76,18 +76,26 @@ class ExcelDriver extends Driver {
         return dataset.field
     }
 
-    @Override
+    /** Full file name */
+    static String fullFileNameDataset(ExcelDataset dataset) {
+        if (dataset.connection == null) throw new ExceptionGETL("Required connection for excel dataset!")
+        String path = (dataset.connection as ExcelConnection).path
+        String fileName = (dataset.connection as ExcelConnection).fileName
+        (path != null)?
+                FileUtils.ConvertToDefaultOSPath(path + File.separator + fileName):
+                FileUtils.ConvertToDefaultOSPath(fileName)
+    }
 
-    long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-        String path = dataset.connection.params.path
-        String fileName = dataset.connection.params.fileName
-        String fullPath = FileUtils.ConvertToDefaultOSPath(path + File.separator + fileName)
+    @Override
+    long eachRow(Dataset source, Map params, Closure prepareCode, Closure code) {
+        ExcelDataset dataset = source as ExcelDataset
+        String fileName = (dataset.connection as ExcelConnection).fileName
+        String fullPath = dataset.fullFileName()
         boolean warnings = BoolUtils.IsValue([params.showWarnings, (dataset as ExcelDataset).showWarnings,
                                               (dataset.connection as ExcelConnection).showWarnings, false])
 
-        if (!path) throw new ExceptionGETL("Required \"path\" parameter with connection")
         if (!fileName) throw new ExceptionGETL("Required \"fileName\" parameter with connection")
-        if (!FileUtils.ExistsFile(fullPath)) throw new ExceptionGETL("File \"${fileName}\" doesn't exists in \"${path}\"")
+        if (!FileUtils.ExistsFile(fullPath)) throw new ExceptionGETL("File \"${fullPath}\" doesn't exists!")
 
         Map datasetParams = dataset.params
 

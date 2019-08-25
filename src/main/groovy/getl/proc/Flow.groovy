@@ -706,11 +706,12 @@ class Flow {
 		Dataset writer
 
 		if (initCode != null) initCode.call()
+//		if (dest instanceof TableDataset && dest.field.isEmpty()) dest.retrieveFields()
 		
 		if (isBulkLoad) {
 			bulkDS = TFS.dataset()
 			bulkDS.escaped = bulkEscaped
-			dest.retrieveFields()
+			if (dest.field.isEmpty()) dest.retrieveFields()
 			bulkDS.field = dest.field
 			
 			bulkParams = destParams
@@ -814,6 +815,8 @@ class Flow {
 
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
+
+		if (initCode != null) initCode.call()
 		
 		Map<Connection, String> destAutoTran = [:]
 		def destParams = [:]
@@ -821,6 +824,8 @@ class Flow {
 		Map<String, Dataset> bulkLoadDS = [:]
 		Map<String, Dataset> writer = [:]
 		dest.each { String n, Dataset d ->
+//			if (d instanceof TableDataset && d.field.isEmpty()) d.retrieveFields()
+
 			// Get destination params
 			if (params.destParams != null && (params.destParams as Map).get(n) != null) {
 				destParams.put(n, (params.destParams as Map).get(n) as Map<String, Object>)
@@ -859,7 +864,7 @@ class Flow {
 			// Valid support bulk load
 			if (isBulkLoad) {
 				if (!d.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destination dataset \"${n}\" not support bulk load")
-				d.retrieveFields()
+				if (d.field.isEmpty()) d.retrieveFields()
 				TFSDataset bulkDS = TFS.dataset()
 				bulkDS.escaped = bulkEscaped
 				bulkLoadDS.put(n, bulkDS)
@@ -899,11 +904,7 @@ class Flow {
 			else {
 				writer.put(n, d)
 			}
-			
-			
 		}
-
-		if (initCode != null) initCode.call()
 
 		String curUpdater = null
 		
