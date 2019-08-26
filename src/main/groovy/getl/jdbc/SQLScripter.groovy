@@ -549,6 +549,12 @@ class SQLScripter {
 		runSql()
 	}
 
+	/** Run SQL script */
+	void exec(boolean useParsing, String sql) {
+		script = sql
+		runSql(useParsing)
+	}
+
 	/** 
 	 * Convert batch script to SQL command list
 	 * @param sql
