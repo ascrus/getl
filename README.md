@@ -1,4 +1,4 @@
-**GETL** - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
+GETL a based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
 
 GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking, transform and load data into programs written in Groovy, or Java, as well as from any software that supports the work with Java classes.
 
@@ -11,3 +11,4 @@ GETL taken into account when developing ideas and following requirements:
 * Simple DSL scripting language for implementing complex multi-threaded logic to work with data sources and file systems.
 
 Maven URL: http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22net.sourceforge.getl%22
+Examples: https://github.com/ascrus/getl-examples
