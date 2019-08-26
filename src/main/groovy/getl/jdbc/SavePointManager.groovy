@@ -24,11 +24,15 @@
 
 package getl.jdbc
 
+import getl.data.Connection
 import getl.data.Field
 import getl.proc.Flow
 import getl.utils.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import groovy.transform.Synchronized
+
+import java.sql.Timestamp
 
 /**
  * Save point manager class
@@ -45,8 +49,10 @@ class SavePointManager {
 	 * Connection
 	 */
 	private JDBCConnection connection
-	public JDBCConnection getConnection () { connection }
-	public void setConnection(JDBCConnection value) {
+
+	JDBCConnection getConnection () { connection }
+
+	void setConnection(JDBCConnection value) {
 		assert value != null, "Required created connection"
 		connection = value
 		map.clear()
@@ -55,8 +61,9 @@ class SavePointManager {
 	/**
 	 * Database name for table
 	 */
-	public String getDbName () { params.dbName }
-	public void setDbName (String value) { 
+	String getDbName () { params.dbName }
+
+	void setDbName (String value) {
 		params.dbName = value
 		map.clear()
 	}
@@ -64,8 +71,9 @@ class SavePointManager {
 	/**
 	 * Schema name for table
 	 */
-	public String getSchemaName () { params.schemaName }
-	public void setSchemaName (String value) { 
+	String getSchemaName () { params.schemaName }
+
+	void setSchemaName (String value) {
 		params.schemaName = value
 		map.clear()
 	}
@@ -73,8 +81,9 @@ class SavePointManager {
 	/**
 	 * Table name
 	 */
-	public String getTableName () { params.tableName }
-	public void setTableName (String value) {
+	String getTableName () { params.tableName }
+
+	void setTableName (String value) {
 		assert value != null, "Required table name" 
 		params.tableName = value 
 		map.clear()
@@ -83,28 +92,30 @@ class SavePointManager {
 	/**
 	 * Map fields
 	 */
-	public Map getFields () { params.fields }
-	public void setFields (Map value) {
+	Map getFields () { params.fields as Map }
+
+	void setFields (Map value) {
 		(params.fields as Map).clear()
 		(params.fields as Map).putAll(value)
 		map.clear()
 	}
+
+	/** Append history value as new row */
+	public final String insertSave = 'INSERT'
+	/** Update history value with exist row */
+	public final String mergeSave = 'MERGE'
 	
-	/**
-	 * Save value method (INSERT OR MERGE)
-	 * @return
-	 */
-	public String getSaveMethod () { (params.saveMethod as String)?.toUpperCase()?:"MERGE" }
-	public void setSaveMethod(String value) {
-		assert value != null, "Save method can not be NULL and allowed only values \"INSERT\" and \"MERGE\""
-		assert value.toUpperCase() in ["INSERT", "MERGE"], "Unknown save method \"$value\", allowed only values \"INSERT\" and \"MERGE\""
+	/** Save value method (INSERT OR MERGE) */
+	String getSaveMethod () { (params.saveMethod as String)?.toUpperCase()?:"MERGE" }
+	/** Save value method (INSERT OR MERGE) */
+	void setSaveMethod(String value) {
+		assert value != null, "Save method can not be NULL and allowed only values \"$insertSave\" and \"$mergeSave\""
+		assert value.toUpperCase() in [insertSave, mergeSave], "Unknown save method \"$value\", allowed only values \"$insertSave\" and \"$mergeSave\""
 		params.saveMethod = value.toUpperCase()
 		map.clear()
 	}
 
-	/**
-	 * Preparing map fields
-	 */
+	/** Preparing map fields */
 	protected final Map map = [:]
 	
 	/**
@@ -122,12 +133,26 @@ class SavePointManager {
 	SavePointManager () {
 		params.fields = [:]
 	}
+
+	/**
+	 * Clone current dataset on specified connection
+	 */
+	SavePointManager cloneSavePointManager (JDBCConnection newConnection = null) {
+		if (newConnection == null) newConnection = this.connection
+		String className = this.class.name
+		Map p = CloneUtils.CloneMap(this.params)
+		def man = Class.forName(className).newInstance() as SavePointManager
+		if (newConnection != null) man.connection = newConnection
+		man.params.putAll(p)
+
+		return man
+	}
 	
 	/**
 	 * Set fields mapping
 	 * @return
 	 */
-	public void prepareTable () {
+	void prepareTable () {
 		assert connection != null, "Required set value for \"connection\""
 		assert tableName != null, "Required set value for \"tableName\""
 		
@@ -163,8 +188,8 @@ class SavePointManager {
 	 * @param ifNotExists
 	 * @return
 	 */
-	@groovy.transform.Synchronized
-	public boolean create(boolean ifNotExists) {
+	@Synchronized
+	boolean create(boolean ifNotExists = false) {
 		prepareTable()
 		
 		if (ifNotExists && table.exists) return false
@@ -182,8 +207,8 @@ class SavePointManager {
 	 * @param ifExists
 	 * @return
 	 */
-	@groovy.transform.Synchronized
-	public boolean drop(boolean ifExists) {
+	@Synchronized
+	boolean drop(boolean ifExists = false) {
 		prepareTable()
 		
 		if (ifExists && !table.exists) return false
@@ -196,15 +221,15 @@ class SavePointManager {
 	 * Valid save point table exists
 	 * @return
 	 */
-	@groovy.transform.Synchronized
-	public boolean isExists() {
+	@Synchronized
+	boolean isExists() {
 		prepareTable()
 		
 		table.exists
 	}
 	
-	@groovy.transform.Synchronized
-	public String getFullTableName() {
+	@Synchronized
+	String getFullTableName() {
 		prepareTable()
 		
 		table.fullNameDataset()
@@ -215,8 +240,8 @@ class SavePointManager {
 	 * @param source
 	 * @return res.type (D and N) and res.value
 	 */
-	@groovy.transform.Synchronized
-	public Map<String, Object> lastValue (String source) {
+	@Synchronized
+	Map<String, Object> lastValue (String source) {
 		prepareTable()
 		source = source.toUpperCase()
 		
@@ -250,15 +275,15 @@ class SavePointManager {
 			if (!(type in ["D", "N", "F"])) throw new ExceptionGETL("Unknown type value \"$type\" from source $source")
 			res.type = row.type
 			if (type == "D") {
-				BigDecimal v = row.value
+				BigDecimal v = row.value as BigDecimal
 				res.value = DateUtils.Value2Timestamp(v)
 			}
 			else if (type =="N") {
-				BigDecimal v = row.value
+				BigDecimal v = row.value as BigDecimal
 				res.value = v.longValue()
 			}
 			else {
-				BigDecimal v = row.value
+				BigDecimal v = row.value as BigDecimal
 				res.value = v
 			}
 		}
@@ -271,7 +296,7 @@ class SavePointManager {
 	 * @param source
 	 * @return
 	 */
-	public static String value2String(Map value) {
+	static String value2String(Map value) {
 		return value2String(value, false, null)
 	}
 	
@@ -281,7 +306,7 @@ class SavePointManager {
 	 * @param quote
 	 * @return
 	 */
-	public static String value2String(Map value, boolean quote, String format) {
+	static String value2String(Map value, boolean quote, String format) {
 		if (value == null) return null
 		
 		def type = (value.type as String)?.toUpperCase()
@@ -307,7 +332,7 @@ class SavePointManager {
 	 * @param source
 	 * @param value
 	 */
-	public void saveValue(String source, def value) {
+	void saveValue(String source, def value) {
 		saveValue(source, value, null)
 	}
 	
@@ -317,11 +342,11 @@ class SavePointManager {
 	 * @param source
 	 * @param value
 	 */
-	@groovy.transform.Synchronized
-	public void saveValue(String source, def value, String format) {
+	@Synchronized
+	void saveValue(String source, def value, String format) {
 		prepareTable()
 		
-		if (!(value instanceof Date || value instanceof java.sql.Timestamp || 
+		if (!(value instanceof Date || value instanceof Timestamp ||
 				value instanceof Integer || value instanceof Long || 
 				value instanceof BigDecimal || 
 				value instanceof String || value instanceof GString)) {
@@ -333,9 +358,9 @@ class SavePointManager {
 			type = "D"
 			value = DateUtils.Timestamp2Value(value as Date)
 		}
-		else if (value instanceof java.sql.Timestamp) {
+		else if (value instanceof Timestamp) {
 			type = "D"
-			value = DateUtils.Timestamp2Value(value as java.sql.Timestamp)
+			value = DateUtils.Timestamp2Value(value as Timestamp)
 		}
 		else if (value instanceof String || value instanceof GString) {
 			type = "D"
@@ -375,7 +400,7 @@ class SavePointManager {
 	 * @param value
 	 * @return
 	 */
-	public static Map ConvertValue(Field.Type type, String format, def value) {
+	static Map ConvertValue(Field.Type type, String format, def value) {
 		def res = [:]
 		if (value == null) return res
 		
@@ -421,10 +446,9 @@ class SavePointManager {
 	
 	/**
 	 * Clear save point value by source
-	 * @param source
 	 */
-	@groovy.transform.Synchronized
-	public void clearValue (String source) {
+	@Synchronized
+	void clearValue (String source) {
 		prepareTable()
 		
 		connection.startTran()
@@ -437,5 +461,11 @@ class SavePointManager {
 			throw e
 		}
 		connection.commitTran()
+	}
+
+	/** Delete all rows in history point table */
+	@Synchronized
+	void truncate(Map truncateParams = null) {
+		table.truncate(truncateParams)
 	}
 }

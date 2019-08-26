@@ -40,7 +40,7 @@ class ConfigFiles extends ConfigManager {
     boolean getEvalVars() { true }
 
     @Override
-    public void init(Map<String, Object> initParams) {
+    void init(Map<String, Object> initParams) {
         if (initParams?.config == null) return
         Map config = initParams.config as Map<String, Object>
         if (config.path != null) {
@@ -70,8 +70,9 @@ class ConfigFiles extends ConfigManager {
 	/**
 	 * Path for configuration files
 	 */
-	public String getPath () { params.path as String }
-	public void setPath (String value) {
+	String getPath () { params.path as String }
+
+    void setPath (String value) {
         if (value.trim() == '') throw new ExceptionGETL('The path can not have empty value')
         params.path = value?.trim()
     }
@@ -79,8 +80,9 @@ class ConfigFiles extends ConfigManager {
 	/**
 	 * Configuration file name
 	 */
-	public String getFileName () { params.fileName as String}
-	public void setFileName (String value) {
+	String getFileName () { params.fileName as String}
+
+    void setFileName (String value) {
         if (value.trim() == '') throw new ExceptionGETL('The file name can not have empty value')
         params.fileName = value?.trim()
     }
@@ -88,8 +90,9 @@ class ConfigFiles extends ConfigManager {
 	/**
 	 * List of configuration files
 	 */
-	public List<String> getFiles () { params.files as List<String> }
-	public void setFiles (List<String> value) {
+	List<String> getFiles () { params.files as List<String> }
+
+    void setFiles (List<String> value) {
         value.each {
             if (it == null || it.trim() == '') {
                 throw new ExceptionGETL('The file name can not have empty value')
@@ -108,8 +111,9 @@ class ConfigFiles extends ConfigManager {
 	/**
 	 * Configuration files code page
 	 */
-	public String getCodePage () { (params.codePage as String)?:'UTF-8' }
-	public void setCodePage (String value) {
+	String getCodePage () { (params.codePage as String)?:'UTF-8' }
+
+    void setCodePage (String value) {
         if (value.trim() == '') throw new ExceptionGETL('Code page value can not have empty value')
         params.codePage = value
     }
@@ -119,7 +123,7 @@ class ConfigFiles extends ConfigManager {
      * @param value
      * @return
      */
-    public static String fullConfigName (String pathFile, String value) {
+    static String fullConfigName (String pathFile, String value) {
         ((pathFile != null)?FileUtils.ConvertToUnixPath(pathFile) + '/':'') + value
     }
 
@@ -127,10 +131,10 @@ class ConfigFiles extends ConfigManager {
      * Return file path for current configuration file
      * @return
      */
-    public String getFullName () { fullConfigName(path, fileName) }
+    String getFullName () { fullConfigName(path, fileName) }
 
 	@Override
-	public void loadConfig(Map<String, Object> readParams = [:]) {
+    void loadConfig(Map<String, Object> readParams = [:]) {
         def fp = (readParams?.path as String)?:this.path
         def fn = (readParams?.fileName as String)?:this.fileName
         def fl = (readParams?.files as List<String>)?:this.files
@@ -170,7 +174,7 @@ class ConfigFiles extends ConfigManager {
 	 * @param file
 	 * @param codePage
 	 */
-	public static Map<String, Object> LoadConfigFile (File file, String codePage) {
+	static Map<String, Object> LoadConfigFile (File file, String codePage) {
 		if (!file.exists()) throw new ExceptionGETL("Config file \"$file\" not found")
 		Logs.Config("Load config file \"${file.absolutePath}\"")
         def data = null
@@ -192,7 +196,7 @@ class ConfigFiles extends ConfigManager {
 	}
 
     @Override
-    public void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
+    void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
         def fp = (saveParams?.path as String)?:this.path
         def fn = (saveParams?.fileName as String)?:this.fileName
         def cp = (saveParams?.codePage as String)?:this.codePage
@@ -217,7 +221,7 @@ class ConfigFiles extends ConfigManager {
      * @param file
      * @param codePage
      */
-	public static void SaveConfigFile (Map<String, Object> data, File file, String codePage) {
+	static void SaveConfigFile (Map<String, Object> data, File file, String codePage) {
         JsonBuilder b = new JsonBuilder()
         try {
             b.call(data)

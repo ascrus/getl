@@ -39,9 +39,9 @@ class NumericUtils {
 	 * @param value
 	 * @return
 	 */
-	public static Boolean IsEven(Long value) {
+	static Boolean IsEven(Long value) {
 		if (value == null) return null
-		return value.toBigInteger().mod( 2 ) == 0
+		return value.toBigInteger() % 2 == 0
 	}
 	
 	/**
@@ -50,9 +50,9 @@ class NumericUtils {
 	 * @param divider
 	 * @return
 	 */
-	public static Boolean IsMultiple(Long value, Long divider) {
+	static Boolean IsMultiple(Long value, Long divider) {
 		if (value == null) return null
-		return value.toBigInteger().mod( divider ) == 0
+		return value.toBigInteger() % divider == 0
 	}
 	
 	/**
@@ -61,7 +61,7 @@ class NumericUtils {
 	 * @param prec
 	 * @return
 	 */
-	public static BigDecimal Round(BigDecimal value, Integer prec) {
+	static BigDecimal Round(BigDecimal value, Integer prec) {
 		if (value == null) return null as BigDecimal
 		if (prec == null) return value
 		value.setScale(prec, BigDecimal.ROUND_HALF_UP)
@@ -72,7 +72,7 @@ class NumericUtils {
 	 * @param args
 	 * @return
 	 */
-	public static long Hash(List args) {
+	static long Hash(List args) {
 		StringBuilder sb = new StringBuilder()
 		args.each { def a ->
 			if (a instanceof Date) {
@@ -96,10 +96,10 @@ class NumericUtils {
 	 * @param args
 	 * @return
 	 */
-	public static int SegmentByHash(int countSegment, List args) {
+	static int SegmentByHash(int countSegment, List args) {
 		long hash = Hash(args)
 		
-		return hash.mod(countSegment).intValue()
+		return (hash % countSegment).intValue()
 	}
 
     /**
@@ -107,10 +107,10 @@ class NumericUtils {
      * @param value
      * @return
      */
-	public static boolean IsInteger(String value) {
+	static boolean IsInteger(String value) {
 		try {
 			Integer.parseInt(value)
-		} catch (NumberFormatException e) {
+		} catch (NumberFormatException ignored) {
 			return false
 		}
 		return true
@@ -122,11 +122,11 @@ class NumericUtils {
      * @param defaultValue
      * @return
      */
-    public static Integer String2Integer(String value, Integer defaultValue) {
+    static Integer String2Integer(String value, Integer defaultValue) {
         Integer res
         try {
             res = Integer.parseInt(value)
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException ignored) {
             res = defaultValue
         }
         return res

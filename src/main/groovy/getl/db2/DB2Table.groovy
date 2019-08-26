@@ -23,6 +23,8 @@
 */
 package getl.db2
 
+import getl.data.Connection
+import getl.exception.ExceptionGETL
 import getl.jdbc.TableDataset
 import groovy.transform.InheritConstructors
 
@@ -33,4 +35,11 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class DB2Table extends TableDataset {
+    @Override
+    void setConnection(Connection value) {
+        if (value != null && !(value instanceof DB2Connection))
+            throw new ExceptionGETL('Сonnection to DB2Connection class is allowed!')
+
+        super.setConnection(value)
+    }
 }

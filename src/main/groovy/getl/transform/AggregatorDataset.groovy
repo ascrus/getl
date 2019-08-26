@@ -49,15 +49,18 @@ class AggregatorDataset extends VirtualDataset {
 		
 		params.algorithm = "HASH"
 	}
-	
-	public List<String> getFieldByGroup () { params.fieldByGroup }
-	public void setFieldByGroup (List<String> value) { params.fieldByGroup = value } 
-	
-	public Map<String, Map> getFieldCalc () { params.fieldCalc }
-	public void setFieldCalc (Map<String, Map> value) { params.fieldCalc = value }
-	
-	public String getAlgorithm () { params.algorithm }
-	public void setAlgorithm (String value) {
+
+    List<String> getFieldByGroup () { params.fieldByGroup }
+
+    void setFieldByGroup (List<String> value) { params.fieldByGroup = value }
+
+    Map<String, Map> getFieldCalc () { params.fieldCalc }
+
+    void setFieldCalc (Map<String, Map> value) { params.fieldCalc = value }
+
+    String getAlgorithm () { params.algorithm }
+
+    void setAlgorithm (String value) {
 		value = value.toUpperCase()
 		if (!(value in ["HASH", "TREE"])) throw new ExceptionGETL("Unknown algorithm \"${value}\"") 
 		params.algorithm = value 

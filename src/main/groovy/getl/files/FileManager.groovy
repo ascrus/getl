@@ -36,7 +36,8 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class FileManager extends Manager {
 	private Boolean connected = false
-	public boolean getConnected () { connected }
+
+	boolean getConnected () { connected }
 	private File currentDir
 	
 	FileManager () {
@@ -53,26 +54,28 @@ class FileManager extends Manager {
 	/**
 	 * Code page on command console
 	 */
-	public String getCodePage () { params.codePage?:"utf-8" }
-	public void setCodePage (String value) { params.codePage = value }
+	String getCodePage () { params.codePage?:"utf-8" }
+
+	void setCodePage (String value) { params.codePage = value }
 	
 	/**
 	 * Create root path if not exists
 	 * @return
 	 */
-	public boolean getCreateRootPath () { BoolUtils.IsValue(params.createRootPath, false) }
-	public void setCreateRootPath (boolean value) { params.createRootPath = value }
+	boolean getCreateRootPath () { BoolUtils.IsValue(params.createRootPath, false) }
+
+	void setCreateRootPath (boolean value) { params.createRootPath = value }
 	
 	@Override
-	public boolean isCaseSensitiveName () { false }
-	
-	public boolean existsRootDirectory() {
+	boolean isCaseSensitiveName () { false }
+
+	boolean existsRootDirectory() {
 		if (rootPath == null) return false
 		new File(rootPath).exists()
 	}
 	
 	@Override
-	public void connect () {
+	void connect () {
 		if (connected) throw new ExceptionGETL("Client already connected")
 		if (rootPath == null) throw new ExceptionGETL("Required value for \"rootPath\" property")
 		File rp = new File(rootPath)
@@ -85,7 +88,7 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	public void disconnect () {
+	void disconnect () {
 		if (!connected) throw new ExceptionGETL("Client already disconnected")
 		currentDir = null
 		connected = false
@@ -99,12 +102,12 @@ class FileManager extends Manager {
 		public File[] listFiles
 		
 		@groovy.transform.CompileStatic
-		public Integer size () {
+		Integer size () {
 			listFiles.length
 		}
 		
 		@groovy.transform.CompileStatic
-		public Map item (int index) {
+		Map item (int index) {
 			File f = listFiles[index]
 
 			Map<String, Object> m =  new HashMap<String, Object>()
@@ -115,15 +118,15 @@ class FileManager extends Manager {
 		  
 			m
 		}
-		
-		public void clear () {
+
+		void clear () {
 			listFiles = []
 		}
 	}
 	
 	@groovy.transform.CompileStatic
 	@Override
-	public FileManagerList listDir(String mask) {
+	FileManagerList listDir(String mask) {
 		validConnect()
 		
 		Closure filter
@@ -148,14 +151,14 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	public String getCurrentPath () {
+	String getCurrentPath () {
 		validConnect()
 		assert currentDir != null, "Current dir not set"
 		currentDir.path.replace("\\", "/")
 	}
 	
 	@Override
-	public void setCurrentPath (String path) {
+	void setCurrentPath (String path) {
 		validConnect()
 		
 		File f = new File(path)
@@ -164,13 +167,13 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	public void changeDirectoryUp () {
+	void changeDirectoryUp () {
 		validConnect()
 		setCurrentPath(currentDir.parent)
 	}
 	
 	@Override
-	public void download (String fileName, String path, String localFileName) {
+	void download (String fileName, String path, String localFileName) {
 		validConnect()
 		
 		def f = fileFromLocalDir("${currentPath}/${fileName}")
@@ -183,7 +186,7 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	public void upload (String path, String fileName) {
+	void upload (String path, String fileName) {
 		validConnect()
 		
 		def fn = ((path != null)?path + "/":"") + fileName
@@ -197,7 +200,7 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	public void removeFile (String fileName) {
+	void removeFile (String fileName) {
 		validConnect()
 		
 		def f = fileFromLocalDir("${currentDir.path}/${fileName}")
@@ -205,7 +208,7 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	public void createDir (String dirName) {
+	void createDir (String dirName) {
 		validConnect()
 		
 		File f = new File("${currentDir.path}/${dirName}")
@@ -214,7 +217,7 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	public void removeDir (String dirName, Boolean recursive) {
+	void removeDir (String dirName, Boolean recursive) {
 		validConnect()
 		
 		File f = new File("${currentDir.path}/${dirName}")
@@ -228,7 +231,7 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	public void rename(String fileName, String path) {
+	void rename(String fileName, String path) {
 		validConnect()
 		
 		def f = fileFromLocalDir("${currentDir.path}/${fileName}")
@@ -237,13 +240,13 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	public boolean existsDirectory (String dirName) {
+	boolean existsDirectory (String dirName) {
 		File f = new File("${currentDir.path}/${dirName}")
 		f.exists()
 	}
 	
 	@Override
-	public boolean isAllowCommand() { true }
+	boolean isAllowCommand() { true }
 	
 	@Override
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {

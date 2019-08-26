@@ -44,7 +44,7 @@ class PurgeTables extends Job {
 	}
 
 	@Override
-	public void process () {
+	void process () {
 		def perc = Config.content."purge_percent"?:30
 		List excludeTables = (Config.content."exclude" as List)?:[]
 		def excludeWhere = ""

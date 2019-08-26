@@ -47,22 +47,22 @@ class Config {
     /**
      * Current OS is Windows
      */
-    public static boolean isWindows() { (OS.indexOf("win") >= 0) }
+    static boolean isWindows() { (OS.indexOf("win") >= 0) }
 
     /**
      * Current OS is Mac
      */
-    public static boolean isMac() { (OS.indexOf("mac") >= 0) }
+    static boolean isMac() { (OS.indexOf("mac") >= 0) }
 
     /**
      * Current OS is Unix
      */
-    public static boolean isUnix() { (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0 ) }
+    static boolean isUnix() { (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0 ) }
 
     /**
      * Current OS is Solaris
      */
-    public static boolean isSolaris() { (OS.indexOf("sunos") >= 0) }
+    static boolean isSolaris() { (OS.indexOf("sunos") >= 0) }
 
     /**
 	 * Used Java version
@@ -72,7 +72,7 @@ class Config {
 	/**
 	 *  Parameters
 	 */
-	public static Map<String, Object> getParams() { configClassManager.params }
+	static Map<String, Object> getParams() { configClassManager.params }
 
     /**
      * Evaluate variables where load configuration
@@ -83,12 +83,14 @@ class Config {
      * Class used for configuration management
      */
     private static ConfigManager configClassManager = new ConfigFiles()
-	public static getConfigClassManager() { configClassManager }
-    public static void setConfigClassManager(ConfigManager value) {
+
+	static getConfigClassManager() { configClassManager }
+
+	static void setConfigClassManager(ConfigManager value) {
         configClassManager = value
     }
 
-    public static void Init(Map initParams) {
+	static void Init(Map initParams) {
 		if ((initParams.config as Map)?.manager != null) {
             configClassManager = Class.forName((initParams.config as Map).manager as String).newInstance() as ConfigManager
             Logs.Config("config: use ${configClassManager.getClass().name} class for config manager")
@@ -105,13 +107,13 @@ class Config {
 	/**
 	 * Variables
 	 */
-	public static Map<String, Object> getVars() { Config.content."vars" as Map<String, Object>}
+	static Map<String, Object> getVars() { Config.content."vars" as Map<String, Object>}
 
     /**
      * Set variables
      * @param value
      */
-	public static void setVars(Map value) {
+	static void setVars(Map value) {
         if (value == null) throw new ExceptionGETL('Null "value" detected!')
 		def v = content.vars as Map<String, Object>
 		if (v == null) {
@@ -130,7 +132,7 @@ class Config {
 	 * Re-initialization class
 	 */
 	@groovy.transform.Synchronized
-	public static void ReInit() {
+	static void ReInit() {
 		init.clear()
 		ClearConfig()
 		configClassManager = new ConfigFiles()
@@ -141,7 +143,7 @@ class Config {
 	 * @param code
 	 */
 	@groovy.transform.Synchronized
-	public static void RegisterOnInit(Closure code) {
+	static void RegisterOnInit(Closure code) {
 		if (init.find { it == code } == null) {
 			init << code
 		}
@@ -152,7 +154,7 @@ class Config {
 	 * @param code
 	 */
 	@groovy.transform.Synchronized
-	public static void UnregisterOnInit(Closure code) {
+	static void UnregisterOnInit(Closure code) {
 		if (init.find { it == code } != null) {
 			init.remove(code)
 		}
@@ -162,7 +164,7 @@ class Config {
 	 * Clear all configurations
 	 */
 	@groovy.transform.Synchronized
-	public static void ClearConfig () {
+	static void ClearConfig () {
 		content.clear()
         this.vars = new HashMap<String, Object>()
 	}
@@ -171,12 +173,12 @@ class Config {
 	 * Load configuration
 	 */
 	@groovy.transform.Synchronized
-	public static void LoadConfig (Map readParams = [:]) {
+	static void LoadConfig (Map readParams = [:]) {
         configClassManager.loadConfig(readParams)
 		DoInitEvent()
 	}
 
-    public static void MergeConfig (Map data) {
+	static void MergeConfig (Map data) {
         if (data == null) throw new ExceptionGETL('Null "data" detected!')
 
         Map<String, Object> currentVars = this.vars
@@ -200,7 +202,7 @@ class Config {
 	 * Run every eventer after load config files
 	 */
 	@groovy.transform.Synchronized
-	public static void DoInitEvent () {
+	static void DoInitEvent () {
 		init.each { doInit ->
 			doInit()
 		}
@@ -213,7 +215,7 @@ class Config {
 	 * @return
 	 */
 	@groovy.transform.Synchronized
-	public static Map FindSection (String section) {
+	static Map FindSection (String section) {
 		if (section == null) return null
 		def res = MapUtils.FindSection(content, section)
 		(res != null)?res:[:]
@@ -225,7 +227,7 @@ class Config {
 	 * @return
 	 */
 	@groovy.transform.Synchronized
-	public static boolean ContainsSection (String section) {
+	static boolean ContainsSection (String section) {
 		MapUtils.ContainsSection(content, section)
 	}
 
@@ -235,7 +237,7 @@ class Config {
 	 * @param value
 	 */
 	@groovy.transform.Synchronized
-	public static void SetValue(String name, value) {
+	static void SetValue(String name, value) {
 		MapUtils.SetValue(content, name, value)
 	}
 	
@@ -244,11 +246,11 @@ class Config {
 	 * @param writer
 	 */
 	@groovy.transform.Synchronized
-	public static void SaveConfig (Map saveParams = [:]) {
+	static void SaveConfig (Map saveParams = [:]) {
         configClassManager.saveConfig(content, saveParams)
 	}
-	
-	public static boolean IsEmpty() {
+
+	static boolean IsEmpty() {
         return (content.size() == 1 && vars.isEmpty())
     }
 }

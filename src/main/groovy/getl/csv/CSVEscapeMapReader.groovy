@@ -52,7 +52,7 @@ class CSVEscapeMapReader extends CsvMapReader {
 	
 	@groovy.transform.CompileStatic
 	@Override
-	public Map<String, Object> read(String[] cols, CellProcessor[] proc) throws IOException {
+    Map<String, Object> read(String[] cols, CellProcessor[] proc) throws IOException {
 		Map<String, Object> res = super.read(cols, proc)
 		if (res == null) return res
 		if (escapeProcessLineChar == null) {

@@ -32,12 +32,12 @@ import getl.utils.*
 class CSVFmtBlob extends CellProcessorAdaptor {
 	@groovy.transform.CompileStatic
 	@Override
-	public <T> T execute(final Object value, final CsvContext context) {
+    <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
 		
 		if (!(value instanceof byte[])) {
 			byte[] b = []
-			throw new SuperCsvCellProcessorException((b.class), value, context, this);
+			throw new SuperCsvCellProcessorException((b.class), value, context, this)
 		}
 		
 		String result = /*'0x' + */StringUtils.RawToHex((byte[])value)

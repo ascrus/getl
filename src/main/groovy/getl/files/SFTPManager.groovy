@@ -65,7 +65,7 @@ class SFTPManager extends Manager {
 	}
 	
 	@Override
-	public void setRootPath (String value) {
+	void setRootPath (String value) {
 		if (value != null && value.substring(0, 1) != "/") value = "/" + value
 		super.setRootPath(value)
 	}
@@ -73,26 +73,30 @@ class SFTPManager extends Manager {
 	/**
 	 * Server address
 	 */
-	public String getServer () { params.server }
-	public void setServer (String value) { params.server = value }
+	String getServer () { params.server }
+
+	void setServer (String value) { params.server = value }
 	
 	/**
 	 * Server port
 	 */
-	public Integer getPort () { (params.port != null)?(params.port as Integer):22 }
-	public void setPort (Integer value) { params.port = value }
+	Integer getPort () { (params.port != null)?(params.port as Integer):22 }
+
+	void setPort (Integer value) { params.port = value }
 	
 	/**
 	 * Login user
 	 */
-	public String getLogin () { params.login }
-	public void setLogin (String value) { params.login = value }
+	String getLogin () { params.login }
+
+	void setLogin (String value) { params.login = value }
 	
 	/**
 	 * Password user
 	 */
-	public String getPassword () { params.password }
-	public void setPassword (String value) { params.password = value }
+	String getPassword () { params.password }
+
+	void setPassword (String value) { params.password = value }
 	
 	/**
 	 * Known hosts file name
@@ -118,29 +122,33 @@ class SFTPManager extends Manager {
 	 * Identity file name
 	 * @return
 	 */
-	public String getIdentityFile () { params.identityFile }
-	public void setIdentityFile (String value) { params.identityFile = value }
+	String getIdentityFile () { params.identityFile }
+
+	void setIdentityFile (String value) { params.identityFile = value }
 	
 	/**
 	 * Code page on command console
 	 */
-	public String getCodePage () { params.codePage?:"utf-8" }
-	public void setCodePage (String value) { params.codePage = value }
+	String getCodePage () { params.codePage?:"utf-8" }
+
+	void setCodePage (String value) { params.codePage = value }
 	
 	/**
 	 * Alive interval (in seconds)
 	 */
-	public Integer getAliveInterval () { params."aliveInterval" as Integer }
-	public void setAliveInterval (Integer value) { params."aliveInterval" = value }
+	Integer getAliveInterval () { params."aliveInterval" as Integer }
+
+	void setAliveInterval (Integer value) { params."aliveInterval" = value }
 	
 	/**
 	 * Alive retry count max
 	 */
-	public Integer getAliveCountMax () { params."aliveCountMax" as Integer }
-	public void setAliveCountMax (Integer value) { params."aliveCountMax" = value }
+	Integer getAliveCountMax () { params."aliveCountMax" as Integer }
+
+	void setAliveCountMax (Integer value) { params."aliveCountMax" = value }
 	
 	@Override
-	public boolean isCaseSensitiveName () { true }
+	boolean isCaseSensitiveName () { true }
 	
 	private Session newSession () {
 		Session s = client.getSession(login, server, port)
@@ -185,7 +193,7 @@ class SFTPManager extends Manager {
 
 	@Override
 	@groovy.transform.Synchronized
-	public void connect() {
+	void connect() {
 		if (clientSession != null && clientSession.connected) throw new ExceptionGETL("SFTP already connect to server")
 		if (server == null || port == null) throw new ExceptionGETL("Required server host and port for connect")
 		if (login == null || password == null) throw new ExceptionGETL("Required login and password for connect")
@@ -205,7 +213,7 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	public void disconnect() {
+	void disconnect() {
 		try {
 			if (clientSession != null && clientSession.connected) {
 				writeScriptHistoryFile("CLOSE SESSION")
@@ -225,12 +233,12 @@ class SFTPManager extends Manager {
 		Vector<ChannelSftp.LsEntry> listFiles
 		
 		@groovy.transform.CompileStatic
-		public Integer size () {
+		Integer size () {
 			listFiles.size()
 		}
 		
 		@groovy.transform.CompileStatic
-		public Map item (int index) {
+		Map item (int index) {
 			ChannelSftp.LsEntry item = listFiles.get(index)
 
 			Map<String, Object> file = new HashMap<String, Object>()
@@ -251,15 +259,15 @@ class SFTPManager extends Manager {
 		  
 			file
 		}
-		
-		public void clear () {
+
+		void clear () {
 			listFiles.clear()
 		}
 	}
 
 	@groovy.transform.CompileStatic
 	@Override
-	public FileManagerList listDir(String maskFiles) {
+	FileManagerList listDir(String maskFiles) {
 		if (maskFiles == null) maskFiles = "*"
 		writeScriptHistoryFile("COMMAND: list \"$maskFiles\"")
 		Vector< ChannelSftp.LsEntry> listFiles = channelFtp.ls(maskFiles)
@@ -271,7 +279,7 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	public String getCurrentPath() {
+	String getCurrentPath() {
 		writeScriptHistoryFile("COMMAND: pwd")
 		def res = channelFtp.pwd()
 		writeScriptHistoryFile("PWD: \"$res\"")
@@ -280,19 +288,19 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	public void setCurrentPath(String path) {
+	void setCurrentPath(String path) {
 		writeScriptHistoryFile("COMMAND: cd \"$path\"")
 		channelFtp.cd(path)
 	}
 
 	@Override
-	public void changeDirectoryUp() {
+	void changeDirectoryUp() {
 		writeScriptHistoryFile("COMMAND: cd ..")
 		channelFtp.cd("..")
 	}
 
 	@Override
-	public void download(String fileName, String path, String localFileName) {
+	void download(String fileName, String path, String localFileName) {
 		def fn = ((path != null)?path + "/":"") + localFileName
 		writeScriptHistoryFile("COMMAND: get \"$fileName\" to \"$fn\"")
         def f = new File(fn)
@@ -312,7 +320,7 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	public void upload(String path, String fileName) {
+	void upload(String path, String fileName) {
 		def fn = ((path != null)?path + "/":"") + fileName
 		writeScriptHistoryFile("COMMAND: put \"$fn\" to \"$fileName\"")
         def f = new File(fn)
@@ -331,7 +339,7 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	public void removeFile(String fileName) {
+	void removeFile(String fileName) {
 		writeScriptHistoryFile("COMMAND: remove \"$fileName\"")
 		try {
 			channelFtp.rm(fileName)
@@ -343,7 +351,7 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	public void createDir(String dirName) {
+	void createDir(String dirName) {
 		writeScriptHistoryFile("COMMAND: pwd")
 		def curDir = channelFtp.pwd()
 		writeScriptHistoryFile("PWD: \"$curDir\"")
@@ -379,7 +387,7 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	public void removeDir(String dirName, Boolean recursive) {
+	void removeDir(String dirName, Boolean recursive) {
 		writeScriptHistoryFile("COMMAND: rmdir \"$dirName\"")
         if (!channelFtp.stat(dirName).isDir()) throw new ExceptionGETL("$dirName is not directory")
 		try {
@@ -421,7 +429,7 @@ class SFTPManager extends Manager {
     }
 
 	@Override
-	public void rename(String fileName, String path) {
+	void rename(String fileName, String path) {
 		writeScriptHistoryFile("COMMAND: rename \"$fileName\" to \"$path\"")
 		try {
 			channelFtp.rename(fileName, path)
@@ -433,7 +441,7 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	public boolean existsDirectory(String dirName) {
+	boolean existsDirectory(String dirName) {
 		writeScriptHistoryFile("COMMAND: pwd \"$dirName\"")
 		def cur = channelFtp.pwd()
 		writeScriptHistoryFile("PWD: \"$cur\"")
@@ -452,7 +460,7 @@ class SFTPManager extends Manager {
 	}
 	
 	@Override
-	public boolean isAllowCommand() { true }
+	boolean isAllowCommand() { true }
 	
 	@Override
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
@@ -494,7 +502,7 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	public void noop () {
+	void noop () {
 		super.noop()
 		clientSession.sendKeepAliveMsg()
 		writeScriptHistoryFile("NOOP")

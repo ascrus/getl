@@ -52,14 +52,14 @@ class MySQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
 				 Driver.Support.INDEX, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
 	}
 
 	@Override
-	public List<Driver.Operation> operations() {
+	List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
@@ -71,7 +71,7 @@ class MySQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public String defaultConnectURL () {
+	String defaultConnectURL () {
 		return 'jdbc:mysql://{host}/{database}'
 	}
 
@@ -79,7 +79,7 @@ class MySQLDriver extends JDBCDriver {
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} = {value}' }
 
 	@Override
-	public Map getSqlType () {
+	Map getSqlType () {
 		Map res = super.getSqlType()
 		res.BLOB.name = 'blob'
 		res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER
@@ -90,10 +90,10 @@ class MySQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public boolean blobReadAsObject () { return false }
+	boolean blobReadAsObject () { return false }
 
 	@Override
-	public String blobMethodWrite (String methodName) {
+	String blobMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
@@ -107,10 +107,10 @@ class MySQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public boolean textReadAsObject () { return false }
+	boolean textReadAsObject () { return false }
 
 	@Override
-	public String textMethodWrite (String methodName) {
+	String textMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.CLOB) 
@@ -122,7 +122,7 @@ class MySQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public void prepareField (Field field) {
+	void prepareField (Field field) {
 		super.prepareField(field)
 
 		if (field.type == Field.Type.BLOB) {
@@ -143,7 +143,7 @@ class MySQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	public String getSysDualTable() { return 'DUAL' }
+	String getSysDualTable() { return 'DUAL' }
 
 	@Override
 	protected String sessionID() {

@@ -178,7 +178,7 @@ class FileUtilsTest extends getl.test.GetlTest {
     }
 
     void testRun() {
-        return
+        //return
         def sout = new StringBuilder()
         def serr = new StringBuilder()
         if (Config.isWindows()) {
@@ -230,5 +230,10 @@ class FileUtilsTest extends getl.test.GetlTest {
     void testFindParentPath() {
         assertNotNull(FileUtils.FindParentPath('.','getl\\.'))
         assertTrue(FileUtils.ExistsFile(FileUtils.FindParentPath('.', 'getl\\.') + 'getl/src'))
+    }
+
+    void testReadFileFromResource() {
+        def file = FileUtils.FileFromResources('fileutils/file.txt')
+        assertEquals('1234567890', file.text)
     }
 }

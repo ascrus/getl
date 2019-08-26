@@ -4,7 +4,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = "4.0.0"//noinspection GroovyUnusedAssignment
+version = "4.0.1"//noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -18,8 +18,8 @@ repositories {
 }
 
 dependencies {
-	compile 'org.codehaus.groovy:groovy-all:2.5.7'
-	compile 'org.codehaus.groovy:groovy-dateutil:2.5.7'
+	compile 'org.codehaus.groovy:groovy-all:2.5.8'
+	compile 'org.codehaus.groovy:groovy-dateutil:2.5.8'
 	
 	compile 'com.jcraft:jsch:0.1.54'
 	compile 'net.sf.supercsv:super-csv:2.4.0'
@@ -91,6 +91,7 @@ build.dependsOn javadocJar
 
 
 //noinspection GroovyMissingReturnStatement
+/*
 uploadArchives {
 	def login = project.properties."ossrhUsername"
 	def password = project.properties."ossrhPassword"
@@ -141,9 +142,9 @@ uploadArchives {
 		}
 	}
 }
+*/
 
 //noinspection GroovyMissingReturnStatement
-/*
 uploadArchives {
     repositories {
         mavenDeployer {
@@ -156,4 +157,3 @@ uploadArchives {
         }
     }
 }
-*/

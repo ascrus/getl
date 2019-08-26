@@ -24,6 +24,8 @@
 
 package getl.mssql
 
+import getl.data.Connection
+import getl.exception.ExceptionGETL
 import getl.jdbc.TableDataset
 import getl.jdbc.opts.ReadSpec
 import getl.mssql.opts.MSSQLReadSpec
@@ -36,6 +38,14 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class MSSQLTable extends TableDataset {
+    @Override
+    void setConnection(Connection value) {
+        if (value != null && !(value instanceof MSSQLConnection))
+            throw new ExceptionGETL('Сonnection to MSSQLConnection class is allowed!')
+
+        super.setConnection(value)
+    }
+
     @Override
     protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
         new MSSQLReadSpec(useExternalParams, opts)

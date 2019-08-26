@@ -53,20 +53,20 @@ class OracleDriver extends JDBCDriver {
 	}
 	
 	@Override
-	public List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB,
 				 Driver.Support.CLOB, Driver.Support.INDEX]
 	}
 	
 	@Override
-	public List<Driver.Operation> operations() {
+	List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
 	
 	@Override
-	public String blobMethodWrite (String methodName) {
+	String blobMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
@@ -82,10 +82,10 @@ class OracleDriver extends JDBCDriver {
     }
 	
 	@Override
-	public boolean blobReadAsObject () { return false }
+	boolean blobReadAsObject () { return false }
 	
 	@Override
-	public String textMethodWrite (String methodName) {
+	String textMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.CLOB) 
@@ -99,7 +99,7 @@ class OracleDriver extends JDBCDriver {
 	}
 	
 	@Override
-	public Map getSqlType () {
+	Map getSqlType () {
 		Map res = super.getSqlType()
 		res.BIGINT.name = 'number'
 		res.BIGINT.useLength = JDBCDriver.sqlTypeUse.NEVER
@@ -110,7 +110,7 @@ class OracleDriver extends JDBCDriver {
 	}
 	
 	@Override
-	public void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
 		Map<String, Object> dl = (dataset as TableDataset).readDirective?:[:] + params
 		if (dl.scn != null) {
@@ -135,7 +135,7 @@ class OracleDriver extends JDBCDriver {
 	}
 	
 	@Override
-    public void prepareField (Field field) {
+	void prepareField (Field field) {
 		super.prepareField(field)
 		
 		if (field.type == Field.Type.NUMERIC) {
@@ -202,7 +202,7 @@ class OracleDriver extends JDBCDriver {
 	}
 	
 	@Override
-	public String defaultConnectURL () {
+	String defaultConnectURL () {
 		return 'jdbc:oracle:thin:@{host}:{database}'
 	}
 
@@ -210,7 +210,7 @@ class OracleDriver extends JDBCDriver {
 	protected String getChangeSessionPropertyQuery() { return 'ALTER SESSION SET {name} = \'{value}\'' }
 
 	@Override
-	public String generateColumnDefinition(Field f, boolean useNativeDBType) {
+	String generateColumnDefinition(Field f, boolean useNativeDBType) {
 		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" +
 				((isSupport(Driver.Support.DEFAULT_VALUE) && f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
 				((isSupport(Driver.Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
@@ -218,7 +218,7 @@ class OracleDriver extends JDBCDriver {
 	}
 
 	@Override
-	public String getSysDualTable() { return 'DUAL' }
+	String getSysDualTable() { return 'DUAL' }
 
 	@Override
 	protected String sessionID() {

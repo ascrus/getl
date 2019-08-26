@@ -24,6 +24,8 @@
 
 package getl.hive
 
+import getl.data.Connection
+import getl.exception.ExceptionGETL
 import getl.hive.opts.HiveCreateSpec
 import getl.jdbc.TableDataset
 import getl.jdbc.opts.CreateSpec
@@ -36,6 +38,14 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class HiveTable extends TableDataset {
+    @Override
+    void setConnection(Connection value) {
+        if (value != null && !(value instanceof HiveConnection))
+            throw new ExceptionGETL('Сonnection to HiveConnection class is allowed!')
+
+        super.setConnection(value)
+    }
+
     /**
      * Overwrite append data to table
      */

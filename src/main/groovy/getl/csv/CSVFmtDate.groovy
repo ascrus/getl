@@ -46,16 +46,16 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 	private final String dateFormat
 	private final String localeStr
 	private final Locale locale
-	
-	public CSVFmtDate(final String dateFormat, final String localeStr) {
+
+    CSVFmtDate(final String dateFormat, final String localeStr) {
 		super()
 		checkPreconditions(dateFormat, localeStr)
 		this.dateFormat = dateFormat
 		this.localeStr = localeStr
 		locale = StringUtils.NewLocale(localeStr)
 	}
-	
-	public CSVFmtDate(final String dateFormat, final String localeStr, final StringCellProcessor next) {
+
+    CSVFmtDate(final String dateFormat, final String localeStr, final StringCellProcessor next) {
 		super(next)
 		checkPreconditions(dateFormat, localeStr)
 		this.dateFormat = dateFormat
@@ -65,7 +65,7 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 	
 	private static void checkPreconditions(final String dateFormat, final String localeStr) {
 		if( dateFormat == null ) {
-			throw new NullPointerException("dateFormat should not be null");
+			throw new NullPointerException("dateFormat should not be null")
 		}
 		
 		StringUtils.NewLocale(localeStr)
@@ -78,7 +78,7 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 	 *             if value is null or is not a Date, or if dateFormat is not a valid date format
 	 */
 	@SuppressWarnings("unchecked")
-	public Object execute(final Object value, final CsvContext context) {
+    Object execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
 		
 		if( !(value instanceof Date) ) {

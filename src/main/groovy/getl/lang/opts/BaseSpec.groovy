@@ -88,6 +88,7 @@ class BaseSpec {
     /**
      * Detected ignore key map from import
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     protected List<String> ignoreImportKeys(Map<String, Object> importParams) { [] as List<String> }
 
     /**

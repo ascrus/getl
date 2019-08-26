@@ -25,16 +25,16 @@
 package getl.csv
 
 import getl.csv.CSVDataset.QuoteMode
-import getl.data.Connection
 import getl.data.FileConnection
 import getl.utils.*
+import groovy.transform.InheritConstructors
 
 /**
  * CSV connection class
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.InheritConstructors
+@InheritConstructors
 class CSVConnection extends FileConnection {
 	CSVConnection () {
 		super([driver: CSVDriver])
@@ -45,91 +45,86 @@ class CSVConnection extends FileConnection {
 
 		methodParams.register('Super', ['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped', 
 										'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime', 
-										'formatDateTime', 'ignoreHeader', 'escapeProcessLineChar'])
+										'formatDateTime', 'ignoreHeader', 'escapeProcessLineChar', 'locale'])
 		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation('Super', params)
 	}
 	
-	/**
-	 * Quote delimiter string
-	 */
-	public String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, '"']) }
-	public void setQuoteStr (String value) { params.quoteStr = value }
+	/** Quote delimiter string */
+	String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, '"'])  as String }
+	/** Quote delimiter string */
+    void setQuoteStr (String value) { params.quoteStr = value }
 	
-	/**
-	 * Field delimiter
-	 */
-	public String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, ',']) }
-	public void setFieldDelimiter (String value) { params.fieldDelimiter = value }
+	/** Field delimiter */
+	String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, ',']) as String }
+	/** Field delimiter */
+    void setFieldDelimiter (String value) { params.fieldDelimiter = value }
 	
-	/**
-	 * Row delimiter
-	 */
-	public String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, '\n']) }
-	public void setRowDelimiter (String value) { params.rowDelimiter = value }
+	/** Row delimiter */
+	String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, '\n']) as String }
+	/** Row delimiter */
+    void setRowDelimiter (String value) { params.rowDelimiter = value }
 	
-	/**
-	 * File has header of fields name
-	 */
-	public boolean getHeader () { BoolUtils.IsValue(params.header, true) }
-	public void setHeader (boolean value) { params.header = value }
+	/** File has header of fields name */
+	boolean getHeader () { BoolUtils.IsValue(params.header, true) }
+	/** File has header of fields name */
+    void setHeader (boolean value) { params.header = value }
 	
-	/**
-	 * Ignore header field name
-	 */
-	public boolean getIgnoreHeader () { BoolUtils.IsValue(params.ignoreHeader, true) }
-	public void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
+	/** Ignore header field name */
+	boolean getIgnoreHeader () { BoolUtils.IsValue(params.ignoreHeader, true) }
+	/** Ignore header field name */
+    void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
 	
-	/**
-	 * Required convert string to escape value
-	 */
-	public boolean getEscaped () { BoolUtils.IsValue(params.escaped, false) }
-	public void setEscaped (boolean value) { params.escaped = value }
+	/** Required convert string to escape value */
+	boolean getEscaped () { BoolUtils.IsValue(params.escaped, false) }
+	/** Required convert string to escape value */
+    void setEscaped (boolean value) { params.escaped = value }
 	
-	/**
-	 * Convert line feed to custom escape char 
-	 */
-	public String getEscapeProcessLineChar () { params.escapeProcessLineChar }
-	public void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
+	/** Convert line feed to custom escape char */
+	String getEscapeProcessLineChar () { params.escapeProcessLineChar as String }
+	/** Convert line feed to custom escape char */
+    void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
 	
-	/**
-	 * Convert NULL to value
-	 */
-	public String getNullAsValue () { params.nullAsValue }
-	public void setNullAsValue (String value) { params.nullAsValue = value }
+	/** Convert NULL to value */
+	String getNullAsValue () { params.nullAsValue as String }
+	/** Convert NULL to value */
+    void setNullAsValue (String value) { params.nullAsValue = value }
 	
-	/**
-	 * Required format values for output to file
-	 */
-	public boolean getFormatOutput () { BoolUtils.IsValue(params.formatOutput, true) }
-	public void setFormatOutput (boolean value) { params.formatOutput = value }
+	/** Required format values for output to file */
+	boolean getFormatOutput () { BoolUtils.IsValue(params.formatOutput, true) }
+	/** Required format values for output to file */
+    void setFormatOutput (boolean value) { params.formatOutput = value }
 	
-	/**
-	 * Mode of quote value
-	 */
-	public QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, QuoteMode.NORMAL])  as QuoteMode }
-	public void setQuoteMode (QuoteMode value) { params.quoteMode = value }
+	/** Mode of quote value */
+	QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, QuoteMode.NORMAL])  as QuoteMode }
+	/** Mode of quote value */
+    void setQuoteMode (QuoteMode value) { params.quoteMode = value }
 	
-	/**
-	 * Decimal separator for number fields
-	 */
-	public String getDecimalSeparator () { params.decimalSeparator?:'.' }
-	public void setDecimalSeparator (String value) { params.decimalSeparator = value }
+	/** Decimal separator for number fields */
+	String getDecimalSeparator () { (params.decimalSeparator as String)?:'.' }
+	/** Decimal separator for number fields */
+    void setDecimalSeparator (String value) { params.decimalSeparator = value }
 	
-	/**
-	 * Format for date fields 
-	 */
-	public String getFormatDate () { params.formatDate }
-	public void setFormatDate (String value) { params.formatDate = value }
+	/** Format for date fields */
+	String getFormatDate () { params.formatDate as String }
+	/** Format for date fields */
+    void setFormatDate (String value) { params.formatDate = value }
 	
-	/**
-	 * Format for time fields
-	 */
-	public String getFormatTime () { params.formatTime }
-	public void setFormatTime (String value) { params.formatTime = value }
+	/** Format for time fields */
+	String getFormatTime () { params.formatTime as String }
+	/** Format for time fields */
+    void setFormatTime (String value) { params.formatTime = value }
 	
-	/**
-	 * Format for datetime fields
+	/** Format for datetime fields */
+	String getFormatDateTime () { params.formatDateTime as String }
+	/** Format for datetime fields */
+    void setFormatDateTime (String value) { params.formatDateTime = value }
+
+	/** OS locale for parsing date-time fields
+	 * <br>P.S. You can set locale for separately field in Field.extended.locale
 	 */
-	public String getFormatDateTime () { params.formatDateTime }
-	public void setFormatDateTime (String value) { params.formatDateTime = value }
+	String getLocale() { params.locale as String }
+	/** OS locale for parsing date-time fields
+	 * <br>P.S. You can set locale for separately field in Field.extended.locale
+	 */
+	void setLocale(String value) { params.locale = value }
 }

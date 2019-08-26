@@ -37,28 +37,28 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 abstract class VirtualDatasetDriver extends Driver {
 	@Override
-	public List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		[Driver.Support.WRITE]
 	}
 
 	@Override
-	public List<Driver.Operation> operations() {
+	List<Driver.Operation> operations() {
 		[]
 	}
 
 	@Override
-	public boolean isConnected() {
+	boolean isConnected() {
 		true
 	}
 
 	@Override
-	public void connect() { }
+	void connect() { }
 
 	@Override
-	public void disconnect() { }
+	void disconnect() { }
 
 	@Override
-	public List<Object> retrieveObjects(Map params, Closure filter) {
+	List<Object> retrieveObjects(Map params, Closure filter) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 	
@@ -70,67 +70,67 @@ abstract class VirtualDatasetDriver extends Driver {
 	}
 
 	@Override
-	public
+
 	List<Field> fields(Dataset dataset) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-	public
+
 	void startTran() {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-	public
+
 	void commitTran() {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-	public
+
 	void rollbackTran() {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-	public
+
 	void createDataset(Dataset dataset, Map params) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-	public
+
 	void dropDataset(Dataset dataset, Map params) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-	public
+
 	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 	
 	@Override
-	public
+
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-	public
+
 	void clearDataset(Dataset dataset, Map params) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-	public
+
 	long executeCommand(String command, Map params) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
-	public long getSequence(String sequenceName) {
+	long getSequence(String sequenceName) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 }

@@ -38,13 +38,13 @@ import getl.proc.*
  */
 @InheritConstructors
 class CacheDataset extends TableDataset {
-	public CacheDataset () {
+	CacheDataset () {
 		super()
 		manualSchema = true
 	}
 	
 	@Override
-	public void setConnection(Connection value) {
+	void setConnection(Connection value) {
 		assert value == null || value instanceof CacheManager 
 		CacheManager oldValue = (CacheManager)connection
 		super.setConnection(value)
@@ -76,7 +76,7 @@ class CacheDataset extends TableDataset {
 	protected long connectionid
 
 	@Override
-	public void eachRow (Map procParams, Closure code) {
+	void eachRow (Map procParams, Closure code) {
 		CacheManager cm = (CacheManager)connection
 		def rowObjects = cm.findObject(connectionid, dataset)
 		assert rowObjects != null, "Can not find dataset \"${dataset.objectName}\" from register objects"
@@ -114,7 +114,7 @@ class CacheDataset extends TableDataset {
 	 * Last readed time source dataset
 	 * @return
 	 */
-	public Date getCacheReaded () {
+	Date getCacheReaded () {
 		def row = null
 		CacheManager cm = (CacheManager)connection
 		cm.startTran()
@@ -132,7 +132,7 @@ class CacheDataset extends TableDataset {
 	 * Last updated time source dataset
 	 * @return
 	 */
-	public Date getCacheUpdated () {
+	Date getCacheUpdated () {
 		def row = null
 		CacheManager cm = (CacheManager)connection
 		cm.startTran()

@@ -62,13 +62,13 @@ class ConfigStores extends ConfigManager {
     /**
      * Configuration file name
      */
-    public String getFileName () { params.fileName as String }
+    String getFileName () { params.fileName as String }
 
     /**
      * Set configuration file name
      * @param value
      */
-    public void setFileName (String value) {
+    void setFileName (String value) {
         if (value == null || value.trim() == '') throw new ExceptionGETL('The file name can not have empty value')
         params.fileName = value.trim()
     }
@@ -76,13 +76,13 @@ class ConfigStores extends ConfigManager {
     /**
      * Configuration section name
      */
-    public String getSection () { (params.section as String)?:'config' }
+    String getSection () { (params.section as String)?:'config' }
 
     /**
      * Set configuration section name
      * @param value
      */
-    public void setSection (String value) {
+    void setSection (String value) {
         if (value == null || value.trim() == '') throw new ExceptionGETL('The section name can not have empty value')
         params.section = value.trim()
     }
@@ -90,13 +90,13 @@ class ConfigStores extends ConfigManager {
     /**
      * Configuration secret key
      */
-    public String getSecretKey () { (params.secretKey as String) }
+    String getSecretKey () { (params.secretKey as String) }
 
     /**
      * Set configuration secret key
      * @param value
      */
-    public void setSecretKey (String value) {
+    void setSecretKey (String value) {
         if (value == '') throw new ExceptionGETL('The secret key can not have empty value')
         params.secretKey = value
     }
@@ -113,7 +113,7 @@ class ConfigStores extends ConfigManager {
         Config.MergeConfig(data)
     }
 
-    public static Map<String, Object> LoadSection(String fileName, String secretKey, String section) {
+    static Map<String, Object> LoadSection(String fileName, String secretKey, String section) {
         if (fileName == null) throw new ExceptionGETL('Required fileName parameter')
 
         Map<String, Object> data = [:]
@@ -142,7 +142,7 @@ class ConfigStores extends ConfigManager {
         SaveSection(content, fileName, secretKey, section)
     }
 
-    public static void SaveSection(Map<String, Object> data, String fileName, String secretKey, String section) {
+    static void SaveSection(Map<String, Object> data, String fileName, String secretKey, String section) {
         def text = MapUtils.ToJson(data)
         def json = new JsonSlurper()
         data = MapUtils.Lazy2HashMap(json.parseText(text))

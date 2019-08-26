@@ -24,6 +24,8 @@
 
 package getl.netsuite
 
+import getl.data.Connection
+import getl.exception.ExceptionGETL
 import getl.jdbc.TableDataset
 import groovy.transform.InheritConstructors
 
@@ -33,6 +35,12 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-/** TODO: add valid on connection */
 class NetsuiteTable extends TableDataset {
+    @Override
+    void setConnection(Connection value) {
+        if (value != null && !(value instanceof NetsuiteConnection))
+            throw new ExceptionGETL('Сonnection to NetsuiteConnection class is allowed!')
+
+        super.setConnection(value)
+    }
 }

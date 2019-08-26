@@ -42,14 +42,14 @@ class ManagerListProcessClosure extends ManagerListProcessing {
 	private Closure runCode
 
 	@Override
-	public void init() {
+    void init() {
 		super.init()
 		if (code != null) runCode = code.clone() as Closure
 	}
 
 	@Override
 	@groovy.transform.CompileStatic
-	public boolean prepare(Map file) {
+    boolean prepare(Map file) {
 		if (runCode != null) return runCode.call(file)
 		
 		true

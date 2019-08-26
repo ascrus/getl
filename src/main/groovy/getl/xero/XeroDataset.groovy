@@ -26,6 +26,7 @@ package getl.xero
 
 import getl.data.Connection
 import getl.data.Dataset
+import getl.exception.ExceptionGETL
 import groovy.transform.InheritConstructors
 
 /**
@@ -35,23 +36,20 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class XeroDataset extends Dataset {
-    /*
-    XeroDataset() {
-        super()
-    }
-    */
-
     @Override
     void setConnection(Connection value) {
-        assert value == null || value instanceof XeroConnection
+        if (value != null && !(value instanceof XeroConnection))
+            throw new ExceptionGETL('Сonnection to XeroConnection class is allowed!')
+
         super.setConnection(value)
     }
 
     /**
      * Object name by Xero
      */
-    public String getXeroObjectName () { params.xeroObjectName }
-    public void setXeroObjectName (String value) {
+    String getXeroObjectName () { params.xeroObjectName }
+
+    void setXeroObjectName (String value) {
         params.xeroObjectName = value
     }
 

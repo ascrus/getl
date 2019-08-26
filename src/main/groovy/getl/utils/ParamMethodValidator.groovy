@@ -39,7 +39,7 @@ class ParamMethodValidator {
 	 * @param methodName
 	 * @param parameterList
 	 */
-	public void register (String methodName, List<String> parameterList) {
+	void register (String methodName, List<String> parameterList) {
 		if (methodParams."${methodName}" == null) {
 			methodParams."${methodName}" = parameterList
 		}
@@ -53,7 +53,7 @@ class ParamMethodValidator {
 	 * @param methodName
 	 * @param parameterList
 	 */
-	public void unregister (String methodName, List<String> parameterList) {
+	void unregister (String methodName, List<String> parameterList) {
 		List<String> params = methodParams."${methodName}"
 		if (params == null || params.isEmpty()) throw new ExceptionGETL("Unknown method \"$methodName\"")
 		methodParams."${methodName}" = params - parameterList
@@ -63,7 +63,7 @@ class ParamMethodValidator {
 	 * Allowed methods
 	 * @return
 	 */
-	public List<String> methods () {
+	List<String> methods () {
 		List<String> res = []
 		methodParams.each { String key, value -> res << key }
 		
@@ -75,7 +75,7 @@ class ParamMethodValidator {
 	 * @param methodName
 	 * @return
 	 */
-	public List<String> params(String methodName) {
+	List<String> params(String methodName) {
 		def res = methodParams."${methodName}"
 		if (res == null) throw new ExceptionGETL("Unknown method ${methodName}")
 		
@@ -87,7 +87,7 @@ class ParamMethodValidator {
 	 * @param methodName
 	 * @param runParams
 	 */
-	public void validation(String methodName, Map runParams) {
+	void validation(String methodName, Map runParams) {
 		def list = params(methodName)
 		
 		def unknown = MapUtils.Unknown(runParams, list, true)
@@ -103,7 +103,7 @@ class ParamMethodValidator {
 	 * @param runParams
 	 * @param otherValidator
 	 */
-	public void validation(String methodName, Map runParams, List<List<String>> others) {
+	void validation(String methodName, Map runParams, List<List<String>> others) {
 		def list = params(methodName)
 		
 		def vlist = []
@@ -121,7 +121,7 @@ class ParamMethodValidator {
 	 * Valid map content names 
 	 * @param content
 	 */
-	public void validation(Map content, String contentName, List excludeSections) {
+	void validation(Map content, String contentName, List excludeSections) {
 		if (content == null) return
 		validationSub(content, contentName, contentName, excludeSections?:[])
 	}
@@ -163,8 +163,8 @@ class ParamMethodValidator {
 		}
 	}
 
-	
-	public String toString() {
+
+	String toString() {
 		MapUtils.ToJson(methodParams)
 	}
 }

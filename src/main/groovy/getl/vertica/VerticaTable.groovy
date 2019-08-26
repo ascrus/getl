@@ -24,6 +24,8 @@
 
 package getl.vertica
 
+import getl.data.Connection
+import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.jdbc.opts.*
 import getl.vertica.opts.*
@@ -36,6 +38,14 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class VerticaTable extends TableDataset {
+    @Override
+    void setConnection(Connection value) {
+        if (value != null && !(value instanceof VerticaConnection))
+            throw new ExceptionGETL('Сonnection to VerticaConnection class is allowed!')
+
+        super.setConnection(value)
+    }
+
     @Override
     protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
         new VerticaCreateSpec(useExternalParams, opts)

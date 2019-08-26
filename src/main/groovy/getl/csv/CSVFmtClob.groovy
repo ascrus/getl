@@ -33,7 +33,7 @@ import java.sql.Clob
 class CSVFmtClob extends CellProcessorAdaptor {
 	@groovy.transform.CompileStatic
 	@Override
-	public <T> T execute(final Object value, final CsvContext context) {
+    <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
 		
 		String result

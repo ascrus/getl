@@ -38,7 +38,7 @@ class TransformUtils {
 	 * @param valueDelimited
 	 * @return
 	 */
-	public static Map DenormalizeColumn (String text, String fieldDelimited, String valueDelimited) {
+    static Map DenormalizeColumn (String text, String fieldDelimited, String valueDelimited) {
 		if (text == null) return null
 		def fields = text.split(fieldDelimited)
 		def values = [:]
@@ -58,7 +58,7 @@ class TransformUtils {
 	 * @param fieldDelimited
 	 * @return
 	 */
-	public static List ListFromColumn (String text, String fieldDelimited) {
+	static List ListFromColumn (String text, String fieldDelimited) {
 		if (text == null) return null
 		text += fieldDelimited + '\u0000'
 		List res = []

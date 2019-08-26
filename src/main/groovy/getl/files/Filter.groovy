@@ -28,13 +28,13 @@ import java.io.FilenameFilter
 
 class Filter implements FilenameFilter {
 	Closure code
-	
-	public Filter (Closure code) {
+
+    Filter (Closure code) {
 		this.code = code 
 	}
 	
 	@Override
-	public boolean accept(File file, String name) {
+    boolean accept(File file, String name) {
 		code.call(file, name)
 	}
 }

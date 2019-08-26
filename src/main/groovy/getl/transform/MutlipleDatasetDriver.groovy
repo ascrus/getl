@@ -39,28 +39,28 @@ import groovy.transform.InheritConstructors
 class MutlipleDatasetDriver extends Driver {
 
 	@Override
-	public List<Support> supported() {
+	List<Support> supported() {
 		return [Driver.Support.WRITE]
 	}
 
 	@Override
-	public List<Operation> operations() {
+	List<Operation> operations() {
 		return []
 	}
 
 	@Override
-	public boolean isConnected() {
+	boolean isConnected() {
 		return true
 	}
 
 	@Override
-    public void connect() { }
+	void connect() { }
 
 	@Override
-    public void disconnect() { }
+	void disconnect() { }
 
 	@Override
-	public List<Object> retrieveObjects(Map params, Closure filter) {
+	List<Object> retrieveObjects(Map params, Closure filter) {
 		throw new ExceptionGETL("Retrieve objects not supported")
 	}
 	
@@ -73,7 +73,7 @@ class MutlipleDatasetDriver extends Driver {
 	}
 
 	@Override
-    public List<Field> fields(Dataset dataset) {
+	List<Field> fields(Dataset dataset) {
 		throw new ExceptionGETL("Retrieve fields not supported")
 	}
 	
@@ -85,25 +85,25 @@ class MutlipleDatasetDriver extends Driver {
 	}
 
 	@Override
-    public void startTran() { }
+	void startTran() { }
 
 	@Override
-    public void commitTran() { }
+	void commitTran() { }
 
 	@Override
-    public void rollbackTran() { }
+	void rollbackTran() { }
 
 	@Override
-    public void createDataset(Dataset dataset, Map params) { }
+	void createDataset(Dataset dataset, Map params) { }
 
 	@Override
-    public void dropDataset(Dataset dataset, Map params) { }
+	void dropDataset(Dataset dataset, Map params) { }
 
 	@Override
-    public long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) { return 0 }
+	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) { return 0 }
 
 	@Override
-    public void openWrite(Dataset dataset, Map params, Closure prepareCode) {
+	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		Map<String, Dataset> ds = getDestinition(dataset)
 		List<Field> fields = destField(dataset)
 		ds.each { String alias, Dataset dest ->
@@ -114,7 +114,7 @@ class MutlipleDatasetDriver extends Driver {
 	}
 
 	@Override
-    public void write(Dataset dataset, Map row) {
+	void write(Dataset dataset, Map row) {
 		Map<String, Dataset> ds = getDestinition(dataset)
 		Map<String, Closure> cond = dataset.params.condition?:[:]
 		
@@ -136,7 +136,7 @@ class MutlipleDatasetDriver extends Driver {
 	}
 
 	@Override
-    public void doneWrite(Dataset dataset) {
+	void doneWrite(Dataset dataset) {
 		Map<String, Dataset> ds = getDestinition(dataset)
 		ds.each { String alias, Dataset dest ->
 			dest.doneWrite()
@@ -144,7 +144,7 @@ class MutlipleDatasetDriver extends Driver {
 	}
 
 	@Override
-    public void closeWrite(Dataset dataset) {
+	void closeWrite(Dataset dataset) {
 		Map<String, Dataset> ds = getDestinition(dataset)
 		ds.each { String alias, Dataset dest ->
 			dest.closeWrite()
@@ -152,18 +152,18 @@ class MutlipleDatasetDriver extends Driver {
 	}
 
 	@Override
-    public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) { }
+	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) { }
 
 	@Override
-    public void clearDataset(Dataset dataset, Map params) { }
+	void clearDataset(Dataset dataset, Map params) { }
 
 	@Override
-    public long executeCommand(String command, Map params) {
+	long executeCommand(String command, Map params) {
 		throw new ExceptionGETL("Execution command not supported")
 	}
 
 	@Override
-	public long getSequence(String sequenceName) {
+	long getSequence(String sequenceName) {
 		throw new ExceptionGETL("Sequence not supported")
 	}
 }

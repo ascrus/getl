@@ -75,7 +75,7 @@ class Executor {
 	/**
 	 * Allow multi-threaded execution
 	 */
-	public boolean allowThread = true
+//	public boolean allowThread = true
 	
 	/**
 	 * Run has errors
@@ -210,20 +210,22 @@ class Executor {
 							code.call(element)
 						}
 						finally {
-							def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
-							try {
-								listDisposeThreadResource.each { Closure disposeCode ->
-									disposeCode.call(cloneObjects)
-								}
-							}
-							finally {
-								cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
-									objects?.each { ExecutorThread.CloneObject obj ->
-										obj.origObject = null
-										obj.cloneObject = null
+							if (Thread.currentThread() instanceof ExecutorThread) {
+								def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
+								try {
+									listDisposeThreadResource.each { Closure disposeCode ->
+										disposeCode.call(cloneObjects)
 									}
 								}
-								cloneObjects.clear()
+								finally {
+									cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
+										objects?.each { ExecutorThread.CloneObject obj ->
+											obj.origObject = null
+											obj.cloneObject = null
+										}
+									}
+									cloneObjects.clear()
+								}
 							}
 						}
 						synchronized (threadActive) {
@@ -251,55 +253,39 @@ class Executor {
 			}
 		}
 
-		if (allowThread && countThread > 1) {
-			def threadPool = Executors.newFixedThreadPool(countThread, new ExecutorFactory())
-			def num = 0
-			elements.each { n ->
-				Map r = Collections.synchronizedMap(new HashMap())
-				r.num = num
-				r.element = n
-				r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable)
-				threadList << r
+		def threadPool = Executors.newFixedThreadPool(countThread, new ExecutorFactory())
+		def num = 0
+		elements.each { n ->
+			Map r = Collections.synchronizedMap(new HashMap())
+			r.num = num
+			r.element = n
+			r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable)
+			threadList << r
 
-				num++
-			}
-			threadPool.shutdown()
+			num++
+		}
+		threadPool.shutdown()
 
-			while (!threadPool.isTerminated()) {
-				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
-					try {
-						mainCode.call()
-					}
-					catch (Throwable e) {
-						setError(null, e)
-						threadActive.each { Map serv ->
-							(serv.threadSubmit as Future)?.cancel(true)
-						}
-						threadPool.shutdownNow()
-						throw e
-					}
+		while (!threadPool.isTerminated()) {
+			if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
+				try {
+					mainCode.call()
 				}
-				threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
-			}
-		} else {
-			def num = 0
-			elements.each {
-				Map r = [:]
-				r.num = num
-				r.element = it
-				r.threadSubmit = null
-				threadList << r
-
-				if (!isInterrupt && (!isError || !abortOnError)) {
-					runCode.call(r)
-					num++
+				catch (Throwable e) {
+					setError(null, e)
+					threadActive.each { Map serv ->
+						(serv.threadSubmit as Future)?.cancel(true)
+					}
+					threadPool.shutdownNow()
+					throw e
 				}
 			}
+			threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
 		}
 
 		if (isError && abortOnError) {
 			def objects = []
-			def num = 0
+			num = 0
 			exceptions.each { obj, Throwable e ->
 				num++
 				if (debugElementOnError) {
@@ -346,20 +332,22 @@ class Executor {
 							element.call()
 						}
 						finally {
-							def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
-							try {
-								listDisposeThreadResource.each { Closure disposeCode ->
-									disposeCode.call(cloneObjects)
-								}
-							}
-							finally {
-								cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
-									objects?.each { ExecutorThread.CloneObject obj ->
-										obj.origObject = null
-										obj.cloneObject = null
+							if (Thread.currentThread() instanceof ExecutorThread) {
+								def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
+								try {
+									listDisposeThreadResource.each { Closure disposeCode ->
+										disposeCode.call(cloneObjects)
 									}
 								}
-								cloneObjects.clear()
+								finally {
+									cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
+										objects?.each { ExecutorThread.CloneObject obj ->
+											obj.origObject = null
+											obj.cloneObject = null
+										}
+									}
+									cloneObjects.clear()
+								}
 							}
 						}
 						synchronized (threadActive) {
@@ -394,55 +382,39 @@ class Executor {
 			}
 		}
 
-		if (allowThread && countThread > 1) {
-			def threadPool = Executors.newFixedThreadPool(countThread, new ExecutorFactory())
-			def num = 0
-			elements.each { n ->
-				Map r = Collections.synchronizedMap(new HashMap())
-				r.num = num
-				r.element = n
-				r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable)
-				threadList << r
+		def threadPool = Executors.newFixedThreadPool(countThread, new ExecutorFactory())
+		def num = 0
+		elements.each { n ->
+			Map r = Collections.synchronizedMap(new HashMap())
+			r.num = num
+			r.element = n
+			r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable)
+			threadList << r
 
-				num++
-			}
-			threadPool.shutdown()
+			num++
+		}
+		threadPool.shutdown()
 
-			while (!threadPool.isTerminated()) {
-				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
-					try {
-						mainCode.call()
-					}
-					catch (Throwable e) {
-						setError(null, e)
-						threadActive.each { Map serv ->
-							(serv.threadSubmit as Future)?.cancel(true)
-						}
-						threadPool.shutdownNow()
-						throw e
-					}
+		while (!threadPool.isTerminated()) {
+			if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
+				try {
+					mainCode.call()
 				}
-				threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
-			}
-		} else {
-			def num = 0
-			elements.each {
-				Map r = [:]
-				r.num = num
-				r.element = it
-				r.threadSubmit = null
-				threadList << r
-
-				if (!isInterrupt && (!isError || !abortOnError)) {
-					runCode.call(r)
-					num++
+				catch (Throwable e) {
+					setError(null, e)
+					threadActive.each { Map serv ->
+						(serv.threadSubmit as Future)?.cancel(true)
+					}
+					threadPool.shutdownNow()
+					throw e
 				}
 			}
+			threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
 		}
 
 		if (isError && abortOnError) {
 			def objects = []
-			def num = 0
+			num = 0
 			exceptions.each { obj, Throwable e ->
 				num++
 				if (debugElementOnError) {

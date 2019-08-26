@@ -20,14 +20,14 @@ class H2DriverTest extends JDBCDriverProto {
 		return new TDS()
 	}
 
-    public void testVersion() {
+    void testVersion() {
         def q = new QueryDataset(connection: con, query: 'SELECT H2Version() AS version')
         def r = q.rows()
         assertEquals(1, r.size())
         assertEquals('1.4.199', r[0].version)
     }
 
-    public void testSessionProperties() {
+    void testSessionProperties() {
         def c = new H2Connection(inMemory: true, sessionProperty: ['exclusive': 1])
         def q = new QueryDataset(connection: c, query: 'SELECT VALUE FROM INFORMATION_SCHEMA.SETTINGS WHERE NAME = \'EXCLUSIVE\'')
 
@@ -40,7 +40,7 @@ class H2DriverTest extends JDBCDriverProto {
 		c.connected = false
     }
 
-    public void testCaseName () {
+    void testCaseName () {
         con.executeCommand(command: 'CREATE SCHEMA test; CREATE TABLE test."$Test_Chars" (Id int NOT NULL, name varchar(50));')
         assertFalse((con.driver as JDBCDriver).retrieveObjects(schemaName: 'test', tableName: '$Test_Chars', null).isEmpty())
     }

@@ -18,7 +18,7 @@ class CSVDriverTest extends getl.test.GetlTest {
             new Field(name: 'ID', type: 'BIGINT', isKey: true),
             new Field(name: 'Name', type: 'STRING', isNull: false, length: 50),
             new Field(name: 'Date', type: 'DATE', isNull: false),
-            new Field(name: 'Time', type: 'TIME', isNull: false, format: 'HH-mm-ss'),
+            new Field(name: 'Time', type: 'TIME', isNull: false),
             new Field(name: 'DateTime', type: 'DATETIME', isNull: false),
             new Field(name: 'Double', type: 'DOUBLE', isNull: false),
             new Field(name: 'Numeric', type: 'NUMERIC', isNull: false, length: 12, precision: 2),
@@ -50,7 +50,7 @@ class CSVDriverTest extends getl.test.GetlTest {
 
     private void validReadWrite(CSVConnection con, String name) {
         con.autoSchema = true
-        def csv = new CSVDataset(connection: con, fileName: name, formatDateTime: DateUtils.defaultDateTimeMask)
+        def csv = new CSVDataset(connection: con, fileName: name)
         csv.field = fields
 
         def generate_row = { id ->
@@ -82,6 +82,7 @@ class CSVDriverTest extends getl.test.GetlTest {
             }
         }
         assertEquals(100, csv.writeRows)
+
         def csvCountRows = 0
         csv.eachRow { Map row ->
 			assertNotNull(row.id)
@@ -100,7 +101,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         assertEquals(200, csv.readRows)
         assertEquals(200, csvCountRows)
 
-		def csv_without_fields = new CSVDataset(connection: con, fileName: name, formatDateTime: DateUtils.defaultDateTimeMask)
+		def csv_without_fields = new CSVDataset(connection: con, fileName: name)
 		csvCountRows = 0
 		csv_without_fields.eachRow { Map row ->
 			assertNotNull(row.id)
@@ -122,6 +123,7 @@ class CSVDriverTest extends getl.test.GetlTest {
 		def newFieldNameList = Dataset.Fields2List(csv_without_fields.field)
 		assertEquals(newFieldNameList, origFieldNameList)
 
+        def csvFileName = csv.fullFileName()
 		new Flow().writeTo(dest: csv, dest_splitSize: 10000) { updater ->
             (1..100).each { id ->
                 updater(generate_row(id))
@@ -129,9 +131,10 @@ class CSVDriverTest extends getl.test.GetlTest {
         }
         assertEquals(2, csv.countWritePortions)
         assertEquals(100, csv.writeRows)
+        FileUtils.DeleteFile(csvFileName)
 
         con.autoSchema = true
-        def new_csv = new CSVDataset(connection: con, fileName: name, formatDateTime: DateUtils.defaultDateTimeMask, autoSchema: true)
+        def new_csv = new CSVDataset(connection: con, fileName: name, autoSchema: true)
         def id = 0
         new_csv.eachRow(isSplit: true) { row ->
             id++
@@ -160,7 +163,8 @@ class CSVDriverTest extends getl.test.GetlTest {
         assertEquals(2, new_csv.countReadPortions)
         assertEquals(100, new_csv.readRows)
 
-        def unwrite_csv = new CSVDataset(connection: con, fileName: "${name}_unwrite", formatDateTime: DateUtils.defaultDateTimeMask, schemaFileName: csv.fullFileSchemaName(), deleteOnEmpty: true)
+        def unwrite_csv = new CSVDataset(connection: con, fileName: "${name}_unwrite",
+                schemaFileName: csv.fullFileSchemaName(), deleteOnEmpty: true)
         unwrite_csv.loadDatasetMetadata()
         unwrite_csv.openWrite(isValid: true)
         def row = generate_row(1)
@@ -221,13 +225,18 @@ class CSVDriverTest extends getl.test.GetlTest {
     }
 
     void testWindowsCSV() {
-        def con = new CSVConnection(conParams + [escaped: false, header: true, isGzFile: false])
+        def con = new CSVConnection(conParams +
+                [escaped: false, header: true, isGzFile: false, locale: 'ru-RU', decimalSeparator: ',',
+                 fieldDelimiter: ';', formatDate: 'dd MMM yyyy',
+                 formatTime: 'HH:mm:ss.SSS', formatDateTime: 'dd MMM yyyy HH:mm:ss.SSS'])
         validReadWrite(con, 'windows')
 
-        con = new CSVConnection(conParams + [escaped: false, header: false, isGzFile: true])
+        con = new CSVConnection(conParams +
+                [escaped: false, header: false, isGzFile: true, formatDateTime: 'yyyy-MM-dd HH:mm:ss.SSS'])
         validReadWrite(con, 'windows-gz')
 
-        con = new CSVConnection(conParams + [escaped: true, header: true, isGzFile: false])
+        con = new CSVConnection(conParams +
+                [escaped: true, header: true, isGzFile: false, formatDateTime: 'yyyy-MM-dd HH:mm:ss.SSS'])
         validReadWrite(con, 'unix')
     }
 
@@ -257,7 +266,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         ds2.drop()
     }
 
-	public void testPerfomance() {
+    void testPerfomance() {
 		def perfomanceRows = 1000
 		def perfomanceCols = 1000
 

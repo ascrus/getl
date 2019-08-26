@@ -65,7 +65,7 @@ class H2Functions {
 	 * @param funcName
 	 * @param funcClass
 	 */
-	public static void RegisterFunction(H2Connection con, String funcName, String funcClass) {
+	static void RegisterFunction(H2Connection con, String funcName, String funcClass) {
 		def sql = "CREATE ALIAS IF NOT EXISTS $funcName FOR \"$funcClass\";"
 		con.executeCommand(command: sql)
 	} 
@@ -74,13 +74,13 @@ class H2Functions {
 	 * Init connection environment
 	 * @param con
 	 */
-	public static void InitConnection(H2Connection con) { }
+	static void InitConnection(H2Connection con) { }
 	
 	/**
 	 * Register function from list
 	 * @param con
 	 */
-	public static void RegisterFunctions (H2Connection con) {
+	static void RegisterFunctions (H2Connection con) {
 		InitConnection(con)
 		FUNCTIONS.each { funcName, funcClass ->
 			RegisterFunction(con, funcName, funcClass)
@@ -92,7 +92,7 @@ class H2Functions {
 	 * @param con
 	 * @param funcName
 	 */
-	public static void UnregisterFunction (H2Connection con, String funcName) {
+	static void UnregisterFunction (H2Connection con, String funcName) {
 		def sql = "DROP ALIAS IF EXISTS $funcName;"
 		con.executeCommand(command: sql)
 	}
@@ -101,7 +101,7 @@ class H2Functions {
 	 * Unregister functions from list
 	 * @param con
 	 */
-	public static void UnregisterFunctions (H2Connection con) {
+	static void UnregisterFunctions (H2Connection con) {
 		FUNCTIONS.each { funcName, funcClass ->
 			UnregisterFunction(con, funcName)
 		}
@@ -116,7 +116,7 @@ class H2Functions {
 	 * @param escaped
 	 * @return
 	 */
-	public static long CopyToCSV(java.sql.Connection sqlConn, String query, String fileName, String fieldDelimiter, Boolean escaped) {
+	static long CopyToCSV(java.sql.Connection sqlConn, String query, String fileName, String fieldDelimiter, Boolean escaped) {
 		H2Connection con = new H2Connection(javaConnection: sqlConn)
 		QueryDataset ds = new QueryDataset(connection: con, query: query)
 		con.connected = true
@@ -152,7 +152,7 @@ class H2Functions {
 	 * @param batchSize
 	 * @return
 	 */
-	public static long CopyToJDBC(java.sql.Connection sqlConn, String query, String driverClass, String connectURL, 
+	static long CopyToJDBC(java.sql.Connection sqlConn, String query, String driverClass, String connectURL,
 									String login, String password, String dbName, String schemaName, String tableName, Long batchSize) {
 		H2Connection conSource = new H2Connection(javaConnection: sqlConn)
 		QueryDataset ds = new QueryDataset(connection: conSource, query: query)
@@ -188,7 +188,7 @@ class H2Functions {
 	 * @param batchSize
 	 * @return
 	 */
-	public static long CopyFromJDBC(java.sql.Connection sqlConn, String query, String driverClass, String connectURL,
+	static long CopyFromJDBC(java.sql.Connection sqlConn, String query, String driverClass, String connectURL,
 										String login, String password, String schemaName, String tableName, Long batchSize) {
 		JDBCConnection conSource = JDBCConnection.CreateConnection(connection: driverClass, connectURL: connectURL, login: login, password: password) as JDBCConnection
 		conSource.connected = true
@@ -219,7 +219,7 @@ class H2Functions {
 	 * @param script
 	 * @return
 	 */
-	public static String RunGroovyScript(java.sql.Connection sqlConn, String script) {
+	static String RunGroovyScript(java.sql.Connection sqlConn, String script) {
 		H2Connection con = new H2Connection(javaConnection: sqlConn)
 		con.connected = true
 		
@@ -238,7 +238,7 @@ class H2Functions {
 	 * @param params
 	 * @return
 	 */
-	public static def SelectFunction (H2Connection con, String funcName, Map params) {
+	static def SelectFunction (H2Connection con, String funcName, Map params) {
 		con.connected = true
 		
 		def paramName = []

@@ -58,7 +58,7 @@ class H2Driver extends JDBCDriver {
 	}
 
 	@Override
-	public List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.LOCAL_TEMPORARY, Driver.Support.MEMORY,
 				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX,
@@ -66,14 +66,14 @@ class H2Driver extends JDBCDriver {
 	}
 
 	@Override
-	public List<Driver.Operation> operations() {
+	List<Driver.Operation> operations() {
 		return super.operations() +
 				[Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
 				 Driver.Operation.BULKLOAD, Driver.Operation.MERGE]
 	}
 
 	@Override
-	public String defaultConnectURL() {
+	String defaultConnectURL() {
 		def con = connection as H2Connection
 		def url
 		if (con.inMemory) {
@@ -97,7 +97,7 @@ class H2Driver extends JDBCDriver {
 	}
 
 	@Override
-	public void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
+	void bulkLoadFile(CSVDataset source, Dataset dest, Map params, Closure prepareCode) {
 		if (params.compressed != null) throw new ExceptionGETL("H2 bulk load dont support compression files")
 
 		params = bulkLoadFilePrepare(source, dest as JDBCDataset, params, prepareCode)
@@ -225,7 +225,7 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 	}
 
 	@Override
-	public void prepareField (Field field) {
+	void prepareField (Field field) {
 		super.prepareField(field)
 
 		if (field.typeName != null) {
@@ -254,7 +254,7 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 	}
 
     @Override
-    public List<Object> retrieveObjects (Map params, Closure filter) {
+	List<Object> retrieveObjects (Map params, Closure filter) {
         String catalog = prepareObjectName(params."dbName" as String)?:defaultDBName
         String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
         String tableNamePattern = prepareObjectName(params."tableName" as String)

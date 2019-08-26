@@ -878,6 +878,7 @@ class FileUtils {
 				if (s.length() == 0) return
 				if (s[s.length() - 1] == '"') {
 					res << tmp
+					//noinspection GrReassignedInClosureLocalVar
 					tmp = null
 				}
 			}
@@ -899,5 +900,40 @@ class FileUtils {
 		path = new File(path).absolutePath
 		findPath = ConvertToDefaultOSPath(findPath)
 		return StringUtils.ExtractParentFromChild(path, findPath, Config.isWindows())
+	}
+
+	/**
+     * Get file from classpath or resources folder
+     * @param fileName file name in resource catalog
+     * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
+     */
+	static File FileFromResources(String fileName, def otherPath = null) {
+		ClassLoader classLoader = ClassLoader.systemClassLoader
+
+		URL resource = classLoader.getResource(fileName)
+		File res
+		if (resource == null) {
+            if (otherPath != null) {
+                if (otherPath instanceof List) {
+                    (otherPath as List<String>).each { String path ->
+                        def file = new File("$path/$fileName")
+                        if (file.exists()) {
+                            res = file
+                            directive = Closure.DONE
+                        }
+                    }
+                } else {
+                    def file = new File("$otherPath/$fileName")
+                    if (file.exists()) res = file
+                }
+            }
+			if (res == null) throw new ExceptionGETL("Resource file \"$fileName\" is not found!")
+		}
+		else {
+			res = new File(resource.getFile())
+            if (!res.exists()) throw new ExceptionGETL("Resource file \"$fileName\" is not found!")
+		}
+
+		return res
 	}
 }

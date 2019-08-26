@@ -86,6 +86,7 @@ class Getl extends Script {
 
         _params.repConnections = new ConcurrentHashMap<String, Map<String, Connection>>()
         _params.repDatasets = new ConcurrentHashMap<String, Map<String, Dataset>>()
+        _params.repHistoryPoints = new ConcurrentHashMap<String, SavePointManager>()
         _params.repFileManagers = new ConcurrentHashMap<String, Map<String, Manager>>()
 
         _params.defaultJDBCConnection = new ConcurrentHashMap<String, Map<String, JDBCConnection>>()
@@ -99,10 +100,16 @@ class Getl extends Script {
     @Override
     Object run() { return this }
 
-    /** Run GETL lang closure */
-    static def Dsl(@DelegatesTo(Getl) Closure cl) {
+    /** Run DSL script */
+    static Getl Dsl(@DelegatesTo(Getl) Closure cl) {
         def parent = new Getl()
         parent.runClosure(parent, cl)
+        return parent
+    }
+
+    /** Run DSL script */
+    void runDsl(@DelegatesTo(Getl) Closure cl) {
+        runClosure(this, cl)
     }
 
     Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
@@ -588,6 +595,71 @@ class Getl extends Script {
         registerDataset(csvTemp, name, true)
     }
 
+    /** History points repository */
+    protected Map<String, SavePointManager> getHistoryPoints() {
+        _params.repHistoryPoints as Map<String, SavePointManager>
+    }
+
+    /** Return list of repository history points */
+    @Synchronized
+    List<String> listHistoryPoint(Closure<Boolean> cl = null) {
+        def res = [] as List<String>
+        historyPoints.each { String name, SavePointManager point ->
+            if (cl == null || BoolUtils.IsValue(cl.call(name, point))) res << name
+        }
+
+        return res
+    }
+
+    /** Check history point registration in repository */
+    @Synchronized
+    protected Boolean isRegisteredHistoryPoint(String name) {
+        return historyPoints.containsKey(name)
+    }
+
+    /** Register history point in repository */
+    @Synchronized
+    protected SavePointManager registerHistoryPoint(String name, Boolean registration = false) {
+        SavePointManager obj
+        if (name == null) {
+            obj = new SavePointManager()
+            if (lastJdbcDefaultConnection != null) obj.connection = lastJdbcDefaultConnection
+            if (obj.connection != null && langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+                def thread = Thread.currentThread() as ExecutorThread
+                obj.connection = thread.registerCloneObject('connections', obj.connection,
+                        { (it as Connection).cloneConnection() }) as Connection
+            }
+        }
+        else {
+            def repName = repObjectName(name)
+            obj = historyPoints.get(repName)
+            if (obj == null) {
+                if ((!BoolUtils.IsValue(registration) && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
+                    throw new ExceptionGETL("History point \"$name\" is not exist!")
+
+                obj = new SavePointManager()
+                if (lastJdbcDefaultConnection != null) obj.connection = lastJdbcDefaultConnection
+                historyPoints.put(repName, obj)
+            }
+
+            if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+                def thread = Thread.currentThread() as ExecutorThread
+                if (obj.connection != null) {
+                    def cloneConnection = thread.registerCloneObject('connections', obj.connection,
+                            { (it as Connection).cloneConnection() }) as JDBCConnection
+                    obj = thread.registerCloneObject('historypoints', obj,
+                            { (it as SavePointManager).cloneSavePointManager(cloneConnection) }) as SavePointManager
+                }
+                else {
+                    obj = thread.registerCloneObject('historypoints', obj,
+                            { (it as Dataset).cloneDataset() }) as SavePointManager
+                }
+            }
+        }
+
+        return obj
+    }
+
     /** File managers repository */
     protected Map<String, Map<String, Manager>> getFileManagers() {
         _params.repFileManagers as Map<String, Map<String, Manager>>
@@ -809,7 +881,7 @@ class Getl extends Script {
     }
 
     /** JDBC connection */
-    JDBCConnection jdbcConnection(String name, String connectionClassName, Boolean registration = false,
+    protected JDBCConnection jdbcConnection(String name, String connectionClassName, Boolean registration = false,
                                   @DelegatesTo(JDBCConnection) Closure cl = null) {
         def parent = registerConnection(connectionClassName?:JDBCCONNECTION, name, registration) as JDBCConnection
         runClosure(parent, cl)
@@ -818,23 +890,23 @@ class Getl extends Script {
     }
 
     /** JDBC connection */
-    JDBCConnection jdbcConnection(String name, Boolean registration,
+    protected JDBCConnection jdbcConnection(String name, Boolean registration,
                                   @DelegatesTo(JDBCConnection) Closure cl = null) {
         jdbcConnection(name, null, registration, cl)
     }
 
     /** JDBC connection */
-    JDBCConnection jdbcConnection(String name, @DelegatesTo(JDBCConnection) Closure cl = null) {
+    protected JDBCConnection jdbcConnection(String name, @DelegatesTo(JDBCConnection) Closure cl = null) {
         jdbcConnection(name, null, false, cl)
     }
 
     /** JDBC connection */
-    JDBCConnection jdbcConnection(@DelegatesTo(JDBCConnection) Closure cl) {
+    protected JDBCConnection jdbcConnection(@DelegatesTo(JDBCConnection) Closure cl) {
         jdbcConnection(null, null, false, cl)
     }
 
     /** JDBC table */
-    TableDataset table(String name, Boolean registration, @DelegatesTo(TableDataset) Closure cl = null) {
+    TableDataset table(String name, Boolean registration, @DelegatesTo(TableDataset) Closure cl) {
         def isRegistered = isRegisteredDataset(TABLEDATASET, name)
         def parent = registerDataset(TABLEDATASET, name, registration) as TableDataset
         runClosure(parent, cl)
@@ -881,7 +953,7 @@ class Getl extends Script {
     }
 
     /** H2 connection */
-    H2Connection h2Connection(String name, Boolean registration, @DelegatesTo(H2Connection) Closure cl = null) {
+    H2Connection h2Connection(String name, Boolean registration, @DelegatesTo(H2Connection) Closure cl) {
         jdbcConnection(name, H2CONNECTION, registration, cl) as H2Connection
     }
 
@@ -911,7 +983,7 @@ class Getl extends Script {
     }
 
     /** H2 table */
-    H2Table h2Table(String name, Boolean registration, @DelegatesTo(H2Table) Closure cl = null) {
+    H2Table h2Table(String name, Boolean registration, @DelegatesTo(H2Table) Closure cl) {
         def isRegistered = isRegisteredDataset(H2TABLE, name)
         def parent = registerDataset(H2TABLE, name, registration) as H2Table
         runClosure(parent, cl)
@@ -941,7 +1013,7 @@ class Getl extends Script {
     }
 
     /** DB2 connection */
-    DB2Connection db2Connection(String name, Boolean registration, @DelegatesTo(DB2Connection) Closure cl = null) {
+    DB2Connection db2Connection(String name, Boolean registration, @DelegatesTo(DB2Connection) Closure cl) {
         jdbcConnection(name, DB2CONNECTION, registration, cl) as DB2Connection
     }
 
@@ -966,7 +1038,7 @@ class Getl extends Script {
     }
 
     /** DB2 database table */
-    DB2Table db2Table(String name, Boolean registration, @DelegatesTo(DB2Table) Closure cl = null) {
+    DB2Table db2Table(String name, Boolean registration, @DelegatesTo(DB2Table) Closure cl) {
         def isRegistered = isRegisteredDataset(DB2TABLE, name)
         def parent = registerDataset(DB2TABLE, name, registration) as DB2Table
         runClosure(parent, cl)
@@ -986,7 +1058,7 @@ class Getl extends Script {
     }
 
     /** Hive connection */
-    HiveConnection hiveConnection(String name, Boolean registration, @DelegatesTo(HiveConnection) Closure cl = null) {
+    HiveConnection hiveConnection(String name, Boolean registration, @DelegatesTo(HiveConnection) Closure cl) {
         jdbcConnection(name, HIVECONNECTION, registration, cl) as HiveConnection
     }
 
@@ -1011,7 +1083,7 @@ class Getl extends Script {
     }
 
     /** Hive table */
-    HiveTable hiveTable(String name, Boolean registration, @DelegatesTo(HiveTable) Closure cl = null) {
+    HiveTable hiveTable(String name, Boolean registration, @DelegatesTo(HiveTable) Closure cl) {
         def isRegistered = isRegisteredDataset(HIVETABLE, name)
         def parent = registerDataset(HIVETABLE, name, registration) as HiveTable
         runClosure(parent, cl)
@@ -1041,7 +1113,7 @@ class Getl extends Script {
     }
 
     /** MSSQL connection */
-    MSSQLConnection mssqlConnection(String name, Boolean registration, @DelegatesTo(MSSQLConnection) Closure cl = null) {
+    MSSQLConnection mssqlConnection(String name, Boolean registration, @DelegatesTo(MSSQLConnection) Closure cl) {
         jdbcConnection(name, MSSQLCONNECTION, registration, cl) as MSSQLConnection
     }
 
@@ -1066,7 +1138,7 @@ class Getl extends Script {
     }
 
     /** MSSQL database table */
-    MSSQLTable mssqlTable(String name, Boolean registration, @DelegatesTo(MSSQLTable) Closure cl = null) {
+    MSSQLTable mssqlTable(String name, Boolean registration, @DelegatesTo(MSSQLTable) Closure cl) {
         def isRegistered = isRegisteredDataset(MSSQLTABLE, name)
         def parent = registerDataset(MSSQLTABLE, name, registration) as MSSQLTable
         runClosure(parent, cl)
@@ -1086,7 +1158,7 @@ class Getl extends Script {
     }
 
     /** MySQL connection */
-    MySQLConnection mysqlConnection(String name, Boolean registration, @DelegatesTo(MySQLConnection) Closure cl = null) {
+    MySQLConnection mysqlConnection(String name, Boolean registration, @DelegatesTo(MySQLConnection) Closure cl) {
         jdbcConnection(name, MYSQLCONNECTION, registration, cl) as MySQLConnection
     }
 
@@ -1111,7 +1183,7 @@ class Getl extends Script {
     }
 
     /** MySQL database table */
-    MySQLTable mysqlTable(String name, Boolean registration, @DelegatesTo(MySQLTable) Closure cl = null) {
+    MySQLTable mysqlTable(String name, Boolean registration, @DelegatesTo(MySQLTable) Closure cl) {
         def isRegistered = isRegisteredDataset(MYSQLTABLE, name)
         def parent = registerDataset(MYSQLTABLE, name, registration) as MySQLTable
         runClosure(parent, cl)
@@ -1131,7 +1203,7 @@ class Getl extends Script {
     }
 
     /** Oracle connection */
-    OracleConnection oracleConnection(String name, Boolean registration, @DelegatesTo(OracleConnection) Closure cl = null) {
+    OracleConnection oracleConnection(String name, Boolean registration, @DelegatesTo(OracleConnection) Closure cl) {
         jdbcConnection(name, ORACLECONNECTION, registration, cl) as OracleConnection
     }
 
@@ -1156,7 +1228,7 @@ class Getl extends Script {
     }
 
     /** Oracle table */
-    OracleTable oracleTable(String name, Boolean registration, @DelegatesTo(OracleTable) Closure cl = null) {
+    OracleTable oracleTable(String name, Boolean registration, @DelegatesTo(OracleTable) Closure cl) {
         def isRegistered = isRegisteredDataset(ORACLETABLE, name)
         def parent = registerDataset(ORACLETABLE, name, registration) as OracleTable
         runClosure(parent, cl)
@@ -1177,7 +1249,7 @@ class Getl extends Script {
 
     /** PostgreSQL connection */
     PostgreSQLConnection postgresqlConnection(String name, Boolean registration,
-                                              @DelegatesTo(PostgreSQLConnection) Closure cl = null) {
+                                              @DelegatesTo(PostgreSQLConnection) Closure cl) {
         jdbcConnection(name, POSTGRESQLCONNECTION, registration, cl) as PostgreSQLConnection
     }
 
@@ -1202,8 +1274,7 @@ class Getl extends Script {
     }
 
     /** MySQL database table */
-    PostgreSQLTable postgresqlTable(String name, Boolean registration,
-                                    @DelegatesTo(PostgreSQLTable) Closure cl = null) {
+    PostgreSQLTable postgresqlTable(String name, Boolean registration, @DelegatesTo(PostgreSQLTable) Closure cl) {
         def isRegistered = isRegisteredDataset(POSTGRESQLTABLE, name)
         def parent = registerDataset(POSTGRESQLTABLE, name, registration) as PostgreSQLTable
         runClosure(parent, cl)
@@ -1225,7 +1296,7 @@ class Getl extends Script {
 
     /** Vertica connection */
     VerticaConnection verticaConnection(String name, Boolean registration,
-                                        @DelegatesTo(VerticaConnection) Closure cl = null) {
+                                        @DelegatesTo(VerticaConnection) Closure cl) {
         jdbcConnection(name, VERTICACONNECTION, registration, cl) as VerticaConnection
     }
 
@@ -1250,7 +1321,7 @@ class Getl extends Script {
     }
 
     /** Vertica table */
-    VerticaTable verticaTable(String name, Boolean registration, @DelegatesTo(VerticaTable) Closure cl = null) {
+    VerticaTable verticaTable(String name, Boolean registration, @DelegatesTo(VerticaTable) Closure cl) {
         def isRegistered = isRegisteredDataset(VERTICATABLE, name)
         def parent = registerDataset(VERTICATABLE, name, registration) as VerticaTable
         runClosure(parent, cl)
@@ -1281,7 +1352,7 @@ class Getl extends Script {
 
     /** NetSuite connection */
     NetsuiteConnection netsuiteConnection(String name, Boolean registration,
-                                          @DelegatesTo(NetsuiteConnection) Closure cl = null) {
+                                          @DelegatesTo(NetsuiteConnection) Closure cl) {
         jdbcConnection(name, NETSUITECONNECTION, registration, cl) as NetsuiteConnection
     }
 
@@ -1306,7 +1377,7 @@ class Getl extends Script {
     }
 
     /** Netsuite table */
-    NetsuiteTable netsuiteTable(String name, Boolean registration, @DelegatesTo(NetsuiteTable) Closure cl = null) {
+    NetsuiteTable netsuiteTable(String name, Boolean registration, @DelegatesTo(NetsuiteTable) Closure cl) {
         def isRegistered = isRegisteredDataset(NETSUITETABLE, name)
         def parent = registerDataset(NETSUITETABLE, name, registration) as NetsuiteTable
         runClosure(parent, cl)
@@ -1326,7 +1397,7 @@ class Getl extends Script {
     }
 
     /** Temporary database connection */
-    TDS embeddedConnection(String name, Boolean registration, @DelegatesTo(TDS) Closure cl = null) {
+    TDS embeddedConnection(String name, Boolean registration, @DelegatesTo(TDS) Closure cl) {
         def parent = registerConnection(EMBEDDEDCONNECTION, name, registration) as TDS
         if (parent.sqlHistoryFile == null) parent.sqlHistoryFile = langOpts.tempDBSQLHistoryFile
         runClosure(parent, cl)
@@ -1350,7 +1421,7 @@ class Getl extends Script {
     }
 
     /** Table with temporary database */
-    TDSTable embeddedTable(String name, Boolean registration, @DelegatesTo(TDSTable) Closure cl = null) {
+    TDSTable embeddedTable(String name, Boolean registration, @DelegatesTo(TDSTable) Closure cl) {
         def isRegistered = isRegisteredDataset(EMBEDDEDTABLE, name)
         def parent = registerDataset(EMBEDDEDTABLE, name, registration) as TDSTable
         if ((parent.connection as TDS).sqlHistoryFile == null)
@@ -1409,7 +1480,8 @@ class Getl extends Script {
     }
 
     /** JDBC query dataset */
-    QueryDataset query(String name, JDBCConnection connection, Boolean registration, @DelegatesTo(QueryDataset) Closure cl = null) {
+    QueryDataset query(String name, JDBCConnection connection, Boolean registration,
+                       @DelegatesTo(QueryDataset) Closure cl) {
         def isRegistered = isRegisteredDataset(QUERYDATASET, name)
         def parent = registerDataset(connection, QUERYDATASET, name, registration) as QueryDataset
         runClosure(parent, cl)
@@ -1419,7 +1491,7 @@ class Getl extends Script {
     }
 
     /** JDBC query dataset */
-    QueryDataset query(String name, Boolean registration, @DelegatesTo(QueryDataset) Closure cl = null) {
+    QueryDataset query(String name, Boolean registration, @DelegatesTo(QueryDataset) Closure cl) {
         query(name, null, registration, cl)
     }
 
@@ -1465,7 +1537,7 @@ class Getl extends Script {
     }
 
     /** CSV connection */
-    CSVConnection csvConnection(String name, Boolean registration, @DelegatesTo(CSVConnection) Closure cl = null) {
+    CSVConnection csvConnection(String name, Boolean registration, @DelegatesTo(CSVConnection) Closure cl) {
         def parent = registerConnection(CSVCONNECTION, name, registration) as CSVConnection
         runClosure(parent, cl)
 
@@ -1493,7 +1565,7 @@ class Getl extends Script {
     }
 
     /** CSV delimiter file */
-    CSVDataset csv(String name, Boolean registration, @DelegatesTo(CSVDataset) Closure cl = null) {
+    CSVDataset csv(String name, Boolean registration, @DelegatesTo(CSVDataset) Closure cl) {
         def parent = registerDataset(CSVDATASET, name, registration) as CSVDataset
         if (parent.connection == null) parent.connection = new CSVConnection()
         runClosure(parent, cl)
@@ -1512,7 +1584,8 @@ class Getl extends Script {
     }
 
     /** CSV file with exists dataset */
-    CSVDataset csvWithDataset(String name, Dataset sourceDataset, Boolean registration, @DelegatesTo(CSVDataset) Closure cl = null) {
+    CSVDataset csvWithDataset(String name, Dataset sourceDataset, Boolean registration,
+                              @DelegatesTo(CSVDataset) Closure cl) {
         if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
         def parent = registerDataset(CSVDATASET, name, registration) as CSVDataset
         parent.field = sourceDataset.field
@@ -1533,8 +1606,7 @@ class Getl extends Script {
     }
 
     /** Excel connection */
-    ExcelConnection excelConnection(String name, Boolean registration,
-                                    @DelegatesTo(ExcelConnection) Closure cl = null) {
+    ExcelConnection excelConnection(String name, Boolean registration, @DelegatesTo(ExcelConnection) Closure cl) {
         def parent = registerConnection(EXCELCONNECTION, name, registration) as ExcelConnection
         runClosure(parent, cl)
 
@@ -1562,7 +1634,7 @@ class Getl extends Script {
     }
 
     /** Excel file */
-    ExcelDataset excel(String name, Boolean registration, @DelegatesTo(ExcelDataset) Closure cl = null) {
+    ExcelDataset excel(String name, Boolean registration, @DelegatesTo(ExcelDataset) Closure cl) {
         def parent = registerDataset(EXCELDATASET, name, registration) as ExcelDataset
         if (parent.connection == null) parent.connection = new ExcelConnection()
         runClosure(parent, cl)
@@ -1581,7 +1653,7 @@ class Getl extends Script {
     }
 
     /** JSON connection */
-    JSONConnection jsonConnection(String name, Boolean registration, @DelegatesTo(JSONConnection) Closure cl = null) {
+    JSONConnection jsonConnection(String name, Boolean registration, @DelegatesTo(JSONConnection) Closure cl) {
         def parent = registerConnection(JSONCONNECTION, name, registration) as JSONConnection
         runClosure(parent, cl)
 
@@ -1609,7 +1681,7 @@ class Getl extends Script {
     }
 
     /** JSON file */
-    JSONDataset json(String name, Boolean registration, @DelegatesTo(JSONDataset) Closure cl = null) {
+    JSONDataset json(String name, Boolean registration, @DelegatesTo(JSONDataset) Closure cl) {
         def parent = registerDataset(JSONDATASET, name, registration) as JSONDataset
         if (parent.connection == null) parent.connection = new JSONConnection()
         runClosure(parent, cl)
@@ -1628,7 +1700,7 @@ class Getl extends Script {
     }
 
     /** XML connection */
-    XMLConnection xmlConnection(String name, Boolean registration, @DelegatesTo(XMLConnection) Closure cl = null) {
+    XMLConnection xmlConnection(String name, Boolean registration, @DelegatesTo(XMLConnection) Closure cl) {
         def parent = registerConnection(XMLCONNECTION, name, registration) as XMLConnection
         runClosure(parent, cl)
 
@@ -1656,7 +1728,7 @@ class Getl extends Script {
     }
 
     /** XML file */
-    XMLDataset xml(String name, Boolean registration, @DelegatesTo(XMLDataset) Closure cl = null) {
+    XMLDataset xml(String name, Boolean registration, @DelegatesTo(XMLDataset) Closure cl) {
         def parent = registerDataset(XMLDATASET, name, registration) as XMLDataset
         if (parent.connection == null) parent.connection = new XMLConnection()
         runClosure(parent, cl)
@@ -1676,7 +1748,7 @@ class Getl extends Script {
 
     /** SalesForce connection */
     SalesForceConnection salesforceConnection(String name, Boolean registration,
-                                              @DelegatesTo(SalesForceConnection) Closure cl = null) {
+                                              @DelegatesTo(SalesForceConnection) Closure cl) {
         def parent = registerConnection(SALESFORCECONNECTION, name, registration) as SalesForceConnection
         runClosure(parent, cl)
 
@@ -1704,7 +1776,7 @@ class Getl extends Script {
     }
 
     /** SalesForce table */
-    SalesForceDataset salesforce(String name, Boolean registration, @DelegatesTo(SalesForceDataset) Closure cl = null) {
+    SalesForceDataset salesforce(String name, Boolean registration, @DelegatesTo(SalesForceDataset) Closure cl) {
         def parent = registerDataset(SALESFORCEDATASET, name, registration) as SalesForceDataset
         runClosure(parent, cl)
 
@@ -1722,7 +1794,7 @@ class Getl extends Script {
     }
 
     /** Xero connection */
-    XeroConnection xeroConnection(String name, Boolean registration, @DelegatesTo(XeroConnection) Closure cl = null) {
+    XeroConnection xeroConnection(String name, Boolean registration, @DelegatesTo(XeroConnection) Closure cl) {
         def parent = registerConnection(XEROCONNECTION, name, registration) as XeroConnection
         runClosure(parent, cl)
 
@@ -1750,7 +1822,7 @@ class Getl extends Script {
     }
 
     /** Xero table */
-    XeroDataset xero(String name, Boolean registration, @DelegatesTo(XeroDataset) Closure cl = null) {
+    XeroDataset xero(String name, Boolean registration, @DelegatesTo(XeroDataset) Closure cl) {
         def parent = registerDataset(XERODATASET, name, registration) as XeroDataset
         runClosure(parent, cl)
 
@@ -1768,7 +1840,7 @@ class Getl extends Script {
     }
 
     /** Temporary CSV file connection */
-    TFS csvTempConnection(String name, Boolean registration, @DelegatesTo(TFS) Closure cl = null) {
+    TFS csvTempConnection(String name, Boolean registration, @DelegatesTo(TFS) Closure cl) {
         def parent = registerConnection(CSVTEMPDATASET, name, registration)
         runClosure(parent, cl)
 
@@ -1796,7 +1868,7 @@ class Getl extends Script {
     }
 
     /** Temporary CSV file */
-    TFSDataset csvTemp(String name, Boolean registration, @DelegatesTo(TFSDataset) Closure cl = null) {
+    TFSDataset csvTemp(String name, Boolean registration, @DelegatesTo(TFSDataset) Closure cl) {
         TFSDataset parent = registerDataset(CSVTEMPDATASET, name, registration) as TFSDataset
         runClosure(parent, cl)
 
@@ -1934,7 +2006,7 @@ class Getl extends Script {
     }
 
     /** Process local file system */
-    FileManager files(String name, Boolean registration, @DelegatesTo(FileManager) Closure cl = null) {
+    FileManager files(String name, Boolean registration, @DelegatesTo(FileManager) Closure cl) {
         def parent = registerFileManager(FILEMANAGER, name, registration) as FileManager
         if (parent.rootPath == null) parent.rootPath = new File('.').absolutePath
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
@@ -1963,7 +2035,7 @@ class Getl extends Script {
     }
 
     /** Process ftp file system */
-    FTPManager ftp(String name, Boolean registration, @DelegatesTo(FTPManager) Closure cl = null) {
+    FTPManager ftp(String name, Boolean registration, @DelegatesTo(FTPManager) Closure cl) {
         def parent = registerFileManager(FTPMANAGER, name, registration) as FTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
@@ -1991,7 +2063,7 @@ class Getl extends Script {
     }
 
     /** Process sftp file system */
-    SFTPManager sftp(String name, Boolean registration, @DelegatesTo(SFTPManager) Closure cl = null) {
+    SFTPManager sftp(String name, Boolean registration, @DelegatesTo(SFTPManager) Closure cl) {
         def parent = registerFileManager(SFTPMANAGER, name, registration) as SFTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
@@ -2019,7 +2091,7 @@ class Getl extends Script {
     }
 
     /** Process sftp file system */
-    HDFSManager hdfs(String name, Boolean registration, @DelegatesTo(HDFSManager) Closure cl = null) {
+    HDFSManager hdfs(String name, Boolean registration, @DelegatesTo(HDFSManager) Closure cl) {
         def parent = registerFileManager(HDFSMANAGER, name, registration) as HDFSManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
@@ -2101,5 +2173,23 @@ class Getl extends Script {
     /** File path parser */
     Path filePath(String mask) {
         return new Path(mask: mask)
+    }
+
+    /** Incremenal history point manager */
+    SavePointManager historypoint(String name, Boolean registration, @DelegatesTo(SavePointManager) Closure cl) {
+        def parent = registerHistoryPoint(name, registration) as SavePointManager
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Incremenal history point manager */
+    SavePointManager historypoint(String name, @DelegatesTo(SavePointManager) Closure cl = null) {
+        historypoint(name, false, cl)
+    }
+
+    /** Incremenal history point manager */
+    SavePointManager historypoint(@DelegatesTo(SavePointManager) Closure cl) {
+        historypoint(null, false, cl)
     }
 }

@@ -9,7 +9,7 @@ class ListUtilsTest extends getl.test.GetlTest {
 //        println "$str: $parseList"
     }
 
-    public void testList2StrArray() {
+    void testList2StrArray() {
         list2str([])
         list2str([1])
         list2str([1,2])

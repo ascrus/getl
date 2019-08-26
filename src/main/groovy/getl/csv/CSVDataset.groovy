@@ -41,157 +41,168 @@ import getl.utils.*
  */
 @InheritConstructors
 class CSVDataset extends FileDataset {
-	public static enum QuoteMode {ALWAYS, NORMAL, COLUMN}
+	static enum QuoteMode {ALWAYS, NORMAL, COLUMN}
 
 	/**
 	 * Quote delimiter string	
 	 */
-	public String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, csvConnection()?.quoteStr, '"']) }
+	String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, csvConnection()?.quoteStr, '"']) }
 	/**
 	 * Quote delimiter string
 	 */
-	public void setQuoteStr (String value) { params.quoteStr = value }
+	void setQuoteStr (String value) { params.quoteStr = value }
 	
 	/**
 	 * Field delimiter
 	 */
-	public String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, csvConnection()?.fieldDelimiter, ',']) }
+	String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, csvConnection()?.fieldDelimiter, ',']) }
 	/**
 	 * Field delimiter
 	 */
-	public void setFieldDelimiter (String value) { params.fieldDelimiter = value }
+	void setFieldDelimiter (String value) { params.fieldDelimiter = value }
 	
 	/**
 	 * Row delimiter
 	 */
-	public String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, csvConnection()?.rowDelimiter,'\n']) }
+	String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, csvConnection()?.rowDelimiter,'\n']) }
 	/**
 	 * Row delimiter
 	 */
-	public void setRowDelimiter (String value) { params.rowDelimiter = value }
+	void setRowDelimiter (String value) { params.rowDelimiter = value }
 	
 	/**
 	 * File has header of fields name
 	 */
-	public boolean getHeader () { BoolUtils.IsValue([params.header, csvConnection()?.header], true) }
+	boolean getHeader () { BoolUtils.IsValue([params.header, csvConnection()?.header], true) }
 	/**
 	 * File has header of fields name
 	 */
-	public void setHeader (boolean value) { params.header = value }
+	void setHeader (boolean value) { params.header = value }
 	
 	/**
 	 * Ignore header field name
 	 */
-	public boolean getIgnoreHeader () { BoolUtils.IsValue([params.ignoreHeader, csvConnection()?.ignoreHeader], true) }
+	boolean getIgnoreHeader () { BoolUtils.IsValue([params.ignoreHeader, csvConnection()?.ignoreHeader], true) }
 	/**
 	 * Ignore header field name
 	 */
-	public void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
+	void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
 	
 	/**
 	 * Required format values for output to file 
 	 */
-	public boolean getFormatOutput () { BoolUtils.IsValue([params.formatOutput, csvConnection()?.formatOutput], true) }
+	boolean getFormatOutput () { BoolUtils.IsValue([params.formatOutput, csvConnection()?.formatOutput], true) }
 	/**
 	 * Required format values for output to file
 	 */
-	public void setFormatOutput (boolean value) { params.formatOutput = value }
+	void setFormatOutput (boolean value) { params.formatOutput = value }
 	
 	/**
 	 * Convert NULL to value
 	 */
-	public String getNullAsValue () { ListUtils.NotNullValue([params.nullAsValue, csvConnection()?.nullAsValue]) }
+	String getNullAsValue () { ListUtils.NotNullValue([params.nullAsValue, csvConnection()?.nullAsValue]) }
 	/**
 	 * Convert NULL to value
 	 */
-	public void setNullAsValue (String value) { params.nullAsValue = value }
+	void setNullAsValue (String value) { params.nullAsValue = value }
 
 	/**
 	 * Required convert string to escape value 	
 	 */
-	public boolean getEscaped () { BoolUtils.IsValue([params.escaped, csvConnection()?.escaped], false) }
+	boolean getEscaped () { BoolUtils.IsValue([params.escaped, csvConnection()?.escaped], false) }
 	/**
 	 * Required convert string to escape value
 	 */
-	public void setEscaped (boolean value) { params.escaped = value }
+	void setEscaped (boolean value) { params.escaped = value }
 	
 	/**
 	 * Convert line feed to custom escape char 
 	 */
-	public String getEscapeProcessLineChar () { ListUtils.NotNullValue([params.escapeProcessLineChar, csvConnection()?.escapeProcessLineChar]) }
+	String getEscapeProcessLineChar () { ListUtils.NotNullValue([params.escapeProcessLineChar, csvConnection()?.escapeProcessLineChar]) }
 	/**
 	 * Convert line feed to custom escape char
 	 */
-	public void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
+	void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
 	
 	/**
 	 * Mode of quote value 
 	 */
-	public QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, csvConnection()?.quoteMode, QuoteMode.NORMAL]) as QuoteMode }
+	QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, csvConnection()?.quoteMode, QuoteMode.NORMAL]) as QuoteMode }
 	/**
 	 * Mode of quote value
 	 */
-	public void setQuoteMode (QuoteMode value) { params.quoteMode = value }
+	void setQuoteMode (QuoteMode value) { params.quoteMode = value }
 	
 	/**
 	 * Decimal separator for number fields
 	 */
-	public String getDecimalSeparator () { ListUtils.NotNullValue([params.decimalSeparator, csvConnection()?.decimalSeparator, '.']) }
+	String getDecimalSeparator () { ListUtils.NotNullValue([params.decimalSeparator, csvConnection()?.decimalSeparator, '.']) }
 	/**
 	 * Decimal separator for number fields
 	 */
-	public void setDecimalSeparator (String value) { params.decimalSeparator = value }
+	void setDecimalSeparator (String value) { params.decimalSeparator = value }
 	
 	/**
 	 * Format for date fields
 	 */
-	public String getFormatDate () { ListUtils.NotNullValue([params.formatDate, csvConnection()?.formatDate]) }
+	String getFormatDate () { ListUtils.NotNullValue([params.formatDate, csvConnection()?.formatDate]) }
 	/**
 	 * Format for date fields
 	 */
-	public void setFormatDate (String value) { params.formatDate = value }
+	void setFormatDate (String value) { params.formatDate = value }
 	
 	/**
 	 * Format for time fields
 	 */
-	public String getFormatTime () { ListUtils.NotNullValue([params.formatTime, csvConnection()?.formatTime]) }
+	String getFormatTime () { ListUtils.NotNullValue([params.formatTime, csvConnection()?.formatTime]) }
 	/**
 	 * Format for time fields
 	 */
-	public void setFormatTime (String value) { params.formatTime = value }
+	void setFormatTime (String value) { params.formatTime = value }
 	
 	/**
 	 * Format for datetime fields
 	 */
-	public String getFormatDateTime () { ListUtils.NotNullValue([params.formatDateTime, csvConnection()?.formatDateTime]) }
+	String getFormatDateTime () { ListUtils.NotNullValue([params.formatDateTime, csvConnection()?.formatDateTime]) }
 	/**
 	 * Format for datetime fields
 	 */
-	public void setFormatDateTime (String value) { params.formatDateTime = value }
+	void setFormatDateTime (String value) { params.formatDateTime = value }
+
+	/** OS locale for parsing date-time fields
+	 * <br>P.S. You can set locale for separately field in Field.extended.locale
+	 */
+	String getLocale() { ListUtils.NotNullValue([params.locale, csvConnection()?.locale]) }
+	/** OS locale for parsing date-time fields
+	 * <br>P.S. You can set locale for separately field in Field.extended.locale
+	 */
+	void setLocale(String value) { params.locale = value }
 		
 	/**
 	 * Length of the recorded file
 	 */
-	public Long getCountWriteCharacters() { params.countWriteCharacters }
+	Long getCountWriteCharacters() { params.countWriteCharacters }
 	
 	/**
 	 * the number of recorded files
 	 */
-	public Integer getCountWritePortions() { params.countWritePortions }
+	Integer getCountWritePortions() { params.countWritePortions }
 	
 	/**
 	 * The number of read files
 	 */
-	public Integer getCountReadPortions() { params.countReadPortions }
+	Integer getCountReadPortions() { params.countReadPortions }
 	
 	@Override
-	public void setConnection(Connection value) {
-		assert value == null || value instanceof CSVConnection
+	void setConnection(Connection value) {
+		if (value != null && !(value instanceof CSVConnection))
+			throw new ExceptionGETL('Сonnection to CSVConnection class is allowed!')
+
 		super.setConnection(value)
 	}
 	
 	@Override
-	public List<String> inheriteConnectionParams () {
+	List<String> inheriteConnectionParams () {
 		super.inheriteConnectionParams() + 
 				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 
 					'escaped', 'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime', 'ignoreHeader', 
@@ -201,12 +212,12 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Current CSV connection
 	 */
-	public CSVConnection csvConnection() { connection as CSVConnection}
+	CSVConnection csvConnection() { connection as CSVConnection}
 	
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
 	 */
-	public long prepareCSVForBulk (CSVDataset source, Map encodeTable, Closure code) {
+	long prepareCSVForBulk (CSVDataset source, Map encodeTable, Closure code) {
 		CSVDriver drv = connection.driver as CSVDriver
 		
 		drv.prepareCSVForBulk(this, source, encodeTable, code)
@@ -215,28 +226,28 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
 	 */
-	public long prepareCSVForBulk (CSVDataset source, Map encodeTable) {
+	long prepareCSVForBulk (CSVDataset source, Map encodeTable) {
 		prepareCSVForBulk(source, encodeTable, null)
 	}
 	
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
 	 */
-	public long prepareCSVForBulk(CSVDataset source) {
+	long prepareCSVForBulk(CSVDataset source) {
 		prepareCSVForBulk(source, null, null)
 	}
 	
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
 	 */
-	public long prepareCSVForBulk (CSVDataset source, Closure code) {
+	long prepareCSVForBulk (CSVDataset source, Closure code) {
 		prepareCSVForBulk(source, null, code)
 	}
 	
 	/**
 	 * Decoding prepare for bulk load file
 	 */
-	public long decodeBulkCSV (CSVDataset source) {
+	long decodeBulkCSV (CSVDataset source) {
 		CSVDriver drv = connection.driver as CSVDriver
 		drv.decodeBulkCSV(this, source)
 	}
@@ -244,7 +255,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Count rows of file
 	 */
-	public long readRowCount (Map params) {
+	long readRowCount (Map params) {
 		long res = 0
 		eachRow((params?:[:]) + [readAsText: true]) {
 			res++
@@ -256,7 +267,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * File lines count 
 	 */
-	public long readLinesCount () {
+	long readLinesCount () {
 		CSVDriver drv = connection.driver as CSVDriver
 		
 		drv.readLinesCount(this)

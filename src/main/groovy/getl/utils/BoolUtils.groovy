@@ -39,7 +39,7 @@ class BoolUtils {
 	 * @param defaultValue - return if value has null
 	 * @return
 	 */
-	public static Boolean IsValue(def value, Boolean defaultValue = false) {
+    static Boolean IsValue(def value, Boolean defaultValue = false) {
 		if (value == null) return defaultValue
 		if (value instanceof Boolean) return value
 
@@ -93,7 +93,7 @@ class BoolUtils {
 	 * @param superClass
 	 * @return
 	 */
-	public static boolean ClassInstanceOf(Class useClass, Class superClass) {
+	static boolean ClassInstanceOf(Class useClass, Class superClass) {
 		def c = useClass.getSuperclass()
 		int i = 0
 		while ( c.name != 'java.lang.Object' && i < 1000) {

@@ -36,11 +36,11 @@ import getl.utils.Logs
  *
  */
 class ConfigTypesafe extends ConfigManager {
-	public String getPath() {
+	String getPath() {
 		return params.path as String
 	}
 
-	public void setPath(String value) {
+	void setPath(String value) {
 		params.path = value
 	}
 

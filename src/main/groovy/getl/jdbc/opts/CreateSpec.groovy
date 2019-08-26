@@ -96,22 +96,22 @@ class CreateSpec extends BaseSpec {
     /**
      * This table
      */
-    JDBCDataset.Type getIsTable() { JDBCDataset.Type.TABLE }
+    static JDBCDataset.Type getIsTable() { JDBCDataset.Type.TABLE }
 
     /**
      * This global temporary table
      */
-    JDBCDataset.Type getIsGlobalTemporary() { JDBCDataset.Type.GLOBAL_TEMPORARY }
+    static JDBCDataset.Type getIsGlobalTemporary() { JDBCDataset.Type.GLOBAL_TEMPORARY }
 
     /**
      * This local temporary table
      */
-    JDBCDataset.Type getIsTemporary() { JDBCDataset.Type.LOCAL_TEMPORARY }
+    static JDBCDataset.Type getIsTemporary() { JDBCDataset.Type.LOCAL_TEMPORARY }
 
     /**
      * Create new parameters object for create index
      */
-    protected IndexSpec newIndexParams(Boolean useExternalParams, Map<String, Object> opts) { new IndexSpec(useExternalParams, opts) }
+    protected static IndexSpec newIndexParams(Boolean useExternalParams, Map<String, Object> opts) { new IndexSpec(useExternalParams, opts) }
 
     /**
      * Generate new parameters object for create index

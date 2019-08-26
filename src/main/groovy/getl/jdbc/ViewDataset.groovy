@@ -42,7 +42,7 @@ class ViewDataset extends TableDataset {
 	 * Validation exists view
 	 * @return
 	 */
-	public boolean isExists() {
+	boolean isExists() {
 		def ds = ((JDBCConnection)connection).retrieveDatasets(dbName: dbName, schemaName: schemaName, 
 					tableName: tableName, type: ["VIEW"])
 		

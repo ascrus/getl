@@ -34,12 +34,12 @@ class Version {
 	/**
 	 * GETL version
 	 */
-	public static version = "4.0.0"
+	public static version = "4.0.1"
 	
 	/**
 	 * GETL version as numeric
 	 */
-	public static versionNum = 4.0000
+	public static versionNum = 4.0001
 
 	/**
 	 * Compatibility GETL version
@@ -51,7 +51,7 @@ class Version {
 	 * @param ver
 	 * @return
 	 */
-	public static boolean IsCompatibility (def ver) { 
+	static boolean IsCompatibility (def ver) {
 		ver >= versionNumCompatibility && ver <= versionNum 
 	}
 	
@@ -61,7 +61,8 @@ class Version {
 	public static years = "2014-2019"
 
 	private static boolean sayInfo = false
-	public static void SayInfo() {
+
+	static void SayInfo() {
 		if (sayInfo) return
 		sayInfo = true
 		Logs.Init()

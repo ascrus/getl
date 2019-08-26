@@ -24,6 +24,8 @@
 
 package getl.postgresql
 
+import getl.data.Connection
+import getl.exception.ExceptionGETL
 import getl.jdbc.TableDataset
 import groovy.transform.InheritConstructors
 
@@ -34,4 +36,11 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class PostgreSQLTable extends TableDataset {
+    @Override
+    void setConnection(Connection value) {
+        if (value != null && !(value instanceof PostgreSQLConnection))
+            throw new ExceptionGETL('Сonnection to PostgreSQLConnection class is allowed!')
+
+        super.setConnection(value)
+    }
 }

@@ -285,7 +285,7 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Create new options object for drop table
 	 */
-	protected DropSpec newDropTableParams(Boolean useExternalParams, Map<String, Object> opts) { new DropSpec(useExternalParams, opts) }
+	protected static DropSpec newDropTableParams(Boolean useExternalParams, Map<String, Object> opts) { new DropSpec(useExternalParams, opts) }
 
 	/**
 	 * Generate new options object for drop table

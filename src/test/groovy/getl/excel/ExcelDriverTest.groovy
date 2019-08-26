@@ -2,9 +2,11 @@ package getl.excel
 
 import getl.data.Dataset
 import getl.data.Field
+import getl.tfs.TFS
+import getl.utils.FileUtils
 
 class ExcelDriverTest extends getl.test.GetlTest {
-    private static final String path = 'tests/excel'
+    public static final String path = TFS.systemPath
     private static final String fileName = 'test.xlsx'
     private static ExcelConnection connection = new ExcelConnection(path: path, fileName: fileName)
     private static ExcelDataset excelDataset
@@ -13,6 +15,14 @@ class ExcelDriverTest extends getl.test.GetlTest {
     @Override
     void setUp() {
         super.setUp()
+
+        def resourcePath = FileUtils.FileFromResources('excel').absolutePath
+        def sourceFileName = "$resourcePath/$fileName"
+        def destFileName = "$path/$fileName"
+
+        FileUtils.CopyToFile(sourceFileName, destFileName, true)
+        new File(destFileName).deleteOnExit()
+
         excelDataset = new ExcelDataset(connection: connection, header: true)
         excelDataset.field << new Field(name: 'a', type: Field.Type.INTEGER)
         excelDataset.field << new Field(name: 'b', type: Field.Type.INTEGER)

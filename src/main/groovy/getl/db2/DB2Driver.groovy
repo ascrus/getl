@@ -24,7 +24,7 @@ Copyright (C) EasyData Company LTD
 
 package getl.db2
 
-import getl.data.Field;
+import getl.data.Field
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
 import groovy.transform.InheritConstructors
@@ -47,25 +47,25 @@ class DB2Driver extends JDBCDriver {
 	}
 
 	@Override
-	public List<Driver.Support> supported() {
+    List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
 				 Driver.Support.INDEX, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
 	}
 	
 	@Override
-	public List<Driver.Operation> operations() {
+    List<Driver.Operation> operations() {
 		return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
 
 	@Override
-	public String defaultConnectURL () {
+    String defaultConnectURL () {
 		return "jdbc:db2://{host}/{database}"
 	}
 	
 	@Override
-    public void prepareField (Field field) {
+    void prepareField (Field field) {
 		super.prepareField(field)
 		
 		if (field.typeName?.matches('(?i)CLOB')) {
