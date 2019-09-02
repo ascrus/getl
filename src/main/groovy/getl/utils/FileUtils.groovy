@@ -907,8 +907,8 @@ class FileUtils {
      * @param fileName file name in resource catalog
      * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
      */
-	static File FileFromResources(String fileName, def otherPath = null) {
-		ClassLoader classLoader = ClassLoader.systemClassLoader
+	static File FileFromResources(String fileName, def otherPath = null, ClassLoader classLoader = null) {
+		if (classLoader == null) classLoader = ClassLoader.systemClassLoader
 
 		URL resource = classLoader.getResource(fileName)
 		File res

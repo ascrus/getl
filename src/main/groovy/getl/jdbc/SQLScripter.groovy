@@ -120,7 +120,7 @@ class SQLScripter {
 	 * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
 	 */
 	void loadResource(String fileName, def otherPath = null, String codePage = 'utf-8') {
-		setScript(FileUtils.FileFromResources(fileName, otherPath).getText(codePage?:'utf-8'))
+		setScript(FileUtils.FileFromResources(fileName, otherPath, this.getClass().classLoader).getText(codePage?:'utf-8'))
 	}
 
 	/**

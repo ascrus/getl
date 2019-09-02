@@ -401,6 +401,9 @@ END FOR;
 """
         def scripter = new SQLScripter(connection: table.connection, script: sql)
         scripter.runSql()
+
+        scripter.loadResource('sql/test_scripter.sql')
+        scripter.runSql()
     }
 
     void testOperations() {
