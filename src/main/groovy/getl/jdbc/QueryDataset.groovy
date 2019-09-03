@@ -24,6 +24,7 @@
 
 package getl.jdbc
 
+import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 import getl.utils.StringUtils
 
@@ -45,4 +46,23 @@ class QueryDataset extends JDBCDataset {
 	
 	@Override
 	String getObjectName() { 'query' }
+
+	/**
+	 * Load script from file
+	 * @param fileName file name sql batch file
+	 * @param codePage file use specified encoding page (default utf-8)
+	 */
+	void loadFile (String fileName, String codePage = 'utf-8') {
+		setQuery(new File(fileName).getText(codePage))
+	}
+
+	/**
+	 * Load script from file in class path or resource directory
+	 * @param fileName file name in resource catalog
+	 * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
+	 * @param codePage file use specified encoding page (default utf-8)
+	 */
+	void loadResource(String fileName, def otherPath = null, String codePage = 'utf-8') {
+		setQuery(FileUtils.FileFromResources(fileName, otherPath, this.getClass().classLoader).getText(codePage?:'utf-8'))
+	}
 }
