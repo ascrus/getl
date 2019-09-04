@@ -44,7 +44,7 @@ class BaseSpec {
         }
     }
 
-    /** Detect delegeta object for closure code */
+    /** Detect delegate object for closure code */
     static Object DetectClosureDelegate(Object obj) {
         while (obj instanceof Closure) obj = (obj as Closure).delegate
         return obj

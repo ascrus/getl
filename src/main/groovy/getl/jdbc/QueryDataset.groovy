@@ -63,6 +63,6 @@ class QueryDataset extends JDBCDataset {
 	 * @param codePage file use specified encoding page (default utf-8)
 	 */
 	void loadResource(String fileName, def otherPath = null, String codePage = 'utf-8') {
-		setQuery(FileUtils.FileFromResources(fileName, otherPath, this.getClass().classLoader).getText(codePage?:'utf-8'))
+		setQuery(FileUtils.FileFromResources(fileName, otherPath).getText(codePage?:'utf-8'))
 	}
 }

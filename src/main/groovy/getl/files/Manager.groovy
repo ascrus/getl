@@ -48,7 +48,8 @@ abstract class Manager {
 	Manager () {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
-				 'sqlHistoryFile', 'saveOriginalDate'])
+				 'sqlHistoryFile', 'saveOriginalDate', 'limitDirs', 'threadLevel', 'recursive',
+				 'ignoreExistInStory', 'createStory', 'takePathInStory'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel',
 				 'ignoreExistInStory', 'createStory'])
@@ -523,10 +524,52 @@ abstract class Manager {
 	 * Connection from table file list (if null, use TDS connection)
 	 */
 	void setFileListConnection (JDBCConnection value) { fileListConnection = value }
+
+	// History table
+	TableDataset story
+	// History table
+	TableDataset getStory() { story }
+	void setStory(TableDataset value) { story = value }
+
+	/** Directory level for which to enable parallelization */
+	Integer getThreadLevel() { params.threadLevel as Integer }
+	/** Directory level for which to enable parallelization */
+	void setThreadLevel(Integer value) {
+		if (value != null && value <= 0)
+			throw new ExceptionGETL('threadLevel value must be greater than zero')
+		params.threadLevel = value
+	}
+
+	/** Limit the number of processed directories */
+	Integer getLimitDirs() { params.limitDirs as Integer }
+	/** Limit the number of processed directories */
+	void setLimitDirs(Integer value) {
+		if (value != null && value <= 0)
+			throw new ExceptionGETL('limitDirs value must be greater than zero')
+		params.limitDirs = value
+	}
+
+	/** Directory recursive processing */
+	Boolean getRecursive() { BoolUtils.IsValue(params.recursive) }
+	/** Directory recursive processing */
+	void setRecursive(Boolean value) { params.recursive = value }
+
+	/** Do not process files that are in history */
+	Boolean getIgnoreExistInStory() { BoolUtils.IsValue(params.ignoreExistInStory, true) }
+	/** Do not process files that are in history */
+	void setIgnoreExistInStory(Boolean value) { params.ignoreExistInStory = value }
+
+	/** Store relative file path in history table */
+	Boolean getTakePathInStory() { BoolUtils.IsValue(params.takePathInStory, true) }
+	/** Store relative file path in history table */
+	void setTakePathInStory(Boolean value) { params.takePathInStory = value }
+
+	/** Create a history table if it does not exist */
+	Boolean getCreateStory() { BoolUtils.IsValue(params.createStory) }
+	/** Create a history table if it does not exist */
+	void setCreateStory(Boolean value) { params.createStory = value }
 	
-	/**
-	 * Count found files 
-	 */
+	/** Count found files */
 	long getCountFileList () { countFileListSync.count }
 	
 	private final SynchronizeObject countFileListSync = new SynchronizeObject() 
@@ -545,9 +588,9 @@ abstract class Manager {
 	
 	@CompileStatic
 	protected void processList (Manager man, TableDataset dest, Path path, String maskFile, Boolean recursive, Integer filelevel,
-								Boolean requiredAnalize, Integer limit, Integer threadLevel, ManagerListProcessing code) {
-		Integer threadCount = (threadLevel != null)?buildListThread:null
-		
+								Boolean requiredAnalize, Integer limit, Integer threadLevel, Integer threadCount, ManagerListProcessing code) {
+		if (threadLevel == null) threadCount = null
+
 		String curPath = man.currentDir()
 		long countFiles = 0
 		long countDirs = 0
@@ -607,7 +650,8 @@ abstract class Manager {
 					if (b) {
 						if (threadCount == null || filelevel != threadLevel) {
 							man.changeDirectory((String) (file.filename))
-							processList(man, dest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, code)
+							processList(man, dest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit,
+									threadLevel, threadCount, code)
 							man.changeDirectory('..')
 						} else {
 							threadDirs << (String) (file.filename)
@@ -644,7 +688,8 @@ abstract class Manager {
 							TableDataset newDest = (dest.cloneDataset(null)) as TableDataset
 							newDest.openWrite(batchSize: 100)
 							try {
-								processList(newMan, newDest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit, threadLevel, newCode)
+								processList(newMan, newDest, path, maskFile, recursive, filelevel + 1, requiredAnalize,
+										limit, threadLevel, threadCount, newCode)
 							}
 							finally {
 								newDest.doneWrite()
@@ -712,49 +757,58 @@ abstract class Manager {
 		methodParams.validation('buildList', lparams)
 
 		String maskFile = lparams.maskFile?:null
-		Path path = lparams.path?:(new Path(mask: maskFile?:"*.*"))
+		Path path = (lparams.path as Path)?:(new Path(mask: maskFile?:"*.*"))
 		if (!path.isCompile) path.compile()
 		boolean requiredAnalize = !(path.vars.isEmpty())
-		boolean recursive = BoolUtils.IsValue(lparams.recursive)
-		boolean takePathInStory =  BoolUtils.IsValue(lparams.takePathInStory, true)
-		boolean ignoreExistInStory = BoolUtils.IsValue(lparams.ignoreExistInStory, true)
-		boolean createStory = BoolUtils.IsValue(lparams.createStory)
+		boolean recursive = (lparams.recursive != null)?BoolUtils.IsValue(lparams.recursive):this.recursive
+		boolean takePathInStory =  (lparams.takePathInStory != null)?
+				BoolUtils.IsValue(lparams.takePathInStory, true):this.takePathInStory
+		boolean ignoreExistInStory = (lparams.ignoreExistInStory != null)?
+				BoolUtils.IsValue(lparams.ignoreExistInStory, true):this.ignoreExistInStory
+		boolean createStory = (lparams.createStory != null)?BoolUtils.IsValue(lparams.createStory):this.createStory
 		
-		Integer limit = lparams.limitDirs
-		if (limit != null && limit <= 0) throw new ExceptionGETL("limitDirs parameter must be great zero!")
+		Integer limit = (lparams.limitDirs as Integer)?:this.limitDirs
+		if (limit != null && limit <= 0)
+			throw new ExceptionGETL("limitDirs value must be great zero!")
 		
-		Integer threadLevel = lparams.threadLevel
-		if (threadLevel != null && threadLevel <= 0) throw new ExceptionGETL("threadLevel parameter must be great zero!")
+		Integer threadLevel = (lparams.threadLevel as Integer)?:this.threadLevel
+		if (threadLevel != null && threadLevel <= 0)
+			throw new ExceptionGETL("threadLevel value must be great zero!")
+
+		Integer threadCount = (lparams.buildListThread as Integer)?:this.buildListThread
+		if (threadCount != null && threadCount <= 0)
+			throw new ExceptionGETL("buildListThread value been must great zero!")
 		
-		if (recursive && maskFile != null) throw new ExceptionGETL("Don't compatibility parameters recursive vs maskFile!")
+		if (recursive && maskFile != null)
+			throw new ExceptionGETL("Don't compatibility parameters recursive vs maskFile!")
 
 		countFileListSync.clear()
 
 		// History table		
-		TableDataset story = lparams.story
-		
+		TableDataset storyTable = (lparams.story as TableDataset)?:story
+
 		// Init file list
 		fileList = new TableDataset(connection: fileListConnection?:new TDS(), 
 									tableName: fileListName?:"FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}")
 		if (sqlHistoryFile != null) ((JDBCConnection)fileList.connection).sqlHistoryFile = sqlHistoryFile
 
-		createStory = (createStory && story != null && !story.exists)
-		if (createStory) AddFieldsToDS(story)
+		createStory = (createStory && storyTable != null && !storyTable.exists)
+		if (createStory) AddFieldsToDS(storyTable)
 
 		initFileList()
 		path.vars.each { key, attr ->
-			def ft = attr.type?:Field.Type.STRING
-			def length = attr.lenMax?:((ft == Field.Type.STRING)?250:30)
-			def field = new Field(name: key.toUpperCase(), type: ft, length: length, precision: attr.precision?:0)
+			def ft = (attr.type as Field.Type)?:Field.Type.STRING
+			def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
+			def field = new Field(name: key.toUpperCase(), type: ft, length: length, precision: (attr.precision as Integer)?:0)
 			fileList.field << field
-			if (createStory) story.field << field
+			if (createStory) storyTable.field << field
 		}
 		fileList.drop(ifExists: true)
 		fileList.create()
 
-		if (createStory) story.create()
+		if (createStory) storyTable.create()
 
-		def tableType = (buildListThread == null)?JDBCDataset.Type.LOCAL_TEMPORARY:JDBCDataset.Type.TABLE
+		def tableType = (threadCount == null)?JDBCDataset.Type.LOCAL_TEMPORARY:JDBCDataset.Type.TABLE
 		
 		TableDataset newFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
 		newFiles.field = [new Field(name: 'ID', type: 'INTEGER', isNull: false, isAutoincrement: true)] + fileList.field
@@ -796,7 +850,7 @@ abstract class Manager {
 			try {
 				newFiles.openWrite(batchSize: 100)
 				try {
-					processList(this, newFiles, path, maskFile, recursive, 1, requiredAnalize, limit, threadLevel, code)
+					processList(this, newFiles, path, maskFile, recursive, 1, requiredAnalize, limit, threadLevel, threadCount, code)
 				}
 				finally {
 					newFiles.doneWrite()
@@ -853,11 +907,11 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 			doubleFiles.drop(ifExists: true)
 			
 			// Valid already loaded file in history table
-			if (story != null) {
+			if (storyTable != null) {
 				useFiles.drop(ifExists: true)
 				useFiles.create()
 				
-				TableDataset validFiles = new TableDataset(connection: story.connection, 
+				TableDataset validFiles = new TableDataset(connection: storyTable.connection,
 															tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
 				validFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 				validFiles.fieldByName('ID').isAutoincrement = false
@@ -875,11 +929,11 @@ FROM ${validFiles.fullNameDataset()} f
 WHERE 
 	NOT EXISTS(
 		SELECT *
-		FROM ${story.fullNameDataset()} h
+		FROM ${storyTable.fullNameDataset()} h
 		WHERE h.FILENAME = f.LOCALFILENAME ${(takePathInStory)?'AND h.FILEPATH = f.FILEPATH':''}
 	)
 """
-					QueryDataset getNewFiles = new QueryDataset(connection: story.connection, query: sqlFoundNew)
+					QueryDataset getNewFiles = new QueryDataset(connection: storyTable.connection, query: sqlFoundNew)
 					new Flow().copy(source: getNewFiles, dest: useFiles, dest_batchSize: 1000)
 				}
 				finally {
@@ -888,10 +942,10 @@ WHERE
 			}
 			
 			def sqlCopyFiles = """
-SELECT ${fileList.sqlFields(['FILEINSTORY']).join(', ')}, ${(story == null)?'FALSE AS FILEINSTORY':'(story.ID IS NULL) AS FILEINSTORY'}
+SELECT ${fileList.sqlFields(['FILEINSTORY']).join(', ')}, ${(storyTable == null)?'FALSE AS FILEINSTORY':'(story.ID IS NULL) AS FILEINSTORY'}
 FROM ${newFiles.fullNameDataset()} files
 """
-			if (story != null) {
+			if (storyTable != null) {
 				sqlCopyFiles += "${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID"
 			}
 			QueryDataset processFiles = new QueryDataset(connection: fileList.connection, query: sqlCopyFiles)
@@ -918,7 +972,7 @@ FROM ${newFiles.fullNameDataset()} files
 	 */
 	void buildList (Map params) {
 		ManagerListProcessClosure p = (params.code != null)?
-				new ManagerListProcessClosure(code: params.code):(ManagerListProcessing)null
+				new ManagerListProcessClosure(code: (params.code as Closure)):null
 		buildList(MapUtils.Copy(params, ['code']), p)
 	}
 
@@ -975,7 +1029,7 @@ FROM ${newFiles.fullNameDataset()} files
 		String sqlWhere = params.filter as String
 		List<String> sqlOrderBy = params.order as List<String>
 		
-		TableDataset storyFiles
+		TableDataset storyFiles = null
 		
 		if (useStory) {
 			if (ds == null) throw new ExceptionGETL("For use store db required set \"ds\" property")
@@ -1440,7 +1494,7 @@ WHERE
 	boolean deleteEmptyFolders(Boolean ignoreErrors, Closure onDelete) {
 		if (fileList == null) throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders')
 		
-		Map dirs = [:]
+		def dirs = [:] as Map<String, Map>
 		QueryDataset pathes = new QueryDataset(connection: fileList.connection, query: "SELECT DISTINCT FILEPATH FROM ${fileList.fullNameDataset()} ORDER BY FILEPATH")
 		pathes.eachRow() { row ->
 			if (row."filepath" == '.') return
@@ -1620,4 +1674,17 @@ WHERE
      * @param time last-modified time, measured in milliseconds since the epoch (00:00:00 GMT, January 1, 1970)
      */
     abstract void setLastModified(String fileName, long time)
+
+	protected Map<String, String> toStringParams() {
+		def res = [:] as Map<String, String>
+		if (rootPath != null) res.root = rootPath
+
+		return res
+	}
+
+	@Override
+	String toString() {
+		def p = toStringParams()
+		return "${getClass().name} ${!p.isEmpty()?p.toString():''}"
+	}
 }

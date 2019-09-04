@@ -518,4 +518,11 @@ class SFTPManager extends Manager {
 	void setLastModified(String fileName, long time) {
 		if (saveOriginalDate) channelFtp.setMtime(fileName, (time / 1000L).intValue())
 	}
+
+	@Override
+	protected Map<String, String> toStringParams() {
+		def res = super.toStringParams()
+		if (server != null) res.server = server
+		return res
+	}
 }

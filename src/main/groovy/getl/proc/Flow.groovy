@@ -60,13 +60,10 @@ class Flow {
 										  'onInit', 'onDone', 'process'])
 	}
 	
-	/**
-	 * Name in config from section "datasets"
-	 */
 	private String config
-
+	/** Name in config from section "flows" */
 	String getConfig () { config }
-
+	/** Name in config from section "flows" */
 	void setConfig (String value) {
 		config = value
 		if (config != null) {
@@ -95,7 +92,7 @@ class Flow {
 	}
 	
 	/**
-	 * Dataset public parameters
+	 * Flow public parameters
 	 */
 	public final Map<String, Object> params = [:]
 

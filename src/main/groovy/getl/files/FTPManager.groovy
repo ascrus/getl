@@ -473,4 +473,11 @@ class FTPManager extends Manager {
             client.sendCustomCommand("MFMT $df $fileName")
         }
     }
+
+	@Override
+	protected Map<String, String> toStringParams() {
+		def res = super.toStringParams()
+		if (server != null) res.server = server
+		return res
+	}
 }

@@ -339,4 +339,11 @@ class HDFSManager extends Manager {
     void setLastModified(String fileName, long time) {
         if (saveOriginalDate) client.setTimes(fullPath(currentPath, fileName), time, -1)
     }
+
+    @Override
+    protected Map<String, String> toStringParams() {
+        def res = super.toStringParams()
+        if (server != null) res.server = server
+        return res
+    }
 }

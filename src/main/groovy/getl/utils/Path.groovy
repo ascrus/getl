@@ -35,9 +35,7 @@ import getl.exception.ExceptionGETL
 /**
  * Analize and processing path value class
  * @author Alexsey Konstantinov
- *
  */
-@InheritConstructors
 class Path {
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 	
