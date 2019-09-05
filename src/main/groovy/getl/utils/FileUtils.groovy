@@ -27,6 +27,8 @@ package getl.utils
 //@GrabConfig(systemClassLoader=true)
 
 import getl.files.FileManager
+import getl.tfs.TFS
+
 import java.nio.file.*
 import java.nio.channels.*
 import java.util.zip.GZIPInputStream
@@ -908,9 +910,7 @@ class FileUtils {
      * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
      */
 	static File FileFromResources(String fileName, def otherPath = null, ClassLoader classLoader = null) {
-		if (classLoader == null) classLoader = Thread.currentThread().getContextClassLoader()
-
-		URL resource = classLoader.getResource(fileName)
+		URL resource = (classLoader == null)?GroovyClassLoader.getResource(fileName):classLoader.getResource(fileName)
 		File res
 		if (resource == null) {
             if (otherPath != null) {
@@ -930,8 +930,11 @@ class FileUtils {
 			if (res == null) throw new ExceptionGETL("Resource file \"$fileName\" is not found!")
 		}
 		else {
-			res = new File(resource.getFile())
-            if (!res.exists()) throw new ExceptionGETL("Resource file \"$fileName\" is not found!")
+			res = File.createTempFile('resource_', '_' + FileName(fileName), new File(TFS.systemPath))
+			res.deleteOnExit()
+			res.withOutputStream {
+				it.write(resource.getBytes())
+			}
 		}
 
 		return res
