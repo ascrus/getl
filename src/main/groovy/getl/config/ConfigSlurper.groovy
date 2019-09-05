@@ -190,19 +190,21 @@ class ConfigSlurper extends ConfigManager {
 		}
 
 		def cfg = (environment == null)?new groovy.util.ConfigSlurper():new groovy.util.ConfigSlurper(environment)
-		Map<String, Object> vars = [vars: Config.vars?:[:]] as Map<String, Object>
-
-		def writer = new StringWriter()
-		SaveMap(vars, writer)
-		text = writer.toString() + '\n\n' + text
+		Map<String, Object> args = [vars: Config.vars?:[:]] as Map
 
 		Map<String, Object> res
 		try {
-			def data = cfg.parse(text) as Map<String, Object>
-			CheckDataMap(data, [vars: data.vars?:[:]])
-			res = MapUtils.DeepCopy(data)
-			if ((res.vars as Map)?.isEmpty()) {
-				res.remove('vars')
+			cfg.setBinding(args)
+			def data = cfg.parse(text) as Map
+			res = CheckDataMap(cfg, data, [configvars: data.configvars?:[:]] + args)
+			if ((res.configvars as Map)?.isEmpty()) {
+				res.remove('configvars')
+			}
+			else {
+				def vars = res.configvars as Map
+				res.remove('configvars')
+				if (res.vars == null) res.vars = [:]
+				(res.vars as Map).putAll(vars)
 			}
 		}
 		catch (Exception e) {
@@ -218,27 +220,32 @@ class ConfigSlurper extends ConfigManager {
 	 * @param data
 	 * @param vars
 	 */
-	private static void CheckDataMap(Map<String, Object> data, Map<String, Object> vars) {
-		groovy.util.ConfigSlurper cfg = new groovy.util.ConfigSlurper()
-
-		data.each { String key, Object value ->
+	private static Map CheckDataMap(groovy.util.ConfigSlurper cfg, Map data, Map vars) {
+		def res = [:]
+		data.each { key, value ->
 			if (value instanceof Map) {
-				CheckDataMap(value, vars)
+				res.put(key, CheckDataMap(cfg, value, vars))
 			}
 			else if (value instanceof List) {
-				CheckDataList(value, vars)
+				res.put(key, CheckDataList(cfg, value, vars))
 			}
 			else  if (value instanceof Closure) {
-				Map<String, Object> res = MapUtils.Copy(vars) as Map<String, Object>
 				Closure cl = value as Closure
-				Closure code = cl.rehydrate(res, cfg, cl.thisObject)
-				code.resolveStrategy = Closure.DELEGATE_ONLY
-
-				cfg.parse(code as groovy.lang.Script)
-				res.remove('vars')
-				data.put(key, res)
+				def val = [:]
+				val.putAll(vars)
+				def code = cl.rehydrate(val, val, val)
+				code.delegate = Closure.DELEGATE_ONLY
+				cfg.parse(code)
+				val.remove('vars')
+				val.remove('configvars')
+				res.put(key, val)
+			}
+			else {
+				res.put(key, value)
 			}
 		}
+
+		return res
 	}
 
 	/**
@@ -246,29 +253,34 @@ class ConfigSlurper extends ConfigManager {
 	 * @param data
 	 * @param vars
 	 */
-	private static void CheckDataList(List data, Map<String, Object> vars) {
-		groovy.util.ConfigSlurper cfg = new groovy.util.ConfigSlurper()
-
+	private static List CheckDataList(groovy.util.ConfigSlurper cfg, List data, Map vars) {
+		def res = []
 		int i = 0
 		data.each { Object value ->
 			if (value instanceof Map) {
-				CheckDataMap(value, vars)
+				res << CheckDataMap(cfg, value, vars)
 			}
 			else if (value instanceof List) {
-				CheckDataList(value, vars)
+				res << CheckDataList(cfg, value, vars)
 			}
 			else  if (value instanceof Closure) {
-				Map<String, Object> res = MapUtils.Copy(vars) as Map<String, Object>
 				Closure cl = value as Closure
-				Closure code = cl.rehydrate(res, cfg, cl.thisObject)
-				code.resolveStrategy = Closure.DELEGATE_ONLY
-
-				cfg.parse(code as groovy.lang.Script)
-				res.remove('vars')
-				data[i] = res
+				def val = [:]
+				val.putAll(vars)
+				def code = cl.rehydrate(val, val, val)
+				code.delegate = Closure.DELEGATE_ONLY
+				cfg.parse(code as Script)
+				val.remove('vars')
+				val.remove('configvars')
+				res << val
+			}
+			else {
+				res << value
 			}
 			i++
 		}
+
+		return res
 	}
 
 	@Override
@@ -309,8 +321,15 @@ class ConfigSlurper extends ConfigManager {
 			throw e
 		}
 
+		def content = MapUtils.DeepCopy(data)
+		def vars = content.vars as Map
+		if (vars != null && !vars.isEmpty()) {
+			content.remove('vars')
+			content = ['configvars': vars] + content
+		}
+
 		try {
-			SaveMap(data, writer, convertVars)
+			SaveMap(content, writer, convertVars)
 		}
 		catch (Exception e) {
 			Logs.Severe("Error save configuration to file \"$file\", error: ${e.message}")
