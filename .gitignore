@@ -39,3 +39,4 @@ tests/netsuite/
 tests/salesforce/
 tests/xero/demo.jar
 tests/emailer/
+tests/
