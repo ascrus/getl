@@ -1,0 +1,17 @@
+{
+    "fields": [
+        {
+            "name": "ID",
+            "type": "BIGINT",
+            "isKey": true,
+            "ordKey": 1
+        },
+
+        {
+            "name": "NAME",
+            "type": "STRING",
+            "length": 50,
+            "isNull": false
+        }
+    ]
+}

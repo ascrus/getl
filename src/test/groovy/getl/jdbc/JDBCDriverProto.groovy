@@ -342,6 +342,12 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         def r2 = q2.rows(queryParams: [param1: 2])
         assertEquals(1, r2.size())
         assertEquals(2, r2[0].id1)
+
+        def q3 = new QueryDataset(connection: con)
+        q3.loadFile('resource:/sql/test_query.sql')
+        def r3 = q3.rows(queryParams: [table: table.objectFullName, field: fieldName, param1: 2])
+        assertEquals(1, r3.size())
+        assertEquals(2, r3[0].id1)
     }
 
     private void validCountZero() {
@@ -402,7 +408,7 @@ END FOR;
         def scripter = new SQLScripter(connection: table.connection, script: sql)
         scripter.runSql()
 
-        scripter.loadResource('sql/test_scripter.sql')
+        scripter.loadFile('resource:/sql/test_scripter.sql')
         scripter.runSql()
     }
 

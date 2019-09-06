@@ -246,4 +246,12 @@ class FileUtilsTest extends getl.test.GetlTest {
 
         assertEquals(file1, file3)
     }
+
+    void testParseFileName() {
+        def fileName1 = FileUtils.ResourceFileName('resource:/fileutils/file.txt')
+        assertTrue(new File(fileName1).exists())
+
+        def fileName2 = FileUtils.ResourceFileName(fileName1)
+        assertEquals(fileName1, fileName2)
+    }
 }

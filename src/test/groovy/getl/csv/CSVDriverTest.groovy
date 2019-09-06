@@ -46,6 +46,13 @@ class CSVDriverTest extends getl.test.GetlTest {
         assertTrue(new_csv.equalsFields(csv.field))
 
         assertTrue(FileUtils.DeleteFile(csv.fullFileSchemaName()))
+
+        def resCsv = new CSVDataset(connection: con, schemaFileName: 'resource:/csv/csv.schema')
+        assertTrue(resCsv.isResourceFileNameSchema())
+        resCsv.loadDatasetMetadata()
+        assertEquals(2, resCsv.field.size())
+        assertNotNull(resCsv.field('id'))
+        assertNotNull(resCsv.field('name'))
     }
 
     private void validReadWrite(CSVConnection con, String name) {

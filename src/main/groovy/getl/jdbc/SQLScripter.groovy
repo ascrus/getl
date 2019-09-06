@@ -110,7 +110,7 @@ class SQLScripter {
 	 * @param codePage file use specified encoding page (default utf-8)
 	 */
 	void loadFile (String fileName, String codePage = 'utf-8') {
-		setScript(new File(fileName).getText(codePage))
+		setScript(new File(FileUtils.ResourceFileName(fileName)).getText(codePage))
 	}
 
 	/**

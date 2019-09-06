@@ -734,7 +734,7 @@ class Getl extends Script {
             if ((!BoolUtils.IsValue(registration) && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
                 throw new ExceptionGETL("File manager \"$name\" with type \"$fileManagerClassName\" is not exist!")
 
-            obj = Manager.CreateManager(connection: fileManagerClassName) as Manager
+            obj = Manager.CreateManager(manager: fileManagerClassName) as Manager
             sect.put(repName, obj)
         }
 
@@ -801,6 +801,30 @@ class Getl extends Script {
     /** Load and run groovy script by class */
     void runGroovyClass(Class groovyClass, Map<String, Object> vars = [:]) {
         runGroovyClass(groovyClass, false, vars)
+    }
+
+    /** Run closure with call parent parameter */
+    static void RunClosure(Object thisObject, Object parent, Closure cl) {
+        if (cl == null) return
+        def code = cl.rehydrate(thisObject, parent, thisObject)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        code.call(parent)
+    }
+
+    /** Run closure with call one parameter */
+    static void RunClosure(Object thisObject, Object parent, Closure cl, Object param) {
+        if (cl == null) return
+        def code = cl.rehydrate(thisObject, parent, thisObject)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        code.call(param)
+    }
+
+    /** Run closure with call two parameters */
+    static void RunClosure(Object thisObject, Object parent, Closure cl, Object param1, Object param2) {
+        if (cl == null) return
+        def code = cl.rehydrate(thisObject, parent, thisObject)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        code.call(param1, param2)
     }
 
     /** Run closure with call parent parameter */
@@ -2011,7 +2035,7 @@ class Getl extends Script {
         if (parent.rootPath == null) parent.rootPath = new File('.').absolutePath
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess('Process local file system')
+            def pt = startProcess("Process $parent")
             try {
                 runClosure(parent, cl)
             }
@@ -2039,7 +2063,7 @@ class Getl extends Script {
         def parent = registerFileManager(FTPMANAGER, name, registration) as FTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess('Process ftp file system')
+            def pt = startProcess("Process $parent")
             try {
                 runClosure(parent, cl)
             }
@@ -2067,7 +2091,7 @@ class Getl extends Script {
         def parent = registerFileManager(SFTPMANAGER, name, registration) as SFTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess('Process sftp file system')
+            def pt = startProcess("Process $parent")
             try {
                 runClosure(parent, cl)
             }
@@ -2095,7 +2119,7 @@ class Getl extends Script {
         def parent = registerFileManager(HDFSMANAGER, name, registration) as HDFSManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess('Process hdfs file system')
+            def pt = startProcess("Process $parent")
             try {
                 runClosure(parent, cl)
             }
@@ -2191,5 +2215,20 @@ class Getl extends Script {
     /** Incremenal history point manager */
     SavePointManager historypoint(@DelegatesTo(SavePointManager) Closure cl) {
         historypoint(null, false, cl)
+    }
+
+    FileCopier fileCopier(Manager source, Manager destination, @DelegatesTo(FileCopier) cl) {
+        if (source == null) throw new ExceptionGETL('Source file manager cannot be null!')
+        if (destination == null) throw new ExceptionGETL('Destination file manager cannot be null!')
+        def parent = new FileCopier()
+        parent.source = source
+        parent.destination = destination
+        runClosure(parent, cl)
+
+        def pt = startProcess("Copy files from $source to $destination")
+        parent.copy()
+        finishProcess(pt, parent.countFiles)
+
+        return parent
     }
 }

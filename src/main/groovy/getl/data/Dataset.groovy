@@ -1133,6 +1133,11 @@ class Dataset {
 	String fullFileSchemaName() {
 		return connection.driver.fullFileNameSchema(this)
 	}
+
+	/** Determine that the schema file is stored in resources */
+	Boolean isResourceFileNameSchema() {
+		return connection.driver.isResourceFileNameSchema(this)
+	}
 	
 	String toString() {
 		return objectName
@@ -1141,9 +1146,14 @@ class Dataset {
 	/**
 	 * Save fields structure to metadata JSON file
 	 */
-	void saveDatasetMetadata (List<String> fieldList = null) {
+	void saveDatasetMetadata(List<String> fieldList = null) {
+		if (isResourceFileNameSchema())
+			throw new ExceptionGETL('It is not possible to save the schema to a resource file!')
+
 		def fn = fullFileSchemaName()
-		if (fn == null) throw new ExceptionGETL("Required \"schemaFileName\" for save dataset schema")
+		if (fn == null)
+			throw new ExceptionGETL("Required \"schemaFileName\" for save dataset schema!")
+
 		FileUtils.ValidFilePath(fn)
 		saveDatasetMetadataToJSON(new File(fn).newWriter("UTF-8"), fieldList)
 	}
@@ -1151,7 +1161,7 @@ class Dataset {
 	/**
 	 * Load fields structure from metadata JSON file
 	 */
-	void loadDatasetMetadata () {
+	void loadDatasetMetadata() {
 		def fn = fullFileSchemaName()
 		if (fn == null) throw new ExceptionGETL("Required \"schemaFileName\" for save dataset schema")
 		try {

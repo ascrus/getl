@@ -26,6 +26,7 @@ package getl.driver
 
 import getl.csv.CSVDataset
 import getl.data.*
+import getl.utils.FileUtils
 import getl.utils.ParamMethodValidator
 
 /**
@@ -90,7 +91,7 @@ abstract class Driver {
     abstract void createDataset (Dataset dataset, Map params)
 
     void dropDataset (Dataset dataset, Map params) {
-		if (dataset.autoSchema) {
+		if (dataset.autoSchema && !isResourceFileNameSchema(dataset)) {
 			def name = fullFileNameSchema(dataset)
 			if (name != null) {
 				def s = new File(name)
@@ -123,6 +124,15 @@ abstract class Driver {
 	 * @return
 	 */
 	String fullFileNameSchema(Dataset dataset) {
-		dataset.schemaFileName
+		FileUtils.ResourceFileName(dataset.schemaFileName)
+	}
+
+	/**
+	 * Determine that the schema file is stored in resources
+	 * @param dataset - source dataset
+	 * @return
+	 */
+	Boolean isResourceFileNameSchema(Dataset dataset) {
+		FileUtils.IsResourceFileName(dataset.schemaFileName)
 	}
 }

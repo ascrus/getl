@@ -943,4 +943,34 @@ class FileUtils {
 
 		return res
 	}
+
+	/**
+	 * Process the prefix "resource:" in the file name and return the full path to the resource file
+	 * <br>P.S. If the prefix is missing, return the input file name.
+	 * @param fileName input file name
+	 * @return
+	 */
+	static String ResourceFileName(String fileName) {
+		if (fileName == null) return null
+		String res
+		if (IsResourceFileName(fileName)) {
+			def file = FileFromResources(fileName.substring(9))
+			res = file.absolutePath
+		}
+		else {
+			res = fileName
+		}
+
+		return res
+	}
+
+	/**
+	 * Determine that the file is stored in resources
+	 * @param fileName file name (use "resource:" to specify the file name in application resources)
+	 * @return
+	 */
+	static Boolean IsResourceFileName(String fileName) {
+		if (fileName == null) return null
+		return (fileName.matches('resource[:].+'))
+	}
 }
