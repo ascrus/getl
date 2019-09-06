@@ -6,28 +6,24 @@ import getl.tfs.TFS
 import getl.utils.FileUtils
 
 class ExcelDriverTest extends getl.test.GetlTest {
-    public static final String path = TFS.systemPath
-    private static final String fileName = 'test.xlsx'
-    private static ExcelConnection connection = new ExcelConnection(path: path, fileName: fileName)
-    private static ExcelDataset excelDataset
-    private static final String listName = 'test'
+    static final String fileName = '/excel/test.xlsx'
+    String excelFileName
+
+    static ExcelConnection connection
+    static ExcelDataset excelDataset
+    static final String listName = 'test'
 
     @Override
     void setUp() {
         super.setUp()
 
-        def resourcePath = FileUtils.FileFromResources('excel').absolutePath
-        def sourceFileName = "$resourcePath/$fileName"
-        def destFileName = "$path/$fileName"
-
-        FileUtils.CopyToFile(sourceFileName, destFileName, true)
-        new File(destFileName).deleteOnExit()
+        excelFileName = FileUtils.FileFromResources(fileName).absolutePath
+        connection = new ExcelConnection(fileName: excelFileName)
 
         excelDataset = new ExcelDataset(connection: connection, header: true)
         excelDataset.field << new Field(name: 'a', type: Field.Type.INTEGER)
         excelDataset.field << new Field(name: 'b', type: Field.Type.INTEGER)
         excelDataset.field << new Field(name: 'c', type: Field.Type.STRING)
-
         excelDataset.listName = listName
     }
 

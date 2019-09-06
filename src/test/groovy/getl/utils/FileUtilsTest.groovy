@@ -233,10 +233,17 @@ class FileUtilsTest extends getl.test.GetlTest {
     }
 
     void testReadFileFromResource() {
-        def file = FileUtils.FileFromResources('/fileutils/file.txt')
-        assertEquals('1234567890', file.text)
+        def file1 = FileUtils.FileFromResources('/fileutils/file.txt')
+        assertEquals('1234567890', file1.text)
 
-        file = FileUtils.FileFromResources('fileutils/file.txt', null, this.getClass().classLoader)
-        assertEquals('1234567890', file.text)
+        def file2 = FileUtils.FileFromResources('fileutils/file.txt', null, this.getClass().classLoader)
+        assertEquals('1234567890', file2.text)
+
+        assertFalse(file1 == file2)
+
+        def file3 = FileUtils.FileFromResources('/fileutils/file.txt')
+        assertEquals('1234567890', file3.text)
+
+        assertEquals(file1, file3)
     }
 }

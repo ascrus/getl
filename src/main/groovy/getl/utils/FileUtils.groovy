@@ -28,6 +28,7 @@ package getl.utils
 
 import getl.files.FileManager
 import getl.tfs.TFS
+import groovy.transform.Memoized
 
 import java.nio.file.*
 import java.nio.channels.*
@@ -612,7 +613,7 @@ class FileUtils {
 			sb << "{ String line -> methodConvertText(line) }\n"
 			sb << "@groovy.transform.CompileStatic\n"
 			sb << "String methodConvertText(String line) {\n"
-			rules.each { Map rule ->
+			(rules as List<Map>).each { Map rule ->
 				if (rule == null) throw new ExceptionGETL("Required rule section for convertation rules")
 				def type = ((rule."type" as String)?:'REPLACE')?.toUpperCase()
 				if (!(type in ["REPLACE", "REGEXPR"])) throw new ExceptionGETL("Invalid rule type \"$type\", allowed REPLACE and REGEXPR")
@@ -712,6 +713,7 @@ class FileUtils {
 	 * @param err
 	 * @return
 	 */
+	@SuppressWarnings("DuplicatedCode")
 	static int Run(String command, String dir, String codePage, StringBuilder out, StringBuilder err) {
 		Process p
 		try {
@@ -776,12 +778,12 @@ class FileUtils {
         params = params?:[:]
 
 		ZipParameters parameters = new ZipParameters()
-		parameters.setCompressionMethod((params.compressionMethod != null)?params.compressionMethod:Zip4jConstants.COMP_DEFLATE)
-		parameters.setCompressionLevel((params.compressionLevel != null)?params.compressionLevel:Zip4jConstants.DEFLATE_LEVEL_NORMAL)
-        if (params.encryptFiles != null) parameters.setEncryptFiles(params.encryptFiles)
-        if (params.encryptionMethod != null) parameters.setEncryptionMethod(params.encryptionMethod)
-        if (params.aesKeyStrength != null) parameters.setAesKeyStrength(params.aesKeyStrength)
-        if (params.password != null) parameters.setPassword(params.password.toString())
+		parameters.setCompressionMethod((params.compressionMethod != null)?(params.compressionMethod as Integer):Zip4jConstants.COMP_DEFLATE)
+		parameters.setCompressionLevel((params.compressionLevel != null)?(params.compressionLevel as Integer):Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+        if (params.encryptFiles != null) parameters.setEncryptFiles(params.encryptFiles as Boolean)
+        if (params.encryptionMethod != null) parameters.setEncryptionMethod(params.encryptionMethod as Integer)
+        if (params.aesKeyStrength != null) parameters.setAesKeyStrength(params.aesKeyStrength as Integer)
+        if (params.password != null) parameters.setPassword(params.password as String)
 
 		String fileMask = MaskFile(path)
 		if (fileMask == null) {
@@ -909,6 +911,7 @@ class FileUtils {
      * @param fileName file name in resource catalog
      * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
      */
+	@Memoized
 	static File FileFromResources(String fileName, def otherPath = null, ClassLoader classLoader = null) {
 		URL resource = (classLoader == null)?GroovyClassLoader.getResource(fileName):classLoader.getResource(fileName)
 		File res
@@ -919,7 +922,8 @@ class FileUtils {
                         def file = new File("$path/$fileName")
                         if (file.exists()) {
                             res = file
-                            directive = Closure.DONE
+							//noinspection UnnecessaryQualifiedReference
+							directive = Closure.DONE
                         }
                     }
                 } else {
