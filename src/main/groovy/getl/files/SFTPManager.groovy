@@ -520,9 +520,17 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	protected Map<String, String> toStringParams() {
-		def res = super.toStringParams()
-		if (server != null) res.server = server
+	String toString() {
+		if (server == null) return 'sftp'
+		String res
+		def loginStr = (login != null)?"$login@":''
+		if (rootPath == null || rootPath.length() == 0)
+			res = "sftp $loginStr$server"
+		else if (rootPath[0] == '/')
+			res = "sftp $loginStr$server$rootPath"
+		else
+			"sftp $loginStr$server/$rootPath"
+
 		return res
 	}
 }

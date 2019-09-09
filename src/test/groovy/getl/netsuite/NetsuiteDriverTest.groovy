@@ -11,6 +11,9 @@ class NetsuiteDriverTest extends getl.test.GetlTest {
 	private NetsuiteConnection netsuiteConnectionHost
 
 	@Override
+	boolean allowTests() { netsuiteConnectionUrl != null && netsuiteConnectionHost != null }
+
+	@Override
 	void setUp() {
 		super.setUp()
 		if (!FileUtils.ExistsFile(configName)) return
@@ -21,43 +24,33 @@ class NetsuiteDriverTest extends getl.test.GetlTest {
 	}
 
 	void testConnectByUrl() {
-		if (netsuiteConnectionUrl == null) return
 		netsuiteConnectionUrl.connected = true
 		assertTrue(netsuiteConnectionUrl.connected)
 	}
 
 	void testConnectByHost() {
-		if (netsuiteConnectionHost == null) return
 		netsuiteConnectionHost.connected = true
 		assertTrue(netsuiteConnectionHost.connected)
 	}
 
 	void testGetDataUrl() {
-		if (netsuiteConnectionUrl == null) return
 		QueryDataset dataset = new QueryDataset(connection: netsuiteConnectionUrl)
-
 		dataset.query = 'select 1 rnd_row'
-
 		assertEquals(dataset.rows()[0].rnd_row, 1)
 	}
 
 	void testGetDataHost() {
-		if (netsuiteConnectionHost == null) return
 		QueryDataset dataset = new QueryDataset(connection: netsuiteConnectionHost)
-
 		dataset.query = 'select 1 rnd_row'
-
 		assertEquals(dataset.rows()[0].rnd_row, 1)
 	}
 
 	void testDisconnectUrl() {
-		if (netsuiteConnectionUrl == null) return
 		netsuiteConnectionUrl.connected = false
 		assertFalse(netsuiteConnectionUrl.connected)
 	}
 
 	void testDisconnectHost() {
-		if (netsuiteConnectionHost == null) return
 		netsuiteConnectionHost.connected = false
 		assertFalse(netsuiteConnectionHost.connected)
 	}

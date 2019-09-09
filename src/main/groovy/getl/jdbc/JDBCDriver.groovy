@@ -1191,8 +1191,8 @@ ${extend}'''
 				}
 				orderBy = orderFields.join(", ")
 			}
-
-			query = sqlTableBuildSelect(dataset, params + [selectFields: selectFields, table: fn, where: where, orderBy: orderBy])
+			params.putAll([selectFields: selectFields, table: fn, where: where, orderBy: orderBy])
+			query = sqlTableBuildSelect(dataset, params)
 		} 
 		else {
 			assert dataset.params.query != null, "Required value in \"query\" from dataset"
@@ -1292,9 +1292,9 @@ ${extend}'''
 			rowCopy = GenerationUtils.GenerateRowCopy(this, fields)
 			copyToMap = (Closure)(rowCopy.code)
 		}
-		int offs = (params.offs != null)?(int)(params.offs):0
-		int max = (params.limit != null)?(int)(params.limit):0
-		Map<String, Object> sp = (Map)(params."sqlParams")
+		int offs = (params.offs != null)?((params.offs as Integer) + 1):0
+		int max = (params.limit != null)?(params.limit as Integer):0
+		Map<String, Object> sp = (Map)(params.sqlParams as Map)
 		Map<String, Object> sqlParams
 		if (sp != null) {
 			sqlParams = new HashMap<String, Object>()

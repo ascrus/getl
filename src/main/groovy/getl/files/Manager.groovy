@@ -1675,6 +1675,10 @@ WHERE
      */
     abstract void setLastModified(String fileName, long time)
 
+	/**
+	 * Build file manager parameters to string
+	 * @return
+	 */
 	protected Map<String, String> toStringParams() {
 		def res = [:] as Map<String, String>
 		if (rootPath != null) res.root = rootPath
@@ -1684,7 +1688,6 @@ WHERE
 
 	@Override
 	String toString() {
-		def p = toStringParams()
-		return "${getClass().name} ${!p.isEmpty()?p.toString():''}"
+		return (rootPath != null)?"file:$rootPath":'file'
 	}
 }

@@ -1,8 +1,32 @@
 package getl.lang
 
 import getl.data.Field
+import getl.utils.FileUtils
+
+/**
+Create config file "tests/lang/copier.groovy" in projection dir as syntax:
+
+source {
+ server = '<sftp host>'
+ login = '<ssh user>'
+ password = '<password>'
+ rootPath = '<source directory of files>'
+ hostKey = '<rsa public key>'
+}
+
+dest {
+ server = '<sftp host>'
+ login = '<ssh user>'
+ password = '<password>'
+ rootPath = '<source directory of files>'
+ hostKey = '<rsa public key>'
+}
+*/
 
 class CopyTest extends getl.test.GetlTest {
+    @Override
+    boolean allowTests() { FileUtils.ExistsFile('tests/lang/copier.groovy') }
+
     void testCopy() {
         Getl.Dsl {
             configuration {
@@ -47,6 +71,8 @@ class CopyTest extends getl.test.GetlTest {
                     variable('date') { type = Field.dateFieldType; format = 'yyyyMMdd' }
                     variable('bs_date') { type = Field.datetimeFieldType; format = 'HH-mm' }
                 }
+
+                fileCopyOrder = ['bs_date', 'region']
             }
         }
     }

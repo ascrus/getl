@@ -12,6 +12,9 @@ import org.apache.poi.ss.usermodel.DateUtil
 abstract class ManagerTest extends getl.test.GetlTest {
     abstract protected Manager getManager()
 
+    @Override
+    boolean allowTests() { manager != null }
+
     final def initLocalDir = 'init'
     final def downloadLocalDir = 'download'
     final def rootDirName = 'getl_test_manager'
@@ -24,8 +27,6 @@ abstract class ManagerTest extends getl.test.GetlTest {
     private String origRootPath
 
     void testWork() {
-        if (manager == null) return
-
         manager.connect()
         init()
         create()

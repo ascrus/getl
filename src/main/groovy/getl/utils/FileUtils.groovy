@@ -26,10 +26,10 @@ package getl.utils
 
 //@GrabConfig(systemClassLoader=true)
 
-import getl.files.FileManager
+import getl.files.*
 import getl.tfs.TFS
+import groovy.transform.CompileStatic
 import groovy.transform.Memoized
-
 import java.nio.file.*
 import java.nio.channels.*
 import java.util.zip.GZIPInputStream
@@ -38,7 +38,6 @@ import net.lingala.zip4j.core.ZipFile
 import net.lingala.zip4j.model.ZipParameters
 import net.lingala.zip4j.util.Zip4jConstants
 import getl.exception.ExceptionGETL
-import getl.files.Filter
 
 /**
  * File library functions class
@@ -972,5 +971,69 @@ class FileUtils {
 	static Boolean IsResourceFileName(String fileName) {
 		if (fileName == null) return null
 		return (fileName.matches('resource[:].+'))
+	}
+
+	/**
+	 * Calculate and return the average download speed
+	 * @param size download size of bytes
+	 * @param longTimeMs download time in microseconds
+	 * @return
+	 */
+	@CompileStatic
+	static String avgSpeed(Long size, Long longTimeMs) {
+		if (longTimeMs == 0) longTimeMs = 1
+		def avgSpeed = NumericUtils.Round(size / longTimeMs * 1000, 3)
+		def speedName = 'bytes/sec'
+		if (avgSpeed >= 1024 * 1024 * 1024) {
+			avgSpeed = NumericUtils.Round(avgSpeed / 1024 / 1024 / 1024, 3)
+			speedName = 'GB/sec'
+		}
+		else
+		if (avgSpeed >= 1024 * 1024) {
+			avgSpeed = NumericUtils.Round(avgSpeed / 1024 / 1024, 3)
+			speedName = 'MB/sec'
+		}
+		else
+		if (avgSpeed >= 1024) {
+			avgSpeed = NumericUtils.Round(avgSpeed / 1024, 3)
+			speedName = 'KB/sec'
+		}
+
+		return "$avgSpeed $speedName"
+	}
+
+	/**
+	 * Return size in large units
+	 * @param bytes size of bytes
+	 * @return
+	 */
+	@CompileStatic
+	static String sizeBytes(BigDecimal bytes) {
+		def res = bytes
+		def byteName = 'bytes'
+		if (bytes > 1024 * 1024 * 1024) {
+			res = NumericUtils.Round(res / 1024 / 1024 / 1024, 3)
+			byteName = 'GB'
+		}
+		else if (bytes > 1024 * 1024) {
+			res = NumericUtils.Round(res / 1024 / 1024, 3)
+			byteName = 'MB'
+		}
+		else if (bytes > 1024) {
+			res = NumericUtils.Round(res / 1024, 3)
+			byteName = 'KB'
+		}
+
+		return "$res $byteName"
+	}
+
+	/**
+	 * Return size in large units
+	 * @param bytes size of bytes
+	 * @return
+	 */
+	@CompileStatic
+	static String sizeBytes(Long bytes) {
+		sizeBytes(new BigDecimal(bytes))
 	}
 }

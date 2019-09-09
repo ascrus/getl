@@ -59,8 +59,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     @Override
-    protected void runTest() {
-        if (con != null) super.runTest()
+    boolean allowTests() {
+        (con != null)
     }
 
     void connect() {
@@ -205,7 +205,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(countRows, count)
         validCount()
 
-        def counter = 9
+        def counter = 10
 		table.eachRow(order: ['id1'], limit: 10, offs: 10) { r ->
             counter++
 			assertEquals(counter, r.id1)

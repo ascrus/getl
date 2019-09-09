@@ -27,7 +27,8 @@ class CSVDriverTest extends getl.test.GetlTest {
             new Field(name: 'Blob', type: 'BLOB', length: 100)
     ]
 
-    static Map<String, Object> conParams = [path: "${TFS.systemPath}/test_csv", createPath: true, extension: 'csv', codePage: 'utf-8']
+    static Map<String, Object> conParams = [path: "${TFS.systemPath}/test_csv", createPath: true, extension: 'csv',
+                                            codePage: 'utf-8']
 
     static {
         FileUtils.ValidPath(conParams.path)

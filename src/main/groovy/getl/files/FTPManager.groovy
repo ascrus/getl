@@ -475,9 +475,17 @@ class FTPManager extends Manager {
     }
 
 	@Override
-	protected Map<String, String> toStringParams() {
-		def res = super.toStringParams()
-		if (server != null) res.server = server
+	String toString() {
+		if (server == null) return 'ftp'
+		String res
+		def loginStr = (login != null)?"$login@":''
+		if (rootPath == null || rootPath.length() == 0)
+			res = "ftp://$loginStr$server"
+		else if (rootPath[0] == '/')
+			res = "ftp://$loginStr$server$rootPath"
+		else
+			res = "ftp://$loginStr$server/$rootPath"
+
 		return res
 	}
 }

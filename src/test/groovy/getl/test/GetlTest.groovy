@@ -17,4 +17,12 @@ abstract class GetlTest extends GroovyTestCase {
         super.tearDown()
         Config.ReInit()
     }
+
+    @Override
+    protected void runTest() {
+        if (allowTests()) super.runTest()
+    }
+
+    /** Allow to run tests */
+    boolean allowTests() { true }
 }

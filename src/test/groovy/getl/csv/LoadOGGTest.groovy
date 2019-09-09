@@ -1,19 +1,21 @@
 package getl.csv
 
 import getl.utils.DateUtils
+import getl.utils.FileUtils
 
 import java.sql.Timestamp
 
 class LoadOGGTest extends getl.test.GetlTest {
     void testReadOGG() {
-        def con = new CSVConnection(path: 'tests/csv', extension: 'dsv', autoSchema: true, fieldDelimiter: '|',
-                                    escaped: false, nullAsValue: '<NULL>', header: false,
-                                    formatDateTime: 'yyyy-MM-dd:HH:mm:ss')
-        def data = new CSVDataset(connection: con, fileName: 'ogg')
-        if (!data.existsFile()) return
+        def csvFile = FileUtils.FileFromResources('/csv/ogg.dsv')
+        def csvFileSchema = FileUtils.FileFromResources('/csv/ogg.dsv.schema')
+
+        def con = new CSVConnection(path: csvFile.parent, extension: 'dsv', autoSchema: true, fieldDelimiter: '|',
+                escaped: false, nullAsValue: '<NULL>', header: false, formatDateTime: 'yyyy-MM-dd:HH:mm:ss')
+        def data = new CSVDataset(connection: con, fileName: csvFile.name, schemaFileName: csvFileSchema.path)
 
         def rows = data.rows()
-        assertEquals(30017, rows.size())
+        assertEquals(18, rows.size())
         assertEquals('I', rows[1].operation)
         assertEquals(119432, rows[1].file_num)
         assertEquals(365897840, rows[1].file_row)

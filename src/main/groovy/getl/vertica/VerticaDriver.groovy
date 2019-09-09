@@ -293,7 +293,7 @@ class VerticaDriver extends JDBCDriver {
 	protected String sessionID() {
 		String res = null
 		def rows = sqlConnect.rows('SELECT session_id FROM CURRENT_SESSION')
-		if (!rows.isEmpty()) res = rows[0].session_id
+		if (!rows.isEmpty()) res = rows[0].session_id as String
 
 		return res
 	}
@@ -322,7 +322,15 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
-		Map<String, Object> dl = (dataset as TableDataset).readDirective?:[:] + params
+		if (params.limit != null) {
+			dir.afterOrderBy = ((dir.afterOrderBy != null)?(dir.afterOrderBy + '\n'):'') + "LIMIT ${params.limit}"
+			params.limit = null
+		}
+		if (params.offs != null) {
+			dir.afterOrderBy = ((dir.afterOrderBy != null)?(dir.afterOrderBy + '\n'):'') + "OFFSET ${params.offs}"
+			params.offs = null
+		}
+		Map<String, Object> dl = ((dataset as TableDataset).readDirective as Map)?:[:] + params
         if (dl.label != null) {
             dir.afterselect = "/*+label(${dl.label})*/"
         }

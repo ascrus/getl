@@ -49,29 +49,36 @@ class FileCopier {
     /** Destination file manager */
     void setDestination(Manager value) { dest = value }
 
+    /** Temporary directory path */
+    String tempPath = TFS.systemPath
+    /** Temporary directory path */
+    String getTempPath() { tempPath }
+    /** Temporary directory path */
+    void setTempPath(String value) { tempPath = value?:TFS.systemPath }
+
     /** Number of attempts to copy a file without an error */
-    Integer retryCount
+    Integer retryCount = 1
     /** Number of attempts to copy a file without an error */
-    Integer getRetryCount() { retryCount as Integer?: 1 }
+    Integer getRetryCount() { retryCount as Integer }
     /** Number of attempts to copy a file without an error */
     void setRetryCount(Integer value) {
         if (value <= 0) throw new ExceptionGETL('The number of attempts cannot be less than 1!')
-        retryCount = value
+        retryCount = value?:1
     }
 
     /** Delete files when copying is complete */
-    Boolean deleteFiles
+    Boolean deleteFiles = false
     /** Delete files when copying is complete */
-    Boolean getDeleteFiles() { BoolUtils.IsValue(deleteFiles) }
+    Boolean getDeleteFiles() { deleteFiles }
     /** Delete files when copying is complete */
-    void setDeleteFiles(Boolean value) { deleteFiles = value }
+    void setDeleteFiles(Boolean value) { deleteFiles = BoolUtils.IsValue(value) }
 
     /** Delete empty directories */
-    Boolean deleteEmptyDir
+    Boolean deleteEmptyDir = false
     /** Delete empty directories */
-    Boolean getDeleteEmptyDir() { BoolUtils.IsValue(deleteEmptyDir) }
+    Boolean getDeleteEmptyDir() { deleteEmptyDir }
     /** Delete empty directories */
-    void setDeleteEmptyDir(Boolean value) { deleteEmptyDir = value }
+    void setDeleteEmptyDir(Boolean value) { deleteEmptyDir = BoolUtils.IsValue(value) }
 
     /** Filter directories to copy */
     public Closure<Boolean> filterDirs
@@ -170,6 +177,56 @@ class FileCopier {
 
     /** Copy files */
     void copy() {
+        FileUtils.ValidFilePath(tempPath)
 
+        if (sourcePath == null) throw new ExceptionGETL('Source mask required in "sourcePath"!')
+        if (!sourcePath.isCompile) sourcePath.compile()
+
+        if (source == null) throw new ExceptionGETL('Source file manager required in "source"!')
+        source.connect()
+
+        if (!deleteFiles) {
+            if (destPath == null) throw new ExceptionGETL('Destination mask required in "destPath"!')
+            if (!destPath.isCompile) destPath.compile()
+
+            if (dest == null) throw new ExceptionGETL('Destination file manager required in "dest"!')
+            dest.connect()
+        }
+
+        if (dest != null)
+            Logs.Fine("Copy files from [$source] to [$dest]")
+        else
+            Logs.Fine("Delete files from $source")
+
+        Logs.Fine("Source mask: ${sourcePath.maskStr}")
+        Logs.Fine("Source pattern: ${sourcePath.maskPath}")
+
+        if (dest != null)
+            Logs.Fine("Destination mask: ${destPath.maskStr}")
+
+        if (renameFilePath != null) {
+            if (dest == null) throw new ExceptionGETL('Renaming files is supported only when copying to the destination')
+            Logs.Fine("Rename file mask: ${renameFilePath.maskStr}")
+        }
+
+        if (deleteFiles && dest != null)
+            Logs.Fine('After copying the files will be deleted on the source')
+
+        if (deleteEmptyDir)
+            Logs.Fine('After copying files, empty directories will be deleted on the source')
+
+        if (retryCount > 1)
+            Logs.Fine("$retryCount repetitions will be used in case of file operation errors until termination")
+
+        if (tempPath != TFS.systemPath)
+            Logs.Fine("For intermediate operations, the \"$tempPath\" directory will be used")
+
+        if (!fileCopyOrder.isEmpty()) {
+            fileCopyOrder.each { col ->
+                if (!sourcePath.vars.containsKey(col))
+                    throw new ExceptionGETL("Field \"$col\" specified for sorting was not found!")
+            }
+            Logs.Fine("Files will be processed in the following sort order:: ${fileCopyOrder.join(', ')}")
+        }
     }
 }

@@ -384,7 +384,8 @@ class CSVDriver extends FileDriver {
 				def fi = writeFields.find { (it.toLowerCase() == v.name.toLowerCase()) }
 				if (fi != null) header << v.name //.toLowerCase()
 			}
-		} 
+		}
+		if (header.isEmpty()) throw new ExceptionGETL('Fields for processing dataset not found!')
 		return header.toArray()
 	}
 	

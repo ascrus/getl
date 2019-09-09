@@ -9,6 +9,9 @@ class XeroDriverTest extends getl.test.GetlTest {
     private XeroConnection connection
 
     @Override
+    boolean allowTests() { connection != null }
+
+    @Override
     void setUp() {
         super.setUp()
         if (!FileUtils.ExistsFile(resourceName)) return
@@ -18,14 +21,11 @@ class XeroDriverTest extends getl.test.GetlTest {
     }
 
     void testConnection() {
-        if (connection == null) return
         connection.connected = true
         assertTrue(connection.connected)
     }
 
     void testRead() {
-        if (connection == null) return
-
         XeroDataset dataset = new XeroDataset(connection: connection, xeroObjectName: 'Currency')
         def r = dataset.rows(where: 'code="USD"')
         assertEquals(1, r.size())

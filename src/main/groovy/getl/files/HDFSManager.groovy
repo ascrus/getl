@@ -341,9 +341,16 @@ class HDFSManager extends Manager {
     }
 
     @Override
-    protected Map<String, String> toStringParams() {
-        def res = super.toStringParams()
-        if (server != null) res.server = server
+    String toString() {
+        if (server == null) return 'hdfs'
+        String res
+        if (rootPath == null || rootPath.length() == 0)
+            res = "hdfs://$server"
+        else if (rootPath[0] == '/')
+            res = "hdfs://$server$rootPath"
+        else
+            res = "hdfs://$server/$rootPath"
+
         return res
     }
 }

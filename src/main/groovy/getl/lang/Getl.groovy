@@ -2035,13 +2035,14 @@ class Getl extends Script {
         if (parent.rootPath == null) parent.rootPath = new File('.').absolutePath
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess("Process $parent")
+            def pt = startProcess("Process [$parent]")
             try {
                 runClosure(parent, cl)
             }
             finally {
                 if (parent.connected) parent.disconnect()
             }
+            pt.name = "Process [$parent]"
             finishProcess(pt)
         }
 
@@ -2063,13 +2064,14 @@ class Getl extends Script {
         def parent = registerFileManager(FTPMANAGER, name, registration) as FTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess("Process $parent")
+            def pt = startProcess("Process [$parent]")
             try {
                 runClosure(parent, cl)
             }
             finally {
                 parent.disconnect()
             }
+            pt.name = "Process [$parent]"
             finishProcess(pt)
         }
 
@@ -2091,13 +2093,14 @@ class Getl extends Script {
         def parent = registerFileManager(SFTPMANAGER, name, registration) as SFTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess("Process $parent")
+            def pt = startProcess("Process [$parent]")
             try {
                 runClosure(parent, cl)
             }
             finally {
                 parent.disconnect()
             }
+            pt.name = "Process [$parent]"
             finishProcess(pt)
         }
 
@@ -2119,13 +2122,14 @@ class Getl extends Script {
         def parent = registerFileManager(HDFSMANAGER, name, registration) as HDFSManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess("Process $parent")
+            def pt = startProcess("Process [$parent]")
             try {
                 runClosure(parent, cl)
             }
             finally {
                 parent.disconnect()
             }
+            pt.name = "Process [$parent]"
             finishProcess(pt)
         }
 
@@ -2225,7 +2229,7 @@ class Getl extends Script {
         parent.destination = destination
         runClosure(parent, cl)
 
-        def pt = startProcess("Copy files from $source to $destination")
+        def pt = startProcess("Copy files from [$source] to [$destination]")
         parent.copy()
         finishProcess(pt, parent.countFiles)
 
