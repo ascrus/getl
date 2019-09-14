@@ -29,6 +29,7 @@ import getl.exception.ExceptionGETL
 import getl.h2.opts.*
 import getl.jdbc.*
 import getl.jdbc.opts.*
+import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 
 /**
@@ -47,7 +48,10 @@ class H2Table extends TableDataset {
     }
 
     @Override
-    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) { new H2CreateSpec(useExternalParams, opts) }
+    protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+                                              Map<String, Object> opts) {
+        return new H2CreateSpec(ownerObject, thisObject, useExternalParams, opts)
+    }
 
     /**
      * Create H2 table
@@ -57,7 +61,10 @@ class H2Table extends TableDataset {
     }
 
     @Override
-    protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) { new H2BulkLoadSpec(useExternalParams, opts) }
+    protected BulkLoadSpec newBulkLoadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+                                                  Map<String, Object> opts) {
+        return new H2BulkLoadSpec(ownerObject, thisObject, useExternalParams, opts)
+    }
 
     /**
      * Read table options

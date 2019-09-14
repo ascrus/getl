@@ -49,11 +49,11 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Type of dataset
 	 */
-	Type getType () { sysParams.type as Type}
+	Type getType () { directives('create').type as Type}
 	/**
 	 * Type of dataset
 	 */
-	void setType(Type value) { sysParams.type = value }
+	void setType(Type value) { directives('create').type = value }
 	
 	/**
 	 * Database name
@@ -81,6 +81,10 @@ class JDBCDataset extends Dataset {
 	 * Event on retrieve list of field
 	 */
 	void setOnUpdateFields (Closure value) { params.onUpdateFields = value }
+	/**
+	 * Event on retrieve list of field
+	 */
+	void updateFields (Closure value) { setOnUpdateFields(value) }
 	
 	@Override
 	String getObjectName() { nameDataset() }
@@ -217,5 +221,10 @@ class JDBCDataset extends Dataset {
 	void setQueryParams (Map value) {
 		queryParams.clear()
 		queryParams.putAll(value)
+	}
+
+	/** Dataset is temporary table */
+	Boolean getIsTemporaryDataset() {
+		((directives('create').type as JDBCDataset.Type) in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
 	}
 }

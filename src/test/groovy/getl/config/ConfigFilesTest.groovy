@@ -7,6 +7,7 @@ import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.MapUtils
 import groovy.json.JsonBuilder
+import org.junit.Test
 
 /**
  * @author Alexsey Konstantinov
@@ -15,6 +16,7 @@ class ConfigFilesTest extends getl.test.GetlTest {
     def h2 = new H2Connection(config: 'h2')
     def csv = new CSVConnection(config: 'csv')
 
+    @Test
     void testSaveLoadConfig() {
         Config.configClassManager = new ConfigFiles()
 

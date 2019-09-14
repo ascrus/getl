@@ -1,8 +1,10 @@
 package getl.utils
 
 import getl.tfs.TFS
+import org.junit.Test
 
 class LogsTest extends GroovyTestCase {
+    @Test
     void testInit() {
         Logs.logFileName = "${TFS.storage.path}/getl.{date}.log"
         Logs.Fine('Init log')

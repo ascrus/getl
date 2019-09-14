@@ -26,6 +26,7 @@ package getl.json
 
 import getl.exception.ExceptionGETL
 import getl.json.opts.JSONReadSpec
+import getl.lang.opts.BaseSpec
 
 import java.util.Map
 
@@ -66,14 +67,10 @@ class JSONDataset extends StructureFileDataset {
 	 * Read file options
 	 */
 	JSONReadSpec readOpts(@DelegatesTo(JSONReadSpec) Closure cl = null) {
-		def parent = new JSONReadSpec(true, readDirective)
-		parent.thisObject = parent.DetectClosureDelegate(cl)
-		if (cl != null) {
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = new JSONReadSpec(ownerObject, thisObject, true, readDirective)
+		parent.runClosure(cl)
 
 		return parent
 	}

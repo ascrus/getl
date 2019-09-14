@@ -28,6 +28,7 @@ package getl.proc.opts
 import getl.data.Dataset
 import getl.data.Field
 import getl.lang.opts.BaseSpec
+import getl.proc.Flow
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 
@@ -37,15 +38,15 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class FlowWriteManySpec extends BaseSpec {
+class FlowWriteManySpec extends FlowBaseSpec {
     FlowWriteManySpec() {
         super()
         params.dest = [:] as Map<String, Dataset>
         params.destParams = [:] as Map<String, Map<String, Object>>
     }
 
-    FlowWriteManySpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    FlowWriteManySpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.dest == null) params.dest = [:] as Map<String, Dataset>
         if (params.destParams == null) params.destParams = [:] as Map<String, Map<String, Object>>
     }
@@ -61,7 +62,7 @@ class FlowWriteManySpec extends BaseSpec {
     /**
      * Temporary destination name
      */
-    String getTempDestName() { params.tempDest }
+    String getTempDestName() { params.tempDest as String }
     /**
      * Temporary destination name
      */
@@ -91,7 +92,7 @@ class FlowWriteManySpec extends BaseSpec {
     /**
      * Write with synchronize main thread
      */
-    Boolean getWriteSynch() { params.writeSynch }
+    Boolean getWriteSynch() { params.writeSynch as Boolean }
     /**
      * Write with synchronize main thread
      */
@@ -100,7 +101,7 @@ class FlowWriteManySpec extends BaseSpec {
     /**
      * Auto starting and finishing transaction for write process
      */
-    Boolean getAutoTran() { params.autoTran }
+    Boolean getAutoTran() { params.autoTran as Boolean }
     /**
      * Auto starting and finishing transaction for write process
      */
@@ -109,7 +110,7 @@ class FlowWriteManySpec extends BaseSpec {
     /**
      * Clearing destination dataset before write
      */
-    Boolean getClear() { params.clear }
+    Boolean getClear() { params.clear as Boolean }
     /**
      * Clearing destination dataset before write
      */
@@ -118,7 +119,7 @@ class FlowWriteManySpec extends BaseSpec {
     /**
      * Load to destination as bulk load (only is supported)
      */
-    Boolean getBulkLoad() { params.bulkLoad }
+    Boolean getBulkLoad() { params.bulkLoad as Boolean }
     /**
      * Load to destination as bulk load (only is supported)
      */
@@ -127,7 +128,7 @@ class FlowWriteManySpec extends BaseSpec {
     /**
      * Convert bulk file to escaped format
      */
-    Boolean getBulkEscaped() { params.bulkEscaped }
+    Boolean getBulkEscaped() { params.bulkEscaped as Boolean }
     /**
      * Convert bulk file to escaped format
      */
@@ -136,36 +137,14 @@ class FlowWriteManySpec extends BaseSpec {
     /**
      * Compress bulk file from GZIP algorithm
      */
-    Boolean getBulkAsGZIP() { params.bulkAsGZIP }
+    Boolean getBulkAsGZIP() { params.bulkAsGZIP as Boolean }
     /**
      * Compress bulk file from GZIP algorithm
      */
     def setBulkAsGZIP(Boolean value) { params.bulkAsGZIP = value }
 
-    /**
-     * Code executed before process write rows
-     */
-    Closure getOnInitFlow() { params.onInit as Closure }
-    /**
-     * Code executed before process write rows
-     */
-    void initFlow(Closure value) { params.onInit = prepareClosure(value) }
-
-    /**
-     * Code executed after process write rows
-     */
-    Closure getOnDoneFlow() { params.onDone as Closure }
-    /**
-     * Code executed after process write rows
-     */
-    void doneFlow(Closure value) { params.onDone = prepareClosure(value) }
-
-    /**
-     * Closure code process row
-     */
-    Closure getOnProcess() { params.process as Closure }
-    /**
-     * Closure code process row
-     */
-    void process(Closure value) { params.process = prepareClosure(value) }
+    @Override
+    protected void runProcess(Flow flow) {
+        flow.writeAllTo(params)
+    }
 }

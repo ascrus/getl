@@ -35,12 +35,15 @@ import getl.utils.MapUtils
 class BaseSpec {
     BaseSpec() { }
 
-    BaseSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        if (useExternalParams) {
-            _params = importParams
-        }
-        else {
-            importFromMap(importParams)
+    BaseSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        this.ownerObject = ownerObject
+        this.thisObject = thisObject
+        if (importParams != null) {
+            if (useExternalParams) {
+                _params = importParams
+            } else {
+                importFromMap(importParams)
+            }
         }
     }
 
@@ -53,37 +56,54 @@ class BaseSpec {
     /** This object for this object */
     def thisObject
 
+    /** This object for owner object */
+    def ownerObject
+
     /** Preparing closure code for this object */
     Closure prepareClosure(Closure cl) {
-        if (thisObject == null) return cl
-        def code = cl.rehydrate(thisObject, this, thisObject)
+//        if (thisObject == null) return cl
+        def code = cl.rehydrate(ownerObject?:this, this, thisObject?:this)
         code.resolveStrategy = Closure.OWNER_FIRST
         return code
+    }
+
+    /** Preparing closure code for specified object */
+    Closure prepareClosure(def parent, Closure cl) {
+//        if (thisObject == null) return cl
+        def code = cl.rehydrate(ownerObject?:this, parent?:this, thisObject?:this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        return code
+    }
+
+    /** Preparing closure code for specified object */
+    static Closure PrepareClosure(def ownerObject, def parent, def thisObject, Closure cl) {
+        def code = cl.rehydrate(ownerObject?:this, parent?:this, thisObject?:this)
+        code.resolveStrategy = Closure.OWNER_FIRST
+        return code
+    }
+
+
+    /** Run closure for this object */
+    void runClosure(Closure cl) {
+        if (cl == null) return
+        prepareClosure(cl).call()
+    }
+
+    /** Run closure for specified object */
+    void runClosure(def parent, Closure cl) {
+        if (cl == null) return
+        prepareClosure(parent, cl).call()
+    }
+
+    /** Run closure for specified object */
+    static void RunClosure(def ownerObject, def parent, def thisObject, Closure cl) {
+        if (cl == null) return
+        PrepareClosure(ownerObject, parent, thisObject, cl).call()
     }
 
     Map<String, Object> _params = [:]
     /** Object parameters */
     Map<String, Object> getParams() { _params }
-
-    Closure onInit
-    /**
-     * User code before run process
-     */
-    Closure getOnInit() { onInit }
-    /**
-     * User code before run process
-     */
-    void init(Closure value) { onInit = prepareClosure(value) }
-
-    public Closure onDone
-    /**
-     * User code after run process
-     */
-    Closure getOnDone() { onDone }
-    /**
-     * User code after run process
-     */
-    void done(Closure value) { onDone = prepareClosure(value) }
 
     /**
      * Detected ignore key map from import
@@ -95,12 +115,7 @@ class BaseSpec {
      * Import options from map
      */
     void importFromMap(Map<String, Object> importParams) {
-        if (importParams == null) throw new ExceptionGETL('Required importMap parameter!')
+        if (importParams == null) throw new ExceptionGETL('Required "importParams" value!')
         params.putAll(MapUtils.Copy(importParams, ignoreImportKeys(importParams)))
     }
-
-    /**
-     * Preparing options before run process
-     */
-    void prepareParams() { }
 }

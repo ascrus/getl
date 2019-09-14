@@ -3,21 +3,25 @@ package getl.utils
 import getl.tfs.TFS
 import groovy.transform.Synchronized
 import net.lingala.zip4j.util.Zip4jConstants
+import org.junit.Test
 
 /**
  * @author Alexsey Konstantinov
  */
 class FileUtilsTest extends getl.test.GetlTest {
+    @Test
     void testFileExtension() {
         assertEquals('txt', FileUtils.FileExtension('test.txt'))
         assertEquals('txt', FileUtils.FileExtension('/tmp/test.getl/test.txt'))
     }
 
+    @Test
     void testExcludeFileExtension() {
         assertEquals(FileUtils.ConvertToDefaultOSPath('test'), FileUtils.ExcludeFileExtension('test.txt'))
         assertEquals(FileUtils.ConvertToDefaultOSPath('/tmp/test.getl/test'), FileUtils.ExcludeFileExtension('/tmp/test.getl/test.txt'))
     }
 
+    @Test
     void testRenameTo() {
         def source = "${TFS.systemPath}/${FileUtils.UniqueFileName()}"
         def destFileName = 'test_rename.txt'
@@ -29,6 +33,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertTrue(FileUtils.DeleteFile(dest))
     }
 
+    @Test
     void testMoveTo() {
         def fileName = 'test_move.txt'
         def source = "${TFS.systemPath}/$fileName"
@@ -47,6 +52,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertTrue(FileUtils.DeleteDir(destPath))
     }
 
+    @Test
     void testCopyToDir() {
         def fileName = 'test_copy.txt'
         def source = "${TFS.systemPath}/$fileName"
@@ -62,6 +68,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertTrue(FileUtils.DeleteDir(destPath))
     }
 
+    @Test
     void testCopyToFile() {
         def fileName = 'test_copy.txt'
         def source = "${TFS.systemPath}/$fileName"
@@ -78,6 +85,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertTrue(FileUtils.DeleteDir(destPath))
     }
 
+    @Test
     void testDeleteFolder() {
         def path = "${TFS.systemPath}/test_empty_folder"
         FileUtils.ValidPath(path)
@@ -100,11 +108,13 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertFalse(new File(path).exists())
     }
 
+    @Test
     void testLastDirFromPath() {
         assertNull(FileUtils.lastDirFromPath(null as String))
         assertEquals('test.getl', FileUtils.lastDirFromPath("/tmp/test.getl"))
     }
 
+    @Test
     void testLastDirFromFile() {
         assertNull(FileUtils.lastDirFromFile(null as String))
 
@@ -119,6 +129,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         FileUtils.DeleteFolder(path, true)
     }
 
+    @Test
     void testMaskFile() {
         assertNull(FileUtils.MaskFile(null))
         assertNull(FileUtils.MaskFile('/tmp/test.getl/test123_a.txt'))
@@ -126,6 +137,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertEquals('test???_*.txt', FileUtils.MaskFile('/tmp/test.getl/test???_*.txt'))
     }
 
+    @Test
     void testPathFromFile() {
         assertNull(FileUtils.PathFromFile(null))
 
@@ -138,6 +150,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertEquals(p, FileUtils.PathFromFile("$p/test_*.txt"))
     }
 
+    @Test
     void testFileName() {
         assertNull(FileUtils.FileName(null))
 
@@ -150,6 +163,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertEquals('test_*.txt', FileUtils.FileName("$p/test_*.txt"))
     }
 
+    @Test
     void testIsLockFileForRead() {
         assertNull(FileUtils.IsLockFileForRead(null))
 
@@ -166,6 +180,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertFalse(FileUtils.IsLockFileForRead(fileName))
     }
 
+    @Test
     void testConvertText() {
         def original_text = new StringReader('Converted text 12345 test validation')
         def processed_text = new StringWriter()
@@ -177,6 +192,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertEquals('Conv[E]rt[E]d t[E]xt-t[E]st validation\n', processed_text.toString())
     }
 
+    @Test
     void testRun() {
         //return
         def sout = new StringBuilder()
@@ -189,6 +205,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         }
     }
 
+    @Test
     void testCompressToZip() {
         def fileName = "${TFS.systemPath}/${FileUtils.UniqueFileName()}"
 
@@ -204,6 +221,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertTrue(FileUtils.ExistsFile(fileName + '.zip'))
     }
 
+    @Test
     void testParseArguments() {
         assertEquals(['1', '2', '3'], FileUtils.ParseArguments('1 2 3'))
         assertEquals(['1', '2', '3'], FileUtils.ParseArguments('1  2  3'))
@@ -217,6 +235,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         shouldFail { FileUtils.ParseArguments('1 2 "3 4 5') }
     }
 
+    @Test
     void testClassLoaser() {
         shouldFail { FileUtils.ClassLoaderFromPath('tests/test.jar') }
 
@@ -227,11 +246,13 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertNotNull(url.text)
     }
 
+    @Test
     void testFindParentPath() {
         assertNotNull(FileUtils.FindParentPath('.','getl\\.'))
         assertTrue(FileUtils.ExistsFile(FileUtils.FindParentPath('.', 'getl\\.') + 'getl/src'))
     }
 
+    @Test
     void testReadFileFromResource() {
         def file1 = FileUtils.FileFromResources('/fileutils/file.txt')
         assertEquals('1234567890', file1.text)
@@ -247,6 +268,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertEquals(file1, file3)
     }
 
+    @Test
     void testParseFileName() {
         def fileName1 = FileUtils.ResourceFileName('resource:/fileutils/file.txt')
         assertTrue(new File(fileName1).exists())

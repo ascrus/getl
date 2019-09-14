@@ -25,6 +25,7 @@
 package getl.data
 
 import getl.data.opts.DatasetLookupSpec
+import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
@@ -240,7 +241,12 @@ class Dataset {
 	 * System parameters	
 	 */
 	public final Map<String, Object> sysParams = [:]
-	
+
+	/** Dataset directives create, drop, read, write and bulkLoad */
+	Map<String, Object> directives(String group) {
+		(params.directive as Map<String, Map<String, Object>>).get(group) as Map<String, Object>
+	}
+
 	/**
 	 * Init configuration
 	 */
@@ -471,16 +477,15 @@ class Dataset {
 
 	/** Create or update dataset field */
 	Field field(String name, @DelegatesTo(Field) Closure cl = null) {
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+
 		Field parent = fieldByName(name)
 		if (parent == null) {
 			parent = new Field(name: name)
 			field << parent
 		}
-		if (cl != null) {
-			def code = cl.rehydrate(BaseSpec.DetectClosureDelegate(cl), parent, BaseSpec.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-		}
+		BaseSpec.RunClosure(ownerObject, parent, thisObject, cl)
 
 		return parent
 	}
@@ -523,6 +528,9 @@ class Dataset {
 
 		if (procParams == null) procParams = [:]
 		methodParams.validation("create", procParams, [connection.driver.methodParams.params("createDataset")])
+
+		def dirs = directives('create')?:[:]
+		procParams = dirs + procParams
 		
 		connection.tryConnect()
 		connection.driver.createDataset(this, procParams)
@@ -537,6 +545,9 @@ class Dataset {
 		
 		if (procParams == null) procParams = [:]
 		methodParams.validation("drop", procParams, [connection.driver.methodParams.params("dropDataset")])
+
+		def dirs = directives('drop')?:[:]
+		procParams = dirs + procParams
 		
 		connection.tryConnect()
 		connection.driver.dropDataset(this, procParams)
@@ -598,7 +609,8 @@ class Dataset {
 		
 		if (procParams == null) procParams = [:]
 		methodParams.validation("bulkLoadFile", procParams, [connection.driver.methodParams.params("bulkLoadFile")])
-		def bulkLoadDir = ((params.directive as Map)?.bulkLoad as Map)?:[:]
+
+		def bulkLoadDir = directives('bulkLoad')?:[:]
 		procParams = bulkLoadDir + procParams
 		
 		if (field.size() == 0) {
@@ -828,7 +840,8 @@ class Dataset {
 		
 		if (procParams == null) procParams = [:]
 		methodParams.validation("eachRow", procParams, [connection.driver.methodParams.params("eachRow")])
-		def readDir = ((params.directive as Map)?.read as Map)?:[:]
+
+		def readDir = directives('read')?:[:]
 		procParams = readDir + procParams
 		
 		// Save parse and assert errors to file
@@ -906,7 +919,7 @@ class Dataset {
 
 		procParams = procParams?:[:]
 		methodParams.validation("openWrite", procParams, [connection.driver.methodParams.params("openWrite")])
-		def writeDir = ((params.directive as Map)?.write as Map)?:[:]
+		def writeDir = directives('write')?:[:]
 		procParams = writeDir + procParams
 
 		def saveSchema = BoolUtils.IsValue(procParams.autoSchema, autoSchema) 
@@ -1084,14 +1097,10 @@ class Dataset {
 	}
 
 	Map lookup(@DelegatesTo(DatasetLookupSpec) Closure cl) {
-		def parent = new DatasetLookupSpec()
-		if (cl != null) {
-			parent.thisObject = parent.DetectClosureDelegate(cl)
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = new DatasetLookupSpec(ownerObject, thisObject, false, null)
+		parent.runClosure(cl)
 
 		return lookup(parent.params)
 	}
@@ -1227,7 +1236,7 @@ class Dataset {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.class.name
 		Map p = CloneUtils.CloneMap(this.params)
-		Dataset ds = CreateDataset([dataset: className] + MapUtils.CleanMap(p, ['sysParams']))
+		Dataset ds = CreateDataset([dataset: className] + p)
 		if (newConnection != null) ds.connection = newConnection
 		ds.setField(this.field)
 		ds.manualSchema = this.manualSchema

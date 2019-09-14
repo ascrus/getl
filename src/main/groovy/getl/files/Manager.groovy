@@ -29,6 +29,7 @@ import getl.exception.ExceptionGETL
 import getl.files.opts.ManagerBuildListSpec
 import getl.files.opts.ManagerDownloadSpec
 import getl.jdbc.*
+import getl.lang.opts.BaseSpec
 import getl.proc.Executor
 import getl.proc.Flow
 import getl.utils.*
@@ -98,12 +99,17 @@ abstract class Manager {
 	/**
 	 * Parameters
 	 */
-	public Map<String, Object> params = [:]
+	public Map<String, Object> params = [:] as Map<String, Object>
+
+	/**
+	 * System parameters
+	 */
+	public final Map<String, Object> sysParams = [:] as Map<String, Object>
 	
 	/**
 	 * Root path
 	 */
-	String getRootPath () { params.rootPath }
+	String getRootPath () { params.rootPath as String }
 	/**
 	 * Root path
 	 */
@@ -985,14 +991,11 @@ FROM ${newFiles.fullNameDataset()} files
 
 	/** Build list of files */
 	TableDataset buildListFiles(String mask, @DelegatesTo(ManagerBuildListSpec) cl = null) {
-		def parent = new ManagerBuildListSpec()
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = new ManagerBuildListSpec(ownerObject, thisObject, false, null)
 		if (mask != null) parent.maskPath = new Path(mask: mask)
-		if (cl != null) {
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		parent.runClosure(cl)
 		buildList(parent.params)
 
 		return fileList
@@ -1184,13 +1187,11 @@ WHERE
 
 	/** Build list of files */
 	void downloadListFiles(@DelegatesTo(ManagerDownloadSpec) cl = null) {
-		def parent = new ManagerDownloadSpec()
-		if (cl != null) {
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = new ManagerDownloadSpec(ownerObject, thisObject, false, null)
+		parent.runClosure(cl)
+
 		downloadFiles(parent.params)
 	}
 

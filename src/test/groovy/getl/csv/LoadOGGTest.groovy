@@ -2,10 +2,12 @@ package getl.csv
 
 import getl.utils.DateUtils
 import getl.utils.FileUtils
+import org.junit.Test
 
 import java.sql.Timestamp
 
 class LoadOGGTest extends getl.test.GetlTest {
+    @Test
     void testReadOGG() {
         def csvFile = FileUtils.FileFromResources('/csv/ogg.dsv')
         def csvFileSchema = FileUtils.FileFromResources('/csv/ogg.dsv.schema')

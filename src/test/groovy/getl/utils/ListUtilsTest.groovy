@@ -1,5 +1,7 @@
 package getl.utils
 
+import org.junit.Test
+
 class ListUtilsTest extends getl.test.GetlTest {
 
     private void list2str(List list) {
@@ -9,6 +11,7 @@ class ListUtilsTest extends getl.test.GetlTest {
 //        println "$str: $parseList"
     }
 
+    @Test
     void testList2StrArray() {
         list2str([])
         list2str([1])

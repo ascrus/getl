@@ -39,8 +39,8 @@ class FlowCopyChildSpec extends BaseSpec {
         params.datasetParams = [:] as Map<String, Object>
     }
 
-    FlowCopyChildSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    FlowCopyChildSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.datasetParams == null) params.datasetParams = [:] as Map<String, Object>
     }
 
@@ -58,11 +58,16 @@ class FlowCopyChildSpec extends BaseSpec {
     }
 
     /** The code for write to child dataset (parameters passed to the writer and the original source row) */
-    void processRow(Closure value) { params.process = prepareClosure(value) }
+    Closure getOnProcess() { params.process as Closure }
+    /** The code for write to child dataset (parameters passed to the writer and the original source row) */
+    void setOnProcess(Closure value) { params.process = value }
+    /** The code for write to child dataset (parameters passed to the writer and the original source row) */
+    void process(Closure value) { setOnProcess(prepareClosure(value)) }
 
     /** Initialization code before processing */
-    void childInit(Closure value) { params.onInit = prepareClosure(value) }
-
-    /** Done code after processing */
-    void childDone(Closure value) { params.onDone = prepareClosure(value) }
+    Closure getOnInit() { params.onInit as Closure }
+    /** Initialization code before processing */
+    void setOnInit(Closure value) { params.onInit = value }
+    /** Initialization code before processing */
+    void init(Closure value) { setOnInit(prepareClosure(value)) }
 }

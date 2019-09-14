@@ -53,7 +53,10 @@ class HiveTable extends TableDataset {
     void setOverwrite(Boolean value) { params.overwrite = value }
 
     @Override
-    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) { new HiveCreateSpec(useExternalParams, opts) }
+    protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+                                              Map<String, Object> opts) {
+        new HiveCreateSpec(ownerObject, thisObject, useExternalParams, opts)
+    }
 
     HiveCreateSpec createOpts(@DelegatesTo(HiveCreateSpec) Closure cl = null) {
         genCreateTable(cl) as HiveCreateSpec

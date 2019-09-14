@@ -47,8 +47,9 @@ class MSSQLTable extends TableDataset {
     }
 
     @Override
-    protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new MSSQLReadSpec(useExternalParams, opts)
+    protected ReadSpec newReadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+                                          Map<String, Object> opts) {
+        new MSSQLReadSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
     /**

@@ -52,7 +52,7 @@ class JDBCDriver extends Driver {
 		super()
 		methodParams.register('retrieveObjects', ['dbName', 'schemaName', 'tableName', 'type'])
 		methodParams.register('createDataset', ['ifNotExists', 'onCommit', 'indexes', 'hashPrimaryKey',
-                                                'useNativeDBType'])
+                                                'useNativeDBType', 'type'])
 		methodParams.register('dropDataset', ['ifExists'])
 		methodParams.register('openWrite', ['operation', 'batchSize', 'updateField', 'logRows',
                                             'onSaveBatch'])
@@ -671,7 +671,7 @@ class JDBCDriver extends Driver {
 				rs.close()
 			}
 
-			if (dataset.sysParams.type == JDBCDataset.Type.TABLE) {
+			if ((dataset as JDBCDataset).type == JDBCDataset.Type.TABLE) {
 				rs = sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, names.schemaName, names.tableName)
 				def ord = 0
 				try {
@@ -778,11 +778,9 @@ ${extend}'''
 		validTableName(dataset)
 
         params = params?:[:]
-		def createDir = ((dataset.params.directive as Map)?.create as Map)?:[:]
-		params = createDir + params
 
 		def tableName = fullNameDataset(dataset)
-		def tableType = dataset.sysParams.type as JDBCDataset.Type
+		def tableType = (dataset as JDBCDataset).type as JDBCDataset.Type
 		if (!(tableType in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.MEMORY])) {
             throw new ExceptionGETL("Can not create dataset for type \"${tableType}\"")
         }
@@ -998,11 +996,11 @@ ${extend}'''
 		
 		def r = prepareTableNameForSQL(ds.params.tableName as String)
 
-		def tableType = dataset.sysParams.type as JDBCDataset.Type
+		def tableType = (dataset as JDBCDataset).type as JDBCDataset.Type
 		if (tableType == null || tableType != JDBCDataset.Type.LOCAL_TEMPORARY) {
 			def schemaName = ds.schemaName
 			if (schemaName == null &&
-					(dataset.sysParams.type as JDBCDataset.Type) == JDBCDataset.Type.TABLE && defaultSchemaName != null) {
+					(dataset as JDBCDataset).type == JDBCDataset.Type.TABLE && defaultSchemaName != null) {
 				schemaName = defaultSchemaName
 			}
 
@@ -1051,14 +1049,13 @@ ${extend}'''
 		validTableName(dataset)
 
         params = params?:[:]
-		def dropDir = ((dataset.params.directive as Map)?.drop as Map)?:[:]
-		params = dropDir + params
 
 		def n = fullNameDataset(dataset)
-		def t = ((dataset.sysParams.type as JDBCDataset.Type) in
+		def t = ((dataset as JDBCDataset).type in
                     [JDBCDataset.Type.TABLE, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.GLOBAL_TEMPORARY,
-                     JDBCDataset.Type.MEMORY])?"TABLE":(dataset.sysParams.type == JDBCDataset.Type.VIEW)?'VIEW':null
-		if (t == null) throw new ExceptionGETL("Can not support type object \"${dataset.sysParams.type}\"")
+                     JDBCDataset.Type.MEMORY])?"TABLE":((dataset as JDBCDataset).type == JDBCDataset.Type.VIEW)?'VIEW':null
+
+		if (t == null) throw new ExceptionGETL("Can not support type object \"${(dataset as JDBCDataset).type}\"")
 		def ifExists = BoolUtils.IsValue(params.ifExists)
 		def e = (dropIfExists && ifExists)?'IF EXISTS ':''
 		def q = "DROP ${t} ${e}${n}"
@@ -1698,10 +1695,6 @@ $sql
 		dataset.driver_params = wp
 		
 		validTableName(dataset)
-
-        /*params = params?:[:]
-		def writeDir = ((dataset.params.directive as Map)?.write as Map)?:[:]
-        params = writeDir + params*/
 
 		def fn = fullNameDataset(dataset)
 		def operation = (params.operation != null)?(params.operation as String).toUpperCase():"INSERT"

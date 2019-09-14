@@ -39,8 +39,8 @@ class XMLReadSpec extends BaseSpec {
         params.fields = [] as List<String>
     }
 
-    XMLReadSpec(Boolean useExternalParams, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    XMLReadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.fields == null) params.fields = [] as List<String>
     }
 
@@ -60,21 +60,31 @@ class XMLReadSpec extends BaseSpec {
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    Closure<Boolean> getFilter() { params.filter as Closure<Boolean> }
+    Closure<Boolean> getOnFilter() { params.filter as Closure<Boolean> }
     /**
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    void filter(Closure<Boolean> value) { params.filter = prepareClosure(value) }
+    void setOnFilter(Closure<Boolean> value) { params.filter = value }
+    /**
+     * Filtering readable records
+     * <br>A readable record is passed as parameter (Map object)
+     */
+    void filter(Closure<Boolean> value) { setOnFilter(prepareClosure(value)) }
 
     /**
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    Closure<Boolean> getInitAttr() { params.initAttr as Closure<Boolean> }
+    Closure<Boolean> getOnInitAttr() { params.initAttr as Closure<Boolean> }
     /**
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    void initAttr(Closure<Boolean> value) { params.initAttr = prepareClosure(value) }
+    void setOnInitAttr(Closure<Boolean> value) { params.initAttr = value }
+    /**
+     * Filtering readable records
+     * <br>A readable record is passed as parameter (Map object)
+     */
+    void initAttr(Closure<Boolean> value) { setOnInitAttr(prepareClosure(value)) }
 }

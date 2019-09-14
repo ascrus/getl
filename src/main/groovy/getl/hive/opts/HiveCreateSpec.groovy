@@ -25,6 +25,7 @@
 package getl.hive.opts
 
 import getl.jdbc.opts.CreateSpec
+import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 
 /**
@@ -41,8 +42,8 @@ class HiveCreateSpec extends CreateSpec {
         params.skewed = [:] as Map<String, Object>
     }
 
-    HiveCreateSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    HiveCreateSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.tblproperties == null) params.tblproperties = [:] as Map<String, Object>
         if (params.clustered == null) params.clustered = [:] as Map<String, Object>
         if (params.skewed == null) params.skewed = [:] as Map<String, Object>
@@ -60,14 +61,8 @@ class HiveCreateSpec extends CreateSpec {
      * Generate new clustered options
      */
     HiveClusteredSpec clustered(@DelegatesTo(HiveClusteredSpec) Closure cl = null) {
-        def parent = new HiveClusteredSpec(true, clustered)
-        if (cl != null) {
-            parent.thisObject = parent.DetectClosureDelegate(cl)
-            def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call()
-            parent.prepareParams()
-        }
+        def parent = new HiveClusteredSpec(ownerObject, thisObject, true, clustered)
+        parent.runClosure(cl)
 
         return parent
     }
@@ -85,14 +80,8 @@ class HiveCreateSpec extends CreateSpec {
      * Generate new skewed options
      */
     HiveSkewedSpec skewed(@DelegatesTo(HiveSkewedSpec) Closure cl = null) {
-        def parent = new HiveSkewedSpec(true, skewed)
-        if (cl != null) {
-            parent.thisObject = parent.DetectClosureDelegate(cl)
-            def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call()
-            parent.prepareParams()
-        }
+        def parent = new HiveSkewedSpec(ownerObject, thisObject, true, skewed)
+        parent.runClosure(cl)
 
         return parent
     }

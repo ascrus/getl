@@ -7,18 +7,12 @@ import getl.utils.FileUtils
  * @author Alexsey Konstantinov
  */
 class FTPManagerTest extends ManagerTest {
-    FTPManager manager
-    protected Manager getManager() {
-        if (manager == null) {
-            def confName = 'tests/filemanager/ftp.conf'
-            if (FileUtils.ExistsFile(confName)) {
-                Config.LoadConfig(fileName: confName)
-                if (Config.ContainsSection('files.test_ftp_filemanager')) {
-                    manager = new FTPManager(config: 'test_ftp_filemanager')
-                }
-            }
-        }
+    static final def confName = 'tests/filemanager/ftp.conf'
 
-        return manager
+    @Override
+    Manager newManager() {
+        if (!FileUtils.ExistsFile(confName)) return null
+        Config.LoadConfig(fileName: confName)
+        return new FTPManager(config: 'test_ftp_filemanager')
     }
 }

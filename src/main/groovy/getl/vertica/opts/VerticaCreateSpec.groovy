@@ -34,8 +34,8 @@ class VerticaCreateSpec extends CreateSpec {
         params.orderBy = [] as List<String>
     }
 
-    VerticaCreateSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    VerticaCreateSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.orderBy == null) params.orderBy = [] as List<String>
     }
 

@@ -1,11 +1,13 @@
 package getl.tfs
 
 import getl.h2.H2Connection
+import org.junit.Test
 
 /**
  * Created by ascru on 01.11.2016.
  */
 class TDSTest extends getl.test.GetlTest {
+    @Test
     void testConnectToStaticInMemory () {
         def d = TDS.dataset()
         H2Connection con = d.connection
@@ -21,6 +23,7 @@ class TDSTest extends getl.test.GetlTest {
         d.connection.connected = false
     }
 
+    @Test
     void testConnectToStaticFile () {
         def con = new TDS(inMemory: false)
         con.connected = true

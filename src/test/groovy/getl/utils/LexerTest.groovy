@@ -1,9 +1,12 @@
 package getl.utils
 
+import org.junit.Test
+
 /**
  * @author Alexsey Konstantinov
  */
 class LexerTest extends getl.test.GetlTest {
+    @Test
     void testParse() {
         def example = '''
 static public int test (def param1, def param2) {
@@ -201,6 +204,7 @@ static public int test (def param1, def param2) {
         assertEquals(res, lexer.toString())
     }
 
+    @Test
     void testMath() {
         def example = "test+=t"
         def lexer = new Lexer(input: new StringReader(example))
@@ -228,6 +232,7 @@ static public int test (def param1, def param2) {
         assertEquals(['test', '<>', 't!=0'], lexer.tokens*.value)
     }
 
+    @Test
     void testEmptyQuotes() {
         def example = "test=''"
         def lexer = new Lexer(input: new StringReader(example))
@@ -235,6 +240,7 @@ static public int test (def param1, def param2) {
         assertEquals(['test','=', ''], lexer.tokens*.value)
     }
 
+    @Test
     void testQuotesWithLineBreak() {
         def example = """println("
 YEAR
@@ -263,6 +269,7 @@ YEAR
         assertEquals(res.toString(), lexer.toString())
     }
 
+    @Test
     void testSingleWord() {
         def example = "test=1"
         def lexer = new Lexer(input: new StringReader(example))
@@ -285,6 +292,7 @@ YEAR
         assertEquals(['test', '=', 'test'], lexer.tokens*.value)
     }
 
+    @Test
     void testOperatorWithThreeChars() {
         def example = "test**=t"
         def lexer = new Lexer(input: new StringReader(example))
@@ -292,6 +300,7 @@ YEAR
         assertEquals(['test','**=', 't'], lexer.tokens*.value)
     }
 
+    @Test
     void testBracketsAfterOperator() {
         String example = "if(var = 1, or(val = 1, var = 2, (value_1 = 1 and value_2 = 2 and something = 3), onemore = 3), false)"
 
@@ -322,6 +331,7 @@ YEAR
         }
     }
 
+    @Test
     void testOneMore() {
         String example = """
 DATE ( 
@@ -351,6 +361,7 @@ IF(MOD(YEAR(EndDate) + FLOOR((MONTH(EndDate) + 3)/12), 400) = 0 || (MOD(YEAR(End
         assertNotNull(lexer.tokens)
     }
 
+    @Test
     void testComments() {
         def example = """
 /*IF(ISBLANK( Linked_Reseller__r.ParentId), Linked_Reseller__r.Name, left(Linked_Reseller__r.Parent_Account_Name__c,len(Linked_Reseller__r.Parent_Account_Name__c)-7))
@@ -399,6 +410,7 @@ Linked_Reseller__r.Name
         assertEquals(res, lexer.toString())
     }
 
+    @Test
     void testFunctionWithLineBreak() {
         def example = """
 Date(

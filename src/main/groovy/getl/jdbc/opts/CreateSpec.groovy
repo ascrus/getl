@@ -40,8 +40,8 @@ class CreateSpec extends BaseSpec {
         params.indexes = [:] as Map<String, Object>
     }
 
-    CreateSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    CreateSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.indexes == null) params.indexes = [:] as Map<String, Object>
     }
 
@@ -94,6 +94,15 @@ class CreateSpec extends BaseSpec {
     void setUseNativeDBType(Boolean value) { params.useNativeDBType = value }
 
     /**
+     * Object type
+     */
+    JDBCDataset.Type getType() { params.type as JDBCDataset.Type }
+    /**
+     * Object type
+     */
+    void setType(JDBCDataset.Type value) { params.type = value }
+
+    /**
      * This table
      */
     static JDBCDataset.Type getIsTable() { JDBCDataset.Type.TABLE }
@@ -111,7 +120,10 @@ class CreateSpec extends BaseSpec {
     /**
      * Create new parameters object for create index
      */
-    protected static IndexSpec newIndexParams(Boolean useExternalParams, Map<String, Object> opts) { new IndexSpec(useExternalParams, opts) }
+    protected static IndexSpec newIndexParams(def ownerObject, def thisObject, Boolean useExternalParams,
+                                              Map<String, Object> opts) {
+        new IndexSpec(ownerObject, thisObject, useExternalParams, opts)
+    }
 
     /**
      * Generate new parameters object for create index
@@ -122,14 +134,8 @@ class CreateSpec extends BaseSpec {
             indexOpts = [:] as  Map<String, Object>
             indexes.put(name, indexOpts)
         }
-        def parent = newIndexParams(true, indexOpts)
-        if (cl != null) {
-            parent.thisObject = parent.DetectClosureDelegate(cl)
-            def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-            code.resolveStrategy = Closure.OWNER_FIRST
-            code.call()
-            parent.prepareParams()
-        }
+        def parent = newIndexParams(ownerObject, thisObject, true, indexOpts)
+        parent.runClosure(cl)
 
         return parent
     }

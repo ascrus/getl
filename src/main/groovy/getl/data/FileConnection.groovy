@@ -27,6 +27,7 @@ package getl.data
 import getl.data.opts.FileDatasetRetrieveObjectsSpec
 import getl.exception.ExceptionGETL
 import getl.driver.FileDriver
+import getl.lang.opts.BaseSpec
 import getl.utils.*
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
@@ -118,14 +119,10 @@ abstract class FileConnection extends Connection {
 
 	/** Return the list of files by the specified conditions */
 	List<File> listFiles(@DelegatesTo(FileDatasetRetrieveObjectsSpec) Closure cl) {
-		def parent = new FileDatasetRetrieveObjectsSpec()
-		if (cl != null) {
-			parent.thisObject = parent.DetectClosureDelegate(cl)
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = new FileDatasetRetrieveObjectsSpec(ownerObject, thisObject, false, null)
+		parent.runClosure(cl)
 
 		return retrieveObjects(parent.params) as List<File>
 	}

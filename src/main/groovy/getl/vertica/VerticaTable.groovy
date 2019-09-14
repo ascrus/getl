@@ -47,8 +47,9 @@ class VerticaTable extends TableDataset {
     }
 
     @Override
-    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new VerticaCreateSpec(useExternalParams, opts)
+    protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+                                              Map<String, Object> opts) {
+        new VerticaCreateSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
     /**
@@ -59,8 +60,9 @@ class VerticaTable extends TableDataset {
     }
 
     @Override
-    protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new VerticaReadSpec(useExternalParams, opts)
+    protected ReadSpec newReadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+                                          Map<String, Object> opts) {
+        new VerticaReadSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
     /**
@@ -71,8 +73,9 @@ class VerticaTable extends TableDataset {
     }
 
     @Override
-    protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new VerticaWriteSpec(useExternalParams, opts)
+    protected WriteSpec newWriteTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+                                            Map<String, Object> opts) {
+        new VerticaWriteSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
     /**
@@ -83,8 +86,9 @@ class VerticaTable extends TableDataset {
     }
 
     @Override
-    protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new VerticaBulkLoadSpec(useExternalParams, opts)
+    protected BulkLoadSpec newBulkLoadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+                                                  Map<String, Object> opts) {
+        new VerticaBulkLoadSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
     /**

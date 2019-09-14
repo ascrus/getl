@@ -27,6 +27,7 @@ package getl.proc.opts
 
 import getl.data.Dataset
 import getl.lang.opts.BaseSpec
+import getl.proc.Flow
 import getl.tfs.TFSDataset
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
@@ -37,14 +38,14 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class FlowProcessSpec extends BaseSpec {
+class FlowProcessSpec extends FlowBaseSpec {
     FlowProcessSpec() {
         super()
         params.sourceParams = [:] as Map<String, Object>
     }
 
-    FlowProcessSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    FlowProcessSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.sourceParams == null) params.sourceParams = [:] as Map<String, Object>
     }
 
@@ -60,7 +61,7 @@ class FlowProcessSpec extends BaseSpec {
     /**
      * Temporary source name
      */
-    String getTempSourceName() { params.tempSource }
+    String getTempSourceName() { params.tempSource as String }
     /**
      * Temporary source name
      */
@@ -81,7 +82,7 @@ class FlowProcessSpec extends BaseSpec {
     /**
      * Save assert errors to temporary dataset "errorsDataset"
      */
-    Boolean getSaveErrors() { params.saveErrors }
+    Boolean getSaveErrors() { params.saveErrors as Boolean }
     /**
      * Save assert errors to temporary dataset "errorsDataset"
      */
@@ -90,37 +91,18 @@ class FlowProcessSpec extends BaseSpec {
     /**
      * Code executed before process read rows
      */
-    Closure getOnInitFlow() { params.onInit as Closure }
+    Closure getOnPrepare() { params.onInit as Closure }
     /**
      * Code executed before process read rows
      */
-    void initFlow(Closure value) { params.onInit = prepareClosure(value) }
+    void setOnPrepare(Closure value) { params.onInit = value }
+    /**
+     * Code executed before process read rows
+     */
+    void prepare(Closure value) { setOnPrepare(prepareClosure(value)) }
 
-    /**
-     * Code executed after process read rows
-     */
-    Closure getOnDoneFlow() { params.onDone as Closure }
-    /**
-     * Code executed after process read rows
-     */
-    void doneFlow(Closure value) { params.onDone = prepareClosure(value) }
-
-    /**
-     * Closure code process row
-     */
-    Closure getOnProcess() { params.process as Closure }
-    /**
-     * Closure code process row
-     */
-    void process(Closure value) { params.process = prepareClosure(value) }
-
-    /**
-     * Last count row
-     */
-    public Long countRow = 0
-
-    /**
-     * Error rows for read process
-     */
-    public TFSDataset errorsDataset
+    @Override
+    protected void runProcess(Flow flow) {
+        flow.process(params)
+    }
 }

@@ -43,7 +43,9 @@ class SavePointManager {
 	/**
 	 * Object parameters
 	 */
-	public final Map params = [:]
+	public final Map<String, Object> params = [:] as Map<String, Object>
+
+	public final Map<String, Object> sysParams = [:] as Map<String, Object>
 	
 	/**
 	 * Connection

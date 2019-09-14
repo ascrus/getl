@@ -3,24 +3,30 @@ package getl.test
 import getl.utils.Config
 import getl.utils.Logs
 import groovy.transform.InheritConstructors
+import org.junit.AfterClass
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 @InheritConstructors
+@RunWith(JUnit4.class)
 abstract class GetlTest extends GroovyTestCase {
-    @Override
-    void setUp() {
-        super.setUp()
+    @BeforeClass
+    static void InitTestClass() {
+        Config.ReInit()
         Logs.Init()
     }
 
-    @Override
-    void tearDown() {
-        super.tearDown()
+    @AfterClass
+    static void DoneTestClass() {
         Config.ReInit()
+        Logs.Done()
     }
 
-    @Override
-    protected void runTest() {
-        if (allowTests()) super.runTest()
+    @Before
+    void beforeTest() {
+        org.junit.Assume.assumeTrue(allowTests());
     }
 
     /** Allow to run tests */

@@ -39,8 +39,8 @@ class VerticaBulkLoadParserSpec extends BaseSpec {
         params.options = [:] as Map<String, Object>
     }
 
-    VerticaBulkLoadParserSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    VerticaBulkLoadParserSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.options == null) params.options = [:] as Map<String, Object>
     }
 

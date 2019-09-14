@@ -42,13 +42,20 @@ class FileTextSpec extends BaseSpec {
     void setFileName(String value) { params.fileName = value }
 
     /** Code page text file (default UTF-8) */
-    String getCodePage() { params.codePage as String }
+    String getCodePage() { (params.codePage as String)?:'UTF-8' }
     void setCodePage(String value) { params.codePage = value }
 
+    /** Delete file after stop program */
     Boolean getTemporaryFile() { BoolUtils.IsValue(params.temporaryFile) }
+    /** Delete file after stop program */
     void setTemporaryFile(Boolean value) {
         params.temporaryFile = value
     }
+
+    /** Append text to exist file */
+    Boolean getAppend() { BoolUtils.IsValue(params.append) }
+    /** Append text to exist file */
+    void setAppend(Boolean value) { params.append = value }
 
     /** Text buffer */
     final private StringBuilder buffer = new StringBuilder()
@@ -56,14 +63,21 @@ class FileTextSpec extends BaseSpec {
     String getTextBuffer() { buffer.toString() }
 
     /** Write text buffer to file */
-    void write(boolean append = false) {
+    void write() {
         if (fileName == null && !temporaryFile) throw new ExceptionGETL("Required \"fileName\" value!")
-        def file = (!temporaryFile)?new File(fileName):
-                File.createTempFile('text.', '.getltemp', new File(TFS.storage.path))
-        if (temporaryFile) {
-            fileName = file.absolutePath
+        File file
+        if (!temporaryFile) {
+            file = new File(fileName)
+        }
+        else if (fileName != null) {
+            file = new File(fileName)
             file.deleteOnExit()
         }
+        else {
+            File.createTempFile('text.', '.getltemp', new File(TFS.storage.path))
+            fileName = file.absolutePath
+        }
+
         def writer = file.newWriter(codePage?:'UTF-8', append, false)
         try {
             writer.write(buffer.toString())
@@ -81,21 +95,19 @@ class FileTextSpec extends BaseSpec {
     }
 
     /** Write text and line feed */
-    void text(String data) {
-        buffer.append(data)
+    void writeln(String text) {
+        buffer.append(text)
         buffer.append('\n')
     }
 
     /** Write string */
-    void string(String data) {
-        buffer.append(data)
+    void write(String text) {
+        buffer.append(text)
     }
 
     /** Read file to text buffer */
-    String read() {
-        clear()
-        if (fileName == null) throw new ExceptionGETL("Required \"fileName\" value!")
-        buffer.append(new File(fileName).text)
-        return buffer.toString()
+    String read(String sourceFileName, String codePage = 'UTF-8') {
+        if (sourceFileName == null) throw new ExceptionGETL("Required \"sourceFileName\" value!")
+        return new File(sourceFileName).getText(codePage)
     }
 }

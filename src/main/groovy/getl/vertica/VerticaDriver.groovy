@@ -98,7 +98,8 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		def result = ''
-		def temporary = ((dataset.sysParams.type as JDBCDataset.Type)in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
+		def temporary = (((dataset as JDBCDataset).type as JDBCDataset.Type) in
+				[JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
 		if (temporary && params.onCommit != null && params.onCommit) result += 'ON COMMIT PRESERVE ROWS\n'
 		if (params.orderBy != null && !(params.orderBy as List).isEmpty()) result += "ORDER BY ${(params.orderBy as List).join(", ")}\n"
 		if (params.segmentedBy != null && params.unsegmented != null) throw new ExceptionGETL('Invalid segmented options')

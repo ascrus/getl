@@ -5,10 +5,12 @@ import getl.tfs.TFS
 import getl.utils.Config
 import getl.utils.MapUtils
 import groovy.json.JsonBuilder
+import org.junit.Test
 
 class ConfigStoresTest extends getl.test.GetlTest {
     def h2 = new H2Connection(config: 'h2')
 
+    @Test
     void testSaveLoadConfig() {
         Config.configClassManager = new ConfigStores()
 

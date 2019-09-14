@@ -2,6 +2,7 @@ package getl.lang
 
 import getl.data.Field
 import getl.utils.FileUtils
+import org.junit.Test
 
 /**
 Create config file "tests/lang/copier.groovy" in projection dir as syntax:
@@ -27,6 +28,7 @@ class CopyTest extends getl.test.GetlTest {
     @Override
     boolean allowTests() { FileUtils.ExistsFile('tests/lang/copier.groovy') }
 
+    @Test
     void testCopy() {
         Getl.Dsl {
             configuration {
@@ -40,10 +42,6 @@ class CopyTest extends getl.test.GetlTest {
                 password = configContent.source.password
                 rootPath = configContent.source.rootPath
                 hostKey = configContent.source.hostKey
-
-                buildListThread = 8
-                threadLevel = 1
-                recursive = true
             }
 
             sftp('dest', true) {
@@ -56,7 +54,7 @@ class CopyTest extends getl.test.GetlTest {
             }
 
             fileCopier(sftp('source'), sftp('dest')) {
-                sourcePath {
+                useSourcePath {
                     mask = 'M2000_{region}_{m2000}/neexport_{date}/{bs_group}/A{bs_date}00+{timezone_start}-{finish_hour}00+{timezone_finish}_{bs}.xml.gz'
                     variable('region') { format = '(CN|FE|KV|MO|NW|SB|UR|VL)'}
                     variable('date') { type = Field.dateFieldType; format = 'yyyyMMdd' }
@@ -66,13 +64,16 @@ class CopyTest extends getl.test.GetlTest {
                     variable('finish_hour') { type = Field.integerFieldType; length = 2 }
                 }
 
-                destinationPath {
+                useDestinationPath {
                     mask = 'm2000/{region}/{date}/{bs_date}'
                     variable('date') { type = Field.dateFieldType; format = 'yyyyMMdd' }
                     variable('bs_date') { type = Field.datetimeFieldType; format = 'HH-mm' }
                 }
 
-                fileCopyOrder = ['bs_date', 'region']
+                directoryConcurrencyNestingLevel = 2
+                countThreadWhenBuildSourceList = 4
+                retryCount = 3
+                copyOrder = ['bs_date', 'region']
             }
         }
     }

@@ -5,6 +5,7 @@ import getl.jdbc.JDBCDriver
 import getl.jdbc.TableDataset
 import getl.proc.Flow
 import getl.tfs.TDS
+import org.junit.Test
 
 import javax.sql.rowset.serial.SerialBlob
 import javax.sql.rowset.serial.SerialClob
@@ -13,23 +14,27 @@ import javax.sql.rowset.serial.SerialClob
  * Created by ascru on 22.11.2016.
  */
 class GenerationUtilsTest extends getl.test.GetlTest {
+    @Test
     void testGenerateInt() {
         def r = GenerationUtils.GenerateInt()
         assertTrue(r instanceof Integer)
     }
 
+    @Test
     void testGenerateIntWithRange() {
         def r = GenerationUtils.GenerateInt(1, 1000)
         assertNotNull(r)
         assertTrue(r instanceof Integer)
     }
 
+    @Test
     void testGenerateLong() {
         def r = GenerationUtils.GenerateLong()
         assertNotNull(r)
         assertTrue(r instanceof Long)
     }
 
+    @Test
     void testGenerateString() {
         def r = GenerationUtils.GenerateString(100)
         assertNotNull(r)
@@ -37,6 +42,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertTrue(r.length() <= 100 && r.length() > 0)
     }
 
+    @Test
     void testGenerateStringValue() {
         def r = GenerationUtils.GenerateStringValue('test')
         assertNotNull(r)
@@ -46,12 +52,14 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertEquals('null', r)
     }
 
+    @Test
     void testGenerateBoolean() {
         def r = GenerationUtils.GenerateBoolean()
         assertNotNull(r)
         assertTrue(r instanceof Boolean)
     }
 
+    @Test
     void testGenerateDate() {
         def r = GenerationUtils.GenerateDate()
         assertNotNull(r)
@@ -61,6 +69,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertTrue(r instanceof Date)
     }
 
+    @Test
     void testGenerateDateTime() {
         def r = GenerationUtils.GenerateDateTime()
         assertNotNull(r)
@@ -70,6 +79,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertTrue(r instanceof Date)
     }
 
+    @Test
     void testGenerateNumeric() {
         def r = GenerationUtils.GenerateNumeric()
         assertNotNull(r)
@@ -82,12 +92,14 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertEquals(5, r.scale)
     }
 
+    @Test
     void testGenerateDouble() {
         def r = GenerationUtils.GenerateDouble()
         assertNotNull(r)
         assertTrue(r instanceof Double)
     }
 
+    @Test
     void testProcessAlias() {
         def s = 'schema.table.field'
         def r = GenerationUtils.ProcessAlias(s, true)
@@ -97,11 +109,13 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertEquals('schema?.table?.field', r)
     }
 
+    @Test
     void testGenerateEmptyValue() {
         Field.Type.values().each { if (it != Field.Type.ROWID) GenerationUtils.GenerateEmptyValue(it, 'test') }
         shouldFail { GenerationUtils.GenerateEmptyValue(Field.Type.ROWID, 'test') }
     }
 
+    @Test
     void testDateFormat() {
         assertEquals('yyyy-MM-dd', GenerationUtils.DateFormat(Field.Type.DATE))
         assertEquals('HH:mm:ss', GenerationUtils.DateFormat(Field.Type.TIME))
@@ -109,6 +123,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         shouldFail { GenerationUtils.DateFormat(Field.Type.INTEGER) }
     }
 
+    @Test
     void testGenerateConvertValue() {
         def t = Field.Type.values()
         t.each { GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'STRING'), new Field(name: 'test', type: it), null, 'var') }
@@ -166,11 +181,13 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         }
     }
 
+    @Test
     void testGenerateValue() {
         def t = Field.Type.values()
         t.each { GenerationUtils.GenerateValue(new Field(name: 'test', type: it))}
     }
 
+    @Test
     void testGenerateRowValues() {
         def t = Field.Type.values()
         def f = []
@@ -178,6 +195,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         GenerationUtils.GenerateRowValues(f)
     }
 
+    @Test
     void testFields2List() {
         def d = TDS.dataset()
         List<String> s = []
@@ -189,6 +207,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertEquals(s, f)
     }
 
+    @Test
     void testGenerateJsonFields() {
         def t = Field.Type.values()
         def f = []
@@ -198,22 +217,26 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertEquals(f, n)
     }
 
+    @Test
     void testEvalGroovyScript() {
         def s = '"test " + \'\\"\' + var + \'\\"\' + " script"'
         assertEquals('test "groovy" script', GenerationUtils.EvalGroovyScript(s, [var: 'groovy']))
     }
 
+    @Test
     void testEvalGroovyClosure() {
         def s = '{ var -> "test " + \'\\"\' + var + \'\\"\' + " script" }'
         def c = GenerationUtils.EvalGroovyClosure(s, [var: 'groovy'])
         assertEquals('test "groovy" script', c('groovy'))
     }
 
+    @Test
     void testEvalText() {
         def s = 'test ${var} text'
         assertEquals('test groovy text', GenerationUtils.EvalText(s, [var: 'groovy']))
     }
 
+    @Test
     void testFieldConvertToString() {
         def t = Field.Type.values() - [Field.Type.OBJECT]
         t.each {
@@ -223,6 +246,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         }
     }
 
+    @Test
     void testGenerateRowCopyWithMap() {
         def t = Field.Type.values() - [Field.Type.OBJECT, Field.Type.ROWID/*, Field.Type.TEXT*/]
         def c = new TDS()
@@ -253,6 +277,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         assertEquals(r, d)
     }
 
+    @Test
     void testGenerateRowCopyWithJDBC() {
 		def c = new TDS()
 
@@ -307,6 +332,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
 
     }
 
+    @Test
     void testGenerateFieldCopy() {
         def t = Field.Type.values()
         def l = []

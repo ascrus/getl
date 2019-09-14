@@ -27,8 +27,10 @@ package getl.proc.opts
 import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
+import getl.proc.Flow
 import getl.tfs.TFSDataset
 import getl.utils.MapUtils
+import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -37,7 +39,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class FlowCopySpec extends BaseSpec {
+class FlowCopySpec extends FlowBaseSpec {
     FlowCopySpec() {
         super()
         params.sourceParams = [:] as Map<String, Object>
@@ -45,8 +47,8 @@ class FlowCopySpec extends BaseSpec {
         params._childs = [:] as Map<String, FlowCopyChildSpec>
     }
 
-    FlowCopySpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    FlowCopySpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.sourceParams == null) params.sourceParams = [:] as Map<String, Object>
         if (params.destParams == null) params.destParams = [:] as Map<String, Object>
         if (params._childs == null) params._childs = [:] as Map<String, FlowCopyChildSpec>
@@ -63,19 +65,10 @@ class FlowCopySpec extends BaseSpec {
     void setDestination(Dataset value) { params.dest = value }
 
     /**
-     * Last count row
-     */
-    public Long countRow
-
-    /**
-     * Error rows for "copy" process
-     */
-    public TFSDataset errorsDataset
-
-    /**
      * Temporary source name
      */
-    String getTempSourceName() { params.tempSource }
+    String getTempSourceName() { params.tempSource as String }
+
     /**
      * Temporary source name
      */
@@ -84,7 +77,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Temporary destination name
      */
-    String getTempDestName() { params.tempDest }
+    String getTempDestName() { params.tempDest as String }
+
     /**
      * Temporary destination name
      */
@@ -93,7 +87,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Destination fields inherit from source fields
      */
-    Boolean getInheritFields() { params.inheritFields }
+    Boolean getInheritFields() { params.inheritFields as Boolean }
+
     /**
      * Destination fields inherit from source fields
      */
@@ -102,7 +97,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Create destination
      */
-    Boolean getCreateDest() { params.createDest }
+    Boolean getCreateDest() { params.createDest as Boolean }
+
     /**
      * Create destination
      */
@@ -112,6 +108,7 @@ class FlowCopySpec extends BaseSpec {
      * List of field from destination dataset
      */
     List<Field> getTempFields() { params.tempFields as List<Field> }
+
     /**
      * List of field from destination dataset
      */
@@ -131,6 +128,7 @@ class FlowCopySpec extends BaseSpec {
      * Parameters for source read process
      */
     Map<String, Object> getSourceParams() { params.sourceParams as Map<String, Object> }
+
     /**
      * Parameters for source read process
      */
@@ -143,6 +141,7 @@ class FlowCopySpec extends BaseSpec {
      * Parameters for destination write process
      */
     Map<String, Object> getDestParams() { params.destParams as Map<String, Object> }
+
     /**
      * Parameters for destination write process
      */
@@ -154,7 +153,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Write with synchronize main thread
      */
-    Boolean getWriteSynch() { params.writeSynch }
+    Boolean getWriteSynch() { params.writeSynch as Boolean }
+
     /**
      * Write with synchronize main thread
      */
@@ -163,7 +163,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Auto mapping value from source fields to destination fields
      */
-    Boolean getAutoMap() { params.autoMap }
+    Boolean getAutoMap() { params.autoMap as Boolean }
+
     /**
      * Auto mapping value from source fields to destination fields
      */
@@ -172,7 +173,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Auto converting type value from source fields to destination fields
      */
-    Boolean getAutoConvert() { params.autoConvert }
+    Boolean getAutoConvert() { params.autoConvert as Boolean }
+
     /**
      * Auto converting type value from source fields to destination fields
      */
@@ -181,7 +183,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Auto starting and finishing transaction for copy process
      */
-    Boolean getAutoTran() { params.autoTran }
+    Boolean getAutoTran() { params.autoTran as Boolean}
+
     /**
      * Auto starting and finishing transaction for copy process
      */
@@ -190,7 +193,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Clearing destination dataset before copy
      */
-    Boolean getClear() { params.clear }
+    Boolean getClear() { params.clear as Boolean }
+
     /**
      * Clearing destination dataset before copy
      */
@@ -199,7 +203,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Save assert errors to temporary dataset "errorsDataset"
      */
-    Boolean getSaveErrors() { params.saveErrors }
+    Boolean getSaveErrors() { params.saveErrors as Boolean }
+
     /**
      * Save assert errors to temporary dataset "errorsDataset"
      */
@@ -209,6 +214,7 @@ class FlowCopySpec extends BaseSpec {
      * List of fields destination that do not need to use
      */
     List<String> getExcludeFields() { params.excludeFields as List<String> }
+
     /**
      * List of fields destination that do not need to use
      */
@@ -217,7 +223,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * List of fields destination that do not need to converted
      */
-    Boolean getNotConverted() { params.notConverted }
+    Boolean getNotConverted() { params.notConverted as Boolean }
+
     /**
      * List of fields destination that do not need to converted
      */
@@ -226,7 +233,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Filename  of mirror CSV dataset
      */
-    String getMirrorCSV() { params.mirrorCSV }
+    String getMirrorCSV() { params.mirrorCSV as Boolean }
+
     /**
      * Filename  of mirror CSV dataset
      */
@@ -235,7 +243,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Load to destination as bulk load (only is supported)
      */
-    Boolean getBulkLoad() { params.bulkLoad }
+    Boolean getBulkLoad() { params.bulkLoad as Boolean }
+
     /**
      * Load to destination as bulk load (only is supported)
      */
@@ -244,7 +253,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Convert bulk file to escaped format
      */
-    Boolean getBulkEscaped() { params.bulkEscaped }
+    Boolean getBulkEscaped() { params.bulkEscaped as Boolean }
+
     /**
      * Convert bulk file to escaped format
      */
@@ -253,7 +263,8 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Compress bulk file from GZIP algorithm
      */
-    Boolean getBulkAsGZIP() { params.bulkAsGZIP }
+    Boolean getBulkAsGZIP() { params.bulkAsGZIP as Boolean }
+
     /**
      * Compress bulk file from GZIP algorithm
      */
@@ -262,47 +273,26 @@ class FlowCopySpec extends BaseSpec {
     /**
      * Code executed before process copy rows
      */
-    Closure getOnInitFlow() { params.onInit as Closure }
+    Closure getOnPrepare() { params.onInit as Closure }
+
     /**
      * Code executed before process copy rows
      */
-    void initFlow(Closure value) { params.onInit = prepareClosure(value) }
+    void setOnPrepare(Closure value) { params.onInit = value }
 
     /**
-     * Code executed before writing to destination dataset
+     * Code executed before process copy rows
      */
-    Closure getOnWriteFlow() { params.onWrite as Closure }
-    /**
-     * Code executed before writing to destination dataset
-     */
-    void writeFlow(Closure value) { params.onWrite = prepareClosure(value) }
-
-    /**
-     * Code executed after process copy rows
-     */
-    Closure getOnDoneFlow() { params.onDone as Closure }
-    /**
-     * Code executed after process copy rows
-     */
-    void doneFlow(Closure value) { params.onDone = prepareClosure(value) }
+    void prepare(Closure value) { setOnPrepare(prepareClosure(value)) }
 
     /**
      * save transformation code to dumn (default false)
      */
-    Boolean getDebug() { params.debug }
+    Boolean getDebug() { params.debug as Boolean }
     /**
      * save transformation code to dumn (default false)
      */
     def setDebug(Boolean value) { params.debug = value }
-
-    /**
-     * Closure code process row
-     */
-    Closure getOnProcess() { params.process as Closure }
-    /**
-     * Closure code process row
-     */
-    void process(Closure value) { params.process = prepareClosure(value) }
 
     /** List of child datasets */
     private Map<String, FlowCopyChildSpec> getChilds() { params._childs as Map<String, FlowCopyChildSpec> }
@@ -314,30 +304,34 @@ class FlowCopySpec extends BaseSpec {
 
         def parent = childs.get(name)
         if (parent == null) {
-            parent = new FlowCopyChildSpec()
+            parent = new FlowCopyChildSpec(ownerObject, thisObject, false, null)
             parent.dataset = dataset
             childs.put(name, parent)
         }
         if (parent.dataset == null) throw new ExceptionGETL("Child dataset \"$name\" required dataset!")
 
-        parent.thisObject = parent.DetectClosureDelegate(cl)
-        def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-        code.resolveStrategy = Closure.OWNER_FIRST
-        code.call()
-        parent.prepareParams()
+        prepareClosure(parent, cl).call()
+        childs.put(name, parent)
     }
 
     /** Set child dataset options */
-    void childs(String name, @DelegatesTo(FlowCopyChildSpec) Closure cl) {
-        childs(name, null, cl)
+    void childs(Dataset dataset, @DelegatesTo(FlowCopyChildSpec) Closure cl) {
+        childs(StringUtils.RandomStr(), dataset, cl)
     }
 
-    @Override
-    void prepareParams() {
+    protected boolean getNeedProcessCode() { false }
+
+    private void prepareParams() {
         params.destChild = [:] as Map<String, Dataset>
         childs.each { String name, FlowCopyChildSpec opts ->
             (params.destChild as Map).put(name, opts.params)
         }
         MapUtils.RemoveKeys(params, ['_childs'])
+    }
+
+    @Override
+    protected void runProcess(Flow flow) {
+        prepareParams()
+        flow.copy(params)
     }
 }

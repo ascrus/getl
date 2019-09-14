@@ -39,8 +39,8 @@ class JSONReadSpec extends BaseSpec {
         params.fields = [] as List<String>
     }
 
-    JSONReadSpec(Boolean useExternalParams, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    JSONReadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.fields == null) params.fields = [] as List<String>
     }
 
@@ -60,10 +60,15 @@ class JSONReadSpec extends BaseSpec {
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    Closure<Boolean> getFilter() { params.filter as Closure<Boolean> }
+    Closure<Boolean> getOnFilter() { params.filter as Closure<Boolean> }
     /**
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    void filter(Closure<Boolean> value) { params.filter = prepareClosure(value) }
+    void setOnFilter(Closure<Boolean> value) { params.filter = value }
+    /**
+     * Filtering readable records
+     * <br>A readable record is passed as parameter (Map object)
+     */
+    void filter(Closure<Boolean> value) { setOnFilter(prepareClosure(value)) }
 }

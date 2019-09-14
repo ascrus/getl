@@ -8,46 +8,50 @@ import getl.tfs.TFSDataset
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
+import org.junit.BeforeClass
+import org.junit.Test
 
 import static getl.data.Field.Type.*
 
 class SalesForceConnectionTest extends getl.test.GetlTest {
 	static final def configName = 'tests/salesforce/config.json'
-	private SalesForceConnection connection
+	static SalesForceConnection connection
 
     @Override
     boolean allowTests() { connection != null }
 
-    @Override
-	void setUp() {
-        super.setUp()
+    @BeforeClass
+    static void InitTest() {
 		if (!FileUtils.ExistsFile(configName)) return
 		Config.LoadConfig(fileName: configName)
-		Logs.Init()
-
 		connection = new SalesForceConnection(config: 'salesforce')
 	}
 
+    @Test
 	void testConnect() {
 		connection.connected = true
 		assertTrue(connection.connected)
 	}
 
+    @Test
 	void testRetrieveObjects() {
 		assertTrue(connection.retrieveObjects().find { Map r -> r.objectName == 'Account' } != null)
 	}
 
+    @Test
     void testOrderBy() {
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
         assertEquals(10, dataset.rows(limit: 10, orderBy: [SystemModstamp: 'desc']).size())
     }
 
+    @Test
 	void testGetFields() {
 		SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
 		dataset.retrieveFields()
 		assertTrue(dataset.field.find { it.name == 'Id' } != null)
 	}
 
+    @Test
     void testFieldsExtended() {
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
         dataset.retrieveFields()
@@ -55,11 +59,13 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
         assertEquals(1, field.extended.ordinalPosition)
     }
 
+    @Test
 	void testRows() {
 		SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
 		assertTrue(dataset.rows(limit: 10).size() == 10)
 	}
 
+    @Test
     void testRowsAsBulk() {
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
         dataset.retrieveFields()
@@ -68,6 +74,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
         assertEquals(result.size(), 100)
     }
 
+    @Test
     void testRowsAsBulkWithChunk() {
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
         dataset.retrieveFields()
@@ -76,16 +83,19 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
         assertNotSame(0, result.size())
     }
 
+    @Test
     void testRowsWithWhere() {
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
         assertEquals(dataset.rows(where: "Id = '0013200001IrlAEAAZ'").size(), 1)
     }
 
+    @Test
     void testRowsWithWhereAndLimit() {
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
         assertEquals(dataset.rows(where: "", limit: 10).size(), 10)
     }
 
+    @Test
     void testFlowCopy() {
         SalesForceDataset source = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
 		def dest = TFS.dataset()
@@ -97,6 +107,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
         pt.finish(count)
     }
 
+    @Test
 	void testFlowCopyWithInherit() {
 		SalesForceDataset source = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
 		def dest = TFS.dataset()
@@ -106,6 +117,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
 		assertEquals(source.field.size() - 1, dest.field.size())
 	}
 
+    @Test
     void testBulkConnection() {
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
         dataset.retrieveFields()
@@ -114,6 +126,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
 		assertTrue(tfsDatasetList[0].rows().size() == 1000 && tfsDatasetList.size() == 1)
     }
 
+    @Test
     void testBulkConnectionWithBatch() {
         connection.connected = false
         connection = new SalesForceConnection(config: 'salesforce', batchSize: 50000)
@@ -124,6 +137,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
         assertTrue(tfsDatasetList[0].rows().size() == 200000 && tfsDatasetList.size() == 1)
     }
 
+    @Test
     void testRowsWithBatch() {
         connection.connected = false
         connection = new SalesForceConnection(config: 'salesforce', batchSize: 2000)
@@ -134,6 +148,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
         assertEquals(10000, rows.size())
     }
 
+    @Test
     void testQueryDataset() {
         connection.connected = false
         connection = new SalesForceConnection(config: 'salesforce')
@@ -155,6 +170,7 @@ group by CALENDAR_YEAR(CreatedDate), CALENDAR_MONTH(CreatedDate)
         assertTrue(rows.size() > 0)
     }
 
+    @Test
     void testDisconnect() {
         connection.connected = false
         assertFalse(connection.connected)

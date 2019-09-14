@@ -39,8 +39,8 @@ class H2BulkLoadSpec extends BulkLoadSpec {
         params.expression = [:] as Map<String, String>
     }
 
-    H2BulkLoadSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    H2BulkLoadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.expression == null) params.expression = [:] as Map<String, String>
     }
 

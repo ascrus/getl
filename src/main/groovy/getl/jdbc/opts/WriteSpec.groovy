@@ -40,15 +40,17 @@ class WriteSpec extends BaseSpec {
         params.updateField = [] as List<String>
     }
 
-    WriteSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    WriteSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.updateField == null) params.updateField = [] as List<String>
     }
 
     /** Preparing code */
     Closure getOnPrepare() { params.prepare as Closure }
     /** Preparing code */
-    void prepare(Closure value) { params.prepare = prepareClosure(value) }
+    void setOnPrepare(Closure value) { params.prepare = value }
+    /** Preparing code */
+    void prepare(Closure value) { setOnPrepare(prepareClosure(value)) }
 
     /** Use schemata file for reading dataset structure */
     Boolean getAutoSchema() { params.autoSchema as Boolean }

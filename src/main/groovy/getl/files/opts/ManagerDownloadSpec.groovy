@@ -67,10 +67,15 @@ class ManagerDownloadSpec extends BaseSpec {
      * Download file processing code
      * @param Map fileAttributes - file attributes
      */
-    Closure onDownloadFile() { params.code }
+    Closure onDownloadFile() { params.code as Closure }
     /**
      * Download file processing code
      * @param Map fileAttributes - file attributes
      */
-    void downloadFile(Closure value) { params.code = prepareClosure(value) }
+    void setOnDownloadFile(Closure value) { params.code = value }
+    /**
+     * Download file processing code
+     * @param Map fileAttributes - file attributes
+     */
+    void downloadFile(Closure value) { setOnDownloadFile(prepareClosure(value)) }
 }

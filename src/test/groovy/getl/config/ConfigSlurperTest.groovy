@@ -7,6 +7,7 @@ import getl.utils.Config
 import getl.utils.MapUtils
 import getl.utils.MapUtilsTest
 import groovy.json.JsonBuilder
+import org.junit.Test
 
 /**
  * @author Alexsey Konstantinov
@@ -15,6 +16,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
     def h2 = new H2Connection(config: 'h2')
     def csv = new CSVConnection(config: 'csv')
 
+    @Test
     void testLoadConfig() {
         Config.configClassManager = new ConfigSlurper()
 

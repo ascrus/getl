@@ -7,18 +7,12 @@ import getl.utils.FileUtils
  * @author Alexsey Konstantinov
  */
 class HDFSManagerTest extends ManagerTest {
-    HDFSManager manager
-    protected Manager getManager() {
-        if (manager == null) {
-            def confName = 'tests/filemanager/hdfs.conf'
-            if (FileUtils.ExistsFile(confName)) {
-                Config.LoadConfig(fileName: confName)
-                if (Config.ContainsSection('files.test_hdfs_filemanager')) {
-                    manager = new HDFSManager(config: 'test_hdfs_filemanager')
-                }
-            }
-        }
+    static final def confName = 'tests/filemanager/hdfs.conf'
 
-        return manager
+    @Override
+    Manager newManager() {
+        if (!FileUtils.ExistsFile(confName)) return null
+        Config.LoadConfig(fileName: confName)
+        return new HDFSManager(config: 'test_hdfs_filemanager')
     }
 }

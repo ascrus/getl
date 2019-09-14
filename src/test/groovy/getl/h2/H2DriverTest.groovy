@@ -7,6 +7,7 @@ import getl.jdbc.QueryDataset
 import getl.tfs.TDS
 import getl.utils.Config
 import getl.utils.FileUtils
+import org.junit.Test
 
 /**
  * Created by ascru on 21.11.2016.
@@ -20,6 +21,7 @@ class H2DriverTest extends JDBCDriverProto {
 		return new TDS()
 	}
 
+    @Test
     void testVersion() {
         def q = new QueryDataset(connection: con, query: 'SELECT H2Version() AS version')
         def r = q.rows()
@@ -27,6 +29,7 @@ class H2DriverTest extends JDBCDriverProto {
         assertEquals('1.4.199', r[0].version)
     }
 
+    @Test
     void testSessionProperties() {
         def c = new H2Connection(inMemory: true, sessionProperty: ['exclusive': 1])
         def q = new QueryDataset(connection: c, query: 'SELECT VALUE FROM INFORMATION_SCHEMA.SETTINGS WHERE NAME = \'EXCLUSIVE\'')
@@ -40,6 +43,7 @@ class H2DriverTest extends JDBCDriverProto {
 		c.connected = false
     }
 
+    @Test
     void testCaseName () {
         con.executeCommand(command: 'CREATE SCHEMA test; CREATE TABLE test."$Test_Chars" (Id int NOT NULL, name varchar(50));')
         assertFalse((con.driver as JDBCDriver).retrieveObjects(schemaName: 'test', tableName: '$Test_Chars', null).isEmpty())

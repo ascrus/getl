@@ -24,6 +24,7 @@
 
 package getl.utils
 
+import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.CompileStatic
 import getl.utils.opts.PathVarsSpec
@@ -126,6 +127,7 @@ class Path {
 	String getLikeFile () { this.likeFile }
 	
 	final Map<String, Map> vars = [:]
+
 	/**
 	 * Used variables in mask<br><br>
 	 * <b>Field for var:</b>
@@ -142,6 +144,9 @@ class Path {
 	/** Mask variables */
 	final Map<String, Map<String, Object>> maskVariables = [:]
 
+	/** System parameters */
+	public final Map<String, Object> sysParams = [:] as Map<String, Object>
+
 	/** Define variable options */
 	Map variable(String name, @DelegatesTo(PathVarsSpec) Closure cl) {
 		if (name == null || name == '') throw new ExceptionGETL('Name required for variable!')
@@ -151,14 +156,10 @@ class Path {
 			maskVariables.put(name, var)
 		}
 
-		def parent = new PathVarsSpec(true, var)
-		parent.thisObject = parent.DetectClosureDelegate(cl)
-		if (cl != null) {
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
+		def parent = new PathVarsSpec(ownerObject, thisObject, true, var)
+		parent.runClosure(cl)
 
 		return parent.params
 	}

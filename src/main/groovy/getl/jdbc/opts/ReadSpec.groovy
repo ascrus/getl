@@ -39,15 +39,17 @@ class ReadSpec extends BaseSpec {
         params.order = [] as List<String>
     }
 
-    ReadSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    ReadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.order == null ) params.order = [] as List<String>
     }
 
     /** Preparing code */
     Closure getOnPrepare() { params.prepare as Closure }
     /** Preparing code */
-    void prepare(Closure value) { params.prepare = prepareClosure(value) }
+    void setOnPrepare(Closure value) { params.prepare = value }
+    /** Preparing code */
+    void prepare(Closure value) { setOnPrepare(prepareClosure(value)) }
 
     /** Use schemata file for reading dataset structure */
     Boolean getAutoSchema() { params.autoSchema as Boolean }

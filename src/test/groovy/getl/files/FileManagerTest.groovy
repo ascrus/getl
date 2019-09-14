@@ -7,17 +7,12 @@ import getl.utils.FileUtils
  * @author Alexsey Konstantinov
  */
 class FileManagerTest extends ManagerTest {
-    FileManager manager
-    protected Manager getManager() {
-        if (manager == null) {
-            def rootPath = "${TFS.systemPath}"
-            def f = new File(rootPath)
-            FileUtils.ValidPath(f)
-            f.deleteOnExit()
-
-            manager = new FileManager(rootPath: rootPath)
-        }
-
-        return manager
+    @Override
+    Manager newManager() {
+        def rootPath = "${TFS.systemPath}"
+        def f = new File(rootPath)
+        FileUtils.ValidPath(f)
+        f.deleteOnExit()
+        return new FileManager(rootPath: rootPath)
     }
 }

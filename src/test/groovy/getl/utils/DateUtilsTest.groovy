@@ -1,5 +1,7 @@
 package getl.utils
 
+import org.junit.Test
+
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
 
@@ -15,6 +17,7 @@ class DateUtilsTest extends getl.test.GetlTest {
     Date getExampleDateHour() { DateUtils.ParseDateTime(textDateTime.substring(0, 13) + ':00:00.000') }
     Date getExampleDateHourMinute() { DateUtils.ParseDateTime(textDateTime.substring(0, 16) + ':00.000') }
 
+    @Test
     void testNow() {
 		def date = DateUtils.Now()
 		def hour_orig = DateUtils.PartOfDate('hour', date)
@@ -33,6 +36,7 @@ class DateUtilsTest extends getl.test.GetlTest {
 
     }
 
+    @Test
     void testParseDate() {
         assertNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss', null))
 
@@ -53,12 +57,14 @@ class DateUtilsTest extends getl.test.GetlTest {
         DateUtils.RestoreOrigDefaultTimeZone()
     }
 
+    @Test
     void testClearTime() {
         assertNull(DateUtils.ClearTime(null))
 
         assertEquals(exampleDate, DateUtils.ClearTime(exampleDateTime))
     }
 
+    @Test
     void testTruncTime() {
         assertNull(DateUtils.TruncTime(Calendar.HOUR, null))
 
@@ -66,12 +72,14 @@ class DateUtilsTest extends getl.test.GetlTest {
         assertEquals(exampleDateHourMinute, DateUtils.TruncTime(Calendar.MINUTE, exampleDateTime))
     }
 
+    @Test
     void testFormatDate() {
         assertNull(DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', null))
 
         assertEquals(textDateTime, DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', exampleDateTime))
     }
 
+    @Test
     void testAddDate() {
         assertNull(DateUtils.AddDate('yyyy', 1, null))
 
@@ -84,6 +92,7 @@ class DateUtilsTest extends getl.test.GetlTest {
         assertEquals(DateUtils.ParseDateTime('2016-01-01 00:00:01.000'), DateUtils.AddDate('ss', 1, d))
     }
 
+    @Test
     void testPartOfDate() {
         assertEquals(0, DateUtils.PartOfDate('YEAR', null))
         assertEquals(0, DateUtils.PartOfDate(null, exampleDate))
@@ -97,6 +106,7 @@ class DateUtilsTest extends getl.test.GetlTest {
         assertEquals(59, DateUtils.PartOfDate('SECOND', d))
     }
 
+    @Test
     void testTimestamp2Value() {
         assertNull(DateUtils.Timestamp2Value(null))
 
@@ -107,6 +117,7 @@ class DateUtilsTest extends getl.test.GetlTest {
         DateUtils.RestoreOrigDefaultTimeZone()
     }
 
+    @Test
     void testValue2Timestamp() {
         assertNull(DateUtils.Value2Timestamp(null))
         def b = BigDecimal.valueOf(1483228739.000000000)
@@ -116,6 +127,7 @@ class DateUtilsTest extends getl.test.GetlTest {
         DateUtils.RestoreOrigDefaultTimeZone()
     }
 
+    @Test
     void testPeriodCrossing() {
         assertEquals([start: null, finish: null], DateUtils.PeriodCrossing(null))
         def p = [
@@ -126,6 +138,7 @@ class DateUtilsTest extends getl.test.GetlTest {
         assertEquals([start: DateUtils.ParseDate('2016-01-01'), finish: DateUtils.ParseDate('2016-01-06')], DateUtils.PeriodCrossing(p))
     }
 
+    @Test
     void testDateAdd() {
         def d = DateUtils.ParseDateTime('2019-01-01 00:00:00.000')
         def nss = DateUtils.AddDate('SSS', 10, d)
@@ -144,6 +157,7 @@ class DateUtilsTest extends getl.test.GetlTest {
         assertEquals('2029-01-01 00:00:00', DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', ny))
     }
 
+    @Test
     void testDateDiff() {
         def d1 = DateUtils.ParseDateTime('2019-01-01 00:00:00.000')
         def d2 = DateUtils.ParseDateTime('2020-02-02 01:01:01.000')

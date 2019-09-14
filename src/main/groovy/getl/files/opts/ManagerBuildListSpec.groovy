@@ -81,11 +81,17 @@ class ManagerBuildListSpec extends BaseSpec {
      * @param Map fileAttributes - file attributes
      * @return Boolean continue - continue processing
      */
-    Closure<Boolean> onProcessFile() { params.code }
+    Closure<Boolean> getOnProcessFile() { params.code as Closure }
+    /**
+     * File processing code
+     * @param Map fileAttributes - file attributes
+     * @return Boolean continue - continue processing
+     */
+    void setOnProcessFile(Closure<Boolean> value) { params.code = value }
     /**
      * Custom file handling code
      * @param Map fileAttributes - file attributes
      * @return Boolean continue - continue processing
      */
-    void processFile(Closure<Boolean> value) { params.code = prepareClosure(value) }
+    void processFile(Closure<Boolean> value) { setOnProcessFile(prepareClosure(value)) }
 }

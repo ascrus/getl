@@ -5,12 +5,19 @@ import getl.utils.DateUtils
 import getl.utils.Path
 import getl.utils.StringUtils
 import org.apache.poi.ss.usermodel.DateUtil
+import org.junit.Test
 
 /**
  * @author Alexsey Konstantinov
  */
 abstract class ManagerTest extends getl.test.GetlTest {
-    abstract protected Manager getManager()
+    abstract Manager newManager()
+
+    Manager _manager
+    Manager getManager() {
+        if (_manager == null) _manager = newManager()
+        return _manager
+    }
 
     @Override
     boolean allowTests() { manager != null }
@@ -24,8 +31,9 @@ abstract class ManagerTest extends getl.test.GetlTest {
     final def subdirDirName = 'subdir'
     final def subdirFileName = 'subdir_file.txt'
 
-    private String origRootPath
+    String origRootPath
 
+    @Test
     void testWork() {
         manager.connect()
         init()

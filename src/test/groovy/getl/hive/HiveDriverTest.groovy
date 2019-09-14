@@ -23,10 +23,10 @@ class HiveDriverTest extends JDBCDriverProto {
     }
 
     @Override
-    protected String getTableClass() { 'getl.hive.HiveTable' }
+    String getTableClass() { 'getl.hive.HiveTable' }
 
     @Override
-    void createTable() {
+    protected void createTable() {
         HiveTable t = table as HiveTable
         t.schemaName = con.connectDatabase
         t.drop(ifExists: true)
@@ -35,7 +35,7 @@ class HiveDriverTest extends JDBCDriverProto {
     }
 
     @Override
-    TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
+    protected TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
         HiveTable t = new HiveTable(connection: con, schemaName: con.connectDatabase, tableName: name, field: fields)
         t.drop(ifExists: true)
         t.create(storedAs: 'ORC', clustered: [by: ['id'], intoBuckets: 2], tblproperties: [transactional: true])

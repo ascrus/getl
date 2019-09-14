@@ -4,29 +4,39 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.tfs.TFS
 import getl.utils.FileUtils
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.Test
 
 class ExcelDriverTest extends getl.test.GetlTest {
     static final String fileName = '/excel/test.xlsx'
-    String excelFileName
+    static String excelFileName
 
     static ExcelConnection connection
     static ExcelDataset excelDataset
     static final String listName = 'test'
 
-    @Override
-    void setUp() {
-        super.setUp()
-
+    @BeforeClass
+    static void InitTest() {
         excelFileName = FileUtils.FileFromResources(fileName).absolutePath
         connection = new ExcelConnection(fileName: excelFileName)
 
-        excelDataset = new ExcelDataset(connection: connection, header: true)
+        excelDataset = new ExcelDataset(connection: connection)
+
+    }
+
+    @Before
+    void setup() {
+        excelDataset.header = true
+        excelDataset.field.clear()
         excelDataset.field << new Field(name: 'a', type: Field.Type.INTEGER)
         excelDataset.field << new Field(name: 'b', type: Field.Type.INTEGER)
         excelDataset.field << new Field(name: 'c', type: Field.Type.STRING)
         excelDataset.listName = listName
+        excelDataset.limit = null
     }
 
+    @Test
     void testEachRow() {
         def counter = 0
         excelDataset.eachRow { Map row ->
@@ -45,6 +55,7 @@ class ExcelDriverTest extends getl.test.GetlTest {
         assertEquals(2, counter)
     }
 
+    @Test
     void testEachRowWithoutFields() {
         def counter = 0
 		def ds = new ExcelDataset(connection: connection, header: true)
@@ -67,11 +78,13 @@ class ExcelDriverTest extends getl.test.GetlTest {
         assertEquals(2, counter)
     }
 
+    @Test
     void testLimit() {
         excelDataset.limit = 1
         assertEquals(1, excelDataset.rows().size())
     }
 
+    @Test
     void testHeader() {
 		try {
 	        excelDataset.header = true
@@ -85,14 +98,17 @@ class ExcelDriverTest extends getl.test.GetlTest {
 		}
     }
 
+    @Test
     void testNullHeader() {
         assertEquals(true, excelDataset.header)
     }
 
+    @Test
     void testHeaderResults() {
         assertEquals(2, excelDataset.rows().size())
     }
 
+    @Test
     void testListName() {
         assertEquals(listName, excelDataset.listName)
 
@@ -100,6 +116,7 @@ class ExcelDriverTest extends getl.test.GetlTest {
         excelDataset.rows()
     }
 
+    @Test
     void testListNameAsZero() {
         excelDataset.listName = 0
     }

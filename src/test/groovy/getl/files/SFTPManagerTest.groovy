@@ -8,18 +8,12 @@ import getl.utils.FileUtils
  * @author Alexsey Konstantinov
  */
 class SFTPManagerTest extends ManagerTest {
-    SFTPManager manager
-    protected Manager getManager() {
-        if (manager == null) {
-            def confName = 'tests/filemanager/sftp.conf'
-            if (FileUtils.ExistsFile(confName)) {
-                Config.LoadConfig(fileName: confName)
-                if (Config.ContainsSection('files.test_sftp_filemanager')) {
-                    manager = new SFTPManager(config: 'test_sftp_filemanager')
-                }
-            }
-        }
+    static final def confName = 'tests/filemanager/sftp.conf'
 
-        return manager
+    @Override
+    Manager newManager() {
+        if (!FileUtils.ExistsFile(confName)) return null
+        Config.LoadConfig(fileName: confName)
+        return new SFTPManager(config: 'test_sftp_filemanager')
     }
 }

@@ -1,11 +1,13 @@
 package getl.utils
 
 import getl.exception.ExceptionParser
+import org.junit.Test
 
 /**
  * @author Alexsey Konstantinov
  */
 class SQLParserTest extends getl.test.GetlTest {
+    @Test
     void testInsertStatement() {
         def sql = '''
 INSERT INTO "Schema"."table" ("field1", field2, field3, field4, Field5) VALUES (1, '123', TO_DATE('2016-10-15'), null, DEFAULT);
@@ -34,6 +36,7 @@ INSERT INTO "Schema"."table" ("field1", field2, field3, field4, Field5) VALUES (
         assertEquals(values, res.values)
     }
 
+    @Test
     void testUpdateStatement() {
         def sql = '''
 UPDATE "Schema"."table"
@@ -66,6 +69,7 @@ WHERE field1 = 1;
         assertEquals(where, res.where)
     }
 
+    @Test
     void testDeleteStatement() {
         def sql = '''
 DELETE FROM "Schema"."table"

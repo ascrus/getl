@@ -40,8 +40,8 @@ class BulkLoadSpec extends BaseSpec {
         params.files = [] as List<String>
     }
 
-    BulkLoadSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    BulkLoadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.files == null) params.files = [] as List<String>
     }
 
@@ -52,7 +52,11 @@ class BulkLoadSpec extends BaseSpec {
     /**
      * Preparing code
      */
-    void prepare(Closure value) { params.prepare = prepareClosure(value) }
+    void setOnPrepare(Closure value) { params.prepare = value }
+    /**
+     * Preparing code
+     */
+    void prepare(Closure value) { setOnPrepare(prepareClosure(value)) }
 
     /**
      * Automatic linking by the file and table field names

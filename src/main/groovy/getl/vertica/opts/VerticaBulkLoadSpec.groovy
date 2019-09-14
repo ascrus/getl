@@ -41,8 +41,8 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
         params.expression = [:] as Map<String, String>
     }
 
-    VerticaBulkLoadSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    VerticaBulkLoadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.parser == null) params.parser = [:] as Map<String, String>
         if (params.expression == null) params.expression = [:] as Map<String, String>
     }
@@ -102,11 +102,8 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
      * Specified parser for loading data from file
      */
     void parser(@DelegatesTo(VerticaBulkLoadParserSpec) Closure cl) {
-        def parent = new VerticaBulkLoadParserSpec(parser)
-        parent.thisObject = parent.DetectClosureDelegate(cl)
-        def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-        code.resolveStrategy = Closure.OWNER_FIRST
-        code.call()
+        def parent = new VerticaBulkLoadParserSpec(ownerObject, thisObject, true, parser)
+        parent.runClosure(cl)
         parser = parent.params
     }
 

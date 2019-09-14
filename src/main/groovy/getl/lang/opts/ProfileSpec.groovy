@@ -37,14 +37,20 @@ class ProfileSpec extends BaseSpec {
     final ProcessTime statistics = new ProcessTime()
 
     /** Start profiling process */
-    void startProfile() { statistics.start = new Date() }
+    void startProfile() {
+        statistics.name = profileName
+        statistics.start = new Date()
+    }
     /** Finish profiling process */
-    void finishProfile() { statistics.finish(statistics.countRow) }
+    void finishProfile() {
+        statistics.name = profileName
+        statistics.finish(statistics.countRow)
+    }
 
     /** Profile name */
-    String getProfileName() { statistics.name }
+    String getProfileName() { params.profileName as String }
     /** Profile name */
-    void setProfileName(String value) { statistics.name = value }
+    void setProfileName(String value) { params.profileName = value }
 
     /** Count processed row */
     Integer getCountRow() { statistics.countRow }

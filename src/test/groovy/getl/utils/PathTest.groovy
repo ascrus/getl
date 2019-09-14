@@ -1,11 +1,14 @@
 package getl.utils
 
+import org.junit.Test
+
 /**
  * @author Alexsey Konstantinov
  */
 class PathTest extends getl.test.GetlTest {
     static final def maskPath = '/root/{group}/{subgroup}/test_{date}_{num}.txt'
 
+    @Test
     void testCompile() {
         def p = new Path()
         p.compile(mask: maskPath)
@@ -26,6 +29,7 @@ class PathTest extends getl.test.GetlTest {
         assertEquals([vars:['date', 'num'], mask:'test_(.+)_(.+)[.]txt', like:'%'], p.elements[4])
     }
 
+    @Test
     void testAnalizeDir() {
         def p = new Path()
         p.compile(mask: maskPath)
@@ -37,6 +41,7 @@ class PathTest extends getl.test.GetlTest {
         assertNull(n)
     }
 
+    @Test
     void testAnalizeFile() {
         def p = new Path()
         p.compile(mask: maskPath, vars: [date: [type: 'DATE', format: 'yyyy-MM-dd'], num: [type: 'INTEGER', len: 2]])
@@ -59,6 +64,7 @@ class PathTest extends getl.test.GetlTest {
         shouldFail { p.analizeFile('/root/group test/state ok/test_2016-10-15_11234567890.txt') }
     }
 
+    @Test
     void testGenerateFileName() {
         def p = new Path()
         p.compile(mask: maskPath, vars: [date: [type: 'DATE', format: 'yyyy-MM-dd'], num: [type: 'INTEGER', len: 2]])

@@ -77,5 +77,7 @@ class FileDatasetRetrieveObjectsSpec extends BaseSpec {
     /** Custom file filtering */
     Closure<Boolean> getOnFilter() { params.filter as Closure }
     /** Custom file filtering */
-    void filter(Closure<Boolean> value) { params.filter = prepareClosure(value) }
+    void setOnFilter(Closure<Boolean> value) { params.filter = value }
+    /** Custom file filtering */
+    void filter(Closure<Boolean> value) { setOnFilter(prepareClosure(value)) }
 }

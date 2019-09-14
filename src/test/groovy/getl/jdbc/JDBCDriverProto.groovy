@@ -7,6 +7,8 @@ import getl.stat.ProcessTime
 import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.InheritConstructors
+import org.junit.BeforeClass
+import org.junit.Test
 
 import java.sql.Time
 
@@ -17,26 +19,27 @@ import java.sql.Time
 abstract class JDBCDriverProto extends getl.test.GetlTest {
 	def static configName = 'tests/jdbc/setup.conf'
 
-    @Override
-	void setUp() {
-        super.setUp()
+    @BeforeClass
+	static void InitTest() {
 		if (!FileUtils.ExistsFile(configName)) return
 		Config.LoadConfig(fileName: configName)
-		Logs.Init()
 	}
 
-    private static final countRows = 100
-    private JDBCConnection _con
+    static final countRows = 100
+    JDBCConnection _con
     protected String defaultDatabase
     protected String defaultSchema
     abstract protected JDBCConnection newCon()
 
     JDBCConnection getCon() {
-        if (_con == null) _con = newCon()
+        if (_con == null) {
+            Config.ReInit()
+            _con = newCon()
+        }
         return _con
     }
-    protected String getTableClass() { 'getl.jdbc.TableDataset' }
-    protected final TableDataset table = TableDataset.CreateDataset(dataset: tableClass, connection: con, tableName: 'getl_test')
+    String getTableClass() { 'getl.jdbc.TableDataset' }
+    final TableDataset table = TableDataset.CreateDataset(dataset: tableClass, connection: con, tableName: 'getl_test')
     List<Field> getFields () {
         def res =
             [
@@ -63,15 +66,15 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         (con != null)
     }
 
-    void connect() {
+    protected void connect() {
         con.connected = true
     }
 
-    void disconnect() {
+    protected void disconnect() {
         con.connected = false
     }
 
-    void createTable() {
+    protected void createTable() {
         table.field = fields
         table.drop(ifExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
@@ -87,6 +90,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         }
     }
 
+    @Test
     void testLocalTable() {
         if (!con.driver.isSupport(Driver.Support.LOCAL_TEMPORARY)) {
             println "Skip test local temporary table: ${con.driver.getClass().name} not support this futures"
@@ -104,6 +108,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         tempTable.drop()
     }
 
+    @Test
     void testGlobalTable() {
         if (!con.driver.isSupport(Driver.Support.GLOBAL_TEMPORARY)) {
             println "Skip test global temporary table: ${con.driver.getClass().name} not support this futures"
@@ -121,12 +126,12 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         tempTable.drop()
     }
 
-    private void dropTable() {
+    protected void dropTable() {
         table.drop(ifExists: true)
         assertFalse(table.exists)
     }
 
-    private void retrieveFields() {
+    protected void retrieveFields() {
         table.field.clear()
         table.retrieveFields()
 
@@ -192,7 +197,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(origFields, dsFields)
     }
 
-    private void insertData() {
+    protected void insertData() {
         if (!con.driver.isOperation(Driver.Operation.INSERT)) return
         def count = new Flow().writeTo(dest: table) { updater ->
             (1..countRows).each { num ->
@@ -224,7 +229,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(10, table.readRows)
     }
 
-    private void updateData() {
+    protected void updateData() {
         if (!con.driver.isOperation(Driver.Operation.UPDATE)) return
         def rows = table.rows(order: ['id1'])
         def count = new Flow().writeTo(dest: table, dest_operation: 'UPDATE') { updater ->
@@ -265,7 +270,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         }
     }
 
-    private void mergeData() {
+    protected void mergeData() {
         if (!con.driver.isOperation(Driver.Operation.MERGE)) return
         def rows = table.rows(order: ['id1'])
         def count = new Flow().writeTo(dest: table, dest_operation: 'MERGE') { updater ->
@@ -306,14 +311,14 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         }
     }
 
-    private void validCount() {
+    protected void validCount() {
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('name')} IS NOT NULL AND ${table.sqlObjectName("desc'ription")} IS NOT NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
         assertEquals(countRows, rows[0].count_rows)
     }
 
-    private void deleteData() {
+    protected void deleteData() {
         if (!con.driver.isOperation(Driver.Operation.DELETE)) return
         def rows = table.rows(onlyFields: ['id1', 'id2'])
         def count = new Flow().writeTo(dest: table, dest_operation: 'DELETE') { updater ->
@@ -325,11 +330,11 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         validCountZero()
     }
 
-    private void truncateData() {
+    protected void truncateData() {
         table.truncate(truncate: true)
     }
 
-    private void queryData() {
+    protected void queryData() {
         def drv = (con.driver as JDBCDriver)
         def fieldName = drv.prepareFieldNameForSQL('ID1', table)
 
@@ -350,14 +355,14 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(2, r3[0].id1)
     }
 
-    private void validCountZero() {
+    protected void validCountZero() {
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()}")
         def rows = q.rows()
         assertEquals(1, rows.size())
         assertEquals(0, rows[0].count_rows)
     }
 
-    private void runCommandUpdate() {
+    protected void runCommandUpdate() {
         con.startTran()
         def count = con.executeCommand(command: "UPDATE ${table.fullNameDataset()} SET ${table.sqlObjectName('double')} = ${table.sqlObjectName('double')} + 1", isUpdate: true)
         assertEquals(countRows, count)
@@ -367,7 +372,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(1, rows.size())
     }
 
-    private void bulkLoad() {
+    protected void bulkLoad() {
         if (!con.driver.isOperation(Driver.Operation.BULKLOAD)) return
 
         def file = TFS.dataset()
@@ -390,7 +395,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         validCount()
     }
 
-    private void runScript() {
+    protected void runScript() {
         def table_name = table.fullNameDataset()
         def sql = """
 ----- Test scripter
@@ -412,6 +417,7 @@ END FOR;
         scripter.runSql()
     }
 
+    @Test
     void testOperations() {
         connect()
         assertTrue(con.connected)
@@ -439,7 +445,7 @@ END FOR;
         assertFalse(con.connected)
     }
 
-    TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
+    protected TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
         TableDataset t = new TableDataset(connection: con, tableName: name, field: fields)
         t.drop(ifExists: true)
         t.create()
@@ -447,6 +453,7 @@ END FOR;
         return t
     }
 
+    @Test
     void testPerfomance() {
 		def c = newCon()
         if (!c.driver.isOperation(Driver.Operation.INSERT)) return

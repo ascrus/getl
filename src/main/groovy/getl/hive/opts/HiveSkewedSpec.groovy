@@ -40,8 +40,8 @@ class HiveSkewedSpec extends BaseSpec {
         params.on = [] as List<String>
     }
 
-    HiveSkewedSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    HiveSkewedSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.by == null) params.by = [] as List<String>
         if (params.on == null) params.on = [] as List<String>
     }

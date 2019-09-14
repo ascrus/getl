@@ -1,6 +1,7 @@
 package getl.utils
 
 import groovy.json.*
+import org.junit.Test
 
 /**
  * @author Alexsey Konstantinov
@@ -62,6 +63,7 @@ class CloneUtilsTest extends getl.test.GetlTest {
         assertFalse(c.prop == n.prop)
     }
 
+    @Test
     void testClone() {
         def c = exampleObjectByJson()
         def n = CloneUtils.CloneObject(c)
@@ -69,6 +71,7 @@ class CloneUtilsTest extends getl.test.GetlTest {
         validClone(c, n)
     }
 
+    @Test
     void testStreamClone() {
         def c = exampleObjectByMap()
         def n = CloneUtils.StreamClone(c)

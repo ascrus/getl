@@ -35,198 +35,245 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  */
 class FileCopier {
-    /** Source file manager */
-    Manager source
-    /** Source file manager */
-    Manager getSource() { source }
-    /** Source file manager */
-    void setSource(Manager value) { source = value }
-
-    /** Destination file manager */
-    Manager dest
-    /** Destination file manager */
-    Manager getDestination() { dest }
-    /** Destination file manager */
-    void setDestination(Manager value) { dest = value }
-
-    /** Temporary directory path */
-    String tempPath = TFS.systemPath
-    /** Temporary directory path */
-    String getTempPath() { tempPath }
-    /** Temporary directory path */
-    void setTempPath(String value) { tempPath = value?:TFS.systemPath }
-
-    /** Number of attempts to copy a file without an error */
-    Integer retryCount = 1
-    /** Number of attempts to copy a file without an error */
-    Integer getRetryCount() { retryCount as Integer }
-    /** Number of attempts to copy a file without an error */
-    void setRetryCount(Integer value) {
-        if (value <= 0) throw new ExceptionGETL('The number of attempts cannot be less than 1!')
-        retryCount = value?:1
+    FileCopier() {
+        params.copyOrder = [] as List<String>
     }
 
-    /** Delete files when copying is complete */
-    Boolean deleteFiles = false
-    /** Delete files when copying is complete */
-    Boolean getDeleteFiles() { deleteFiles }
-    /** Delete files when copying is complete */
-    void setDeleteFiles(Boolean value) { deleteFiles = BoolUtils.IsValue(value) }
+    /** Parameters */
+    public final Map<String, Object> params = [:] as Map<String, Object>
 
+    /** System parameters */
+    public final Map<String, Object> sysParams = [:] as Map<String, Object>
+
+    /** Source file manager */
+    Manager getSource() { params.source as Manager }
+    /** Source file manager */
+    void setSource(Manager value) { params.source = value }
+
+    /** Destination file manager */
+    Manager getDestination() { params.destination as Manager }
+    /** Destination file manager */
+    void setDestination(Manager value) { params.destination = value }
+
+    /** Temporary directory path */
+    String getTempPath() { params.tempPath as String }
+    /** Temporary directory path */
+    void setTempPath(String value) { params.tempPath = value }
+
+    /** Number of attempts to copy a file without an error (default 1) */
+    Integer getRetryCount() { params.retryCount as Integer }
+    /** Number of attempts to copy a file without an error (default 1) */
+    void setRetryCount(Integer value) {
+        if (value <= 0) throw new ExceptionGETL('The number of attempts cannot be less than 1!')
+        params.retryCount = value
+    }
+
+    /** Delete files when copying is complete (default false)*/
+    Boolean getDeleteFiles() { params.deleteFiles as Boolean }
+    /** Delete files when copying is complete (default false) */
+    void setDeleteFiles(Boolean value) { params.deleteFiles = value }
+
+    /** Delete empty directories (default false) */
+    Boolean getDeleteEmptyDirs() { params.deleteEmptyDirs as Boolean }
     /** Delete empty directories */
-    Boolean deleteEmptyDir = false
-    /** Delete empty directories */
-    Boolean getDeleteEmptyDir() { deleteEmptyDir }
-    /** Delete empty directories */
-    void setDeleteEmptyDir(Boolean value) { deleteEmptyDir = BoolUtils.IsValue(value) }
+    void setDeleteEmptyDirs(Boolean value) { params.deleteEmptyDirs = value }
 
     /** Filter directories to copy */
-    public Closure<Boolean> filterDirs
+    Closure<Boolean> getOnFilterDirs() { params.filterDirs as Closure<Boolean> }
     /** Filter directories to copy */
-    void filterDirs(Closure<Boolean> value) { filterDirs = value }
+    void setOnFilterDirs(Closure<Boolean> value) { params.filterDirs = value }
+    /** Filter directories to copy */
+    void filterDirs(Closure<Boolean> value) { params.filterDirs = value }
 
     /** Filter files to copy */
-    public Closure<Boolean> filterFiles
+    Closure<Boolean> getOnFilterFiles() { params.filterFiles as Closure<Boolean> }
     /** Filter files to copy */
-    void filterFiles(Closure<Boolean> value) { filterFiles = value }
+    void setOnFilterFiles(Closure<Boolean> value) { params.filterFiles = value }
+    /** Filter files to copy */
+    void filterFiles(Closure<Boolean> value) { params.filterFiles = value }
 
-    /** Filtering the resulting list of files to copy */
-    public Closure filterList
-    /** Filtering the resulting list of files to copy */
-    void filterList(Closure value) { filterList = value }
+    /** Filtering the resulting list of files before copy */
+    Closure getOnProcessListFiles() { params.onProcessListFiles as Closure }
+    /** Filtering the resulting list of files before copy */
+    void setOnProcessListFiles(Closure value) { params.onProcessListFiles = value }
+    /** Filtering the resulting list of files before copy */
+    void processListFiles(Closure value) { params.onProcessListFiles = value }
 
     /** Source file path mask */
-    Path sourcePath
+    Path getSourcePath() { params.sourcePath as Path }
     /** Source file path mask */
-    Path getSourcePath() { sourcePath }
+    void setSourcePath(Path value) { params.sourcePath = value }
     /** Source file path mask */
-    void setSourcePath(Path value) { sourcePath = value }
-    /** Source file path mask */
-    void sourcePath(@DelegatesTo(Path) Closure cl) {
+    void useSourcePath(@DelegatesTo(Path) Closure cl) {
         def parent = new Path()
         Getl.RunClosure(this, parent, cl)
         setSourcePath(parent)
     }
 
     /** Destination directory path mask */
-    Path destPath
+    Path getDestinationPath() { params.destinationPath as Path }
     /** Destination directory path mask */
-    Path getDestinationPath() { destPath }
+    void setDestinationPath(Path value) { params.destinationPath = value }
     /** Destination directory path mask */
-    void setDestinationPath(Path value) { destPath = value }
-    /** Destination directory path mask */
-    void destinationPath(@DelegatesTo(Path) Closure cl) {
+    void useDestinationPath(@DelegatesTo(Path) Closure cl) {
         def parent = new Path()
         Getl.RunClosure(this, parent, cl)
         setDestinationPath(parent)
     }
 
     /** File rename mask */
-    Path renameFilePath
+    Path getRenamePath() { params.renamePath as Path }
     /** File rename mask */
-    Path getRenameFilePath() { renameFilePath }
+    void setRenamePath(Path value) { params.renamePath = value }
     /** File rename mask */
-    void setRenameFilePath(Path value) { renameFilePath = value }
-    /** File rename mask */
-    void renameFilePath(@DelegatesTo(Path) Closure cl) {
+    void useRenamePath(@DelegatesTo(Path) Closure cl) {
         def parent = new Path()
         Getl.RunClosure(this, parent, cl)
-        setRenameFilePath(parent)
+        setRenamePath(parent)
+    }
+
+    /** The count of threads when building a list of files from the source (default 1) */
+    Integer getCountThreadWhenBuildSourceList() { params.countThreadWhenBuildSourceList as Integer }
+    /** The count of threads when building a list of files from the source (default 1) */
+    void setCountThreadWhenBuildSourceList(Integer value) {
+        if (value != null && value < 1)
+            throw new ExceptionGETL('The value cannot be less than 1 in "countThreadWhenBuildSourceList"!')
+        params.countThreadWhenBuildSourceList = value
+    }
+
+    /** Directory level for which to enable parallelization (null for disable) */
+    Integer getDirectoryConcurrencyNestingLevel() { params.directoryConcurrencyNestingLevel as Integer }
+    /** Directory level for which to enable parallelization (null for disable) */
+    void setDirectoryConcurrencyNestingLevel(Integer value) {
+        if (value != null && value < 1)
+            throw new ExceptionGETL('The value cannot be less than 1 in "sourceProcessListThread"!')
+        params.directoryConcurrencyNestingLevel = value
     }
 
     /**
      * Action before copying a file<br>
      * Closure parameters:<br>
-     * Manager source, String sourcePath, Map sourceFile, Manager dest, String destPath, Map destFile
+     * Map sourceFile, Map destFile
      */
-    public Closure beforeCopyFile
+    Closure getOnBeforeCopyFile() { params.beforeCopyFile as Closure }
     /**
      * Action before copying a file<br>
      * Closure parameters:<br>
-     * Manager source, String sourcePath, Map sourceFile, Manager dest, String destPath, Map destFile
+     * Map sourceFile, Map destFile
      */
-    void beforeCopyFile(Closure value) { beforeCopyFile = value }
+    void setOnBeforeCopyFile(Closure value) { params.beforeCopyFile = value }
+    /**
+     * Action before copying a file<br>
+     * Closure parameters:<br>
+     * Map sourceFile, Map destFile
+     */
+    void beforeCopyFile(Closure value) { setOnBeforeCopyFile(value) }
 
+    /**
+     * Action after copying a file<br>
+     * Closure parameters:<br>
+     * Manager Map sourceFile, Map destFile
+     */
+    Closure getOnAfterCopyFile() { params.afterCopyFile as Closure }
     /**
      * Action after copying a file<br>
      * Closure parameters:<br>
      * Manager source, String sourcePath, Map sourceFile, Manager dest, String destPath, Map destFile
      */
-    public Closure afterCopyFile
+    void setOnAfterCopyFile(Closure value) { params.afterCopyFile = value }
     /**
      * Action after copying a file<br>
      * Closure parameters:<br>
      * Manager source, String sourcePath, Map sourceFile, Manager dest, String destPath, Map destFile
      */
-    void afterCopyFile(Closure value) { afterCopyFile = value }
+    void afterCopy(Closure value) { setOnAfterCopyFile(value) }
 
     /** Sort when copying files */
-    List<String> fileCopyOrder = [] as List<String>
+    List<String> getCopyOrder() { params.copyOrder as List<String> }
     /** Sort when copying files */
-    List<String> getFileCopyOrder() { fileCopyOrder }
-    /** Sort when copying files */
-    void setFileCopyOrder(List value) {
-        fileCopyOrder.clear()
-        if (value != null) fileCopyOrder.addAll(value)
+    void setCopyOrder(List value) {
+        copyOrder.clear()
+        if (value != null) copyOrder.addAll(value)
     }
+
+    /** Synchronized counter */
+    private final SynchronizeObject counter = new SynchronizeObject()
 
     /** Number of copied files */
     long getCountFiles () { counter.count }
 
-    private final SynchronizeObject counter = new SynchronizeObject()
-
     /** Copy files */
     void copy() {
-        FileUtils.ValidFilePath(tempPath)
-
-        if (sourcePath == null) throw new ExceptionGETL('Source mask required in "sourcePath"!')
-        if (!sourcePath.isCompile) sourcePath.compile()
+        def tmpPath = tempPath
+        if (tmpPath == null) {
+            tmpPath = TFS.systemPath + '/' + FileUtils.UniqueFileName()
+            FileUtils.ValidPath(tmpPath)
+            new File(tmpPath).deleteOnExit()
+        }
+        Logs.Fine("For intermediate operations, the \"$tmpPath\" directory will be used")
 
         if (source == null) throw new ExceptionGETL('Source file manager required in "source"!')
-        source.connect()
+        def src = source
+        src.connect()
+        src.localDirectory = tmpPath
 
+        if (sourcePath == null) throw new ExceptionGETL('Source mask required in "sourcePath"!')
+        def sPath = sourcePath
+        if (!sPath.isCompile) sPath.compile()
+
+        Manager dest = null
+        Path dPath = null
         if (!deleteFiles) {
-            if (destPath == null) throw new ExceptionGETL('Destination mask required in "destPath"!')
-            if (!destPath.isCompile) destPath.compile()
-
-            if (dest == null) throw new ExceptionGETL('Destination file manager required in "dest"!')
+            if (destination == null) throw new ExceptionGETL('Destination file manager required in "destination"!')
+            dest = destination
             dest.connect()
+            dest.localDirectory = tmpPath
+
+            if (destinationPath == null) throw new ExceptionGETL('Destination mask required in "destinationPath"!')
+            dPath = destinationPath
+            if (!dPath.isCompile) dPath.compile()
         }
 
         if (dest != null)
-            Logs.Fine("Copy files from [$source] to [$dest]")
+            Logs.Fine("Copy files from [$src] to [$dest]")
         else
-            Logs.Fine("Delete files from $source")
+            Logs.Fine("Delete files from $src")
 
-        Logs.Fine("Source mask: ${sourcePath.maskStr}")
-        Logs.Fine("Source pattern: ${sourcePath.maskPath}")
+        Logs.Fine("Source mask: ${sPath.maskStr}")
+        Logs.Fine("Source pattern: ${sPath.maskPath}")
 
         if (dest != null)
-            Logs.Fine("Destination mask: ${destPath.maskStr}")
+            Logs.Fine("Destination mask: ${dPath.maskStr}")
 
-        if (renameFilePath != null) {
+        Path rPath = null
+        if (renamePath != null) {
             if (dest == null) throw new ExceptionGETL('Renaming files is supported only when copying to the destination')
-            Logs.Fine("Rename file mask: ${renameFilePath.maskStr}")
+            rPath = renamePath
+            if (!rPath.isCompile) rPath.compile()
+            Logs.Fine("Rename file mask: ${rPath.maskStr}")
         }
 
-        if (deleteFiles && dest != null)
+        def delFiles = BoolUtils.IsValue(deleteFiles)
+        def delEmptyDirs = BoolUtils.IsValue(deleteEmptyDirs)
+        def rCount = retryCount?:1
+
+        if (delFiles && dest != null)
             Logs.Fine('After copying the files will be deleted on the source')
 
-        if (deleteEmptyDir)
+        if (delEmptyDirs)
             Logs.Fine('After copying files, empty directories will be deleted on the source')
 
-        if (retryCount > 1)
-            Logs.Fine("$retryCount repetitions will be used in case of file operation errors until termination")
+        if (rCount > 1)
+            Logs.Fine("$rCount repetitions will be used in case of file operation errors until termination")
 
-        if (tempPath != TFS.systemPath)
-            Logs.Fine("For intermediate operations, the \"$tempPath\" directory will be used")
-
-        if (!fileCopyOrder.isEmpty()) {
-            fileCopyOrder.each { col ->
-                if (!sourcePath.vars.containsKey(col))
+        List<String> cOrder = null
+        if (!copyOrder.isEmpty()) {
+            copyOrder.each { col ->
+                if (!sPath.vars.containsKey(col))
                     throw new ExceptionGETL("Field \"$col\" specified for sorting was not found!")
             }
-            Logs.Fine("Files will be processed in the following sort order:: ${fileCopyOrder.join(', ')}")
+            cOrder = copyOrder
+            Logs.Fine("Files will be processed in the following sort order: [${cOrder.join(', ')}]")
         }
     }
 }

@@ -25,6 +25,8 @@
 package getl.xml
 
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
+import getl.lang.opts.BaseSpec
 import getl.xml.opts.XMLReadSpec
 import groovy.transform.InheritConstructors
 import getl.data.*
@@ -90,14 +92,10 @@ class XMLDataset extends StructureFileDataset {
 	 * Read file options
 	 */
 	XMLReadSpec readOpts(@DelegatesTo(XMLReadSpec) Closure cl = null) {
-		def parent = new XMLReadSpec(true, readDirective)
-		parent.thisObject = parent.DetectClosureDelegate(cl)
-		if (cl != null) {
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = new XMLReadSpec(ownerObject, thisObject, true, readDirective)
+		parent.runClosure(cl)
 
 		return parent
 	}

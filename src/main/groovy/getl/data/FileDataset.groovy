@@ -200,7 +200,7 @@ class FileDataset extends Dataset {
 	}
 
 	/** Read file options */
-	Map<String, Object> getReadDirective() { (params.directive as Map<String, Object>).read as Map<String, Object>}
+	Map<String, Object> getReadDirective() { directives('read') }
 	/** Read file options */
 	void setReadDirective(Map<String, Object> value) {
 		readDirective.clear()
@@ -208,7 +208,7 @@ class FileDataset extends Dataset {
 	}
 
 	/** Write file options */
-	Map<String, Object> getWriteDirective() { (params.directive as Map<String, Object>).write as Map<String, Object>}
+	Map<String, Object> getWriteDirective() { directives('write') }
 	/** Write file options */
 	void setWriteDirective(Map<String, Object> value) {
 		writeDirective.clear()

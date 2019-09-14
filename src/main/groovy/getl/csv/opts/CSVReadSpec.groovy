@@ -58,7 +58,12 @@ class CSVReadSpec extends BaseSpec {
      * Processing write parsing error and return the need to read the following rows of file
      * <br>Closure parameters: Map row, Long numberRow
      */
-    void processError(Closure<Boolean> value) { params.processError = prepareClosure(value) }
+    void setOnProcessError(Closure<Boolean> value) { params.processError = value }
+    /**
+     * Processing write parsing error and return the need to read the following rows of file
+     * <br>Closure parameters: Map row, Long numberRow
+     */
+    void processError(Closure<Boolean> value) { setOnProcessError(prepareClosure(value)) }
 
     /**
      * Filter reading file records
@@ -69,5 +74,10 @@ class CSVReadSpec extends BaseSpec {
      * Filter reading file records
      * <br>Closure parameters: Map row
      */
-    void filter(Closure<Boolean> value) { params.filter = prepareClosure(value) }
+    void setOnFilter(Closure<Boolean> value) { params.filter = value }
+    /**
+     * Filter reading file records
+     * <br>Closure parameters: Map row
+     */
+    void filter(Closure<Boolean> value) { setOnFilter(prepareClosure(value)) }
 }

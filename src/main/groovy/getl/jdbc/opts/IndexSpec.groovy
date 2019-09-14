@@ -39,8 +39,8 @@ class IndexSpec extends BaseSpec {
         params.columns = [] as List<String>
     }
 
-    IndexSpec(Boolean useExternalParams = false, Map<String, Object> importParams) {
-        super(useExternalParams, importParams)
+    IndexSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
+        super(ownerObject, thisObject, useExternalParams, importParams)
         if (params.columns == null) params.columns = [] as List<String>
     }
 

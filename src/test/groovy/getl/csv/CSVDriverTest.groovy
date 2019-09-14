@@ -9,6 +9,8 @@ import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.NumericUtils
+import org.junit.BeforeClass
+import org.junit.Test
 
 /**
  * Created by ascru on 10.11.2016.
@@ -30,11 +32,13 @@ class CSVDriverTest extends getl.test.GetlTest {
     static Map<String, Object> conParams = [path: "${TFS.systemPath}/test_csv", createPath: true, extension: 'csv',
                                             codePage: 'utf-8']
 
-    static {
+    @BeforeClass
+    static void InitTest() {
         FileUtils.ValidPath(conParams.path)
         new File(conParams.path).deleteOnExit()
     }
 
+    @Test
     void testSchema() {
         def con = new CSVConnection(conParams + [autoSchema: false])
         def csv = new CSVDataset(connection: con, fileName: 'test_schema')
@@ -232,6 +236,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         bad_csv.drop()
     }
 
+    @Test
     void testWindowsCSV() {
         def con = new CSVConnection(conParams +
                 [escaped: false, header: true, isGzFile: false, locale: 'ru-RU', decimalSeparator: ',',
@@ -248,6 +253,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         validReadWrite(con, 'unix')
     }
 
+    @Test
     void testRowDelimiter() {
         def con = new CSVConnection(conParams + [header: false, rowDelimiter: '\n'])
         def ds1 = new CSVDataset(connection: con, fileName: 'test_row_delimiter_1')
@@ -274,6 +280,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         ds2.drop()
     }
 
+    @Test
     void testPerfomance() {
 		def perfomanceRows = 1000
 		def perfomanceCols = 1000

@@ -25,6 +25,7 @@
 package getl.jdbc
 
 import getl.jdbc.opts.*
+import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import getl.cache.*
 import getl.exception.ExceptionGETL
@@ -38,7 +39,7 @@ import getl.exception.ExceptionGETL
 class TableDataset extends JDBCDataset {
 	TableDataset() {
 		super()
-		type = JDBCDataset.Type.TABLE
+		directives('create').type = JDBCDataset.Type.TABLE
 		sysParams.isTable = true
 		methodParams.register("unionDataset", [])
 	}
@@ -55,7 +56,7 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Create table options
 	 */
-	Map<String, Object> getCreateDirective() { (params.directive as Map<String, Object>).create as Map<String, Object>}
+	Map<String, Object> getCreateDirective() { directives('create') }
 	/**
 	 * Create table options
 	 */
@@ -67,7 +68,7 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Drop table options
 	 */
-	Map<String, Object> getDropDirective() { (params.directive as Map<String, Object>).drop as Map<String, Object>}
+	Map<String, Object> getDropDirective() { directives('drop') }
 	/**
 	 * Drop table options
 	 */
@@ -79,7 +80,7 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Read table options
 	 */
-	Map<String, Object> getReadDirective() { (params.directive as Map<String, Object>).read as Map<String, Object>}
+	Map<String, Object> getReadDirective() { directives('read') }
 	/**
 	 * Read table options
 	 */
@@ -91,7 +92,7 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Write table options
 	 */
-	Map<String, Object> getWriteDirective() { (params.directive as Map<String, Object>).write as Map<String, Object>}
+	Map<String, Object> getWriteDirective() { directives('write') }
 	/**
 	 * Write table options
 	 */
@@ -103,7 +104,7 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Bulk load CSV file options
 	 */
-	Map<String, Object> getBulkLoadDirective() { (params.directive as Map<String, Object>).bulkLoad as Map<String, Object>}
+	Map<String, Object> getBulkLoadDirective() { directives('bulkLoad') }
 	/**
 	 * Bulk load CSV file options
 	 */
@@ -257,20 +258,19 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Create new options object for create table
 	 */
-	protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) { new CreateSpec(useExternalParams, opts) }
+	protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+											  Map<String, Object> opts) {
+		new CreateSpec(ownerObject, thisObject, useExternalParams, opts)
+	}
 
 	/**
 	 * Generate new options object for create table
 	 */
 	protected CreateSpec genCreateTable(Closure cl) {
-		def parent = newCreateTableParams(true, createDirective)
-		if (cl != null) {
-			parent.thisObject = parent.DetectClosureDelegate(cl)
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = newCreateTableParams(ownerObject, thisObject, true, createDirective)
+		parent.runClosure(cl)
 
 		return parent
 	}
@@ -285,20 +285,19 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Create new options object for drop table
 	 */
-	protected static DropSpec newDropTableParams(Boolean useExternalParams, Map<String, Object> opts) { new DropSpec(useExternalParams, opts) }
+	protected static DropSpec newDropTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+												 Map<String, Object> opts) {
+		new DropSpec(ownerObject, thisObject, useExternalParams, opts)
+	}
 
 	/**
 	 * Generate new options object for drop table
 	 */
 	protected DropSpec genDropTable(Closure cl) {
-		def parent = newDropTableParams(true, dropDirective)
-		if (cl != null) {
-			parent.thisObject = parent.DetectClosureDelegate(cl)
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = newDropTableParams(ownerObject, thisObject, true, dropDirective)
+		parent.runClosure(cl)
 
 		return parent
 	}
@@ -313,20 +312,19 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Create new options object for reading table
 	 */
-	protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) { new ReadSpec(useExternalParams, opts) }
+	protected ReadSpec newReadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+										  Map<String, Object> opts) {
+		new ReadSpec(ownerObject, thisObject, useExternalParams, opts)
+	}
 
 	/**
 	 * Generate new options object for reading table
 	 */
 	protected ReadSpec genReadDirective(Closure cl) {
-		def parent = newReadTableParams(true, readDirective)
-		parent.thisObject = parent.DetectClosureDelegate(cl)
-		if (cl != null) {
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = newReadTableParams(ownerObject, thisObject, true, readDirective)
+		parent.runClosure(cl)
 
 		return parent
 	}
@@ -341,20 +339,19 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Create new options object for writing table
 	 */
-	protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) { new WriteSpec(useExternalParams, opts) }
+	protected WriteSpec newWriteTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+											Map<String, Object> opts) {
+		new WriteSpec(ownerObject, thisObject, useExternalParams, opts)
+	}
 
 	/**
 	 * Generate new options object for writing table
 	 */
 	protected WriteSpec genWriteDirective(Closure cl) {
-		def parent = newWriteTableParams(true, writeDirective)
-		parent.thisObject = parent.DetectClosureDelegate(cl)
-		if (cl != null) {
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = newWriteTableParams(ownerObject, thisObject, true, writeDirective)
+		parent.runClosure(cl)
 
 		return parent
 	}
@@ -369,20 +366,19 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Create new options object for writing table
 	 */
-	protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) { new BulkLoadSpec(useExternalParams, opts) }
+	protected BulkLoadSpec newBulkLoadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
+												  Map<String, Object> opts) {
+		new BulkLoadSpec(ownerObject, thisObject, useExternalParams, opts)
+	}
 
 	/**
 	 * Generate new options object for writing table
 	 */
 	protected BulkLoadSpec genBulkLoadDirective(Closure cl) {
-		def parent = newBulkLoadTableParams(true, bulkLoadDirective)
-		parent.thisObject = parent.DetectClosureDelegate(cl)
-		if (cl != null) {
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = newBulkLoadTableParams(ownerObject, thisObject, true, bulkLoadDirective)
+		parent.runClosure(cl)
 
 		return parent
 	}

@@ -27,6 +27,8 @@ package getl.csv
 import getl.csv.opts.CSVReadSpec
 import getl.csv.opts.CSVWriteSpec
 import getl.jdbc.opts.ReadSpec
+import getl.lang.Getl
+import getl.lang.opts.BaseSpec
 import getl.vertica.opts.VerticaReadSpec
 import groovy.transform.InheritConstructors
 import getl.data.Connection
@@ -277,14 +279,10 @@ class CSVDataset extends FileDataset {
 	 * Read file options
 	 */
 	CSVReadSpec readOpts(@DelegatesTo(CSVReadSpec) Closure cl = null) {
-		def parent = new CSVReadSpec(true, readDirective)
-		parent.thisObject = parent.DetectClosureDelegate(cl)
-		if (cl != null) {
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = new CSVReadSpec(ownerObject, thisObject, true, readDirective)
+		parent.runClosure(cl)
 
 		return parent
 	}
@@ -293,14 +291,10 @@ class CSVDataset extends FileDataset {
 	 * Write file options
 	 */
 	CSVWriteSpec writeOpts(@DelegatesTo(CSVWriteSpec) Closure cl = null) {
-		def parent = new CSVWriteSpec(true, writeDirective)
-		parent.thisObject = parent.DetectClosureDelegate(cl)
-		if (cl != null) {
-			def code = cl.rehydrate(parent.DetectClosureDelegate(cl), parent, parent.DetectClosureDelegate(cl))
-			code.resolveStrategy = Closure.OWNER_FIRST
-			code.call()
-			parent.prepareParams()
-		}
+		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def parent = new CSVWriteSpec(ownerObject, thisObject, true, writeDirective)
+		parent.runClosure(cl)
 
 		return parent
 	}

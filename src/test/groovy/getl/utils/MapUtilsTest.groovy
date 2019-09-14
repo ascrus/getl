@@ -1,6 +1,9 @@
 package getl.utils
 
+import org.junit.Test
+
 class MapUtilsTest extends getl.test.GetlTest {
+    @Test
     void testMergeMap() {
         def map = [a: 1, b: 0, c: [ca: 1, cb: 2], d: [1, 2, 3], e: [[ea: 1, eb: 2], [ec: 3, ed: 4]]]
         def added = [b: 2, f: 3, g: 4, c: [cc: 3], d: [4, 5], e: [[ee: 5]]]
@@ -39,6 +42,7 @@ class MapUtilsTest extends getl.test.GetlTest {
         assertEquals(req, MapUtils.ToJson(map))
     }
 
+    @Test
     void testFindSection() {
         def m = [a: 1, b: [d: [f: 5], e: 4, g:[h: [i: [j: 6]]]], c: 3]
 
@@ -49,6 +53,7 @@ class MapUtilsTest extends getl.test.GetlTest {
         assertEquals(6, MapUtils.FindSection(m, 'b.g.*.*').j)
     }
 
+    @Test
     void testXsdApi() {
         if (!FileUtils.ExistsFile('tests/xero/xero-accounting-api-schema-0.1.2.jar')) return
 
@@ -67,6 +72,7 @@ class MapUtilsTest extends getl.test.GetlTest {
         */
     }
 
+    @Test
     void testProcessArguments() {
         String[] a1 = ['a=1', '', 'b=2', ' ', 'c=3']
         assertEquals([a:1, b:2, c:3].toString(), MapUtils.ProcessArguments(a1).toString())
@@ -87,6 +93,7 @@ class MapUtilsTest extends getl.test.GetlTest {
         assertEquals(['a 1 2  3':null].toString(), MapUtils.ProcessArguments(s2).toString())
     }
 
+    @Test
     void testFindKeys() {
         def m = [a: 1, b: [c: 1, d: 2, e: [f: [1, 2], g: 3], h: [f: [1, 2], g: 3], j: 3], k: 2,
                  l: [c: 1, d: 2, e: [f: [1, 2], g: 3]]]
