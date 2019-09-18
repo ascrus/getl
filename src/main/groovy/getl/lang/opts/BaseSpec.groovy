@@ -25,6 +25,7 @@
 package getl.lang.opts
 
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.utils.MapUtils
 
 /**
@@ -36,8 +37,8 @@ class BaseSpec {
     BaseSpec() { }
 
     BaseSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        this.ownerObject = ownerObject
-        this.thisObject = thisObject
+        this._ownerObject = ownerObject
+        this._thisObject = thisObject
         if (importParams != null) {
             if (useExternalParams) {
                 _params = importParams
@@ -54,51 +55,31 @@ class BaseSpec {
     }
 
     /** This object for this object */
-    def thisObject
+    def _thisObject
 
     /** This object for owner object */
-    def ownerObject
+    def _ownerObject
 
     /** Preparing closure code for this object */
     Closure prepareClosure(Closure cl) {
-//        if (thisObject == null) return cl
-        def code = cl.rehydrate(ownerObject?:this, this, thisObject?:this)
-        code.resolveStrategy = Closure.OWNER_FIRST
-        return code
+        Getl.PrepareClosure(_ownerObject?:this, _thisObject?:this, this, cl)
     }
 
     /** Preparing closure code for specified object */
     Closure prepareClosure(def parent, Closure cl) {
-//        if (thisObject == null) return cl
-        def code = cl.rehydrate(ownerObject?:this, parent?:this, thisObject?:this)
-        code.resolveStrategy = Closure.OWNER_FIRST
-        return code
+        Getl.PrepareClosure(_ownerObject?:this, _thisObject?:this, parent?:this, cl)
     }
-
-    /** Preparing closure code for specified object */
-    static Closure PrepareClosure(def ownerObject, def parent, def thisObject, Closure cl) {
-        def code = cl.rehydrate(ownerObject?:this, parent?:this, thisObject?:this)
-        code.resolveStrategy = Closure.OWNER_FIRST
-        return code
-    }
-
 
     /** Run closure for this object */
     void runClosure(Closure cl) {
         if (cl == null) return
-        prepareClosure(cl).call()
+        Getl.RunClosure(_ownerObject?:this, _thisObject?:this, this, cl)
     }
 
     /** Run closure for specified object */
     void runClosure(def parent, Closure cl) {
         if (cl == null) return
-        prepareClosure(parent, cl).call()
-    }
-
-    /** Run closure for specified object */
-    static void RunClosure(def ownerObject, def parent, def thisObject, Closure cl) {
-        if (cl == null) return
-        PrepareClosure(ownerObject, parent, thisObject, cl).call()
+        Getl.RunClosure(_ownerObject?:this, _thisObject?:this, parent?:this, cl)
     }
 
     Map<String, Object> _params = [:]

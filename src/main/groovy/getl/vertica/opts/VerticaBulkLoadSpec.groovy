@@ -102,7 +102,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
      * Specified parser for loading data from file
      */
     void parser(@DelegatesTo(VerticaBulkLoadParserSpec) Closure cl) {
-        def parent = new VerticaBulkLoadParserSpec(ownerObject, thisObject, true, parser)
+        def parent = new VerticaBulkLoadParserSpec(_ownerObject, _thisObject, true, parser)
         parent.runClosure(cl)
         parser = parent.params
     }

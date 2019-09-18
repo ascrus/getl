@@ -120,17 +120,14 @@ class Dataset {
 	}
 	
 
-	private Connection connection
-	/**
-	 * Connection
-	 */
+	/** Connection */
+	Connection connection
+	/** Connection */
 	Connection getConnection() { return this.connection }
-	/**
-	 * Connection
-	 */
+	/** Connection */
 	void setConnection(Connection value) { this.connection = value }
 
-	private String config
+	String config
 	/**
 	 * Name in config from section "datasets"
 	 */
@@ -149,19 +146,16 @@ class Dataset {
 			}
 		}
 	}
-	
-	private final Map params = [:]
-	/** Dataset public parameters */
-	Map getParams () { return this.params }
-	/** Dataset public parameters */
-	void setParams(Map value) {
-		this.params.clear()
-		initParams()
-		this.params.putAll(value)
-	}
-	
 
-	private final List<Field> field = []
+	/** Use specified configuration from section "datasets" */
+	void useConfig (String configName) {
+		setConfig(configName)
+	}
+
+	/** Dataset public parameters */
+	public final Map params = [:]
+
+	final List<Field> field = []
 	/** Fields of dataset */
 	List<Field> getField() { return this.field }
 	/** Fields of dataset */
@@ -485,7 +479,7 @@ class Dataset {
 			parent = new Field(name: name)
 			field << parent
 		}
-		BaseSpec.RunClosure(ownerObject, parent, thisObject, cl)
+		Getl.RunClosure(ownerObject, thisObject, parent, cl)
 
 		return parent
 	}

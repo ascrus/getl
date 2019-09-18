@@ -1,6 +1,7 @@
 package getl.lang
 
 import getl.data.Field
+import getl.exception.ExceptionGETL
 import getl.utils.FileUtils
 import org.junit.Test
 
@@ -28,29 +29,21 @@ class CopyTest extends getl.test.GetlTest {
     @Override
     boolean allowTests() { FileUtils.ExistsFile('tests/lang/copier.groovy') }
 
+    final def configFile = 'tests/lang/copier.groovy'
+
     @Test
     void testCopy() {
-        Getl.Dsl {
+        Getl.Dsl(this) {
             configuration {
-                load('tests/lang/copier.groovy')
+                load(this.configFile)
             }
 
             sftp('source', true) {
-                server = configContent.source.server
-
-                login = configContent.source.login
-                password = configContent.source.password
-                rootPath = configContent.source.rootPath
-                hostKey = configContent.source.hostKey
+                useConfig 'source'
             }
 
             sftp('dest', true) {
-                server = configContent.dest.server
-
-                login = configContent.dest.login
-                password = configContent.dest.password
-                rootPath = configContent.dest.rootPath
-                hostKey = configContent.dest.hostKey
+                useConfig 'dest'
             }
 
             fileCopier(sftp('source'), sftp('dest')) {

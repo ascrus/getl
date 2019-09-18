@@ -26,9 +26,7 @@ package getl.proc.opts
 
 import getl.data.*
 import getl.exception.ExceptionGETL
-import getl.lang.opts.BaseSpec
 import getl.proc.Flow
-import getl.tfs.TFSDataset
 import getl.utils.MapUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
@@ -304,7 +302,7 @@ class FlowCopySpec extends FlowBaseSpec {
 
         def parent = childs.get(name)
         if (parent == null) {
-            parent = new FlowCopyChildSpec(ownerObject, thisObject, false, null)
+            parent = new FlowCopyChildSpec(_ownerObject, _thisObject, false, null)
             parent.dataset = dataset
             childs.put(name, parent)
         }

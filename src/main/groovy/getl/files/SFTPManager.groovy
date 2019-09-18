@@ -55,7 +55,8 @@ class SFTPManager extends Manager {
 	@Override
 	protected void initMethods () {
 		super.initMethods()
-		methodParams.register("super", ["server", "port", "login", "password", "knownHostsFile", "identityFile", "codePage", "aliveInterval", "aliveCountMax"])
+		methodParams.register('super', ['server', 'port', 'login', 'password', 'knownHostsFile',
+										'identityFile', 'codePage', 'aliveInterval', 'aliveCountMax', 'hostKey'])
 	}
 	
 	@Override

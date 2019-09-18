@@ -32,16 +32,10 @@ import javax.mail.internet.*
 import getl.exception.ExceptionGETL
 
 class EMailer {
-	private final Map params = [:]
 	/** Parameters */
-	Map getParams () { params }
-	/** Parameters */
-	void setParams(Map value) {
-		params.clear()
-		params.putAll(value)
-	}
+	public final Map params = [:]
 
-	private String config
+	String config
 	/** Name in config from section "emailers" */
 	String getConfig () { config }
 	/** Name in config from section "emailers" */
@@ -55,6 +49,11 @@ class EMailer {
 				Config.RegisterOnInit(doInitConfig)
 			}
 		}
+	}
+
+	/** Use specified configuration from section "emailers" */
+	void useConfig (String configName) {
+		setConfig(configName)
 	}
 
 	/** Host server */

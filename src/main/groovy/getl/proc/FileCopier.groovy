@@ -106,7 +106,7 @@ class FileCopier {
     /** Source file path mask */
     void useSourcePath(@DelegatesTo(Path) Closure cl) {
         def parent = new Path()
-        Getl.RunClosure(this, parent, cl)
+        Getl.RunClosure(sysParams.dslOwnerObject?:this, sysParams.dslThisObject?:this, parent, cl)
         setSourcePath(parent)
     }
 
@@ -117,7 +117,7 @@ class FileCopier {
     /** Destination directory path mask */
     void useDestinationPath(@DelegatesTo(Path) Closure cl) {
         def parent = new Path()
-        Getl.RunClosure(this, parent, cl)
+        Getl.RunClosure(sysParams.dslOwnerObject?:this, sysParams.dslThisObject?:this, parent, cl)
         setDestinationPath(parent)
     }
 
@@ -128,7 +128,7 @@ class FileCopier {
     /** File rename mask */
     void useRenamePath(@DelegatesTo(Path) Closure cl) {
         def parent = new Path()
-        Getl.RunClosure(this, parent, cl)
+        Getl.RunClosure(sysParams.dslOwnerObject?:this, sysParams.dslThisObject?:this, parent, cl)
         setRenamePath(parent)
     }
 

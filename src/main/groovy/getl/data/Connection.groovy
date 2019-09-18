@@ -126,26 +126,26 @@ class Connection {
 	}
 
 	/** Connection driver manager class*/
-	private Driver driver
+	Driver driver
 
 	/** Connection driver manager class*/
 	Driver getDriver() { driver }
 	
 	/**
 	 * Configuration name
-	 * Store parameters to config file from section "CONNECTIONS"
+	 * Store parameters to config file from section "connections"
 	 */
-	private String config
+	String config
 
 	/**
 	 * Configuration name
-	 * Store parameters to config file from section "CONNECTIONS"
+	 * Store parameters to config file from section "connections"
 	 */
 	String getConfig () { config }
 
 	/**
 	 * Configuration name
-	 * Store parameters to config file from section "CONNECTIONS"
+	 * Store parameters to config file from section "connections"
 	 */
 	void setConfig (String value) {
 		config = value
@@ -157,6 +157,11 @@ class Connection {
 				Config.RegisterOnInit(doInitConfig)
 			}
 		}
+	}
+
+	/** Use specified configuration from section "connections" */
+	void useConfig (String configName) {
+		setConfig(configName)
 	}
 	
 	/**

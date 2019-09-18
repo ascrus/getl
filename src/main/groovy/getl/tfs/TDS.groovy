@@ -26,10 +26,6 @@ package getl.tfs
 
 import groovy.transform.InheritConstructors
 import getl.h2.*
-import getl.jdbc.*
-import getl.data.*
-import getl.exception.*
-import getl.utils.*
 import org.h2.tools.DeleteDbFiles
 
 /**
@@ -74,8 +70,8 @@ class TDS extends H2Connection {
 				connectDatabase = "getl"
 			}
 			else {
-                tempPath = TFS.systemPath
-				connectDatabase = "$tempPath/getl"
+                _tempPath = TFS.systemPath
+				connectDatabase = "$_tempPath/getl"
 			}
 		}
 		if (login == null && password == null) {
@@ -98,7 +94,7 @@ class TDS extends H2Connection {
 	}
 
     /** Temp path of database file */
-    private String tempPath
+    String _tempPath
 	
 	/** Internal name in config section */
 	protected String internalConfigName() { "getl_tds" }
@@ -125,8 +121,8 @@ class TDS extends H2Connection {
     @Override
     protected void doDoneDisconnect () {
         super.doDoneDisconnect()
-        if (tempPath != null) {
-            DeleteDbFiles.execute(tempPath, 'getl', true)
+        if (_tempPath != null) {
+            DeleteDbFiles.execute(_tempPath, 'getl', true)
         }
     }
 	

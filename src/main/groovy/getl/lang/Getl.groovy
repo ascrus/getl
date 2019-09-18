@@ -103,13 +103,13 @@ class Getl extends Script {
     static Getl _getl
 
     /* Owner object for instance DSL */
-    static def _thisObject
+    static def _ownerObject
 
     /** Run DSL script on getl share object */
-    static Getl Dsl(def thisObject, Map parameters, @DelegatesTo(Getl) Closure cl) {
+    static Getl Dsl(def ownerObject, Map parameters, @DelegatesTo(Getl) Closure cl) {
         if (_getl == null) _getl = new Getl()
-        if (thisObject != null) _thisObject = thisObject
-        return _getl.runDsl(_thisObject, parameters, cl)
+        if (ownerObject != null) _ownerObject = ownerObject
+        return _getl.runDsl(_ownerObject, parameters, cl)
     }
 
     /** Run DSL script on getl share object */
@@ -128,10 +128,10 @@ class Getl extends Script {
     }
 
     /** Run DSL script */
-    Getl runDsl(def thisObject, Map parameters, @DelegatesTo(Getl) Closure cl) {
+    Getl runDsl(def owner, Map parameters, @DelegatesTo(Getl) Closure cl) {
         if (cl != null) {
-            def code = cl.rehydrate(this, this, thisObject?:this)
-            code.resolveStrategy = Closure.OWNER_FIRST
+            def code = cl.rehydrate(this, this, owner?:this)
+            code.resolveStrategy = childDelegate
             if (parameters != null) code.properties.putAll(parameters)
             code.call(this)
         }
@@ -148,6 +148,13 @@ class Getl extends Script {
     Getl runDsl(@DelegatesTo(Getl) Closure cl) {
         runDsl(null, null, cl)
     }
+
+    /** Owner object for child objects  */
+    def getChildOwnerObject() { this }
+    /** This object for child objects */
+    def getChildThisObject() { _ownerObject?:this }
+    /** Delegate method for child objects */
+    static int childDelegate = Closure.DELEGATE_FIRST
 
     Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
     /** Set language parameters */
@@ -301,8 +308,8 @@ class Getl extends Script {
 
         if (name == null) {
             def c = Connection.CreateConnection(connection: connectionClassName) as Connection
-            c.sysParams.dslThisObject = _thisObject
-            c.sysParams.dslOwnerObject = this
+            c.sysParams.dslThisObject = childThisObject
+            c.sysParams.dslOwnerObject = childOwnerObject
             return c
         }
 
@@ -319,8 +326,8 @@ class Getl extends Script {
                 throw new ExceptionGETL("Connection \"$name\" with type \"$connectionClassName\" is not exist!")
 
             obj = Connection.CreateConnection(connection: connectionClassName) as Connection
-            obj.sysParams.dslThisObject = _thisObject
-            obj.sysParams.dslOwnerObject = this
+            obj.sysParams.dslThisObject = childThisObject
+            obj.sysParams.dslOwnerObject = childOwnerObject
             sect.put(repName, obj)
         }
 
@@ -329,8 +336,8 @@ class Getl extends Script {
             obj = thread.registerCloneObject('connections', obj,
                     {
                         def c = (it as Connection).cloneConnection()
-                        c.sysParams.dslThisObject = _thisObject
-                        c.sysParams.dslOwnerObject = this
+                        c.sysParams.dslThisObject = childThisObject
+                        c.sysParams.dslOwnerObject = childOwnerObject
                         return c
                     }
             )
@@ -574,8 +581,8 @@ class Getl extends Script {
             else
                 setDefaultConnection(datasetClassName, obj)
 
-            obj.sysParams.dslThisObject = _thisObject
-            obj.sysParams.dslOwnerObject = this
+            obj.sysParams.dslThisObject = childThisObject
+            obj.sysParams.dslOwnerObject = childOwnerObject
 
             if (obj.connection != null && langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
                 def thread = Thread.currentThread() as ExecutorThread
@@ -583,8 +590,8 @@ class Getl extends Script {
                         {
                             def c = (it as Connection).cloneConnection()
                             if (connection == null) {
-                                c.sysParams.dslThisObject = _thisObject
-                                c.sysParams.dslOwnerObject = this
+                                c.sysParams.dslThisObject = childThisObject
+                                c.sysParams.dslOwnerObject = childOwnerObject
                             }
                             return c
                         }
@@ -605,8 +612,8 @@ class Getl extends Script {
                     throw new ExceptionGETL("Dataset \"$name\" with type \"$datasetClassName\" is not exist!")
 
                 obj = Dataset.CreateDataset(dataset: datasetClassName) as Dataset
-                obj.sysParams.dslThisObject = _thisObject
-                obj.sysParams.dslOwnerObject = this
+                obj.sysParams.dslThisObject = childThisObject
+                obj.sysParams.dslOwnerObject = childOwnerObject
 
                 if (connection != null) {
                     obj.connection = connection
@@ -624,8 +631,8 @@ class Getl extends Script {
                             {
                                 def c = (it as Connection).cloneConnection()
                                 if (connection == null) {
-                                    c.sysParams.dslThisObject = _thisObject
-                                    c.sysParams.dslOwnerObject = this
+                                    c.sysParams.dslThisObject = childThisObject
+                                    c.sysParams.dslOwnerObject = childOwnerObject
                                 }
                                 return c
                             }
@@ -634,8 +641,8 @@ class Getl extends Script {
                     obj = thread.registerCloneObject('datasets', obj,
                             {
                                 def d = (it as Dataset).cloneDataset(cloneConnection)
-                                d.sysParams.dslThisObject = _thisObject
-                                d.sysParams.dslOwnerObject = this
+                                d.sysParams.dslThisObject = childThisObject
+                                d.sysParams.dslOwnerObject = childOwnerObject
                                 return d
                             }
                     ) as Dataset
@@ -644,8 +651,8 @@ class Getl extends Script {
                     obj = thread.registerCloneObject('datasets', obj,
                             {
                                 def d = (it as Dataset).cloneDataset()
-                                d.sysParams.dslThisObject = _thisObject
-                                d.sysParams.dslOwnerObject = this
+                                d.sysParams.dslThisObject = childThisObject
+                                d.sysParams.dslOwnerObject = childOwnerObject
                                 return d
                             }
                     ) as Dataset
@@ -718,16 +725,16 @@ class Getl extends Script {
         SavePointManager obj
         if (name == null) {
             obj = new SavePointManager()
-            obj.sysParams.dslThisObject = _thisObject
-            obj.sysParams.dslOwnerObject = this
+            obj.sysParams.dslThisObject = childThisObject
+            obj.sysParams.dslOwnerObject = childOwnerObject
             if (lastJdbcDefaultConnection != null) obj.connection = lastJdbcDefaultConnection
             if (obj.connection != null && langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
                 def thread = Thread.currentThread() as ExecutorThread
                 obj.connection = thread.registerCloneObject('connections', obj.connection,
                         {
                             def p = (it as Connection).cloneConnection()
-                            p.sysParams.dslThisObject = _thisObject
-                            p.sysParams.dslOwnerObject = this
+                            p.sysParams.dslThisObject = childThisObject
+                            p.sysParams.dslOwnerObject = childOwnerObject
                             return p
                         }
                 ) as Connection
@@ -741,8 +748,8 @@ class Getl extends Script {
                     throw new ExceptionGETL("History point \"$name\" is not exist!")
 
                 obj = new SavePointManager()
-                obj.sysParams.dslThisObject = _thisObject
-                obj.sysParams.dslOwnerObject = this
+                obj.sysParams.dslThisObject = childThisObject
+                obj.sysParams.dslOwnerObject = childOwnerObject
                 if (lastJdbcDefaultConnection != null) obj.connection = lastJdbcDefaultConnection
                 historyPoints.put(repName, obj)
             }
@@ -753,16 +760,16 @@ class Getl extends Script {
                     def cloneConnection = thread.registerCloneObject('connections', obj.connection,
                             {
                                 def c = (it as Connection).cloneConnection()
-                                c.sysParams.dslThisObject = _thisObject
-                                c.sysParams.dslOwnerObject = this
+                                c.sysParams.dslThisObject = childThisObject
+                                c.sysParams.dslOwnerObject = childOwnerObject
                                 return c
                             }
                     ) as JDBCConnection
                     obj = thread.registerCloneObject('historypoints', obj,
                             {
                                 def p = (it as SavePointManager).cloneSavePointManager(cloneConnection)
-                                p.sysParams.dslThisObject = _thisObject
-                                p.sysParams.dslOwnerObject = this
+                                p.sysParams.dslThisObject = childThisObject
+                                p.sysParams.dslOwnerObject = childOwnerObject
                                 return p
                             }
                     ) as SavePointManager
@@ -771,8 +778,8 @@ class Getl extends Script {
                     obj = thread.registerCloneObject('historypoints', obj,
                             {
                                 def p = (it as SavePointManager).cloneSavePointManager()
-                                p.sysParams.dslThisObject = _thisObject
-                                p.sysParams.dslOwnerObject = this
+                                p.sysParams.dslThisObject = childThisObject
+                                p.sysParams.dslOwnerObject = childOwnerObject
                                 return p
                             }
                     ) as SavePointManager
@@ -843,8 +850,8 @@ class Getl extends Script {
 
         if (name == null) {
             def obj = FileManager.CreateManager(manager: fileManagerClassName) as Manager
-            obj.sysParams.dslThisObject = _thisObject
-            obj.sysParams.dslOwnerObject = this
+            obj.sysParams.dslThisObject = childThisObject
+            obj.sysParams.dslOwnerObject = childOwnerObject
             return obj
         }
 
@@ -861,8 +868,8 @@ class Getl extends Script {
                 throw new ExceptionGETL("File manager \"$name\" with type \"$fileManagerClassName\" is not exist!")
 
             obj = Manager.CreateManager(manager: fileManagerClassName) as Manager
-            obj.sysParams.dslThisObject = _thisObject
-            obj.sysParams.dslOwnerObject = this
+            obj.sysParams.dslThisObject = childThisObject
+            obj.sysParams.dslOwnerObject = childOwnerObject
             sect.put(repName, obj)
         }
 
@@ -871,8 +878,8 @@ class Getl extends Script {
             obj = thread.registerCloneObject('filemanagers', obj,
                     {
                         def f = (it as FileManager).cloneManager()
-                        f.sysParams.dslThisObject = _thisObject
-                        f.sysParams.dslOwnerObject = this
+                        f.sysParams.dslThisObject = childThisObject
+                        f.sysParams.dslOwnerObject = childOwnerObject
                         return f
                     }
             )
@@ -937,52 +944,66 @@ class Getl extends Script {
         runGroovyClass(groovyClass, false, vars)
     }
 
-    /** Run closure with call parent parameter */
-    static void RunClosure(Object thisObject, Object parent, Closure cl) {
+    /** Preparing closure code for specified object */
+    static Closure PrepareClosure(def ownerObject, def thisObject, def parent, Closure cl) {
         if (cl == null) return
-        def code = cl.rehydrate(thisObject, parent, thisObject)
-        code.resolveStrategy = Closure.OWNER_FIRST
+        def code = cl.rehydrate(parent, ownerObject, thisObject)
+        code.resolveStrategy = childDelegate
+        return code
+    }
+
+    /** Run closure with call parent parameter */
+    static void RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl) {
+        if (cl == null) return
+
+        def code = cl.rehydrate(parent, ownerObject, thisObject)
+        code.resolveStrategy = childDelegate
         code.call(parent)
     }
 
     /** Run closure with call one parameter */
-    static void RunClosure(Object thisObject, Object parent, Closure cl, Object param) {
+    static void RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object param) {
         if (cl == null) return
-        def code = cl.rehydrate(thisObject, parent, thisObject)
-        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def code = cl.rehydrate(parent, ownerObject, thisObject)
+        code.resolveStrategy = childDelegate
         code.call(param)
     }
 
     /** Run closure with call two parameters */
-    static void RunClosure(Object thisObject, Object parent, Closure cl, Object param1, Object param2) {
+    static void RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object... params) {
         if (cl == null) return
-        def code = cl.rehydrate(thisObject, parent, thisObject)
-        code.resolveStrategy = Closure.OWNER_FIRST
-        code.call(param1, param2)
+
+        def code = cl.rehydrate(parent, ownerObject, thisObject)
+        code.resolveStrategy = childDelegate
+        code.call(params)
     }
 
     /** Run closure with call parent parameter */
     protected void runClosure(Object parent, Closure cl) {
         if (cl == null) return
-        def code = cl.rehydrate(this, parent, _thisObject?:this)
-        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
+        code.resolveStrategy = childDelegate
         code.call(parent)
     }
 
     /** Run closure with call one parameter */
     protected void runClosure(Object parent, Closure cl, Object param) {
         if (cl == null) return
-        def code = cl.rehydrate(this, parent, _thisObject?:this)
-        code.resolveStrategy = Closure.OWNER_FIRST
+
+        def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
+        code.resolveStrategy = childDelegate
         code.call(param)
     }
 
     /** Run closure with call two parameters */
-    protected void runClosure(Object parent, Closure cl, Object param1, Object param2) {
+    protected void runClosure(Object parent, Closure cl, Object... params) {
         if (cl == null) return
-        def code = cl.rehydrate(this, parent, _thisObject?:this)
-        code.resolveStrategy = Closure.OWNER_FIRST
-        code.call(param1, param2)
+
+        def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
+        code.resolveStrategy = childDelegate
+        code.call(params)
     }
 
     /** Current configuration content */
@@ -1025,7 +1046,7 @@ class Getl extends Script {
     /** Configuration options */
     ConfigSpec configuration(@DelegatesTo(ConfigSpec) Closure cl = null) {
         if (Config.configClassManager != ConfigSlurper) Config.configClassManager = new ConfigSlurper()
-        def parent = new ConfigSpec(this, _thisObject, false, null)
+        def parent = new ConfigSpec(childOwnerObject, childThisObject, false, null)
         parent.runClosure(cl)
 
         return parent
@@ -1033,7 +1054,7 @@ class Getl extends Script {
 
     /** Log options */
     LogSpec logging(@DelegatesTo(LogSpec) Closure cl = null) {
-        def parent = new LogSpec(this, _thisObject, false, null)
+        def parent = new LogSpec(childOwnerObject, childThisObject, false, null)
         parent.runClosure(cl)
 
         return parent
@@ -2065,7 +2086,7 @@ class Getl extends Script {
         if (destination == null) throw new ExceptionGETL('Destination dataset cannot be null!')
 
         def pt = startProcess("Copy rows from $source to $destination")
-        def parent = new FlowCopySpec(this, _thisObject, false, null)
+        def parent = new FlowCopySpec(childOwnerObject, childThisObject, false, null)
         parent.source = source
         parent.destination = destination
         parent.runClosure(cl)
@@ -2078,7 +2099,7 @@ class Getl extends Script {
         if (destination == null) throw new ExceptionGETL('Destination dataset cannot be null!')
 
         def pt = startProcess("Write rows to $destination")
-        def parent = new FlowWriteSpec(this, _thisObject, false, null)
+        def parent = new FlowWriteSpec(childOwnerObject, childThisObject, false, null)
         parent.destination = destination
         parent.runClosure(cl)
         finishProcess(pt, parent.countRow)
@@ -2091,7 +2112,7 @@ class Getl extends Script {
         def destNames = [] as List<String>
         destinations.each { String destName, Dataset ds -> destNames.add("$destName: ${ds.toString()}".toString())}
         def pt = startProcess("Write rows to $destNames")
-        def parent = new FlowWriteManySpec(this, _thisObject, false, null)
+        def parent = new FlowWriteManySpec(childOwnerObject, childThisObject, false, null)
         parent.destinations = destinations
         parent.runClosure(cl)
         finishProcess(pt)
@@ -2101,7 +2122,7 @@ class Getl extends Script {
     void rowProcess(Dataset source, @DelegatesTo(FlowProcessSpec) Closure cl) {
         if (source == null) throw new ExceptionGETL('Source dataset cannot be null!')
         def pt = startProcess("Read rows from $source")
-        def parent = new FlowProcessSpec(this, _thisObject, false, null)
+        def parent = new FlowProcessSpec(childOwnerObject, childThisObject, false, null)
         parent.source = source
         parent.runClosure(cl)
         finishProcess(pt, parent.countRow)
@@ -2280,7 +2301,7 @@ class Getl extends Script {
      * @cl process code
      */
     FileTextSpec textFile(def file, @DelegatesTo(FileTextSpec) Closure cl) {
-        def parent = new FileTextSpec(this, _thisObject, false, null)
+        def parent = new FileTextSpec(childOwnerObject, childThisObject, false, null)
         if (file != null) {
             parent.fileName = (file instanceof File)?((file as File).name):file.toString()
         }
@@ -2301,8 +2322,8 @@ class Getl extends Script {
     /** File path parser */
     Path filePath(@DelegatesTo(Path) Closure cl) {
         def parent = new Path()
-        parent.sysParams.dslThisObject = _thisObject
-        parent.sysParams.dslOwnerObject = this
+        parent.sysParams.dslThisObject = childThisObject
+        parent.sysParams.dslOwnerObject = childOwnerObject
         runClosure(parent, cl)
 
         return parent
@@ -2335,8 +2356,8 @@ class Getl extends Script {
         if (source == null) throw new ExceptionGETL('Source file manager cannot be null!')
         if (destination == null) throw new ExceptionGETL('Destination file manager cannot be null!')
         def parent = new FileCopier()
-        parent.sysParams.dslThisObject = _thisObject
-        parent.sysParams.dslOwnerObject = this
+        parent.sysParams.dslThisObject = childThisObject
+        parent.sysParams.dslOwnerObject = childOwnerObject
         parent.source = source
         parent.destination = destination
         runClosure(parent, cl)

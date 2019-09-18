@@ -7,6 +7,7 @@ import getl.utils.DateUtils
 import getl.utils.Logs
 import getl.utils.StringUtils
 import org.junit.FixMethodOrder
+import org.junit.Ignore
 import org.junit.Test
 
 @FixMethodOrder(org.junit.runners.MethodSorters.NAME_ASCENDING)
@@ -70,7 +71,7 @@ datasets {
             }
         }
 
-        assertEquals("${this.tempPath}/getl.{date}.logs", Logs.logFileName)
+        assertEquals("${tempPath}/getl.{date}.logs", Logs.logFileName)
     }
 
     @Test
@@ -93,11 +94,9 @@ datasets {
             h2Table('table1', true) { H2Table table ->
                 config = 'table1'
 
-                field = [
-                        field('id') { type = integerFieldType; isKey = true },
-                        field('name') { type = stringFieldType; length = 50; isNull = false },
-                        field('dt') { type = datetimeFieldType; defaultValue = 'Now()'; isNull = false }
-                ]
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { type = stringFieldType; length = 50; isNull = false }
+                field('dt') { type = datetimeFieldType; defaultValue = 'Now()'; isNull = false }
 
                 createOpts {
                     hashPrimaryKey = true
@@ -171,7 +170,7 @@ datasets {
 
     @Test
     void test08_01LoadFile1ToTable1AndTable2() {
-        Getl.Dsl {
+        Getl.Dsl { getl ->
             rowsToMany([
                     table1: h2Table('table1') { truncate() },
                     table2: h2Table('table2') { truncate() }
@@ -280,6 +279,8 @@ ORDER BY t1.id'''
                 process { Map sourceRow, Map destRow ->
                     destRow.name = (sourceRow.name as String).toUpperCase()
                 }
+
+                assertEquals(this.table1_rows, destination.writeRows)
             }
         }
     }
@@ -348,6 +349,7 @@ ORDER BY t1.id'''
         }
     }
 
+    @Ignore
     @Test
     void test13PrintSqlLog() {
         Getl.Dsl {

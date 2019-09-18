@@ -99,7 +99,7 @@ abstract class Manager {
 	/**
 	 * Parameters
 	 */
-	public Map<String, Object> params = [:] as Map<String, Object>
+	public final Map<String, Object> params = [:] as Map<String, Object>
 
 	/**
 	 * System parameters
@@ -193,7 +193,7 @@ abstract class Manager {
 	void setSaveOriginalDate(boolean value) { params.saveOriginalDate = value }
 	
 
-	private String config
+	String config
 	/**
 	 * Name section parameteres value in config file
 	 * Store parameters to config file from section "FTPSERVERS"
@@ -213,6 +213,11 @@ abstract class Manager {
 				Config.RegisterOnInit(doInitConfig)
 			}
 		}
+	}
+
+	/** Use specified configuration from section "files" */
+	void useConfig (String configName) {
+		setConfig(configName)
 	}
 	
 	/**
