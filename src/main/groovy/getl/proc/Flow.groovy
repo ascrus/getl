@@ -31,6 +31,8 @@ import getl.exception.ExceptionGETL
 import getl.transform.*
 import getl.utils.*
 import getl.tfs.*
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Data flow manager class 
@@ -276,7 +278,9 @@ class Flow {
 	/**
 	 * Copy rows from dataset to other dataset
 	 */
-	long copy (Map params, Closure map_code = null) {
+	long copy (Map params,
+			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
+					   Closure map_code = null) {
 		methodParams.validation("copy", params)
 
 		errorsDataset = null
@@ -656,7 +660,9 @@ class Flow {
 	 *
 	 * @param params - parameters
 	 */
-	long writeTo(Map params, Closure code = null) {
+	long writeTo(Map params,
+				 @ClosureParams(value = SimpleType, options = ['groovy.lang.Closure'])
+						 Closure code = null) {
 		methodParams.validation("writeTo", params)
 
 		countRow = 0
@@ -708,8 +714,7 @@ class Flow {
 		Dataset writer
 
 		if (initCode != null) initCode.call()
-//		if (dest instanceof TableDataset && dest.field.isEmpty()) dest.retrieveFields()
-		
+
 		if (isBulkLoad) {
 			bulkDS = TFS.dataset()
 			bulkDS.escaped = bulkEscaped
@@ -799,7 +804,8 @@ class Flow {
 	/**
 	 * Write user data to list of dataset
 	 */
-	void writeAllTo(Map params, Closure code = null) {
+	void writeAllTo(Map params, @ClosureParams(value = SimpleType, options = ['groovy.lang.Closure'])
+			Closure code = null) {
 		methodParams.validation("writeAllTo", params)
 
 		if (code == null) code = params.process as Closure
@@ -826,8 +832,6 @@ class Flow {
 		Map<String, Dataset> bulkLoadDS = [:]
 		Map<String, Dataset> writer = [:]
 		dest.each { String n, Dataset d ->
-//			if (d instanceof TableDataset && d.field.isEmpty()) d.retrieveFields()
-
 			// Get destination params
 			if (params.destParams != null && (params.destParams as Map).get(n) != null) {
 				destParams.put(n, (params.destParams as Map).get(n) as Map<String, Object>)
@@ -1027,7 +1031,9 @@ class Flow {
 	/**
 	 * Read and proccessed data from dataset
 	 */
-	long process(Map params, Closure code = null) {
+	long process(Map params,
+				 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
+						 Closure code = null) {
 		methodParams.validation("process", params)
 
 		errorsDataset = null

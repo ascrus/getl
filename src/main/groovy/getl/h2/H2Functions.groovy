@@ -160,7 +160,7 @@ class H2Functions {
 		
 		JDBCConnection conDest = JDBCConnection.CreateConnection(connection: driverClass, connectURL: connectURL, login: login, password: password) as JDBCConnection
 		conDest.connected = true
-		TableDataset table = new TableDataset(connection: conDest, dbName: dbName, schemaName: schemaName, tableName: tableName)
+		def table = new TableDataset(connection: conDest, dbName: dbName, schemaName: schemaName, tableName: tableName)
 		long count = 0
 		try {
 			count = new Flow().copy(source: ds, dest: table, dest_batchSize: batchSize)
@@ -198,7 +198,7 @@ class H2Functions {
 		
 		QueryDataset ds = new QueryDataset(connection: conSource, query: query)
 		
-		TableDataset table = new TableDataset(connection: conDest, schemaName: schemaName, tableName: tableName)
+		def table = new TableDataset(connection: conDest, schemaName: schemaName, tableName: tableName)
 		long count = 0
 		try {
 			count = new Flow().copy(source: ds, dest: table, dest_batchSize: batchSize)

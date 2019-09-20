@@ -58,7 +58,7 @@ abstract class VirtualDatasetDriver extends Driver {
 	void disconnect() { }
 
 	@Override
-	List<Object> retrieveObjects(Map params, Closure filter) {
+	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 	

@@ -44,6 +44,12 @@ class XeroDataset extends Dataset {
         super.setConnection(value)
     }
 
+    /** Use specified connection */
+    XeroConnection useConnection(XeroConnection value) {
+        setConnection(value)
+        return value
+    }
+
     /**
      * Object name by Xero
      */
@@ -61,5 +67,15 @@ class XeroDataset extends Dataset {
     @Override
     String getObjectFullName() {
         return (connection as XeroConnection).configInResource?:'' +'.' + xeroObjectName
+    }
+
+    /**
+     * Perform operations on a xero dataset
+     * @param cl closure code
+     * @return source xero dataset
+     */
+    XeroDataset dois(@DelegatesTo(XeroDataset) Closure cl) {
+        this.with(cl)
+        return this
     }
 }

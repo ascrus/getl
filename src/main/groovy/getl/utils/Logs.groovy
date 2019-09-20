@@ -350,8 +350,10 @@ class Logs {
 	@Synchronized
 	static void Exception (Throwable e, String typeObject, String nameObject) {
 		ToOut(Level.SEVERE, e.message)
-		def t = (e.stackTrace.length > 0)?" => " + e.stackTrace[0]:""
-		def message = "<${typeObject} ${nameObject}> ${e.getClass().name}: ${FormatMessage(e.message)}${t}"
+		def message = "<${typeObject} ${nameObject}> ${e.getClass().name}: ${FormatMessage(e.message)}"
+		if (e.stackTrace.length > 0) {
+			message += " => " + StringUtils.ToText(e.stackTrace[0].toString())[0]
+		}
 		logger.severe(message)
 		event(Level.SEVERE, e.message)
 		StackTraceUtils.sanitize(e)

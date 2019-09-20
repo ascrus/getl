@@ -24,11 +24,9 @@
 
 package getl.postgresql
 
-import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
-import getl.jdbc.JDBCDriver
-import getl.jdbc.TableDataset
+import getl.jdbc.*
 import groovy.transform.InheritConstructors
 
 /**

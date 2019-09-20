@@ -63,34 +63,26 @@ class XeroConnection extends Connection {
         }
     }
 
-    /**
-     * Use resource file with configuration file and certificate file
-     */
+    /** Use resource file with configuration file and certificate file */
     String getUseResourceFile () { params.useResourceFile }
-
+    /** Use resource file with configuration file and certificate file */
     void setUseResourceFile(String value) {
         params.useResourceFile = value
     }
 
-    /**
-     * Config file name by resource
-     */
+    /** Config file name by resource */
     String getConfigInResource () { params.configInResource }
-
+    /** Config file name by resource */
     void setConfigInResource (String value) {
         params.configInResource = value
     }
 
-    /**
-     * Command history file
-     */
+    /** Command history file */
     String getHistoryFile () { params.historyFile }
-
+    /** Command history file */
     void setHistoryFile(String value) { params.historyFile = value }
 
-    /**
-     * Real script history file name
-     */
+    /** Real script history file name */
     protected String fileNameHistory
 
     /**
@@ -101,5 +93,15 @@ class XeroConnection extends Connection {
             fileNameHistory = StringUtils.EvalMacroString(historyFile, StringUtils.MACROS_FILE)
             FileUtils.ValidFilePath(fileNameHistory)
         }
+    }
+
+    /**
+     * Perform operations on a connection
+     * @param cl closure code
+     * @return source connection
+     */
+    XeroConnection dois(@DelegatesTo(XeroConnection) Closure cl) {
+        this.with(cl)
+        return this
     }
 }

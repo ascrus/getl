@@ -26,6 +26,8 @@ package getl.csv.opts
 
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Options for reading CSV file
@@ -63,7 +65,10 @@ class CSVReadSpec extends BaseSpec {
      * Processing write parsing error and return the need to read the following rows of file
      * <br>Closure parameters: Map row, Long numberRow
      */
-    void processError(Closure<Boolean> value) { setOnProcessError(prepareClosure(value)) }
+    void processError(@ClosureParams(value = SimpleType, options = ['java.lang.Exception', 'long'])
+                              Closure<Boolean> value) {
+        setOnProcessError(prepareClosure(value))
+    }
 
     /**
      * Filter reading file records
@@ -79,5 +84,8 @@ class CSVReadSpec extends BaseSpec {
      * Filter reading file records
      * <br>Closure parameters: Map row
      */
-    void filter(Closure<Boolean> value) { setOnFilter(prepareClosure(value)) }
+    void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
+                        Closure<Boolean> value) {
+        setOnFilter(prepareClosure(value))
+    }
 }

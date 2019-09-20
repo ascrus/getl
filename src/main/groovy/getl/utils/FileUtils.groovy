@@ -30,6 +30,9 @@ import getl.files.*
 import getl.tfs.TFS
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
+
 import java.nio.file.*
 import java.nio.channels.*
 import java.util.zip.GZIPInputStream
@@ -202,7 +205,9 @@ class FileUtils {
 	 * @param deleteRoot
 	 * @param onDelete
 	 */
-	static void DeleteEmptyFolder(String rootFolder, boolean deleteRoot, Closure onDelete) {
+	static void DeleteEmptyFolder(String rootFolder, boolean deleteRoot,
+								  @ClosureParams(value = SimpleType, options = ['java.io.File'])
+										  Closure onDelete) {
 		if (rootFolder == null) return
 		File root = new File(rootFolder)
 		if (!root.exists()) return
@@ -253,7 +258,8 @@ class FileUtils {
 	 * @param rootFolder
 	 * @param onDelete
 	 */
-	static void DeleteEmptyFolder(String rootFolder, Closure onDelete) {
+	static void DeleteEmptyFolder(String rootFolder,
+								  @ClosureParams(value = SimpleType, options = ['java.io.File']) Closure onDelete) {
 		DeleteEmptyFolder(rootFolder, true, onDelete)
 	}
 	
@@ -272,7 +278,8 @@ class FileUtils {
 	 * @param deleteRoot
 	 * @param onDelete
 	 */
-	static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, boolean throwError, Closure onDelete) {
+	static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, boolean throwError,
+								@ClosureParams(value = SimpleType, options = ['java.io.File']) Closure onDelete) {
 		if (rootFolder == null) return null
 		File root = new File(rootFolder)
 		if (!root.exists()) {
@@ -329,7 +336,8 @@ class FileUtils {
      * @param deleteRoot
      * @param onDelete
      */
-    static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, Closure onDelete) {
+    static Boolean DeleteFolder(String rootFolder, boolean deleteRoot,
+								@ClosureParams(value = SimpleType, options = ['java.io.File']) Closure onDelete) {
         return DeleteFolder(rootFolder, deleteRoot, true, onDelete)
     }
 
@@ -359,7 +367,8 @@ class FileUtils {
 	 * @param rootFolder
 	 * @param onDelete
 	 */
-	static Boolean DeleteFolder(String rootFolder, Closure onDelete) {
+	static Boolean DeleteFolder(String rootFolder,
+								@ClosureParams(value = SimpleType, options = ['java.io.File']) Closure onDelete) {
 		return DeleteFolder(rootFolder, true, true, onDelete)
 	}
 	
@@ -504,8 +513,6 @@ class FileUtils {
 		file = ConvertToDefaultOSPath(file)
 		String res
 		if (MaskFile(file) != null) {
-//			def i = file.lastIndexOf(File.separator)
-//			if (i < 0) file = '.' else file = file.substring(0, i)
 			res = new File(RelativePathFromFile(file)).absolutePath
 		}
 		else {
@@ -605,7 +612,9 @@ class FileUtils {
 	 * @param convertBuffer
 	 * @return
 	 */
-	static long ConvertText (Reader reader, Writer writer, List rules, Closure convertLine, def convertBuffer) {
+	static long ConvertText (Reader reader, Writer writer, List rules,
+							 @ClosureParams(value = SimpleType, options = ['long', 'java.lang.Object']) Closure convertLine,
+							 def convertBuffer) {
 		Closure convertCode
 		if (rules != null && !rules.isEmpty()) {
 			StringBuilder sb = new StringBuilder()
@@ -771,7 +780,9 @@ class FileUtils {
      * @param params
 	 * @param validMask
 	 */
-	static void CompressToZip(String zipName, String path, Map params, Closure validFile) {
+	static void CompressToZip(String zipName, String path, Map params,
+							  @ClosureParams(value = SimpleType, options = ['java.io.File', 'java.lang.String'])
+									  Closure validFile) {
 		zipName = new File(zipName).absolutePath
 		ZipFile zipFile = new ZipFile(zipName)
         params = params?:[:]

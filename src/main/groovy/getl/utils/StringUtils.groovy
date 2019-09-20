@@ -327,4 +327,10 @@ class StringUtils {
 
 		return res
 	}
+
+	/** Convert string value to array of string */
+	static List<String> ToText(String value) {
+		if (value == null) return null
+		return value.toList()
+	}
 }

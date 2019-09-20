@@ -59,6 +59,12 @@ class SavePointManager {
 		connection = value
 		map.clear()
 	}
+
+	/** Use specified connection */
+	JDBCConnection useConnection(JDBCConnection value) {
+		setConnection(value)
+		return value
+	}
 	
 	/**
 	 * Database name for table
@@ -130,7 +136,7 @@ class SavePointManager {
 										new Field(name: "value", alias: "value", type: "NUMERIC", length: 38, precision: 9, isNull: false)
 									]
 	
-	protected final TableDataset table = new TableDataset(manualSchema: true)
+	protected final InternalTableDataset table = new TableDataset(manualSchema: true)
 	
 	SavePointManager () {
 		params.fields = [:]

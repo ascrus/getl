@@ -30,6 +30,8 @@ import getl.jdbc.*
 import getl.jdbc.opts.*
 import getl.vertica.opts.*
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Vertica table
@@ -37,13 +39,19 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class VerticaTable extends TableDataset {
+class VerticaTable extends InternalTableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof VerticaConnection))
             throw new ExceptionGETL('Сonnection to VerticaConnection class is allowed!')
 
         super.setConnection(value)
+    }
+
+    /** Use specified connection */
+    VerticaConnection useConnection(VerticaConnection value) {
+        setConnection(value)
+        return value
     }
 
     @Override
@@ -55,7 +63,9 @@ class VerticaTable extends TableDataset {
     /**
      * Create H2 table
      */
-    VerticaCreateSpec createOpts(@DelegatesTo(VerticaCreateSpec) Closure cl = null) {
+    VerticaCreateSpec createOpts(@DelegatesTo(VerticaCreateSpec)
+                                 @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaCreateSpec'])
+                                         Closure cl = null) {
         genCreateTable(cl) as VerticaCreateSpec
     }
 
@@ -68,7 +78,9 @@ class VerticaTable extends TableDataset {
     /**
      * Read table options
      */
-    VerticaReadSpec readOpts(@DelegatesTo(VerticaReadSpec) Closure cl = null) {
+    VerticaReadSpec readOpts(@DelegatesTo(VerticaReadSpec)
+                             @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaReadSpec'])
+                                     Closure cl = null) {
         genReadDirective(cl) as VerticaReadSpec
     }
 
@@ -81,7 +93,9 @@ class VerticaTable extends TableDataset {
     /**
      * Read table options
      */
-    VerticaWriteSpec writeOpts(@DelegatesTo(VerticaWriteSpec) Closure cl = null) {
+    VerticaWriteSpec writeOpts(@DelegatesTo(VerticaWriteSpec)
+                               @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaWriteSpec'])
+                                       Closure cl = null) {
         genWriteDirective(cl) as VerticaWriteSpec
     }
 
@@ -94,7 +108,9 @@ class VerticaTable extends TableDataset {
     /**
      * Read table options
      */
-    VerticaBulkLoadSpec bulkLoadOpts(@DelegatesTo(VerticaBulkLoadSpec) Closure cl = null) {
+    VerticaBulkLoadSpec bulkLoadOpts(@DelegatesTo(VerticaBulkLoadSpec)
+                                     @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaBulkLoadSpec'])
+                                             Closure cl = null) {
         genBulkLoadDirective(cl) as VerticaBulkLoadSpec
     }
 
@@ -105,5 +121,15 @@ class VerticaTable extends TableDataset {
         csvTempFile.codePage = 'UTF-8'
         csvTempFile.nullAsValue = '<NULL>'
         csvTempFile.isGzFile = true
+    }
+
+    /**
+     * Perform operations on a table
+     * @param cl closure code
+     * @return source table
+     */
+    VerticaTable dois(@DelegatesTo(VerticaTable) Closure cl) {
+        this.with(cl)
+        return this
     }
 }

@@ -50,6 +50,8 @@ package getl.data
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Base connection class
@@ -260,7 +262,10 @@ class Connection {
 	 * @param filter Filter closure
 	 * @return List of objects
 	 */
-	List<Object> retrieveObjects (Closure filter) { retrieveObjects([:], filter) }
+	List<Object> retrieveObjects (@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
+										  Closure<Boolean> filter) {
+		retrieveObjects([:], filter)
+	}
 	
 	/**
 	 * Return objects list of connection
@@ -268,9 +273,12 @@ class Connection {
 	 * @param filter Filter closure
 	 * @return List of objects
 	 */
-	List<Object> retrieveObjects (Map params, Closure filter) {
+	List<Object> retrieveObjects (Map params,
+								  @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
+										  Closure<Boolean> filter) {
 		if (params == null) params = [:]
-		methodParams.validation("retrieveObjects", params, [driver.methodParams.params("retrieveObjects")])
+		methodParams.validation("retrieveObjects", params,
+				[driver.methodParams.params("retrieveObjects")])
 		
 		tryConnect() 
 		driver.retrieveObjects(params, filter) 

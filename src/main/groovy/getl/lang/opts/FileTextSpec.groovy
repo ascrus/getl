@@ -62,8 +62,11 @@ class FileTextSpec extends BaseSpec {
     /** Text buffer */
     String getTextBuffer() { buffer.toString() }
 
+    /** Count saved bytes */
+    Long countBytes = 0
+
     /** Write text buffer to file */
-    void write() {
+    void save() {
         if (fileName == null && !temporaryFile) throw new ExceptionGETL("Required \"fileName\" value!")
         File file
         if (!temporaryFile) {
@@ -74,7 +77,7 @@ class FileTextSpec extends BaseSpec {
             file.deleteOnExit()
         }
         else {
-            File.createTempFile('text.', '.getltemp', new File(TFS.storage.path))
+            file = File.createTempFile('text.', '.getltemp', new File(TFS.storage.path))
             fileName = file.absolutePath
         }
 
@@ -85,6 +88,8 @@ class FileTextSpec extends BaseSpec {
         finally {
             writer.close()
         }
+
+        countBytes = buffer.length()
 
         clear()
     }

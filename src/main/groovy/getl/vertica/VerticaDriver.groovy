@@ -331,7 +331,7 @@ class VerticaDriver extends JDBCDriver {
 			dir.afterOrderBy = ((dir.afterOrderBy != null)?(dir.afterOrderBy + '\n'):'') + "OFFSET ${params.offs}"
 			params.offs = null
 		}
-		Map<String, Object> dl = ((dataset as TableDataset).readDirective as Map)?:[:] + params
+		Map<String, Object> dl = ((dataset as InternalTableDataset).readDirective as Map)?:[:] + params
         if (dl.label != null) {
             dir.afterselect = "/*+label(${dl.label})*/"
         }

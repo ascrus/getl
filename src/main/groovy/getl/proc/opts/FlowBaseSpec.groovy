@@ -64,14 +64,18 @@ class FlowBaseSpec extends BaseSpec {
      */
     void setOnProcess(Closure value) { params.process = value }
 
+    Boolean isProcessed = false
+    Boolean getIsProcessed() { isProcessed }
+
     /**
      * Closure code process row
      */
-    void process(Closure value = null) {
+    protected void doProcess(Closure value) {
         if (value != null) setOnProcess(prepareClosure(value))
         if (needProcessCode && onProcess == null) throw new ExceptionGETL('Required "process" code!')
 
         Flow flow = new Flow()
+        isProcessed = true
         runProcess(flow)
         countRow = flow.countRow
         errorsDataset = flow.errorsDataset

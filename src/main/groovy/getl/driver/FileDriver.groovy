@@ -25,6 +25,8 @@
 package getl.driver
 
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
@@ -53,7 +55,7 @@ abstract class FileDriver extends Driver {
 	}
 	
 	@Override
-	List<Object> retrieveObjects (Map params, Closure filter) {
+	List<Object> retrieveObjects (Map params, Closure<Boolean> filter) {
 		def path = (connection as FileConnection).path
 		if (path == null) throw new ExceptionGETL('Path not setting!')
 		

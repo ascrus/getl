@@ -39,9 +39,9 @@ class ProcessTime {
     static void SetLogLevelDefault (String level) { LogLevelDefault = Logs.StrToLevel(level) }
 	public static boolean debugDefault = false
 	
-	public String name = "process"
+	public String name = 'process'
 	public Level logLevel
-	public String objectName = "row"
+	public String objectName = 'row'
 	public boolean debug = debugDefault
 	
 	public Date start

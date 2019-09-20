@@ -63,4 +63,14 @@ class VerticaConnection extends JDBCConnection {
 		def query = new QueryDataset(connection: this, query: 'SELECT * FROM current_session')
 		return query.rows()[0]
 	}
+
+	/**
+	 * Perform operations on a connection
+	 * @param cl closure code
+	 * @return source connection
+	 */
+	VerticaConnection dois(@DelegatesTo(VerticaConnection) Closure cl) {
+		this.with(cl)
+		return this
+	}
 }

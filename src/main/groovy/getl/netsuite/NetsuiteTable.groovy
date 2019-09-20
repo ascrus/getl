@@ -26,7 +26,7 @@ package getl.netsuite
 
 import getl.data.Connection
 import getl.exception.ExceptionGETL
-import getl.jdbc.TableDataset
+import getl.jdbc.*
 import groovy.transform.InheritConstructors
 
 /**
@@ -35,12 +35,28 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class NetsuiteTable extends TableDataset {
+class NetsuiteTable extends InternalTableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof NetsuiteConnection))
             throw new ExceptionGETL('Сonnection to NetsuiteConnection class is allowed!')
 
         super.setConnection(value)
+    }
+
+    /** Use specified connection */
+    NetsuiteConnection useConnection(NetsuiteConnection value) {
+        setConnection(value)
+        return value
+    }
+
+    /**
+     * Perform operations on a table
+     * @param cl closure code
+     * @return source table
+     */
+    NetsuiteTable dois(@DelegatesTo(NetsuiteTable) Closure cl) {
+        this.with(cl)
+        return this
     }
 }

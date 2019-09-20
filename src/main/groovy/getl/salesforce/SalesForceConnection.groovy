@@ -60,20 +60,14 @@ class SalesForceConnection extends Connection {
 		}
 	}
 
-	/**
-	 * SalesForce login
-	 * @return
-	 */
+	/** SalesForce login */
 	String getLogin () { params.login }
-
+	/** SalesForce login */
     void setLogin (String value) { params.login = value }
 
-	/**
-	 * SalesForce password and token
-	 * @return
-	 */
+	/** SalesForce password and token */
 	String getPassword () { params.password }
-
+	/** SalesForce password and token */
     void setPassword (String value) { params.password = value }
 
 	/**
@@ -81,15 +75,30 @@ class SalesForceConnection extends Connection {
 	 * Example: https://login.salesforce.com/services/Soap/u/40.0
 	 */
 	String getConnectURL () { params.connectURL }
-
+	/**
+	 * SalesForce SOAP Auth Endpoint
+	 * <br>Example: https://login.salesforce.com/services/Soap/u/40.0
+	 */
     void setConnectURL (String value) { params.connectURL = value }
 
 	/**
 	 * Batch Size for SalesForce connection
-     * This param do nothing for readAsBulk.
-	 * @return
+     * <br>This param do nothing for readAsBulk.
 	 */
 	int getBatchSize () { params.batchSize ?: 200 }
-
+	/**
+	 * Batch Size for SalesForce connection
+	 * <br>This param do nothing for readAsBulk.
+	 */
     void setBatchSize (int value) { params.batchSize =value }
+
+	/**
+	 * Perform operations on a connection
+	 * @param cl closure code
+	 * @return source connection
+	 */
+	SalesForceConnection dois(@DelegatesTo(SalesForceConnection) Closure cl) {
+		this.with(cl)
+		return this
+	}
 }

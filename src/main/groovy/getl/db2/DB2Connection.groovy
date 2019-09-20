@@ -54,4 +54,14 @@ class DB2Connection extends JDBCConnection {
 		super.doInitConnection()
 		driverName = "com.ibm.db2.jcc.DB2Driver"
 	}
+
+	/**
+	 * Perform operations on a connection
+	 * @param cl closure code
+	 * @return source connection
+	 */
+	DB2Connection dois(@DelegatesTo(DB2Connection) Closure cl) {
+		this.with(cl)
+		return this
+	}
 }

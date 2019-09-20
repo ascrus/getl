@@ -30,6 +30,8 @@ import getl.data.*
 import getl.jdbc.*
 import getl.utils.*
 import getl.proc.*
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Cache dataset class
@@ -76,7 +78,8 @@ class CacheDataset extends TableDataset {
 	protected long connectionid
 
 	@Override
-	void eachRow (Map procParams, Closure code) {
+	void eachRow (Map procParams,
+				  @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure code) {
 		CacheManager cm = (CacheManager)connection
 		def rowObjects = cm.findObject(connectionid, dataset)
 		assert rowObjects != null, "Can not find dataset \"${dataset.objectName}\" from register objects"

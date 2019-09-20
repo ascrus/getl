@@ -296,7 +296,7 @@ class XeroDriver extends Driver {
     ]
 
     @Override
-    List<Object> retrieveObjects(Map params, Closure filter) {
+    List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
         saveToHistory("Retrieving list of objects with params $params")
         def res = [] as List<Map>
         objects.each { Map obj ->

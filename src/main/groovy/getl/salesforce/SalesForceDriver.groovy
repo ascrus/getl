@@ -126,7 +126,7 @@ class SalesForceDriver extends Driver {
 	}
 
 	@Override
-	List<Object> retrieveObjects(Map params, Closure filter) {
+	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
 		DescribeGlobalResult describeGlobalResult = partnerConnection.describeGlobal()
 		DescribeGlobalSObjectResult[] sobjectResults = describeGlobalResult.sobjects
 		List<Map> objects = []

@@ -38,13 +38,19 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class H2Table extends TableDataset {
+class H2Table extends InternalTableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof H2Connection))
             throw new ExceptionGETL('Сonnection to H2Connection class is allowed!')
 
         super.setConnection(value)
+    }
+
+    /** Use specified connection */
+    H2Connection useConnection(H2Connection value) {
+        setConnection(value)
+        return value
     }
 
     @Override
@@ -77,5 +83,15 @@ class H2Table extends TableDataset {
     void createCsvTempFile() {
         super.createCsvTempFile()
         csvTempFile.escaped = false
+    }
+
+    /**
+     * Perform operations on a table
+     * @param cl closure code
+     * @return source table
+     */
+    H2Table dois(@DelegatesTo(H2Table) Closure cl) {
+        this.with(cl)
+        return this
     }
 }

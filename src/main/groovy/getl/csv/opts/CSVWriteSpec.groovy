@@ -26,6 +26,8 @@ package getl.csv.opts
 
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Options for reading CSV file
@@ -58,7 +60,9 @@ class CSVWriteSpec extends BaseSpec {
      * Run after save batch records
      * <br>Closure parameters: Long numberOfBatch
      */
-    void saveBatch(Closure value) { setOnSaveBatch(prepareClosure(value)) }
+    void saveBatch(@ClosureParams(value = SimpleType, options = ['long']) Closure value) {
+        setOnSaveBatch(prepareClosure(value))
+    }
 
     /** Maximum size of the portion of the recorded file (use 0 or null for no size limit) */
     Long getSplitSize() { params.splitSize as Long }
@@ -74,10 +78,15 @@ class CSVWriteSpec extends BaseSpec {
      * Checking row for need to write current and next rows to the new file
      * <br>Closure parameters: Map row
      */
-    void setOnSplitFile(Closure<Boolean> value) { params.onSplitFile = value }
+    void setOnSplitFile(Closure<Boolean> value) {
+        params.onSplitFile = value
+    }
     /**
      * Checking row for need to write current and next rows to the new file
      * <br>Closure parameters: Map row
      */
-    void splitFile(Closure<Boolean> value) { setOnSplitFile(prepareClosure(value)) }
+    void splitFile(@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
+                           Closure<Boolean> value) {
+        setOnSplitFile(prepareClosure(value))
+    }
 }

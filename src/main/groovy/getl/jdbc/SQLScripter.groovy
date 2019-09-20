@@ -72,6 +72,12 @@ class SQLScripter {
 	JDBCConnection getConnection() { connection }
 
 	void setConnection(JDBCConnection value) { connection = value }
+
+	/** Use specified connection */
+	JDBCConnection useConnection(JDBCConnection value) {
+		setConnection(value)
+		return value
+	}
 	
 	/*
 	 * Connection for point manager

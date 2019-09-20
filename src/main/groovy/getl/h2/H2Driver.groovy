@@ -254,7 +254,7 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 	}
 
     @Override
-	List<Object> retrieveObjects (Map params, Closure filter) {
+	List<Object> retrieveObjects (Map params, Closure<Boolean> filter) {
         String catalog = prepareObjectName(params."dbName" as String)?:defaultDBName
         String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
         String tableNamePattern = prepareObjectName(params."tableName" as String)

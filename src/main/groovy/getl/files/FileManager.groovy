@@ -35,9 +35,12 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class FileManager extends Manager {
+	/** Connect status */
 	private Boolean connected = false
-
+	/** Connect status */
 	boolean getConnected () { connected }
+
+	/** Current directory file handler */
 	private File currentDir
 	
 	FileManager () {
@@ -51,24 +54,20 @@ class FileManager extends Manager {
 		methodParams.register("super", ["codePage", "createRootPath"])
 	}
 	
-	/**
-	 * Code page on command console
-	 */
+	/** Code page on command console */
 	String getCodePage () { params.codePage?:"utf-8" }
-
+	/** Code page on command console */
 	void setCodePage (String value) { params.codePage = value }
 	
-	/**
-	 * Create root path if not exists
-	 * @return
-	 */
+	/** Create root path if not exists */
 	boolean getCreateRootPath () { BoolUtils.IsValue(params.createRootPath, false) }
-
+	/** Create root path if not exists */
 	void setCreateRootPath (boolean value) { params.createRootPath = value }
 	
 	@Override
 	boolean isCaseSensitiveName () { false }
 
+	/** Check exist root path */
 	boolean existsRootDirectory() {
 		if (rootPath == null) return false
 		new File(rootPath).exists()
@@ -93,20 +92,24 @@ class FileManager extends Manager {
 		currentDir = null
 		connected = false
 	}
-	
+
+	/** Set connect status if need for operations */
 	protected void validConnect () {
 		if (!connected) connect() //throw new ExceptionGETL("Client not connected")
 	}
-	
+
+	/** List of files class */
 	class FilesList extends FileManagerList {
 		public File[] listFiles
-		
+
 		@groovy.transform.CompileStatic
+		@Override
 		Integer size () {
 			listFiles.length
 		}
 		
 		@groovy.transform.CompileStatic
+		@Override
 		Map item (int index) {
 			File f = listFiles[index]
 
@@ -116,9 +119,11 @@ class FileManager extends Manager {
 			m.filesize = f.length()
 			if (f.isDirectory()) m.type = Manager.TypeFile.DIRECTORY else m.type = Manager.TypeFile.FILE
 		  
-			m
+			return m
 		}
 
+		@groovy.transform.CompileStatic
+		@Override
 		void clear () {
 			listFiles = []
 		}
@@ -233,10 +238,14 @@ class FileManager extends Manager {
 	@Override
 	void rename(String fileName, String path) {
 		validConnect()
-		
-		def f = fileFromLocalDir("${currentDir.path}/${fileName}")
-		def p = new File(path)
-		if (!f.renameTo(p)) throw new ExceptionGETL("Can not rename file \"${f.path}\" to \"${p.path}\"")
+
+		def sourceFile = fileFromLocalDir("${currentDir.path}/${fileName}")
+
+		def destPath = FileUtils.ConvertToUnixPath(path)
+		def destFile = new File((destPath.indexOf('/') != -1)?"${rootPath}/${destPath}":
+				"${currentDir.path}/${destPath}")
+
+		if (!sourceFile.renameTo(destFile)) throw new ExceptionGETL("Can not rename file \"$fileName\" to \"$path\"")
 	}
 	
 	@Override
@@ -290,5 +299,15 @@ class FileManager extends Manager {
 	@Override
 	void setLastModified(String fileName, long time) {
 		if (saveOriginalDate) new File(fileName).setLastModified(time)
+	}
+
+	/**
+	 * Perform operations on a manager
+	 * @param cl closure code
+	 * @return source manager
+	 */
+	FileManager dois(@DelegatesTo(FileManager) Closure cl) {
+		this.with(cl)
+		return this
 	}
 }

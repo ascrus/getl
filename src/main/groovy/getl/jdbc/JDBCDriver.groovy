@@ -569,7 +569,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	List<Object> retrieveObjects (Map params, Closure filter) {
+	List<Object> retrieveObjects (Map params, Closure<Boolean> filter) {
 		String catalog = prepareObjectName(params."dbName" as String)?:defaultDBName
 		String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
 		String tableNamePattern = prepareObjectName(params."tableName" as String)
@@ -606,7 +606,7 @@ class JDBCDriver extends Driver {
 	}
 
 	/** Prepare database, schema and table name for retrieve field operation */
-	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
+	protected Map<String, String> prepareForRetrieveFields(InternalTableDataset dataset) {
 		def names = [:] as Map<String, String>
 		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, defaultDBName]) as String)
 		names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)
@@ -1062,8 +1062,8 @@ ${extend}'''
 
 		if (commitDDL && transactionalDDL) startTran()
 		try {
-			if (!dropIfExists && ifExists && dataset instanceof TableDataset) {
-				TableDataset table = dataset as TableDataset
+			if (!dropIfExists && ifExists && dataset instanceof InternalTableDataset) {
+				TableDataset table = dataset as InternalTableDataset
 				if (table.exists) {
 					executeCommand(q, [:])
 				}
@@ -1161,7 +1161,7 @@ ${extend}'''
 	String sqlForDataset (Dataset dataset, Map params) {
 		String query
 		if (isTable(dataset)) {
-			def table = dataset as TableDataset
+			def table = dataset as InternalTableDataset
 			validTableName(table)
 			def fn = fullNameDataset(table)
 			
@@ -2046,7 +2046,7 @@ $sql
 	 * @return
 	 */
 	protected String unionDatasetMerge (JDBCDataset source, JDBCDataset target, Map<String, String> map, List<String> keyField, Map procParams) {
-		if (!source instanceof TableDataset) throw new ExceptionGETL("Source dataset must be \"TableDataset\"")
+		if (!source instanceof InternalTableDataset) throw new ExceptionGETL("Source dataset must be \"TableDataset\"")
 		if (keyField.isEmpty()) throw new ExceptionGETL("For MERGE operation required key fields by table")
 		
 		String condition = (procParams."condition" != null)?" AND ${procParams."condition"}":""

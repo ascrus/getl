@@ -26,6 +26,8 @@ package getl.xml.opts
 
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Options for reading XML file
@@ -70,21 +72,25 @@ class XMLReadSpec extends BaseSpec {
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    void filter(Closure<Boolean> value) { setOnFilter(prepareClosure(value)) }
+    void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> value) {
+        setOnFilter(prepareClosure(value))
+    }
 
     /**
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    Closure<Boolean> getOnInitAttr() { params.initAttr as Closure<Boolean> }
+    Closure<Boolean> getOnReadAttributes() { params.initAttr as Closure<Boolean> }
     /**
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    void setOnInitAttr(Closure<Boolean> value) { params.initAttr = value }
+    void setOnReadAttributes(Closure<Boolean> value) { params.initAttr = value }
     /**
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    void initAttr(Closure<Boolean> value) { setOnInitAttr(prepareClosure(value)) }
+    void readAttributes(@ClosureParams(value = SimpleType, options = ['getl.xml.XMLDataset']) Closure<Boolean> value) {
+        setOnReadAttributes(prepareClosure(value))
+    }
 }

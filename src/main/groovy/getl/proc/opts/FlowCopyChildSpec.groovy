@@ -26,6 +26,8 @@ package getl.proc.opts
 import getl.data.Dataset
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Flow copy child options
@@ -62,12 +64,15 @@ class FlowCopyChildSpec extends BaseSpec {
     /** The code for write to child dataset (parameters passed to the writer and the original source row) */
     void setOnProcess(Closure value) { params.process = value }
     /** The code for write to child dataset (parameters passed to the writer and the original source row) */
-    void process(Closure value) { setOnProcess(prepareClosure(value)) }
+    void writeRow(@ClosureParams(value = SimpleType, options = ['groovy.lang.Closure', 'java.util.HashMap'])
+                          Closure value) {
+        setOnProcess(prepareClosure(value))
+    }
 
     /** Initialization code before processing */
-    Closure getOnInit() { params.onInit as Closure }
+    Closure getOnInitWrite() { params.onInit as Closure }
     /** Initialization code before processing */
-    void setOnInit(Closure value) { params.onInit = value }
+    void setOnInitWrite(Closure value) { params.onInit = value }
     /** Initialization code before processing */
-    void init(Closure value) { setOnInit(prepareClosure(value)) }
+    void initWrite(Closure value) { setOnInitWrite(prepareClosure(value)) }
 }

@@ -30,6 +30,8 @@ import getl.proc.Flow
 import getl.utils.MapUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Flow copy options
@@ -296,7 +298,10 @@ class FlowCopySpec extends FlowBaseSpec {
     private Map<String, FlowCopyChildSpec> getChilds() { params._childs as Map<String, FlowCopyChildSpec> }
 
     /** Set child dataset options */
-    void childs(String name, Dataset dataset, @DelegatesTo(FlowCopyChildSpec) Closure cl) {
+    void childs(String name, Dataset dataset,
+                @DelegatesTo(FlowCopyChildSpec)
+                @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowCopyChildSpec'])
+                        Closure cl) {
         if (name == null) throw new ExceptionGETL("For the child dataset, you must specify a name!")
         if (cl == null) throw new ExceptionGETL("Child dataset \"$name\" required processing code!")
 
@@ -313,8 +318,16 @@ class FlowCopySpec extends FlowBaseSpec {
     }
 
     /** Set child dataset options */
-    void childs(Dataset dataset, @DelegatesTo(FlowCopyChildSpec) Closure cl) {
+    void childs(Dataset dataset,
+                @DelegatesTo(FlowCopyChildSpec)
+                @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowCopyChildSpec'])
+                        Closure cl) {
         childs(StringUtils.RandomStr(), dataset, cl)
+    }
+
+    /** Children flow dataset */
+    Dataset childs(String name) {
+        return childs.get(name).dataset
     }
 
     protected boolean getNeedProcessCode() { false }
@@ -324,7 +337,21 @@ class FlowCopySpec extends FlowBaseSpec {
         childs.each { String name, FlowCopyChildSpec opts ->
             (params.destChild as Map).put(name, opts.params)
         }
-        MapUtils.RemoveKeys(params, ['_childs'])
+    }
+
+    /** Initialization code before processing */
+    Closure getOnInitCopy() { params.onInit as Closure }
+    /** Initialization code before processing */
+    void setOnInitCopy(Closure value) { params.onInit = value }
+    /** Initialization code before processing */
+    void initCopy(Closure value) { setOnInitCopy(prepareClosure(value)) }
+
+    /**
+     * Closure code process row
+     */
+    void copyRow(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
+                         Closure value = null) {
+        doProcess(value)
     }
 
     @Override

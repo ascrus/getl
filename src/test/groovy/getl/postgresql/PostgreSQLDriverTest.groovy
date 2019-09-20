@@ -38,7 +38,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 			}
 
 			rowsTo(postgresqlTable('test_limit')) {
-				process { add ->
+				writeRow { add ->
 					(1..count).each {
 						add id: it, name: "test $it", dt: DateUtils.now
 					}
@@ -49,7 +49,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 
 			rowProcess(postgresqlTable('test_limit')) {
 				int c = 0
-				process {
+				readRow {
 					c++
 				}
 				assertEquals(count, c)
@@ -58,7 +58,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 			rowProcess(postgresqlTable('test_limit')) {
 				sourceParams.limit = 1
 				int c = 0
-				process { c++ }
+				readRow { c++ }
 				assertEquals(1, c)
 			}
 		}

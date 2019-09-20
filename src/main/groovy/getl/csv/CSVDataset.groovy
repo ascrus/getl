@@ -202,6 +202,12 @@ class CSVDataset extends FileDataset {
 
 		super.setConnection(value)
 	}
+
+	/** Use specified connection */
+	CSVConnection useConnection(CSVConnection value) {
+		setConnection(value)
+		return value
+	}
 	
 	@Override
 	List<String> inheriteConnectionParams () {
@@ -297,5 +303,15 @@ class CSVDataset extends FileDataset {
 		parent.runClosure(cl)
 
 		return parent
+	}
+
+	/**
+	 * Perform operations on a dataset
+	 * @param cl closure code
+	 * @return source dataset
+	 */
+	CSVDataset dois(@DelegatesTo(CSVDataset) Closure cl) {
+		this.with(cl)
+		return this
 	}
 }

@@ -64,7 +64,7 @@ class ExcelDriver extends Driver {
     }
 
     @Override
-    List<Object> retrieveObjects(Map params, Closure filter) { throw new ExceptionGETL('Not support this features!') }
+    List<Object> retrieveObjects(Map params, Closure<Boolean> filter) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
     List<Field> fields(Dataset dataset) {

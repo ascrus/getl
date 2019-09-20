@@ -61,24 +61,28 @@ class NetsuiteConnection extends JDBCConnection {
 		driverName = 'com.netsuite.jdbc.openaccess.OpenAccessDriver'
 	}
 
-	/**
-	 * Server Data Source
-	 */
+	/** Server Data Source */
 	String getServerDataSource () { params.serverDataSource }
-
+	/** Server Data Source */
     void setServerDataSource (String value) { params.serverDataSource = value }
 
-	/**
-	 * Ciphersuites
-	 */
+	/** Ciphersuites */
 	String getCiphersuites () { params.ciphersuites }
-
+	/** Ciphersuites */
     void setCiphersuites (String value) { params.ciphersuites = value }
 
-	/**
-	 * Account ID
-	 */
+	/** Account ID */
 	Integer getAccountId () { params.accountId }
-
+	/** Account ID */
     void setAccountId (Integer value) { params.accountId = value }
+
+	/**
+	 * Perform operations on a connection
+	 * @param cl closure code
+	 * @return source connection
+	 */
+	NetsuiteConnection dois(@DelegatesTo(NetsuiteConnection) Closure cl) {
+		this.with(cl)
+		return this
+	}
 }

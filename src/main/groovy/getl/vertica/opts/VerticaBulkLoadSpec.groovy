@@ -27,6 +27,8 @@ package getl.vertica.opts
 import getl.exception.ExceptionGETL
 import getl.jdbc.opts.BulkLoadSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Options for bulk loading Vertica table
@@ -101,7 +103,9 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     /**
      * Specified parser for loading data from file
      */
-    void parser(@DelegatesTo(VerticaBulkLoadParserSpec) Closure cl) {
+    void parser(@DelegatesTo(VerticaBulkLoadParserSpec)
+                @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaBulkLoadParserSpec'])
+                        Closure cl) {
         def parent = new VerticaBulkLoadParserSpec(_ownerObject, _thisObject, true, parser)
         parent.runClosure(cl)
         parser = parent.params

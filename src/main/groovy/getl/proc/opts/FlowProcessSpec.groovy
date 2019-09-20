@@ -31,6 +31,8 @@ import getl.proc.Flow
 import getl.tfs.TFSDataset
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Flow read options
@@ -91,15 +93,22 @@ class FlowProcessSpec extends FlowBaseSpec {
     /**
      * Code executed before process read rows
      */
-    Closure getOnPrepare() { params.onInit as Closure }
+    Closure getOnInitRead() { params.onInit as Closure }
     /**
      * Code executed before process read rows
      */
-    void setOnPrepare(Closure value) { params.onInit = value }
+    void setOnInitRead(Closure value) { params.onInit = value }
     /**
      * Code executed before process read rows
      */
-    void prepare(Closure value) { setOnPrepare(prepareClosure(value)) }
+    void initRead(Closure value) { setOnInitRead(prepareClosure(value)) }
+
+    /**
+     * Closure code process row
+     */
+    void readRow(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value = null) {
+        doProcess(value)
+    }
 
     @Override
     protected void runProcess(Flow flow) {

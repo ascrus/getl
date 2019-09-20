@@ -58,96 +58,74 @@ class FTPManager extends Manager {
 		super.setRootPath(value)
 	}
 	
-	/**
-	 * Server address
-	 */
+	/** Server address */
 	String getServer () { params.server }
-
+	/** Server address */
 	void setServer (String value) { params.server = value }
 	
-	/**
-	 * Server port
-	 */
+	/** Server port */
 	Integer getPort () { (params.port != null)?(params.port as Integer):21 }
-
+	/** Server port */
 	void setPort (Integer value) { params.port = value }
 	
-	/**
-	 * Login user
-	 */
+	/** Login user */
 	String getLogin () { params.login }
-
+	/** Login user */
 	void setLogin (String value) { params.login = value }
 	
-	/**
-	 * Password user
-	 */
+	/** Password user */
 	String getPassword () { params.password }
-
+	/** Password user */
 	void setPassword (String value) { params.password = value }
 	
-	/**
-	 * Passive mode
-	 */
+	/** Passive mode */
 	boolean getPassive () { (params.passive != null)?params.passive:true }
-
+	/** Passive mode */
 	void setPassive (boolean value) {
 		if (client.connected) client.setPassive(value) 
 		params.passive = value 
 	}
 	
-	/**
-	 * Hard disconnect
-	 */
+	/** Hard disconnect */
 	boolean getIsHardDisconnect () { (params.isHardDisconnect != null)?params.isHardDisconnect:false }
-
+	/** Hard disconnect */
 	void setIsHardDisconnect (boolean value) { params.isHardDisconnect = value }
 	
-	/**
-	 * Auto noop timeout in seconds 
-	 */
+	/** Auto noop timeout in seconds */
 	Integer getAutoNoopTimeout () { params.autoNoopTimeout as Integer }
-
+	/** Auto noop timeout in seconds */
 	void setAutoNoopTimeout (Integer value) {
 		if (client.connected) client.setAutoNoopTimeout(value * 1000)
 		params.autoNoopTimeout = value
 	}
 	
-	/**
-	 * Close timeout
-	 */
+	/** Close timeout */
 	Integer getCloseTimeout () { params.closeTimeout as Integer }
-
+	/** Close timeout */
 	void setCloseTimeout (Integer value) {
 		if (client.connected) client.connector.closeTimeout = value
 		params.closeTimeout = value
 	}
 	
-	/**
-	 * Connection timeout
-	 */
+	/** Connection timeout */
 	Integer getConnectionmTimeout () { params.connectionTimeout as Integer }
-
+	/** Connection timeout */
 	void setConnectionTimeout (Integer value) {
 		if (client.connected) client.connector.connectionTimeout = value
 		params.connectionTimeout = value
 	}
 	
-	/**
-	 * Read timeout
-	 */
+	/** Read timeout */
 	Integer getReadTimeout () { params.readTimeout as Integer }
-
+	/** Read timeout */
 	void setReadTimeout (Integer value) {
 		if (client.connected) client.connector.readTimeout = value
 		params.readTimeout = value
 	}
 
-    /**
-     * FTP server time zone
-     */
+    /** FTP server time zone */
     Integer getTimeZone () { (params.timeZone as Integer)?:0 }
-
+	/** FTP server time zone */
 	void setTimeZone (Integer value) { params.timeZone = value }
 	
 	@Override
@@ -223,11 +201,13 @@ class FTPManager extends Manager {
 		public FTPFile[] listFiles
 		
 		@groovy.transform.CompileStatic
+		@Override
 		Integer size () {
 			listFiles.length
 		}
 		
 		@groovy.transform.CompileStatic
+		@Override
 		Map item (int index) {
 			FTPFile f = listFiles[index]
 
@@ -254,6 +234,8 @@ class FTPManager extends Manager {
 			m
 		}
 
+		@groovy.transform.CompileStatic
+		@Override
 		void clear () {
 			listFiles = []
 		}
@@ -487,5 +469,15 @@ class FTPManager extends Manager {
 			res = "ftp://$loginStr$server/$rootPath"
 
 		return res
+	}
+
+	/**
+	 * Perform operations on a manager
+	 * @param cl closure code
+	 * @return source manager
+	 */
+	FTPManager dois(@DelegatesTo(FTPManager) Closure cl) {
+		this.with(cl)
+		return this
 	}
 }

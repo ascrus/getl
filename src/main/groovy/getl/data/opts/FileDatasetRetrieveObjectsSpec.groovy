@@ -27,6 +27,8 @@ package getl.data.opts
 import getl.driver.FileDriver
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * File dataset retrieve objects options
@@ -79,5 +81,8 @@ class FileDatasetRetrieveObjectsSpec extends BaseSpec {
     /** Custom file filtering */
     void setOnFilter(Closure<Boolean> value) { params.filter = value }
     /** Custom file filtering */
-    void filter(Closure<Boolean> value) { setOnFilter(prepareClosure(value)) }
+    void filter(@ClosureParams(value = SimpleType, options = ['java.io.File'])
+                        Closure<Boolean> value) {
+        setOnFilter(prepareClosure(value))
+    }
 }

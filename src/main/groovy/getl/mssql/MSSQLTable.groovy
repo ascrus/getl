@@ -26,10 +26,12 @@ package getl.mssql
 
 import getl.data.Connection
 import getl.exception.ExceptionGETL
-import getl.jdbc.TableDataset
+import getl.jdbc.InternalTableDataset
 import getl.jdbc.opts.ReadSpec
 import getl.mssql.opts.MSSQLReadSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * MS SQLServer table
@@ -37,13 +39,19 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class MSSQLTable extends TableDataset {
+class MSSQLTable extends InternalTableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof MSSQLConnection))
             throw new ExceptionGETL('Сonnection to MSSQLConnection class is allowed!')
 
         super.setConnection(value)
+    }
+
+    /** Use specified connection */
+    MSSQLConnection useConnection(MSSQLConnection value) {
+        setConnection(value)
+        return value
     }
 
     @Override
@@ -55,7 +63,19 @@ class MSSQLTable extends TableDataset {
     /**
      * Read table options
      */
-    MSSQLReadSpec readOpts(@DelegatesTo(MSSQLReadSpec) Closure cl = null) {
+    MSSQLReadSpec readOpts(@DelegatesTo(MSSQLReadSpec)
+                           @ClosureParams(value = SimpleType, options = ['getl.mssql.opts.MSSQLReadSpec>'])
+                                   Closure cl = null) {
         genReadDirective(cl) as MSSQLReadSpec
+    }
+
+    /**
+     * Perform operations on a table
+     * @param cl closure code
+     * @return source table
+     */
+    MSSQLTable dois(@DelegatesTo(MSSQLTable) Closure cl) {
+        this.with(cl)
+        return this
     }
 }

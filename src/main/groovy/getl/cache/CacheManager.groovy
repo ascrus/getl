@@ -75,7 +75,7 @@ class CacheManager extends H2Connection {
 	/**
 	 * List of cached connections
 	 */
-	protected final TableDataset connections = new TableDataset(connection: this, tableName: connectionsName, manualSchema: true,
+	protected final InternalTableDataset connections = new TableDataset(connection: this, tableName: connectionsName, manualSchema: true,
 														field: [
 															new Field(name: "CONNECTIONID", type: "BIGINT", isNull: false, isAutoincrement: true),
 															new Field(name: "DRIVER", length: 128, isNull: false, isKey: true),
@@ -88,7 +88,7 @@ class CacheManager extends H2Connection {
 	/**
 	 * List of cached datasets
 	 */
-	protected final TableDataset objects = new TableDataset(connection: this, tableName: objectsName, manualSchema: true,
+	protected final InternalTableDataset objects = new TableDataset(connection: this, tableName: objectsName, manualSchema: true,
 														field: [
 															new Field(name: "NAME", length: 1024, isNull: false, isKey: true),
 															new Field(name: "CONNECTIONID", type: "BIGINT", isNull: false, isKey: false),

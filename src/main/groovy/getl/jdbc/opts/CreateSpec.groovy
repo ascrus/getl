@@ -27,6 +27,8 @@ package getl.jdbc.opts
 import getl.jdbc.JDBCDataset
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Create options for creating table
@@ -143,7 +145,10 @@ class CreateSpec extends BaseSpec {
     /**
      * Generate index of specified parameters
      */
-    IndexSpec index(String name, @DelegatesTo(IndexSpec) Closure cl = null) {
+    IndexSpec index(String name,
+                    @DelegatesTo(IndexSpec)
+                    @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.IndexSpec'])
+                            Closure cl = null) {
         genIndex(name, cl)
     }
 }

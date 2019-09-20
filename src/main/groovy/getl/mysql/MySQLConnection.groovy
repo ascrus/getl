@@ -66,4 +66,14 @@ class MySQLConnection extends JDBCConnection {
 		super.doInitConnection()
 		driverName = (!BoolUtils.IsValue(usedOldDriver))?'com.mysql.cj.jdbc.Driver':'com.mysql.jdbc.Driver'
 	}
+
+	/**
+	 * Perform operations on a connection
+	 * @param cl closure code
+	 * @return source connection
+	 */
+	MySQLConnection dois(@DelegatesTo(MySQLConnection) Closure cl) {
+		this.with(cl)
+		return this
+	}
 }

@@ -32,12 +32,18 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class ViewDataset extends TableDataset {
+class ViewDataset extends InternalTableDataset {
 	ViewDataset() {
 		super()
 		type = JDBCDataset.Type.VIEW
 	}
-	
+
+	/** Use specified connection */
+	JDBCConnection useConnection(JDBCConnection value) {
+		setConnection(value)
+		return value
+	}
+
 	/**
 	 * Validation exists view
 	 * @return
@@ -47,5 +53,15 @@ class ViewDataset extends TableDataset {
 					tableName: tableName, type: ["VIEW"])
 		
 		(!ds.isEmpty())
+	}
+
+	/**
+	 * Perform operations on a view
+	 * @param cl closure code
+	 * @return source view
+	 */
+	ViewDataset dois(@DelegatesTo(ViewDataset) Closure cl) {
+		this.with(cl)
+		return this
 	}
 }

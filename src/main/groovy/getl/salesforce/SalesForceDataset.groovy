@@ -52,6 +52,12 @@ class SalesForceDataset extends Dataset {
 		super.setConnection(value)
 	}
 
+	/** Use specified connection */
+	SalesForceConnection useConnection(SalesForceConnection value) {
+		setConnection(value)
+		return value
+	}
+
 	/**
 	 * SalesForce object name
 	 * @return
@@ -80,5 +86,15 @@ class SalesForceDataset extends Dataset {
 	 */
 	List<TFSDataset> bulkUnload(Map params) {
 		return (connection.driver as SalesForceDriver).bulkUnload(this, params)
+	}
+
+	/**
+	 * Perform operations on a salesforce dataset
+	 * @param cl closure code
+	 * @return source salesforce dataset
+	 */
+	SalesForceDataset dois(@DelegatesTo(SalesForceDataset) Closure cl) {
+		this.with(cl)
+		return this
 	}
 }

@@ -32,6 +32,8 @@ import getl.utils.*
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * File connection class
@@ -40,7 +42,6 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 abstract class FileConnection extends Connection {
-	
 	FileConnection (Map params) {
 		super(params)
 		if (!BoolUtils.ClassInstanceOf(params.driver as Class, FileDriver)) throw new ExceptionGETL("Requider FileDriver instance class for connection")
@@ -118,7 +119,8 @@ abstract class FileConnection extends Connection {
 	}
 
 	/** Return the list of files by the specified conditions */
-	List<File> listFiles(@DelegatesTo(FileDatasetRetrieveObjectsSpec) Closure cl) {
+	List<File> listFiles(@DelegatesTo(FileDatasetRetrieveObjectsSpec)
+						 @ClosureParams(value = SimpleType, options = ['java.io.File']) Closure<Boolean> cl) {
 		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = new FileDatasetRetrieveObjectsSpec(ownerObject, thisObject, false, null)

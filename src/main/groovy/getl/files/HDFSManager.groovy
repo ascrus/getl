@@ -44,28 +44,22 @@ class HDFSManager extends Manager {
         methodParams.register("super", ["server", "port", "login"])
     }
 
-    /**
-     * Server address
-     */
+    /** Server address */
     String getServer () { params.server }
-
+    /** Server address */
     void setServer (String value) { params.server = value }
 
-    /**
-     * Server port
-     */
+    /** Server port */
     Integer getPort () { (params.port != null)?(params.port as Integer):8022 }
-
+    /** Server port */
     void setPort (Integer value) { params.port = value }
 
-    /**
-     * Login user
-     */
+    /** Login user */
     String getLogin () { params.login }
-
+    /** Login user */
     void setLogin (String value) { params.login = value }
 
-    /**
+    /*
      * Password user
      */
     /*
@@ -73,16 +67,12 @@ class HDFSManager extends Manager {
     public void setPassword (String value) { params.password = value }
     */
 
-    /**
-     * File system driver
-     */
+    /** File system driver */
     private FileSystem client
 
-    /**
-     * Home directory by user
-     */
+    /** Home directory by user */
     private String homeDirectory
-
+    /** Home directory by user */
     String getHomeDirectory() { this.homeDirectory }
 
     @Override
@@ -180,14 +170,14 @@ class HDFSManager extends Manager {
     class HDFSList extends FileManagerList {
         FileStatus[] listFiles
 
-        @Override
         @CompileStatic
+        @Override
         Integer size() {
             listFiles.length
         }
 
-        @Override
         @CompileStatic
+        @Override
         Map item(int index) {
             FileStatus f = listFiles[index]
 
@@ -213,6 +203,7 @@ class HDFSManager extends Manager {
             m
         }
 
+        @CompileStatic
         @Override
         void clear() {
             listFiles = []
@@ -224,7 +215,7 @@ class HDFSManager extends Manager {
         HDFSList res = new HDFSList()
         res.listFiles = client.listStatus(fullPath(currentPath, null))
 
-        res
+        return res
     }
 
     @Override
@@ -352,5 +343,15 @@ class HDFSManager extends Manager {
             res = "hdfs://$server/$rootPath"
 
         return res
+    }
+
+    /**
+     * Perform operations on a manager
+     * @param cl closure code
+     * @return source manager
+     */
+    HDFSManager dois(@DelegatesTo(HDFSManager) Closure cl) {
+        this.with(cl)
+        return this
     }
 }

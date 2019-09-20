@@ -26,6 +26,8 @@ package getl.json.opts
 
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Options for reading JSON file
@@ -70,5 +72,7 @@ class JSONReadSpec extends BaseSpec {
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    void filter(Closure<Boolean> value) { setOnFilter(prepareClosure(value)) }
+    void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> value) {
+        setOnFilter(prepareClosure(value))
+    }
 }

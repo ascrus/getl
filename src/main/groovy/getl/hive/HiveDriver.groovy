@@ -232,7 +232,7 @@ class HiveDriver extends JDBCDriver {
 
     @Override
     protected String syntaxInsertStatement(Dataset dataset, Map params) {
-        String into = (BoolUtils.IsValue([params.overwrite, (dataset as TableDataset).params.overwrite]))?'OVERWRITE':'INTO'
+        String into = (BoolUtils.IsValue([params.overwrite, (dataset as InternalTableDataset).params.overwrite]))?'OVERWRITE':'INTO'
         return ((dataset.fieldListPartitions.isEmpty()))?
                 "INSERT $into TABLE {table} ({columns}) VALUES({values})":
                 "INSERT $into TABLE {table} ({columns}) PARTITION ({partition}) VALUES({values})"
@@ -240,7 +240,7 @@ class HiveDriver extends JDBCDriver {
 
     @Override
     void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
-        def table = dest as TableDataset
+        def table = dest as InternalTableDataset
         bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
         def conHive = dest.connection as HiveConnection
 
@@ -374,7 +374,7 @@ class HiveDriver extends JDBCDriver {
         }
     }
 
-    static Map<String, Object> tableExtendedInfo(TableDataset table) {
+    static Map<String, Object> tableExtendedInfo(InternalTableDataset table) {
         Map<String, Object> res = [:]
         def sql = 'SHOW TABLE EXTENDED'
         if (table.schemaName != null) sql += " IN ${table.schemaName}"
@@ -446,7 +446,7 @@ class HiveDriver extends JDBCDriver {
     @Override
     List<Field> fields(Dataset dataset) {
         List<Field> res = super.fields(dataset)
-        if (dataset instanceof TableDataset) {
+        if (dataset instanceof InternalTableDataset) {
             def ext = tableExtendedInfo(dataset)
             if (BoolUtils.IsValue(ext.partitioned) && ext.partitionColumns != null) {
                 def partNum = 0

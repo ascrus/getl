@@ -27,8 +27,7 @@ package getl.mysql
 import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
-import getl.jdbc.JDBCDriver
-import getl.jdbc.TableDataset
+import getl.jdbc.*
 import getl.utils.ListUtils
 import groovy.transform.InheritConstructors
 
@@ -155,7 +154,7 @@ class MySQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
+	protected Map<String, String> prepareForRetrieveFields(InternalTableDataset dataset) {
 		def names = [:] as Map<String, String>
 		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, (dataset.connection as MySQLConnection).connectDatabase, defaultDBName]) as String)
 		names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)

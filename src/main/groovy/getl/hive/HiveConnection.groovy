@@ -71,13 +71,9 @@ class HiveConnection extends JDBCConnection {
         }
     }
 
-    /**
-     * Vendor driver name
-     */
-    String getVendor() { return params.vendor }
-    /**
-     * Vendor driver name
-     */
+    /** Vendor driver name */
+    String getVendor() { params.vendor as String }
+    /** Vendor driver name */
     void setVendor(String value) {
         switch (value?.toLowerCase()) {
             case 'apache':
@@ -93,40 +89,38 @@ class HiveConnection extends JDBCConnection {
         params.vendor = value
     }
 
-    /**
-     * Version JDBC driver
-     */
-    Integer getVersionDriver() { return params.versionDriver }
-    /**
-     * Version JDBC driver
-     */
+    /** Version JDBC driver */
+    Integer getVersionDriver() { params.versionDriver as Integer }
+    /** Version JDBC driver */
     void setVersionDriver(Integer value) { params.versionDriver = value }
 
-    /**
-     * HDFS host
-     */
-    String getHdfsHost () { return params.hdfsHost }
-
+    /** HDFS host */
+    String getHdfsHost () { params.hdfsHost as String }
+    /** HDFS host */
     void setHdfsHost (String value) { params.hdfsHost = value }
 
-    /**
-     * HDFS port
-     */
-    Integer getHdfsPort() { return params.hdfsPort }
-
+    /** HDFS port */
+    Integer getHdfsPort() { params.hdfsPort as Integer }
+    /** HDFS port */
     void setHdfsPort(Integer value) { params.hdfsPort = value }
 
-    /**
-     * HDFS login
-     */
-    String getHdfsLogin () { return params.hdfsLogin }
-
+    /** HDFS login */
+    String getHdfsLogin () { params.hdfsLogin as String }
+    /** HDFS login */
     void setHdfsLogin (String value) { params.hdfsLogin = value }
 
-    /**
-     * HDFS directory for bulkload files
-     */
-    String getHdfsDir () { return params.hdfsDir }
-
+    /** HDFS directory for bulkload files */
+    String getHdfsDir () { params.hdfsDir as String }
+    /** HDFS directory for bulkload files */
     void setHdfsDir (String value) { params.hdfsDir = value }
+
+    /**
+     * Perform operations on a connection
+     * @param cl closure code
+     * @return source connection
+     */
+    HiveConnection dois(@DelegatesTo(HiveConnection) Closure cl) {
+        this.with(cl)
+        return this
+    }
 }

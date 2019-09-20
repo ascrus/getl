@@ -26,12 +26,23 @@ class DslTest extends getl.test.GetlTest {
     final def table1_rows = 100
 
     @Test
-    void test01GenerateAndLoadConfig() {
+    void test01_01SaveFile() {
         Getl.Dsl(this) {
+            def file = textFile {
+                temporaryFile = true
+                write '12345'
+            }
+            assertEquals('12345', new File(file).text)
+        }
+    }
+
+    @Test
+    void test01_02GenerateAndLoadConfig() {
+        Getl.Dsl() {
             logInfo "Use temporary path: ${this.tempPath}"
 
             // Generate configuration file
-            textFile(this.tempConfig) {
+            def configFileName = textFile(this.tempConfig) {
                 temporaryFile = true
                 write """
 datasets {
@@ -49,6 +60,8 @@ datasets {
 }
 """
             }
+
+            assertEquals(this.tempConfig, configFileName)
 
             // Load configuration
             configuration {
@@ -91,8 +104,8 @@ datasets {
     void test04CreateTables() {
         Getl.Dsl() {
             // Create and generate data to H2 temporary table
-            h2Table('table1', true) { H2Table table ->
-                config = 'table1'
+            h2Table('test.table1', true) { H2Table table ->
+                useConfig 'table1'
 
                 field('id') { type = integerFieldType; isKey = true }
                 field('name') { type = stringFieldType; length = 50; isNull = false }
@@ -113,8 +126,8 @@ datasets {
                 assertTrue(exists)
             }
 
-            registerDataset(h2Table('table1').cloneDataset(), 'table2', true)
-            h2Table('table2') {
+            registerDataset(h2Table('test.table1').cloneDataset(), 'test.table2', true)
+            h2Table('test.table2') {
                 tableName = 'table2'
                 createOpts {
                     type = isTemporary
@@ -128,11 +141,11 @@ datasets {
     @Test
     void test05GenerateDataToTable1() {
         Getl.Dsl() {
-            rowsTo(h2Table('table1')) {
-                process { append ->
+            rowsTo(h2Table('test.table1')) {
+                writeRow { append ->
                     (1..this.table1_rows).each { append id: it, name: "test $it", dt: DateUtils.now }
                 }
-                assertEquals(this.table1_rows, destination.countRow())
+                assertEquals(this.table1_rows, countRow)
             }
         }
     }
@@ -140,16 +153,30 @@ datasets {
     @Test
     void test06DefineFilesFromTablesStructure() {
         Getl.Dsl {
-            csvTempWithDataset('file1', h2Table('table1')) { config = 'file1' }
-            assertEquals(h2Table('table1').field, csvTemp('file1').field)
+            csvTempWithDataset('test.file1', h2Table('test.table1')) {
+                useConfig 'file1'
+                readOpts {
+                    filter {
+                        (it.id > 0 && it.id <= this.table1_rows)
+                    }
+                }
+            }
+            assertEquals(h2Table('test.table1').field, csvTemp('test.file1').field)
 
-            csvTempWithDataset('file2', h2Table('table2')) { config = 'file2' }
-            assertEquals(h2Table('table2').field, csvTemp('file2').field)
+            csvTempWithDataset('test.file2', h2Table('test.table2')) {
+                useConfig 'file2'
+                readOpts {
+                    filter {
+                        (it.id > 0 && it.id <= this.table1_rows)
+                    }
+                }
+            }
+            assertEquals(h2Table('test.table2').field, csvTemp('test.file2').field)
 
-            csvTemp('file1') {
+            csvTemp('test.file1') {
                 assertEquals(this.csvFileName1, fileName)
             }
-            csvTemp('file2') {
+            csvTemp('test.file2') {
                 assertEquals(this.csvFileName2, fileName)
             }
         }
@@ -158,8 +185,8 @@ datasets {
     @Test
     void test07CopyTable1ToFile1() {
         Getl.Dsl {
-            copyRows(h2Table('table1'), csvTemp('file1')) {
-                process { t, f ->
+            copyRows(h2Table('test.table1'), csvTemp('test.file1')) {
+                copyRow { t, f ->
                     f.name = StringUtils.ToCamelCase(t.name)
                     f.dt = DateUtils.now
                 }
@@ -172,12 +199,12 @@ datasets {
     void test08_01LoadFile1ToTable1AndTable2() {
         Getl.Dsl { getl ->
             rowsToMany([
-                    table1: h2Table('table1') { truncate() },
-                    table2: h2Table('table2') { truncate() }
+                    table1: h2Table('test.table1') { truncate() },
+                    table2: h2Table('test.table2') { truncate() }
             ]) {
-                process { add ->
-                    rowProcess(csvTemp('file1')) {
-                        process { row ->
+                writeRow { add ->
+                    rowProcess(csvTemp('test.file1')) {
+                        readRow { row ->
                             row.dt = DateUtils.now
                             add 'table1', row
                             add 'table2', row
@@ -196,13 +223,13 @@ datasets {
     void test08_02LoadFile1ToTable1AndTable2WithBulkLoad() {
         Getl.Dsl {
             rowsToMany([
-                    table1: h2Table('table1') { truncate() },
-                    table2: h2Table('table2') { truncate() }
+                    table1: h2Table('test.table1') { truncate() },
+                    table2: h2Table('test.table2') { truncate() }
             ]) {
                 bulkLoad = true
-                process { add ->
-                    rowProcess(csvTemp('file1')) {
-                        process { row ->
+                writeRow { add ->
+                    rowProcess(csvTemp('test.file1')) {
+                        readRow { row ->
                             row.dt = DateUtils.now
                             add 'table1', row
                             add 'table2', row
@@ -220,7 +247,7 @@ datasets {
     @Test
     void test09SelectQuery() {
         Getl.Dsl() {
-            query('query1', true) {
+            query('test.query1', true) {
                 query = '''
 SELECT
     t1.id as t1_id, t1.name as t1_name, t1.dt as t1_dt,
@@ -228,19 +255,19 @@ SELECT
 FROM table1 t1 
     INNER JOIN table2 t2 ON t1.id = t2.id
 ORDER BY t1.id'''
-            }
 
-            rowProcess(query('query1')) {
-                def count = 0
-                count = 0
-                process {
-                    count++
-                    assertEquals(it.t1_id, it.t2_id)
-                    assertTrue(it.t1_dt < DateUtils.now )
-                    assertEquals(count, it.t1_id)
+                rowProcess {
+                    def count = 0
+                    count = 0
+                    readRow { row ->
+                        count++
+                        assertEquals(row.t1_id, row.t2_id)
+                        assertTrue(row.t1_dt < DateUtils.now)
+                        assertEquals(count, row.t1_id)
+                    }
+                    assertEquals(this.table1_rows, count)
+                    assertEquals(countRow, count)
                 }
-                assertEquals(this.table1_rows, count)
-                assertEquals(countRow, count)
             }
         }
     }
@@ -248,15 +275,15 @@ ORDER BY t1.id'''
     @Test
     void test10ReadTable1WithFilter() {
         Getl.Dsl {
-            h2Table('table1') { table ->
+            h2Table('test.table1') {
                 readOpts { where = 'id < 3'; order = ['id ASC'] }
-                rowProcess(table) {
+                rowProcess {
                     def i = 0
-                    process {
+                    readRow { row ->
                         i++
-                        assertTrue(it.id < 3);
-                        assertTrue(it.t1_dt < DateUtils.now )
-                        assertEquals(i, it.id)
+                        assertTrue(row.id < 3);
+                        assertTrue(row.t1_dt < DateUtils.now )
+                        assertEquals(i, row.id)
                     }
                     assertEquals(2, countRow)
                 }
@@ -268,15 +295,15 @@ ORDER BY t1.id'''
     @Test
     void test11CopyTable1ToTwoFiles() {
         Getl.Dsl {
-            copyRows(h2Table('table1'), csvTemp('file1')) {
-                childs(csvTemp('file2')) {
-                    process { Closure add, Map sourceRow ->
+            copyRows(h2Table('test.table1'), csvTemp('test.file1')) {
+                childs(csvTemp('test.file2')) {
+                    writeRow { add, sourceRow ->
                         sourceRow.name = (sourceRow.name as String).toLowerCase()
                         add sourceRow
                     }
                 }
 
-                process { Map sourceRow, Map destRow ->
+                copyRow { sourceRow, destRow ->
                     destRow.name = (sourceRow.name as String).toUpperCase()
                 }
 
@@ -288,29 +315,29 @@ ORDER BY t1.id'''
     @Test
     void test12_01CopyFile1ToTwoTables() {
         Getl.Dsl {
-            h2Table('table1') {
+            h2Table('test.table1') {
                 truncate()
                 assertEquals(0, countRow())
             }
 
-            h2Table('table2') {
+            h2Table('test.table2') {
                 truncate()
                 assertEquals(0, countRow())
             }
 
-            copyRows(csvTemp('file1'), h2Table('table1')) {
-                childs(h2Table('table2')) {
-                    process { Closure add, Map sourceRow ->
+            copyRows(csvTemp('test.file1'), h2Table('test.table1')) {
+                childs(h2Table('test.table2')) {
+                    writeRow { add, sourceRow ->
                         add sourceRow
                     }
                 }
             }
 
-            h2Table('table1') {
+            h2Table('test.table1') {
                 assertEquals(this.table1_rows, countRow())
             }
 
-            h2Table('table2') {
+            h2Table('test.table2') {
                 assertEquals(this.table1_rows, countRow())
             }
         }
@@ -319,43 +346,68 @@ ORDER BY t1.id'''
     @Test
     void test12_02CopyFile1ToTwoTablesWithBulkLoad() {
         Getl.Dsl {
-            h2Table('table1') {
+            h2Table('test.table1') {
                 truncate()
                 assertEquals(0, countRow())
             }
 
-            h2Table('table2') {
+            h2Table('test.table2') {
                 truncate()
                 assertEquals(0, countRow())
             }
 
-            copyRows(csvTemp('file1'), h2Table('table1')) {
+            copyRows(csvTemp('test.file1'), h2Table('test.table1')) {
                 bulkLoad = true
 
-                childs(h2Table('table2')) {
-                    process { Closure add, Map sourceRow ->
+                childs(h2Table('test.table2')) {
+                    writeRow { add, sourceRow ->
                         add sourceRow
                     }
                 }
             }
 
-            h2Table('table1') {
+            h2Table('test.table1') {
                 assertEquals(this.table1_rows, countRow())
             }
 
-            h2Table('table2') {
+            h2Table('test.table2') {
                 assertEquals(this.table1_rows, countRow())
             }
         }
     }
 
-    @Ignore
     @Test
-    void test13PrintSqlLog() {
+    void test13ProcessRegisteredDataset() {
         Getl.Dsl {
-            embeddedConnection('h2') {
-                println new File(sqlHistoryFile).text
-            }
+            def countAll = 0
+            datasetProcess { name, dataset -> countAll++ }
+            assertEquals(5, countAll)
+
+            def countByTestGroup = 0
+            datasetProcess('test.*') { name, dataset -> countByTestGroup++ }
+            assertEquals(5, countByTestGroup)
+
+            def tables = []
+            datasetProcess(null, H2TABLE) { name, dataset -> tables << name }
+            assertEquals(2, tables.size())
+            assertEquals(['test.table1', 'test.table2'], tables.sort())
+
+            def files = []
+            datasetProcess(null, CSVTEMPDATASET) { name, dataset -> files << name }
+            assertEquals(2, tables.size())
+            assertEquals(['test.file1', 'test.file2'], files.sort())
+
+            def queries = []
+            datasetProcess(null, QUERYDATASET) { name, dataset -> queries << name }
+            assertEquals(1, queries.size())
+            assertEquals(['test.query1'], queries.sort())
+
+            def objects1 = []
+            datasetProcess('*.*1') { name, dataset -> objects1 << name }
+            assertEquals(3, objects1.size())
+            assertEquals(['test.file1', 'test.query1', 'test.table1'], objects1.sort())
+
+            datasetProcess('test.table1') { name, dataset -> assertEquals('test.table1', name) }
         }
     }
 }

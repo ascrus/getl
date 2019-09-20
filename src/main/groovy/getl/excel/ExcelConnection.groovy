@@ -64,4 +64,14 @@ class ExcelConnection extends Connection {
     Boolean getShowWarnings() { params.showWarnings }
     /** Warnings from Dataset (e.g. show warning when list not found) */
     void setShowWarnings(final Boolean value) { params.showWarnings = value}
+
+    /**
+     * Perform operations on a connection
+     * @param cl closure code
+     * @return source connection
+     */
+    ExcelConnection dois(@DelegatesTo(ExcelConnection) Closure cl) {
+        this.with(cl)
+        return this
+    }
 }

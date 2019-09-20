@@ -25,13 +25,11 @@
 package getl.oracle
 
 import getl.exception.ExceptionGETL
-import getl.jdbc.JDBCConnection
-import getl.jdbc.TableDataset
+import getl.jdbc.*
 import groovy.transform.InheritConstructors
 import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
-import getl.jdbc.JDBCDriver
 import getl.utils.*
 
 
@@ -112,7 +110,7 @@ class OracleDriver extends JDBCDriver {
 	@Override
 	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
-		Map<String, Object> dl = (dataset as TableDataset).readDirective?:[:] + params
+		Map<String, Object> dl = (dataset as InternalTableDataset).readDirective?:[:] + params
 		if (dl.scn != null) {
 			Long scn
 			if (dl.scn instanceof String) scn = ConvertUtils.Object2Long(dl.scn) else scn = dl.scn

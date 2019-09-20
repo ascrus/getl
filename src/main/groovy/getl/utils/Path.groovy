@@ -63,11 +63,14 @@ class Path {
 	 */
 	public boolean ignoreConvertError = false
 
-	/** Mask file (use {var} for definition variables) */
+	/** Mask path
+	 * <br>(use {var} for definition variables) */
 	String mask
-	/** Mask file (use {var} for definition variables) */
+	/** Mask path
+	 * <br>(use {var} for definition variables) */
 	String getMask() { mask }
-	/** Mask file (use {var} for definition variables) */
+	/** Mask path
+	 * <br>(use {var} for definition variables) */
 	void setMask(String value) {
 		isCompile = false
 		mask = value
@@ -421,6 +424,11 @@ class Path {
 	/** Analize dir with mask and return value of variables */
 	Map analizeDir(String dirName) {
 		analize(dirName, true)
+	}
+
+	/** Checking the value by compiled mask */
+	Boolean match(String value) {
+		return value.matches(maskPathPattern)
 	}
 	
 	/** Analize file or directory */

@@ -26,7 +26,6 @@ package getl.tfs
 
 import getl.data.Connection
 import getl.h2.H2Table
-import getl.jdbc.TableDataset
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 

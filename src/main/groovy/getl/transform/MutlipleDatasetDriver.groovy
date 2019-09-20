@@ -60,7 +60,7 @@ class MutlipleDatasetDriver extends Driver {
 	void disconnect() { }
 
 	@Override
-	List<Object> retrieveObjects(Map params, Closure filter) {
+	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
 		throw new ExceptionGETL("Retrieve objects not supported")
 	}
 	

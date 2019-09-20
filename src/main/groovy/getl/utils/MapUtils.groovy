@@ -30,6 +30,8 @@ import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import org.apache.groovy.json.internal.LazyMap
 
 /**
@@ -470,7 +472,9 @@ class MapUtils {
 		return res
 	}
 
-	static void FindKeys(Map<String, Object> map, String expression, Closure closure) {
+	static void FindKeys(Map<String, Object> map, String expression,
+						 @ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.lang.String', 'java.lang.Object'])
+								 Closure closure) {
 		if (map == null || map.isEmpty() || expression == null || expression.length() == 0) return
 
 		def keys = expression.split('[.]')

@@ -27,7 +27,7 @@ package getl.hive
 import getl.data.Connection
 import getl.exception.ExceptionGETL
 import getl.hive.opts.HiveCreateSpec
-import getl.jdbc.TableDataset
+import getl.jdbc.*
 import getl.jdbc.opts.CreateSpec
 import groovy.transform.InheritConstructors
 
@@ -37,13 +37,19 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class HiveTable extends TableDataset {
+class HiveTable extends InternalTableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof HiveConnection))
             throw new ExceptionGETL('Сonnection to HiveConnection class is allowed!')
 
         super.setConnection(value)
+    }
+
+    /** Use specified connection */
+    HiveConnection useConnection(HiveConnection value) {
+        setConnection(value)
+        return value
     }
 
     /**
@@ -60,5 +66,15 @@ class HiveTable extends TableDataset {
 
     HiveCreateSpec createOpts(@DelegatesTo(HiveCreateSpec) Closure cl = null) {
         genCreateTable(cl) as HiveCreateSpec
+    }
+
+    /**
+     * Perform operations on a table
+     * @param cl closure code
+     * @return source table
+     */
+    HiveTable dois(@DelegatesTo(HiveTable) Closure cl) {
+        this.with(cl)
+        return this
     }
 }

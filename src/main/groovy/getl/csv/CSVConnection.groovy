@@ -127,4 +127,14 @@ class CSVConnection extends FileConnection {
 	 * <br>P.S. You can set locale for separately field in Field.extended.locale
 	 */
 	void setLocale(String value) { params.locale = value }
+
+	/**
+	 * Perform operations on a connection
+	 * @param cl closure code
+	 * @return source connection
+	 */
+	CSVConnection dois(@DelegatesTo(CSVConnection) Closure cl) {
+		this.with(cl)
+		return this
+	}
 }

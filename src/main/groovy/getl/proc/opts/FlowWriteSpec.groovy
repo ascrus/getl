@@ -32,6 +32,8 @@ import getl.proc.Flow
 import getl.tfs.TFSDataset
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Flow write options
@@ -145,6 +147,13 @@ class FlowWriteSpec extends FlowBaseSpec {
      * Compress bulk file from GZIP algorithm
      */
     def setBulkAsGZIP(Boolean value) { params.bulkAsGZIP = value }
+
+    /**
+     * Closure code process row
+     */
+    void writeRow(@ClosureParams(value = SimpleType, options = ['groovy.lang.Closure']) Closure value = null) {
+        doProcess(value)
+    }
 
     @Override
     protected void runProcess(Flow flow) {

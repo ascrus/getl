@@ -2,6 +2,7 @@ package getl.files
 
 import getl.tfs.TFS
 import getl.utils.DateUtils
+import getl.utils.FileUtils
 import getl.utils.Path
 import getl.utils.StringUtils
 import org.apache.poi.ss.usermodel.DateUtil
@@ -25,6 +26,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
     final def initLocalDir = 'init'
     final def downloadLocalDir = 'download'
     final def rootDirName = 'getl_test_manager'
+    final def rootFileInitName = 'root-file.txt'
     final def rootFileName = 'root$file.txt'
     final def catalogDirName = 'catalog'
     final def catalogFileName = 'catalog_file.txt'
@@ -39,6 +41,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
         init()
         create()
         upload()
+        rename()
         buildList()
         download()
         remove()
@@ -71,7 +74,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
         manager.changeLocalDirectory(initLocalDir)
         assertEquals(initLocalDir, manager.localDirFile.name)
 
-        def rf = new File("${manager.currentLocalDir()}/$rootFileName")
+        def rf = new File("${manager.currentLocalDir()}/$rootFileInitName")
         rf.text = 'root file'
         def d = DateUtils.ParseDateTime('2016-02-29 23:59:59.000')
         manager.setLocalLastModified(rf, d.time)
@@ -83,7 +86,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
         def sf = new File("${manager.currentLocalDir()}/$subdirFileName")
         sf.text = 'child file'
 
-        sleep 1000
+//        sleep 1000
     }
 
     private void create() {
@@ -105,7 +108,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
         manager.changeLocalDirectoryToRoot()
         manager.changeLocalDirectory(initLocalDir)
 
-        manager.upload(rootFileName)
+        manager.upload(rootFileInitName)
 
         (1..3).each { catalogNum ->
             manager.changeDirectory("${catalogDirName}_$catalogNum")
@@ -121,8 +124,13 @@ abstract class ManagerTest extends getl.test.GetlTest {
         manager.changeDirectoryToRoot()
         manager.changeLocalDirectoryToRoot()
         manager.changeLocalDirectory(initLocalDir)
-        def rf = new File("${manager.currentLocalDir()}/$rootFileName")
-        assertEquals(new Date(rf.lastModified()), new Date(manager.getLastModified(rootFileName)))
+        def rf = new File("${manager.currentLocalDir()}/$rootFileInitName")
+        assertEquals(new Date(rf.lastModified()), new Date(manager.getLastModified(rootFileInitName)))
+    }
+
+    private void rename() {
+        manager.rename(rootFileInitName, rootFileName)
+        assertNotNull(manager.getLastModified(rootFileName))
     }
 
     private void buildList() {
@@ -144,7 +152,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
         manager.changeDirectoryToRoot()
         manager.changeLocalDirectoryToRoot()
         manager.changeLocalDirectory(initLocalDir)
-        def rf = new File("${manager.currentLocalDir()}/$rootFileName")
+        def rf = new File("${manager.currentLocalDir()}/$rootFileInitName")
         assertEquals(new Date(rf.lastModified()), new Date(manager.getLastModified(rootFileName)))
     }
 

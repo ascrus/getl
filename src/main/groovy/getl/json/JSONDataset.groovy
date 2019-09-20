@@ -27,6 +27,8 @@ package getl.json
 import getl.exception.ExceptionGETL
 import getl.json.opts.JSONReadSpec
 import getl.lang.opts.BaseSpec
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 import java.util.Map
 
@@ -57,6 +59,12 @@ class JSONDataset extends StructureFileDataset {
 
 		super.setConnection(value)
 	}
+
+	/** Use specified connection */
+	JSONConnection useConnection(JSONConnection value) {
+		setConnection(value)
+		return value
+	}
 	
 	/** Read JSON dataset attributes */
 	void readAttrs (Map params) {
@@ -66,12 +74,24 @@ class JSONDataset extends StructureFileDataset {
 	/**
 	 * Read file options
 	 */
-	JSONReadSpec readOpts(@DelegatesTo(JSONReadSpec) Closure cl = null) {
+	JSONReadSpec readOpts(@DelegatesTo(JSONReadSpec)
+						  @ClosureParams(value = SimpleType, options = ['getl.json.opts.JSONReadSpec'])
+								  Closure cl = null) {
 		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = new JSONReadSpec(ownerObject, thisObject, true, readDirective)
 		parent.runClosure(cl)
 
 		return parent
+	}
+
+	/**
+	 * Perform operations on a json file
+	 * @param cl closure code
+	 * @return source json file
+	 */
+	JSONDataset dois(@DelegatesTo(JSONDataset) Closure cl) {
+		this.with(cl)
+		return this
 	}
 }

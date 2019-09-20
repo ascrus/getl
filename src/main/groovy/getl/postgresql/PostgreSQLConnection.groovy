@@ -55,4 +55,14 @@ class PostgreSQLConnection extends JDBCConnection {
 		super.doInitConnection()
 		driverName = "org.postgresql.Driver"
 	}
+
+	/**
+	 * Perform operations on a connection
+	 * @param cl closure code
+	 * @return source connection
+	 */
+	PostgreSQLConnection dois(@DelegatesTo(PostgreSQLConnection) Closure cl) {
+		this.with(cl)
+		return this
+	}
 }

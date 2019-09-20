@@ -33,6 +33,8 @@ import getl.csv.CSVDataset
 import getl.driver.Driver
 import getl.utils.*
 import getl.tfs.*
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Base dataset class
@@ -350,7 +352,7 @@ class Dataset {
 	/**
 	 * Remove fields by user filter
 	 */
-	void removeFields(Closure where) {
+	void removeFields(@ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure<Boolean> where) {
 		def l = []
 		this.field.each {
 			if (where(it)) l << it
@@ -677,7 +679,7 @@ class Dataset {
 	/**
 	 * Process each row dataset with user code
 	 */
-	void eachRow (Closure code) {
+	void eachRow (@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure code) {
 		eachRow([:], code)
 	}
 	
@@ -820,7 +822,8 @@ class Dataset {
 	 * @param params	- dynamic parameters
 	 * @param code		- process code
 	 */
-	void eachRow (Map procParams, Closure code) {
+	void eachRow (Map procParams,
+				  @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure code) {
 		validConnection()
 		if (!connection.driver.isSupport(Driver.Support.EACHROW)) throw new ExceptionGETL("Driver is not support each row operation")
 		if (status != Dataset.Status.AVAIBLE) throw new ExceptionGETL("Dataset is not avaible for read operation (current status is ${status})")

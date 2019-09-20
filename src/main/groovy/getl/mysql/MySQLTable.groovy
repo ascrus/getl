@@ -26,7 +26,7 @@ package getl.mysql
 
 import getl.data.Connection
 import getl.exception.ExceptionGETL
-import getl.jdbc.TableDataset
+import getl.jdbc.*
 import groovy.transform.InheritConstructors
 
 /**
@@ -35,12 +35,28 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class MySQLTable extends TableDataset {
+class MySQLTable extends InternalTableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof MySQLConnection))
             throw new ExceptionGETL('Сonnection to MySQLConnection class is allowed!')
 
         super.setConnection(value)
+    }
+
+    /** Use specified connection */
+    MySQLConnection useConnection(MySQLConnection value) {
+        setConnection(value)
+        return value
+    }
+
+    /**
+     * Perform operations on a table
+     * @param cl closure code
+     * @return source table
+     */
+    MySQLTable dois(@DelegatesTo(MySQLTable) Closure cl) {
+        this.with(cl)
+        return this
     }
 }

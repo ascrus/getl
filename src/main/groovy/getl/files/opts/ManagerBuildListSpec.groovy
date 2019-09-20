@@ -24,10 +24,13 @@
 
 package getl.files.opts
 
+import getl.jdbc.InternalTableDataset
 import getl.jdbc.TableDataset
 import getl.lang.opts.BaseSpec
 import getl.utils.Path
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Build list options for file manager
@@ -42,9 +45,9 @@ class ManagerBuildListSpec extends BaseSpec {
     void setMaskPath(Path value) { params.path = value }
 
     /** Download history table (default TDS table) */
-    TableDataset getHistoryTable() { params.story as TableDataset }
+    InternalTableDataset getHistoryTable() { params.story as InternalTableDataset }
     /** Download history table (default TDS table) */
-    void setHistoryTable(TableDataset value) { params.story = value }
+    void setHistoryTable(InternalTableDataset value) { params.story = value }
 
     /** Create history table if not exists (default false) */
     Boolean getCreateHistoryTable() { params.createStory as Boolean }
@@ -81,17 +84,19 @@ class ManagerBuildListSpec extends BaseSpec {
      * @param Map fileAttributes - file attributes
      * @return Boolean continue - continue processing
      */
-    Closure<Boolean> getOnProcessFile() { params.code as Closure }
+    Closure<Boolean> getOnFilterFile() { params.code as Closure }
     /**
      * File processing code
      * @param Map fileAttributes - file attributes
      * @return Boolean continue - continue processing
      */
-    void setOnProcessFile(Closure<Boolean> value) { params.code = value }
+    void setOnFilterFile(Closure<Boolean> value) { params.code = value }
     /**
      * Custom file handling code
      * @param Map fileAttributes - file attributes
      * @return Boolean continue - continue processing
      */
-    void processFile(Closure<Boolean> value) { setOnProcessFile(prepareClosure(value)) }
+    void filterFile(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> value) {
+        setOnFilterFile(prepareClosure(value))
+    }
 }

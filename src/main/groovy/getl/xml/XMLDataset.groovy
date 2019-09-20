@@ -25,11 +25,12 @@
 package getl.xml
 
 import getl.exception.ExceptionGETL
-import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.xml.opts.XMLReadSpec
 import groovy.transform.InheritConstructors
 import getl.data.*
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * XML dataset class
@@ -59,6 +60,12 @@ class XMLDataset extends StructureFileDataset {
 			throw new ExceptionGETL('Сonnection to XMLConnection class is allowed!')
 
 		super.setConnection(value)
+	}
+
+	/** Use specified connection */
+	XMLConnection useConnection(XMLConnection value) {
+		setConnection(value)
+		return value
 	}
 
 	/** Use default the attribute access method (default) */
@@ -91,12 +98,24 @@ class XMLDataset extends StructureFileDataset {
 	/**
 	 * Read file options
 	 */
-	XMLReadSpec readOpts(@DelegatesTo(XMLReadSpec) Closure cl = null) {
+	XMLReadSpec readOpts(@DelegatesTo(XMLReadSpec)
+						 @ClosureParams(value = SimpleType, options = ['getl.xml.opts.XMLReadSpec'])
+								 Closure cl = null) {
 		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = new XMLReadSpec(ownerObject, thisObject, true, readDirective)
 		parent.runClosure(cl)
 
 		return parent
+	}
+
+	/**
+	 * Perform operations on a xml dataset
+	 * @param cl closure code
+	 * @return source xml dataset
+	 */
+	XMLDataset dois(@DelegatesTo(XMLDataset) Closure cl) {
+		this.with(cl)
+		return this
 	}
 }

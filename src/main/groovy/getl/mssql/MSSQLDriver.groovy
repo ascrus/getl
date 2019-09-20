@@ -25,9 +25,8 @@
 package getl.mssql
 
 import getl.data.Field
+import getl.jdbc.InternalTableDataset
 import getl.jdbc.TableDataset
-
-import java.sql.PreparedStatement
 import getl.data.Dataset
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
@@ -97,7 +96,7 @@ class MSSQLDriver extends JDBCDriver {
 	@Override
 	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
-		Map<String, Object> dl = (dataset as TableDataset).readDirective?:[:] + params
+		Map<String, Object> dl = (dataset as InternalTableDataset).readDirective?:[:] + params
 		if (dl.with != null) {
 			dir.afteralias = "with (${dl.with})"
 		}

@@ -419,7 +419,8 @@ class CSVDriver extends FileDriver {
 		fm.buildList(path: filePath)
 		def filesParams = (p.isSplit)?[order: ['number']]:[:]
 		def files = fm.fileList.rows(filesParams)
-		if (files.isEmpty()) throw new ExceptionGETL("File(s) \"${cds.fileName}\" not found or invalid path \"${((CSVConnection)cds.connection).path}\"")
+		if (files.isEmpty())
+			throw new ExceptionGETL("File(s) \"${cds.fileName}\" not found or invalid path \"${((CSVConnection)cds.connection).path}\"")
 		Integer portion = 0
 		Reader bufReader = getFileReader(dataset, params, (Integer)files[portion].number)
 		

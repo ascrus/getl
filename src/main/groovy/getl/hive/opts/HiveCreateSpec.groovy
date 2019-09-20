@@ -26,6 +26,8 @@ package getl.hive.opts
 
 import getl.jdbc.opts.CreateSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Hive create table options
@@ -59,7 +61,9 @@ class HiveCreateSpec extends CreateSpec {
     /**
      * Generate new clustered options
      */
-    HiveClusteredSpec clustered(@DelegatesTo(HiveClusteredSpec) Closure cl = null) {
+    HiveClusteredSpec clustered(@DelegatesTo(HiveClusteredSpec)
+                                @ClosureParams(value = SimpleType, options = ['getl.hive.opts.HiveClusteredSpec'])
+                                        Closure cl = null) {
         def parent = new HiveClusteredSpec(_ownerObject, _thisObject, true, clustered)
         parent.runClosure(cl)
 
@@ -78,7 +82,9 @@ class HiveCreateSpec extends CreateSpec {
     /**
      * Generate new skewed options
      */
-    HiveSkewedSpec skewed(@DelegatesTo(HiveSkewedSpec) Closure cl = null) {
+    HiveSkewedSpec skewed(@DelegatesTo(HiveSkewedSpec)
+                          @ClosureParams(value = SimpleType, options = ['getl.hive.opts.HiveClusteredSpec'])
+                                  Closure cl = null) {
         def parent = new HiveSkewedSpec(_ownerObject, _thisObject, true, skewed)
         parent.runClosure(cl)
 

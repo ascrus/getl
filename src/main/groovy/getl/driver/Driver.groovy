@@ -78,7 +78,7 @@ abstract class Driver {
 
     abstract void disconnect ()
 
-    abstract List<Object> retrieveObjects (Map params, Closure filter)
+    abstract List<Object> retrieveObjects (Map params, Closure<Boolean> filter)
 
     abstract  List<Field> fields (Dataset dataset)
 

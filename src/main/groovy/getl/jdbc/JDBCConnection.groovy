@@ -30,6 +30,8 @@ import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.sql.Sql
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * JDBC connection class
@@ -341,25 +343,33 @@ class JDBCConnection extends Connection {
 	
 	/**
 	 * Return datasets list by parameters
+	 * @param params retrive params by specified connection driver
+	 * @filter user filter code
 	 */
-	List<TableDataset> retrieveDatasets (Map params, Closure code) {
+	List<InternalTableDataset> retrieveDatasets (Map params,
+										 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
+												 Closure<Boolean> filter = null) {
 		if (params == null) params = [:]
 		List<TableDataset> result = []
-		def o = retrieveObjects(params, code)
+		def o = retrieveObjects(params, filter)
 		o.each { Map row ->
-			TableDataset d = new TableDataset(connection: this, type: JDBCDataset.Type.UNKNOWN)
+			InternalTableDataset d
+			switch ((row.type as String)?.toUpperCase()) {
+				case 'TABLE':
+					d = new TableDataset(type: JDBCDataset.Type.TABLE)
+					break
+				case 'VIEW':
+					d = new ViewDataset(type: JDBCDataset.Type.VIEW)
+					break
+				default:
+					d = new JDBCDataset(type: JDBCDataset.Type.UNKNOWN)
+			}
+			d.connection = this
 			d.with {
 				d.autoSchema = true
 				d.dbName = row.dbName
 				d.schemaName = row.schemaName
 				d.tableName = row.tableName
-				if ((row.type as String)?.toUpperCase() == "TABLE") {
-					d.type = JDBCDataset.Type.TABLE
-				}
-				else if ((row.type as String)?.toUpperCase() == "VIEW") {
-					d.type = JDBCDataset.Type.VIEW
-				}
-				
 				d.description = row.description
 			}
 			result << d
@@ -378,17 +388,11 @@ class JDBCConnection extends Connection {
 	/**
 	 * Return datasets list
 	 */
-	List<Dataset> retrieveDatasets (Closure code) {
-		retrieveDatasets([:], code)
+	List<Dataset> retrieveDatasets (@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
+											Closure<Boolean> filter) {
+		retrieveDatasets([:], filter)
 	}
-	
-	/**
-	 * Return datasets list
-	 */
-	List<Dataset> retrieveDatasets (Map params) {
-		retrieveDatasets(params, null)
-	}
-	
+
 	@Override
 	String getObjectName () { toString() }
 	

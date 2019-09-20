@@ -24,6 +24,7 @@
 
 package getl.files
 
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import com.jcraft.jsch.*
 import getl.exception.ExceptionGETL
@@ -71,86 +72,72 @@ class SFTPManager extends Manager {
 		super.setRootPath(value)
 	}
 	
-	/**
-	 * Server address
-	 */
+	/** Server address */
 	String getServer () { params.server }
-
+	/** Server address */
 	void setServer (String value) { params.server = value }
 	
-	/**
-	 * Server port
-	 */
+	/** Server port */
 	Integer getPort () { (params.port != null)?(params.port as Integer):22 }
-
+	/** Server port */
 	void setPort (Integer value) { params.port = value }
 	
-	/**
-	 * Login user
-	 */
+	/** Login user */
 	String getLogin () { params.login }
-
+	/** Login user */
 	void setLogin (String value) { params.login = value }
 	
-	/**
-	 * Password user
-	 */
+	/** Password user */
 	String getPassword () { params.password }
-
+	/** Password user */
 	void setPassword (String value) { params.password = value }
 	
 	/**
 	 * Known hosts file name
-	 * <i>use "ssh-keyscan -t rsa <IP address>" for get key
+	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
 	String getKnownHostsFile () { params.knownHostsFile }
 	/**
 	 * Known hosts file name
-	 * <i>use "ssh-keyscan -t rsa <IP address>" for get key
+	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
 	void setKnownHostsFile (String value) { params.knownHostsFile = value }
 
 	/**
 	 * Host key
+	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
 	String getHostKey() { params.hostKey }
 	/**
 	 * Host key
+	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
 	void setHostKey(String value) { params.hostKey = value }
 	
-	/**
-	 * Identity file name
-	 * @return
-	 */
+	/** Identity file name */
 	String getIdentityFile () { params.identityFile }
-
+	/** Identity file name */
 	void setIdentityFile (String value) { params.identityFile = value }
 	
-	/**
-	 * Code page on command console
-	 */
+	/** Code page on command console */
 	String getCodePage () { params.codePage?:"utf-8" }
-
+	/** Code page on command console */
 	void setCodePage (String value) { params.codePage = value }
 	
-	/**
-	 * Alive interval (in seconds)
-	 */
+	/** Alive interval (in seconds) */
 	Integer getAliveInterval () { params."aliveInterval" as Integer }
-
+	/** Alive interval (in seconds) */
 	void setAliveInterval (Integer value) { params."aliveInterval" = value }
 	
-	/**
-	 * Alive retry count max
-	 */
+	/** Alive retry count max */
 	Integer getAliveCountMax () { params."aliveCountMax" as Integer }
-
+	/** Alive retry count max */
 	void setAliveCountMax (Integer value) { params."aliveCountMax" = value }
 	
 	@Override
 	boolean isCaseSensitiveName () { true }
-	
+
+	/** Create new session manager */
 	private Session newSession () {
 		Session s = client.getSession(login, server, port)
 		try {
@@ -234,11 +221,13 @@ class SFTPManager extends Manager {
 		Vector<ChannelSftp.LsEntry> listFiles
 		
 		@groovy.transform.CompileStatic
+		@Override
 		Integer size () {
 			listFiles.size()
 		}
 		
 		@groovy.transform.CompileStatic
+		@Override
 		Map item (int index) {
 			ChannelSftp.LsEntry item = listFiles.get(index)
 
@@ -261,6 +250,8 @@ class SFTPManager extends Manager {
 			file
 		}
 
+		@CompileStatic
+		@Override
 		void clear () {
 			listFiles.clear()
 		}
@@ -276,7 +267,7 @@ class SFTPManager extends Manager {
 		SFTPList res = new SFTPList()
 		res.listFiles = listFiles
 		
-		res
+		return res
 	}
 
 	@Override
@@ -285,7 +276,7 @@ class SFTPManager extends Manager {
 		def res = channelFtp.pwd()
 		writeScriptHistoryFile("PWD: \"$res\"")
 		
-		res
+		return res
 	}
 
 	@Override
@@ -533,5 +524,15 @@ class SFTPManager extends Manager {
 			"sftp $loginStr$server/$rootPath"
 
 		return res
+	}
+
+	/**
+	 * Perform operations on a manager
+	 * @param cl closure code
+	 * @return source manager
+	 */
+	SFTPManager dois(@DelegatesTo(SFTPManager) Closure cl) {
+		this.with(cl)
+		return this
 	}
 }
