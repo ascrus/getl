@@ -38,7 +38,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class H2Table extends InternalTableDataset {
+class H2Table extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof H2Connection))

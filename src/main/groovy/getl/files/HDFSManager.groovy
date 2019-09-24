@@ -150,7 +150,7 @@ class HDFSManager extends Manager {
             if (writeErrorsToLog) Logs.Severe("Path \"$path\" not found")
             throw new ExceptionGETL("Path \"$path\" not found")
         }
-        if (!client.exists(p) || !client.isDirectory(p)) {
+        if (!client.exists(p) || !client.isDirectory(p)) { /* todo: rewrite */
             if (writeErrorsToLog) Logs.Severe("Path \"$path\" non directory")
             throw new ExceptionGETL("Path \"$path\" non directory")
         }

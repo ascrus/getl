@@ -29,15 +29,14 @@ import getl.config.opts.*
 import getl.csv.*
 import getl.data.*
 import getl.db2.*
+import getl.deploy.Version
 import getl.driver.Driver
 import getl.excel.*
 import getl.exception.ExceptionGETL
 import getl.files.*
 import getl.h2.*
-import getl.h2.opts.*
 import getl.hive.*
 import getl.jdbc.*
-import getl.jdbc.opts.*
 import getl.json.*
 import getl.lang.opts.*
 import getl.mssql.*
@@ -52,7 +51,6 @@ import getl.stat.*
 import getl.tfs.*
 import getl.utils.*
 import getl.vertica.*
-import getl.vertica.opts.*
 import getl.xero.*
 import getl.xml.*
 import groovy.transform.InheritConstructors
@@ -80,7 +78,7 @@ class Getl extends Script {
     }
 
     private void init() {
-        getl.deploy.Version.SayInfo()
+        Version.SayInfo()
 
         _params.executedClasses = new SynchronizeObject()
 
@@ -132,6 +130,11 @@ class Getl extends Script {
         Dsl(null, null, null)
     }
 
+    /** Clean Getl instance */
+    static void CleanGetl() {
+        _getl = null
+    }
+
     /** Run DSL script */
     Getl runDsl(def ownerObject, Map parameters,
                 @DelegatesTo(Getl)
@@ -177,7 +180,6 @@ class Getl extends Script {
     public final String EXCELCONNECTION = 'getl.excel.ExcelConnection'
     public final String H2CONNECTION = 'getl.h2.H2Connection'
     public final String HIVECONNECTION = 'getl.hive.HiveConnection'
-    public final String JDBCCONNECTION = 'getl.jdbc.JDBCConnection'
     public final String JSONCONNECTION = 'getl.json.JSONConnection'
     public final String MSSQLCONNECTION = 'getl.mssql.MSSQLConnection'
     public final String MYSQLCONNECTION = 'getl.mysql.MySQLConnection'
@@ -191,10 +193,14 @@ class Getl extends Script {
     public final String XMLCONNECTION = 'getl.xml.XMLConnection'
 
     protected final List<String> listConnectionClasses = [
-            CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EXCELCONNECTION, H2CONNECTION, HIVECONNECTION,
-            JDBCCONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
-            POSTGRESQLCONNECTION, SALESFORCECONNECTION, EMBEDDEDCONNECTION, VERTICACONNECTION, XEROCONNECTION,
-            XMLCONNECTION
+            CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, H2CONNECTION,
+            HIVECONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
+            POSTGRESQLCONNECTION, SALESFORCECONNECTION, VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION
+    ]
+
+    protected final List<String> listJdbcConectionClasses = [
+            DB2CONNECTION, H2CONNECTION, HIVECONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETSUITECONNECTION,
+            ORACLECONNECTION, POSTGRESQLCONNECTION, VERTICACONNECTION
     ]
 
     public final String CSVDATASET = 'getl.csv.CSVDataset'
@@ -212,7 +218,6 @@ class Getl extends Script {
     public final String POSTGRESQLTABLE = 'getl.postgresql.PostgreSQLTable'
     public final String SALESFORCEDATASET = 'getl.salesforce.SalesForceDataset'
     public final String SALESFORCEQUERYDATASET = 'getl.salesforce.SalesForceQueryDataset'
-    public final String TABLEDATASET = 'getl.jdbc.TableDataset'
     public final String EMBEDDEDTABLE = 'getl.tfs.TDSTable'
     public final String VIEWDATASET = 'getl.jdbc.ViewDataset'
     public final String VERTICATABLE = 'getl.vertica.VerticaTable'
@@ -222,7 +227,12 @@ class Getl extends Script {
     protected final List<String> listDatasetClasses = [
             CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, H2TABLE, HIVETABLE, JSONDATASET, MSSQLTABLE,
             MYSQLTABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, SALESFORCEDATASET,
-            SALESFORCEQUERYDATASET, TABLEDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET, XMLDATASET
+            SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET, XMLDATASET
+    ]
+
+    protected final List<String> listJdbcTableClasses = [
+            DB2TABLE, H2TABLE, HIVETABLE, MSSQLTABLE, MYSQLTABLE, NETSUITETABLE, ORACLETABLE, POSTGRESQLTABLE,
+            VERTICATABLE
     ]
 
     public final String FILEMANAGER = 'getl.files.FileManager'
@@ -289,14 +299,18 @@ class Getl extends Script {
         _params.repConnections as Map<String, Map<String, Connection>>
     }
 
-    /** Return list of repository connections for specified class */
+    /** Return list of repository connections for specified mask and class */
     @Synchronized
-    Map<String, Connection> connectionList(String mask, String connectionClassName, Closure<Boolean> filter = null) {
-        if (connectionClassName != null && !(connectionClassName in listConnectionClasses))
-            throw new ExceptionGETL("$connectionClassName is not connection class!")
+    List<String> connectionList(String mask, List connectionClasses,
+                                           @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
+                                                   Closure<Boolean> filter = null) {
+        (connectionClasses as List<String>)?.each {
+            if (!(it in listConnectionClasses))
+                throw new ExceptionGETL("\"$it\" is not connection class!")
+        }
 
-        def sects = (connectionClassName != null)?([connectionClassName] as List<String>):connections.keySet().toList()
-        def res = [:] as Map<String, Connection>
+        def sects = (connectionClasses as List<String>)?:connections.keySet().toList()
+        def res = [] as List<String>
 
         mask = mask?:filterObjects
         def path = (mask != null)?new Path(mask: mask):null
@@ -305,7 +319,7 @@ class Getl extends Script {
             def sect = connections.get(sectName) as Map<String, Connection>
             sect?.each { String name, Connection connection ->
                 if (mask == null || path.match(name)) {
-                    if (filter == null || BoolUtils.IsValue(filter.call(name, connection))) res.put(name, connection)
+                    if (filter == null || BoolUtils.IsValue(filter.call(name, connection))) res << name
                 }
             }
         }
@@ -314,26 +328,45 @@ class Getl extends Script {
     }
 
     /** Process repository connections for specified mask and class */
-    void connectionProcess(String mask, String connectionClassName,
-                           @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection']) Closure cl) {
+    void connectionProcess(String mask, List connectionClasses,
+                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
             throw new ExceptionGETL('Process required closure code!')
 
         def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        connectionList(mask, connectionClassName).each { String name, Connection connection ->
-            code.call(name, connection)
+        def list = connectionList(mask, connectionClasses)
+        list.each { name ->
+            code.call(name)
         }
     }
 
     /** Process repository connections for specified mask */
     void connectionProcess(String mask,
-                           @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection']) Closure cl) {
+                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         connectionProcess(mask, null, cl)
     }
 
     /** Process all repository connections */
-    void connectionProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection']) Closure cl) {
+    void connectionProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         connectionProcess(null, null, cl)
+    }
+
+    /** Return list of repository jdbc connections for specified mask */
+    List<String> jdbcConnectionList(String mask, Closure<Boolean> filter = null) {
+        return connectionList(mask, listJdbcConectionClasses, filter)
+    }
+
+    /** Process repository jdbc connections for specified mask */
+    void jdbcConnectionProcess(String mask,
+                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        if (cl == null)
+            throw new ExceptionGETL('Process required closure code!')
+
+        def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
+        def list = jdbcConnectionList(mask)
+        list.each { name ->
+            code.call(name)
+        }
     }
 
     /** Check connection registration in repository */
@@ -351,6 +384,36 @@ class Getl extends Script {
         return sect.containsKey(name)
     }
 
+    /** Find class name from registered connection */
+    @SuppressWarnings("UnnecessaryQualifiedReference")
+    @Synchronized
+    protected String findClassConnection(String name) {
+        name = repObjectName(name)
+        String res = null
+        connections.each { className, values ->
+            if (values.containsKey(name)) {
+                res = className
+                directive = Closure.DONE
+            }
+        }
+        return res
+    }
+
+    /** Find class name from registered jdbc connection */
+    @SuppressWarnings("UnnecessaryQualifiedReference")
+    @Synchronized
+    protected String findClassJdbcConnection(String name) {
+        name = repObjectName(name)
+        String res = null
+        connections.each { className, values ->
+            if (className in listJdbcConectionClasses && values.containsKey(name)) {
+                res = className
+                directive = Closure.DONE
+            }
+        }
+        return res
+    }
+
     /** Register connection in repository */
     @Synchronized
     protected Connection registerConnection(String connectionClassName, String name, Boolean registration = false) {
@@ -366,6 +429,14 @@ class Getl extends Script {
             return c
         }
 
+        registration = BoolUtils.IsValue(registration)
+
+        if (registration) {
+            def existClassName = findClassConnection(name)
+            if (existClassName != null && existClassName != connectionClassName)
+                throw new ExceptionGETL("Connection \"$name\" already registered for class \"$existClassName\"!")
+        }
+
         def sect = connections.get(connectionClassName) as Map<String, Connection>
         if (sect == null) {
             sect = new ConcurrentHashMap<String, Connection>()
@@ -375,8 +446,8 @@ class Getl extends Script {
         def repName = repObjectName(name)
         def obj = sect.get(repName)
         if (obj == null) {
-            if ((!BoolUtils.IsValue(registration) && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
-                throw new ExceptionGETL("Connection \"$name\" with type \"$connectionClassName\" is not exist!")
+            if ((!registration && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
+                throw new ExceptionGETL("Connection \"$name\" with class \"$connectionClassName\" is not registered!")
 
             obj = Connection.CreateConnection(connection: connectionClassName) as Connection
             obj.sysParams.dslThisObject = childThisObject
@@ -410,8 +481,14 @@ class Getl extends Script {
         if (name == null) {
             obj.sysParams.dslThisObject = childThisObject
             obj.sysParams.dslOwnerObject = childOwnerObject
-            return
+            return obj
         }
+
+        validExist = BoolUtils.IsValue(validExist, true)
+
+        def existClassName = findClassConnection(name)
+        if (existClassName != null && existClassName != className)
+            throw new ExceptionGETL("Connection \"$name\" already registered for class \"$existClassName\"!")
 
         def sect = connections.get(className) as Map<String, Connection>
         if (sect == null) {
@@ -422,7 +499,7 @@ class Getl extends Script {
         def repName = repObjectName(name)
         if (sect.containsKey(repName)) {
             if (validExist)
-                throw new ExceptionGETL("Connection object \"$name\" already registered in repository!")
+                throw new ExceptionGETL("Connection \"$name\" already registered in repository!")
         }
         sect.put(repName, obj)
 
@@ -432,6 +509,25 @@ class Getl extends Script {
         return obj
     }
 
+    /**
+     * Unregister connections by a given mask or a list of their classes
+     * @param mask mask of objects (in Path format)
+     * @param connectionClasses list of processed connection classes
+     * @param filter filter for detect connections to unregister
+     */
+    @Synchronized
+    void unregisterConnection(String mask = null, List connectionClasses = null,
+                              @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
+                                      Closure<Boolean> filter = null) {
+        def list = connectionList(mask, connectionClasses, filter)
+        list.each { name ->
+            def connection = connection(name)
+            def className = connection.getClass().name
+            def sect = connections.get(className)
+            sect.remove(name)
+        }
+    }
+
     /** Tables repository */
     protected Map<String, Map<String, Dataset>> getDatasets() {
         _params.repDatasets as Map<String, Map<String, Dataset>>
@@ -439,12 +535,16 @@ class Getl extends Script {
 
     /** Return list of repository datasets for specified mask and class */
     @Synchronized
-    Map<String, Dataset> datasetList(String mask, String datasetClassName = null, Closure<Boolean> filter = null) {
-        if (datasetClassName != null && !(datasetClassName in listDatasetClasses))
-            throw new ExceptionGETL("$datasetClassName is not dataset class!")
+    List<String> datasetList(String mask, List datasetClasses = null,
+                                     @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
+                                             Closure<Boolean> filter = null) {
+        (datasetClasses as List<String>)?.each {
+            if (!(it in listDatasetClasses))
+                throw new ExceptionGETL("\"$it\" is not dataset class!")
+        }
 
-        def sects = (datasetClassName != null)?([datasetClassName] as List<String>):datasets.keySet().toList()
-        def res = [:] as Map<String, Dataset>
+        def sects = (datasetClasses as List<String>)?:datasets.keySet().toList()
+        def res = [] as List<String>
 
         mask = mask?:filterObjects
         def path = (mask != null)?new Path(mask: mask):null
@@ -453,7 +553,7 @@ class Getl extends Script {
             def sect = datasets.get(sectName) as Map<String, Dataset>
             sect?.each { String name, Dataset dataset ->
                 if (mask == null || path.match(name)) {
-                    if (filter == null || BoolUtils.IsValue(filter.call(name, dataset))) res.put(name, dataset)
+                    if (filter == null || BoolUtils.IsValue(filter.call(name, dataset))) res << name
                 }
             }
         }
@@ -462,26 +562,78 @@ class Getl extends Script {
     }
 
     /** Process repository datasets for specified mask and class */
-    void datasetProcess(String mask, String datasetClassName,
-                        @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset']) Closure cl) {
+    void datasetProcess(String mask, List datasetClasses,
+                        @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
             throw new ExceptionGETL('Process required closure code!')
 
         def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        datasetList(mask, datasetClassName).each { String name, Dataset dataset ->
-            code.call(name, dataset)
+        def list = datasetList(mask, datasetClasses)
+        list.each { name ->
+            code.call(name)
         }
     }
 
     /** Process repository datasets for specified mask */
     void datasetProcess(String mask,
-                        @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset']) Closure cl) {
+                        @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         datasetProcess(mask, null, cl)
     }
 
     /** Process all repository datasets */
-    void datasetProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset']) Closure cl) {
+    void datasetProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         datasetProcess(null, null, cl)
+    }
+
+    Map<String, String> datasetLinking(String sourceGroupMask, String destinationGroupMask,
+                                       @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.String'])
+                                               Closure<Boolean> filter = null) {
+        if (sourceGroupMask == null) throw new ExceptionGETL('Required to specify the value of the source group mask!')
+        if (destinationGroupMask == null) throw new ExceptionGETL('Required to specify the value of the destination group mask!')
+
+        def sourceList = datasetList(sourceGroupMask + '.*')
+        def destList = datasetList(destinationGroupMask + '.*')
+
+        def sourceTables = [:] as Map<String, String>
+        sourceList.each { name ->
+            sourceTables.put(name - sourceGroupMask, name)
+        }
+
+        def destTables = [:] as Map<String, String>
+        destList.each { name ->
+            destTables.put(name - destinationGroupMask, name)
+        }
+
+        def res = [:] as Map<String, String>
+        sourceTables.each { smallName, sourceFullName ->
+            def destFullName = destTables.get(smallName)
+            if (destFullName != null) res.put(sourceFullName, destFullName)
+        }
+
+        return res
+    }
+
+    /** Return list of repository tables for specified mask */
+    List<String> jdbcTableList(String mask, Closure<Boolean> filter = null) {
+        return datasetList(mask, listJdbcTableClasses, filter)
+    }
+
+    /** Process repository tables for specified mask */
+    void jdbcTableProcess(String mask,
+                          @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        if (cl == null)
+            throw new ExceptionGETL('Process required closure code!')
+
+        def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
+        def list = jdbcTableList(mask)
+        list.each { name ->
+            code.call(name)
+        }
+    }
+
+    /** Process all repository tables */
+    void jdbcTableProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        jdbcTableProcess(null, cl)
     }
 
     /** Set default connection for use in datasets */
@@ -536,11 +688,6 @@ class Getl extends Script {
         _params.lastJDBCDefaultConnection = value
 
         return value
-    }
-
-    /** Use default JDBC connection for new tables */
-    JDBCConnection useJdbcConnection(JDBCConnection connection) {
-        useJdbcConnection(TABLEDATASET, connection)
     }
 
     /** Last used file default connection */
@@ -619,6 +766,36 @@ class Getl extends Script {
         return sect.containsKey(name)
     }
 
+    /** Find class name from registered dataset */
+    @SuppressWarnings("UnnecessaryQualifiedReference")
+    @Synchronized
+    protected String findClassDataset(String name) {
+        name = repObjectName(name)
+        String res = null
+        datasets.each { className, values ->
+            if (values.containsKey(name)) {
+                res = className
+                directive = Closure.DONE
+            }
+        }
+        return res
+    }
+
+    /** Find class name from registered jdbc table */
+    @SuppressWarnings("UnnecessaryQualifiedReference")
+    @Synchronized
+    protected String findClassJdbcTable(String name) {
+        name = repObjectName(name)
+        String res = null
+        datasets.each { className, values ->
+            if (className in listJdbcTableClasses && values.containsKey(name)) {
+                res = className
+                directive = Closure.DONE
+            }
+        }
+        return res
+    }
+
     /** Register dataset in repository */
     @Synchronized
     protected Dataset registerDataset(Connection connection, String datasetClassName, String name, Boolean registration = false) {
@@ -651,66 +828,75 @@ class Getl extends Script {
                         }
                 ) as Connection
             }
+
+            return obj
         }
-        else {
-            def sect = datasets.get(datasetClassName) as Map<String, Dataset>
-            if (sect == null) {
-                sect = new ConcurrentHashMap<String, Dataset>()
-                datasets.put(datasetClassName, sect)
+
+        registration = BoolUtils.IsValue(registration)
+
+        if (registration) {
+            def existClassName = findClassDataset(name)
+            if (existClassName != null && existClassName != datasetClassName)
+                throw new ExceptionGETL("Dataset \"$name\" already registered for class \"$existClassName\"!")
+        }
+
+        def sect = datasets.get(datasetClassName) as Map<String, Dataset>
+        if (sect == null) {
+            sect = new ConcurrentHashMap<String, Dataset>()
+            datasets.put(datasetClassName, sect)
+        }
+
+        def repName = repObjectName(name)
+        obj = sect.get(repName)
+        if (obj == null) {
+            if ((!registration && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
+                throw new ExceptionGETL("Dataset \"$name\" with class \"$datasetClassName\" is not registered!")
+
+            obj = Dataset.CreateDataset(dataset: datasetClassName) as Dataset
+            obj.sysParams.dslThisObject = childThisObject
+            obj.sysParams.dslOwnerObject = childOwnerObject
+
+            if (connection != null) {
+                obj.connection = connection
             }
-
-            def repName = repObjectName(name)
-            obj = sect.get(repName)
-            if (obj == null) {
-                if ((!BoolUtils.IsValue(registration) && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
-                    throw new ExceptionGETL("Dataset \"$name\" with type \"$datasetClassName\" is not exist!")
-
-                obj = Dataset.CreateDataset(dataset: datasetClassName) as Dataset
-                obj.sysParams.dslThisObject = childThisObject
-                obj.sysParams.dslOwnerObject = childOwnerObject
-
-                if (connection != null) {
-                    obj.connection = connection
-                }
-                else {
-                    setDefaultConnection(datasetClassName, obj)
-                }
-                sect.put(repName, obj)
+            else {
+                setDefaultConnection(datasetClassName, obj)
             }
+            sect.put(repName, obj)
+        }
 
-            if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
-                def thread = Thread.currentThread() as ExecutorThread
-                if (obj.connection != null) {
-                    def cloneConnection = thread.registerCloneObject('connections', obj.connection,
-                            {
-                                def c = (it as Connection).cloneConnection()
-                                if (connection == null) {
-                                    c.sysParams.dslThisObject = childThisObject
-                                    c.sysParams.dslOwnerObject = childOwnerObject
-                                }
-                                return c
+        if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+            def thread = Thread.currentThread() as ExecutorThread
+            if (obj.connection != null) {
+                def cloneConnection = thread.registerCloneObject('connections', obj.connection,
+                        {
+                            def c = (it as Connection).cloneConnection()
+                            if (connection == null) {
+                                c.sysParams.dslThisObject = childThisObject
+                                c.sysParams.dslOwnerObject = childOwnerObject
                             }
-                    ) as Connection
+                            return c
+                        }
+                ) as Connection
 
-                    obj = thread.registerCloneObject('datasets', obj,
-                            {
-                                def d = (it as Dataset).cloneDataset(cloneConnection)
-                                d.sysParams.dslThisObject = childThisObject
-                                d.sysParams.dslOwnerObject = childOwnerObject
-                                return d
-                            }
-                    ) as Dataset
-                }
-                else {
-                    obj = thread.registerCloneObject('datasets', obj,
-                            {
-                                def d = (it as Dataset).cloneDataset()
-                                d.sysParams.dslThisObject = childThisObject
-                                d.sysParams.dslOwnerObject = childOwnerObject
-                                return d
-                            }
-                    ) as Dataset
-                }
+                obj = thread.registerCloneObject('datasets', obj,
+                        {
+                            def d = (it as Dataset).cloneDataset(cloneConnection)
+                            d.sysParams.dslThisObject = childThisObject
+                            d.sysParams.dslOwnerObject = childOwnerObject
+                            return d
+                        }
+                ) as Dataset
+            }
+            else {
+                obj = thread.registerCloneObject('datasets', obj,
+                        {
+                            def d = (it as Dataset).cloneDataset()
+                            d.sysParams.dslThisObject = childThisObject
+                            d.sysParams.dslOwnerObject = childOwnerObject
+                            return d
+                        }
+                ) as Dataset
             }
         }
 
@@ -735,8 +921,14 @@ class Getl extends Script {
         if (name == null) {
             obj.sysParams.dslThisObject = childThisObject
             obj.sysParams.dslOwnerObject = childOwnerObject
-            return
+            return obj
         }
+
+        validExist = BoolUtils.IsValue(validExist, true)
+
+        def existClassName = findClassDataset(name)
+        if (existClassName != null && existClassName != className)
+            throw new ExceptionGETL("Dataset \"$name\" already registered for class \"$existClassName\"!")
 
         def sect = datasets.get(className) as Map<String, Dataset>
         if (sect == null) {
@@ -745,13 +937,26 @@ class Getl extends Script {
         }
 
         def repName = repObjectName(name)
-        if (validExist && sect.containsKey(repName)) throw new ExceptionGETL("Dataset object \"$name\" already registered in repository!")
+        if (validExist && sect.containsKey(repName)) throw new ExceptionGETL("Dataset \"$name\" already registered in repository!")
         sect.put(repName, obj)
 
         obj.sysParams.dslThisObject = childThisObject
         obj.sysParams.dslOwnerObject = childOwnerObject
 
         return obj
+    }
+
+    @Synchronized
+    void unregisterDataset(String mask = null, List datasetClasses = null,
+                              @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
+                                      Closure<Boolean> filter = null) {
+        def list = datasetList(mask, datasetClasses, filter)
+        list.each { name ->
+            def dataset = dataset(name)
+            def className = dataset.getClass().name
+            def sect = datasets.get(className)
+            sect.remove(name)
+        }
     }
 
     /** Create CSV temporary dataset for dataset */
@@ -824,7 +1029,7 @@ class Getl extends Script {
                             p.sysParams.dslOwnerObject = childOwnerObject
                             return p
                         }
-                ) as Connection
+                ) as JDBCConnection
             }
         }
         else {
@@ -885,12 +1090,16 @@ class Getl extends Script {
 
     /** Return list of repository file managers for specified class */
     @Synchronized
-    Map<String, Manager> filemanagerList(String mask, String fileManagerClassName, Closure<Boolean> filter = null) {
-        if (fileManagerClassName != null && !(fileManagerClassName in listFileManagerClasses))
-            throw new ExceptionGETL("$fileManagerClassName is not file manager class!")
+    List<String> filemanagerList(String mask, List filemanagerClasses,
+                                         @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
+                                                 Closure<Boolean> filter = null) {
+        (filemanagerClasses as List<String>)?.each {
+            if (!(it in listFileManagerClasses))
+                throw new ExceptionGETL("\"$it\" is not file manager class!")
+        }
 
-        def sects = (fileManagerClassName != null)?([fileManagerClassName] as List<String>):fileManagers.keySet().toList()
-        def res = [:] as Map<String, Manager>
+        def sects = (filemanagerClasses as List<String>)?:fileManagers.keySet().toList()
+        def res = [] as List<String>
 
         mask = mask?:filterObjects
         def path = (mask != null)?new Path(mask: mask):null
@@ -899,7 +1108,7 @@ class Getl extends Script {
             def sect = fileManagers.get(sectName) as Map<String, Manager>
             sect?.each { String name, Manager manager ->
                 if (mask == null || path.match(name)) {
-                    if (filter == null || BoolUtils.IsValue(filter.call(name, manager))) res.put(name, manager)
+                    if (filter == null || BoolUtils.IsValue(filter.call(name, manager))) res << name
                 }
             }
         }
@@ -908,25 +1117,25 @@ class Getl extends Script {
     }
 
     /** Process repository file managers for specified mask and class */
-    void filemanagerProcess(String mask, String fileManagerClassName,
-                            @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager']) Closure cl) {
+    void filemanagerProcess(String mask, List<String> filemanagerClasses,
+                            @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
             throw new ExceptionGETL('Process required closure code!')
 
         def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        filemanagerList(mask, fileManagerClassName).each { String name, Manager manager ->
-            code.call(name, manager)
+        filemanagerList(mask, filemanagerClasses).each { name ->
+            code.call(name)
         }
     }
 
     /** Process repository file managers for specified mask */
     void filemanagerProcess(String mask,
-                            @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager']) Closure cl) {
+                            @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         filemanagerProcess(mask, null, cl)
     }
 
     /** Process all repository file managers */
-    void filemanagerProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager']) Closure  cl) {
+    void filemanagerProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure  cl) {
         filemanagerProcess(null, null, cl)
     }
 
@@ -944,6 +1153,21 @@ class Getl extends Script {
         return sect.containsKey(name)
     }
 
+    /** Find class name from registered jdbc table */
+    @SuppressWarnings("UnnecessaryQualifiedReference")
+    @Synchronized
+    protected String findClassFileManager(String name) {
+        name = repObjectName(name)
+        String res = null
+        fileManagers.each { className, values ->
+            if (values.containsKey(name)) {
+                res = className
+                directive = Closure.DONE
+            }
+        }
+        return res
+    }
+
     /** Register file manager in repository */
     @Synchronized
     protected Manager registerFileManager(String fileManagerClassName, String name, Boolean registration = false) {
@@ -959,6 +1183,14 @@ class Getl extends Script {
             return obj
         }
 
+        registration = BoolUtils.IsValue(registration)
+
+        if (registration) {
+            def existClassName = findClassFileManager(name)
+            if (existClassName != null && existClassName != fileManagerClassName)
+                throw new ExceptionGETL("File manager \"$name\" already registered for class \"$existClassName\"!")
+        }
+
         def sect = fileManagers.get(fileManagerClassName) as Map<String, Manager>
         if (sect == null) {
             sect = new ConcurrentHashMap<String, Manager>()
@@ -968,8 +1200,8 @@ class Getl extends Script {
         def repName = repObjectName(name)
         def obj = sect.get(repName)
         if (obj == null) {
-            if ((!BoolUtils.IsValue(registration) && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
-                throw new ExceptionGETL("File manager \"$name\" with type \"$fileManagerClassName\" is not exist!")
+            if ((!registration && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
+                throw new ExceptionGETL("File manager \"$name\" with class \"$fileManagerClassName\" is not registered!")
 
             obj = Manager.CreateManager(manager: fileManagerClassName) as Manager
             obj.sysParams.dslThisObject = childThisObject
@@ -1003,8 +1235,14 @@ class Getl extends Script {
         if (name == null) {
             obj.sysParams.dslThisObject = childThisObject
             obj.sysParams.dslOwnerObject = childOwnerObject
-            return
+            return obj
         }
+
+        validExist = BoolUtils.IsValue(validExist, true)
+
+        def existClassName = findClassFileManager(name)
+        if (existClassName != null && existClassName != className)
+            throw new ExceptionGETL("File manager \"$name\" already registered for class \"$existClassName\"!")
 
         def sect = fileManagers.get(className) as Map<String, Manager>
         if (sect == null) {
@@ -1013,13 +1251,26 @@ class Getl extends Script {
         }
 
         def repName = repObjectName(name)
-        if (validExist && sect.containsKey(repName)) throw new ExceptionGETL("File manager object \"$name\" already registered in repository!")
+        if (validExist && sect.containsKey(repName)) throw new ExceptionGETL("File manager \"$name\" already registered in repository!")
         sect.put(repName, obj)
 
         obj.sysParams.dslThisObject = childThisObject
         obj.sysParams.dslOwnerObject = childOwnerObject
 
         return obj
+    }
+
+    @Synchronized
+    void unregisterFileManager(String mask = null, List filemanagerClasses = null,
+                           @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
+                                   Closure<Boolean> filter = null) {
+        def list = filemanagerList(mask, filemanagerClasses, filter)
+        list.each { name ->
+            def filemanager = fileManager(name)
+            def className = filemanager.getClass().name
+            def sect = fileManagers.get(className)
+            sect.remove(name)
+        }
     }
 
     /** Load and run groovy script file */
@@ -1039,7 +1290,7 @@ class Getl extends Script {
     public Map<String, Object> scriptArgs = [:]
 
     /** Load and run groovy script by class */
-    void runGroovyClass(Class groovyClass, Boolean runOnce, Map<String, Object> vars = [:]) {
+    void runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:]) {
         def className = groovyClass.name
         def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
         if (previouslyRun && BoolUtils.IsValue(runOnce)) return
@@ -1050,13 +1301,13 @@ class Getl extends Script {
             scriptGetl.setGetlParams(_params)
             scriptGetl.setLangOpts(langOpts)
         }
-        script.binding = new Binding([scriptArgs: MapUtils.DeepCopy(vars)?:([:] as Map<String, Object>)])
+        script.binding = new Binding([scriptArgs: vars?.clone()?:[:]])
         if (!previouslyRun) executedClasses.addToList(className)
         script.run()
     }
 
     /** Load and run groovy script by class */
-    void runGroovyClass(Class groovyClass, Map<String, Object> vars = [:]) {
+    void runGroovyClass(Class groovyClass, Map vars = [:]) {
         runGroovyClass(groovyClass, false, vars)
     }
 
@@ -1068,7 +1319,7 @@ class Getl extends Script {
 
     /** Preparing closure code for specified object */
     static Closure PrepareClosure(def ownerObject, def thisObject, def parent, Closure cl) {
-        if (cl == null) return
+        if (cl == null) return null
         def code = cl.rehydrate(parent, ownerObject, thisObject)
         code.resolveStrategy = childDelegate
         return code
@@ -1156,7 +1407,7 @@ class Getl extends Script {
     static void logConfig(def msg) { Logs.Config(msg.toString()) }
 
     /** System temporary directory */
-    static String systemTempPath() { TFS.systemPath }
+    static String getSystemTempPath() { TFS.systemPath }
 
     /** GETL DSL options */
     LangSpec options(@DelegatesTo(LangSpec)
@@ -1169,7 +1420,7 @@ class Getl extends Script {
     /** Configuration options */
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ConfigSpec']) Closure cl = null) {
-        if (Config.configClassManager != ConfigSlurper) Config.configClassManager = new ConfigSlurper()
+        if (!(Config.configClassManager instanceof ConfigSlurper)) Config.configClassManager = new ConfigSlurper()
         def parent = new ConfigSpec(childOwnerObject, childThisObject, false, null)
         parent.runClosure(cl)
 
@@ -1185,59 +1436,58 @@ class Getl extends Script {
         return parent
     }
 
-    /** JDBC connection */
-    protected JDBCConnection jdbcConnection(String name, String connectionClassName, Boolean registration = false,
-                                  @DelegatesTo(JDBCConnection)
-                                  @ClosureParams(value = SimpleType, options = ['getl.jdbc.JDBCConnection']) Closure cl = null) {
-        def parent = registerConnection(connectionClassName?:JDBCCONNECTION, name, registration) as JDBCConnection
+    /** Exist jdbc connection */
+    Connection connection(String name,
+                                  @DelegatesTo(Connection)
+                                  @ClosureParams(value = SimpleType, options = ['getl.data.Connection']) Closure cl = null) {
+        if (name == null) throw new ExceptionGETL('Need connection name value!')
+        def className = findClassConnection(name)
+        if (className == null) throw new ExceptionGETL("Connection \"$name\" not found!")
+
+        def parent = registerConnection(className, name, false) as Connection
         runClosure(parent, cl)
 
         return parent
     }
 
-    /** JDBC connection */
-    protected JDBCConnection jdbcConnection(String name, Boolean registration,
-                                  @DelegatesTo(JDBCConnection)
-                                  @ClosureParams(value = SimpleType, options = ['getl.jdbc.JDBCConnection']) Closure cl = null) {
-        jdbcConnection(name, null, registration, cl)
-    }
-
-    /** JDBC connection */
-    protected JDBCConnection jdbcConnection(String name,
-                                            @DelegatesTo(JDBCConnection)
-                                            @ClosureParams(value = SimpleType, options = ['getl.jdbc.JDBCConnection']) Closure cl = null) {
-        jdbcConnection(name, null, false, cl)
-    }
-
-    /** JDBC connection */
-    protected JDBCConnection jdbcConnection(@DelegatesTo(JDBCConnection)
-                                            @ClosureParams(value = SimpleType, options = ['getl.jdbc.JDBCConnection']) Closure cl) {
-        jdbcConnection(null, null, false, cl)
-    }
-
-    /** JDBC table */
-    TableDataset table(String name, Boolean registration,
-                       @DelegatesTo(TableDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset']) Closure cl) {
-        def isRegistered = isRegisteredDataset(TABLEDATASET, name)
-        def parent = registerDataset(TABLEDATASET, name, registration) as TableDataset
+    /** Exist dataset */
+    Dataset dataset(String name,
+                    @DelegatesTo(Dataset)
+                    @ClosureParams(value = SimpleType, options = ['getl.data.Dataset']) Closure cl = null) {
+        if (name == null) throw new ExceptionGETL('Need table name value!')
+        def className = findClassDataset(name)
+        if (className == null) throw new ExceptionGETL("Dataset \"$name\" not found!")
+        def parent = registerDataset(className, name, false) as Dataset
         runClosure(parent, cl)
-        if (langOpts.autoCSVTempForJDBDTables && !BoolUtils.IsValue(isRegistered)) createCsvTemp(name, parent)
 
         return parent
     }
 
-    /** JDBC table */
-    TableDataset table(String name,
-                       @DelegatesTo(TableDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset']) Closure cl = null) {
-        table(name, false, cl)
+    /** Exist jdbc connection */
+    JDBCConnection jdbcConnection(String name,
+                               @DelegatesTo(JDBCConnection)
+                               @ClosureParams(value = SimpleType, options = ['getl.jdbc.JDBCConnection']) Closure cl = null) {
+        if (name == null) throw new ExceptionGETL('Need connection name value!')
+        def className = findClassJdbcConnection(name)
+        if (className == null) throw new ExceptionGETL("Jdbc connection \"$name\" not found!")
+
+        def parent = registerConnection(className, name, false) as JDBCConnection
+        runClosure(parent, cl)
+
+        return parent
     }
 
-    /** JDBC table */
-    TableDataset table(@DelegatesTo(TableDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset']) Closure cl) {
-        table(null, false, cl)
+    /** Exist jdbc table */
+    TableDataset jdbcTable(String name,
+                                   @DelegatesTo(TableDataset)
+                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset']) Closure cl = null) {
+        if (name == null) throw new ExceptionGETL('Need table name value!')
+        def className = findClassJdbcTable(name)
+        if (className == null) throw new ExceptionGETL("Table \"$name\" not found!")
+        def parent = registerDataset(className, name, false) as TableDataset
+        runClosure(parent, cl)
+
+        return parent
     }
 
     /** JDBC view dataset */
@@ -1283,7 +1533,10 @@ class Getl extends Script {
     H2Connection h2Connection(String name, Boolean registration,
                               @DelegatesTo(H2Connection)
                               @ClosureParams(value = SimpleType, options = ['getl.h2.H2Connection']) Closure cl) {
-        jdbcConnection(name, H2CONNECTION, registration, cl) as H2Connection
+        def parent = registerConnection(H2CONNECTION, name, registration) as H2Connection
+        runClosure(parent, cl)
+
+        return parent
     }
 
     /** H2 connection */
@@ -1301,7 +1554,7 @@ class Getl extends Script {
 
     /** H2 current connection */
     H2Connection h2Connection() {
-        defaultJdbcConnection(H2TABLE)
+        defaultJdbcConnection(H2TABLE) as H2Connection
     }
 
     /** Use default H2 connection for new datasets */
@@ -1343,14 +1596,18 @@ class Getl extends Script {
     DB2Connection db2Connection(String name, Boolean registration,
                                 @DelegatesTo(DB2Connection)
                                 @ClosureParams(value = SimpleType, options = ['getl.db2.DB2Connection']) Closure cl) {
-        jdbcConnection(name, DB2CONNECTION, registration, cl) as DB2Connection
+        def parent = registerConnection(DB2CONNECTION, name, registration) as DB2Connection
+        runClosure(parent, cl)
+
+        return parent
+
     }
 
     /** DB2 connection */
     DB2Connection db2Connection(String name,
                                 @DelegatesTo(DB2Connection)
                                 @ClosureParams(value = SimpleType, options = ['getl.db2.DB2Connection']) Closure cl = null) {
-        jdbcConnection(name, DB2CONNECTION, false, cl) as DB2Connection
+        db2Connection(name, false, cl)
     }
 
     /** DB2 connection */
@@ -1361,7 +1618,7 @@ class Getl extends Script {
 
     /** DB2 current connection */
     DB2Connection db2Connection() {
-        defaultJdbcConnection(DB2TABLE)
+        defaultJdbcConnection(DB2TABLE) as DB2Connection
     }
 
     /** Use default DB2 connection for new datasets */
@@ -1398,7 +1655,10 @@ class Getl extends Script {
     HiveConnection hiveConnection(String name, Boolean registration,
                                   @DelegatesTo(HiveConnection)
                                   @ClosureParams(value = SimpleType, options = ['getl.hive.HiveConnection']) Closure cl) {
-        jdbcConnection(name, HIVECONNECTION, registration, cl) as HiveConnection
+        def parent = registerConnection(HIVECONNECTION, name, registration) as HiveConnection
+        runClosure(parent, cl)
+
+        return parent
     }
 
     /** Hive connection */
@@ -1416,7 +1676,7 @@ class Getl extends Script {
 
     /** Hive current connection */
     HiveConnection hiveConnection() {
-        defaultJdbcConnection(HIVETABLE)
+        defaultJdbcConnection(HIVETABLE) as HiveConnection
     }
 
     /** Use default Hive connection for new datasets */
@@ -1453,7 +1713,10 @@ class Getl extends Script {
     MSSQLConnection mssqlConnection(String name, Boolean registration,
                                     @DelegatesTo(MSSQLConnection)
                                     @ClosureParams(value = SimpleType, options = ['getl.mssql.MSSQLConnection']) Closure cl) {
-        jdbcConnection(name, MSSQLCONNECTION, registration, cl) as MSSQLConnection
+        def parent = registerConnection(MSSQLCONNECTION, name, registration) as MSSQLConnection
+        runClosure(parent, cl)
+
+        return parent
     }
 
     /** MSSQL connection */
@@ -1471,7 +1734,7 @@ class Getl extends Script {
 
     /** MSSQL current connection */
     MSSQLConnection mssqlConnection() {
-        defaultJdbcConnection(MSSQLTABLE)
+        defaultJdbcConnection(MSSQLTABLE) as MSSQLConnection
     }
 
     /** Use default MSSQL connection for new datasets */
@@ -1508,7 +1771,10 @@ class Getl extends Script {
     MySQLConnection mysqlConnection(String name, Boolean registration,
                                     @DelegatesTo(MySQLConnection)
                                     @ClosureParams(value = SimpleType, options = ['getl.mysql.MySQLConnection']) Closure cl) {
-        jdbcConnection(name, MYSQLCONNECTION, registration, cl) as MySQLConnection
+        def parent = registerConnection(MYSQLCONNECTION, name, registration) as MySQLConnection
+        runClosure(parent, cl)
+
+        return parent
     }
 
     /** MySQL connection */
@@ -1526,7 +1792,7 @@ class Getl extends Script {
 
     /** MySQL current connection */
     MySQLConnection mysqlConnection() {
-        defaultJdbcConnection(MYSQLTABLE)
+        defaultJdbcConnection(MYSQLTABLE) as MySQLConnection
     }
 
     /** Use default MySQL connection for new datasets */
@@ -1563,7 +1829,10 @@ class Getl extends Script {
     OracleConnection oracleConnection(String name, Boolean registration,
                                       @DelegatesTo(OracleConnection)
                                       @ClosureParams(value = SimpleType, options = ['getl.oracle.OracleConnection']) Closure cl) {
-        jdbcConnection(name, ORACLECONNECTION, registration, cl) as OracleConnection
+        def parent = registerConnection(ORACLECONNECTION, name, registration) as OracleConnection
+        runClosure(parent, cl)
+
+        return parent
     }
 
     /** Oracle connection */
@@ -1581,7 +1850,7 @@ class Getl extends Script {
 
     /** Oracle current connection */
     OracleConnection oracleConnection() {
-        defaultJdbcConnection(ORACLETABLE)
+        defaultJdbcConnection(ORACLETABLE) as OracleConnection
     }
 
     /** Use default Oracle connection for new datasets */
@@ -1618,7 +1887,10 @@ class Getl extends Script {
     PostgreSQLConnection postgresqlConnection(String name, Boolean registration,
                                               @DelegatesTo(PostgreSQLConnection)
                                               @ClosureParams(value = SimpleType, options = ['getl.postgresql.PostgreSQLConnection']) Closure cl) {
-        jdbcConnection(name, POSTGRESQLCONNECTION, registration, cl) as PostgreSQLConnection
+        def parent = registerConnection(POSTGRESQLCONNECTION, name, registration) as PostgreSQLConnection
+        runClosure(parent, cl)
+
+        return parent
     }
 
     /** PostgreSQL connection */
@@ -1636,7 +1908,7 @@ class Getl extends Script {
 
     /** PostgreSQL default connection */
     PostgreSQLConnection postgresqlConnection() {
-        defaultJdbcConnection(POSTGRESQLTABLE)
+        defaultJdbcConnection(POSTGRESQLTABLE) as PostgreSQLConnection
     }
 
     /** Use default PostgreSQL connection for new datasets */
@@ -1674,7 +1946,10 @@ class Getl extends Script {
     VerticaConnection verticaConnection(String name, Boolean registration,
                                         @DelegatesTo(VerticaConnection)
                                         @ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaConnection']) Closure cl) {
-        jdbcConnection(name, VERTICACONNECTION, registration, cl) as VerticaConnection
+        def parent = registerConnection(VERTICACONNECTION, name, registration) as VerticaConnection
+        runClosure(parent, cl)
+
+        return parent
     }
 
     /** Vertica connection */
@@ -1692,7 +1967,7 @@ class Getl extends Script {
 
     /** Vertica default connection */
     VerticaConnection verticaConnection() {
-        defaultJdbcConnection(VERTICATABLE)
+        defaultJdbcConnection(VERTICATABLE) as VerticaConnection
     }
 
     /** Use default Vertica connection for new datasets */
@@ -1729,7 +2004,10 @@ class Getl extends Script {
     NetsuiteConnection netsuiteConnection(String name, Boolean registration,
                                           @DelegatesTo(NetsuiteConnection)
                                           @ClosureParams(value = SimpleType, options = ['getl.netsuite.NetsuiteConnection']) Closure cl) {
-        jdbcConnection(name, NETSUITECONNECTION, registration, cl) as NetsuiteConnection
+        def parent = registerConnection(NETSUITECONNECTION, name, registration) as NetsuiteConnection
+        runClosure(parent, cl)
+
+        return parent
     }
 
     /** NetSuite connection */
@@ -1747,7 +2025,7 @@ class Getl extends Script {
 
     /** NetSuite default connection */
     NetsuiteConnection netsuiteConnection() {
-        defaultJdbcConnection(NETSUITETABLE)
+        defaultJdbcConnection(NETSUITETABLE) as NetsuiteConnection
     }
 
     /** Use default Netsuite connection for new datasets */
@@ -1794,18 +2072,18 @@ class Getl extends Script {
     TDS embeddedConnection(String name,
                            @DelegatesTo(TDS)
                            @ClosureParams(value = SimpleType, options = ['getl.tfs.TDS']) Closure cl = null) {
-        embeddedConnection(name, true, cl)
+        embeddedConnection(name, false, cl)
     }
 
     /** Temporary database connection */
     TDS embeddedConnection(@DelegatesTo(TDS)
                            @ClosureParams(value = SimpleType, options = ['getl.tfs.TDS']) Closure cl) {
-        embeddedConnection(null, true, cl)
+        embeddedConnection(null, false, cl)
     }
 
     /** Temporary database default connection */
     TDS embeddedConnection() {
-        defaultJdbcConnection(EMBEDDEDTABLE)
+        defaultJdbcConnection(EMBEDDEDTABLE) as TDS
     }
 
     /** Table with temporary database */
@@ -1828,7 +2106,7 @@ class Getl extends Script {
     TDSTable embeddedTable(String name,
                            @DelegatesTo(TDSTable)
                            @ClosureParams(value = SimpleType, options = ['getl.tfs.TDSTable']) Closure cl = null) {
-        embeddedTable(name, true, cl)
+        embeddedTable(name, false, cl)
     }
 
     /** Table with temporary database */
@@ -1853,7 +2131,7 @@ class Getl extends Script {
             (parent.connection as TDS).sqlHistoryFile = langOpts.tempDBSQLHistoryFile
         if (!parent.exists) parent.create()
 
-        registerDataset(parent, name, false)
+        registerDataset(parent, name, true)
         runClosure(parent, cl)
 
         return parent
@@ -1956,7 +2234,7 @@ class Getl extends Script {
 
     /** CSV default connection */
     CSVConnection csvConnection() {
-        defaultFileConnection(CSVDATASET)
+        defaultFileConnection(CSVDATASET) as CSVConnection
     }
 
     /** Use default CSV connection for new datasets */
@@ -2005,14 +2283,14 @@ class Getl extends Script {
     CSVDataset csvWithDataset(String name, Dataset sourceDataset,
                               @DelegatesTo(CSVDataset)
                               @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl = null) {
-        csvWithDataset(name, sourceDataset, true, cl)
+        csvWithDataset(name, sourceDataset, false, cl)
     }
 
     /** CSV file with exists dataset */
     CSVDataset csvWithDataset(Dataset sourceDataset,
                               @DelegatesTo(CSVDataset)
                               @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl = null) {
-        csvWithDataset(null, sourceDataset, true, cl)
+        csvWithDataset(null, sourceDataset, false, cl)
     }
 
     /** Excel connection */
@@ -2040,7 +2318,7 @@ class Getl extends Script {
 
     /** Excel default connection */
     ExcelConnection excelConnection() {
-        defaultFileConnection(EXCELDATASET)
+        defaultFileConnection(EXCELDATASET) as ExcelConnection
     }
 
     /** Use default Excel connection for new datasets */
@@ -2097,7 +2375,7 @@ class Getl extends Script {
 
     /** JSON default connection */
     JSONConnection jsonConnection() {
-        defaultFileConnection(JSONDATASET)
+        defaultFileConnection(JSONDATASET) as JSONConnection
     }
 
     /** Use default Json connection for new datasets */
@@ -2154,12 +2432,12 @@ class Getl extends Script {
 
     /** XML default connection */
     XMLConnection xmlConnection() {
-        defaultFileConnection(XMLDATASET)
+        defaultFileConnection(XMLDATASET) as XMLConnection
     }
 
     /** Use default XML connection for new datasets */
     XMLConnection useXmlConnection(XMLConnection connection) {
-        useFileConnection(XMLConnection, connection) as XMLConnection
+        useFileConnection(XMLCONNECTION, connection) as XMLConnection
     }
 
     /** XML file */
@@ -2211,7 +2489,7 @@ class Getl extends Script {
 
     /** SalesForce default connection */
     SalesForceConnection salesforceConnection() {
-        defaultOtherConnection(SALESFORCEDATASET)
+        defaultOtherConnection(SALESFORCEDATASET) as SalesForceConnection
     }
 
     /** Use default SalesForce connection for new datasets */
@@ -2290,7 +2568,7 @@ class Getl extends Script {
 
     /** Xero default connection */
     XeroConnection xeroConnection() {
-        defaultOtherConnection(XERODATASET)
+        defaultOtherConnection(XERODATASET) as XeroConnection
     }
 
     /** Use default Xero connection for new datasets */
@@ -2325,7 +2603,7 @@ class Getl extends Script {
     TFS csvTempConnection(String name, Boolean registration,
                           @DelegatesTo(TFS)
                           @ClosureParams(value = SimpleType, options = ['getl.tfs.TFS']) Closure cl) {
-        def parent = registerConnection(CSVTEMPDATASET, name, registration)
+        def parent = registerConnection(CSVTEMPDATASET, name, registration) as TFS
         runClosure(parent, cl)
 
         return parent
@@ -2335,7 +2613,7 @@ class Getl extends Script {
     TFS csvTempConnection(String name,
                           @DelegatesTo(TFS)
                           @ClosureParams(value = SimpleType, options = ['getl.tfs.TFS']) Closure cl = null) {
-        csvTempConnection(name, true, cl)
+        csvTempConnection(name, false, cl)
     }
 
     /** Temporary CSV file connection */
@@ -2346,7 +2624,7 @@ class Getl extends Script {
 
     /** Temporary CSV file current connection */
     TFS csvTempConnection() {
-        defaultFileConnection(CSVTEMPDATASET)
+        defaultFileConnection(CSVTEMPDATASET) as TFS
     }
 
     /** Use default CSV temporary connection for new datasets */
@@ -2368,7 +2646,7 @@ class Getl extends Script {
     TFSDataset csvTemp(String name,
                        @DelegatesTo(TFSDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
-        csvTemp(name, true, cl)
+        csvTemp(name, false, cl)
     }
 
     /** Temporary CSV file */
@@ -2382,8 +2660,8 @@ class Getl extends Script {
                                   @DelegatesTo(TFSDataset)
                                   @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
         if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
-        TFSDataset parent = sourceDataset.csvTempFile.cloneDataset()
-        registerDataset(parent, name, false)
+        def parent = sourceDataset.csvTempFile.cloneDataset() as TFSDataset
+        registerDataset(parent, name, true)
         runClosure(parent, cl)
 
         return parent
@@ -2446,7 +2724,7 @@ class Getl extends Script {
     }
 
     /** Write rows to many destination datasets */
-    void rowsToMany(Map<String, Dataset> destinations,
+    void rowsToMany(Map destinations,
                     @DelegatesTo(FlowWriteManySpec)
                     @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteManySpec']) Closure cl) {
         if (destinations == null || destinations.isEmpty())
@@ -2455,7 +2733,7 @@ class Getl extends Script {
             throw new ExceptionGETL('Required closure code!')
 
         def destNames = [] as List<String>
-        destinations.each { String destName, Dataset ds -> destNames.add("$destName: ${ds.toString()}".toString())}
+        (destinations as Map<String, Dataset>).each { destName, ds -> destNames.add("$destName: ${ds.toString()}".toString())}
         def pt = startProcess("Write rows to $destNames")
         def parent = new FlowWriteManySpec(childOwnerObject, childThisObject, false, null)
         parent.destinations = destinations
@@ -2507,6 +2785,19 @@ class Getl extends Script {
     SQLScripter sql(@DelegatesTo(SQLScripter)
                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl) {
         sql(null, cl)
+    }
+
+    /** Exist file manager */
+    Manager fileManager(String name,
+                        @DelegatesTo(Manager)
+                        @ClosureParams(value = SimpleType, options = ['getl.files.Manager']) Closure cl = null) {
+        if (name == null) throw new ExceptionGETL('Need file manager name value!')
+        def className = findClassFileManager(name)
+        if (className == null) throw new ExceptionGETL("File manager \"$name\" not found!")
+        def parent = registerFileManager(className, name, false) as Manager
+        runClosure(parent, cl)
+
+        return parent
     }
 
     /** Process local file system */
@@ -2692,11 +2983,11 @@ class Getl extends Script {
         if (file != null) {
             parent.fileName = (file instanceof File)?((file as File).path):file.toString()
         }
-        def pt = startProcess("Processing text file${(file != null)?(' "' + file + '"'):''}")
+        def pt = startProcess("Processing text file${(parent.fileName != null)?(' "' + parent.fileName + '"'):''}")
         pt.objectName = 'byte'
         parent.runClosure(cl)
         parent.save()
-        pt.name = "Processing text file${(file != null)?(' "' + file + '"'):''}"
+        pt.name = "Processing text file${(parent.fileName != null)?(' "' + parent.fileName + '"'):''}"
         finishProcess(pt, parent.countBytes)
 
         return parent.fileName
@@ -2720,6 +3011,7 @@ class Getl extends Script {
     }
 
     /** File path parser */
+    @SuppressWarnings("GrMethodMayBeStatic")
     Path filePath(String mask) {
         return new Path(mask: mask)
     }

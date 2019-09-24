@@ -86,7 +86,7 @@ class CacheDataset extends TableDataset {
 
 		// Limit live time
 		Date readed = DateUtils.AddDate("ss", liveTime, (Date)rowObjects.readed)
-		Date updated = rowObjects.updated
+		def updated = rowObjects.updated as Date
 		// Current time
 		Date now = DateUtils.Now()
 
@@ -118,7 +118,7 @@ class CacheDataset extends TableDataset {
 	 * @return
 	 */
 	Date getCacheReaded () {
-		def row = null
+		Map row
 		CacheManager cm = (CacheManager)connection
 		cm.startTran()
 		try {
@@ -126,9 +126,10 @@ class CacheDataset extends TableDataset {
 		}
 		catch (Exception ignored) {
 			cm.rollbackTran()
+			row = null
 		}
 		cm.commitTran()
-		row?.readed
+		return row?.readed as Date
 	}
 	
 	/**
@@ -136,7 +137,7 @@ class CacheDataset extends TableDataset {
 	 * @return
 	 */
 	Date getCacheUpdated () {
-		def row = null
+		Map row
 		CacheManager cm = (CacheManager)connection
 		cm.startTran()
 		try {
@@ -144,8 +145,9 @@ class CacheDataset extends TableDataset {
 		}
 		catch (Exception ignored) {
 			cm.rollbackTran()
+			row = null
 		}
 		cm.commitTran()
-		row?.updated
+		row?.updated as Date
 	}
 }

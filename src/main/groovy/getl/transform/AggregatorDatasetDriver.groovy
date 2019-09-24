@@ -39,13 +39,13 @@ import groovy.transform.InheritConstructors
 class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	
 	private static List<String> getFieldByGroup(Dataset dataset) {
-		List<String> res = dataset.params.fieldByGroup
+		def res = dataset.params.fieldByGroup as List<String>
 		if (res == null) throw new ExceptionGETL("Required parameter \"fieldByGroup\" in dataset")
 		res
 	}
 	
 	private static Map<String, Map> getFieldCalc(Dataset dataset) {
-		Map<String, Map> res = dataset.params.fieldCalc
+		def res = dataset.params.fieldCalc as Map<String, Map>
 		if (res == null) throw new ExceptionGETL("Required parameter \"fieldCalc\" in dataset")
 		res
 	}
@@ -88,9 +88,9 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	@Override
 
 	void write(Dataset dataset, Map row) {
-		Map data = dataset.params.aggregator_data
-		Closure aggregateCode = dataset.params.aggregator_code
-		Map filter = dataset.params.aggregator_filter
+		def data = dataset.params.aggregator_data as Map
+		def aggregateCode = dataset.params.aggregator_code as Closure
+		def filter = dataset.params.aggregator_filter as Map
 		aggregateCode.call(row, data, filter)
 	}
 
@@ -98,7 +98,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 
 	void doneWrite(Dataset dataset) {
 		Dataset ds = getDestinition(dataset)
-		Map<Object, Map> data = dataset.params.aggregator_data
+		def data = dataset.params.aggregator_data as Map<Object, Map>
 		data.each { key, value ->
 			ds.write(value)
 		}
@@ -151,7 +151,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		fieldCalc.each { String name, Map mp ->
 			name = name.toLowerCase().replace("'", "\\'")
 			String method = (mp.method != null)?(mp.method as String).toUpperCase():"SUM"
-			Closure filter = mp.filter
+			def filter = mp.filter as Closure
 			def source = (mp.fieldName as String)?.replace("'", "\\'")
 			if (source == null && method != "COUNT") throw new ExceptionGETL("Required fieldName in parameters by field \"${name}\"")
 			

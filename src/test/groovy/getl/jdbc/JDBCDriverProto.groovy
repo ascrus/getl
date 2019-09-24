@@ -39,7 +39,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         return _con
     }
     String getTableClass() { 'getl.jdbc.TableDataset' }
-    final InternalTableDataset table = InternalTableDataset.CreateDataset(dataset: tableClass, connection: con, tableName: 'getl_test')
+    final TableDataset table = TableDataset.CreateDataset(dataset: tableClass, connection: con, tableName: 'getl_test')
     List<Field> getFields () {
         def res =
             [
@@ -445,7 +445,7 @@ END FOR;
         assertFalse(con.connected)
     }
 
-    protected InternalTableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
+    protected TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
         def t = new TableDataset(connection: con, tableName: name, field: fields)
         t.drop(ifExists: true)
         t.create()

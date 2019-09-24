@@ -196,7 +196,7 @@ class ConfigSlurper extends ConfigManager {
 		try {
 			cfg.setBinding(args)
 			def data = cfg.parse(text) as Map
-			res = CheckDataMap(cfg, data, [configvars: data.configvars?:[:]] + args)
+			res = CheckDataMap(cfg, data, [configvars: (data.configvars as Map)?:[:]] + args) as Map<String, Object>
 			if ((res.configvars as Map)?.isEmpty()) {
 				res.remove('configvars')
 			}
@@ -234,6 +234,7 @@ class ConfigSlurper extends ConfigManager {
 				def val = [:]
 				val.putAll(vars)
 				def code = cl.rehydrate(val, val, val)
+				//noinspection UnnecessaryQualifiedReference
 				code.delegate = Closure.DELEGATE_ONLY
 				cfg.parse(code)
 				val.remove('vars')
@@ -268,6 +269,7 @@ class ConfigSlurper extends ConfigManager {
 				def val = [:]
 				val.putAll(vars)
 				def code = cl.rehydrate(val, val, val)
+				//noinspection UnnecessaryQualifiedReference
 				code.delegate = Closure.DELEGATE_ONLY
 				cfg.parse(code as Script)
 				val.remove('vars')

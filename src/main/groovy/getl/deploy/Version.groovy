@@ -62,6 +62,7 @@ class Version {
 
 	private static boolean sayInfo = false
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	static void SayInfo() {
 		if (sayInfo) return
 		sayInfo = true

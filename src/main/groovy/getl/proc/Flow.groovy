@@ -558,7 +558,7 @@ class Flow {
 						if (!writeSynch) writer.write(outRow) else writer.writeSynch(outRow)
 						if (isChilds) {
 							childs.each { String name, FlowCopyChild child ->
-								child.processRow(inRow.clone())
+								child.processRow(inRow.clone() as Map)
 							}
 						}
 						countRow++

@@ -34,7 +34,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class DB2Table extends InternalTableDataset {
+class DB2Table extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof DB2Connection))

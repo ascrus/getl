@@ -39,14 +39,16 @@ import getl.utils.*
 @InheritConstructors
 class JSONDriver extends FileDriver {
 	JSONDriver () {
-		methodParams.register("eachRow", ["fields", "filter"])
+		methodParams.register("eachRow", ["fields", "filter", "initAttr"])
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		[Driver.Support.EACHROW, Driver.Support.AUTOLOADSCHEMA]
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
 		[Driver.Operation.DROP]

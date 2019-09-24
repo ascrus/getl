@@ -39,7 +39,7 @@ import groovy.transform.stc.SimpleType
  *
  */
 @InheritConstructors
-class OracleTable extends InternalTableDataset {
+class OracleTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof OracleConnection))

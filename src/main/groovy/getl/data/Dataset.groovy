@@ -472,7 +472,9 @@ class Dataset {
 	}
 
 	/** Create or update dataset field */
-	Field field(String name, @DelegatesTo(Field) Closure cl = null) {
+	Field field(String name,
+                @DelegatesTo(Field)
+                @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure cl = null) {
 		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 
@@ -481,7 +483,7 @@ class Dataset {
 			parent = new Field(name: name)
 			field << parent
 		}
-		Getl.RunClosure(ownerObject, thisObject, parent, cl)
+		Getl.RunClosure(this, thisObject, parent, cl)
 
 		return parent
 	}
@@ -1096,7 +1098,7 @@ class Dataset {
 	Map lookup(@DelegatesTo(DatasetLookupSpec) Closure cl) {
 		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-		def parent = new DatasetLookupSpec(ownerObject, thisObject, false, null)
+		def parent = new DatasetLookupSpec(this, thisObject, false, null)
 		parent.runClosure(cl)
 
 		return lookup(parent.params)

@@ -24,6 +24,7 @@
 
 package getl.csv
 
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 import org.supercsv.cellprocessor.*
@@ -48,7 +49,7 @@ class CSVConvertToNullProcessor extends CellProcessorAdaptor
 		this.nullValue = nullValue
 	}
 
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Override
     <T> T execute(Object value, CsvContext context) {
 		if (nullValue != null && value != null && value == nullValue) value = null

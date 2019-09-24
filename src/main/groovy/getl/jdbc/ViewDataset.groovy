@@ -32,7 +32,8 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class ViewDataset extends InternalTableDataset {
+class ViewDataset extends TableDataset {
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	ViewDataset() {
 		super()
 		type = JDBCDataset.Type.VIEW
@@ -48,6 +49,7 @@ class ViewDataset extends InternalTableDataset {
 	 * Validation exists view
 	 * @return
 	 */
+	@Override
 	boolean isExists() {
 		def ds = ((JDBCConnection)connection).retrieveDatasets(dbName: dbName, schemaName: schemaName, 
 					tableName: tableName, type: ["VIEW"])

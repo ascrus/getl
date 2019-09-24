@@ -25,13 +25,14 @@
 package getl.utils
 
 import getl.exception.ExceptionGETL
+import groovy.transform.CompileStatic
 
 /**
  * Boolean functions
  * @author Alexsey Konstantonov
  *
  */
-@groovy.transform.CompileStatic
+@CompileStatic
 class BoolUtils {
 	/**
 	 * Return boolean by value

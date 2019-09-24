@@ -136,7 +136,7 @@ class CreateSpec extends BaseSpec {
             indexOpts = [:] as  Map<String, Object>
             indexes.put(name, indexOpts)
         }
-        def parent = newIndexParams(_ownerObject, _thisObject, true, indexOpts)
+        def parent = newIndexParams(ownerObject, thisObject, true, indexOpts)
         parent.runClosure(cl)
 
         return parent

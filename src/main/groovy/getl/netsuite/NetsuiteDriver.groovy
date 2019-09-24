@@ -51,6 +51,7 @@ class NetsuiteDriver extends JDBCDriver {
 		tableEndPrefix = ']'
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() + [
@@ -66,6 +67,7 @@ class NetsuiteDriver extends JDBCDriver {
 	}
 	*/
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	Map getSqlType () {
 		Map res = super.getSqlType()

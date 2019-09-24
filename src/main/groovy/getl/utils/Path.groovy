@@ -156,12 +156,12 @@ class Path {
 		def var = maskVariables.get(name) as Map
 		if (var == null) {
 			var = [:]
-			maskVariables.put(name, var)
+			maskVariables.put(name, (var as Map<String, Object>))
 		}
 
-		def ownerObject = sysParams.dslOwnerObject?:this
+//		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
-		def parent = new PathVarsSpec(ownerObject, thisObject, true, var)
+		def parent = new PathVarsSpec(this, thisObject, true, var)
 		parent.runClosure(cl)
 
 		return parent.params
@@ -190,7 +190,7 @@ class Path {
 		if (maskStr == null) throw new ExceptionGETL("Required parameter \"mask\"")
 		boolean sysVar = BoolUtils.IsValue(params.sysVar)
 		Map patterns = (params.patterns as Map)?:[:]
-		Map<String, Map<String, Object>> varAttr = [:]
+		def varAttr = ([:] as Map<String, Map<String, Object>>)
 		varAttr.putAll(maskVariables)
 		if (params.vars != null) MapUtils.MergeMap(varAttr, params.vars as Map<String, Map<String, Object>>)
 
@@ -318,11 +318,11 @@ class Path {
 			vars.put("#file_size", [:])
 		}
 		
-		varAttr.each { String name, values ->
+		varAttr.each { name, values ->
 			def fn = name.toLowerCase()
 			Map<String, Object> attrList = vars.get(fn)
 			if (attrList != null) {
-				values.each { String attr, value ->
+				values.each { attr, value ->
 					def a = attr.toLowerCase()
 					if (!(a in ["type", "format", "len", "lenmin", "lenmax"])) throw new ExceptionGETL("Unknown variable attribute \"${attr}\"") 
 					attrList.put(a, value)

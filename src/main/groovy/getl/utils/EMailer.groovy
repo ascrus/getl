@@ -245,6 +245,7 @@ class EMailer {
 			msg.setContent(message, "text/$mimeTextType; charset=UTF-8")
 		}
 
+		//noinspection UnnecessaryQualifiedReference
 		try {
 			Transport.send(msg)
 		}

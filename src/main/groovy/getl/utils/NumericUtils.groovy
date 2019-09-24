@@ -24,6 +24,8 @@
 
 package getl.utils
 
+import groovy.transform.CompileStatic
+
 import java.security.MessageDigest
 
 /**
@@ -31,7 +33,7 @@ import java.security.MessageDigest
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.CompileStatic
+@CompileStatic
 class NumericUtils {
 
 	/**
@@ -72,6 +74,7 @@ class NumericUtils {
 	 * @param args
 	 * @return
 	 */
+	@SuppressWarnings(["UnnecessaryQualifiedReference", "UnnecessaryQualifiedReference"])
 	static long Hash(List args) {
 		StringBuilder sb = new StringBuilder()
 		args.each { def a ->

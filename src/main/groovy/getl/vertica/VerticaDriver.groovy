@@ -67,16 +67,18 @@ class VerticaDriver extends JDBCDriver {
         return res
     }
 
-    @Override
-    List<Driver.Support> supported() {
+	@SuppressWarnings("UnnecessaryQualifiedReference")
+	@Override
+	List<Driver.Support> supported() {
         return super.supported() +
 				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE,
 				 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.UUID,
 				 Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
     }
 
-    @Override
-    List<Driver.Operation> operations() {
+	@SuppressWarnings("UnnecessaryQualifiedReference")
+	@Override
+	List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
                  Driver.Operation.BULKLOAD]
@@ -118,7 +120,7 @@ class VerticaDriver extends JDBCDriver {
 		if (params.parser != null && !(params.parser as Map).isEmpty()) {
 			String parserFunc = (params.parser as Map).function
 			if (parserFunc == null) throw new ExceptionGETL('Required parser function name')
-			Map<String, Object> parserOptions = (params.parser as Map).options
+			def parserOptions = (params.parser as Map).options as Map<String, Object>
 			if (parserOptions != null && !parserOptions.isEmpty()) {
 				def ol = []
 				parserOptions.each { String name, def value ->
@@ -156,15 +158,15 @@ class VerticaDriver extends JDBCDriver {
 		def header = source.header
 		def isGzFile = source.isGzFile
 
-		List<Map> map = params.map
-		Map<String, String> expressions = params.expression?:[:]
+		def map = params.map as List<Map>
+		def expressions = (params.expression as Map<String, String>)?:[:]
 		String loadMethod = ListUtils.NotNullValue([params.loadMethod, 'AUTO'])
 		boolean enforceLength = BoolUtils.IsValue(params.enforceLength, true)
 		boolean autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
 		String compressed = ListUtils.NotNullValue([params.compressed, (isGzFile?'GZIP':null)])
 		String exceptionPath = params.exceptionPath
 		String rejectedPath = params.rejectedPath
-		Long rejectMax = params.rejectMax
+		def rejectMax = params.rejectMax as Long
 		/** TODO: check load from table with left field */
 		boolean abortOnError = ListUtils.NotNullValue([BoolUtils.IsValue(params.abortOnError, null),
 													   (!(rejectedPath != null || exceptionPath != null))])
@@ -331,12 +333,13 @@ class VerticaDriver extends JDBCDriver {
 			dir.afterOrderBy = ((dir.afterOrderBy != null)?(dir.afterOrderBy + '\n'):'') + "OFFSET ${params.offs}"
 			params.offs = null
 		}
-		Map<String, Object> dl = ((dataset as InternalTableDataset).readDirective as Map)?:[:] + params
+		Map<String, Object> dl = ((dataset as TableDataset).readDirective as Map)?:[:] + params
         if (dl.label != null) {
             dir.afterselect = "/*+label(${dl.label})*/"
         }
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	void prepareField (Field field) {
 		super.prepareField(field)

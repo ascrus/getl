@@ -41,11 +41,13 @@ class XMLDriver extends FileDriver {
 		methodParams.register("eachRow", ["fields", "filter", "initAttr"])
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		[Driver.Support.EACHROW, Driver.Support.AUTOLOADSCHEMA]
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
 		[Driver.Operation.DROP]
@@ -164,7 +166,7 @@ class XMLDriver extends FileDriver {
 	/**
 	 * Read only attributes from dataset
 	 */
-	void readAttrs (Dataset dataset, Map params) {
+	static void readAttrs (Dataset dataset, Map params) {
 		params = params?:[:]
 		def data = readData(dataset, params)
 		
@@ -201,7 +203,7 @@ class XMLDriver extends FileDriver {
 	/**
 	 * Read dataset attribute and rows
 	 */
-	private void doRead (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	private static void doRead (Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
 		if (dataset.params.rootNode == null) throw new ExceptionGETL("Required \"rootNode\" parameter with dataset")
 		String rootNode = dataset.params.rootNode

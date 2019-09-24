@@ -26,6 +26,7 @@ package getl.jdbc
 
 import groovy.sql.Sql
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 
 import java.sql.DriverManager
 import java.sql.PreparedStatement
@@ -66,10 +67,11 @@ class JDBCDriver extends Driver {
 	
 	private Date connectDate
 
-	Sql getSqlConnect () { connection.sysParams.sqlConnect }
+	Sql getSqlConnect () { connection.sysParams.sqlConnect as Sql }
 
 	void setSqlConnect(Sql value) { connection.sysParams.sqlConnect = value }
-	
+
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		[Driver.Support.CONNECT, Driver.Support.SQL, Driver.Support.EACHROW, Driver.Support.WRITE, Driver.Support.BATCH,
@@ -77,6 +79,7 @@ class JDBCDriver extends Driver {
 		 Driver.Support.PRIMARY_KEY, Driver.Support.TRANSACTIONAL]
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
 		[Driver.Operation.RETRIEVEFIELDS, Driver.Operation.READ_METADATA, Driver.Operation.INSERT,
@@ -132,6 +135,7 @@ class JDBCDriver extends Driver {
 	/**
 	 * Java field type association
 	 */
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	static Map javaTypes() {
 		[
 			BIGINT: [java.sql.Types.BIGINT],
@@ -154,8 +158,8 @@ class JDBCDriver extends Driver {
 	 */
 	String defaultConnectURL () { null }
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-
 	void prepareField (Field field) {
 		if (field.dbType == null) return
 		if (field.type != null && field.type != Field.Type.STRING) return
@@ -395,7 +399,7 @@ class JDBCDriver extends Driver {
 		return conParams
 	}
 	
-	@groovy.transform.Synchronized
+	@Synchronized
 	static Sql NewSql (Class driverClass, String url, String login, String password, String drvName, int loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
         Sql sql
@@ -594,7 +598,7 @@ class JDBCDriver extends Driver {
 			rs.close()
 		}
 		
-		tables
+		return tables
 	}
 
 	/**
@@ -606,7 +610,7 @@ class JDBCDriver extends Driver {
 	}
 
 	/** Prepare database, schema and table name for retrieve field operation */
-	protected Map<String, String> prepareForRetrieveFields(InternalTableDataset dataset) {
+	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
 		def names = [:] as Map<String, String>
 		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, defaultDBName]) as String)
 		names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)
@@ -617,6 +621,8 @@ class JDBCDriver extends Driver {
 
 	@Override
 	List<Field> fields(Dataset dataset) {
+		if (!dataset instanceof TableDataset) throw new ExceptionGETL('Listing fields is supported only for TableDataset objects!')
+
 		validTableName(dataset)
 		
 		if (dataset.sysParams.cacheDataset != null && dataset.sysParams.cacheRetrieveFields == null) {
@@ -631,13 +637,12 @@ class JDBCDriver extends Driver {
 			}
 		}
 		
-		if (dataset.params.onUpdateFields != null) dataset.params.onUpdateFields(dataset)
+		if (dataset.params.onUpdateFields != null) (dataset.params.onUpdateFields as Closure).call(dataset)
 
 		List<Field> result = []
+		TableDataset ds = dataset as TableDataset
 
 		if (Driver.Operation.READ_METADATA in operations()) {
-			JDBCDataset ds = dataset as JDBCDataset
-
 			def names = prepareForRetrieveFields(ds)
 
 			saveToHistory("-- READ METADATA WITH DB=[${names.dbName}], SCHEMA=[${names.schemaName}], TABLE=[${names.tableName}]")
@@ -671,7 +676,7 @@ class JDBCDriver extends Driver {
 				rs.close()
 			}
 
-			if ((dataset as JDBCDataset).type == JDBCDataset.Type.TABLE) {
+			if (ds.type == JDBCDataset.Type.TABLE) {
 				rs = sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, names.schemaName, names.tableName)
 				def ord = 0
 				try {
@@ -680,7 +685,7 @@ class JDBCDriver extends Driver {
 						Field pf = result.find { Field f ->
 							(f.name.toLowerCase() == n.toLowerCase())
 						}
-						if (pf == null) throw new ExceptionGETL("Primary field \"${n}\" not found in fields list on object [${fullNameDataset(dataset)}]")
+						if (pf == null) throw new ExceptionGETL("Primary field \"${n}\" not found in fields list on object [${fullNameDataset(ds)}]")
 						ord++
 						pf.isKey = true
 						pf.ordKey = ord
@@ -691,8 +696,8 @@ class JDBCDriver extends Driver {
 				}
 			}
 		}
-		else if (isTable(dataset) && dataset instanceof JDBCDataset) {
-			result = fieldsTableWithoutMetadata(dataset as JDBCDataset)
+		else /*if (isTable(dataset) && dataset instanceof JDBCDataset)*/ {
+			result = fieldsTableWithoutMetadata(ds)
 		}
 
 		return result
@@ -846,17 +851,20 @@ ${extend}'''
 							fields: fields, 
 							pk: pk, 
 							extend: extend]
-			def sqlCodeCT = GenerationUtils.EvalGroovyScript(createTableCode, varsCT)
+			def sqlCodeCT = GenerationUtils.EvalGroovyScript(createTableCode, varsCT) as String
 	//		println sqlCodeCT
 			executeCommand(sqlCodeCT, p)
 
 			if (params.indexes != null && !(params.indexes as Map).isEmpty()) {
 				if (!isSupport(Driver.Support.INDEX)) throw new ExceptionGETL("Driver not support indexes")
-				(params.indexes as Map).each { String name, Map value ->
+				(params.indexes as Map<String, Map>).each { name, value ->
 					String createIndexCode = '"""' + sqlCreateIndex + '"""'
 					
 					def idxCols = []
-					(value.columns as List)?.each { String nameCol -> idxCols << ((dataset.fieldByName(nameCol) != null)?prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol) }
+					(value.columns as List<String>)?.each { nameCol ->
+						idxCols << ((dataset.fieldByName(nameCol) != null)?
+										prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol)
+					}
 					
 					def varsCI = [  indexName: prepareTableNameForSQL(name as String),
 									unique: (value.unique != null && value.unique == true)?"UNIQUE":"",
@@ -865,7 +873,7 @@ ${extend}'''
 									tableName: tableName,
 									columns: idxCols.join(",")
 									]
-					def sqlCodeCI = GenerationUtils.EvalGroovyScript(createIndexCode, varsCI)
+					def sqlCodeCI = GenerationUtils.EvalGroovyScript(createIndexCode, varsCI) as String
 
 					if (commitDDL) {
 						if (transactionalDDL) {
@@ -990,7 +998,7 @@ ${extend}'''
 	 * @return String	- full name SQL object
 	 */
 	String fullNameDataset (Dataset dataset) {
-		if (dataset.sysParams.isTable == null || !dataset.sysParams.isTable) return 'noname'
+		if (!dataset instanceof TableDataset) return 'noname'
 
         JDBCDataset ds = dataset as JDBCDataset
 		
@@ -1021,7 +1029,7 @@ ${extend}'''
 	}
 
 	String nameDataset (Dataset dataset) {
-		if (dataset.sysParams.isTable == null || !dataset.sysParams.isTable) return 'noname'
+		if (!dataset instanceof TableDataset) return 'noname'
 
         JDBCDataset ds = dataset as JDBCDataset
 
@@ -1062,8 +1070,8 @@ ${extend}'''
 
 		if (commitDDL && transactionalDDL) startTran()
 		try {
-			if (!dropIfExists && ifExists && dataset instanceof InternalTableDataset) {
-				TableDataset table = dataset as InternalTableDataset
+			if (!dropIfExists && ifExists && dataset instanceof TableDataset) {
+				TableDataset table = dataset as TableDataset
 				if (table.exists) {
 					executeCommand(q, [:])
 				}
@@ -1089,7 +1097,7 @@ ${extend}'''
 	}
 
 	static boolean isTable(Dataset dataset) {
-		return (dataset.sysParams.isTable != null && dataset.sysParams.isTable)
+		return (dataset instanceof TableDataset)
 	}
 	
 	/**
@@ -1161,14 +1169,15 @@ ${extend}'''
 	String sqlForDataset (Dataset dataset, Map params) {
 		String query
 		if (isTable(dataset)) {
-			def table = dataset as InternalTableDataset
+			def table = dataset as TableDataset
 			validTableName(table)
 			def fn = fullNameDataset(table)
 			
 			List<String> fields = []
-            List<Field> useFields = (params.useFields != null && (params.useFields as List).size() > 0)?params.useFields:table.field
+            def useFields = (params.useFields != null && (params.useFields as List).size() > 0)?
+								(params.useFields as List<Field>):table.field
 
-            useFields.each { Field f ->
+            useFields.each { f ->
 				fields << prepareFieldNameForSQL(f.name, table as JDBCDataset)
 			}
 			
@@ -1179,7 +1188,7 @@ ${extend}'''
 			def where = params.where
 
 			def order = params.order as List<String>
-			String orderBy
+			String orderBy = null
 			if (order != null && !order.isEmpty()) {
 				def orderFields = [] as List<String>
 				order.each { String col ->
@@ -1715,7 +1724,7 @@ $sql
 		}
 
 		def batchSize = (!isSupport(Driver.Support.BATCH)?1:((params.batchSize != null)?params.batchSize:1000L))
-		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch
+		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch as Closure
 		
 		def fields = prepareFieldFromWrite(dataset, prepareCode)
 		
@@ -1885,7 +1894,7 @@ $sql
 		Closure setStatement = generateSetStatement(operation, fields, statFields, wp)
 
 		wp.operation = operation
-		wp.batchSize = batchSize
+		wp.batchSize = batchSize as Long
 		wp.query = query
 		wp.stat = stat
 		wp.setStatement = setStatement
@@ -2046,7 +2055,7 @@ $sql
 	 * @return
 	 */
 	protected String unionDatasetMerge (JDBCDataset source, JDBCDataset target, Map<String, String> map, List<String> keyField, Map procParams) {
-		if (!source instanceof InternalTableDataset) throw new ExceptionGETL("Source dataset must be \"TableDataset\"")
+		if (!source instanceof TableDataset) throw new ExceptionGETL("Source dataset must be \"TableDataset\"")
 		if (keyField.isEmpty()) throw new ExceptionGETL("For MERGE operation required key fields by table")
 		
 		String condition = (procParams."condition" != null)?" AND ${procParams."condition"}":""
@@ -2088,7 +2097,7 @@ $sql
 	 * @return
 	 */
 	long unionDataset (JDBCDataset target, Map procParams) {
-		JDBCDataset source = procParams.source
+		def source = procParams.source as JDBCDataset
 		if (source == null) throw new ExceptionGETL("Required \"source\" parameter")
 		if (!source instanceof JDBCDataset) throw new ExceptionGETL("Source dataset must be \"JDBCDataset\"")
 		
@@ -2099,8 +2108,8 @@ $sql
 		if (target.connection != source.connection) throw new ExceptionGETL("Required one identical the connection by datasets")
 		
 		boolean autoMap = (procParams.autoMap != null)?procParams.autoMap:true
-		Map map = procParams.map?:[:]
-		List<String> keyField = procParams.keyField?:[]
+		def map = (procParams.map as Map)?:[:]
+		def keyField = (procParams.keyField as List<String>)?:([] as List<String>)
 		def autoKeyField = keyField.isEmpty()
 		
 		if (!target.manualSchema && target.field.isEmpty()) target.retrieveFields()
@@ -2143,7 +2152,7 @@ $sql
 		String sql
 		switch (oper) {
 			case "MERGE":
-				sql = unionDatasetMerge(source, target, mapField, keyField, procParams)
+				sql = unionDatasetMerge(source, target, mapField as Map<String, String>, keyField, procParams)
 				break
 			default:
 				throw new ExceptionGETL("Unknown operation \"${oper}\"")

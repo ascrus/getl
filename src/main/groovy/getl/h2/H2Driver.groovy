@@ -57,6 +57,7 @@ class H2Driver extends JDBCDriver {
 		methodParams.register('bulkLoadFile', ['expression'])
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
@@ -65,6 +66,7 @@ class H2Driver extends JDBCDriver {
 				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
 		return super.operations() +
@@ -102,7 +104,7 @@ class H2Driver extends JDBCDriver {
 
 		params = bulkLoadFilePrepare(source, dest as JDBCDataset, params, prepareCode)
 
-		List<Map> map = params.map
+		def map = params.map as List<Map>
 		boolean autoCommit = (params.autoCommit != null) ? params.autoCommit : (dest.connection.tranCount == 0 && !(dest.connection as JDBCConnection).autoCommit)
 
 		Map<String, String> expression = (params.expression?:[:]) as Map<String, String>
@@ -224,6 +226,7 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 		return res
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	void prepareField (Field field) {
 		super.prepareField(field)

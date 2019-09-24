@@ -85,12 +85,12 @@ class SalesForceConnection extends Connection {
 	 * Batch Size for SalesForce connection
      * <br>This param do nothing for readAsBulk.
 	 */
-	int getBatchSize () { params.batchSize ?: 200 }
+	int getBatchSize () { (params.batchSize as int)?:200 }
 	/**
 	 * Batch Size for SalesForce connection
 	 * <br>This param do nothing for readAsBulk.
 	 */
-    void setBatchSize (int value) { params.batchSize =value }
+    void setBatchSize (int value) { params.batchSize = value }
 
 	/**
 	 * Perform operations on a connection

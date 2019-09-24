@@ -53,11 +53,13 @@ class ExcelDriver extends Driver {
 
     }
 
+    @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Support> supported() {
         [Driver.Support.EACHROW, Driver.Support.AUTOLOADSCHEMA]
     }
 
+    @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Operation> operations() {
         [Driver.Operation.DROP, Driver.Operation.RETRIEVEFIELDS]
@@ -106,8 +108,8 @@ class ExcelDriver extends Driver {
 		
 		def offset = (params.offset?:datasetParams.offset) as Map
 
-        Number offsetRows = offset?.rows?:0
-        Number offsetCells = offset?.cells?:0
+        Number offsetRows = (offset?.rows as Number)?:0
+        Number offsetCells = (offset?.cells as Number)?:0
 
         long countRec = 0
 
@@ -118,10 +120,11 @@ class ExcelDriver extends Driver {
         try {
             Sheet sheet
 
-            if (ln instanceof String) sheet = workbook.getSheet(ln as String)
+            if (ln instanceof String)
+                sheet = workbook.getSheet(ln as String)
             else {
-                sheet = workbook.getSheetAt(ln) as Sheet
-                dataset.params.listName = workbook.getSheetName(ln)
+                sheet = workbook.getSheetAt(ln as Integer) as Sheet
+                dataset.params.listName = workbook.getSheetName(ln as Integer)
                 if (warnings) Logs.Warning("Parameter listName not found. Using list name: '${dataset.params.listName}'")
             }
 
@@ -156,6 +159,7 @@ class ExcelDriver extends Driver {
             rows.each { Row row ->
                 rowNum++
                 if (row.rowNum >= additionalRows) {
+                    //noinspection UnnecessaryQualifiedReference
                     directive = Closure.DONE
                     return
                 }

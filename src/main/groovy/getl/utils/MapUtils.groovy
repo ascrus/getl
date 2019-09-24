@@ -695,6 +695,7 @@ class MapUtils {
 		return Xsd2Map(fileName, null, reader)
 	}
 
+	@SuppressWarnings("GrUnresolvedAccess")
 	@CompileDynamic
 	static List<Field> XsdMap2Fields(Map<String, Object> map, String objectTypeName) {
 		if (map == null) 
@@ -798,7 +799,8 @@ class MapUtils {
         }
     }
 
-    @CompileDynamic
+	@SuppressWarnings("GrUnresolvedAccess")
+	@CompileDynamic
     private static Map<String, Object> XsdTypeProcess(Map<String, Object> map, String typeName) {
         if (typeName == null)
             throw new ExceptionGETL('Required \"typeName\" parameter!')

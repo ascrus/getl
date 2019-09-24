@@ -23,7 +23,6 @@
 */
 package getl.files.opts
 
-import getl.jdbc.InternalTableDataset
 import getl.jdbc.TableDataset
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
@@ -38,9 +37,9 @@ import groovy.transform.stc.SimpleType
 @InheritConstructors
 class ManagerDownloadSpec extends BaseSpec {
     /** Download history table */
-    InternalTableDataset getHistoryTable() { params.story as InternalTableDataset }
+    TableDataset getHistoryTable() { params.story as TableDataset }
     /** Download history table */
-    void setHistoryTable(InternalTableDataset value) { params.story = value }
+    void setHistoryTable(TableDataset value) { params.story = value }
 
     /** Delete files after download (default false) */
     Boolean getDeleteLoadedFile() { params.deleteLoadedFile as Boolean }
@@ -81,6 +80,6 @@ class ManagerDownloadSpec extends BaseSpec {
      * @param Map fileAttributes - file attributes
      */
     void downloadFile(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
-        setOnDownloadFile(prepareClosure(value))
+        setOnDownloadFile(value)
     }
 }

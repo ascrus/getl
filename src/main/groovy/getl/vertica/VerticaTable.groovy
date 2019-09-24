@@ -39,7 +39,7 @@ import groovy.transform.stc.SimpleType
  *
  */
 @InheritConstructors
-class VerticaTable extends InternalTableDataset {
+class VerticaTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof VerticaConnection))

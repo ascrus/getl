@@ -24,9 +24,13 @@
 
 package getl.data
 
+import getl.lang.Getl
+import getl.lang.opts.BaseSpec
 import getl.utils.*
 import getl.exception.ExceptionGETL
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Base structure dataset class
@@ -82,12 +86,9 @@ class StructureFileDataset extends FileDataset {
 		}
 	}
 	
-	/**
-	 * List of attributes for structured file
-	 * @return
-	 */
+	/** List of attributes field  */
 	List<Field> getAttributeField () { params.attributeField as List<Field> }
-
+	/** List of attributes field */
 	void setAttributeField (List<Field> value) {
 		 List<Field> l = []
 		 value.each { Field f ->
@@ -95,24 +96,42 @@ class StructureFileDataset extends FileDataset {
 		 }
 		 params.attributeField = l
 	}
-	
-	/**
-	 * Attribute value
-	 * @return
-	 */
-	Map<String, Object> getAttributeValue () { params.attributeValue as Map<String, Object> }
 
+	/** Find attribute field by name */
+	Field attributeByName(String name) {
+		if (name == null) throw new ExceptionGETL('The value of parameter "name" must be specified!')
+		name = name.toUpperCase()
+		return attributeField.find { it.name.toUpperCase() == name }
+	}
+
+	/** Dataset attribute field */
+	Field attributeField(String name,
+						 @DelegatesTo(Field) @ClosureParams(value = SimpleType, options = ['getl.data.Field'])
+								 Closure cl) {
+//		def ownerObject = sysParams.dslOwnerObject?:this
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+
+		Field parent = attributeByName(name)
+		if (parent == null) {
+			parent = new Field(name: name)
+			attributeField << parent
+		}
+		Getl.RunClosure(this, thisObject, parent, cl)
+
+		return parent
+	}
+	
+	/** Attribute value */
+	Map<String, Object> getAttributeValue () { params.attributeValue as Map<String, Object> }
+	/** Attribute value */
 	void setAttributeValue (Map<String, Object> value) {
 		Map<String, Object> m = [:]
 		m.putAll(value)
 		params.attributeValue = m
 	}
 	
-	/**
-	 * Name of root node
-	 * @return
-	 */
+	/** Name of root node */
 	String getRootNode () { params.rootNode }
-
+	/** Name of root node */
 	void setRootNode (String value) { params.rootNode = value }
 }

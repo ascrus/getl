@@ -25,13 +25,14 @@
 package getl.utils
 
 import getl.exception.ExceptionParser
+import groovy.transform.CompileStatic
 
 /**
  * SQL parser
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.CompileStatic
+@CompileStatic
 class SQLParser {
 	/**
 	 * List of type statements

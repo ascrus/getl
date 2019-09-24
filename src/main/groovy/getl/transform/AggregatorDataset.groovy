@@ -39,7 +39,7 @@ class AggregatorDataset extends VirtualDataset {
 	AggregatorDataset () {
 		super()
 		
-		connection = new Connection(driver: AggregatorDatasetDriver)
+		connection = new Connection([driver: AggregatorDatasetDriver])
 		
 		List<String> fieldByGroup = []
 		params.fieldByGroup = fieldByGroup
@@ -50,11 +50,11 @@ class AggregatorDataset extends VirtualDataset {
 		params.algorithm = "HASH"
 	}
 
-    List<String> getFieldByGroup () { params.fieldByGroup }
+    List<String> getFieldByGroup () { params.fieldByGroup as List<String> }
 
     void setFieldByGroup (List<String> value) { params.fieldByGroup = value }
 
-    Map<String, Map> getFieldCalc () { params.fieldCalc }
+    Map<String, Map> getFieldCalc () { params.fieldCalc as Map<String, Map> }
 
     void setFieldCalc (Map<String, Map> value) { params.fieldCalc = value }
 

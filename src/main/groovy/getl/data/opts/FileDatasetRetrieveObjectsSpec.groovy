@@ -83,6 +83,6 @@ class FileDatasetRetrieveObjectsSpec extends BaseSpec {
     /** Custom file filtering */
     void filter(@ClosureParams(value = SimpleType, options = ['java.io.File'])
                         Closure<Boolean> value) {
-        setOnFilter(prepareClosure(value))
+        setOnFilter(value)
     }
 }

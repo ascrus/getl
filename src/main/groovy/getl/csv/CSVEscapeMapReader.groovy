@@ -24,6 +24,7 @@
 
 package getl.csv
 
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import org.supercsv.cellprocessor.ift.CellProcessor
 import org.supercsv.io.CsvMapReader
@@ -50,7 +51,7 @@ class CSVEscapeMapReader extends CsvMapReader {
 		this.escapeProcessLineChar = escapeProcessLineChar
 	}
 	
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Override
     Map<String, Object> read(String[] cols, CellProcessor[] proc) throws IOException {
 		Map<String, Object> res = super.read(cols, proc)

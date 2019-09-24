@@ -26,7 +26,7 @@ package getl.mssql
 
 import getl.data.Connection
 import getl.exception.ExceptionGETL
-import getl.jdbc.InternalTableDataset
+import getl.jdbc.TableDataset
 import getl.jdbc.opts.ReadSpec
 import getl.mssql.opts.MSSQLReadSpec
 import groovy.transform.InheritConstructors
@@ -39,7 +39,7 @@ import groovy.transform.stc.SimpleType
  *
  */
 @InheritConstructors
-class MSSQLTable extends InternalTableDataset {
+class MSSQLTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof MSSQLConnection))

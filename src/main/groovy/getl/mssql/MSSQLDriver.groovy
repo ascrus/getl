@@ -25,7 +25,6 @@
 package getl.mssql
 
 import getl.data.Field
-import getl.jdbc.InternalTableDataset
 import getl.jdbc.TableDataset
 import getl.data.Dataset
 import getl.driver.Driver
@@ -59,6 +58,7 @@ class MSSQLDriver extends JDBCDriver {
 		transactionalTruncate = true
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
@@ -67,12 +67,14 @@ class MSSQLDriver extends JDBCDriver {
 				 Driver.Support.BOOLEAN]
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
 		return super.operations() +
 				[Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	Map getSqlType () {
 		Map res = super.getSqlType()
@@ -96,7 +98,7 @@ class MSSQLDriver extends JDBCDriver {
 	@Override
 	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
-		Map<String, Object> dl = (dataset as InternalTableDataset).readDirective?:[:] + params
+		def dl = ((dataset as TableDataset).readDirective?:[:]) + (params as Map<String, Object>)
 		if (dl.with != null) {
 			dir.afteralias = "with (${dl.with})"
 		}
@@ -114,6 +116,7 @@ class MSSQLDriver extends JDBCDriver {
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} {value}' }
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	void prepareField (Field field) {
 		super.prepareField(field)

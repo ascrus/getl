@@ -35,7 +35,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class PostgreSQLTable extends InternalTableDataset {
+class PostgreSQLTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof PostgreSQLConnection))

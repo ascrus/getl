@@ -25,13 +25,14 @@
 package getl.excel
 
 import getl.data.Connection
+import groovy.transform.InheritConstructors
 
 /**
  * Excel Connection class
  * @author Dmitry Shaldin
  *
  */
-@groovy.transform.InheritConstructors
+@InheritConstructors
 class ExcelConnection extends Connection {
     ExcelConnection () {
         super(driver: ExcelDriver)

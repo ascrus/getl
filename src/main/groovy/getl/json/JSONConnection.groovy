@@ -25,13 +25,14 @@
 package getl.json
 
 import getl.data.FileConnection
+import groovy.transform.InheritConstructors
 
 /**
  * JSON connection class
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.InheritConstructors
+@InheritConstructors
 class JSONConnection extends FileConnection {
 	JSONConnection () {
 		super([driver: JSONDriver])

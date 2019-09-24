@@ -24,6 +24,8 @@
 
 package getl.files
 
+import groovy.transform.CompileStatic
+
 /**
  * Processing files by files.Manager.buildList method with closure code
  * @author @author Alexsey Konstantinov
@@ -33,8 +35,8 @@ class ManagerListProcessClosure extends ManagerListProcessing {
 	/**
 	 * Process client code 
 	 */
-	Closure getCode() { params."code" }
-	void setCode(Closure value) { params."code" = value }
+	Closure getCode() { params.code as Closure }
+	void setCode(Closure value) { params.code = value }
 	
 	/**
 	 * Run code
@@ -48,7 +50,7 @@ class ManagerListProcessClosure extends ManagerListProcessing {
 	}
 
 	@Override
-	@groovy.transform.CompileStatic
+	@CompileStatic
     boolean prepare(Map file) {
 		if (runCode != null) return runCode.call(file)
 		

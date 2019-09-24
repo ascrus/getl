@@ -65,15 +65,6 @@ class JDBCDataset extends Dataset {
 	void setDbName (String value) { params.dbName = value }
 
 	/**
-	 * Schema name
-	 */
-	String getSchemaName () { ListUtils.NotNullValue([params.schemaName, (connection as JDBCConnection).schemaName]) }
-	/**
-	 * Schema name
-	 */
-	void setSchemaName (String value) { params.schemaName = value }
-
-	/**
 	 * Event on retrieve list of field 	
 	 */
 	Closure getOnUpdateFields () { params.onUpdateFields as Closure }
@@ -199,22 +190,6 @@ class JDBCDataset extends Dataset {
 		sqlFields(null, excludeFields)
 	}
 
-	/**
-	 * Valid exist table
-	 */
-	boolean isExists() {
-		if (!(connection.driver as JDBCDriver).isTable(this)) throw new ExceptionGETL("${fullNameDataset()} is not a table!")
-		def con = connection as JDBCConnection
-		def dbName = dbName
-		def schemaName = schemaName
-		def tableName = params.tableName
-		if (tableName == null) throw new ExceptionGETL("Table name is not specified for ${fullNameDataset()}!")
-		def ds = con.retrieveDatasets(dbName: dbName, schemaName: schemaName,
-				tableName: tableName)
-
-		return (!ds.isEmpty())
-	}
-
 	/** Query parameters */
 	Map getQueryParams () { params.queryParams as Map<String, Object> }
 	/** Query parameters */
@@ -224,6 +199,7 @@ class JDBCDataset extends Dataset {
 	}
 
 	/** Dataset is temporary table */
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	Boolean getIsTemporaryDataset() {
 		((directives('create').type as JDBCDataset.Type) in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
 	}

@@ -24,12 +24,15 @@ Copyright (C) EasyData Company LTD
 
 package getl.utils
 
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
+
 /**
  * List library functions class
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.CompileStatic
+@CompileStatic
 class ListUtils {
 	/**
 	 * Return to list items that fit the specified condition 
@@ -196,7 +199,7 @@ class ListUtils {
      * @param list
      * @return
      */
-    @groovy.transform.CompileDynamic
+    @CompileDynamic
 	static String List2StrArray(List list) {
         if (list == null) return null
         if (list.size() == 0) return ''
@@ -224,9 +227,9 @@ class ListUtils {
         def strList = [] as List<String>
         array.each { List elem ->
             if (elem[0] == elem[1])
-                strList << elem[0]
+                strList << elem[0].toString()
             else
-                strList << "${elem[0]}-${elem[1]}"
+                strList << "${elem[0]}-${elem[1]}".toString()
         }
 
         return strList.join(',')
@@ -238,7 +241,7 @@ class ListUtils {
      * @param elemClass
      * @return
      */
-    @groovy.transform.CompileDynamic
+    @CompileDynamic
 	static List StrArray2List(String strList, Class elemClass) {
         if (strList == null) return null
         def list = strList.split(',')

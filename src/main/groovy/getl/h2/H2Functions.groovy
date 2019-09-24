@@ -116,6 +116,7 @@ class H2Functions {
 	 * @param escaped
 	 * @return
 	 */
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	static long CopyToCSV(java.sql.Connection sqlConn, String query, String fileName, String fieldDelimiter, Boolean escaped) {
 		H2Connection con = new H2Connection(javaConnection: sqlConn)
 		QueryDataset ds = new QueryDataset(connection: con, query: query)
@@ -152,6 +153,7 @@ class H2Functions {
 	 * @param batchSize
 	 * @return
 	 */
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	static long CopyToJDBC(java.sql.Connection sqlConn, String query, String driverClass, String connectURL,
 									String login, String password, String dbName, String schemaName, String tableName, Long batchSize) {
 		H2Connection conSource = new H2Connection(javaConnection: sqlConn)
@@ -188,6 +190,7 @@ class H2Functions {
 	 * @param batchSize
 	 * @return
 	 */
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	static long CopyFromJDBC(java.sql.Connection sqlConn, String query, String driverClass, String connectURL,
 										String login, String password, String schemaName, String tableName, Long batchSize) {
 		JDBCConnection conSource = JDBCConnection.CreateConnection(connection: driverClass, connectURL: connectURL, login: login, password: password) as JDBCConnection
@@ -219,6 +222,7 @@ class H2Functions {
 	 * @param script
 	 * @return
 	 */
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	static String RunGroovyScript(java.sql.Connection sqlConn, String script) {
 		H2Connection con = new H2Connection(javaConnection: sqlConn)
 		con.connected = true

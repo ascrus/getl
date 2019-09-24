@@ -32,6 +32,7 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings("UnnecessaryQualifiedReference")
 class Field implements Serializable {
 	/**
 	 * Data type
@@ -359,27 +360,27 @@ class Field implements Serializable {
 		if (strField == null) throw new ExceptionGETL("Can not parse null Map to fields")
 		String name = strField.name
 		if (strField.name == null) throw new ExceptionGETL("Required field name: ${strField}")
-		Field.Type type = strField.type?:Field.Type.STRING
+		Field.Type type = (strField.type as Field.Type)?:Field.Type.STRING
 		String typeName = strField.typeName
 		boolean isNull = BoolUtils.IsValue(strField.isNull,true)
-		Integer length = strField.length
-		Integer precision = strField.precision
-		boolean isKey = BoolUtils.IsValue(strField.isKey, false)
-		Integer ordKey = strField.ordKey
-		boolean isPartition = BoolUtils.IsValue(strField.isPartition, false)
-		Integer ordPartition = strField.ordPartition
-		boolean isAutoincrement = BoolUtils.IsValue(strField.isAutoincrement, false)
-		boolean isReadOnly = BoolUtils.IsValue(strField.isReadOnly, false)
-		String defaultValue = strField.defaultValue
-		String compute = strField.compute
+		def length = strField.length as Integer
+		def precision = strField.precision as Integer
+		def isKey = BoolUtils.IsValue(strField.isKey, false)
+		def ordKey = strField.ordKey as Integer
+		def isPartition = BoolUtils.IsValue(strField.isPartition, false)
+		def ordPartition = strField.ordPartition as Integer
+		def isAutoincrement = BoolUtils.IsValue(strField.isAutoincrement, false)
+		def isReadOnly = BoolUtils.IsValue(strField.isReadOnly, false)
+		def defaultValue = strField.defaultValue as String
+		def compute = strField.compute as String
 		def minValue = strField.minValue
 		def maxValue = strField.maxValue
-		String format = strField.format
-		String alias = strField.alias
-		boolean trim = BoolUtils.IsValue(strField.trim,false)
-		String decimalSeparator = strField.decimalSeparator
-		String description = strField.description
-		Map extended = strField.extended
+		def format = strField.format as String
+		def alias = strField.alias as String
+		def trim = BoolUtils.IsValue(strField.trim,false)
+		def decimalSeparator = strField.decimalSeparator as String
+		def description = strField.description as String
+		def extended = strField.extended as Map<String, Object>
 		
 		return new Field(
 					name: name, type: type, typeName: typeName, isNull: isNull, length: length, precision: precision,

@@ -145,7 +145,7 @@ class ConfigStores extends ConfigManager {
     static void SaveSection(Map<String, Object> data, String fileName, String secretKey, String section) {
         def text = MapUtils.ToJson(data)
         def json = new JsonSlurper()
-        data = MapUtils.Lazy2HashMap(json.parseText(text))
+        data = MapUtils.Lazy2HashMap(json.parseText(text) as Map)
 
         if (FileUtils.FileExtension(fileName) == '') fileName += '.store'
         FileUtils.ValidFilePath(fileName)

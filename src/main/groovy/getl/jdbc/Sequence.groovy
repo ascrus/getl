@@ -27,6 +27,7 @@ package getl.jdbc
 import getl.data.Connection
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import groovy.transform.Synchronized
 
 /**
  * Sequence manager class
@@ -83,7 +84,7 @@ class Sequence {
 	 * Get next sequence value with synchronized
 	 * @return
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	long getNextValue() {
 		nextValueFast
 	}

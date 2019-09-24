@@ -38,7 +38,7 @@ class VirtualDataset extends Dataset {
 	 * Destinition dataset
 	 * @return
 	 */
-    Dataset getDest () { params.dest }
+    Dataset getDest () { params.dest as Dataset }
 
     void setDest (Dataset value) { params.dest = value }
 	

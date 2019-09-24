@@ -26,6 +26,7 @@ package getl.files
 
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -102,13 +103,13 @@ class FileManager extends Manager {
 	class FilesList extends FileManagerList {
 		public File[] listFiles
 
-		@groovy.transform.CompileStatic
+		@CompileStatic
 		@Override
 		Integer size () {
 			listFiles.length
 		}
 		
-		@groovy.transform.CompileStatic
+		@CompileStatic
 		@Override
 		Map item (int index) {
 			File f = listFiles[index]
@@ -122,14 +123,14 @@ class FileManager extends Manager {
 			return m
 		}
 
-		@groovy.transform.CompileStatic
+		@CompileStatic
 		@Override
 		void clear () {
 			listFiles = []
 		}
 	}
 	
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Override
 	FileManagerList listDir(String mask) {
 		validConnect()

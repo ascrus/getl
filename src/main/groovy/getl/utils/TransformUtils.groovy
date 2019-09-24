@@ -24,12 +24,14 @@
 
 package getl.utils
 
+import groovy.transform.CompileStatic
+
 /**
  * Data transformation library functions class 
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.CompileStatic
+@CompileStatic
 class TransformUtils {
 	/**
 	 * Convert a set of fields with values in the map

@@ -507,14 +507,14 @@ abstract class Manager {
 	 * @param path
 	 */
 	abstract void rename (String fileName, String path)
-	
-	private InternalTableDataset fileList
+
+	TableDataset fileList
 	/**
 	 * File list
 	 */
-	InternalTableDataset getFileList () { fileList }
+	TableDataset getFileList () { fileList }
 	
-	private String fileListName
+	String fileListName
 	/**
 	 * Name of table file list
 	 */
@@ -526,7 +526,7 @@ abstract class Manager {
 		fileListName = value
 	}
 	
-	private JDBCConnection fileListConnection
+	JDBCConnection fileListConnection
 	/**
 	 * Connection from table file list (if null, use TDS connection)
 	 */
@@ -598,7 +598,7 @@ abstract class Manager {
 	}
 	
 	@CompileStatic
-	protected void processList (Manager man, InternalTableDataset dest, Path path, String maskFile, Boolean recursive, Integer filelevel,
+	protected void processList (Manager man, TableDataset dest, Path path, String maskFile, Boolean recursive, Integer filelevel,
 								Boolean requiredAnalize, Integer limit, Integer threadLevel, Integer threadCount, ManagerListProcessing code) {
 		if (threadLevel == null) threadCount = null
 
@@ -696,7 +696,7 @@ abstract class Manager {
 						String newDir = "$curPath/$dirName"
 						newMan.changeDirectory(newDir)
 						try {
-							InternalTableDataset newDest = (dest.cloneDataset(null)) as InternalTableDataset
+							TableDataset newDest = (dest.cloneDataset(null)) as TableDataset
 							newDest.openWrite(batchSize: 100)
 							try {
 								processList(newMan, newDest, path, maskFile, recursive, filelevel + 1, requiredAnalize,
@@ -797,7 +797,7 @@ abstract class Manager {
 		countFileListSync.clear()
 
 		// History table		
-		InternalTableDataset storyTable = (lparams.story as InternalTableDataset)?:story
+		TableDataset storyTable = (lparams.story as TableDataset)?:story
 
 		// Init file list
 		fileList = new TableDataset(connection: fileListConnection?:new TDS(), 
@@ -996,10 +996,10 @@ FROM ${newFiles.fullNameDataset()} files
 	}
 
 	/** Build list of files */
-	TableDataset buildListFiles(String mask, @DelegatesTo(ManagerBuildListSpec) cl = null) {
-		def ownerObject = sysParams.dslOwnerObject?:this
+	TableDataset buildListFiles(String mask, @DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
+//		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-		def parent = new ManagerBuildListSpec(ownerObject, thisObject, false, null)
+		def parent = new ManagerBuildListSpec(this, thisObject, false, null)
 		if (mask != null) parent.maskPath = new Path(mask: mask)
 		parent.runClosure(cl)
 		buildList(parent.params)
@@ -1008,7 +1008,7 @@ FROM ${newFiles.fullNameDataset()} files
 	}
 
 	/** Build list of files */
-	TableDataset buildListFiles(@DelegatesTo(ManagerBuildListSpec) cl = null) {
+	TableDataset buildListFiles(@DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
 		buildListFiles(null, cl)
 	}
 	
@@ -1032,14 +1032,14 @@ FROM ${newFiles.fullNameDataset()} files
 		if (fileList == null || fileList.field.isEmpty()) throw new ExceptionGETL("Before download build fileList dataset!")
 		
 		boolean deleteLoadedFile = BoolUtils.IsValue(params.deleteLoadedFile)
-		InternalTableDataset ds = params.story as InternalTableDataset
+		TableDataset ds = params.story as TableDataset
 		boolean useStory = (ds != null)
 		boolean ignoreError = BoolUtils.IsValue(params.ignoreError)
 		boolean folders = BoolUtils.IsValue(params.folders, true)
 		String sqlWhere = params.filter as String
 		List<String> sqlOrderBy = params.order as List<String>
 
-		InternalTableDataset storyFiles = null
+		TableDataset storyFiles = null
 		
 		if (useStory) {
 			if (ds == null) throw new ExceptionGETL("For use store db required set \"ds\" property")
@@ -1193,10 +1193,10 @@ WHERE
 	}
 
 	/** Build list of files */
-	void downloadListFiles(@DelegatesTo(ManagerDownloadSpec) cl = null) {
-		def ownerObject = sysParams.dslOwnerObject?:this
+	void downloadListFiles(@DelegatesTo(ManagerDownloadSpec) Closure cl = null) {
+//		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-		def parent = new ManagerDownloadSpec(ownerObject, thisObject, false, null)
+		def parent = new ManagerDownloadSpec(this, thisObject, false, null)
 		parent.runClosure(cl)
 
 		downloadFiles(parent.params)
@@ -1626,7 +1626,7 @@ WHERE
 	/**
 	 * Real script history file name
 	 */
-	private String fileNameScriptHistory
+	String fileNameScriptHistory
 	
 	/**
 	 * Validation script history file

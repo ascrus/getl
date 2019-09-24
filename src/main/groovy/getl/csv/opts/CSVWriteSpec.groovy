@@ -61,7 +61,7 @@ class CSVWriteSpec extends BaseSpec {
      * <br>Closure parameters: Long numberOfBatch
      */
     void saveBatch(@ClosureParams(value = SimpleType, options = ['long']) Closure value) {
-        setOnSaveBatch(prepareClosure(value))
+        setOnSaveBatch(value)
     }
 
     /** Maximum size of the portion of the recorded file (use 0 or null for no size limit) */
@@ -87,6 +87,6 @@ class CSVWriteSpec extends BaseSpec {
      */
     void splitFile(@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
                            Closure<Boolean> value) {
-        setOnSplitFile(prepareClosure(value))
+        setOnSplitFile(value)
     }
 }

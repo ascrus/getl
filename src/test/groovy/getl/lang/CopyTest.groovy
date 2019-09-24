@@ -3,6 +3,7 @@ package getl.lang
 import getl.data.Field
 import getl.exception.ExceptionGETL
 import getl.utils.FileUtils
+import org.junit.BeforeClass
 import org.junit.Test
 
 /**
@@ -26,6 +27,11 @@ dest {
 */
 
 class CopyTest extends getl.test.GetlTest {
+    @BeforeClass
+    static void CleanGetl() {
+        Getl.CleanGetl()
+    }
+
     @Override
     boolean allowTests() { FileUtils.ExistsFile('tests/lang/copier.groovy') }
 

@@ -55,9 +55,11 @@ class JDBCConnection extends Connection {
 	@Override
 	protected void registerParameters () {
 		super.registerParameters()
-		methodParams.register("Super", ["login", "password", "connectURL", "sqlHistoryFile", "autoCommit", "connectProperty", "dbName",
-			"javaConnection", "maskDate", "maskDateTime", "sessionProperty", "maskTime", "schemaName", "driverName", "driverPath",
-            "connectHost", "connectDatabase", "balancer", "fetchSize", "loginTimeout", "queryTimeout", "sqlHistoryOutput"])
+		methodParams.register('Super', [
+				'login', 'password', 'connectURL', 'sqlHistoryFile', 'autoCommit', 'connectProperty', 'dbName',
+				'javaConnection', 'maskDate', 'maskDateTime', 'sessionProperty', 'maskTime', 'schemaName',
+				'driverName', 'driverPath', 'connectHost', 'connectDatabase', 'balancer', 'fetchSize', 'loginTimeout',
+				'queryTimeout', 'sqlHistoryOutput'])
 	}
 	
 	@Override
@@ -88,7 +90,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Use exists JDBC connection 
 	 */
-	java.sql.Connection getJavaConnection () { params.javaConnection }
+	java.sql.Connection getJavaConnection () { params.javaConnection as java.sql.Connection }
 	/**
 	 * Use exists JDBC connection
 	 */
@@ -97,7 +99,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * JDBC connection URL
 	 */
-	String getConnectURL () { params.connectURL }
+	String getConnectURL () { params.connectURL as String }
 	/**
 	 * JDBC connection URL
 	 */
@@ -106,12 +108,12 @@ class JDBCConnection extends Connection {
 	/**
 	 * Build jdbc connection url
 	 */
-	String currentConnectURL () { sysParams.currentConnectURL }
+	String currentConnectURL () { sysParams.currentConnectURL as String }
 	
 	/**
 	 * Server host and port for connection url
 	 */
-	String getConnectHost () { params.connectHost }
+	String getConnectHost () { params.connectHost as String }
 	/**
 	 * Server host and port for connection url
 	 */
@@ -120,7 +122,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Database name for connection url
 	 */
-	String getConnectDatabase () { params."connectDatabase" }
+	String getConnectDatabase () { params.connectDatabase as String }
 	/**
 	 * Database name for connection url
 	 */
@@ -129,7 +131,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Connection balancer
 	 */
-	Balancer getBalancer () { params."balancer" }
+	Balancer getBalancer () { params.balancer as Balancer }
 	/**
 	 * Connection balancer
 	 */
@@ -138,7 +140,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * JDBC driver name
 	 */
-	String getDriverName() { params.driverName }
+	String getDriverName() { params.driverName as String }
 	/**
 	 * JDBC driver name
 	 */
@@ -147,7 +149,7 @@ class JDBCConnection extends Connection {
     /**
      * JDBC driver jar file path
      */
-    String getDriverPath() { params.driverPath }
+    String getDriverPath() { params.driverPath as String }
 	/**
 	 * JDBC driver jar file path
 	 */
@@ -156,7 +158,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Connection login
 	 */
-	String getLogin () { params.login }
+	String getLogin () { params.login as String }
 	/**
 	 * Connection login
 	 */
@@ -165,7 +167,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Connection password
 	 */
-	String getPassword () { params.password }
+	String getPassword () { params.password as String }
 	/**
 	 * Connection password
 	 */
@@ -186,7 +188,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Database name from access to objects in datasets
 	 */
-	String getDbName () { params.dbName }
+	String getDbName () { params.dbName as String }
 	/**
 	 * Database name from access to objects in datasets
 	 */
@@ -195,7 +197,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Schema name from access to objects in datasets
 	 */
-	String getSchemaName () { params.schemaName }
+	String getSchemaName () { params.schemaName as String }
 	/**
 	 * Schema name from access to objects in datasets
 	 */
@@ -206,7 +208,7 @@ class JDBCConnection extends Connection {
 	 */
 	Map getConnectProperty () {
 		if (params.connectProperty == null) params.connectProperty = [:]
-		return params.connectProperty
+		return params.connectProperty as Map
 	}
 	/**
 	 * Extend connection properties
@@ -228,7 +230,7 @@ class JDBCConnection extends Connection {
 	 */
 	Map getSessionProperty () {
 		if (params.sessionProperty == null) params.sessionProperty = [:]
-		return params.sessionProperty
+		return params.sessionProperty as Map
 	}
 	/**
 	 * Session properties
@@ -248,7 +250,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Default mask for date values
 	 */
-	String getMaskDate () { params.maskDate }
+	String getMaskDate () { params.maskDate as String }
 	/**
 	 * Default mask for date values
 	 */
@@ -257,7 +259,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Default mask for time values
 	 */
-	String getMaskTime () { params.maskTime }
+	String getMaskTime () { params.maskTime as String }
 	/**
 	 * Default mask for time values
 	 */
@@ -266,7 +268,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Default mask for datetime values
 	 */
-	String getMaskDateTime () { params.maskDateTime }
+	String getMaskDateTime () { params.maskDateTime as String }
 	/**
 	 * Default mask for datetime values
 	 */
@@ -275,7 +277,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Name of file history sql commands
 	 */
-	String getSqlHistoryFile () { params.sqlHistoryFile }
+	String getSqlHistoryFile () { params.sqlHistoryFile as String }
 	/**
 	 * Name of file history sql commands
 	 */
@@ -287,7 +289,7 @@ class JDBCConnection extends Connection {
     /**
      * Output server warning messages to log
      */
-    Boolean getOutputServerWarningToLog() { params.outputServerWarningToLog }
+    Boolean getOutputServerWarningToLog() { BoolUtils.IsValue(params.outputServerWarningToLog, false) }
 	/**
 	 * Output server warning messages to log
 	 */
@@ -307,7 +309,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Fetch size records for read query 
 	 */
-	Integer getFetchSize () { params.fetchSize }
+	Integer getFetchSize () { params.fetchSize as Integer }
 	/**
 	 * Fetch size records for read query
 	 */
@@ -316,7 +318,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Set login timeout for connection driver (in seconds) 
 	 */
-	Integer getLoginTimeout () { params.loginTimeout }
+	Integer getLoginTimeout () { params.loginTimeout as Integer }
 	/**
 	 * Set login timeout for connection driver (in seconds)
 	 */
@@ -325,7 +327,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Set statement timeout for connection driver (in seconds)
 	 */
-	Integer getQueryTimeout () { params.queryTimeout }
+	Integer getQueryTimeout () { params.queryTimeout as Integer }
 	/**
 	 * Set statement timeout for connection driver (in seconds)
 	 */
@@ -334,35 +336,32 @@ class JDBCConnection extends Connection {
 	/**
 	 * Return using groovy SQL connection
 	 */
-	Sql getSqlConnection () { sysParams.sqlConnect }
+	Sql getSqlConnection () { sysParams.sqlConnect as Sql }
 	
 	/**
 	 * Return session ID (if supported RDBMS driver)
 	 */
-	String getSessionID () { sysParams.sessionID }
+	String getSessionID () { sysParams.sessionID as String }
 	
 	/**
 	 * Return datasets list by parameters
 	 * @param params retrive params by specified connection driver
 	 * @filter user filter code
 	 */
-	List<InternalTableDataset> retrieveDatasets (Map params,
+	List<TableDataset> retrieveDatasets (Map params,
 										 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 												 Closure<Boolean> filter = null) {
 		if (params == null) params = [:]
-		List<TableDataset> result = []
-		def o = retrieveObjects(params, filter)
-		o.each { Map row ->
-			InternalTableDataset d
+		def result = [] as List<TableDataset>
+		def o = retrieveObjects(params, filter) as List<Map>
+		o.each { row ->
+			TableDataset d
 			switch ((row.type as String)?.toUpperCase()) {
-				case 'TABLE':
-					d = new TableDataset(type: JDBCDataset.Type.TABLE)
-					break
 				case 'VIEW':
 					d = new ViewDataset(type: JDBCDataset.Type.VIEW)
 					break
 				default:
-					d = new JDBCDataset(type: JDBCDataset.Type.UNKNOWN)
+					d = new TableDataset(type: JDBCDataset.Type.TABLE)
 			}
 			d.connection = this
 			d.with {
@@ -407,10 +406,8 @@ class JDBCConnection extends Connection {
 	/**
 	 * Return used balancer server attributes
 	 */
-	Map getBalancerServer () {
-		sysParams."balancerServer"
-	}
-	
+	Map getBalancerServer () { sysParams.balancerServer as Map }
+
 	/**
 	 * Build connection params for connect url 
 	 */

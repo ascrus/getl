@@ -46,15 +46,17 @@ class DB2Driver extends JDBCDriver {
 		connectionParamFinish = ';'
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-    List<Driver.Support> supported() {
+	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
 				 Driver.Support.INDEX, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
 	}
-	
+
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-    List<Driver.Operation> operations() {
+	List<Driver.Operation> operations() {
 		return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}

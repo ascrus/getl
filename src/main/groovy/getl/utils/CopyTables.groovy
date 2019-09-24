@@ -34,6 +34,9 @@ import getl.proc.Job
 import getl.stat.ProcessTime
 import getl.tfs.TDS
 
+import java.util.logging.Level
+import java.util.logging.Logger
+
 /**
  * Copyes tables data from source to destination
  * @author Aleksey Konstantinov
@@ -129,7 +132,7 @@ class CopyTables extends Job {
             def cDest = dest.cloneConnection()
             def tDest = new TableDataset(connection: cDest, schemaName: row.schema_name, tableName: row.table_name)
 
-            def pt = new ProcessTime(name: "Copy table ${tSource.fullNameDataset()}", logLevel: 'INFO')
+            def pt = new ProcessTime(name: "Copy table ${tSource.fullNameDataset()}", logLevel: Level.INFO)
             Logs.Fine("Copy ${tSource.fullNameDataset()} ...")
             def count = new Flow().copy([source: tSource, dest: tDest, clear: clearDestination] + destParams)
             pt.finish(count)

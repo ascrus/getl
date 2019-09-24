@@ -29,6 +29,7 @@ import groovy.transform.InheritConstructors
 import com.jcraft.jsch.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.Synchronized
 
 /**
  * SFTP file manager
@@ -180,7 +181,7 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	@groovy.transform.Synchronized
+	@Synchronized
 	void connect() {
 		if (clientSession != null && clientSession.connected) throw new ExceptionGETL("SFTP already connect to server")
 		if (server == null || port == null) throw new ExceptionGETL("Required server host and port for connect")
@@ -220,13 +221,13 @@ class SFTPManager extends Manager {
 	class SFTPList extends FileManagerList {
 		Vector<ChannelSftp.LsEntry> listFiles
 		
-		@groovy.transform.CompileStatic
+		@CompileStatic
 		@Override
 		Integer size () {
 			listFiles.size()
 		}
 		
-		@groovy.transform.CompileStatic
+		@CompileStatic
 		@Override
 		Map item (int index) {
 			ChannelSftp.LsEntry item = listFiles.get(index)
@@ -257,7 +258,7 @@ class SFTPManager extends Manager {
 		}
 	}
 
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Override
 	FileManagerList listDir(String maskFiles) {
 		if (maskFiles == null) maskFiles = "*"
@@ -406,7 +407,7 @@ class SFTPManager extends Manager {
         if (channelFtp.stat(objName).isDir()) {
             channelFtp.cd(objName)
             try {
-                Vector<ChannelSftp.LsEntry> entries = channelFtp.ls(".")
+                def entries = channelFtp.ls(".") as Vector<ChannelSftp.LsEntry>
                 for (ChannelSftp.LsEntry entry : entries) {
                     doDeleteDirectory(entry.getFilename())
                 }
@@ -521,7 +522,7 @@ class SFTPManager extends Manager {
 		else if (rootPath[0] == '/')
 			res = "sftp $loginStr$server$rootPath"
 		else
-			"sftp $loginStr$server/$rootPath"
+			res = "sftp $loginStr$server/$rootPath"
 
 		return res
 	}

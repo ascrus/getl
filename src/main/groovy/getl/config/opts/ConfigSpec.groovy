@@ -44,19 +44,23 @@ class ConfigSpec extends BaseSpec {
     /**
      * Configuration files path
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     String getPath() { manager.path }
     /**
      * Configuration files path
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     void setPath(String value) { manager.path = value }
 
     /**
      * Code page in configuration files
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     String getCodePage() { manager.codePage }
     /**
      * Code page in configuration files
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     void setCodePage(String value) { manager.codePage = value }
 
     /**

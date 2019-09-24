@@ -33,6 +33,7 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings("UnnecessaryQualifiedReference")
 class ProcessTime {
 	public static java.util.logging.Level LogLevelDefault = Level.FINE
 

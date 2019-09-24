@@ -73,6 +73,24 @@ class JSONReadSpec extends BaseSpec {
      * <br>A readable record is passed as parameter (Map object)
      */
     void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> value) {
-        setOnFilter(prepareClosure(value))
+        setOnFilter(value)
+    }
+
+    /**
+     * Filtering readable records
+     * <br>A readable record is passed as parameter (Map object)
+     */
+    Closure<Boolean> getOnReadAttributes() { params.initAttr as Closure<Boolean> }
+    /**
+     * Filtering readable records
+     * <br>A readable record is passed as parameter (Map object)
+     */
+    void setOnReadAttributes(Closure<Boolean> value) { params.initAttr = value }
+    /**
+     * Filtering readable records
+     * <br>A readable record is passed as parameter (Map object)
+     */
+    void readAttributes(@ClosureParams(value = SimpleType, options = ['getl.json.JSONDataset']) Closure<Boolean> value) {
+        setOnReadAttributes(value)
     }
 }

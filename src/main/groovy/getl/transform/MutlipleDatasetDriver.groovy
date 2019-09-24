@@ -38,6 +38,7 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class MutlipleDatasetDriver extends Driver {
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Support> supported() {
 		return [Driver.Support.WRITE]
@@ -65,7 +66,7 @@ class MutlipleDatasetDriver extends Driver {
 	}
 	
 	private static Map<String, Dataset> getDestinition(Dataset dataset) {
-		Map<String, Dataset> ds = dataset.params.dest
+		def ds = dataset.params.dest as Map<String, Dataset>
 		if (ds == null) throw new ExceptionGETL("Required MultipleDataset object class")
 		if (ds.isEmpty()) throw new ExceptionGETL("Required set param \"dest\" with dataset")
 		
@@ -116,7 +117,7 @@ class MutlipleDatasetDriver extends Driver {
 	@Override
 	void write(Dataset dataset, Map row) {
 		Map<String, Dataset> ds = getDestinition(dataset)
-		Map<String, Closure> cond = dataset.params.condition?:[:]
+		def cond = (dataset.params.condition as Map<String, Closure>)?:[:]
 		
 		// Valid conditions and write only filtered rows		
 		cond.each { String alias, Closure valid ->

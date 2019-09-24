@@ -39,6 +39,7 @@ import javax.sql.rowset.serial.SerialClob
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings("UnnecessaryQualifiedReference")
 class GenerationUtils {
 	public static final Long EMPTY_BIGINT = null
 	public static final def EMPTY_BLOB = null

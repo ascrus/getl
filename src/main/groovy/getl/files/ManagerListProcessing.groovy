@@ -25,6 +25,7 @@
 package getl.files
 
 import getl.utils.*
+import groovy.transform.Synchronized
 
 /**
  * Processing files by files.Manager.buildList method
@@ -40,7 +41,7 @@ abstract class ManagerListProcessing {
 	/**
 	 * Clone class for use in thread
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	ManagerListProcessing newProcessing () {
 		ManagerListProcessing res = getClass().newInstance() as ManagerListProcessing
 		res.params.putAll(params)
@@ -51,7 +52,7 @@ abstract class ManagerListProcessing {
 	/**
 	 * Init class for build thread
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	void init () { }
 	
 	/**
@@ -64,6 +65,6 @@ abstract class ManagerListProcessing {
 	/**
 	 * Done class after build thread
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	void done () { }
 }

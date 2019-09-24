@@ -39,13 +39,13 @@ class SorterDataset extends VirtualDataset {
 	SorterDataset () {
 		super()
 		
-		connection = new Connection(driver: SorterDatasetDriver)
+		connection = new Connection([driver: SorterDatasetDriver])
 		
 		List<String> fieldOrderBy = []
 		params.fieldOrderBy = fieldOrderBy
 	}
 
-    List<String> getFieldOrderBy () { params.fieldOrderBy }
-
+	/** List of sort column */
+    List<String> getFieldOrderBy () { params.fieldOrderBy as List<String> }
     void setFieldOrderBy (List<String> value) { params.fieldOrderBy = value }
 }

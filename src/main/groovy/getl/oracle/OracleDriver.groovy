@@ -49,14 +49,16 @@ class OracleDriver extends JDBCDriver {
 
 		methodParams.register("eachRow", ["scn", "timestamp", "hints", "usePartition"])
 	}
-	
+
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB,
 				 Driver.Support.CLOB, Driver.Support.INDEX]
 	}
-	
+
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
         return super.operations() +
@@ -95,7 +97,8 @@ class OracleDriver extends JDBCDriver {
 	} 
 }"""
 	}
-	
+
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	Map getSqlType () {
 		Map res = super.getSqlType()
@@ -110,15 +113,21 @@ class OracleDriver extends JDBCDriver {
 	@Override
 	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
-		Map<String, Object> dl = (dataset as InternalTableDataset).readDirective?:[:] + params
+		Map<String, Object> dl = ((dataset as TableDataset).readDirective?:[:]) + (params as Map<String, Object>)
 		if (dl.scn != null) {
 			Long scn
-			if (dl.scn instanceof String) scn = ConvertUtils.Object2Long(dl.scn) else scn = dl.scn
+			if (dl.scn instanceof String)
+				scn = ConvertUtils.Object2Long(dl.scn)
+			else
+				scn = dl.scn as Long
 			dir.afteralias = "AS OF SCN $scn"
 		}
 		else if (dl.timestamp != null) {
 			Date timestamp 
-			if (dl.timestamp instanceof String) timestamp = DateUtils.ParseDate("yyyy-MM-dd HH:mm:ss", dl.timestamp) else timestamp = dl.timestamp
+			if (dl.timestamp instanceof String)
+				timestamp = DateUtils.ParseDate("yyyy-MM-dd HH:mm:ss", dl.timestamp)
+			else
+				timestamp = dl.timestamp as Date
 			def ts = DateUtils.FormatDate("yyyy-MM-dd HH:mm:ss.sss", timestamp)
 			dir.afteralias = "AS OF TIMESTAMP TO_TIMESTAMP('$ts', 'YYYY-MM-DD HH24:MI:SS.FF')"
 		}
@@ -131,7 +140,8 @@ class OracleDriver extends JDBCDriver {
 			dir.aftertable = "PARTITION (${dl.usePartition})"
 		}
 	}
-	
+
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	void prepareField (Field field) {
 		super.prepareField(field)
@@ -207,6 +217,7 @@ class OracleDriver extends JDBCDriver {
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'ALTER SESSION SET {name} = \'{value}\'' }
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	String generateColumnDefinition(Field f, boolean useNativeDBType) {
 		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" +

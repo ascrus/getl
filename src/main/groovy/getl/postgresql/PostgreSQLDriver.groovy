@@ -43,6 +43,7 @@ class PostgreSQLDriver extends JDBCDriver {
 		transactionalTruncate = true
     }
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
@@ -51,7 +52,8 @@ class PostgreSQLDriver extends JDBCDriver {
 				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
 	}
 
-    @Override
+	@SuppressWarnings("UnnecessaryQualifiedReference")
+	@Override
 	List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
@@ -74,6 +76,7 @@ class PostgreSQLDriver extends JDBCDriver {
 		return res
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	Map getSqlType () {
 		Map res = super.getSqlType()
@@ -85,6 +88,7 @@ class PostgreSQLDriver extends JDBCDriver {
 		return res
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	void prepareField (Field field) {
 		super.prepareField(field)

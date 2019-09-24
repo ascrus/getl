@@ -101,9 +101,9 @@ class XMLDataset extends StructureFileDataset {
 	XMLReadSpec readOpts(@DelegatesTo(XMLReadSpec)
 						 @ClosureParams(value = SimpleType, options = ['getl.xml.opts.XMLReadSpec'])
 								 Closure cl = null) {
-		def ownerObject = sysParams.dslOwnerObject?:this
+//		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-		def parent = new XMLReadSpec(ownerObject, thisObject, true, readDirective)
+		def parent = new XMLReadSpec(this, thisObject, true, readDirective)
 		parent.runClosure(cl)
 
 		return parent

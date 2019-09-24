@@ -32,7 +32,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class ExceptionGETL extends groovy.lang.GroovyRuntimeException {
+class ExceptionGETL extends GroovyRuntimeException {
 	ExceptionGETL(String message) {
 		super(message)
 	}

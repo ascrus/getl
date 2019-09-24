@@ -73,7 +73,7 @@ class XMLReadSpec extends BaseSpec {
      * <br>A readable record is passed as parameter (Map object)
      */
     void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> value) {
-        setOnFilter(prepareClosure(value))
+        setOnFilter(value)
     }
 
     /**
@@ -91,6 +91,6 @@ class XMLReadSpec extends BaseSpec {
      * <br>A readable record is passed as parameter (Map object)
      */
     void readAttributes(@ClosureParams(value = SimpleType, options = ['getl.xml.XMLDataset']) Closure<Boolean> value) {
-        setOnReadAttributes(prepareClosure(value))
+        setOnReadAttributes(value)
     }
 }

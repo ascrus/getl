@@ -56,17 +56,21 @@ abstract class Driver {
 		AUTOLOADSCHEMA, AUTOSAVESCHEMA, INDEX, DATE, TIME, BOOLEAN, BLOB, CLOB, MEMORY, NOT_NULL_FIELD, PRIMARY_KEY,
 		DEFAULT_VALUE, COMPUTE_FIELD, UUID}
 
-    abstract List<Driver.Support> supported ()
+	@SuppressWarnings("UnnecessaryQualifiedReference")
+	abstract List<Driver.Support> supported ()
 
-    boolean isSupport(Driver.Support feature) {
+	@SuppressWarnings("UnnecessaryQualifiedReference")
+	boolean isSupport(Driver.Support feature) {
 		(supported().indexOf(feature) != -1)
 	}
 
     static enum Operation {CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS, INSERT, UPDATE, DELETE, MERGE, READ_METADATA}
 
-    abstract List<Driver.Operation> operations ()
+	@SuppressWarnings("UnnecessaryQualifiedReference")
+	abstract List<Driver.Operation> operations ()
 
-    boolean isOperation(Driver.Operation operation) {
+	@SuppressWarnings("UnnecessaryQualifiedReference")
+	boolean isOperation(Driver.Operation operation) {
 		(operations().indexOf(operation) != -1)
 	}
 
@@ -132,7 +136,7 @@ abstract class Driver {
 	 * @param dataset - source dataset
 	 * @return
 	 */
-	Boolean isResourceFileNameSchema(Dataset dataset) {
+	static Boolean isResourceFileNameSchema(Dataset dataset) {
 		FileUtils.IsResourceFileName(dataset.schemaFileName)
 	}
 }

@@ -136,7 +136,7 @@ class SavePointManager {
 										new Field(name: "value", alias: "value", type: "NUMERIC", length: 38, precision: 9, isNull: false)
 									]
 	
-	protected final InternalTableDataset table = new TableDataset(manualSchema: true)
+	protected final TableDataset table = new TableDataset(manualSchema: true)
 	
 	SavePointManager () {
 		params.fields = [:]

@@ -28,6 +28,7 @@ import getl.config.ConfigFiles
 import getl.config.ConfigManager
 import getl.proc.Job
 import getl.exception.ExceptionGETL
+import groovy.transform.Synchronized
 
 /**
  * Configuration manager class
@@ -84,7 +85,7 @@ class Config {
      */
     private static ConfigManager configClassManager = new ConfigFiles()
 
-	static getConfigClassManager() { configClassManager }
+	static ConfigManager getConfigClassManager() { configClassManager }
 
 	static void setConfigClassManager(ConfigManager value) {
         configClassManager = value
@@ -107,7 +108,7 @@ class Config {
 	/**
 	 * Variables
 	 */
-	static Map<String, Object> getVars() { Config.content."vars" as Map<String, Object>}
+	static Map<String, Object> getVars() { content."vars" as Map<String, Object>}
 
     /**
      * Set variables
@@ -131,7 +132,7 @@ class Config {
 	/**
 	 * Re-initialization class
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	static void ReInit() {
 		init.clear()
 		ClearConfig()
@@ -142,7 +143,7 @@ class Config {
 	 * Registration object code closure on load of the configuration files
 	 * @param code
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	static void RegisterOnInit(Closure code) {
 		if (init.find { it == code } == null) {
 			init << code
@@ -153,7 +154,7 @@ class Config {
 	 * Unregistration object code closure on load of the configuration files
 	 * @param code
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	static void UnregisterOnInit(Closure code) {
 		if (init.find { it == code } != null) {
 			init.remove(code)
@@ -163,7 +164,7 @@ class Config {
 	/**
 	 * Clear all configurations
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	static void ClearConfig () {
 		content.clear()
         this.vars = new HashMap<String, Object>()
@@ -172,7 +173,7 @@ class Config {
 	/**
 	 * Load configuration
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	static void LoadConfig (Map readParams = [:]) {
         configClassManager.loadConfig(readParams)
 		DoInitEvent()
@@ -181,7 +182,7 @@ class Config {
 	static void MergeConfig (Map data) {
         if (data == null) throw new ExceptionGETL('Null "data" detected!')
 
-        Map<String, Object> currentVars = this.vars
+        Map<String, Object> currentVars = vars
         if (data.vars != null) MapUtils.MergeMap(currentVars, (Map<String, Object>)(data.vars))
         if (!(Job.jobArgs.vars as Map)?.isEmpty()) MapUtils.MergeMap(currentVars, (Map<String, Object>)(Job.jobArgs.vars))
 
@@ -201,7 +202,7 @@ class Config {
 	/**
 	 * Run every eventer after load config files
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	static void DoInitEvent () {
 		init.each { doInit ->
 			doInit()
@@ -214,7 +215,7 @@ class Config {
 	 * @param section
 	 * @return
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	static Map FindSection (String section) {
 		if (section == null) return null
 		def res = MapUtils.FindSection(content, section)
@@ -226,7 +227,7 @@ class Config {
 	 * @param section
 	 * @return
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	static boolean ContainsSection (String section) {
 		MapUtils.ContainsSection(content, section)
 	}
@@ -236,7 +237,7 @@ class Config {
 	 * @param name
 	 * @param value
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	static void SetValue(String name, value) {
 		MapUtils.SetValue(content, name, value)
 	}
@@ -245,7 +246,7 @@ class Config {
 	 * Save content to JSON configuration file
 	 * @param writer
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	static void SaveConfig (Map saveParams = [:]) {
         configClassManager.saveConfig(content, saveParams)
 	}

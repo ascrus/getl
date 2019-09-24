@@ -111,7 +111,7 @@ class FileTextSpec extends BaseSpec {
     }
 
     /** Read file to text buffer */
-    String read(String sourceFileName, String codePage = 'UTF-8') {
+    static String read(String sourceFileName, String codePage = 'UTF-8') {
         if (sourceFileName == null) throw new ExceptionGETL("Required \"sourceFileName\" value!")
         return new File(sourceFileName).getText(codePage)
     }

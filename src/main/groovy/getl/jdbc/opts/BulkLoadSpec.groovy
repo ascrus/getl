@@ -56,7 +56,9 @@ class BulkLoadSpec extends BaseSpec {
     /**
      * Preparing code
      */
-    void prepare(Closure value) { setOnPrepare(prepareClosure(value)) }
+    void prepare(Closure value) {
+        setOnPrepare(value)
+    }
 
     /**
      * Automatic linking by the file and table field names

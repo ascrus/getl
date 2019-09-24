@@ -60,12 +60,14 @@ class CSVDriver extends FileDriver {
 								'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'nullAsValue', 'decimalSeparator', 
 								'formatDate', 'formatTime', 'formatDateTime', 'onSplitFile', 'escapeProcessLineChar'])
 	}
-	
+
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		[Driver.Support.WRITE, Driver.Support.AUTOLOADSCHEMA, Driver.Support.AUTOSAVESCHEMA, Driver.Support.EACHROW] 
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations () {
 		[Driver.Operation.DROP] 
@@ -283,6 +285,7 @@ class CSVDriver extends FileDriver {
 			}
 			else {
 				if (fieldLocale == null) {
+					//noinspection UnnecessaryQualifiedReference
 					cp = new org.supercsv.cellprocessor.FmtDate(df)
 				}
 				else {

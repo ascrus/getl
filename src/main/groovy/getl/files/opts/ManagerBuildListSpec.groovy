@@ -24,7 +24,6 @@
 
 package getl.files.opts
 
-import getl.jdbc.InternalTableDataset
 import getl.jdbc.TableDataset
 import getl.lang.opts.BaseSpec
 import getl.utils.Path
@@ -43,11 +42,22 @@ class ManagerBuildListSpec extends BaseSpec {
     Path getMaskPath() { params.path as Path }
     /** File path search mask */
     void setMaskPath(Path value) { params.path = value }
+    /** File path search mask */
+    void useMaskPath(@DelegatesTo(Path)
+                     @ClosureParams(value = SimpleType, options = ['getl.utils.Path']) Closure cl) {
+        def parent = new Path()
+        parent.sysParams.dslThisObject = thisObject
+        parent.sysParams.dslOwnerObject = ownerObject
+        runClosure(parent, cl)
+        if (!parent.isCompile) parent.compile()
+
+        setMaskPath(parent)
+    }
 
     /** Download history table (default TDS table) */
-    InternalTableDataset getHistoryTable() { params.story as InternalTableDataset }
+    TableDataset getHistoryTable() { params.story as TableDataset }
     /** Download history table (default TDS table) */
-    void setHistoryTable(InternalTableDataset value) { params.story = value }
+    void setHistoryTable(TableDataset value) { params.story = value }
 
     /** Create history table if not exists (default false) */
     Boolean getCreateHistoryTable() { params.createStory as Boolean }
@@ -97,6 +107,6 @@ class ManagerBuildListSpec extends BaseSpec {
      * @return Boolean continue - continue processing
      */
     void filterFile(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> value) {
-        setOnFilterFile(prepareClosure(value))
+        setOnFilterFile(value)
     }
 }

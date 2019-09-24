@@ -24,6 +24,7 @@
 
 package getl.csv
 
+import groovy.transform.CompileStatic
 import org.supercsv.cellprocessor.CellProcessorAdaptor
 import org.supercsv.exception.SuperCsvCellProcessorException
 import org.supercsv.util.CsvContext
@@ -31,7 +32,7 @@ import getl.utils.*
 import javax.sql.rowset.serial.SerialClob
 
 class CSVParseClob extends CellProcessorAdaptor {
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Override
     <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)

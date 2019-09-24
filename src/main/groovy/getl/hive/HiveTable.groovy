@@ -37,7 +37,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class HiveTable extends InternalTableDataset {
+class HiveTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof HiveConnection))

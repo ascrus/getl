@@ -35,7 +35,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class NetsuiteTable extends InternalTableDataset {
+class NetsuiteTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof NetsuiteConnection))

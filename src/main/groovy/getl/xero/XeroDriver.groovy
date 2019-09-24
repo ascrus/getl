@@ -44,6 +44,7 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
+//noinspection GroovyAssignabilityCheck
 @InheritConstructors
 class XeroDriver extends Driver {
     private XeroClient client
@@ -54,9 +55,11 @@ class XeroDriver extends Driver {
         methodParams.register('rows', ['modifiedAfter', 'where', 'orderBy', 'limit', 'includeArchived', 'filter'])
     }
 
+    @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Support> supported() { return [Driver.Support.EACHROW, Driver.Support.CONNECT] }
 
+    @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Operation> operations() { return [Driver.Operation.RETRIEVEFIELDS] }
 

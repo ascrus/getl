@@ -50,6 +50,7 @@ class MySQLDriver extends JDBCDriver {
         localTemporaryTablePrefix = 'TEMPORARY'
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		return super.supported() +
@@ -57,6 +58,7 @@ class MySQLDriver extends JDBCDriver {
 				 Driver.Support.INDEX, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
         return super.operations() +
@@ -77,6 +79,7 @@ class MySQLDriver extends JDBCDriver {
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} = {value}' }
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	Map getSqlType () {
 		Map res = super.getSqlType()
@@ -120,6 +123,7 @@ class MySQLDriver extends JDBCDriver {
 }"""
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	void prepareField (Field field) {
 		super.prepareField(field)
@@ -154,7 +158,7 @@ class MySQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	protected Map<String, String> prepareForRetrieveFields(InternalTableDataset dataset) {
+	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
 		def names = [:] as Map<String, String>
 		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, (dataset.connection as MySQLConnection).connectDatabase, defaultDBName]) as String)
 		names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)

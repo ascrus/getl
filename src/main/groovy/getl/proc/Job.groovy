@@ -110,6 +110,7 @@ abstract class Job {
 	/**
 	 * Run job process
 	 */
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	private void doRun () {
 		DateUtils.init()
 		getl.deploy.Version.SayInfo()

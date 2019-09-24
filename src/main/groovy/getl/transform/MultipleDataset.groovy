@@ -44,14 +44,14 @@ class MultipleDataset extends Dataset {
 		
 		Map<String, Closure> cond = [:]
 		params.condition = cond
-		connection = new Connection(driver: MutlipleDatasetDriver)
+		connection = new Connection([driver: MutlipleDatasetDriver])
 	}
 	
 	/**
 	 * Destinition datasets (alias:dataset)
 	 * @return
 	 */
-	Map<String, Dataset> getDest () { params.dest }
+	Map<String, Dataset> getDest () { params.dest as Map<String, Dataset> }
 
     void setDest (Map<String, Dataset> value) { params.dest = value }
 	
@@ -59,7 +59,7 @@ class MultipleDataset extends Dataset {
 	 * Conditions for filter rows to datasets (alias:condition)
 	 * @return
 	 */
-	Map<String, Closure> getCondition () { params.condition }
+	Map<String, Closure> getCondition () { params.condition as Map<String, Closure> }
 
     void setCondition (Map<String, Closure> value) { params.condition = value }
 	

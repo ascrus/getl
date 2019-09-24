@@ -74,7 +74,7 @@ class ConfigUtils extends Job {
 
         Logs.Info("config: load ${Config.content.size()} parameters for source")
 
-        def destMan = Class.forName((jobArgs.dest as Map).manager).newInstance() as ConfigManager
+        def destMan = Class.forName((jobArgs.dest as Map).manager as String).newInstance() as ConfigManager
         Config.params.clear()
         Config.configClassManager = destMan
         def destParams = [config: jobArgs.dest]

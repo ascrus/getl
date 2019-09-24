@@ -6,10 +6,16 @@ import getl.lang.Getl
 import getl.utils.Config
 import getl.utils.DateUtils
 import getl.utils.FileUtils
+import org.junit.BeforeClass
 import org.junit.Test
 
 class PostgreSQLDriverTest extends JDBCDriverProto {
 	static final def configName = 'tests/postgresql/postgresql.conf'
+
+	@BeforeClass
+	static void CleanGetl() {
+		Getl.CleanGetl()
+	}
 
 	@Override
 	protected JDBCConnection newCon() {
@@ -24,9 +30,9 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 	void testLimit() {
 		def count = 1000
 		Getl.Dsl(this) {
-			usePostgresqlConnection registerConnection(this.con, 'getl.test', true)
+			usePostgresqlConnection registerConnection(this.con, 'getl.test.postgresql', true)
 
-			postgresqlTable('test_limit', true) {
+			def table = postgresqlTable('getl.test.postgresql.test_limit', true) {
 				tableName = 'getl_test_limit'
 				field('id') { type = integerFieldType; isKey = true }
 				field('name') { length = 50; isNull = false }
@@ -37,7 +43,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 				truncate()
 			}
 
-			rowsTo(postgresqlTable('test_limit')) {
+			rowsTo(table) {
 				writeRow { add ->
 					(1..count).each {
 						add id: it, name: "test $it", dt: DateUtils.now
@@ -45,9 +51,9 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 				}
 			}
 
-			assertEquals(count, postgresqlTable('test_limit').countRow())
+			assertEquals(count, table.countRow())
 
-			rowProcess(postgresqlTable('test_limit')) {
+			rowProcess(table) {
 				int c = 0
 				readRow {
 					c++
@@ -55,7 +61,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 				assertEquals(count, c)
 			}
 
-			rowProcess(postgresqlTable('test_limit')) {
+			rowProcess(table) {
 				sourceParams.limit = 1
 				int c = 0
 				readRow { c++ }

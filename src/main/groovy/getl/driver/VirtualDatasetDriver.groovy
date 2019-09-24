@@ -36,11 +36,13 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 abstract class VirtualDatasetDriver extends Driver {
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
 		[Driver.Support.WRITE]
 	}
 
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations() {
 		[]
@@ -63,7 +65,7 @@ abstract class VirtualDatasetDriver extends Driver {
 	}
 	
 	protected static Dataset getDestinition(Dataset dataset) {
-		Dataset ds = dataset.params.dest
+		def ds = dataset.params.dest as Dataset
 		if (ds == null) throw new ExceptionGETL("Required set param \"dest\" with dataset")
 		
 		return ds

@@ -37,9 +37,9 @@ class ConvertUtils {
 	 * @param value
 	 * @return
 	 */
-	static String Object2String(def value) {
+	static String Object2String(Object value) {
 		if (value == null) return null
-		String.valueOf(value)
+		return String.valueOf(value)
 	}
 	
 	/**

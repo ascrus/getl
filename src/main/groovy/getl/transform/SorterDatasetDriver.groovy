@@ -39,7 +39,7 @@ import groovy.transform.InheritConstructors
 class SorterDatasetDriver extends VirtualDatasetDriver {
 	
 	private static List<String> getFieldOrderBy(Dataset dataset) {
-		List<String> res = dataset.params.fieldOrderBy
+		def res = dataset.params.fieldOrderBy as List<String>
 		if (res == null) throw new ExceptionGETL("Required parameter \"fieldOrderBy\" in dataset")
 
 		return res
@@ -61,15 +61,15 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 	@Override
 
 	void write(Dataset dataset, Map row) {
-		List data = dataset.params.sorter_data
+		def data = dataset.params.sorter_data as List<Map>
 		data << row
 	}
 
 	@Override
 
 	void doneWrite(Dataset dataset) {
-		List<Map> data = dataset.params.sorter_data
-		Closure code = dataset.params.sorter_code
+		def data = dataset.params.sorter_data as List<Map>
+		def code = dataset.params.sorter_code as Closure
 		data.sort(true, code)
 		
 		Dataset ds = getDestinition(dataset)

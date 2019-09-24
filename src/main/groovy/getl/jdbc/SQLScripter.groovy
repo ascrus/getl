@@ -36,6 +36,7 @@ import java.util.regex.Pattern
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings("UnnecessaryQualifiedReference")
 class SQLScripter {
 	/** 
 	 * Type of script command 
@@ -153,7 +154,7 @@ class SQLScripter {
 			
 		def varNames = [] as List<String>
 		def locVars = allVars
-		locVars.keySet().toArray().each { varNames << it }
+		locVars.keySet().toArray().each { varNames << (it as String) }
 		
 		Pattern p
 		Matcher m

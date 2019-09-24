@@ -183,17 +183,17 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Length of the recorded file
 	 */
-	Long getCountWriteCharacters() { params.countWriteCharacters }
+	Long getCountWriteCharacters() { params.countWriteCharacters as Long }
 	
 	/**
 	 * the number of recorded files
 	 */
-	Integer getCountWritePortions() { params.countWritePortions }
+	Integer getCountWritePortions() { params.countWritePortions as Integer }
 	
 	/**
 	 * The number of read files
 	 */
-	Integer getCountReadPortions() { params.countReadPortions }
+	Integer getCountReadPortions() { params.countReadPortions as Integer }
 	
 	@Override
 	void setConnection(Connection value) {
@@ -285,9 +285,9 @@ class CSVDataset extends FileDataset {
 	 * Read file options
 	 */
 	CSVReadSpec readOpts(@DelegatesTo(CSVReadSpec) Closure cl = null) {
-		def ownerObject = sysParams.dslOwnerObject?:this
+//		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-		def parent = new CSVReadSpec(ownerObject, thisObject, true, readDirective)
+		def parent = new CSVReadSpec(this, thisObject, true, readDirective)
 		parent.runClosure(cl)
 
 		return parent
@@ -297,9 +297,9 @@ class CSVDataset extends FileDataset {
 	 * Write file options
 	 */
 	CSVWriteSpec writeOpts(@DelegatesTo(CSVWriteSpec) Closure cl = null) {
-		def ownerObject = sysParams.dslOwnerObject?:this
+//		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-		def parent = new CSVWriteSpec(ownerObject, thisObject, true, writeDirective)
+		def parent = new CSVWriteSpec(this, thisObject, true, writeDirective)
 		parent.runClosure(cl)
 
 		return parent

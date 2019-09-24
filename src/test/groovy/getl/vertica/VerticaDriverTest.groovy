@@ -4,6 +4,7 @@ import getl.data.*
 import getl.jdbc.*
 import getl.lang.Getl
 import getl.utils.*
+import org.junit.BeforeClass
 import org.junit.Test
 
 /**
@@ -11,6 +12,12 @@ import org.junit.Test
  */
 class VerticaDriverTest extends JDBCDriverProto {
     static final def configName = 'tests/vertica/vertica.conf'
+
+    @BeforeClass
+    static void CleanGetl() {
+        Getl.CleanGetl()
+    }
+
     @Override
     protected JDBCConnection newCon() {
         if (!FileUtils.ExistsFile(configName)) return null
@@ -21,8 +28,8 @@ class VerticaDriverTest extends JDBCDriverProto {
     @Test
     void testLimit() {
         Getl.Dsl(this) {
-            useVerticaConnection registerConnection(this.con, 'getl.test', true)
-            verticaTable('tables', true) {
+            useVerticaConnection registerConnection(this.con, 'getl.test.vertica', true)
+            def table = verticaTable('getl.test.vertica.tables', true) {
                 schemaName = 'v_catalog'
                 tableName =  'tables'
                 field('table_schema')
@@ -31,7 +38,7 @@ class VerticaDriverTest extends JDBCDriverProto {
                 assertEquals(1, rows().size())
             }
 
-            query('requests', true) {
+            def query = query('getl.test.vertica.requests', true) {
                 query = '''SELECT request
 FROM query_requests
 WHERE start_timestamp::date = CURRENT_DATE AND request_label = 'test_limit'

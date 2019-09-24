@@ -67,7 +67,7 @@ class CSVReadSpec extends BaseSpec {
      */
     void processError(@ClosureParams(value = SimpleType, options = ['java.lang.Exception', 'long'])
                               Closure<Boolean> value) {
-        setOnProcessError(prepareClosure(value))
+        setOnProcessError(value)
     }
 
     /**
@@ -86,6 +86,6 @@ class CSVReadSpec extends BaseSpec {
      */
     void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
                         Closure<Boolean> value) {
-        setOnFilter(prepareClosure(value))
+        setOnFilter(value)
     }
 }

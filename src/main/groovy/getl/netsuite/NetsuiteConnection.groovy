@@ -72,7 +72,7 @@ class NetsuiteConnection extends JDBCConnection {
     void setCiphersuites (String value) { params.ciphersuites = value }
 
 	/** Account ID */
-	Integer getAccountId () { params.accountId }
+	Integer getAccountId () { params.accountId as Integer }
 	/** Account ID */
     void setAccountId (Integer value) { params.accountId = value }
 

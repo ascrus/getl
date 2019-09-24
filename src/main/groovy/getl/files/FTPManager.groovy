@@ -26,6 +26,7 @@ package getl.files
 
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import it.sauronsoftware.ftp4j.*
 
@@ -200,13 +201,13 @@ class FTPManager extends Manager {
 	class FTPList extends FileManagerList {
 		public FTPFile[] listFiles
 		
-		@groovy.transform.CompileStatic
+		@CompileStatic
 		@Override
 		Integer size () {
 			listFiles.length
 		}
 		
-		@groovy.transform.CompileStatic
+		@CompileStatic
 		@Override
 		Map item (int index) {
 			FTPFile f = listFiles[index]
@@ -234,14 +235,14 @@ class FTPManager extends Manager {
 			m
 		}
 
-		@groovy.transform.CompileStatic
+		@CompileStatic
 		@Override
 		void clear () {
 			listFiles = []
 		}
 	}
 	
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Override
 	FileManagerList listDir(String mask) {
 		FTPFile[] listFiles 

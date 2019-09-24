@@ -27,12 +27,13 @@ package getl.excel
 import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.InheritConstructors
 
 /**
  * Excel Dataset class
  * @author Dmitry Shaldin
  */
-@groovy.transform.InheritConstructors
+@InheritConstructors
 class ExcelDataset extends Dataset {
     @Override
     void setConnection(Connection value) {

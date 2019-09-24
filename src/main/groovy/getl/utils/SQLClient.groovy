@@ -112,9 +112,9 @@ END FOR;"""
 		
 		String connectionName = args."connection"
 		JDBCConnection connection = JDBCConnection.CreateConnection(config: connectionName) as JDBCConnection
-		
-		
-		getl.jdbc.SQLScripter scripter = new getl.jdbc.SQLScripter(connection: connection, logEcho: "INFO")
+
+
+		SQLScripter scripter = new SQLScripter(connection: connection, logEcho: "INFO")
 		scripter.vars.putAll(Config.content."vars" as Map)
 		scripter.loadFile(args."script" as String, "utf-8")
 		scripter.runSql()

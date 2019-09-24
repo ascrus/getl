@@ -101,7 +101,7 @@ class FlowProcessSpec extends FlowBaseSpec {
     /**
      * Code executed before process read rows
      */
-    void initRead(Closure value) { setOnInitRead(prepareClosure(value)) }
+    void initRead(Closure value) { setOnInitRead(value) }
 
     /**
      * Closure code process row

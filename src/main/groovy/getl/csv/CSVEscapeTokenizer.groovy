@@ -24,6 +24,7 @@
 
 package getl.csv
 
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 import org.supercsv.io.Tokenizer
@@ -37,7 +38,7 @@ class CSVEscapeTokenizer extends Tokenizer {
 		super(reader, preferences)
 	}
 	
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Override
 	protected String readLine() throws IOException {
 		def res = super.readLine()

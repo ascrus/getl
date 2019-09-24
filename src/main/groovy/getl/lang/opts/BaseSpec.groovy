@@ -37,8 +37,8 @@ class BaseSpec {
     BaseSpec() { }
 
     BaseSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        this._ownerObject = ownerObject
-        this._thisObject = thisObject
+        this.ownerObject = ownerObject
+        this.thisObject = thisObject
         if (importParams != null) {
             if (useExternalParams) {
                 _params = importParams
@@ -55,31 +55,31 @@ class BaseSpec {
     }
 
     /** This object for this object */
-    def _thisObject
+    protected def thisObject
 
     /** This object for owner object */
-    def _ownerObject
+    protected def ownerObject
 
     /** Preparing closure code for this object */
     Closure prepareClosure(Closure cl) {
-        Getl.PrepareClosure(_ownerObject?:this, _thisObject?:this, this, cl)
+        Getl.PrepareClosure(ownerObject?:this, thisObject?:this, this, cl)
     }
 
     /** Preparing closure code for specified object */
     Closure prepareClosure(def parent, Closure cl) {
-        Getl.PrepareClosure(_ownerObject?:this, _thisObject?:this, parent?:this, cl)
+        Getl.PrepareClosure(ownerObject?:this, thisObject?:this, parent?:this, cl)
     }
 
     /** Run closure for this object */
     void runClosure(Closure cl) {
         if (cl == null) return
-        Getl.RunClosure(_ownerObject?:this, _thisObject?:this, this, cl)
+        Getl.RunClosure(ownerObject?:this, thisObject?:this, this, cl)
     }
 
     /** Run closure for specified object */
     void runClosure(def parent, Closure cl) {
         if (cl == null) return
-        Getl.RunClosure(_ownerObject?:this, _thisObject?:this, parent?:this, cl)
+        Getl.RunClosure(ownerObject?:this, thisObject?:this, parent?:this, cl)
     }
 
     Map<String, Object> _params = [:]

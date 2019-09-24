@@ -24,6 +24,7 @@
 
 package getl.csv
 
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 import org.supercsv.encoder.CsvEncoder
@@ -69,7 +70,7 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 		replaceTab = escaped && dataset.fieldDelimiter == "\t"
 	}
 
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Override
     String encode(String value, CsvContext context, CsvPreference pref) {
 		String res = (replaceQuote)?value.replace(quote, '\u0007'):value

@@ -50,33 +50,60 @@ import getl.exception.ExceptionGETL
 class FileUtils {
 	/**
 	 * Create path is not exists
-	 * @param fileName
+	 * @param fileName specified file name
+	 * @param deleteOnExit deleting file after stop program (defalt false)
+	 * @return true if the directory was created or false if it already existed
 	 */
-	static void ValidFilePath (String fileName) {
+	static Boolean ValidFilePath (String fileName, Boolean deleteOnExit = false) {
 		fileName = ConvertToDefaultOSPath(fileName)
-		ValidFilePath(new File(fileName))
+		return ValidFilePath(new File(fileName), deleteOnExit)
 	}
 	
 	/**
 	 * Create path is not exists
-	 * @param file
+	 * @param file specified file object
+	 * @param deleteOnExit deleting file after stop program (defalt false)
+	 * @return true if object is file or the directory was created or false if it already existed
 	 */
-	static void ValidFilePath (File file) {
-		if (file == null || file.parentFile == null) return
-		if (!file.isDirectory()) file.parentFile.mkdirs()
+	static Boolean ValidFilePath(File file, Boolean deleteOnExit = false) {
+		if (file == null || file.parentFile == null) return null
+		if (!file.isDirectory()) {
+			if (file.parentFile.mkdirs()) {
+				file.deleteOnExit()
+				return true
+			}
+			else {
+				return false
+			}
+		}
+		return true
 	}
 	
 	/**
 	 * Create path is not exists
-	 * @param path
+	 * @param path specified directory name
+	 * @param deleteOnExit deleting file after stop program (defalt false)
+	 * @return true if the directory was created or false if it already existed
 	 */
-	static void ValidPath(String path) {
+	static Boolean ValidPath(String path, Boolean deleteOnExit = false) {
 		path = ConvertToDefaultOSPath(path)
-		ValidPath(new File(path))
+		return ValidPath(new File(path), deleteOnExit)
 	}
 
-	static void ValidPath(File path) {
-		path.mkdirs()
+
+	/**
+	 * Create path is not exists
+	 * @param path specified directory file object
+	 * @param deleteOnExit deleting file after stop program (defalt false)
+	 * @return true if the directory was created or false if it already existed
+	 */
+	static Boolean ValidPath(File path, Boolean deleteOnExit = false) {
+		if (path.mkdirs()) {
+			path.deleteOnExit()
+			return true
+		}
+
+		return false
 	}
 	
 	/** 
@@ -89,6 +116,7 @@ class FileUtils {
 		int sepPos = fullPath.lastIndexOf(File.separator)
 		String nameAndExt = fullPath.substring(sepPos + 1, fullPath.length())
 		int dotPos = nameAndExt.lastIndexOf('.')
+
 		return (dotPos != -1)?nameAndExt.substring(dotPos + 1):''
 	}
 	

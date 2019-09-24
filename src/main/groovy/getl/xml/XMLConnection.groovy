@@ -26,13 +26,14 @@ package getl.xml
 
 import getl.data.FileConnection
 import getl.exception.ExceptionGETL
+import groovy.transform.InheritConstructors
 
 /**
  * XML connection class 
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.InheritConstructors
+@InheritConstructors
 class XMLConnection extends FileConnection {
 	XMLConnection () {
 		super([driver: XMLDriver])

@@ -75,7 +75,7 @@ class CacheManager extends H2Connection {
 	/**
 	 * List of cached connections
 	 */
-	protected final InternalTableDataset connections = new TableDataset(connection: this, tableName: connectionsName, manualSchema: true,
+	protected final TableDataset connections = new TableDataset(connection: this, tableName: connectionsName, manualSchema: true,
 														field: [
 															new Field(name: "CONNECTIONID", type: "BIGINT", isNull: false, isAutoincrement: true),
 															new Field(name: "DRIVER", length: 128, isNull: false, isKey: true),
@@ -88,7 +88,7 @@ class CacheManager extends H2Connection {
 	/**
 	 * List of cached datasets
 	 */
-	protected final InternalTableDataset objects = new TableDataset(connection: this, tableName: objectsName, manualSchema: true,
+	protected final TableDataset objects = new TableDataset(connection: this, tableName: objectsName, manualSchema: true,
 														field: [
 															new Field(name: "NAME", length: 1024, isNull: false, isKey: true),
 															new Field(name: "CONNECTIONID", type: "BIGINT", isNull: false, isKey: false),
@@ -171,10 +171,10 @@ class CacheManager extends H2Connection {
 				}
 				QueryDataset q = new QueryDataset(connection: this, query: "SELECT IDENTITY() AS id;")
 				def qr = q.rows()
-				connectionid = qr[0].id
+				connectionid = qr[0].id as Long
 			}
 			else {
-				connectionid = rowCons.connectionid
+				connectionid = rowCons.connectionid as Long
 			}
 		}
 		catch (Exception e) {
@@ -213,7 +213,7 @@ class CacheManager extends H2Connection {
 				if (cds.field.isEmpty()) cds.retrieveFields()
 				
 				if (dataset.field.isEmpty()) {
-					Clob cb = rowObjects.fields
+					def cb = rowObjects.fields as Clob
 					if (cb != null) {
 						def jsonFields = cb.characterStream.text
 						dataset.field = GenerationUtils.ParseJsonFields(jsonFields)

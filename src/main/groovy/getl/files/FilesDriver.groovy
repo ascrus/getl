@@ -27,13 +27,14 @@ package getl.files
 import getl.data.*
 import getl.driver.*
 import getl.exception.ExceptionGETL
+import groovy.transform.InheritConstructors
 
 /**
  * Files driver
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.InheritConstructors
+@InheritConstructors
 class FilesDriver extends FileDriver {
 
 	@Override
@@ -43,7 +44,7 @@ class FilesDriver extends FileDriver {
 
 	@Override
 	List<Operation> operations() {
-		[Driver.Operation.DROP]
+		[Operation.DROP]
 	}
 
 	@Override

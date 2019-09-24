@@ -245,7 +245,7 @@ class FileCopier {
         if (dest != null)
             Logs.Fine("Destination mask: ${dPath.maskStr}")
 
-        Path rPath = null
+        Path rPath
         if (renamePath != null) {
             if (dest == null) throw new ExceptionGETL('Renaming files is supported only when copying to the destination')
             rPath = renamePath

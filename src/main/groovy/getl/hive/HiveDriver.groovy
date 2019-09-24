@@ -62,6 +62,7 @@ class HiveDriver extends JDBCDriver {
                                                'hdfsDir', 'processRow', 'expression'])
     }
 
+    @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Support> supported() {
         return super.supported() +
@@ -71,6 +72,7 @@ class HiveDriver extends JDBCDriver {
                  Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD]
     }
 
+    @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Operation> operations() {
         return super.operations() +
@@ -85,6 +87,7 @@ class HiveDriver extends JDBCDriver {
         return 'jdbc:hive2://{host}/{database}'
     }
 
+    @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     Map getSqlType () {
         Map res = super.getSqlType()
@@ -232,7 +235,7 @@ class HiveDriver extends JDBCDriver {
 
     @Override
     protected String syntaxInsertStatement(Dataset dataset, Map params) {
-        String into = (BoolUtils.IsValue([params.overwrite, (dataset as InternalTableDataset).params.overwrite]))?'OVERWRITE':'INTO'
+        String into = (BoolUtils.IsValue([params.overwrite, (dataset as TableDataset).params.overwrite]))?'OVERWRITE':'INTO'
         return ((dataset.fieldListPartitions.isEmpty()))?
                 "INSERT $into TABLE {table} ({columns}) VALUES({values})":
                 "INSERT $into TABLE {table} ({columns}) PARTITION ({partition}) VALUES({values})"
@@ -240,11 +243,11 @@ class HiveDriver extends JDBCDriver {
 
     @Override
     void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
-        def table = dest as InternalTableDataset
+        def table = dest as TableDataset
         bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
         def conHive = dest.connection as HiveConnection
 
-        def overwrite = BoolUtils.IsValue([bulkParams.overwrite, table.params.overwrite])
+        def overwriteTable = BoolUtils.IsValue([bulkParams.overwrite, table.params.overwrite])
         def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, conHive.hdfsHost])
         def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, conHive.hdfsPort]) as Integer
         def hdfsLogin = ListUtils.NotNullValue([bulkParams.hdfsLogin, conHive.hdfsLogin])
@@ -353,7 +356,7 @@ class HiveDriver extends JDBCDriver {
                 dest.readRows = tempTable.connection
                         .executeCommand(isUpdate: true, command: "LOAD DATA INPATH '${fileMan.rootPath}/${tempFile.fileName}' INTO TABLE ${tempTable.tableName}")
                 def countRow = tempTable.connection
-                        .executeCommand(isUpdate: true, command: "FROM ${tempTable.tableName} INSERT ${(overwrite) ? 'OVERWRITE' : 'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
+                        .executeCommand(isUpdate: true, command: "FROM ${tempTable.tableName} INSERT ${(overwriteTable)?'OVERWRITE':'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
                         (!partFields.isEmpty() ? " PARTITION(${partFields.join(', ')})" : '') + " SELECT ${loadFields.join(', ')}")
                 dest.writeRows = countRow
                 dest.updateRows = countRow
@@ -374,7 +377,7 @@ class HiveDriver extends JDBCDriver {
         }
     }
 
-    static Map<String, Object> tableExtendedInfo(InternalTableDataset table) {
+    static Map<String, Object> tableExtendedInfo(TableDataset table) {
         Map<String, Object> res = [:]
         def sql = 'SHOW TABLE EXTENDED'
         if (table.schemaName != null) sql += " IN ${table.schemaName}"
@@ -403,9 +406,10 @@ class HiveDriver extends JDBCDriver {
                         if (x != -1) {
                             colName = col.substring(x + 1)
                             colType = col.substring(0, x)
+                            /* todo: need detailing logic */
+                            Map<String, String> cr = [name: colName, type: colType]
+                            pc << cr
                         }
-                        Map<String, String> cr = [name: colName, type: colType]
-                        pc << cr
                     }
                     value = pc
                     break
@@ -446,7 +450,7 @@ class HiveDriver extends JDBCDriver {
     @Override
     List<Field> fields(Dataset dataset) {
         List<Field> res = super.fields(dataset)
-        if (dataset instanceof InternalTableDataset) {
+        if (dataset instanceof TableDataset) {
             def ext = tableExtendedInfo(dataset)
             if (BoolUtils.IsValue(ext.partitioned) && ext.partitionColumns != null) {
                 def partNum = 0

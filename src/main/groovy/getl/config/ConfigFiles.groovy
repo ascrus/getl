@@ -105,7 +105,7 @@ class ConfigFiles extends ConfigManager {
             params.files = f
         }
         this.files.clear()
-        this.files.addAll(value*.trim())
+        this.files.addAll(value*.trim() as List<String>)
 	}
 	
 	/**

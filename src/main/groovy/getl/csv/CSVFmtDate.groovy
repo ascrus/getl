@@ -24,6 +24,8 @@
 
 package getl.csv
 
+import groovy.transform.InheritConstructors
+
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -40,7 +42,7 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@groovy.transform.InheritConstructors
+@InheritConstructors
 class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 	
 	private final String dateFormat

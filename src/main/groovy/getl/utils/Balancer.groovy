@@ -98,7 +98,7 @@ class Balancer  {
 	 * </ul>
 	 * @return
 	 */
-	List<Map> getServers () { params."servers" }
+	List<Map> getServers () { params."servers" as List<Map> }
 	
 	@Synchronized
 	void setServers (List<Map> value) {
@@ -110,7 +110,7 @@ class Balancer  {
 	 * 
 	 * @return
 	 */
-	int getCheckTimeErrorServers () { params."checkTimeErrorServers"?:600 }
+	int getCheckTimeErrorServers () { (params.checkTimeErrorServers as Integer)?:600 }
 	
 	@Synchronized
 	void setCheckTimeErrorServers (int value) { params."checkTimeErrorServers" = value }

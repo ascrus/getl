@@ -27,7 +27,6 @@ package getl.proc.opts
 import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.proc.Flow
-import getl.utils.MapUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -283,7 +282,9 @@ class FlowCopySpec extends FlowBaseSpec {
     /**
      * Code executed before process copy rows
      */
-    void prepare(Closure value) { setOnPrepare(prepareClosure(value)) }
+    void prepare(Closure value) {
+        setOnPrepare(value)
+    }
 
     /**
      * save transformation code to dumn (default false)
@@ -307,7 +308,7 @@ class FlowCopySpec extends FlowBaseSpec {
 
         def parent = childs.get(name)
         if (parent == null) {
-            parent = new FlowCopyChildSpec(_ownerObject, _thisObject, false, null)
+            parent = new FlowCopyChildSpec(ownerObject, thisObject, false, null)
             parent.dataset = dataset
             childs.put(name, parent)
         }
@@ -344,7 +345,7 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Initialization code before processing */
     void setOnInitCopy(Closure value) { params.onInit = value }
     /** Initialization code before processing */
-    void initCopy(Closure value) { setOnInitCopy(prepareClosure(value)) }
+    void initCopy(Closure value) { setOnInitCopy(value) }
 
     /**
      * Closure code process row
