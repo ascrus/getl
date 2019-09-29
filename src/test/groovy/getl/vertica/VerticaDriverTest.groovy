@@ -28,7 +28,7 @@ class VerticaDriverTest extends JDBCDriverProto {
     @Test
     void testLimit() {
         Getl.Dsl(this) {
-            useVerticaConnection registerConnection(this.con, 'getl.test.vertica', true)
+            useVerticaConnection registerConnectionObject(this.con, 'getl.test.vertica', true)
             def table = verticaTable('getl.test.vertica.tables', true) {
                 schemaName = 'v_catalog'
                 tableName =  'tables'

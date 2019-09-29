@@ -101,6 +101,16 @@ class Executor {
 	/** List of processes */
 	public List list = []
 
+	/** Use this list for running threads */
+	void useList(Object... elements) {
+		list = elements.toList()
+	}
+
+	/** Use this list for running threads */
+	void useList(List elements) {
+		list = elements
+	}
+
 	/** List closure code for thread run */
 	final List<Closure> listCode = [] as List<Closure>
 	/** Adding thread code for run */

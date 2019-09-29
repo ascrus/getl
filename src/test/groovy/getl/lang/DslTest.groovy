@@ -7,10 +7,10 @@ import getl.utils.Config
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
+import getl.utils.MapUtils
 import getl.utils.StringUtils
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
-import org.junit.Ignore
 import org.junit.Test
 import groovy.test.GroovyAssert
 
@@ -135,7 +135,7 @@ datasets {
                 assertTrue(exists)
             }
 
-            registerDataset(h2Table('getl.testdsl.h2.table1').cloneDataset(), 'getl.testdsl.h2.table2', true)
+            registerDatasetObject datasetClone(h2Table('getl.testdsl.h2.table1')), 'getl.testdsl.h2.table2', true
             h2Table('getl.testdsl.h2.table2') {
                 tableName = 'table2'
                 createOpts {
@@ -162,6 +162,8 @@ datasets {
     @Test
     void test02_04DefineFilesFromTablesStructure() {
         Getl.Dsl {
+            registerConnectionObject csvTempConnection(), 'getl.testdsl.csv'
+
             csvTempWithDataset('getl.testdsl.csv.table1', h2Table('getl.testdsl.h2.table1')) {
                 useConfig 'file1'
                 readOpts {
@@ -386,6 +388,37 @@ ORDER BY t1.id'''
     }
 
     @Test
+    void test02_13HistoryPoint() {
+        Getl.Dsl {
+            historypoint('getl.test.dsl.history1', true) {
+                tableName = 'historytable'
+                saveMethod = mergeSave
+                create(true)
+
+                assertTrue(exists)
+                assertNull(lastValue('table1').value)
+                assertNull(lastValue('table2').value)
+
+                saveValue('table1', 1)
+                assertEquals(1, lastValue('table1').value)
+
+                saveValue('table2', 1)
+                assertEquals(1, lastValue('table2').value)
+
+                saveValue('table1', 2)
+                assertEquals(2, lastValue('table1').value)
+
+                clearValue('table1')
+                assertNull(lastValue('table1').value)
+                assertEquals(1, lastValue('table2').value)
+
+                truncate()
+                assertNull(lastValue('table2').value)
+            }
+        }
+    }
+
+    @Test
     void test03_01FileManagers() {
         Getl.Dsl {
             def fileRootPath = "$systemTempPath/root"
@@ -475,10 +508,10 @@ ORDER BY t1.id'''
             datasetProcess('getl.testdsl.h2.table1') { name -> assertEquals('getl.testdsl.h2.table1', name) }
 
             def files = []
-            useFilterObjects 'getl.testdsl.*'
+            useFilterObjects 'getl.testdsl.fail'
             filemanagerProcess { name -> files << name }
-            assertEquals(1, files.size())
-            assertEquals('getl.testdsl.files', files[0])
+            assertEquals(0, files.size())
+            clearFilterObjects()
         }
     }
 
@@ -489,7 +522,7 @@ ORDER BY t1.id'''
             assertTrue(dataset('getl.testdsl.h2.table1') instanceof H2Table)
             assertEquals(h2Table('getl.testdsl.h2.table2').params, jdbcTable('getl.testdsl.h2.table2').params)
             GroovyAssert.shouldFail { jdbcTable('getl.testdsl.csv.table1') }
-            assertTrue(fileManager('getl.testdsl.files') instanceof FileManager)
+            assertTrue(filemanager('getl.testdsl.files') instanceof FileManager)
         }
     }
 
@@ -505,12 +538,117 @@ ORDER BY t1.id'''
     }
 
     @Test
+    void test05_01ThreadConnections() {
+        Getl.Dsl {
+            def h2Con = embeddedConnection('getl.testdsl.h2')
+            def csvCon = csvTempConnection('getl.testdsl.csv')
+
+            thread {
+                abortOnError = true
+                useList 'getl.testdsl.h2', 'getl.testdsl.csv'
+                run { String connectionName ->
+                    def con = connection(connectionName)
+                    assertTrue(con instanceof TFS || con instanceof TDS)
+
+                    def newcon = connection(connectionName)
+                    assertSame(con, newcon)
+
+                    assertFalse(con in [h2Con, csvCon])
+
+                    if (con instanceof TDS)
+                        assertEquals(h2Con.params, con.params)
+                }
+            }
+        }
+    }
+
+    @Test
+    void test05_02ThreadDatasets() {
+        Getl.Dsl {
+            def h2Table = h2Table('getl.testdsl.h2.table1')
+            def csvFile = csvTemp('getl.testdsl.csv.table1') {
+                readOpts {
+                    onFilter = null
+                }
+            }
+            thread {
+                abortOnError = true
+                useList(['getl.testdsl.h2.table1', 'getl.testdsl.csv.table1'])
+                run { String datasetName ->
+                    def ds = dataset(datasetName)
+                    assertTrue(ds instanceof TFSDataset || ds instanceof H2Table)
+
+                    def newds = dataset(datasetName)
+                    assertSame(ds, newds)
+                    assertSame(ds.connection, newds.connection)
+
+                    assertFalse(ds in [h2Table, csvFile])
+
+                    if (ds instanceof H2Table) {
+                        assertNotSame(h2Table.connection, ds.connection)
+                        assertEquals(h2Table.params, ds.params)
+                    }
+                    else {
+                        assertNotSame(csvFile.connection, ds.connection)
+                        assertEquals(csvFile.params, ds.params)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void test05_03ThreadFilemanagers() {
+        Getl.Dsl {
+            def fmfiles = filemanager('getl.testdsl.files')
+
+            thread {
+                abortOnError = true
+                useList 'getl.testdsl.files'
+                run { String filemanagerName ->
+                    def fm = filemanager(filemanagerName)
+                    assertTrue(fm instanceof FileManager)
+
+                    def newfm = filemanager(filemanagerName)
+                    assertSame(fm, newfm)
+
+                    assertNotSame(fmfiles, fm)
+
+                    assertEquals(fmfiles.params, fm.params)
+                }
+            }
+        }
+    }
+
+    @Test
+    void test05_04ThreadHistoryPoints() {
+        Getl.Dsl {
+            def point1 = historypoint('getl.test.dsl.history1')
+
+            thread {
+                abortOnError = true
+                useList 'getl.test.dsl.history1'
+                run { String historyPointName ->
+                    def hp = historypoint(historyPointName)
+
+                    def newhp = historypoint(historyPointName)
+                    assertSame(hp, newhp)
+
+                    assertNotSame(point1, hp)
+
+                    assertEquals(point1.params, hp.params)
+                }
+            }
+        }
+    }
+
+    @Test
     void test99UnregisterObjects() {
         Getl.Dsl {
-            unregisterFileManager('getl.testdsl.files')
+            unregisterFileManager'getl.testdsl.files'
             GroovyAssert.shouldFail { files('getl.testdsl.files') }
 
-            unregisterDataset(null, [H2TABLE, EMBEDDEDTABLE])
+            unregisterDataset null, [H2TABLE, EMBEDDEDTABLE]
             GroovyAssert.shouldFail { h2Table('getl.testdsl.h2.table1') }
             GroovyAssert.shouldFail { h2Table('getl.testdsl.h2.table2') }
             assertEquals(datasetList(null, [CSVTEMPDATASET]).sort(), ['getl.testdsl.csv.table1', 'getl.testdsl.csv.table2'])
