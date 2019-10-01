@@ -304,14 +304,4 @@ class CSVDataset extends FileDataset {
 
 		return parent
 	}
-
-	/**
-	 * Perform operations on a dataset
-	 * @param cl closure code
-	 * @return source dataset
-	 */
-	CSVDataset dois(@DelegatesTo(CSVDataset) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

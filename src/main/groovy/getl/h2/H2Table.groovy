@@ -84,14 +84,4 @@ class H2Table extends TableDataset {
         super.createCsvTempFile()
         csvTempFile.escaped = false
     }
-
-    /**
-     * Perform operations on a table
-     * @param cl closure code
-     * @return source table
-     */
-    H2Table dois(@DelegatesTo(H2Table) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

@@ -122,14 +122,4 @@ class VerticaTable extends TableDataset {
         csvTempFile.nullAsValue = '<NULL>'
         csvTempFile.isGzFile = true
     }
-
-    /**
-     * Perform operations on a table
-     * @param cl closure code
-     * @return source table
-     */
-    VerticaTable dois(@DelegatesTo(VerticaTable) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

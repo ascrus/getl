@@ -94,14 +94,4 @@ class XeroConnection extends Connection {
             FileUtils.ValidFilePath(fileNameHistory)
         }
     }
-
-    /**
-     * Perform operations on a connection
-     * @param cl closure code
-     * @return source connection
-     */
-    XeroConnection dois(@DelegatesTo(XeroConnection) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

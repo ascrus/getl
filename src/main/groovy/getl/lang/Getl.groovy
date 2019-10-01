@@ -87,10 +87,6 @@ class Getl extends Script {
         _params.repHistoryPoints = new ConcurrentHashMap<String, SavePointManager>()
         _params.repFileManagers = new ConcurrentHashMap<String, Manager>()
 
-        _params.defaultJDBCConnection = new ConcurrentHashMap<String, Map<String, JDBCConnection>>()
-        _params.defaultFileConnection = new ConcurrentHashMap<String, Map<String, FileConnection>>()
-        _params.defaultOtherConnection = new ConcurrentHashMap<String, Map<String, FileConnection>>()
-
         useEmbeddedConnection()
         useCsvTempConnection()
     }
@@ -192,13 +188,15 @@ class Getl extends Script {
     public final String XEROCONNECTION = 'getl.xero.XeroConnection'
     public final String XMLCONNECTION = 'getl.xml.XMLConnection'
 
-    protected final List<String> listConnectionClasses = [
+    /** List of allowed connection classes */
+    public final List<String> listConnectionClasses = [
             CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, H2CONNECTION,
             HIVECONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
             POSTGRESQLCONNECTION, SALESFORCECONNECTION, VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION
     ]
 
-    protected final List<String> listJdbcConectionClasses = [
+    /** List of allowed jdbc connection classes */
+    public final List<String> listJdbcConectionClasses = [
             DB2CONNECTION, H2CONNECTION, HIVECONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETSUITECONNECTION,
             ORACLECONNECTION, POSTGRESQLCONNECTION, VERTICACONNECTION
     ]
@@ -224,13 +222,15 @@ class Getl extends Script {
     public final String XERODATASET = 'getl.xero.XeroDataset'
     public final String XMLDATASET = 'getl.xml.XMLDataset'
 
-    protected final List<String> listDatasetClasses = [
+    /** List of allowed dataset classes */
+    public final List<String> listDatasetClasses = [
             CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, H2TABLE, HIVETABLE, JSONDATASET, MSSQLTABLE,
             MYSQLTABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, SALESFORCEDATASET,
             SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET, XMLDATASET
     ]
 
-    protected final List<String> listJdbcTableClasses = [
+    /** List of allowed jdbc dataset classes */
+    public final List<String> listJdbcTableClasses = [
             DB2TABLE, H2TABLE, HIVETABLE, MSSQLTABLE, MYSQLTABLE, NETSUITETABLE, ORACLETABLE, POSTGRESQLTABLE,
             VERTICATABLE
     ]
@@ -240,7 +240,8 @@ class Getl extends Script {
     public final String HDFSMANAGER = 'getl.files.HDFSManager'
     public final String SFTPMANAGER = 'getl.files.SFTPManager'
 
-    protected final List<String> listFileManagerClasses = [
+    /** List of allowed file manager classes */
+    public final List<String> listFileManagerClasses = [
             FILEMANAGER, FTPMANAGER, HDFSMANAGER, SFTPMANAGER
     ]
 
@@ -280,22 +281,137 @@ class Getl extends Script {
     protected SynchronizeObject getExecutedClasses() { _params.executedClasses as SynchronizeObject }
 
     /** Specified filter when searching for objects */
-    String _filterObjects
+    String _filteringGroup
     /** Specified filter when searching for objects */
-    protected getFilterObjects() { _filterObjects }
-    /** Specified filter when searching for objects */
-    protected setFilterObjects(String value) { _filterObjects = value }
+    @Synchronized
+    String getFilteringGroup() { _filteringGroup }
 
-    /** Use the specified filter when searching for objects */
-    void useFilterObjects(String mask) {
-        if (mask == null) throw new ExceptionGETL('Filter mask required!')
-        _filterObjects = mask
+    /** Use the specified filter by group name when searching for objects */
+    @Synchronized
+    void forGroup(String group) {
+        if (group == null || group.trim().length() == 0)
+            throw new ExceptionGETL('Filter group required!')
+        if (Thread.currentThread() instanceof ExecutorThread)
+            throw new ExceptionGETL('Using group filtering within a threads is not allowed!')
+
+        _filteringGroup = group.trim().toLowerCase()
     }
+
     /** Reset filter to search for objects */
-    void clearFilterObjects() { _filterObjects = null }
+    @Synchronized
+    void clearGroupFilter() { _filteringGroup = null }
 
     /** Repository object name */
-    protected static String repObjectName(String name) { name.toLowerCase() }
+    String repObjectName(String name) {
+        def names = new ParseObjectName(name)
+        if (filteringGroup != null && names.groupName == null)
+            names.groupName = filteringGroup
+
+        return names.name
+    }
+
+    /** Class for parsing object name*/
+    class ParseObjectName {
+        ParseObjectName() {
+            super()
+        }
+
+        ParseObjectName(String repName) {
+            super()
+            setName(repName)
+        }
+
+        ParseObjectName(String groupName, objectName) {
+            super()
+            setGroupName(groupName)
+            setObjectName(objectName)
+        }
+
+        /** Name object in repository */
+        String _name
+        /** Name object in repository */
+        String getName() { _name }
+        /** Name object in repository */
+        void setName(String value) {
+            if (value == null) {
+                _name = null
+                _groupName = null
+                _objectName = null
+                return
+            }
+
+            value = value.trim().toLowerCase()
+            if (value.length() == 0)
+                throw new ExceptionGETL('The naming value cannot be empty!')
+
+            def i = value.indexOf(':')
+            if (i > -1) {
+                if (i == 0)
+                    throw new ExceptionGETL("Invalid name \"$value\"")
+
+                _groupName = value.substring(0, i)
+                if (i < value.length() - 1)
+                    _objectName = value.substring(i + 1)
+                else
+                    _objectName = null
+            }
+            else {
+                _groupName = null
+                _objectName = value
+            }
+
+            _name = value
+        }
+
+        /** Group name */
+        String _groupName
+        /** Group name */
+        String getGroupName() { _groupName }
+        /** Group name */
+        void setGroupName(String value) {
+            value = value?.trim().toLowerCase()
+            if (value != null && value.length() == 0)
+                throw new ExceptionGETL('The group naming value cannot be empty!')
+
+            if (value == null) {
+                _name = _objectName
+            }
+            else if (_objectName != null) {
+                _name = value + ':' + _objectName
+            }
+            else {
+                _name = null
+            }
+            _groupName = value
+        }
+
+        /** Object name */
+        String _objectName
+        /** Object name */
+        String getObjectName() { _objectName }
+        /** Object name */
+        void setObjectName(String value) {
+            value = value?.trim().toLowerCase()
+            if (value != null && value.length() == 0)
+                throw new ExceptionGETL('The object naming value cannot be empty!')
+
+            if (value == null) {
+                _name = null
+            }
+            else if (_groupName != null) {
+                _name = _groupName + ':' + value
+            }
+            else {
+                _name = value
+            }
+            _objectName = value
+        }
+    }
+
+    /** Parsing the name of an object from the repository into a group and the name itself */
+    ParseObjectName parseName(String name) {
+        return new ParseObjectName(name)
+    }
 
     /** Connections repository */
     protected Map<String, Connection> getConnections() {
@@ -310,8 +426,8 @@ class Getl extends Script {
      * @return list of connection names according to specified conditions
      */
     @Synchronized
-    List<String> connectionList(String mask = null, List connectionClasses = null,
-                                           @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
+    List<String> listConnections(String mask = null, List connectionClasses = null,
+                                 @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                                    Closure<Boolean> filter = null) {
         (connectionClasses as List<String>)?.each {
             if (!(it in listConnectionClasses))
@@ -319,16 +435,21 @@ class Getl extends Script {
         }
 
         def res = [] as List<String>
-
-        mask = mask?:filterObjects
-        def path = (mask != null)?new Path(mask: mask):null
-
         def classList = connectionClasses as List<String>
 
+        def masknames = parseName(mask)
+        def maskgroup = masknames.groupName?:filteringGroup
+        def maskobject = masknames.objectName
+        def path = (maskobject != null)?new Path(mask: maskobject):null
+        def names = new ParseObjectName()
+
         connections.each { name, obj ->
-            if (mask == null || path.match(name)) {
-                if (connectionClasses == null || obj.getClass().name in classList) {
-                    if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
+            names.name = name
+            if (maskgroup == null || maskgroup == names.groupName) {
+                if (path == null || path.match(names.objectName)) {
+                    if (classList == null || obj.getClass().name in classList) {
+                        if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
+                    }
                 }
             }
         }
@@ -342,10 +463,10 @@ class Getl extends Script {
      * @param filter object filtering code
      * @return list of connection names according to specified conditions
      */
-    List<String> connectionList(List connectionClasses,
-                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
+    List<String> listConnections(List connectionClasses,
+                                 @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                         Closure<Boolean> filter = null) {
-        connectionList(null, connectionClasses, filter)
+        listConnections(null, connectionClasses, filter)
     }
 
     /**
@@ -353,9 +474,9 @@ class Getl extends Script {
      * @param filter object filtering code
      * @return list of connection names according to specified conditions
      */
-    List<String> connectionList(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
+    List<String> listConnections(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                         Closure<Boolean> filter) {
-        connectionList(null, null, filter)
+        listConnections(null, null, filter)
     }
 
     /**
@@ -364,13 +485,13 @@ class Getl extends Script {
      * @param connectionClasses connection class list
      * @param cl processing code
      */
-    void connectionProcess(String mask, List connectionClasses,
-                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+    void processConnections(String mask, List connectionClasses,
+                            @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
             throw new ExceptionGETL('Process required closure code!')
 
         def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        def list = connectionList(mask, connectionClasses)
+        def list = listConnections(mask, connectionClasses)
         list.each { name ->
             code.call(name)
         }
@@ -381,9 +502,9 @@ class Getl extends Script {
      * @param mask filter mask (use Path expression syntax)
      * @param cl processing code
      */
-    void connectionProcess(String mask,
-                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        connectionProcess(mask, null, cl)
+    void processConnections(String mask,
+                            @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processConnections(mask, null, cl)
     }
 
     /**
@@ -391,17 +512,17 @@ class Getl extends Script {
      * @param connectionClasses connection class list
      * @param cl processing code
      */
-    void connectionProcess(List connectionClasses,
-                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        connectionProcess(null, connectionClasses, cl)
+    void processConnections(List connectionClasses,
+                            @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processConnections(null, connectionClasses, cl)
     }
 
     /**
      * Process all repository connections
      * @param cl processing code
      */
-    void connectionProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        connectionProcess(null, null, cl)
+    void processConnections(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processConnections(null, null, cl)
     }
 
     /**
@@ -411,7 +532,7 @@ class Getl extends Script {
      * @return list of jdbc connection names according to specified conditions
      */
     List<String> jdbcConnectionList(String mask = null, Closure<Boolean> filter = null) {
-        return connectionList(mask, listJdbcConectionClasses, filter)
+        return listConnections(mask, listJdbcConectionClasses, filter)
     }
 
     /**
@@ -421,7 +542,7 @@ class Getl extends Script {
      */
     void jdbcConnectionProcess(String mask,
                            @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        connectionProcess(mask, listJdbcConectionClasses, cl)
+        processConnections(mask, listJdbcConectionClasses, cl)
     }
 
     /**
@@ -533,7 +654,7 @@ class Getl extends Script {
     void unregisterConnection(String mask = null, List connectionClasses = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                       Closure<Boolean> filter = null) {
-        def list = connectionList(mask, connectionClasses, filter)
+        def list = listConnections(mask, connectionClasses, filter)
         list.each { name ->
             connections.remove(name)
         }
@@ -552,8 +673,8 @@ class Getl extends Script {
      * @return list of dataset names according to specified conditions
      */
     @Synchronized
-    List<String> datasetList(String mask = null, List datasetClasses = null,
-                                     @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
+    List<String> listDatasets(String mask = null, List datasetClasses = null,
+                              @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                              Closure<Boolean> filter = null) {
         (datasetClasses as List<String>)?.each {
             if (!(it in listDatasetClasses))
@@ -561,16 +682,21 @@ class Getl extends Script {
         }
 
         def res = [] as List<String>
-
-        mask = mask?:filterObjects
-        def path = (mask != null)?new Path(mask: mask):null
-
         def classList = datasetClasses as List<String>
 
+        def masknames = parseName(mask)
+        def maskgroup = masknames.groupName?:filteringGroup
+        def maskobject = masknames.objectName
+        def path = (maskobject != null)?new Path(mask: maskobject):null
+        def names = new ParseObjectName()
+
         datasets.each { name, obj ->
-            if (mask == null || path.match(name)) {
-                if (classList == null || obj.getClass().name in classList) {
-                    if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
+            names.name = name
+            if (maskgroup == null || maskgroup == names.groupName) {
+                if (path == null || path.match(names.objectName)) {
+                    if (classList == null || obj.getClass().name in classList) {
+                        if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
+                    }
                 }
             }
         }
@@ -584,10 +710,10 @@ class Getl extends Script {
      * @param filter object filtering code
      * @return list of dataset names according to specified conditions
      */
-    List<String> datasetList(List datasetClasses,
-                             @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
+    List<String> listDatasets(List datasetClasses,
+                              @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                      Closure<Boolean> filter = null) {
-        datasetList(null, datasetClasses, filter)
+        listDatasets(null, datasetClasses, filter)
     }
 
     /**
@@ -595,9 +721,9 @@ class Getl extends Script {
      * @param filter object filtering code
      * @return list of dataset names according to specified conditions
      */
-    List<String> datasetList(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
+    List<String> listDatasets(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                      Closure<Boolean> filter) {
-        datasetList(null, null, filter)
+        listDatasets(null, null, filter)
     }
 
     /**
@@ -606,13 +732,13 @@ class Getl extends Script {
      * @param datasetClasses dataset class list
      * @param cl processing code
      */
-    void datasetProcess(String mask, List datasetClasses,
-                        @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+    void processDatasets(String mask, List datasetClasses,
+                         @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
             throw new ExceptionGETL('Process required closure code!')
 
         def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        def list = datasetList(mask, datasetClasses)
+        def list = listDatasets(mask, datasetClasses)
         list.each { name ->
             code.call(name)
         }
@@ -623,9 +749,9 @@ class Getl extends Script {
      * @param mask filter mask (use Path expression syntax)
      * @param cl processing code
      */
-    void datasetProcess(String mask,
-                        @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        datasetProcess(mask, null, cl)
+    void processDatasets(String mask,
+                         @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processDatasets(mask, null, cl)
     }
 
     /**
@@ -633,42 +759,55 @@ class Getl extends Script {
      * @param datasetClasses dataset class list
      * @param cl processing code
      */
-    void datasetProcess(List datasetClasses,
-                        @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        datasetProcess(null, datasetClasses, cl)
+    void processDatasets(List datasetClasses,
+                         @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processDatasets(null, datasetClasses, cl)
     }
 
     /**
      * Process all repository datasets
      * @param cl processing code
      */
-    void datasetProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        datasetProcess(null, null, cl)
+    void processDatasets(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processDatasets(null, null, cl)
     }
 
-    Map<String, String> datasetLinking(String sourceGroupMask, String destinationGroupMask,
-                                       @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.String'])
+    /**
+     * Return a list of objects associated with the names of two groups
+     * @param sourceGroup name of the group of source objects
+     * @param destinationGroup name of the group of destination objects
+     * @param filter filtering objects
+     * @return list of names of related objects
+     */
+    List<ExecutorListElement> linkDatasets(String sourceGroup, String destinationGroup,
+                                           @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                                                Closure<Boolean> filter = null) {
-        if (sourceGroupMask == null) throw new ExceptionGETL('Required to specify the value of the source group mask!')
-        if (destinationGroupMask == null) throw new ExceptionGETL('Required to specify the value of the destination group mask!')
+        if (sourceGroup == null) throw new ExceptionGETL('Required to specify the value of the source group name!')
+        if (destinationGroup == null) throw new ExceptionGETL('Required to specify the value of the destination group name!')
 
-        def sourceList = datasetList(sourceGroupMask + '.*')
-        def destList = datasetList(destinationGroupMask + '.*')
+        def sourceList = listDatasets(sourceGroup + ':')
+        def destList = listDatasets(destinationGroup + ':')
+
+        def parse = new ParseObjectName()
 
         def sourceTables = [:] as Map<String, String>
         sourceList.each { name ->
-            sourceTables.put(name - sourceGroupMask, name)
+            parse.name = name
+            sourceTables.put(parse.objectName, name)
         }
 
         def destTables = [:] as Map<String, String>
         destList.each { name ->
-            destTables.put(name - destinationGroupMask, name)
+            parse.name = name
+            destTables.put(parse.objectName, name)
         }
 
-        def res = [:] as Map<String, String>
+        def res = [] as List<ExecutorListElement>
         sourceTables.each { smallName, sourceFullName ->
             def destFullName = destTables.get(smallName)
-            if (destFullName != null) res.put(sourceFullName, destFullName)
+            if (destFullName != null)
+                if (filter == null || filter.call(smallName))
+                    res << new ExecutorListElement(source: sourceFullName, destination: destFullName)
         }
 
         return res
@@ -681,7 +820,7 @@ class Getl extends Script {
      * @return list of jdbc table names according to specified conditions
      */
     List<String> jdbcTableList(String mask = null, Closure<Boolean> filter = null) {
-        return datasetList(mask, listJdbcTableClasses, filter)
+        return listDatasets(mask, listJdbcTableClasses, filter)
     }
 
     /**
@@ -690,7 +829,7 @@ class Getl extends Script {
      * @return list of jdbc table names according to specified conditions
      */
     List<String> jdbcTableList(Closure<Boolean> filter) {
-        return datasetList(null, listJdbcTableClasses, filter)
+        return listDatasets(null, listJdbcTableClasses, filter)
     }
 
     /**
@@ -741,7 +880,13 @@ class Getl extends Script {
     }
 
     /** Last used JDBC default connection */
-    JDBCConnection getLastJdbcDefaultConnection() { _params.lastJDBCDefaultConnection as JDBCConnection }
+    JDBCConnection _lastJDBCDefaultConnection
+
+    /** Last used JDBC default connection */
+    JDBCConnection getLastJdbcDefaultConnection() { _lastJDBCDefaultConnection }
+
+    // /** Default JDBC connection for datasets */
+    def _defaultJDBCConnection = new ConcurrentHashMap<String, JDBCConnection>()
 
     /** Default JDBC connection for datasets */
     JDBCConnection defaultJdbcConnection(String datasetClassName = null) {
@@ -752,7 +897,7 @@ class Getl extends Script {
             if (!(datasetClassName in listDatasetClasses))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
-            res = (_params.defaultJDBCConnection as Map<String, JDBCConnection>).get(datasetClassName) as JDBCConnection
+            res = _defaultJDBCConnection.get(datasetClassName)
             if (res == null && lastJdbcDefaultConnection != null && datasetClassName == QUERYDATASET)
                 res = lastJdbcDefaultConnection
         }
@@ -762,18 +907,26 @@ class Getl extends Script {
 
     /** Use specified JDBC connection as default */
     JDBCConnection useJdbcConnection(String datasetClassName, JDBCConnection value) {
+        if (Thread.currentThread() instanceof ExecutorThread)
+            throw new ExceptionGETL('Specifying the default connection is not allowed in streams!')
+
         if (datasetClassName != null) {
             if (!(datasetClassName in listDatasetClasses))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
-            (_params.defaultJDBCConnection as Map<String, JDBCConnection>).put(datasetClassName, value)
+            _defaultJDBCConnection.put(datasetClassName, value)
         }
-        _params.lastJDBCDefaultConnection = value
+        _lastJDBCDefaultConnection = value
 
         return value
     }
 
     /** Last used file default connection */
-    FileConnection getLastFileDefaultConnection() { _params.lastFileDefaultConnection as FileConnection }
+    FileConnection _lastFileDefaultConnection
+
+    /** Last used file default connection */
+    FileConnection getLastFileDefaultConnection() { _lastFileDefaultConnection }
+
+    def _defaultFileConnection = new ConcurrentHashMap<String, FileConnection>()
 
     /** Default file connection for datasets */
     FileConnection defaultFileConnection(String datasetClassName = null) {
@@ -784,7 +937,7 @@ class Getl extends Script {
             if (!(datasetClassName in listDatasetClasses))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
-            res = (_params.defaultFileConnection as Map<String, FileConnection>).get(datasetClassName) as FileConnection
+            res = _defaultFileConnection.get(datasetClassName)
         }
 
         return res
@@ -792,19 +945,27 @@ class Getl extends Script {
 
     /** Use specified file connection as default */
     FileConnection useFileConnection(String datasetClassName, FileConnection value) {
+        if (Thread.currentThread() instanceof ExecutorThread)
+            throw new ExceptionGETL('Specifying the default connection is not allowed in streams!')
+
         if (datasetClassName != null) {
             if (!(datasetClassName in listDatasetClasses))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
-            (_params.defaultFileConnection as Map<String, FileConnection>).put(datasetClassName, value)
+            _defaultFileConnection.put(datasetClassName, value)
         }
-        _params.lastFileDefaultConnection = value
+        _lastFileDefaultConnection = value
 
         return value
     }
 
     /** Last used other type default connection */
-    Connection getLastOtherDefaultConnection() { _params.lastOtherDefaultConnection as Connection }
+    Connection _lastOtherDefaultConnection
+
+    /** Last used other type default connection */
+    Connection getLastOtherDefaultConnection() { _lastOtherDefaultConnection }
+
+    def _defaultOtherConnection = new ConcurrentHashMap<String, Connection>()
 
     /** Default other type connection for datasets */
     Connection defaultOtherConnection(String datasetClassName = null) {
@@ -815,7 +976,7 @@ class Getl extends Script {
             if (!(datasetClassName in listDatasetClasses))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
-            res = (_params.defaultOtherConnection as Map<String, Connection>).get(datasetClassName) as Connection
+            res = _defaultOtherConnection.get(datasetClassName)
         }
 
         return res
@@ -823,13 +984,16 @@ class Getl extends Script {
 
     /** Use specified other type connection as default */
     Connection useOtherConnection(String datasetClassName, Connection value) {
+        if (Thread.currentThread() instanceof ExecutorThread)
+            throw new ExceptionGETL('Specifying the default connection is not allowed in streams!')
+
         if (datasetClassName != null) {
             if (!(datasetClassName in listDatasetClasses))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
-            (_params.defaultOtherConnection as Map<String, Connection>).put(datasetClassName, value)
+            _defaultOtherConnection.put(datasetClassName, value)
         }
-        _params.lastOtherDefaultConnection = value
+        _lastOtherDefaultConnection = value
 
         return value
     }
@@ -990,7 +1154,7 @@ class Getl extends Script {
     void unregisterDataset(String mask = null, List datasetClasses = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                       Closure<Boolean> filter = null) {
-        def list = datasetList(mask, datasetClasses, filter)
+        def list = listDatasets(mask, datasetClasses, filter)
         list.each { name ->
             datasets.remove(name)
         }
@@ -1008,14 +1172,21 @@ class Getl extends Script {
      * @return list of history point manager names according to specified conditions
      */
     @Synchronized
-    List<String> historypointList(String mask, Closure<Boolean> filter = null) {
-        mask = mask?:filterObjects
-        def path = (mask != null)?new Path(mask: mask):null
-
+    List<String> listHistorypoints(String mask = null, Closure<Boolean> filter = null) {
         def res = [] as List<String>
-        historyPoints.each { String name, SavePointManager point ->
-            if (mask == null || path.match(name)) {
-                if (filter == null || BoolUtils.IsValue(filter.call(name, point))) res << name
+
+        def masknames = parseName(mask)
+        def maskgroup = masknames.groupName?:filteringGroup
+        def maskobject = masknames.objectName
+        def path = (maskobject != null)?new Path(mask: maskobject):null
+        def names = new ParseObjectName()
+
+        historyPoints.each { String name, SavePointManager obj ->
+            names.name = name
+            if (maskgroup == null || maskgroup == names.groupName) {
+                if (path == null || path.match(names.objectName)) {
+                    if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
+                }
             }
         }
 
@@ -1023,24 +1194,33 @@ class Getl extends Script {
     }
 
     /**
+     * Return list of repository history point manager
+     * @param filter object filtering code
+     * @return list of history point manager names according to specified conditions
+     */
+    List<String> listHistorypoints(Closure<Boolean> filter) {
+        listHistorypoints(null, filter)
+    }
+
+    /**
      * Process repository history point managers for specified mask and filter
      * @param mask filter mask (use Path expression syntax)
      * @param filter object filtering code
      */
-    void historypointProcess(String mask,
-                             @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+    void processHistorypoints(String mask,
+                              @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
             throw new ExceptionGETL('Process required closure code!')
 
         def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        historypointList(mask).each { name ->
+        listHistorypoints(mask).each { name ->
             code.call(name)
         }
     }
 
     /** Process all repository history point managers */
-    void historypointProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        historypointList(null, cl)
+    void processHistorypoints(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processHistorypoints(null, cl)
     }
 
     /**
@@ -1160,7 +1340,7 @@ class Getl extends Script {
     void unregisterHistoryPoint(String mask = null,
                                 @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.SavePointManager'])
                                         Closure<Boolean> filter = null) {
-        def list = historypointList(mask, filter)
+        def list = listHistorypoints(mask, filter)
         list.each { name ->
             historyPoints.remove(name)
         }
@@ -1179,8 +1359,8 @@ class Getl extends Script {
      * @return list of file manager names according to specified conditions
      */
     @Synchronized
-    List<String> filemanagerList(String mask = null, List filemanagerClasses = null,
-                                         @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
+    List<String> listFilemanagers(String mask = null, List filemanagerClasses = null,
+                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                                  Closure<Boolean> filter = null) {
         (filemanagerClasses as List<String>)?.each {
             if (!(it in listFileManagerClasses))
@@ -1188,13 +1368,22 @@ class Getl extends Script {
         }
 
         def res = [] as List<String>
+        def classList = filemanagerClasses as List<String>
 
-        mask = mask?:filterObjects
-        def path = (mask != null)?new Path(mask: mask):null
+        def masknames = parseName(mask)
+        def maskgroup = masknames.groupName?:filteringGroup
+        def maskobject = masknames.objectName
+        def path = (maskobject != null)?new Path(mask: maskobject):null
+        def names = new ParseObjectName()
 
-        fileManagers.each { String name, Manager manager ->
-            if (mask == null || path.match(name)) {
-                if (filter == null || BoolUtils.IsValue(filter.call(name, manager))) res << name
+        fileManagers.each { String name, Manager obj ->
+            names.name = name
+            if (maskgroup == null || maskgroup == names.groupName) {
+                if (path == null || path.match(names.objectName)) {
+                    if (classList == null || obj.getClass().name in classList) {
+                        if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
+                    }
+                }
             }
         }
 
@@ -1207,10 +1396,20 @@ class Getl extends Script {
      * @param filter object filtering code
      * @return list of file manager names according to specified conditions
      */
-    List<String> filemanagerList(List filemanagerClasses,
-                                 @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
+    List<String> listFilemanagers(List filemanagerClasses,
+                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                          Closure<Boolean> filter = null) {
-        filemanagerList(null, filemanagerList, filter)
+        listFilemanagers(null, filemanagerList, filter)
+    }
+
+    /**
+     * Return list of repository file managers for specified class
+     * @param filter object filtering code
+     * @return list of file manager names according to specified conditions
+     */
+    List<String> listFilemanagers(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
+                                          Closure<Boolean> filter) {
+        listFilemanagers(null, null, filter)
     }
 
     /**
@@ -1219,13 +1418,13 @@ class Getl extends Script {
      * @param filemanagerClasses file manager class list
      * @param cl processing code
      */
-    void filemanagerProcess(String mask, List<String> filemanagerClasses,
-                            @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+    void processFilemanagers(String mask, List filemanagerClasses,
+                             @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
             throw new ExceptionGETL('Process required closure code!')
 
         def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        filemanagerList(mask, filemanagerClasses).each { name ->
+        listFilemanagers(mask, filemanagerClasses).each { name ->
             code.call(name)
         }
     }
@@ -1235,9 +1434,9 @@ class Getl extends Script {
      * @param mask filter mask (use Path expression syntax)
      * @param cl processing code
      */
-    void filemanagerProcess(String mask,
-                            @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        filemanagerProcess(mask, null, cl)
+    void processFilemanagers(String mask,
+                             @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processFilemanagers(mask, null, cl)
     }
 
     /**
@@ -1245,17 +1444,17 @@ class Getl extends Script {
      * @param filemanagerClasses file manager class list
      * @param cl processing code
      */
-    void filemanagerProcess(List<String> filemanagerClasses,
-                            @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        filemanagerProcess(null, filemanagerClasses, cl)
+    void processFilemanagers(List filemanagerClasses,
+                             @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processFilemanagers(null, filemanagerClasses, cl)
     }
 
     /**
      * Process all repository file managers
      * @param cl processing code
      */
-    void filemanagerProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure  cl) {
-        filemanagerProcess(null, null, cl)
+    void processFilemanagers(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure  cl) {
+        processFilemanagers(null, null, cl)
     }
 
     /** Register file manager in repository */
@@ -1353,27 +1552,39 @@ class Getl extends Script {
     void unregisterFileManager(String mask = null, List filemanagerClasses = null,
                            @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                    Closure<Boolean> filter = null) {
-        def list = filemanagerList(mask, filemanagerClasses, filter)
+        def list = listFilemanagers(mask, filemanagerClasses, filter)
         list.each { name ->
             fileManagers.remove(name)
         }
     }
 
     /** Load and run groovy script file */
-    void runGroovyFile(String fileName, Map vars = [:]) {
+    void runGroovyFile(String fileName, Boolean runOnce, Map vars = [:]) {
         File sourceFile = new File(fileName)
         def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
-        runGroovyClass(groovyClass, vars)
+        runGroovyClass(groovyClass, runOnce, vars)
     }
 
-    /** Load and run groovy script by class name */
-    void runGroovyScript(String className, Map vars = [:]) {
-        def groovyClass = Class.forName(className)
-        runGroovyClass(groovyClass, vars)
+    /** Load and run groovy script file */
+    void runGroovyFile(String fileName, Map vars = [:]) {
+        runGroovyFile(fileName, false, vars)
+    }
+
+    /** Load and run groovy script file */
+    void runGroovyFile(String fileName, Boolean runOnce, Closure vars) {
+        File sourceFile = new File(fileName)
+        def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
+        runGroovyClass(groovyClass, runOnce, vars)
+    }
+
+    /** Load and run groovy script file */
+    void runGroovyFile(String fileName, Closure vars) {
+        runGroovyFile(fileName, false, vars)
     }
 
     /** Script call arguments */
-    public Map<String, Object> scriptArgs = [:]
+    protected final def _scriptArgs = new ConcurrentHashMap<String, Object>()
+    Map<String, Object> getScriptArgs() { _scriptArgs }
 
     /** Load and run groovy script by class */
     void runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:]) {
@@ -1386,15 +1597,85 @@ class Getl extends Script {
             def scriptGetl = script as Getl
             scriptGetl.setGetlParams(_params)
             scriptGetl.setLangOpts(langOpts)
+            if (vars != null && !vars.isEmpty()) {
+                scriptGetl._scriptArgs.putAll(vars)
+                fillFieldFromVars(scriptGetl, vars)
+            }
         }
-        script.binding = new Binding([scriptArgs: vars?.clone()?:[:]])
-        if (!previouslyRun) executedClasses.addToList(className)
+        else if (vars != null && !vars.isEmpty()) {
+            script.binding = new Binding(vars)
+        }
+
+        def pt = startProcess("Execution groovy class $className")
         script.run()
+        pt.finish()
+
+        if (!previouslyRun) executedClasses.addToList(className)
     }
 
     /** Load and run groovy script by class */
     void runGroovyClass(Class groovyClass, Map vars = [:]) {
         runGroovyClass(groovyClass, false, vars)
+    }
+
+    /** Load and run groovy script by class */
+    void runGroovyClass(Class groovyClass, Boolean runOnce, Closure vars) {
+        def cfg = new groovy.util.ConfigSlurper()
+        def cl = PrepareClosure(childOwnerObject, childThisObject, vars, vars)
+        def map = cfg.parse(new ClosureScript(closure: cl))
+        runGroovyClass(groovyClass, runOnce, map)
+    }
+
+    /** Load and run groovy script by class */
+    void runGroovyClass(Class groovyClass, Closure vars) {
+        runGroovyClass(groovyClass, false, vars)
+    }
+
+    /** Run getl script */
+    void runGetl(Getl script, Boolean runOnce = false, Map vars = [:]) {
+        def className = script.getClass().name
+        def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
+        if (previouslyRun && BoolUtils.IsValue(runOnce)) return
+
+        script.setGetlParams(_params)
+        script.setLangOpts(langOpts)
+        if (vars != null && !vars.isEmpty()) {
+            script._scriptArgs.putAll(vars)
+            fillFieldFromVars(script, vars)
+        }
+
+        def pt = startProcess("Execution groovy class $className")
+        script.run()
+        pt.finish()
+
+        if (!previouslyRun) executedClasses.addToList(className)
+    }
+
+    /** Run getl script */
+    void runGetl(Getl script, Map vars) {
+        runGetl(script, false, vars)
+    }
+
+    /** Run getl script */
+    void runGetl(Getl script, Boolean runOnce, Closure vars) {
+        def cfg = new groovy.util.ConfigSlurper()
+        def cl = PrepareClosure(childOwnerObject, childThisObject, vars, vars)
+        def map = cfg.parse(new ClosureScript(closure: cl))
+        runGetl(script, runOnce, map)
+    }
+
+    /** Run getl script */
+    void runGetl(Getl script, Closure vars) {
+        runGetl(script, false, vars)
+    }
+
+    /** Fill script field property from external arguments */
+    static protected void fillFieldFromVars(Getl script, Map vars) {
+        vars.each { key, value ->
+            MetaProperty prop = script.hasProperty(key)
+            if (prop != null)
+                prop.setProperty(script, value)
+        }
     }
 
     /** Detect delegate object for closure code */
@@ -1544,7 +1825,7 @@ class Getl extends Script {
      * @param obj object to clone
      * @return clone object
      */
-    Connection connectionClone(Connection obj) {
+    Connection cloneConnection(Connection obj) {
         if (obj == null) throw new ExceptionGETL('Need object value!')
         return obj.cloneConnection()
     }
@@ -1572,7 +1853,7 @@ class Getl extends Script {
      * @param con used connection for new dataset
      * @return clone object
      */
-    Dataset datasetClone(Dataset obj, Connection con = null) {
+    Dataset cloneDataset(Dataset obj, Connection con = null) {
         if (obj == null) throw new ExceptionGETL('Need object value!')
         return obj.cloneDataset(con)
     }
@@ -2910,7 +3191,7 @@ class Getl extends Script {
      * @param obj object to clone
      * @return clone object
      */
-    Manager filemanagerClone(Manager obj) {
+    Manager cloneFilemanager(Manager obj) {
         if (obj == null) throw new ExceptionGETL('Need object value!')
         return obj.cloneManager()
     }
@@ -3143,6 +3424,15 @@ class Getl extends Script {
         return parent
     }
 
+    /**
+     * Incremenal history point manager
+     */
+    SavePointManager historypoint(String name,
+                                  @DelegatesTo(SavePointManager)
+                                  @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl) {
+        historypoint(name, false, cl)
+    }
+
     /** Incremenal history point manager */
     SavePointManager historypoint(@DelegatesTo(SavePointManager)
                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl) {
@@ -3155,7 +3445,7 @@ class Getl extends Script {
      * @param con used connection for new history point manager
      * @return clone object
      */
-    SavePointManager historypointClone(SavePointManager obj, Connection con = null) {
+    SavePointManager cloneHistorypoint(SavePointManager obj, Connection con = null) {
         if (obj == null) throw new ExceptionGETL('Need object value!')
         return obj.cloneSavePointManager(con)
     }

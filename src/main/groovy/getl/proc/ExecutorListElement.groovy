@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
+
  Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
@@ -22,36 +22,16 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.db2
-
-import groovy.transform.InheritConstructors
-import getl.jdbc.JDBCConnection
+package getl.proc
 
 /**
- * IBM DB2 connection class
+ * Element for thread execution list
  * @author Alexsey Konstantinov
- *
  */
-@InheritConstructors
-class DB2Connection extends JDBCConnection {
-	DB2Connection() {
-		super(driver: DB2Driver)
-	}
-	
-	DB2Connection(Map params) {
-		super(new HashMap([driver: DB2Driver]) + params)
-		if (this.getClass().name == 'getl.db2.DB2Connection') methodParams.validation("Super", params)
-	}
-	
-	@Override
-	protected void onLoadConfig (Map configSection) {
-		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.db2.DB2Connection') methodParams.validation("Super", params)
-	}
-	
-	@Override
-	protected void doInitConnection () {
-		super.doInitConnection()
-		driverName = "com.ibm.db2.jcc.DB2Driver"
-	}
+class ExecutorListElement {
+    /** Source object */
+    public Object source
+
+    /** Destination object */
+    public Object destination
 }

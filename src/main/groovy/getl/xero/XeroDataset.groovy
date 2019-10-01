@@ -68,14 +68,4 @@ class XeroDataset extends Dataset {
     String getObjectFullName() {
         return (connection as XeroConnection).configInResource?:'' +'.' + xeroObjectName
     }
-
-    /**
-     * Perform operations on a xero dataset
-     * @param cl closure code
-     * @return source xero dataset
-     */
-    XeroDataset dois(@DelegatesTo(XeroDataset) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

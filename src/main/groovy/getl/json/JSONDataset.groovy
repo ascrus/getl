@@ -84,14 +84,4 @@ class JSONDataset extends StructureFileDataset {
 
 		return parent
 	}
-
-	/**
-	 * Perform operations on a json file
-	 * @param cl closure code
-	 * @return source json file
-	 */
-	JSONDataset dois(@DelegatesTo(JSONDataset) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

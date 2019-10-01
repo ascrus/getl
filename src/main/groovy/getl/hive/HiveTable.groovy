@@ -67,14 +67,4 @@ class HiveTable extends TableDataset {
     HiveCreateSpec createOpts(@DelegatesTo(HiveCreateSpec) Closure cl = null) {
         genCreateTable(cl) as HiveCreateSpec
     }
-
-    /**
-     * Perform operations on a table
-     * @param cl closure code
-     * @return source table
-     */
-    HiveTable dois(@DelegatesTo(HiveTable) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

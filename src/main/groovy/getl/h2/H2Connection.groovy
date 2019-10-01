@@ -90,14 +90,4 @@ class H2Connection extends JDBCConnection {
         if (connected && exclusive != value) (driver as JDBCDriver).changeSessionProperty('exclusive', value)
         sessionProperty.exclusive = value
     }
-
-	/**
-	 * Perform operations on a connection
-	 * @param cl closure code
-	 * @return source connection
-	 */
-	H2Connection dois(@DelegatesTo(H2Connection) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

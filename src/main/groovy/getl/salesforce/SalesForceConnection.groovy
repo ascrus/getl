@@ -91,14 +91,4 @@ class SalesForceConnection extends Connection {
 	 * <br>This param do nothing for readAsBulk.
 	 */
     void setBatchSize (int value) { params.batchSize = value }
-
-	/**
-	 * Perform operations on a connection
-	 * @param cl closure code
-	 * @return source connection
-	 */
-	SalesForceConnection dois(@DelegatesTo(SalesForceConnection) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

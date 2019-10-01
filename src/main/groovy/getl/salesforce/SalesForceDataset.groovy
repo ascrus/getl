@@ -87,14 +87,4 @@ class SalesForceDataset extends Dataset {
 	List<TFSDataset> bulkUnload(Map params) {
 		return (connection.driver as SalesForceDriver).bulkUnload(this, params)
 	}
-
-	/**
-	 * Perform operations on a salesforce dataset
-	 * @param cl closure code
-	 * @return source salesforce dataset
-	 */
-	SalesForceDataset dois(@DelegatesTo(SalesForceDataset) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

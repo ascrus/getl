@@ -22,7 +22,7 @@ class FileManagerTest extends ManagerTest {
         def resFile = FileUtils.FileFromResources('/fileutils/file.txt').name
         FileUtils.ValidPath(usepath)
         new File(usepath).deleteOnExit()
-        (manager as FileManager).dois {
+        (manager as FileManager).with {
             rootPath = usepath
             localDirectory = TFS.systemPath
             upload(resFile)

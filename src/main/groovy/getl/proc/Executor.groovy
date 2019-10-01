@@ -25,6 +25,8 @@
 package getl.proc
 
 import groovy.transform.Synchronized
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import org.codehaus.groovy.runtime.StackTraceUtils
 
 import java.util.concurrent.*
@@ -194,6 +196,13 @@ class Executor {
 	}
 
 	/** Run thread code with list elements */
+	void runWithElements(@ClosureParams(value = SimpleType, options = ['getl.proc.ExecutorListElement']) Closure cl) {
+		if (!(list instanceof List<ExecutorListElement>))
+			throw new ExceptionGETL('Requires List<ExecutorListElement> type for list elements!')
+		run(null, null, cl)
+	}
+
+	/** Run thread code with list elements */
 	void run(List elements = list, Integer countThread = countProc, Closure code) {
 		hasError = false
 		isInterrupt = false
@@ -202,6 +211,8 @@ class Executor {
 		threadActive.clear()
 
 		if (elements == null) elements = list
+		if (elements == null || elements.isEmpty()) throw new ExceptionGETL("List of items to process is empty!")
+
 		if (countThread == null) countThread = countProc?:elements?.size()
 
 		def runCode = { Map m ->

@@ -526,14 +526,4 @@ class SFTPManager extends Manager {
 
 		return res
 	}
-
-	/**
-	 * Perform operations on a manager
-	 * @param cl closure code
-	 * @return source manager
-	 */
-	SFTPManager dois(@DelegatesTo(SFTPManager) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

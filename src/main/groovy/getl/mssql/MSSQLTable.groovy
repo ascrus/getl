@@ -68,14 +68,4 @@ class MSSQLTable extends TableDataset {
                                    Closure cl = null) {
         genReadDirective(cl) as MSSQLReadSpec
     }
-
-    /**
-     * Perform operations on a table
-     * @param cl closure code
-     * @return source table
-     */
-    MSSQLTable dois(@DelegatesTo(MSSQLTable) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

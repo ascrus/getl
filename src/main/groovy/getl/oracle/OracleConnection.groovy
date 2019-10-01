@@ -61,14 +61,4 @@ class OracleConnection extends JDBCConnection {
 		super.doInitConnection()
 		driverName = 'oracle.jdbc.OracleDriver'
 	}
-
-	/**
-	 * Perform operations on a connection
-	 * @param cl closure code
-	 * @return source connection
-	 */
-	OracleConnection dois(@DelegatesTo(OracleConnection) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

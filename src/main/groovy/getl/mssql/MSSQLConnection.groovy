@@ -54,14 +54,4 @@ class MSSQLConnection extends JDBCConnection {
 		super.doInitConnection()
 		driverName = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 	}
-
-	/**
-	 * Perform operations on a connection
-	 * @param cl closure code
-	 * @return source connection
-	 */
-	MSSQLConnection dois(@DelegatesTo(MSSQLConnection) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

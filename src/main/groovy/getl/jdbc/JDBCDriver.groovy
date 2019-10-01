@@ -56,7 +56,7 @@ class JDBCDriver extends Driver {
                                                 'useNativeDBType', 'type'])
 		methodParams.register('dropDataset', ['ifExists'])
 		methodParams.register('openWrite', ['operation', 'batchSize', 'updateField', 'logRows',
-                                            'onSaveBatch'])
+                                            'onSaveBatch', 'where'])
 		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order',
                                           'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
 		methodParams.register('bulkLoadFile', ['allowMapAlias', 'files', 'fileMask'])
@@ -1688,14 +1688,18 @@ $sql
 	 * SQL update statement pattern
 	 */
 	protected String syntaxUpdateStatement(Dataset dataset, Map params) {
-		return 'UPDATE {table} SET {values} WHERE {keys}'
+		def res =  'UPDATE {table} SET {values} WHERE ({keys})'
+		if (params.where != null) res += " AND (${params.where})"
+		return res
 	}
 
 	/**
 	 * SQL delete statement pattern
 	 */
 	protected String syntaxDeleteStatement(Dataset dataset, Map params){
-		return 'DELETE FROM {table} WHERE {keys}'
+		def res = 'DELETE FROM {table} WHERE ({keys})'
+		if (params.where != null) res += " AND (${params.where})"
+		return res
 	}
 	
 	@Override

@@ -113,14 +113,4 @@ class HiveConnection extends JDBCConnection {
     String getHdfsDir () { params.hdfsDir as String }
     /** HDFS directory for bulkload files */
     void setHdfsDir (String value) { params.hdfsDir = value }
-
-    /**
-     * Perform operations on a connection
-     * @param cl closure code
-     * @return source connection
-     */
-    HiveConnection dois(@DelegatesTo(HiveConnection) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

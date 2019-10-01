@@ -56,14 +56,4 @@ class ViewDataset extends TableDataset {
 		
 		(!ds.isEmpty())
 	}
-
-	/**
-	 * Perform operations on a view
-	 * @param cl closure code
-	 * @return source view
-	 */
-	ViewDataset dois(@DelegatesTo(ViewDataset) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

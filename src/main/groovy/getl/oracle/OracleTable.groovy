@@ -68,14 +68,4 @@ class OracleTable extends TableDataset {
                                     Closure cl = null) {
         genReadDirective(cl) as OracleReadSpec
     }
-
-    /**
-     * Perform operations on a table
-     * @param cl closure code
-     * @return source table
-     */
-    OracleTable dois(@DelegatesTo(OracleTable) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

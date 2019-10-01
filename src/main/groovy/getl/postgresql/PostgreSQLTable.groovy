@@ -49,14 +49,4 @@ class PostgreSQLTable extends TableDataset {
         setConnection(value)
         return value
     }
-
-    /**
-     * Perform operations on a table
-     * @param cl closure code
-     * @return source table
-     */
-    PostgreSQLTable dois(@DelegatesTo(PostgreSQLTable) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

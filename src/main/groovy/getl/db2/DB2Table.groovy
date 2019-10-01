@@ -48,14 +48,4 @@ class DB2Table extends TableDataset {
         setConnection(value)
         return value
     }
-
-    /**
-     * Perform operations on a table
-     * @param cl closure code
-     * @return source table
-     */
-    DB2Table dois(@DelegatesTo(DB2Table) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

@@ -301,14 +301,4 @@ class FileManager extends Manager {
 	void setLastModified(String fileName, long time) {
 		if (saveOriginalDate) new File(fileName).setLastModified(time)
 	}
-
-	/**
-	 * Perform operations on a manager
-	 * @param cl closure code
-	 * @return source manager
-	 */
-	FileManager dois(@DelegatesTo(FileManager) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

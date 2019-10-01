@@ -49,14 +49,4 @@ class MySQLTable extends TableDataset {
         setConnection(value)
         return value
     }
-
-    /**
-     * Perform operations on a table
-     * @param cl closure code
-     * @return source table
-     */
-    MySQLTable dois(@DelegatesTo(MySQLTable) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

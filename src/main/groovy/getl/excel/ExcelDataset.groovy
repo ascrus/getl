@@ -85,14 +85,4 @@ class ExcelDataset extends Dataset {
         ExcelDriver drv = connection.driver as ExcelDriver
         return drv.fullFileNameDataset(this)
     }
-
-    /**
-     * Perform operations on a excel file
-     * @param cl closure code
-     * @return source excel file
-     */
-    ExcelDataset dois(@DelegatesTo(ExcelDataset) Closure cl) {
-        this.with(cl)
-        return this
-    }
 }

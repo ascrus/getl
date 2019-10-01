@@ -388,11 +388,15 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	protected String syntaxUpdateStatement(Dataset dataset, Map params) {
-		return "UPDATE ${writeHints(params)} {table} SET {values} WHERE {keys}"
+		def res = "UPDATE ${writeHints(params)} {table} SET {values} WHERE {keys}"
+		if (params.where != null) res += " AND (${params.where})"
+		return res
 	}
 
 	@Override
 	protected String syntaxDeleteStatement(Dataset dataset, Map params){
-		return "DELETE ${writeHints(params)} FROM {table} WHERE {keys}"
+		def res = "DELETE ${writeHints(params)} FROM {table} WHERE {keys}"
+		if (params.where != null) res += " AND (${params.where})"
+		return res
 	}
 }

@@ -236,7 +236,7 @@ class SavePointManager {
 		table.exists
 	}
 	
-	@Synchronized
+	/** Full history table name */
 	String getFullTableName() {
 		prepareTable()
 		
@@ -248,7 +248,6 @@ class SavePointManager {
 	 * @param source
 	 * @return res.type (D and N) and res.value
 	 */
-	@Synchronized
 	Map<String, Object> lastValue (String source) {
 		prepareTable()
 		source = source.toUpperCase()
@@ -350,7 +349,6 @@ class SavePointManager {
 	 * @param source
 	 * @param value
 	 */
-	@Synchronized
 	void saveValue(String source, def value, String format) {
 		prepareTable()
 		
@@ -383,15 +381,20 @@ class SavePointManager {
 		}
 		
 		def operation = (saveMethod == "MERGE")?"UPDATE":"INSERT"
+
+		def sourceField = (map.source as String).toLowerCase()
+		def typeField = (map.type as String).toLowerCase()
+		def timeField = (map.time as String).toLowerCase()
+		def valueField = (map.value as String).toLowerCase()
 		
 		def row = [:]
-		row.put((map.source as String).toLowerCase(), source.toUpperCase())
-		row.put((map.type as String).toLowerCase(), type)
-		row.put((map.time as String).toLowerCase(), DateUtils.Now())
-		row.put((map.value as String).toLowerCase(), value)
+		row.put(sourceField, source.toUpperCase())
+		row.put(typeField, type)
+		row.put(timeField, DateUtils.Now())
+		row.put(valueField, value)
 		
 		def save = { oper ->
-			new Flow().writeTo(dest: table, dest_operation: oper) { updater ->
+			new Flow().writeTo(dest: table, dest_operation: oper, dest_where: ((oper == 'UPDATE')?"$valueField < ${value.toString()}":null)) { updater ->
 				updater(row)
 			}
 		}

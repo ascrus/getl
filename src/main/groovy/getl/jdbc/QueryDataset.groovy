@@ -71,14 +71,4 @@ class QueryDataset extends JDBCDataset {
 	void loadResource(String fileName, def otherPath = null, String codePage = 'utf-8') {
 		setQuery(FileUtils.FileFromResources(fileName, otherPath).getText(codePage?:'utf-8'))
 	}
-
-	/**
-	 * Perform operations on a query
-	 * @param cl closure code
-	 * @return source query
-	 */
-	QueryDataset dois(@DelegatesTo(QueryDataset) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

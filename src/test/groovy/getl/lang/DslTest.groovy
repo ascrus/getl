@@ -7,7 +7,6 @@ import getl.utils.Config
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
-import getl.utils.MapUtils
 import getl.utils.StringUtils
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
@@ -47,7 +46,7 @@ class DslTest extends getl.test.GetlTest {
 
     @Test
     void test01_02GenerateAndLoadConfig() {
-        Getl.Dsl() {
+        Getl.Dsl(this) {
             logInfo "Use temporary path: ${this.tempPath}"
 
             // Generate configuration file
@@ -85,7 +84,7 @@ datasets {
 
     @Test
     void test01_03InitLogFile() {
-        Getl.Dsl() {
+        Getl.Dsl(this) {
             // Init log file
             logging {
                 logFileName = "${this.tempPath}/getl.{date}.logs"
@@ -98,22 +97,26 @@ datasets {
 
     @Test
     void test02_01CreateH2Connection() {
-        Getl.Dsl() {
+        Getl.Dsl(this) {
             // Register connection as H2
-            useH2Connection embeddedConnection('getl.testdsl.h2', true) {
+            useH2Connection embeddedConnection('getl.testdsl.h2:h2', true) {
                 sqlHistoryFile = "${this.tempPath}/getl.lang.h2.sql"
                 new File(sqlHistoryFile).deleteOnExit()
+
+                configContent.sqlFileHistoryH2 = sqlHistoryFile
             }
         }
 
-        assertEquals("$tempPath/getl.lang.h2.sql", Getl.Dsl().embeddedConnection('getl.testdsl.h2').sqlHistoryFile)
+        assertEquals("$tempPath/getl.lang.h2.sql", Getl.Dsl().embeddedConnection('getl.testdsl.h2:h2').sqlHistoryFile)
     }
 
     @Test
     void test02_02CreateTables() {
-        Getl.Dsl() {
+        Getl.Dsl(this) {
+            forGroup 'getl.testdsl.h2'
+
             // Create and generate data to H2 temporary table
-            h2Table('getl.testdsl.h2.table1', true) {
+            h2Table('table1', true) {
                 useConfig 'table1'
 
                 field('id') { type = integerFieldType; isKey = true }
@@ -135,8 +138,8 @@ datasets {
                 assertTrue(exists)
             }
 
-            registerDatasetObject datasetClone(h2Table('getl.testdsl.h2.table1')), 'getl.testdsl.h2.table2', true
-            h2Table('getl.testdsl.h2.table2') {
+            registerDatasetObject cloneDataset(h2Table('table1')), 'table2', true
+            h2Table('table2') {
                 tableName = 'table2'
                 createOpts {
                     type = isTemporary
@@ -149,8 +152,10 @@ datasets {
 
     @Test
     void test02_03GenerateDataToTable1() {
-        Getl.Dsl() {
-            rowsTo(h2Table('getl.testdsl.h2.table1')) {
+        Getl.Dsl(this) {
+            forGroup 'getl.testdsl.h2'
+
+            rowsTo(h2Table('table1')) {
                 writeRow { append ->
                     (1..this.table1_rows).each { append id: it, name: "test $it", dt: DateUtils.now }
                 }
@@ -161,10 +166,12 @@ datasets {
 
     @Test
     void test02_04DefineFilesFromTablesStructure() {
-        Getl.Dsl {
-            registerConnectionObject csvTempConnection(), 'getl.testdsl.csv'
+        Getl.Dsl(this) {
+            forGroup 'getl.testdsl.csv'
 
-            csvTempWithDataset('getl.testdsl.csv.table1', h2Table('getl.testdsl.h2.table1')) {
+            registerConnectionObject csvTempConnection(), 'csv'
+
+            csvTempWithDataset('table1', h2Table('getl.testdsl.h2:table1')) {
                 useConfig 'file1'
                 readOpts {
                     filter {
@@ -172,9 +179,9 @@ datasets {
                     }
                 }
             }
-            assertEquals(h2Table('getl.testdsl.h2.table1').field, csvTemp('getl.testdsl.csv.table1').field)
+            assertEquals(h2Table('getl.testdsl.h2:table1').field, csvTemp('table1').field)
 
-            csvTempWithDataset('getl.testdsl.csv.table2', h2Table('getl.testdsl.h2.table2')) {
+            csvTempWithDataset('table2', h2Table('getl.testdsl.h2:table2')) {
                 useConfig 'file2'
                 readOpts {
                     filter {
@@ -182,12 +189,12 @@ datasets {
                     }
                 }
             }
-            assertEquals(h2Table('getl.testdsl.h2.table2').field, csvTemp('getl.testdsl.csv.table2').field)
+            assertEquals(h2Table('getl.testdsl.h2:table2').field, csvTemp('table2').field)
 
-            csvTemp('getl.testdsl.csv.table1') {
+            csvTemp('table1') {
                 assertEquals(this.csvFileName1, fileName)
             }
-            csvTemp('getl.testdsl.csv.table2') {
+            csvTemp('table2') {
                 assertEquals(this.csvFileName2, fileName)
             }
         }
@@ -195,8 +202,10 @@ datasets {
 
     @Test
     void test02_05CopyTable1ToFile1() {
-        Getl.Dsl {
-            copyRows(h2Table('getl.testdsl.h2.table1'), csvTemp('getl.testdsl.csv.table1')) {
+        Getl.Dsl(this) {
+            clearGroupFilter()
+
+            copyRows(h2Table('getl.testdsl.h2:table1'), csvTemp('getl.testdsl.csv:table1')) {
                 copyRow { t, f ->
                     f.name = StringUtils.ToCamelCase(t.name)
                     f.dt = DateUtils.now
@@ -208,38 +217,15 @@ datasets {
 
     @Test
     void test02_06LoadFile1ToTable1AndTable2() {
-        Getl.Dsl { getl ->
+        Getl.Dsl(this) { getl ->
+            clearGroupFilter()
+
             rowsToMany([
-                    table1: h2Table('getl.testdsl.h2.table1') { truncate() },
-                    table2: h2Table('getl.testdsl.h2.table2') { truncate() }
+                    table1: h2Table('getl.testdsl.h2:table1') { truncate() },
+                    table2: h2Table('getl.testdsl.h2:table2') { truncate() }
             ]) {
                 writeRow { add ->
-                    rowProcess(csvTemp('getl.testdsl.csv.table1')) {
-                        readRow { row ->
-                            row.dt = DateUtils.now
-                            add 'table1', row
-                            add 'table2', row
-                        }
-                        assertEquals(this.table1_rows, countRow)
-                    }
-                }
-
-                assertEquals(this.table1_rows, destinations.table1.updateRows)
-                assertEquals(this.table1_rows, destinations.table2.updateRows)
-            }
-        }
-    }
-
-//    @Test
-    void test02_07LoadFile1ToTable1AndTable2WithBulkLoad() {
-        Getl.Dsl {
-            rowsToMany([
-                    table1: h2Table('getl.testdsl.h2.table1') { truncate() },
-                    table2: h2Table('getl.testdsl.h2.table2') { truncate() }
-            ]) {
-                bulkLoad = true
-                writeRow { add ->
-                    rowProcess(csvTemp('getl.testdsl.csv.table1')) {
+                    rowProcess(csvTemp('getl.testdsl.csv:table1')) {
                         readRow { row ->
                             row.dt = DateUtils.now
                             add 'table1', row
@@ -256,9 +242,11 @@ datasets {
     }
 
     @Test
-    void test02_08SelectQuery() {
-        Getl.Dsl() {
-            query('getl.testdsl.h2.query1', true) {
+    void test02_07SelectQuery() {
+        Getl.Dsl(this) {
+            forGroup 'getl.testdsl.h2'
+
+            query('query1', true) {
                 query = '''
 SELECT
     t1.id as t1_id, t1.name as t1_name, t1.dt as t1_dt,
@@ -284,9 +272,11 @@ ORDER BY t1.id'''
     }
 
     @Test
-    void test02_09ReadTable1WithFilter() {
-        Getl.Dsl {
-            h2Table('getl.testdsl.h2.table1') {
+    void test02_08ReadTable1WithFilter() {
+        Getl.Dsl(this) {
+            forGroup 'getl.testdsl.h2'
+
+            h2Table('table1') {
                 readOpts { where = 'id < 3'; order = ['id ASC'] }
                 rowProcess {
                     def i = 0
@@ -304,10 +294,12 @@ ORDER BY t1.id'''
     }
 
     @Test
-    void test02_10CopyTable1ToTwoFiles() {
-        Getl.Dsl {
-            copyRows(h2Table('getl.testdsl.h2.table1'), csvTemp('getl.testdsl.csv.table1')) {
-                childs(csvTemp('getl.testdsl.csv.table2')) {
+    void test02_09CopyTable1ToTwoFiles() {
+        Getl.Dsl(this) {
+            clearGroupFilter()
+
+            copyRows(h2Table('getl.testdsl.h2:table1'), csvTemp('getl.testdsl.csv:table1')) {
+                childs(csvTemp('getl.testdsl.csv:table2')) {
                     writeRow { add, sourceRow ->
                         sourceRow.name = (sourceRow.name as String).toLowerCase()
                         add sourceRow
@@ -324,73 +316,44 @@ ORDER BY t1.id'''
     }
 
     @Test
-    void test02_11CopyFile1ToTwoTables() {
-        Getl.Dsl {
-            h2Table('getl.testdsl.h2.table1') {
+    void test02_10CopyFile1ToTwoTables() {
+        Getl.Dsl(this) {
+            forGroup 'getl.testdsl.h2'
+
+            h2Table('table1') {
                 truncate()
                 assertEquals(0, countRow())
             }
 
-            h2Table('getl.testdsl.h2.table2') {
+            h2Table('table2') {
                 truncate()
                 assertEquals(0, countRow())
             }
 
-            copyRows(csvTemp('getl.testdsl.csv.table1'), h2Table('getl.testdsl.h2.table1')) {
-                childs(h2Table('getl.testdsl.h2.table2')) {
+            copyRows(csvTemp('getl.testdsl.csv:table1'), h2Table('table1')) {
+                childs(h2Table('table2')) {
                     writeRow { add, sourceRow ->
                         add sourceRow
                     }
                 }
             }
 
-            h2Table('getl.testdsl.h2.table1') {
+            h2Table('table1') {
                 assertEquals(this.table1_rows, countRow())
             }
 
-            h2Table('getl.testdsl.h2.table2') {
-                assertEquals(this.table1_rows, countRow())
-            }
-        }
-    }
-
-    @Test
-    void test02_12CopyFile1ToTwoTablesWithBulkLoad() {
-        Getl.Dsl {
-            h2Table('getl.testdsl.h2.table1') {
-                truncate()
-                assertEquals(0, countRow())
-            }
-
-            h2Table('getl.testdsl.h2.table2') {
-                truncate()
-                assertEquals(0, countRow())
-            }
-
-            copyRows(csvTemp('getl.testdsl.csv.table1'), h2Table('getl.testdsl.h2.table1')) {
-                bulkLoad = true
-
-                childs(h2Table('getl.testdsl.h2.table2')) {
-                    writeRow { add, sourceRow ->
-                        add sourceRow
-                    }
-                }
-            }
-
-            h2Table('getl.testdsl.h2.table1') {
-                assertEquals(this.table1_rows, countRow())
-            }
-
-            h2Table('getl.testdsl.h2.table2') {
+            h2Table('table2') {
                 assertEquals(this.table1_rows, countRow())
             }
         }
     }
 
     @Test
-    void test02_13HistoryPoint() {
-        Getl.Dsl {
-            historypoint('getl.test.dsl.history1', true) {
+    void test02_11HistoryPoint() {
+        Getl.Dsl(this) {
+            forGroup 'getl.testdsl.h2'
+
+            historypoint('history1', true) {
                 tableName = 'historytable'
                 saveMethod = mergeSave
                 create(true)
@@ -402,15 +365,20 @@ ORDER BY t1.id'''
                 saveValue('table1', 1)
                 assertEquals(1, lastValue('table1').value)
 
-                saveValue('table2', 1)
-                assertEquals(1, lastValue('table2').value)
+                def nowDate = DateUtils.now
+                saveValue('table2', nowDate)
+                assertEquals(nowDate, lastValue('table2').value)
 
                 saveValue('table1', 2)
                 assertEquals(2, lastValue('table1').value)
 
+                nowDate = DateUtils.now
+                saveValue('table2', nowDate)
+                assertEquals(nowDate, lastValue('table2').value)
+
                 clearValue('table1')
                 assertNull(lastValue('table1').value)
-                assertEquals(1, lastValue('table2').value)
+                assertEquals(nowDate, lastValue('table2').value)
 
                 truncate()
                 assertNull(lastValue('table2').value)
@@ -420,7 +388,9 @@ ORDER BY t1.id'''
 
     @Test
     void test03_01FileManagers() {
-        Getl.Dsl {
+        Getl.Dsl(this) {
+            forGroup 'getl.testdsl.files'
+
             def fileRootPath = "$systemTempPath/root"
             FileUtils.ValidPath(fileRootPath, true)
             textFile("$fileRootPath/server.txt") {
@@ -435,7 +405,7 @@ ORDER BY t1.id'''
                 write('Local file')
             }
 
-            files('getl.testdsl.files', true) {
+            files('files', true) {
                 rootPath = fileRootPath
                 localDirectory = fileLocalPath
 
@@ -476,76 +446,75 @@ ORDER BY t1.id'''
 
     @Test
     void test04_01ProcessRepositoryObjects() {
-        Getl.Dsl {
-            def countAll = 0
-            datasetProcess { name -> countAll++ }
-            assertEquals(5, countAll)
+        Getl.Dsl(this) {
+            clearGroupFilter()
 
-            def countByTestGroup = 0
-            datasetProcess('getl.testdsl.*') { name -> countByTestGroup++ }
-            assertEquals(5, countByTestGroup)
+            assertEquals(2, listConnections().size())
+            assertEquals(1, listConnections('h*').size())
+            assertEquals(1, listConnections('c*').size())
+            assertEquals(5, listDatasets().size())
+            assertEquals(4, listDatasets('table*').size())
+            assertEquals(1, listDatasets('query*').size())
+            assertEquals(1, listHistorypoints().size())
+            assertEquals(1, listHistorypoints('h*').size())
+            assertEquals(1, listFilemanagers().size())
+            assertEquals(1, listFilemanagers('f*').size())
 
-            def tables = []
-            jdbcTableProcess(null) { name -> tables << name }
-            assertEquals(2, tables.size())
-            assertEquals(['getl.testdsl.h2.table1', 'getl.testdsl.h2.table2'], tables.sort())
+            forGroup 'getl.testdsl.h2'
+            assertEquals(1, listConnections().size())
+            assertEquals(3, listDatasets().size())
+            assertEquals(1, listHistorypoints().size())
+            assertEquals(0, listFilemanagers().size())
 
-            def csv = []
-            datasetProcess(null, [CSVTEMPDATASET]) { name -> csv << name }
-            assertEquals(2, tables.size())
-            assertEquals(['getl.testdsl.csv.table1', 'getl.testdsl.csv.table2'], csv.sort())
+            forGroup 'getl.testdsl.csv'
+            assertEquals(1, listConnections().size())
+            assertEquals(2, listDatasets().size())
+            assertEquals(0, listHistorypoints().size())
+            assertEquals(0, listFilemanagers().size())
 
-            def queries = []
-            datasetProcess(null, [QUERYDATASET]) { name -> queries << name }
-            assertEquals(1, queries.size())
-            assertEquals(['getl.testdsl.h2.query1'], queries.sort())
-
-            def objects1 = []
-            datasetProcess('*.*1') { name -> objects1 << name }
-            assertEquals(3, objects1.size())
-            assertEquals(['getl.testdsl.csv.table1', 'getl.testdsl.h2.query1', 'getl.testdsl.h2.table1'], objects1.sort())
-
-            datasetProcess('getl.testdsl.h2.table1') { name -> assertEquals('getl.testdsl.h2.table1', name) }
-
-            def files = []
-            useFilterObjects 'getl.testdsl.fail'
-            filemanagerProcess { name -> files << name }
-            assertEquals(0, files.size())
-            clearFilterObjects()
+            forGroup 'getl.testdsl.files'
+            assertEquals(0, listConnections().size())
+            assertEquals(0, listDatasets().size())
+            assertEquals(0, listHistorypoints().size())
+            assertEquals(1, listFilemanagers().size())
         }
     }
 
     @Test
     void test04_02WorkWithPrototype() {
-        Getl.Dsl {
-            assertTrue(connection('getl.testdsl.h2') instanceof TDS)
-            assertTrue(dataset('getl.testdsl.h2.table1') instanceof H2Table)
-            assertEquals(h2Table('getl.testdsl.h2.table2').params, jdbcTable('getl.testdsl.h2.table2').params)
-            GroovyAssert.shouldFail { jdbcTable('getl.testdsl.csv.table1') }
-            assertTrue(filemanager('getl.testdsl.files') instanceof FileManager)
+        Getl.Dsl(this) {
+            forGroup 'fail-test'
+            assertTrue(connection('getl.testdsl.h2:h2') instanceof TDS)
+            assertTrue(dataset('getl.testdsl.h2:table1') instanceof H2Table)
+            assertEquals(h2Table('getl.testdsl.h2:table2').params, jdbcTable('getl.testdsl.h2:table2').params)
+            GroovyAssert.shouldFail { jdbcTable('getl.testdsl.csv:table1') }
+            GroovyAssert.shouldFail { dataset('table1') }
+            assertTrue(filemanager('getl.testdsl.files:files') instanceof FileManager)
         }
     }
 
     @Test
     void test04_03LinkDatasets() {
-        Getl.Dsl {
-            def map = datasetLinking('getl.testdsl.h2', 'getl.testdsl.csv')
-            assertEquals([
-                    'getl.testdsl.h2.table1': 'getl.testdsl.csv.table1',
-                    'getl.testdsl.h2.table2': 'getl.testdsl.csv.table2'
-            ], map)
+        Getl.Dsl(this) {
+            forGroup 'getl.testdsl.h2'
+
+            def map = linkDatasets(filteringGroup, 'getl.testdsl.csv').sort { a, b -> a.source <=> b.source }
+            assertEquals(map[0].source, 'getl.testdsl.h2:table1')
+            assertEquals(map[0].destination, 'getl.testdsl.csv:table1')
+            assertEquals(map[1].source, 'getl.testdsl.h2:table2')
+            assertEquals(map[1].destination, 'getl.testdsl.csv:table2')
         }
     }
 
     @Test
     void test05_01ThreadConnections() {
-        Getl.Dsl {
-            def h2Con = embeddedConnection('getl.testdsl.h2')
-            def csvCon = csvTempConnection('getl.testdsl.csv')
+        Getl.Dsl(this) {
+            def h2Con = embeddedConnection('getl.testdsl.h2:h2')
+            def csvCon = csvTempConnection('getl.testdsl.csv:csv')
 
             thread {
                 abortOnError = true
-                useList 'getl.testdsl.h2', 'getl.testdsl.csv'
+                useList 'getl.testdsl.h2:h2', 'getl.testdsl.csv:csv'
                 run { String connectionName ->
                     def con = connection(connectionName)
                     assertTrue(con instanceof TFS || con instanceof TDS)
@@ -564,16 +533,16 @@ ORDER BY t1.id'''
 
     @Test
     void test05_02ThreadDatasets() {
-        Getl.Dsl {
-            def h2Table = h2Table('getl.testdsl.h2.table1')
-            def csvFile = csvTemp('getl.testdsl.csv.table1') {
+        Getl.Dsl(this) {
+            def h2Table = h2Table('getl.testdsl.h2:table1')
+            def csvFile = csvTemp('getl.testdsl.csv:table1') {
                 readOpts {
                     onFilter = null
                 }
             }
             thread {
                 abortOnError = true
-                useList(['getl.testdsl.h2.table1', 'getl.testdsl.csv.table1'])
+                useList(['getl.testdsl.h2:table1', 'getl.testdsl.csv:table1'])
                 run { String datasetName ->
                     def ds = dataset(datasetName)
                     assertTrue(ds instanceof TFSDataset || ds instanceof H2Table)
@@ -599,12 +568,12 @@ ORDER BY t1.id'''
 
     @Test
     void test05_03ThreadFilemanagers() {
-        Getl.Dsl {
-            def fmfiles = filemanager('getl.testdsl.files')
+        Getl.Dsl(this) {
+            def fmfiles = filemanager('getl.testdsl.files:files')
 
             thread {
                 abortOnError = true
-                useList 'getl.testdsl.files'
+                useList 'getl.testdsl.files:files'
                 run { String filemanagerName ->
                     def fm = filemanager(filemanagerName)
                     assertTrue(fm instanceof FileManager)
@@ -622,12 +591,13 @@ ORDER BY t1.id'''
 
     @Test
     void test05_04ThreadHistoryPoints() {
-        Getl.Dsl {
-            def point1 = historypoint('getl.test.dsl.history1')
+        Getl.Dsl(this) {
+            forGroup 'getl.testdsl.h2'
+            def point1 = historypoint('history1')
 
             thread {
                 abortOnError = true
-                useList 'getl.test.dsl.history1'
+                useList 'history1'
                 run { String historyPointName ->
                     def hp = historypoint(historyPointName)
 
@@ -643,21 +613,59 @@ ORDER BY t1.id'''
     }
 
     @Test
-    void test99UnregisterObjects() {
-        Getl.Dsl {
-            unregisterFileManager'getl.testdsl.files'
-            GroovyAssert.shouldFail { files('getl.testdsl.files') }
+    void test05_05CopyDatasets() {
+        Getl.Dsl(this) {
+            thread {
+                abortOnError = true
+                useList linkDatasets('getl.testdsl.h2', 'getl.testdsl.csv') {
+                    it != 'table2'
+                }
+                runWithElements {
+                    copyRows(h2Table(it.source), csvTemp(it.destination)) {
+                        copyRow()
+                        assertEquals(source.readRows, destination.writeRows)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void test99_01UnregisterObjects() {
+        Getl.Dsl(this) {
+            clearGroupFilter()
+
+            unregisterFileManager'getl.testdsl.files:*'
+            GroovyAssert.shouldFail { filemanager('getl.testdsl.files:files') }
 
             unregisterDataset null, [H2TABLE, EMBEDDEDTABLE]
-            GroovyAssert.shouldFail { h2Table('getl.testdsl.h2.table1') }
-            GroovyAssert.shouldFail { h2Table('getl.testdsl.h2.table2') }
-            assertEquals(datasetList(null, [CSVTEMPDATASET]).sort(), ['getl.testdsl.csv.table1', 'getl.testdsl.csv.table2'])
+            GroovyAssert.shouldFail { dataset('getl.testdsl.h2:table1') }
+            GroovyAssert.shouldFail { dataset('getl.testdsl.h2:table2') }
+            assertEquals(listDatasets().sort(), ['getl.testdsl.csv:table1', 'getl.testdsl.csv:table2', 'getl.testdsl.h2:query1'])
             unregisterDataset()
-            GroovyAssert.shouldFail { h2Table('getl.testdsl.csv.table1') }
-            GroovyAssert.shouldFail { h2Table('getl.testdsl.csv.table2') }
+            GroovyAssert.shouldFail { dataset('getl.testdsl.csv:table1') }
+            GroovyAssert.shouldFail { dataset('getl.testdsl.csv:table2') }
+            GroovyAssert.shouldFail { dataset('getl.testdsl.h2:query1') }
 
             unregisterConnection()
-            GroovyAssert.shouldFail { embeddedConnection('getl.testdsl.h2') }
+            GroovyAssert.shouldFail { embeddedConnection('getl.testdsl.h2:h2') }
+        }
+
+//        println new File(Config.content.sqlFileHistoryH2).text
+    }
+
+    @Test
+    void test99_02RunGetlScript() {
+        Getl.Dsl(this) {
+            def p1 = 1
+            runGroovyClass DslTestScript, {
+                param1 = p1
+                param2 = p1 + 1
+                param3 = 3
+                param5 = [1,2,3]
+                param6 = [a:1, b:2, c:3]
+                paramCountTableRow = this.table1_rows
+            }
         }
     }
 }

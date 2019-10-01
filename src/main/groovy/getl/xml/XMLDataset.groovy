@@ -108,14 +108,4 @@ class XMLDataset extends StructureFileDataset {
 
 		return parent
 	}
-
-	/**
-	 * Perform operations on a xml dataset
-	 * @param cl closure code
-	 * @return source xml dataset
-	 */
-	XMLDataset dois(@DelegatesTo(XMLDataset) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

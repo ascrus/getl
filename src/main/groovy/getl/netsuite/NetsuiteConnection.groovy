@@ -75,14 +75,4 @@ class NetsuiteConnection extends JDBCConnection {
 	Integer getAccountId () { params.accountId as Integer }
 	/** Account ID */
     void setAccountId (Integer value) { params.accountId = value }
-
-	/**
-	 * Perform operations on a connection
-	 * @param cl closure code
-	 * @return source connection
-	 */
-	NetsuiteConnection dois(@DelegatesTo(NetsuiteConnection) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

@@ -43,14 +43,4 @@ class JSONConnection extends FileConnection {
 		
 		if (this.getClass().name == 'getl.json.JSONConnection') methodParams.validation("Super", params)
 	}
-
-	/**
-	 * Perform operations on a connection
-	 * @param cl closure code
-	 * @return source connection
-	 */
-	JSONConnection dois(@DelegatesTo(JSONConnection) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }

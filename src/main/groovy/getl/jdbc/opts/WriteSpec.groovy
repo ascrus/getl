@@ -57,6 +57,11 @@ class WriteSpec extends BaseSpec {
     /** Use schemata file for reading dataset structure */
     void setAutoSchema(Boolean value) { params.autoSchema = value }
 
+    /** Update and delete filter */
+    String getWhere() { params.where as String}
+    /** Update and delete filter */
+    void setWhere(String value) { params.where = value }
+
     /**
      * Operation type
      * <br>allow: INSERT, UPDATE, DELETE and MERGE

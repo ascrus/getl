@@ -428,14 +428,4 @@ class TableDataset extends JDBCDataset {
 									  Closure cl = null) {
 		genBulkLoadDirective(cl)
 	}
-
-	/**
-	 * Perform operations on a table
-	 * @param cl closure code
-	 * @return source table
-	 */
-	TableDataset dois(@DelegatesTo(TableDataset) Closure cl) {
-		this.with(cl)
-		return this
-	}
 }
