@@ -39,7 +39,8 @@ class NetsuiteConnection extends JDBCConnection {
 	}
 
 	NetsuiteConnection(Map params) {
-		super(new HashMap([driver: NetsuiteDriver]) + params)
+		super(new HashMap([driver: NetsuiteDriver]) + params?:[:])
+		if (this.getClass().name == 'getl.netsuite.NetsuiteConnection') methodParams.validation("Super", params?:[:])
 	}
 
 	@Override

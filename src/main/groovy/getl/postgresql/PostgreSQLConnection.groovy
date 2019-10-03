@@ -40,8 +40,8 @@ class PostgreSQLConnection extends JDBCConnection {
 	}
 	
 	PostgreSQLConnection(Map params) {
-		super(new HashMap([driver: PostgreSQLDriver]) + params)
-		if (this.getClass().name == 'getl.postgresql.PostgreSQLConnection') methodParams.validation("Super", params)
+		super(new HashMap([driver: PostgreSQLDriver]) + params?:[:])
+		if (this.getClass().name == 'getl.postgresql.PostgreSQLConnection') methodParams.validation("Super", params?:[:])
 	}
 	
 	@Override

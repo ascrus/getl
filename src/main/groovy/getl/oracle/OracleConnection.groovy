@@ -40,8 +40,8 @@ class OracleConnection extends JDBCConnection {
 	}
 	
 	OracleConnection(Map params) {
-		super(new HashMap([driver: OracleDriver]) + params)
-		if (this.getClass().name == 'getl.oracle.OracleConnection') methodParams.validation('Super', params)
+		super(new HashMap([driver: OracleDriver]) + params?:[:])
+		if (this.getClass().name == 'getl.oracle.OracleConnection') methodParams.validation('Super', params?:[:])
 	}
 
 	@Override

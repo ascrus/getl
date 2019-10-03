@@ -39,11 +39,11 @@ class ExcelConnection extends Connection {
     }
 
     ExcelConnection (Map params) {
-        super(new HashMap([driver: ExcelDriver]) + params)
+        super(new HashMap([driver: ExcelDriver]) + params?:[:])
 		
 		methodParams.register('Super', ['path', 'fileName', 'header'])
 		
-		if (this.getClass().name == 'getl.excel.ExcelConnection') methodParams.validation('Super', params)
+		if (this.getClass().name == 'getl.excel.ExcelConnection') methodParams.validation('Super', params?:[:])
     }
 
     /** Connection path */

@@ -40,6 +40,24 @@ import getl.utils.FileUtils
 class TFS extends CSVConnection {
 	private static String _systemPath
 
+	TFS () {
+		super(driver: TFSDriver)
+
+		methodParams.register("Super", ["deleteOnExit"])
+		if (this.getClass().name == 'getl.tfs.TFS') methodParams.validation("Super", params)
+
+		initParams()
+	}
+
+	TFS (Map params) {
+		super(new HashMap([driver: TFSDriver]) + params?:[:])
+
+		methodParams.register("Super", ["deleteOnExit"])
+		if (this.getClass().name == 'getl.tfs.TFS') methodParams.validation("Super", params?:[:])
+
+		initParams()
+	}
+
 	static def getSystemPath() {
         if (_systemPath == null) {
 			_systemPath = "${FileUtils.SystemTempDir()}/getl/${FileUtils.UniqueFileName()}"
@@ -49,29 +67,9 @@ class TFS extends CSVConnection {
         return _systemPath
     }
 	
-	/**
-	 * Global Temporary File Storage connection object
-	 */
+	/** Global temporary file connection object */
 	public static final TFS storage = new TFS([:])
-	
-	TFS () {
-		super(driver: TFSDriver)
 
-		methodParams.register("Super", ["deleteOnExit"])
-		if (this.getClass().name == 'getl.tfs.TFS') methodParams.validation("Super", params)
-
-		initParams()
-	}
-	
-	TFS (Map params) {
-		super(new HashMap([driver: TFSDriver]) + params)
-		
-		methodParams.register("Super", ["deleteOnExit"])
-		if (this.getClass().name == 'getl.tfs.TFS') methodParams.validation("Super", params)
-
-		initParams()
-	}
-	
 	/**
 	 * Init on creating
 	 */

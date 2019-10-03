@@ -36,7 +36,7 @@ import org.h2.tools.DeleteDbFiles
 @InheritConstructors
 class TDS extends H2Connection {
 	TDS() {
-		super(defaultParams)
+		super()
 		
 		if (connectURL == null && params."inMemory" == null) inMemory = true
 		if (connectURL == null && connectDatabase == null) connectDatabase = "getl"
@@ -60,9 +60,9 @@ class TDS extends H2Connection {
 	}
 	
 	TDS(Map initParams) {
-		super(defaultParams + initParams)
+		super(initParams?:[:])
 		
-		if (this.getClass().name == 'getl.tfs.TDS') methodParams.validation("Super", params)
+		if (this.getClass().name == 'getl.tfs.TDS') methodParams.validation("Super", initParams?:[:])
 		
 		if (connectURL == null && params."inMemory" == null) inMemory = true
 		if (connectURL == null && connectDatabase == null) {
@@ -92,6 +92,9 @@ class TDS extends H2Connection {
 		}
 		if (params."config" == null) config = "getl_tds"
 	}
+
+	/** Global temporary database connection object */
+	public static final TDS storage = new TDS([:])
 
     /** Temp path of database file */
     String _tempPath

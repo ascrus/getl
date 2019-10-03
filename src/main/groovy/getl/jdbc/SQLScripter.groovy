@@ -497,6 +497,9 @@ class SQLScripter {
 	 * Run script as SQL
 	 */ 
 	void runSql(boolean useParsing = true) {
+		if (connection == null)
+			throw new ExceptionGETL('Not defined jdbc connection for work!')
+
 		if (!useParsing) {
 			sql = StringUtils.EvalMacroString(script, allVars)
 			connection.executeCommand(command: sql)

@@ -197,7 +197,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(origFields, dsFields)
     }
 
-    protected void insertData() {
+    protected long insertData() {
         if (!con.driver.isOperation(Driver.Operation.INSERT)) return
         def count = new Flow().writeTo(dest: table) { updater ->
             (1..countRows).each { num ->
@@ -227,6 +227,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
 		}
         assertEquals(10, table.readRows)
+
+        return count
     }
 
     protected void updateData() {
@@ -260,7 +262,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
             assertEquals(rows[i].value + 1, r.value)
 			assertNotNull(r.double)
 			if (con.driver.isSupport(Driver.Support.DATE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
-			if (con.driver.isSupport(Driver.Support.TIME)) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
+			if (con.driver.isSupport(Driver.Support.TIME)) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)).toString(), r.time.toString())
 			if (con.driver.isSupport(Driver.Support.BOOLEAN)) assertNotNull(r.flag)
 			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
 			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
@@ -425,8 +427,8 @@ END FOR;
         createTable()
         assertTrue(table.exists)
 
-        insertData()
-        if (table.updateRows > 0) {
+        if (insertData() > 0) {
+            copyToCsv()
             updateData()
             queryData()
             mergeData()
@@ -501,4 +503,10 @@ END FOR;
             t?.drop()
         }
 	}
+
+    protected copyToCsv() {
+        def csv = TFS.dataset()
+        new Flow().copy(source: table, dest: csv, inheritFields: true)
+        assertEquals(table.readRows, csv.writeRows)
+    }
 }

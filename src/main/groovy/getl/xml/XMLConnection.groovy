@@ -40,9 +40,9 @@ class XMLConnection extends FileConnection {
 	}
 	
 	XMLConnection (Map params) {
-		super(new HashMap([driver: XMLDriver]) + params)
+		super(new HashMap([driver: XMLDriver]) + params?:[:])
 		
-		if (this.getClass().name == 'getl.xml.XMLConnection') methodParams.validation("Super", params)
+		if (this.getClass().name == 'getl.xml.XMLConnection') methodParams.validation("Super", params?:[:])
 	}
 
 	/** Use default the attribute access method (default) */

@@ -41,12 +41,12 @@ class CSVConnection extends FileConnection {
 	}
 	
 	CSVConnection (Map params) {
-		super(new HashMap([driver: CSVDriver]) + params)
+		super(new HashMap([driver: CSVDriver]) + params?:[:])
 
 		methodParams.register('Super', ['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped', 
 										'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime', 
 										'formatDateTime', 'ignoreHeader', 'escapeProcessLineChar', 'locale'])
-		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation('Super', params)
+		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation('Super', params?:[:])
 	}
 	
 	/** Quote delimiter string */

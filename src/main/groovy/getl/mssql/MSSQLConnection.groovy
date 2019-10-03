@@ -39,8 +39,8 @@ class MSSQLConnection extends JDBCConnection {
 	}
 	
 	MSSQLConnection(Map params) {
-		super(new HashMap([driver: MSSQLDriver]) + params)
-		if (this.getClass().name == 'getl.mssql.MSSQLConnection') methodParams.validation("Super", params)
+		super(new HashMap([driver: MSSQLDriver]) + params?:[:])
+		if (this.getClass().name == 'getl.mssql.MSSQLConnection') methodParams.validation("Super", params?:[:])
 	}
 	
 	@Override

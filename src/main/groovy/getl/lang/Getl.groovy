@@ -87,18 +87,23 @@ class Getl extends Script {
         _params.repHistoryPoints = new ConcurrentHashMap<String, SavePointManager>()
         _params.repFileManagers = new ConcurrentHashMap<String, Manager>()
 
-        useEmbeddedConnection()
-        useCsvTempConnection()
+        _connections = _params.repConnections
+        _datasets = _params.repDatasets
+        _historypoints = _params.repHistoryPoints
+        _filemanagers = _params.repFileManagers
+
+        //useEmbeddedConnection()
+        //useCsvTempConnection()
     }
 
     @Override
     Object run() { return this }
 
     /** Instance DSL */
-    static Getl _getl
+    protected static Getl _getl
 
     /* Owner object for instance DSL */
-    def _ownerObject
+    private _ownerObject
 
     /** Run DSL script on getl share object */
     static Getl Dsl(def ownerObject, Map parameters,
@@ -164,11 +169,17 @@ class Getl extends Script {
     /** This object for child objects */
     def getChildThisObject() { _ownerObject?:this }
     /** Delegate method for child objects */
-    static int childDelegate = Closure.DELEGATE_FIRST
+    protected static int childDelegate = Closure.DELEGATE_FIRST
 
-    Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
+    protected Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
     /** Set language parameters */
-    protected void setGetlParams(Map<String, Object> importParams) { _params = importParams }
+    protected void setGetlParams(Map<String, Object> importParams) {
+        _params = importParams
+        _connections = _params.repConnections
+        _datasets = _params.repDatasets
+        _historypoints = _params.repHistoryPoints
+        _filemanagers = _params.repFileManagers
+    }
 
     public final String CSVCONNECTION = 'getl.csv.CSVConnection'
     public final String CSVTEMPCONNECTION = 'getl.tfs.TFS'
@@ -267,7 +278,7 @@ class Getl extends Script {
 
 
     /** GETL DSL options */
-    final def _langOpts = new LangSpec()
+    private final def _langOpts = new LangSpec()
 
     /** GETL DSL options */
     protected LangSpec getLangOpts() { _langOpts }
@@ -281,7 +292,7 @@ class Getl extends Script {
     protected SynchronizeObject getExecutedClasses() { _params.executedClasses as SynchronizeObject }
 
     /** Specified filter when searching for objects */
-    String _filteringGroup
+    private String _filteringGroup
     /** Specified filter when searching for objects */
     @Synchronized
     String getFilteringGroup() { _filteringGroup }
@@ -413,10 +424,11 @@ class Getl extends Script {
         return new ParseObjectName(name)
     }
 
+    /** Object link to connections repository */
+    private Map<String, Connection> _connections
+
     /** Connections repository */
-    protected Map<String, Connection> getConnections() {
-        _params.repConnections as Map<String, Connection>
-    }
+    protected Map<String, Connection> getConnections() { _connections }
 
     /**
      * Return list of repository connections for specified mask, classes and filter
@@ -660,10 +672,11 @@ class Getl extends Script {
         }
     }
 
+    /** Tables repository link object */
+    private Map<String, Dataset> _datasets
+
     /** Tables repository */
-    protected Map<String, Dataset> getDatasets() {
-        _params.repDatasets as Map<String, Dataset>
-    }
+    protected Map<String, Dataset> getDatasets() { _datasets }
 
     /**
      * Return list of repository datasets for specified mask, class and filter
@@ -774,31 +787,28 @@ class Getl extends Script {
 
     /**
      * Return a list of objects associated with the names of two groups
-     * @param sourceGroup name of the group of source objects
-     * @param destinationGroup name of the group of destination objects
+     * @param sourceList List of name source objects
+     * @param destGroup List of name destination objects
      * @param filter filtering objects
      * @return list of names of related objects
      */
-    List<ExecutorListElement> linkDatasets(String sourceGroup, String destinationGroup,
+    List<ExecutorListElement> linkDatasets(List sourceList, List destList,
                                            @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                                                Closure<Boolean> filter = null) {
-        if (sourceGroup == null) throw new ExceptionGETL('Required to specify the value of the source group name!')
-        if (destinationGroup == null) throw new ExceptionGETL('Required to specify the value of the destination group name!')
-
-        def sourceList = listDatasets(sourceGroup + ':')
-        def destList = listDatasets(destinationGroup + ':')
+        if (sourceList == null) throw new ExceptionGETL('Required to specify the value of the source group name!')
+        if (destList == null) throw new ExceptionGETL('Required to specify the value of the destination group name!')
 
         def parse = new ParseObjectName()
 
         def sourceTables = [:] as Map<String, String>
         sourceList.each { name ->
-            parse.name = name
+            parse.name = name as String
             sourceTables.put(parse.objectName, name)
         }
 
         def destTables = [:] as Map<String, String>
         destList.each { name ->
-            parse.name = name
+            parse.name = name as String
             destTables.put(parse.objectName, name)
         }
 
@@ -811,6 +821,22 @@ class Getl extends Script {
         }
 
         return res
+    }
+
+    /**
+     * Return a list of objects associated with the names of two groups
+     * @param sourceGroup name of the group of source objects
+     * @param destGroup name of the group of destination objects
+     * @param filter filtering objects
+     * @return list of names of related objects
+     */
+    List<ExecutorListElement> linkDatasets(String sourceGroup, String destGroup,
+                                           @ClosureParams(value = SimpleType, options = ['java.lang.String'])
+                                                   Closure<Boolean> filter = null) {
+        if (sourceGroup == null) throw new ExceptionGETL('Required to specify the value of the source group name!')
+        if (destGroup == null) throw new ExceptionGETL('Required to specify the value of the destination group name!')
+
+        return linkDatasets(listDatasets(sourceGroup + ':'), listDatasets(destGroup + ':'), filter)
     }
 
     /**
@@ -880,13 +906,13 @@ class Getl extends Script {
     }
 
     /** Last used JDBC default connection */
-    JDBCConnection _lastJDBCDefaultConnection
+    private JDBCConnection _lastJDBCDefaultConnection
 
     /** Last used JDBC default connection */
     JDBCConnection getLastJdbcDefaultConnection() { _lastJDBCDefaultConnection }
 
     // /** Default JDBC connection for datasets */
-    def _defaultJDBCConnection = new ConcurrentHashMap<String, JDBCConnection>()
+    private def _defaultJDBCConnection = new ConcurrentHashMap<String, JDBCConnection>()
 
     /** Default JDBC connection for datasets */
     JDBCConnection defaultJdbcConnection(String datasetClassName = null) {
@@ -921,12 +947,12 @@ class Getl extends Script {
     }
 
     /** Last used file default connection */
-    FileConnection _lastFileDefaultConnection
+    private FileConnection _lastFileDefaultConnection
 
     /** Last used file default connection */
     FileConnection getLastFileDefaultConnection() { _lastFileDefaultConnection }
 
-    def _defaultFileConnection = new ConcurrentHashMap<String, FileConnection>()
+    private def _defaultFileConnection = new ConcurrentHashMap<String, FileConnection>()
 
     /** Default file connection for datasets */
     FileConnection defaultFileConnection(String datasetClassName = null) {
@@ -960,12 +986,12 @@ class Getl extends Script {
     }
 
     /** Last used other type default connection */
-    Connection _lastOtherDefaultConnection
+    private Connection _lastOtherDefaultConnection
 
     /** Last used other type default connection */
     Connection getLastOtherDefaultConnection() { _lastOtherDefaultConnection }
 
-    def _defaultOtherConnection = new ConcurrentHashMap<String, Connection>()
+    private def _defaultOtherConnection = new ConcurrentHashMap<String, Connection>()
 
     /** Default other type connection for datasets */
     Connection defaultOtherConnection(String datasetClassName = null) {
@@ -1160,10 +1186,11 @@ class Getl extends Script {
         }
     }
 
+    /** History points repository link object */
+    private Map<String, SavePointManager> _historypoints
+
     /** History points repository */
-    protected Map<String, SavePointManager> getHistoryPoints() {
-        _params.repHistoryPoints as Map<String, SavePointManager>
-    }
+    protected Map<String, SavePointManager> getHistoryPoints() { _historypoints }
 
     /**
      * Return list of repository history point manager
@@ -1346,10 +1373,11 @@ class Getl extends Script {
         }
     }
 
+    /** File managers repository link object */
+    private Map<String, Manager> _filemanagers
+
     /** File managers repository */
-    protected Map<String, Manager> getFileManagers() {
-        _params.repFileManagers as Map<String, Manager>
-    }
+    protected Map<String, Manager> getFileManagers() { _filemanagers }
 
     /**
      * Return list of repository file managers for specified mask, class and filter
@@ -1965,7 +1993,7 @@ class Getl extends Script {
     }
 
     /** Use default H2 connection for new datasets */
-    TDS useEmbeddedConnection(TDS connection = new TDS()) {
+    TDS useEmbeddedConnection(TDS connection = TDS.storage) {
         useJdbcConnection(EMBEDDEDTABLE, connection) as TDS
     }
 
@@ -2467,14 +2495,15 @@ class Getl extends Script {
 
     /** Temporary database default connection */
     TDS embeddedConnection() {
-        defaultJdbcConnection(EMBEDDEDTABLE) as TDS
+//        defaultJdbcConnection(EMBEDDEDTABLE) as TDS
+        TDS.storage
     }
 
     /** Table with temporary database */
     TDSTable embeddedTable(String name, Boolean registration,
                            @DelegatesTo(TDSTable)
                            @ClosureParams(value = SimpleType, options = ['getl.tfs.TDSTable']) Closure cl) {
-        def parent = registerDataset(EMBEDDEDTABLE, name, registration) as TDSTable
+        def parent = registerDataset(defaultJdbcConnection(EMBEDDEDTABLE)?:TDS.storage, EMBEDDEDTABLE, name, registration) as TDSTable
         if ((parent.connection as TDS).sqlHistoryFile == null)
             (parent.connection as TDS).sqlHistoryFile = langOpts.tempDBSQLHistoryFile
 
@@ -2506,11 +2535,10 @@ class Getl extends Script {
             if (sourceDataset.field.isEmpty()) throw new ExceptionGETL("Required field from dataset $sourceDataset")
         }
 
-        TDSTable parent = new TDSTable()
+        TDSTable parent = new TDSTable(connection: defaultJdbcConnection(EMBEDDEDTABLE)?:TDS.storage)
         parent.field = sourceDataset.field
         if ((parent.connection as TDS).sqlHistoryFile == null)
             (parent.connection as TDS).sqlHistoryFile = langOpts.tempDBSQLHistoryFile
-        if (!parent.exists) parent.create()
 
         registerDatasetObject(parent, name, true)
         runClosure(parent, cl)
@@ -3003,7 +3031,8 @@ class Getl extends Script {
 
     /** Temporary CSV file current connection */
     TFS csvTempConnection() {
-        defaultFileConnection(CSVTEMPDATASET) as TFS
+//        defaultFileConnection(CSVTEMPDATASET) as TFS
+        TFS.storage
     }
 
     /** Use default CSV temporary connection for new datasets */
@@ -3023,7 +3052,7 @@ class Getl extends Script {
     TFSDataset csvTemp(String name, Boolean registration,
                        @DelegatesTo(TFSDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl) {
-        TFSDataset parent = registerDataset(CSVTEMPDATASET, name, registration) as TFSDataset
+        TFSDataset parent = registerDataset(defaultFileConnection(CSVTEMPDATASET)?:TFS.storage, CSVTEMPDATASET, name, registration) as TFSDataset
         runClosure(parent, cl)
 
         return parent
@@ -3048,6 +3077,7 @@ class Getl extends Script {
                                   @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
         if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
         def parent = sourceDataset.csvTempFile.cloneDataset() as TFSDataset
+        parent.connection = defaultFileConnection(CSVTEMPDATASET)?:TFS.storage
         registerDatasetObject(parent, name, true)
         runClosure(parent, cl)
 
@@ -3481,7 +3511,7 @@ class Getl extends Script {
     }
 
     /** Test case instance */
-    GroovyTestCase _testCase
+    protected GroovyTestCase _testCase
 
     /** Run test case code */
     GroovyTestCase testCase(@DelegatesTo(GroovyTestCase)

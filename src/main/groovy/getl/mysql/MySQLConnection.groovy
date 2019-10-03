@@ -40,8 +40,8 @@ class MySQLConnection extends JDBCConnection {
 	}
 	
 	MySQLConnection(Map params) {
-		super(new HashMap([driver: MySQLDriver]) + params)
-		if (this.getClass().name == 'getl.mysql.MySQLConnection') methodParams.validation("Super", params)
+		super(new HashMap([driver: MySQLDriver]) + params?:[:])
+		if (this.getClass().name == 'getl.mysql.MySQLConnection') methodParams.validation("Super", params?:[:])
 	}
 
 	@Override

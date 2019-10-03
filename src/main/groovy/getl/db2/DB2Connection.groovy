@@ -39,8 +39,8 @@ class DB2Connection extends JDBCConnection {
 	}
 	
 	DB2Connection(Map params) {
-		super(new HashMap([driver: DB2Driver]) + params)
-		if (this.getClass().name == 'getl.db2.DB2Connection') methodParams.validation("Super", params)
+		super(new HashMap([driver: DB2Driver]) + params?:[:])
+		if (this.getClass().name == 'getl.db2.DB2Connection') methodParams.validation("Super", params?:[:])
 	}
 	
 	@Override

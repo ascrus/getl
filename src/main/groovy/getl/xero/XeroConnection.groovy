@@ -41,10 +41,10 @@ class XeroConnection extends Connection {
     }
 
     XeroConnection (Map params) {
-        super(new HashMap([driver: XeroDriver]) + params)
+        super(new HashMap([driver: XeroDriver]) + params?:[:])
 
         if (this.getClass().name == 'getl.xero.XeroConnection') {
-            methodParams.validation("Super", params)
+            methodParams.validation("Super", params?:[:])
         }
     }
 

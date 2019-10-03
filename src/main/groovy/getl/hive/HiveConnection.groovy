@@ -36,7 +36,8 @@ class HiveConnection extends JDBCConnection {
     }
 
     HiveConnection(Map params) {
-        super(new HashMap([driver: HiveDriver]) + params)
+        super(new HashMap([driver: HiveDriver]) + params?:[:])
+        if (this.getClass().name == 'getl.hive.HiveConnection') methodParams.validation('Super', params?:[:])
     }
 
     @Override

@@ -1276,10 +1276,10 @@ ${extend}'''
 		Map rowCopy
 		Closure copyToMap
 		def getFields = { meta ->
+			metaFields = meta2Fields(meta)
+			metaFields.each { prepareField(it) }
 			if (!isTable) {
-				metaFields = meta2Fields(meta)
-				metaFields.each { prepareField(it) }
-				dataset.field = metaFields 
+				dataset.field = metaFields
 			}
 			
 			ArrayList<String> listFields = new ArrayList<String>()

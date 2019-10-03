@@ -39,8 +39,8 @@ class JSONConnection extends FileConnection {
 	}
 	
 	JSONConnection (Map params) {
-		super(new HashMap([driver: JSONDriver]) + params)
+		super(new HashMap([driver: JSONDriver]) + params?:[:])
 		
-		if (this.getClass().name == 'getl.json.JSONConnection') methodParams.validation("Super", params)
+		if (this.getClass().name == 'getl.json.JSONConnection') methodParams.validation("Super", params?:[:])
 	}
 }

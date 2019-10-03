@@ -45,8 +45,8 @@ class JDBCConnection extends Connection {
 	}
 	
 	JDBCConnection (Map params) {
-		super(new HashMap([driver: JDBCDriver]) + params)
-		if (this.getClass().name == 'getl.jdbc.JDBCConnection') methodParams.validation("Super", params)
+		super(new HashMap([driver: JDBCDriver]) + params?:[:])
+		if (this.getClass().name == 'getl.jdbc.JDBCConnection') methodParams.validation("Super", params?:[:])
 	}
 	
 	/**

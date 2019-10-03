@@ -38,10 +38,10 @@ class SalesForceConnection extends Connection {
 	}
 
 	SalesForceConnection (Map params) {
-		super(new HashMap([driver: SalesForceDriver]) + params)
+		super(new HashMap([driver: SalesForceDriver]) + params?:[:])
 
 		if (this.getClass().name == 'getl.salesforce.SalesForceConnection') {
-			methodParams.validation("Super", params)
+			methodParams.validation("Super", params?:[:])
 		}
 	}
 
