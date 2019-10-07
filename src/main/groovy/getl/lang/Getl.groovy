@@ -1611,8 +1611,8 @@ class Getl extends Script {
     }
 
     /** Script call arguments */
-    protected final def _scriptArgs = new ConcurrentHashMap<String, Object>()
-    Map<String, Object> getScriptArgs() { _scriptArgs }
+//    protected final def _scriptArgs = new ConcurrentHashMap<String, Object>()
+//    Map<String, Object> getScriptArgs() { _scriptArgs }
 
     /** Load and run groovy script by class */
     void runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:]) {
@@ -1626,7 +1626,7 @@ class Getl extends Script {
             scriptGetl.setGetlParams(_params)
             scriptGetl.setLangOpts(langOpts)
             if (vars != null && !vars.isEmpty()) {
-                scriptGetl._scriptArgs.putAll(vars)
+//                scriptGetl._scriptArgs.putAll(vars)
                 fillFieldFromVars(scriptGetl, vars)
             }
         }
@@ -1668,7 +1668,7 @@ class Getl extends Script {
         script.setGetlParams(_params)
         script.setLangOpts(langOpts)
         if (vars != null && !vars.isEmpty()) {
-            script._scriptArgs.putAll(vars)
+//            script._scriptArgs.putAll(vars)
             fillFieldFromVars(script, vars)
         }
 
@@ -1701,8 +1701,10 @@ class Getl extends Script {
     static protected void fillFieldFromVars(Getl script, Map vars) {
         vars.each { key, value ->
             MetaProperty prop = script.hasProperty(key)
-            if (prop != null)
-                prop.setProperty(script, value)
+            if (prop == null)
+                throw new ExceptionGETL("Field \"$key\" not defined in script!")
+
+            prop.setProperty(script, value)
         }
     }
 

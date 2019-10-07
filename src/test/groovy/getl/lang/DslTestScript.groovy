@@ -12,4 +12,4 @@ import groovy.transform.Field
 @Field def param6 = [a:0]; assert param6 == [a:1, b:2, c:3]
 @Field int paramCountTableRow; assert paramCountTableRow != null
 
-assert scriptArgs.param3 == 3
+configContent.testScript = param1

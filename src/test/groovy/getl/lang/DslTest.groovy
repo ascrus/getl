@@ -484,12 +484,14 @@ ORDER BY t1.id'''
     void test04_02WorkWithPrototype() {
         Getl.Dsl(this) {
             forGroup 'fail-test'
-            assertTrue(connection('getl.testdsl.h2:h2') instanceof TDS)
-            assertTrue(dataset('getl.testdsl.h2:table1') instanceof H2Table)
-            assertEquals(h2Table('getl.testdsl.h2:table2').params, jdbcTable('getl.testdsl.h2:table2').params)
-            GroovyAssert.shouldFail { jdbcTable('getl.testdsl.csv:table1') }
-            GroovyAssert.shouldFail { dataset('table1') }
-            assertTrue(filemanager('getl.testdsl.files:files') instanceof FileManager)
+            testCase {
+                assertTrue(connection('getl.testdsl.h2:h2') instanceof TDS)
+                assertTrue(dataset('getl.testdsl.h2:table1') instanceof H2Table)
+                assertEquals(h2Table('getl.testdsl.h2:table2').params, jdbcTable('getl.testdsl.h2:table2').params)
+                shouldFail { jdbcTable('getl.testdsl.csv:table1') }
+                shouldFail { dataset('table1') }
+                assertTrue(filemanager('getl.testdsl.files:files') instanceof FileManager)
+            }
         }
     }
 
@@ -633,22 +635,24 @@ ORDER BY t1.id'''
     @Test
     void test99_01UnregisterObjects() {
         Getl.Dsl(this) {
-            clearGroupFilter()
+            testCase {
+                clearGroupFilter()
 
-            unregisterFileManager'getl.testdsl.files:*'
-            GroovyAssert.shouldFail { filemanager('getl.testdsl.files:files') }
+                unregisterFileManager 'getl.testdsl.files:*'
+                shouldFail { filemanager('getl.testdsl.files:files') }
 
-            unregisterDataset null, [H2TABLE, EMBEDDEDTABLE]
-            GroovyAssert.shouldFail { dataset('getl.testdsl.h2:table1') }
-            GroovyAssert.shouldFail { dataset('getl.testdsl.h2:table2') }
-            assertEquals(listDatasets().sort(), ['getl.testdsl.csv:table1', 'getl.testdsl.csv:table2', 'getl.testdsl.h2:query1'])
-            unregisterDataset()
-            GroovyAssert.shouldFail { dataset('getl.testdsl.csv:table1') }
-            GroovyAssert.shouldFail { dataset('getl.testdsl.csv:table2') }
-            GroovyAssert.shouldFail { dataset('getl.testdsl.h2:query1') }
+                unregisterDataset null, [H2TABLE, EMBEDDEDTABLE]
+                shouldFail { dataset('getl.testdsl.h2:table1') }
+                shouldFail { dataset('getl.testdsl.h2:table2') }
+                assertEquals(listDatasets().sort(), ['getl.testdsl.csv:table1', 'getl.testdsl.csv:table2', 'getl.testdsl.h2:query1'])
+                unregisterDataset()
+                shouldFail { dataset('getl.testdsl.csv:table1') }
+                shouldFail { dataset('getl.testdsl.csv:table2') }
+                shouldFail { dataset('getl.testdsl.h2:query1') }
 
-            unregisterConnection()
-            GroovyAssert.shouldFail { embeddedConnection('getl.testdsl.h2:h2') }
+                unregisterConnection()
+                shouldFail { embeddedConnection('getl.testdsl.h2:h2') }
+            }
         }
 
 //        println new File(Config.content.sqlFileHistoryH2).text
@@ -657,14 +661,38 @@ ORDER BY t1.id'''
     @Test
     void test99_02RunGetlScript() {
         Getl.Dsl(this) {
-            def p1 = 1
-            runGroovyClass DslTestScript, {
-                param1 = p1
-                param2 = p1 + 1
-                param3 = 3
-                param5 = [1,2,3]
-                param6 = [a:1, b:2, c:3]
-                paramCountTableRow = this.table1_rows
+            testCase {
+                def p1 = 1
+                runGroovyClass DslTestScript, {
+                    param1 = p1
+                    param2 = p1 + 1
+                    param5 = [1, 2, 3]
+                    param6 = [a: 1, b: 2, c: 3]
+                    paramCountTableRow = this.table1_rows
+                }
+
+                assertEquals(1, configContent.testScript)
+
+                shouldFail {
+                    runGroovyClass DslTestScript, {
+                        param1 = p1
+                        param2 = p1 + 1
+                        param3 = 3 // not defined paramemeter
+                        param5 = [1, 2, 3]
+                        param6 = [a: 1, b: 2, c: 3]
+                        paramCountTableRow = this.table1_rows
+                    }
+                }
+
+                shouldFail {
+                    runGroovyClass DslTestScript, {
+                        param1 = p1
+                        param2 = p1 + 1
+                        param5 = [1, 2, 3]
+                        param6 = [a: 1, b: 2, c: 3]
+                        //paramCountTableRow = this.table1_rows // required parameter
+                    }
+                }
             }
         }
     }
