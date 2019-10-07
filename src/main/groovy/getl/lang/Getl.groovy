@@ -543,7 +543,7 @@ class Getl extends Script {
      * @param filter object filtering code
      * @return list of jdbc connection names according to specified conditions
      */
-    List<String> jdbcConnectionList(String mask = null, Closure<Boolean> filter = null) {
+    List<String> listJdbcConnections(String mask = null, Closure<Boolean> filter = null) {
         return listConnections(mask, listJdbcConectionClasses, filter)
     }
 
@@ -552,8 +552,8 @@ class Getl extends Script {
      * @param mask filter mask (use Path expression syntax)
      * @param cl processing code
      */
-    void jdbcConnectionProcess(String mask,
-                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+    void processJdbcConnections(String mask,
+                                @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         processConnections(mask, listJdbcConectionClasses, cl)
     }
 
@@ -561,8 +561,8 @@ class Getl extends Script {
      * Process repository all jdbc connections
      * @param cl processing code
      */
-    void jdbcConnectionProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        jdbcConnectionProcess(null, cl)
+    void processJdbcConnections(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processJdbcConnections(null, cl)
     }
 
     /** Register connection in repository */
@@ -845,7 +845,7 @@ class Getl extends Script {
      * @param filter object filtering code
      * @return list of jdbc table names according to specified conditions
      */
-    List<String> jdbcTableList(String mask = null, Closure<Boolean> filter = null) {
+    List<String> listJdbcTables(String mask = null, Closure<Boolean> filter = null) {
         return listDatasets(mask, listJdbcTableClasses, filter)
     }
 
@@ -854,7 +854,7 @@ class Getl extends Script {
      * @param filter object filtering code
      * @return list of jdbc table names according to specified conditions
      */
-    List<String> jdbcTableList(Closure<Boolean> filter) {
+    List<String> listJdbcTables(Closure<Boolean> filter) {
         return listDatasets(null, listJdbcTableClasses, filter)
     }
 
@@ -863,13 +863,13 @@ class Getl extends Script {
      * @param mask filter mask (use Path expression syntax)
      * @param cl processing code
      */
-    void jdbcTableProcess(String mask,
-                          @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+    void processJdbcTables(String mask,
+                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
             throw new ExceptionGETL('Process required closure code!')
 
         def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        def list = jdbcTableList(mask)
+        def list = listJdbcTables(mask)
         list.each { name ->
             code.call(name)
         }
@@ -879,8 +879,8 @@ class Getl extends Script {
      * Process all repository tables
      * @param cl processing code
      */
-    void jdbcTableProcess(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        jdbcTableProcess(null, cl)
+    void processJdbcTables(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processJdbcTables(null, cl)
     }
 
     /** Set default connection for use in datasets */
