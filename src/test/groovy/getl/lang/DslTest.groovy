@@ -696,4 +696,10 @@ ORDER BY t1.id'''
             }
         }
     }
+
+    @Test
+    void test99_03RunGetlMain() {
+        Getl.main('runclass=getl.lang.DslTestScript', 'vars.param1=1', 'vars.param2=2', 'vars.param5=[1, 2, 3]',
+                'vars.param6=[a:1, b:2, c:3]', 'vars.paramCountTableRow=100')
+    }
 }

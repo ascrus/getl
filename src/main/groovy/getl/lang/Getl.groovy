@@ -77,6 +77,29 @@ class Getl extends Script {
         init()
     }
 
+    static void main(def args) {
+        def job = new Job() {
+            @Override
+            void process() {
+                def className = jobArgs.runclass as String
+
+                if (className == null)
+                    throw new ExceptionGETL('Required argument "runclass"!')
+
+                Class runClass
+                try {
+                    runClass = Class.forName(className)
+                }
+                catch (Throwable e) {
+                    throw new ExceptionGETL("Class \"$className\" not found!")
+                }
+
+                Getl.Dsl().runGroovyClass(runClass, Config.vars)
+            }
+        }
+        job.run(args)
+    }
+
     private void init() {
         Version.SayInfo()
 
@@ -1704,7 +1727,12 @@ class Getl extends Script {
             if (prop == null)
                 throw new ExceptionGETL("Field \"$key\" not defined in script!")
 
-            prop.setProperty(script, value)
+            try {
+                prop.setProperty(script, value)
+            }
+            catch (Exception e) {
+                throw new ExceptionGETL("Can not assign by class ${value.getClass().name} value \"$value\" to property \"$key\" with class \"${prop.type.name}\", error: ${e.message}")
+            }
         }
     }
 

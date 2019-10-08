@@ -2,6 +2,8 @@
 .DS_Store
 
 ### Gradle template
+gradlew
+gradlew.bat
 .gradle
 build/
 
