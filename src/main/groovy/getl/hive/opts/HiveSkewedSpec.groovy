@@ -34,14 +34,9 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class HiveSkewedSpec extends BaseSpec {
-    HiveSkewedSpec() {
-        super()
-        params.by = [] as List<String>
-        params.on = [] as List<String>
-    }
-
-    HiveSkewedSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.by == null) params.by = [] as List<String>
         if (params.on == null) params.on = [] as List<String>
     }

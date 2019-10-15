@@ -48,11 +48,25 @@ abstract class FileConnection extends Connection {
 		
 		methodParams.register("Super", ["path", "codePage", "createPath", "isGzFile", "extension", "append", "deleteOnEmpty", "fileSeparator", "bufferSize"])
 	}
+
+	@Override
+	protected void doInitConnection () {
+		super.doInitConnection()
+		// Init path
+		if (path != null) setPath(path)
+	}
 	
 	/** Connection path */
 	String getPath () { params.path }
 	/** Connection path */
-	void setPath (String value) { params.path = value }
+	void setPath (String value) {
+		if (value != null) {
+			value = FileUtils.ConvertToDefaultOSPath(value)
+			if (value[value.length() - 1] == File.separator)
+				value = value.substring(0, value.length() - 1)
+		}
+		params.path = value
+	}
 	
 	/** Code page for connection files */
 	String getCodePage () { params.codePage }

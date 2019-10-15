@@ -26,7 +26,9 @@ package getl.jdbc
 
 import getl.jdbc.opts.*
 import getl.lang.opts.BaseSpec
+import getl.utils.BoolUtils
 import getl.utils.ListUtils
+import getl.utils.Path
 import groovy.transform.InheritConstructors
 import getl.cache.*
 import getl.exception.ExceptionGETL
@@ -43,28 +45,29 @@ class TableDataset extends JDBCDataset {
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	TableDataset() {
 		super()
-		directives('create').type = JDBCDataset.Type.TABLE
+		type = JDBCDataset.Type.TABLE
 		sysParams.isTable = true
 		methodParams.register("unionDataset", [])
+		methodParams.register("generateDsl", [])
 	}
 
 	/**
 	 * Schema name
 	 */
-	String getSchemaName () { ListUtils.NotNullValue([params.schemaName, (connection as JDBCConnection).schemaName]) }
+	String getSchemaName() { ListUtils.NotNullValue([params.schemaName, (connection as JDBCConnection).schemaName]) }
 	/**
 	 * Schema name
 	 */
-	void setSchemaName (String value) { params.schemaName = value }
+	void setSchemaName(String value) { params.schemaName = value }
 
 	/**
 	 * Table name
 	 */
-	String getTableName () { params.tableName }
+	String getTableName() { params.tableName }
 	/**
 	 * Table name
 	 */
-	void setTableName (String value) { params.tableName = value }
+	void setTableName(String value) { params.tableName = value }
 
 	/**
 	 * Create table options
@@ -158,21 +161,21 @@ class TableDataset extends JDBCDataset {
 	 * Cache manager
 	 * Is used to monitor changes in the structure or data
 	 */
-	CacheManager getCacheManager () { cacheManager }
+	CacheManager getCacheManager() { cacheManager }
 	/**
 	 * Cache manager
 	 * Is used to monitor changes in the structure or data
 	 */
-	void setCacheManager (CacheManager value) {
+	void setCacheManager(CacheManager value) {
 		if (cacheDataset != null && value != cacheManager) {
 			cacheDataset.connection = null
 			cacheDataset = null
 		}
-		
+
 		def isNewCacheManager = (value != null && value != cacheManager)
-		
+
 		cacheManager = value
-		
+
 		if (isNewCacheManager) {
 			cacheDataset = new CacheDataset(connection: cacheManager, dataset: this)
 		}
@@ -182,21 +185,21 @@ class TableDataset extends JDBCDataset {
 	 * Cache dataset
 	 * Is used to monitor changes in the structure or data
 	 */
-	private CacheDataset getCacheDataset () { sysParams.cacheDataset as CacheDataset}
+	private CacheDataset getCacheDataset() { sysParams.cacheDataset as CacheDataset }
 	/**
 	 * Cache dataset
 	 * Is used to monitor changes in the structure or data
 	 */
-	private void setCacheDataset (CacheDataset value) { sysParams.cacheDataset = value }
+	private void setCacheDataset(CacheDataset value) { sysParams.cacheDataset = value }
 
 	/**
 	 * Description table
 	 */
-	String getDescription () { params.description }
+	String getDescription() { params.description }
 	/**
 	 * Description table
 	 */
-	void setDescription (String value) { params.description = value }
+	void setDescription(String value) { params.description = value }
 
 	/**
 	 * Valid exist table
@@ -206,10 +209,9 @@ class TableDataset extends JDBCDataset {
 		def con = connection as JDBCConnection
 		def dbName = dbName
 		def schemaName = schemaName
-		def tableName = params.tableName
-		if (tableName == null) throw new ExceptionGETL("Table name is not specified for ${fullNameDataset()}!")
-		def ds = con.retrieveDatasets(dbName: dbName, schemaName: schemaName,
-				tableName: tableName)
+		def tblName = tableName
+		if (tblName == null) throw new ExceptionGETL("Table name is not specified for ${fullNameDataset()}!")
+		def ds = con.retrieveDatasets(dbName: dbName, schemaName: schemaName, tableName: tblName)
 
 		return (!ds.isEmpty())
 	}
@@ -217,46 +219,46 @@ class TableDataset extends JDBCDataset {
 	/**
 	 * Insert/Update/Delete/Merge records from other dataset
 	 */
-	long unionDataset (Map procParams) {
+	long unionDataset(Map procParams) {
 		if (procParams == null) procParams = [:]
 		methodParams.validation("unionDataset", procParams, [connection.driver.methodParams.params("unionDataset")])
-		
-		return ((JDBCDriver)connection.driver).unionDataset(this, procParams)
+
+		return ((JDBCDriver) connection.driver).unionDataset(this, procParams)
 	}
-	
+
 	/**
 	 * Find key by filter
 	 * @param procParams - parameters for query
 	 * @return - values of key field or null is not found
 	 */
-	Map findKey (Map procParams) {
+	Map findKey(Map procParams) {
 		def keys = getFieldKeys()
 		if (keys.isEmpty()) throw new ExceptionGETL("Required key fields")
-		procParams = procParams?:[:]
+		procParams = procParams ?: [:]
 		def r = rows(procParams + [onlyFields: keys, limit: 1])
 		if (r.isEmpty()) return null
-		
+
 		return r[0]
 	}
-	
+
 	/**
 	 * Return count rows from table
 	 */
 	long countRow(String where = null, Map procParams = [:]) {
 		QueryDataset q = new QueryDataset(connection: connection, query: "SELECT Count(*) AS count FROM ${fullNameDataset()}")
-		where = where?:readDirective.where
+		where = where ?: readDirective.where
 		if (where != null && where != '') q.query += " WHERE " + where
 		def r = q.rows(procParams)
-		
+
 		return r[0].count as long
 	}
-	
+
 	/**
 	 * Delete rows for condition
 	 */
-	long deleteRows (String where = null) {
-		String sql = "DELETE FROM ${fullNameDataset()}" + ((where != null && where.trim().length() > 0)?" WHERE $where":'')
-		
+	long deleteRows(String where = null) {
+		String sql = "DELETE FROM ${fullNameDataset()}" + ((where != null && where.trim().length() > 0) ? " WHERE $where" : '')
+
 		long count
 		boolean isAutoCommit = !connection.isTran()
 		if (isAutoCommit) connection.startTran()
@@ -268,14 +270,14 @@ class TableDataset extends JDBCDataset {
 			throw e
 		}
 		if (isAutoCommit) connection.commitTran()
-		
+
 		return count
 	}
 
 	/**
 	 * Truncate table
 	 */
-	void truncate () {
+	void truncate() {
 		(connection.driver as JDBCDriver).clearDataset(this, [truncate: true])
 	}
 
@@ -297,7 +299,7 @@ class TableDataset extends JDBCDataset {
 	 */
 	protected CreateSpec genCreateTable(Closure cl) {
 //		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = sysParams.dslThisObject ?: BaseSpec.DetectClosureDelegate(cl)
 		def parent = newCreateTableParams(this, thisObject, true, createDirective)
 		parent.runClosure(cl)
 
@@ -326,7 +328,7 @@ class TableDataset extends JDBCDataset {
 	 */
 	protected DropSpec genDropTable(Closure cl) {
 //		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = sysParams.dslThisObject ?: BaseSpec.DetectClosureDelegate(cl)
 		def parent = newDropTableParams(this, thisObject, true, dropDirective)
 		parent.runClosure(cl)
 
@@ -355,7 +357,7 @@ class TableDataset extends JDBCDataset {
 	 */
 	protected ReadSpec genReadDirective(Closure cl) {
 //		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = sysParams.dslThisObject ?: BaseSpec.DetectClosureDelegate(cl)
 		def parent = newReadTableParams(this, thisObject, true, readDirective)
 		parent.runClosure(cl)
 
@@ -384,7 +386,7 @@ class TableDataset extends JDBCDataset {
 	 */
 	protected WriteSpec genWriteDirective(Closure cl) {
 //		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = sysParams.dslThisObject ?: BaseSpec.DetectClosureDelegate(cl)
 		def parent = newWriteTableParams(this, thisObject, true, writeDirective)
 		parent.runClosure(cl)
 
@@ -413,7 +415,7 @@ class TableDataset extends JDBCDataset {
 	 */
 	protected BulkLoadSpec genBulkLoadDirective(Closure cl) {
 //		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = sysParams.dslThisObject ?: BaseSpec.DetectClosureDelegate(cl)
 		def parent = newBulkLoadTableParams(this, thisObject, true, bulkLoadDirective)
 		parent.runClosure(cl)
 

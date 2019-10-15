@@ -306,8 +306,8 @@ class FileUtils {
 	 * @param deleteRoot
 	 * @param onDelete
 	 */
-	static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, boolean throwError,
-								@ClosureParams(value = SimpleType, options = ['java.io.File']) Closure onDelete) {
+	static Boolean DeleteFolder(String rootFolder, boolean deleteRoot = true, boolean throwError = true,
+								@ClosureParams(value = SimpleType, options = ['java.io.File']) Closure onDelete = null) {
 		if (rootFolder == null) return null
 		File root = new File(rootFolder)
 		if (!root.exists()) {
@@ -358,38 +358,6 @@ class FileUtils {
         return res
 	}
 
-    /**
-     * Delete directory with all recursive objects
-     * @param rootFolder
-     * @param deleteRoot
-     * @param onDelete
-     */
-    static Boolean DeleteFolder(String rootFolder, boolean deleteRoot,
-								@ClosureParams(value = SimpleType, options = ['java.io.File']) Closure onDelete) {
-        return DeleteFolder(rootFolder, deleteRoot, true, onDelete)
-    }
-
-	static Boolean DeleteFolder(String rootFolder, boolean deleteRoot, boolean throwError) {
-        return DeleteFolder(rootFolder, deleteRoot, throwError, null)
-    }
-
-    /**
-	 * Delete directory with all recursive objects
-	 * @param rootFolder
-	 * @param deleteRoot
-	 */
-	static Boolean DeleteFolder(String rootFolder, boolean deleteRoot) {
-		return DeleteFolder(rootFolder, deleteRoot, true, null)
-	}
-	
-	/**
-	 * Delete directory with all recursive objects
-	 * @param rootFolder
-	 */
-	static Boolean DeleteFolder(String rootFolder) {
-		return DeleteFolder(rootFolder, true, true, null)
-	}
-	
 	/**
 	 * Delete directory with all recursive objects
 	 * @param rootFolder
@@ -944,6 +912,8 @@ class FileUtils {
 		return StringUtils.ExtractParentFromChild(path, findPath, Config.isWindows())
 	}
 
+	static final List<String> ListResourcePath = []
+
 	/**
      * Get file from classpath or resources folder
      * @param fileName file name in resource catalog
@@ -969,6 +939,17 @@ class FileUtils {
                     if (file.exists()) res = file
                 }
             }
+			else if (!ListResourcePath.isEmpty()) {
+				ListResourcePath.each { String path ->
+					def file = new File("$path/$fileName")
+					if (file.exists()) {
+						res = file
+						//noinspection UnnecessaryQualifiedReference
+						directive = Closure.DONE
+					}
+				}
+			}
+
 			if (res == null) throw new ExceptionGETL("Resource file \"$fileName\" is not found!")
 		}
 		else {

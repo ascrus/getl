@@ -10,8 +10,8 @@ import getl.utils.Logs
 import getl.utils.StringUtils
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
+import org.junit.Ignore
 import org.junit.Test
-import groovy.test.GroovyAssert
 
 @FixMethodOrder(org.junit.runners.MethodSorters.NAME_ASCENDING)
 class DslTest extends getl.test.GetlTest {
@@ -141,9 +141,6 @@ datasets {
             registerDatasetObject cloneDataset(h2Table('table1')), 'table2', true
             h2Table('table2') {
                 tableName = 'table2'
-                createOpts {
-                    type = isTemporary
-                }
                 create()
                 assertTrue(exists)
             }
@@ -628,6 +625,53 @@ ORDER BY t1.id'''
                         assertEquals(source.readRows, destination.writeRows)
                     }
                 }
+            }
+        }
+    }
+
+    @Test
+    void test06GenerateDslTables() {
+        Getl.Dsl(this) {
+            forGroup  'getl.testdsl.h2'
+
+            def tempDir = TFS.systemPath + '/dsl/generate'
+            FileUtils.ValidPath(tempDir)
+            def scriptFile = "$tempDir/script.groovy"
+            FileUtils.ValidFilePath(scriptFile)
+            def resourceDir = "$tempDir/resources"
+            FileUtils.ValidPath(resourceDir)
+            FileUtils.ListResourcePath << resourceDir
+
+            embeddedConnection('h2').generateDslTables {
+                packageName = 'getl.tables.pub'
+                connectionName = 'getl.testdsl.h2:h2'
+                groupName = 'getl.testdsl.temp'
+                defineFields = true
+                createTables = true
+                dropTables = true
+                listTableSavedData = ['table1']
+                scriptPath = scriptFile
+                overwriteScript = true
+                resourcePath = resourceDir
+
+                filter {
+                    (it.tableName as String)?.toLowerCase() in ['table1', 'table2']
+                }
+            }
+
+            def scriptTable1 = new File(scriptFile)
+            assertTrue(scriptTable1.exists())
+//            println scriptTable1.text
+
+            try {
+                runGroovyFile(scriptFile) { createTables = true }
+                embeddedTable('getl.testdsl.temp:table1') {
+                    assertTrue(exists)
+                    assertEquals(this.table1_rows, countRow())
+                }
+            }
+            finally {
+                FileUtils.DeleteFolder(tempDir, true)
             }
         }
     }

@@ -34,14 +34,9 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class HiveClusteredSpec extends BaseSpec {
-    HiveClusteredSpec() {
-        super()
-        params.by = [] as List<String>
-        params.sortedBy = [] as List<String>
-    }
-
-    HiveClusteredSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.by == null) params.by = [] as List<String>
         if (params.sortedBy == null) params.sortedBy = [] as List<String>
     }

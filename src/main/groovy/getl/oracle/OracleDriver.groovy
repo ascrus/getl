@@ -45,7 +45,6 @@ class OracleDriver extends JDBCDriver {
 		caseObjectName = 'UPPER'
 		commitDDL = true
 		transactionalDDL = true
-		dropIfExists = false
 
 		methodParams.register("eachRow", ["scn", "timestamp", "hints", "usePartition"])
 	}

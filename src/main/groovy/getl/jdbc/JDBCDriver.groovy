@@ -578,7 +578,10 @@ class JDBCDriver extends Driver {
 		String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
 		String tableNamePattern = prepareObjectName(params."tableName" as String)
 		String[] types
-		if (params."type" != null) types = params."type" as String[] else types = ['TABLE', 'GLOBAL_TEMPORARY', 'LOCAL_TEMPORARY', 'ALIAS', 'SYNONYM', 'VIEW'] as String[]
+		if (params."type" != null)
+			types = (params."type" as List<String>).toArray(new String[0])
+		else
+			types = ['TABLE', 'GLOBAL TEMPORARY', 'VIEW'] as String[]
 
 		List<Map> tables = []
 		ResultSet rs = sqlConnect.connection.metaData.getTables(catalog, schemaPattern, tableNamePattern, types)
@@ -804,8 +807,13 @@ ${extend}'''
 				temporary = memoryTablePrefix
 				break
 		}
-		
-		String ifNotExists = (params."ifNotExists" != null && params."ifNotExists")?"IF NOT EXISTS":""
+
+		def validExists = BoolUtils.IsValue(params.ifNotExists)
+		if (validExists && !isSupport(Driver.Support.CREATEIFNOTEXIST)) {
+			if (!isTable(dataset)) throw new ExceptionGETL("Option \"ifNotExists\" is not supported for dataset type \"${dataset.getClass().name}\"")
+			if ((dataset as TableDataset).exists) return
+		}
+		String ifNotExists = (validExists && isSupport(Driver.Support.CREATEIFNOTEXIST))?'IF NOT EXISTS':''
 		boolean useNativeDBType = BoolUtils.IsValue(params."useNativeDBType", true)
 		
 		def p = MapUtils.CleanMap(params, ["ifNotExists", "indexes", "hashPrimaryKey", "useNativeDBType"])
@@ -898,6 +906,10 @@ ${extend}'''
 		if (commitDDL) {
 			if (transactionalDDL) jdbcConnect.commitTran() else executeCommand('COMMIT')
 		}
+	}
+
+	boolean existsTable(JDBCDataset dataset) {
+
 	}
 
 	/**
@@ -1047,11 +1059,6 @@ ${extend}'''
 		return r
 	}
 
-	/**
-	 * Allow if exists in drop operator
-	 */
-	protected boolean dropIfExists = true
-
 	@Override
 	void dropDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
@@ -1064,21 +1071,19 @@ ${extend}'''
                      JDBCDataset.Type.MEMORY])?"TABLE":((dataset as JDBCDataset).type == JDBCDataset.Type.VIEW)?'VIEW':null
 
 		if (t == null) throw new ExceptionGETL("Can not support type object \"${(dataset as JDBCDataset).type}\"")
-		def ifExists = BoolUtils.IsValue(params.ifExists)
-		def e = (dropIfExists && ifExists)?'IF EXISTS ':''
+
+		def validExists = BoolUtils.IsValue(params.ifExists)
+		if (validExists && !isSupport(Driver.Support.DROPIFEXIST)) {
+			if (!isTable(dataset)) throw new ExceptionGETL("Option \"ifExists\" is not supported for dataset type \"${dataset.getClass().name}\"")
+			if (!(dataset as TableDataset).exists) return
+		}
+
+		def e = (validExists && isSupport(Driver.Support.DROPIFEXIST))?'IF EXISTS ':''
 		def q = "DROP ${t} ${e}${n}"
 
 		if (commitDDL && transactionalDDL) startTran()
 		try {
-			if (!dropIfExists && ifExists && dataset instanceof TableDataset) {
-				TableDataset table = dataset as TableDataset
-				if (table.exists) {
-					executeCommand(q, [:])
-				}
-			}
-			else {
-				executeCommand(q, [:])
-			}
+			executeCommand(q, [:])
 		}
 		catch (Throwable err) {
 			if (commitDDL) {
@@ -1096,10 +1101,11 @@ ${extend}'''
 		}
 	}
 
+	/** Check that the dataset is a table */
 	static boolean isTable(Dataset dataset) {
 		return (dataset instanceof TableDataset)
 	}
-	
+
 	/**
 	 * Return directive for sql select generation
 	 * <p>Directive:</p>

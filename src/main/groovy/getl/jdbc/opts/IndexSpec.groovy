@@ -34,13 +34,9 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class IndexSpec extends BaseSpec {
-    IndexSpec() {
-        super()
-        params.columns = [] as List<String>
-    }
-
-    IndexSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.columns == null) params.columns = [] as List<String>
     }
 

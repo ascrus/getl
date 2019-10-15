@@ -51,10 +51,6 @@ class MSSQLDriver extends JDBCDriver {
 		tableEndPrefix = ']'
 		commitDDL = true
 		transactionalDDL = true
-		dropIfExists = false
-
-		transactionalDDL = true
-		commitDDL = true
 		transactionalTruncate = true
 	}
 

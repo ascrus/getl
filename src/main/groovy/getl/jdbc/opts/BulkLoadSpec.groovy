@@ -35,13 +35,9 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class BulkLoadSpec extends BaseSpec {
-    BulkLoadSpec() {
-        super()
-        params.files = [] as List<String>
-    }
-
-    BulkLoadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.files == null) params.files = [] as List<String>
     }
 

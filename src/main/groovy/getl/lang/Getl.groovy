@@ -78,6 +78,14 @@ class Getl extends Script {
     }
 
     static void main(def args) {
+        Main(args)
+    }
+
+    /**
+     * Launch GETL DSL main class
+     * @param args use runClass and vars
+     */
+    static void Main(def args) {
         def job = new Job() {
             @Override
             void process() {
@@ -115,8 +123,29 @@ class Getl extends Script {
         _historypoints = _params.repHistoryPoints
         _filemanagers = _params.repFileManagers
 
-        //useEmbeddedConnection()
-        //useCsvTempConnection()
+        LISTCONNECTIONCLASSES = [
+                CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, H2CONNECTION,
+                HIVECONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
+                POSTGRESQLCONNECTION, SALESFORCECONNECTION, VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION
+        ]
+
+        LISTJDBCCONNECTIONCLASSES = [
+                DB2CONNECTION, EMBEDDEDCONNECTION, H2CONNECTION, HIVECONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETSUITECONNECTION,
+                ORACLECONNECTION, POSTGRESQLCONNECTION, VERTICACONNECTION
+        ]
+
+        LISTDATASETCLASSES = [
+                CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, H2TABLE, HIVETABLE, JSONDATASET, MSSQLTABLE,
+                MYSQLTABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, SALESFORCEDATASET,
+                SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET, XMLDATASET
+        ]
+
+        LISTJDBCTABLECLASSES = [
+                DB2TABLE, EMBEDDEDTABLE, H2TABLE, HIVETABLE, MSSQLTABLE, MYSQLTABLE, NETSUITETABLE, ORACLETABLE, POSTGRESQLTABLE,
+                VERTICATABLE
+        ]
+
+        LISTFILEMANAGERCLASSES = [FILEMANAGER, FTPMANAGER, HDFSMANAGER, SFTPMANAGER]
     }
 
     @Override
@@ -204,80 +233,64 @@ class Getl extends Script {
         _filemanagers = _params.repFileManagers
     }
 
-    public final String CSVCONNECTION = 'getl.csv.CSVConnection'
-    public final String CSVTEMPCONNECTION = 'getl.tfs.TFS'
-    public final String DB2CONNECTION = 'getl.db2.DB2Connection'
-    public final String EXCELCONNECTION = 'getl.excel.ExcelConnection'
-    public final String H2CONNECTION = 'getl.h2.H2Connection'
-    public final String HIVECONNECTION = 'getl.hive.HiveConnection'
-    public final String JSONCONNECTION = 'getl.json.JSONConnection'
-    public final String MSSQLCONNECTION = 'getl.mssql.MSSQLConnection'
-    public final String MYSQLCONNECTION = 'getl.mysql.MySQLConnection'
-    public final String NETSUITECONNECTION = 'getl.netsuite.NetsuiteConnection'
-    public final String ORACLECONNECTION = 'getl.oracle.OracleConnection'
-    public final String POSTGRESQLCONNECTION = 'getl.postgresql.PostgreSQLConnection'
-    public final String SALESFORCECONNECTION = 'getl.salesforce.SalesForceConnection'
-    public final String EMBEDDEDCONNECTION = 'getl.tfs.TDS'
-    public final String VERTICACONNECTION = 'getl.vertica.VerticaConnection'
-    public final String XEROCONNECTION = 'getl.xero.XeroConnection'
-    public final String XMLCONNECTION = 'getl.xml.XMLConnection'
+    public static final String CSVCONNECTION = 'getl.csv.CSVConnection'
+    public static final String CSVTEMPCONNECTION = 'getl.tfs.TFS'
+    public static final String DB2CONNECTION = 'getl.db2.DB2Connection'
+    public static final String EXCELCONNECTION = 'getl.excel.ExcelConnection'
+    public static final String H2CONNECTION = 'getl.h2.H2Connection'
+    public static final String HIVECONNECTION = 'getl.hive.HiveConnection'
+    public static final String JSONCONNECTION = 'getl.json.JSONConnection'
+    public static final String MSSQLCONNECTION = 'getl.mssql.MSSQLConnection'
+    public static final String MYSQLCONNECTION = 'getl.mysql.MySQLConnection'
+    public static final String NETSUITECONNECTION = 'getl.netsuite.NetsuiteConnection'
+    public static final String ORACLECONNECTION = 'getl.oracle.OracleConnection'
+    public static final String POSTGRESQLCONNECTION = 'getl.postgresql.PostgreSQLConnection'
+    public static final String SALESFORCECONNECTION = 'getl.salesforce.SalesForceConnection'
+    public static final String EMBEDDEDCONNECTION = 'getl.tfs.TDS'
+    public static final String VERTICACONNECTION = 'getl.vertica.VerticaConnection'
+    public static final String XEROCONNECTION = 'getl.xero.XeroConnection'
+    public static final String XMLCONNECTION = 'getl.xml.XMLConnection'
 
     /** List of allowed connection classes */
-    public final List<String> listConnectionClasses = [
-            CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, H2CONNECTION,
-            HIVECONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
-            POSTGRESQLCONNECTION, SALESFORCECONNECTION, VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION
-    ]
+    public static List<String> LISTCONNECTIONCLASSES
 
     /** List of allowed jdbc connection classes */
-    public final List<String> listJdbcConectionClasses = [
-            DB2CONNECTION, H2CONNECTION, HIVECONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETSUITECONNECTION,
-            ORACLECONNECTION, POSTGRESQLCONNECTION, VERTICACONNECTION
-    ]
+    public static List<String> LISTJDBCCONNECTIONCLASSES
 
-    public final String CSVDATASET = 'getl.csv.CSVDataset'
-    public final String CSVTEMPDATASET = 'getl.tfs.TFSDataset'
-    public final String DB2TABLE = 'getl.db2.DB2Table'
-    public final String EXCELDATASET = 'getl.excel.ExcelDataset'
-    public final String H2TABLE = 'getl.h2.H2Table'
-    public final String HIVETABLE = 'getl.hive.HiveTable'
-    public final String JSONDATASET = 'getl.json.JSONDataset'
-    public final String MSSQLTABLE = 'getl.mssql.MSSQLTable'
-    public final String MYSQLTABLE = 'getl.mysql.MySQLTable'
-    public final String NETSUITETABLE = 'getl.netsuite.NetsuiteTable'
-    public final String ORACLETABLE = 'getl.oracle.OracleTable'
-    public final String QUERYDATASET = 'getl.jdbc.QueryDataset'
-    public final String POSTGRESQLTABLE = 'getl.postgresql.PostgreSQLTable'
-    public final String SALESFORCEDATASET = 'getl.salesforce.SalesForceDataset'
-    public final String SALESFORCEQUERYDATASET = 'getl.salesforce.SalesForceQueryDataset'
-    public final String EMBEDDEDTABLE = 'getl.tfs.TDSTable'
-    public final String VIEWDATASET = 'getl.jdbc.ViewDataset'
-    public final String VERTICATABLE = 'getl.vertica.VerticaTable'
-    public final String XERODATASET = 'getl.xero.XeroDataset'
-    public final String XMLDATASET = 'getl.xml.XMLDataset'
+    public static final String CSVDATASET = 'getl.csv.CSVDataset'
+    public static final String CSVTEMPDATASET = 'getl.tfs.TFSDataset'
+    public static final String DB2TABLE = 'getl.db2.DB2Table'
+    public static final String EXCELDATASET = 'getl.excel.ExcelDataset'
+    public static final String H2TABLE = 'getl.h2.H2Table'
+    public static final String HIVETABLE = 'getl.hive.HiveTable'
+    public static final String JSONDATASET = 'getl.json.JSONDataset'
+    public static final String MSSQLTABLE = 'getl.mssql.MSSQLTable'
+    public static final String MYSQLTABLE = 'getl.mysql.MySQLTable'
+    public static final String NETSUITETABLE = 'getl.netsuite.NetsuiteTable'
+    public static final String ORACLETABLE = 'getl.oracle.OracleTable'
+    public static final String QUERYDATASET = 'getl.jdbc.QueryDataset'
+    public static final String POSTGRESQLTABLE = 'getl.postgresql.PostgreSQLTable'
+    public static final String SALESFORCEDATASET = 'getl.salesforce.SalesForceDataset'
+    public static final String SALESFORCEQUERYDATASET = 'getl.salesforce.SalesForceQueryDataset'
+    public static final String EMBEDDEDTABLE = 'getl.tfs.TDSTable'
+    public static final String VIEWDATASET = 'getl.jdbc.ViewDataset'
+    public static final String VERTICATABLE = 'getl.vertica.VerticaTable'
+    public static final String XERODATASET = 'getl.xero.XeroDataset'
+    public static final String XMLDATASET = 'getl.xml.XMLDataset'
 
     /** List of allowed dataset classes */
-    public final List<String> listDatasetClasses = [
-            CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, H2TABLE, HIVETABLE, JSONDATASET, MSSQLTABLE,
-            MYSQLTABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, SALESFORCEDATASET,
-            SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET, XMLDATASET
-    ]
+    public static List<String> LISTDATASETCLASSES
 
     /** List of allowed jdbc dataset classes */
-    public final List<String> listJdbcTableClasses = [
-            DB2TABLE, H2TABLE, HIVETABLE, MSSQLTABLE, MYSQLTABLE, NETSUITETABLE, ORACLETABLE, POSTGRESQLTABLE,
-            VERTICATABLE
-    ]
+    public static List<String> LISTJDBCTABLECLASSES
 
-    public final String FILEMANAGER = 'getl.files.FileManager'
-    public final String FTPMANAGER = 'getl.files.FTPManager'
-    public final String HDFSMANAGER = 'getl.files.HDFSManager'
-    public final String SFTPMANAGER = 'getl.files.SFTPManager'
+    public static final String FILEMANAGER = 'getl.files.FileManager'
+    public static final String FTPMANAGER = 'getl.files.FTPManager'
+    public static final String HDFSMANAGER = 'getl.files.HDFSManager'
+    public static final String SFTPMANAGER = 'getl.files.SFTPManager'
 
     /** List of allowed file manager classes */
-    public final List<String> listFileManagerClasses = [
-            FILEMANAGER, FTPMANAGER, HDFSMANAGER, SFTPMANAGER
-    ]
+    public static List<String> LISTFILEMANAGERCLASSES
 
     /** Fix start process */
     ProcessTime startProcess(String name) {
@@ -465,7 +478,7 @@ class Getl extends Script {
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                                    Closure<Boolean> filter = null) {
         (connectionClasses as List<String>)?.each {
-            if (!(it in listConnectionClasses))
+            if (!(it in LISTCONNECTIONCLASSES))
                 throw new ExceptionGETL("\"$it\" is not connection class!")
         }
 
@@ -567,7 +580,7 @@ class Getl extends Script {
      * @return list of jdbc connection names according to specified conditions
      */
     List<String> listJdbcConnections(String mask = null, Closure<Boolean> filter = null) {
-        return listConnections(mask, listJdbcConectionClasses, filter)
+        return listConnections(mask, LISTJDBCCONNECTIONCLASSES, filter)
     }
 
     /**
@@ -577,7 +590,7 @@ class Getl extends Script {
      */
     void processJdbcConnections(String mask,
                                 @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        processConnections(mask, listJdbcConectionClasses, cl)
+        processConnections(mask, LISTJDBCCONNECTIONCLASSES, cl)
     }
 
     /**
@@ -596,7 +609,7 @@ class Getl extends Script {
         if (connectionClassName ==  null && registration)
             throw new ExceptionGETL('Connection class name cannot be null!')
 
-        if (connectionClassName != null && !(connectionClassName in listConnectionClasses))
+        if (connectionClassName != null && !(connectionClassName in LISTCONNECTIONCLASSES))
             throw new ExceptionGETL("$connectionClassName is not connection class!")
 
         if (name == null) {
@@ -616,6 +629,7 @@ class Getl extends Script {
             obj = Connection.CreateConnection(connection: connectionClassName) as Connection
             obj.sysParams.dslThisObject = childThisObject
             obj.sysParams.dslOwnerObject = childOwnerObject
+            obj.sysParams.dslNameObject = repName
             connections.put(repName, obj)
         }
         else {
@@ -634,6 +648,7 @@ class Getl extends Script {
                         def c = (it as Connection).cloneConnection()
                         c.sysParams.dslThisObject = childThisObject
                         c.sysParams.dslOwnerObject = childOwnerObject
+                        c.sysParams.dslNameObject = repName
                         return c
                     }
             )
@@ -653,7 +668,7 @@ class Getl extends Script {
         if (obj == null) throw new ExceptionGETL("Connection object cannot be null!")
 
         def className = obj.getClass().name
-        if (!(className in listConnectionClasses))
+        if (!(className in LISTCONNECTIONCLASSES))
             throw new ExceptionGETL("Unknown connection class $className!")
 
         if (name == null) {
@@ -673,6 +688,7 @@ class Getl extends Script {
 
         obj.sysParams.dslThisObject = childThisObject
         obj.sysParams.dslOwnerObject = childOwnerObject
+        obj.sysParams.dslNameObject = repName
 
         connections.put(repName, obj)
 
@@ -713,7 +729,7 @@ class Getl extends Script {
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                              Closure<Boolean> filter = null) {
         (datasetClasses as List<String>)?.each {
-            if (!(it in listDatasetClasses))
+            if (!(it in LISTDATASETCLASSES))
                 throw new ExceptionGETL("\"$it\" is not dataset class!")
         }
 
@@ -869,7 +885,7 @@ class Getl extends Script {
      * @return list of jdbc table names according to specified conditions
      */
     List<String> listJdbcTables(String mask = null, Closure<Boolean> filter = null) {
-        return listDatasets(mask, listJdbcTableClasses, filter)
+        return listDatasets(mask, LISTJDBCTABLECLASSES, filter)
     }
 
     /**
@@ -878,7 +894,7 @@ class Getl extends Script {
      * @return list of jdbc table names according to specified conditions
      */
     List<String> listJdbcTables(Closure<Boolean> filter) {
-        return listDatasets(null, listJdbcTableClasses, filter)
+        return listDatasets(null, LISTJDBCTABLECLASSES, filter)
     }
 
     /**
@@ -911,7 +927,7 @@ class Getl extends Script {
     protected void setDefaultConnection(String datasetClassName, Dataset ds) {
         if (datasetClassName ==  null)
             throw new ExceptionGETL('Dataset class name cannot be null!')
-        if (!(datasetClassName in listDatasetClasses))
+        if (!(datasetClassName in LISTDATASETCLASSES))
             throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
         if (ds instanceof JDBCDataset) {
@@ -943,7 +959,7 @@ class Getl extends Script {
         if (datasetClassName == null)
             res = lastJdbcDefaultConnection
         else {
-            if (!(datasetClassName in listDatasetClasses))
+            if (!(datasetClassName in LISTDATASETCLASSES))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
             res = _defaultJDBCConnection.get(datasetClassName)
@@ -960,7 +976,7 @@ class Getl extends Script {
             throw new ExceptionGETL('Specifying the default connection is not allowed in streams!')
 
         if (datasetClassName != null) {
-            if (!(datasetClassName in listDatasetClasses))
+            if (!(datasetClassName in LISTDATASETCLASSES))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
             _defaultJDBCConnection.put(datasetClassName, value)
         }
@@ -983,7 +999,7 @@ class Getl extends Script {
         if (datasetClassName == null)
             res = lastFileDefaultConnection
         else {
-            if (!(datasetClassName in listDatasetClasses))
+            if (!(datasetClassName in LISTDATASETCLASSES))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
             res = _defaultFileConnection.get(datasetClassName)
@@ -998,7 +1014,7 @@ class Getl extends Script {
             throw new ExceptionGETL('Specifying the default connection is not allowed in streams!')
 
         if (datasetClassName != null) {
-            if (!(datasetClassName in listDatasetClasses))
+            if (!(datasetClassName in LISTDATASETCLASSES))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
             _defaultFileConnection.put(datasetClassName, value)
@@ -1022,7 +1038,7 @@ class Getl extends Script {
         if (datasetClassName == null)
             res = lastOtherDefaultConnection
         else {
-            if (!(datasetClassName in listDatasetClasses))
+            if (!(datasetClassName in LISTDATASETCLASSES))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
             res = _defaultOtherConnection.get(datasetClassName)
@@ -1037,7 +1053,7 @@ class Getl extends Script {
             throw new ExceptionGETL('Specifying the default connection is not allowed in streams!')
 
         if (datasetClassName != null) {
-            if (!(datasetClassName in listDatasetClasses))
+            if (!(datasetClassName in LISTDATASETCLASSES))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
             _defaultOtherConnection.put(datasetClassName, value)
@@ -1054,7 +1070,7 @@ class Getl extends Script {
 
         if (registration && datasetClassName ==  null)
             throw new ExceptionGETL('Dataset class name cannot be null!')
-        if (datasetClassName != null && !(datasetClassName in listDatasetClasses))
+        if (datasetClassName != null && !(datasetClassName in LISTDATASETCLASSES))
             throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
         Dataset obj
@@ -1095,6 +1111,7 @@ class Getl extends Script {
             obj = Dataset.CreateDataset(dataset: datasetClassName) as Dataset
             obj.sysParams.dslThisObject = childThisObject
             obj.sysParams.dslOwnerObject = childOwnerObject
+            obj.sysParams.dslNameObject = repName
 
             if (connection != null) {
                 obj.connection = connection
@@ -1122,6 +1139,7 @@ class Getl extends Script {
                             if (connection == null) {
                                 c.sysParams.dslThisObject = childThisObject
                                 c.sysParams.dslOwnerObject = childOwnerObject
+                                c.sysParams.dslNameObject = (it as Connection).sysParams.dslNameObject
                             }
                             return c
                         }
@@ -1132,6 +1150,7 @@ class Getl extends Script {
                             def d = (it as Dataset).cloneDataset(cloneConnection)
                             d.sysParams.dslThisObject = childThisObject
                             d.sysParams.dslOwnerObject = childOwnerObject
+                            d.sysParams.dslNameObject = repName
                             return d
                         }
                 ) as Dataset
@@ -1142,6 +1161,7 @@ class Getl extends Script {
                             def d = (it as Dataset).cloneDataset()
                             d.sysParams.dslThisObject = childThisObject
                             d.sysParams.dslOwnerObject = childOwnerObject
+                            d.sysParams.dslNameObject = repName
                             return d
                         }
                 ) as Dataset
@@ -1167,7 +1187,7 @@ class Getl extends Script {
         if (obj == null) throw new ExceptionGETL("Dataset object cannot be null!")
 
         def className = obj.getClass().name
-        if (!(className in listDatasetClasses))
+        if (!(className in LISTDATASETCLASSES))
             throw new ExceptionGETL("Unknown dataset class $className!")
 
         if (name == null) {
@@ -1187,6 +1207,7 @@ class Getl extends Script {
 
         obj.sysParams.dslThisObject = childThisObject
         obj.sysParams.dslOwnerObject = childOwnerObject
+        obj.sysParams.dslNameObject = repName
 
         datasets.put(repName, obj)
 
@@ -1308,6 +1329,7 @@ class Getl extends Script {
                 obj = new SavePointManager()
                 obj.sysParams.dslThisObject = childThisObject
                 obj.sysParams.dslOwnerObject = childOwnerObject
+                obj.sysParams.dslNameObject = repName
                 if (lastJdbcDefaultConnection != null) obj.connection = lastJdbcDefaultConnection
                 historyPoints.put(repName, obj)
             }
@@ -1320,6 +1342,7 @@ class Getl extends Script {
                                 def c = (it as Connection).cloneConnection()
                                 c.sysParams.dslThisObject = childThisObject
                                 c.sysParams.dslOwnerObject = childOwnerObject
+                                c.sysParams.dslNameObject = (it as Connection).sysParams.dslNameObject
                                 return c
                             }
                     ) as JDBCConnection
@@ -1328,6 +1351,7 @@ class Getl extends Script {
                                 def p = (it as SavePointManager).cloneSavePointManager(cloneConnection)
                                 p.sysParams.dslThisObject = childThisObject
                                 p.sysParams.dslOwnerObject = childOwnerObject
+                                p.sysParams.dslNameObject = repName
                                 return p
                             }
                     ) as SavePointManager
@@ -1338,6 +1362,7 @@ class Getl extends Script {
                                 def p = (it as SavePointManager).cloneSavePointManager()
                                 p.sysParams.dslThisObject = childThisObject
                                 p.sysParams.dslOwnerObject = childOwnerObject
+                                p.sysParams.dslNameObject = repName
                                 return p
                             }
                     ) as SavePointManager
@@ -1375,6 +1400,7 @@ class Getl extends Script {
 
         obj.sysParams.dslThisObject = childThisObject
         obj.sysParams.dslOwnerObject = childOwnerObject
+        obj.sysParams.dslNameObject = repName
 
         historyPoints.put(repName, obj)
 
@@ -1414,7 +1440,7 @@ class Getl extends Script {
                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                                  Closure<Boolean> filter = null) {
         (filemanagerClasses as List<String>)?.each {
-            if (!(it in listFileManagerClasses))
+            if (!(it in LISTFILEMANAGERCLASSES))
                 throw new ExceptionGETL("\"$it\" is not file manager class!")
         }
 
@@ -1515,7 +1541,7 @@ class Getl extends Script {
 
         if (registration && fileManagerClassName ==  null)
             throw new ExceptionGETL('File manager class name cannot be null!')
-        if (fileManagerClassName != null && !(fileManagerClassName in listFileManagerClasses))
+        if (fileManagerClassName != null && !(fileManagerClassName in LISTFILEMANAGERCLASSES))
             throw new ExceptionGETL("$fileManagerClassName is not file manager class!")
 
         Manager obj
@@ -1537,6 +1563,7 @@ class Getl extends Script {
             obj = Manager.CreateManager(manager: fileManagerClassName) as Manager
             obj.sysParams.dslThisObject = childThisObject
             obj.sysParams.dslOwnerObject = childOwnerObject
+            obj.sysParams.dslNameObject = repName
             fileManagers.put(repName, obj)
         }
         else {
@@ -1555,6 +1582,7 @@ class Getl extends Script {
                         def f = (it as FileManager).cloneManager()
                         f.sysParams.dslThisObject = childThisObject
                         f.sysParams.dslOwnerObject = childOwnerObject
+                        f.sysParams.dslNameObject = repName
                         return f
                     }
             )
@@ -1573,7 +1601,7 @@ class Getl extends Script {
     Manager registerFileManagerObject(Manager obj, String name = null, Boolean validExist = true) {
         if (obj == null) throw new ExceptionGETL("File manager object cannot be null!")
         def className = obj.getClass().name
-        if (!(className in listFileManagerClasses))
+        if (!(className in LISTFILEMANAGERCLASSES))
             throw new ExceptionGETL("$className is not file manager class!")
 
         if (name == null) {
@@ -1593,6 +1621,7 @@ class Getl extends Script {
 
         obj.sysParams.dslThisObject = childThisObject
         obj.sysParams.dslOwnerObject = childOwnerObject
+        obj.sysParams.dslNameObject = repName
 
         fileManagers.put(repName, obj)
 

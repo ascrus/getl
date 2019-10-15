@@ -35,13 +35,9 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class WriteSpec extends BaseSpec {
-    WriteSpec() {
-        super()
-        params.updateField = [] as List<String>
-    }
-
-    WriteSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.updateField == null) params.updateField = [] as List<String>
     }
 

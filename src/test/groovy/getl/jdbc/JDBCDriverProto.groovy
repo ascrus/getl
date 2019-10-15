@@ -83,7 +83,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 							[columns: ['id2', 'name']]]
 			if (con != null && con.driver.isSupport(Driver.Support.DATE))
 				indexes << [getl_test_idx_2: [columns: ['id1', 'date'], unique: true]]
-            table.create(indexes: indexes)
+            table.create(ifNotExists: true, indexes: indexes)
         }
         else {
             table.create()

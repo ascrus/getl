@@ -34,7 +34,15 @@ import getl.utils.MapUtils
  *
  */
 class BaseSpec {
-    BaseSpec() { }
+    BaseSpec() {
+        initSpec()
+    }
+
+    BaseSpec(def ownerObject, def thisObject) {
+        this.ownerObject = ownerObject
+        this.thisObject = thisObject
+        initSpec()
+    }
 
     BaseSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
         this.ownerObject = ownerObject
@@ -46,7 +54,11 @@ class BaseSpec {
                 importFromMap(importParams)
             }
         }
+        initSpec()
     }
+
+    /** Init options after create object */
+    protected void initSpec() { }
 
     /** Detect delegate object for closure code */
     static Object DetectClosureDelegate(Object obj) {

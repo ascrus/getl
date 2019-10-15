@@ -567,4 +567,38 @@ class Field implements Serializable {
 
 		return true
 	}
+
+	/** Convert field type to dsl type name */
+	static String TypeToDsl(Type type) {
+		return type.toString().toLowerCase() + 'FieldType'
+	}
+
+	String generateDsl() {
+		def l = [] as List<String>
+		l << "type = ${Field.TypeToDsl(type)}"
+		if (AllowLength(this) && length != null) l << "length = $length"
+		if (AllowPrecision(this) && precision != null) l << "precision = $precision"
+		if (!isNull) l << 'isNull = false'
+		if (BoolUtils.IsValue(isKey)) {
+			l << 'isKey = true'
+			if (ordKey > 0) l << "ordKey = $ordKey"
+		}
+		if (BoolUtils.IsValue(isPartition)) {
+			l << 'isPartition = true'
+			if (ordPartition != null) l << "ordPartition = $ordPartition"
+		}
+		if (BoolUtils.IsValue(isAutoincrement)) l << 'isAutoincrement = true'
+		if (BoolUtils.IsValue(isReadOnly)) l << 'isReadOnly = true'
+		if (defaultValue != null) l << "defaultValue = '$defaultValue'"
+		if (compute != null) l << "compute = '$compute'"
+		if (minValue != null) l << "minValue = $minValue"
+		if (maxValue != null) l << "minValue = $maxValue"
+		if (format != null) l << "format = '$format'"
+		if (alias != null) l << "alias = '$alias'"
+		if (BoolUtils.IsValue(trim)) 'trim = true'
+		if (decimalSeparator != null) "decimalSeparator = '$decimalSeparator'"
+		if (description != null) "description = '$description'"
+
+		return "field('$name') { ${l.join('; ')} }"
+	}
 }

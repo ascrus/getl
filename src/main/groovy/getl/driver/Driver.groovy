@@ -52,9 +52,10 @@ abstract class Driver {
 	protected Connection connection
 
     static enum Support {
-		CONNECT, TRANSACTIONAL, SQL, LOCAL_TEMPORARY, GLOBAL_TEMPORARY, BATCH, EACHROW, WRITE, SEQUENCE,
-		AUTOLOADSCHEMA, AUTOSAVESCHEMA, INDEX, DATE, TIME, BOOLEAN, BLOB, CLOB, MEMORY, NOT_NULL_FIELD, PRIMARY_KEY,
-		DEFAULT_VALUE, COMPUTE_FIELD, UUID}
+		CONNECT, TRANSACTIONAL, SQL, LOCAL_TEMPORARY, GLOBAL_TEMPORARY, BATCH, CREATEIFNOTEXIST, DROPIFEXIST, EACHROW,
+		WRITE, SEQUENCE, AUTOLOADSCHEMA, AUTOSAVESCHEMA, INDEX, DATE, TIME, BOOLEAN, BLOB, CLOB, MEMORY, NOT_NULL_FIELD,
+		PRIMARY_KEY, DEFAULT_VALUE, COMPUTE_FIELD, UUID
+	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	abstract List<Driver.Support> supported ()
@@ -64,7 +65,10 @@ abstract class Driver {
 		(supported().indexOf(feature) != -1)
 	}
 
-    static enum Operation {CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS, INSERT, UPDATE, DELETE, MERGE, READ_METADATA}
+    static enum Operation {
+		CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS, INSERT, UPDATE, DELETE, MERGE,
+		READ_METADATA
+	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	abstract List<Driver.Operation> operations ()

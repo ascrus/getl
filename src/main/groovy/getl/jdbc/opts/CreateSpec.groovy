@@ -37,13 +37,9 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class CreateSpec extends BaseSpec {
-    CreateSpec() {
-        super()
-        params.indexes = [:] as Map<String, Object>
-    }
-
-    CreateSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.indexes == null) params.indexes = [:] as Map<String, Object>
     }
 

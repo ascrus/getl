@@ -36,13 +36,9 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class XMLReadSpec extends BaseSpec {
-    XMLReadSpec() {
-        super()
-        params.fields = [] as List<String>
-    }
-
-    XMLReadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.fields == null) params.fields = [] as List<String>
     }
 

@@ -24,9 +24,15 @@
 
 package getl.jdbc
 
+import getl.csv.CSVConnection
+import getl.csv.CSVDataset
 import getl.data.Connection
 import getl.data.Dataset
 import getl.exception.ExceptionGETL
+import getl.jdbc.opts.GenerateDslTablesSpec
+import getl.lang.Getl
+import getl.lang.opts.BaseSpec
+import getl.proc.Flow
 import getl.utils.*
 import groovy.sql.Sql
 import groovy.transform.InheritConstructors
@@ -59,7 +65,7 @@ class JDBCConnection extends Connection {
 				'login', 'password', 'connectURL', 'sqlHistoryFile', 'autoCommit', 'connectProperty', 'dbName',
 				'javaConnection', 'maskDate', 'maskDateTime', 'sessionProperty', 'maskTime', 'schemaName',
 				'driverName', 'driverPath', 'connectHost', 'connectDatabase', 'balancer', 'fetchSize', 'loginTimeout',
-				'queryTimeout', 'sqlHistoryOutput'])
+				'queryTimeout', 'sqlHistoryOutput', 'loginsConfigStore'])
 	}
 	
 	@Override
@@ -353,15 +359,23 @@ class JDBCConnection extends Connection {
 												 Closure<Boolean> filter = null) {
 		if (params == null) params = [:]
 		def result = [] as List<TableDataset>
-		def o = retrieveObjects(params, filter) as List<Map>
-		o.each { row ->
+		(retrieveObjects(params, filter) as List<Map>).each { row ->
 			TableDataset d
 			switch ((row.type as String)?.toUpperCase()) {
 				case 'VIEW':
 					d = new ViewDataset(type: JDBCDataset.Type.VIEW)
 					break
-				default:
+				case 'GLOBAL TEMPORARY':
+					d = new TableDataset(type: JDBCDataset.Type.GLOBAL_TEMPORARY)
+					break
+				case 'LOCAL TEMPORARY':
+					d = new TableDataset(type: JDBCDataset.Type.LOCAL_TEMPORARY)
+					break
+				case 'TABLE': case 'SYSTEM TABLE':
 					d = new TableDataset(type: JDBCDataset.Type.TABLE)
+					break
+				default:
+					throw new ExceptionGETL("Not support dataset type \"${row.type}\"")
 			}
 			d.connection = this
 			d.with {
@@ -503,5 +517,212 @@ class JDBCConnection extends Connection {
 			str = "unknown"
 		}
 		return str
+	}
+
+	/**
+	 * Generate tables and views by name mask
+	 */
+	void generateDslTables(@DelegatesTo(GenerateDslTablesSpec)
+			@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.GenerateDslTablesSpec']) Closure cl) {
+		def connectionClassName = getClass().name
+		if (!(connectionClassName in Getl.LISTJDBCCONNECTIONCLASSES))
+			throw new ExceptionGETL("Connection type \"$connectionClassName\" is not supported!")
+
+		String classType
+		if (this instanceof getl.tfs.TDS) {
+			classType = 'embedded'
+		}
+		else {
+			def classPath = new Path(mask: '{package}.{classtype}Connection')
+			def classNames = classPath.analizeFile(connectionClassName)
+			classType = (classNames?.classtype as String)?.toLowerCase()
+		}
+		if (classType == null) throw new ExceptionGETL("Connection type \"$connectionClassName\" is no supported!")
+        Logs.Fine("Generate GETL DSL script for $classType tables")
+
+		if (cl == null) throw new ExceptionGETL('Parameter setting code required!')
+		def thisObject = sysParams.dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
+		def p = new GenerateDslTablesSpec(this, thisObject)
+		p.runClosure(cl)
+
+		def packageName = p.packageName
+		if (packageName == null)
+			throw new ExceptionGETL('Required value for "packageName" parameter!')
+
+		def scriptPath = p.scriptPath
+		if (scriptPath == null)
+			throw new ExceptionGETL('Required value for "scriptPath" parameter!')
+		def scriptFile = new File(p.scriptPath)
+        Logs.Fine("  saving GETL DSL script to file ${scriptFile.path}")
+        if (scriptFile.exists()) {
+			if (p.overwriteScript)
+				Logs.Warning("Script \"${p.scriptPath}\" already exist!")
+			else
+				throw new ExceptionGETL("Script \"${p.scriptPath}\" already exist!")
+		}
+
+		def listTableSavedData = (p.listTableSavedData as List<String>)*.toLowerCase()
+		def listTableExcluded = (p.listTableExcluded as List<String>)*.toLowerCase()
+		def useResource = (p.defineFields || (p.createTables && !listTableSavedData.isEmpty()))
+
+		def resourcePath = p.resourcePath
+		File resourceDir
+		if (useResource) {
+			if (useResource && resourcePath == null)
+				throw new ExceptionGETL('Required value for "resourcePath" parameter!')
+
+			resourceDir = new File(resourcePath)
+			if (!resourceDir.exists())
+				throw new ExceptionGETL("Invalid resource directory \"${resourcePath}\"")
+		}
+
+		def connectionName = p.connectionName?:(sysParams.dslNameObject as String)
+		if (connectionName == null)
+			throw new ExceptionGETL('Required value for "connectionName" parameter!')
+
+		Logs.Fine("  with connection: $connectionName")
+		if (p.groupName != null) Logs.Fine("  group in repository: ${p.groupName}")
+		if (p.defineFields) Logs.Fine("  saving list of field in resource files")
+		if (p.createTables) Logs.Fine("  generating create table operation")
+		if (p.dropTables) Logs.Fine("  generating drop table operation")
+		if (!listTableSavedData.isEmpty()) Logs.Fine("  save data from tables ${listTableSavedData.toString()} to resource files")
+		Logs.Fine("  using filter \"${p.dbName?:'*'}\".\"${p.schemaName?:'*'}\".\"${p.tableName?:'*'}\"${(!p.types.isEmpty())?(' with types: ' + p.types.toString()):''}${(!listTableExcluded.isEmpty())?(' excluded: ' + listTableExcluded.toString()):''}")
+		if (useResource) Logs.Fine("  using resource files path ${resourceDir.path}")
+
+		StringBuilder sb = new StringBuilder()
+
+		sb << """/* GETL DSL script generator */
+package $p.packageName
+
+import groovy.transform.BaseScript
+import groovy.transform.Field
+import getl.lang.Getl
+
+//noinspection GroovyUnusedAssignment
+@BaseScript Getl main
+"""
+		if (p.createTables) sb << '\n@Field Boolean createTables = false'
+		sb << "\n\nuse${classType.capitalize()}Connection ${classType}Connection('$connectionName')"
+		if (p.groupName != null) sb << "\nforGroup '${p.groupName}'"
+
+		def tab = '\t'
+		retrieveDatasets([dbName: p.dbName, schemaName: p.schemaName?: this.schemaName, tableName: p.tableName, type: p.types], p.onFilter).each { TableDataset dataset ->
+			Logs.Fine("generate script for table $dataset.fullTableName")
+			if (dataset.tableName == null)
+				throw new ExceptionGETL("Invalid table name for $dataset!")
+
+			def classObject = (dataset.type != JDBCDataset.Type.VIEW)?"${classType}Table":'view'
+			def repName = dataset.tableName.toLowerCase()
+
+			if (repName in listTableExcluded) return
+
+			sb << "\n\n$classObject ('${repName}', true) { table ->"
+			if (dataset.dbName != null) sb << "\n${tab}dbName = '$dataset.dbName'"
+			if (dataset.schemaName != null) sb << "\n${tab}schemaName = '$dataset.schemaName'"
+			sb << "\n${tab}tableName = '$dataset.tableName'"
+
+			def cr = generateDslCreate(dataset)?:([] as List<String>)
+			if (dataset.type == JDBCDataset.Type.GLOBAL_TEMPORARY)
+				cr << 'type = globalTemporaryType'
+			if (!cr.isEmpty()) {
+				cr = cr.collect { tab + tab + it }
+				sb << "\n${tab}createOpts {\n${cr.join('\n')}\n}"
+			}
+
+			def tableName = StringUtils.TransformObjectName(dataset.tableName)
+
+			if (p.defineFields) {
+				if (dataset.field.size() == 0) dataset.retrieveFields()
+				if (dataset.field.size() == 0) throw new ExceptionGETL("Table ${dataset.fullTableName} has no fields!")
+				def schemaResourceDir = "/fields/" + generateDslResourceName(dataset)
+				FileUtils.ValidPath(resourcePath + schemaResourceDir)
+				def resourceFieldFile = new File(resourcePath + schemaResourceDir + "${tableName}.json")
+				dataset.saveDatasetMetadataToJSON(resourceFieldFile.newWriter('utf-8'))
+				Logs.Fine("  saved ${dataset.field.size()} fields desctiption to file \"${resourceFieldFile.path}\"")
+
+				sb << "\n\n${tab}schemaFileName = 'resource:${schemaResourceDir}${tableName}.json'"
+				sb << "\n${tab}loadDatasetMetadata()"
+			}
+
+			if (p.createTables && dataset.type in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY]) {
+				sb << "\n\n${tab}if (createTables) {"
+
+				if (p.dropTables) {
+					sb << "\n${tab}${tab}drop(ifExists: true)"
+				}
+
+				sb << "\n${tab}${tab}create()"
+				sb << "\n${tab}${tab}logInfo \"Created table \$fullTableName\""
+
+				if (dataset.type == JDBCDataset.Type.TABLE && repName in listTableSavedData) {
+					def dataResourceDir = "/csv.init/" + generateDslResourceName(dataset)
+					FileUtils.ValidPath("$resourcePath$dataResourceDir")
+					def csvPath = new CSVConnection(path: "$resourcePath$dataResourceDir")
+					def csvFile = new CSVDataset(connection: csvPath, fileName: "${tableName}.csv",
+							field: dataset.field, codePage: 'utf-8', fieldDelimiter: ',', escaped: false,
+							nullAsValue: '<NULL>')
+
+					new Flow().copy(source: dataset, dest: csvFile)
+					Logs.Fine("  saved ${csvFile.writeRows} rows to file \"${csvFile.fullFileName()}\"")
+
+					sb << """\n\n${tab}${tab}def initDataFile = csv {
+${tab}${tab}${tab}useConnection csvConnection { path = getl.utils.FileUtils.PathFromFile(getl.utils.FileUtils.ResourceFileName('resource:${dataResourceDir}${tableName}.csv')) }
+${tab}${tab}${tab}fileName = "${tableName}.csv"
+${tab}${tab}${tab}field = table.field; codePage = 'utf-8'; fieldDelimiter = ','; escaped = false; nullAsValue = '<NULL>'
+${tab}${tab}}
+${tab}${tab}copyRows(initDataFile, table) {
+${tab}${tab}${tab}copyRow()
+${tab}${tab}${tab}logInfo "Loaded \$countRow rows to table \${table.fullTableName}"
+${tab}${tab}}
+"""
+				}
+
+				sb << "\n${tab}}"
+			}
+
+			Logs.Info("Generated script for table $dataset.fullTableName complete")
+
+			sb << '\n}'
+		}
+
+		scriptFile.setText(sb.toString(),'utf-8')
+		Logs.Info("Generated GETL DSL script \"${scriptFile.path}\" complete")
+	}
+
+	/** Resource file name for table
+	 * @param dataset specified table
+	 * @return resource file name
+	 */
+	protected String generateDslResourceName(TableDataset dataset) {
+		return ((dataset.dbName != null)?"${dataset.dbName}/":'') + ((dataset.schemaName != null)?"${dataset.schemaName}/":'')
+	}
+
+	/**
+	 * Generate dsl script for createOpts section table
+	 * @return
+	 */
+	protected List<String> generateDslCreate(TableDataset table) { [] as List<String> }
+
+	/** The path to store logins in the configuration */
+	String getLoginsConfigStore() { params.loginsConfigStore as String }
+	/** The path to store logins in the configuration */
+	void setLoginsConfigStore(String value) { params.loginsConfigStore = value }
+
+	/** Use login to connect */
+	void useLogin(String user) {
+		if (loginsConfigStore == null)
+			throw new ExceptionGETL('Login storage path not specified in configuration!')
+
+		def logins = Config.FindSection(loginsConfigStore)
+		if (logins == null)
+			throw new ExceptionGETL("Login storage path \"$loginsConfigStore\" not found in configuration!")
+
+		def pwd = logins.get(user)
+		if (pwd == null)
+			throw new ExceptionGETL("User \"$user\" not found in in configuration!")
+
+		if (login != user && connected) connected = false
+		login = user
+		password = pwd
 	}
 }

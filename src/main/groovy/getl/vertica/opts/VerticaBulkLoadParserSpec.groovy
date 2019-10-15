@@ -34,13 +34,9 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class VerticaBulkLoadParserSpec extends BaseSpec {
-    VerticaBulkLoadParserSpec() {
-        super()
-        params.options = [:] as Map<String, Object>
-    }
-
-    VerticaBulkLoadParserSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.options == null) params.options = [:] as Map<String, Object>
     }
 

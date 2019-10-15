@@ -1,6 +1,7 @@
 package getl.test
 
 import getl.utils.Config
+import getl.utils.FileUtils
 import getl.utils.Logs
 import groovy.transform.InheritConstructors
 import org.junit.AfterClass
@@ -16,12 +17,14 @@ abstract class GetlTest extends GroovyTestCase {
     static void InitTestClass() {
         Config.ReInit()
         Logs.Init()
+        FileUtils.ListResourcePath.clear()
     }
 
     @AfterClass
     static void DoneTestClass() {
         Config.ReInit()
         Logs.Done()
+        FileUtils.ListResourcePath.clear()
     }
 
     @Before

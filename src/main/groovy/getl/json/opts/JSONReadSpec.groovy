@@ -36,13 +36,9 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class JSONReadSpec extends BaseSpec {
-    JSONReadSpec() {
-        super()
-        params.fields = [] as List<String>
-    }
-
-    JSONReadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.fields == null) params.fields = [] as List<String>
     }
 

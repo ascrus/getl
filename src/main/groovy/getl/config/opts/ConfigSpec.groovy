@@ -66,12 +66,16 @@ class ConfigSpec extends BaseSpec {
     /**
      * Load configuration file
      */
-    static void load(String fileName, String codePage = null) { Config.LoadConfig([fileName: fileName, codePage: codePage]) }
+    static void load(String fileName, String codePage = null) {
+        Config.LoadConfig([fileName: FileUtils.ResourceFileName(fileName), codePage: codePage])
+    }
 
     /**
      * Save configuration file
      */
-    static void save(String fileName, String codePage = null) { Config.SaveConfig(fileName: fileName, codePage: codePage)}
+    static void save(String fileName, String codePage = null) {
+        Config.SaveConfig(fileName: fileName, codePage: codePage)
+    }
 
     /**
      * Clear configuration content

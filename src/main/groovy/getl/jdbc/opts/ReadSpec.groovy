@@ -34,13 +34,9 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class ReadSpec extends BaseSpec {
-    ReadSpec() {
-        super()
-        params.order = [] as List<String>
-    }
-
-    ReadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.order == null ) params.order = [] as List<String>
     }
 

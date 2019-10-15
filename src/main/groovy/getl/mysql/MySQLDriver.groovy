@@ -55,7 +55,8 @@ class MySQLDriver extends JDBCDriver {
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
-				 Driver.Support.INDEX, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN]
+				 Driver.Support.INDEX, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN,
+				 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

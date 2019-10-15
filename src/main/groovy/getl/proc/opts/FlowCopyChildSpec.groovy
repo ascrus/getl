@@ -36,13 +36,9 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class FlowCopyChildSpec extends BaseSpec {
-    FlowCopyChildSpec() {
-        super()
-        params.datasetParams = [:] as Map<String, Object>
-    }
-
-    FlowCopyChildSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.datasetParams == null) params.datasetParams = [:] as Map<String, Object>
     }
 
