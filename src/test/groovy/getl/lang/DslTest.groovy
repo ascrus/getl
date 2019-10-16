@@ -653,9 +653,10 @@ ORDER BY t1.id'''
                 scriptPath = scriptFile
                 overwriteScript = true
                 resourcePath = resourceDir
+                listTableExcluded = ['FILE_MANAGER_*']
 
                 filter {
-                    (it.tableName as String)?.toLowerCase() in ['table1', 'table2']
+                    (it.tableName as String)?.toLowerCase() != 'historytable'
                 }
             }
 
@@ -665,9 +666,13 @@ ORDER BY t1.id'''
 
             try {
                 runGroovyFile(scriptFile) { createTables = true }
+                assertEquals(2, listJdbcTables('getl.testdsl.temp:').size())
                 embeddedTable('getl.testdsl.temp:table1') {
                     assertTrue(exists)
                     assertEquals(this.table1_rows, countRow())
+                }
+                embeddedTable('getl.testdsl.temp:table2') {
+                    assertTrue(exists)
                 }
             }
             finally {

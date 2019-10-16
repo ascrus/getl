@@ -39,7 +39,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         return _con
     }
     String getTableClass() { 'getl.jdbc.TableDataset' }
-    final TableDataset table = TableDataset.CreateDataset(dataset: tableClass, connection: con, tableName: 'getl_test')
+    final TableDataset table = TableDataset.CreateDataset(dataset: tableClass, connection: con, tableName: 'getl_test_data')
     List<Field> getFields () {
         def res =
             [
@@ -79,10 +79,10 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         table.drop(ifExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
 			def indexes = [
-					getl_test_idx_1:
+					getl_test_data_idx_1:
 							[columns: ['id2', 'name']]]
 			if (con != null && con.driver.isSupport(Driver.Support.DATE))
-				indexes << [getl_test_idx_2: [columns: ['id1', 'date'], unique: true]]
+				indexes << [getl_test_data_idx_2: [columns: ['id1', 'date'], unique: true]]
             table.create(ifNotExists: true, indexes: indexes)
         }
         else {
@@ -195,6 +195,13 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 		}
 
         assertEquals(origFields, dsFields)
+    }
+
+    protected void retrieveObject() {
+        def d = con.retrieveDatasets(tableName: 'getl_test_data')
+        assertEquals(1, d.size())
+        def l = con.retrieveObjects(tableMask: 'getl_test_dat*')
+        assertEquals(1, l.size())
     }
 
     protected long insertData() {
@@ -426,6 +433,8 @@ END FOR;
 
         createTable()
         assertTrue(table.exists)
+
+        retrieveObject()
 
         if (insertData() > 0) {
             copyToCsv()

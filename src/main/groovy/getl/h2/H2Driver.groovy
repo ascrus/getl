@@ -90,6 +90,23 @@ class H2Driver extends JDBCDriver {
 	}
 
 	@Override
+	List<Object> retrieveObjects (Map params, Closure<Boolean> filter) {
+		def p = MapUtils.Copy(params)
+		def tableName = p.tableName
+		if (tableName != null) {
+			p.remove('tableName')
+			def mask = p.get('tableMask')
+			if (mask == null) {
+				mask = [] as List<String>
+				p.put('tableMask', mask)
+			}
+			mask << tableName
+		}
+
+		return super.retrieveObjects(p, filter)
+	}
+
+	@Override
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		String result = ""
 		def temporary = (dataset as JDBCDataset).isTemporaryDataset
@@ -256,34 +273,4 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 			}
 		}
 	}
-
-    @Override
-	List<Object> retrieveObjects (Map params, Closure<Boolean> filter) {
-        String catalog = prepareObjectName(params."dbName" as String)?:defaultDBName
-        String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
-        String tableNamePattern = prepareObjectName(params."tableName" as String)
-        String[] types
-        if (params."type" != null) types = params."type" as String[] else types = ['TABLE', 'GLOBAL_TEMPORARY', 'LOCAL_TEMPORARY', 'ALIAS', 'SYNONYM', 'VIEW'] as String[]
-
-        List<Map> tables = []
-        ResultSet rs = sqlConnect.connection.metaData.getTables(catalog, schemaPattern, null, types)
-        try {
-            while (rs.next()) {
-                def t = [:]
-                t.dbName = prepareObjectName(rs.getString("TABLE_CAT"))
-                t.schemaName = prepareObjectName(rs.getString("TABLE_SCHEM"))
-                t.tableName = prepareObjectName(rs.getString("TABLE_NAME"))
-                t.type = rs.getString("TABLE_TYPE")
-                t.description = rs.getString("REMARKS")
-                if (tableNamePattern == null || (tableNamePattern == t.tableName)) {
-                    if (filter == null || filter(t)) tables << t
-                }
-            }
-        }
-        finally {
-            rs.close()
-        }
-
-        return tables
-    }
 }

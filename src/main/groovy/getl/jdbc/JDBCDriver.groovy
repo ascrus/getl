@@ -51,7 +51,7 @@ import getl.utils.*
 class JDBCDriver extends Driver {
 	JDBCDriver () {
 		super()
-		methodParams.register('retrieveObjects', ['dbName', 'schemaName', 'tableName', 'type'])
+		methodParams.register('retrieveObjects', ['dbName', 'schemaName', 'tableName', 'type', 'tableMask'])
 		methodParams.register('createDataset', ['ifNotExists', 'onCommit', 'indexes', 'hashPrimaryKey',
                                                 'useNativeDBType', 'type'])
 		methodParams.register('dropDataset', ['ifExists'])
@@ -574,9 +574,24 @@ class JDBCDriver extends Driver {
 
 	@Override
 	List<Object> retrieveObjects (Map params, Closure<Boolean> filter) {
-		String catalog = prepareObjectName(params."dbName" as String)?:defaultDBName
+		def isMultiDB = isSupport(Driver.Support.MULTIDATABASE)
+		String catalog = (isMultiDB)?(prepareObjectName(params."dbName" as String)?:defaultDBName):null
 		String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
 		String tableNamePattern = prepareObjectName(params."tableName" as String)
+
+		def tableMaskList = [] as List<Path>
+		if (params.tableMask != null) {
+			if (params.tableMask instanceof List) {
+				(params.tableMask as List<String>).each {
+					tableMaskList << new Path(mask: it)
+				}
+			}
+			else {
+				tableMaskList << new Path(mask: params.tableMask)
+			}
+		}
+		def useMask = !tableMaskList.isEmpty()
+
 		String[] types
 		if (params."type" != null)
 			types = (params."type" as List<String>).toArray(new String[0])
@@ -587,10 +602,22 @@ class JDBCDriver extends Driver {
 		ResultSet rs = sqlConnect.connection.metaData.getTables(catalog, schemaPattern, tableNamePattern, types)
 		try {
 			while (rs.next()) {
+				def tableName = prepareObjectName(rs.getString("TABLE_NAME"))
+				if (tableName != null && useMask) {
+					def addTable = false
+					tableMaskList.each {
+						if (tableName.matches(it.maskPathPattern)) {
+							addTable = true
+							directive = Closure.DONE
+						}
+					}
+					if (!addTable) continue
+				}
+
 				def t = [:]
-				t."dbName" = prepareObjectName(rs.getString("TABLE_CAT"))
+				if (isMultiDB) t."dbName" = prepareObjectName(rs.getString("TABLE_CAT"))
 				t."schemaName" = prepareObjectName(rs.getString("TABLE_SCHEM"))
-				t."tableName" = prepareObjectName(rs.getString("TABLE_NAME"))
+				t."tableName" = tableName
 				t."type" = rs.getString("TABLE_TYPE")
 				t."description" = rs.getString("REMARKS")
 				

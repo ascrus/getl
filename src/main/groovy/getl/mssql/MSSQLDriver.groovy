@@ -60,7 +60,7 @@ class MSSQLDriver extends JDBCDriver {
 		return super.supported() +
 				[Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
 				 Driver.Support.INDEX, Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE,
-				 Driver.Support.BOOLEAN]
+				 Driver.Support.BOOLEAN, Driver.Support.MULTIDATABASE]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

@@ -562,9 +562,14 @@ class JDBCConnection extends Connection {
 		}
 
 		def listTableSavedData = (p.listTableSavedData as List<String>)*.toLowerCase()
-		def listTableExcluded = (p.listTableExcluded as List<String>)*.toLowerCase()
+		def listTableExcluded = (p.listTableExcluded as List<String>)//*.toLowerCase()
+		def listTablePathExcluded = [] as List<Path>
+		listTableExcluded.each {
+			listTablePathExcluded << new Path(mask: it)
+		}
 		def useResource = (p.defineFields || (p.createTables && !listTableSavedData.isEmpty()))
 
+		def resourceRoot = p.resourceRoot
 		def resourcePath = p.resourcePath
 		File resourceDir
 		if (useResource) {
@@ -587,7 +592,7 @@ class JDBCConnection extends Connection {
 		if (p.dropTables) Logs.Fine("  generating drop table operation")
 		if (!listTableSavedData.isEmpty()) Logs.Fine("  save data from tables ${listTableSavedData.toString()} to resource files")
 		Logs.Fine("  using filter \"${p.dbName?:'*'}\".\"${p.schemaName?:'*'}\".\"${p.tableName?:'*'}\"${(!p.types.isEmpty())?(' with types: ' + p.types.toString()):''}${(!listTableExcluded.isEmpty())?(' excluded: ' + listTableExcluded.toString()):''}")
-		if (useResource) Logs.Fine("  using resource files path ${resourceDir.path}")
+		if (useResource) Logs.Fine("  using resource files path \"${resourceDir.path}\"" + ((resourceRoot != null)?" with root path \"$resourceRoot\"":''))
 
 		StringBuilder sb = new StringBuilder()
 
@@ -607,14 +612,24 @@ import getl.lang.Getl
 
 		def tab = '\t'
 		retrieveDatasets([dbName: p.dbName, schemaName: p.schemaName?: this.schemaName, tableName: p.tableName, type: p.types], p.onFilter).each { TableDataset dataset ->
-			Logs.Fine("generate script for table $dataset.fullTableName")
+			Logs.Fine("Generate script for table $dataset.fullTableName")
 			if (dataset.tableName == null)
 				throw new ExceptionGETL("Invalid table name for $dataset!")
 
 			def classObject = (dataset.type != JDBCDataset.Type.VIEW)?"${classType}Table":'view'
 			def repName = dataset.tableName.toLowerCase()
 
-			if (repName in listTableExcluded) return
+			def isExclude = false
+			listTablePathExcluded.each {
+				if (repName.matches(it.maskPathPattern)) {
+					isExclude = true
+					directive = Closure.DONE
+				}
+			}
+			if (isExclude) {
+				Logs.Info("Skip table $dataset.fullTableName")
+				return
+			}
 
 			sb << "\n\n$classObject ('${repName}', true) { table ->"
 			if (dataset.dbName != null) sb << "\n${tab}dbName = '$dataset.dbName'"
@@ -634,7 +649,7 @@ import getl.lang.Getl
 			if (p.defineFields) {
 				if (dataset.field.size() == 0) dataset.retrieveFields()
 				if (dataset.field.size() == 0) throw new ExceptionGETL("Table ${dataset.fullTableName} has no fields!")
-				def schemaResourceDir = "/fields/" + generateDslResourceName(dataset)
+				def schemaResourceDir = ((resourceRoot != null)?"/$resourceRoot":'') + "/fields/" + generateDslResourceName(dataset)
 				FileUtils.ValidPath(resourcePath + schemaResourceDir)
 				def resourceFieldFile = new File(resourcePath + schemaResourceDir + "${tableName}.json")
 				dataset.saveDatasetMetadataToJSON(resourceFieldFile.newWriter('utf-8'))
@@ -655,7 +670,7 @@ import getl.lang.Getl
 				sb << "\n${tab}${tab}logInfo \"Created table \$fullTableName\""
 
 				if (dataset.type == JDBCDataset.Type.TABLE && repName in listTableSavedData) {
-					def dataResourceDir = "/csv.init/" + generateDslResourceName(dataset)
+					def dataResourceDir = ((resourceRoot != null)?"/$resourceRoot":'') + "/csv.init/" + generateDslResourceName(dataset)
 					FileUtils.ValidPath("$resourcePath$dataResourceDir")
 					def csvPath = new CSVConnection(path: "$resourcePath$dataResourceDir")
 					def csvFile = new CSVDataset(connection: csvPath, fileName: "${tableName}.csv",

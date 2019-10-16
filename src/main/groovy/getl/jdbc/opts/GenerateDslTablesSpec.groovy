@@ -128,6 +128,9 @@ class GenerateDslTablesSpec extends BaseSpec {
     /** Path to resource files for storing table data */
     void setResourcePath(String value) { params.resourcePath = value }
 
+    String getResourceRoot() { params.resourceRoot as String }
+    void setResourceRoot(String value) { params.resourceRoot = value }
+
     Closure getOnFilter() { params.filter as Closure<Boolean> }
     void setOnFilter(Closure<Boolean> value) { params.filter = value }
     void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> cl) {
