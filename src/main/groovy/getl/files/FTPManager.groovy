@@ -139,6 +139,9 @@ class FTPManager extends Manager {
      * @return
      */
     boolean supportCommand(String cmd) { (cmd.toUpperCase() in supportCommands) }
+
+	@Override
+	boolean isConnected() { client.connected }
 	
 	@Override
 	void connect () {

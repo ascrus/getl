@@ -181,6 +181,11 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
+	boolean isConnected() {
+		return (clientSession != null && clientSession.connected)
+	}
+
+	@Override
 	@Synchronized
 	void connect() {
 		if (clientSession != null && clientSession.connected) throw new ExceptionGETL("SFTP already connect to server")

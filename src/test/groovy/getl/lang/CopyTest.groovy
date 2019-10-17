@@ -55,7 +55,7 @@ class CopyTest extends getl.test.GetlTest {
             fileCopier(sftp('source'), sftp('dest')) {
                 useSourcePath {
                     mask = 'M2000_{region}_{m2000}/neexport_{date}/{bs_group}/A{bs_date}00+{timezone_start}-{finish_hour}00+{timezone_finish}_{bs}.xml.gz'
-                    variable('region') { format = '(CN|FE|KV|MO|NW|SB|UR|VL)'}
+                    variable('region') { format = 'CN|DV|KV|MO|NW|SB|UR|VL'}
                     variable('date') { type = Field.dateFieldType; format = 'yyyyMMdd' }
                     variable('bs_date') { type = Field.datetimeFieldType; format = 'yyyyMMdd.HH' }
                     variable('timezone_start') { type = Field.integerFieldType; length = 4 }
@@ -69,8 +69,18 @@ class CopyTest extends getl.test.GetlTest {
                     variable('bs_date') { type = Field.datetimeFieldType; format = 'HH-mm' }
                 }
 
-                directoryConcurrencyNestingLevel = 2
-                countThreadWhenBuildSourceList = 4
+                useRenamePath {
+                    mask = '{filenameonly}.{filedate}.{fileextonly}'
+                }
+
+                source.buildList(path: sourcePath, recursive: true)
+                source.fileList.eachRow {
+                    println it.filename + ': ' + it.filedate.toString()
+                    it.filenameonly = FileUtils.ExcludeFileExtension(it.filename)
+                    it.fileextonly = FileUtils.FileExtension(it.filename)
+                    println '  ' + renamePath.generateFileName(it)
+                }
+
                 retryCount = 3
                 copyOrder = ['bs_date', 'region']
             }

@@ -3550,19 +3550,21 @@ class Getl extends Script {
         parent.sysParams.dslOwnerObject = childOwnerObject
         parent.source = source
         parent.destination = destination
-        runClosure(parent, cl)
 
         def pt = startProcess("Copy files from [$source] to [$destination]")
+        if (!source.connected) source.connect()
         try {
-            parent.copy()
-        }
-        finally {
+            if (!destination.connected) destination.connect()
             try {
-                source.disconnect()
+                runClosure(parent, cl)
+                parent.copy()
             }
             finally {
-                destination.disconnect()
+                if (destination.connected) destination.disconnect()
             }
+        }
+        finally {
+            if (source.connected) source.disconnect()
         }
         finishProcess(pt, parent.countFiles)
 

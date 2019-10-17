@@ -151,7 +151,7 @@ class Path {
 	public final Map<String, Object> sysParams = [:] as Map<String, Object>
 
 	/** Define variable options */
-	Map variable(String name, @DelegatesTo(PathVarsSpec) Closure cl) {
+	Map variable(String name, @DelegatesTo(PathVarsSpec) Closure cl = null) {
 		if (name == null || name == '') throw new ExceptionGETL('Name required for variable!')
 		def var = maskVariables.get(name) as Map
 		if (var == null) {
@@ -561,13 +561,10 @@ class Path {
 	}
 	
 	/** Generation file name with variables */
-	String generateFileName(Map varValues) {
-		generateFileName(varValues, true)
-	}
-	
-	/** Generation file name with variables */
 	@CompileStatic
-	String generateFileName(Map<String, Object> varValues, boolean formatValue) {
+	String generateFileName(Map varValues, boolean formatValue) {
+		if (!isCompile) compile()
+
 		def v = [:] as Map<String, Object>
 		if (formatValue) {
 			vars.each { key, value ->
@@ -583,6 +580,12 @@ class Path {
 		def res = GenerationUtils.EvalText(maskFile, v)
 		
 		res
+	}
+
+	/** Generation file name with variables */
+	@CompileStatic
+	String generateFileName(Map varValues) {
+		generateFileName(varValues, true)
 	}
 
 	/**

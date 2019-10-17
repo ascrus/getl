@@ -81,6 +81,9 @@ class HDFSManager extends Manager {
     }
 
     @Override
+    boolean isConnected() { client != null }
+
+    @Override
     void connect() {
         if (client != null) throw new ExceptionGETL("HDFS already connect to server")
         if (server == null || port == null) throw new ExceptionGETL("Required server host and port for connect")

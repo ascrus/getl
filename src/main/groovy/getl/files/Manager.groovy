@@ -267,12 +267,12 @@ abstract class Manager {
 	 * File name is case-sensitive
 	 * @return
 	 */
-	abstract boolean isCaseSensitiveName ()
+	abstract boolean isCaseSensitiveName()
 	
 	/**
 	 * Init validator methods
 	 */
-	protected void initMethods () { }
+	protected void initMethods() { }
 	
 	/**
 	 * Connect to server
@@ -282,7 +282,12 @@ abstract class Manager {
 	/**
 	 * Disconnect from server
 	 */
-	abstract void disconnect ()
+	abstract void disconnect()
+
+	/**
+	 * Connection established successfully
+	 */
+	abstract boolean isConnected()
 	
 	/**
 	 * Return list files of current directory from server
@@ -290,7 +295,7 @@ abstract class Manager {
 	 * @param maskFiles
 	 * @return
 	 */
-	abstract FileManagerList listDir (String maskFiles)
+	abstract FileManagerList listDir(String maskFiles)
 
 	/**
 	 * Process list files of current directory from server

@@ -73,6 +73,9 @@ class FileManager extends Manager {
 		if (rootPath == null) return false
 		new File(rootPath).exists()
 	}
+
+	@Override
+	boolean isConnected() { connected }
 	
 	@Override
 	void connect () {
