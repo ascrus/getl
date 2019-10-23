@@ -1086,6 +1086,9 @@ ${extend}'''
 		return r
 	}
 
+	/** Drop sql statement syntax */
+	protected String dropSyntax = 'DROP {object} {ifexists} {name}'
+
 	@Override
 	void dropDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
@@ -1105,8 +1108,8 @@ ${extend}'''
 			if (!(dataset as TableDataset).exists) return
 		}
 
-		def e = (validExists && isSupport(Driver.Support.DROPIFEXIST))?'IF EXISTS ':''
-		def q = "DROP ${t} ${e}${n}"
+		def e = (validExists && isSupport(Driver.Support.DROPIFEXIST))?'IF EXISTS':''
+		def q = StringUtils.EvalMacroString(dropSyntax, [object: t, ifexists: e, name: n])
 
 		if (commitDDL && transactionalDDL) startTran()
 		try {

@@ -24,7 +24,6 @@
 
 package getl.mysql
 
-import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.jdbc.*
