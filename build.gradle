@@ -30,6 +30,8 @@ dependencies {
 	addJars files('file:libs/ftp4j-1.7.2.jar')
 	addJars files('file:libs/jsch-0.1.53x.jar')
 
+	compile fileTree(dir: 'jdbc')
+
 	compile 'com.typesafe:config:1.4.0'
 
 	compile ('org.apache.poi:poi-ooxml:4.1.1') {
