@@ -41,6 +41,8 @@ import getl.json.*
 import getl.lang.opts.*
 import getl.mssql.*
 import getl.mysql.*
+import getl.netezza.NetezzaConnection
+import getl.netezza.NetezzaTable
 import getl.netsuite.*
 import getl.oracle.*
 import getl.postgresql.*
@@ -125,24 +127,25 @@ class Getl extends Script {
 
         LISTCONNECTIONCLASSES = [
                 CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, H2CONNECTION,
-                HIVECONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
-                POSTGRESQLCONNECTION, SALESFORCECONNECTION, VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION
+                HIVECONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION,
+                ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION, VERTICACONNECTION, XEROCONNECTION,
+                XMLCONNECTION
         ]
 
         LISTJDBCCONNECTIONCLASSES = [
-                DB2CONNECTION, EMBEDDEDCONNECTION, H2CONNECTION, HIVECONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETSUITECONNECTION,
-                ORACLECONNECTION, POSTGRESQLCONNECTION, VERTICACONNECTION
+                DB2CONNECTION, EMBEDDEDCONNECTION, H2CONNECTION, HIVECONNECTION, MSSQLCONNECTION, MYSQLCONNECTION,
+                NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, VERTICACONNECTION
         ]
 
         LISTDATASETCLASSES = [
                 CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, H2TABLE, HIVETABLE, JSONDATASET, MSSQLTABLE,
-                MYSQLTABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, SALESFORCEDATASET,
+                MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, SALESFORCEDATASET,
                 SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET, XMLDATASET
         ]
 
         LISTJDBCTABLECLASSES = [
-                DB2TABLE, EMBEDDEDTABLE, H2TABLE, HIVETABLE, MSSQLTABLE, MYSQLTABLE, NETSUITETABLE, ORACLETABLE, POSTGRESQLTABLE,
-                VERTICATABLE
+                DB2TABLE, EMBEDDEDTABLE, H2TABLE, HIVETABLE, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE,
+                ORACLETABLE, POSTGRESQLTABLE, VERTICATABLE
         ]
 
         LISTFILEMANAGERCLASSES = [FILEMANAGER, FTPMANAGER, HDFSMANAGER, SFTPMANAGER]
@@ -242,6 +245,7 @@ class Getl extends Script {
     public static final String JSONCONNECTION = 'getl.json.JSONConnection'
     public static final String MSSQLCONNECTION = 'getl.mssql.MSSQLConnection'
     public static final String MYSQLCONNECTION = 'getl.mysql.MySQLConnection'
+    public static final String NETEZZACONNECTION = 'getl.netezza.NetezzaConnection'
     public static final String NETSUITECONNECTION = 'getl.netsuite.NetsuiteConnection'
     public static final String ORACLECONNECTION = 'getl.oracle.OracleConnection'
     public static final String POSTGRESQLCONNECTION = 'getl.postgresql.PostgreSQLConnection'
@@ -266,6 +270,7 @@ class Getl extends Script {
     public static final String JSONDATASET = 'getl.json.JSONDataset'
     public static final String MSSQLTABLE = 'getl.mssql.MSSQLTable'
     public static final String MYSQLTABLE = 'getl.mysql.MySQLTable'
+    public static final String NETEZZATABLE = 'getl.netezza.NetezzaTable'
     public static final String NETSUITETABLE = 'getl.netsuite.NetsuiteTable'
     public static final String ORACLETABLE = 'getl.oracle.OracleTable'
     public static final String QUERYDATASET = 'getl.jdbc.QueryDataset'
@@ -2304,6 +2309,62 @@ class Getl extends Script {
         mysqlTable(null, false, cl)
     }
 
+    /** Netezza connection */
+    NetezzaConnection netezzaConnection(String name, Boolean registration,
+                                    @DelegatesTo(NetezzaConnection)
+                                    @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl) {
+        def parent = registerConnection(NETEZZACONNECTION, name, registration) as NetezzaConnection
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Netezza connection */
+    NetezzaConnection netezzaConnection(String name,
+                                    @DelegatesTo(NetezzaConnection)
+                                    @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl = null) {
+        netezzaConnection(name, false, cl)
+    }
+
+    /** Netezza connection */
+    NetezzaConnection netezzaConnection(@DelegatesTo(NetezzaConnection)
+                                    @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl) {
+        netezzaConnection(null, false, cl)
+    }
+
+    /** Netezza current connection */
+    NetezzaConnection netezzaConnection() {
+        defaultJdbcConnection(NETEZZATABLE) as NetezzaConnection
+    }
+
+    /** Use default Netezza connection for new datasets */
+    NetezzaConnection useNetezzaConnection(NetezzaConnection connection) {
+        useJdbcConnection(NETEZZATABLE, connection) as NetezzaConnection
+    }
+
+    /** Netezza database table */
+    NetezzaTable netezzaTable(String name, Boolean registration,
+                          @DelegatesTo(NetezzaTable)
+                          @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl) {
+        def parent = registerDataset(NETEZZATABLE, name, registration) as NetezzaTable
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Netezza database table */
+    NetezzaTable netezzaTable(String name,
+                          @DelegatesTo(NetezzaTable)
+                          @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl = null) {
+        netezzaTable(name, false, cl)
+    }
+
+    /** Netezza database table */
+    NetezzaTable netezzaTable(@DelegatesTo(NetezzaTable)
+                          @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl) {
+        netezzaTable(null, false, cl)
+    }
+
     /** Oracle connection */
     OracleConnection oracleConnection(String name, Boolean registration,
                                       @DelegatesTo(OracleConnection)
@@ -2393,7 +2454,7 @@ class Getl extends Script {
         useJdbcConnection(POSTGRESQLTABLE, connection) as PostgreSQLConnection
     }
 
-    /** MySQL database table */
+    /** PostgreSQL database table */
     PostgreSQLTable postgresqlTable(String name, Boolean registration,
                                     @DelegatesTo(PostgreSQLTable)
                                     @ClosureParams(value = SimpleType, options = ['getl.postgresql.PostgreSQLTable']) Closure cl) {
@@ -2404,14 +2465,14 @@ class Getl extends Script {
     }
 
 
-    /** MySQL database table */
+    /** PostgreSQL database table */
     PostgreSQLTable postgresqlTable(String name,
                                     @DelegatesTo(PostgreSQLTable)
                                     @ClosureParams(value = SimpleType, options = ['getl.postgresql.PostgreSQLTable']) Closure cl = null) {
         postgresqlTable(name, false, cl)
     }
 
-    /** MySQL database table */
+    /** PostgreSQL database table */
     PostgreSQLTable postgresqlTable(@DelegatesTo(PostgreSQLTable)
                                     @ClosureParams(value = SimpleType, options = ['getl.postgresql.PostgreSQLTable']) Closure cl) {
         postgresqlTable(null, false, cl)
