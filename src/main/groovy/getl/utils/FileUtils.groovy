@@ -32,14 +32,18 @@ import groovy.transform.CompileStatic
 import groovy.transform.Memoized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
+import net.lingala.zip4j.model.enums.AesKeyStrength
+import net.lingala.zip4j.model.enums.CompressionLevel
+import net.lingala.zip4j.model.enums.CompressionMethod
+import net.lingala.zip4j.model.enums.EncryptionMethod
 
 import java.nio.file.*
 import java.nio.channels.*
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
-import net.lingala.zip4j.core.ZipFile
+import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.model.ZipParameters
-import net.lingala.zip4j.util.Zip4jConstants
+import net.lingala.zip4j.util.InternalZipConstants
 import getl.exception.ExceptionGETL
 
 /**
@@ -780,16 +784,16 @@ class FileUtils {
 							  @ClosureParams(value = SimpleType, options = ['java.io.File', 'java.lang.String'])
 									  Closure validFile) {
 		zipName = new File(zipName).absolutePath
-		ZipFile zipFile = new ZipFile(zipName)
+		def password = params.password as String
+		ZipFile zipFile = (password != null)?new ZipFile(zipName, password.toCharArray()):new ZipFile(zipName)
         params = params?:[:]
 
 		ZipParameters parameters = new ZipParameters()
-		parameters.setCompressionMethod((params.compressionMethod != null)?(params.compressionMethod as Integer):Zip4jConstants.COMP_DEFLATE)
-		parameters.setCompressionLevel((params.compressionLevel != null)?(params.compressionLevel as Integer):Zip4jConstants.DEFLATE_LEVEL_NORMAL)
+		parameters.setCompressionMethod((params.compressionMethod != null)?(CompressionMethod.valueOf(params.compressionMethod as String)):CompressionMethod.DEFLATE)
+		parameters.setCompressionLevel((params.compressionLevel != null)?(CompressionLevel.valueOf(params.compressionLevel as String)):CompressionLevel.NORMAL)
         if (params.encryptFiles != null) parameters.setEncryptFiles(params.encryptFiles as Boolean)
-        if (params.encryptionMethod != null) parameters.setEncryptionMethod(params.encryptionMethod as Integer)
-        if (params.aesKeyStrength != null) parameters.setAesKeyStrength(params.aesKeyStrength as Integer)
-        if (params.password != null) parameters.setPassword(params.password as String)
+        if (params.encryptionMethod != null) parameters.setEncryptionMethod(EncryptionMethod.valueOf(params.encryptionMethod as String))
+        if (params.aesKeyStrength != null) parameters.setAesKeyStrength(AesKeyStrength.valueOf(params.aesKeyStrength as String))
 
 		String fileMask = MaskFile(path)
 		if (fileMask == null) {

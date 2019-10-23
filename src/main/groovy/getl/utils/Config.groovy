@@ -127,7 +127,7 @@ class Config {
 	/**
 	 * List of initialization object code on load config
 	 */
-	public static final List<Closure> init = []
+	static final List<Closure> init = []
 
 	/**
 	 * Re-initialization class
@@ -175,6 +175,19 @@ class Config {
 	 */
 	@Synchronized
 	static void LoadConfig (Map readParams = [:]) {
+		if (readParams.files != null) {
+			def l = [] as List<String>
+			(readParams.files as List).each {
+				if (it instanceof String)
+					l << FileUtils.ResourceFileName(it)
+				else
+					l << it
+			}
+			readParams.files = l
+		}
+		if (readParams.fileName != null && readParams.fileName instanceof String) {
+			readParams.fileName = FileUtils.ResourceFileName(readParams.fileName)
+		}
         configClassManager.loadConfig(readParams)
 		DoInitEvent()
 	}

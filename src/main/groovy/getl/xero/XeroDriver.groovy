@@ -25,7 +25,7 @@
 package getl.xero
 
 import com.xero.api.JsonConfig
-import com.xero.api.XeroClient
+import com.xero.api.XeroClient /* TODO: rewrite to new version API */
 import getl.csv.CSVDataset
 import getl.data.Dataset
 import getl.data.Field

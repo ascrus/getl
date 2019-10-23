@@ -653,6 +653,7 @@ ORDER BY t1.id'''
                 scriptPath = scriptFile
                 overwriteScript = true
                 resourcePath = resourceDir
+                tableMask = 'table*'
                 listTableExcluded = ['FILE_MANAGER_*']
 
                 filter {

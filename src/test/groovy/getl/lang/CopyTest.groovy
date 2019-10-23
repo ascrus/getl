@@ -48,11 +48,11 @@ class CopyTest extends getl.test.GetlTest {
                 useConfig 'source'
             }
 
-            sftp('dest', true) {
+            files('dest', true) {
                 useConfig 'dest'
             }
 
-            fileCopier(sftp('source'), sftp('dest')) {
+            fileCopier(sftp('source'), files('dest')) {
                 useSourcePath {
                     mask = 'M2000_{region}_{m2000}/neexport_{date}/{bs_group}/A{bs_date}00+{timezone_start}-{finish_hour}00+{timezone_finish}_{bs}.xml.gz'
                     variable('region') { format = 'CN|DV|KV|MO|NW|SB|UR|VL'}
@@ -83,6 +83,9 @@ class CopyTest extends getl.test.GetlTest {
 
                 retryCount = 3
                 copyOrder = ['bs_date', 'region']
+
+                scriptOfSourceOnStart = 'ls'
+                scriptOfDestinationOnStart = 'dir'
             }
         }
     }

@@ -25,13 +25,17 @@
 package getl.proc
 
 import getl.data.Field
-import getl.exception.ExceptionGETL
 import getl.files.Manager
+import getl.h2.H2Connection
+import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
 import getl.lang.Getl
+import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.Synchronized
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * File Copy Manager Between File Systems
@@ -161,7 +165,10 @@ class FileCopier {
      * Closure parameters:<br>
      * Map sourceFile, Map destFile
      */
-    void beforeCopyFile(Closure value) { setOnBeforeCopyFile(value) }
+    void beforeCopyFile(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
+                                Closure value) {
+        setOnBeforeCopyFile(value)
+    }
 
     /**
      * Action after copying a file<br>
@@ -172,15 +179,38 @@ class FileCopier {
     /**
      * Action after copying a file<br>
      * Closure parameters:<br>
-     * Manager source, String sourcePath, Map sourceFile, Manager dest, String destPath, Map destFile
+     * Map sourceFile, Map destFile
      */
     void setOnAfterCopyFile(Closure value) { params.afterCopyFile = value }
     /**
      * Action after copying a file<br>
      * Closure parameters:<br>
-     * Manager source, String sourcePath, Map sourceFile, Manager dest, String destPath, Map destFile
+     * Map sourceFile, Map destFile
      */
-    void afterCopy(Closure value) { setOnAfterCopyFile(value) }
+    void afterCopy(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
+                           Closure value) {
+        setOnAfterCopyFile(value)
+    }
+
+    /** Run the script on the source before starting the process */
+    String getScriptOfSourceOnStart() { params.scriptOfSourceOnStart as String }
+    /** Run the script on the source before starting the process */
+    void setScriptOfSourceOnStart(String value) { params.scriptOfSourceOnStart = value }
+
+    /** Run the script on the source before starting the process */
+    String getScriptOfDestinationOnStart() { params.scriptOfDestinationOnStart as String }
+    /** Run the script on the source before starting the process */
+    void setScriptOfDestinationOnStart(String value) { params.scriptOfDestinationOnStart = value }
+
+    /** Run script on source after process is complete */
+    String getScriptOfSourceOnComplete() { params.scriptOfSourceOnComplete as String }
+    /** Run script on source after process is complete */
+    void setScriptOfSourceOnComplete(String value) { params.scriptOfSourceOnComplete = value }
+
+    /** Run script on source after process is complete */
+    String getScriptOfDestinationOnComplete() { params.scriptOfDestinationOnComplete as String }
+    /** Run script on source after process is complete */
+    void setScriptOfDestinationOnComplete(String value) { params.scriptOfDestinationOnComplete = value }
 
     /** Sort when copying files */
     List<String> getCopyOrder() { params.copyOrder as List<String> }
@@ -205,7 +235,8 @@ class FileCopier {
     @groovy.transform.CompileStatic
     static Map ProcessFileVars(String formatDate, Map vars) {
         Map res = [:]
-        res.putAll(vars)
+        if (vars != null) res.putAll(vars)
+        if (formatDate == null) formatDate = 'yyyy-MM-dd_HH-mm-ss'
         res.each { name, value ->
             if (name == 'filedate') {
                 res.put(name, DateUtils.FormatDate('yyyy-MM-dd_HH-mm-ss', (value as Date)))
@@ -226,25 +257,28 @@ class FileCopier {
      * @param vars list of variables
      * @return execution result code
      */
-    static int DoCommand(String name, Manager man, String command, boolean throwOnError, String formatDate, Map vars) {
+    static int DoCommand(String name, Manager man, String command, boolean throwOnError = true,
+                         String formatDate = null, Map vars = null) {
         int res
         StringBuilder console = new StringBuilder()
         StringBuilder err = new StringBuilder()
+
+        if (name == null) name = man.toString()
 
         command = StringUtils.EvalMacroString(command, ProcessFileVars(formatDate, vars))
         res = man.command(command, console, err)
 
         if (res != 0) {
-            String errText = "$name: "
+            String errText = ''
             String errLine = err.toString()
             if (errLine != null) errLine = errLine.split("\n")[0]
             if (res < 0) {
-                errText += "syntax error $res of command \"$command\""
+                errText += "syntax error $res of command \"$command\" in \"$name\""
             }
             else {
-                errText += "when executing command \"$command\" an error occurred $res"
+                errText += "when executing command \"$command\" an error occurred $res in \"$name\""
             }
-            if (errLine != null) errText += ", ошибка: $errLine"
+            if (errLine != null) errText += ", error: $errLine"
             errText += '!'
 
             if (throwOnError)
@@ -378,29 +412,28 @@ class FileCopier {
         if (tmpPath == null) {
             tmpPath = TFS.systemPath + '/' + FileUtils.UniqueFileName()
             FileUtils.ValidPath(tmpPath)
-            new File(tmpPath).deleteOnExit()
         }
 
-        if (source == null) throw new FileCopierException('Source file manager required in "source"!')
-        def src = source
+        Manager src = source
+        Manager dest = destination
+
+        if (src == null) throw new FileCopierException('Source file manager required in "source"!')
         if (!src.connected) src.connect()
         src.localDirectory = tmpPath
 
-        if (sourcePath == null) throw new FileCopierException('Source mask required in "sourcePath"!')
-        def sPath = sourcePath
-        if (!sPath.isCompile) sPath.compile()
+        def srcPath = sourcePath
+        if (srcPath == null) throw new FileCopierException('Source mask required in "sourcePath"!')
+        if (!srcPath.isCompile) srcPath.compile()
 
-        Manager dest = null
-        Path dPath = null
+        def destPath = destinationPath
+
         if (!deleteFiles) {
-            if (destination == null) throw new FileCopierException('Destination file manager required in "destination"!')
-            dest = destination
+            if (dest == null) throw new FileCopierException('Destination file manager required in "destination"!')
             if (!dest.connected) dest.connect()
             dest.localDirectory = tmpPath
 
-            if (destinationPath == null) throw new FileCopierException('Destination mask required in "destinationPath"!')
-            dPath = destinationPath
-            if (!dPath.isCompile) dPath.compile()
+            if (destPath == null) throw new FileCopierException('Destination mask required in "destinationPath"!')
+            if (!destPath.isCompile) destPath.compile()
         }
 
         if (dest != null)
@@ -409,18 +442,18 @@ class FileCopier {
             Logs.Fine("Delete files from $src")
         Logs.Fine("  for intermediate operations, the \"$tmpPath\" directory will be used")
 
-        Logs.Fine("  source mask: ${sPath.maskStr}")
-        Logs.Fine("  source pattern: ${sPath.maskPath}")
+        Logs.Fine("  source mask: ${srcPath.maskStr}")
+        Logs.Fine("  source pattern: ${srcPath.maskPath}")
+
 
         if (dest != null)
-            Logs.Fine("  destination mask: ${dPath.maskStr}")
+            Logs.Fine("  destination mask: ${destPath.maskStr}")
 
-        Path rPath
-        if (renamePath != null) {
+        def renPath = renamePath
+        if (renPath != null) {
             if (dest == null) throw new FileCopierException('Renaming files is supported only when copying to the destination!')
-            rPath = renamePath
-            if (!rPath.isCompile) rPath.compile()
-            Logs.Fine("  rename file mask: ${rPath.maskStr}")
+            if (!renPath.isCompile) renPath.compile()
+            Logs.Fine("  rename file mask: ${renPath.maskStr}")
         }
 
         def delFiles = BoolUtils.IsValue(deleteFiles)
@@ -436,16 +469,80 @@ class FileCopier {
         if (rCount > 1)
             Logs.Fine("  $rCount repetitions will be used in case of file operation errors until termination")
 
-        List<String> cOrder = null
         if (!copyOrder.isEmpty()) {
             copyOrder.each { col ->
-                if (!sPath.vars.containsKey(col))
+                if (!srcPath.vars.containsKey(col))
                     throw new FileCopierException("Field \"$col\" specified for sorting was not found!")
             }
-            cOrder = copyOrder
-            Logs.Fine("  files will be processed in the following sort order: [${cOrder.join(', ')}]")
+            Logs.Fine("  files will be processed in the following sort order: [${copyOrder.join(', ')}]")
         }
 
+        if (scriptOfSourceOnStart != null)
+            DoCommand('source', src, scriptOfSourceOnStart, true, null, Config.vars)
+        if (dest != null && scriptOfDestinationOnStart != null)
+            DoCommand('destination', dest, scriptOfDestinationOnStart, true, null, Config.vars)
 
+        TableDataset dsDeleteDirs
+        if (delEmptyDirs) {
+            dsDeleteDirs = TDS.dataset()
+            dsDeleteDirs.field << new Field(name: 'FILEPATH', length: 500, isNull: false)
+            dsDeleteDirs.create(indexes: ["${dsDeleteDirs.tableName}_idx_1": [columns: ['FILEPATH']]])
+        }
+
+        def h2TempFileName = "$tmpPath/filelist/${FileUtils.UniqueFileName()}"
+        FileUtils.ValidFilePath(h2TempFileName)
+        def h2TempFile = new File(h2TempFileName)
+        src.fileListConnection = new H2Connection(connectURL: "jdbc:h2:file:${h2TempFile.absolutePath}",
+                login: "easyload", password: "easydata", autoCommit: true,
+                connectProperty: [
+                        LOCK_MODE: 3,
+                        LOG: 0,
+                        UNDO_LOG: 0,
+                        MAX_LOG_SIZE: 0,
+                        WRITE_DELAY: 6000,
+                        PAGE_SIZE: 8192,
+                        PAGE_STORE_TRIM: false,
+//                        MVCC: true,
+                        DB_CLOSE_DELAY: 0])
+
+        JDBCConnection hDB
+        TableDataset hTable = null
+        TableDataset tFiles = null
+
+        /*SynchronizeObject ptFiles = new SynchronizeObject()
+        SynchronizeObject ptSize = new SynchronizeObject()*/
+
+        // Build history table
+        if (src.story != null) {
+            hDB = historyStore_con.cloneConnection()
+            hDB.connected = true
+            hTable = new TableDataset(connection: hDB, tableName: StringUtils.EvalMacroString(historyTable, [rule: rule]))
+            ruleInMan.AddFieldsToDS(hTable)
+
+            if (inPath.vars."date" != null) hTable.field << new Field(name: "DATE", type: "DATETIME")
+            if (inPath.vars."num" != null) hTable.field << new Field(name: "NUM", type: "BIGINT")
+
+            inPath.vars?.each { String v, Map p ->
+                if (v in ["name", "date", "num"]) return
+                def f = new Field(name: v.toUpperCase(), length: 128)
+                if (p."type" != null) f.type = p."type"
+                if (f.type == Field.Type.STRING) {
+                    if (p."lenmax" != null) f.length = p."lenmax"
+                }
+                hTable.field << f
+            }
+
+            if (!hTable.exists) {
+                hTable.create(ifNotExists: true,
+                        indexes: [
+                                "idx_${hTable.tableName}_filedate": [columns: ["FILEDATE"]]
+                        ])
+                Logs.Fine("$rule: для хранения истории создана таблица ${hTable.fullNameDataset()}")
+            }
+            else {
+                hTable.retrieveFields()
+                Logs.Finest("$rule: для хранения истории используется таблица ${hTable.fullNameDataset()}")
+            }
+        }
     }
 }

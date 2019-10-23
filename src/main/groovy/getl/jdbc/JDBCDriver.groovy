@@ -573,7 +573,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	List<Object> retrieveObjects (Map params, Closure<Boolean> filter) {
+	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
 		def isMultiDB = isSupport(Driver.Support.MULTIDATABASE)
 		String catalog = (isMultiDB)?(prepareObjectName(params."dbName" as String)?:defaultDBName):null
 		String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
@@ -621,7 +621,7 @@ class JDBCDriver extends Driver {
 				t."type" = rs.getString("TABLE_TYPE")
 				t."description" = rs.getString("REMARKS")
 				
-				if (filter == null || filter(t)) tables << t
+				if (filter == null || filter.call(t)) tables << t
 			}
 		}
 		finally {

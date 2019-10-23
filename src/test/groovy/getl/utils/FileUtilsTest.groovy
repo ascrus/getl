@@ -2,7 +2,9 @@ package getl.utils
 
 import getl.tfs.TFS
 import groovy.transform.Synchronized
-import net.lingala.zip4j.util.Zip4jConstants
+import net.lingala.zip4j.model.enums.AesKeyStrength
+import net.lingala.zip4j.model.enums.CompressionLevel
+import net.lingala.zip4j.model.enums.EncryptionMethod
 import org.junit.Test
 
 /**
@@ -211,11 +213,11 @@ class FileUtilsTest extends getl.test.GetlTest {
 
         new File(fileName + '.txt').text = 'test zip archive'
         FileUtils.CompressToZip(fileName + '.zip', fileName + '.txt',
-                [compressionMethod: Zip4jConstants.COMP_DEFLATE,
-                 compressionLevel: Zip4jConstants.DEFLATE_LEVEL_MAXIMUM,
+                [compressionMethod: 'DEFLATE',
+                 compressionLevel: 'MAXIMUM',
                  encryptFiles: true,
-                 encryptionMethod: Zip4jConstants.ENC_METHOD_AES,
-                 aesKeyStrength: Zip4jConstants.AES_STRENGTH_256,
+                 encryptionMethod: 'AES',
+                 aesKeyStrength: 'KEY_STRENGTH_256',
                  password: 'TEST GETL ZIP'])
 
         assertTrue(FileUtils.ExistsFile(fileName + '.zip'))

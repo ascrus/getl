@@ -23,6 +23,7 @@
 */
 package getl.jdbc.opts
 
+import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
 import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
@@ -64,25 +65,35 @@ class GenerateDslTablesSpec extends BaseSpec {
     /** Overwrite existing script */
     void setOverwriteScript(Boolean value) { params.overwriteScript = value }
 
-    /** Path to store table scripts */
+    /** Path and file name to store table scripts (use capitalized file name and extension ".groovy") */
     String getScriptPath() { params.scriptPath as String}
-    /** Path to store table scripts */
+    /** Path and file name to store table scripts (use capitalized file name and extension ".groovy") */
     void setScriptPath(String value) { params.scriptPath = value }
 
-    /** Select tables from the specified database */
+    /** Select tables from the specified database name */
     String getDbName() { params.dbName as String }
     /** Select tables from the specified database */
     void setDbName(String value) { params.dbName = value }
 
-    /** Select tables from the specified schema mask */
+    /** Select tables from the specified schema name */
     String getSchemaName() { params.schemaName as String }
     /** Select tables from the specified database */
     void setSchemaName(String value) { params.schemaName = value }
 
-    /** Select tables from the specified table mask */
+    /** Select tables from the specified table pattern by JDBC syntax */
     String getTableName() { params.tableName as String }
     /** Select tables from the specified database */
-    void setTableName(String value) { params.tableName = value }
+    void setTableName(String value) { params.tableName = value } /* TODO: change to object from RetrieveDataset */
+
+    /** Select tables from the specified table mask (String or List) */
+    Object getTableMask() { params.tableMask }
+    /** Select tables from the specified table mask (String or List) */
+    void setTableMask(Object value) {
+        if (!(value instanceof String) && !(value instanceof List))
+            throw new ExceptionGETL('For "tableMask" it is allowed to have a string type or a list of strings')
+
+        params.tableMask = value
+    }
 
     /** Filter by object type */
     List getTypes() { params.types as List<String> }

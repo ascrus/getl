@@ -17,11 +17,10 @@ import java.sql.Time
  */
 @InheritConstructors
 abstract class JDBCDriverProto extends getl.test.GetlTest {
-	def static configName = 'tests/jdbc/setup.conf'
+	def static configName = 'resource:/jdbc/setup.conf'
 
     @BeforeClass
 	static void InitTest() {
-		if (!FileUtils.ExistsFile(configName)) return
 		Config.LoadConfig(fileName: configName)
 	}
 
@@ -33,7 +32,6 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
     JDBCConnection getCon() {
         if (_con == null) {
-            Config.ReInit()
             _con = newCon()
         }
         return _con

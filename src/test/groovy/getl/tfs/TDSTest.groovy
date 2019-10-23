@@ -18,7 +18,7 @@ class TDSTest extends getl.test.GetlTest {
         assertEquals('getl', con.connectDatabase)
         assertEquals(0, con.connectProperty.LOG)
         assertEquals(0, con.connectProperty.UNDO_LOG)
-        assertFalse(con.connectProperty.MVCC)
+//        assertFalse(con.connectProperty.MVCC)
         assertEquals(-1, con.connectProperty.DB_CLOSE_DELAY)
         d.connection.connected = false
     }

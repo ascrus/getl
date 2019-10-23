@@ -1,44 +1,12 @@
-### OSX template
-.DS_Store
-
 ### Gradle template
 gradlew
 gradlew.bat
 .gradle
-build/
-
-### Eclipse template
-bin/
-gradle/
-
-# JDT-specific (Eclipse Java Development Tools)
-*.iml
+gradle
+build
 
 ## Directory-based project format:
 .idea/
 
-# IntelliJ
-out/
-
-# mpeltonen/sbt-idea plugin
-.idea_modules/
-
-### Java template
-*.class
-
 ### Config files for test modules
-tests/.svn
-tests/vertica/
-tests/hive/
-tests/filemanager/
-tests/postgresql/
-tests/oracle/
-tests/mysql/
-tests/jdbc/
-tests/mssql/
-tests/h2/
-tests/netsuite/
-tests/salesforce/
-tests/xero/demo.jar
-tests/emailer/
 tests/

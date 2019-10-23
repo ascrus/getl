@@ -354,7 +354,7 @@ class JDBCConnection extends Connection {
 	 * @param params retrive params by specified connection driver
 	 * @filter user filter code
 	 */
-	List<TableDataset> retrieveDatasets (Map params,
+	List<TableDataset> retrieveDatasets(Map params,
 										 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 												 Closure<Boolean> filter = null) {
 		if (params == null) params = [:]
@@ -553,6 +553,9 @@ class JDBCConnection extends Connection {
 		if (scriptPath == null)
 			throw new ExceptionGETL('Required value for "scriptPath" parameter!')
 		def scriptFile = new File(p.scriptPath)
+
+		if (scriptFile.isDirectory())
+			throw new ExceptionGETL('It is required to specify the path and file name in parameter "scriptPath"!')
         Logs.Fine("  saving GETL DSL script to file ${scriptFile.path}")
         if (scriptFile.exists()) {
 			if (p.overwriteScript)
@@ -562,7 +565,7 @@ class JDBCConnection extends Connection {
 		}
 
 		def listTableSavedData = (p.listTableSavedData as List<String>)*.toLowerCase()
-		def listTableExcluded = (p.listTableExcluded as List<String>)//*.toLowerCase()
+		def listTableExcluded = (p.listTableExcluded as List<String>)
 		def listTablePathExcluded = [] as List<Path>
 		listTableExcluded.each {
 			listTablePathExcluded << new Path(mask: it)
@@ -592,6 +595,7 @@ class JDBCConnection extends Connection {
 		if (p.dropTables) Logs.Fine("  generating drop table operation")
 		if (!listTableSavedData.isEmpty()) Logs.Fine("  save data from tables ${listTableSavedData.toString()} to resource files")
 		Logs.Fine("  using filter \"${p.dbName?:'*'}\".\"${p.schemaName?:'*'}\".\"${p.tableName?:'*'}\"${(!p.types.isEmpty())?(' with types: ' + p.types.toString()):''}${(!listTableExcluded.isEmpty())?(' excluded: ' + listTableExcluded.toString()):''}")
+		if (p.tableMask != null) Logs.Fine("    processing the tables by masked: $p.tableMask")
 		if (useResource) Logs.Fine("  using resource files path \"${resourceDir.path}\"" + ((resourceRoot != null)?" with root path \"$resourceRoot\"":''))
 
 		StringBuilder sb = new StringBuilder()
@@ -611,7 +615,8 @@ import getl.lang.Getl
 		if (p.groupName != null) sb << "\nforGroup '${p.groupName}'"
 
 		def tab = '\t'
-		retrieveDatasets([dbName: p.dbName, schemaName: p.schemaName?: this.schemaName, tableName: p.tableName, type: p.types], p.onFilter).each { TableDataset dataset ->
+		retrieveDatasets([dbName: p.dbName, schemaName: p.schemaName?: this.schemaName, tableName: p.tableName,
+						  tableMask: p.tableMask, type: p.types], p.onFilter).each { TableDataset dataset ->
 			Logs.Fine("Generate script for table $dataset.fullTableName")
 			if (dataset.tableName == null)
 				throw new ExceptionGETL("Invalid table name for $dataset!")
