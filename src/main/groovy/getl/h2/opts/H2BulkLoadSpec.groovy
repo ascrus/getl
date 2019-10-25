@@ -34,13 +34,9 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class H2BulkLoadSpec extends BulkLoadSpec {
-    H2BulkLoadSpec() {
-        super()
-        params.expression = [:] as Map<String, String>
-    }
-
-    H2BulkLoadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.expression == null) params.expression = [:] as Map<String, String>
     }
 

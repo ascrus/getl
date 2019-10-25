@@ -2799,7 +2799,18 @@ class Getl extends Script {
                               @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl) {
         if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
         def parent = registerDataset(CSVDATASET, name, registration) as CSVDataset
+
+        if (sourceDataset.field.isEmpty()) {
+            if (!sourceDataset.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
+                throw new ExceptionGETL("No fields are specified for dataset $sourceDataset and it supports reading fields from metadata!")
+
+            sourceDataset.retrieveFields()
+            if (sourceDataset.field.isEmpty())
+                throw new ExceptionGETL("Can not read list of field from dataset $sourceDataset!")
+        }
         parent.field = sourceDataset.field
+
+        sourceDataset.prepareCsvTempFile(parent)
 
         runClosure(parent, cl)
 
@@ -3196,6 +3207,16 @@ class Getl extends Script {
                                   @DelegatesTo(TFSDataset)
                                   @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
         if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
+
+        if (sourceDataset.field.isEmpty()) {
+            if (!sourceDataset.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
+                throw new ExceptionGETL("No fields are specified for dataset $sourceDataset and it supports reading fields from metadata!")
+
+            sourceDataset.retrieveFields()
+            if (sourceDataset.field.isEmpty())
+                throw new ExceptionGETL("Can not read list of field from dataset $sourceDataset!")
+        }
+
         def parent = sourceDataset.csvTempFile.cloneDataset() as TFSDataset
         parent.connection = defaultFileConnection(CSVTEMPDATASET)?:TFS.storage
         registerDatasetObject(parent, name, true)

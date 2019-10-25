@@ -24,6 +24,7 @@
 
 package getl.vertica
 
+import getl.csv.CSVDataset
 import getl.data.Connection
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
@@ -48,7 +49,7 @@ class VerticaTable extends TableDataset {
         super.setConnection(value)
     }
 
-    /** Use specified connection */
+    /** Use specified Vertica connection */
     VerticaConnection useConnection(VerticaConnection value) {
         setConnection(value)
         return value
@@ -60,9 +61,7 @@ class VerticaTable extends TableDataset {
         new VerticaCreateSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
-    /**
-     * Create H2 table
-     */
+    /** Options for creating Vertica table */
     VerticaCreateSpec createOpts(@DelegatesTo(VerticaCreateSpec)
                                  @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaCreateSpec'])
                                          Closure cl = null) {
@@ -75,9 +74,7 @@ class VerticaTable extends TableDataset {
         new VerticaReadSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
-    /**
-     * Read table options
-     */
+    /** Options for reading from Vertica table */
     VerticaReadSpec readOpts(@DelegatesTo(VerticaReadSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaReadSpec'])
                                      Closure cl = null) {
@@ -90,9 +87,7 @@ class VerticaTable extends TableDataset {
         new VerticaWriteSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
-    /**
-     * Read table options
-     */
+    /** Options for writing to Vertica table */
     VerticaWriteSpec writeOpts(@DelegatesTo(VerticaWriteSpec)
                                @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaWriteSpec'])
                                        Closure cl = null) {
@@ -105,9 +100,7 @@ class VerticaTable extends TableDataset {
         new VerticaBulkLoadSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
-    /**
-     * Read table options
-     */
+    /** Options for loading csv files to Vertica table */
     VerticaBulkLoadSpec bulkLoadOpts(@DelegatesTo(VerticaBulkLoadSpec)
                                      @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaBulkLoadSpec'])
                                              Closure cl = null) {
@@ -115,11 +108,17 @@ class VerticaTable extends TableDataset {
     }
 
     @Override
-    void createCsvTempFile() {
-        super.createCsvTempFile()
+    void prepareCsvTempFile(CSVDataset csvFile) {
+        csvFile.header = true
         csvTempFile.escaped = true
         csvTempFile.codePage = 'UTF-8'
         csvTempFile.nullAsValue = '<NULL>'
-        csvTempFile.isGzFile = true
+        csvFile.fieldDelimiter = '|'
+        //csvTempFile.isGzFile = true
+    }
+
+    /** Load specified csv files to Vertica table */
+    VerticaBulkLoadSpec bulkLoadCsv(@DelegatesTo(VerticaBulkLoadSpec) Closure cl = null) {
+        doBulkLoadCsv(cl) as VerticaBulkLoadSpec
     }
 }

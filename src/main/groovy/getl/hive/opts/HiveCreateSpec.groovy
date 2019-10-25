@@ -36,15 +36,9 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class HiveCreateSpec extends CreateSpec {
-    HiveCreateSpec() {
-        super()
-        params.tblproperties = [:] as Map<String, Object>
-        params.clustered = [:] as Map<String, Object>
-        params.skewed = [:] as Map<String, Object>
-    }
-
-    HiveCreateSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.tblproperties == null) params.tblproperties = [:] as Map<String, Object>
         if (params.clustered == null) params.clustered = [:] as Map<String, Object>
         if (params.skewed == null) params.skewed = [:] as Map<String, Object>

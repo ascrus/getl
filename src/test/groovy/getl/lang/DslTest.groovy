@@ -1,7 +1,9 @@
 package getl.lang
 
+import getl.csv.CSVConnection
 import getl.files.FileManager
 import getl.h2.*
+import getl.jdbc.TableDataset
 import getl.tfs.*
 import getl.utils.Config
 import getl.utils.DateUtils
@@ -26,7 +28,7 @@ class DslTest extends getl.test.GetlTest {
     /** CSV file name 2 */
     final def csvFileName2 = 'file2.csv'
     /** Count rows in table1 */
-    final def table1_rows = 100
+    final def table1_rows = 1000
 
     @BeforeClass
     static void CleanGetl() {
@@ -380,6 +382,51 @@ ORDER BY t1.id'''
                 truncate()
                 assertNull(lastValue('table2').value)
             }
+        }
+    }
+
+    @Test
+    void test02_12BulkLoad() {
+        Getl.Dsl(this) {
+            clearGroupFilter()
+
+            def csv = csvTempWithDataset(h2Table('getl.testdsl.h2:table1')) {
+                fileName = 'file.split'
+                extension = 'csv'
+
+                writeOpts {
+                    def count = 0
+                    splitFile { count++; (count.mod(300) == 0) }
+                }
+            }
+
+            copyRows(h2Table('getl.testdsl.h2:table1'), csv)
+            assertEquals(4, csv.countWritePortions)
+
+            TableDataset list
+            files {
+                rootPath = (csv.connection as CSVConnection).path
+                list = buildListFiles('file.split.{num}.*')
+            }
+            assertEquals(5, list.countRow())
+
+            h2Table('getl.testdsl.h2:table1') {
+                truncate()
+
+                bulkLoadCsv {
+                    files = "${(csv.connection as CSVConnection).path}/file.split.{num}.csv"
+                    schemaFileName = 'file.split.csv.schema'
+                    removeFile = true
+                }
+            }
+
+            files {
+                rootPath = (csv.connection as CSVConnection).path
+                list = buildListFiles('file.split.{num}.*')
+            }
+            assertEquals(0, list.countRow())
+
+            assertEquals(this.table1_rows, h2Table('getl.testdsl.h2:table1').countRow())
         }
     }
 

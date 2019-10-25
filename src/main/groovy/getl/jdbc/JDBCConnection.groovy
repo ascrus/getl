@@ -745,4 +745,14 @@ ${tab}${tab}}
 		login = user
 		password = pwd
 	}
+
+	/**
+	 * Execute SQL command
+	 * @param command sql operator
+	 * @param params parameters (Map queryParams and Boolean isUpdate)
+	 */
+	long executeCommand(String command, Map execParams = [:]) {
+		methodParams.validation("executeCommand", execParams, [driver.methodParams.params("executeCommand")])
+		driver.executeCommand(command, execParams)
+	}
 }

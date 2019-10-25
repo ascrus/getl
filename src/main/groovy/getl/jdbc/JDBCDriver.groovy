@@ -59,10 +59,11 @@ class JDBCDriver extends Driver {
                                             'onSaveBatch', 'where'])
 		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order',
                                           'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
-		methodParams.register('bulkLoadFile', ['allowMapAlias', 'files', 'fileMask'])
+		methodParams.register('bulkLoadFile', ['allowMapAlias'])
 		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
                                                'queryParams', 'condition'])
 		methodParams.register('clearDataset', ['truncate'])
+		methodParams.register("executeCommand", ['queryParams', 'isUpdate'])
 	}
 	
 	private Date connectDate
@@ -1448,9 +1449,11 @@ $sql
 
 	@Override
 	long executeCommand(String command, Map params = [:]) {
-		def result = 0
+		Long result = 0
 		
 		if (command == null || command.trim().length() == 0) return result
+
+		if (params == null) params = [:]
 		
 		if (params.queryParams != null) {
 			command = StringUtils.SetValueString(command, params.queryParams as Map)
@@ -1463,10 +1466,10 @@ $sql
 		
 		try {
 			if (params.isUpdate != null && params.isUpdate) {
-				result = stat.executeUpdate(command)
+				result += stat.executeUpdate(command)
 			}
 			else {
-				if (!stat.execute(command)) result = stat.updateCount
+				if (!stat.execute(command)) result += stat.updateCount
 			}
 		}
 		catch (SQLException e) {

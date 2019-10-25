@@ -176,28 +176,11 @@ class VerticaDriver extends JDBCDriver {
 
 		String streamName = params.streamName
 
-		List fileList
-		if (params.files != null && !(params.files as List).isEmpty()) {
-			fileList = []
-			params.files.each { String fileName ->
-				fileList << "'${fileName.replace("\\", "/")}'$onNode"
-			}
-		}
-		else if (params.fileMask != null) {
-			fileList =  ["'${params.fileMask}'$onNode"]
-		}
-		else {
-			fileList =  ["'${source.fullFileName().replace("\\", "/")}'$onNode"]
-		}
+		String fileName =  "'${source.fullFileName().replace("\\", "/")}'$onNode"
 
 		if (compressed != null) {
-			def f = []
-			fileList.each { file ->
-				f << "$file $compressed"
-			}
-			fileList = f
+			fileName = "$fileName $compressed"
 		}
-		def fileName = fileList.join(',')
 
 		if (exceptionPath != null) FileUtils.ValidFilePath(exceptionPath)
 		if (rejectedPath != null) FileUtils.ValidFilePath(rejectedPath)

@@ -37,14 +37,9 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class VerticaBulkLoadSpec extends BulkLoadSpec {
-    VerticaBulkLoadSpec() {
-        super()
-        params.parser = [:] as Map<String, String>
-        params.expression = [:] as Map<String, String>
-    }
-
-    VerticaBulkLoadSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.parser == null) params.parser = [:] as Map<String, String>
         if (params.expression == null) params.expression = [:] as Map<String, String>
     }

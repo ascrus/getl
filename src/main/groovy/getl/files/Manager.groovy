@@ -1001,11 +1001,10 @@ FROM ${newFiles.fullNameDataset()} files
 	}
 
 	/** Build list of files */
-	TableDataset buildListFiles(String mask, @DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
-//		def ownerObject = sysParams.dslOwnerObject?:this
+	TableDataset buildListFiles(Path maskPath, @DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = new ManagerBuildListSpec(this, thisObject, false, null)
-		if (mask != null) parent.maskPath = new Path(mask: mask)
+		if (maskPath != null) parent.maskPath = maskPath
 		parent.runClosure(cl)
 		buildList(parent.params)
 
@@ -1013,8 +1012,14 @@ FROM ${newFiles.fullNameDataset()} files
 	}
 
 	/** Build list of files */
+	TableDataset buildListFiles(String mask, @DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
+		def maskPath = (mask != null)?new Path(mask: mask):null
+		buildListFiles(maskPath, cl)
+	}
+
+	/** Build list of files */
 	TableDataset buildListFiles(@DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
-		buildListFiles(null, cl)
+		buildListFiles(null as Path, cl)
 	}
 	
 	/**

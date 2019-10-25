@@ -30,7 +30,6 @@ import getl.csv.*
 import getl.data.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
-import getl.files.FileManager
 import getl.jdbc.*
 import getl.utils.*
 
@@ -167,33 +166,14 @@ FROM CSVREAD('{file_name}', ${heads}, '${functionParms}')
 		//println sb.toString()
 
         def sourceConnection = source.connection as CSVConnection
-		List<String> files = []
-        if (params.files != null && !(params.files as List).isEmpty()) {
-            files.addAll(params.files as List<String>)
-        }
-        else if (params.fileMask != null) {
-            def fm = new FileManager(rootPath: sourceConnection.path)
-            fm.connect()
-            try {
-                fm.list(params.fileMask as String).each { Map f -> files << (f.filename as String)}
-            }
-            finally {
-                fm.disconnect()
-            }
-        }
-        else {
-            files << source.fileName
-        }
 
         dest.writeRows = 0
 		dest.updateRows = 0
 		if (autoCommit) dest.connection.startTran()
 		long count = 0
 		try {
-            files.each { String fileName ->
-                def loadFile = "${sourceConnection.path}/$fileName"
-                count += executeCommand(sql.replace('{file_name}', loadFile), [isUpdate: true])
-            }
+			def loadFile = source.fullFileName()
+			count += executeCommand(sql.replace('{file_name}', loadFile), [isUpdate: true])
 		}
 		catch (Exception e) {
 			if (autoCommit) dest.connection.rollbackTran()

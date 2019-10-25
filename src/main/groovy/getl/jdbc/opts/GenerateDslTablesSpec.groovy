@@ -83,7 +83,7 @@ class GenerateDslTablesSpec extends BaseSpec {
     /** Select tables from the specified table pattern by JDBC syntax */
     String getTableName() { params.tableName as String }
     /** Select tables from the specified database */
-    void setTableName(String value) { params.tableName = value } /* TODO: change to object from RetrieveDataset */
+    void setTableName(String value) { params.tableName = value }
 
     /** Select tables from the specified table mask (String or List) */
     Object getTableMask() { params.tableMask }

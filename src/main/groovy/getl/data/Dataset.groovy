@@ -50,7 +50,8 @@ class Dataset {
 		methodParams.register('create', [])
 		methodParams.register('drop', [])
 		methodParams.register('truncate', ['autoTran'])
-		methodParams.register('bulkLoadFile', ['source', 'prepare', 'map', 'autoMap', 'autoCommit', 'abortOnError', 'inheritFields'])
+		methodParams.register('bulkLoadFile', ['source', 'prepare', 'map', 'autoMap', 'autoCommit',
+											   'abortOnError', 'inheritFields', 'removeFile', 'moveFileTo'])
 		methodParams.register('eachRow', ['prepare', 'offs', 'limit', 'saveErrors', 'autoSchema'])
 		methodParams.register('openWrite', ['prepare', 'autoSchema'])
 		methodParams.register('lookup', ['key', 'strategy'])
@@ -603,7 +604,8 @@ class Dataset {
         updateRows = 0
 
 		validConnection()
-		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Driver not supported bulk load file")
+		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD))
+			throw new ExceptionGETL("Driver not supported bulk load file!")
 		
 		if (procParams == null) procParams = [:]
 		methodParams.validation("bulkLoadFile", procParams, [connection.driver.methodParams.params("bulkLoadFile")])
@@ -613,14 +615,17 @@ class Dataset {
 		
 		if (field.size() == 0) {
 			if (BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
-				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA)) throw new ExceptionGETL("Can not auto load schema from destination dataset")
+				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
+					throw new ExceptionGETL("Can not auto load schema from destination dataset!")
+
 				loadDatasetMetadata()
 			}
 			else {
 				if (connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS)) retrieveFields()
 			}
 		}
-		if (field.isEmpty()) throw new ExceptionGETL("Destination dataset required declare fields")
+		if (field.isEmpty())
+			throw new ExceptionGETL("Destination dataset required declare fields!")
 		
 		CSVDataset source = procParams.source
 		if (source == null) throw new ExceptionGETL("Required parameter \"source\"")
@@ -630,14 +635,20 @@ class Dataset {
 		
 		if (source.field.size() == 0) { 
 			if (BoolUtils.IsValue(procParams.source_autoSchema, source.autoSchema)) {
-				if (!source.connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA)) throw new ExceptionGETL("Can not auto load schema from source dataset")
+				if (!source.connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
+					throw new ExceptionGETL("Can not auto load schema from source dataset!")
+
 				source.loadDatasetMetadata()
 			}
 			else {
 				if (source.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS)) source.retrieveFields()
 			}
 		}
-		if (source.field.isEmpty()) throw new ExceptionGETL("Source dataset required declare fields")
+		if (source.field.isEmpty())
+			throw new ExceptionGETL("Source dataset required declare fields!")
+
+		def removeFile = BoolUtils.IsValue(procParams.removeFile)
+		def moveFileTo = procParams.moveFileTo as String
 		
 		connection.tryConnect()
 		
@@ -653,6 +664,13 @@ class Dataset {
 		Map p = MapUtils.CleanMap(procParams, ["prepare", "source"])
 		
 		connection.driver.bulkLoadFile(source, this, p, prepareFields)
+
+		if (moveFileTo != null) {
+			FileUtils.MoveTo(source.fullFileName(), moveFileTo)
+		}
+		else if (removeFile) {
+			source.drop()
+		}
 	}
 	
 	String getObjectName() { "noname" }
@@ -1273,12 +1291,22 @@ class Dataset {
 			if (field.isEmpty()) throw new ExceptionGETL("Dataset can not be generate temp file while not specified the fields")
 		}
 		this.csvTempFile.field = field
+
+		prepareCsvTempFile(this.csvTempFile)
 	}
+
 	/** Csv temporary file for use in download and upload data from this dataset */
 	TFSDataset getCsvTempFile() {
 		if (this.csvTempFile == null) createCsvTempFile()
 		return csvTempFile
 	}
+
 	/** This dataset use csv temporary file */
 	boolean isUseCsvTempFile() { this.csvTempFile != null }
+
+	/**
+	 * Configure the file to work and upload to the table
+	 * @param csvFile CSV dataset
+	 */
+	void prepareCsvTempFile(CSVDataset csvFile) { }
 }

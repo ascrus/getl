@@ -26,6 +26,7 @@ package getl.jdbc.opts
 
 import getl.csv.CSVDataset
 import getl.lang.opts.BaseSpec
+import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -35,90 +36,57 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class BulkLoadSpec extends BaseSpec {
-    @Override
-    protected void initSpec() {
-        super.initSpec()
-        if (params.files == null) params.files = [] as List<String>
-    }
-
-    /**
-     * Preparing code
-     */
+    /** Preparing code */
     Closure getOnPrepare() { params.prepare as Closure }
-    /**
-     * Preparing code
-     */
+    /** Preparing code */
     void setOnPrepare(Closure value) { params.prepare = value }
-    /**
-     * Preparing code
-     */
+    /** Preparing code */
     void prepare(Closure value) {
         setOnPrepare(value)
     }
 
-    /**
-     * Automatic linking by the file and table field names
-     */
+    /** Automatic linking by the file and table field names */
     Boolean getAutoMap() { params.autoMap as Boolean }
-    /**
-     * Automatic linking by the file and table field names
-     */
+    /** Automatic linking by the file and table field names */
     void setAutoMap(Boolean value) { params.autoMap = value }
 
-    /**
-     * Using the field binding map
-     */
+    /** Using the field binding map */
     Boolean getAllowMapAlias() { params.allowMapAlias as Boolean }
-    /**
-     * Using the field binding map
-     */
+    /** Using the field binding map */
     void setAllowMapAlias(Boolean value) { params.allowMapAlias = value }
 
-    /**
-     * Auto commit after bulk load files
-     */
+    /** Auto commit after bulk load files */
     Boolean getAutoCommit() { params.autoCommit as Boolean }
-    /**
-     * Auto commit after bulk load files
-     */
+    /** Auto commit after bulk load files */
     void setAutoCommit(Boolean value) { params.autoCommit = value }
 
-    /**
-     * Stop downloading files on any error
-     */
+    /** Stop downloading files on any error */
     Boolean getAbortOnError() { params.abortOnError as Boolean }
-    /**
-     * Stop downloading files on any error
-     */
+    /** Stop downloading files on any error */
     void setAbortOnError(Boolean value) { params.abortOnError = value }
 
-    /**
-     * Use the table field description to read the CSV file
-     */
+    /** Use the table field description to read the CSV file */
     Boolean getInheritFields() { params.inheritFields as Boolean }
-    /**
-     * Use the table field description to read the CSV file
-     */
+    /** Use the table field description to read the CSV file */
     void setInheritFields(Boolean value) { params.inheritFields = value }
 
-    /**
-     * List of CSV files to upload to the table
-     */
-    List<String> getFiles() { params.files as List<String> }
-    /**
-     * List of CSV files to load to the table
-     */
-    void setFiles(List<String> value) {
-        files.clear()
-        files.addAll(value)
-    }
+    /** Use the schema description file when reading CSV files */
+    String getSchemaFileName() { params.schemaFileName as String }
+    /** Use the schema description file when reading CSV files */
+    void setSchemaFileName(String value) { params.schemaFileName = value }
 
-    /**
-     * Mask of CSV files to load to the table
-     */
-    String getFileMask() { params.fileMask as String }
-    /**
-     * Mask of CSV files to load to the table
-     */
-    void setFileMask(String value) { params.fileMask = value }
+    /** list of names or search masks for uploaded CSV files */
+    Object getFiles() { params.files }
+    /** list of names or search masks for uploaded CSV files */
+    void setFiles(Object value) { params.files = value }
+
+    /** Delete file after successful upload */
+    Boolean getRemoveFile() { BoolUtils.IsValue(params.removeFile) }
+    /** Delete file after successful upload */
+    void setRemoveFile(Boolean value) { params.removeFile = value }
+
+    /** Move file after successful upload to the specified path */
+    String getMoveFileTo() { params.moveFileTo as String }
+    /** Move file after successful upload to the specified path */
+    void setMoveFileTo(String value) { params.moveFileTo = value }
 }

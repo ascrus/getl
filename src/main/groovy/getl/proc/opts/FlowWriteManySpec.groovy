@@ -41,14 +41,9 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class FlowWriteManySpec extends FlowBaseSpec {
-    FlowWriteManySpec() {
-        super()
-        params.dest = [:] as Map<String, Dataset>
-        params.destParams = [:] as Map<String, Map<String, Object>>
-    }
-
-    FlowWriteManySpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.dest == null) params.dest = [:] as Map<String, Dataset>
         if (params.destParams == null) params.destParams = [:] as Map<String, Map<String, Object>>
     }

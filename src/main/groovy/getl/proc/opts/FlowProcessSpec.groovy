@@ -41,13 +41,9 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class FlowProcessSpec extends FlowBaseSpec {
-    FlowProcessSpec() {
-        super()
-        params.sourceParams = [:] as Map<String, Object>
-    }
-
-    FlowProcessSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.sourceParams == null) params.sourceParams = [:] as Map<String, Object>
     }
 

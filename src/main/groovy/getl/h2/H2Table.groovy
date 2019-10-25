@@ -24,6 +24,7 @@
 
 package getl.h2
 
+import getl.csv.CSVDataset
 import getl.data.Connection
 import getl.exception.ExceptionGETL
 import getl.h2.opts.*
@@ -47,10 +48,19 @@ class H2Table extends TableDataset {
         super.setConnection(value)
     }
 
-    /** Use specified connection */
+    /** Use specified H2 connection */
     H2Connection useConnection(H2Connection value) {
         setConnection(value)
         return value
+    }
+
+    @Override
+    void prepareCsvTempFile(CSVDataset csvFile) {
+        csvFile.escaped = false
+        csvFile.header = false
+        csvFile.fieldDelimiter = '|'
+        csvTempFile.nullAsValue = '<NULL>'
+        csvTempFile.codePage = 'UTF-8'
     }
 
     @Override
@@ -59,9 +69,7 @@ class H2Table extends TableDataset {
         return new H2CreateSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
-    /**
-     * Create H2 table
-     */
+    /** Options for creating Vertica table */
     H2CreateSpec createOpts(@DelegatesTo(H2CreateSpec) Closure cl = null) {
         genCreateTable(cl) as H2CreateSpec
     }
@@ -72,16 +80,13 @@ class H2Table extends TableDataset {
         return new H2BulkLoadSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
-    /**
-     * Read table options
-     */
+    /** Options for loading csv files to Vertica table */
     H2BulkLoadSpec bulkLoadOpts(@DelegatesTo(H2BulkLoadSpec) Closure cl = null) {
         genBulkLoadDirective(cl) as H2BulkLoadSpec
     }
 
-    @Override
-    void createCsvTempFile() {
-        super.createCsvTempFile()
-        csvTempFile.escaped = false
+    /** Load specified csv files to Vertica table */
+    H2BulkLoadSpec bulkLoadCsv(@DelegatesTo(H2BulkLoadSpec) Closure cl = null) {
+        doBulkLoadCsv(cl) as H2BulkLoadSpec
     }
 }

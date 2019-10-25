@@ -39,18 +39,13 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class FlowCopySpec extends FlowBaseSpec {
-    FlowCopySpec() {
-        super()
-        params.sourceParams = [:] as Map<String, Object>
-        params.destParams = [:] as Map<String, Object>
-        params._childs = [:] as Map<String, FlowCopyChildSpec>
-    }
-
-    FlowCopySpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.sourceParams == null) params.sourceParams = [:] as Map<String, Object>
         if (params.destParams == null) params.destParams = [:] as Map<String, Object>
         if (params._childs == null) params._childs = [:] as Map<String, FlowCopyChildSpec>
+        if (params.map == null) params.map = [:] as HashMap<String, String>
     }
 
     /** Source dataset */
@@ -121,7 +116,10 @@ class FlowCopySpec extends FlowBaseSpec {
     /**
      * Map card columns with syntax: [<destination field>:"<source field>:<convert format>"]
      */
-    void setMap(Map<String, String> value) { params.map = value }
+    void setMap(Map<String, String> value) {
+        map.clear()
+        if (value != null) map.putAll(value)
+    }
 
     /**
      * Parameters for source read process

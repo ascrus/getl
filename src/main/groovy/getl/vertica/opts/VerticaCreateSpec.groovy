@@ -29,13 +29,9 @@ import groovy.transform.InheritConstructors
 
 @InheritConstructors
 class VerticaCreateSpec extends CreateSpec {
-    VerticaCreateSpec() {
-        super()
-        params.orderBy = [] as List<String>
-    }
-
-    VerticaCreateSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        super(ownerObject, thisObject, useExternalParams, importParams)
+    @Override
+    protected void initSpec() {
+        super.initSpec()
         if (params.orderBy == null) params.orderBy = [] as List<String>
     }
 

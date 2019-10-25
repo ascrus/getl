@@ -24,10 +24,17 @@
 
 package getl.jdbc
 
+import getl.csv.CSVConnection
+import getl.csv.CSVDataset
+import getl.data.Field
+import getl.files.FileManager
 import getl.jdbc.opts.*
+import getl.lang.Getl
 import getl.lang.opts.BaseSpec
-import getl.utils.BoolUtils
+import getl.stat.ProcessTime
+import getl.utils.FileUtils
 import getl.utils.ListUtils
+import getl.utils.MapUtils
 import getl.utils.Path
 import groovy.transform.InheritConstructors
 import getl.cache.*
@@ -51,119 +58,79 @@ class TableDataset extends JDBCDataset {
 		methodParams.register("generateDsl", [])
 	}
 
-	/**
-	 * Schema name
-	 */
+	/** Schema name */
 	String getSchemaName() { ListUtils.NotNullValue([params.schemaName, (connection as JDBCConnection).schemaName]) }
-	/**
-	 * Schema name
-	 */
+	/** Schema name */
 	void setSchemaName(String value) { params.schemaName = value }
 
-	/**
-	 * Table name
-	 */
+	/** Table name */
 	String getTableName() { params.tableName }
-	/**
-	 * Table name
-	 */
+	/** Table name */
 	void setTableName(String value) { params.tableName = value }
 
-	/**
-	 * Create table options
-	 */
+	/** Create table options */
 	Map<String, Object> getCreateDirective() { directives('create') }
-	/**
-	 * Create table options
-	 */
+	/** Create table options */
 	void setCreateDirective(Map<String, Object> value) {
 		createDirective.clear()
 		createDirective.putAll(value)
 	}
 
-	/**
-	 * Drop table options
-	 */
+	/** Drop table options */
 	Map<String, Object> getDropDirective() { directives('drop') }
-	/**
-	 * Drop table options
-	 */
+	/** Drop table options */
 	void setDropDirective(Map<String, Object> value) {
 		dropDirective.clear()
 		dropDirective.putAll(value)
 	}
 
-	/**
-	 * Read table options
-	 */
+	/** Read table options */
 	Map<String, Object> getReadDirective() { directives('read') }
-	/**
-	 * Read table options
-	 */
+	/** Read table options */
 	void setReadDirective(Map<String, Object> value) {
 		readDirective.clear()
 		readDirective.putAll(value)
 	}
 
-	/**
-	 * Write table options
-	 */
+	/** Write table options */
 	Map<String, Object> getWriteDirective() { directives('write') }
-	/**
-	 * Write table options
-	 */
+	/** Write table options */
 	void setWriteDirective(Map<String, Object> value) {
 		writeDirective.clear()
 		writeDirective.putAll(value)
 	}
 
-	/**
-	 * Bulk load CSV file options
-	 */
+	/** Bulk load CSV file options */
 	Map<String, Object> getBulkLoadDirective() { directives('bulkLoad') }
-	/**
-	 * Bulk load CSV file options
-	 */
+	/** Bulk load CSV file options */
 	void setBulkLoadDirective(Map<String, Object> value) {
 		bulkLoadDirective.clear()
 		bulkLoadDirective.putAll(value)
 	}
 
-	/**
-	 * Read table as update locking
-	 */
+	/** Read table as update locking */
 	Boolean getForUpdate() { params.forUpdate }
-	/**
-	 * Read table as update locking
-	 */
+	/** Read table as update locking */
 	void setForUpdate(Boolean value) { params.forUpdate = value }
 
-	/**
-	 * Read offset row
-	 */
+	/** Read offset row */
 	Long getOffs() { params.offs as Long }
-	/**
-	 * Read offset row
-	 */
+	/** Read offset row */
 	void setOffs(Long value) { params.offs = value }
 
-	/**
-	 * Read limit row
-	 */
+	/** Read limit row */
 	Long getLimit() { params.limit as Long }
-	/**
-	 * Read limit row
-	 */
+	/** Read limit row */
 	void setLimit(Long value) { params.limit = value }
 
 	private CacheManager cacheManager
 	/**
-	 * Cache manager
+	 * Cache manager<br>
 	 * Is used to monitor changes in the structure or data
 	 */
 	CacheManager getCacheManager() { cacheManager }
 	/**
-	 * Cache manager
+	 * Cache manager<br>
 	 * Is used to monitor changes in the structure or data
 	 */
 	void setCacheManager(CacheManager value) {
@@ -182,28 +149,22 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/**
-	 * Cache dataset
+	 * Cache dataset<br>
 	 * Is used to monitor changes in the structure or data
 	 */
 	private CacheDataset getCacheDataset() { sysParams.cacheDataset as CacheDataset }
 	/**
-	 * Cache dataset
+	 * Cache dataset<br>
 	 * Is used to monitor changes in the structure or data
 	 */
 	private void setCacheDataset(CacheDataset value) { sysParams.cacheDataset = value }
 
-	/**
-	 * Description table
-	 */
+	/** Description of table */
 	String getDescription() { params.description }
-	/**
-	 * Description table
-	 */
+	/** Description of table */
 	void setDescription(String value) { params.description = value }
 
-	/**
-	 * Valid exist table
-	 */
+	/** Valid exist table */
 	boolean isExists() {
 		if (!(connection.driver as JDBCDriver).isTable(this)) throw new ExceptionGETL("${fullNameDataset()} is not a table!")
 		def con = connection as JDBCConnection
@@ -216,10 +177,8 @@ class TableDataset extends JDBCDataset {
 		return (!ds.isEmpty())
 	}
 
-	/**
-	 * Insert/Update/Delete/Merge records from other dataset
-	 */
-	long unionDataset(Map procParams) {
+	/** Insert/Update/Delete/Merge records from other dataset */
+	long unionDataset(Map procParams = [:]) {
 		if (procParams == null) procParams = [:]
 		methodParams.validation("unionDataset", procParams, [connection.driver.methodParams.params("unionDataset")])
 
@@ -234,19 +193,17 @@ class TableDataset extends JDBCDataset {
 	Map findKey(Map procParams) {
 		def keys = getFieldKeys()
 		if (keys.isEmpty()) throw new ExceptionGETL("Required key fields")
-		procParams = procParams ?: [:]
+		procParams = procParams?:[:]
 		def r = rows(procParams + [onlyFields: keys, limit: 1])
 		if (r.isEmpty()) return null
 
 		return r[0]
 	}
 
-	/**
-	 * Return count rows from table
-	 */
+	/** Return count rows from table */
 	long countRow(String where = null, Map procParams = [:]) {
 		QueryDataset q = new QueryDataset(connection: connection, query: "SELECT Count(*) AS count FROM ${fullNameDataset()}")
-		where = where ?: readDirective.where
+		where = where?:readDirective.where
 		if (where != null && where != '') q.query += " WHERE " + where
 		def r = q.rows(procParams)
 
@@ -254,7 +211,8 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/**
-	 * Delete rows for condition
+	 * Delete rows
+	 * @param where rows filter
 	 */
 	long deleteRows(String where = null) {
 		String sql = "DELETE FROM ${fullNameDataset()}" + ((where != null && where.trim().length() > 0) ? " WHERE $where" : '')
@@ -274,160 +232,220 @@ class TableDataset extends JDBCDataset {
 		return count
 	}
 
-	/**
-	 * Truncate table
-	 */
+	/** Truncate table */
 	void truncate() {
 		(connection.driver as JDBCDriver).clearDataset(this, [truncate: true])
 	}
 
-	/**
-	 * Full table name
-	 */
+	/** Full table name in database */
 	String getFullTableName() { fullNameDataset() }
 
-	/**
-	 * Create new options object for create table
-	 */
+	/** Create new options object for create table */
 	protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
 											  Map<String, Object> opts) {
 		new CreateSpec(ownerObject, thisObject, useExternalParams, opts)
 	}
 
-	/**
-	 * Generate new options object for create table
-	 */
+	/** Generate new options object for create table */
 	protected CreateSpec genCreateTable(Closure cl) {
-//		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject ?: BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = newCreateTableParams(this, thisObject, true, createDirective)
 		parent.runClosure(cl)
 
 		return parent
 	}
 
-	/**
-	 * Create table of specified options
-	 */
+	/** Options for creating table */
 	CreateSpec createOpts(@DelegatesTo(CreateSpec)
 						  @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.CreateSpec'])
 								  Closure cl = null) {
 		genCreateTable(cl)
 	}
 
-	/**
-	 * Create new options object for drop table
-	 */
+	/** Create new options object for drop table */
 	protected static DropSpec newDropTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
 												 Map<String, Object> opts) {
 		new DropSpec(ownerObject, thisObject, useExternalParams, opts)
 	}
 
-	/**
-	 * Generate new options object for drop table
-	 */
+	/** Generate new options object for drop table */
 	protected DropSpec genDropTable(Closure cl) {
-//		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject ?: BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = newDropTableParams(this, thisObject, true, dropDirective)
 		parent.runClosure(cl)
 
 		return parent
 	}
 
-	/**
-	 * Drop table
-	 */
+	/** Options for deleting table */
 	DropSpec dropOpts(@DelegatesTo(DropSpec)
 					  @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.DropSpec'])
 							  Closure cl = null) {
 		genDropTable(cl)
 	}
 
-	/**
-	 * Create new options object for reading table
-	 */
+	/** Create new options object for reading table */
 	protected ReadSpec newReadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
 										  Map<String, Object> opts) {
 		new ReadSpec(ownerObject, thisObject, useExternalParams, opts)
 	}
 
-	/**
-	 * Generate new options object for reading table
-	 */
+	/** Generate new options object for reading table */
 	protected ReadSpec genReadDirective(Closure cl) {
-//		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject ?: BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = newReadTableParams(this, thisObject, true, readDirective)
 		parent.runClosure(cl)
 
 		return parent
 	}
 
-	/**
-	 * Read table options
-	 */
+	/** Options for reading from table */
 	ReadSpec readOpts(@DelegatesTo(ReadSpec)
 					  @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.ReadSpec'])
 							  Closure cl = null) {
 		genReadDirective(cl)
 	}
 
-	/**
-	 * Create new options object for writing table
-	 */
+	/** Create new options object for writing table */
 	protected WriteSpec newWriteTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
 											Map<String, Object> opts) {
 		new WriteSpec(ownerObject, thisObject, useExternalParams, opts)
 	}
 
-	/**
-	 * Generate new options object for writing table
-	 */
+	/** Generate new options object for writing table */
 	protected WriteSpec genWriteDirective(Closure cl) {
-//		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject ?: BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = newWriteTableParams(this, thisObject, true, writeDirective)
 		parent.runClosure(cl)
 
 		return parent
 	}
 
-	/**
-	 * Write table options
-	 */
+	/** Options for writing to table */
 	WriteSpec writeOpts(@DelegatesTo(WriteSpec)
 						@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.WriteSpec'])
 								Closure cl = null) {
 		genWriteDirective(cl)
 	}
 
-	/**
-	 * Create new options object for writing table
-	 */
+	/** Create new options object for writing table */
 	protected BulkLoadSpec newBulkLoadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
 												  Map<String, Object> opts) {
 		new BulkLoadSpec(ownerObject, thisObject, useExternalParams, opts)
 	}
 
-	/**
-	 * Generate new options object for writing table
-	 */
+	/** Generate new options object for writing table */
 	protected BulkLoadSpec genBulkLoadDirective(Closure cl) {
-//		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject ?: BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = newBulkLoadTableParams(this, thisObject, true, bulkLoadDirective)
 		parent.runClosure(cl)
 
 		return parent
 	}
 
-	/**
-	 * Write table options
-	 */
+	/** Options for loading csv files to table */
 	BulkLoadSpec bulkLoadOpts(@DelegatesTo(BulkLoadSpec)
 							  @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.BulkLoadSpec'])
 									  Closure cl = null) {
 		genBulkLoadDirective(cl)
+	}
+
+	/** Bulk load specified csv files */
+	protected BulkLoadSpec doBulkLoadCsv(Closure cl) {
+		Getl getl = (sysParams.dslOwnerObject != null && sysParams.dslOwnerObject instanceof Getl)?
+				sysParams.dslOwnerObject:null
+
+		ProcessTime pt
+		if (getl != null) pt = getl.startProcess("Bulk load files to table ${fullNameDataset()}")
+
+		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def bulkParams = MapUtils.DeepCopy(bulkLoadDirective) as Map<String, Object>
+		def parent = newBulkLoadTableParams(this, thisObject, true, bulkParams)
+		parent.runClosure(cl)
+
+		if (parent.files == null)
+			throw new ExceptionGETL('Required to specify the names of the uploaded files in "files"!')
+
+		def files = parent.files
+		if (!(files instanceof List)) files = [files]
+
+		def procFiles = [] as List<CSVDataset>
+		def schemaFiles = [] as List<CSVDataset>
+		(files as List<String>).each { filePath ->
+			def path = FileUtils.PathFromFile(filePath)
+			if (!FileUtils.ExistsFile(path, true))
+				throw new ExceptionGETL("Path \"$path\" not found!")
+
+			def csvCon = new CSVConnection(path: path)
+
+			def name = FileUtils.FileName(filePath)
+			def maskPath = new Path(mask: name)
+
+			def schemaFile = parent.schemaFileName
+			List<Field> csvFields
+			if (schemaFile != null) {
+				if (!FileUtils.ExistsFile(schemaFile)) {
+					if (FileUtils.RelativePathFromFile(schemaFile) == '.') {
+						schemaFile = "$path/$schemaFile"
+						if (!FileUtils.ExistsFile(schemaFile))
+							throw new ExceptionGETL("Schema file \"${parent.schemaFileName}\" not found!")
+					}
+					else {
+						throw new ExceptionGETL("Schema file \"${parent.schemaFileName}\" not found!")
+					}
+				}
+
+				def csv = new CSVDataset(connection: csvCon, schemaFileName: schemaFile)
+				csv.loadDatasetMetadata()
+				csvFields = csv.field
+				if (csvFields.isEmpty())
+					throw new ExceptionGETL("Fields description not found for schema file \"${parent.schemaFileName}\"!")
+
+				schemaFiles << schemaFile
+			}
+
+			def fm = new FileManager()
+			fm.with {
+				rootPath = path
+				def list = buildListFiles(maskPath)
+				list.eachRow {
+					def csvFile = new CSVDataset(connection: csvCon, fileName: it.filename)
+					if (csvFields != null) csvFile.field = csvFields
+					prepareCsvTempFile(csvFile)
+					procFiles << csvFile
+				}
+			}
+		}
+
+		long countRow = 0
+		procFiles.each { csv ->
+			ProcessTime ptf
+			if (getl != null)
+				ptf = getl.startProcess("Bulk load file \"${csv.fullFileName()}\" to table ${fullNameDataset()}")
+
+			bulkLoadFile(MapUtils.Copy(bulkParams, ['schemaFileName', 'files']) + [source: csv])
+			countRow += updateRows
+
+			if (getl != null)
+				getl.finishProcess(ptf, updateRows)
+		}
+
+		if (parent.moveFileTo != null || parent.removeFile) {
+			schemaFiles.each { file ->
+				if (parent.moveFileTo != null) {
+					FileUtils.MoveTo(file, parent.moveFileTo)
+				}
+				else if (parent.removeFile) {
+					FileUtils.DeleteFile(file)
+				}
+			}
+		}
+
+		if (getl != null) {
+			pt.name = "Bulk load ${procFiles.size()} files to table ${fullNameDataset()}"
+			getl.finishProcess(pt, countRow)
+		}
+
+		return parent
 	}
 }
