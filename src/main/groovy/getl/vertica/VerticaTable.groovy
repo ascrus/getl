@@ -117,8 +117,20 @@ class VerticaTable extends TableDataset {
         //csvTempFile.isGzFile = true
     }
 
-    /** Load specified csv files to Vertica table */
-    VerticaBulkLoadSpec bulkLoadCsv(@DelegatesTo(VerticaBulkLoadSpec) Closure cl = null) {
-        doBulkLoadCsv(cl) as VerticaBulkLoadSpec
+    /**
+     * Load specified csv files to Vertica table
+     * @param source File to load
+     * @param cl Load setup code
+     */
+    VerticaBulkLoadSpec bulkLoadCsv(CSVDataset source, @DelegatesTo(VerticaBulkLoadSpec) Closure cl = null) {
+        doBulkLoadCsv(source, cl) as VerticaBulkLoadSpec
+    }
+
+    /**
+     * Load specified csv files to Vertica table
+     * @param cl Load setup code
+     */
+    VerticaBulkLoadSpec bulkLoadCsv(@DelegatesTo(VerticaBulkLoadSpec) Closure cl) {
+        doBulkLoadCsv(null, cl) as VerticaBulkLoadSpec
     }
 }

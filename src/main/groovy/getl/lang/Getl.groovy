@@ -3182,7 +3182,7 @@ class Getl extends Script {
     /** Temporary CSV file */
     TFSDataset csvTemp(String name, Boolean registration,
                        @DelegatesTo(TFSDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl) {
+                       @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
         TFSDataset parent = registerDataset(defaultFileConnection(CSVTEMPDATASET)?:TFS.storage, CSVTEMPDATASET, name, registration) as TFSDataset
         runClosure(parent, cl)
 
@@ -3198,7 +3198,7 @@ class Getl extends Script {
 
     /** Temporary CSV file */
     TFSDataset csvTemp(@DelegatesTo(TFSDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl) {
+                       @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
         csvTemp(null, false, cl)
     }
 

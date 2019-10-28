@@ -211,6 +211,15 @@ datasets {
                 }
                 assertEquals(this.table1_rows, countRow)
             }
+
+            def c = csvTemp('#file', true)
+            def t = h2Table('#table', true) { tableName = this.h2TableName }
+            thread {
+                addThread { copyRows(h2Table('#table'), csvTemp('#file')) { inheritFields = true } }
+                exec()
+            }
+
+            unregisterDataset('#*')
         }
     }
 
@@ -413,11 +422,28 @@ ORDER BY t1.id'''
             h2Table('getl.testdsl.h2:table1') {
                 truncate()
 
+                assertEquals(0, countRow())
+
                 bulkLoadCsv {
                     files = "${(csv.connection as CSVConnection).path}/file.split.{num}.csv"
+                    inheritFields = true
+                }
+
+                assertEquals(this.table1_rows, countRow())
+            }
+
+            h2Table('getl.testdsl.h2:table1') {
+                truncate()
+
+                assertEquals(0, countRow())
+
+                bulkLoadCsv(csv) {
+                    files = "file.split.{num}.csv"
                     schemaFileName = 'file.split.csv.schema'
                     removeFile = true
                 }
+
+                assertEquals(this.table1_rows, countRow())
             }
 
             files {

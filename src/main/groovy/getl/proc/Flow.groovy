@@ -166,6 +166,7 @@ class Flow {
 		List<String> sourceFields = []
 		
 		int c = 0
+		int cf = 0
 		dest.field.each { Field d ->
 			c++
 			
@@ -184,6 +185,8 @@ class Flow {
 				sb << "// Exclude field ${d.name}\n\n"
 				return
 			}
+
+			cf++
 			
 			// Map field name
 			String mn = dn
@@ -254,6 +257,9 @@ class Flow {
 		def scriptMap = sb.toString()
 
 //		println scriptMap
+
+		if (cf == 0)
+			throw new ExceptionGETL("No fields were found for copying data from source \"$source\" to destination \"$dest\"!")
 
 		result.code = GenerationUtils.EvalGroovyScript(scriptMap)
 		result.sourceFields = sourceFields

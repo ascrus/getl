@@ -39,9 +39,7 @@ import getl.utils.*
  *
  */
 class Executor {
-	/**
-	 * Count thread process
-	 */
+	/** Count thread process */
 	public Integer countProc
 	
 	/**
@@ -100,17 +98,25 @@ class Executor {
 		if (obj != null) exceptions.put(obj, except)
 	}
 	
-	/** List of processes */
-	public List list = []
+	/** List of processing elements */
+	final List list = []
+
+	/** List of processing elements */
+	List getList() { this.list }
+	/** List of processing elements */
+	void setList(List value) {
+		this.list.clear()
+		if (value != null) list.addAll(value)
+	}
 
 	/** Use this list for running threads */
 	void useList(Object... elements) {
-		list = elements.toList()
+		setList(elements.toList())
 	}
 
 	/** Use this list for running threads */
 	void useList(List elements) {
-		list = elements
+		setList(elements)
 	}
 
 	/** List closure code for thread run */
@@ -120,10 +126,14 @@ class Executor {
 	/** Clear current list of registered thread code */
 	void clearListThread() { listCode.clear() }
 	
-	/**
-	 * Main code (is executed while running threads)
-	 */
-	public Closure mainCode
+	/** Main code (is executed while running threads) */
+	Closure mainCode
+	/** Main code (is executed while running threads) */
+	Closure getMainCode() { this.mainCode }
+	/** Main code (is executed while running threads) */
+	void setMainCode(Closure value) { this.mainCode = value }
+	/** Main code (is executed while running threads) */
+	void mainCode(Closure value) { setMainCode(value) }
 
 	/**
 	 * List of all threads

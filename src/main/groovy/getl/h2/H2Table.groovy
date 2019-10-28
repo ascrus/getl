@@ -85,8 +85,20 @@ class H2Table extends TableDataset {
         genBulkLoadDirective(cl) as H2BulkLoadSpec
     }
 
-    /** Load specified csv files to Vertica table */
-    H2BulkLoadSpec bulkLoadCsv(@DelegatesTo(H2BulkLoadSpec) Closure cl = null) {
-        doBulkLoadCsv(cl) as H2BulkLoadSpec
+    /**
+     * Load specified csv files to H2 table
+     * @param source File to load
+     * @param cl Load setup code
+     */
+    H2BulkLoadSpec bulkLoadCsv(CSVDataset source, @DelegatesTo(H2BulkLoadSpec) Closure cl = null) {
+        doBulkLoadCsv(source, cl) as H2BulkLoadSpec
+    }
+
+    /**
+     * Load specified csv files to H2 table
+     * @param cl Load setup code
+     */
+    H2BulkLoadSpec bulkLoadCsv(@DelegatesTo(H2BulkLoadSpec) Closure cl) {
+        doBulkLoadCsv(null, cl) as H2BulkLoadSpec
     }
 }

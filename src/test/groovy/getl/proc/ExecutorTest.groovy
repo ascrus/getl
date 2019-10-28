@@ -9,20 +9,22 @@ class ExecutorTest extends getl.test.GetlTest {
 
     @Test
     void testSingleThreadList() {
-        def e = new Executor(countProc: 1, list: list)
+        def e = new Executor(countProc: 1)
+        e.list = list
         e.run { Logs.Fine("${DateUtils.FormatDate('HH:mm:ss.SSS', new Date())}: single $it ... "); sleep 50 }
     }
 
     @Test
     void testManyThreadList() {
-        def e = new Executor(countProc: 3, list: list)
+        def e = new Executor(countProc: 3)
+        e.useList(list)
         e.run { Logs.Fine("${DateUtils.FormatDate('HH:mm:ss.SSS', new Date())}: many $it ... "); sleep 50 }
     }
 
     @Test
     void testMainCode() {
         def e = new Executor(countProc: 3, list: list, waitTime: 100)
-        e.mainCode = {
+        e.mainCode {
             synchronized (e.threadActive) {
                 Logs.Fine("${DateUtils.FormatDate('HH:mm:ss.SSS', new Date())}: active: $e.threadActive")
             }

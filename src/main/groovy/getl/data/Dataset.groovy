@@ -555,7 +555,7 @@ class Dataset {
 	/**
 	 * Clear data of dataset
 	 */
-	void truncate (Map procParams) {
+	void truncate (Map procParams = [:]) {
 		validConnection()
 		if (!connection.driver.isOperation(Driver.Operation.CLEAR)) throw new ExceptionGETL("Driver not supported truncate operation")
 		
@@ -579,13 +579,6 @@ class Dataset {
 			throw e
 		}
 		if (autoTran) connection.commitTran()
-	}
-	
-	/**
-	 * Clear data of dataset
-	 */
-	void truncate () {
-		truncate([:])
 	}
 	
 	/**

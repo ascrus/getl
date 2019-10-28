@@ -232,11 +232,6 @@ class TableDataset extends JDBCDataset {
 		return count
 	}
 
-	/** Truncate table */
-	void truncate() {
-		(connection.driver as JDBCDriver).clearDataset(this, [truncate: true])
-	}
-
 	/** Full table name in database */
 	String getFullTableName() { fullNameDataset() }
 
@@ -350,10 +345,17 @@ class TableDataset extends JDBCDataset {
 		genBulkLoadDirective(cl)
 	}
 
-	/** Bulk load specified csv files */
-	protected BulkLoadSpec doBulkLoadCsv(Closure cl) {
+	/**
+	 * Bulk load specified csv files
+	 * @param source File to load
+	 * @param cl Load setup code
+	 */
+	protected BulkLoadSpec doBulkLoadCsv(CSVDataset source, Closure cl) {
 		Getl getl = (sysParams.dslOwnerObject != null && sysParams.dslOwnerObject instanceof Getl)?
 				sysParams.dslOwnerObject:null
+
+		if (source == null && cl == null)
+			throw new ExceptionGETL("It is required to specify a file to load into the table!")
 
 		ProcessTime pt
 		if (getl != null) pt = getl.startProcess("Bulk load files to table ${fullNameDataset()}")
@@ -363,20 +365,30 @@ class TableDataset extends JDBCDataset {
 		def parent = newBulkLoadTableParams(this, thisObject, true, bulkParams)
 		parent.runClosure(cl)
 
-		if (parent.files == null)
+		def files = parent.files
+		if (files == null && source != null) files = [source.fullFileName()]
+
+		if (files == null)
 			throw new ExceptionGETL('Required to specify the names of the uploaded files in "files"!')
 
-		def files = parent.files
 		if (!(files instanceof List)) files = [files]
 
 		def procFiles = [] as List<CSVDataset>
 		def schemaFiles = [] as List<CSVDataset>
 		(files as List<String>).each { filePath ->
 			def path = FileUtils.PathFromFile(filePath)
+			if (path == null)
+				if ((source?.connection as CSVConnection)?.path != null)
+					path = (source.connection as CSVConnection).path
+			else
+					path = '.'
+
 			if (!FileUtils.ExistsFile(path, true))
 				throw new ExceptionGETL("Path \"$path\" not found!")
 
-			def csvCon = new CSVConnection(path: path)
+			def csvCon = (source?.connection != null)?(source.connection.cloneConnection() as CSVConnection):new CSVConnection()
+			csvCon.path = path
+			csvCon.extension = null
 
 			def name = FileUtils.FileName(filePath)
 			def maskPath = new Path(mask: name)
@@ -395,7 +407,10 @@ class TableDataset extends JDBCDataset {
 					}
 				}
 
-				def csv = new CSVDataset(connection: csvCon, schemaFileName: schemaFile)
+				def csv = (source != null)?(source.cloneDataset() as CSVDataset):new CSVDataset()
+				csv.connection = csvCon
+				csv.schemaFileName = schemaFile
+				csv.extension = null
 				csv.loadDatasetMetadata()
 				csvFields = csv.field
 				if (csvFields.isEmpty())
