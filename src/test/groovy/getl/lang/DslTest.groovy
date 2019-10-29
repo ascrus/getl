@@ -399,9 +399,16 @@ ORDER BY t1.id'''
         Getl.Dsl(this) {
             clearGroupFilter()
 
-            def csv = csvTempWithDataset(h2Table('getl.testdsl.h2:table1')) {
-                fileName = 'file.split'
+            def con = csvConnection('#csv', true) {
+                fieldDelimiter = '~'
+                path = csvTempConnection().path
                 extension = 'csv'
+                autoSchema = true
+            }
+
+            def csv = csvWithDataset('#csv', h2Table('getl.testdsl.h2:table1')) {
+                useConnection con
+                fileName = 'file.split'
 
                 writeOpts {
                     def count = 0
@@ -424,19 +431,6 @@ ORDER BY t1.id'''
 
                 assertEquals(0, countRow())
 
-                bulkLoadCsv {
-                    files = "${(csv.connection as CSVConnection).path}/file.split.{num}.csv"
-                    inheritFields = true
-                }
-
-                assertEquals(this.table1_rows, countRow())
-            }
-
-            h2Table('getl.testdsl.h2:table1') {
-                truncate()
-
-                assertEquals(0, countRow())
-
                 bulkLoadCsv(csv) {
                     files = "file.split.{num}.csv"
                     schemaFileName = 'file.split.csv.schema'
@@ -449,6 +443,58 @@ ORDER BY t1.id'''
             files {
                 rootPath = (csv.connection as CSVConnection).path
                 list = buildListFiles('file.split.{num}.*')
+            }
+            assertEquals(0, list.countRow())
+
+            assertEquals(this.table1_rows, h2Table('getl.testdsl.h2:table1').countRow())
+
+            unregisterConnection('#*')
+            unregisterDataset('#*')
+        }
+    }
+
+    @Test
+    void test02_13BulkLoadWithTemp() {
+        Getl.Dsl(this) {
+            clearGroupFilter()
+
+            def csv = csvTempWithDataset(h2Table('getl.testdsl.h2:table1')) {
+                fileName = 'file.temp.split'
+                autoSchema = false
+
+                writeOpts {
+                    def count = 0
+                    splitFile { count++; (count.mod(300) == 0) }
+                }
+            }
+
+            copyRows(h2Table('getl.testdsl.h2:table1'), csv)
+            assertEquals(4, csv.countWritePortions)
+
+            TableDataset list
+            files {
+                rootPath = (csv.connection as CSVConnection).path
+                list = buildListFiles('file.temp.split.{num}.*')
+            }
+            assertEquals(4, list.countRow())
+
+            h2Table('getl.testdsl.h2:table1') {
+                truncate()
+
+                assertEquals(0, countRow())
+
+                bulkLoadCsv {
+                    files = "${(csv.connection as CSVConnection).path}/file.temp.split.{num}.csv"
+                    inheritFields = true
+                    removeFile = true
+                }
+
+                assertEquals(this.table1_rows, countRow())
+            }
+
+            files {
+                rootPath = (csv.connection as CSVConnection).path
+                list = buildListFiles('file.temp.split.{num}.*')
             }
             assertEquals(0, list.countRow())
 
@@ -750,7 +796,7 @@ ORDER BY t1.id'''
                 }
             }
             finally {
-                FileUtils.DeleteFolder(tempDir, true)
+                FileUtils.DeleteFolder(TFS.systemPath + '/dsl', true)
             }
         }
     }

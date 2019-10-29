@@ -88,6 +88,7 @@ class Getl extends Script {
      * @param args use runClass and vars
      */
     static void Main(def args) {
+        Config.configClassManager = new ConfigSlurper()
         def job = new Job() {
             @Override
             void process() {
@@ -2821,14 +2822,14 @@ class Getl extends Script {
     CSVDataset csvWithDataset(String name, Dataset sourceDataset,
                               @DelegatesTo(CSVDataset)
                               @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl = null) {
-        csvWithDataset(name, sourceDataset, false, cl)
+        csvWithDataset(name, sourceDataset, true, cl)
     }
 
     /** CSV file with exists dataset */
     CSVDataset csvWithDataset(Dataset sourceDataset,
                               @DelegatesTo(CSVDataset)
                               @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl = null) {
-        csvWithDataset(null, sourceDataset, false, cl)
+        csvWithDataset(null, sourceDataset, true, cl)
     }
 
     /** Excel connection */

@@ -25,6 +25,7 @@
 package getl.config
 
 import getl.exception.ExceptionGETL
+import getl.proc.Job
 import getl.utils.*
 
 /**
@@ -35,6 +36,8 @@ import getl.utils.*
 class ConfigSlurper extends ConfigManager {
 	@Override
 	void init(Map<String, Object> initParams) {
+		if (Job.jobArgs.environment != null) environment = Job.jobArgs.environment
+
 		if (initParams?.config == null) return
 		def config = initParams.config as Map<String, Object>
 		if (config.path != null) {

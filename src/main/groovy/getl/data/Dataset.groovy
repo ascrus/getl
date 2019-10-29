@@ -622,6 +622,7 @@ class Dataset {
 		
 		CSVDataset source = procParams.source
 		if (source == null) throw new ExceptionGETL("Required parameter \"source\"")
+		validCsvTempFile(source)
 		if (BoolUtils.IsValue(procParams.inheritFields, false)) {
 			source.setField(field)
 		}
@@ -1114,38 +1115,55 @@ class Dataset {
 
 		return lookup(parent.params)
 	}
-	
+
 	/**
 	 * Load fields structure from metadata JSON file
 	 */
-	void loadDatasetMetadataFromJSON (Reader reader, boolean useParams = true) {
-		def b = new JsonSlurper()
-		def l = null
+	void loadDatasetMetadataFromJSON(Reader reader) {
 		try {
-			l = b.parse(reader)
+			setField(LoadDatasetMetadataFromJSON(reader))
+		}
+		catch (ExceptionGETL e) {
+			throw e
 		}
 		catch (Exception e) {
 			Logs.Severe("Error reading schema file for dataset \"${objectName}\", error: ${e.message}")
 			throw e
 		}
+		manualSchema = true
+	}
+	
+	/** Load fields structure from metadata JSON file */
+	static List<Field> LoadDatasetMetadataFromJSON(Reader reader) {
+		def b = new JsonSlurper()
+		def l = null
+		try {
+			l = b.parse(reader)
+		}
 		finally {
 			reader.close()
 		}
 
-		/**
-		if (useParams && (l as Map).params != null) {
-			def p = MapUtils.Lazy2HashMap((l as Map).params as Map)
-			MapUtils.MergeMap(params, p, true, false)
-		}
-		*/
-
 		List<Field> fl = GenerationUtils.Map2Fields(l as Map)
 		if (fl == null || fl.isEmpty()) throw new ExceptionGETL("Fields not found in json schema")
 		
-		setField(fl)
-		manualSchema = true
+		return fl
 	}
-	
+
+	/** Load fields structure from metadata JSON file */
+	static List<Field> LoadDatasetMetadata(String fileName) {
+		try {
+			LoadDatasetMetadataFromJSON(new File(fileName).newReader("UTF-8"))
+		}
+		catch (ExceptionGETL e) {
+			throw e
+		}
+		catch (Exception e) {
+			Logs.Severe("Error reading schema file from file \"$fileName\", error: ${e.message}")
+			throw e
+		}
+	}
+
 	/**
 	 * Full file schema name with path
 	 */
@@ -1186,11 +1204,13 @@ class Dataset {
 		try {
 			loadDatasetMetadataFromJSON(new File(fn).newReader("UTF-8"))
 		}
-		catch (Exception e) {
-			Logs.Severe("Error read \"$fn\" schema file for \"$objectFullName\"")
+		catch (ExceptionGETL e) {
 			throw e
 		}
-		manualSchema = true
+		catch (Exception e) {
+			Logs.Severe("Error reading schema file for dataset \"${objectName}\" from file \"$fn\", error: ${e.message}")
+			throw e
+		}
 	}
 	
 	/**
@@ -1302,4 +1322,10 @@ class Dataset {
 	 * @param csvFile CSV dataset
 	 */
 	void prepareCsvTempFile(CSVDataset csvFile) { }
+
+	/**
+	 * Check CSV file settings for bulk loading
+	 * @param csvFile CSV dataset
+	 */
+	void validCsvTempFile(CSVDataset csvFile) { }
 }

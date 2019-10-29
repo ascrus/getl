@@ -64,6 +64,12 @@ class H2Table extends TableDataset {
     }
 
     @Override
+    void validCsvTempFile(CSVDataset csvFile) {
+        if (csvFile.header)
+            throw new ExceptionGETL('It is not allowed to use the header in the file for bulk load!')
+    }
+
+    @Override
     protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
                                               Map<String, Object> opts) {
         return new H2CreateSpec(ownerObject, thisObject, useExternalParams, opts)

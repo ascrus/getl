@@ -77,7 +77,8 @@ class TFS extends CSVConnection {
 		if (params.fieldDelimiter == null) fieldDelimiter = "|"
 		if (params.rowDelimiter == null) rowDelimiter = "\n"
 		if (params.autoSchema == null) autoSchema = true
-		
+		if (params.extenstion == null) extension = 'csv'
+
 		if (params.deleteOnExit == null) params.deleteOnExit = true
 		setPath((params.path as String)?:systemPath)
 	}
@@ -136,23 +137,13 @@ class TFS extends CSVConnection {
 	 * @param validExists - object required is exists 
 	 * @return
 	 */
-	static TFSDataset dataset(TFS connection, String name, boolean validExists) {
+	static TFSDataset dataset(TFS connection, String name, boolean validExists = false) {
 		TFSDataset ds = new TFSDataset(connection: connection, fileName: name)
 		if (validExists && !ds.existsFile()) throw new ExceptionGETL("Temporary file \"${name}\" not exists")
 		
-		ds
+		return ds
 	}
 
-	/**
-	 * Create new temporary named dataset object
-	 * @param connection - TFS connection
-	 * @param name - name of object
-	 * @return
-	 */
-	static TFSDataset dataset(TFS connection, String name) {
-		dataset(connection, name, false)
-	}
-	
 	/**
 	 * Create new temporary unnamed dataset object
 	 * @param connection - TFS connection

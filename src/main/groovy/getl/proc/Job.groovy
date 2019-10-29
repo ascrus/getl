@@ -56,10 +56,10 @@ abstract class Job {
 		}
 
 		// Set job parameters from arguments
-		Config.Init(m)
 		jobArgs.clear()
 		jobArgs.putAll(MapUtils.Copy(m, ['stdout', 'stderr', 'stdcodepage']))
 		if (jobArgs.vars == null) jobArgs.vars = [:]
+		Config.Init(m)
 		jobVarsToConfig()
 	}
 

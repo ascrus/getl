@@ -117,6 +117,18 @@ class VerticaTable extends TableDataset {
         //csvTempFile.isGzFile = true
     }
 
+    @Override
+    void validCsvTempFile(CSVDataset csvFile) {
+        if (!csvFile.escaped)
+            throw new ExceptionGETL('The CSV file must be written in escape mode for bulk load!')
+
+        if (!(csvFile.codePage.toLowerCase() in ['utf-8', 'utf8']))
+            throw new ExceptionGETL('The file must be encoded in 8 for batch download!')
+
+        if (csvFile.fieldDelimiter.length() > 1)
+            throw new ExceptionGETL('The field separator must have only one character for bulk load!')
+    }
+
     /**
      * Load specified csv files to Vertica table
      * @param source File to load

@@ -373,8 +373,28 @@ class TableDataset extends JDBCDataset {
 
 		if (!(files instanceof List)) files = [files]
 
+		List<Field> csvFields
+		def schemaFile = parent.schemaFileName
+		if (schemaFile == null && source?.schemaFileName != null && source?.autoSchema) schemaFile = source.schemaFileName
+		if (schemaFile != null && !parent.inheritFields) {
+			if (!FileUtils.ExistsFile(schemaFile)) {
+				if (FileUtils.RelativePathFromFile(schemaFile) == '.' && (source?.connection as CSVConnection).path != null) {
+					def schemaFileWithPath = "${(source?.connection as CSVConnection).path}/$schemaFile"
+					if (!FileUtils.ExistsFile(schemaFileWithPath))
+						throw new ExceptionGETL("Schema file \"$schemaFileName\" not found!")
+					schemaFile = schemaFileWithPath
+				}
+				else {
+					throw new ExceptionGETL("Schema file \"$schemaFileName\" not found!")
+				}
+			}
+
+			csvFields = CSVDataset.LoadDatasetMetadata(schemaFile)
+			if (csvFields.isEmpty())
+				throw new ExceptionGETL("Fields description not found for schema file \"${parent.schemaFileName}\"!")
+		}
+
 		def procFiles = [] as List<CSVDataset>
-		def schemaFiles = [] as List<CSVDataset>
 		(files as List<String>).each { filePath ->
 			def path = FileUtils.PathFromFile(filePath)
 			if (path == null)
@@ -393,40 +413,17 @@ class TableDataset extends JDBCDataset {
 			def name = FileUtils.FileName(filePath)
 			def maskPath = new Path(mask: name)
 
-			def schemaFile = parent.schemaFileName
-			List<Field> csvFields
-			if (schemaFile != null) {
-				if (!FileUtils.ExistsFile(schemaFile)) {
-					if (FileUtils.RelativePathFromFile(schemaFile) == '.') {
-						schemaFile = "$path/$schemaFile"
-						if (!FileUtils.ExistsFile(schemaFile))
-							throw new ExceptionGETL("Schema file \"${parent.schemaFileName}\" not found!")
-					}
-					else {
-						throw new ExceptionGETL("Schema file \"${parent.schemaFileName}\" not found!")
-					}
-				}
-
-				def csv = (source != null)?(source.cloneDataset() as CSVDataset):new CSVDataset()
-				csv.connection = csvCon
-				csv.schemaFileName = schemaFile
-				csv.extension = null
-				csv.loadDatasetMetadata()
-				csvFields = csv.field
-				if (csvFields.isEmpty())
-					throw new ExceptionGETL("Fields description not found for schema file \"${parent.schemaFileName}\"!")
-
-				schemaFiles << schemaFile
-			}
-
 			def fm = new FileManager()
 			fm.with {
 				rootPath = path
 				def list = buildListFiles(maskPath)
 				list.eachRow {
-					def csvFile = new CSVDataset(connection: csvCon, fileName: it.filename)
+					def csvFile = (source != null)?(source.cloneDataset() as CSVDataset):new CSVDataset()
+					csvFile.connection = csvCon
+					csvFile.fileName = it.filename
+					csvFile.extension = null
 					if (csvFields != null) csvFile.field = csvFields
-					prepareCsvTempFile(csvFile)
+					if (source == null) prepareCsvTempFile(csvFile)
 					procFiles << csvFile
 				}
 			}
@@ -445,14 +442,12 @@ class TableDataset extends JDBCDataset {
 				getl.finishProcess(ptf, updateRows)
 		}
 
-		if (parent.moveFileTo != null || parent.removeFile) {
-			schemaFiles.each { file ->
-				if (parent.moveFileTo != null) {
-					FileUtils.MoveTo(file, parent.moveFileTo)
-				}
-				else if (parent.removeFile) {
-					FileUtils.DeleteFile(file)
-				}
+		if (schemaFile != null) {
+			if (parent.moveFileTo != null) {
+				FileUtils.MoveTo(schemaFile, parent.moveFileTo)
+			}
+			else if (parent.removeFile) {
+				FileUtils.DeleteFile(schemaFile)
 			}
 		}
 
