@@ -22,14 +22,16 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.csv
+package getl.csv.proc
 
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 import org.supercsv.cellprocessor.CellProcessorAdaptor
 import org.supercsv.exception.SuperCsvCellProcessorException
 import org.supercsv.util.CsvContext
 import getl.utils.*
 
+@InheritConstructors
 class CSVFmtBlob extends CellProcessorAdaptor {
 	@CompileStatic
 	@Override
@@ -41,7 +43,7 @@ class CSVFmtBlob extends CellProcessorAdaptor {
 			throw new SuperCsvCellProcessorException((b.class), value, context, this)
 		}
 		
-		String result = /*'0x' + */StringUtils.RawToHex((byte[])value)
+		final String result = StringUtils.RawToHex((byte[])value)
 		return next.execute(result, context)
 	}
 

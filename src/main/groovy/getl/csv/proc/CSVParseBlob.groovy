@@ -22,39 +22,27 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.csv
+package getl.csv.proc
 
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
-
-import org.supercsv.cellprocessor.*
-import org.supercsv.cellprocessor.ift.*
-import org.supercsv.util.*
-
-import getl.utils.StringUtils
+import org.supercsv.cellprocessor.CellProcessorAdaptor
+import org.supercsv.exception.SuperCsvCellProcessorException
+import org.supercsv.util.CsvContext
+import getl.utils.*
 
 @InheritConstructors
-class CSVConvertToNullProcessor extends CellProcessorAdaptor 
-						implements BoolCellProcessor, DateCellProcessor, DoubleCellProcessor, 
-									LongCellProcessor, StringCellProcessor {
-	
-	private String nullValue
-
-    CSVConvertToNullProcessor() {
-		super()
-	}
-
-    CSVConvertToNullProcessor(String nullValue, CellProcessor next) {
-		super(next)
-		this.nullValue = nullValue
-	}
-
+class CSVParseBlob extends CellProcessorAdaptor {
 	@CompileStatic
 	@Override
-    <T> T execute(Object value, CsvContext context) {
-		if (nullValue != null && value != null && value == nullValue) value = null
+    <T> T execute(final Object value, final CsvContext context) {
+		validateInputNotNull(value, context)
 		
-		next.execute(value, context)
-	}
+		if (!(value instanceof String)) {
+			throw new SuperCsvCellProcessorException(String.class, value, context, this)
+		}
 
+		final def result = StringUtils.HexToRaw((String)value)
+		return next.execute(result, context)
+	}
 }

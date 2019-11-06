@@ -24,6 +24,15 @@
 
 package getl.csv
 
+import getl.csv.proc.CSVConvertToNullProcessor
+import getl.csv.proc.CSVDefaultFileEncoder
+import getl.csv.proc.CSVEscapeTokenizer
+import getl.csv.proc.CSVFmtBlob
+import getl.csv.proc.CSVFmtClob
+import getl.csv.proc.CSVFmtDate
+import getl.csv.proc.CSVFmtEscapeString
+import getl.csv.proc.CSVParseBlob
+import getl.csv.proc.CSVParseEscapeString
 import groovy.transform.InheritConstructors
 
 import java.text.DecimalFormat
@@ -55,10 +64,10 @@ class CSVDriver extends FileDriver {
 	CSVDriver () {
 		super()
 		methodParams.register('eachRow', ['isValid', 'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'isSplit', 'readAsText', 
-											'escaped', 'processError', 'filter', 'nullAsValue', 'escapeProcessLineChar'])
+											'escaped', 'processError', 'filter', 'nullAsValue'])
 		methodParams.register('openWrite', ['batchSize', 'onSaveBatch', 'isValid', 'escaped', 'splitSize', 
 								'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'nullAsValue', 'decimalSeparator', 
-								'formatDate', 'formatTime', 'formatDateTime', 'onSplitFile', 'escapeProcessLineChar'])
+								'formatDate', 'formatTime', 'formatDateTime', 'onSplitFile'])
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -180,25 +189,21 @@ class CSVDriver extends FileDriver {
 		CellProcessor cp
 		
 		if (field.type == null || (field.type in [Field.Type.STRING, Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
-			if (BoolUtils.IsValue(field.trim)) {
-				cp = new Trim()
-			}
-			else {
-				cp = new Optional()
+			if (BoolUtils.IsValue(field.trim)) cp = new Trim()
+
+			if (isEscape && field.type == Field.Type.STRING) {
+				if (isWrite)
+					cp = (cp != null)?new CSVFmtEscapeString(cp):new CSVFmtEscapeString()
+				else
+					cp = (cp != null)?new CSVParseEscapeString(cp):new CSVParseEscapeString()
 			}
 		} else if (field.type == Field.Type.INTEGER) {
 			if (!isWrite) {
 				cp = new ParseInt()
 			}
-			else {
-				cp = new Optional()
-			}
 		} else if (field.type == Field.Type.BIGINT) {
 				if (!isWrite) {
 					cp = new ParseLong()
-				}
-				else {
-					cp = new Optional()
 				}
 		} else if (field.type == Field.Type.NUMERIC) {
 			def ds = ListUtils.NotNullValue([field.decimalSeparator, decimalSeparator]) as String
@@ -239,16 +244,10 @@ class CSVDriver extends FileDriver {
 					DecimalFormat df = new DecimalFormat(f, dfs)
 					cp = new FmtNumber(df)
 				}
-				else {
-					cp = new Optional()
-				}
 			}
 		} else if (field.type == Field.Type.DOUBLE) {
 			if (!isWrite) {
 				cp = new ParseDouble()
-			}
-			else {
-				cp = new Optional()
 			}
 		} else if (field.type == Field.Type.BOOLEAN) {
 			String[] v = (field.format == null)?['1', '0']:field.format.toLowerCase().split('[|]')
@@ -261,7 +260,7 @@ class CSVDriver extends FileDriver {
 			else {
 				cp = new FmtBool(v[0], v[1])
 			}
-		} else if (field.type in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME]) {
+		} else if (field.type in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE]) {
 			String df = null
 			switch (field.type) {
 				case Field.Type.DATE:
@@ -270,7 +269,7 @@ class CSVDriver extends FileDriver {
 				case Field.Type.TIME:
 					df = ListUtils.NotNullValue([field.format, formatTime, 'HH:mm:ss'])
 					break
-				case Field.Type.DATETIME:
+				case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 					df = ListUtils.NotNullValue([field.format, formatDateTime, 'yyyy-MM-dd HH:mm:ss'])
 					break
 			}
@@ -300,42 +299,49 @@ class CSVDriver extends FileDriver {
 				cp = new CSVFmtBlob()
 			} 
 		} else if (field.type == Field.Type.TEXT) {
-			if (!isWrite) {
-				cp = new CSVParseClob()
-			}
-			else {
+			if (isWrite) {
 				cp = new CSVFmtClob()
+			}
+
+			if (isEscape) {
+				if (isWrite)
+					cp = (cp != null)?new CSVFmtEscapeString(cp):new CSVFmtEscapeString()
+				else
+					cp = (cp != null)?new CSVParseEscapeString(cp):new CSVParseEscapeString()
 			}
 		} else {
 			throw new ExceptionGETL("Type ${field.type} not supported")
 		}
 
-		if (field.isKey != null && field.isKey && isValid) cp = new UniqueHashCode(cp)
-		if (field.isNull != null && !field.isNull && isValid) cp = new NotNull(cp) else cp = new Optional(cp)
+		if (BoolUtils.IsValue(field.isKey) && isValid)
+			cp = (cp != null)?new UniqueHashCode(cp):new UniqueHashCode()
 
-		if (nullAsValue != null) {
+		if (!BoolUtils.IsValue(field.isNull, true) && isValid)
+			cp = (cp != null)?new NotNull(cp):new NotNull()
+		else
+			cp = (cp != null)?new Optional(cp):new Optional()
+
+		if (nullAsValue != null && BoolUtils.IsValue(field.isNull, true)) {
 			if (isWrite)
 				cp = new ConvertNullTo(nullAsValue, cp)
 			else
 				cp = new CSVConvertToNullProcessor(nullAsValue, cp)
 		}
 
-		/*		
-		CellProcessor c = cp
+		/*CellProcessor c = cp
 		print "${field.name}: "
 		while (c != CellProcessorAdaptor.NullObjectPattern.INSTANCE) {
 			print c.getClass().name + ";"
 			c = c.next
 		}
-		println ""
-		*/
-		
-		cp
+		println ""*/
+
+		return cp
 	}
 	
 	static CellProcessor[] fields2cellProcessor(Map fParams) {
 		CSVDataset dataset = (CSVDataset)fParams.dataset
-		ArrayList<String> fields = (ArrayList<String>)fParams.filds
+		ArrayList<String> fields = (ArrayList<String>)fParams.fields
 		String[] header = (String[])fParams.header
 		Boolean isOptional = fParams.isOptional as Boolean
 		Boolean isWrite = fParams.isWrite as Boolean
@@ -396,13 +402,12 @@ class CSVDriver extends FileDriver {
 	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (code == null) throw new ExceptionGETL('Required process code')
 		
-		CSVDataset cds = (CSVDataset)dataset
+		def cds = dataset as CSVDataset
 		if (cds.fileName == null) throw new ExceptionGETL('Dataset required fileName')
 		
 		boolean escaped = BoolUtils.IsValue(params.escaped, cds.escaped)
 		boolean readAsText = BoolUtils.IsValue(params.readAsText)
 		boolean ignoreHeader = BoolUtils.IsValue([params.ignoreHeader, cds.ignoreHeader], true)
-		String escapeProcessLineChar = ListUtils.NotNullValue([params.escapeProcessLineChar, cds.escapeProcessLineChar])
 		Closure filter = (Closure)params."filter"
 
 		long countRec = 0
@@ -428,16 +433,17 @@ class CSVDriver extends FileDriver {
 		Reader bufReader = getFileReader(dataset, params, (Integer)files[portion].number)
 		
 		Closure processError = (params.processError != null)?params.processError as Closure:null
-		boolean isValid = BoolUtils.IsValue(params.isValid, false)
+		boolean isValid = BoolUtils.IsValue([params.isValid, cds.constraintsCheck], false)
 		CsvPreference pref = new CsvPreference.Builder((char)p.quoteStr, (int)p.fieldDelimiter, (String)p.rowDelimiter).useQuoteMode((QuoteMode)p.qMode).build()
 		ICsvMapReader reader
-		if (escaped) { 
-			if (!readAsText) {
-				reader = new CSVEscapeMapReader(new CSVEscapeTokenizer(bufReader, pref), pref, escapeProcessLineChar)
+		if (escaped) {
+			reader = new CsvMapReader(new CSVEscapeTokenizer(bufReader, pref, p.isHeader), pref)
+			/*if (!readAsText) {
+				reader = new CSVEscapeMapReader(new CSVEscapeTokenizer(bufReader, pref), pref)
 			}
 			else {
 				reader = new CsvMapReader(new CSVEscapeTokenizer(bufReader, pref), pref)
-			}
+			}*/
 		}
 		else {
 			reader = new CsvMapReader(bufReader, pref)
@@ -467,7 +473,7 @@ class CSVDriver extends FileDriver {
 				listFields = (ArrayList<String>)prepareCode.call(filefields)
 			}
 			
-			CellProcessor[] cp = fields2cellProcessor([dataset: dataset, fields: listFields, header: header, isOptional: readAsText, isWrite: false, isValid: isValid, isEscape: false, nullAsValue: p.nullAsValue])
+			CellProcessor[] cp = fields2cellProcessor([dataset: dataset, fields: listFields, header: header, isOptional: readAsText, isWrite: false, isValid: isValid, isEscape: escaped, nullAsValue: p.nullAsValue])
 			
 			long count = (params.limit != null)?(long)params.limit:0
 			long cur = 0
@@ -492,12 +498,13 @@ class CSVDriver extends FileDriver {
 							bufReader = getFileReader(dataset, params, (Integer)files[portion].number)
 							
 							if (escaped) {
-								if (!readAsText) {
+								reader = new CsvMapReader(new CSVEscapeTokenizer(bufReader, pref, p.isHeader), pref)
+								/*if (!readAsText) {
 									reader = new CSVEscapeMapReader(new CSVEscapeTokenizer(bufReader, pref), pref)
 								}
 								else {
 									reader = new CsvMapReader(new CSVEscapeTokenizer(bufReader, pref), pref)
-								}
+								}*/
 							}
 							else {
 								reader = new CsvMapReader(bufReader, pref)
@@ -541,7 +548,7 @@ class CSVDriver extends FileDriver {
 		String quote
 		String nullAsValue
 		boolean escaped
-		String escapeProcessLineChar
+		List<Integer> escapedColumns
 		Long splitSize
 		boolean formatOutput = true
 		long batchSize = 1000
@@ -560,7 +567,7 @@ class CSVDriver extends FileDriver {
 	
 	@Override
 	void openWrite (Dataset dataset, Map params, Closure prepareCode) {
-		CSVDataset csv_ds = dataset as CSVDataset
+		def csv_ds = dataset as CSVDataset
 		if (csv_ds.fileName == null) throw new ExceptionGETL('Dataset required fileName')
 		
 		WriterParams wp = new WriterParams()
@@ -569,14 +576,12 @@ class CSVDriver extends FileDriver {
 
 		ReadParams p = readParamDataset(csv_ds, params)
 		boolean isAppend = p.params.isAppend
-		boolean isValid = (params.isValid != null)?params.isValid:false
-//		boolean bulkFile = (params.bulkFile != null)?params.bulkFile:false
+		boolean isValid = BoolUtils.IsValue([params.isValid, csv_ds.constraintsCheck], false)
 		boolean escaped = BoolUtils.IsValue(params.escaped, csv_ds.escaped)
 		String formatDate = ListUtils.NotNullValue([params.formatDate, csv_ds.formatDate])
 		String formatTime = ListUtils.NotNullValue([params.formatTime, csv_ds.formatTime])
 		String formatDateTime = ListUtils.NotNullValue([params.formatDateTime, csv_ds.formatDateTime])
-		String escapeProcessLineChar = ListUtils.NotNullValue([params.escapeProcessLineChar, csv_ds.escapeProcessLineChar])
-		
+
 		if (params.batchSize != null) wp.batchSize = params.batchSize as Long
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch as Closure
 		if (params.onSplitFile != null) wp.onSplitFile = params.onSplitFile as Closure
@@ -601,8 +606,18 @@ class CSVDriver extends FileDriver {
 		wp.isHeader = p.isHeader
 		wp.quote = p.quote
 		wp.nullAsValue = p.nullAsValue
-		wp.escaped = escaped
-		wp.escapeProcessLineChar = escapeProcessLineChar
+
+		if (escaped) {
+			wp.escapedColumns = new ArrayList<Integer>()
+			def num = 0
+			header.each { fieldName ->
+				num++
+				if (csv_ds.fieldByName(fieldName).type in [Field.Type.STRING, Field.Type.TEXT])
+					wp.escapedColumns << num
+			}
+			wp.escaped = !(wp.escapedColumns.isEmpty())
+		}
+
 		wp.splitSize = params.splitSize as Long
 		if (wp.splitSize != null || wp.onSplitFile != null) wp.portion = 1
 

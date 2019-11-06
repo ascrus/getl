@@ -906,7 +906,7 @@ class FileUtils {
 	static List<String> Path2List(String path) {
 		if (path == null) throw new ExceptionGETL('Path parameter is required!')
 		def absolutePath = new File(path).absolutePath
-		return absolutePath.split('[' + StringUtils.EscapeJavaWithoutUTF(File.separator) + ']').toList() as List<String>
+		return absolutePath.split('[' + StringUtils.EscapeJava(File.separator) + ']').toList() as List<String>
 	}
 
 	/** Find parent directory by nearest specified elements in path */

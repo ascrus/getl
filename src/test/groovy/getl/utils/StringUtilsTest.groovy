@@ -1,5 +1,9 @@
 package getl.utils
 
+import getl.proc.Executor
+import getl.stat.ProcessTime
+import groovy.json.StringEscapeUtils
+import groovy.transform.CompileStatic
 import org.junit.Test
 
 /**
@@ -90,7 +94,12 @@ class StringUtilsTest extends getl.test.GetlTest {
 
     @Test
     void testEscapeJavaWithoutUTF() {
-        assertEquals("begin\\n\\'text\\'\\t\\\"test\\\"\\nend", StringUtils.EscapeJavaWithoutUTF('begin\n\'text\'\t"test"\nend'))
+        assertEquals("begin\\n\\'text\\'\t\\\"test\\\"\\nend", StringUtils.EscapeJavaWithoutUTF('begin\n\'text\'\t"test"\nend'))
+    }
+
+    @Test
+    void testUnescapeJavaWithoutUTF() {
+        assertEquals('begin\n\'text\'\t"test"\nend', StringUtils.UnescapeJavaWithoutUTF("begin\\n\\'text\\'\t\\\"test\\\"\\nend"))
     }
 
     @Test
@@ -128,5 +137,59 @@ class StringUtilsTest extends getl.test.GetlTest {
     void testExtractParentFromChild() {
         assertEquals('\\123-456.~$%789\\_\\123-456',
                 StringUtils.ExtractParentFromChild('\\123-456.~$%789\\_\\123-456.~$%789\\_', '.~$%789\\_'))
+    }
+
+    @Test
+    @CompileStatic
+    void testEscapePerfomance() {
+        def keys = ['\\': '\\\\', '"': '\\"', '\'':'\\\'' ,'\n': '\\n']
+        def str = '123\\456"789\'\n'
+        assertEquals('123\\\\456\\"789\\\'\\n',
+                StringUtils.ReplaceMany(str, keys))
+
+        assertEquals('\\n',
+                StringUtils.ReplaceMany('\n', keys))
+
+        assertEquals('\\\\\\n\\"',
+                StringUtils.ReplaceMany('\\\n"', keys))
+
+        def perfCount = 100000
+        str = StringUtils.Replicate(str, 10)
+
+        def e = new Executor()
+        e.useList((1..10).toList())
+        def pt1 = new ProcessTime(name: "Perfomance EscapeJava")
+        e.run {
+            (1..perfCount).each {
+                def r = StringEscapeUtils.escapeJavaScript(str)
+            }
+        }
+        pt1.finish()
+
+        def pt2 = new ProcessTime(name: "Perfomance EscapeJavaWithoutUtf")
+        e.run {
+            (1..perfCount).each {
+                def r = StringUtils.EscapeJavaWithoutUTF(str)
+            }
+        }
+        pt2.finish()
+
+        def resStr = StringUtils.EscapeJavaWithoutUTF(str)
+
+        def pt3 = new ProcessTime(name: "Perfomance UnescapeJava")
+        e.run {
+            (1..perfCount).each {
+                def r = StringUtils.UnescapeJava(resStr)
+            }
+        }
+        pt3.finish()
+
+        def pt4 = new ProcessTime(name: "Perfomance UnescapeJavaWithoutUtf")
+        e.run {
+            (1..perfCount).each {
+                def r = StringUtils.UnescapeJavaWithoutUTF(resStr)
+            }
+        }
+        pt4.finish()
     }
 }

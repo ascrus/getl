@@ -139,6 +139,13 @@ class DateUtils {
 		return result
 	}
 
+	/**
+	 * Parse string to date with format
+	 * @param sdf
+	 * @param value
+	 * @param ignoreError
+	 * @return
+	 */
 	static Date ParseDate(SimpleDateFormat sdf, def value, boolean ignoreError = true) {
 		Date result = null
 		if (value == null) return result
@@ -230,6 +237,7 @@ class DateUtils {
 		return result
 	}
 
+	/** Convert type timestamp to date */
 	static Date SQLDate2Date (Timestamp value) {
 		return value
 	}
@@ -248,6 +256,7 @@ class DateUtils {
 		return new Date()
 	}
 
+	/** Convert date to original time zone */
 	static Date ToOrigTimeZoneDate(Date date) {
 		if (date != null) {
 			if (offsTimeZone != 0) {
@@ -260,19 +269,18 @@ class DateUtils {
 	
 	/**
 	 * Current date without time
-	 * @return
 	 */
 	static Date CurrentDate() {
 		return DateUtilExtensions.clearTime(Now())
 	}
 
+	/** Current date without time as string */
 	static String CurrentDateStr() {
 		return FormatDate('yyyyMMdd', CurrentDate())
 	}
 	
 	/**
 	 * Current datetime
-	 * @return
 	 */
 	static String CurrentTime() {
 		return DateUtilExtensions.getTimeString(Now())

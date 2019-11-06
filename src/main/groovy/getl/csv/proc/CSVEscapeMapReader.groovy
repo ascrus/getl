@@ -22,7 +22,7 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.csv
+package getl.csv.proc
 
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
@@ -34,10 +34,13 @@ import getl.utils.StringUtils
 import java.sql.Clob
 import javax.sql.rowset.serial.SerialClob
 
+/**
+ * CSV map reader escaped string
+ * @author Alexsey Konstantinov
+ *
+ */
 @InheritConstructors
 class CSVEscapeMapReader extends CsvMapReader {
-	private String escapeProcessLineChar
-	
 	CSVEscapeMapReader (Reader reader, CsvPreference preferences) {
 		super(reader, preferences)
 	}
@@ -46,43 +49,23 @@ class CSVEscapeMapReader extends CsvMapReader {
 		super(tokenizer, preferences)
 	}
 	
-	CSVEscapeMapReader (ITokenizer tokenizer, CsvPreference preferences, String escapeProcessLineChar) {
-		super(tokenizer, preferences)
-		this.escapeProcessLineChar = escapeProcessLineChar
-	}
-	
 	@CompileStatic
 	@Override
-    Map<String, Object> read(String[] cols, CellProcessor[] proc) throws IOException {
+    Map<String, Object> read(final String[] cols, final CellProcessor[] proc) throws IOException {
 		Map<String, Object> res = super.read(cols, proc)
 		if (res == null) return res
-		if (escapeProcessLineChar == null) {
-			res.each { String key, value ->
-				if (value instanceof String) {
-					res.put(key, StringUtils.UnescapeJava((String)value))
-				}
-				else if (value instanceof Clob) {
-					Clob text = (Clob)value
-					String str = (text.getSubString(1, (int)text.length()))
-					str = StringUtils.UnescapeJava(str)
-					res.put(key, new SerialClob(str.chars))
-				}
+		res.each { String key, value ->
+			if (value instanceof String) {
+				res.put(key, StringUtils.UnescapeJava((String)value))
+			}
+			else if (value instanceof Clob) {
+				Clob text = (Clob)value
+				String str = (text.getSubString(1, (int)text.length()))
+				str = StringUtils.UnescapeJava(str)
+				res.put(key, new SerialClob(str.chars))
 			}
 		}
-		else {
-			res.each { String key, value ->
-				if (value instanceof String) {
-					res.put(key, StringUtils.UnescapeJavaWithProcLineChar((String)value, this.escapeProcessLineChar))
-				}
-				else if (value instanceof Clob) {
-					Clob text = (Clob)value
-					String str = (text.getSubString(1, (int)text.length()))
-					str = StringUtils.UnescapeJavaWithProcLineChar(str, this.escapeProcessLineChar)
-					res.put(key, new SerialClob(str.chars))
-				}
-			}
-		}
-		
+
 		return res
 	}
 }

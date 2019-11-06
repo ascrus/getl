@@ -22,32 +22,59 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.csv
+package getl.csv.proc
 
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 import org.supercsv.io.Tokenizer
 import org.supercsv.prefs.CsvPreference
+import java.util.regex.Pattern
 
 import getl.utils.StringUtils
+import getl.csv.CSVDriver
+import getl.csv.CSVDriver.WriterParams
 
+/**
+ * CSV tokenizer escape string
+ * @author Alexsey Konstantinov
+ *
+ */
 @InheritConstructors
 class CSVEscapeTokenizer extends Tokenizer {
-	CSVEscapeTokenizer (Reader reader, CsvPreference preferences) {
+	boolean header
+
+	CSVEscapeTokenizer (Reader reader, CsvPreference preferences, boolean useHeader) {
 		super(reader, preferences)
+		this.header = useHeader
+
+		def quoteChar = String.valueOf(preferences.quoteChar)
+		pattern2 = StringUtils.SearchPattern('\\' + quoteChar)
+		replace2 = quoteChar + quoteChar
 	}
+
+	static final Pattern pattern1 = StringUtils.SearchPattern('\\\\')
+	static final String replace1 = '\u0001'
+
+	Pattern pattern2
+	String replace2
+
+	static final Pattern pattern3 = StringUtils.SearchPattern('\u0001')
+	static final String replace3 = '\\\\'
 	
 	@CompileStatic
 	@Override
 	protected String readLine() throws IOException {
 		def res = super.readLine()
-		if (res != null) {
-			res = res.replace("\\\\", "\u0001")
-			res = res.replace('\\"', '""').replace("\\'", "''")
-			res = res.replace("\u0001", "\\\\")
+		if (res != null && (!header || lineNumber > 1)) {
+			def sb = new StringBuilder(res)
+			StringUtils.ReplaceAll(sb, pattern1, replace1)
+			StringUtils.ReplaceAll(sb, pattern2, replace2)
+			StringUtils.ReplaceAll(sb, pattern3, replace3)
+
+			res = sb.toString()
 		}
-		
+
 		return res
 	}
 }

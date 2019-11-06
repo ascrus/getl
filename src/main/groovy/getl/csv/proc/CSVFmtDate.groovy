@@ -22,8 +22,9 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.csv
+package getl.csv.proc
 
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 import java.text.SimpleDateFormat
@@ -80,6 +81,7 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 	 *             if value is null or is not a Date, or if dateFormat is not a valid date format
 	 */
 	@SuppressWarnings("unchecked")
+	@CompileStatic
     Object execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
 		
@@ -104,7 +106,7 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 			throw e
 		}
 		
-		String result = formatter.format((Date) value)
+		final String result = formatter.format((Date) value)
 		return next.execute(result, context)
 	}
 }

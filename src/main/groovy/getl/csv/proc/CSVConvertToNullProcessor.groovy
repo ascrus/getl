@@ -22,36 +22,39 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.csv
+package getl.csv.proc
 
 import groovy.transform.CompileStatic
-import org.supercsv.cellprocessor.CellProcessorAdaptor
-import org.supercsv.exception.SuperCsvCellProcessorException
-import org.supercsv.util.CsvContext
-import getl.utils.*
-import java.sql.Clob
+import groovy.transform.InheritConstructors
 
-class CSVFmtClob extends CellProcessorAdaptor {
+import org.supercsv.cellprocessor.*
+import org.supercsv.cellprocessor.ift.*
+import org.supercsv.util.*
+
+import getl.utils.StringUtils
+
+@InheritConstructors
+class CSVConvertToNullProcessor extends CellProcessorAdaptor 
+						implements BoolCellProcessor, DateCellProcessor, DoubleCellProcessor, 
+									LongCellProcessor, StringCellProcessor {
+	
+	private String nullValue
+
+    CSVConvertToNullProcessor() {
+		super()
+	}
+
+    CSVConvertToNullProcessor(String nullValue, CellProcessor next) {
+		super(next)
+		this.nullValue = nullValue
+	}
+
 	@CompileStatic
 	@Override
-    <T> T execute(final Object value, final CsvContext context) {
-		validateInputNotNull(value, context)
+    <T> T execute(Object value, final CsvContext context) {
+		if (nullValue != null && value != null && value == nullValue) value = null
 		
-		String result
-		if (value instanceof String) {
-			result = value
-		}
-		else if (value instanceof GString) {
-			result = value.toString()
-		}
-		else if (value instanceof Clob) {
-			Clob text = (Clob)value
-			result = (text.getSubString(1, (int)text.length()))
-		}
-		else {
-			throw new SuperCsvCellProcessorException((String).class, value, context, this)
-		}
-		
-		return next.execute(result, context)
+		next.execute(value, context)
 	}
+
 }

@@ -54,7 +54,7 @@ class OracleDriver extends JDBCDriver {
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB,
-				 Driver.Support.CLOB, Driver.Support.INDEX]
+				 Driver.Support.CLOB, Driver.Support.INDEX, Driver.Support.DATE, Driver.Support.TIMESTAMP_WITH_TIMEZONE]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -159,6 +159,12 @@ class OracleDriver extends JDBCDriver {
 		}
 		
 		if (field.typeName != null) {
+			if (field.typeName.matches("(?i)DATE")) {
+				field.type = Field.Type.DATE
+//				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.DATE).timestampValue().getTime())"
+				return
+			}
+
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)]") || 
 					field.typeName.matches("(?i)TIMESTAMP")) {
 				field.type = Field.Type.DATETIME
@@ -168,15 +174,15 @@ class OracleDriver extends JDBCDriver {
 			
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH TIME ZONE") ||
 					field.typeName.matches("(?i)TIMESTAMP WITH TIME ZONE")) {
-				field.type = Field.Type.DATETIME
-				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue(connection).getTime())"
+				field.type = Field.Type.TIMESTAMP_WITH_TIMEZONE
+				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMPTZ).timestampValue(connection).getTime())"
 				return
 			}
 			
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH LOCAL TIME ZONE") ||
 					field.typeName.matches("(?i)TIMESTAMP WITH LOCAL TIME ZONE")) {
-				field.type = Field.Type.DATETIME
-				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMP).timestampValue(connection, Calendar.getInstance()).getTime())"
+				field.type = Field.Type.TIMESTAMP_WITH_TIMEZONE
+				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMPLTZ).timestampValue(connection, Calendar.instance).getTime())"
 				return
 			}
 			

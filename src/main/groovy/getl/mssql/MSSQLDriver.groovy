@@ -59,7 +59,8 @@ class MSSQLDriver extends JDBCDriver {
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB,
-				 Driver.Support.INDEX, Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE,
+				 Driver.Support.INDEX, Driver.Support.UUID,
+				 Driver.Support.TIME, Driver.Support.DATE, Driver.Support.TIMESTAMP_WITH_TIMEZONE,
 				 Driver.Support.BOOLEAN, Driver.Support.MULTIDATABASE]
 	}
 
@@ -81,6 +82,7 @@ class MSSQLDriver extends JDBCDriver {
 		res.TEXT.name = 'text'
 		res.TEXT.useLength = JDBCDriver.sqlTypeUse.NEVER
 		res.DATETIME.name = 'datetime'
+		res.TIMESTAMP_WITH_TIMEZONE.name = 'datetimeoffset'
 		res.UUID.name = 'uniqueidentifier'
 
 		return res
@@ -118,6 +120,12 @@ class MSSQLDriver extends JDBCDriver {
 		super.prepareField(field)
 
 		if (field.typeName != null) {
+			if (field.typeName.matches("(?i)DATETIMEOFFSET")) {
+				field.type = Field.timestamp_with_timezoneFieldType
+				field.getMethod = '({field} as microsoft.sql.DateTimeOffset).timestamp'
+				return
+			}
+
 			if (field.typeName.matches("(?i)TEXT")) {
 				field.type = Field.Type.TEXT
 				field.dbType = java.sql.Types.CLOB
@@ -139,4 +147,7 @@ class MSSQLDriver extends JDBCDriver {
 
 	@Override
 	boolean textReadAsObject() { return false }
+
+	@Override
+	boolean timestampWithTimezoneConvertOnWrite() { return true }
 }

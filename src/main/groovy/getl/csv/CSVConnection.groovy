@@ -45,7 +45,7 @@ class CSVConnection extends FileConnection {
 
 		methodParams.register('Super', ['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped', 
 										'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime', 
-										'formatDateTime', 'ignoreHeader', 'escapeProcessLineChar', 'locale'])
+										'formatDateTime', 'ignoreHeader', 'locale', 'constraintsCheck'])
 		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation('Super', params?:[:])
 	}
 	
@@ -79,11 +79,6 @@ class CSVConnection extends FileConnection {
 	/** Required convert string to escape value */
     void setEscaped (boolean value) { params.escaped = value }
 	
-	/** Convert line feed to custom escape char */
-	String getEscapeProcessLineChar () { params.escapeProcessLineChar as String }
-	/** Convert line feed to custom escape char */
-    void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
-	
 	/** Convert NULL to value */
 	String getNullAsValue () { params.nullAsValue as String }
 	/** Convert NULL to value */
@@ -93,6 +88,11 @@ class CSVConnection extends FileConnection {
 	boolean getFormatOutput () { BoolUtils.IsValue(params.formatOutput, true) }
 	/** Required format values for output to file */
     void setFormatOutput (boolean value) { params.formatOutput = value }
+
+	/** Check constraints during reading and writing */
+	boolean getConstraintsCheck() { BoolUtils.IsValue(params.constraintsCheck, false) }
+	/** Check constraints during reading and writing */
+	void setConstraintsCheck(boolean value) { params.constraintsCheck = value }
 	
 	/** Mode of quote value */
 	QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, QuoteMode.NORMAL])  as QuoteMode }

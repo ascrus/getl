@@ -29,7 +29,7 @@ import  groovy.json.StringEscapeUtils
 import groovy.transform.CompileStatic
 
 import javax.xml.bind.DatatypeConverter
-import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 /**
  * String functions
@@ -168,6 +168,126 @@ class StringUtils {
 		return res
 	}
 
+	/** Escape sequence coding mapping */
+	public static final Map ESCAPEKEYS = ['\\': '\\\\', '"': '\\"', '\'': '\\\'', '\n': '\\n', '\r': '\\r']
+	/** Escape sequence coding pattern */
+	public static final Pattern ESCAPEPATTERN = SearchManyPattern(ESCAPEKEYS)
+
+	/** Escape sequence decoding mapping */
+	public static final Map UNESCAPEKEYS = ['\\\\': '\\', '\\"': '"', '\\\'': '\'', '\\n': '\n', '\\r':'\r']
+	/** Escape sequence decoding pattern */
+	public static final Pattern UNESCAPEPATTERN = SearchManyPattern(UNESCAPEKEYS)
+
+	/**
+	 * Generate a search pattern
+	 * @param map search keys map
+	 * @return search pattern
+	 */
+	static Pattern SearchManyPattern(final Map map) {
+		if (map == null) return null
+		def keys = map.keySet().toList() as List<String>
+		def list = new ArrayList(keys.size())
+		def i = 0
+		keys.each { key ->
+			list[i] = EscapeJava(key)
+			i++
+		}
+
+		final def pattern = "(?-s)(${list.join('|')})"
+		return Pattern.compile(pattern)
+	}
+
+	/**
+	 * Generate a search pattern
+	 * @param keys search keys list
+	 * @return search pattern
+	 */
+	static Pattern SearchManyPattern(final List keys) {
+		if (keys == null) return null
+		def list = new ArrayList(keys.size())
+		def i = 0
+		(keys as List<String>).each { key ->
+			list[i] = EscapeJava(key)
+			i++
+		}
+
+		final def pattern = "(?-s)(${list.join('|')})"
+		return Pattern.compile(pattern)
+	}
+
+	/**
+	 * Generate a search pattern
+	 * @param value search value
+	 * @return search pattern
+	 */
+	static Pattern SearchPattern(final String value) {
+		if (value == null) return null
+		final def pattern = "(?-s)(${EscapeJava(value)})"
+		return Pattern.compile(pattern)
+	}
+
+	/**
+	 * Replace values in a string with others
+	 * @param sb text buffer
+	 * @param pattern search pattern
+	 * @param replace replacement string
+	 */
+	static void ReplaceAll(StringBuilder sb, Pattern pattern, String replace){
+		def matcher = pattern.matcher(sb);
+
+		int startIndex = 0;
+		while( matcher.find(startIndex) ){
+			sb.replace(matcher.start(), matcher.end(), replace);
+			startIndex = matcher.start() + replace.length();
+		}
+	}
+
+	/**
+	 * Replace values in a string with others
+	 * @param value source string
+	 * @param replaceValues value map for replacement
+	 * @param pattern search replacement pattern (generated if not set)
+	 * @return modified text
+	 */
+	static String ReplaceMany(final String value, final Map replaceValues, Pattern pattern = null) {
+		if (value == null) return null
+		if (pattern == null) pattern = SearchManyPattern(replaceValues)
+		def matcher = pattern.matcher(value)
+		def sb = new StringBuilder()
+		int pos = 0
+		while (matcher.find()) {
+			sb.append(value, pos, matcher.start())
+			pos = matcher.end()
+			sb.append(replaceValues.get(matcher.group(1)))
+		}
+		sb.append(value, pos, value.length())
+
+		return sb.toString()
+	}
+
+	/**
+	 * Replace values in a string with others
+	 * @param value source string
+	 * @param replaceValues value map for replacement
+	 * @param pattern search replacement pattern (generated if not set)
+	 * @return modified text
+	 */
+	static StringBuilder ReplaceMany(final StringBuilder value, final Map replaceValues, Pattern pattern = null) {
+		if (value == null) return null
+		if (pattern == null) pattern = SearchManyPattern(replaceValues)
+		def matcher = pattern.matcher(value)
+		def sb = new StringBuilder()
+		int pos = 0
+		while (matcher.find()) {
+			sb.append(value, pos, matcher.start())
+			pos = matcher.end()
+			sb.append(replaceValues.get(matcher.group(1)))
+		}
+		sb.append(value, pos, value.length())
+
+		return sb
+	}
+
 	/**
 	 * Process java string and return escaped string	
 	 * @param str
@@ -189,25 +309,23 @@ class StringUtils {
 	}
 	
 	/**
-	 * Process escaped string and return java string with custom process feed line char
-	 * @param str
-	 * @param procLineChar
-	 * @return
-	 */
-	static String UnescapeJavaWithProcLineChar(String str, String procLineChar) {
-		if (str == null) return null
-		str = str.replace(procLineChar, '\n')
-		return StringEscapeUtils.unescapeJava(str)
-	}
-	
-	/**
 	 * Process escaped string and return java string without UTF-8 escaped
 	 * @param str
 	 * @return
 	 */
 	static String EscapeJavaWithoutUTF(String str) {
 		if (str == null) return null
-		return str.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\b', '\\b').replace('\t', '\\t').replace('\f', '\\f').replace("'", "\\'").replace('"', '\\"')
+		return ReplaceMany(str, ESCAPEKEYS, ESCAPEPATTERN)
+	}
+
+	/**
+	 * Process escaped string and return java string without UTF-8 escaped
+	 * @param str
+	 * @return
+	 */
+	static String UnescapeJavaWithoutUTF(String str) {
+		if (str == null) return null
+		return ReplaceMany(str, UNESCAPEKEYS, UNESCAPEPATTERN)
 	}
 	
 	/**

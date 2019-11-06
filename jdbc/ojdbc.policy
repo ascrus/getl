@@ -25,6 +25,7 @@
 grant codeBase "file:${oracle.jdbc.policy.JDBC_CODE_BASE}" {
 
   /* Always needed */
+  permission java.sql.SQLPermission "deregisterDriver", "";
   permission java.util.PropertyPermission "user.name", "read";
   permission java.util.PropertyPermission "oracle.jdbc.*", "read";
   permission java.util.PropertyPermission "oracle.net.*", "read";

@@ -72,9 +72,9 @@ class VerticaDriver extends JDBCDriver {
 	List<Driver.Support> supported() {
         return super.supported() +
 				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE,
-				 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.UUID,
-				 Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN,
-				 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST]
+                 Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.UUID,
+                 Driver.Support.TIME, Driver.Support.DATE, Driver.Support.TIMESTAMP_WITH_TIMEZONE, Driver.Support.BOOLEAN,
+                 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST]
     }
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -215,7 +215,7 @@ class VerticaDriver extends JDBCDriver {
 						else
 							if (formatTime != null) options << "$fieldName format '$formatTime'"
 						break
-					case Field.Type.DATETIME:
+					case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 						if (f.format != null && f.format != '')
 							options << "$fieldName format '${f.format}'"
 						else
@@ -329,6 +329,11 @@ class VerticaDriver extends JDBCDriver {
 		super.prepareField(field)
 
 		if (field.typeName != null) {
+			if (field.typeName.matches("(?i)TIMESTAMPTZ")) {
+				field.type = Field.Type.TIMESTAMP_WITH_TIMEZONE
+				return
+			}
+
 			if (field.typeName.matches("(?i)UUID")) {
 				field.type = Field.Type.UUID
 				field.dbType = java.sql.Types.VARCHAR

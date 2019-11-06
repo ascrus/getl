@@ -89,7 +89,6 @@ class JDBCDriver extends Driver {
 	
 	/**
 	 * Script for write array of bytes to serial blob object
-	 * @return
 	 */
 	String blobMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
@@ -123,15 +122,16 @@ class JDBCDriver extends Driver {
 
 	/**
 	 * Clob field return value as Clob interface
-	 * @return
 	 */
 	boolean textReadAsObject() { return true }
 
 	/**
 	 * UUID field return value as UUID interface
-	 * @return
 	 */
 	boolean uuidReadAsObject() { return false }
+
+	/** Convert time zone to UTC 0 for writing fields by timestamp_with_timezone type */
+	boolean timestampWithTimezoneConvertOnWrite() { return false }
 
 	/**
 	 * Java field type association
@@ -149,7 +149,8 @@ class JDBCDriver extends Driver {
 			TEXT: [java.sql.Types.CLOB, java.sql.Types.NCLOB, java.sql.Types.LONGNVARCHAR, java.sql.Types.LONGVARCHAR],
 			DATE: [java.sql.Types.DATE],
 			TIME: [java.sql.Types.TIME/*, java.sql.Types.TIME_WITH_TIMEZONE*/],
-			TIMESTAMP: [java.sql.Types.TIMESTAMP/*, java.sql.Types.TIMESTAMP_WITH_TIMEZONE*/],
+			TIMESTAMP: [java.sql.Types.TIMESTAMP],
+			TIMESTAMP_WITH_TIMEZONE: [java.sql.Types.TIMESTAMP_WITH_TIMEZONE]
 		]
 	}
 	
@@ -215,7 +216,11 @@ class JDBCDriver extends Driver {
 			case java.sql.Types.TIMESTAMP:
 				res = Field.Type.DATETIME
 				break
-				
+
+			case java.sql.Types.TIMESTAMP_WITH_TIMEZONE:
+				res = Field.Type.TIMESTAMP_WITH_TIMEZONE
+				break
+
 			case java.sql.Types.ROWID:
 				res = Field.Type.ROWID
 				break
@@ -257,6 +262,9 @@ class JDBCDriver extends Driver {
 			case Field.Type.DATETIME:
 				result = java.sql.Types.TIMESTAMP
 				break
+			case Field.Type.TIMESTAMP_WITH_TIMEZONE:
+				result = java.sql.Types.TIMESTAMP_WITH_TIMEZONE
+				break
 			case Field.Type.BLOB:
 				result = java.sql.Types.BLOB
 				break
@@ -295,6 +303,7 @@ class JDBCDriver extends Driver {
 			DATE: [name: 'date'],
 			TIME: [name: 'time'],
 			DATETIME: [name: 'timestamp'],
+			TIMESTAMP_WITH_TIMEZONE: [name: 'timestamp with time zone'],
 			BLOB: [name: 'blob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
 			TEXT: [name: 'clob', useLength: sqlTypeUse.SOMETIMES, defaultLength: 65535],
 			UUID: [name: 'uuid'],
@@ -315,8 +324,13 @@ class JDBCDriver extends Driver {
 		def type = field.type.toString()
 		def rule = sqlType."$type"
 		if (rule == null) throw new ExceptionGETL("Can not generate type ${field.type}")
-		
-		def name = (field.typeName != null && useNativeDBType)?field.typeName:rule.name
+
+		String name
+		if (field.typeName != null && useNativeDBType)
+			name = field.typeName
+		else {
+			name = rule.name
+		}
 		def useLength = rule.useLength?:sqlTypeUse.NEVER
 		def defaultLength = rule.defaultLength
 		def usePrecision = rule.usePrecision?:sqlTypeUse.NEVER

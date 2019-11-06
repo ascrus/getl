@@ -38,7 +38,8 @@ class Field implements Serializable {
 	 * Data type
 	 */
 	static enum Type {
-		STRING, INTEGER, BIGINT, NUMERIC, DOUBLE, BOOLEAN, DATE, TIME, DATETIME, BLOB, TEXT, OBJECT, ROWID, UUID
+		STRING, INTEGER, BIGINT, NUMERIC, DOUBLE, BOOLEAN, DATE, TIME, DATETIME, TIMESTAMP_WITH_TIMEZONE,
+		BLOB, TEXT, OBJECT, ROWID, UUID
 	}
 
 	/** Integer field type */
@@ -59,6 +60,8 @@ class Field implements Serializable {
 	static public final Field.Type timeFieldType = Field.Type.TIME
 	/** Date and time field type */
 	static public final Field.Type datetimeFieldType = Field.Type.DATETIME
+	/** Timestamp with time zone field type */
+	static public final Field.Type timestamp_with_timezoneFieldType = Field.Type.TIMESTAMP_WITH_TIMEZONE
 	/** Boolean field type */
 	static public final Field.Type booleanFieldType = Field.Type.BOOLEAN
 	/** Blob field type */

@@ -4,13 +4,13 @@ import getl.data.*
 import getl.driver.Driver
 import getl.proc.Flow
 import getl.stat.ProcessTime
+import getl.tfs.TDS
+import getl.tfs.TDSTable
 import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.InheritConstructors
 import org.junit.BeforeClass
 import org.junit.Test
-
-import java.sql.Time
 
 /**
  * Created by ascru on 21.11.2016.
@@ -50,8 +50,9 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
             ]
 
 		if (con != null && con.driver.isSupport(Driver.Support.DATE)) res << new Field(name: 'date', type: 'DATE', isNull: false)
-		if (con != null && con.driver.isSupport(Driver.Support.BOOLEAN)) res << new Field(name: 'flag', type: 'BOOLEAN', isNull: false)
 		if (con != null && con.driver.isSupport(Driver.Support.TIME)) res << new Field(name: 'time', type: 'TIME', isNull: false)
+        if (con != null && con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) res << new Field(name: 'dtwithtz', type: 'TIMESTAMP_WITH_TIMEZONE', isNull: false)
+        if (con != null && con.driver.isSupport(Driver.Support.BOOLEAN)) res << new Field(name: 'flag', type: 'BOOLEAN', isNull: false)
         if (con != null && con.driver.isSupport(Driver.Support.BLOB)) res << new Field(name: 'data', type: 'BLOB', length: 1024, isNull: false)
         if (con != null && con.driver.isSupport(Driver.Support.CLOB)) res << new Field(name: 'text', type: 'TEXT', length: 1024, isNull: false)
 		if (con != null && con.driver.isSupport(Driver.Support.UUID)) res << new Field(name: 'uniqueid', type: 'UUID', isNull: false)
@@ -226,6 +227,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 			assertNotNull(r.double)
 			if (con.driver.isSupport(Driver.Support.DATE)) assertNotNull(r.date)
 			if (con.driver.isSupport(Driver.Support.TIME)) assertNotNull(r.time)
+            if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) assertNotNull(r.dtwithtz)
 			if (con.driver.isSupport(Driver.Support.BOOLEAN)) assertNotNull(r.flag)
 			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
 			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
@@ -249,6 +251,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
                 nr.double = r.double + 1.00
 				if (con.driver.isSupport(Driver.Support.DATE)) nr.date = DateUtils.AddDate('dd', 1, r.date)
 				if (con.driver.isSupport(Driver.Support.TIME)) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
+                if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz)
 				if (con.driver.isSupport(Driver.Support.BOOLEAN)) nr.flag = GenerationUtils.GenerateBoolean()
 				if (con.driver.isSupport(Driver.Support.CLOB)) nr.text = GenerationUtils.GenerateString(1024)
 				if (con.driver.isSupport(Driver.Support.BLOB)) nr.data = GenerationUtils.GenerateString(512).bytes
@@ -268,6 +271,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 			assertNotNull(r.double)
 			if (con.driver.isSupport(Driver.Support.DATE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
 			if (con.driver.isSupport(Driver.Support.TIME)) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)).toString(), r.time.toString())
+            if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].dtwithtz), r.dtwithtz)
 			if (con.driver.isSupport(Driver.Support.BOOLEAN)) assertNotNull(r.flag)
 			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
 			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
@@ -290,6 +294,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
                 nr.double = r.double + 1.00
 				if (con.driver.isSupport(Driver.Support.DATE)) nr.date = DateUtils.AddDate('dd', 1, r.date)
 				if (con.driver.isSupport(Driver.Support.TIME)) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
+                if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz)
 				if (con.driver.isSupport(Driver.Support.BOOLEAN)) nr.flag = GenerationUtils.GenerateBoolean()
 				if (con.driver.isSupport(Driver.Support.CLOB)) nr.text = GenerationUtils.GenerateString(1024)
 				if (con.driver.isSupport(Driver.Support.BLOB)) nr.data = GenerationUtils.GenerateString(512).bytes
@@ -309,6 +314,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 			assertNotNull(r.double)
 			if (con.driver.isSupport(Driver.Support.DATE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
 			if (con.driver.isSupport(Driver.Support.TIME)) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
+            if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].dtwithtz), r.dtwithtz)
 			if (con.driver.isSupport(Driver.Support.BOOLEAN)) assertNotNull(r.flag)
 			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
 			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)

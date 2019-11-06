@@ -128,37 +128,37 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         def t = Field.Type.values()
         t.each { GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'STRING'), new Field(name: 'test', type: it), null, 'var') }
         t.each {
-            if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.BLOB, Field.Type.TEXT,
+            if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE, Field.Type.BLOB, Field.Type.TEXT,
                          Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'INTEGER'), new Field(name: 'test', type: it), null, 'var')
             }
         }
         t.each {
-            if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.BLOB, Field.Type.TEXT,
+            if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE, Field.Type.BLOB, Field.Type.TEXT,
                          Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'BIGINT'), new Field(name: 'test', type: it), null, 'var')
             }
         }
         t.each {
-            if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.BLOB, Field.Type.TEXT,
+            if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE, Field.Type.BLOB, Field.Type.TEXT,
                          Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'DOUBLE'), new Field(name: 'test', type: it), null, 'var')
             }
         }
         t.each {
-            if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.BLOB, Field.Type.TEXT,
+            if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE, Field.Type.BLOB, Field.Type.TEXT,
                          Field.Type.NUMERIC, Field.Type.DOUBLE, Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'BOOLEAN'), new Field(name: 'test', type: it), null, 'var')
             }
         }
         t.each {
-            if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.BLOB, Field.Type.TEXT,
+            if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE, Field.Type.BLOB, Field.Type.TEXT,
                          Field.Type.OBJECT, Field.Type.ROWID, Field.Type.BOOLEAN, Field.Type.UUID])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'NUMERIC'), new Field(name: 'test', type: it), null, 'var')
             }
         }
         t.each {
-            if ((it in [Field.Type.STRING, Field.Type.DATE, Field.Type.DATETIME])) {
+            if ((it in [Field.Type.STRING, Field.Type.DATE, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'DATE'), new Field(name: 'test', type: it), null, 'var')
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'DATETIME'), new Field(name: 'test', type: it), null, 'var')
             }

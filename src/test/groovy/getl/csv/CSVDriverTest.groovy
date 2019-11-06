@@ -7,8 +7,11 @@ import getl.stat.ProcessTime
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
+import getl.utils.GenerationUtils
 import getl.utils.Logs
 import getl.utils.NumericUtils
+import getl.utils.StringUtils
+import groovy.transform.CompileStatic
 import org.junit.BeforeClass
 import org.junit.Test
 
@@ -185,7 +188,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         shouldFail { unwrite_csv.doneWrite() }
         unwrite_csv.closeWrite()
 
-        def bad_csv = new CSVDataset(connection: con, fileName: "${name}_bad", decimalSeparator: ',', escapeProcessLineChar: '[enter]')
+        def bad_csv = new CSVDataset(connection: con, fileName: "${name}_bad", decimalSeparator: ',')
         bad_csv.field = fields
         bad_csv.openWrite()
 
@@ -237,6 +240,39 @@ class CSVDriverTest extends getl.test.GetlTest {
     }
 
     @Test
+    void testEscapeCsv() {
+        def con = new CSVConnection(conParams +
+                [escaped: true, header: true, isGzFile: false, nullAsValue: '<NULL>', constraintsCheck: true])
+        def ds = new CSVDataset(connection: con, fileName: 'test.escape.csv')
+        ds.field << new Field(name: 'id', type: Field.Type.INTEGER, isKey: true)
+        ds.field << new Field(name: 'name', isNull: false)
+        ds.field << new Field(name: 'value', type: Field.Type.INTEGER)
+        ds.field << new Field(name: 'text', type: Field.Type.TEXT)
+        new Flow().writeTo(dest: ds) { updater ->
+            def r = [id: 1, name: '123"456\'789"', text: '123"456\'789,\nabc']
+            updater(r)
+        }
+        def file = new File(ds.fullFileName())
+        try {
+            def text = '''id,name,value,text
+1,"123\\"456\\'789\\"",<NULL>,"123\\"456\\'789,\\nabc"
+'''
+            assertEquals(text, file.text)
+            //        println '>>>\n' + file.text + '\n>>>'
+
+            ds.eachRow { r ->
+                assertEquals(1, r.id)
+                assertEquals('123"456\'789"', r.name)
+                assertNull(r.value)
+                assertEquals('123"456\'789,\nabc', r.text)
+            }
+        }
+        finally {
+            file.delete()
+        }
+    }
+
+    @Test
     void testWindowsCSV() {
         def con = new CSVConnection(conParams +
                 [escaped: false, header: true, isGzFile: false, locale: 'ru-RU', decimalSeparator: ',',
@@ -247,10 +283,17 @@ class CSVDriverTest extends getl.test.GetlTest {
         con = new CSVConnection(conParams +
                 [escaped: false, header: false, isGzFile: true, formatDateTime: 'yyyy-MM-dd HH:mm:ss.SSS'])
         validReadWrite(con, 'windows-gz')
+    }
 
-        con = new CSVConnection(conParams +
+    @Test
+    void testLinuxCSV() {
+        def con = new CSVConnection(conParams +
                 [escaped: true, header: true, isGzFile: false, formatDateTime: 'yyyy-MM-dd HH:mm:ss.SSS'])
         validReadWrite(con, 'unix')
+
+        con = new CSVConnection(conParams +
+                [escaped: true, header: true, isGzFile: true, formatDateTime: 'yyyy-MM-dd HH:mm:ss.SSS'])
+        validReadWrite(con, 'unix-gz')
     }
 
     @Test
@@ -280,56 +323,67 @@ class CSVDriverTest extends getl.test.GetlTest {
         ds2.drop()
     }
 
+    static def perfomanceStringValue = StringUtils.Replicate('0', 23) + '"' + '\n' + "'" + StringUtils.Replicate('0', 23)
+
     @Test
-    void testPerfomance() {
-		def perfomanceRows = 1000
-		def perfomanceCols = 1000
+    void testPerfomanceWindows() {
+        doPerfomance('Windows format with constraints',
+                conParams + [escaped: false, codePage: 'cp1251', constraintsCheck: true, nullAsValue: '<NULL>'])
+    }
 
-		Logs.Finest("Test CSV perfomance write from $perfomanceRows rows with ${perfomanceCols+2} cols ...")
+    @Test
+    void testPerfomanceLinux() {
+        doPerfomance('Linux format with constraints',
+                conParams + [escaped: true, codePage: 'utf-8', constraintsCheck: true, nullAsValue: '<NULL>'])
+    }
 
-		def c = new CSVConnection(conParams + (Map<String, Object>)([autoSchema: (Object)false]))
+    @CompileStatic
+    private void doPerfomance(String testName, Map testParams) {
+		def perfomanceRows = 50000
+		def perfomanceCols = 50
+
+		Logs.Finest("Test perfomance for $testName ($perfomanceRows rows, ${perfomanceCols+2} cols) ...")
+
+		def c = new CSVConnection(testParams + (Map<String, Object>)([autoSchema: (Object)false]))
 		def t = new CSVDataset(connection: c, fileName: 'test_perfomance')
 
 		t.field << new Field(name: 'Id', type: Field.Type.INTEGER, isKey: true)
 		t.field << new Field(name: 'Name', length: 50, isNull: false)
 		(1..perfomanceCols).each { num ->
-			t.field << new Field(name: "Value_$num", type: Field.Type.DOUBLE)
+            def f = new Field(name: "Value_$num", type: Field.Type.STRING, length: 50, isNull: false)
+            if (num.mod(10) == 0) f.isNull = true
+			t.field << f
 		}
 
 		try {
 			def pt = new ProcessTime(name: "CSV perfomance write")
-			new Flow().writeTo(dest: t, dest_batchSize: 1000) { Closure updater ->
+			new Flow().writeTo(dest: t/*, dest_batchSize: 1000*/) { Closure updater ->
 				(1..perfomanceRows).each { Integer cur ->
 					def r = [:] as Map<String, Object>
 					r.id = cur
-					r.name = "name $cur"
+					r.name = perfomanceStringValue
 					(1..perfomanceCols).each { Integer num ->
-						r.put("value_$num".toString(), cur)
+                        if (num.mod(10) == 0)
+                            r.put("value_$num".toString(), null as String)
+                        else
+						    r.put("value_$num".toString(), perfomanceStringValue)
 					}
 					updater(r)
 				}
 			}
+            def size = new File(t.fullFileName()).size()
+            pt.name = "CSV perfomance write (${FileUtils.sizeBytes(size)})"
 			pt.finish(perfomanceRows as Long)
 
-			pt = new ProcessTime(name: "CSV perfomance read")
+
+			pt = new ProcessTime(name: "CSV perfomance read (${FileUtils.sizeBytes(size)})")
 			def cur = 0
 			new Flow().process(source: t) { Map<String, Object> r ->
 				cur++
 				assertEquals(cur, r.id)
-				assertEquals("name $cur", r.name)
+                assertEquals(perfomanceStringValue, r.name)
 			}
 			pt.finish(cur as Long)
-			assertEquals(perfomanceRows, cur)
-
-			def n = TFS.dataset()
-			new Flow().copy(source: t, dest: n, inheritFields: true, excludeFields: t.field*.name - ['Id', 'Name'])
-			assertEquals(2, n.field.size())
-			cur  = 0
-			n.eachRow { Map<String, Object> r ->
-				cur++
-				assertEquals(cur, r.id)
-				assertEquals("name $cur", r.name)
-			}
 			assertEquals(perfomanceRows, cur)
 		}
 		finally {

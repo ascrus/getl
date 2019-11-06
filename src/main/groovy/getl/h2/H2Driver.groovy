@@ -33,8 +33,6 @@ import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.utils.*
 
-import java.sql.ResultSet
-
 /**
  * H2 driver class
  * @author Alexsey Konstantinov
@@ -62,8 +60,8 @@ class H2Driver extends JDBCDriver {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.LOCAL_TEMPORARY, Driver.Support.MEMORY,
 				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX,
-				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.BOOLEAN,
-				 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST]
+				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE, Driver.Support.TIMESTAMP_WITH_TIMEZONE,
+				 Driver.Support.BOOLEAN, Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -228,6 +226,11 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 	@Override
 	void prepareField (Field field) {
 		super.prepareField(field)
+
+		if (field.type == Field.timestamp_with_timezoneFieldType) {
+			field.getMethod = 'org.h2.value.ValueTimestampTimeZone.fromDateValueAndNanos(({field} as org.h2.api.TimestampWithTimeZone).YMD, ({field} as org.h2.api.TimestampWithTimeZone).nanosSinceMidnight, ({field} as org.h2.api.TimestampWithTimeZone).timeZoneOffsetSeconds).getTimestamp(TimeZone.default)'
+			return
+		}
 
 		if (field.typeName != null) {
 			if (field.typeName.matches("(?i)UUID")) {

@@ -98,6 +98,13 @@ class CSVDataset extends FileDataset {
 	 * Required format values for output to file
 	 */
 	void setFormatOutput (boolean value) { params.formatOutput = value }
+
+	/** Check constraints during reading and writing */
+	boolean getConstraintsCheck() {
+		BoolUtils.IsValue([params.constraintsCheck, csvConnection()?.constraintsCheck], false)
+	}
+	/** Check constraints during reading and writing */
+	void setConstraintsCheck(boolean value) { params.constraintsCheck = value }
 	
 	/**
 	 * Convert NULL to value
@@ -116,16 +123,7 @@ class CSVDataset extends FileDataset {
 	 * Required convert string to escape value
 	 */
 	void setEscaped (boolean value) { params.escaped = value }
-	
-	/**
-	 * Convert line feed to custom escape char 
-	 */
-	String getEscapeProcessLineChar () { ListUtils.NotNullValue([params.escapeProcessLineChar, csvConnection()?.escapeProcessLineChar]) }
-	/**
-	 * Convert line feed to custom escape char
-	 */
-	void setEscapeProcessLineChar (String value) { params.escapeProcessLineChar = value }
-	
+
 	/**
 	 * Mode of quote value 
 	 */
@@ -214,7 +212,7 @@ class CSVDataset extends FileDataset {
 		super.inheriteConnectionParams() + 
 				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 
 					'escaped', 'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime', 'ignoreHeader', 
-					'escapeProcessLineChar', 'nullAsValue']
+					'nullAsValue']
 	}
 
 	/**

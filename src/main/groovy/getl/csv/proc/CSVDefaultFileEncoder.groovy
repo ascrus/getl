@@ -22,8 +22,9 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.csv
+package getl.csv.proc
 
+import getl.csv.CSVDataset
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
@@ -33,69 +34,57 @@ import org.supercsv.prefs.CsvPreference
 import org.supercsv.util.CsvContext
 
 import getl.csv.CSVDriver.WriterParams
-import getl.data.*
-import getl.utils.*
 
+/**
+ * CSV file encoder class
+ * @author Alexsey Konstantinov
+ *
+ */
 @InheritConstructors
 class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 	/*
-	private final def quoteFields = []
-	private boolean isHeader
-	*/
-	private String quote
 	private boolean replaceQuote
 	private boolean replaceTab
-	private String quote_replace
+	private String quote_replace*/
+
+	private boolean header
+	private String quote
 	private boolean escaped
-	private String escapeProcessLineChar
+	private List<Integer> escapedColumns
+
 	private long fieldDelimiterSize
 	private long rowDelimiterSize
 	private int countFields
+
 	public long writeSize = 0
 	
 	CSVDefaultFileEncoder (CSVDataset dataset, WriterParams wp) {
 		super()
-		
+
+		this.header = wp.header
 		this.quote = wp.quote
 		this.escaped = wp.escaped
-		this.escapeProcessLineChar = wp.escapeProcessLineChar
+		if (escaped) this.escapedColumns = wp.escapedColumns
+
 		this.fieldDelimiterSize = wp.fieldDelimiterSize
 		this.rowDelimiterSize = wp.rowDelimiterSize
 		this.countFields = wp.countFields
-		
-		replaceQuote = escaped && quote in ['"', "'"]
-		if (replaceQuote) {
-			quote_replace = "\\${quote}"
-		}
-		replaceTab = escaped && dataset.fieldDelimiter == "\t"
 	}
 
 	@CompileStatic
 	@Override
-    String encode(String value, CsvContext context, CsvPreference pref) {
-		String res = (replaceQuote)?value.replace(quote, '\u0007'):value
-		boolean isQuoted = (res.indexOf("\u0007") > -1)
-		if (escaped) {
-			res = res.replace('\\', '\\\\')
-			if (escapeProcessLineChar == null) {
-				res = res.replace('\n', '\\n').replace('\r', '\\r')
-			}
-			else {
-				res = res.replace('\n', escapeProcessLineChar).replace('\r', '')
-			}
-			if (replaceTab) res = res.replace('\t', '\\t')
-			if (replaceQuote && isQuoted) {
-				res = quote + res.replace('\u0007', quote_replace) + quote
-			}
-			else {
-				res = super.encode(res, context, pref)
-			} 
+    String encode(String value, final CsvContext context, final CsvPreference pref) {
+		if (!escaped || (header && context.lineNumber == 1)) {
+			value = super.encode(value, context, pref)
+		}
+		else if (escaped && context.columnNumber in escapedColumns) {
+			value = quote + value + quote
 		}
 		else {
-			res = super.encode(res, context, pref)
+			value = super.encode(value, context, pref)
 		}
-		
-		writeSize += res.length()
+
+		writeSize += value.length()
 		if (context.columnNumber < countFields) {
 			writeSize += fieldDelimiterSize 
 		}
@@ -103,6 +92,6 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 			writeSize += rowDelimiterSize
 		}
 		
-		res
+		return value
 	}
 }

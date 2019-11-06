@@ -162,7 +162,7 @@ class SQLScripter {
 		// Compile vars
 		p = Pattern.compile('(?i)([{][a-z0-9._-]+[}])')
 		m = p.matcher(script)
-		StringBuffer b = new StringBuffer()
+		def b = new StringBuffer()
 		String vn
 		while (m.find()) {
 			vn = m.group()
@@ -177,7 +177,7 @@ class SQLScripter {
 				valStr = "null"
 			}
 			else if (val instanceof List) {
-				StringBuffer sb = new StringBuffer()
+				def sb = new StringBuffer()
 				sb << "\n"
 				val.each {
 					sb << "				"
@@ -358,7 +358,7 @@ class SQLScripter {
 	private int doFor(List<String> st, int i) {
 		int fe = -1
 		int fc = 1
-		StringBuffer b = new StringBuffer()
+		def b = new StringBuffer()
 		for (int fs = i + 1; fs < st.size(); fs++) {
 			String c = st[fs] 
 			if (c.matches("(?is)for(\\s|\\n|\\t)+select(\\s|\\n|\\t).*")) {
@@ -416,7 +416,7 @@ class SQLScripter {
 	private int doIf(List<String> st, int i) {
 		int fe = -1
 		int fc = 1
-		StringBuffer b = new StringBuffer()
+		def b = new StringBuffer()
 		for (int fs = i + 1; fs < st.size(); fs++) {
 			if (st[fs].matches("(?is)if(\\s|\\n|\\t)+.*")) {
 				fc++
@@ -455,7 +455,7 @@ class SQLScripter {
 	private int doBlock(List<String> st, int i) {
 		int fe = -1
 		int fc = 1
-		StringBuffer b = new StringBuffer()
+		def b = new StringBuffer()
 		for (int fs = i + 1; fs < st.size(); fs++) {
 			if (st[fs].matches('(?is)begin(\\s|\\t)+block(\\s|\\t)*')) {
 				fc++
@@ -575,7 +575,7 @@ class SQLScripter {
 		if (sql == null) throw new ExceptionGETL("SQLScripter: required sql for BatchSQL2List method")
 		
 		// Delete multi comment
-		/*StringBuffer b = new StringBuffer()
+		/*def b = new StringBuffer()
 		int cur = 0
 		int start = sql.indexOf("*//*")
 		int finish //= -1
@@ -596,7 +596,7 @@ class SQLScripter {
 		*/
 		
 		// Delete single comment
-        def sb = new StringBuilder()
+        def sb = new StringBuffer()
         sql.eachLine { String line ->
             def i = line.indexOf('--')
             if (i == -1) {

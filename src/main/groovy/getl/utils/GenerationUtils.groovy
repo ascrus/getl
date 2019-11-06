@@ -25,7 +25,6 @@
 package getl.utils
 
 import getl.data.*
-import getl.data.Field.Type
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import groovy.json.JsonSlurper
@@ -98,28 +97,28 @@ class GenerationUtils {
 	static String GenerateEmptyValue(getl.data.Field.Type type, String variableName) {
 		String r
 		switch (type) {
-			case getl.data.Field.Type.STRING: case getl.data.Field.Type.UUID:
+			case Field.Type.STRING: case getl.data.Field.Type.UUID:
 				r = "String ${variableName}"
 				break
-			case getl.data.Field.Type.BOOLEAN:
+			case Field.Type.BOOLEAN:
 				r =  "Boolean ${variableName}"
 				break
-			case getl.data.Field.Type.INTEGER:
+			case Field.Type.INTEGER:
 				r =  "Integer ${variableName}"
 				break
-			case getl.data.Field.Type.BIGINT:
+			case Field.Type.BIGINT:
 				r =  "Long ${variableName}"
 				break
-			case getl.data.Field.Type.NUMERIC:
+			case Field.Type.NUMERIC:
 				r =  "BigDecimal ${variableName}"
 				break
-			case getl.data.Field.Type.DOUBLE:
+			case Field.Type.DOUBLE:
 				r =  "Double ${variableName}"
 				break
-			case getl.data.Field.Type.DATE:
+			case Field.Type.DATE:
 				r =  "java.sql.Date ${variableName}"
 				break
-			case getl.data.Field.Type.DATETIME:
+			case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 				r =  "java.sql.Timestamp ${variableName}"
 				break
 			case getl.data.Field.Type.TIME:
@@ -137,11 +136,11 @@ class GenerationUtils {
 	static String DateFormat(getl.data.Field.Type type) {
 		String df
 		
-		if (type == getl.data.Field.Type.DATE)
+		if (type == Field.Type.DATE)
 			df = 'yyyy-MM-dd'
-		else if (type == getl.data.Field.Type.TIME)
+		else if (type == Field.Type.TIME)
 			df = 'HH:mm:ss'
-		else if (type == getl.data.Field.Type.DATETIME)
+		else if (type in [Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE])
 			df = 'yyyy-MM-dd HH:mm:ss'
 		else
 			throw new ExceptionGETL("Can not return date format from \"${type}\" type")
@@ -170,7 +169,7 @@ class GenerationUtils {
 
 						break
 
-					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME:
+					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 						dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(source.type)
 						r =  "getl.utils.DateUtils.FormatDate('${StringUtils.EscapeJava(dataformat)}', (Date)$sourceValue)"
 
@@ -306,7 +305,7 @@ class GenerationUtils {
 
 						break
 
-					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME:
+					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 						r = "((Date)$sourceValue)?.time"
 
 						break
@@ -397,7 +396,7 @@ class GenerationUtils {
 				dataformat = dataformat?:GenerationUtils.DateFormat(dest.type)
 
 				switch (source.type) {
-					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME:
+					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 						r = "($sourceValue != null)?new java.sql.Date(((Date)$sourceValue).time):null as java.sql.Date"
 
 						break
@@ -418,11 +417,11 @@ class GenerationUtils {
 
 				break
 				
-			case getl.data.Field.Type.DATETIME:
+			case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 				dataformat = dataformat?:GenerationUtils.DateFormat(dest.type)
 
 				switch (source.type) {
-					case Field.Type.DATETIME: case Field.Type.DATE: case Field.Type.TIME:
+					case Field.Type.DATETIME: case Field.Type.DATE: case Field.Type.TIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 						r = "($sourceValue != null)?new java.sql.Timestamp(((Date)$sourceValue).time):null as java.sql.Timestamp"
 
 						break
@@ -447,7 +446,7 @@ class GenerationUtils {
 				dataformat = dataformat?:GenerationUtils.DateFormat(dest.type)
 
 				switch (source.type) {
-					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME:
+					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 						r = "($sourceValue != null)?new java.sql.Time(((Date)$sourceValue).time):null as java.sql.Time"
 
 						break
@@ -677,7 +676,7 @@ class GenerationUtils {
 			case getl.data.Field.Type.TIME:
 				result = new java.sql.Timestamp(GenerateDate().time)
 				break
-			case getl.data.Field.Type.DATETIME:
+			case getl.data.Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 				result = new java.sql.Timestamp(GenerateDateTime().time)
 				break
             case getl.data.Field.Type.TEXT:
@@ -1010,6 +1009,7 @@ sb << """
 				len = 13
 				break
 			case getl.data.Field.Type.DATE: case getl.data.Field.Type.DATETIME: case getl.data.Field.Type.TIME:
+			case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 				len = 30
 				break
 			case getl.data.Field.Type.BOOLEAN:
@@ -1345,6 +1345,13 @@ sb << """
 				
 			case types.TIMESTAMP:
 				res = "if ($value != null) _getl_stat.setTimestamp($paramNum, new java.sql.Timestamp(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP)"
+				break
+
+			case types.TIMESTAMP_WITH_TIMEZONE:
+				if (!driver.timestampWithTimezoneConvertOnWrite())
+					res = "if ($value != null) _getl_stat.setTimestamp($paramNum, new java.sql.Timestamp(((${value}) as Date).getTime())) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP_WITH_TIMEZONE)"
+				else
+					res = "if ($value != null) _getl_stat.setObject($paramNum, ((${value}) as Date).toInstant().atZone(java.time.ZoneId.of('UTC')).toLocalDateTime()) else _getl_stat.setNull($paramNum, java.sql.Types.TIMESTAMP_WITH_TIMEZONE)"
 				break
 
 			default:
