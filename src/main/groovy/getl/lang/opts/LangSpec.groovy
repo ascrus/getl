@@ -26,6 +26,8 @@ package getl.lang.opts
 import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
 
+import java.util.logging.Level
+
 /**
  * Getl language options
  * @author Alexsey Konstantinov
@@ -37,6 +39,16 @@ class LangSpec extends BaseSpec {
     boolean getProcessTimeTracing() { BoolUtils.IsValue(params.processTimeTracing, true) }
      /** Fixing the execution time of processes in the log */
     void setProcessTimeTracing(boolean value) {params.processTimeTracing = value }
+
+    /** Log process profiling start time */
+    boolean getProcessTimeDebug() { BoolUtils.IsValue(params.processTimeDebug, false) }
+    /** Log process profiling start time */
+    void setProcessTimeDebug(boolean value) { params.processTimeDebug = value }
+
+    /** The level of fixation in the log of process profiling records */
+    Level getProcessTimeLevelLog() { params.processTimeLevelLog?:Level.FINE }
+    /** The level of fixation in the log of process profiling records */
+    void setProcessTimeLevelLog(Level value) { params.processTimeLevelLog = value }
 
     /** Use the multithreaded JDBC connection model */
     boolean getUseThreadModelConnection() { BoolUtils.IsValue(params.useThreadModelJDBCConnection, true) }

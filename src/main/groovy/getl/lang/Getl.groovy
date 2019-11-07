@@ -61,6 +61,7 @@ import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.logging.Level
 
 /**
  * Getl language script
@@ -105,6 +106,19 @@ class Getl extends Script {
                     throw new ExceptionGETL("Class \"$className\" not found!")
                 }
 
+                def initClassName = jobArgs.initclass as String
+                if (initClassName != null) {
+                    Class initClass
+                    try {
+                        initClass = Class.forName(initClassName)
+                    }
+                    catch (Throwable e) {
+                        throw new ExceptionGETL("Class \"$initClassName\" not found!")
+                    }
+
+                    Getl.Dsl().runGroovyClass(initClass)
+                }
+
                 Getl.Dsl().runGroovyClass(runClass, Config.vars)
             }
         }
@@ -116,11 +130,13 @@ class Getl extends Script {
 
         _params.executedClasses = new SynchronizeObject()
 
+        _params.langOpts = new LangSpec(this, this)
         _params.repConnections = new ConcurrentHashMap<String, Connection>()
         _params.repDatasets = new ConcurrentHashMap<String, Dataset>()
         _params.repHistoryPoints = new ConcurrentHashMap<String, SavePointManager>()
         _params.repFileManagers = new ConcurrentHashMap<String, Manager>()
 
+        _langOpts = _params.langOpts
         _connections = _params.repConnections
         _datasets = _params.repDatasets
         _historypoints = _params.repHistoryPoints
@@ -231,6 +247,8 @@ class Getl extends Script {
     /** Set language parameters */
     protected void setGetlParams(Map<String, Object> importParams) {
         _params = importParams
+
+        _langOpts = _params.langOpts
         _connections = _params.repConnections
         _datasets = _params.repDatasets
         _historypoints = _params.repHistoryPoints
@@ -300,7 +318,9 @@ class Getl extends Script {
 
     /** Fix start process */
     ProcessTime startProcess(String name) {
-        return (langOpts.processTimeTracing)?new ProcessTime(name: name):null
+        return new ProcessTime(name: name,
+                logLevel: (langOpts.processTimeTracing)?langOpts.processTimeLevelLog:Level.OFF,
+                debug: langOpts.processTimeDebug)
     }
 
     /** Fix finish process */
@@ -312,7 +332,7 @@ class Getl extends Script {
     void profile(String name,
                  @DelegatesTo(ProfileSpec)
                  @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ProfileSpec']) Closure cl) {
-        def stat = new ProfileSpec(profileName: name)
+        def stat = new ProfileSpec(this, this, name)
         stat.startProfile()
         runClosure(stat, cl)
         stat.finishProfile()
@@ -320,7 +340,7 @@ class Getl extends Script {
 
 
     /** GETL DSL options */
-    private final def _langOpts = new LangSpec()
+    private LangSpec _langOpts
 
     /** GETL DSL options */
     protected LangSpec getLangOpts() { _langOpts }
@@ -1682,7 +1702,6 @@ class Getl extends Script {
         if (script instanceof Getl) {
             def scriptGetl = script as Getl
             scriptGetl.setGetlParams(_params)
-            scriptGetl.setLangOpts(langOpts)
             if (vars != null && !vars.isEmpty()) {
 //                scriptGetl._scriptArgs.putAll(vars)
                 fillFieldFromVars(scriptGetl, vars)
@@ -1874,14 +1893,14 @@ class Getl extends Script {
                      @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LangSpec']) Closure cl = null) {
         runClosure(langOpts, cl)
 
-        return langOpts as LangSpec
+        return langOpts
     }
 
     /** Configuration options */
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ConfigSpec']) Closure cl = null) {
         if (!(Config.configClassManager instanceof ConfigSlurper)) Config.configClassManager = new ConfigSlurper()
-        def parent = new ConfigSpec(childOwnerObject, childThisObject, false, null)
+        def parent = new ConfigSpec(childOwnerObject, childThisObject)
         parent.runClosure(cl)
 
         return parent
@@ -1890,8 +1909,12 @@ class Getl extends Script {
     /** Log options */
     LogSpec logging(@DelegatesTo(LogSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LogSpec']) Closure cl = null) {
-        def parent = new LogSpec(childOwnerObject, childThisObject, false, null)
+        def parent = new LogSpec(childOwnerObject, childThisObject)
+        def logFileName = parent.getLogFileName()
         parent.runClosure(cl)
+        if (logFileName != parent.getLogFileName()) {
+            Logs.Info("### GETL DSL start logging to log file")
+        }
 
         return parent
     }
@@ -3663,5 +3686,10 @@ class Getl extends Script {
         def parent = _testCase?:new GroovyTestCase()
         RunClosure(cl.delegate, this, parent, cl)
         return parent
+    }
+
+    /** Pause current process */
+    void pause(Long timeout) {
+        Thread.currentThread().wait(timeout)
     }
 }

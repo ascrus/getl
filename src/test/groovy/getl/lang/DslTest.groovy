@@ -15,6 +15,8 @@ import org.junit.FixMethodOrder
 import org.junit.Ignore
 import org.junit.Test
 
+import java.util.logging.Level
+
 @FixMethodOrder(org.junit.runners.MethodSorters.NAME_ASCENDING)
 class DslTest extends getl.test.GetlTest {
     /** Temporary path */
@@ -87,6 +89,11 @@ datasets {
     @Test
     void test01_03InitLogFile() {
         Getl.Dsl(this) {
+            options {
+                processTimeDebug = true
+                processTimeLevelLog = Level.INFO
+            }
+
             // Init log file
             logging {
                 logFileName = "${this.tempPath}/getl.{date}.logs"
@@ -426,18 +433,20 @@ ORDER BY t1.id'''
             }
             assertEquals(5, list.countRow())
 
-            h2Table('getl.testdsl.h2:table1') {
-                truncate()
+            profile('Bulk load to table1') {
+                h2Table('getl.testdsl.h2:table1') {
+                    truncate()
 
-                assertEquals(0, countRow())
+                    assertEquals(0, countRow())
 
-                bulkLoadCsv(csv) {
-                    files = "file.split.{num}.csv"
-                    schemaFileName = 'file.split.csv.schema'
-                    removeFile = true
+                    bulkLoadCsv(csv) {
+                        files = "file.split.{num}.csv"
+                        schemaFileName = 'file.split.csv.schema'
+                        removeFile = true
+                    }
+
+                    assertEquals(this.table1_rows, countRow())
                 }
-
-                assertEquals(this.table1_rows, countRow())
             }
 
             files {

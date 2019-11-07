@@ -30,6 +30,8 @@ import getl.hive.opts.HiveCreateSpec
 import getl.jdbc.*
 import getl.jdbc.opts.CreateSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Hive database table
@@ -64,7 +66,9 @@ class HiveTable extends TableDataset {
         new HiveCreateSpec(ownerObject, thisObject, useExternalParams, opts)
     }
 
-    HiveCreateSpec createOpts(@DelegatesTo(HiveCreateSpec) Closure cl = null) {
+    HiveCreateSpec createOpts(@DelegatesTo(HiveCreateSpec)
+                              @ClosureParams(value = SimpleType, options = ['getl.hive.opts.HiveCreateSpec'])
+                                      Closure cl = null) {
         genCreateTable(cl) as HiveCreateSpec
     }
 }

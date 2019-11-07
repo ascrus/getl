@@ -24,6 +24,7 @@
 
 package getl.lang.opts
 
+import getl.lang.Getl
 import getl.stat.ProcessTime
 import groovy.transform.InheritConstructors
 
@@ -34,23 +35,35 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class ProfileSpec extends BaseSpec {
-    final ProcessTime statistics = new ProcessTime()
+    ProfileSpec(def ownerObject, def thisObject, String name) {
+        super(ownerObject, thisObject)
+        statistics = new ProcessTime(
+                name: name,
+                logLevel: geltOwner().options().processTimeLevelLog,
+                debug: geltOwner().options().processTimeDebug
+        )
+    }
+
+    /** Getl main class */
+    protected Getl geltOwner() { ownerObject as Getl }
+
+    /** Profile statistics object */
+    ProcessTime statistics
 
     /** Start profiling process */
     void startProfile() {
-        statistics.name = profileName
-        statistics.start = new Date()
+        statistics.countRow = null
     }
+
     /** Finish profiling process */
     void finishProfile() {
-        statistics.name = profileName
         statistics.finish(statistics.countRow)
     }
 
     /** Profile name */
-    String getProfileName() { params.profileName as String }
+    String getProfileName() { statistics.name }
     /** Profile name */
-    void setProfileName(String value) { params.profileName = value }
+    void setProfileName(String value) { statistics.name = value }
 
     /** Count processed row */
     Integer getCountRow() { statistics.countRow }

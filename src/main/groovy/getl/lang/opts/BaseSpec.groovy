@@ -28,6 +28,8 @@ import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import getl.utils.MapUtils
 
+import java.util.concurrent.ConcurrentHashMap
+
 /**
  * Base options class
  * @author Alexsey Konstantinov
@@ -94,7 +96,7 @@ class BaseSpec {
         Getl.RunClosure(ownerObject?:this, thisObject?:this, parent?:this, cl)
     }
 
-    Map<String, Object> _params = [:]
+    Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
     /** Object parameters */
     Map<String, Object> getParams() { _params }
 

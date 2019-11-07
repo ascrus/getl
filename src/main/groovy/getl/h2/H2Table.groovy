@@ -32,6 +32,8 @@ import getl.jdbc.*
 import getl.jdbc.opts.*
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * H2 database table
@@ -61,7 +63,9 @@ class H2Table extends TableDataset {
     }
 
     /** Options for creating Vertica table */
-    H2CreateSpec createOpts(@DelegatesTo(H2CreateSpec) Closure cl = null) {
+    H2CreateSpec createOpts(@DelegatesTo(H2CreateSpec)
+                            @ClosureParams(value = SimpleType, options = ['getl.h2.opts.H2CreateSpec'])
+                                    Closure cl = null) {
         genCreateTable(cl) as H2CreateSpec
     }
 
@@ -72,7 +76,9 @@ class H2Table extends TableDataset {
     }
 
     /** Options for loading csv files to Vertica table */
-    H2BulkLoadSpec bulkLoadOpts(@DelegatesTo(H2BulkLoadSpec) Closure cl = null) {
+    H2BulkLoadSpec bulkLoadOpts(@DelegatesTo(H2BulkLoadSpec)
+                                @ClosureParams(value = SimpleType, options = ['getl.h2.opts.H2BulkLoadSpec'])
+                                        Closure cl = null) {
         genBulkLoadDirective(cl) as H2BulkLoadSpec
     }
 
@@ -81,7 +87,10 @@ class H2Table extends TableDataset {
      * @param source File to load
      * @param cl Load setup code
      */
-    H2BulkLoadSpec bulkLoadCsv(CSVDataset source, @DelegatesTo(H2BulkLoadSpec) Closure cl = null) {
+    H2BulkLoadSpec bulkLoadCsv(CSVDataset source,
+                               @DelegatesTo(H2BulkLoadSpec)
+                               @ClosureParams(value = SimpleType, options = ['getl.h2.opts.H2BulkLoadSpec'])
+                                       Closure cl = null) {
         doBulkLoadCsv(source, cl) as H2BulkLoadSpec
     }
 
@@ -89,7 +98,9 @@ class H2Table extends TableDataset {
      * Load specified csv files to H2 table
      * @param cl Load setup code
      */
-    H2BulkLoadSpec bulkLoadCsv(@DelegatesTo(H2BulkLoadSpec) Closure cl) {
+    H2BulkLoadSpec bulkLoadCsv(@DelegatesTo(H2BulkLoadSpec)
+                               @ClosureParams(value = SimpleType, options = ['getl.h2.opts.H2BulkLoadSpec'])
+                                       Closure cl) {
         doBulkLoadCsv(null, cl) as H2BulkLoadSpec
     }
 }
