@@ -53,8 +53,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 		if (con != null && con.driver.isSupport(Driver.Support.TIME)) res << new Field(name: 'time', type: 'TIME', isNull: false)
         if (con != null && con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) res << new Field(name: 'dtwithtz', type: 'TIMESTAMP_WITH_TIMEZONE', isNull: false)
         if (con != null && con.driver.isSupport(Driver.Support.BOOLEAN)) res << new Field(name: 'flag', type: 'BOOLEAN', isNull: false)
-        if (con != null && con.driver.isSupport(Driver.Support.BLOB)) res << new Field(name: 'data', type: 'BLOB', length: 1024, isNull: false)
-        if (con != null && con.driver.isSupport(Driver.Support.CLOB)) res << new Field(name: 'text', type: 'TEXT', length: 1024, isNull: false)
+        if (con != null && con.driver.isSupport(Driver.Support.BLOB)) res << new Field(name: 'data', type: 'BLOB', length: 1024)
+        if (con != null && con.driver.isSupport(Driver.Support.CLOB)) res << new Field(name: 'text', type: 'TEXT', length: 1024)
 		if (con != null && con.driver.isSupport(Driver.Support.UUID)) res << new Field(name: 'uniqueid', type: 'UUID', isNull: false)
 
         return res
@@ -229,8 +229,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 			if (con.driver.isSupport(Driver.Support.TIME)) assertNotNull(r.time)
             if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) assertNotNull(r.dtwithtz)
 			if (con.driver.isSupport(Driver.Support.BOOLEAN)) assertNotNull(r.flag)
-			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
-			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
+			/*if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
+			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)*/
 			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
 		}
         assertEquals(10, table.readRows)
@@ -253,8 +253,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 				if (con.driver.isSupport(Driver.Support.TIME)) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
                 if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz)
 				if (con.driver.isSupport(Driver.Support.BOOLEAN)) nr.flag = GenerationUtils.GenerateBoolean()
-				if (con.driver.isSupport(Driver.Support.CLOB)) nr.text = GenerationUtils.GenerateString(1024)
-				if (con.driver.isSupport(Driver.Support.BLOB)) nr.data = GenerationUtils.GenerateString(512).bytes
+				if (con.driver.isSupport(Driver.Support.CLOB)) nr.text = GenerationUtils.GenerateString(500)
+				if (con.driver.isSupport(Driver.Support.BLOB)) nr.data = GenerationUtils.GenerateString(250).bytes
 				if (con.driver.isSupport(Driver.Support.UUID)) nr.uniqueid = UUID.randomUUID().toString()
 
                 updater(nr)
@@ -345,6 +345,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
     protected void truncateData() {
         table.truncate(truncate: true)
+        assertEquals(0, table.countRow())
     }
 
     protected void queryData() {
@@ -385,27 +386,26 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(1, rows.size())
     }
 
-    protected void bulkLoad() {
+    protected void bulkLoad(TableDataset bulkTable) {
         if (!con.driver.isOperation(Driver.Operation.BULKLOAD)) return
 
-        def file = TFS.dataset()
-        //def count = new Flow().copy(source: table, dest: file, inheritFields: true)
-        file.field = table.field
+        def file = bulkTable.csvTempFile
         def count = new Flow().writeTo(dest: file) { updater ->
             (1..countRows).each { num ->
                 Map r = GenerationUtils.GenerateRowValues(file.field, num)
                 r.id1 = num
+                r.name = """'name'\t"$num"\ntest|/,\\;"""
 
                 updater(r)
             }
         }
         assertEquals(countRows, count)
 
-        truncateData()
-        validCountZero()
+        bulkTable.truncate()
 
-        table.bulkLoadFile(source: file)
-        validCount()
+        bulkTable.bulkLoadFile(source: file)
+        assertEquals(countRows, bulkTable.updateRows)
+        assertEquals(countRows, bulkTable.countRow())
     }
 
     protected void runScript() {
@@ -447,7 +447,7 @@ END FOR;
             mergeData()
             runCommandUpdate()
         }
-        bulkLoad()
+        bulkLoad(table)
 
         retrieveFields()
 

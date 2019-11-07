@@ -3,6 +3,7 @@ package getl.vertica
 import getl.data.*
 import getl.jdbc.*
 import getl.lang.Getl
+import getl.proc.Flow
 import getl.utils.*
 import org.junit.BeforeClass
 import org.junit.Test
@@ -48,6 +49,24 @@ LIMIT 1'''
                 assertEquals(1, rows.size())
                 assertEquals('SELECT /*+label(test_limit)*/ "table_schema","table_name" FROM "v_catalog"."tables" tab LIMIT 1 OFFSET 1', rows[0].request)
             }
+        }
+    }
+
+    @Override
+    protected void bulkLoad(TableDataset bulkTable) {
+        super.bulkLoad(bulkTable)
+
+        def tableWithoutBlob = bulkTable.cloneDatasetConnection() as TableDataset
+        tableWithoutBlob.tableName = 'getl_test_without_data'
+        tableWithoutBlob.removeField('data')
+        tableWithoutBlob.drop(ifExists: true)
+        tableWithoutBlob.create()
+        try {
+            new Flow().copy(source: bulkTable, dest: tableWithoutBlob)
+            super.bulkLoad(tableWithoutBlob)
+        }
+        finally {
+            tableWithoutBlob.drop(ifExists: true)
         }
     }
 }

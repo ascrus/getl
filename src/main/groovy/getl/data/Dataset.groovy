@@ -1321,11 +1321,17 @@ class Dataset {
 	 * Configure the file to work and upload to the table
 	 * @param csvFile CSV dataset
 	 */
-	void prepareCsvTempFile(CSVDataset csvFile) { }
+	void prepareCsvTempFile(CSVDataset csvFile) {
+		validConnection()
+		connection.driver.prepareCsvTempFile(this, csvFile)
+	}
 
 	/**
 	 * Check CSV file settings for bulk loading
 	 * @param csvFile CSV dataset
 	 */
-	void validCsvTempFile(CSVDataset csvFile) { }
+	void validCsvTempFile(CSVDataset csvFile) {
+		validConnection()
+		connection.driver.validCsvTempFile(this, csvFile)
+	}
 }

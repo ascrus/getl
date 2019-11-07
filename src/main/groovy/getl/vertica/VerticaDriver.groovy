@@ -145,7 +145,20 @@ class VerticaDriver extends JDBCDriver {
 				if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
 			}
 		}
-		else {
+		else if (!source.escaped) {
+			def opts = [
+					'type=\'traditional\'',
+					"delimiter = E'${StringUtils.EscapeJava(source.fieldDelimiter)}'",
+					"enclosed_by = E'${StringUtils.EscapeJava(source.quoteStr)}'",
+					"record_terminator = E'${StringUtils.EscapeJava(source.rowDelimiter)}'"
+			]
+			if (source.header) opts << 'header=\'true\''
+
+			parserText = "\nWITH PARSER fcsvparser(${opts.join(', ')})"
+			if (source.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
+		}
+
+		if (parserText.length() == 0) {
 			if (source.fieldDelimiter == null || source.fieldDelimiter.length() != 1) throw new ExceptionGETL('Required one char field delimiter')
 			if (source.rowDelimiter == null || source.rowDelimiter.length() != 1) throw new ExceptionGETL('Required one char row delimiter')
 			if (source.quoteStr == null || source.quoteStr.length() != 1) throw new ExceptionGETL('Required one char quote str')
@@ -249,7 +262,7 @@ class VerticaDriver extends JDBCDriver {
 
 		sb << """FROM ${(location == null)?"LOCAL ":""}$fileName $parserText $fieldDelimiter$nullAsValue$quoteStr$rowDelimiter
 """
-		if (header) sb << 'SKIP 1\n'
+		if (header && parserText.length() == 0) sb << 'SKIP 1\n'
 		if (rejectMax != null) sb << "REJECTMAX ${rejectMax}\n"
 		if (exceptionPath != null) sb << "EXCEPTIONS '${exceptionPath}'$onNode\n"
 		if (rejectedPath != null) sb << "REJECTED DATA '${rejectedPath}'$onNode\n"
@@ -350,7 +363,7 @@ class VerticaDriver extends JDBCDriver {
 	String blobMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
 	if (value == null) { 
-		stat.setNull(paramNum, java.sql.Types.BLOB) 
+		stat.setNull(paramNum, java.sql.Types.BINARY) 
 	}
 	else {
 		def stream = new ByteArrayInputStream(value)
@@ -387,5 +400,39 @@ class VerticaDriver extends JDBCDriver {
 		def res = "DELETE ${writeHints(params)} FROM {table} WHERE {keys}"
 		if (params.where != null) res += " AND (${params.where})"
 		return res
+	}
+
+	@Override
+	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
+		csvFile.header = true
+		csvFile.escaped = (csvFile.field.find { it.type == Field.blobFieldType && source.fieldByName(it.name) != null } != null)
+		csvFile.codePage = 'UTF-8'
+		csvFile.nullAsValue = '<NULL>'
+		csvFile.fieldDelimiter = '|'
+		csvFile.rowDelimiter = '\n'
+		csvFile.quoteStr = '"'
+	}
+
+	@Override
+	void validCsvTempFile(Dataset source, CSVDataset csvFile) {
+		if (!(csvFile.codePage.toLowerCase() in ['utf-8', 'utf8']))
+			throw new ExceptionGETL('The file must be encoded in 8 for batch download!')
+
+		if (csvFile.fieldDelimiter.length() > 1)
+			throw new ExceptionGETL('The field delimiter must have only one character for bulk load!')
+
+		if (csvFile.quoteStr.length() > 1)
+			throw new ExceptionGETL('The quote must have only one character for bulk load!')
+
+		if (csvFile.rowDelimiter.length() > 1)
+			throw new ExceptionGETL('The row delimiter must have only one character for bulk load!')
+
+		if (!csvFile.escaped) {
+			def blobFields = csvFile.field.findAll { it.type == Field.blobFieldType && source.fieldByName(it.name) != null }
+			if (blobFields != null && !blobFields.isEmpty()) {
+				def blobNames = blobFields*.name
+				throw new ExceptionGETL("When escaped is off, bulk loading with binary type fields is not allowed (fields: ${blobNames.join(', ')})!")
+			}
+		}
 	}
 }

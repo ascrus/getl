@@ -143,4 +143,16 @@ abstract class Driver {
 	static Boolean isResourceFileNameSchema(Dataset dataset) {
 		FileUtils.IsResourceFileName(dataset.schemaFileName)
 	}
+
+	/**
+	 * Configure the file to work and upload to the table
+	 * @param csvFile CSV dataset
+	 */
+	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) { }
+
+	/**
+	 * Check CSV file settings for bulk loading
+	 * @param csvFile CSV dataset
+	 */
+	void validCsvTempFile(Dataset source, CSVDataset csvFile) { }
 }

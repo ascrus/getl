@@ -63,6 +63,12 @@ class OracleDriver extends JDBCDriver {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
 	}
+
+	@Override
+	void connect() {
+		System.properties.setProperty('oracle.jdbc.fanEnabled', 'false')
+		super.connect()
+	}
 	
 	@Override
 	String blobMethodWrite (String methodName) {

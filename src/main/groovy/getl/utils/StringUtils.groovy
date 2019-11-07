@@ -451,4 +451,9 @@ class StringUtils {
 		if (value == null) return null
 		return value.toList()
 	}
+
+	/** Replace string for text to double string */
+	static String Str2Double(String value, String rep) {
+		return value.replace(rep, rep + rep)
+	}
 }

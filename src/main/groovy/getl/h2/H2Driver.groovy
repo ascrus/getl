@@ -135,7 +135,7 @@ class H2Driver extends JDBCDriver {
 		map.each { Map<String, Object> m ->
 			Field f = m.field as Field
 			if (f != null && !f.isReadOnly) {
-				headers << f.name.toUpperCase()
+				headers << f.name.toUpperCase().replace('\'', '\'\'')
 				columns << fieldPrefix + f.name.toUpperCase() + fieldPrefix
 				def expr = expression.get(f.name.toLowerCase())
 				if (expr == null) {
@@ -255,5 +255,22 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 //				return
 			}
 		}
+	}
+
+	@Override
+	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
+		csvFile.escaped = false
+		csvFile.header = false
+		csvFile.fieldDelimiter = '|'
+		csvFile.rowDelimiter = '\n'
+		csvFile.quoteStr = '"'
+		csvFile.nullAsValue = '<NULL>'
+		csvFile.codePage = 'UTF-8'
+	}
+
+	@Override
+	void validCsvTempFile(Dataset source, CSVDataset csvFile) {
+		if (csvFile.header)
+			throw new ExceptionGETL('It is not allowed to use the header in the file for bulk load!')
 	}
 }
