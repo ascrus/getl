@@ -73,7 +73,7 @@ class FileUtils {
 		if (file == null || file.parentFile == null) return null
 		if (!file.isDirectory()) {
 			if (file.parentFile.mkdirs()) {
-				file.deleteOnExit()
+				if (deleteOnExit) file.deleteOnExit()
 				return true
 			}
 			else {

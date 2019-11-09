@@ -53,7 +53,7 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register('bulkLoadFile',
 				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
 				 'expression', 'location', 'maskDate', 'maskTime', 'maskDateTime',
-				 'parser', 'streamName'])
+				 'parser', 'streamName', 'files'])
 		methodParams.register('unionDataset', ['direct'])
 	}
 
@@ -175,7 +175,7 @@ class VerticaDriver extends JDBCDriver {
 		def map = params.map as List<Map>
 		def expressions = (params.expression as Map<String, String>)?:[:]
 		String loadMethod = ListUtils.NotNullValue([params.loadMethod, 'AUTO'])
-		boolean enforceLength = BoolUtils.IsValue(params.enforceLength, true)
+		boolean enforceLength = (parserText == null && BoolUtils.IsValue(params.enforceLength, true))
 		boolean autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
 		String compressed = ListUtils.NotNullValue([params.compressed, (isGzFile?'GZIP':null)])
 		String exceptionPath = params.exceptionPath
@@ -189,10 +189,23 @@ class VerticaDriver extends JDBCDriver {
 
 		String streamName = params.streamName
 
-		String fileName =  "'${source.fullFileName().replace("\\", "/")}'$onNode"
-
-		if (compressed != null) {
-			fileName = "$fileName $compressed"
+		String fileName
+		if (params.files != null) {
+			if (!(params.files instanceof List))
+				throw new ExceptionGETL('Parameter files must be of type List')
+			def f = []
+			(params.files as List<String>).each {
+				def s = "'" + it + "'"
+				if (compressed != null) s += ' ' + compressed
+				s += onNode
+				f << s
+			}
+			fileName = f.join(', ')
+		}
+		else {
+			fileName = "'${source.fullFileName().replace("\\", "/")}'"
+			if (compressed != null) fileName += ' ' + compressed
+			fileName += onNode
 		}
 
 		if (exceptionPath != null) FileUtils.ValidFilePath(exceptionPath)

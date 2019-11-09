@@ -57,10 +57,8 @@ class Balancer  {
 		}
 	}
 	
-	/**
-	 * Public parameters
-	 */
-	private final Map params = [:]
+	/** Balancer parameters */
+	final Map params = [:]
 
 	Map getParams () { params }
 

@@ -173,9 +173,17 @@ class Connection {
 	}
 	
 	/**
-	 * Parameters
+	 * Connection parameters
 	 */
-	public final Map params = [:]
+	final Map params = [:]
+
+	/** Connection parameters */
+	Map getParams() { params }
+	/** Connection parameters */
+	void setParams(Map value) {
+		params.clear()
+		if (value != null) params.putAll(value)
+	}
 	
 	/**
 	 * System parameters

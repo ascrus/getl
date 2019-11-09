@@ -32,8 +32,16 @@ import javax.mail.internet.*
 import getl.exception.ExceptionGETL
 
 class EMailer {
-	/** Parameters */
-	public final Map params = [:]
+	/** Emailer parameters */
+	final Map params = [:]
+
+	/** Emailer parameters */
+	Map getParams() { params }
+	/** Emailer parameters */
+	void setParams(Map value) {
+		params.clear()
+		if (value != null) params.putAll(value)
+	}
 
 	String config
 	/** Name in config from section "emailers" */

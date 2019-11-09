@@ -45,6 +45,17 @@ class JDBCDataset extends Dataset {
 	 * Type of jdbc datasets
 	 */
 	static enum Type {TABLE, VIEW, QUERY, PROCEDURE, ALIAS, SYNONYM, MEMORY, GLOBAL_TEMPORARY, LOCAL_TEMPORARY, SYSTEM_TABLE, UNKNOWN}
+
+	/** Table type */
+	static tableType = Type.TABLE
+	/** View type */
+	static viewType = Type.VIEW
+	/** Global temporary type */
+	static globalTemporaryTableType = Type.GLOBAL_TEMPORARY
+	/** Local temporary type */
+	static localTemporaryTableType = Type.LOCAL_TEMPORARY
+	/** Query type */
+	static queryType = Type.QUERY
 	
 	/**
 	 * Type of dataset

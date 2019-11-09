@@ -46,8 +46,16 @@ class FileCopier {
         params.copyOrder = [] as List<String>
     }
 
-    /** Parameters */
-    public final Map<String, Object> params = [:] as Map<String, Object>
+    /** Copier parameters */
+    final Map<String, Object> params = [:] as Map<String, Object>
+
+    /** Copier parameters */
+    Map getParams() { params }
+    /** Copier parameters */
+    void setParams(Map value) {
+        params.clear()
+        if (value != null) params.putAll(value)
+    }
 
     /** System parameters */
     public final Map<String, Object> sysParams = [:] as Map<String, Object>

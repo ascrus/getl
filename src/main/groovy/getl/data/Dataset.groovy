@@ -155,8 +155,16 @@ class Dataset {
 		setConfig(configName)
 	}
 
-	/** Dataset public parameters */
-	public final Map params = [:]
+	/** Dataset parameters */
+	final Map params = [:]
+
+	/** Dataset parameters */
+	Map getParams() { params }
+	/** Dataset parameters */
+	void setParams(Map value) {
+		params.clear()
+		if (value != null) params.putAll(value)
+	}
 
 	final List<Field> field = []
 	/** Fields of dataset */

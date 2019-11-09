@@ -93,10 +93,16 @@ class Flow {
 		MapUtils.MergeMap(params, configSection)
 	}
 	
-	/**
-	 * Flow public parameters
-	 */
-	public final Map<String, Object> params = [:]
+	/** Flow parameters */
+	final Map<String, Object> params = [:]
+
+	/** Flow parameters */
+	Map getParams() { params }
+	/** Flow parameters */
+	void setParams(Map value) {
+		params.clear()
+		if (value != null) params.putAll(value)
+	}
 
 	/** Dataset of error rows*/
 	TFSDataset errorsDataset

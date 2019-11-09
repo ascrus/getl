@@ -40,10 +40,16 @@ import java.sql.Timestamp
  *
  */
 class SavePointManager {
-	/**
-	 * Object parameters
-	 */
-	public final Map<String, Object> params = [:] as Map<String, Object>
+	/** Save point manager parameters */
+	final Map<String, Object> params = [:] as Map<String, Object>
+
+	/** Save point manager parameters */
+	Map getParams() { params }
+	/** Save point manager parameters */
+	void setParams(Map value) {
+		params.clear()
+		if (value != null) params.putAll(value)
+	}
 
 	public final Map<String, Object> sysParams = [:] as Map<String, Object>
 	

@@ -69,4 +69,41 @@ LIMIT 1'''
             tableWithoutBlob.drop(ifExists: true)
         }
     }
+
+    @Test
+    void bulkLoadFiles() {
+        Getl.Dsl(this) {
+            def vertable = verticaTable {
+                connection = this.con
+                tableName = 'testBulkLoad'
+                type = localTemporaryTableType
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50; isNull = false }
+                field('dt') { type = datetimeFieldType }
+                create()
+            }
+
+            def csv = csvTempWithDataset(vertable) {
+                fileName = 'vertica.bulkload'
+                extension = 'csv'
+
+                writeOpts {
+                    splitFile { true }
+                }
+
+                rowsTo {
+                    writeRow { add ->
+                        add id: 1, name: 'one', dt: DateUtils.Now()
+                        add id: 2, name: 'one', dt: DateUtils.Now()
+                        add id: 3, name: 'one', dt: DateUtils.Now()
+                    }
+                }
+                assertEquals(3, writeRows)
+                assertEquals(4, countWritePortions)
+            }
+
+            vertable.bulkLoadFile(source: csv, files: ["${csv.csvConnection().path}/${csv.fileName}.*.csv"])
+            assertEquals(3, vertable.updateRows)
+        }
+    }
 }
