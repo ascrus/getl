@@ -1546,7 +1546,7 @@ $sql
 	 * @param wp
 	 * @return
 	 */
-	private Closure generateSetStatement (String operation, List<Field> procFields, List<String> statFields, WriterParams wp) {
+	protected Closure generateSetStatement (String operation, List<Field> procFields, List<String> statFields, WriterParams wp) {
 		if (statFields.isEmpty()) throw new ExceptionGETL('Required fields from generate prepared statement')
 		def countMethod = new BigDecimal(statFields.size() / 100).intValue() + 1
 		def curMethod = 0
@@ -1966,7 +1966,7 @@ $sql
 		throw new ExceptionGETL("Driver not supported \"MERGE\" operation")
 	}
 	
-	private void validRejects (Dataset dataset, int[] er) {
+	protected void validRejects (Dataset dataset, int[] er) {
 		WriterParams wp = dataset.driver_params
 		
 		if (er.length == 0) return
@@ -1978,7 +1978,7 @@ $sql
 	}
 	
 	@groovy.transform.CompileStatic
-	private void saveBatch (Dataset dataset, WriterParams wp) {
+	protected void saveBatch (Dataset dataset, WriterParams wp) {
 		long countComplete = 0
 //		long countError = 0
 		wp.batchCount++

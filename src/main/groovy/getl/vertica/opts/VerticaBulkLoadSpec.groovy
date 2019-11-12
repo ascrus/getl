@@ -26,6 +26,7 @@ package getl.vertica.opts
 
 import getl.exception.ExceptionGETL
 import getl.jdbc.opts.BulkLoadSpec
+import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -127,13 +128,18 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
      * <br>Specifying the optional ENFORCELENGTH parameter rejects rows.
      * <br>Default: true value
      */
-    Boolean getEnforceLength() { (params.enforceLength as Boolean)?:true }
+    Boolean getEnforceLength() { BoolUtils.IsValue(params.enforceLength, true) }
     /**
      * Determines whether load truncates or rejects data rows of type char, varchar, binary, and varbinary if they do not fit the target table.
      * <br>Specifying the optional ENFORCELENGTH parameter rejects rows.
      * <br>Default: true value
      */
     void setEnforceLength(Boolean value) { params.enforceLength = value }
+
+    /** Stop loading rows on any error (default true) */
+    Boolean getAbortOnError() { BoolUtils.IsValue(params.abortOnError, true) }
+    /** Stop loading rows on any error (default true) */
+    void setAbortOnError(Boolean value) { params.abortOnError = value }
 
     /**
      * Describes the SQL expression of loading file columns into table fields.

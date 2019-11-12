@@ -42,6 +42,7 @@ import getl.utils.*
 class H2Driver extends JDBCDriver {
 	H2Driver() {
 		super()
+
 		sqlAutoIncrement = "auto_increment"
 		commitDDL = false
 
@@ -264,7 +265,7 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 		csvFile.fieldDelimiter = '|'
 		csvFile.rowDelimiter = '\n'
 		csvFile.quoteStr = '"'
-		csvFile.nullAsValue = '<NULL>'
+		csvFile.nullAsValue = null
 		csvFile.codePage = 'UTF-8'
 	}
 

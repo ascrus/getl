@@ -30,6 +30,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     protected String defaultSchema
     abstract protected JDBCConnection newCon()
 
+    String getDescriptionName() { "desc'ription" }
+
     JDBCConnection getCon() {
         if (_con == null) {
             _con = newCon()
@@ -44,18 +46,18 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
                 new Field(name: 'ID1', type: 'BIGINT', isKey: true, ordKey: 1),
                 new Field(name: 'ID2', type: 'DATETIME', isKey: true, ordKey: 2),
                 new Field(name: 'Name', type: 'STRING', length: 50, isNull: false),
-				new Field(name: "desc'ription", type: 'STRING', length: 250, isNull: false),
+				new Field(name: descriptionName, type: 'STRING', length: 250, isNull: false),
                 new Field(name: 'value', type: 'NUMERIC', length: 12, precision: 2, isNull: false),
                 new Field(name: 'DOuble', type: 'DOUBLE', isNull: false, defaultValue: 0),
             ]
 
-		if (con != null && con.driver.isSupport(Driver.Support.DATE)) res << new Field(name: 'date', type: 'DATE', isNull: false)
-		if (con != null && con.driver.isSupport(Driver.Support.TIME)) res << new Field(name: 'time', type: 'TIME', isNull: false)
-        if (con != null && con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) res << new Field(name: 'dtwithtz', type: 'TIMESTAMP_WITH_TIMEZONE', isNull: false)
-        if (con != null && con.driver.isSupport(Driver.Support.BOOLEAN)) res << new Field(name: 'flag', type: 'BOOLEAN', isNull: false)
-        if (con != null && con.driver.isSupport(Driver.Support.BLOB)) res << new Field(name: 'data', type: 'BLOB', length: 1024)
-        if (con != null && con.driver.isSupport(Driver.Support.CLOB)) res << new Field(name: 'text', type: 'TEXT', length: 1024)
-		if (con != null && con.driver.isSupport(Driver.Support.UUID)) res << new Field(name: 'uniqueid', type: 'UUID', isNull: false)
+		if (con != null && useDate) res << new Field(name: 'date', type: 'DATE', isNull: false)
+		if (con != null && useTime) res << new Field(name: 'time', type: 'TIME', isNull: false)
+        if (con != null && useTimestampWithZone) res << new Field(name: 'dtwithtz', type: 'TIMESTAMP_WITH_TIMEZONE', isNull: false)
+        if (con != null && useBoolean) res << new Field(name: 'flag', type: 'BOOLEAN', isNull: false)
+        if (con != null && useClob) res << new Field(name: 'text', type: 'TEXT', length: 1024)
+        if (con != null && useBlob) res << new Field(name: 'data', type: 'BLOB', length: 1024)
+		if (con != null && useUuid) res << new Field(name: 'uniqueid', type: 'UUID', isNull: false)
 
         return res
     }
@@ -80,7 +82,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 			def indexes = [
 					getl_test_data_idx_1:
 							[columns: ['id2', 'name']]]
-			if (con != null && con.driver.isSupport(Driver.Support.DATE))
+			if (con != null && useDate)
 				indexes << [getl_test_data_idx_2: [columns: ['id1', 'date'], unique: true]]
             table.create(ifNotExists: true, indexes: indexes)
         }
@@ -203,6 +205,14 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(1, l.size())
     }
 
+    protected boolean getUseDate() { con.driver.isSupport(Driver.Support.DATE) }
+    protected boolean getUseTime() { con.driver.isSupport(Driver.Support.TIME) }
+    protected boolean getUseTimestampWithZone() { con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE) }
+    protected boolean getUseBoolean() { con.driver.isSupport(Driver.Support.BOOLEAN) }
+    protected boolean getUseClob() { con.driver.isSupport(Driver.Support.CLOB) }
+    protected boolean getUseBlob() { con.driver.isSupport(Driver.Support.BLOB) }
+    protected boolean getUseUuid() { con.driver.isSupport(Driver.Support.UUID) }
+
     protected long insertData() {
         if (!con.driver.isOperation(Driver.Operation.INSERT)) return
         def count = new Flow().writeTo(dest: table) { updater ->
@@ -222,16 +232,16 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 			assertEquals(counter, r.id1)
 			assertNotNull(r.id2)
 			assertNotNull(r.name)
-			assertNotNull(r."desc'ription")
+			assertNotNull(r.get(descriptionName))
 			assertNotNull(r.value)
 			assertNotNull(r.double)
-			if (con.driver.isSupport(Driver.Support.DATE)) assertNotNull(r.date)
-			if (con.driver.isSupport(Driver.Support.TIME)) assertNotNull(r.time)
-            if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) assertNotNull(r.dtwithtz)
-			if (con.driver.isSupport(Driver.Support.BOOLEAN)) assertNotNull(r.flag)
-			/*if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
-			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)*/
-			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
+			if (useDate) assertNotNull(r.date)
+			if (useTime) assertNotNull(r.time)
+            if (useTimestampWithZone) assertNotNull(r.dtwithtz)
+			if (useBoolean) assertNotNull(r.flag)
+//			if (useClob) assertNotNull(r.text)
+//			if (useBlob) assertNotNull(r.data)
+			if (useUuid) assertNotNull(r.uniqueid)
 		}
         assertEquals(10, table.readRows)
 
@@ -246,16 +256,16 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
                 Map nr = [:]
                 nr.putAll(r)
                 nr.name = StringUtils.LeftStr(r.name, 40) + ' update'
-				nr."desc'ription" = StringUtils.LeftStr(r."desc'ription", 200) + ' update'
+				nr.put(descriptionName, StringUtils.LeftStr(r."desc'ription", 200) + ' update')
                 nr.value = r.value + 1
                 nr.double = r.double + 1.00
-				if (con.driver.isSupport(Driver.Support.DATE)) nr.date = DateUtils.AddDate('dd', 1, r.date)
-				if (con.driver.isSupport(Driver.Support.TIME)) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
-                if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz)
-				if (con.driver.isSupport(Driver.Support.BOOLEAN)) nr.flag = GenerationUtils.GenerateBoolean()
-				if (con.driver.isSupport(Driver.Support.CLOB)) nr.text = GenerationUtils.GenerateString(500)
-				if (con.driver.isSupport(Driver.Support.BLOB)) nr.data = GenerationUtils.GenerateString(250).bytes
-				if (con.driver.isSupport(Driver.Support.UUID)) nr.uniqueid = UUID.randomUUID().toString()
+				if (useDate) nr.date = DateUtils.AddDate('dd', 1, r.date)
+				if (useTime) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
+                if (useTimestampWithZone) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz)
+				if (useBoolean) nr.flag = GenerationUtils.GenerateBoolean()
+				if (useClob) nr.text = GenerationUtils.GenerateString(500)
+				if (useBlob) nr.data = GenerationUtils.GenerateString(250).bytes
+				if (useUuid) nr.uniqueid = UUID.randomUUID().toString()
 
                 updater(nr)
             }
@@ -266,16 +276,16 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 		def i = 0
         table.eachRow(order: ['id1']) { r ->
             assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' update', r.name)
-			assertEquals(StringUtils.LeftStr(rows[i]."desc'ription", 200) + ' update', r."desc'ription")
+			assertEquals(StringUtils.LeftStr(rows[i].get(descriptionName), 200) + ' update', r.get(descriptionName))
             assertEquals(rows[i].value + 1, r.value)
 			assertNotNull(r.double)
-			if (con.driver.isSupport(Driver.Support.DATE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
-			if (con.driver.isSupport(Driver.Support.TIME)) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)).toString(), r.time.toString())
-            if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].dtwithtz), r.dtwithtz)
-			if (con.driver.isSupport(Driver.Support.BOOLEAN)) assertNotNull(r.flag)
-			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
-			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
-			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
+			if (useDate) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
+			if (useTime) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)).toString(), r.time.toString())
+            if (useTimestampWithZone) assertEquals(DateUtils.AddDate('dd', 1, rows[i].dtwithtz), r.dtwithtz)
+			if (useBoolean) assertNotNull(r.flag)
+			/*if (useClob) assertNotNull(r.text)
+			if (useBlob) assertNotNull(r.data)*/
+			if (useUuid) assertNotNull(r.uniqueid)
 
 			i++
         }
@@ -289,16 +299,16 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
                 Map nr = [:]
                 nr.putAll(r)
                 nr.name = StringUtils.LeftStr(r.name, 40) + ' merge'
-				nr."desc'ription" = StringUtils.LeftStr(r."desc'ription", 200) + ' merge'
+				nr.put(descriptionName, StringUtils.LeftStr(r."desc'ription", 200) + ' merge')
                 nr.value = r.value + 1
                 nr.double = r.double + 1.00
-				if (con.driver.isSupport(Driver.Support.DATE)) nr.date = DateUtils.AddDate('dd', 1, r.date)
-				if (con.driver.isSupport(Driver.Support.TIME)) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
-                if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz)
-				if (con.driver.isSupport(Driver.Support.BOOLEAN)) nr.flag = GenerationUtils.GenerateBoolean()
-				if (con.driver.isSupport(Driver.Support.CLOB)) nr.text = GenerationUtils.GenerateString(1024)
-				if (con.driver.isSupport(Driver.Support.BLOB)) nr.data = GenerationUtils.GenerateString(512).bytes
-				if (con.driver.isSupport(Driver.Support.UUID)) nr.uniqueid = UUID.randomUUID().toString()
+				if (useDate) nr.date = DateUtils.AddDate('dd', 1, r.date)
+				if (useTime) nr.time = java.sql.Time.valueOf((r.time as java.sql.Time).toLocalTime().plusSeconds(100))
+                if (useTimestampWithZone) nr.dtwithtz = DateUtils.AddDate('dd', 1, r.dtwithtz)
+				if (useBoolean) nr.flag = GenerationUtils.GenerateBoolean()
+				if (useClob) nr.text = GenerationUtils.GenerateString(1024)
+				if (useBlob) nr.data = GenerationUtils.GenerateString(512).bytes
+				if (useUuid) nr.uniqueid = UUID.randomUUID().toString()
 
                 updater(nr)
             }
@@ -309,23 +319,23 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 		def i = 0
         table.eachRow(order: ['id1']) { r ->
             assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' merge', r.name)
-			assertEquals(StringUtils.LeftStr(rows[i]."desc'ription", 200) + ' merge', r."desc'ription")
+			assertEquals(StringUtils.LeftStr(rows[i].get(descriptionName), 200) + ' merge', r.get(descriptionName))
             assertEquals(rows[i].value + 1, r.value)
 			assertNotNull(r.double)
-			if (con.driver.isSupport(Driver.Support.DATE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
-			if (con.driver.isSupport(Driver.Support.TIME)) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
-            if (con.driver.isSupport(Driver.Support.TIMESTAMP_WITH_TIMEZONE)) assertEquals(DateUtils.AddDate('dd', 1, rows[i].dtwithtz), r.dtwithtz)
-			if (con.driver.isSupport(Driver.Support.BOOLEAN)) assertNotNull(r.flag)
-			if (con.driver.isSupport(Driver.Support.CLOB)) assertNotNull(r.text)
-			if (con.driver.isSupport(Driver.Support.BLOB)) assertNotNull(r.data)
-			if (con.driver.isSupport(Driver.Support.UUID)) assertNotNull(r.uniqueid)
+			if (useDate) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
+			if (useTime) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)), r.time)
+            if (useTimestampWithZone) assertEquals(DateUtils.AddDate('dd', 1, rows[i].dtwithtz), r.dtwithtz)
+			if (useBoolean) assertNotNull(r.flag)
+			/*if (useClob) assertNotNull(r.text)
+			if (useBlob) assertNotNull(r.data)*/
+			if (useUuid) assertNotNull(r.uniqueid)
 
 			i++
         }
     }
 
     protected void validCount() {
-        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('name')} IS NOT NULL AND ${table.sqlObjectName("desc'ription")} IS NOT NULL")
+        def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('name')} IS NOT NULL AND ${table.sqlObjectName(descriptionName)} IS NOT NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
         assertEquals(countRows, rows[0].count_rows)
@@ -344,7 +354,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     protected void truncateData() {
-        table.truncate(truncate: true)
+        table.truncate(truncate: [con.driver.isOperation(Driver.Operation.DELETE)?false:true])
         assertEquals(0, table.countRow())
     }
 
@@ -377,6 +387,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     protected void runCommandUpdate() {
+        if (!con.driver.isOperation(Driver.Operation.UPDATE)) return
         con.startTran()
         def count = con.executeCommand(command: "UPDATE ${table.fullNameDataset()} SET ${table.sqlObjectName('double')} = ${table.sqlObjectName('double')} + 1", isUpdate: true)
         assertEquals(countRows, count)
@@ -394,15 +405,15 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
             (1..countRows).each { num ->
                 Map r = GenerationUtils.GenerateRowValues(file.field, num)
                 r.id1 = num
-                r.name = """'name'\t"$num"\ntest|/,\\;"""
+                r.name = """'name'\t"$num"\ntest|/,;|\\"""
 
                 updater(r)
             }
         }
         assertEquals(countRows, count)
 
-        bulkTable.truncate()
-
+        bulkTable.truncate(truncate: [con.driver.isOperation(Driver.Operation.DELETE)?false:true])
+                
         bulkTable.bulkLoadFile(source: file)
         assertEquals(countRows, bulkTable.updateRows)
         assertEquals(countRows, bulkTable.countRow())
@@ -413,7 +424,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         def sql = """
 ----- Test scripter
 ECHO Run sql script ...
-IF EXISTS(SELECT * FROM $table_name); -- test IF operator
+IF (1 IN (SELECT ID1 FROM ${table.fullTableName})); -- test IF operator
 ECHO Table has rows -- test ECHO 
 END IF;
 SET SELECT ${table.sqlObjectName('id2')} FROM $table_name WHERE ${table.sqlObjectName('id1')} = 1; -- test SET operator
@@ -477,12 +488,12 @@ END FOR;
 		if (Config.content.perfomanceRows == null) return
 		def perfomanceRows = Config.content.perfomanceRows as Integer
 		def perfomanceCols = (Config.content.perfomanceCols as Integer)?:100
-		Logs.Finest("Test ${c.driverName} perfomance write from $perfomanceRows rows with ${perfomanceCols+2} cols ...")
+		Logs.Finest("Test ${c.getClass().name} perfomance write from $perfomanceRows rows with ${perfomanceCols+2} cols ...")
 
         List<Field> fields = []
         fields << new Field(name: 'id', type: Field.Type.INTEGER, isKey: true)
         fields << new Field(name: 'name', length: 50, isNull: false)
-        fields << new Field(name: 'desc\'cription', length: 50, isNull: false)
+        fields << new Field(name: descriptionName, length: 50, isNull: false)
 		(1..perfomanceCols).each { num ->
             fields << new Field(name: "value_$num", type: Field.Type.DOUBLE)
 		}
@@ -496,7 +507,7 @@ END FOR;
                     def r = [:] as Map<String, Object>
                     r.id = cur
                     r.name = "name $cur"
-                    r."desc'cription" = "description $cur"
+                    r.put(descriptionName, "description $cur")
                     (1..perfomanceCols).each { Integer num ->
                         r.put("value_$num".toString(), cur)
                     }

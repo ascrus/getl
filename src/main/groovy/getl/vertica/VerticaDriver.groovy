@@ -150,7 +150,8 @@ class VerticaDriver extends JDBCDriver {
 					'type=\'traditional\'',
 					"delimiter = E'${StringUtils.EscapeJava(source.fieldDelimiter)}'",
 					"enclosed_by = E'${StringUtils.EscapeJava(source.quoteStr)}'",
-					"record_terminator = E'${StringUtils.EscapeJava(source.rowDelimiter)}'"
+					"record_terminator = E'${StringUtils.EscapeJava(source.rowDelimiter)}'",
+					"escape=U&'\\0001'"
 			]
 			if (source.header) opts << 'header=\'true\''
 
@@ -181,9 +182,7 @@ class VerticaDriver extends JDBCDriver {
 		String exceptionPath = params.exceptionPath
 		String rejectedPath = params.rejectedPath
 		def rejectMax = params.rejectMax as Long
-		/** TODO: check load from table with left field */
-		boolean abortOnError = ListUtils.NotNullValue([BoolUtils.IsValue(params.abortOnError, null),
-													   (!(rejectedPath != null || exceptionPath != null))])
+		boolean abortOnError = BoolUtils.IsValue(params.abortOnError, true)
 		String location = params.location
 		String onNode = (location != null)?(' ON ' + location):''
 
@@ -429,7 +428,7 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	void validCsvTempFile(Dataset source, CSVDataset csvFile) {
 		if (!(csvFile.codePage.toLowerCase() in ['utf-8', 'utf8']))
-			throw new ExceptionGETL('The file must be encoded in 8 for batch download!')
+			throw new ExceptionGETL('The file must be encoded in utf-8 for batch download!')
 
 		if (csvFile.fieldDelimiter.length() > 1)
 			throw new ExceptionGETL('The field delimiter must have only one character for bulk load!')

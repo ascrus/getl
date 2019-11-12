@@ -23,7 +23,13 @@ class HiveDriverTest extends JDBCDriverProto {
     }
 
     @Override
+    protected boolean getUseDate() { false }
+
+    @Override
     String getTableClass() { 'getl.hive.HiveTable' }
+
+    /*@Override
+    String getDescriptionName() { "description" }*/
 
     @Override
     protected void createTable() {
@@ -31,14 +37,14 @@ class HiveDriverTest extends JDBCDriverProto {
         t.schemaName = con.connectDatabase
         t.drop(ifExists: true)
         t.field = fields
-        t.create(storedAs: 'ORC', clustered: [by: ['id1'], intoBuckets: 2], tblproperties: [transactional: true])
+        t.create(storedAs: 'ORC', clustered: [by: ['id1'], intoBuckets: 2], tblproperties: [transactional: false])
     }
 
     @Override
     protected TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
         HiveTable t = new HiveTable(connection: con, schemaName: con.connectDatabase, tableName: name, field: fields)
         t.drop(ifExists: true)
-        t.create(storedAs: 'ORC', clustered: [by: ['id'], intoBuckets: 2], tblproperties: [transactional: true])
+        t.create(storedAs: 'ORC', clustered: [by: ['id'], intoBuckets: 2], tblproperties: [transactional: false])
         return t
     }
 }

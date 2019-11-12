@@ -45,6 +45,7 @@ class HiveDriver extends JDBCDriver {
         tablePrefix = '`'
         fieldPrefix = '`'
 
+        caseObjectName = "LOWER"
         connectionParamBegin = ';'
         connectionParamJoin = ';'
 
@@ -78,8 +79,7 @@ class HiveDriver extends JDBCDriver {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
                  Driver.Operation.BULKLOAD] -
-                [Driver.Operation.READ_METADATA, Driver.Operation.INSERT,
-                 Driver.Operation.UPDATE, Driver.Operation.DELETE]
+                [/*Driver.Operation.READ_METADATA, */Driver.Operation.UPDATE, Driver.Operation.DELETE]
     }
 
     @Override
@@ -281,12 +281,13 @@ class HiveDriver extends JDBCDriver {
             files << source.fileName
         }
 
-        // Describe temporary local csv file
+        // Describe temporary table
         def tempFile = TFS.dataset()
+        def tempFileName = new File(tempFile.fullFileName()).name
         tempFile.header = false
         tempFile.fieldDelimiter = '\u0001'
         tempFile.rowDelimiter = '\n'
-        tempFile.quoteMode = CSVDataset.QuoteMode.NORMAL
+        tempFile.quoteMode = CSVDataset.QuoteMode.COLUMN
         tempFile.codePage = 'utf-8'
         tempFile.escaped = true
         tempFile.nullAsValue = '<NULL>'
@@ -328,12 +329,8 @@ class HiveDriver extends JDBCDriver {
         }
 
         // Copy source file to temp csv file
-        def count = 0
-        files.each { String fileName ->
-            source.fileName = fileName
-            count = count + new Flow().copy([source: source, dest: tempFile, inheritFields: false,
-                                             dest_append: (count > 0)], processRow)
-        }
+        def count = new Flow().copy([source: source, dest: tempFile, inheritFields: false,
+                                     dest_append: false], processRow)
         if (count == 0) return
 
         // Copy temp csv file to HDFS
@@ -341,7 +338,7 @@ class HiveDriver extends JDBCDriver {
                             localDirectory: (tempFile.connection as CSVConnection).path)
         fileMan.connect()
         try {
-            fileMan.upload(tempFile.fileName)
+            fileMan.upload(tempFileName)
         }
         finally {
             fileMan.disconnect()
@@ -353,13 +350,14 @@ class HiveDriver extends JDBCDriver {
             tempTable.field = tempFile.field
             tempTable.create(rowFormat: 'DELIMITED', fieldsTerminated: '\\001', nullDefined: tempFile.nullAsValue)
             try {
-                dest.readRows = tempTable.connection
-                        .executeCommand(isUpdate: true, command: "LOAD DATA INPATH '${fileMan.rootPath}/${tempFile.fileName}' INTO TABLE ${tempTable.tableName}")
+                tempTable.connection
+                        .executeCommand(isUpdate: true, command: "LOAD DATA INPATH '${fileMan.rootPath}/${tempFileName}' INTO TABLE ${tempTable.tableName}")
                 def countRow = tempTable.connection
                         .executeCommand(isUpdate: true, command: "FROM ${tempTable.tableName} INSERT ${(overwriteTable)?'OVERWRITE':'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
                         (!partFields.isEmpty() ? " PARTITION(${partFields.join(', ')})" : '') + " SELECT ${loadFields.join(', ')}")
-                dest.writeRows = countRow
-                dest.updateRows = countRow
+                source.readRows = tempFile.writeRows
+                dest.writeRows = tempFile.writeRows
+                dest.updateRows = tempFile.writeRows
             }
             finally {
                 tempTable.drop()
@@ -369,7 +367,7 @@ class HiveDriver extends JDBCDriver {
             tempFile.drop()
             fileMan.connect()
             try {
-                fileMan.removeFile(tempFile.fileName)
+                fileMan.removeFile(tempFileName)
             }
             finally {
                 fileMan.disconnect()
@@ -467,5 +465,16 @@ class HiveDriver extends JDBCDriver {
         }
 
         return res
+    }
+
+    @groovy.transform.CompileStatic
+    protected void saveBatch (Dataset dataset, WriterParams wp) {
+        try {
+            super.saveBatch(dataset, wp)
+        }
+        catch (AssertionError e) {
+            Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
+            throw e
+        }
     }
 }
