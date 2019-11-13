@@ -721,7 +721,7 @@ class JDBCDriver extends Driver {
 				rs.close()
 			}
 
-			if (ds.type == JDBCDataset.Type.TABLE) {
+			if (ds.type in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType]) {
 				rs = sqlConnect.connection.metaData.getPrimaryKeys(names.dbName, names.schemaName, names.tableName)
 				def ord = 0
 				try {
@@ -831,20 +831,21 @@ ${extend}'''
 
 		def tableName = fullNameDataset(dataset)
 		def tableType = (dataset as JDBCDataset).type as JDBCDataset.Type
-		if (!(tableType in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.MEMORY])) {
+		if (!(tableType in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType,
+							JDBCDataset.localTemporaryTableType, JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
             throw new ExceptionGETL("Can not create dataset for type \"${tableType}\"")
         }
 		def temporary = ""
 		switch (tableType) {
-			case JDBCDataset.Type.GLOBAL_TEMPORARY:
+			case JDBCDataset.globalTemporaryTableType:
                 if (!isSupport(Driver.Support.GLOBAL_TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables')
 				temporary = globalTemporaryTablePrefix
 				break
-			case JDBCDataset.Type.LOCAL_TEMPORARY:
+			case JDBCDataset.localTemporaryTableType:
                 if (!isSupport(Driver.Support.LOCAL_TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables')
 				temporary = localTemporaryTablePrefix
 				break
-			case JDBCDataset.Type.MEMORY:
+			case JDBCDataset.memoryTable:
                 if (!isSupport(Driver.Support.MEMORY)) throw new ExceptionGETL('Driver not support memory tables')
 				temporary = memoryTablePrefix
 				break
@@ -1062,7 +1063,9 @@ ${extend}'''
 		if (tableType == null || tableType != JDBCDataset.Type.LOCAL_TEMPORARY) {
 			def schemaName = ds.schemaName
 			if (schemaName == null &&
-					(dataset as JDBCDataset).type == JDBCDataset.Type.TABLE && defaultSchemaName != null) {
+					(dataset as JDBCDataset).type in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType,
+													  JDBCDataset.externalTable] &&
+					defaultSchemaName != null) {
 				schemaName = defaultSchemaName
 			}
 
@@ -1112,8 +1115,9 @@ ${extend}'''
 
 		def n = fullNameDataset(dataset)
 		def t = ((dataset as JDBCDataset).type in
-                    [JDBCDataset.Type.TABLE, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.GLOBAL_TEMPORARY,
-                     JDBCDataset.Type.MEMORY])?"TABLE":((dataset as JDBCDataset).type == JDBCDataset.Type.VIEW)?'VIEW':null
+                    [JDBCDataset.tableType, JDBCDataset.localTemporaryTableType, JDBCDataset.globalTemporaryTableType,
+                     JDBCDataset.memoryTable, JDBCDataset.externalTable])?'TABLE':
+				((dataset as JDBCDataset).type == JDBCDataset.viewType)?'VIEW':null
 
 		if (t == null) throw new ExceptionGETL("Can not support type object \"${(dataset as JDBCDataset).type}\"")
 
@@ -1650,7 +1654,8 @@ $sql
 	 * @return
 	 */
 	protected Map bulkLoadFilePrepare(CSVDataset source, JDBCDataset dest, Map<String, Object> params, Closure prepareCode) {
-		if (!(dest.type in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY, JDBCDataset.Type.MEMORY]) ) {
+		if (!(dest.type in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType,
+							JDBCDataset.localTemporaryTableType, JDBCDataset.memoryTable, JDBCDataset.externalTable]) ) {
 			throw new ExceptionGETL("Bulk load support only table and not worked for ${dest.type}")
 		}
 		

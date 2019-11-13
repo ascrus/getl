@@ -107,7 +107,7 @@ class H2Driver extends JDBCDriver {
 	@Override
 	protected String createDatasetExtend(Dataset dataset, Map params) {
 		String result = ""
-		def temporary = (dataset as JDBCDataset).isTemporaryDataset
+		def temporary = (dataset as JDBCDataset).isTemporaryTable
 		if (BoolUtils.IsValue(params."not_persistent")) result += "NOT PERSISTENT "
 		if (temporary && BoolUtils.IsValue(params.transactional)) result += "TRANSACTIONAL "
 
@@ -121,7 +121,6 @@ class H2Driver extends JDBCDriver {
 		params = bulkLoadFilePrepare(source, dest as JDBCDataset, params, prepareCode)
 
 		def map = params.map as List<Map>
-		boolean autoCommit = (params.autoCommit != null) ? params.autoCommit : (dest.connection.tranCount == 0 && !(dest.connection as JDBCConnection).autoCommit)
 
 		Map<String, String> expression = (params.expression?:[:]) as Map<String, String>
 		expression.each { String fieldName, String expr ->
@@ -164,21 +163,11 @@ FROM CSVREAD('{file_name}', ${heads}, '${functionParms}')
         def sql = sb.toString()
 		//println sb.toString()
 
-        def sourceConnection = source.connection as CSVConnection
-
         dest.writeRows = 0
 		dest.updateRows = 0
-		if (autoCommit) dest.connection.startTran()
-		long count = 0
-		try {
-			def loadFile = source.fullFileName()
-			count += executeCommand(sql.replace('{file_name}', loadFile), [isUpdate: true])
-		}
-		catch (Exception e) {
-			if (autoCommit) dest.connection.rollbackTran()
-			throw e
-		}
-		if (autoCommit) dest.connection.commitTran()
+		def loadFile = source.fullFileName()
+		long count = executeCommand(sql.replace('{file_name}', loadFile), [isUpdate: true])
+		source.readRows = count
 		dest.writeRows = count
 		dest.updateRows = count
 	}

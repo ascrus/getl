@@ -60,7 +60,7 @@ class HiveDriver extends JDBCDriver {
                  'fieldsTerminated', 'nullDefined', 'select'])
         methodParams.register('openWrite', ['overwrite'])
         methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
-                                               'hdfsDir', 'processRow', 'expression'])
+                                               'hdfsDir', 'processRow', 'expression', 'files', 'fileMask'])
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -68,7 +68,7 @@ class HiveDriver extends JDBCDriver {
     List<Driver.Support> supported() {
         return super.supported() +
                 [Driver.Support.LOCAL_TEMPORARY, Driver.Support.DATE, Driver.Support.BOOLEAN,
-                 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST] -
+                 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Driver.Support.BULKLOADMANYFILES] -
                 [Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD,
                  Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD]
     }
@@ -79,7 +79,7 @@ class HiveDriver extends JDBCDriver {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE,
                  Driver.Operation.BULKLOAD] -
-                [/*Driver.Operation.READ_METADATA, */Driver.Operation.UPDATE, Driver.Operation.DELETE]
+                [Driver.Operation.READ_METADATA, Driver.Operation.UPDATE, Driver.Operation.DELETE]
     }
 
     @Override
@@ -94,8 +94,8 @@ class HiveDriver extends JDBCDriver {
         res.STRING.name = 'string'
         res.STRING.useLength = JDBCDriver.sqlTypeUse.NEVER
         res.DOUBLE.name = 'double'
-        res.BLOB.name = 'binary'
-        res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER
+        /*res.BLOB.name = 'binary'
+        res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER*/
 
         return res
     }
@@ -235,7 +235,7 @@ class HiveDriver extends JDBCDriver {
 
     @Override
     protected String syntaxInsertStatement(Dataset dataset, Map params) {
-        String into = (BoolUtils.IsValue([params.overwrite, (dataset as TableDataset).params.overwrite]))?'OVERWRITE':'INTO'
+        String into = (BoolUtils.IsValue([params.overwrite, dataset.directives('write').overwrite]))?'OVERWRITE':'INTO'
         return ((dataset.fieldListPartitions.isEmpty()))?
                 "INSERT $into TABLE {table} ({columns}) VALUES({values})":
                 "INSERT $into TABLE {table} ({columns}) PARTITION ({partition}) VALUES({values})"
@@ -247,14 +247,14 @@ class HiveDriver extends JDBCDriver {
         bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
         def conHive = dest.connection as HiveConnection
 
-        def overwriteTable = BoolUtils.IsValue([bulkParams.overwrite, table.params.overwrite])
+        def overwriteTable = BoolUtils.IsValue(bulkParams.overwrite)
         def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, conHive.hdfsHost])
         def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, conHive.hdfsPort]) as Integer
         def hdfsLogin = ListUtils.NotNullValue([bulkParams.hdfsLogin, conHive.hdfsLogin])
         def hdfsDir = ListUtils.NotNullValue([bulkParams.hdfsDir, conHive.hdfsDir])
         def processRow = bulkParams.processRow as Closure
 
-        Map<String, String> expression = bulkParams.expression as Map<String, String>?:[:]
+        def expression = ListUtils.NotNullValue([bulkParams.expression, [:]]) as Map<String, Object>
         expression.each { String fieldName, String expr ->
             if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
         }
@@ -271,14 +271,14 @@ class HiveDriver extends JDBCDriver {
             def fm = new FileManager(rootPath: (source.connection as CSVConnection).path)
             fm.connect()
             try {
-                fm.list(bulkParams.fileMask as String).each { Map f -> files.add(f.filename as String)}
+                fm.list(bulkParams.fileMask as String).each { Map f -> files.add(f.filepath + '/' + f.filename)}
             }
             finally {
                 fm.disconnect()
             }
         }
         else {
-            files << source.fileName
+            files << source.fullFileName()
         }
 
         // Describe temporary table
@@ -329,8 +329,21 @@ class HiveDriver extends JDBCDriver {
         }
 
         // Copy source file to temp csv file
-        def count = new Flow().copy([source: source, dest: tempFile, inheritFields: false,
-                                     dest_append: false], processRow)
+        long count = 0
+        def csvCon = source.connection.cloneConnection() as CSVConnection
+        csvCon.extension = null
+        def csvFile = source.cloneDataset(csvCon) as CSVDataset
+        csvFile.extension = null
+        files.each { fileName ->
+            def file = new File(fileName)
+            if (!file.exists())
+                throw new ExceptionGETL("File $fileName not found!")
+
+            csvCon.path = file.parent
+            csvFile.fileName = file.name
+
+            count += new Flow().copy([source: csvFile, dest: tempFile, inheritFields: false, dest_append: (count > 0)], processRow)
+        }
         if (count == 0) return
 
         // Copy temp csv file to HDFS
@@ -355,9 +368,9 @@ class HiveDriver extends JDBCDriver {
                 def countRow = tempTable.connection
                         .executeCommand(isUpdate: true, command: "FROM ${tempTable.tableName} INSERT ${(overwriteTable)?'OVERWRITE':'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
                         (!partFields.isEmpty() ? " PARTITION(${partFields.join(', ')})" : '') + " SELECT ${loadFields.join(', ')}")
-                source.readRows = tempFile.writeRows
-                dest.writeRows = tempFile.writeRows
-                dest.updateRows = tempFile.writeRows
+                source.readRows = count
+                dest.writeRows = count
+                dest.updateRows = count
             }
             finally {
                 tempTable.drop()

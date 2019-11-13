@@ -45,6 +45,11 @@ class BulkLoadSpec extends BaseSpec {
         setOnPrepare(value)
     }
 
+    /** Auto commit after bulk load files */
+    Boolean getLoadAsPackage() { BoolUtils.IsValue(params.loadAsPackage) }
+    /** Auto commit after bulk load files */
+    void setLoadAsPackage(Boolean value) { params.loadAsPackage = value }
+
     /** Automatic linking by the file and table field names */
     Boolean getAutoMap() { params.autoMap as Boolean }
     /** Automatic linking by the file and table field names */

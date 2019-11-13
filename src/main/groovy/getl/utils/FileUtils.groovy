@@ -538,7 +538,7 @@ class FileUtils {
 	}
 
 	/**
-	 * Return name from file
+	 * Return name from file without path
 	 * @param file
 	 * @return
 	 */

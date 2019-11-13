@@ -825,7 +825,7 @@ abstract class Manager {
 
 		if (createStory) storyTable.create()
 
-		def tableType = (threadCount == null)?JDBCDataset.Type.LOCAL_TEMPORARY:JDBCDataset.Type.TABLE
+		def tableType = (threadCount == null)?JDBCDataset.localTemporaryTableType:JDBCDataset.tableType
 		
 		def newFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
 		newFiles.field = [new Field(name: 'ID', type: 'INTEGER', isNull: false, isAutoincrement: true)] + fileList.field

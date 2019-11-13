@@ -80,6 +80,9 @@ LIMIT 1'''
                 field('id') { type = integerFieldType; isKey = true }
                 field('name') { length = 50; isNull = false }
                 field('dt') { type = datetimeFieldType }
+                createOpts {
+                    onCommit = true
+                }
                 create()
             }
 
@@ -102,8 +105,15 @@ LIMIT 1'''
                 assertEquals(4, countWritePortions)
             }
 
-            vertable.bulkLoadFile(source: csv, files: ["${csv.csvConnection().path}/${csv.fileName}.*.csv"])
+            vertable.with {
+                bulkLoadCsv(csv) {
+                    files = "${csv.csvConnection().path}/${csv.fileName}.*.csv"
+                    loadAsPackage = true
+                }
+            }
+
             assertEquals(3, vertable.updateRows)
+            assertEquals(3, vertable.countRow())
         }
     }
 }

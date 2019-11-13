@@ -657,11 +657,14 @@ class Flow {
 			}
 		}
 		
-		if (autoTran) dest.connection.commitTran()
+		if (autoTran)
+			dest.connection.commitTran()
+
 		childs.each { String name, FlowCopyChild child ->
 			def dataset = child.dataset as Dataset
 			def autoTranChild = BoolUtils.IsValue(child.autoTran)
-			if (autoTranChild) dataset.connection.commitTran()
+			if (autoTranChild)
+				dataset.connection.commitTran()
 		}
 
 		return countRow

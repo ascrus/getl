@@ -101,21 +101,6 @@ class CreateSpec extends BaseSpec {
     void setType(JDBCDataset.Type value) { params.type = value }
 
     /**
-     * This table
-     */
-    static JDBCDataset.Type getIsTable() { JDBCDataset.Type.TABLE }
-
-    /**
-     * This global temporary table
-     */
-    static JDBCDataset.Type getIsGlobalTemporary() { JDBCDataset.Type.GLOBAL_TEMPORARY }
-
-    /**
-     * This local temporary table
-     */
-    static JDBCDataset.Type getIsTemporary() { JDBCDataset.Type.LOCAL_TEMPORARY }
-
-    /**
      * Create new parameters object for create index
      */
     protected static IndexSpec newIndexParams(def ownerObject, def thisObject, Boolean useExternalParams,

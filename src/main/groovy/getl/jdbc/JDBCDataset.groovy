@@ -44,7 +44,8 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Type of jdbc datasets
 	 */
-	static enum Type {TABLE, VIEW, QUERY, PROCEDURE, ALIAS, SYNONYM, MEMORY, GLOBAL_TEMPORARY, LOCAL_TEMPORARY, SYSTEM_TABLE, UNKNOWN}
+	static enum Type {TABLE, VIEW, QUERY, PROCEDURE, ALIAS, SYNONYM, MEMORY, GLOBAL_TEMPORARY, LOCAL_TEMPORARY,
+						EXTERNAL_TABLE, SYSTEM_TABLE, UNKNOWN}
 
 	/** Table type */
 	static tableType = Type.TABLE
@@ -54,6 +55,12 @@ class JDBCDataset extends Dataset {
 	static globalTemporaryTableType = Type.GLOBAL_TEMPORARY
 	/** Local temporary type */
 	static localTemporaryTableType = Type.LOCAL_TEMPORARY
+	/** External table type */
+	static externalTable = Type.EXTERNAL_TABLE
+	/** System table type */
+	static systemTable = Type.SYSTEM_TABLE
+	/** Table in memory */
+	static memoryTable = Type.MEMORY
 	/** Query type */
 	static queryType = Type.QUERY
 	
@@ -211,7 +218,13 @@ class JDBCDataset extends Dataset {
 
 	/** Dataset is temporary table */
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	Boolean getIsTemporaryDataset() {
+	Boolean getIsTemporaryTable() {
 		((directives('create').type as JDBCDataset.Type) in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
+	}
+
+	/** Dataset is external table */
+	@SuppressWarnings("UnnecessaryQualifiedReference")
+	Boolean getIsExternalTable() {
+		(directives('create').type as JDBCDataset.Type == JDBCDataset.Type.EXTERNAL_TABLE)
 	}
 }

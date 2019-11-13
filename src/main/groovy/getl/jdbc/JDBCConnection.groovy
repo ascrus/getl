@@ -376,16 +376,19 @@ class JDBCConnection extends Connection {
 			TableDataset d
 			switch ((row.type as String)?.toUpperCase()) {
 				case 'VIEW':
-					d = new ViewDataset(type: JDBCDataset.Type.VIEW)
+					d = new ViewDataset(type: JDBCDataset.viewType)
 					break
 				case 'GLOBAL TEMPORARY':
-					d = new TableDataset(type: JDBCDataset.Type.GLOBAL_TEMPORARY)
+					d = new TableDataset(type: JDBCDataset.globalTemporaryTableType)
 					break
 				case 'LOCAL TEMPORARY':
-					d = new TableDataset(type: JDBCDataset.Type.LOCAL_TEMPORARY)
+					d = new TableDataset(type: JDBCDataset.localTemporaryTableType)
 					break
-				case 'TABLE': case 'SYSTEM TABLE':
-					d = new TableDataset(type: JDBCDataset.Type.TABLE)
+				case 'TABLE':
+					d = new TableDataset(type: JDBCDataset.tableType)
+					break
+				case 'SYSTEM TABLE':
+					d = new TableDataset(type: JDBCDataset.systemTable)
 					break
 				default:
 					throw new ExceptionGETL("Not support dataset type \"${row.type}\"")
@@ -675,7 +678,7 @@ import getl.lang.Getl
 				sb << "\n${tab}loadDatasetMetadata()"
 			}
 
-			if (p.createTables && dataset.type in [JDBCDataset.Type.TABLE, JDBCDataset.Type.GLOBAL_TEMPORARY]) {
+			if (p.createTables && dataset.type in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType, JDBCDataset.externalTable]) {
 				sb << "\n\n${tab}if (createTables) {"
 
 				if (p.dropTables) {
@@ -685,7 +688,7 @@ import getl.lang.Getl
 				sb << "\n${tab}${tab}create()"
 				sb << "\n${tab}${tab}logInfo \"Created table \$fullTableName\""
 
-				if (dataset.type == JDBCDataset.Type.TABLE && repName in listTableSavedData) {
+				if (dataset.type in [JDBCDataset.tableType, JDBCDataset.externalTable] && repName in listTableSavedData) {
 					def dataResourceDir = ((resourceRoot != null)?"/$resourceRoot":'') + "/csv.init/" + generateDslResourceName(dataset)
 					FileUtils.ValidPath("$resourcePath$dataResourceDir")
 					def csvPath = new CSVConnection(path: "$resourcePath$dataResourceDir")

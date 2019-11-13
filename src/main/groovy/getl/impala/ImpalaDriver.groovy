@@ -25,7 +25,9 @@
 package getl.impala
 
 import getl.data.Dataset
+import getl.data.Field
 import getl.driver.Driver
+import getl.exception.ExceptionGETL
 import getl.jdbc.JDBCDriver
 import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
@@ -47,6 +49,13 @@ class ImpalaDriver extends JDBCDriver {
         connectionParamJoin = ';'
 
         syntaxPartitionKeyInColumns = false
+
+        methodParams.register('createDataset',
+                ['external', 'sortBy', 'rowFormat', 'storedAs', 'location', 'tblproperties', 'serdeproperties', 'fieldsTerminated',
+                 'escapedBy', 'linesTerminatedBy', 'select'])
+        methodParams.register('openWrite', ['overwrite'])
+        methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
+                                               'hdfsDir', 'processRow', 'expression'])
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -63,7 +72,7 @@ class ImpalaDriver extends JDBCDriver {
     List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE] -
-                [/*Driver.Operation.READ_METADATA, */Driver.Operation.UPDATE, Driver.Operation.DELETE]
+                [Driver.Operation.READ_METADATA, Driver.Operation.UPDATE, Driver.Operation.DELETE]
     }
 
     @Override
@@ -76,10 +85,110 @@ class ImpalaDriver extends JDBCDriver {
     Map getSqlType () {
         Map res = super.getSqlType()
         res.DOUBLE.name = 'double'
-        res.BLOB.name = 'binary'
-        res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER
+        /*res.BLOB.name = 'binary'
+        res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER*/
 
         return res
+    }
+
+    @Override
+    protected String createDatasetAddColumn(Field f, boolean useNativeDBType) {
+        return (!f.isPartition)?super.createDatasetAddColumn(f, useNativeDBType):null
+    }
+
+    @Override
+    protected String createDatasetExtend(Dataset dataset, Map params) {
+        def sb = new StringBuilder()
+
+        def partitionFields = [] as List<Field>
+        dataset.field.each { Field f ->
+            if (f.isPartition) partitionFields << f
+        }
+
+        if (!partitionFields.isEmpty()) {
+            partitionFields.sort(true) { Field a, Field b -> (a.ordPartition?:999999999) <=> (b.ordPartition?:999999999) }
+            def partitionCols = [] as List<String>
+            partitionFields.each { Field f ->
+                partitionCols << generateColumnDefinition(f, false)
+            }
+            sb << "PARTITIONED BY (${partitionCols.join(', ')})"
+            sb << '\n'
+        }
+
+        def sortBy = params.sortBy as List<String>
+        if (!(sortBy?.isEmpty())) {
+            sb << " SORT BY (${sortBy.join(', ')})"
+        }
+
+        if (params.rowFormat != null) {
+            sb << "ROW FORMAT ${params.rowFormat}"
+            sb << '\n'
+        }
+
+        if (params.fieldsTerminated != null) {
+            sb << "FIELDS TERMINATED BY '${params.fieldsTerminated}'"
+            sb << '\n'
+        }
+
+        if (params.escapedBy != null) {
+            sb << "ESCAPED BY '${params.escapedBy}'"
+            sb << '\n'
+        }
+
+        if (params.linesTerminatedBy != null) {
+            sb << "LINES TERMINATED BY '${params.linesTerminatedBy}'"
+            sb << '\n'
+        }
+
+        if (params.serdeproperties != null) {
+            if (!(params.serdeproperties instanceof Map)) throw new ExceptionGETL('Required map type for parameter "serdeproperties"')
+            def serdeproperties = params.serdeproperties as Map
+            if (!serdeproperties.isEmpty()) {
+                def props = [] as List<String>
+                serdeproperties.each { k, v ->
+                    props << "\"$k\"=\"$v\"".toString()
+                }
+                sb << "WITH SERDEPROPERTIES(${props.join(', ')})"
+
+                sb << '\n'
+            }
+        }
+
+        if (params.storedAs != null) {
+            sb << "STORED AS ${params.storedAs}"
+
+            sb << '\n'
+        }
+
+        if (params.location != null) {
+            sb << "LOCATION '${params.location}'"
+
+            sb << '\n'
+        }
+
+        if (params.tblproperties != null) {
+            if (!(params.tblproperties instanceof Map)) throw new ExceptionGETL('Required map type for parameter "tblproperties"')
+            def tblproperties = params.tblproperties as Map
+            if (!tblproperties.isEmpty()) {
+                def props = [] as List<String>
+                tblproperties.each { k, v ->
+                    props << "\"$k\"=\"$v\"".toString()
+                }
+                sb << "TBLPROPERTIES(${props.join(', ')})"
+
+                sb << '\n'
+            }
+        }
+
+        if (params.select != null) {
+            sb << "AS"
+            sb << '\n'
+            sb << "${params.select}"
+
+            sb << '\n'
+        }
+
+        return sb.toString()
     }
 
     @Override

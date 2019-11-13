@@ -27,11 +27,13 @@ package getl.jdbc
 import getl.csv.CSVConnection
 import getl.csv.CSVDataset
 import getl.data.Field
+import getl.driver.Driver
 import getl.files.FileManager
 import getl.jdbc.opts.*
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.stat.ProcessTime
+import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.utils.ListUtils
 import getl.utils.MapUtils
@@ -58,8 +60,11 @@ class TableDataset extends JDBCDataset {
 		methodParams.register("generateDsl", [])
 	}
 
+	/** Current JDBC connection */
+	JDBCConnection getJdbcConnection() { connection as JDBCConnection }
+
 	/** Schema name */
-	String getSchemaName() { ListUtils.NotNullValue([params.schemaName, (connection as JDBCConnection).schemaName]) }
+	String getSchemaName() { ListUtils.NotNullValue([params.schemaName, jdbcConnection.schemaName]) }
 	/** Schema name */
 	void setSchemaName(String value) { params.schemaName = value }
 
@@ -167,12 +172,11 @@ class TableDataset extends JDBCDataset {
 	/** Valid exist table */
 	boolean isExists() {
 		if (!(connection.driver as JDBCDriver).isTable(this)) throw new ExceptionGETL("${fullNameDataset()} is not a table!")
-		def con = connection as JDBCConnection
 		def dbName = dbName
 		def schemaName = schemaName
 		def tblName = tableName
 		if (tblName == null) throw new ExceptionGETL("Table name is not specified for ${fullNameDataset()}!")
-		def ds = con.retrieveDatasets(dbName: dbName, schemaName: schemaName, tableName: tblName)
+		def ds = jdbcConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName, tableName: tblName)
 
 		return (!ds.isEmpty())
 	}
@@ -217,17 +221,26 @@ class TableDataset extends JDBCDataset {
 	long deleteRows(String where = null) {
 		String sql = "DELETE FROM ${fullNameDataset()}" + ((where != null && where.trim().length() > 0) ? " WHERE $where" : '')
 
-		long count
-		boolean isAutoCommit = !connection.isTran()
-		if (isAutoCommit) connection.startTran()
+		long count = 0
+		def autoTran = connection.driver.isSupport(Driver.Support.TRANSACTIONAL)
+		if (autoTran) {
+			autoTran = (!jdbcConnection.autoCommit && connection.tranCount == 0)
+		}
+
+		if (autoTran)
+			connection.startTran()
+
 		try {
 			count = connection.executeCommand(command: sql, isUpdate: true)
 		}
 		catch (Throwable e) {
-			if (isAutoCommit) connection.rollbackTran()
+			if (autoTran)
+				connection.rollbackTran()
+
 			throw e
 		}
-		if (isAutoCommit) connection.commitTran()
+		if (autoTran)
+			connection.commitTran()
 
 		return count
 	}
@@ -351,11 +364,21 @@ class TableDataset extends JDBCDataset {
 	 * @param cl Load setup code
 	 */
 	protected BulkLoadSpec doBulkLoadCsv(CSVDataset source, Closure cl) {
+		readRows = 0
+		writeRows = 0
+		updateRows = 0
+
+		validConnection()
+		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD))
+			throw new ExceptionGETL("Driver not supported bulk load file!")
+
 		Getl getl = (sysParams.dslOwnerObject != null && sysParams.dslOwnerObject instanceof Getl)?
 				sysParams.dslOwnerObject:null
 
 		if (source == null && cl == null)
 			throw new ExceptionGETL("It is required to specify a file to load into the table!")
+
+		def sourceConnection = source.connection as CSVConnection
 
 		ProcessTime pt
 		if (getl != null) pt = getl.startProcess("Bulk load files to table ${fullNameDataset()}")
@@ -372,14 +395,17 @@ class TableDataset extends JDBCDataset {
 			throw new ExceptionGETL('Required to specify the names of the uploaded files in "files"!')
 
 		if (!(files instanceof List)) files = [files]
+		def loadAsPackage = parent.loadAsPackage
+		if (loadAsPackage && !(jdbcConnection.driver.isSupport(Driver.Support.BULKLOADMANYFILES)))
+			throw new ExceptionGETL('The server does not support multiple file bulk loading, you need to turn off the parameter "loadAsPackage"!')
 
 		List<Field> csvFields
 		def schemaFile = parent.schemaFileName
 		if (schemaFile == null && source?.schemaFileName != null && source?.autoSchema) schemaFile = source.schemaFileName
 		if (schemaFile != null && !parent.inheritFields) {
 			if (!FileUtils.ExistsFile(schemaFile)) {
-				if (FileUtils.RelativePathFromFile(schemaFile) == '.' && (source?.connection as CSVConnection).path != null) {
-					def schemaFileWithPath = "${(source?.connection as CSVConnection).path}/$schemaFile"
+				if (FileUtils.RelativePathFromFile(schemaFile) == '.' && sourceConnection?.path != null) {
+					def schemaFileWithPath = "${sourceConnection.path}/$schemaFile"
 					if (!FileUtils.ExistsFile(schemaFileWithPath))
 						throw new ExceptionGETL("Schema file \"$schemaFileName\" not found!")
 					schemaFile = schemaFileWithPath
@@ -395,18 +421,19 @@ class TableDataset extends JDBCDataset {
 		}
 
 		def procFiles = [] as List<CSVDataset>
+		def listFiles = [] as List<String>
 		(files as List<String>).each { filePath ->
 			def path = FileUtils.PathFromFile(filePath)
 			if (path == null)
-				if ((source?.connection as CSVConnection)?.path != null)
-					path = (source.connection as CSVConnection).path
+				if (sourceConnection?.path != null)
+					path = sourceConnection.path
 			else
 					path = '.'
 
 			if (!FileUtils.ExistsFile(path, true))
 				throw new ExceptionGETL("Path \"$path\" not found!")
 
-			def csvCon = (source?.connection != null)?(source.connection.cloneConnection() as CSVConnection):new CSVConnection()
+			def csvCon = (sourceConnection != null)?(sourceConnection.cloneConnection() as CSVConnection):new CSVConnection()
 			csvCon.path = path
 			csvCon.extension = null
 
@@ -424,32 +451,103 @@ class TableDataset extends JDBCDataset {
 					csvFile.extension = null
 					if (csvFields != null) csvFile.field = csvFields
 					if (source == null) prepareCsvTempFile(csvFile)
+
 					procFiles << csvFile
+					listFiles << csvFile.fullFileName()
 				}
 			}
 		}
 
+		if (procFiles.isEmpty()) {
+			pt.name = "No found files for load to table ${fullNameDataset()}"
+			getl.finishProcess(pt)
+			return
+		}
+
+		connection.tryConnect()
+
+		def autoTran = connection.driver.isSupport(Driver.Support.TRANSACTIONAL)
+		if (autoTran) {
+			autoTran = parent.autoCommit ?:
+					(!BoolUtils.IsValue(jdbcConnection.autoCommit) && jdbcConnection.tranCount == 0)
+		}
+
+		if (autoTran)
+			jdbcConnection.startTran()
+
+		def moveFileTo = parent.moveFileTo
+		def removeFile = parent.removeFile
+
 		long countRow = 0
-		procFiles.each { csv ->
-			ProcessTime ptf
-			if (getl != null)
-				ptf = getl.startProcess("Bulk load file \"${csv.fullFileName()}\" to table ${fullNameDataset()}")
+		try {
+			if (!loadAsPackage) {
+				procFiles.each { csv ->
+					ProcessTime ptf
+					if (getl != null)
+						ptf = getl.startProcess("Bulk load file \"${csv.fullFileName()}\" to table ${fullNameDataset()}")
 
-			bulkLoadFile(MapUtils.Copy(bulkParams, ['schemaFileName', 'files']) + [source: csv])
-			countRow += updateRows
+					bulkLoadFile(MapUtils.Copy(bulkParams,
+							['schemaFileName', 'files', 'removeFile', 'moveFileTo', 'loadAsPackage']) + [source: csv])
+					countRow += updateRows
 
-			if (getl != null)
-				getl.finishProcess(ptf, updateRows)
+					if (!autoTran) {
+						if (moveFileTo != null) {
+							FileUtils.MoveTo(csv.fullFileName(), moveFileTo)
+						}
+						else if (removeFile) {
+							source.drop()
+						}
+					}
+
+					if (getl != null)
+						getl.finishProcess(ptf, updateRows)
+				}
+
+				writeRows = countRow
+				updateRows = countRow
+				source.readRows = countRow
+			}
+			else {
+				ProcessTime ptf
+				if (getl != null)
+					ptf = getl.startProcess("Bulk load ${listFiles.size()} files to table ${fullNameDataset()}")
+
+				bulkLoadFile(MapUtils.Copy(bulkParams,
+						['schemaFileName', 'files', 'removeFile', 'moveFileTo', 'loadAsPackage']) + [source: procFiles[0], files: listFiles])
+				countRow = updateRows
+
+				if (getl != null)
+					getl.finishProcess(ptf, updateRows)
+			}
+
+			if (moveFileTo != null || removeFile) {
+				if (autoTran || loadAsPackage) {
+					procFiles.each { csv ->
+						if (moveFileTo != null) {
+							FileUtils.MoveTo(csv.fullFileName(), moveFileTo)
+						} else if (removeFile) {
+							source.drop()
+						}
+					}
+				}
+
+				if (schemaFile != null) {
+					if (moveFileTo != null) {
+						FileUtils.MoveTo(schemaFile, moveFileTo)
+					} else if (removeFile) {
+						FileUtils.DeleteFile(schemaFile)
+					}
+				}
+			}
+		}
+		catch (Throwable e) {
+			if (autoTran)
+				jdbcConnection.rollbackTran()
+
+			throw e
 		}
 
-		if (schemaFile != null) {
-			if (parent.moveFileTo != null) {
-				FileUtils.MoveTo(schemaFile, parent.moveFileTo)
-			}
-			else if (parent.removeFile) {
-				FileUtils.DeleteFile(schemaFile)
-			}
-		}
+		jdbcConnection.commitTran()
 
 		if (getl != null) {
 			pt.name = "Bulk load ${procFiles.size()} files to table ${fullNameDataset()}"

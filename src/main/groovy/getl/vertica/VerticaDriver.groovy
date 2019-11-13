@@ -74,7 +74,7 @@ class VerticaDriver extends JDBCDriver {
 				[Driver.Support.LOCAL_TEMPORARY, Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE,
                  Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.UUID,
                  Driver.Support.TIME, Driver.Support.DATE, Driver.Support.TIMESTAMP_WITH_TIMEZONE, Driver.Support.BOOLEAN,
-                 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST]
+                 Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST, Driver.Support.BULKLOADMANYFILES]
     }
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -290,15 +290,10 @@ class VerticaDriver extends JDBCDriver {
 
 		dest.writeRows = 0
 		dest.updateRows = 0
-		try {
-			long count = executeCommand(sql, [isUpdate: true])
-			dest.writeRows = count
-			dest.updateRows = count
-		}
-		catch (Exception e) {
-//			Logs.Dump(e, getClass().name + '.bulkLoad', "${source.objectName}->${dest.objectName}", sql)
-			throw e
-		}
+		long count = executeCommand(sql, [isUpdate: true])
+		source.readRows = count
+		dest.writeRows = count
+		dest.updateRows = count
 	}
 
 	@Override

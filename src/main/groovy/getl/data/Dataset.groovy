@@ -664,8 +664,26 @@ class Dataset {
 		}
 		
 		Map p = MapUtils.CleanMap(procParams, ["prepare", "source"])
-		
-		connection.driver.bulkLoadFile(source, this, p, prepareFields)
+
+		def autoTran = connection.driver.isSupport(Driver.Support.TRANSACTIONAL)
+		if (autoTran) {
+			autoTran = procParams.autoCommit?:
+						(!BoolUtils.IsValue(connection.params.autoCommit) && connection.tranCount == 0)
+		}
+
+		if (autoTran)
+			connection.startTran()
+
+		try {
+			connection.driver.bulkLoadFile(source, this, p, prepareFields)
+		}
+		catch (Throwable e) {
+			if (autoTran)
+				connection.rollbackTran()
+			throw e
+		}
+		if (autoTran)
+			connection.commitTran()
 
 		if (moveFileTo != null) {
 			FileUtils.MoveTo(source.fullFileName(), moveFileTo)
@@ -674,8 +692,10 @@ class Dataset {
 			source.drop()
 		}
 	}
-	
+
+	/** Dataset name */
 	String getObjectName() { "noname" }
+	/** Full dataset name */
 	String getObjectFullName() { objectName }
 	
 	/**
