@@ -492,8 +492,9 @@ ORDER BY t1.id'''
 
                 assertEquals(0, countRow())
 
-                bulkLoadCsv {
-                    files = "${(csv.connection as CSVConnection).path}/file.temp.split.{num}.csv"
+                bulkLoadCsv(csv) {
+                    files = []
+                    list.eachRow { files << it.filename }
                     inheritFields = true
                     removeFile = true
                 }

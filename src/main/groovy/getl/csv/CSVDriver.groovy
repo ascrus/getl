@@ -551,7 +551,7 @@ class CSVDriver extends FileDriver {
 		List<Integer> escapedColumns
 		Long splitSize
 		boolean formatOutput = true
-		long batchSize = 1000
+		long batchSize = 100
 		List<Map> rows = new ArrayList<Map>()
 		long current = 0
 		long batch = 0

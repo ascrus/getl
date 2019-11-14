@@ -22,7 +22,7 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.hive.opts
+package getl.impala.opts
 
 import getl.jdbc.opts.BulkLoadSpec
 import getl.utils.BoolUtils
@@ -31,12 +31,12 @@ import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
 /**
- * Options for loading files to Hive table
+ * Options for loading files to Impala table
  * @author Alexsey Konstantinov
  *
  */
 @InheritConstructors
-class HiveBulkLoadSpec extends BulkLoadSpec {
+class ImpalaBulkLoadSpec extends BulkLoadSpec {
     @Override
     protected void initSpec() {
         super.initSpec()

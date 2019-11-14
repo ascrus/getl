@@ -4,8 +4,10 @@ import getl.data.*
 import getl.jdbc.*
 import getl.utils.*
 import getl.lang.Getl
+import groovy.transform.InheritConstructors
 import org.junit.Test
 
+@InheritConstructors
 class HiveDriverTest extends JDBCDriverProto {
     static final def configName = 'tests/hive/hive.conf'
 
@@ -14,13 +16,6 @@ class HiveDriverTest extends JDBCDriverProto {
         if (!FileUtils.ExistsFile(configName)) return null
         Config.LoadConfig(fileName: configName)
         return new HiveConnection(config: 'hive')
-    }
-
-    @Override
-    List<Field> getFields () {
-        def res = super.getFields()
-        res.each { Field f -> if (f.type == Field.Type.STRING || f.type == Field.Type.TEXT) f.length = 255 }
-        return res
     }
 
     @Override
@@ -80,7 +75,7 @@ class HiveDriverTest extends JDBCDriverProto {
 
             hivetable.with {
                 bulkLoadCsv(csv) {
-                    files = "${csv.csvConnection().path}/${csv.fileName}.*.csv"
+                    files = "hive.bulkload.*.csv"
                     loadAsPackage = true
                 }
             }

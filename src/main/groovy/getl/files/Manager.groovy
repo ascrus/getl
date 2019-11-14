@@ -938,7 +938,7 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				validFiles.drop(ifExists: true)
 				validFiles.create(onCommit: true)
 				try {
-					new Flow().copy(source: newFiles, dest: validFiles, dest_batchSize: 1000)
+					new Flow().copy(source: newFiles, dest: validFiles, dest_batchSize: 500L)
 					
 					def sqlFoundNew = """
 SELECT ID
@@ -951,7 +951,7 @@ WHERE
 	)
 """
 					QueryDataset getNewFiles = new QueryDataset(connection: storyTable.connection, query: sqlFoundNew)
-					new Flow().copy(source: getNewFiles, dest: useFiles, dest_batchSize: 1000)
+					new Flow().copy(source: getNewFiles, dest: useFiles, dest_batchSize: 500L)
 				}
 				finally {
 					validFiles.drop(ifExists: true)
@@ -966,7 +966,7 @@ FROM ${newFiles.fullNameDataset()} files
 				sqlCopyFiles += "${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID"
 			}
 			QueryDataset processFiles = new QueryDataset(connection: fileList.connection, query: sqlCopyFiles)
-			countFileListSync.setCount(new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 1000))
+			countFileListSync.setCount(new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 500L))
 		}
 		finally {
 			if (noopService != null) noopService.stopBackground()
@@ -1063,7 +1063,7 @@ FROM ${newFiles.fullNameDataset()} files
 			storyFiles.field = fileList.field
 			storyFiles.create()
 			
-			new Flow().writeTo(dest: storyFiles, dest_batchSize: 10000) { updater ->
+			new Flow().writeTo(dest: storyFiles, dest_batchSize: 500L) { updater ->
 				fileList.eachRow { Map file ->
 					def row = [:]
 					row.putAll(file)

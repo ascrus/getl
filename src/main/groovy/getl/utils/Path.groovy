@@ -147,6 +147,9 @@ class Path {
 	/** Mask variables */
 	final Map<String, Map<String, Object>> maskVariables = [:]
 
+	/** Mask variables */
+	Map<String, Map<String, Object>> getMaskVariables() { maskVariables }
+
 	/** System parameters */
 	public final Map<String, Object> sysParams = [:] as Map<String, Object>
 

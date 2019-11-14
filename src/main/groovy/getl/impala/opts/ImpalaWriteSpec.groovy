@@ -22,46 +22,21 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.hive.opts
+package getl.impala.opts
 
-import getl.jdbc.opts.BulkLoadSpec
+import getl.jdbc.opts.WriteSpec
 import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
-import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.SimpleType
 
 /**
- * Options for loading files to Hive table
+ * Options for writing Impala table
  * @author Alexsey Konstantinov
  *
  */
 @InheritConstructors
-class HiveBulkLoadSpec extends BulkLoadSpec {
-    @Override
-    protected void initSpec() {
-        super.initSpec()
-        if (params.expression == null) params.expression = [:] as Map<String, Object>
-    }
-
-    /** Replace data in table then load file */
+class ImpalaWriteSpec extends WriteSpec {
+    /** Replace data in table then insert */
     Boolean getOverwrite() { BoolUtils.IsValue(params.overwrite) }
-    /** Replace data in table then load file */
+    /** Replace data in table then insert */
     void setOverwrite(Boolean value) { params.overwrite = value }
-
-    /** Process row during conversion before loading them into a table */
-    Closure getOnProcessRow() { params.processRow as Closure }
-    /** Process row during conversion before loading them into a table */
-    void setOnProcessRow(Closure value) { params.processRow = value }
-    /** Process row during conversion before loading them into a table */
-    void processRow(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
-        setOnProcessRow(value)
-    }
-
-    /** Expression for loading table fields */
-    Map getExpression() { params.expression as Map<String, Object> }
-    /** Expression for loading table fields */
-    void setExpression(Map value) {
-        expression.clear()
-        if (value != null) expression.putAll(value)
-    }
 }

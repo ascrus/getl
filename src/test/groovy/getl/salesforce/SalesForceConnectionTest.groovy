@@ -129,7 +129,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
     @Test
     void testBulkConnectionWithBatch() {
         connection.connected = false
-        connection = new SalesForceConnection(config: 'salesforce', batchSize: 50000)
+        connection = new SalesForceConnection(config: 'salesforce', batchSize: 500)
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
         dataset.retrieveFields()
         dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }
@@ -140,7 +140,7 @@ class SalesForceConnectionTest extends getl.test.GetlTest {
     @Test
     void testRowsWithBatch() {
         connection.connected = false
-        connection = new SalesForceConnection(config: 'salesforce', batchSize: 2000)
+        connection = new SalesForceConnection(config: 'salesforce', batchSize: 500)
         SalesForceDataset dataset = new SalesForceDataset(connection: connection, sfObjectName: 'Account')
         dataset.retrieveFields()
         dataset.removeFields { !(it.name in ['Id', 'IsDeleted', 'Name', 'Type', 'CreatedDate']) }

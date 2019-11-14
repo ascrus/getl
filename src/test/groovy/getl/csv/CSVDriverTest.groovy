@@ -357,7 +357,7 @@ class CSVDriverTest extends getl.test.GetlTest {
 
 		try {
 			def pt = new ProcessTime(name: "CSV perfomance write")
-			new Flow().writeTo(dest: t/*, dest_batchSize: 1000*/) { Closure updater ->
+			new Flow().writeTo(dest: t) { Closure updater ->
 				(1..perfomanceRows).each { Integer cur ->
 					def r = [:] as Map<String, Object>
 					r.id = cur

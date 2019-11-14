@@ -4,7 +4,9 @@ import getl.jdbc.JDBCConnection
 import getl.jdbc.JDBCDriverProto
 import getl.utils.Config
 import getl.utils.FileUtils
+import groovy.transform.InheritConstructors
 
+@InheritConstructors
 class MySQLDriverTest extends JDBCDriverProto {
 	static final def configName = 'tests/mysql/mysql.conf'
 	@Override

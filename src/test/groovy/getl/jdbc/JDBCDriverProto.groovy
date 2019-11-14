@@ -153,6 +153,10 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 				f.precision = null
 			}
 
+            if (f.type == Field.stringFieldType && (con.driver as JDBCDriver).sqlType.STRING.useLength == JDBCDriver.sqlTypeUse.NEVER) {
+                f.length = null
+            }
+
 			if (!(f.type in [Field.Type.STRING, Field.Type.NUMERIC])) {
 				if ((f.type != Field.Type.TEXT || (con.driver as JDBCDriver).sqlType.TEXT.useLength == JDBCDriver.sqlTypeUse.NEVER) &&
 						(f.type != Field.Type.BLOB || (con.driver as JDBCDriver).sqlType.BLOB.useLength == JDBCDriver.sqlTypeUse.NEVER))
@@ -185,6 +189,10 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 			if (f.type != Field.Type.NUMERIC) {
 				f.precision = null
 			}
+
+            if (f.type == Field.stringFieldType && (con.driver as JDBCDriver).sqlType.STRING.useLength == JDBCDriver.sqlTypeUse.NEVER) {
+                f.length = null
+            }
 
 			if (!(f.type in [Field.Type.STRING, Field.Type.NUMERIC])) {
 				if ((f.type != Field.Type.TEXT || (con.driver as JDBCDriver).sqlType.TEXT.useLength == JDBCDriver.sqlTypeUse.NEVER) &&
@@ -421,16 +429,18 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
     protected void runScript() {
         def table_name = table.fullNameDataset()
+        def id1Name = table.sqlObjectName('ID1')
+        def id2Name = table.sqlObjectName('ID2')
         def sql = """
 ----- Test scripter
 ECHO Run sql script ...
-IF (1 IN (SELECT ID1 FROM ${table.fullTableName})); -- test IF operator
+IF (1 IN (SELECT $id1Name FROM $table_name)); -- test IF operator
 ECHO Table has rows -- test ECHO 
 END IF;
-SET SELECT ${table.sqlObjectName('id2')} FROM $table_name WHERE ${table.sqlObjectName('id1')} = 1; -- test SET operator
+SET SELECT $id2Name FROM $table_name WHERE $id1Name = 1; -- test SET operator
 ECHO For id1=1 then id2={id2}
 
-FOR SELECT ${table.sqlObjectName('id1')}, ${table.sqlObjectName('id2')} FROM $table_name WHERE ${table.sqlObjectName('id1')} BETWEEN 2 AND 3; -- test FOR operator
+FOR SELECT $id1Name, $id2Name FROM $table_name WHERE $id1Name BETWEEN 2 AND 3; -- test FOR operator
 ECHO For id1={id1} then id2={id2}
 END FOR;
 """
@@ -501,7 +511,7 @@ END FOR;
         def t = createPerfomanceTable(c, 'GETL_TEST_PERFOMANCE', fields)
         try {
             def pt = new ProcessTime(name: "${c.driverName} perfomance write")
-            new Flow().writeTo(dest: t, dest_batchSize: 1000) { Closure updater ->
+            new Flow().writeTo(dest: t, dest_batchSize: 500L) { Closure updater ->
                 (1..perfomanceRows).each { Integer cur ->
                     cur++
                     def r = [:] as Map<String, Object>

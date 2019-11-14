@@ -11,12 +11,14 @@ import getl.tfs.TDSTable
 import getl.utils.Config
 import getl.utils.DateUtils
 import getl.utils.FileUtils
+import groovy.transform.InheritConstructors
 import org.h2.value.ValueTimestampTimeZone
 import org.junit.Test
 
 /**
  * Created by ascru on 21.11.2016.
  */
+@InheritConstructors
 class H2DriverTest extends JDBCDriverProto {
 	static final def configName = 'tests/h2/h2.conf'
 

@@ -8,9 +8,11 @@ import getl.proc.Flow
 import getl.tfs.TDS
 import getl.utils.Config
 import getl.utils.FileUtils
+import groovy.transform.InheritConstructors
 import org.h2.value.ValueTimestampTimeZone
 import org.junit.Test
 
+@InheritConstructors
 class OracleDriverTest extends JDBCDriverProto {
 	static final def configName = 'tests/oracle/oracle.conf'
 	@Override

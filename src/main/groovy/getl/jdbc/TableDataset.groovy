@@ -29,18 +29,23 @@ import getl.csv.CSVDataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.files.FileManager
+import getl.files.Manager
 import getl.jdbc.opts.*
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
+import getl.proc.Flow
 import getl.stat.ProcessTime
+import getl.tfs.TDS
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.utils.ListUtils
+import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.Path
-import groovy.transform.InheritConstructors
 import getl.cache.*
 import getl.exception.ExceptionGETL
+
+import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -363,7 +368,7 @@ class TableDataset extends JDBCDataset {
 	 * @param source File to load
 	 * @param cl Load setup code
 	 */
-	protected BulkLoadSpec doBulkLoadCsv(CSVDataset source, Closure cl) {
+	protected BulkLoadSpec doBulkLoadCsv(CSVDataset source, Closure cl) { /* TODO: added history table */
 		readRows = 0
 		writeRows = 0
 		updateRows = 0
@@ -375,13 +380,24 @@ class TableDataset extends JDBCDataset {
 		Getl getl = (sysParams.dslOwnerObject != null && sysParams.dslOwnerObject instanceof Getl)?
 				sysParams.dslOwnerObject:null
 
-		if (source == null && cl == null)
-			throw new ExceptionGETL("It is required to specify a file to load into the table!")
+		if (source == null)
+			throw new ExceptionGETL("It is required to specify a CSV dataset to load into the table!")
 
 		def sourceConnection = source.connection as CSVConnection
+		if (sourceConnection == null)
+			throw new ExceptionGETL("It is required to specify connection for CSV dataset to load into the table!")
+
+		String path = sourceConnection.path
+		if (path == null)
+			throw new ExceptionGETL("It is required to specify connection path for CSV dataset to load into the table!")
+		if (!FileUtils.ExistsFile(path, true))
+			throw new ExceptionGETL("Directory \"${sourceConnection.path}\" not found!")
+
+        def fullTableName = Getl.datasetObjectName(this)
 
 		ProcessTime pt
-		if (getl != null) pt = getl.startProcess("Bulk load files to table ${fullNameDataset()}")
+		if (getl != null)
+            pt = getl.startProcess("${fullTableName}: load files")
 
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def bulkParams = MapUtils.DeepCopy(bulkLoadDirective) as Map<String, Object>
@@ -389,22 +405,24 @@ class TableDataset extends JDBCDataset {
 		parent.runClosure(cl)
 
 		def files = parent.files
-		if (files == null && source != null) files = [source.fullFileName()]
+		if (files == null) files = [source.fileNameWithExt()]
 
 		if (files == null)
 			throw new ExceptionGETL('Required to specify the names of the uploaded files in "files"!')
 
-		if (!(files instanceof List)) files = [files]
+		if (!(files instanceof List || files instanceof String || files instanceof GString || files instanceof Path))
+			throw new ExceptionGETL('For option "files" you can specify a string type, a list of strings or a Path object!')
+
 		def loadAsPackage = parent.loadAsPackage
 		if (loadAsPackage && !(jdbcConnection.driver.isSupport(Driver.Support.BULKLOADMANYFILES)))
 			throw new ExceptionGETL('The server does not support multiple file bulk loading, you need to turn off the parameter "loadAsPackage"!')
 
 		List<Field> csvFields
 		def schemaFile = parent.schemaFileName
-		if (schemaFile == null && source?.schemaFileName != null && source?.autoSchema) schemaFile = source.schemaFileName
+		if (schemaFile == null && source.schemaFileName != null && source.autoSchema) schemaFile = source.schemaFileName
 		if (schemaFile != null && !parent.inheritFields) {
 			if (!FileUtils.ExistsFile(schemaFile)) {
-				if (FileUtils.RelativePathFromFile(schemaFile) == '.' && sourceConnection?.path != null) {
+				if (FileUtils.RelativePathFromFile(schemaFile) == '.' && sourceConnection.path != null) {
 					def schemaFileWithPath = "${sourceConnection.path}/$schemaFile"
 					if (!FileUtils.ExistsFile(schemaFileWithPath))
 						throw new ExceptionGETL("Schema file \"$schemaFileName\" not found!")
@@ -420,46 +438,84 @@ class TableDataset extends JDBCDataset {
 				throw new ExceptionGETL("Fields description not found for schema file \"${parent.schemaFileName}\"!")
 		}
 
-		def procFiles = [] as List<CSVDataset>
-		def listFiles = [] as List<String>
-		(files as List<String>).each { filePath ->
-			def path = FileUtils.PathFromFile(filePath)
-			if (path == null)
-				if (sourceConnection?.path != null)
-					path = sourceConnection.path
-			else
-					path = '.'
+		def orderProcess = parent.orderProcess as List<String>
+		if (orderProcess.isEmpty()) orderProcess = ['FILEPATH', 'FILENAME']
 
-			if (!FileUtils.ExistsFile(path, true))
-				throw new ExceptionGETL("Path \"$path\" not found!")
+		TableDataset procFiles
 
-			def csvCon = (sourceConnection != null)?(sourceConnection.cloneConnection() as CSVConnection):new CSVConnection()
-			csvCon.path = path
-			csvCon.extension = null
+		if (files instanceof String || files instanceof GString) {
+			if (files.matches('.*(\\{|\\*).*')) {
+				def maskPath = new Path()
+				maskPath.with {
+					mask = FileUtils.ConvertToUnixPath(files)
+					variable('date') { type = Field.datetimeFieldType; format = 'yyyy-MM-dd_HH-mm-ss' }
+					variable('num') { type = Field.integerFieldType; length = 4 }
+					compile()
+				}
 
-			def name = FileUtils.FileName(filePath)
-			def maskPath = new Path(mask: name)
+				def fm = new FileManager()
+				fm.with {
+					rootPath = path
+					procFiles = buildListFiles(maskPath) { recursive = true }
+				}
+			}
+			else {
+				procFiles = TDS.dataset()
+				Manager.AddFieldFileListToDS(procFiles)
+				procFiles.create()
+				new Flow().writeTo(dest: procFiles) { add ->
+					String filePath = FileUtils.RelativePathFromFile(files)
+					String fileName = FileUtils.FileName(files)
+					def file = new File(path + File.separator + ((filePath != '.')?"${filePath}${File.separator}":'') + fileName)
+					if (!file.exists())
+						throw new ExceptionGETL("File $file not found!")
+					def fileDate = new Date(file.lastModified())
+					def fileSize = file.size()
+					add filepath: filePath, filename: fileName, filedate: fileDate, filesize: fileSize,
+							filetype: 'FILE', localfilename: fileName, fileinstory: false
+				}
+			}
+		}
+		else if (files instanceof Path) {
+			def maskPath = files as Path
+			maskPath.with {
+				if (maskVariables.date == null)
+					variable('date') { type = Field.datetimeFieldType; format = 'yyyy-MM-dd_HH-mm-ss' }
+
+				if (maskVariables.num == null)
+					variable('num') { type = Field.integerFieldType; length = 4 }
+
+				compile()
+			}
 
 			def fm = new FileManager()
 			fm.with {
 				rootPath = path
-				def list = buildListFiles(maskPath)
-				list.eachRow {
-					def csvFile = (source != null)?(source.cloneDataset() as CSVDataset):new CSVDataset()
-					csvFile.connection = csvCon
-					csvFile.fileName = it.filename
-					csvFile.extension = null
-					if (csvFields != null) csvFile.field = csvFields
-					if (source == null) prepareCsvTempFile(csvFile)
-
-					procFiles << csvFile
-					listFiles << csvFile.fullFileName()
+				procFiles = buildListFiles(maskPath) { recursive = true }
+			}
+		}
+		else {
+			procFiles = TDS.dataset()
+			Manager.AddFieldFileListToDS(procFiles)
+			procFiles.create()
+			new Flow().writeTo(dest: procFiles) { add ->
+				(files as List).each { elem ->
+					String filePath = FileUtils.RelativePathFromFile(elem)
+					String fileName = FileUtils.FileName(elem)
+					def file = new File(path + File.separator + ((filePath != '.')?"${filePath}${File.separator}":'') + fileName)
+					if (!file.exists())
+						throw new ExceptionGETL("File $file not found!")
+					def fileDate = new Date(file.lastModified())
+					def fileSize = file.size()
+					add filepath: filePath, filename: fileName, filedate: fileDate, filesize: fileSize,
+							filetype: 'FILE', localfilename: fileName, fileinstory: false
 				}
 			}
 		}
 
-		if (procFiles.isEmpty()) {
-			pt.name = "No found files for load to table ${fullNameDataset()}"
+		def countFiles = procFiles.countRow()
+		if (countFiles == 0) {
+			pt.name = "${fullTableName}: no found files for loading"
 			getl.finishProcess(pt)
 			return
 		}
@@ -478,29 +534,67 @@ class TableDataset extends JDBCDataset {
 		def moveFileTo = parent.moveFileTo
 		def removeFile = parent.removeFile
 
+		CSVConnection cCon = source.connection.cloneConnection() as CSVConnection
+		cCon.extension = null
+
+		CSVDataset cFile = source.cloneDataset(cCon) as CSVDataset
+		cFile.extension = null
+
 		long countRow = 0
+		BigDecimal sizeFiles = 0
+        boolean abortOnError = parent.abortOnError
+		Closure beforeLoad = parent.onBeforeBulkLoadFile
+		Closure afterLoad = parent.onAfterBulkLoadFile
+        Closure beforeLoadPackage = parent.onBeforeBulkLoadPackageFiles
+        Closure afterLoadPackage = parent.onAfterBulkLoadPackageFiles
 		try {
 			if (!loadAsPackage) {
-				procFiles.each { csv ->
+				procFiles.eachRow(order: orderProcess) { file ->
+					cCon.path = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'')
+					cFile.fileName = file.filename
+
+					BigDecimal tsize = file.filesize
+
+                    def fileName = cFile.fullFileName()
+
 					ProcessTime ptf
 					if (getl != null)
-						ptf = getl.startProcess("Bulk load file \"${csv.fullFileName()}\" to table ${fullNameDataset()}")
+						ptf = getl.startProcess("${fullTableName}: load file \"$fileName\" (${FileUtils.sizeBytes(tsize)})")
 
-					bulkLoadFile(MapUtils.Copy(bulkParams,
-							['schemaFileName', 'files', 'removeFile', 'moveFileTo', 'loadAsPackage']) + [source: csv])
-					countRow += updateRows
+                    if (beforeLoad != null) beforeLoad.call(fileName)
+
+					long tcount = 0
+					try {
+						bulkLoadFile(MapUtils.Copy(bulkParams,
+								['schemaFileName', 'files', 'removeFile', 'moveFileTo', 'loadAsPackage',
+								 'beforeBulkLoadFile', 'afterBulkLoadFile',
+                                 'beforeBulkLoadPackageFiles', 'afterBulkLoadPackageFiles',
+                                 'orderProcess']) + [source: cFile])
+
+						tcount = updateRows
+					}
+					catch (Exception e) {
+						if (abortOnError) throw e
+						Logs.Severe("${fullTableName}: cannot load file \"$fileName\" (${FileUtils.sizeBytes(tsize)}), error: ${e.message}")
+					}
+
+                    if (afterLoad != null) afterLoad.call(fileName)
 
 					if (!autoTran) {
 						if (moveFileTo != null) {
-							FileUtils.MoveTo(csv.fullFileName(), moveFileTo)
+							FileUtils.MoveTo(fileName, moveFileTo)
 						}
 						else if (removeFile) {
-							source.drop()
+							if (!FileUtils.DeleteFile(fileName))
+								throw new ExceptionGETL("Cannot delete file \"$fileName\" (${FileUtils.sizeBytes(tsize)})!")
 						}
 					}
 
-					if (getl != null)
-						getl.finishProcess(ptf, updateRows)
+					countRow += tcount
+					sizeFiles += tsize
+					if (getl != null) {
+						getl.finishProcess(ptf, tcount)
+					}
 				}
 
 				writeRows = countRow
@@ -508,25 +602,59 @@ class TableDataset extends JDBCDataset {
 				source.readRows = countRow
 			}
 			else {
-				ProcessTime ptf
-				if (getl != null)
-					ptf = getl.startProcess("Bulk load ${listFiles.size()} files to table ${fullNameDataset()}")
+				def listFiles = []
+				BigDecimal tsize = 0
+				procFiles.eachRow(order: orderProcess) { file ->
+					tsize += file.filesize
+					listFiles << path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
+				}
 
-				bulkLoadFile(MapUtils.Copy(bulkParams,
-						['schemaFileName', 'files', 'removeFile', 'moveFileTo', 'loadAsPackage']) + [source: procFiles[0], files: listFiles])
-				countRow = updateRows
+                if (beforeLoadPackage != null) beforeLoadPackage.call(listFiles)
 
-				if (getl != null)
-					getl.finishProcess(ptf, updateRows)
+				long tcount = 0
+				try {
+					bulkLoadFile(MapUtils.Copy(bulkParams,
+							['schemaFileName', 'files', 'removeFile', 'moveFileTo', 'loadAsPackage',
+							 'beforeBulkLoadFile', 'afterBulkLoadFile',
+                             'beforeBulkLoadPackageFiles', 'afterBulkLoadPackageFiles',
+                             'orderProcess']) +
+							[source: cFile, files: listFiles])
+
+					tcount = updateRows
+				}
+				catch (Exception e) {
+                    Logs.Severe("${fullTableName}: cannot load ${listFiles.size()} files (${FileUtils.sizeBytes(tsize)}), error: ${e.message}")
+                    procFiles.eachRow(order: orderProcess) { file ->
+                        def fileName = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
+                        getl.Severe(level, "${fullTableName}: cannot load ${fileName} (${FileUtils.sizeBytes(file.filesize)})")
+                    }
+                    if (abortOnError) throw e
+				}
+
+                if (afterLoadPackage != null) afterLoadPackage.call(listFiles)
+
+                if (getl != null) {
+                    def level = getl.options().processTimeLevelLog
+                    procFiles.eachRow(order: orderProcess) { file ->
+                        def fileName = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
+                        getl.logWrite(level, "${fullTableName}: loaded ${fileName} (${FileUtils.sizeBytes(file.filesize)})")
+                    }
+                }
+
+				countRow = tcount
+				sizeFiles = tsize
+				listFiles = null // clear garbage
 			}
 
 			if (moveFileTo != null || removeFile) {
 				if (autoTran || loadAsPackage) {
-					procFiles.each { csv ->
+					procFiles.eachRow(order: orderProcess) { file ->
+						def fileName = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
 						if (moveFileTo != null) {
-							FileUtils.MoveTo(csv.fullFileName(), moveFileTo)
+							FileUtils.MoveTo(fileName, moveFileTo)
 						} else if (removeFile) {
-							source.drop()
+							if (!FileUtils.DeleteFile(fileName))
+								throw new ExceptionGETL("Cannot delete file \"${fileName}\"!")
 						}
 					}
 				}
@@ -535,7 +663,8 @@ class TableDataset extends JDBCDataset {
 					if (moveFileTo != null) {
 						FileUtils.MoveTo(schemaFile, moveFileTo)
 					} else if (removeFile) {
-						FileUtils.DeleteFile(schemaFile)
+						if (!FileUtils.DeleteFile(schemaFile))
+							throw new ExceptionGETL("Cannot delete file \"$schemaFile\"!")
 					}
 				}
 			}
@@ -547,10 +676,11 @@ class TableDataset extends JDBCDataset {
 			throw e
 		}
 
-		jdbcConnection.commitTran()
+		if (autoTran)
+			jdbcConnection.commitTran()
 
 		if (getl != null) {
-			pt.name = "Bulk load ${procFiles.size()} files to table ${fullNameDataset()}"
+			pt.name = "${fullTableName}: loaded ${countFiles} files (${FileUtils.sizeBytes(sizeFiles)})"
 			getl.finishProcess(pt, countRow)
 		}
 

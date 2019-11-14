@@ -27,6 +27,7 @@ package getl.postgresql
 import getl.data.Field
 import getl.driver.Driver
 import getl.jdbc.*
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -48,7 +49,7 @@ class PostgreSQLDriver extends JDBCDriver {
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.LOCAL_TEMPORARY,
-				 Driver.Support.SEQUENCE, Driver.Support.BLOB, Driver.Support.CLOB, Driver.Support.INDEX,
+				 Driver.Support.SEQUENCE, /*Driver.Support.BLOB, */Driver.Support.CLOB, Driver.Support.INDEX,
 				 Driver.Support.UUID, Driver.Support.TIME, Driver.Support.DATE, /*Driver.Support.TIMESTAMP_WITH_TIMEZONE,*/
 				 Driver.Support.BOOLEAN, Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST]
 	}
@@ -122,7 +123,7 @@ class PostgreSQLDriver extends JDBCDriver {
 	@Override
 	boolean blobReadAsObject () { return false }
 
-	@Override
+	/*@Override
 	String blobMethodWrite (String methodName) {
 		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
 	if (value == null) { 
@@ -131,6 +132,22 @@ class PostgreSQLDriver extends JDBCDriver {
 	else {
 		def stream = new ByteArrayInputStream(value)
 		stat.setBinaryStream(paramNum, stream, value.length)
+		stream.close()
+	}
+}"""
+	}*/
+
+	@Override
+	@CompileStatic
+	String blobMethodWrite (String methodName) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
+	if (value == null) { 
+		stat.setNull(paramNum, java.sql.Types.BLOB) 
+	}
+	else {
+		System.println("BLOB!!!")
+    	def stream = new ByteArrayInputStream(value)
+		stat.setBinaryStream(paramNum, stream)
 		stream.close()
 	}
 }"""

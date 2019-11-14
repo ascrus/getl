@@ -21,82 +21,43 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
+package getl.impala
 
-package getl.hive
-
-import getl.exception.ExceptionGETL
 import getl.jdbc.JDBCConnection
 import groovy.transform.InheritConstructors
 
 /**
- * Hive connection
+ * Impala connection
  * @author Aleksey Konstantinov
  */
 @InheritConstructors
-class HiveConnection extends JDBCConnection {
-    HiveConnection() {
-        super(driver: HiveDriver)
+class ImpalaConnection extends JDBCConnection {
+    ImpalaConnection() {
+        super(driver: ImpalaDriver)
     }
 
-    HiveConnection(Map params) {
-        super(new HashMap([driver: HiveDriver]) + params?:[:])
-        if (this.getClass().name == 'getl.hive.HiveConnection') methodParams.validation('Super', params?:[:])
+    ImpalaConnection(Map params) {
+        super(new HashMap([driver: ImpalaDriver]) + params?:[:])
+        if (this.getClass().name == 'getl.impala.ImpalaConnection') methodParams.validation('Super', params?:[:])
     }
 
     @Override
     protected void registerParameters () {
         super.registerParameters()
-        methodParams.register('Super', ['vendor', 'version', 'hdfsHost', 'hdfsLogin', 'hdfsDir'])
+        methodParams.register('Super', ['hdfsHost', 'hdfsLogin', 'hdfsDir'])
+    }
+
+    @Override
+    protected void doInitConnection () {
+        super.doInitConnection()
+        driverName = 'com.cloudera.impala.jdbc.Driver'
     }
 
     @Override
     protected void onLoadConfig (Map configSection) {
         super.onLoadConfig(configSection)
-        if (this.getClass().name == 'getl.hive.HiveConnection') methodParams.validation('Super', params)
-        if (params.vendor != null) setVendor(params.vendor as String)
+        if (this.getClass().name == 'getl.impala.ImpalaConnection') methodParams.validation('Super', params)
     }
-
-    @Override
-    protected void doBeforeConnect () {
-        super.doBeforeConnect()
-        switch (vendor?.toLowerCase()) {
-            case 'apache':
-                driverName = 'org.apache.hive.jdbc.HiveDriver'
-                break
-            case 'hortonworks':
-                driverName = 'org.apache.hive.jdbc.HiveDriver'
-                break
-            case 'cloudera':
-                def ver = versionDriver?:4
-                driverName = "com.cloudera.hive.jdbc${ver}.HS2Driver"
-                break
-            default:
-                throw new ExceptionGETL('Need set vendor name from Hive connection')
-        }
-    }
-
-    /** Vendor driver name */
-    String getVendor() { params.vendor as String }
-    /** Vendor driver name */
-    void setVendor(String value) {
-        switch (value?.toLowerCase()) {
-            case 'apache':
-                break
-            case 'hortonworks':
-                break
-            case 'cloudera':
-                break
-            default:
-                throw new ExceptionGETL("Unknown Hive vendor \"$value\"")
-
-        }
-        params.vendor = value
-    }
-
-    /** Version JDBC driver */
-    Integer getVersionDriver() { params.versionDriver as Integer }
-    /** Version JDBC driver */
-    void setVersionDriver(Integer value) { params.versionDriver = value }
 
     /** HDFS host */
     String getHdfsHost () { params.hdfsHost as String }

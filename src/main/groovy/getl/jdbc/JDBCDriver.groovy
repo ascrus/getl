@@ -796,7 +796,7 @@ class JDBCDriver extends Driver {
 		}
 	}
 	
-	protected String sqlCreateTable = '''CREATE ${temporary} TABLE ${ifNotExists} ${tableName} (
+	protected String sqlCreateTable = '''CREATE ${type} TABLE ${ifNotExists} ${tableName} (
 ${fields}
 ${pk}
 )
@@ -817,6 +817,7 @@ ${extend}'''
 	protected String globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
 	protected String localTemporaryTablePrefix = 'LOCAL TEMPORARY'
 	protected String memoryTablePrefix = 'MEMORY'
+	protected String externalTablePrefix = 'EXTERNAL'
 
 	/**
 	 * Name dual system table
@@ -835,19 +836,23 @@ ${extend}'''
 							JDBCDataset.localTemporaryTableType, JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
             throw new ExceptionGETL("Can not create dataset for type \"${tableType}\"")
         }
-		def temporary = ""
+		def tableTypeName = ''
 		switch (tableType) {
 			case JDBCDataset.globalTemporaryTableType:
-                if (!isSupport(Driver.Support.GLOBAL_TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables')
-				temporary = globalTemporaryTablePrefix
+                if (!isSupport(Driver.Support.GLOBAL_TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables!')
+				tableTypeName = globalTemporaryTablePrefix
 				break
 			case JDBCDataset.localTemporaryTableType:
-                if (!isSupport(Driver.Support.LOCAL_TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables')
-				temporary = localTemporaryTablePrefix
+                if (!isSupport(Driver.Support.LOCAL_TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables!')
+				tableTypeName = localTemporaryTablePrefix
 				break
 			case JDBCDataset.memoryTable:
-                if (!isSupport(Driver.Support.MEMORY)) throw new ExceptionGETL('Driver not support memory tables')
-				temporary = memoryTablePrefix
+                if (!isSupport(Driver.Support.MEMORY)) throw new ExceptionGETL('Driver not support memory tables!')
+				tableTypeName = memoryTablePrefix
+				break
+			case JDBCDataset.externalTable:
+				if (!isSupport(Driver.Support.EXTERNAL)) throw new ExceptionGETL('Driver not support external tables!')
+				tableTypeName = externalTablePrefix
 				break
 		}
 
@@ -896,7 +901,7 @@ ${extend}'''
 		
 		if (commitDDL && transactionalDDL) jdbcConnect.startTran()
 		try {
-			def varsCT = [  temporary: temporary, 
+			def varsCT = [  type: tableTypeName,
 							ifNotExists: ifNotExists, 
 							tableName: tableName,
 							fields: fields, 
@@ -1785,7 +1790,7 @@ $sql
 				break
 		}
 
-		def batchSize = (!isSupport(Driver.Support.BATCH)?1:((params.batchSize != null)?params.batchSize:1000L))
+		def batchSize = (!isSupport(Driver.Support.BATCH)?1:((params.batchSize != null)?params.batchSize:500L))
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch as Closure
 		
 		def fields = prepareFieldFromWrite(dataset, prepareCode)

@@ -659,7 +659,7 @@ class Dataset {
 		def prepareFields = { List<Field> sourceFields ->
 			doInitFields(sourceFields)
 			List<String> result = []
-			if (prepareCode != null) result = prepareCode() as List<String>
+			if (prepareCode != null) result = prepareCode.call(source) as List<String>
 			result
 		}
 		
@@ -689,7 +689,8 @@ class Dataset {
 			FileUtils.MoveTo(source.fullFileName(), moveFileTo)
 		}
 		else if (removeFile) {
-			source.drop()
+			if (!FileUtils.DeleteFile(source.fullFileName()))
+				throw new ExceptionGETL("Cannot delete file \"${source.fullFileName()}\"!")
 		}
 	}
 
@@ -1203,7 +1204,8 @@ class Dataset {
 	Boolean isResourceFileNameSchema() {
 		return connection.driver.isResourceFileNameSchema(this)
 	}
-	
+
+	@Override
 	String toString() {
 		return objectName
 	}

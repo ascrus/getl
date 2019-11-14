@@ -207,8 +207,8 @@ class VerticaDriver extends JDBCDriver {
 			fileName += onNode
 		}
 
-		if (exceptionPath != null) FileUtils.ValidFilePath(exceptionPath)
-		if (rejectedPath != null) FileUtils.ValidFilePath(rejectedPath)
+		if (exceptionPath != null && location == null) FileUtils.ValidFilePath(exceptionPath)
+		if (rejectedPath != null && location == null) FileUtils.ValidFilePath(rejectedPath)
 
 		StringBuilder sb = new StringBuilder()
 		sb << "COPY ${fullNameDataset(dest)} (\n"

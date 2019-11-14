@@ -118,7 +118,7 @@ class FileDataset extends Dataset {
 	void setBufferSize(Integer value)  { params.bufferSize = value }
 	
 	@Override
-	String getObjectName() { fileName }
+	String getObjectName() { fileName + ((extension != null)?".${extension}":'') }
 	
 	@Override
 	String getObjectFullName() { fullFileName() }
@@ -131,6 +131,11 @@ class FileDataset extends Dataset {
 		FileDriver drv = connection.driver as FileDriver
 		
 		return drv.fullFileNameDataset(this)
+	}
+
+	/** File name with extenstion */
+	String fileNameWithExt() {
+		objectName
 	}
 	
 	/**

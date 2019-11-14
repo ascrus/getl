@@ -5,12 +5,14 @@ import getl.jdbc.*
 import getl.lang.Getl
 import getl.proc.Flow
 import getl.utils.*
+import groovy.transform.InheritConstructors
 import org.junit.BeforeClass
 import org.junit.Test
 
 /**
  * Created by ascru on 13.01.2017.
  */
+@InheritConstructors
 class VerticaDriverTest extends JDBCDriverProto {
     static final def configName = 'tests/vertica/vertica.conf'
 
@@ -72,8 +74,8 @@ LIMIT 1'''
 
     @Test
     void bulkLoadFiles() {
-        Getl.Dsl(this) {
-            def vertable = verticaTable {
+        Getl.Dsl(this) { main ->
+            def vertable = verticaTable('vertica:testbulkload', true) {
                 connection = this.con
                 tableName = 'testBulkLoad'
                 type = localTemporaryTableType
@@ -87,6 +89,12 @@ LIMIT 1'''
             }
 
             def csv = csvTempWithDataset(vertable) {
+                useConnection connection.cloneConnection()
+                csvConnection().with {
+                    setPath path + '/bulkload'
+                    FileUtils.ValidPath(path)
+                    new File(path).deleteOnExit()
+                }
                 fileName = 'vertica.bulkload'
                 extension = 'csv'
 
@@ -105,15 +113,80 @@ LIMIT 1'''
                 assertEquals(4, countWritePortions)
             }
 
+            logInfo 'Bulk load single file without package:'
             vertable.with {
+                truncate(truncate: true)
                 bulkLoadCsv(csv) {
-                    files = "${csv.csvConnection().path}/${csv.fileName}.*.csv"
-                    loadAsPackage = true
+                    files = "vertica.bulkload.0001.csv"
+                    loadAsPackage = false
+                    exceptionPath = main.configContent.errorPath + '/vertica.bulkload.err'
+                    rejectedPath = main.configContent.errorPath + '/vertica.bulkload.csv'
+
+                    beforeBulkLoadFile { println 'before: ' + it }
+                    afterBulkLoadFile { println 'after: ' + it }
                 }
             }
+            assertEquals(1, vertable.updateRows)
+            assertEquals(1, vertable.countRow())
 
+            csv.with {
+                useConnection csvTempConnection()
+            }
+
+            logInfo 'Bulk load files with mask without package:'
+            vertable.with {
+                truncate(truncate: true)
+                bulkLoadCsv(csv) {
+                    files = "bulkload/vertica.bulkload.{num}.csv"
+                    loadAsPackage = false
+                    orderProcess = ['num']
+                    exceptionPath = main.configContent.errorPath + '/vertica.bulkload.err'
+                    rejectedPath = main.configContent.errorPath + '/vertica.bulkload.csv'
+                }
+            }
             assertEquals(3, vertable.updateRows)
             assertEquals(3, vertable.countRow())
+
+            logInfo 'Bulk load many files with package:'
+            vertable.with {
+                truncate(truncate: true)
+                bulkLoadCsv(csv) {
+                    files = ["bulkload/vertica.bulkload.0003.csv",
+                             "bulkload/vertica.bulkload.0001.csv",
+                             "bulkload/vertica.bulkload.0002.csv",
+                             "bulkload/vertica.bulkload.0004.csv"
+                            ]
+                    loadAsPackage = true
+                    exceptionPath = main.configContent.errorPath + '/vertica.bulkload.err'
+                    rejectedPath = main.configContent.errorPath + '/vertica.bulkload.csv'
+
+                    beforeBulkLoadPackageFiles { println 'before: ' + it }
+                    afterBulkLoadPackageFiles { println 'after: ' + it }
+                }
+            }
+            assertEquals(3, vertable.updateRows)
+            assertEquals(3, vertable.countRow())
+
+            logInfo 'Bulk load files with path mask without package:'
+            vertable.with {
+                truncate(truncate: true)
+                bulkLoadCsv(csv) {
+                    files = main.filePath {
+                        mask = "bulkload/{name}.{num}.csv"
+                        variable('name') { format = 'vertica[.]bulkload'}
+                    }
+                    loadAsPackage = false
+                    orderProcess = ['name', 'num']
+                    exceptionPath = main.configContent.errorPath + '/vertica.bulkload.err'
+                    rejectedPath = main.configContent.errorPath + '/vertica.bulkload.csv'
+
+                    removeFile = true
+                }
+            }
+            assertEquals(3, vertable.updateRows)
+            assertEquals(3, vertable.countRow())
+
+            unregisterDataset('vertica:testbulkload')
         }
     }
 }

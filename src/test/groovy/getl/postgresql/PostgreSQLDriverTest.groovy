@@ -6,9 +6,11 @@ import getl.lang.Getl
 import getl.utils.Config
 import getl.utils.DateUtils
 import getl.utils.FileUtils
+import groovy.transform.InheritConstructors
 import org.junit.BeforeClass
 import org.junit.Test
 
+@InheritConstructors
 class PostgreSQLDriverTest extends JDBCDriverProto {
 	static final def configName = 'tests/postgresql/postgresql.conf'
 
@@ -38,7 +40,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 				field('name') { length = 50; isNull = false }
 				field('dt') { type = datetimeFieldType; isNull = false }
 				createOpts { ifNotExists = true }
-				writeOpts { batchSize = 500 }
+//				writeOpts { batchSize = 500 }
 				create()
 				truncate()
 			}
@@ -69,5 +71,11 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 			}
 		}
 		Config.ReInit()
+	}
+
+	@Override
+	protected void createTable() {
+		super.createTable()
+//		table.writeOpts { batchSize = 1 }
 	}
 }

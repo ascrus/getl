@@ -31,6 +31,7 @@ import getl.exception.ExceptionGETL
 import getl.jdbc.JDBCDriver
 import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
+import getl.utils.Logs
 import groovy.transform.InheritConstructors
 
 /**
@@ -45,14 +46,17 @@ class ImpalaDriver extends JDBCDriver {
         tablePrefix = '`'
         fieldPrefix = '`'
 
+        caseObjectName = "LOWER"
         connectionParamBegin = ';'
         connectionParamJoin = ';'
 
         syntaxPartitionKeyInColumns = false
 
+        defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_UNCOMMITTED
+
         methodParams.register('createDataset',
-                ['external', 'sortBy', 'rowFormat', 'storedAs', 'location', 'tblproperties', 'serdeproperties', 'fieldsTerminated',
-                 'escapedBy', 'linesTerminatedBy', 'select'])
+                ['sortBy', 'rowFormat', 'storedAs', 'location', 'tblproperties', 'serdeproperties',
+                 'fieldsTerminated', 'escapedBy', 'linesTerminatedBy', 'select'])
         methodParams.register('openWrite', ['overwrite'])
         methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
                                                'hdfsDir', 'processRow', 'expression'])
@@ -62,7 +66,8 @@ class ImpalaDriver extends JDBCDriver {
     @Override
     List<Driver.Support> supported() {
         return super.supported() +
-                [Driver.Support.BOOLEAN, Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST] -
+                [Driver.Support.BOOLEAN, Driver.Support.CREATEIFNOTEXIST, Driver.Support.DROPIFEXIST,
+                 Driver.Support.EXTERNAL, Driver.Support.BULKLOADMANYFILES] -
                 [Driver.Support.PRIMARY_KEY, Driver.Support.NOT_NULL_FIELD,
                  Driver.Support.DEFAULT_VALUE, Driver.Support.COMPUTE_FIELD]
     }
@@ -71,7 +76,8 @@ class ImpalaDriver extends JDBCDriver {
     @Override
     List<Driver.Operation> operations() {
         return super.operations() +
-                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE] -
+                [Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE/*,
+                 Driver.Operation.BULKLOAD*/] -
                 [Driver.Operation.READ_METADATA, Driver.Operation.UPDATE, Driver.Operation.DELETE]
     }
 
@@ -84,6 +90,8 @@ class ImpalaDriver extends JDBCDriver {
     @Override
     Map getSqlType () {
         Map res = super.getSqlType()
+        res.STRING.name = 'string'
+        res.STRING.useLength = JDBCDriver.sqlTypeUse.NEVER
         res.DOUBLE.name = 'double'
         /*res.BLOB.name = 'binary'
         res.BLOB.useLength = JDBCDriver.sqlTypeUse.NEVER*/
@@ -116,8 +124,9 @@ class ImpalaDriver extends JDBCDriver {
         }
 
         def sortBy = params.sortBy as List<String>
-        if (!(sortBy?.isEmpty())) {
+        if (sortBy != null && !(sortBy.isEmpty())) {
             sb << " SORT BY (${sortBy.join(', ')})"
+            sb << '\n'
         }
 
         if (params.rowFormat != null) {
@@ -197,5 +206,16 @@ class ImpalaDriver extends JDBCDriver {
         return ((dataset.fieldListPartitions.isEmpty()))?
                 "INSERT $into TABLE {table} ({columns}) VALUES({values})":
                 "INSERT $into TABLE {table} ({columns}) PARTITION ({partition}) VALUES({values})"
+    }
+
+    @groovy.transform.CompileStatic
+    protected void saveBatch (Dataset dataset, JDBCDriver.WriterParams wp) {
+        try {
+            super.saveBatch(dataset, wp)
+        }
+        catch (AssertionError e) {
+            Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
+            throw e
+        }
     }
 }

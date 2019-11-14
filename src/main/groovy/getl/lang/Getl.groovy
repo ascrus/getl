@@ -36,6 +36,8 @@ import getl.exception.ExceptionGETL
 import getl.files.*
 import getl.h2.*
 import getl.hive.*
+import getl.impala.ImpalaConnection
+import getl.impala.ImpalaTable
 import getl.jdbc.*
 import getl.json.*
 import getl.lang.opts.*
@@ -144,25 +146,27 @@ class Getl extends Script {
 
         LISTCONNECTIONCLASSES = [
                 CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, H2CONNECTION,
-                HIVECONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION,
-                ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION, VERTICACONNECTION, XEROCONNECTION,
-                XMLCONNECTION
+                HIVECONNECTION, IMPALACONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION,
+                NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION, VERTICACONNECTION,
+                XEROCONNECTION, XMLCONNECTION
         ]
 
         LISTJDBCCONNECTIONCLASSES = [
-                DB2CONNECTION, EMBEDDEDCONNECTION, H2CONNECTION, HIVECONNECTION, MSSQLCONNECTION, MYSQLCONNECTION,
-                NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, VERTICACONNECTION
+                DB2CONNECTION, EMBEDDEDCONNECTION, H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, MSSQLCONNECTION,
+                MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION,
+                VERTICACONNECTION
         ]
 
         LISTDATASETCLASSES = [
-                CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, H2TABLE, HIVETABLE, JSONDATASET, MSSQLTABLE,
-                MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, SALESFORCEDATASET,
-                SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET, XMLDATASET
+                CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, H2TABLE, HIVETABLE, IMPALATABLE, JSONDATASET,
+                MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
+                SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET,
+                XMLDATASET
         ]
 
         LISTJDBCTABLECLASSES = [
-                DB2TABLE, EMBEDDEDTABLE, H2TABLE, HIVETABLE, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE,
-                ORACLETABLE, POSTGRESQLTABLE, VERTICATABLE
+                DB2TABLE, EMBEDDEDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE,
+                NETSUITETABLE, ORACLETABLE, POSTGRESQLTABLE, VERTICATABLE
         ]
 
         LISTFILEMANAGERCLASSES = [FILEMANAGER, FTPMANAGER, HDFSMANAGER, SFTPMANAGER]
@@ -261,6 +265,7 @@ class Getl extends Script {
     public static final String EXCELCONNECTION = 'getl.excel.ExcelConnection'
     public static final String H2CONNECTION = 'getl.h2.H2Connection'
     public static final String HIVECONNECTION = 'getl.hive.HiveConnection'
+    public static final String IMPALACONNECTION = 'getl.impala.ImpalaConnection'
     public static final String JSONCONNECTION = 'getl.json.JSONConnection'
     public static final String MSSQLCONNECTION = 'getl.mssql.MSSQLConnection'
     public static final String MYSQLCONNECTION = 'getl.mysql.MySQLConnection'
@@ -286,6 +291,7 @@ class Getl extends Script {
     public static final String EXCELDATASET = 'getl.excel.ExcelDataset'
     public static final String H2TABLE = 'getl.h2.H2Table'
     public static final String HIVETABLE = 'getl.hive.HiveTable'
+    public static final String IMPALATABLE = 'getl.impala.ImpalaTable'
     public static final String JSONDATASET = 'getl.json.JSONDataset'
     public static final String MSSQLTABLE = 'getl.mssql.MSSQLTable'
     public static final String MYSQLTABLE = 'getl.mysql.MySQLTable'
@@ -742,6 +748,35 @@ class Getl extends Script {
 
     /** Tables repository */
     protected Map<String, Dataset> getDatasets() { _datasets }
+
+    /**
+     * Return GETL object name for specified dataset
+     * @dataset dataset
+     * @return repository or class name
+     */
+    static String datasetObjectName(Dataset dataset) {
+        if (dataset == null)
+            return null
+
+        def name = dataset.objectFullName
+
+        def type = dataset.getClass().name
+        if (type in LISTDATASETCLASSES) {
+            type = dataset.getClass().simpleName
+            type = type.replaceFirst(type[0], type[0].toLowerCase())
+
+            if (dataset.sysParams.dslNameObject != null)
+                name = type + "('" + dataset.sysParams.dslNameObject + "')"
+            else
+                name = type + ' ' + name
+        }
+        else {
+            type = dataset.getClass().simpleName
+            name = type + ' ' + name
+        }
+
+        return name
+    }
 
     /**
      * Return list of repository datasets for specified mask, class and filter
@@ -1864,6 +1899,12 @@ class Getl extends Script {
     /** Current configuration vars */
     static Map<String, Object> getConfigVars() { Config.vars }
 
+    /** Write message for specified level to log */
+    static void logWrite(String level, String message) { Logs.Write(level, message) }
+
+    /** Write message for specified level to log */
+    static void logWrite(Level level, String message) { Logs.Write(level, message) }
+
     /** Write message as level the INFO to log */
     static void logInfo(def msg) { Logs.Info(msg.toString()) }
 
@@ -2219,6 +2260,62 @@ class Getl extends Script {
     HiveTable hiveTable(@DelegatesTo(HiveTable)
                         @ClosureParams(value = SimpleType, options = ['getl.hive.HiveTable']) Closure cl) {
         hiveTable(null, false, cl)
+    }
+
+    /** Impala connection */
+    ImpalaConnection impalaConnection(String name, Boolean registration,
+                                      @DelegatesTo(ImpalaConnection)
+                                      @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaConnection']) Closure cl) {
+        def parent = registerConnection(IMPALACONNECTION, name, registration) as ImpalaConnection
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Impala connection */
+    ImpalaConnection impalaConnection(String name,
+                                      @DelegatesTo(ImpalaConnection)
+                                      @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaConnection']) Closure cl = null) {
+        impalaConnection(name, false, cl)
+    }
+
+    /** Impala connection */
+    ImpalaConnection impalaConnection(@DelegatesTo(ImpalaConnection)
+                                      @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaConnection']) Closure cl) {
+        impalaConnection(null, false, cl)
+    }
+
+    /** Impala current connection */
+    ImpalaConnection impalaConnection() {
+        defaultJdbcConnection(IMPALATABLE) as ImpalaConnection
+    }
+
+    /** Use default Impala connection for new datasets */
+    ImpalaConnection useImpalaConnection(ImpalaConnection connection) {
+        useJdbcConnection(IMPALATABLE, connection) as ImpalaConnection
+    }
+
+    /** Impala table */
+    ImpalaTable impalaTable(String name, Boolean registration,
+                            @DelegatesTo(ImpalaTable)
+                            @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaTable']) Closure cl) {
+        def parent = registerDataset(IMPALATABLE, name, registration) as ImpalaTable
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Impala table */
+    ImpalaTable impalaTable(String name,
+                            @DelegatesTo(ImpalaTable)
+                            @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaTable']) Closure cl = null) {
+        impalaTable(name, false, cl)
+    }
+
+    /** Impala table */
+    ImpalaTable impalaTable(@DelegatesTo(ImpalaTable)
+                            @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaTable']) Closure cl) {
+        impalaTable(null, false, cl)
     }
 
     /** MSSQL connection */

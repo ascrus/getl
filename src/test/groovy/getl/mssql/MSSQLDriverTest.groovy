@@ -5,6 +5,7 @@ import getl.jdbc.*
 import getl.oracle.OracleTable
 import getl.proc.Flow
 import getl.utils.*
+import groovy.transform.InheritConstructors
 import org.junit.Test
 
 import java.sql.Time
@@ -13,6 +14,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 
+@InheritConstructors
 class MSSQLDriverTest extends JDBCDriverProto {
 	static final def configName = 'tests/mssql/mssql.conf'
 

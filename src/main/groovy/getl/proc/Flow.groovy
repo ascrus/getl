@@ -741,7 +741,7 @@ class Flow {
 			if (autoTran) bulkParams.autoCommit = false
 			if (bulkAsGZIP) bulkDS.isGzFile = true
 			bulkParams.source = bulkDS
-			bulkParams.abortOnError = true
+			if (bulkParams.abortOnError == null) bulkParams.abortOnError = true
 			
 			destParams = [:]
 			writer = bulkDS
@@ -895,7 +895,7 @@ class Flow {
 				if (isAutoTran) bp.autoCommit = false
 				if (bulkAsGZIP) bulkDS.isGzFile = true
 				bp.source = bulkDS
-				bp.abortOnError = true
+				if (bp.abortOnError == null) bp.abortOnError = true
 				
 				bulkParams.put(n, bp)
 				destParams.put(n, [:])

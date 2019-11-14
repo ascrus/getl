@@ -24,6 +24,7 @@
 
 package getl.netezza
 
+import getl.data.Dataset
 import getl.driver.Driver
 import getl.jdbc.JDBCDriver
 import groovy.transform.InheritConstructors
@@ -73,6 +74,20 @@ class NetezzaDriver extends JDBCDriver {
     @Override
     String defaultConnectURL () {
         return 'jdbc:netezza://{host}/{database}'
+    }
+
+    @Override
+    void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+        super.sqlTableDirective(dataset, params, dir)
+        if (params.limit != null) {
+            dir.afterOrderBy = ((dir.afterOrderBy != null) ? (dir.afterOrderBy + '\n') : '') + "LIMIT ${params.limit}"
+            params.limit = null
+        }
+
+        if (params.offs != null) {
+            dir.afterOrderBy = ((dir.afterOrderBy != null)?(dir.afterOrderBy + '\n'):'') + "OFFSET ${params.offs}"
+            params.offs = null
+        }
     }
 
     /* TODO: checking what syntax is correct

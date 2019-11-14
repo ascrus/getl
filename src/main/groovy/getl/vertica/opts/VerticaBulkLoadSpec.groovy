@@ -137,9 +137,9 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     void setEnforceLength(Boolean value) { params.enforceLength = value }
 
     /** Stop loading rows on any error (default true) */
-    Boolean getAbortOnError() { BoolUtils.IsValue(params.abortOnError, true) }
+    //Boolean getAbortOnError() { BoolUtils.IsValue(params.abortOnError, true) }
     /** Stop loading rows on any error (default true) */
-    void setAbortOnError(Boolean value) { params.abortOnError = value }
+    //void setAbortOnError(Boolean value) { params.abortOnError = value }
 
     /**
      * Describes the SQL expression of loading file columns into table fields.
