@@ -73,9 +73,9 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 		Config.ReInit()
 	}
 
-	@Override
+/*	@Override
 	protected void createTable() {
 		super.createTable()
-//		table.writeOpts { batchSize = 1 }
-	}
+		table.writeOpts { batchSize = 1 }
+	}*/
 }

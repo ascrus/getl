@@ -43,7 +43,7 @@ class H2Driver extends JDBCDriver {
 	H2Driver() {
 		super()
 
-		sqlAutoIncrement = "auto_increment"
+		sqlAutoIncrement = "AUTO_INCREMENT"
 		commitDDL = false
 
 		caseObjectName = "UPPER"

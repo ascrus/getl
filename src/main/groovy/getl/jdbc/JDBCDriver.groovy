@@ -65,12 +65,17 @@ class JDBCDriver extends Driver {
 		methodParams.register('clearDataset', ['truncate'])
 		methodParams.register("executeCommand", ['queryParams', 'isUpdate'])
 	}
-	
+
+	/** Start time connect */
 	private Date connectDate
 
+	/** Groovy sql connection */
 	Sql getSqlConnect () { connection.sysParams.sqlConnect as Sql }
-
+	/** Groovy sql connection */
 	void setSqlConnect(Sql value) { connection.sysParams.sqlConnect = value }
+
+	/** Parent JDBC connection manager */
+	protected JDBCConnection getJdbcConnection() { connection as JDBCConnection }
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
@@ -379,7 +384,7 @@ class JDBCDriver extends Driver {
 	 * @return
 	 */
 	protected String buildConnectURL () {
-		JDBCConnection con = connection as JDBCConnection
+		JDBCConnection con = jdbcConnection
 		
 		def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()
 		if (url == null) return null
@@ -397,7 +402,7 @@ class JDBCDriver extends Driver {
 	}
 
 	String buildConnectParams () {
-		JDBCConnection con = connection as JDBCConnection
+		JDBCConnection con = jdbcConnection
 		String conParams = ""
 		
 		Map prop = [:]
@@ -455,7 +460,7 @@ class JDBCDriver extends Driver {
 	@Override
 	void connect() {
 		Sql sql = null
-		JDBCConnection con = connection as JDBCConnection
+		JDBCConnection con = jdbcConnection
 		
 		if (con.javaConnection != null) {
 			sql = new Sql(con.javaConnection)
@@ -557,7 +562,7 @@ class JDBCDriver extends Driver {
     void changeSessionProperty(String name, def value) {
         if (changeSessionPropertyQuery == null) throw new ExceptionGETL("Current driver not allowed change session property value")
         try {
-            (connection as JDBCConnection).executeCommand(command: StringUtils.EvalMacroString(changeSessionPropertyQuery, [name: name, value: value]))
+            jdbcConnection.executeCommand(command: StringUtils.EvalMacroString(changeSessionPropertyQuery, [name: name, value: value]))
         }
         catch (Exception e) {
             Logs.Severe("Error change session property \"$name\" to value \"$value\"")
@@ -569,7 +574,7 @@ class JDBCDriver extends Driver {
      * Init session properties after connected to database
      */
     protected void initSessionProperties() {
-        (connection as JDBCConnection).sessionProperty.each { name, value -> changeSessionProperty(name as String, value) }
+		jdbcConnection.sessionProperty.each { name, value -> changeSessionProperty(name as String, value) }
     }
 
 	@Override
@@ -579,7 +584,7 @@ class JDBCDriver extends Driver {
 		jdbcClass = null
 		useLoadedDriver = false
 		
-		JDBCConnection con = connection as JDBCConnection
+		JDBCConnection con = jdbcConnection
 		if (con.balancer != null && con.sysParams."balancerServer" != null) {
 			def bs = con.sysParams."balancerServer" as Map
 			con.sysParams."balancerServer" = null
@@ -761,38 +766,41 @@ class JDBCDriver extends Driver {
 
 	@Override
 	void startTran() {
+		def con = jdbcConnection
 		if (!isSupport(Driver.Support.TRANSACTIONAL)) return
-		if (connection.tranCount == 0) {
+		if (con.tranCount == 0) {
 			saveToHistory("START TRAN")
 		}
 		else {
-			saveToHistory("-- START TRAN (active ${connection.tranCount} transaction)")
+			saveToHistory("-- START TRAN (active ${con.tranCount} transaction)")
 		}
 	}
 
 	@Override
 	void commitTran() {
+		def con = jdbcConnection
         if (!isSupport(Driver.Support.TRANSACTIONAL)) return
-		if (connection == null) throw new ExceptionGETL("Can not commit from disconnected connection")
-		if (connection.tranCount == 1) {
+		if (con == null) throw new ExceptionGETL("Can not commit from disconnected connection")
+		if (con.tranCount == 1) {
 			saveToHistory("COMMIT")
 			sqlConnect.commit()
 		}
 		else {
-			saveToHistory("-- COMMIT (active ${connection.tranCount} transaction)")
+			saveToHistory("-- COMMIT (active ${con.tranCount} transaction)")
 		}
 	}
 
 	@Override
 	void rollbackTran() {
+		def con = jdbcConnection
         if (!isSupport(Driver.Support.TRANSACTIONAL)) return
-		if (connection == null) throw new ExceptionGETL("Can not rollback from disconnected connection")
-		if (connection.tranCount == 1) {
+		if (con == null) throw new ExceptionGETL("Can not rollback from disconnected connection")
+		if (con.tranCount == 1) {
 			saveToHistory("ROLLBACK")
 			sqlConnect.rollback()
 		}
 		else {
-			saveToHistory("-- ROLLBACK (active ${connection.tranCount} transaction)")
+			saveToHistory("-- ROLLBACK (active ${con.tranCount} transaction)")
 		}
 	}
 	
@@ -897,9 +905,9 @@ ${extend}'''
 
 		String createTableCode = '"""' + sqlCreateTable + '"""'
 
-		def jdbcConnect = connection as JDBCConnection
+		def con = jdbcConnection
 		
-		if (commitDDL && transactionalDDL) jdbcConnect.startTran()
+		if (commitDDL && transactionalDDL && !(jdbcConnection.autoCommit)) con.startTran()
 		try {
 			def varsCT = [  type: tableTypeName,
 							ifNotExists: ifNotExists, 
@@ -931,10 +939,10 @@ ${extend}'''
 									]
 					def sqlCodeCI = GenerationUtils.EvalGroovyScript(createIndexCode, varsCI) as String
 
-					if (commitDDL) {
+					if (commitDDL && !(jdbcConnection.autoCommit)) {
 						if (transactionalDDL) {
-							jdbcConnect.commitTran()
-							jdbcConnect.startTran()
+							con.commitTran()
+							con.startTran()
 						} else {
 							executeCommand('COMMIT')
 						}
@@ -945,19 +953,18 @@ ${extend}'''
 			}
 		}
 		catch (Throwable e) {
-			if (commitDDL) {
-				if (transactionalDDL) jdbcConnect.rollbackTran()
+			if (commitDDL && !(jdbcConnection.autoCommit)) {
+				if (transactionalDDL) con.rollbackTran()
 			}
 			throw e
 		}
 		
-		if (commitDDL) {
-			if (transactionalDDL) jdbcConnect.commitTran() else executeCommand('COMMIT')
+		if (commitDDL && !(jdbcConnection.autoCommit)) {
+			if (transactionalDDL)
+				con.commitTran()
+			else
+				executeCommand('COMMIT')
 		}
-	}
-
-	boolean existsTable(JDBCDataset dataset) {
-
 	}
 
 	/**
@@ -1135,18 +1142,20 @@ ${extend}'''
 		def e = (validExists && isSupport(Driver.Support.DROPIFEXIST))?'IF EXISTS':''
 		def q = StringUtils.EvalMacroString(dropSyntax, [object: t, ifexists: e, name: n])
 
-		if (commitDDL && transactionalDDL) startTran()
+		if (commitDDL && transactionalDDL && !(jdbcConnection.autoCommit))
+			startTran()
+
 		try {
 			executeCommand(q, [:])
 		}
 		catch (Throwable err) {
-			if (commitDDL) {
+			if (commitDDL && !(jdbcConnection.autoCommit)) {
 				if (transactionalDDL) rollbackTran()
 			}
 			throw err
 		}
 
-		if (commitDDL) {
+		if (commitDDL && !(jdbcConnection.autoCommit)) {
 			if (transactionalDDL) {
 				commitTran()
 			} else {
@@ -1412,7 +1421,7 @@ ${extend}'''
 			if (rowCopy != null) Logs.Dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
 			throw e
 		}
-		catch (Exception e) {
+		catch (Throwable e) {
 			if (rowCopy != null) Logs.Dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
 			throw e
 		}
@@ -1430,6 +1439,8 @@ ${extend}'''
 	
 	@Override
 	void clearDataset(Dataset dataset, Map params) {
+		def con = jdbcConnection
+
 		validTableName(dataset)
 		def truncate = BoolUtils.IsValue(params.truncate)
 		
@@ -1437,20 +1448,20 @@ ${extend}'''
 		String q = (truncate)?"TRUNCATE TABLE $fn":"DELETE FROM $fn"
 
 		try {
-			if (transactionalTruncate) connection.startTran()
+			if (transactionalTruncate) con.startTran()
 			def count = executeCommand(q, params + [isUpdate: (!truncate)])
 			dataset.updateRows = count
 
-			if (transactionalTruncate) connection.commitTran()
+			if (transactionalTruncate) con.commitTran()
 		}
 		catch (Exception e) {
-			if (transactionalTruncate) connection.rollbackTran()
+			if (transactionalTruncate) con.rollbackTran()
 			throw e
 		}
 	}
 	
 	protected void saveToHistory(String sql) {
-		JDBCConnection con = connection as JDBCConnection
+		JDBCConnection con = jdbcConnection
 		if (con.sqlHistoryFile != null) {
 			con.validSqlHistoryFile()
 			def f = new File(con.fileNameSqlHistory).newWriter("utf-8", true)
@@ -1482,7 +1493,7 @@ $sql
 			command = StringUtils.SetValueString(command, params.queryParams as Map)
 		}
 		
-		JDBCConnection con = connection as JDBCConnection
+		JDBCConnection con = jdbcConnection
 		def stat = sqlConnect.connection.createStatement()
 		
 		saveToHistory(command)
@@ -1515,7 +1526,7 @@ $sql
 			}
 			warn = warn.nextWarning
 		}
-		if (!((connection as JDBCConnection).sysParams.warnings as List).isEmpty()) {
+		if (!(con.sysParams.warnings as List).isEmpty()) {
 			if (BoolUtils.IsValue(con.outputServerWarningToLog)) Logs.Warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
             saveToHistory("-- Server warning ${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
 		}

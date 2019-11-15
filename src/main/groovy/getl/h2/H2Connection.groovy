@@ -38,7 +38,7 @@ import getl.utils.*
  */
 @InheritConstructors
 class H2Connection extends JDBCConnection {
-	H2Connection () {
+	H2Connection() {
 		super(driver: H2Driver)
 		if (connectProperty.LOCK_TIMEOUT == null) connectProperty.LOCK_TIMEOUT = 10000
 		//connectProperty.DATABASE_TO_UPPER = true
@@ -46,7 +46,7 @@ class H2Connection extends JDBCConnection {
 		connectProperty.ALIAS_COLUMN_NAME = true
 	}
 	
-	H2Connection (Map params) {
+	H2Connection(Map params) {
 		super(new HashMap([driver: H2Driver]) + params?:[:])
 		if (connectProperty.LOCK_TIMEOUT == null) connectProperty.LOCK_TIMEOUT = 10000
         //connectProperty.DATABASE_TO_UPPER = true

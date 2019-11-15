@@ -34,6 +34,8 @@ import getl.driver.Driver
 import getl.excel.*
 import getl.exception.ExceptionGETL
 import getl.files.*
+import getl.firebird.FirebirdConnection
+import getl.firebird.FirebirdTable
 import getl.h2.*
 import getl.hive.*
 import getl.impala.ImpalaConnection
@@ -145,27 +147,27 @@ class Getl extends Script {
         _filemanagers = _params.repFileManagers
 
         LISTCONNECTIONCLASSES = [
-                CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, H2CONNECTION,
-                HIVECONNECTION, IMPALACONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION,
-                NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION, VERTICACONNECTION,
-                XEROCONNECTION, XMLCONNECTION
+                CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
+                H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION,
+                NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
+                VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION
         ]
 
         LISTJDBCCONNECTIONCLASSES = [
-                DB2CONNECTION, EMBEDDEDCONNECTION, H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, MSSQLCONNECTION,
-                MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION,
-                VERTICACONNECTION
+                DB2CONNECTION, EMBEDDEDCONNECTION, FIREBIRDCONNECTION, H2CONNECTION, HIVECONNECTION, IMPALACONNECTION,
+                MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
+                POSTGRESQLCONNECTION, VERTICACONNECTION
         ]
 
         LISTDATASETCLASSES = [
-                CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, H2TABLE, HIVETABLE, IMPALATABLE, JSONDATASET,
+                CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, JSONDATASET,
                 MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
                 SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET,
                 XMLDATASET
         ]
 
         LISTJDBCTABLECLASSES = [
-                DB2TABLE, EMBEDDEDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE,
+                DB2TABLE, EMBEDDEDTABLE, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE,
                 NETSUITETABLE, ORACLETABLE, POSTGRESQLTABLE, VERTICATABLE
         ]
 
@@ -263,6 +265,7 @@ class Getl extends Script {
     public static final String CSVTEMPCONNECTION = 'getl.tfs.TFS'
     public static final String DB2CONNECTION = 'getl.db2.DB2Connection'
     public static final String EXCELCONNECTION = 'getl.excel.ExcelConnection'
+    public static final String FIREBIRDCONNECTION = 'getl.firebird.FirebirdConnection'
     public static final String H2CONNECTION = 'getl.h2.H2Connection'
     public static final String HIVECONNECTION = 'getl.hive.HiveConnection'
     public static final String IMPALACONNECTION = 'getl.impala.ImpalaConnection'
@@ -289,6 +292,7 @@ class Getl extends Script {
     public static final String CSVTEMPDATASET = 'getl.tfs.TFSDataset'
     public static final String DB2TABLE = 'getl.db2.DB2Table'
     public static final String EXCELDATASET = 'getl.excel.ExcelDataset'
+    public static final String FIREBIRDTABLE = 'getl.firebird.FirebirdTable'
     public static final String H2TABLE = 'getl.h2.H2Table'
     public static final String HIVETABLE = 'getl.hive.HiveTable'
     public static final String IMPALATABLE = 'getl.impala.ImpalaTable'
@@ -2088,6 +2092,62 @@ class Getl extends Script {
         view(null, connection, false, cl)
     }
 
+    /** Firebird connection */
+    FirebirdConnection firebirdConnection(String name, Boolean registration,
+                                          @DelegatesTo(FirebirdConnection)
+                              @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl) {
+        def parent = registerConnection(FIREBIRDCONNECTION, name, registration) as FirebirdConnection
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Firebird connection */
+    FirebirdConnection firebirdConnection(String name,
+                              @DelegatesTo(FirebirdConnection)
+                              @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl = null) {
+        firebirdConnection(name, false, cl)
+    }
+
+    /** Firebird connection */
+    FirebirdConnection firebirdConnection(@DelegatesTo(FirebirdConnection)
+                              @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl) {
+        firebirdConnection(null, false, cl)
+    }
+
+    /** Firebird current connection */
+    FirebirdConnection firebirdConnection() {
+        defaultJdbcConnection(FIREBIRDTABLE) as FirebirdConnection
+    }
+
+    /** Use default Firebird connection for new datasets */
+    FirebirdConnection useFirebirdConnection(FirebirdConnection connection) {
+        useJdbcConnection(FIREBIRDTABLE, connection) as FirebirdConnection
+    }
+
+    /** Firebird table */
+    FirebirdTable firebirdTable(String name, Boolean registration,
+                                @DelegatesTo(FirebirdTable)
+                    @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl) {
+        def parent = registerDataset(FIREBIRDTABLE, name, registration) as FirebirdTable
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Firebird table */
+    FirebirdTable firebirdTable(String name,
+                    @DelegatesTo(FirebirdTable)
+                    @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl = null) {
+        firebirdTable(name, false, cl)
+    }
+
+    /** Firebird table */
+    FirebirdTable firebirdTable(@DelegatesTo(FirebirdTable)
+                    @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl) {
+        firebirdTable(null, false, cl)
+    }
+
     /** H2 connection */
     H2Connection h2Connection(String name, Boolean registration,
                               @DelegatesTo(H2Connection)
@@ -2119,11 +2179,6 @@ class Getl extends Script {
     /** Use default H2 connection for new datasets */
     H2Connection useH2Connection(H2Connection connection) {
         useJdbcConnection(H2TABLE, connection) as H2Connection
-    }
-
-    /** Use default H2 connection for new datasets */
-    TDS useEmbeddedConnection(TDS connection = TDS.storage) {
-        useJdbcConnection(EMBEDDEDTABLE, connection) as TDS
     }
 
     /** H2 table */
@@ -2736,8 +2791,12 @@ class Getl extends Script {
 
     /** Temporary database default connection */
     TDS embeddedConnection() {
-//        defaultJdbcConnection(EMBEDDEDTABLE) as TDS
         TDS.storage
+    }
+
+    /** Use default temporary connection for new datasets */
+    TDS useEmbeddedConnection(TDS connection = TDS.storage) {
+        useJdbcConnection(EMBEDDEDTABLE, connection) as TDS
     }
 
     /** Table with temporary database */

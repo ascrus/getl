@@ -251,7 +251,7 @@ class OracleDriver extends JDBCDriver {
 
     @Override
 	protected String buildConnectURL () {
-        JDBCConnection con = connection as JDBCConnection
+        JDBCConnection con = jdbcConnection
 
         def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()
         if (url == null) return null

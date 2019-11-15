@@ -234,6 +234,10 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(countRows, count)
         validCount()
 
+        /*con.sqlConnection.eachRow("SELECT * FROM ${table.fullNameDataset()}".toString()) {
+            println it
+        }*/
+
         def counter = 10
 		table.eachRow(order: ['id1'], limit: 10, offs: 10) { r ->
             counter++
@@ -399,7 +403,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         con.startTran()
         def count = con.executeCommand(command: "UPDATE ${table.fullNameDataset()} SET ${table.sqlObjectName('double')} = ${table.sqlObjectName('double')} + 1", isUpdate: true)
         assertEquals(countRows, count)
-        con.commitTran()
+        if (!con.autoCommit) con.commitTran()
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('double')} IS NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
@@ -448,6 +452,7 @@ END FOR;
         scripter.runSql()
 
         scripter.loadFile('resource:/sql/test_scripter.sql')
+        scripter.allVars.from = (con.jdbcDriver.sysDualTable != null)?"FROM ${con.jdbcDriver.sysDualTable}":''
         scripter.runSql()
     }
 

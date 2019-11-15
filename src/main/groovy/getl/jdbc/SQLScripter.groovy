@@ -187,7 +187,7 @@ class SQLScripter {
 				valStr = sb.toString()
 			}
 			else {
-				valStr = val.toString()
+				valStr = val.toString().replace('$', '\\$')
 			}
 			m.appendReplacement(b, valStr)
 		}
