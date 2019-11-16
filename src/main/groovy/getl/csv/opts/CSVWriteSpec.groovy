@@ -25,6 +25,7 @@
 package getl.csv.opts
 
 import getl.lang.opts.BaseSpec
+import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -89,4 +90,9 @@ class CSVWriteSpec extends BaseSpec {
                            Closure<Boolean> value) {
         setOnSplitFile(value)
     }
+
+    /** Parts of files are available immediately after writing */
+    Boolean getAvaibleAfterWrite() { params.avaibleAfterWrite as Boolean }
+    /** Parts of files are available immediately after writing */
+    void setAvaibleAfterWrite(Boolean value) { params.avaibleAfterWrite = value }
 }

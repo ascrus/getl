@@ -24,6 +24,7 @@
 
 package getl.data
 
+import getl.data.opts.FileWriteOpts
 import groovy.transform.InheritConstructors
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
@@ -169,22 +170,27 @@ class FileDataset extends Dataset {
 	 * Valid existing file
 	 */
 	boolean existsFile() { new File(fullFileName()).exists() }
+
+	final List<FileWriteOpts> writedFiles = [] as List<FileWriteOpts>
+
+	/** List of writed files */
+	List<FileWriteOpts> getWritedFiles() { writedFiles }
 	
 	@Override
 	void openWrite (Map procParams) {
 		sysParams.deleteOnEmpty = BoolUtils.IsValue(procParams.deleteOnEmpty, deleteOnEmpty)
-		sysParams.writeFiles = [:]
 		sysParams.append = procParams.append
+		writedFiles.clear()
 		super.openWrite(procParams)
 	}
 	
 	@Override
 	void closeWrite () {
 		super.closeWrite()
-		if (isWriteError || (sysParams.deleteOnEmpty && writeRows == 0)) {
-			(connection.driver as FileDriver).fixTempFiles(this, true)
+		if (isWriteError) {
+			(connection.driver as FileDriver).RemoveTempFiles(this)
 		} else {
-			(connection.driver as FileDriver).fixTempFiles(this, false)
+			(connection.driver as FileDriver).FixTempFiles(this)
 		}
 	}
 	

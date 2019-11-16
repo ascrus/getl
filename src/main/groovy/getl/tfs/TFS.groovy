@@ -109,19 +109,10 @@ class TFS extends CSVConnection {
 	 * @param validExists - object required is exists 
 	 * @return
 	 */
-	static TFSDataset dataset(String name, boolean validExists) {
+	static TFSDataset dataset(String name, boolean validExists = false) {
 		dataset(storage, name, validExists)
 	}
 	
-	/**
-	 * Create new temporary named dataset object
-	 * @param name - name of object
-	 * @return
-	 */
-	static TFSDataset dataset(String name) {
-		dataset(name, false)
-	}
-
 	/**
 	 * Create new temporary unnamed dataset object	
 	 * @return

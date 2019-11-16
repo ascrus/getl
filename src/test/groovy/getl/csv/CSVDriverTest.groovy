@@ -2,6 +2,7 @@ package getl.csv
 
 import getl.data.Dataset
 import getl.data.Field
+import getl.lang.Getl
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TFS
@@ -390,4 +391,41 @@ class CSVDriverTest extends getl.test.GetlTest {
 			t.drop()
 		}
 	}
+
+    @Test
+    void testAvaibleSplit() {
+        Getl.Dsl(this) {
+            def csv = csv {
+                useConnection csvConnection { path = csvTempConnection().path }
+                fileName = 'test.split'
+                field('id') { type = integerFieldType}
+                field('name')
+                writeOpts {
+                    batchSize = 0
+                    avaibleAfterWrite = true
+                    splitFile { true }
+                    deleteOnEmpty = true
+                }
+            }
+
+            rowsTo(csv) {
+                writeRow { add ->
+                    (1..3).each { num ->
+                        add id: num, name: "name $num"
+                        assertTrue(new File(csv.fullFileName(num)).exists())
+                    }
+                }
+            }
+
+            assertEquals(3, csv.writedFiles.size())
+            csv.writedFiles.each {
+                assertTrue(new File(it.fileName).exists())
+            }
+
+            csv.drop(portions: 3)
+            csv.writedFiles.each {
+                assertFalse(new File(it.fileName).exists())
+            }
+        }
+    }
 }

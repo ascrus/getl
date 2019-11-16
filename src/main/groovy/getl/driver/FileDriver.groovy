@@ -24,9 +24,9 @@
 
 package getl.driver
 
+import getl.data.opts.FileWriteOpts
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
-import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.SimpleType
 
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
@@ -51,7 +51,8 @@ abstract class FileDriver extends Driver {
 		super()
 		methodParams.register('retrieveObjects', ['directory', 'mask', 'type', 'sort', 'recursive'])
 		methodParams.register('eachRow', ['append', 'codePage'])
-		methodParams.register('openWrite', ['append', 'codePage', 'createPath', 'deleteOnEmpty'])
+		methodParams.register('openWrite', ['append', 'codePage', 'createPath', 'deleteOnEmpty',
+											'avaibleAfterWrite'])
 	}
 	
 	@Override
@@ -237,17 +238,16 @@ abstract class FileDriver extends Driver {
 	 * @param portion
 	 * @return
 	 */
-	static protected Map getDatasetParams (Dataset dataset, Map params, Integer portion = null) {
+	@CompileStatic
+	static protected Map getDatasetParams (FileDataset dataset, Map params, Integer portion = null) {
 		def res = [:]
-		FileDataset ds = dataset as FileDataset
-		
-		res.fn = fullFileNameDataset(ds, portion)
-		res.isGzFile = ds.isGzFile
-		res.codePage = ListUtils.NotNullValue([params.codePage, ds.codePage])
-		res.isAppend = BoolUtils.IsValue(params.append, ds.append)
-		res.autoSchema = BoolUtils.IsValue(params.autoSchema, ds.autoSchema)
-		res.createPath = BoolUtils.IsValue(params.createPath, ds.createPath)
-		res.deleteOnEmpty = BoolUtils.IsValue([params.deleteOnEmpty, ds.deleteOnEmpty], null)
+		res.fn = fullFileNameDataset(dataset, portion)
+		res.isGzFile = dataset.isGzFile
+		res.codePage = ListUtils.NotNullValue([params.codePage, dataset.codePage])
+		res.isAppend = BoolUtils.IsValue(params.append, dataset.append)
+		res.autoSchema = BoolUtils.IsValue(params.autoSchema, dataset.autoSchema)
+		res.createPath = BoolUtils.IsValue(params.createPath, dataset.createPath)
+		res.deleteOnEmpty = BoolUtils.IsValue([params.deleteOnEmpty, dataset.deleteOnEmpty], null)
 		
 		return res
 	}
@@ -259,7 +259,8 @@ abstract class FileDriver extends Driver {
 	 * @param portion
 	 * @return
 	 */
-	static protected Reader getFileReader (Dataset dataset, Map params, Integer portion = null) {
+	@CompileStatic
+	static protected Reader getFileReader (FileDataset dataset, Map params, Integer portion = null) {
 		def wp = getDatasetParams(dataset, params, portion)
 		
 		def fn = wp.fn as String
@@ -275,7 +276,7 @@ abstract class FileDriver extends Driver {
 			input = new FileInputStream(fn)
 		}
 		
-		reader = new BufferedReader(new InputStreamReader(input, codePage), (dataset as FileDataset).bufferSize)
+		reader = new BufferedReader(new InputStreamReader(input, codePage), dataset.bufferSize)
 		
 		return reader
 	}
@@ -297,24 +298,36 @@ abstract class FileDriver extends Driver {
 	 * @param portion
 	 * @return
 	 */
-	protected Writer getFileWriter (Dataset dataset, Map params, Integer portion) {
+	@CompileStatic
+	protected Writer getFileWriter (FileDataset dataset, Map params, Integer portion) {
 		def wp = getDatasetParams(dataset, params, portion)
-		
+
+		if (BoolUtils.IsValue(params.avaibleAfterWrite) && (portion?:0) > 1) {
+			def opt = dataset.writedFiles[portion - 2]
+			FixTempFile(dataset, opt)
+		}
+
 		def fn = "${wp.fn}.getltemp"
-		(dataset.sysParams.writeFiles as Map).put(wp.fn, fn)
-		
+		def writeOpt = new FileWriteOpts()
+		writeOpt.with {
+			fileName = wp.fn
+			tempFileName = fn
+			partNumber = portion
+		}
+		dataset.writedFiles << writeOpt
+
 		if (wp.createPath) createPath(fn)
 		
-		boolean isGzFile = wp.isGzFile
+		boolean isGzFile = BoolUtils.IsValue(wp.isGzFile)
 		def codePage = wp.codePage as String
-		def isAppend = wp.isAppend as Boolean
+		def isAppend = BoolUtils.IsValue(wp.isAppend)
 
 		def writer
 		OutputStream output
 		def file = new File(fn)
-        def dsFile = new File(dataset.objectFullName)
+        def dsFile = new File(dataset.fullFileName())
         if (isAppend && dsFile.exists()) {
-            FileUtils.CopyToFile(dataset.objectFullName, fn)
+            FileUtils.CopyToFile(dataset.fullFileName(), fn)
         }
 		
 		if (isGzFile) {
@@ -324,7 +337,7 @@ abstract class FileDriver extends Driver {
 			output = new FileOutputStream(file, isAppend)
 		}
 		
-		writer = new BufferedWriter(new OutputStreamWriter(output, codePage), (dataset as FileDataset).bufferSize)
+		writer = new BufferedWriter(new OutputStreamWriter(output, codePage), dataset.bufferSize)
 		
 		processWriteFile(wp.fn as String, file)
 		
@@ -337,39 +350,82 @@ abstract class FileDriver extends Driver {
 	 * @param fileTemp
 	 */
 	protected void processWriteFile(String fileName, File fileTemp) {  }
+
+	/**
+	 * Fixing temporary files to persistent file or deleting
+	 * @param dataset
+	 * @param isDelete
+	 */
+	@CompileStatic
+	static void FixTempFiles(FileDataset dataset) {
+		try {
+			dataset.writedFiles.each { opt ->
+				FixTempFile(dataset, opt)
+			}
+		}
+		catch (Exception e) {
+			RemoveTempFiles(dataset)
+			throw e
+		}
+
+		if (BoolUtils.IsValue(dataset.sysParams.deleteOnEmpty))
+			dataset.writedFiles.removeAll { opt -> opt.countRows == 0 }
+
+		if (BoolUtils.IsValue(dataset.sysParams.deleteOnEmpty) && dataset.autoSchema && dataset.writeRows == 0) {
+			def s = new File(dataset.fullFileSchemaName())
+			if (s.exists()) s.delete()
+		}
+	}
 	
 	/**
 	 * Fixing temporary files to persistent file or deleting 
 	 * @param dataset
 	 * @param isDelete
 	 */
-	protected static void fixTempFiles (Dataset dataset, boolean isDelete) {
-		dataset.sysParams.writeFiles?.each { fileName, tempFileName ->
-			def f = new File(fileName as String)
-			def t = new File(tempFileName as String)
-            if (f.exists()) {
-				if (!f.delete()) throw new ExceptionGETL("Failed to remove the file \"$fileName\"")
-			}
-			if (isDelete) {
-				t.delete()
-				if (dataset.autoSchema) {
-					def s = new File(dataset.fullFileSchemaName())
-					if (s.exists()) s.delete()
-				}
-			}
-			else {
-                if (!t.renameTo(f)) {
-                    t.delete()
-                    throw new ExceptionGETL("Failed rename temp file to \"${dataset.objectFullName}\"")
-                }
+	@CompileStatic
+	static void FixTempFile(FileDataset dataset, FileWriteOpts opt) {
+		if (opt.readyFile) return
+
+		def f = new File(opt.fileName as String)
+		def t = new File(opt.tempFileName as String)
+
+		if (f.exists()) {
+			if (!f.delete())
+				throw new ExceptionGETL("Failed to remove file \"${opt.fileName}\"!")
+		}
+
+		if (BoolUtils.IsValue(dataset.sysParams.deleteOnEmpty) && opt.countRows == 0) {
+			if (!t.delete())
+				Logs.Severe("Failed to remove file \"${opt.tempFileName}\"!")
+		}
+		else {
+			if (!t.renameTo(f)) {
+				throw new ExceptionGETL("Failed rename temp file \"${opt.tempFileName}\" to \"${opt.fileName}\"!")
 			}
 		}
+
+		opt.tempFileName = null
+		opt.readyFile = true
+	}
+
+	/**
+	 * Remove temporary files
+	 * @param dataset
+	 */
+	@CompileStatic
+	static void RemoveTempFiles(FileDataset dataset) {
+		dataset.writedFiles.each { opt ->
+			if (opt.readyFile) return
+
+			if (!FileUtils.DeleteFile(opt.tempFileName))
+				Logs.Severe("Failed to remove file \"${opt.tempFileName}\"!")
+		}
+
+		dataset.writedFiles.clear()
 	}
 	
 	@Override
-	void doneWrite (Dataset dataset) {
-		
-	}
+	void doneWrite (Dataset dataset) {	}
 	
 	@Override
 	long executeCommand (String command, Map params) {
