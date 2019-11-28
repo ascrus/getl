@@ -99,6 +99,9 @@ class ImpalaDriver extends JDBCDriver {
         return res
     }
 
+    /** Impala connection */
+    ImpalaConnection getImpalaConnection() { connection as ImpalaConnection } /* TODO: added to all drivers */
+
     @Override
     protected String createDatasetAddColumn(Field f, boolean useNativeDBType) {
         return (!f.isPartition)?super.createDatasetAddColumn(f, useNativeDBType):null
@@ -218,4 +221,7 @@ class ImpalaDriver extends JDBCDriver {
             throw e
         }
     }
+
+    @Override
+    String getSysDualTable() { impalaConnection.dualTable?:'(SELECT 1 AS row_num) AS x' }
 }

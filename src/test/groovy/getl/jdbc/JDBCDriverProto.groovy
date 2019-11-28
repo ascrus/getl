@@ -438,13 +438,19 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         def sql = """
 ----- Test scripter
 ECHO Run sql script ...
-IF (1 IN (SELECT $id1Name FROM $table_name)); -- test IF operator
+
+/*
+  test IF operator
+*/
+IF (1 IN (SELECT $id1Name FROM $table_name)); -- check condition 
 ECHO Table has rows -- test ECHO 
 END IF;
+
+/* select to variables */
 SET SELECT $id2Name FROM $table_name WHERE $id1Name = 1; -- test SET operator
 ECHO For id1=1 then id2={id2}
 
-FOR SELECT $id1Name, $id2Name FROM $table_name WHERE $id1Name BETWEEN 2 AND 3; -- test FOR operator
+/* FOR CYCLE */FOR SELECT $id1Name, $id2Name FROM $table_name WHERE $id1Name BETWEEN 2 AND 3; -- test FOR operator
 ECHO For id1={id1} then id2={id2}
 END FOR;
 """
@@ -477,7 +483,7 @@ END FOR;
 
         retrieveFields()
 
-        if (table.updateRows > 0) runScript()
+        runScript()
 
         deleteData()
         dropTable()

@@ -148,7 +148,7 @@ class SQLScripter {
 	 * Compile script to commands
 	 * @param script 
 	 */
-	private void prepareSql(String script) {
+	private boolean prepareSql(String script) {
 		if (script == null) 
 			throw new ExceptionGETL("SQLScripter: need script in prepareSql method")
 			
@@ -194,44 +194,79 @@ class SQLScripter {
 		m.appendTail(b)
 		sql = b.toString().trim()
 		scriptLabel = null
+
+		def startCommand = StringUtils.DetectStartSQLCommand(sql)
+		if (startCommand == -1) return false
+		def cs = sql.substring(startCommand).trim()
 		
-		if (sql.matches("(?is)set(\\s|\\t|\\n).*")) {
-			sql = sql.substring(4).trim()
+		if (cs.matches("(?is)set\\s.*")) {
+			sql = removeFirstOperator(sql, 'SET', startCommand)
 			typeSql = TypeCommand.SET
-		} else if (sql.matches("(?is)echo(\\s|\\t).*")) {
-			sql = sql.substring(5).trim()
+		} else if (cs.matches("(?is)echo\\s.*")) {
+			sql = StringUtils.RemoveSQLComments(sql)
+			sql = removeFirstOperator(sql, 'ECHO', 0)
 			typeSql = TypeCommand.ECHO
-		} else if (sql.matches("(?is)for(\\s|\\n|\\t)+select(\\s|\\n|\\t).*") || sql.matches("(?is)for(\\s|\\n|\\t)+with(\\s|\\n|\\t).*")) {
-			sql = sql.substring(4).trim()
+		} else if (cs.matches("(?is)for\\s+select\\s.*") || sql.matches("(?is)for\\s+with\\s.*")) {
+			sql = removeFirstOperator(sql, 'FOR', startCommand)
 			typeSql = TypeCommand.FOR
-		} else if (sql.matches("(?is)if(\\s|\\n|\\t).*")) {
+		} else if (cs.matches("(?is)if\\s.*")) {
 			def from = ((connection.driver as JDBCDriver).sysDualTable != null)?"FROM ${(connection.driver as JDBCDriver).sysDualTable}":''
-			sql = "SELECT 1 AS result $from WHERE " + sql.substring(3).trim()
+			sql = "SELECT 1 AS result $from WHERE " + removeFirstOperator(sql, 'IF', startCommand)
 			typeSql = TypeCommand.IF
-		} else if (sql.matches("(?is)error(\\s|\\t).*")) {
-			sql = sql.substring(6).trim()
+		} else if (cs.matches("(?is)error\\s.*")) {
+			sql = StringUtils.RemoveSQLComments(sql)
+			sql = removeFirstOperator(sql, 'ERROR', 0)
 			typeSql = TypeCommand.ERROR
-		} else if (sql.matches("(?is)exit")) {
+		} else if (cs.matches("(?is)exit")) {
+			sql = StringUtils.RemoveSQLComments(sql)
 			typeSql = TypeCommand.EXIT
-		} else if (sql.matches("(?is)load_point(\\s|\\t)+.*")) {
+		} else if (cs.matches("(?is)load_point\\s+.*")) {
+			sql = StringUtils.RemoveSQLComments(sql)
 			typeSql = TypeCommand.LOAD_POINT
-		} else if (sql.matches("(?is)save_point(\\s|\\t)+.*")) {
+		} else if (cs.matches("(?is)save_point\\s+.*")) {
+			sql = StringUtils.RemoveSQLComments(sql)
 			typeSql = TypeCommand.SAVE_POINT
-		} else if (sql.matches("(?is)begin(\\s|\\t)+block(\\s|\\t)*")) {
+		} else if (cs.matches("(?is)begin\\s+block\\s*")) {
+			sql = cs
 			typeSql = TypeCommand.BLOCK
 		} else {
+			sql = StringUtils.RemoveSQLCommentsWithoutHints(sql).trim()
 			if (sql.matches("(?is)[/][*][:].*[*][/].*")) {
 				int ic = sql.indexOf("*/")
 				scriptLabel = sql.substring(2, ic).trim().substring(1).trim().toLowerCase()
 				sql = sql.substring(ic + 2).trim()
 			}
-			if (sql.matches("(?is)SELECT(\\s|\\n|\\t)+.*") ||
-                    sql.matches("(?is)WITH(\\s|\\n|\\t)+.*")) {
+			if (cs.matches("(?is)SELECT\\s+.*") ||
+                    cs.matches("(?is)WITH\\s+.*")) {
                 typeSql = TypeCommand.SELECT
             } else {
                 typeSql = TypeCommand.UPDATE
             }
 		}
+
+		return true
+	}
+
+	/**
+	 * Remove first operator for SQL script
+	 * @param sql script
+	 * @param oper operator
+	 * @param start start index in script
+	 * @return script without first operator
+	 */
+	private String removeFirstOperator(String sql, String oper, Integer start) {
+		def str = sql.substring(start)
+		def find = "(?i)^(\\s*${StringUtils.EscapeJava(oper.toUpperCase())})"
+		def pat = Pattern.compile(find)
+		def mat = pat.matcher(str)
+		if (!mat.find()) {
+			Logs.Dump(null, getClass().name, 'sql', sql)
+			throw new ExceptionGETL("Operator \"$oper\" not found in script!")
+		}
+		str = mat.replaceFirst('')
+
+		if (start > 0) str = sql.substring(0, start) + str
+		return str
 	}
 	
 	private void doLoadPoint (List<String> st, int i) {
@@ -308,7 +343,7 @@ class SQLScripter {
 	 */
 	private void doUpdate(List<String> st, int i) {
 		long rc = connection.executeCommand(command: sql)
-		rowCount += rc
+		if (rc > 0) rowCount += rc
 		if (scriptLabel != null) {
 			vars.put(scriptLabel, rc)
 		}
@@ -323,7 +358,6 @@ class SQLScripter {
 		//println "Select query: ${sql}"
 		QueryDataset ds = new QueryDataset(connection: connection, query: sql) 
 		def rows = ds.rows()
-		//rowCount += rows.size()
 		if (scriptLabel != null) {
 			vars.put(scriptLabel, rows)
 		}
@@ -511,7 +545,7 @@ class SQLScripter {
 		rowCount = 0
 		for (int i = 0; i < st.size(); i++) {
 			if (requiredExit) return
-			prepareSql(st[i])
+			if (!prepareSql(st[i])) continue
 			
 			switch (typeSql) {
 				case TypeCommand.UPDATE:
@@ -524,7 +558,7 @@ class SQLScripter {
 					doSetVar(st, i)
 					break
 				case TypeCommand.ECHO:
-					Logs.Write(logEcho, sql)
+					Logs.Write(logEcho, sql.trim())
 					break
 				case TypeCommand.FOR:
 					i = doFor(st, i)
@@ -596,7 +630,7 @@ class SQLScripter {
 		*/
 		
 		// Delete single comment
-        def sb = new StringBuffer()
+        /*def sb = new StringBuffer()
         sql.eachLine { String line ->
             def i = line.indexOf('--')
             if (i == -1) {
@@ -607,7 +641,7 @@ class SQLScripter {
             }
             sb << '\n'
         }
-		sql = sb.toString()
+		sql = sb.toString()*/
 		
 		List<String> res = sql.split('\n')
 		for (int i = 0; i < res.size(); i++) {
@@ -622,5 +656,4 @@ class SQLScripter {
 
 		return res
 	}
-
 }

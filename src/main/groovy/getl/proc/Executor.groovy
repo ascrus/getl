@@ -200,6 +200,11 @@ class Executor {
 	/** Added code on dispose resource after run the thread */
 	void disposeThreadResource(Closure cl) { listDisposeThreadResource << cl }
 
+	/** Checking element permission */
+	private Closure<Boolean> onValidAllowRun
+	/** Checking element permission */
+	void validAllowRun(Closure<Boolean> value) { onValidAllowRun = value }
+
 	/** Run thread code with list elements */
 	void run(Integer countThread, Closure code) {
 		run(list, countThread, code)
@@ -238,7 +243,14 @@ class Executor {
 							threadActive.add(m)
 						}
 						try {
-							code.call(element)
+							def allowRun = true
+							if (onValidAllowRun != null) {
+								allowRun = onValidAllowRun.call(element)
+							}
+							if (allowRun)
+								code.call(element)
+							else
+								setInterrupt(true)
 						}
 						finally {
 							if (Thread.currentThread() instanceof ExecutorThread) {

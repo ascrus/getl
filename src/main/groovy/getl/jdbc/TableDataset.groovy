@@ -634,7 +634,7 @@ class TableDataset extends JDBCDataset {
                 if (afterLoadPackage != null) afterLoadPackage.call(listFiles)
 
                 if (getl != null) {
-                    def level = getl.options().processTimeLevelLog
+                    def level = getl.langOpts.processTimeLevelLog
                     procFiles.eachRow(order: orderProcess) { file ->
                         def fileName = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
                         getl.logWrite(level, "${fullTableName}: loaded ${fileName} (${FileUtils.sizeBytes(file.filesize)})")

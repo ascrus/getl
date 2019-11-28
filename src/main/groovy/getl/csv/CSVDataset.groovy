@@ -45,6 +45,13 @@ import getl.utils.*
 class CSVDataset extends FileDataset {
 	static enum QuoteMode {ALWAYS, NORMAL, COLUMN}
 
+	/** Quotate all fields */
+	static getQuoteAlways() { QuoteMode.ALWAYS }
+	/** Quote text fields that have quotation marks or line feeds */
+	static getQuoteNormal() { QuoteMode.NORMAL }
+	/** Quote only text fields */
+	static getQuoteColumn() { QuoteMode.COLUMN }
+
 	/**
 	 * Quote delimiter string	
 	 */

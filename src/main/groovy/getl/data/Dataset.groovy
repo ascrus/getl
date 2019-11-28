@@ -59,8 +59,11 @@ class Dataset {
 
 	/** Initialization dataset parameters */
 	private void initParams() {
+		params.extended = [:] as Map<String, Object>
+
 		def dirs = [:] as Map<String, Object>
 		params.directive = dirs
+
 		dirs.create = [:] as Map<String, Object>
 		dirs.drop = [:] as Map<String, Object>
 		dirs.read = [:] as Map<String, Object>
@@ -130,14 +133,23 @@ class Dataset {
 	/** Connection */
 	void setConnection(Connection value) { this.connection = value }
 
+	/**
+	 * Extended attributes
+	 */
+	Map getExtended() { params.extended as Map }
+	/**
+	 * Extended attributes
+	 */
+	void setExtended (Map value) {
+		extended.clear()
+		if (value != null) extended.putAll(value)
+	}
+
+	/** Name in config from section "datasets" */
 	String config
-	/**
-	 * Name in config from section "datasets"
-	 */
+	/** Name in config from section "datasets" */
 	String getConfig () { return this.config }
-	/**
-	 * Name in config from section "datasets"
-	 */
+	/** Name in config from section "datasets" */
 	void setConfig (String value) {
 		this.config = value
 		if (config != null) {

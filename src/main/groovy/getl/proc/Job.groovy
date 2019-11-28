@@ -106,6 +106,9 @@ abstract class Job {
 	 * Prepare before run job process
 	 */
 	protected void prepareRun () { }
+
+	/** Finish job if detected error */
+	public static ExitOnError = true
 	
 	/**
 	 * Run job process
@@ -116,23 +119,24 @@ abstract class Job {
 		getl.deploy.Version.SayInfo()
 		prepareRun()
 		def isError = false
+        Throwable err
 		try {
 			process()
 		}
 		catch (Throwable e) {
 			Logs.Exception(e, getClass().name, "JOB.RUN")
 			isError = true
-//			org.codehaus.groovy.runtime.StackTraceUtils.sanitize(e)
-//			e.printStackTrace()
+            err = e
 		}
 		finally {
 			done()
 			Logs.Info("### Job stop")
 			Logs.Done()
-			if (isError) {
+			if (isError && ExitOnError) {
 				System.exit(1)
 			}
 		}
+        if (isError) throw err
 	}
 	
 	/**

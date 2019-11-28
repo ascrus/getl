@@ -108,7 +108,7 @@ class Config {
 	/**
 	 * Variables
 	 */
-	static Map<String, Object> getVars() { content."vars" as Map<String, Object>}
+	static Map<String, Object> getVars() { content.vars as Map<String, Object>}
 
     /**
      * Set variables

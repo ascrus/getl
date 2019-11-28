@@ -78,4 +78,9 @@ class ImpalaConnection extends JDBCConnection {
     String getHdfsDir () { params.hdfsDir as String }
     /** HDFS directory for bulkload files */
     void setHdfsDir (String value) { params.hdfsDir = value }
+
+    /** Pseudo dual table name*/
+    String getDualTable() { params.dualTable }
+    /** Pseudo dual table name*/
+    void setDualTable(String value) { params.dualTable = value }
 }

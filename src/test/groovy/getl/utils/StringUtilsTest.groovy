@@ -192,4 +192,55 @@ class StringUtilsTest extends getl.test.GetlTest {
         }
         pt4.finish()
     }
+
+    @Test
+    void testRemoveSQLComments() {
+        def s = '''-- Comment
+/*
+    Comment
+*/
+SELECT /* Comment */ id 
+FROM table -- Comment
+ORDER BY id /* 
+  Comment
+*/
+'''
+        def r = '''SELECT  id 
+FROM table 
+ORDER BY id'''
+
+        s = StringUtils.RemoveSQLComments(s)
+        assertEquals(r.trim(), s.trim())
+    }
+
+    @Test
+    void testRemoveSQLCommentsWithoutHints() {
+        def s = '''/*:count*/
+SELECT /* Comment */ id 
+FROM table /*+direct*/ -- comment
+ORDER BY id /* 
+  Comment
+*/
+'''
+        def r = '''/*:count*/
+SELECT  id 
+FROM table /*+direct*/ 
+ORDER BY id'''
+
+        s = StringUtils.RemoveSQLCommentsWithoutHints(s)
+        assertEquals(r.trim(), s.trim())
+    }
+
+    @Test
+    void testDetectStartSQLCommand() {
+        def s = '''/*
+-- test
+*/
+-- Test
+SET SELECT * FROM table; -- test
+/* all test */'''
+
+        def i = StringUtils.DetectStartSQLCommand(s)
+        assertEquals('SET', s.substring(i, i + 3))
+    }
 }

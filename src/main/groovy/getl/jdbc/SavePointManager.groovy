@@ -40,6 +40,11 @@ import java.sql.Timestamp
  *
  */
 class SavePointManager {
+	SavePointManager () {
+		params.fields = [:] as Map<String, Object>
+		params.extended = [:] as Map<String, Object>
+	}
+
 	/** Save point manager parameters */
 	final Map<String, Object> params = [:] as Map<String, Object>
 
@@ -53,13 +58,11 @@ class SavePointManager {
 
 	public final Map<String, Object> sysParams = [:] as Map<String, Object>
 	
-	/**
-	 * Connection
-	 */
+	/** Connection */
 	private JDBCConnection connection
-
+	/** Connection */
 	JDBCConnection getConnection () { connection }
-
+	/** Connection */
 	void setConnection(JDBCConnection value) {
 		assert value != null, "Required created connection"
 		connection = value
@@ -72,42 +75,34 @@ class SavePointManager {
 		return value
 	}
 	
-	/**
-	 * Database name for table
-	 */
+	/** Database name for table */
 	String getDbName () { params.dbName }
-
+	/** Database name for table */
 	void setDbName (String value) {
 		params.dbName = value
 		map.clear()
 	}
 	
-	/**
-	 * Schema name for table
-	 */
+	/** Schema name for table */
 	String getSchemaName () { params.schemaName }
-
+	/** Schema name for table */
 	void setSchemaName (String value) {
 		params.schemaName = value
 		map.clear()
 	}
 	
-	/**
-	 * Table name
-	 */
+	/** Table name */
 	String getTableName () { params.tableName }
-
+	/** Table name */
 	void setTableName (String value) {
 		assert value != null, "Required table name" 
 		params.tableName = value 
 		map.clear()
 	}
 	
-	/**
-	 * Map fields
-	 */
+	/** Map fields (dest: source) */
 	Map getFields () { params.fields as Map }
-
+	/** Map fields (dest: source) */
 	void setFields (Map value) {
 		(params.fields as Map).clear()
 		(params.fields as Map).putAll(value)
@@ -129,28 +124,29 @@ class SavePointManager {
 		map.clear()
 	}
 
+	/** Extended attributes */
+	Map getExtended() { params.extended as Map }
+	/** Extended attributes */
+	void setExtended (Map value) {
+		extended.clear()
+		if (value != null) extended.putAll(value)
+	}
+
 	/** Preparing map fields */
-	protected final Map map = [:]
+	protected final Map map = [:] as Map<String, Object>
 	
-	/**
-	 * Save point table fields
-	 */
+	/** Save point table fields */
 	protected final List<Field> table_field = [
 										new Field(name: "source", alias: "source", type: "STRING", length: 128, isNull: false),
 										new Field(name: "type", alias: "type", type: "STRING", length: 1, isNull: false),
 										new Field(name: "time", alias: "time", type: "DATETIME", isNull: false),
 										new Field(name: "value", alias: "value", type: "NUMERIC", length: 38, precision: 9, isNull: false)
 									]
-	
-	protected final TableDataset table = new TableDataset(manualSchema: true)
-	
-	SavePointManager () {
-		params.fields = [:]
-	}
 
-	/**
-	 * Clone current dataset on specified connection
-	 */
+	/** History table object */
+	protected final TableDataset table = new TableDataset(manualSchema: true)
+
+	/** Clone current dataset on specified connection */
 	SavePointManager cloneSavePointManager (JDBCConnection newConnection = null) {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.class.name
@@ -162,11 +158,8 @@ class SavePointManager {
 		return man
 	}
 	
-	/**
-	 * Set fields mapping
-	 * @return
-	 */
-	void prepareTable () {
+	/** Set fields mapping */
+	protected void prepareTable () {
 		assert connection != null, "Required set value for \"connection\""
 		assert tableName != null, "Required set value for \"tableName\""
 		
@@ -199,8 +192,8 @@ class SavePointManager {
 	
 	/**
 	 * Create save point table
-	 * @param ifNotExists
-	 * @return
+	 * @param ifNotExists do not create if already exists
+	 * @return creation result
 	 */
 	@Synchronized
 	boolean create(boolean ifNotExists = false) {
@@ -218,8 +211,8 @@ class SavePointManager {
 	
 	/**
 	 * Drop save point table
-	 * @param ifExists
-	 * @return
+	 * @param ifExists delete only if exists
+	 * @return delete result
 	 */
 	@Synchronized
 	boolean drop(boolean ifExists = false) {
@@ -233,7 +226,7 @@ class SavePointManager {
 	
 	/**
 	 * Valid save point table exists
-	 * @return
+	 * @return search results
 	 */
 	@Synchronized
 	boolean isExists() {
@@ -246,12 +239,12 @@ class SavePointManager {
 	String getFullTableName() {
 		prepareTable()
 		
-		table.fullNameDataset()
+		return table.fullNameDataset()
 	}
 	
 	/**
 	 * Return last value of save point by source 
-	 * @param source
+	 * @param source name of source
 	 * @return res.type (D and N) and res.value
 	 */
 	Map<String, Object> lastValue (String source) {
@@ -301,13 +294,13 @@ class SavePointManager {
 			}
 		}
 		
-		res
+		return res
 	}
 	
 	/**
 	 * Return last string value of save point by source
-	 * @param source
-	 * @return
+	 * @param source name of source
+	 * @return text result
 	 */
 	static String value2String(Map value) {
 		return value2String(value, false, null)
@@ -315,9 +308,10 @@ class SavePointManager {
 	
 	/**
 	 * Return last string value of save point by source
-	 * @param source
-	 * @param quote
-	 * @return
+	 * @param source name of source
+	 * @param quote enclose text in single quotes
+	 * @param format timestamp to text format
+	 * @return text result
 	 */
 	static String value2String(Map value, boolean quote, String format) {
 		if (value == null) return null
@@ -342,8 +336,8 @@ class SavePointManager {
 	
 	/**
 	 * Set new save point value to source
-	 * @param source
-	 * @param value
+	 * @param source name of source
+	 * @param value numerical or timestamp value
 	 */
 	void saveValue(String source, def value) {
 		saveValue(source, value, null)
@@ -352,8 +346,9 @@ class SavePointManager {
 
 	/**
 	 * Set new save point value to source
-	 * @param source
-	 * @param value
+	 * @param source name of source
+	 * @param value numerical or timestamp value
+	 * @param format text to timestamp format
 	 */
 	void saveValue(String source, def value, String format) {
 		prepareTable()
@@ -413,9 +408,10 @@ class SavePointManager {
 	
 	/**
 	 * Convert value with field type
-	 * @param type
-	 * @param value
-	 * @return
+	 * @param type field type
+	 * @param value numerical or timestamp value
+	 * @param format text to timestamp format
+	 * @return type and value
 	 */
 	static Map ConvertValue(Field.Type type, String format, def value) {
 		def res = [:]
@@ -463,6 +459,7 @@ class SavePointManager {
 	
 	/**
 	 * Clear save point value by source
+	 * @param source name of source
 	 */
 	@Synchronized
 	void clearValue (String source) {

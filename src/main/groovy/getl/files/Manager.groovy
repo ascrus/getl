@@ -52,12 +52,15 @@ abstract class Manager {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
 				 'sqlHistoryFile', 'saveOriginalDate', 'limitDirs', 'threadLevel', 'recursive',
-				 'ignoreExistInStory', 'createStory', 'takePathInStory'])
+				 'ignoreExistInStory', 'createStory', 'takePathInStory', 'extended'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel',
 				 'ignoreExistInStory', 'createStory'])
 		methodParams.register('downloadFiles',
 				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
+
+
+		params.extended = [:] as Map<String, Object>
 		
 		initMethods()
 	}
@@ -97,6 +100,15 @@ abstract class Manager {
 	 * Type of file in list
 	 */
 	static enum TypeFile {FILE, DIRECTORY, LINK, ALL}
+
+	/** File type object */
+	static TypeFile getFileType() { TypeFile.FILE }
+	/** Directory type object */
+	static TypeFile getDirectoryType() { TypeFile.DIRECTORY }
+	/** Link type object */
+	static TypeFile getLinkType() { TypeFile.LINK }
+	/** All type object */
+	static TypeFile getAllType() { TypeFile.ALL }
 	
 	/**
 	 * Parameters
@@ -193,7 +205,18 @@ abstract class Manager {
 	 * Save original date and time from downloading and uploading file
 	 */
 	void setSaveOriginalDate(boolean value) { params.saveOriginalDate = value }
-	
+
+	/**
+	 * Extended attributes
+	 */
+	Map getExtended() { params.extended as Map }
+	/**
+	 * Extended attributes
+	 */
+	void setExtended (Map value) {
+		extended.clear()
+		if (value != null) extended.putAll(value)
+	}
 
 	String config
 	/**
@@ -545,7 +568,10 @@ abstract class Manager {
 	TableDataset story
 	// History table
 	TableDataset getStory() { story }
+	// History table
 	void setStory(TableDataset value) { story = value }
+	// Use table for storing history download files
+	void useStory(TableDataset value) { setStory(value) }
 
 	/** Directory level for which to enable parallelization */
 	Integer getThreadLevel() { params.threadLevel as Integer }

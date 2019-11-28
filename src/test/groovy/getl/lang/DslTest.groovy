@@ -4,6 +4,7 @@ import getl.csv.CSVConnection
 import getl.files.FileManager
 import getl.h2.*
 import getl.jdbc.TableDataset
+import getl.proc.Job
 import getl.tfs.*
 import getl.utils.Config
 import getl.utils.DateUtils
@@ -878,7 +879,50 @@ ORDER BY t1.id'''
 
     @Test
     void test99_03RunGetlMain() {
-        Getl.main('runclass=getl.lang.DslTestScript', 'vars.param1=1', 'vars.param2=2', 'vars.param5=[1, 2, 3]',
-                'vars.param6=[a:1, b:2, c:3]', 'vars.paramCountTableRow=100')
+        Getl.Main(['runclass=getl.lang.DslTestScript', 'vars.param1=1', 'vars.param2=2', 'vars.param5=[1, 2, 3]',
+                'vars.param6=[a:1, b:2, c:3]', 'vars.paramCountTableRow=100'])
+    }
+
+    @Test
+    void test99_04AllowProcess() {
+        Job.ExitOnError = false
+
+        Getl.Main([
+                'runclass=getl.lang.DslTestAllowProcess',
+                'vars.enabled=true',
+                'vars.checkOnStart=false',
+                'vars.checkForThreads=false'
+        ])
+        assertTrue(Config.content.testAllowProcess)
+        assertEquals(9, Config.content.testAllowThreads)
+
+        Getl.Main([
+                'runclass=getl.lang.DslTestAllowProcess',
+                'vars.enabled=true',
+                'vars.checkOnStart=true',
+                'vars.checkForThreads=true'
+        ])
+        assertTrue(Config.content.testAllowProcess)
+        assertEquals(9, Config.content.testAllowThreads)
+
+        shouldFail {
+            Getl.Main([
+                    'runclass=getl.lang.DslTestAllowProcess',
+                    'vars.enabled=false',
+                    'vars.checkOnStart=true',
+                    'vars.checkForThreads=true'
+            ])
+        }
+
+        Getl.Main([
+                'runclass=getl.lang.DslTestAllowProcess',
+                'vars.enabled=false',
+                'vars.checkOnStart=false',
+                'vars.checkForThreads=true'
+        ])
+        assertTrue(Config.content.testAllowProcess as Boolean)
+        assertEquals(0, Config.content.testAllowThreads)
+
+        Job.ExitOnError = true
     }
 }

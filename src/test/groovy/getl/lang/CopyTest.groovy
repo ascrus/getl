@@ -44,8 +44,13 @@ class CopyTest extends getl.test.GetlTest {
                 load(this.configFile)
             }
 
+            embeddedTable('history', true) {
+                tableName = 'history'
+            }
+
             sftp('source', true) {
                 useConfig 'source'
+                useStory embeddedTable('history')
             }
 
             files('dest', true) {
@@ -86,6 +91,12 @@ class CopyTest extends getl.test.GetlTest {
 
                 scriptOfSourceOnStart = 'ls'
                 scriptOfDestinationOnStart = 'dir'
+
+                scriptOfSourceOnComplete = 'ls'
+                scriptOfDestinationOnComplete = 'dir'
+
+                beforeCopyFile { s, d -> println "Start copy file $s to file $d" }
+                afterCopyFile { s, d -> println "Finish copy file $s to file $d" }
             }
         }
     }

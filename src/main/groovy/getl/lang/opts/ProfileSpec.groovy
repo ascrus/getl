@@ -39,8 +39,8 @@ class ProfileSpec extends BaseSpec {
         super(ownerObject, thisObject)
         statistics = new ProcessTime(
                 name: name,
-                logLevel: geltOwner().options().processTimeLevelLog,
-                debug: geltOwner().options().processTimeDebug
+                logLevel: geltOwner().langOpts.processTimeLevelLog,
+                debug: geltOwner().langOpts.processTimeDebug
         )
     }
 

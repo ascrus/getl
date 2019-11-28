@@ -94,6 +94,8 @@ class Getl extends Script {
      */
     static void Main(def args) {
         Config.configClassManager = new ConfigSlurper()
+        CleanGetl()
+
         def job = new Job() {
             @Override
             void process() {
@@ -110,8 +112,13 @@ class Getl extends Script {
                     throw new ExceptionGETL("Class \"$className\" not found!")
                 }
 
+                Getl eng = Getl.Dsl()
+                eng._params.mainClass = className
+
                 def initClassName = jobArgs.initclass as String
                 if (initClassName != null) {
+                    eng._params.initClass = initClassName
+
                     Class initClass
                     try {
                         initClass = Class.forName(initClassName)
@@ -120,13 +127,64 @@ class Getl extends Script {
                         throw new ExceptionGETL("Class \"$initClassName\" not found!")
                     }
 
-                    Getl.Dsl().runGroovyClass(initClass)
+                    eng.runGroovyClass(initClass)
                 }
 
-                Getl.Dsl().runGroovyClass(runClass, Config.vars)
+                eng.runGroovyClass(runClass, Config.vars)
             }
         }
         job.run(args)
+    }
+
+    /** The name of the main class of the process */
+    String getMainClassName() { _params.mainClass }
+
+    /** The name of the process initializing class */
+    String getInitClassName() { _params.initClass }
+
+    /** Checking process permission */
+    @Synchronized
+    boolean allowProcess(String processName, Boolean throwError = false) {
+        def res = true
+        if (langOpts.processControlDataset != null) {
+            if (processName == null) processName = _params.mainClass
+            if (processName == null)
+                throw new ExceptionGETL('Required name for the process being checked!')
+
+            if (langOpts.processControlDataset instanceof TableDataset) {
+                def table = langOpts.processControlDataset as TableDataset
+                def row = sqlQueryRow(table.connection as JDBCConnection, "SELECT enabled FROM ${table.fullNameDataset()} WHERE name = '$processName'")
+                if (row!= null && !row.isEmpty())
+                    res = BoolUtils.IsValue(row.enabled)
+            }
+            else {
+                def csv = langOpts.processControlDataset as CSVDataset
+                def row = null
+                csv.eachRow {
+                    if (it.name == processName) {
+                        row = it
+                        directive = Closure.DONE
+                    }
+                }
+                if (row != null)
+                    res = BoolUtils.IsValue(row.enabled)
+            }
+
+            if (!res) {
+                if (!throwError)
+                    Logs.Warning("A flag was found to stop the process \"$processName\"!")
+                else
+                    throw new ExceptionGETL("A flag was found to stop the process \"$processName\"!")
+            }
+        }
+
+        return res
+    }
+
+    /** Checking process permission */
+    @Synchronized
+    boolean allowProcess(Boolean throwError = false) {
+        allowProcess(null, throwError)
     }
 
     private void init() {
@@ -353,9 +411,9 @@ class Getl extends Script {
     private LangSpec _langOpts
 
     /** GETL DSL options */
-    protected LangSpec getLangOpts() { _langOpts }
+    LangSpec getLangOpts() { _langOpts }
     /** GETL DSL options */
-    protected setLangOpts(LangSpec value) {
+    void setLangOpts(LangSpec value) {
         _langOpts.params.clear()
         _langOpts.params.putAll(value.params)
     }
@@ -659,7 +717,10 @@ class Getl extends Script {
         def obj = connections.get(repName)
 
         if (obj == null) {
-            if ((!registration && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
+            if (registration && Thread.currentThread() instanceof ExecutorThread)
+                throw new ExceptionGETL("it is not allowed to register an connection \"$name\" inside a thread!")
+
+            if (!registration && langOpts.validRegisterObjects)
                 throw new ExceptionGETL("Connection \"$name\" is not registered!")
 
             obj = Connection.CreateConnection(connection: connectionClassName) as Connection
@@ -1038,7 +1099,7 @@ class Getl extends Script {
     /** Use specified JDBC connection as default */
     JDBCConnection useJdbcConnection(String datasetClassName, JDBCConnection value) {
         if (Thread.currentThread() instanceof ExecutorThread)
-            throw new ExceptionGETL('Specifying the default connection is not allowed in streams!')
+            throw new ExceptionGETL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
             if (!(datasetClassName in LISTDATASETCLASSES))
@@ -1076,7 +1137,7 @@ class Getl extends Script {
     /** Use specified file connection as default */
     FileConnection useFileConnection(String datasetClassName, FileConnection value) {
         if (Thread.currentThread() instanceof ExecutorThread)
-            throw new ExceptionGETL('Specifying the default connection is not allowed in streams!')
+            throw new ExceptionGETL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
             if (!(datasetClassName in LISTDATASETCLASSES))
@@ -1115,7 +1176,7 @@ class Getl extends Script {
     /** Use specified other type connection as default */
     Connection useOtherConnection(String datasetClassName, Connection value) {
         if (Thread.currentThread() instanceof ExecutorThread)
-            throw new ExceptionGETL('Specifying the default connection is not allowed in streams!')
+            throw new ExceptionGETL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
             if (!(datasetClassName in LISTDATASETCLASSES))
@@ -1170,7 +1231,10 @@ class Getl extends Script {
         obj = datasets.get(repName)
 
         if (obj == null) {
-            if ((!registration && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
+            if (registration && Thread.currentThread() instanceof ExecutorThread)
+                throw new ExceptionGETL("it is not allowed to register an dataset \"$name\" inside a thread!")
+
+            if (!registration && langOpts.validRegisterObjects)
                 throw new ExceptionGETL("Dataset \"$name\" is not registered!")
 
             obj = Dataset.CreateDataset(dataset: datasetClassName) as Dataset
@@ -1366,6 +1430,8 @@ class Getl extends Script {
      */
     @Synchronized
     protected SavePointManager registerHistoryPoint(String name, Boolean registration = false) {
+        registration = BoolUtils.IsValue(registration)
+
         SavePointManager obj
         if (name == null) {
             obj = new SavePointManager()
@@ -1388,7 +1454,10 @@ class Getl extends Script {
             def repName = repObjectName(name)
             obj = historyPoints.get(repName)
             if (obj == null) {
-                if ((!BoolUtils.IsValue(registration) && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
+                if (registration && Thread.currentThread() instanceof ExecutorThread)
+                    throw new ExceptionGETL("it is not allowed to register an history point \"$name\" inside a thread!")
+
+                if (!registration && langOpts.validRegisterObjects)
                     throw new ExceptionGETL("History point \"$name\" is not exist!")
 
                 obj = new SavePointManager()
@@ -1622,7 +1691,10 @@ class Getl extends Script {
         obj = fileManagers.get(repName)
 
         if (obj == null) {
-            if ((!registration && langOpts.validRegisterObjects) || Thread.currentThread() instanceof ExecutorThread)
+            if (registration && Thread.currentThread() instanceof ExecutorThread)
+                throw new ExceptionGETL("it is not allowed to register an file manager \"$name\" inside a thread!")
+
+            if (!registration && langOpts.validRegisterObjects)
                 throw new ExceptionGETL("File manager \"$name\" with class \"$fileManagerClassName\" is not registered!")
 
             obj = Manager.CreateManager(manager: fileManagerClassName) as Manager
@@ -1644,7 +1716,7 @@ class Getl extends Script {
             def thread = Thread.currentThread() as ExecutorThread
             obj = thread.registerCloneObject('filemanagers', obj,
                     {
-                        def f = (it as FileManager).cloneManager()
+                        def f = (it as Manager).cloneManager()
                         f.sysParams.dslThisObject = childThisObject
                         f.sysParams.dslOwnerObject = childOwnerObject
                         f.sysParams.dslNameObject = repName
@@ -1742,7 +1814,6 @@ class Getl extends Script {
             def scriptGetl = script as Getl
             scriptGetl.setGetlParams(_params)
             if (vars != null && !vars.isEmpty()) {
-//                scriptGetl._scriptArgs.putAll(vars)
                 fillFieldFromVars(scriptGetl, vars)
             }
         }
@@ -1784,7 +1855,6 @@ class Getl extends Script {
         script.setGetlParams(_params)
         script.setLangOpts(langOpts)
         if (vars != null && !vars.isEmpty()) {
-//            script._scriptArgs.putAll(vars)
             fillFieldFromVars(script, vars)
         }
 
@@ -1936,7 +2006,19 @@ class Getl extends Script {
     /** GETL DSL options */
     LangSpec options(@DelegatesTo(LangSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LangSpec']) Closure cl = null) {
+        if (Thread.currentThread() instanceof ExecutorThread)
+            throw new ExceptionGETL('Changing options is not supported in the thread!')
+
+        def processDataset = langOpts.processControlDataset
+        def checkOnStart = langOpts.checkProcessOnStart
+
         runClosure(langOpts, cl)
+
+        if (langOpts.processControlDataset != null && langOpts.checkProcessOnStart) {
+            if (processDataset != langOpts.processControlDataset || !checkOnStart) {
+                allowProcess(true)
+            }
+        }
 
         return langOpts
     }
@@ -1944,6 +2026,9 @@ class Getl extends Script {
     /** Configuration options */
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ConfigSpec']) Closure cl = null) {
+        if (Thread.currentThread() instanceof ExecutorThread)
+            throw new ExceptionGETL('Changing configuration is not supported in the thread!')
+
         if (!(Config.configClassManager instanceof ConfigSlurper)) Config.configClassManager = new ConfigSlurper()
         def parent = new ConfigSpec(childOwnerObject, childThisObject)
         parent.runClosure(cl)
@@ -1954,6 +2039,9 @@ class Getl extends Script {
     /** Log options */
     LogSpec logging(@DelegatesTo(LogSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LogSpec']) Closure cl = null) {
+        if (Thread.currentThread() instanceof ExecutorThread)
+            throw new ExceptionGETL('Changing log file options is not supported in the thread!')
+
         def parent = new LogSpec(childOwnerObject, childThisObject)
         def logFileName = parent.getLogFileName()
         parent.runClosure(cl)
@@ -3693,13 +3781,21 @@ class Getl extends Script {
             }
 
             (list?.filemanagers as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
-                def man = cloneObject.cloneObject as FileManager
-                if (man != null) man.connected = false
+                def man = cloneObject.cloneObject as Manager
+                if (man != null && man.connected) man.disconnect()
             }
         }
 
-        def parent = new Executor()
+        def parent = new Executor(abortOnError: true)
         parent.disposeThreadResource(disposeConnections)
+
+        if (langOpts.processControlDataset != null && langOpts.checkProcessForThreads) {
+            def allowRun = {
+                return allowProcess()
+            }
+            parent.validAllowRun(allowRun)
+        }
+
         def pt = startProcess('Execution threads')
         runClosure(parent, cl)
         finishProcess(pt)

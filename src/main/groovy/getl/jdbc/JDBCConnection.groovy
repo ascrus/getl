@@ -751,9 +751,9 @@ ${tab}${tab}}
 		if (logins == null)
 			throw new ExceptionGETL("Login storage path \"$loginsConfigStore\" not found in configuration!")
 
-		def pwd = logins.get(user)
-		if (pwd == null)
+		if (!logins.containsKey(user))
 			throw new ExceptionGETL("User \"$user\" not found in in configuration!")
+		def pwd = logins.get(user)
 
 		if (login != user && connected) connected = false
 		login = user

@@ -55,6 +55,8 @@ class Connection {
 	 */
 	Connection(Map parameters) {
 		registerParameters()
+
+		params.extended = [:] as Map<String, Object>
 		
 		Class driverClass = parameters.driver as Class
 		if (driverClass == null) throw new ExceptionGETL("Required parameter \"driver\" (driver class name)")
@@ -73,7 +75,7 @@ class Connection {
 	protected void registerParameters () {
 		methodParams.register('Super',
 				['driver', 'config', 'autoSchema', 'dataset', 'connection', 'numberConnectionAttempts',
-				 'timeoutConnectionAttempts'])
+				 'timeoutConnectionAttempts', 'extended'])
 		methodParams.register('retrieveObjects', [])
 		methodParams.register('executeCommand', ['command', 'queryParams', 'isUpdate'])
 	}
@@ -102,6 +104,18 @@ class Connection {
 		if (connectionClass == null) throw new ExceptionGETL("Required parameter \"connection\"")
 		
 		(Connection)(Class.forName(connectionClass).newInstance(MapUtils.CleanMap(params, ["connection", "config"])))
+	}
+
+	/**
+	 * Extended attributes
+	 */
+	Map getExtended() { params.extended as Map }
+	/**
+	 * Extended attributes
+	 */
+	void setExtended (Map value) {
+		extended.clear()
+		if (value != null) extended.putAll(value)
 	}
 
 	/** Connection driver manager class*/

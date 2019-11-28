@@ -456,4 +456,74 @@ class StringUtils {
 	static String Str2Double(String value, String rep) {
 		return value.replace(rep, rep + rep)
 	}
+
+	/**
+	 * Remove comments from SQL script
+	 * @param sql original script
+	 * @return script without comments
+	 */
+	static String RemoveSQLComments(String sql) {
+		def p = Pattern.compile("--.*|\\/\\*[\\s\\S]*?\\*\\/", Pattern.MULTILINE)
+		def m = p.matcher(sql)
+		return m.replaceAll('').trim()
+	}
+
+	/**
+	 * Remove comments from SQL script without hints comments
+	 * @param sql original script
+	 * @return script without comments
+	 */
+	static String RemoveSQLCommentsWithoutHints(String sql) {
+		def p = Pattern.compile("--.*|\\/\\*[\\s\\S]*?\\*\\/", Pattern.MULTILINE)
+		def m = p.matcher(sql)
+		def fm = '\\/\\*\\s*[\\+|\\:]+.*'
+
+		def sb = new StringBuffer()
+		while (m.find()) {
+			def g = m.group()
+			if (!(g.indexOf('\n') == -1 && g.matches(fm)))
+				m.appendReplacement(sb, '')
+		}
+		m.appendTail(sb)
+
+		return sb.toString()
+	}
+
+	/**
+	 * Detected start position SQL command without comments
+	 * @param sql
+	 * @return
+	 */
+	static Integer DetectStartSQLCommand(String sql) {
+		def p = Pattern.compile("--.*|\\/\\*[\\s\\S]*?\\*\\/", Pattern.MULTILINE)
+		def m = p.matcher(sql)
+		def le = -1
+		while (m.find()) {
+			def s = m.start()
+			def e = m.end()
+			if (le > -1) {
+				def str = sql.substring(le + 1, s).trim()
+				if (str.length() > 0) break
+			}
+			else {
+				if (s > 0) {
+					def str = sql.substring(s - 1).trim()
+					if (str.length() > 0) break
+				}
+			}
+
+			le = e
+		}
+
+		if (le == -1) {
+			le = 0
+		}
+		else {
+			def l = sql.length()
+			while (le < l && sql[le].matches('\\s')) le++
+			if (le == l) le = -1
+		}
+
+		return le
+	}
 }

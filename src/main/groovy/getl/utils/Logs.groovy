@@ -465,7 +465,7 @@ class Logs {
 		
 		def fn = "${DumpFolder()}/dump.txt"
 		
-		Fine("Save dump information to ${fn} with error ${error.message}")
+		Fine("Save dump information to ${fn} with error ${error?.message}")
 		FileUtils.ValidFilePath(fn)
 		if (error != null) StackTraceUtils.sanitize(error)
 		File df = new File(fn)

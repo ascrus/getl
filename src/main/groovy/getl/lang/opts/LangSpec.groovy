@@ -23,9 +23,13 @@
 */
 package getl.lang.opts
 
+import getl.csv.CSVDataset
+import getl.data.*
+import getl.exception.ExceptionGETL
+import getl.jdbc.JDBCDataset
+import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
-
 import java.util.logging.Level
 
 /**
@@ -69,4 +73,38 @@ class LangSpec extends BaseSpec {
     Boolean getValidRegisterObjects() { BoolUtils.IsValue(params.validObjectExist, true) }
     /** Check on connection registration */
     void setValidRegisterObjects(Boolean value) { params.validObjectExist = value }
+
+    /**  Process management dataset */
+    Dataset getProcessControlDataset() { params.processControlDataset as Dataset }
+    /**  Process management dataset */
+    void setProcessControlDataset(Dataset value) {
+        if (value != null) {
+            if (!(value instanceof TableDataset || value instanceof CSVDataset))
+                throw new ExceptionGETL('To control the operation of processes, a dataset with types "table" or "csv" can be used!')
+
+            def name = value.fieldByName('name')
+            if (name == null)
+                throw new ExceptionGETL('Required field "name"!')
+            if (name.type != Field.stringFieldType)
+                throw new ExceptionGETL('Field "name" must be of string type"!')
+
+            def enabled = value.fieldByName('enabled')
+            if (enabled == null)
+                throw new ExceptionGETL('Required field "enabled"!')
+            if (!(enabled.type in [Field.stringFieldType, Field.integerFieldType, Field.bigintFieldType, Field.booleanFieldType]))
+                throw new ExceptionGETL('Field "name" must be of string, integer or boolean type"!')
+        }
+
+        params.processControlDataset = value
+    }
+
+    /** Check permission to work processes when they start */
+    Boolean getCheckProcessOnStart() { BoolUtils.IsValue(params.checkProcessOnStart) }
+    /** Check permission to work processes when they start */
+    void setCheckProcessOnStart(Boolean value) { params.checkProcessOnStart = value }
+
+    /** Check permission to work processes when they start */
+    Boolean getCheckProcessForThreads() { BoolUtils.IsValue(params.checkProcessForThreads) }
+    /** Check permission to work processes when they start */
+    void setCheckProcessForThreads(Boolean value) { params.checkProcessForThreads = value }
 }

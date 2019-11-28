@@ -25,13 +25,17 @@
 package getl.proc
 
 import getl.data.Field
+import getl.exception.ExceptionGETL
 import getl.files.Manager
 import getl.h2.H2Connection
+import getl.h2.H2Table
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.tfs.TDS
+import getl.tfs.TDSTable
 import getl.tfs.TFS
+import getl.tfs.TFSDataset
 import getl.utils.*
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -195,7 +199,7 @@ class FileCopier {
      * Closure parameters:<br>
      * Map sourceFile, Map destFile
      */
-    void afterCopy(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
+    void afterCopyFile(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
                            Closure value) {
         setOnAfterCopyFile(value)
     }
@@ -227,6 +231,11 @@ class FileCopier {
         copyOrder.clear()
         if (value != null) copyOrder.addAll(value)
     }
+
+    /** Use in-memory mode to process a list of files */
+    Boolean getInMemoryMode() { BoolUtils.IsValue(params.inMemoryMode, true) }
+    /** Use in-memory mode to process a list of files */
+    void setInMemoryMode(Boolean value) { params.inMemoryMode = value }
 
     /** Synchronized counter */
     private final SynchronizeObject counter = new SynchronizeObject()
@@ -414,143 +423,190 @@ class FileCopier {
                 new FileCopierListProcessing(params: [filecopier: this]))
     }
 
+    /** Class of copy process parameters */
+    class CopyParams {
+        String tmpPath
+
+        Manager src
+        Manager dest
+
+        Path srcPath
+        Path destPath
+        Path renPath
+
+        Boolean delFiles
+        Boolean delEmptyDirs
+        Integer rCount
+
+        List<String> orderBy
+
+        File h2TempFile
+        TDS con
+        TDSTable dsDeleteDirs
+
+        JDBCConnection hDB
+        TableDataset hTable
+        TableDataset tFiles
+
+        /*SynchronizeObject ptFiles = new SynchronizeObject()
+        SynchronizeObject ptSize = new SynchronizeObject()*/
+
+        void init() {
+            tmpPath = tempPath
+            if (tmpPath == null) {
+                tmpPath = TFS.systemPath + '/' + FileUtils.UniqueFileName()
+            }
+            FileUtils.ValidPath(tmpPath)
+            if (!FileUtils.ExistsFile(tmpPath, true))
+                throw new ExceptionGETL("Temporary directory \"$tmpPath\" not found!")
+
+            src = source
+            dest = destination
+
+            if (src == null) throw new FileCopierException('Source file manager required!')
+            if (!src.connected) src.connect()
+            src.localDirectory = tmpPath
+
+            srcPath = sourcePath
+            if (srcPath == null) throw new FileCopierException('Source mask path required!')
+            if (!srcPath.isCompile) srcPath.compile()
+
+            destPath = destinationPath
+
+            if (!deleteFiles) {
+                if (dest == null) throw new FileCopierException('Destination file manager required!')
+                if (!dest.connected) dest.connect()
+                dest.localDirectory = tmpPath
+
+                if (destPath == null) throw new FileCopierException('Destination mask path required!')
+                if (!destPath.isCompile) destPath.compile()
+            }
+
+            renPath = renamePath
+            if (renPath != null) {
+                if (dest == null) throw new FileCopierException('Renaming files is supported only when copying to the destination!')
+                if (!renPath.isCompile) renPath.compile()
+            }
+
+            delFiles = BoolUtils.IsValue(deleteFiles)
+            delEmptyDirs = BoolUtils.IsValue(deleteEmptyDirs)
+            rCount = retryCount?:1
+
+            if (!copyOrder.isEmpty()) {
+                orderBy = [] as List<String>
+                def keys = srcPath.vars.keySet().toList()*.toLowerCase()
+                copyOrder.each { col ->
+                    if (!(col.toLowerCase() in keys))
+                        throw new FileCopierException("Field \"$col\" specified for sorting was not found!")
+
+                    orderBy << col
+                }
+            }
+
+            if (inMemoryMode) {
+                con = new TDS()
+            }
+            else {
+                def h2TempFileName = "$tmpPath/${FileUtils.UniqueFileName()}"
+                FileUtils.ValidFilePath(h2TempFileName, true)
+                h2TempFile = new File(h2TempFileName)
+                con = new TDS(connectURL: "jdbc:h2:file:${h2TempFile.absolutePath}",
+                        login: "easyload", password: "easydata", autoCommit: true,
+                        inMemory: false,
+                        connectProperty: [
+                                LOCK_MODE: 3,
+                                LOG: 0,
+                                UNDO_LOG: 0,
+                                MAX_LOG_SIZE: 0,
+                                WRITE_DELAY: 6000,
+                                PAGE_SIZE: 8192,
+                                PAGE_STORE_TRIM: false,
+                                DB_CLOSE_DELAY: 0])
+            }
+
+            src.fileListConnection = con
+
+            if (delEmptyDirs) {
+                dsDeleteDirs = new TDSTable(connection: con)
+                dsDeleteDirs.field << new Field(name: 'FILEPATH', length: 1200, isNull: false, isKey: true)
+//                dsDeleteDirs.create(indexes: ["${dsDeleteDirs.tableName}_idx_1": [columns: ['FILEPATH']]])
+            }
+
+            // Build history table
+            if (src.story != null) {
+                hDB = historyStore_con.cloneConnection()
+                hDB.connected = true
+                hTable = new TableDataset(connection: hDB, tableName: historyTable)
+                src.AddFieldsToDS(hTable)
+
+                if (srcPath.vars.date != null) hTable.field << new Field(name: "DATE", type: "DATETIME")
+                if (srcPath.vars.num != null) hTable.field << new Field(name: "NUM", type: "BIGINT")
+
+                srcPath.vars.each { String v, Map p ->
+                    if (v in ['name', 'date', 'num']) return
+                    def f = new Field(name: v.toUpperCase(), length: 128)
+                    if (p.'type' != null) f.type = p.'type'
+                    if (f.type == Field.Type.STRING) {
+                        if (p.'lenmax' != null) f.length = p."lenmax"
+                    }
+                    hTable.field << f
+                }
+
+                if (!hTable.exists) {
+                    hTable.create(ifNotExists: true,
+                            indexes: [
+                                    "idx_${hTable.tableName}_filedate": [columns: ["FILEDATE"]]
+                            ])
+                    Logs.Fine("$rule: для хранения истории создана таблица ${hTable.fullNameDataset()}")
+                }
+                else {
+                    hTable.retrieveFields()
+                    Logs.Finest("$rule: для хранения истории используется таблица ${hTable.fullNameDataset()}")
+                }
+            }
+        }
+    }
+
+    /** Copy process parameters */
+    CopyParams cp
+
     /** Copy files */
     void copy() {
-        def tmpPath = tempPath
-        if (tmpPath == null) {
-            tmpPath = TFS.systemPath + '/' + FileUtils.UniqueFileName()
-            FileUtils.ValidPath(tmpPath)
-        }
+        cp = new CopyParams()
+        cp.init()
 
-        Manager src = source
-        Manager dest = destination
-
-        if (src == null) throw new FileCopierException('Source file manager required in "source"!')
-        if (!src.connected) src.connect()
-        src.localDirectory = tmpPath
-
-        def srcPath = sourcePath
-        if (srcPath == null) throw new FileCopierException('Source mask required in "sourcePath"!')
-        if (!srcPath.isCompile) srcPath.compile()
-
-        def destPath = destinationPath
-
-        if (!deleteFiles) {
-            if (dest == null) throw new FileCopierException('Destination file manager required in "destination"!')
-            if (!dest.connected) dest.connect()
-            dest.localDirectory = tmpPath
-
-            if (destPath == null) throw new FileCopierException('Destination mask required in "destinationPath"!')
-            if (!destPath.isCompile) destPath.compile()
-        }
-
-        if (dest != null)
-            Logs.Fine("Copy files from [$src] to [$dest]")
+        if (cp.dest != null)
+            Logs.Fine("Copy files from [${cp.src}] to [${cp.dest}] ...")
         else
-            Logs.Fine("Delete files from $src")
-        Logs.Fine("  for intermediate operations, the \"$tmpPath\" directory will be used")
+            Logs.Fine("Delete files from ${cp.src} ...")
 
-        Logs.Fine("  source mask: ${srcPath.maskStr}")
-        Logs.Fine("  source pattern: ${srcPath.maskPath}")
+        Logs.Fine("  for intermediate operations, \"${cp.tmpPath}\"  directory will be used")
+        Logs.Fine("  source mask path: ${cp.srcPath.maskStr}")
+        Logs.Fine("  source mask pattern: ${cp.srcPath.maskPath}")
 
+        if (cp.dest != null)
+            Logs.Fine("  destination mask path: ${cp.destPath.maskStr}")
 
-        if (dest != null)
-            Logs.Fine("  destination mask: ${destPath.maskStr}")
+        if (cp.renPath != null)
+            Logs.Fine("  rename file mask path: ${cp.renPath.maskStr}")
 
-        def renPath = renamePath
-        if (renPath != null) {
-            if (dest == null) throw new FileCopierException('Renaming files is supported only when copying to the destination!')
-            if (!renPath.isCompile) renPath.compile()
-            Logs.Fine("  rename file mask: ${renPath.maskStr}")
-        }
-
-        def delFiles = BoolUtils.IsValue(deleteFiles)
-        def delEmptyDirs = BoolUtils.IsValue(deleteEmptyDirs)
-        def rCount = retryCount?:1
-
-        if (delFiles && dest != null)
+        if (cp.delFiles && cp.dest != null)
             Logs.Fine('  after copying the files will be deleted on the source')
 
-        if (delEmptyDirs)
+        if (cp.delEmptyDirs)
             Logs.Fine('  after copying files, empty directories will be deleted on the source')
 
-        if (rCount > 1)
-            Logs.Fine("  $rCount repetitions will be used in case of file operation errors until termination")
+        if (cp.rCount > 1)
+            Logs.Fine("  ${cp.rCount} repetitions will be used in case of file operation errors until termination")
 
-        if (!copyOrder.isEmpty()) {
-            copyOrder.each { col ->
-                if (!srcPath.vars.containsKey(col))
-                    throw new FileCopierException("Field \"$col\" specified for sorting was not found!")
-            }
-            Logs.Fine("  files will be processed in the following sort order: [${copyOrder.join(', ')}]")
-        }
+        if (cp.orderBy != null)
+            Logs.Fine("  files will be processed in the following sort order: [${cp.orderBy.join(', ')}]")
 
         if (scriptOfSourceOnStart != null)
             DoCommand('source', src, scriptOfSourceOnStart, true, null, Config.vars)
         if (dest != null && scriptOfDestinationOnStart != null)
             DoCommand('destination', dest, scriptOfDestinationOnStart, true, null, Config.vars)
 
-        TableDataset dsDeleteDirs
-        if (delEmptyDirs) {
-            dsDeleteDirs = TDS.dataset()
-            dsDeleteDirs.field << new Field(name: 'FILEPATH', length: 500, isNull: false)
-            dsDeleteDirs.create(indexes: ["${dsDeleteDirs.tableName}_idx_1": [columns: ['FILEPATH']]])
-        }
 
-        def h2TempFileName = "$tmpPath/filelist/${FileUtils.UniqueFileName()}"
-        FileUtils.ValidFilePath(h2TempFileName)
-        def h2TempFile = new File(h2TempFileName)
-        src.fileListConnection = new H2Connection(connectURL: "jdbc:h2:file:${h2TempFile.absolutePath}",
-                login: "easyload", password: "easydata", autoCommit: true,
-                connectProperty: [
-                        LOCK_MODE: 3,
-                        LOG: 0,
-                        UNDO_LOG: 0,
-                        MAX_LOG_SIZE: 0,
-                        WRITE_DELAY: 6000,
-                        PAGE_SIZE: 8192,
-                        PAGE_STORE_TRIM: false,
-//                        MVCC: true,
-                        DB_CLOSE_DELAY: 0])
-
-        JDBCConnection hDB
-        TableDataset hTable = null
-        TableDataset tFiles = null
-
-        /*SynchronizeObject ptFiles = new SynchronizeObject()
-        SynchronizeObject ptSize = new SynchronizeObject()*/
-
-        // Build history table
-        if (src.story != null) {
-            hDB = historyStore_con.cloneConnection()
-            hDB.connected = true
-            hTable = new TableDataset(connection: hDB, tableName: StringUtils.EvalMacroString(historyTable, [rule: rule]))
-            ruleInMan.AddFieldsToDS(hTable)
-
-            if (inPath.vars."date" != null) hTable.field << new Field(name: "DATE", type: "DATETIME")
-            if (inPath.vars."num" != null) hTable.field << new Field(name: "NUM", type: "BIGINT")
-
-            inPath.vars?.each { String v, Map p ->
-                if (v in ["name", "date", "num"]) return
-                def f = new Field(name: v.toUpperCase(), length: 128)
-                if (p."type" != null) f.type = p."type"
-                if (f.type == Field.Type.STRING) {
-                    if (p."lenmax" != null) f.length = p."lenmax"
-                }
-                hTable.field << f
-            }
-
-            if (!hTable.exists) {
-                hTable.create(ifNotExists: true,
-                        indexes: [
-                                "idx_${hTable.tableName}_filedate": [columns: ["FILEDATE"]]
-                        ])
-                Logs.Fine("$rule: для хранения истории создана таблица ${hTable.fullNameDataset()}")
-            }
-            else {
-                hTable.retrieveFields()
-                Logs.Finest("$rule: для хранения истории используется таблица ${hTable.fullNameDataset()}")
-            }
-        }
     }
 }
