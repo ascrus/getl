@@ -58,6 +58,9 @@ class ImpalaTable extends TableDataset {
         return value
     }
 
+    /** Current Impala connection */
+    ImpalaConnection getCurrentImpalaConnection() { connection as ImpalaConnection }
+
     @Override
     protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
                                               Map<String, Object> opts) {

@@ -78,13 +78,15 @@ class CopyTest extends getl.test.GetlTest {
                     mask = '{filenameonly}.{filedate}.{fileextonly}'
                 }
 
-                source.buildList(path: sourcePath, recursive: true)
+                inMemoryMode = true
+
+                /*source.buildList(path: sourcePath, recursive: true)
                 source.fileList.eachRow {
                     println it.filename + ': ' + it.filedate.toString()
                     it.filenameonly = FileUtils.ExcludeFileExtension(it.filename)
                     it.fileextonly = FileUtils.FileExtension(it.filename)
                     println '  ' + renamePath.generateFileName(it)
-                }
+                }*/
 
                 retryCount = 3
                 copyOrder = ['bs_date', 'region']

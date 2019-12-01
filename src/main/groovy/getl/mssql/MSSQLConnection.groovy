@@ -42,6 +42,9 @@ class MSSQLConnection extends JDBCConnection {
 		super(new HashMap([driver: MSSQLDriver]) + params?:[:])
 		if (this.getClass().name == 'getl.mssql.MSSQLConnection') methodParams.validation("Super", params?:[:])
 	}
+
+	/** Current MSSQL connection driver */
+	MSSQLDriver getCurrentMSSQLDriver() { driver as MSSQLDriver }
 	
 	@Override
 	protected void onLoadConfig (Map configSection) {

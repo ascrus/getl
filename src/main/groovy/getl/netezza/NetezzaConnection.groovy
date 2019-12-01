@@ -42,6 +42,9 @@ class NetezzaConnection extends JDBCConnection {
         if (this.getClass().name == 'getl.netezza.NetezzaConnection') methodParams.validation("Super", params?:[:])
     }
 
+    /** Current Netezza connection driver */
+    NetezzaDriver getCurrentNetezzaDriver() { driver as NetezzaDriver }
+
     @Override
     protected void onLoadConfig (Map configSection) {
         super.onLoadConfig(configSection)

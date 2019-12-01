@@ -41,6 +41,9 @@ class FirebirdConnection extends JDBCConnection {
         if (this.getClass().name == 'getl.firebird.FirebirdConnection') methodParams.validation('Super', params?:[:])
     }
 
+    /** Current Firebird connection driver */
+    FirebirdDriver getCurrentFirebirdDriver() { driver as FirebirdDriver }
+
     @Override
     protected void onLoadConfig (Map configSection) {
         super.onLoadConfig(configSection)

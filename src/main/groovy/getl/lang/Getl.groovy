@@ -554,6 +554,23 @@ class Getl extends Script {
         return new ParseObjectName(name)
     }
 
+    /**
+     * Read text from specified file
+     * @param fileName file path
+     * @param codePage encoding text (default UTF-8)
+     * @return text from file
+     */
+    String textFromFile(String fileName, String codePage = 'UTF-8') {
+        def path = FileUtils.ResourceFileName(fileName)
+        def file = new File(path)
+        if (!file.exists())
+            throw new ExceptionGETL("File $fileName not found!")
+        if (!file.isFile())
+            throw new ExceptionGETL("File $fileName not file!")
+
+        return file.getText(codePage?:'UTF-8')
+    }
+
     /** Object link to connections repository */
     private Map<String, Connection> _connections
 
@@ -2941,6 +2958,11 @@ class Getl extends Script {
         embeddedTableWithDataset(null, sourceDataset, cl)
     }
 
+    /** Use default JDBC connection for query */
+    JDBCConnection useQueryConnection(JDBCConnection connection) {
+        useJdbcConnection(QUERYDATASET, connection) as JDBCConnection
+    }
+
     /** JDBC query dataset */
     QueryDataset query(String name, JDBCConnection connection, Boolean registration,
                        @DelegatesTo(QueryDataset)
@@ -3598,7 +3620,7 @@ class Getl extends Script {
                     @DelegatesTo(SQLScripter)
                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl) {
         def parent = new SQLScripter()
-        parent.connection = connection?:defaultJdbcConnection()
+        parent.connection = connection?:defaultJdbcConnection(QUERYDATASET)
         parent.extVars = configContent
         def pt = startProcess("Execution SQL script${(parent.connection != null)?' on [' + parent.connection + ']':''}")
         runClosure(parent, cl)

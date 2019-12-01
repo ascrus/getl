@@ -58,6 +58,9 @@ class SalesForceDataset extends Dataset {
 		return value
 	}
 
+	/** Current SalesForce connection*/
+	SalesForceConnection getCurrentSalesForceConnection() { connection as SalesForceConnection }
+
 	/**
 	 * SalesForce object name
 	 * @return

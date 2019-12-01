@@ -65,11 +65,8 @@ class TableDataset extends JDBCDataset {
 		methodParams.register("generateDsl", [])
 	}
 
-	/** Current JDBC connection */
-	JDBCConnection getJdbcConnection() { connection as JDBCConnection }
-
 	/** Schema name */
-	String getSchemaName() { ListUtils.NotNullValue([params.schemaName, jdbcConnection.schemaName]) }
+	String getSchemaName() { ListUtils.NotNullValue([params.schemaName, currentJDBCConnection?.schemaName]) }
 	/** Schema name */
 	void setSchemaName(String value) { params.schemaName = value }
 
@@ -176,22 +173,30 @@ class TableDataset extends JDBCDataset {
 
 	/** Valid exist table */
 	boolean isExists() {
-		if (!(connection.driver as JDBCDriver).isTable(this)) throw new ExceptionGETL("${fullNameDataset()} is not a table!")
+		validConnection()
+
+		if (!currentJDBCConnection.currentJDBCDriver.isTable(this))
+			throw new ExceptionGETL("${fullNameDataset()} is not a table!")
+
 		def dbName = dbName
 		def schemaName = schemaName
 		def tblName = tableName
-		if (tblName == null) throw new ExceptionGETL("Table name is not specified for ${fullNameDataset()}!")
-		def ds = jdbcConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName, tableName: tblName)
+		if (tblName == null)
+			throw new ExceptionGETL("Table name is not specified for ${fullNameDataset()}!")
+
+		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName, tableName: tblName)
 
 		return (!ds.isEmpty())
 	}
 
 	/** Insert/Update/Delete/Merge records from other dataset */
 	long unionDataset(Map procParams = [:]) {
+		validConnection()
+
 		if (procParams == null) procParams = [:]
 		methodParams.validation("unionDataset", procParams, [connection.driver.methodParams.params("unionDataset")])
 
-		return ((JDBCDriver) connection.driver).unionDataset(this, procParams)
+		return currentJDBCConnection.currentJDBCDriver.unionDataset(this, procParams)
 	}
 
 	/**
@@ -211,12 +216,14 @@ class TableDataset extends JDBCDataset {
 
 	/** Return count rows from table */
 	long countRow(String where = null, Map procParams = [:]) {
+		validConnection()
+
 		QueryDataset q = new QueryDataset(connection: connection, query: "SELECT Count(*) AS count FROM ${fullNameDataset()}")
 		where = where?:readDirective.where
 		if (where != null && where != '') q.query += " WHERE " + where
 		def r = q.rows(procParams)
 
-		return r[0].count as long
+		return Long.valueOf((r[0].count).toString()).longValue()
 	}
 
 	/**
@@ -224,12 +231,14 @@ class TableDataset extends JDBCDataset {
 	 * @param where rows filter
 	 */
 	long deleteRows(String where = null) {
+		validConnection()
+
 		String sql = "DELETE FROM ${fullNameDataset()}" + ((where != null && where.trim().length() > 0) ? " WHERE $where" : '')
 
 		long count = 0
 		def autoTran = connection.driver.isSupport(Driver.Support.TRANSACTIONAL)
 		if (autoTran) {
-			autoTran = (!jdbcConnection.autoCommit && connection.tranCount == 0)
+			autoTran = (!currentJDBCConnection.autoCommit && connection.tranCount == 0)
 		}
 
 		if (autoTran)
@@ -383,7 +392,7 @@ class TableDataset extends JDBCDataset {
 		if (source == null)
 			throw new ExceptionGETL("It is required to specify a CSV dataset to load into the table!")
 
-		def sourceConnection = source.connection as CSVConnection
+		def sourceConnection = source.currentCsvConnection
 		if (sourceConnection == null)
 			throw new ExceptionGETL("It is required to specify connection for CSV dataset to load into the table!")
 
@@ -414,7 +423,7 @@ class TableDataset extends JDBCDataset {
 			throw new ExceptionGETL('For option "files" you can specify a string type, a list of strings or a Path object!')
 
 		def loadAsPackage = parent.loadAsPackage
-		if (loadAsPackage && !(jdbcConnection.driver.isSupport(Driver.Support.BULKLOADMANYFILES)))
+		if (loadAsPackage && !(connection.driver.isSupport(Driver.Support.BULKLOADMANYFILES)))
 			throw new ExceptionGETL('The server does not support multiple file bulk loading, you need to turn off the parameter "loadAsPackage"!')
 
 		List<Field> csvFields
@@ -525,11 +534,11 @@ class TableDataset extends JDBCDataset {
 		def autoTran = connection.driver.isSupport(Driver.Support.TRANSACTIONAL)
 		if (autoTran) {
 			autoTran = parent.autoCommit ?:
-					(!BoolUtils.IsValue(jdbcConnection.autoCommit) && jdbcConnection.tranCount == 0)
+					(!BoolUtils.IsValue(currentJDBCConnection.autoCommit) && currentJDBCConnection.tranCount == 0)
 		}
 
 		if (autoTran)
-			jdbcConnection.startTran()
+			currentJDBCConnection.startTran()
 
 		def moveFileTo = parent.moveFileTo
 		def removeFile = parent.removeFile
@@ -671,13 +680,13 @@ class TableDataset extends JDBCDataset {
 		}
 		catch (Throwable e) {
 			if (autoTran)
-				jdbcConnection.rollbackTran()
+				currentJDBCConnection.rollbackTran()
 
 			throw e
 		}
 
 		if (autoTran)
-			jdbcConnection.commitTran()
+			currentJDBCConnection.commitTran()
 
 		if (getl != null) {
 			pt.name = "${fullTableName}: loaded ${countFiles} files (${FileUtils.sizeBytes(sizeFiles)})"

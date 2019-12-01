@@ -47,7 +47,7 @@ class JSONDataset extends StructureFileDataset {
 		super()
 		params.convertToList = false
 	}
-	
+
 	/** Added root {...} for JSON text */
 	boolean getConvertToList () { params.convertToList }
 	void setConvertToList (boolean value) { params.convertToList = value }
@@ -65,6 +65,9 @@ class JSONDataset extends StructureFileDataset {
 		setConnection(value)
 		return value
 	}
+
+	/** Current JSON connection */
+	JSONConnection getCurrentJSONConnection() { connection as JSONConnection }
 	
 	/** Read JSON dataset attributes */
 	void readAttrs (Map params) {

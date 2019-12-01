@@ -58,6 +58,15 @@ class WriteSpec extends BaseSpec {
     /** Update and delete filter */
     void setWhere(String value) { params.where = value }
 
+    /** Use insert when writing rows */
+    static public String insertOperation = 'INSERT'
+    /** Use update when writing rows */
+    static public String updateOperation = 'UPDATE'
+    /** Use delete when writing rows */
+    static public String deleteOperation = 'DELETE'
+    /** Use merge when writing rows */
+    static public String mergeOperation = 'MERGE'
+
     /**
      * Operation type
      * <br>allow: INSERT, UPDATE, DELETE and MERGE

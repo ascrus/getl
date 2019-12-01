@@ -43,6 +43,9 @@ class NetsuiteConnection extends JDBCConnection {
 		if (this.getClass().name == 'getl.netsuite.NetsuiteConnection') methodParams.validation("Super", params?:[:])
 	}
 
+	/** Current Netsuite connection driver */
+	NetsuiteDriver getCurrentNetsuiteDriver() { driver as NetsuiteDriver }
+
 	@Override
 	protected void registerParameters () {
 		super.registerParameters()

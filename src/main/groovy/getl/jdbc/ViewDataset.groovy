@@ -51,7 +51,7 @@ class ViewDataset extends TableDataset {
 	 */
 	@Override
 	boolean isExists() {
-		def ds = ((JDBCConnection)connection).retrieveDatasets(dbName: dbName, schemaName: schemaName, 
+		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName,
 					tableName: tableName, type: ["VIEW"])
 		
 		(!ds.isEmpty())

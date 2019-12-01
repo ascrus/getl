@@ -48,4 +48,7 @@ class NetezzaTable extends TableDataset {
         setConnection(value)
         return value
     }
+
+    /** Current Netezza connection */
+    NetezzaConnection getCurrentNetezzaConnection() { connection as NetezzaConnection }
 }

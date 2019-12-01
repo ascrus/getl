@@ -49,4 +49,7 @@ class PostgreSQLTable extends TableDataset {
         setConnection(value)
         return value
     }
+
+    /** Current PostgreSQL connection */
+    PostgreSQLConnection getCurrentPostgreSQLConnection() { connection as PostgreSQLConnection }
 }

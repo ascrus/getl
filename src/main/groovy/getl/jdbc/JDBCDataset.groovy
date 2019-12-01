@@ -41,6 +41,9 @@ class JDBCDataset extends Dataset {
 		params.queryParams = [:] as Map<String, Object>
 	}
 
+	/** Current JDBC connection */
+	JDBCConnection getCurrentJDBCConnection() { connection as JDBCConnection }
+
 	/**
 	 * Type of jdbc datasets
 	 */
@@ -76,7 +79,7 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Database name
 	 */
-	String getDbName () { ListUtils.NotNullValue([params.dbName, (connection as JDBCConnection).dbName]) }
+	String getDbName () { ListUtils.NotNullValue([params.dbName, currentJDBCConnection?.dbName]) }
 	/**
 	 * Database name
 	 */
@@ -105,7 +108,7 @@ class JDBCDataset extends Dataset {
 	 * Name of dataset
 	 */
 	String nameDataset () {
-		JDBCDriver drv = connection?.driver as JDBCDriver
+		JDBCDriver drv = currentJDBCConnection.currentJDBCDriver
 		(drv != null)?drv.nameDataset(this):getClass().name
 	}
 
@@ -113,7 +116,7 @@ class JDBCDataset extends Dataset {
 	 * Full name of dataset
 	 */
 	String fullNameDataset () {
-		JDBCDriver drv = connection?.driver as JDBCDriver
+		JDBCDriver drv = currentJDBCConnection.currentJDBCDriver
 		(drv != null)?drv.fullNameDataset(this):getClass().name
 	}
 	

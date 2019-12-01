@@ -41,6 +41,9 @@ class ImpalaConnection extends JDBCConnection {
         if (this.getClass().name == 'getl.impala.ImpalaConnection') methodParams.validation('Super', params?:[:])
     }
 
+    /** Current Impala connection driver */
+    ImpalaDriver getCurrentImpalaDriver() { driver as ImpalaDriver }
+
     @Override
     protected void registerParameters () {
         super.registerParameters()

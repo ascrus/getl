@@ -43,6 +43,9 @@ class HiveConnection extends JDBCConnection {
         if (this.getClass().name == 'getl.hive.HiveConnection') methodParams.validation('Super', params?:[:])
     }
 
+    /** Current Hive connection driver */
+    HiveDriver getCurrentHiveDrivert() { driver as HiveDriver }
+
     @Override
     protected void registerParameters () {
         super.registerParameters()

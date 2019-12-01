@@ -43,6 +43,9 @@ class PostgreSQLConnection extends JDBCConnection {
 		super(new HashMap([driver: PostgreSQLDriver]) + params?:[:])
 		if (this.getClass().name == 'getl.postgresql.PostgreSQLConnection') methodParams.validation("Super", params?:[:])
 	}
+
+	/** Current PostgreSQL connection driver */
+	PostgreSQLDriver getCurrentPostgreSQLDriver() { driver as PostgreSQLDriver }
 	
 	@Override
 	protected void onLoadConfig (Map configSection) {

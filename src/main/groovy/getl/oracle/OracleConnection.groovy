@@ -44,6 +44,9 @@ class OracleConnection extends JDBCConnection {
 		if (this.getClass().name == 'getl.oracle.OracleConnection') methodParams.validation('Super', params?:[:])
 	}
 
+	/** Current Oracle connection driver */
+	OracleDriver getCurrentOracleDriver() { driver as OracleDriver }
+
 	@Override
 	protected void registerParameters () {
 		super.registerParameters()

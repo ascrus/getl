@@ -44,6 +44,9 @@ class MySQLConnection extends JDBCConnection {
 		if (this.getClass().name == 'getl.mysql.MySQLConnection') methodParams.validation("Super", params?:[:])
 	}
 
+	/** Current MySQL connection driver */
+	MySQLDriver getCurrentMySQLDriver() { driver as MySQLDriver }
+
 	@Override
 	protected void registerParameters () {
 		super.registerParameters()

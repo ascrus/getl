@@ -56,6 +56,9 @@ class H2Table extends TableDataset {
         return value
     }
 
+    /** Current H2 connection */
+    H2Connection getCurrentH2Connection() { connection as H2Connection }
+
     @Override
     protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
                                               Map<String, Object> opts) {

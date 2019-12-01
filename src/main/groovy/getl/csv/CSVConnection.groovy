@@ -48,6 +48,9 @@ class CSVConnection extends FileConnection {
 										'formatDateTime', 'ignoreHeader', 'locale', 'constraintsCheck'])
 		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation('Super', params?:[:])
 	}
+
+	/** Current CSV connection driver */
+	CSVDriver getCurrentCSVDriver() { driver as CSVDriver }
 	
 	/** Quote delimiter string */
 	String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, '"'])  as String }

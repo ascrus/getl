@@ -43,4 +43,7 @@ class JSONConnection extends FileConnection {
 		
 		if (this.getClass().name == 'getl.json.JSONConnection') methodParams.validation("Super", params?:[:])
 	}
+
+	/** Current JSON connection driver */
+	JSONDriver getCurrentJSONDriver() { driver as JSONDriver }
 }

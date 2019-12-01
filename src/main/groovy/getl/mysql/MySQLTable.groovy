@@ -49,4 +49,7 @@ class MySQLTable extends TableDataset {
         setConnection(value)
         return value
     }
+
+    /** Current MySQL connection */
+    MySQLConnection getCurrentMySQLConnection() { connection as MySQLConnection }
 }

@@ -55,8 +55,8 @@ class JDBCConnection extends Connection {
 		if (this.getClass().name == 'getl.jdbc.JDBCConnection') methodParams.validation("Super", params?:[:])
 	}
 
-	/** Current JDBC driver */
-	JDBCDriver getJdbcDriver() { driver as JDBCDriver }
+	/** Current JDBC connection driver */
+	JDBCDriver getCurrentJDBCDriver() { driver as JDBCDriver }
 	
 	/**
 	 * Register connection parameters with method validator
@@ -80,28 +80,28 @@ class JDBCConnection extends Connection {
 	@Override
 	protected void doBeforeConnect() {
 		super.doBeforeConnect()
-		jdbcDriver.saveToHistory("-- USER CONNECTING ${MapUtils.CopyOnly(params, ['connectURL', 'connectHost', 'connectDatabase', 'login', 'autoCommit', 'driverName', 'driverPath', 'loginTimeout'])}")
+		currentJDBCDriver.saveToHistory("-- USER CONNECTING ${MapUtils.CopyOnly(params, ['connectURL', 'connectHost', 'connectDatabase', 'login', 'autoCommit', 'driverName', 'driverPath', 'loginTimeout'])}")
 	}
 
 	@Override
 	protected void doBeforeDisconnect() {
 		super.doBeforeDisconnect()
-		jdbcDriver.saveToHistory("-- USER DISCONNECTING (URL: ${sysParams."currentConnectURL"})")
+		currentJDBCDriver.saveToHistory("-- USER DISCONNECTING (URL: ${sysParams."currentConnectURL"})")
 	}
 
 	@Override
 	protected void doDoneConnect() {
 		super.doDoneConnect()
-		sysParams.sessionID = jdbcDriver.sessionID()
-		jdbcDriver.saveToHistory("-- USER CONNECTED (URL: ${sysParams."currentConnectURL"})${(autoCommit)?' WITH AUTOCOMMIT':''}")
+		sysParams.sessionID = currentJDBCDriver.sessionID()
+		currentJDBCDriver.saveToHistory("-- USER CONNECTED (URL: ${sysParams."currentConnectURL"})${(autoCommit)?' WITH AUTOCOMMIT':''}")
         if (!sessionProperty.isEmpty()) {
-			jdbcDriver.initSessionProperties()
+			currentJDBCDriver.initSessionProperties()
         }
 	}
 
 	@Override
 	protected void doDoneDisconnect() {
-		jdbcDriver.saveToHistory("-- USER DISCONNECTED (URL: ${sysParams."currentConnectURL"})")
+		currentJDBCDriver.saveToHistory("-- USER DISCONNECTED (URL: ${sysParams."currentConnectURL"})")
 		super.doDoneDisconnect()
 		sysParams.sessionID = null
 	}
@@ -429,7 +429,7 @@ class JDBCConnection extends Connection {
 	 * Save sql to history file
 	 */
 	void saveToHistory(String sql) {
-		jdbcDriver.saveToHistory(sql)
+		currentJDBCDriver.saveToHistory(sql)
 	}
 	
 	/**
@@ -441,7 +441,7 @@ class JDBCConnection extends Connection {
 	 * Build connection params for connect url 
 	 */
 	String buildConnectParams () {
-		jdbcDriver.buildConnectParams()
+		currentJDBCDriver.buildConnectParams()
 	}
 	
 	/**
@@ -527,7 +527,10 @@ class JDBCConnection extends Connection {
 			str = "host: $connectHost"
 			if (connectDatabase != null) str += ", db: $connectDatabase"
 		}
-		else {
+		else if (connectDatabase != null) {
+			str = "database: $connectDatabase"
+		}
+		else{
 			str = "unknown"
 		}
 		return str

@@ -48,4 +48,7 @@ class DB2Table extends TableDataset {
         setConnection(value)
         return value
     }
+
+    /** Current DB2 connection */
+    DB2Connection getCurrentDb2Connection() { connection as DB2Connection }
 }

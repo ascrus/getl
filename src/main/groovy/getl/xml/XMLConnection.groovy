@@ -45,6 +45,9 @@ class XMLConnection extends FileConnection {
 		if (this.getClass().name == 'getl.xml.XMLConnection') methodParams.validation("Super", params?:[:])
 	}
 
+	/** Current XML connection driver */
+	XMLDriver getCurrentXMLDriver() { driver as XMLDriver }
+
 	/** Use default the attribute access method (default) */
 	static final DEFAULT_ATTRIBUTE_ACCESS = 0
 	/** Use default the node access method */

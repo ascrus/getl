@@ -26,10 +26,7 @@ package getl.csv
 
 import getl.csv.opts.CSVReadSpec
 import getl.csv.opts.CSVWriteSpec
-import getl.jdbc.opts.ReadSpec
-import getl.lang.Getl
 import getl.lang.opts.BaseSpec
-import getl.vertica.opts.VerticaReadSpec
 import groovy.transform.InheritConstructors
 import getl.data.Connection
 import getl.data.FileDataset
@@ -55,7 +52,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Quote delimiter string	
 	 */
-	String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, csvConnection()?.quoteStr, '"']) }
+	String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, currentCsvConnection?.quoteStr, '"']) }
 	/**
 	 * Quote delimiter string
 	 */
@@ -64,7 +61,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Field delimiter
 	 */
-	String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, csvConnection()?.fieldDelimiter, ',']) }
+	String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, currentCsvConnection?.fieldDelimiter, ',']) }
 	/**
 	 * Field delimiter
 	 */
@@ -73,7 +70,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Row delimiter
 	 */
-	String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, csvConnection()?.rowDelimiter,'\n']) }
+	String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, currentCsvConnection?.rowDelimiter, '\n']) }
 	/**
 	 * Row delimiter
 	 */
@@ -82,7 +79,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * File has header of fields name
 	 */
-	boolean getHeader () { BoolUtils.IsValue([params.header, csvConnection()?.header], true) }
+	boolean getHeader () { BoolUtils.IsValue([params.header, currentCsvConnection?.header], true) }
 	/**
 	 * File has header of fields name
 	 */
@@ -91,7 +88,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Ignore header field name
 	 */
-	boolean getIgnoreHeader () { BoolUtils.IsValue([params.ignoreHeader, csvConnection()?.ignoreHeader], true) }
+	boolean getIgnoreHeader () { BoolUtils.IsValue([params.ignoreHeader, currentCsvConnection?.ignoreHeader], true) }
 	/**
 	 * Ignore header field name
 	 */
@@ -100,7 +97,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Required format values for output to file 
 	 */
-	boolean getFormatOutput () { BoolUtils.IsValue([params.formatOutput, csvConnection()?.formatOutput], true) }
+	boolean getFormatOutput () { BoolUtils.IsValue([params.formatOutput, currentCsvConnection?.formatOutput], true) }
 	/**
 	 * Required format values for output to file
 	 */
@@ -108,7 +105,7 @@ class CSVDataset extends FileDataset {
 
 	/** Check constraints during reading and writing */
 	boolean getConstraintsCheck() {
-		BoolUtils.IsValue([params.constraintsCheck, csvConnection()?.constraintsCheck], false)
+		BoolUtils.IsValue([params.constraintsCheck, currentCsvConnection?.constraintsCheck], false)
 	}
 	/** Check constraints during reading and writing */
 	void setConstraintsCheck(boolean value) { params.constraintsCheck = value }
@@ -116,7 +113,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Convert NULL to value
 	 */
-	String getNullAsValue () { ListUtils.NotNullValue([params.nullAsValue, csvConnection()?.nullAsValue]) }
+	String getNullAsValue () { ListUtils.NotNullValue([params.nullAsValue, currentCsvConnection?.nullAsValue]) }
 	/**
 	 * Convert NULL to value
 	 */
@@ -125,7 +122,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Required convert string to escape value 	
 	 */
-	boolean getEscaped () { BoolUtils.IsValue([params.escaped, csvConnection()?.escaped], false) }
+	boolean getEscaped () { BoolUtils.IsValue([params.escaped, currentCsvConnection?.escaped], false) }
 	/**
 	 * Required convert string to escape value
 	 */
@@ -134,7 +131,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Mode of quote value 
 	 */
-	QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, csvConnection()?.quoteMode, QuoteMode.NORMAL]) as QuoteMode }
+	QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, currentCsvConnection?.quoteMode, QuoteMode.NORMAL]) as QuoteMode }
 	/**
 	 * Mode of quote value
 	 */
@@ -143,7 +140,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Decimal separator for number fields
 	 */
-	String getDecimalSeparator () { ListUtils.NotNullValue([params.decimalSeparator, csvConnection()?.decimalSeparator, '.']) }
+	String getDecimalSeparator () { ListUtils.NotNullValue([params.decimalSeparator, currentCsvConnection?.decimalSeparator, '.']) }
 	/**
 	 * Decimal separator for number fields
 	 */
@@ -152,7 +149,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Format for date fields
 	 */
-	String getFormatDate () { ListUtils.NotNullValue([params.formatDate, csvConnection()?.formatDate]) }
+	String getFormatDate () { ListUtils.NotNullValue([params.formatDate, currentCsvConnection?.formatDate]) }
 	/**
 	 * Format for date fields
 	 */
@@ -161,7 +158,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Format for time fields
 	 */
-	String getFormatTime () { ListUtils.NotNullValue([params.formatTime, csvConnection()?.formatTime]) }
+	String getFormatTime () { ListUtils.NotNullValue([params.formatTime, currentCsvConnection?.formatTime]) }
 	/**
 	 * Format for time fields
 	 */
@@ -170,7 +167,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Format for datetime fields
 	 */
-	String getFormatDateTime () { ListUtils.NotNullValue([params.formatDateTime, csvConnection()?.formatDateTime]) }
+	String getFormatDateTime () { ListUtils.NotNullValue([params.formatDateTime, currentCsvConnection?.formatDateTime]) }
 	/**
 	 * Format for datetime fields
 	 */
@@ -179,7 +176,7 @@ class CSVDataset extends FileDataset {
 	/** OS locale for parsing date-time fields
 	 * <br>P.S. You can set locale for separately field in Field.extended.locale
 	 */
-	String getLocale() { ListUtils.NotNullValue([params.locale, csvConnection()?.locale]) }
+	String getLocale() { ListUtils.NotNullValue([params.locale, currentCsvConnection?.locale]) }
 	/** OS locale for parsing date-time fields
 	 * <br>P.S. You can set locale for separately field in Field.extended.locale
 	 */
@@ -222,18 +219,14 @@ class CSVDataset extends FileDataset {
 					'nullAsValue']
 	}
 
-	/**
-	 * Current CSV connection
-	 */
-	CSVConnection csvConnection() { connection as CSVConnection}
-	
+	/** Current CSV connection */
+	CSVConnection getCurrentCsvConnection() { connection as CSVConnection}
+
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
 	 */
 	long prepareCSVForBulk (CSVDataset source, Map encodeTable, Closure code) {
-		CSVDriver drv = connection.driver as CSVDriver
-		
-		drv.prepareCSVForBulk(this, source, encodeTable, code)
+		currentCsvConnection.currentCSVDriver.prepareCSVForBulk(this, source, encodeTable, code)
 	}
 	
 	/**
@@ -261,8 +254,7 @@ class CSVDataset extends FileDataset {
 	 * Decoding prepare for bulk load file
 	 */
 	long decodeBulkCSV (CSVDataset source) {
-		CSVDriver drv = connection.driver as CSVDriver
-		drv.decodeBulkCSV(this, source)
+		currentCsvConnection.currentCSVDriver.decodeBulkCSV(this, source)
 	}
 	
 	/**
@@ -281,9 +273,7 @@ class CSVDataset extends FileDataset {
 	 * File lines count 
 	 */
 	long readLinesCount () {
-		CSVDriver drv = connection.driver as CSVDriver
-		
-		drv.readLinesCount(this)
+		currentCsvConnection.currentCSVDriver.readLinesCount(this)
 	}
 
 	/**

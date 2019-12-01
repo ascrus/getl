@@ -48,6 +48,9 @@ class XeroConnection extends Connection {
         }
     }
 
+    /** Current Xero connection driver */
+    XeroDriver getCurrentXeroDriver() { driver as XeroDriver }
+
     @Override
     protected void registerParameters () {
         super.registerParameters()

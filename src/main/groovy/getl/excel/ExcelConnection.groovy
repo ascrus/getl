@@ -46,6 +46,9 @@ class ExcelConnection extends Connection {
 		if (this.getClass().name == 'getl.excel.ExcelConnection') methodParams.validation('Super', params?:[:])
     }
 
+    /** Current Excel connection driver */
+    ExcelDriver getCurrentExcelDriver() { driver as ExcelDriver }
+
     /** Connection path */
     String getPath () { params.path as String }
     /** Connection path */

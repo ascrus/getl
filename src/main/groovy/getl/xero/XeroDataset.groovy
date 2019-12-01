@@ -50,6 +50,9 @@ class XeroDataset extends Dataset {
         return value
     }
 
+    /** Current Xero connection */
+    XeroConnection getCurrentXeroConnection() { connection as XeroConnection }
+
     /**
      * Object name by Xero
      */
@@ -66,6 +69,6 @@ class XeroDataset extends Dataset {
 
     @Override
     String getObjectFullName() {
-        return (connection as XeroConnection).configInResource?:'' +'.' + xeroObjectName
+        return currentXeroConnection?.configInResource?:'' +'.' + xeroObjectName
     }
 }

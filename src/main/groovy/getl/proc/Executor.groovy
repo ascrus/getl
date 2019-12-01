@@ -282,17 +282,7 @@ class Executor {
 				}
 			}
 			catch (Throwable e) {
-				try {
-					removeActiveThread(m)
-					putThreadListElement(m, [finish: new Date(), threadSubmit: null])
-					setError(element, e)
-					def errObject = (debugElementOnError)?"[${num}]: ${element}":"Element ${num}"
-					if (dumpErrors) Logs.Dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: elements])}")
-					if (logErrors) {
-						Logs.Exception(e, this.toString(), errObject)
-					}
-				}
-				catch (Throwable ignored) { }
+				processRunError(e, m, num, element, elements)
 			}
 		}
 
@@ -342,6 +332,21 @@ class Executor {
 		}
 		
 		if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
+	}
+
+	@Synchronized
+	private void processRunError(Throwable e, Map m, Object num, Object element, List elements) {
+		try {
+			removeActiveThread(m)
+			putThreadListElement(m, [finish: new Date(), threadSubmit: null])
+			setError(element, e)
+			def errObject = (debugElementOnError)?"[${num}]: ${element}":"Element ${num}"
+			if (dumpErrors) Logs.Dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: elements])}")
+			if (logErrors) {
+				Logs.Exception(e, this.toString(), errObject)
+			}
+		}
+		catch (Throwable ignored) { }
 	}
 
 	/** Run thread code with list elements */
@@ -411,17 +416,7 @@ class Executor {
 				}
 			}
 			catch (Throwable e) {
-				try {
-					removeActiveThread(m)
-					putThreadListElement(m, [finish: new Date(), threadSubmit: null])
-					setError(element, e)
-					def errObject = "Element ${num}"
-					if (dumpErrors) Logs.Dump(e, getClass().name, errObject, null)
-					if (logErrors) {
-						Logs.Exception(e, this.toString(), errObject)
-					}
-				}
-				catch (Throwable ignored) { }
+				processRunError(e, m, num, element, elements)
 			}
 		}
 
@@ -528,5 +523,10 @@ class Executor {
 		}
 		
 		return true
+	}
+
+	@Synchronized
+	void callSynch(Closure cl) {
+		cl.call()
 	}
 }

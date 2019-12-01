@@ -68,6 +68,9 @@ class XMLDataset extends StructureFileDataset {
 		return value
 	}
 
+	/** Current XML connection */
+	XMLConnection getCurrentXMLConnection() { connection as XMLConnection }
+
 	/** Use default the attribute access method (default) */
 	static final DEFAULT_ATTRIBUTE_ACCESS = 0
 	/** Use default the node access method */
@@ -92,7 +95,9 @@ class XMLDataset extends StructureFileDataset {
 	 * Read XML dataset attributes
 	 */
 	void readAttrs (Map params) {
-		((XMLDriver)(connection.driver)).readAttrs(this, params)
+		validConnection()
+
+		currentXMLConnection.currentXMLDriver.readAttrs(this, params)
 	}
 
 	/**

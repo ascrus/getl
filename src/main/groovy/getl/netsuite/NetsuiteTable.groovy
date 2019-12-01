@@ -49,4 +49,7 @@ class NetsuiteTable extends TableDataset {
         setConnection(value)
         return value
     }
+
+    /** Current Netsuite connection */
+    NetsuiteConnection getCurrentNetsuiteConnection() { connection as NetsuiteConnection }
 }

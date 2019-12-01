@@ -54,6 +54,9 @@ class MSSQLTable extends TableDataset {
         return value
     }
 
+    /** Current MSSQL connection */
+    MSSQLConnection getCurrentMSSQLConnection() { connection as MSSQLConnection }
+
     @Override
     protected ReadSpec newReadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
                                           Map<String, Object> opts) {

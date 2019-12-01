@@ -54,6 +54,9 @@ class OracleTable extends TableDataset {
         return value
     }
 
+    /** Current Oracle connection */
+    OracleConnection getCurrentOracleConnection() { connection as OracleConnection }
+
     @Override
     protected ReadSpec newReadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
                                           Map<String, Object> opts) {

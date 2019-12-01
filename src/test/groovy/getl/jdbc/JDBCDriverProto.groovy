@@ -4,8 +4,6 @@ import getl.data.*
 import getl.driver.Driver
 import getl.proc.Flow
 import getl.stat.ProcessTime
-import getl.tfs.TDS
-import getl.tfs.TDSTable
 import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.InheritConstructors
@@ -458,7 +456,7 @@ END FOR;
         scripter.runSql()
 
         scripter.loadFile('resource:/sql/test_scripter.sql')
-        scripter.allVars.from = (con.jdbcDriver.sysDualTable != null)?"FROM ${con.jdbcDriver.sysDualTable}":''
+        scripter.allVars.from = (con.currentJDBCDriver.sysDualTable != null)?"FROM ${con.currentJDBCDriver.sysDualTable}":''
         scripter.runSql()
     }
 

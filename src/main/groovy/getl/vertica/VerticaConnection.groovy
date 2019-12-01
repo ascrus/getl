@@ -43,6 +43,9 @@ class VerticaConnection extends JDBCConnection {
 		super(new HashMap([driver: VerticaDriver]) + params?:[:])
 		if (this.getClass().name == 'getl.vertica.VerticaConnection') methodParams.validation("Super", params?:[:])
 	}
+
+	/** Current Vertica connection driver */
+	VerticaDriver getCurrentVerticaDriver() { driver as VerticaDriver }
 	
 	@Override
 	protected void onLoadConfig (Map configSection) {

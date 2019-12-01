@@ -59,6 +59,9 @@ class HiveTable extends TableDataset {
         return value
     }
 
+    /** Current Hive connection */
+    HiveConnection getCurrentHiveConnection() { connection as HiveConnection }
+
     @Override
     protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
                                               Map<String, Object> opts) {

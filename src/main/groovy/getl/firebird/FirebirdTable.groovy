@@ -49,4 +49,7 @@ class FirebirdTable extends TableDataset {
         setConnection(value)
         return value
     }
+
+    /** Current Firebird connection */
+    FirebirdConnection getCurrentFirebirdConnection() { connection as FirebirdConnection }
 }

@@ -49,6 +49,9 @@ class ExcelDataset extends Dataset {
         return value
     }
 
+    /** Current Excel connection */
+    ExcelConnection getCurrentExcelConnection() { connection as ExcelConnection }
+
     /** List name */
     String getListName () { params.listName as String }
     /** List name */
@@ -82,7 +85,6 @@ class ExcelDataset extends Dataset {
 
     /** Full file name with path */
     String fullFileName() {
-        ExcelDriver drv = connection.driver as ExcelDriver
-        return drv.fullFileNameDataset(this)
+        currentExcelConnection.currentExcelDriver.fullFileNameDataset(this)
     }
 }

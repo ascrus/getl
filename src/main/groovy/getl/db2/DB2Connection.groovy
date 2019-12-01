@@ -42,6 +42,9 @@ class DB2Connection extends JDBCConnection {
 		super(new HashMap([driver: DB2Driver]) + params?:[:])
 		if (this.getClass().name == 'getl.db2.DB2Connection') methodParams.validation("Super", params?:[:])
 	}
+
+	/** Current DB2 connection driver */
+	DB2Driver getCurrentDB2Driver() { driver as DB2Driver }
 	
 	@Override
 	protected void onLoadConfig (Map configSection) {

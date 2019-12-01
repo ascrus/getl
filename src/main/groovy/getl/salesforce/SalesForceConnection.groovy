@@ -45,6 +45,9 @@ class SalesForceConnection extends Connection {
 		}
 	}
 
+	/** Current SalesForce connection driver */
+	SalesForceDriver getCurrentSalesForceDriver() { driver as SalesForceDriver }
+
 	@Override
 	protected void registerParameters () {
 		super.registerParameters()

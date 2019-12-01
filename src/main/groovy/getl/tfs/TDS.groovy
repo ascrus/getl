@@ -24,6 +24,7 @@
 
 package getl.tfs
 
+import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 import getl.h2.*
 import org.h2.tools.DeleteDbFiles
@@ -69,8 +70,16 @@ class TDS extends H2Connection {
 			else {
                 _tempPath = TFS.systemPath
 				connectDatabase = "$_tempPath/getl"
+				new File(connectDatabase + '.mv.db').deleteOnExit()
+				new File(connectDatabase + '.trace.db').deleteOnExit()
 			}
 		}
+		else if (connectDatabase != null) {
+			_tempPath = FileUtils.PathFromFile(connectDatabase)
+			new File(connectDatabase + '.mv.db').deleteOnExit()
+			new File(connectDatabase + '.trace.db').deleteOnExit()
+		}
+
 		if (login == null && password == null) {
 			login = "easyload"
 			password = "easydata"
