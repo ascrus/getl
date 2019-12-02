@@ -528,8 +528,9 @@ class SQLScripter {
 	boolean isRequiredExit() { requiredExit }
 
 	/**
-	 * Run script as SQL
-	 */ 
+	 * Run SQL script
+	 * @param useParsing enable script command parsing
+	 */
 	void runSql(boolean useParsing = true) {
 		if (connection == null)
 			throw new ExceptionGETL('Not defined jdbc connection for work!')
@@ -587,13 +588,41 @@ class SQLScripter {
 		}
 	}
 
-	/** Run SQL script */
+	/**
+	 * Run the script for the specified file
+	 * @param fileName file path (use the prefix "resource:/" to load from the resource file)
+	 * @param codePage text encoding (default utf-8)
+	 */
+	void runFile (String fileName, String codePage = 'utf-8') {
+		loadFile(fileName, codePage)
+		runSql()
+	}
+
+	/**
+	 * Run the script for the specified file
+	 * @param useParsing enable script command parsing
+	 * @param fileName file path (use the prefix "resource:/" to load from the resource file)
+	 * @param codePage text encoding (default utf-8)
+	 */
+	void runFile (boolean useParsing, String fileName, String codePage = 'utf-8') {
+		loadFile(fileName, codePage)
+		runSql(useParsing)
+	}
+
+	/**
+	 * Run SQL script
+	 * @param sql script to execute
+	 */
 	void exec(String sql) {
 		script = sql
 		runSql()
 	}
 
-	/** Run SQL script */
+	/**
+	 * Run SQL script
+	 * @param useParsing enable script command parsing
+	 * @param sql script to execute
+	 */
 	void exec(boolean useParsing, String sql) {
 		script = sql
 		runSql(useParsing)
@@ -606,43 +635,8 @@ class SQLScripter {
 	 * @return
 	 */
 	static List<String> BatchSQL2List (String sql, String delim) {
-		if (sql == null) throw new ExceptionGETL("SQLScripter: required sql for BatchSQL2List method")
-		
-		// Delete multi comment
-		/*def b = new StringBuffer()
-		int cur = 0
-		int start = sql.indexOf("*//*")
-		int finish //= -1
-		while (start >= 0) {
-			if (cur < start) b.append(sql.substring(cur, start))
-			finish = sql.indexOf("*//*", start)
-			String comment = sql.substring(start + 2, finish).trim()
-			if ("+".equals(comment.substring(0, 1)) || ":".equals(comment.substring(0, 1)))
-				b.append("*//*" + comment + "*//*")
-			cur = finish + 2
-			start = sql.indexOf("*//*", cur)
-		}
-		if (cur < sql.length()) b.append(sql.substring(cur))
-		sql = b.toString()
-		
-		Pattern p
-		Matcher m
-		*/
-		
-		// Delete single comment
-        /*def sb = new StringBuffer()
-        sql.eachLine { String line ->
-            def i = line.indexOf('--')
-            if (i == -1) {
-                sb << line
-            }
-            else {
-                sb << line.substring(0, i)
-            }
-            sb << '\n'
-        }
-		sql = sb.toString()*/
-		
+		if (sql == null) throw new ExceptionGETL("\"sql\" parameter required!")
+
 		List<String> res = sql.split('\n')
 		for (int i = 0; i < res.size(); i++) {
 			String s = res[i].trim()
