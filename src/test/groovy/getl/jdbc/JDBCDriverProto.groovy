@@ -457,8 +457,11 @@ END FOR;
 
         scripter.loadFile('resource:/sql/test_scripter.sql')
         scripter.allVars.from = (con.currentJDBCDriver.sysDualTable != null)?"FROM ${con.currentJDBCDriver.sysDualTable}":''
+        scripter.vars.func = currentTimestampFuncName
         scripter.runSql()
     }
+
+    protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP()' }
 
     @Test
     void testOperations() {

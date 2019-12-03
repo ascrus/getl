@@ -24,6 +24,7 @@
 
 package getl.vertica
 
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 import getl.csv.CSVDataset
@@ -113,6 +114,30 @@ class VerticaDriver extends JDBCDriver {
 		return result
 	}
 
+	/**
+	 * Convert text to unicode escape Vertica string
+	 * @param value
+	 * @return
+	 */
+	@CompileStatic
+	static String EscapeString(String value) {
+		def sb = new StringBuilder()
+		for (int i = 0; i < value.length(); i++) {
+			def ch = value.chars[i]
+			def bt = value.bytes[i]
+			if (ch < '\u0020'.chars[0] || ch > '\u007E'.chars[0])
+				sb << '\\' + StringUtils.AddLedZeroStr(Integer.toHexString(bt), 4)
+			else if (ch == '\''.chars[0])
+				sb << '\'\''
+			else if (ch == '\\'.chars[0])
+				sb << '\\\\'
+			else
+				sb << ch
+		}
+
+		return 'U&\'' + sb.toString() + '\''
+	}
+
 	@Override
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
 		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
@@ -139,24 +164,24 @@ class VerticaDriver extends JDBCDriver {
 			}
 			boolean useCsvOptions = BoolUtils.IsValue((params.parser as Map).useCsvOptions, true)
 			if (useCsvOptions) {
-				if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
-				if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
-				if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
-				if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
+				if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter)}"
+				if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(source.rowDelimiter)}"
+				if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr)}"
+				if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue)}"
 			}
 		}
 		else if (!source.escaped) {
 			def opts = [
 					'type=\'traditional\'',
-					"delimiter = E'${StringUtils.EscapeJava(source.fieldDelimiter)}'",
-					"enclosed_by = E'${StringUtils.EscapeJava(source.quoteStr)}'",
-					"record_terminator = E'${StringUtils.EscapeJava(source.rowDelimiter)}'",
-					"escape=U&'\\0001'"
+					"delimiter = ${EscapeString(source.fieldDelimiter)}",
+					"enclosed_by = ${EscapeString(source.quoteStr)}",
+					"record_terminator = ${EscapeString(source.rowDelimiter)}",
+					"escape = ${EscapeString('\u0001')}"
 			]
 			if (source.header) opts << 'header=\'true\''
 
 			parserText = "\nWITH PARSER fcsvparser(${opts.join(', ')})"
-			if (source.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
+			if (source.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue)}"
 		}
 
 		if (parserText.length() == 0) {
@@ -164,10 +189,10 @@ class VerticaDriver extends JDBCDriver {
 			if (source.rowDelimiter == null || source.rowDelimiter.length() != 1) throw new ExceptionGETL('Required one char row delimiter')
 			if (source.quoteStr == null || source.quoteStr.length() != 1) throw new ExceptionGETL('Required one char quote str')
 
-			if (source.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS E'\\x${Integer.toHexString(source.fieldDelimiter.bytes[0])}'"
-			if (source.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR E'\\x${Integer.toHexString(source.rowDelimiter.bytes[0])}'"
-			if (source.quoteStr != null) quoteStr = "\nENCLOSED BY E'\\x${Integer.toHexString(source.quoteStr.bytes[0])}'"
-			if (source.nullAsValue != null) nullAsValue = "\nNULL AS '${source.nullAsValue}'"
+			if (source.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter)}"
+			if (source.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(source.rowDelimiter)}"
+			if (source.quoteStr != null) quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr)}"
+			if (source.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue)}"
 		}
 
 		def header = source.header
@@ -326,6 +351,7 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} TO {value}' }
 
+	@SuppressWarnings("DuplicatedCode")
 	@Override
 	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
@@ -414,7 +440,7 @@ class VerticaDriver extends JDBCDriver {
 		csvFile.header = true
 		csvFile.escaped = (csvFile.field.find { it.type == Field.blobFieldType && source.fieldByName(it.name) != null } != null)
 		csvFile.codePage = 'UTF-8'
-		csvFile.nullAsValue = '<NULL>'
+		csvFile.nullAsValue = '\u0000'
 		csvFile.fieldDelimiter = '|'
 		csvFile.rowDelimiter = '\n'
 		csvFile.quoteStr = '"'

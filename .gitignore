@@ -10,3 +10,5 @@ build
 
 ### Config files for test modules
 tests/
+
+out/

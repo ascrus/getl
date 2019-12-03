@@ -4,6 +4,7 @@ import getl.data.*
 import getl.jdbc.*
 import getl.lang.Getl
 import getl.proc.Flow
+import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.InheritConstructors
 import org.junit.BeforeClass
@@ -82,21 +83,24 @@ LIMIT 1'''
                 field('id') { type = integerFieldType; isKey = true }
                 field('name') { length = 50; isNull = false }
                 field('dt') { type = datetimeFieldType }
+                field('value') { type = integerFieldType }
                 createOpts {
                     onCommit = true
                 }
                 create()
             }
 
-            def csv = csvTempWithDataset(vertable) {
-                useConnection connection.cloneConnection()
-                csvConnection().with {
-                    setPath path + '/bulkload'
+            def csv = csvTemp {
+                useConnection csvTempConnection {
+                    path = TFS.systemPath + '/bulkload'
                     FileUtils.ValidPath(path)
                     new File(path).deleteOnExit()
+                    escaped = false
+                    nullAsValue = '\u0002'
                 }
                 fileName = 'vertica.bulkload'
                 extension = 'csv'
+                field = vertable.field
 
                 writeOpts {
                     splitFile { true }
@@ -104,9 +108,9 @@ LIMIT 1'''
 
                 rowsTo {
                     writeRow { add ->
-                        add id: 1, name: 'one', dt: DateUtils.Now()
-                        add id: 2, name: 'one', dt: DateUtils.Now()
-                        add id: 3, name: 'one', dt: DateUtils.Now()
+                        add id: 1, name: 'one', dt: DateUtils.Now(), value: 1
+                        add id: 2, name: 'two', dt: DateUtils.Now()
+                        add id: 3, name: 'three', value: 3
                     }
                 }
                 assertEquals(3, writeRows)
@@ -129,9 +133,7 @@ LIMIT 1'''
             assertEquals(1, vertable.updateRows)
             assertEquals(1, vertable.countRow())
 
-            csv.with {
-                useConnection csvTempConnection()
-            }
+            csv.currentCsvConnection.path = TFS.systemPath
 
             logInfo 'Bulk load files with mask without package:'
             vertable.with {
@@ -189,4 +191,7 @@ LIMIT 1'''
             unregisterDataset('vertica:testbulkload')
         }
     }
+
+    @Override
+    protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP' }
 }
