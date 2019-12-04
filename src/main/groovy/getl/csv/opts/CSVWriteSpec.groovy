@@ -37,9 +37,9 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class CSVWriteSpec extends BaseSpec {
-    /** Check constraints while reading a file */
+    /** Check constraints while writing a file */
     Boolean getIsValid() { params.isValid as Boolean }
-    /** Check constraints while reading a file */
+    /** Check constraints while writing a file */
     void setIsValid(Boolean value) { params.isValid = value }
 
     /** Batch size packet */

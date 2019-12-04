@@ -54,12 +54,12 @@ class CSVEscapeTokenizer extends Tokenizer {
 	}
 
 	static final Pattern pattern1 = StringUtils.SearchPattern('\\\\')
-	static final String replace1 = '\u0001'
+	static final String replace1 = '\u0081'
 
 	Pattern pattern2
 	String replace2
 
-	static final Pattern pattern3 = StringUtils.SearchPattern('\u0001')
+	static final Pattern pattern3 = StringUtils.SearchPattern('\u0081')
 	static final String replace3 = '\\\\'
 	
 	@CompileStatic

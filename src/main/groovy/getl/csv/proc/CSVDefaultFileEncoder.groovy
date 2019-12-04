@@ -25,6 +25,7 @@
 package getl.csv.proc
 
 import getl.csv.CSVDataset
+import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
@@ -49,6 +50,7 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 
 	private boolean header
 	private String quote
+	private String nullValue
 	private boolean escaped
 	private List<Integer> escapedColumns
 
@@ -63,6 +65,7 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 
 		this.header = wp.header
 		this.quote = wp.quote
+		this.nullValue = wp.nullAsValue
 		this.escaped = wp.escaped
 		if (escaped) this.escapedColumns = wp.escapedColumns
 
@@ -74,14 +77,16 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 	@CompileStatic
 	@Override
     String encode(String value, final CsvContext context, final CsvPreference pref) {
-		if (!escaped || (header && context.lineNumber == 1)) {
+		if (context.lineNumber == 1 && header)
 			value = super.encode(value, context, pref)
-		}
-		else if (escaped && context.columnNumber in escapedColumns) {
-			value = quote + value + quote
-		}
-		else {
-			value = super.encode(value, context, pref)
+		else if (value != nullValue && (nullValue == null || value != nullValue)) {
+			if (!escaped) {
+				value = super.encode(value, context, pref)
+			} else if (escaped && context.columnNumber in escapedColumns) {
+				value = quote + StringUtils.EscapeJavaWithoutUTF(value) + quote
+			} else {
+				value = super.encode(value, context, pref)
+			}
 		}
 
 		writeSize += value.length()

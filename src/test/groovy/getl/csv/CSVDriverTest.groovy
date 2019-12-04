@@ -8,7 +8,6 @@ import getl.stat.ProcessTime
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
-import getl.utils.GenerationUtils
 import getl.utils.Logs
 import getl.utils.NumericUtils
 import getl.utils.StringUtils
@@ -425,6 +424,98 @@ class CSVDriverTest extends getl.test.GetlTest {
             csv.drop(portions: 3)
             csv.writedFiles.each {
                 assertFalse(new File(it.fileName).exists())
+            }
+        }
+    }
+
+    @Test
+    void testNullValue() {
+        Getl.Dsl(this) {
+            csvTemp { ds ->
+                writeOpts {
+                    isValid = true
+                }
+
+                header = true
+
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { isNull = false }
+                field('v1') { type = integerFieldType }
+                field('v2') { type = stringFieldType }
+                field('v3') { type = dateFieldType }
+                field('v4') { type = numericFieldType; length = 12; precision = 2 }
+                field('v5') { type = booleanFieldType }
+
+                def write = {
+                    rowsTo(ds) {
+                        writeRow { add ->
+                            add id: 1, name: 'one', v1: 1, v2: '"string"', v3: DateUtils.ParseDate('2019-12-31'), v4: 123.45, v5: true
+                            add id: 2, name: 'two'
+                        }
+                    }
+                }
+
+                def read = {
+                    rowProcess(ds) {
+                        int i = 0
+                        readRow { row ->
+                            i++
+
+                            if (i == 1) {
+                                assertEquals(1, row.id)
+                                assertEquals('one', row.name)
+                                assertEquals(1, row.v1)
+                                assertEquals('"string"', row.v2)
+                                assertEquals(DateUtils.ParseDate('2019-12-31'), row.v3)
+                                assertEquals(123.45, row.v4)
+                                assertEquals(true, row.v5)
+                            }
+                            else {
+                                assertEquals(2, row.id)
+                                assertEquals('two', row.name)
+                                assertNull(row.v1)
+                                assertNull(row.v2)
+                                assertNull(row.v3)
+                                assertNull(row.v4)
+                                assertNull(row.v5)
+                            }
+                        }
+                    }
+
+                    return new File(ds.fullFileName()).text
+                }
+
+                escaped = true
+                nullAsValue = '\u0000'
+                write()
+                assertEquals('''id|name|v1|v2|v3|v4|v5
+1|"one"|1|"\\"string\\""|2019-12-31|123.45|1
+2|"two"|\u0000|\u0000|\u0000|\u0000|\u0000
+''',read())
+
+                escaped = false
+                nullAsValue = '\u0000'
+                write()
+                assertEquals('''id|name|v1|v2|v3|v4|v5
+1|one|1|"""string"""|2019-12-31|123.45|1
+2|two|\u0000|\u0000|\u0000|\u0000|\u0000
+''',read())
+
+                escaped = true
+                nullAsValue = '\\\\'
+                write()
+                assertEquals('''id|name|v1|v2|v3|v4|v5
+1|"one"|1|"\\"string\\""|2019-12-31|123.45|1
+2|"two"|\\\\|\\\\|\\\\|\\\\|\\\\
+''',read())
+
+                escaped = false
+                nullAsValue = '\\\\'
+                write()
+                assertEquals('''id|name|v1|v2|v3|v4|v5
+1|one|1|"""string"""|2019-12-31|123.45|1
+2|two|\\\\|\\\\|\\\\|\\\\|\\\\
+''',read())
             }
         }
     }

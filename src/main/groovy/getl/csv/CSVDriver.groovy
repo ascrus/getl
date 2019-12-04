@@ -195,9 +195,9 @@ class CSVDriver extends FileDriver {
 			if (BoolUtils.IsValue(field.trim)) cp = new Trim()
 
 			if (isEscape && field.type == Field.Type.STRING) {
-				if (isWrite)
-					cp = (cp != null)?new CSVFmtEscapeString(cp):new CSVFmtEscapeString()
-				else
+				if (!isWrite)
+					/*cp = (cp != null)?new CSVFmtEscapeString(cp):new CSVFmtEscapeString()
+				else*/
 					cp = (cp != null)?new CSVParseEscapeString(cp):new CSVParseEscapeString()
 			}
 		} else if (field.type == Field.Type.INTEGER) {
@@ -307,9 +307,9 @@ class CSVDriver extends FileDriver {
 			}
 
 			if (isEscape) {
-				if (isWrite)
-					cp = (cp != null)?new CSVFmtEscapeString(cp):new CSVFmtEscapeString()
-				else
+				if (!isWrite)
+					/*cp = (cp != null)?new CSVFmtEscapeString(cp):new CSVFmtEscapeString()
+				else*/
 					cp = (cp != null)?new CSVParseEscapeString(cp):new CSVParseEscapeString()
 			}
 		} else {
