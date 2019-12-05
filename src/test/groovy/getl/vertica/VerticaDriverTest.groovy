@@ -79,14 +79,19 @@ LIMIT 1'''
             def vertable = verticaTable('vertica:testbulkload', true) {
                 connection = this.con
                 tableName = 'testBulkLoad'
-                type = localTemporaryTableType
+//                type = localTemporaryTableType
                 field('id') { type = integerFieldType; isKey = true }
                 field('name') { length = 50; isNull = false }
                 field('dt') { type = datetimeFieldType }
                 field('value') { type = integerFieldType }
+                field('description') { length = 50 }
                 createOpts {
                     onCommit = true
                 }
+                dropOpts {
+                    ifExists = true
+                }
+                drop()
                 create()
             }
 
@@ -96,7 +101,10 @@ LIMIT 1'''
                     FileUtils.ValidPath(path)
                     new File(path).deleteOnExit()
                     escaped = false
-                    nullAsValue = '\u0002'
+                    nullAsValue = '\u000C'
+                    fieldDelimiter = ','
+                    quoteStr = '"'
+                    rowDelimiter = '\n'
                 }
                 fileName = 'vertica.bulkload'
                 extension = 'csv'
@@ -109,8 +117,8 @@ LIMIT 1'''
                 rowsTo {
                     writeRow { add ->
                         add id: 1, name: 'one', dt: DateUtils.Now(), value: 1
-                        add id: 2, name: 'two', dt: DateUtils.Now()
-                        add id: 3, name: 'three', value: 3
+                        add id: 2, name: 'two', dt: DateUtils.Now(), description: 'desc 2'
+                        add id: 3, name: 'three', value: 3, description: ''
                     }
                 }
                 assertEquals(3, writeRows)
@@ -125,9 +133,6 @@ LIMIT 1'''
                     loadAsPackage = false
                     exceptionPath = main.configContent.errorPath + '/vertica.bulkload.err'
                     rejectedPath = main.configContent.errorPath + '/vertica.bulkload.csv'
-
-                    beforeBulkLoadFile { println 'before: ' + it }
-                    afterBulkLoadFile { println 'after: ' + it }
                 }
             }
             assertEquals(1, vertable.updateRows)
@@ -144,6 +149,9 @@ LIMIT 1'''
                     orderProcess = ['num']
                     exceptionPath = main.configContent.errorPath + '/vertica.bulkload.err'
                     rejectedPath = main.configContent.errorPath + '/vertica.bulkload.csv'
+
+                    beforeBulkLoadFile { FileUtils.CopyToDir(it, main.configContent.errorPath) }
+                    afterBulkLoadFile { main.logInfo 'Loaded file ' + it }
                 }
             }
             assertEquals(3, vertable.updateRows)
@@ -162,8 +170,8 @@ LIMIT 1'''
                     exceptionPath = main.configContent.errorPath + '/vertica.bulkload.err'
                     rejectedPath = main.configContent.errorPath + '/vertica.bulkload.csv'
 
-                    beforeBulkLoadPackageFiles { println 'before: ' + it }
-                    afterBulkLoadPackageFiles { println 'after: ' + it }
+                    beforeBulkLoadPackageFiles { main.logInfo 'Before loaded package files ' + it }
+                    afterBulkLoadPackageFiles { main.logInfo 'After loaded package files ' + it }
                 }
             }
             assertEquals(3, vertable.updateRows)

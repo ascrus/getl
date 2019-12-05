@@ -142,6 +142,9 @@ class VerticaDriver extends JDBCDriver {
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
 		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
 
+		def rowDelimiterChar = source.rowDelimiter
+		if (rowDelimiterChar == '\r\n') rowDelimiterChar = '\n'
+
 		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = ''
 		if (params.parser != null && !(params.parser as Map).isEmpty()) {
 			String parserFunc = (params.parser as Map).function
@@ -165,7 +168,7 @@ class VerticaDriver extends JDBCDriver {
 			boolean useCsvOptions = BoolUtils.IsValue((params.parser as Map).useCsvOptions, true)
 			if (useCsvOptions) {
 				if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter)}"
-				if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(source.rowDelimiter)}"
+				if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
 				if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr)}"
 				if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue)}"
 			}
@@ -175,7 +178,7 @@ class VerticaDriver extends JDBCDriver {
 					'type=\'traditional\'',
 					"delimiter = ${EscapeString(source.fieldDelimiter)}",
 					"enclosed_by = ${EscapeString(source.quoteStr)}",
-					"record_terminator = ${EscapeString(source.rowDelimiter)}",
+					"record_terminator = ${EscapeString(rowDelimiterChar)}",
 					"escape = ${EscapeString('\u0001')}"
 			]
 			if (source.header) opts << 'header=\'true\''
@@ -186,11 +189,11 @@ class VerticaDriver extends JDBCDriver {
 
 		if (parserText.length() == 0) {
 			if (source.fieldDelimiter == null || source.fieldDelimiter.length() != 1) throw new ExceptionGETL('Required one char field delimiter')
-			if (source.rowDelimiter == null || source.rowDelimiter.length() != 1) throw new ExceptionGETL('Required one char row delimiter')
+			if (rowDelimiterChar == null || rowDelimiterChar.length() != 1) throw new ExceptionGETL('Required one char row delimiter')
 			if (source.quoteStr == null || source.quoteStr.length() != 1) throw new ExceptionGETL('Required one char quote str')
 
 			if (source.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter)}"
-			if (source.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(source.rowDelimiter)}"
+			if (rowDelimiterChar != null) rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
 			if (source.quoteStr != null) quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr)}"
 			if (source.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue)}"
 		}
@@ -440,8 +443,8 @@ class VerticaDriver extends JDBCDriver {
 		csvFile.header = true
 		csvFile.escaped = (csvFile.field.find { it.type == Field.blobFieldType && source.fieldByName(it.name) != null } != null)
 		csvFile.codePage = 'UTF-8'
-		csvFile.nullAsValue = '\u0000'
-		csvFile.fieldDelimiter = '|'
+		csvFile.nullAsValue = '\u000C'
+		csvFile.fieldDelimiter = ','
 		csvFile.rowDelimiter = '\n'
 		csvFile.quoteStr = '"'
 	}
@@ -457,7 +460,7 @@ class VerticaDriver extends JDBCDriver {
 		if (csvFile.quoteStr.length() > 1)
 			throw new ExceptionGETL('The quote must have only one character for bulk load!')
 
-		if (csvFile.rowDelimiter.length() > 1)
+		if (csvFile.rowDelimiter.length() > 1 && csvFile.rowDelimiter != '\r\n')
 			throw new ExceptionGETL('The row delimiter must have only one character for bulk load!')
 
 		if (!csvFile.escaped) {
