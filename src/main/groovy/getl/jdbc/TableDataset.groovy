@@ -221,7 +221,10 @@ class TableDataset extends JDBCDataset {
 		QueryDataset q = new QueryDataset(connection: connection, query: "SELECT Count(*) AS count FROM ${fullNameDataset()}")
 		where = where?:readDirective.where
 		if (where != null && where != '') q.query += " WHERE " + where
-		def r = q.rows(procParams)
+		def p = [:]
+		if (!procParams?.isEmpty())
+			p.queryParams = procParams
+		def r = q.rows(p)
 
 		return Long.valueOf((r[0].count).toString()).longValue()
 	}

@@ -3616,7 +3616,7 @@ class Getl extends Script {
     }
 
     /** SQL scripter */
-    SQLScripter sql(JDBCConnection connection,
+    SQLScripter sql(JDBCConnection connection, /* TODO: Added extended variables with table structure */
                     @DelegatesTo(SQLScripter)
                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl) {
         def parent = new SQLScripter()

@@ -205,6 +205,11 @@ class Executor {
 	/** Checking element permission */
 	void validAllowRun(Closure<Boolean> value) { onValidAllowRun = value }
 
+	/** Component runs threads */
+	boolean isRunThreads = false
+	/** Component runs threads */
+	boolean getIsRunThreads() { isRunThreads }
+
 	/** Run thread code with list elements */
 	void run(Integer countThread, Closure code) {
 		run(list, countThread, code)
@@ -219,6 +224,9 @@ class Executor {
 
 	/** Run thread code with list elements */
 	void run(List elements = list, Integer countThread = countProc, Closure code) {
+		if (isRunThreads)
+			throw new ExceptionGETL('Cannot start "run" method when threads are running!')
+
 		hasError = false
 		isInterrupt = false
 		exceptions.clear()
@@ -287,51 +295,56 @@ class Executor {
 		}
 
 		def threadPool = Executors.newFixedThreadPool(countThread, new ExecutorFactory())
-		def num = 0
-		elements.each { n ->
-			Map r = Collections.synchronizedMap(new HashMap())
-			r.num = num
-			r.element = n
-			r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable)
-			threadList << r
+		isRunThreads = true
+		try {
+			def num = 0
+			elements.each { n ->
+				Map r = Collections.synchronizedMap(new HashMap())
+				r.num = num
+				r.element = n
+				r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable)
+				threadList << r
 
-			num++
-		}
-		threadPool.shutdown()
-
-		while (!threadPool.isTerminated()) {
-			if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
-				try {
-					mainCode.call()
-				}
-				catch (Throwable e) {
-					setError(null, e)
-					threadActive.each { Map serv ->
-						(serv.threadSubmit as Future)?.cancel(true)
-					}
-					threadPool.shutdownNow()
-					throw e
-				}
-			}
-			threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
-		}
-
-		if (isError && abortOnError) {
-			def objects = []
-			num = 0
-			exceptions.each { obj, Throwable e ->
 				num++
-				if (debugElementOnError) {
-					objects << "[${num}] ${e.message}: ${obj.toString()}"
-				}
-				else {
-					objects << "[${num}] ${e.message}"
-				}
 			}
-			throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
+			threadPool.shutdown()
+
+			while (!threadPool.isTerminated()) {
+				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
+					try {
+						mainCode.call()
+					}
+					catch (Throwable e) {
+						setError(null, e)
+						threadActive.each { Map serv ->
+							(serv.threadSubmit as Future)?.cancel(true)
+						}
+						threadPool.shutdownNow()
+						throw e
+					}
+				}
+				threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
+			}
+
+			if (isError && abortOnError) {
+				def objects = []
+				num = 0
+				exceptions.each { obj, Throwable e ->
+					num++
+					if (debugElementOnError) {
+						objects << "[${num}] ${e.message}: ${obj.toString()}"
+					} else {
+						objects << "[${num}] ${e.message}"
+					}
+				}
+				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
+			}
+
+			if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
 		}
-		
-		if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
+		finally {
+			isRunThreads = false
+		}
 	}
 
 	@Synchronized
@@ -356,6 +369,9 @@ class Executor {
 
 	/** Run thread code with list elements */
 	void exec(List<Closure> elements = listCode, Integer countThread = countProc) {
+		if (isRunThreads)
+			throw new ExceptionGETL('Cannot start "exec" method when threads are running!')
+
 		hasError = false
 		isInterrupt = false
 		exceptions.clear()
@@ -421,51 +437,56 @@ class Executor {
 		}
 
 		def threadPool = Executors.newFixedThreadPool(countThread, new ExecutorFactory())
-		def num = 0
-		elements.each { n ->
-			Map r = Collections.synchronizedMap(new HashMap())
-			r.num = num
-			r.element = n
-			r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable)
-			threadList << r
+		isRunThreads = true
+		try {
+			def num = 0
+			elements.each { n ->
+				Map r = Collections.synchronizedMap(new HashMap())
+				r.num = num
+				r.element = n
+				r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable)
+				threadList << r
 
-			num++
-		}
-		threadPool.shutdown()
-
-		while (!threadPool.isTerminated()) {
-			if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
-				try {
-					mainCode.call()
-				}
-				catch (Throwable e) {
-					setError(null, e)
-					threadActive.each { Map serv ->
-						(serv.threadSubmit as Future)?.cancel(true)
-					}
-					threadPool.shutdownNow()
-					throw e
-				}
-			}
-			threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
-		}
-
-		if (isError && abortOnError) {
-			def objects = []
-			num = 0
-			exceptions.each { obj, Throwable e ->
 				num++
-				if (debugElementOnError) {
-					objects << "[${num}] ${e.message}: ${obj.toString()}"
-				}
-				else {
-					objects << "[${num}] ${e.message}"
-				}
 			}
-			throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
-		}
+			threadPool.shutdown()
 
-		if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
+			while (!threadPool.isTerminated()) {
+				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
+					try {
+						mainCode.call()
+					}
+					catch (Throwable e) {
+						setError(null, e)
+						threadActive.each { Map serv ->
+							(serv.threadSubmit as Future)?.cancel(true)
+						}
+						threadPool.shutdownNow()
+						throw e
+					}
+				}
+				threadPool.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
+			}
+
+			if (isError && abortOnError) {
+				def objects = []
+				num = 0
+				exceptions.each { obj, Throwable e ->
+					num++
+					if (debugElementOnError) {
+						objects << "[${num}] ${e.message}: ${obj.toString()}"
+					} else {
+						objects << "[${num}] ${e.message}"
+					}
+				}
+				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
+			}
+
+			if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
+		}
+		finally {
+			isRunThreads = false
+		}
 	}
 
 	private ExecutorService threadBackground
@@ -476,7 +497,9 @@ class Executor {
 	
 	/** Start background process */
 	void startBackground(Closure code) {
-		if (isRunBackground()) throw new ExceptionGETL("Background process already running")
+		if (isRunThreads)
+			throw new ExceptionGETL('Cannot start "startBackground" when threads are running!')
+
 		def runCode = {
 			try {
 				while (isRunBackground()) {
@@ -493,22 +516,35 @@ class Executor {
 		}
 		
 		runBackgroundService = true
-		threadBackground = Executors.newSingleThreadExecutor()
-		threadBackground.execute(runCode)
+		isRunThreads = true
+		try {
+			threadBackground = Executors.newSingleThreadExecutor()
+			threadBackground.execute(runCode)
+		}
+		catch (Throwable e) {
+			runBackgroundService = false
+			isRunThreads = false
+			throw e
+		}
 	}
 	
 	/** Finish background process */
 	void stopBackground () {
 		if (!isRunBackground()) throw new ExceptionGETL("Not Background process running")
-		runBackgroundService = false
-		if (threadBackground != null) {
-			try {
-				threadBackground.shutdown()
-				while (!threadBackground.isShutdown()) threadBackground.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
+		try {
+			if (threadBackground != null) {
+				try {
+					threadBackground.shutdown()
+					while (!threadBackground.isShutdown()) threadBackground.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
+				}
+				finally {
+					threadBackground = null
+				}
 			}
-			finally {
-				threadBackground = null
-			}
+		}
+		finally {
+			runBackgroundService = false
+			isRunThreads = false
 		}
 	}
 
