@@ -57,6 +57,11 @@ class ExcelDataset extends Dataset {
     /** List name */
     void setListName (final String value) { params.listName = value }
 
+    /** List number */
+    Integer getListNumber() { params.listNumber as Integer }
+    /** List number */
+    void setListNumber(final Integer value) { params.listNumber = value }
+
     /** Offset param */
     Map<String, Integer> getOffset() { params.offset as Map<String, Integer> }
     /** Offset param */
@@ -68,12 +73,16 @@ class ExcelDataset extends Dataset {
     void setLimit(final Integer value) { params.limit = value }
 
     /** Header row */
-    Boolean getHeader() { params.header }
+    Boolean getHeader() {
+        BoolUtils.IsValue([params.header, currentExcelConnection?.header], false)
+    }
     /** Header row */
     void setHeader(final boolean value) { params.header = value }
 
     /** Warnings from Dataset (e.g. show warning when list not found) */
-    Boolean getShowWarnings() { params.showWarnings }
+    Boolean getShowWarnings() {
+        BoolUtils.IsValue([params.showWarnings, currentExcelConnection?.showWarnings], false)
+    }
     /** Warnings from Dataset (e.g. show warning when list not found) */
     void setShowWarnings(final Boolean value) { params.showWarnings = value}
 

@@ -29,6 +29,7 @@ import getl.driver.Driver
 import getl.csv.CSVDataset
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.openxml4j.opc.OPCPackage
@@ -89,24 +90,23 @@ class ExcelDriver extends Driver {
     }
 
     @Override
+    @CompileStatic
     long eachRow(Dataset source, Map params, Closure prepareCode, Closure code) {
         ExcelDataset dataset = source as ExcelDataset
-        String fileName = (dataset.connection as ExcelConnection).fileName
+        String fileName = dataset.currentExcelConnection.fileName
         String fullPath = dataset.fullFileName()
-        boolean warnings = BoolUtils.IsValue([params.showWarnings, (dataset as ExcelDataset).showWarnings,
-                                              (dataset.connection as ExcelConnection).showWarnings, false])
+        boolean warnings = BoolUtils.IsValue([params.showWarnings, dataset.showWarnings,
+                                              dataset.currentExcelConnection.showWarnings, false])
 
         if (!fileName) throw new ExceptionGETL("Required \"fileName\" parameter with connection")
         if (!FileUtils.ExistsFile(fullPath)) throw new ExceptionGETL("File \"${fullPath}\" doesn't exists!")
 
-        Map datasetParams = dataset.params
-
-        def ln = datasetParams.listName?:0
-        def header = BoolUtils.IsValue([params.header, datasetParams.header,
+        def ln = dataset.listName?:0
+        def header = BoolUtils.IsValue([params.header, dataset.header,
                                         (dataset.connection as ExcelConnection).header], true)
         if (dataset.field.isEmpty() && !header) throw new ExceptionGETL("Required fields description with dataset")
 		
-		def offset = (params.offset?:datasetParams.offset) as Map
+		def offset = (params.offset?:dataset.offset) as Map
 
         Number offsetRows = (offset?.rows as Number)?:0
         Number offsetCells = (offset?.cells as Number)?:0
@@ -115,20 +115,30 @@ class ExcelDriver extends Driver {
 
         if (prepareCode != null) prepareCode([])
 
-        Workbook workbook = getWorkbookType(fullPath)
+        def workbook = getWorkbookType(fullPath) as Workbook
 
         try {
             Sheet sheet
 
-            if (ln instanceof String)
-                sheet = workbook.getSheet(ln as String)
-            else {
-                sheet = workbook.getSheetAt(ln as Integer) as Sheet
-                dataset.params.listName = workbook.getSheetName(ln as Integer)
-                if (warnings) Logs.Warning("Parameter listName not found. Using list name: '${dataset.params.listName}'")
-            }
+            if (dataset.listName != null) {
+                if (workbook.getSheetIndex(dataset.listName) == -1)
+                    throw new ExceptionGETL("List \"${dataset.listName}\" not found!")
 
-            def limit = ListUtils.NotNullValue([params.limit, datasetParams.limit, sheet.lastRowNum])
+                sheet = workbook.getSheet(dataset.listName)
+                dataset.listNumber = workbook.getSheetIndex(dataset.listName)
+            }
+            else {
+                def num = dataset.listNumber?:0
+                if (workbook.getNumberOfSheets() < num)
+                    throw new ExceptionGETL("List №$num not found!")
+
+                sheet = workbook.getSheetAt(num) as Sheet
+                dataset.listName = workbook.getSheetName(num)
+            }
+            if (sheet == null)
+                throw new ExceptionGETL("Specified list not found!")
+
+            def limit = ListUtils.NotNullValue([params.limit, dataset.limit, sheet.lastRowNum]) as Integer
 
             Iterator rows = sheet.rowIterator()
 
@@ -159,8 +169,7 @@ class ExcelDriver extends Driver {
             rows.each { Row row ->
                 rowNum++
                 if (row.rowNum >= additionalRows) {
-                    //noinspection UnnecessaryQualifiedReference
-                    directive = Closure.DONE
+//                    directive = Closure.DONE
                     return
                 }
 
@@ -172,24 +181,26 @@ class ExcelDriver extends Driver {
                 }
 
                 if (requiedParseField) {
-                    def types = [] as List<String>
+                    def types = [] as List<Field.Type>
                     cells.each { Cell cell ->
                         colNum++
                         switch (cell.cellType) {
                             case CellType.STRING:
-                                types << 'STRING'
+                                types << Field.stringFieldType
                                 break
                             case CellType.BOOLEAN:
-                                types << 'BOOLEAN'
+                                types << Field.booleanFieldType
                                 break
                             case CellType.NUMERIC:
-                                types << 'NUMERIC'
+                                types << Field.numericFieldType
                                 break
                             default:
                                 throw new ExceptionGETL("Unknown type cell from $rowNum row $colNum col")
                         }
                     }
-                    if (types.size() != excelFields.size()) throw new ExceptionGETL("The number of fields in the header and in the next data line does not match")
+                    if (types.size() != excelFields.size())
+                        throw new ExceptionGETL("The number of fields in the header and in the next data line does not match")
+
                     for (int i = 0; i < excelFields.size(); i++) {
                         dataset.field << new Field(name: excelFields[i], type: types[i])
                     }
@@ -203,12 +214,12 @@ class ExcelDriver extends Driver {
                     }
                 }
 
-                LinkedHashMap<String, Object> updater = [:]
+                def updater = [:] as LinkedHashMap<String, Object>
                 cells.each { Cell cell ->
                     colNum++
                     int columnIndex = cell.columnIndex - offsetCells
                     if (columnIndex >= dataset.field.size()) return
-                    updater."${dataset.field.get(columnIndex).name}" = getCellValue(cell, dataset, columnIndex)
+                    updater.put("${dataset.field.get(columnIndex).name}".toString(), getCellValue(cell, dataset, columnIndex))
                 }
 
                 code.call(updater)

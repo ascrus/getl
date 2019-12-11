@@ -110,14 +110,17 @@ class ExcelDriverTest extends getl.test.GetlTest {
 
     @Test
     void testListName() {
-        assertEquals(listName, excelDataset.listName)
-
-        excelDataset.listName = null
+        excelDataset.listName = 'test'
+        excelDataset.listNumber = null
         excelDataset.rows()
+        assertEquals(0, excelDataset.listNumber)
     }
 
     @Test
-    void testListNameAsZero() {
-        excelDataset.listName = 0
+    void testListNumberAsZero() {
+        excelDataset.listName = null
+        excelDataset.listNumber = 0
+        excelDataset.rows()
+        assertEquals('test', excelDataset.listName)
     }
 }
