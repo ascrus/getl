@@ -43,7 +43,11 @@ class SynchronizeObject {
 
 	/** Clear counter value */
 	@Synchronized
-	clear  () { count = 0 }
+	clear  () {
+		count = 0
+		text = null
+		list.clear()
+	}
 
 	/** Increase counter value */
 	@Synchronized

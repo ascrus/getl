@@ -4,11 +4,13 @@ import getl.data.*
 import getl.jdbc.JDBCDriver
 import getl.jdbc.TableDataset
 import getl.proc.Flow
+import getl.stat.ProcessTime
 import getl.tfs.TDS
 import org.junit.Test
 
 import javax.sql.rowset.serial.SerialBlob
 import javax.sql.rowset.serial.SerialClob
+import java.sql.Timestamp
 
 /**
  * Created by ascru on 22.11.2016.
@@ -348,5 +350,62 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         def d = [:]
         c.call(r, d)
         assertEquals(r, d)
+    }
+
+    static final int countGenerateRandomRow = 100000
+
+    @Test
+    void testGenerateRandomRow() {
+        def d = new Dataset()
+        d.field('id') { type = bigintFieldType; isNull = false }
+        d.field('name') { length = 10; isNull = false }
+        d.field('code') { length = 2; isNull = false }
+        d.field('is_active') { type = booleanFieldType; isNull = false}
+        d.field('percent') { type = integerFieldType; isNull = false; minValue = 0; maxValue = 100 }
+        d.field('weight') { type = doubleFieldType; isNull = false}
+        d.field('count') { type = bigintFieldType; isNull = false }
+        d.field('value') { type = numericFieldType; length = 12; precision = 2; isNull = false}
+        d.field('open_date') { type = dateFieldType; isNull = false}
+        d.field('insert_time') { type = datetimeFieldType; isNull = false}
+
+        def code = GenerationUtils.GenerateRandomRow(d, ['id'],
+                [
+                    '#abs': true,
+                    code: [list: ['1', '2', '3', '4', '5']],
+                    open_date: [date: DateUtils.ParseDate('2019-12-01'), days: 30],
+                    insert_time: [date: DateUtils.ParseDate('2019-12-01'), seconds: 3600],
+                    weight: [abs: false]
+                ])
+
+        (1..10).each {
+            Map row = [id: it]
+            code.call(row)
+
+            assertEquals(it, row.id)
+            assertNotNull(row.name)
+            assertNotNull(row.code)
+            assertNotNull(row.is_active)
+            assertNotNull(row.percent)
+            assertNotNull(row.weight)
+            assertNotNull(row.count)
+            assertNotNull(row.value)
+            assertNotNull(row.open_date)
+            assertNotNull(row.insert_time)
+
+            assertTrue((row.name as String).length() <= 10)
+            assertTrue(row.code in ['1', '2', '3', '4', '5'])
+            assertTrue(row.percent >= 0 && row.percent <= 100)
+            assertTrue(row.count >= 0)
+            assertTrue(row.value >= 0)
+            assertTrue(row.open_date >= DateUtils.ParseDate('2019-12-01') && row.open_date <= DateUtils.ParseDate('2019-12-31'))
+            assertTrue(row.insert_time >= DateUtils.ParseDateTime('2019-12-01 00:00:00.000') && row.insert_time <= DateUtils.ParseDateTime('2019-12-01 01:00:00.000'))
+        }
+
+        def pt = new ProcessTime(name: "Generate random $countGenerateRandomRow rows")
+        (1..countGenerateRandomRow).each {
+            Map row = [id: it]
+            code.call(row)
+        }
+        pt.finish(countGenerateRandomRow)
     }
 }

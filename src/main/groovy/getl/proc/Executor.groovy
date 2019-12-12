@@ -162,7 +162,7 @@ class Executor {
 	 * @param code
 	 */
 	void runSingle(Closure code) {
-		run([1], 2, code)
+		run([1], 1, code)
 	}
 	
 	/**
@@ -232,6 +232,7 @@ class Executor {
 		exceptions.clear()
 		threadList.clear()
 		threadActive.clear()
+		counter.clear()
 
 		if (elements == null) elements = list
 		if (elements == null || elements.isEmpty()) throw new ExceptionGETL("List of items to process is empty!")
@@ -377,6 +378,7 @@ class Executor {
 		exceptions.clear()
 		threadList.clear()
 		threadActive.clear()
+		counter.clear()
 
 		if (countThread == null) countThread = countProc?:elements.size()
 
@@ -565,4 +567,9 @@ class Executor {
 	void callSynch(Closure cl) {
 		cl.call()
 	}
+
+	/** Synchronized counter for work between threads */
+	final def counter = new SynchronizeObject()
+	/** Synchronized counter for work between threads */
+	SynchronizeObject getCounter() { counter }
 }

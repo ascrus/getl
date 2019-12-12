@@ -3,7 +3,6 @@ package getl.utils
 import org.junit.Test
 
 import java.text.SimpleDateFormat
-import java.time.format.DateTimeFormatter
 
 /**
  * @author Alexsey Konstantinov
@@ -165,5 +164,25 @@ class DateUtilsTest extends getl.test.GetlTest {
         assertEquals(9529, DateUtils.DiffDate(d2, d1, 'HH', false))
         assertEquals(571741, DateUtils.DiffDate(d2, d1, 'mm', false))
         assertEquals(34304461, DateUtils.DiffDate(d2, d1, 'ss', false))
+    }
+
+    @Test
+    void testLastDateOfMonth() {
+        assertEquals(28, DateUtils.LastDayOfMonth(2019, 2))
+        assertEquals(29, DateUtils.LastDayOfMonth(2020, 2))
+
+        assertEquals(28, DateUtils.LastDayOfMonth(DateUtils.ParseDate('2019-02-15')))
+        assertEquals(29, DateUtils.LastDayOfMonth(DateUtils.ParseDate('2020-02-28')))
+
+        assertEquals(DateUtils.ParseDate('2019-02-28'), DateUtils.LastDateOfMonth(2019, 2))
+        assertEquals(DateUtils.ParseDate('2020-02-29'), DateUtils.LastDateOfMonth(2020, 2))
+
+        assertEquals(DateUtils.ParseDate('2019-02-28'), DateUtils.LastDateOfMonth(DateUtils.ParseDate('2019-02-15')))
+        assertEquals(DateUtils.ParseDate('2020-02-29'), DateUtils.LastDateOfMonth(DateUtils.ParseDate('2020-02-28')))
+    }
+
+    @Test
+    void testFirstDateOfMonth() {
+        assertEquals(DateUtils.ParseDate('2019-02-01'), DateUtils.FirstDateOfMonth(DateUtils.ParseDate('2019-02-15')))
     }
 }

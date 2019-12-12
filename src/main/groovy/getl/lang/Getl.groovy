@@ -109,10 +109,10 @@ class Getl extends Script {
                     runClass = Class.forName(className)
                 }
                 catch (Throwable e) {
-                    throw new ExceptionGETL("Class \"$className\" not found!")
+                    throw new ExceptionGETL("Class \"$className\" not found, error: ${e.message}!")
                 }
 
-                Getl eng = Getl.Dsl()
+                Getl eng = Dsl()
                 eng._params.mainClass = className
 
                 def initClassName = jobArgs.initclass as String
@@ -124,7 +124,7 @@ class Getl extends Script {
                         initClass = Class.forName(initClassName)
                     }
                     catch (Throwable e) {
-                        throw new ExceptionGETL("Class \"$initClassName\" not found!")
+                        throw new ExceptionGETL("Class \"$initClassName\" not found, error: ${e.message}!")
                     }
 
                     eng.runGroovyClass(initClass)
@@ -163,6 +163,7 @@ class Getl extends Script {
                 csv.eachRow {
                     if (it.name == processName) {
                         row = it
+                        //noinspection UnnecessaryQualifiedReference
                         directive = Closure.DONE
                     }
                 }
@@ -198,11 +199,11 @@ class Getl extends Script {
         _params.repHistoryPoints = new ConcurrentHashMap<String, SavePointManager>()
         _params.repFileManagers = new ConcurrentHashMap<String, Manager>()
 
-        _langOpts = _params.langOpts
-        _connections = _params.repConnections
-        _datasets = _params.repDatasets
-        _historypoints = _params.repHistoryPoints
-        _filemanagers = _params.repFileManagers
+        _langOpts = _params.langOpts as LangSpec
+        _connections = _params.repConnections as Map<String, Connection>
+        _datasets = _params.repDatasets as Map<String, Dataset>
+        _historypoints = _params.repHistoryPoints as Map<String, SavePointManager>
+        _filemanagers = _params.repFileManagers as Map<String, Manager>
 
         LISTCONNECTIONCLASSES = [
                 CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
@@ -312,11 +313,11 @@ class Getl extends Script {
     protected void setGetlParams(Map<String, Object> importParams) {
         _params = importParams
 
-        _langOpts = _params.langOpts
-        _connections = _params.repConnections
-        _datasets = _params.repDatasets
-        _historypoints = _params.repHistoryPoints
-        _filemanagers = _params.repFileManagers
+        _langOpts = _params.langOpts as LangSpec
+        _connections = _params.repConnections as Map<String, Connection>
+        _datasets = _params.repDatasets as Map<String, Dataset>
+        _historypoints = _params.repHistoryPoints as Map<String, SavePointManager>
+        _filemanagers = _params.repFileManagers as Map<String, Manager>
     }
 
     public static final String CSVCONNECTION = 'getl.csv.CSVConnection'
@@ -510,7 +511,7 @@ class Getl extends Script {
         String getGroupName() { _groupName }
         /** Group name */
         void setGroupName(String value) {
-            value = value?.trim().toLowerCase()
+            value = value?.trim()?.toLowerCase()
             if (value != null && value.length() == 0)
                 throw new ExceptionGETL('The group naming value cannot be empty!')
 
@@ -532,7 +533,7 @@ class Getl extends Script {
         String getObjectName() { _objectName }
         /** Object name */
         void setObjectName(String value) {
-            value = value?.trim().toLowerCase()
+            value = value?.trim()?.toLowerCase()
             if (value != null && value.length() == 0)
                 throw new ExceptionGETL('The object naming value cannot be empty!')
 
@@ -560,6 +561,7 @@ class Getl extends Script {
      * @param codePage encoding text (default UTF-8)
      * @return text from file
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     String textFromFile(String fileName, String codePage = 'UTF-8') {
         def path = FileUtils.ResourceFileName(fileName)
         def file = new File(path)
@@ -740,7 +742,7 @@ class Getl extends Script {
             if (!registration && langOpts.validRegisterObjects)
                 throw new ExceptionGETL("Connection \"$name\" is not registered!")
 
-            obj = Connection.CreateConnection(connection: connectionClassName) as Connection
+            obj = Connection.CreateConnection(connection: connectionClassName)
             obj.sysParams.dslThisObject = childThisObject
             obj.sysParams.dslOwnerObject = childOwnerObject
             obj.sysParams.dslNameObject = repName
@@ -765,7 +767,7 @@ class Getl extends Script {
                         c.sysParams.dslNameObject = repName
                         return c
                     }
-            )
+            ) as Connection
         }
 
         return obj
@@ -985,13 +987,13 @@ class Getl extends Script {
         def sourceTables = [:] as Map<String, String>
         sourceList.each { name ->
             parse.name = name as String
-            sourceTables.put(parse.objectName, name)
+            sourceTables.put(parse.objectName, parse.name)
         }
 
         def destTables = [:] as Map<String, String>
         destList.each { name ->
             parse.name = name as String
-            destTables.put(parse.objectName, name)
+            destTables.put(parse.objectName, parse.name)
         }
 
         def res = [] as List<ExecutorListElement>
@@ -1627,7 +1629,7 @@ class Getl extends Script {
     List<String> listFilemanagers(List filemanagerClasses,
                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                          Closure<Boolean> filter = null) {
-        listFilemanagers(null, filemanagerList, filter)
+        listFilemanagers(null, filemanagerClasses, filter)
     }
 
     /**
@@ -1739,7 +1741,7 @@ class Getl extends Script {
                         f.sysParams.dslNameObject = repName
                         return f
                     }
-            )
+            ) as Manager
         }
 
         return obj
@@ -1863,47 +1865,10 @@ class Getl extends Script {
         runGroovyClass(groovyClass, false, vars)
     }
 
-    /** Run getl script */
-    void runGetl(Getl script, Boolean runOnce = false, Map vars = [:]) {
-        def className = script.getClass().name
-        def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
-        if (previouslyRun && BoolUtils.IsValue(runOnce)) return
-
-        script.setGetlParams(_params)
-        script.setLangOpts(langOpts)
-        if (vars != null && !vars.isEmpty()) {
-            fillFieldFromVars(script, vars)
-        }
-
-        def pt = startProcess("Execution groovy class $className")
-        script.run()
-        pt.finish()
-
-        if (!previouslyRun) executedClasses.addToList(className)
-    }
-
-    /** Run getl script */
-    void runGetl(Getl script, Map vars) {
-        runGetl(script, false, vars)
-    }
-
-    /** Run getl script */
-    void runGetl(Getl script, Boolean runOnce, Closure vars) {
-        def cfg = new groovy.util.ConfigSlurper()
-        def cl = PrepareClosure(childOwnerObject, childThisObject, vars, vars)
-        def map = cfg.parse(new ClosureScript(closure: cl))
-        runGetl(script, runOnce, map)
-    }
-
-    /** Run getl script */
-    void runGetl(Getl script, Closure vars) {
-        runGetl(script, false, vars)
-    }
-
     /** Fill script field property from external arguments */
     static protected void fillFieldFromVars(Getl script, Map vars) {
         vars.each { key, value ->
-            MetaProperty prop = script.hasProperty(key)
+            MetaProperty prop = script.hasProperty(key as String)
             if (prop == null)
                 throw new ExceptionGETL("Field \"$key\" not defined in script!")
 
@@ -2026,18 +1991,18 @@ class Getl extends Script {
         if (Thread.currentThread() instanceof ExecutorThread)
             throw new ExceptionGETL('Changing options is not supported in the thread!')
 
-        def processDataset = langOpts.processControlDataset
-        def checkOnStart = langOpts.checkProcessOnStart
+        def processDataset = _langOpts.processControlDataset
+        def checkOnStart = _langOpts.checkProcessOnStart
 
-        runClosure(langOpts, cl)
+        runClosure(_langOpts, cl)
 
-        if (langOpts.processControlDataset != null && langOpts.checkProcessOnStart) {
-            if (processDataset != langOpts.processControlDataset || !checkOnStart) {
+        if (_langOpts.processControlDataset != null && _langOpts.checkProcessOnStart) {
+            if (processDataset != _langOpts.processControlDataset || !checkOnStart) {
                 allowProcess(true)
             }
         }
 
-        return langOpts
+        return _langOpts
     }
 
     /** Configuration options */
@@ -2091,6 +2056,7 @@ class Getl extends Script {
      * @param obj object to clone
      * @return clone object
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     Connection cloneConnection(Connection obj) {
         if (obj == null) throw new ExceptionGETL('Need object value!')
         return obj.cloneConnection()
@@ -2119,6 +2085,7 @@ class Getl extends Script {
      * @param con used connection for new dataset
      * @return clone object
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     Dataset cloneDataset(Dataset obj, Connection con = null) {
         if (obj == null) throw new ExceptionGETL('Need object value!')
         return obj.cloneDataset(con)
@@ -2895,6 +2862,7 @@ class Getl extends Script {
     }
 
     /** Temporary database default connection */
+    @SuppressWarnings("GrMethodMayBeStatic")
     TDS embeddedConnection() {
         TDS.storage
     }
@@ -3451,6 +3419,7 @@ class Getl extends Script {
     }
 
     /** Temporary CSV file current connection */
+    @SuppressWarnings("GrMethodMayBeStatic")
     TFS csvTempConnection() {
 //        defaultFileConnection(CSVTEMPDATASET) as TFS
         TFS.storage
@@ -3652,6 +3621,7 @@ class Getl extends Script {
      * @param obj object to clone
      * @return clone object
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     Manager cloneFilemanager(Manager obj) {
         if (obj == null) throw new ExceptionGETL('Need object value!')
         return obj.cloneManager()
@@ -3914,9 +3884,10 @@ class Getl extends Script {
      * @param con used connection for new history point manager
      * @return clone object
      */
-    SavePointManager cloneHistorypoint(SavePointManager obj, Connection con = null) {
+    @SuppressWarnings("GrMethodMayBeStatic")
+    SavePointManager cloneHistorypoint(SavePointManager obj, JDBCConnection con = null) {
         if (obj == null) throw new ExceptionGETL('Need object value!')
-        return obj.cloneSavePointManager(con)
+        return obj.cloneSavePointManager(con) as SavePointManager
     }
 
     /** Copying files according to the specified rules */
@@ -3963,6 +3934,7 @@ class Getl extends Script {
     }
 
     /** Pause current process */
+    @SuppressWarnings("GrMethodMayBeStatic")
     void pause(Long timeout) {
         Thread.currentThread().wait(timeout)
     }

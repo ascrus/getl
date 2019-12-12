@@ -30,8 +30,6 @@ import getl.jdbc.*
 import groovy.json.JsonSlurper
 import org.codehaus.groovy.control.CompilerConfiguration
 
-import javax.sql.rowset.serial.SerialBlob
-import javax.sql.rowset.serial.SerialClob
 
 /**
  * Generation code library functions class 
@@ -592,6 +590,11 @@ class GenerationUtils {
 	static Date GenerateDate(int days) {
         return DateUtils.AddDate("dd", -GenerateInt(0, days), DateUtils.CurrentDate())
 	}
+
+	@groovy.transform.CompileStatic
+	static Date GenerateDate(Date date, int days) {
+		return DateUtils.AddDate("dd", GenerateInt(0, days), date)
+	}
 	
 	@groovy.transform.CompileStatic
 	static Date GenerateDateTime() {
@@ -601,6 +604,11 @@ class GenerationUtils {
 	@groovy.transform.CompileStatic
 	static Date GenerateDateTime(int seconds) {
         return DateUtils.AddDate("ss", -GenerateInt(0, seconds), DateUtils.Now())
+	}
+
+	@groovy.transform.CompileStatic
+	static Date GenerateDateTime(Date date, int seconds) {
+		return DateUtils.AddDate("ss", GenerateInt(0, seconds), date)
 	}
 	
 	@groovy.transform.CompileStatic
@@ -712,6 +720,193 @@ class GenerationUtils {
 		}
 
         return row
+	}
+
+	/**
+	 * Generate closure code generating random dataset field values
+	 * <br><br>The rules syntax is:
+	 * <br>#abs: only generate positive numbers for all number fields (true or false)
+	 * <br>Use the rule for a specific field: field_name = [rule: value, rule: value, ...]
+	 * <br><br>Field rules (the default value is from the field):
+	 * <ul>
+	 *     <li>isNull: allow generate null value</li>
+	 *     <li>length: generate value of specified length for string and decimal fields</li>
+	 *     <li>precision: generate precision decimal fields of specified length</li>
+	 *     <li>minValue and maxValue: generate integer numeric fields within specified boundaries</li>
+	 *     <li>date: generate fields with date and datetime starting from the specified date</li>
+	 *     <li>days: generate fields with a date within the specified number of days from the current or specified date</li>
+	 *     <li>seconds: generate fields with datetime within the specified number of seconds from the current or specified date</li>
+	 *     <li>list: generate for the text field a value from the specified list</li>
+	 * </ul>
+	 * Example:
+	 * <pre>
+	 * def code = GenerationUtils.GenerateRandomRow(dataset, ['field1'],
+	 *     ['#abs': true, field2: [minValue1:1,maxValue:100]])
+	 * def row = [:]
+	 * code(row)
+	 * </pre>
+	 * @param dataset required for filling the dataset
+	 * @param excludeFields list of field names excluded from generation
+	 * @param rules additional rules for generating values
+	 * @return code for generating a record with field values
+	 */
+	@groovy.transform.CompileStatic
+	static Closure GenerateRandomRow(Dataset dataset, List excludeFields = [], Map rules = [:]) {
+		if (excludeFields == null) excludeFields = [] as List<String>
+		excludeFields = (excludeFields as List<String>)*.toLowerCase()
+		if (rules == null) rules = [:]
+		def absAll = BoolUtils.IsValue(rules.get('#abs'))
+
+		def sb = new StringBuilder()
+		sb << '{ Map row ->\n'
+		sb << '  generateRow(row)\n'
+		sb << '}\n'
+		sb << '@groovy.transform.CompileStatic\n'
+		sb << 'static void generateRow(final Map row) {\n'
+		def count = 0
+
+		dataset.field.each { Field f ->
+			def fieldName = f.name.toLowerCase()
+			if (fieldName in excludeFields) return
+			count++
+
+			def isNull = f.isNull
+			def length = f.length
+			def precision = f.precision
+			def minValue = f.minValue
+			def maxValue = f.maxValue
+
+			def rule = (rules.get(fieldName)?:[:]) as Map<String, Object>
+			if (rule.isNull != null) isNull = BoolUtils.IsValue(rule.isNull)
+			if (rule.containsKey('length')) length = rule.length as Integer
+			if (rule.containsKey('precision')) precision = rule.precision as Integer
+			if (rule.containsKey('minValue')) minValue = rule.minValue as Integer
+			if (rule.containsKey('maxValue')) maxValue = rule.maxValue as Integer
+			def date = rule.date as Date
+			def days = rule.days as Integer
+			def seconds = rule.seconds as Integer
+			def list = rule.list as List<String>
+			def abs = BoolUtils.IsValue(rule.abs, absAll)
+
+			String func
+			switch (f.type) {
+				case Field.integerFieldType: case Field.bigintFieldType:
+					def absFunc = (abs)?'.abs()':''
+					def generate = (minValue != null && maxValue != null)?
+							"getl.utils.GenerationUtils.GenerateInt($minValue, $maxValue)":
+							"getl.utils.GenerationUtils.GenerateInt()$absFunc"
+					if (isNull)
+						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as Integer)"
+					else
+						func = generate
+
+					break
+
+				case Field.booleanFieldType:
+					def generate = "getl.utils.GenerationUtils.GenerateBoolean()"
+					if (isNull)
+						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as Boolean)"
+					else
+						func = generate
+
+					break
+
+				case Field.dateFieldType:
+					String generate
+					if (date != null && days != null) {
+						generate = "getl.utils.GenerationUtils.GenerateDate(new Date(${date.time}), $days)"
+					}
+					else {
+					 	if (days != null)
+							generate = "getl.utils.GenerationUtils.GenerateDate($days)"
+						else
+							generate = "getl.utils.GenerationUtils.GenerateDate()"
+					}
+
+					if (isNull)
+						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as Date)"
+					else
+						func = generate
+
+					break
+
+				case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+					String generate
+					if (date != null && seconds != null) {
+						generate = "getl.utils.GenerationUtils.GenerateDateTime(new Date(${date.time}), $seconds)"
+					}
+					else {
+						if (seconds != null)
+							generate = "getl.utils.GenerationUtils.GenerateDateTime($seconds)"
+						else
+							generate = "getl.utils.GenerationUtils.GenerateDateTime()"
+					}
+
+					if (isNull)
+						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as Date)"
+					else
+						func = generate
+
+					break
+
+				case Field.doubleFieldType:
+					def absFunc = (abs)?'.abs()':''
+					def generate = "getl.utils.GenerationUtils.GenerateDouble()$absFunc"
+					if (isNull)
+						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as Double)"
+					else
+						func = generate
+
+					break
+
+				case Field.numericFieldType:
+					def absFunc = (abs)?'.abs()':''
+					String generate
+					if (length != null) {
+						if (precision != null)
+							generate = "getl.utils.GenerationUtils.GenerateNumeric($length, $precision)$absFunc"
+						else
+							generate = "getl.utils.GenerationUtils.GenerateNumeric($length)$absFunc"
+					}
+					else {
+						generate = "getl.utils.GenerationUtils.GenerateNumeric()$absFunc"
+					}
+
+					if (isNull)
+						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as BigDecimal)"
+					else
+						func = generate
+
+					break
+
+				case Field.stringFieldType:
+					String generate
+					if (list != null) {
+						sb << "  final def ${fieldName}_list = [${ListUtils.QuoteList(list, '\'').join(',')}]\n"
+						generate = "${fieldName}_list[getl.utils.GenerationUtils.GenerateInt(0, ${list.size() - 1})]"
+					}
+					else
+						generate = "getl.utils.GenerationUtils.GenerateString(${length?:255})"
+
+					if (isNull)
+						func = "(getl.utils.GenerationUtils.GenerateBoolean())?$generate:(null as String)"
+					else
+						func = generate
+
+					break
+
+				default:
+					throw new ExceptionGETL("Generation of type \"${f.type}\" for field \"${f.name}\" is not supported!")
+			}
+			sb << "  row.put('$fieldName', $func)\n"
+		}
+		if (count == 0)
+			throw new ExceptionGETL('No fields were found for generation!')
+		sb << '}'
+
+//		println sb.toString()
+
+		return EvalGroovyClosure(sb.toString())
 	}
 	
 	/**

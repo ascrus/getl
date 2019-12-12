@@ -306,7 +306,7 @@ class DateUtils {
 	static Date TruncTime(int part, Date date) {
 		if (date == null) return null
 		Calendar c = Calendar.getInstance()
-		c.setTime((Date)(date.clone()))
+		c.setTime(date)
 		//noinspection GroovyFallthrough,GroovyDuplicateSwitchBranch
 		switch (part) {
 			case Calendar.HOUR:
@@ -637,5 +637,83 @@ class DateUtils {
 		}
 
 		return [start: start, finish: finish]
+	}
+
+	/**
+	 * Return last day in specified month
+	 * @param year specified year
+	 * @param month specified month
+	 * @return last day of month
+	 */
+	static Integer LastDayOfMonth(Integer year, Integer month) {
+		Calendar cal = Calendar.getInstance()
+		cal.set(year, month - 1, 1)
+		cal.add(Calendar.MONTH, 1)
+		cal.add(Calendar.DAY_OF_MONTH, -1)
+
+		return cal.get(Calendar.DAY_OF_MONTH)
+	}
+
+	/**
+	 * Return last day in specified month
+	 * @param year specified year
+	 * @param month specified month
+	 * @return last day of month
+	 */
+	static Integer LastDayOfMonth(Date date) {
+		Calendar cal = Calendar.getInstance()
+		cal.setTime(date)
+		cal.clearTime()
+		cal.set(Calendar.DAY_OF_MONTH, 1)
+		cal.add(Calendar.MONTH, 1)
+		cal.add(Calendar.DAY_OF_MONTH, -1)
+
+		return cal.get(Calendar.DAY_OF_MONTH)
+	}
+
+	/**
+	 * Return last day in specified month
+	 * @param year specified year
+	 * @param month specified month
+	 * @return last date of month
+	 */
+	static Date LastDateOfMonth(Integer year, Integer month) {
+		Calendar cal = Calendar.getInstance()
+		cal.set(year, month - 1, 1)
+		cal.clearTime()
+		cal.add(Calendar.MONTH, 1)
+		cal.add(Calendar.DAY_OF_MONTH, -1)
+
+		return cal.time
+	}
+
+	/**
+	 * Return last day in specified month
+	 * @param date specified date
+	 * @return last date of month
+	 */
+	static Date LastDateOfMonth(Date date) {
+		Calendar cal = Calendar.getInstance()
+		cal.setTime(date)
+		cal.clearTime()
+		cal.set(Calendar.DAY_OF_MONTH, 1)
+		cal.add(Calendar.MONTH, 1)
+		cal.add(Calendar.DAY_OF_MONTH, -1)
+
+		return cal.time
+	}
+
+	/**
+	 * Return first day in specified month
+	 * @param date specified date
+	 * @return first date of month
+	 */
+	static Date FirstDateOfMonth(Date date) {
+		Calendar cal = Calendar.getInstance()
+		cal.setTime(date)
+		cal.clearTime()
+		cal.set(Calendar.DAY_OF_MONTH, 1)
+
+		return cal.time
 	}
 }
