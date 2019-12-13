@@ -35,10 +35,13 @@ import groovy.transform.Synchronized
  *
  */
 class Sequence {
-	/**
-	 * Connection for use 
-	 */
+	/** Connection for use */
 	public Connection connection
+
+	/** Use specified connection */
+	void useConnection(Connection value) {
+		connection = value
+	}
 	
 	/**
 	 * Sequence name

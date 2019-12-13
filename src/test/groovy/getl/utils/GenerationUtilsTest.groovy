@@ -358,7 +358,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
     void testGenerateRandomRow() {
         def d = new Dataset()
         d.field('id') { type = bigintFieldType; isNull = false }
-        d.field('name') { length = 10; isNull = false }
+        d.field('name') { length = 20; isNull = false }
         d.field('code') { length = 2; isNull = false }
         d.field('is_active') { type = booleanFieldType; isNull = false}
         d.field('percent') { type = integerFieldType; isNull = false; minValue = 0; maxValue = 100 }
@@ -370,7 +370,10 @@ class GenerationUtilsTest extends getl.test.GetlTest {
 
         def code = GenerationUtils.GenerateRandomRow(d, ['id'],
                 [
-                    '#abs': true,
+                    _abs_: true,
+                    _minValue_: -100,
+                    _maxValue_: 100000,
+                    name: [divLength: 2],
                     code: [list: ['1', '2', '3', '4', '5']],
                     open_date: [date: DateUtils.ParseDate('2019-12-01'), days: 30],
                     insert_time: [date: DateUtils.ParseDate('2019-12-01'), seconds: 3600],
@@ -395,7 +398,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
             assertTrue((row.name as String).length() <= 10)
             assertTrue(row.code in ['1', '2', '3', '4', '5'])
             assertTrue(row.percent >= 0 && row.percent <= 100)
-            assertTrue(row.count >= 0)
+            assertTrue(row.count >= 0 && row.count <= 100000)
             assertTrue(row.value >= 0)
             assertTrue(row.open_date >= DateUtils.ParseDate('2019-12-01') && row.open_date <= DateUtils.ParseDate('2019-12-31'))
             assertTrue(row.insert_time >= DateUtils.ParseDateTime('2019-12-01 00:00:00.000') && row.insert_time <= DateUtils.ParseDateTime('2019-12-01 01:00:00.000'))

@@ -92,6 +92,25 @@ class NumericUtils {
 		
 		sb.toString().hashCode() & 0xFF
 	}
+
+	@SuppressWarnings(["UnnecessaryQualifiedReference", "UnnecessaryQualifiedReference"])
+	static long Hash(Object... args) {
+		StringBuilder sb = new StringBuilder()
+		args.each { def a ->
+			if (a instanceof Date) {
+				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", a as Date))
+			}
+			else if (a instanceof java.sql.Timestamp) {
+				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", a as java.sql.Timestamp))
+			}
+			else {
+				sb.append(a.toString())
+			}
+			sb.append('|')
+		}
+
+		sb.toString().hashCode() & 0xFF
+	}
 	
 	/**
 	 * Calc segment number by value list as hash algorithm 
@@ -102,6 +121,18 @@ class NumericUtils {
 	static int SegmentByHash(int countSegment, List args) {
 		long hash = Hash(args)
 		
+		return (hash % countSegment).intValue()
+	}
+
+	/**
+	 * Calc segment number by value list as hash algorithm
+	 * @param countSegment
+	 * @param args
+	 * @return
+	 */
+	static int SegmentByHash(int countSegment, Object... args) {
+		long hash = Hash(args)
+
 		return (hash % countSegment).intValue()
 	}
 

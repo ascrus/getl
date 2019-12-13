@@ -154,10 +154,9 @@ class Getl extends Script {
             if (langOpts.processControlDataset instanceof TableDataset) {
                 def table = langOpts.processControlDataset as TableDataset
                 def row = sqlQueryRow(table.connection as JDBCConnection, "SELECT enabled FROM ${table.fullNameDataset()} WHERE name = '$processName'")
-                if (row!= null && !row.isEmpty())
+                if (row != null && !row.isEmpty())
                     res = BoolUtils.IsValue(row.enabled)
-            }
-            else {
+            } else {
                 def csv = langOpts.processControlDataset as CSVDataset
                 def row = null
                 csv.eachRow {
@@ -279,7 +278,7 @@ class Getl extends Script {
                 @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         if (ownerObject != null) _ownerObject = ownerObject
         if (cl != null) {
-            def code = cl.rehydrate(this, this, _ownerObject?:this)
+            def code = cl.rehydrate(this, this, _ownerObject ?: this)
             code.resolveStrategy = childDelegate
             if (parameters != null) code.properties.putAll(parameters)
             code.call(this)
@@ -304,7 +303,7 @@ class Getl extends Script {
     /** Owner object for child objects  */
     def getChildOwnerObject() { this }
     /** This object for child objects */
-    def getChildThisObject() { _ownerObject?:this }
+    def getChildThisObject() { _ownerObject ?: this }
     /** Delegate method for child objects */
     protected static int childDelegate = Closure.DELEGATE_FIRST
 
@@ -388,7 +387,7 @@ class Getl extends Script {
     /** Fix start process */
     ProcessTime startProcess(String name) {
         return new ProcessTime(name: name,
-                logLevel: (langOpts.processTimeTracing)?langOpts.processTimeLevelLog:Level.OFF,
+                logLevel: (langOpts.processTimeTracing) ? langOpts.processTimeLevelLog : Level.OFF,
                 debug: langOpts.processTimeDebug)
     }
 
@@ -496,8 +495,7 @@ class Getl extends Script {
                     _objectName = value.substring(i + 1)
                 else
                     _objectName = null
-            }
-            else {
+            } else {
                 _groupName = null
                 _objectName = value
             }
@@ -517,11 +515,9 @@ class Getl extends Script {
 
             if (value == null) {
                 _name = _objectName
-            }
-            else if (_objectName != null) {
+            } else if (_objectName != null) {
                 _name = value + ':' + _objectName
-            }
-            else {
+            } else {
                 _name = null
             }
             _groupName = value
@@ -539,11 +535,9 @@ class Getl extends Script {
 
             if (value == null) {
                 _name = null
-            }
-            else if (_groupName != null) {
+            } else if (_groupName != null) {
                 _name = _groupName + ':' + value
-            }
-            else {
+            } else {
                 _name = value
             }
             _objectName = value
@@ -570,7 +564,7 @@ class Getl extends Script {
         if (!file.isFile())
             throw new ExceptionGETL("File $fileName not file!")
 
-        return file.getText(codePage?:'UTF-8')
+        return file.getText(codePage ?: 'UTF-8')
     }
 
     /** Object link to connections repository */
@@ -589,7 +583,7 @@ class Getl extends Script {
     @Synchronized
     List<String> listConnections(String mask = null, List connectionClasses = null,
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
-                                                   Closure<Boolean> filter = null) {
+                                         Closure<Boolean> filter = null) {
         (connectionClasses as List<String>)?.each {
             if (!(it in LISTCONNECTIONCLASSES))
                 throw new ExceptionGETL("\"$it\" is not connection class!")
@@ -599,9 +593,9 @@ class Getl extends Script {
         def classList = connectionClasses as List<String>
 
         def masknames = parseName(mask)
-        def maskgroup = masknames.groupName?:filteringGroup
+        def maskgroup = masknames.groupName ?: filteringGroup
         def maskobject = masknames.objectName
-        def path = (maskobject != null)?new Path(mask: maskobject):null
+        def path = (maskobject != null) ? new Path(mask: maskobject) : null
         def names = new ParseObjectName()
 
         connections.each { name, obj ->
@@ -626,7 +620,7 @@ class Getl extends Script {
      */
     List<String> listConnections(List connectionClasses,
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
-                                        Closure<Boolean> filter = null) {
+                                         Closure<Boolean> filter = null) {
         listConnections(null, connectionClasses, filter)
     }
 
@@ -636,7 +630,7 @@ class Getl extends Script {
      * @return list of connection names according to specified conditions
      */
     List<String> listConnections(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
-                                        Closure<Boolean> filter) {
+                                         Closure<Boolean> filter) {
         listConnections(null, null, filter)
     }
 
@@ -719,7 +713,7 @@ class Getl extends Script {
     protected Connection registerConnection(String connectionClassName, String name, Boolean registration = false) {
         registration = BoolUtils.IsValue(registration)
 
-        if (connectionClassName ==  null && registration)
+        if (connectionClassName == null && registration)
             throw new ExceptionGETL('Connection class name cannot be null!')
 
         if (connectionClassName != null && !(connectionClassName in LISTCONNECTIONCLASSES))
@@ -747,8 +741,7 @@ class Getl extends Script {
             obj.sysParams.dslOwnerObject = childOwnerObject
             obj.sysParams.dslNameObject = repName
             connections.put(repName, obj)
-        }
-        else {
+        } else {
             if (registration)
                 throw new ExceptionGETL("Connection \"$name\" already registered for class \"${obj.getClass().name}\"!")
             else {
@@ -853,8 +846,7 @@ class Getl extends Script {
                 name = type + "('" + dataset.sysParams.dslNameObject + "')"
             else
                 name = type + ' ' + name
-        }
-        else {
+        } else {
             type = dataset.getClass().simpleName
             name = type + ' ' + name
         }
@@ -872,7 +864,7 @@ class Getl extends Script {
     @Synchronized
     List<String> listDatasets(String mask = null, List datasetClasses = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
-                                             Closure<Boolean> filter = null) {
+                                      Closure<Boolean> filter = null) {
         (datasetClasses as List<String>)?.each {
             if (!(it in LISTDATASETCLASSES))
                 throw new ExceptionGETL("\"$it\" is not dataset class!")
@@ -882,9 +874,9 @@ class Getl extends Script {
         def classList = datasetClasses as List<String>
 
         def masknames = parseName(mask)
-        def maskgroup = masknames.groupName?:filteringGroup
+        def maskgroup = masknames.groupName ?: filteringGroup
         def maskobject = masknames.objectName
-        def path = (maskobject != null)?new Path(mask: maskobject):null
+        def path = (maskobject != null) ? new Path(mask: maskobject) : null
         def names = new ParseObjectName()
 
         datasets.each { name, obj ->
@@ -909,7 +901,7 @@ class Getl extends Script {
      */
     List<String> listDatasets(List datasetClasses,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
-                                     Closure<Boolean> filter = null) {
+                                      Closure<Boolean> filter = null) {
         listDatasets(null, datasetClasses, filter)
     }
 
@@ -919,7 +911,7 @@ class Getl extends Script {
      * @return list of dataset names according to specified conditions
      */
     List<String> listDatasets(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
-                                     Closure<Boolean> filter) {
+                                      Closure<Boolean> filter) {
         listDatasets(null, null, filter)
     }
 
@@ -978,7 +970,7 @@ class Getl extends Script {
      */
     List<ExecutorListElement> linkDatasets(List sourceList, List destList,
                                            @ClosureParams(value = SimpleType, options = ['java.lang.String'])
-                                               Closure<Boolean> filter = null) {
+                                                   Closure<Boolean> filter = null) {
         if (sourceList == null) throw new ExceptionGETL('Required to specify the value of the source group name!')
         if (destList == null) throw new ExceptionGETL('Required to specify the value of the destination group name!')
 
@@ -1070,7 +1062,7 @@ class Getl extends Script {
     /** Set default connection for use in datasets */
     @Synchronized
     protected void setDefaultConnection(String datasetClassName, Dataset ds) {
-        if (datasetClassName ==  null)
+        if (datasetClassName == null)
             throw new ExceptionGETL('Dataset class name cannot be null!')
         if (!(datasetClassName in LISTDATASETCLASSES))
             throw new ExceptionGETL("$datasetClassName is not dataset class!")
@@ -1078,12 +1070,10 @@ class Getl extends Script {
         if (ds instanceof JDBCDataset) {
             def con = defaultJdbcConnection(datasetClassName)
             if (con != null) ds.connection = con
-        }
-        else if (ds instanceof FileDataset) {
+        } else if (ds instanceof FileDataset) {
             def con = defaultFileConnection(datasetClassName)
             if (con != null) ds.connection = con
-        }
-        else {
+        } else {
             def con = defaultOtherConnection(datasetClassName)
             if (con != null) ds.connection = con
         }
@@ -1213,7 +1203,7 @@ class Getl extends Script {
     protected Dataset registerDataset(Connection connection, String datasetClassName, String name, Boolean registration = false) {
         registration = BoolUtils.IsValue(registration)
 
-        if (registration && datasetClassName ==  null)
+        if (registration && datasetClassName == null)
             throw new ExceptionGETL('Dataset class name cannot be null!')
         if (datasetClassName != null && !(datasetClassName in LISTDATASETCLASSES))
             throw new ExceptionGETL("$datasetClassName is not dataset class!")
@@ -1263,13 +1253,11 @@ class Getl extends Script {
 
             if (connection != null) {
                 obj.connection = connection
-            }
-            else {
+            } else {
                 setDefaultConnection(datasetClassName, obj)
             }
             datasets.put(repName, obj)
-        }
-        else {
+        } else {
             if (registration)
                 throw new ExceptionGETL("Dataset \"$name\" already registered for class \"${obj.getClass().name}\"!")
             else {
@@ -1302,8 +1290,7 @@ class Getl extends Script {
                             return d
                         }
                 ) as Dataset
-            }
-            else {
+            } else {
                 obj = thread.registerCloneObject('datasets', obj,
                         {
                             def d = (it as Dataset).cloneDataset()
@@ -1370,8 +1357,8 @@ class Getl extends Script {
      */
     @Synchronized
     void unregisterDataset(String mask = null, List datasetClasses = null,
-                              @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
-                                      Closure<Boolean> filter = null) {
+                           @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
+                                   Closure<Boolean> filter = null) {
         def list = listDatasets(mask, datasetClasses, filter)
         list.each { name ->
             datasets.remove(name)
@@ -1395,9 +1382,9 @@ class Getl extends Script {
         def res = [] as List<String>
 
         def masknames = parseName(mask)
-        def maskgroup = masknames.groupName?:filteringGroup
+        def maskgroup = masknames.groupName ?: filteringGroup
         def maskobject = masknames.objectName
-        def path = (maskobject != null)?new Path(mask: maskobject):null
+        def path = (maskobject != null) ? new Path(mask: maskobject) : null
         def names = new ParseObjectName()
 
         historyPoints.each { String name, SavePointManager obj ->
@@ -1468,8 +1455,7 @@ class Getl extends Script {
                         }
                 ) as JDBCConnection
             }
-        }
-        else {
+        } else {
             def repName = repObjectName(name)
             obj = historyPoints.get(repName)
             if (obj == null) {
@@ -1508,8 +1494,7 @@ class Getl extends Script {
                                 return p
                             }
                     ) as SavePointManager
-                }
-                else {
+                } else {
                     obj = thread.registerCloneObject('historypoints', obj,
                             {
                                 def p = (it as SavePointManager).cloneSavePointManager()
@@ -1591,7 +1576,7 @@ class Getl extends Script {
     @Synchronized
     List<String> listFilemanagers(String mask = null, List filemanagerClasses = null,
                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
-                                                 Closure<Boolean> filter = null) {
+                                          Closure<Boolean> filter = null) {
         (filemanagerClasses as List<String>)?.each {
             if (!(it in LISTFILEMANAGERCLASSES))
                 throw new ExceptionGETL("\"$it\" is not file manager class!")
@@ -1601,9 +1586,9 @@ class Getl extends Script {
         def classList = filemanagerClasses as List<String>
 
         def masknames = parseName(mask)
-        def maskgroup = masknames.groupName?:filteringGroup
+        def maskgroup = masknames.groupName ?: filteringGroup
         def maskobject = masknames.objectName
-        def path = (maskobject != null)?new Path(mask: maskobject):null
+        def path = (maskobject != null) ? new Path(mask: maskobject) : null
         def names = new ParseObjectName()
 
         fileManagers.each { String name, Manager obj ->
@@ -1628,7 +1613,7 @@ class Getl extends Script {
      */
     List<String> listFilemanagers(List filemanagerClasses,
                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
-                                         Closure<Boolean> filter = null) {
+                                          Closure<Boolean> filter = null) {
         listFilemanagers(null, filemanagerClasses, filter)
     }
 
@@ -1683,7 +1668,7 @@ class Getl extends Script {
      * Process all repository file managers
      * @param cl processing code
      */
-    void processFilemanagers(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure  cl) {
+    void processFilemanagers(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         processFilemanagers(null, null, cl)
     }
 
@@ -1692,7 +1677,7 @@ class Getl extends Script {
     protected Manager registerFileManager(String fileManagerClassName, String name, Boolean registration = false) {
         registration = BoolUtils.IsValue(registration)
 
-        if (registration && fileManagerClassName ==  null)
+        if (registration && fileManagerClassName == null)
             throw new ExceptionGETL('File manager class name cannot be null!')
         if (fileManagerClassName != null && !(fileManagerClassName in LISTFILEMANAGERCLASSES))
             throw new ExceptionGETL("$fileManagerClassName is not file manager class!")
@@ -1721,8 +1706,7 @@ class Getl extends Script {
             obj.sysParams.dslOwnerObject = childOwnerObject
             obj.sysParams.dslNameObject = repName
             fileManagers.put(repName, obj)
-        }
-        else {
+        } else {
             if (registration)
                 throw new ExceptionGETL("File manager \"$name\" already registered for class \"${obj.getClass().name}\"!")
             else {
@@ -1786,8 +1770,8 @@ class Getl extends Script {
 
     @Synchronized
     void unregisterFileManager(String mask = null, List filemanagerClasses = null,
-                           @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
-                                   Closure<Boolean> filter = null) {
+                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
+                                       Closure<Boolean> filter = null) {
         def list = listFilemanagers(mask, filemanagerClasses, filter)
         list.each { name ->
             fileManagers.remove(name)
@@ -1828,15 +1812,14 @@ class Getl extends Script {
         def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
         if (previouslyRun && BoolUtils.IsValue(runOnce)) return
 
-        def script = (GroovyObject)groovyClass.newInstance() as Script
+        def script = (GroovyObject) groovyClass.newInstance() as Script
         if (script instanceof Getl) {
             def scriptGetl = script as Getl
             scriptGetl.setGetlParams(_params)
             if (vars != null && !vars.isEmpty()) {
                 fillFieldFromVars(scriptGetl, vars)
             }
-        }
-        else if (vars != null && !vars.isEmpty()) {
+        } else if (vars != null && !vars.isEmpty()) {
             script.binding = new Binding(vars)
         }
 
@@ -2041,8 +2024,8 @@ class Getl extends Script {
      * @return connection object
      */
     Connection connection(String name,
-                                  @DelegatesTo(Connection)
-                                  @ClosureParams(value = SimpleType, options = ['getl.data.Connection']) Closure cl = null) {
+                          @DelegatesTo(Connection)
+                          @ClosureParams(value = SimpleType, options = ['getl.data.Connection']) Closure cl = null) {
         if (name == null) throw new ExceptionGETL('Need connection name value!')
 
         def parent = registerConnection(null, name, false) as Connection
@@ -2098,8 +2081,8 @@ class Getl extends Script {
      * @return jdbc connection object
      */
     JDBCConnection jdbcConnection(String name,
-                               @DelegatesTo(JDBCConnection)
-                               @ClosureParams(value = SimpleType, options = ['getl.jdbc.JDBCConnection']) Closure cl = null) {
+                                  @DelegatesTo(JDBCConnection)
+                                  @ClosureParams(value = SimpleType, options = ['getl.jdbc.JDBCConnection']) Closure cl = null) {
         if (name == null) throw new ExceptionGETL('Need connection name value!')
 
         def parent = registerConnection(null, name, false) as Connection
@@ -2117,8 +2100,8 @@ class Getl extends Script {
      * @return jdbc table object
      */
     TableDataset jdbcTable(String name,
-                                   @DelegatesTo(TableDataset)
-                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset']) Closure cl = null) {
+                           @DelegatesTo(TableDataset)
+                           @ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset']) Closure cl = null) {
         if (name == null) throw new ExceptionGETL('Need table name value!')
 
         def parent = registerDataset(null, name, false) as TableDataset
@@ -2167,7 +2150,7 @@ class Getl extends Script {
     /** Firebird connection */
     FirebirdConnection firebirdConnection(String name, Boolean registration,
                                           @DelegatesTo(FirebirdConnection)
-                              @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl) {
+                                          @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl) {
         def parent = registerConnection(FIREBIRDCONNECTION, name, registration) as FirebirdConnection
         runClosure(parent, cl)
 
@@ -2176,14 +2159,14 @@ class Getl extends Script {
 
     /** Firebird connection */
     FirebirdConnection firebirdConnection(String name,
-                              @DelegatesTo(FirebirdConnection)
-                              @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl = null) {
+                                          @DelegatesTo(FirebirdConnection)
+                                          @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl = null) {
         firebirdConnection(name, false, cl)
     }
 
     /** Firebird connection */
     FirebirdConnection firebirdConnection(@DelegatesTo(FirebirdConnection)
-                              @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl) {
+                                          @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl) {
         firebirdConnection(null, false, cl)
     }
 
@@ -2200,7 +2183,7 @@ class Getl extends Script {
     /** Firebird table */
     FirebirdTable firebirdTable(String name, Boolean registration,
                                 @DelegatesTo(FirebirdTable)
-                    @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl) {
+                                @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl) {
         def parent = registerDataset(FIREBIRDTABLE, name, registration) as FirebirdTable
         runClosure(parent, cl)
 
@@ -2209,14 +2192,14 @@ class Getl extends Script {
 
     /** Firebird table */
     FirebirdTable firebirdTable(String name,
-                    @DelegatesTo(FirebirdTable)
-                    @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl = null) {
+                                @DelegatesTo(FirebirdTable)
+                                @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl = null) {
         firebirdTable(name, false, cl)
     }
 
     /** Firebird table */
     FirebirdTable firebirdTable(@DelegatesTo(FirebirdTable)
-                    @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl) {
+                                @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl) {
         firebirdTable(null, false, cl)
     }
 
@@ -2559,8 +2542,8 @@ class Getl extends Script {
 
     /** Netezza connection */
     NetezzaConnection netezzaConnection(String name, Boolean registration,
-                                    @DelegatesTo(NetezzaConnection)
-                                    @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl) {
+                                        @DelegatesTo(NetezzaConnection)
+                                        @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl) {
         def parent = registerConnection(NETEZZACONNECTION, name, registration) as NetezzaConnection
         runClosure(parent, cl)
 
@@ -2569,14 +2552,14 @@ class Getl extends Script {
 
     /** Netezza connection */
     NetezzaConnection netezzaConnection(String name,
-                                    @DelegatesTo(NetezzaConnection)
-                                    @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl = null) {
+                                        @DelegatesTo(NetezzaConnection)
+                                        @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl = null) {
         netezzaConnection(name, false, cl)
     }
 
     /** Netezza connection */
     NetezzaConnection netezzaConnection(@DelegatesTo(NetezzaConnection)
-                                    @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl) {
+                                        @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl) {
         netezzaConnection(null, false, cl)
     }
 
@@ -2592,8 +2575,8 @@ class Getl extends Script {
 
     /** Netezza database table */
     NetezzaTable netezzaTable(String name, Boolean registration,
-                          @DelegatesTo(NetezzaTable)
-                          @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl) {
+                              @DelegatesTo(NetezzaTable)
+                              @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl) {
         def parent = registerDataset(NETEZZATABLE, name, registration) as NetezzaTable
         runClosure(parent, cl)
 
@@ -2602,14 +2585,14 @@ class Getl extends Script {
 
     /** Netezza database table */
     NetezzaTable netezzaTable(String name,
-                          @DelegatesTo(NetezzaTable)
-                          @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl = null) {
+                              @DelegatesTo(NetezzaTable)
+                              @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl = null) {
         netezzaTable(name, false, cl)
     }
 
     /** Netezza database table */
     NetezzaTable netezzaTable(@DelegatesTo(NetezzaTable)
-                          @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl) {
+                              @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl) {
         netezzaTable(null, false, cl)
     }
 
@@ -2876,7 +2859,7 @@ class Getl extends Script {
     TDSTable embeddedTable(String name, Boolean registration,
                            @DelegatesTo(TDSTable)
                            @ClosureParams(value = SimpleType, options = ['getl.tfs.TDSTable']) Closure cl) {
-        def parent = registerDataset(defaultJdbcConnection(EMBEDDEDTABLE)?:TDS.storage, EMBEDDEDTABLE, name, registration) as TDSTable
+        def parent = registerDataset(defaultJdbcConnection(EMBEDDEDTABLE) ?: TDS.storage, EMBEDDEDTABLE, name, registration) as TDSTable
         if ((parent.connection as TDS).sqlHistoryFile == null)
             (parent.connection as TDS).sqlHistoryFile = langOpts.tempDBSQLHistoryFile
 
@@ -2908,7 +2891,7 @@ class Getl extends Script {
             if (sourceDataset.field.isEmpty()) throw new ExceptionGETL("Required field from dataset $sourceDataset")
         }
 
-        TDSTable parent = new TDSTable(connection: defaultJdbcConnection(EMBEDDEDTABLE)?:TDS.storage)
+        TDSTable parent = new TDSTable(connection: defaultJdbcConnection(EMBEDDEDTABLE) ?: TDS.storage)
         parent.field = sourceDataset.field
         if ((parent.connection as TDS).sqlHistoryFile == null)
             (parent.connection as TDS).sqlHistoryFile = langOpts.tempDBSQLHistoryFile
@@ -2986,7 +2969,7 @@ class Getl extends Script {
     Map<String, Object> sqlQueryRow(JDBCConnection connection, String sql, Map vars = [:]) {
         def query = sqlQuery(connection, sql, vars)
         def rows = query.rows(limit: 1)
-        return (!rows.isEmpty())?rows[0]:null
+        return (!rows.isEmpty()) ? rows[0] : null
     }
 
     /** Return the first row from query */
@@ -3432,8 +3415,8 @@ class Getl extends Script {
 
     /** Create CSV temporary dataset for dataset */
     void createCsvTemp(String name, Dataset dataset) {
-        if (name ==  null) throw new ExceptionGETL('Name cannot be null!')
-        if (dataset ==  null) throw new ExceptionGETL('Dataset cannot be null!')
+        if (name == null) throw new ExceptionGETL('Name cannot be null!')
+        if (dataset == null) throw new ExceptionGETL('Dataset cannot be null!')
         TFSDataset csvTemp = dataset.csvTempFile
         registerDatasetObject(csvTemp, name, true)
     }
@@ -3442,7 +3425,7 @@ class Getl extends Script {
     TFSDataset csvTemp(String name, Boolean registration,
                        @DelegatesTo(TFSDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
-        TFSDataset parent = registerDataset(defaultFileConnection(CSVTEMPDATASET)?:TFS.storage, CSVTEMPDATASET, name, registration) as TFSDataset
+        TFSDataset parent = registerDataset(defaultFileConnection(CSVTEMPDATASET) ?: TFS.storage, CSVTEMPDATASET, name, registration) as TFSDataset
         runClosure(parent, cl)
 
         return parent
@@ -3477,7 +3460,7 @@ class Getl extends Script {
         }
 
         def parent = sourceDataset.csvTempFile.cloneDataset() as TFSDataset
-        parent.connection = defaultFileConnection(CSVTEMPDATASET)?:TFS.storage
+        parent.connection = defaultFileConnection(CSVTEMPDATASET) ?: TFS.storage
         registerDatasetObject(parent, name, true)
         runClosure(parent, cl)
 
@@ -3550,7 +3533,7 @@ class Getl extends Script {
             throw new ExceptionGETL('Required closure code!')
 
         def destNames = [] as List<String>
-        (destinations as Map<String, Dataset>).each { destName, ds -> destNames.add("$destName: ${ds.toString()}".toString())}
+        (destinations as Map<String, Dataset>).each { destName, ds -> destNames.add("$destName: ${ds.toString()}".toString()) }
         def pt = startProcess("Write rows to $destNames")
         def parent = new FlowWriteManySpec(childOwnerObject, childThisObject, false, null)
         parent.destinations = destinations
@@ -3589,9 +3572,9 @@ class Getl extends Script {
                     @DelegatesTo(SQLScripter)
                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl) {
         def parent = new SQLScripter()
-        parent.connection = connection?:defaultJdbcConnection(QUERYDATASET)
+        parent.connection = connection ?: defaultJdbcConnection(QUERYDATASET)
         parent.extVars = configContent
-        def pt = startProcess("Execution SQL script${(parent.connection != null)?' on [' + parent.connection + ']':''}")
+        def pt = startProcess("Execution SQL script${(parent.connection != null) ? ' on [' + parent.connection + ']' : ''}")
         runClosure(parent, cl)
         finishProcess(pt, parent.rowCount)
 
@@ -3816,13 +3799,13 @@ class Getl extends Script {
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.FileTextSpec']) Closure cl) {
         def parent = new FileTextSpec(childOwnerObject, childThisObject, false, null)
         if (file != null) {
-            parent.fileName = (file instanceof File)?((file as File).path):file.toString()
+            parent.fileName = (file instanceof File) ? ((file as File).path) : file.toString()
         }
-        def pt = startProcess("Processing text file${(parent.fileName != null)?(' "' + parent.fileName + '"'):''}")
+        def pt = startProcess("Processing text file${(parent.fileName != null) ? (' "' + parent.fileName + '"') : ''}")
         pt.objectName = 'byte'
         parent.runClosure(cl)
         parent.save()
-        pt.name = "Processing text file${(parent.fileName != null)?(' "' + parent.fileName + '"'):''}"
+        pt.name = "Processing text file${(parent.fileName != null) ? (' "' + parent.fileName + '"') : ''}"
         finishProcess(pt, parent.countBytes)
 
         return parent.fileName
@@ -3928,7 +3911,7 @@ class Getl extends Script {
     /** Run test case code */
     GroovyTestCase testCase(@DelegatesTo(GroovyTestCase)
                             @ClosureParams(value = SimpleType, options = ['junit.framework.TestCase']) Closure cl) {
-        def parent = _testCase?:new GroovyTestCase()
+        def parent = _testCase ?: new GroovyTestCase()
         RunClosure(cl.delegate, this, parent, cl)
         return parent
     }
@@ -3938,4 +3921,8 @@ class Getl extends Script {
     void pause(Long timeout) {
         Thread.currentThread().wait(timeout)
     }
+
+    /* TODO: add Counter repository object */
+    /* TODO: add Sequence repository object */
+    /* TODO: add control process history (complete process elements, analog s_copy_to_impala) */
 }

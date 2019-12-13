@@ -122,16 +122,20 @@ class ListUtils {
 	
 	/**
 	 * Return first not null value from list
-	 * @param value
-	 * @param defaultValue
+	 * @param listValues
 	 * @return
 	 */
-	static def NotNullValue(List value) {
-		if (value == null) return null
-		
-		def res = value.find { it != null }
-		
-		return res
+	static def NotNullValue(List listValues) {
+		return listValues?.find { it != null }
+	}
+
+	/**
+	 * Return first not null value from list
+	 * @param values
+	 * @return
+	 */
+	static def NotNullValue(Object... values) {
+		return values?.find { it != null }
 	}
 	
 	/**

@@ -28,6 +28,7 @@ import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import groovy.json.JsonSlurper
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 
 
@@ -598,7 +599,7 @@ class GenerationUtils {
 	
 	@groovy.transform.CompileStatic
 	static Date GenerateDateTime() {
-        return DateUtils.AddDate("ss", -GenerateInt(0, 525600), DateUtils.Now())
+        return DateUtils.AddDate("ss", -GenerateInt(0, 300000000), DateUtils.Now())
 	}
 	
 	@groovy.transform.CompileStatic
@@ -725,8 +726,10 @@ class GenerationUtils {
 	/**
 	 * Generate closure code generating random dataset field values
 	 * <br><br>The rules syntax is:
-	 * <br>#abs: only generate positive numbers for all number fields (true or false)
-	 * <br>Use the rule for a specific field: field_name = [rule: value, rule: value, ...]
+	 * <br>_abs_: only generate positive numbers for all number fields (true or false)
+	 * <br>_minValue_ and _maxValue_: generate all integer numeric fields within specified boundaries</li>
+	 * <br>_divLength_: when generating strings, divide their length by the specified value
+	 * <br><br>Use the rule for a specific field: field_name = [rule: value, rule: value, ...]
 	 * <br><br>Field rules (the default value is from the field):
 	 * <ul>
 	 *     <li>isNull: allow generate null value</li>
@@ -737,6 +740,7 @@ class GenerationUtils {
 	 *     <li>days: generate fields with a date within the specified number of days from the current or specified date</li>
 	 *     <li>seconds: generate fields with datetime within the specified number of seconds from the current or specified date</li>
 	 *     <li>list: generate for the text field a value from the specified list</li>
+	 *     <li>divLength: when generating strings, divide their length by the specified value
 	 * </ul>
 	 * Example:
 	 * <pre>
@@ -750,12 +754,15 @@ class GenerationUtils {
 	 * @param rules additional rules for generating values
 	 * @return code for generating a record with field values
 	 */
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	static Closure GenerateRandomRow(Dataset dataset, List excludeFields = [], Map rules = [:]) {
 		if (excludeFields == null) excludeFields = [] as List<String>
 		excludeFields = (excludeFields as List<String>)*.toLowerCase()
 		if (rules == null) rules = [:]
-		def absAll = BoolUtils.IsValue(rules.get('#abs'))
+		def absAll = BoolUtils.IsValue(rules.get('_abs_'))
+		def minValueAll = rules.get('_minValue_') as Integer
+		def maxValueAll = rules.get('_maxValue_') as Integer
+		def divLengthAll = rules.get('_divLength_') as Integer
 
 		def sb = new StringBuilder()
 		sb << '{ Map row ->\n'
@@ -773,8 +780,8 @@ class GenerationUtils {
 			def isNull = f.isNull
 			def length = f.length
 			def precision = f.precision
-			def minValue = f.minValue
-			def maxValue = f.maxValue
+			def minValue = ListUtils.NotNullValue(f.minValue, minValueAll) as Integer
+			def maxValue = ListUtils.NotNullValue(f.maxValue, maxValueAll) as Integer
 
 			def rule = (rules.get(fieldName)?:[:]) as Map<String, Object>
 			if (rule.isNull != null) isNull = BoolUtils.IsValue(rule.isNull)
@@ -786,6 +793,7 @@ class GenerationUtils {
 			def days = rule.days as Integer
 			def seconds = rule.seconds as Integer
 			def list = rule.list as List<String>
+			def divLength = ListUtils.NotNullValue(rule.divLength, divLengthAll) as Integer
 			def abs = BoolUtils.IsValue(rule.abs, absAll)
 
 			String func
@@ -880,6 +888,9 @@ class GenerationUtils {
 					break
 
 				case Field.stringFieldType:
+					if (divLength != null)
+						length = (length / divLength).intValue()
+
 					String generate
 					if (list != null) {
 						sb << "  final def ${fieldName}_list = [${ListUtils.QuoteList(list, '\'').join(',')}]\n"
