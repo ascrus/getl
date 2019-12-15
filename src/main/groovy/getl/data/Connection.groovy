@@ -427,4 +427,23 @@ class Connection {
 		Map p = CloneUtils.CloneMap(this.params)
 		CreateConnection([connection: className] + p)
 	}
+
+	/**
+	 * Perform operations within a transaction connection
+	 * @param cl your code
+	 */
+	void transaction(Closure cl) {
+		if (!driver.isSupport(Driver.Support.TRANSACTIONAL))
+			throw new ExceptionGETL("Connection \"${toString()}\" does not support transactions!")
+
+		startTran()
+		try {
+			cl.call()
+			commitTran()
+		}
+		catch (Throwable e) {
+			rollbackTran()
+			throw e
+		}
+	}
 }

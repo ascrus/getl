@@ -223,16 +223,16 @@ class VerticaDriver extends JDBCDriver {
 			def f = []
 			(params.files as List<String>).each {
 				def s = "'" + it + "'"
-				if (compressed != null) s += ' ' + compressed
 				s += onNode
+				if (compressed != null) s += ' ' + compressed
 				f << s
 			}
 			fileName = f.join(', ')
 		}
 		else {
 			fileName = "'${source.fullFileName().replace("\\", "/")}'"
-			if (compressed != null) fileName += ' ' + compressed
 			fileName += onNode
+			if (compressed != null) fileName += ' ' + compressed
 		}
 
 		if (exceptionPath != null && location == null) FileUtils.ValidFilePath(exceptionPath)

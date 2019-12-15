@@ -729,6 +729,9 @@ class GenerationUtils {
 	 * <br>_abs_: only generate positive numbers for all number fields (true or false)
 	 * <br>_minValue_ and _maxValue_: generate all integer numeric fields within specified boundaries</li>
 	 * <br>_divLength_: when generating strings, divide their length by the specified value
+	 * <br>_date_: generate fields with date and datetime starting from the specified date
+	 * <br>_days_: generate fields with a date within the specified number of days from the current or specified date
+	 * <br>_seconds_: generate fields with datetime within the specified number of seconds from the current or specified date
 	 * <br><br>Use the rule for a specific field: field_name = [rule: value, rule: value, ...]
 	 * <br><br>Field rules (the default value is from the field):
 	 * <ul>
@@ -763,6 +766,9 @@ class GenerationUtils {
 		def minValueAll = rules.get('_minValue_') as Integer
 		def maxValueAll = rules.get('_maxValue_') as Integer
 		def divLengthAll = rules.get('_divLength_') as Integer
+		def dateAll =  rules.get('_date_') as Date
+		def daysAll =  rules.get('_days_') as Integer
+		def secondsAll = rules.get('_seconds_') as Integer
 
 		def sb = new StringBuilder()
 		sb << '{ Map row ->\n'
@@ -789,9 +795,9 @@ class GenerationUtils {
 			if (rule.containsKey('precision')) precision = rule.precision as Integer
 			if (rule.containsKey('minValue')) minValue = rule.minValue as Integer
 			if (rule.containsKey('maxValue')) maxValue = rule.maxValue as Integer
-			def date = rule.date as Date
-			def days = rule.days as Integer
-			def seconds = rule.seconds as Integer
+			def date = (rule.date as Date)?:dateAll
+			def days = (rule.days as Integer)?:daysAll
+			def seconds = (rule.seconds as Integer)?:secondsAll
 			def list = rule.list as List<String>
 			def divLength = ListUtils.NotNullValue(rule.divLength, divLengthAll) as Integer
 			def abs = BoolUtils.IsValue(rule.abs, absAll)

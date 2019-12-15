@@ -144,6 +144,11 @@ class BulkLoadSpec extends BaseSpec {
     /** Auto commit after bulk load files */
     void setLoadAsPackage(Boolean value) { params.loadAsPackage = value }
 
+    /** Remote files bulk load */
+    Boolean getRemoteLoad() { BoolUtils.IsValue(params.remoteLoad) }
+    /** Remote files bulk load */
+    void setRemoteLoad(Boolean value) { params.remoteLoad = value }
+
     /** Automatic linking by the file and table field names */
     Boolean getAutoMap() { params.autoMap as Boolean }
     /** Automatic linking by the file and table field names */

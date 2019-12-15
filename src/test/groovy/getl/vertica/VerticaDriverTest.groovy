@@ -177,6 +177,19 @@ LIMIT 1'''
             assertEquals(3, vertable.updateRows)
             assertEquals(3, vertable.countRow())
 
+            logInfo 'Bulk load files with remote load from path mask:'
+            vertable.with {
+                truncate(truncate: true)
+                bulkLoadCsv(csv) {
+                    remoteLoad = true
+                    files = csv.currentCsvConnection.path + '/bulkload/*.csv'
+                    exceptionPath = main.configContent.errorPath + '/vertica.bulkload.err'
+                    rejectedPath = main.configContent.errorPath + '/vertica.bulkload.csv'
+                }
+            }
+            assertEquals(3, vertable.updateRows)
+            assertEquals(3, vertable.countRow())
+
             logInfo 'Bulk load files with path mask without package:'
             vertable.with {
                 truncate(truncate: true)
