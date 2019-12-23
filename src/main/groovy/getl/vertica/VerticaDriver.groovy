@@ -44,7 +44,8 @@ class VerticaDriver extends JDBCDriver {
 	VerticaDriver () {
 		super()
 
-		defaultSchemaName = 'PUBLIC'
+		defaultSchemaName = 'public'
+		tempSchemaName = 'v_temp_schema'
 
         addPKFieldsToUpdateStatementFromMerge = true
 

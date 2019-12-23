@@ -58,4 +58,7 @@ class OracleDriverTest extends JDBCDriverProto {
 			ds.drop()
 		}
 	}
+
+	@Override
+	protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP' }
 }

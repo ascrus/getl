@@ -31,4 +31,7 @@ class FirebirdDriverTest extends JDBCDriverProto {
         con.connected = true
         super.dropTable()
     }
+
+    @Override
+    protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP' }
 }

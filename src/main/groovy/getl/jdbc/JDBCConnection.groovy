@@ -731,7 +731,7 @@ ${tab}${tab}}
 	 * @return resource file name
 	 */
 	protected String generateDslResourceName(TableDataset dataset) {
-		return ((dataset.dbName != null)?"${dataset.dbName}/":'') + ((dataset.schemaName != null)?"${dataset.schemaName}/":'')
+		return (((dataset.dbName != null)?"${dataset.dbName}/":'') + ((dataset.schemaName != null)?"${dataset.schemaName}/":'')).toLowerCase()
 	}
 
 	/**

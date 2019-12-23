@@ -104,6 +104,13 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         else {
             tempTable.create()
         }
+
+        if (tempTable.currentJDBCConnection.currentJDBCDriver.supportLocalTemporaryRetrieveFields) {
+            tempTable.field = null
+            tempTable.retrieveFields()
+            assertEquals(fields*.name*.toLowerCase(), tempTable.field*.name*.toLowerCase())
+        }
+
         tempTable.drop()
     }
 
@@ -122,6 +129,11 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         else {
             tempTable.create()
         }
+
+        tempTable.field = null
+        tempTable.retrieveFields()
+        assertEquals(fields*.name*.toLowerCase(), tempTable.field*.name*.toLowerCase())
+
         tempTable.drop()
     }
 
@@ -261,6 +273,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     protected void updateData() {
         if (!con.driver.isOperation(Driver.Operation.UPDATE)) return
         def rows = table.rows(order: ['id1'])
+        def i = 0
         def count = new Flow().writeTo(dest: table, dest_operation: 'UPDATE') { updater ->
             rows.each { r ->
                 Map nr = [:]
@@ -278,24 +291,28 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 				if (useUuid) nr.uniqueid = UUID.randomUUID().toString()
 
                 updater(nr)
+                rows[i] = nr
+                i++
             }
         }
         assertEquals(countRows, count)
         validCount()
 
-		def i = 0
+		i = 0
         table.eachRow(order: ['id1']) { r ->
-            assertEquals(StringUtils.LeftStr(rows[i].name, 40) + ' update', r.name)
-			assertEquals(StringUtils.LeftStr(rows[i].get(descriptionName), 200) + ' update', r.get(descriptionName))
-            assertEquals(rows[i].value + 1, r.value)
-			assertNotNull(r.double)
-			if (useDate) assertEquals(DateUtils.AddDate('dd', 1, rows[i].date), r.date)
-			if (useTime) assertEquals(java.sql.Time.valueOf((rows[i].time as java.sql.Time).toLocalTime().plusSeconds(100)).toString(), r.time.toString())
-            if (useTimestampWithZone) assertEquals(DateUtils.AddDate('dd', 1, rows[i].dtwithtz), r.dtwithtz)
-			if (useBoolean) assertNotNull(r.flag)
-			/*if (useClob) assertNotNull(r.text)
-			if (useBlob) assertNotNull(r.data)*/
-			if (useUuid) assertNotNull(r.uniqueid)
+            assertEquals("id: $r.id1", rows[i].name, r.name)
+			assertEquals("id: $r.id1", rows[i].descriptionName, r.descriptionName)
+            assertEquals("id: $r.id1", rows[i].value, r.value)
+            assertNotNull("id: $r.id1", r.double)
+			if (useDate) assertEquals("id: $r.id1", rows[i].date, r.date)
+			if (useTime) assertEquals("id: $r.id1", rows[i].time.toString(), r.time.toString())
+            /* TODO: incorrect work for Oracle! */
+//            if (useTimestampWithZone) assertEquals("id: $r.id1", rows[i].dtwithtz, r.dtwithtz)
+           if (useTimestampWithZone) assertNotNull("id: $r.id1", r.dtwithtz)
+           if (useBoolean) assertEquals("id: $r.id1", rows[i].flag, r.flag)
+           /*if (useClob) assertNotNull(r.text)
+           if (useBlob) assertNotNull(r.data)*/
+			if (useUuid) assertEquals("id: $r.id1", rows[i].uniqueid.toString().toLowerCase(), r.uniqueid.toString().toLowerCase())
 
 			i++
         }

@@ -663,7 +663,10 @@ class JDBCDriver extends Driver {
 	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
 		def names = [:] as Map<String, String>
 		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, defaultDBName]) as String)
-		names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)
+		if (dataset.type == TableDataset.localTemporaryTableType)
+			names.schemaName = tempSchemaName
+		else
+			names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)
 		names.tableName = prepareObjectName(dataset.tableName as String)
 
 		return names
@@ -693,6 +696,9 @@ class JDBCDriver extends Driver {
 		TableDataset ds = dataset as TableDataset
 
 		if (Driver.Operation.READ_METADATA in operations()) {
+			if (ds.type == JDBCDataset.localTemporaryTableType && !supportLocalTemporaryRetrieveFields)
+				throw new ExceptionGETL('The driver does not support getting a list of fields in the local temporary table!')
+
 			def names = prepareForRetrieveFields(ds)
 
 			saveToHistory("-- READ METADATA WITH DB=[${names.dbName}], SCHEMA=[${names.schemaName}], TABLE=[${names.tableName}]")
@@ -821,6 +827,9 @@ ${extend}'''
 	protected String caseObjectName = "NONE" // LOWER OR UPPER
 	protected String defaultDBName = null
 	protected String defaultSchemaName = null
+	protected String tempSchemaName = null
+	protected boolean supportLocalTemporaryRetrieveFields = true
+	Boolean isSupportLocalTemporaryRetrieveFields() { supportLocalTemporaryRetrieveFields }
 
 	protected String globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
 	protected String localTemporaryTablePrefix = 'LOCAL TEMPORARY'
@@ -1103,9 +1112,10 @@ ${extend}'''
         JDBCDataset ds = dataset as JDBCDataset
 
 		def r = prepareObjectName(ds.params.tableName as String)
-		if (ds.schemaName != null) r = prepareObjectName(ds.schemaName) + '.' + r
+		def schema = (ds.type != JDBCDataset.localTemporaryTableType)?prepareObjectName(ds.schemaName):null
+		if (schema != null) r = prepareObjectName(ds.schemaName) + '.' + r
 		if (ds.dbName != null) {
-			if (ds.schemaName != null) {
+			if (schema != null) {
 				r = prepareObjectName(ds.dbName) + '.' + r
 			}
 			else {

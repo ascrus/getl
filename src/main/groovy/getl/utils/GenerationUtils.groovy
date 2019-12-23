@@ -689,11 +689,9 @@ class GenerationUtils {
 				result = new java.sql.Timestamp(GenerateDateTime().time)
 				break
             case getl.data.Field.Type.TEXT:
-//                result = new SerialClob(GenerateString(l).chars)
 				result = GenerateString(l)
                 break
             case getl.data.Field.Type.BLOB:
-//                result = new SerialBlob(GenerateString(l).bytes)
                 result = GenerateString(l).bytes
                 break
 			case getl.data.Field.Type.UUID:

@@ -73,9 +73,6 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 		Config.ReInit()
 	}
 
-/*	@Override
-	protected void createTable() {
-		super.createTable()
-		table.writeOpts { batchSize = 1 }
-	}*/
+	@Override
+	protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP' }
 }

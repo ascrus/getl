@@ -47,6 +47,7 @@ class MySQLDriver extends JDBCDriver {
 		fieldPrefix = '`'
 
         localTemporaryTablePrefix = 'TEMPORARY'
+		supportLocalTemporaryRetrieveFields = false
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -159,11 +160,8 @@ class MySQLDriver extends JDBCDriver {
 
 	@Override
 	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
-		def names = [:] as Map<String, String>
+		def names = super.prepareForRetrieveFields(dataset)
 		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, (dataset.connection as MySQLConnection).connectDatabase, defaultDBName]) as String)
-		names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)
-		names.tableName = prepareObjectName(dataset.tableName as String)
-
 		return names
 	}
 }
