@@ -400,7 +400,7 @@ class Getl extends Script {
     void profile(String name,
                  @DelegatesTo(ProfileSpec)
                  @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ProfileSpec']) Closure cl) {
-        def stat = new ProfileSpec(this, this, name)
+        def stat = new ProfileSpec(this, this, name, Level.INFO)
         stat.startProfile()
         runClosure(stat, cl)
         stat.finishProfile()

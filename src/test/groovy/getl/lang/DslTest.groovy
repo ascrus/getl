@@ -92,7 +92,7 @@ datasets {
         Getl.Dsl(this) {
             options {
                 processTimeDebug = true
-                processTimeLevelLog = Level.INFO
+                processTimeLevelLog = Level.FINEST
             }
 
             // Init log file
