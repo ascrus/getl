@@ -1102,6 +1102,19 @@ class Getl extends Script {
                 res = lastJdbcDefaultConnection
         }
 
+        if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+            def thread = Thread.currentThread() as ExecutorThread
+            res = thread.registerCloneObject('connections', res,
+                    {
+                        def c = (it as Connection).cloneConnection()
+                        c.sysParams.dslThisObject = childThisObject
+                        c.sysParams.dslOwnerObject = childOwnerObject
+                        c.sysParams.dslNameObject = res.sysParams.dslNameObject
+                        return c
+                    }
+            ) as JDBCConnection
+        }
+
         return res
     }
 
@@ -1138,6 +1151,19 @@ class Getl extends Script {
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
             res = _defaultFileConnection.get(datasetClassName)
+        }
+
+        if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+            def thread = Thread.currentThread() as ExecutorThread
+            res = thread.registerCloneObject('connections', res,
+                    {
+                        def c = (it as Connection).cloneConnection()
+                        c.sysParams.dslThisObject = childThisObject
+                        c.sysParams.dslOwnerObject = childOwnerObject
+                        c.sysParams.dslNameObject = res.sysParams.dslNameObject
+                        return c
+                    }
+            ) as FileConnection
         }
 
         return res
@@ -1177,6 +1203,19 @@ class Getl extends Script {
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
             res = _defaultOtherConnection.get(datasetClassName)
+        }
+
+        if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+            def thread = Thread.currentThread() as ExecutorThread
+            res = thread.registerCloneObject('connections', res,
+                    {
+                        def c = (it as Connection).cloneConnection()
+                        c.sysParams.dslThisObject = childThisObject
+                        c.sysParams.dslOwnerObject = childOwnerObject
+                        c.sysParams.dslNameObject = res.sysParams.dslNameObject
+                        return c
+                    }
+            ) as Connection
         }
 
         return res

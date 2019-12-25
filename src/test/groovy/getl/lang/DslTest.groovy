@@ -742,7 +742,24 @@ ORDER BY t1.id'''
     }
 
     @Test
-    void test05_05CopyDatasets() {
+    void test05_05ThreadSql() {
+        Getl.Dsl(this) {
+            useQueryConnection embeddedConnection('getl.testdsl.h2:h2')
+            def tableName = h2Table('table1').tableName
+            thread {
+                useList (1..9)
+                run { id ->
+                    sql {
+                        exec "SET SELECT ID FROM $tableName WHERE ID = $id"
+                        assertEquals(id, vars.id)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void test05_06CopyDatasets() {
         Getl.Dsl(this) {
             thread {
                 abortOnError = true
