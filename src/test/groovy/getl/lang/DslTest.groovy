@@ -13,7 +13,6 @@ import getl.utils.Logs
 import getl.utils.StringUtils
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
-import org.junit.Ignore
 import org.junit.Test
 
 import java.util.logging.Level
@@ -860,18 +859,29 @@ ORDER BY t1.id'''
         Getl.Dsl(this) {
             testCase {
                 def p1 = 1
-                runGroovyClass DslTestScript, {
+                runGroovyClass DslTestScriptFields1, {
                     param1 = p1
                     param2 = p1 + 1
                     param5 = [1, 2, 3]
                     param6 = [a: 1, b: 2, c: 3]
                     paramCountTableRow = this.table1_rows
                 }
+                assertEquals('complete test 1', configContent.testScript)
 
-                assertEquals(1, configContent.testScript)
+                configContent.script_params = [param1: p1, param2: p1 + 1, param5: [1,2,3], param6: [a: 1, b: 2, c: 3],
+                                               paramCountTableRow: this.table1_rows]
+                configContent.testScript = null
+                runGroovyClass DslTestScriptFields1, 'script_params'
+                assertEquals('complete test 1', configContent.testScript)
+
+                configContent.script_params.param3 = 3 // not defined paramemeter
+                configContent.testScript = null
+                shouldFail {
+                    runGroovyClass DslTestScriptFields1, 'script_params'
+                }
 
                 shouldFail {
-                    runGroovyClass DslTestScript, {
+                    runGroovyClass DslTestScriptFields1, {
                         param1 = p1
                         param2 = p1 + 1
                         param3 = 3 // not defined paramemeter
@@ -882,7 +892,7 @@ ORDER BY t1.id'''
                 }
 
                 shouldFail {
-                    runGroovyClass DslTestScript, {
+                    runGroovyClass DslTestScriptFields1, {
                         param1 = p1
                         param2 = p1 + 1
                         param5 = [1, 2, 3]
@@ -890,13 +900,16 @@ ORDER BY t1.id'''
                         //paramCountTableRow = this.table1_rows // required parameter
                     }
                 }
+
+                runGroovyClass DslTestScriptFields2
+                assertEquals('complete test 2', configContent.testScript)
             }
         }
     }
 
     @Test
     void test99_03RunGetlMain() {
-        Getl.Main(['runclass=getl.lang.DslTestScript', 'vars.param1=1', 'vars.param2=2', 'vars.param5=[1, 2, 3]',
+        Getl.Main(['runclass=getl.lang.DslTestScriptFields1', 'vars.param1=1', 'vars.param2=2', 'vars.param5=[1, 2, 3]',
                 'vars.param6=[a:1, b:2, c:3]', 'vars.paramCountTableRow=100'])
     }
 

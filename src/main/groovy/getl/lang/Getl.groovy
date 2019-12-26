@@ -130,9 +130,11 @@ class Getl extends Script {
                     eng.runGroovyClass(initClass)
                 }
 
-                eng.runGroovyClass(runClass, Config.vars)
+                def p = MapUtils.ConvertString2Object(Config.vars)
+                eng.runGroovyClass(runClass, p)
             }
         }
+
         job.run(args)
     }
 
@@ -1817,35 +1819,92 @@ class Getl extends Script {
         }
     }
 
-    /** Load and run groovy script file */
+    /**
+     * Load and run groovy script file
+     * <br><br>Example:
+     * <br>runGroovyFile './scripts/script1.groovy', false, [param1: 1, param2: 'a', param3: [1,2,3]]
+     * @param fileName script file path
+     * @param runOnce do not execute if previously executed
+     * @param vars set values for script fields declared as "@Field"
+     */
     void runGroovyFile(String fileName, Boolean runOnce, Map vars = [:]) {
         File sourceFile = new File(fileName)
         def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
         runGroovyClass(groovyClass, runOnce, vars)
     }
 
-    /** Load and run groovy script file */
+    /**
+     * Load and run groovy script file
+     * <br><br>Example:
+     * <br>runGroovyFile './scripts/script1.groovy', [param1: 1, param2: 'a', param3: [1,2,3]]
+     * @param fileName script file path
+     * @param vars set values for script fields declared as "@Field"
+     */
     void runGroovyFile(String fileName, Map vars = [:]) {
         runGroovyFile(fileName, false, vars)
     }
 
-    /** Load and run groovy script file */
+    /**
+     * Load and run groovy script file
+     * <br><br>Example:
+     * <br>runGroovyFile './scripts/script1.groovy', false, { param1 = 1; param2 = 'a'; param3 = [1,2,3] }
+     * @param fileName script file path
+     * @param runOnce do not execute if previously executed
+     * @param vars set values for script fields declared as "@Field"
+     */
     void runGroovyFile(String fileName, Boolean runOnce, Closure vars) {
         File sourceFile = new File(fileName)
         def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
         runGroovyClass(groovyClass, runOnce, vars)
     }
 
-    /** Load and run groovy script file */
+    /**
+     * Load and run groovy script file
+     * <br><br>Example:
+     * <br>runGroovyFile './scripts/script1.groovy', { param1 = 1; param2 = 'a'; param3 = [1,2,3] }
+     * @param fileName script file path
+     * @param runOnce do not execute if previously executed
+     * @param vars set values for script fields declared as "@Field"
+     */
     void runGroovyFile(String fileName, Closure vars) {
         runGroovyFile(fileName, false, vars)
     }
 
-    /** Script call arguments */
-//    protected final def _scriptArgs = new ConcurrentHashMap<String, Object>()
-//    Map<String, Object> getScriptArgs() { _scriptArgs }
+    /**
+     * Load and run groovy script file
+     * <br><br>Example:
+     * <br>runGroovyFile './scripts/script1.groovy', false, 'processes.process1'
+     * @param fileName script file path
+     * @param runOnce do not execute if previously executed
+     * @param configSection set values for script fields declared as "@Field" from the specified configuration section
+     */
+    void runGroovyFile(String fileName, Boolean runOnce, String configSection) {
+        def sectParams = Config.FindSection(configSection)
+        if (sectParams == null)
+            throw new ExceptionGETL("Configuration section \"$configSection\" not found!")
 
-    /** Load and run groovy script by class */
+        runGroovyFile(fileName, runOnce, sectParams)
+    }
+
+    /**
+     * Load and run groovy script file
+     * <br><br>Example:
+     * <br>runGroovyFile './scripts/script1.groovy', 'processes.process1'
+     * @param fileName script file path
+     * @param configSection set values for script fields declared as "@Field" from the specified configuration section
+     */
+    void runGroovyFile(String fileName, String configSection) {
+        runGroovyFile(fileName, false, configSection)
+    }
+
+    /**
+     * Run groovy script class
+     * <br><br>Example:
+     * <br>runGroovyClass 'project.processed.Script1', false, [param1: 1, param2: 'a', param3: [1,2,3]]
+     * @param groovyClass groovy script class full name
+     * @param runOnce do not execute if previously executed
+     * @param vars set values for script fields declared as "@Field"
+     */
     void runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:]) {
         def className = groovyClass.name
         def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
@@ -1856,7 +1915,7 @@ class Getl extends Script {
             def scriptGetl = script as Getl
             scriptGetl.setGetlParams(_params)
             if (vars != null && !vars.isEmpty()) {
-                fillFieldFromVars(scriptGetl, vars)
+                FillFieldFromVars(scriptGetl, vars)
             }
         } else if (vars != null && !vars.isEmpty()) {
             script.binding = new Binding(vars)
@@ -1869,12 +1928,25 @@ class Getl extends Script {
         if (!previouslyRun) executedClasses.addToList(className)
     }
 
-    /** Load and run groovy script by class */
+    /**
+     * Run groovy script class
+     * <br><br>Example:
+     * <br>runGroovyClass 'project.processed.Script1', [param1: 1, param2: 'a', param3: [1,2,3]]
+     * @param groovyClass groovy script class full name
+     * @param vars set values for script fields declared as "@Field"
+     */
     void runGroovyClass(Class groovyClass, Map vars = [:]) {
         runGroovyClass(groovyClass, false, vars)
     }
 
-    /** Load and run groovy script by class */
+    /**
+     * Run groovy script class
+     * <br><br>Example:
+     * <br>runGroovyClass 'project.processed.Script1', false, { param1 = 1; param2 = 'a'; param3 = [1,2,3] }
+     * @param groovyClass groovy script class full name
+     * @param runOnce do not execute if previously executed
+     * @param vars set values for script fields declared as "@Field"
+     */
     void runGroovyClass(Class groovyClass, Boolean runOnce, Closure vars) {
         def cfg = new groovy.util.ConfigSlurper()
         def cl = PrepareClosure(childOwnerObject, childThisObject, vars, vars)
@@ -1882,17 +1954,59 @@ class Getl extends Script {
         runGroovyClass(groovyClass, runOnce, map)
     }
 
-    /** Load and run groovy script by class */
+    /**
+     * Run groovy script class
+     * <br><br>Example:
+     * <br>runGroovyClass 'project.processed.Script1', { param1 = 1; param2 = 'a'; param3 = [1,2,3] }
+     * @param groovyClass groovy script class full name
+     * @param vars set values for script fields declared as "@Field"
+     */
     void runGroovyClass(Class groovyClass, Closure vars) {
         runGroovyClass(groovyClass, false, vars)
     }
 
-    /** Fill script field property from external arguments */
-    static protected void fillFieldFromVars(Getl script, Map vars) {
+    /**
+     * Run groovy script class
+     * <br><br>Example:
+     * <br>runGroovyClass 'project.processed.Script1', false, 'processes.process1'
+     * @param groovyClass groovy script class full name
+     * @param runOnce do not execute if previously executed
+     * @param configSection set values for script fields declared as "@Field" from the specified configuration section
+     */
+    void runGroovyClass(Class groovyClass, Boolean runOnce, String configSection) {
+        def sectParams = Config.FindSection(configSection)
+        if (sectParams == null)
+            throw new ExceptionGETL("Configuration section \"$configSection\" not found!")
+
+        runGroovyClass(groovyClass, runOnce, sectParams)
+    }
+
+    /**
+     * Run groovy script class
+     * <br><br>Example:
+     * <br>runGroovyClass 'project.processed.Script1', 'processes.process1'
+     * @param groovyClass groovy script class full name
+     * @param configSection set values for script fields declared as "@Field" from the specified configuration section
+     */
+    void runGroovyClass(Class groovyClass, String configSection) {
+        runGroovyClass(groovyClass, false, configSection)
+    }
+
+    /**
+     * Fill script field property from external arguments
+     * @param script groove script object
+     * @param vars vars set values for script fields declared as "@Field"
+     * @param validExist check for the existence of fields in the script
+     */
+    static void FillFieldFromVars(Script script, Map vars, Boolean validExist = true) {
         vars.each { key, value ->
             MetaProperty prop = script.hasProperty(key as String)
-            if (prop == null)
-                throw new ExceptionGETL("Field \"$key\" not defined in script!")
+            if (prop == null) {
+                if (validExist)
+                    throw new ExceptionGETL("Field \"$key\" not defined in script!")
+                else
+                    return
+            }
 
             try {
                 prop.setProperty(script, value)
@@ -3951,7 +4065,7 @@ class Getl extends Script {
     GroovyTestCase testCase(@DelegatesTo(GroovyTestCase)
                             @ClosureParams(value = SimpleType, options = ['junit.framework.TestCase']) Closure cl) {
         def parent = _testCase ?: new GroovyTestCase()
-        RunClosure(cl.delegate, this, parent, cl)
+        RunClosure(childOwnerObject, childThisObject, parent, cl)
         return parent
     }
 

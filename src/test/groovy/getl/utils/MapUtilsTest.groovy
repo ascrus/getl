@@ -143,4 +143,23 @@ class MapUtilsTest extends getl.test.GetlTest {
 
         assertEquals(res, MapUtils.ToJson(m))
     }
+
+    @Test
+    void testConvertString2Object() {
+        def m = [s: 'abc', numbers: [i: '100', n: '123.45'], dates:[d: '2019-12-31', dt: '2019-12-31 23:59:59'], other: 999]
+        def r = MapUtils.ConvertString2Object(m)
+        def s = '''{
+    "s": "abc",
+    "numbers": {
+        "i": 100,
+        "n": 123.45
+    },
+    "dates": {
+        "d": "2019-12-30T21:00:00+0000",
+        "dt": "2019-12-31T20:59:59+0000"
+    },
+    "other": 999
+}'''
+        assertEquals(s, MapUtils.ToJson(r))
+    }
 }

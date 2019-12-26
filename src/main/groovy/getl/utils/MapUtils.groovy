@@ -869,4 +869,54 @@ class MapUtils {
 
         return res
     }
+
+	/**
+	 * Convert text values from the map to the values of the appropriate types
+	 * @param source
+	 * @return
+	 */
+	static Map ConvertString2Object(Map source) {
+		def res = [:]
+		source.each { k, v ->
+			if (v instanceof Map) {
+				res.put(k, ConvertString2Object(v as Map))
+				return
+			}
+
+			if (!(v instanceof String)) {
+				res.put(k, v)
+				return
+			}
+
+			def s = v as String
+
+			def dt = DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss', s, true)
+			if (dt != null) {
+				res.put(k, dt)
+				return
+			}
+
+			def d = DateUtils.ParseDate('yyyy-MM-dd', s, true)
+			if (d != null) {
+				res.put(k, d)
+				return
+			}
+
+			def n = NumericUtils.String2Numeric(s, null)
+			if (n != null) {
+				res.put(k, n)
+				return
+			}
+
+			def i = NumericUtils.String2Integer(s, null)
+			if (i != null) {
+				res.put(k, i)
+				return
+			}
+
+			res.put(k, s)
+		}
+
+		return res
+	}
 }

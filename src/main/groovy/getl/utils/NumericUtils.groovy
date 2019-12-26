@@ -150,6 +150,20 @@ class NumericUtils {
 		return true
 	}
 
+	/**
+	 * Check string as numeric
+	 * @param value
+	 * @return
+	 */
+	static boolean IsNumeric(String value) {
+		try {
+			new BigDecimal(value)
+		} catch (NumberFormatException ignored) {
+			return false
+		}
+		return true
+	}
+
     /**
      * Convert string to integer
      * @param value
@@ -165,4 +179,20 @@ class NumericUtils {
         }
         return res
     }
+
+	/**
+	 * Convert string to numeric
+	 * @param value
+	 * @param defaultValue
+	 * @return
+	 */
+	static BigDecimal String2Numeric(String value, BigDecimal defaultValue) {
+		BigDecimal res
+		try {
+			res = new BigDecimal(value)
+		} catch (NumberFormatException ignored) {
+			res = defaultValue
+		}
+		return res
+	}
 }

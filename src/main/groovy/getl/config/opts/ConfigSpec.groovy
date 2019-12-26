@@ -25,6 +25,8 @@
 package getl.config.opts
 
 import getl.config.*
+import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.utils.*
 import groovy.transform.InheritConstructors
@@ -81,4 +83,20 @@ class ConfigSpec extends BaseSpec {
      * Clear configuration content
      */
     static void clear() { Config.ClearConfig() }
+
+    /**
+     * read fields from the specified configuration section
+     * @param section path to store variables in configuration
+     * @param validExist check for the existence of fields in the script
+     */
+    void readFields(String section, Boolean validExist = true) {
+        def vars = Config.FindSection(section)
+        if (vars == null)
+            throw new ExceptionGETL("Configuration section \"$section\" not found!")
+        if (vars.isEmpty())
+            return
+
+        def getl = (ownerObject as Getl)
+        getl.FillFieldFromVars(getl, vars, validExist)
+    }
 }
