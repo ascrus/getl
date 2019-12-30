@@ -238,7 +238,7 @@ class HDFSManager extends Manager {
         try {
             currentPath = c
         }
-        catch (Throwable e) {
+        catch (Exception e) {
             if (writeErrorsToLog) Logs.Severe("Can not change directory to up")
             throw e
         }
@@ -253,7 +253,7 @@ class HDFSManager extends Manager {
             def f = new File(fn)
             setLocalLastModified(f, getLastModified(fileName))
         }
-        catch (Throwable e) {
+        catch (Exception e) {
             if (writeErrorsToLog) Logs.Severe("Can not download file \"${fullName(currentPath, fileName)}\" to \"$fn\"")
             throw e
         }
@@ -268,7 +268,7 @@ class HDFSManager extends Manager {
             def f = new File(fn)
             setLastModified(fileName, f.lastModified())
         }
-        catch (Throwable e) {
+        catch (Exception e) {
             if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fn\" to \"${fullName(currentPath, fileName)}\"")
             throw e
         }
@@ -279,7 +279,7 @@ class HDFSManager extends Manager {
         try {
             client.delete(fullPath(currentPath, fileName), false)
         }
-        catch (Throwable e) {
+        catch (Exception e) {
             if (writeErrorsToLog) Logs.Severe("Can not remove file \"${fullName(currentPath, fileName)}\"")
             throw e
         }
@@ -290,7 +290,7 @@ class HDFSManager extends Manager {
         try {
             client.mkdirs(fullPath(currentPath, dirName))
         }
-        catch (Throwable e) {
+        catch (Exception e) {
             if (writeErrorsToLog) Logs.Severe("Can not create dir \"${fullName(currentPath, dirName)}\"")
             throw e
         }
@@ -301,7 +301,7 @@ class HDFSManager extends Manager {
         try {
             client.delete(fullPath(currentPath, dirName), recursive)
         }
-        catch (Throwable e) {
+        catch (Exception e) {
             if (writeErrorsToLog) Logs.Severe("Can not remove dir \"${fullName(currentPath, dirName)}\"")
             throw e
         }
@@ -312,7 +312,7 @@ class HDFSManager extends Manager {
         try {
             client.rename(fullPath(currentPath, fileName), new Path(path))
         }
-        catch (Throwable e) {
+        catch (Exception e) {
             if (writeErrorsToLog) Logs.Severe("Can not rename file \"${fullName(currentPath, fileName)}\" to \"$path\"")
             throw e
         }

@@ -155,14 +155,14 @@ class FTPManager extends Manager {
 		try {
 			client.connect(server, port)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not connect to $server:$port")
 			throw e
 		}
 		try {
 			client.login(login, password)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Invalid login or password for $server:$port")
 			throw e
 		}
@@ -194,7 +194,7 @@ class FTPManager extends Manager {
 					if (numRetry > 4) throw new ExceptionGETL('Can not disconnect from server') 
 				}
 			}
-			catch (Throwable e) {
+			catch (Exception e) {
 				if (writeErrorsToLog) Logs.Severe("Can not disconnect from $server:$port")
 				throw e
 			}
@@ -252,7 +252,7 @@ class FTPManager extends Manager {
 		try {
 			listFiles = (mask != null)?client.list(mask):client.list()
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe('Can not read ftp list')
 			throw e
 		}
@@ -273,7 +273,7 @@ class FTPManager extends Manager {
 		try {
 			client.changeDirectory(path)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not change directory to \"$path\"")
 			throw e
 		}
@@ -284,7 +284,7 @@ class FTPManager extends Manager {
 		try {
 			client.changeDirectoryUp()
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe('Can not change directory to up')
 			throw e
 		}
@@ -299,7 +299,7 @@ class FTPManager extends Manager {
             setLocalLastModified(f, getLastModified(fileName))
 
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not download file \"$fileName\" to \"$fn\"")
 			throw e
 		}
@@ -320,7 +320,7 @@ class FTPManager extends Manager {
                 setLastModified(fileName, d.time)
             }
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fileName\" from \"$fn\"")
 			throw e
 		}
@@ -331,7 +331,7 @@ class FTPManager extends Manager {
 		try {
 			client.deleteFile(fileName)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not remove file \"$fileName\"")
 			throw e
 		}
@@ -350,7 +350,7 @@ class FTPManager extends Manager {
 				try {
 					client.changeDirectory(dir)
 				}
-				catch (Throwable ignored) {
+				catch (Exception ignored) {
 					isExists = false
 				}
 				if (!isExists) {
@@ -359,7 +359,7 @@ class FTPManager extends Manager {
 				}
 			}
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not create directory \"$cdDir\"")
 			throw e
 		}
@@ -381,7 +381,7 @@ class FTPManager extends Manager {
                 client.deleteDirectory(dirName)
             }
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not remove directory \"$dirName\"")
 			throw e
 		}
@@ -415,7 +415,7 @@ class FTPManager extends Manager {
 		try {
 			client.rename(fileName, path)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not rename file \"$fileName\" to \"$path\"")
 			throw e
 		}
@@ -428,7 +428,7 @@ class FTPManager extends Manager {
 		try {
 			client.changeDirectory(dirName)
 		}
-		catch (Throwable ignored) {
+		catch (Exception ignored) {
 			isExists = false
 		}
 		client.changeDirectory(cur)

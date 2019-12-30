@@ -99,4 +99,9 @@ class ConfigSpec extends BaseSpec {
         def getl = (ownerObject as Getl)
         getl.FillFieldFromVars(getl, vars, validExist)
     }
+
+    /** Current environment */
+    String getEnviroment() {
+        return manager.environment
+    }
 }

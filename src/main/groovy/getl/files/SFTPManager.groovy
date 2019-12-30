@@ -164,7 +164,7 @@ class SFTPManager extends Manager {
 			try {
 				s.connect()
 			}
-			catch (Throwable e) {
+			catch (Exception e) {
 				if (writeErrorsToLog) Logs.Severe("Can not connect to $server:$port or invalid login/password")
 				throw e
 			}
@@ -172,7 +172,7 @@ class SFTPManager extends Manager {
 			if (aliveInterval != null) s.setServerAliveInterval(aliveInterval * 1000)
 			if (aliveCountMax != null) s.setServerAliveCountMax(aliveCountMax)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (s.connected) clientSession.disconnect()
 			throw e
 		}
@@ -199,7 +199,7 @@ class SFTPManager extends Manager {
 			channelFtp.connect()
 			if (rootPath != null) currentPath = rootPath
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (channelFtp != null && channelFtp.connected) channelFtp.disconnect()
 			if (clientSession.connected) clientSession.disconnect()
 			throw e
@@ -217,7 +217,7 @@ class SFTPManager extends Manager {
 				clientSession == null
 			}
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not disconnect from $server:$port")
 			throw e
 		}
@@ -306,7 +306,7 @@ class SFTPManager extends Manager {
 		try {
 			channelFtp.get(fileName, s)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not download file \"$fileName\" to \"$fn\"")
 			throw e
 		}
@@ -327,7 +327,7 @@ class SFTPManager extends Manager {
 			channelFtp.put(s, fileName)
             setLastModified(fileName, f.lastModified())
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fileName\" from \"$fn\"")
 			throw e
 		}
@@ -342,7 +342,7 @@ class SFTPManager extends Manager {
 		try {
 			channelFtp.rm(fileName)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not remove file \"$fileName\"")
 			throw e
 		}
@@ -363,7 +363,7 @@ class SFTPManager extends Manager {
 				try {
 					channelFtp.cd(dir)
 				}
-				catch (Throwable ignored) {
+				catch (Exception ignored) {
 					isExists = false
 				}
 				if (!isExists) {
@@ -374,7 +374,7 @@ class SFTPManager extends Manager {
 				}
 			}
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not create directory \"$cdDir\"")
 			throw e
 		}
@@ -396,7 +396,7 @@ class SFTPManager extends Manager {
                 channelFtp.rmdir(dirName)
             }
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not remove directory \"$dirName\"")
 			throw e
 		}
@@ -432,7 +432,7 @@ class SFTPManager extends Manager {
 		try {
 			channelFtp.rename(fileName, path)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not rename file \"$fileName\" to \"$path\"")
 			throw e
 		}
@@ -448,7 +448,7 @@ class SFTPManager extends Manager {
 			writeScriptHistoryFile("COMMAND: cd \"$dirName\"")
 			channelFtp.cd(dirName)
 		}
-		catch (Throwable ignored) {
+		catch (Exception ignored) {
 			isExists = false
 		}
 		writeScriptHistoryFile("COMMAND: cd \"$cur\"")

@@ -432,8 +432,8 @@ class Field implements Serializable {
 	 */
 	void assign(Field f) {
 		type = (f.type != Type.OBJECT)?f.type:type
-		typeName = f.typeName
-		dbType = f.dbType
+		typeName = (f.typeName != null)?f.typeName:typeName
+		dbType = (f.dbType != null)?f.dbType:dbType
 		isNull = (!f.isNull)?false:isNull
 		isKey = (f.isKey)?true:isKey
 		ordKey = (f.ordKey != null)?f.ordKey:ordKey
@@ -449,10 +449,10 @@ class Field implements Serializable {
 		maxValue = (f.maxValue != null)?f.maxValue:maxValue
 		format = (f.format != null)?f.format:format
 		alias = (f.alias != null)?f.alias:alias
-		trim = BoolUtils.IsValue(f.trim, trim)
+		trim = (f.trim != null)?f.trim:trim
 		decimalSeparator = (f.decimalSeparator != null)?f.decimalSeparator:decimalSeparator
 		description = (f.description != null)?f.description:description
-		extended.putAll(f.extended)
+		if (f.extended != null) MapUtils.MergeMap(extended, f.extended)
 	}
 	
 	/**

@@ -602,7 +602,7 @@ class Flow {
 				try {
 					dest.bulkLoadFile(bulkParams)
 				}
-				catch (Throwable e) {
+				catch (Exception e) {
 					if (debug && Logs.fileNameHandler != null) {
 						def dn = "${Logs.DumpFolder()}/${dest.objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
 						if (bulkAsGZIP) dn += ".gz"
@@ -618,7 +618,7 @@ class Flow {
 					try {
 						dataset.bulkLoadFile(bulkChildParams)
 					}
-					catch (Throwable e) {
+					catch (Exception e) {
 						if (debug && Logs.fileNameHandler != null) {
 							def dn = "${Logs.DumpFolder()}/${(bulkChildParams.source as Dataset).objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
 							if (bulkAsGZIP) dn += ".gz"
@@ -636,7 +636,7 @@ class Flow {
 				}
 			}
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			Logs.Exception(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}")
 
 			if (autoTran) dest.connection.rollbackTran()
@@ -768,7 +768,7 @@ class Flow {
 			code.call(updateCode)
 			writer.doneWrite()
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			isError = true
 			writer.isWriteError = true
 			Logs.Exception(e, getClass().name + ".writeTo", writer.objectName)
@@ -793,7 +793,7 @@ class Flow {
 			try {
 				dest.bulkLoadFile(bulkParams)
 			}
-			catch (Throwable e) {
+			catch (Exception e) {
 				Logs.Exception(e, getClass().name + ".writeTo", "${destDescription}")
 				
 				if (autoTran) Executor.RunIgnoreErrors { 
@@ -975,7 +975,7 @@ class Flow {
 			try {
 				d.openWrite(destParams.get(n) as Map)
 			}
-			catch (Throwable e) {
+			catch (Exception e) {
 				Logs.Exception(e, getClass().name + ".writeAllTo.openWrite", d.objectName)
 				closeDests(true)
 				rollbackTrans(["ALL", "COPY"])
@@ -986,7 +986,7 @@ class Flow {
 		try {
 			code.call(updateCode)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			writer.each { String n, Dataset d ->
 				d.isWriteError = true
 			}
@@ -1001,7 +1001,7 @@ class Flow {
 				d.doneWrite()
 			}
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			def destDescription = writer.keySet().toList().join(",")
 			Logs.Exception(e, getClass().name + ".writeAllTo.doneWrite", destDescription)
 			closeDests(true)
@@ -1012,7 +1012,7 @@ class Flow {
 		try {
 			closeDests(false)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			def destDescription = writer.keySet().toList().join(",")
 			Logs.Exception(e, getClass().name + ".writeAllTo.closeWrite", destDescription)
 			closeDests(true)
@@ -1027,7 +1027,7 @@ class Flow {
 				Map bp = bulkParams.get(n) as Map
 				ds.bulkLoadFile(bp)
 			}
-			catch (Throwable e) {
+			catch (Exception e) {
 				Logs.Exception(e, getClass().name + ".writeToAll.bulkLoadFile", "${ds.objectName}")
 				rollbackTrans(["ALL", "COPY", "BULK"])
 				throw e

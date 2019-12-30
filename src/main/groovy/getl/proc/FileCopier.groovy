@@ -350,7 +350,7 @@ class FileCopier {
                 catch (FileCopierException e) {
                     throw e
                 }
-                catch (Throwable e) {
+                catch (Exception e) {
                     error = e
                     Logs.Severe("Error changing current directory to \"$path\" for file source \"$sourceName\", attempt $retryNum of $retryCount, error text: ${error.message}!")
 
@@ -364,7 +364,7 @@ class FileCopier {
                     man.disconnect()
                     connected = false
                 }
-                catch (Throwable de) {
+                catch (Exception de) {
                     Logs.Severe("Cannot disconnect from source \"$sourceName\", error text: ${de.message}!")
 
                     sleep retryWait
@@ -379,7 +379,7 @@ class FileCopier {
                 man.changeLocalDirectory(curLocalDir)
                 connected = true
             }
-            catch (Throwable ce) {
+            catch (Exception ce) {
                 Logs.Severe("Cannot connect to source \"$sourceName\", error text: ${ce.message}!")
             }
         }
@@ -409,7 +409,7 @@ class FileCopier {
         try {
             man.changeLocalDirectory(path)
         }
-        catch (Throwable e) {
+        catch (Exception e) {
             Logs.Severe("Error changing current local directory to \"$path\" for file source \"$sourceName\", error text: ${e.message}!")
             throw e
         }

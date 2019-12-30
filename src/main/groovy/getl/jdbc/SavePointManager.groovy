@@ -423,7 +423,7 @@ class SavePointManager {
 				try {
 					res."value" = DateUtils.ParseDate(format, value, false)
 				}
-				catch (Throwable e) {
+				catch (Exception e) {
 					Logs.Severe("Can not parse \"$value\" with \"$format\" format")
 					throw e
 				}
@@ -434,7 +434,7 @@ class SavePointManager {
                     //noinspection GroovyAssignabilityCheck
                     res."value" = new Long(value)
 				}
-				catch (Throwable e) {
+				catch (Exception e) {
 					Logs.Severe("Can not parse \"$value\" to long")
 					throw e
 				}
@@ -445,7 +445,7 @@ class SavePointManager {
                     //noinspection GroovyAssignabilityCheck
                     res."value" = new BigDecimal(value)
 				}
-				catch (Throwable e) {
+				catch (Exception e) {
 					Logs.Severe("Can not parse \"$value\" to numeric")
 					throw e
 				}

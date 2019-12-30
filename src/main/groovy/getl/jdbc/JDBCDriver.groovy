@@ -510,7 +510,7 @@ class JDBCDriver extends Driver {
 					sql = NewSql(jdbcClass, url, login, password, drvName, loginTimeout)
 					notConnected = false
 				}
-				catch (Throwable e) {
+				catch (Exception e) {
 					if (server != null) {
 						Logs.Warning("Cannot connect to $url")
 						con.balancer.errorDisconnect(server)
@@ -900,7 +900,7 @@ ${extend}'''
 
 				defFields << s
 			}
-			catch (Throwable e) {
+			catch (Exception e) {
 				Logs.Severe("Error create table \"${dataset.objectName}\" for field \"${f.name}\": ${e.message}")
 				throw e
 			}
@@ -961,7 +961,7 @@ ${extend}'''
 				}
 			}
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (commitDDL && !(jdbcConnection.autoCommit)) {
 				if (transactionalDDL) con.rollbackTran()
 			}
@@ -1158,7 +1158,7 @@ ${extend}'''
 		try {
 			executeCommand(q, [:])
 		}
-		catch (Throwable err) {
+		catch (Exception err) {
 			if (commitDDL && !(jdbcConnection.autoCommit)) {
 				if (transactionalDDL) rollbackTran()
 			}
@@ -1431,7 +1431,7 @@ ${extend}'''
 			if (rowCopy != null) Logs.Dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
 			throw e
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (rowCopy != null) Logs.Dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
 			throw e
 		}

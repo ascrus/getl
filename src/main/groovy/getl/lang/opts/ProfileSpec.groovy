@@ -26,6 +26,7 @@ package getl.lang.opts
 
 import getl.lang.Getl
 import getl.stat.ProcessTime
+import getl.utils.Logs
 import groovy.transform.InheritConstructors
 
 import java.util.logging.Level
@@ -37,14 +38,20 @@ import java.util.logging.Level
  */
 @InheritConstructors
 class ProfileSpec extends BaseSpec {
-    ProfileSpec(def ownerObject, def thisObject, String name, Level logLevel = null) {
+    ProfileSpec(def ownerObject, def thisObject, String name, String objectName = null, boolean isProfile = false) {
         super(ownerObject, thisObject)
+        this.isProfile = isProfile
         statistics = new ProcessTime(
                 name: name,
-                logLevel: logLevel?:(geltOwner().langOpts.processTimeLevelLog),
-                debug: geltOwner().langOpts.processTimeDebug
+                logLevel: (isProfile)?Level.INFO:(geltOwner().langOpts.processTimeLevelLog),
+                debug: (isProfile)?true:(geltOwner().langOpts.processTimeDebug),
+                objectName: objectName?:'row',
+                abbrName: (isProfile)?'<PROFILE>':'<STAT>'
         )
     }
+
+    /** Getl profile block */
+    boolean isProfile = false
 
     /** Getl main class */
     protected Getl geltOwner() { ownerObject as Getl }

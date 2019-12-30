@@ -35,7 +35,7 @@ import getl.utils.*
  */
 @SuppressWarnings("UnnecessaryQualifiedReference")
 class ProcessTime {
-	public static java.util.logging.Level LogLevelDefault = Level.FINE
+	public static java.util.logging.Level LogLevelDefault = Level.FINER
 
     static void SetLogLevelDefault (String level) { LogLevelDefault = Logs.StrToLevel(level) }
 	public static boolean debugDefault = false
@@ -43,6 +43,7 @@ class ProcessTime {
 	public String name = 'process'
 	public Level logLevel
 	public String objectName = 'row'
+	public String abbrName = '<STAT>'
 	public boolean debug = debugDefault
 	
 	public Date start
@@ -67,7 +68,7 @@ class ProcessTime {
 		if (logLevel == null) logLevel = LogLevelDefault
 		
 		if (logLevel != Level.OFF && debug) {
-			def msg = "<STAT START> ${name}"
+			def msg = "$abbrName START ${name}"
 			Logs.Write(logLevel, msg)
 		}
 	}
@@ -102,6 +103,10 @@ class ProcessTime {
 		
 		if (params.debug != null) {
 			debug = params.debug
+		}
+
+		if (params.abbrName != null) {
+			abbrName = params.abbrName
 		}
 		
 		init()
@@ -156,7 +161,7 @@ class ProcessTime {
 
 		if (logLevel != Level.OFF) {
 			def msg = "${name}: ${lastStat()}".toString()
-			if (debug) msg = "<STAT FINISH> " + msg else msg = "<STAT> " + msg  
+			if (debug) msg = "$abbrName FINISH " + msg else msg = "$abbrName " + msg
 			Logs.Write(logLevel, msg)
 		}
 	}

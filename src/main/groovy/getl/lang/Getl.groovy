@@ -85,18 +85,33 @@ class Getl extends Script {
     }
 
     static void main(def args) {
-        Main(args)
+        Main(args, true)
     }
 
     /**
      * Launch GETL DSL main class
      * @param args use runClass and vars
      */
-    static void Main(def args) {
+    static void Main(def args, Boolean isMain = false) {
         Config.configClassManager = new ConfigSlurper()
         CleanGetl()
 
+        def getlObj = this
+
         def job = new Job() {
+            public Boolean isMain
+
+            @Override
+            protected void doRun() {
+                super.doRun()
+                StackTraceElement[] stack = Thread.currentThread().getStackTrace()
+                def obj = stack[stack.length - 1]
+                if (obj.getClassName() == 'getl.lang.Getl' && this.isMain) {
+                    Logs.Finest("System exit ${exitCode?:0}")
+                    System.exit(exitCode?:0)
+                }
+            }
+
             @Override
             void process() {
                 def className = jobArgs.runclass as String
@@ -130,12 +145,48 @@ class Getl extends Script {
                     eng.runGroovyClass(initClass)
                 }
 
-                def p = MapUtils.ConvertString2Object(Config.vars)
-                eng.runGroovyClass(runClass, p)
+                try {
+                    eng.runGroovyClass(runClass, Config.vars)
+                }
+                catch (DslException e) {
+                    if (e.typeCode == DslException.STOP_APP) {
+                        if (e.message != null) logInfo(e.message)
+                        if (e.exitCode != null) exitCode = e.exitCode
+                    }
+                    else {
+                        throw e
+                    }
+                }
             }
         }
-
+        job.isMain = isMain
         job.run(args)
+    }
+
+    /** Quit DSL Application */
+    void appRunSTOP(String message = null, Integer exitCode = null) {
+        if (message != null)
+            throw new DslException(DslException.STOP_APP, exitCode, message)
+        else
+            throw new DslException(DslException.STOP_APP, exitCode)
+    }
+
+    /** Quit DSL Application */
+    void appRunSTOP(Integer exitCode) {
+        throw new DslException(DslException.STOP_APP, exitCode)
+    }
+
+    /** Stop code execution of the current class */
+    void classRunSTOP(String message = null, Integer exitCode = null) {
+        if (message != null)
+            throw new DslException(DslException.STOP_CLASS, exitCode, message)
+        else
+            throw new DslException(DslException.STOP_CLASS, exitCode)
+    }
+
+    /** Stop code execution of the current class */
+    void classRunSTOP(Integer exitCode) {
+        throw new DslException(DslException.STOP_CLASS, exitCode)
     }
 
     /** The name of the main class of the process */
@@ -387,7 +438,7 @@ class Getl extends Script {
     public static List<String> LISTFILEMANAGERCLASSES
 
     /** Fix start process */
-    ProcessTime startProcess(String name) {
+    ProcessTime startProcess(String name, String objName = null) {
         return new ProcessTime(name: name,
                 logLevel: (langOpts.processTimeTracing) ? langOpts.processTimeLevelLog : Level.OFF,
                 debug: langOpts.processTimeDebug)
@@ -399,10 +450,10 @@ class Getl extends Script {
     }
 
     /** GETL DSL options */
-    void profile(String name,
+    void profile(String name, String objName = null,
                  @DelegatesTo(ProfileSpec)
                  @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ProfileSpec']) Closure cl) {
-        def stat = new ProfileSpec(this, this, name, Level.INFO)
+        def stat = new ProfileSpec(this, this, name, objName, true)
         stat.startProfile()
         runClosure(stat, cl)
         stat.finishProfile()
@@ -1826,11 +1877,12 @@ class Getl extends Script {
      * @param fileName script file path
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
+     * @return exit code
      */
-    void runGroovyFile(String fileName, Boolean runOnce, Map vars = [:]) {
+    Integer runGroovyFile(String fileName, Boolean runOnce, Map vars = [:]) {
         File sourceFile = new File(fileName)
         def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
-        runGroovyClass(groovyClass, runOnce, vars)
+        return runGroovyClass(groovyClass, runOnce, vars)
     }
 
     /**
@@ -1839,9 +1891,10 @@ class Getl extends Script {
      * <br>runGroovyFile './scripts/script1.groovy', [param1: 1, param2: 'a', param3: [1,2,3]]
      * @param fileName script file path
      * @param vars set values for script fields declared as "@Field"
+     * @return exit code
      */
-    void runGroovyFile(String fileName, Map vars = [:]) {
-        runGroovyFile(fileName, false, vars)
+    Integer runGroovyFile(String fileName, Map vars = [:]) {
+        return runGroovyFile(fileName, false, vars)
     }
 
     /**
@@ -1851,11 +1904,12 @@ class Getl extends Script {
      * @param fileName script file path
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
+     * @return exit code
      */
-    void runGroovyFile(String fileName, Boolean runOnce, Closure vars) {
+    Integer runGroovyFile(String fileName, Boolean runOnce, Closure vars) {
         File sourceFile = new File(fileName)
         def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
-        runGroovyClass(groovyClass, runOnce, vars)
+        return runGroovyClass(groovyClass, runOnce, vars)
     }
 
     /**
@@ -1865,9 +1919,10 @@ class Getl extends Script {
      * @param fileName script file path
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
+     * @return exit code
      */
-    void runGroovyFile(String fileName, Closure vars) {
-        runGroovyFile(fileName, false, vars)
+    Integer runGroovyFile(String fileName, Closure vars) {
+        return runGroovyFile(fileName, false, vars)
     }
 
     /**
@@ -1877,13 +1932,14 @@ class Getl extends Script {
      * @param fileName script file path
      * @param runOnce do not execute if previously executed
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
+     * @return exit code
      */
-    void runGroovyFile(String fileName, Boolean runOnce, String configSection) {
+    Integer runGroovyFile(String fileName, Boolean runOnce, String configSection) {
         def sectParams = Config.FindSection(configSection)
         if (sectParams == null)
             throw new ExceptionGETL("Configuration section \"$configSection\" not found!")
 
-        runGroovyFile(fileName, runOnce, sectParams)
+        return runGroovyFile(fileName, runOnce, sectParams)
     }
 
     /**
@@ -1892,9 +1948,10 @@ class Getl extends Script {
      * <br>runGroovyFile './scripts/script1.groovy', 'processes.process1'
      * @param fileName script file path
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
+     * @return exit code
      */
-    void runGroovyFile(String fileName, String configSection) {
-        runGroovyFile(fileName, false, configSection)
+    Integer runGroovyFile(String fileName, String configSection) {
+        return runGroovyFile(fileName, false, configSection)
     }
 
     /**
@@ -1904,8 +1961,9 @@ class Getl extends Script {
      * @param groovyClass groovy script class full name
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
+     * @return exit code
      */
-    void runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:]) {
+    Integer runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:]) {
         def className = groovyClass.name
         def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
         if (previouslyRun && BoolUtils.IsValue(runOnce)) return
@@ -1921,11 +1979,26 @@ class Getl extends Script {
             script.binding = new Binding(vars)
         }
 
-        def pt = startProcess("Execution groovy class $className")
-        script.run()
+        def res = 0
+
+        def pt = startProcess("Execution groovy class $className", 'class')
+        try {
+            script.run()
+        }
+        catch (DslException e) {
+            if (e.typeCode == DslException.STOP_CLASS) {
+                if (e.message != null) logInfo(e.message)
+                if (e.exitCode != null) res = e.exitCode
+            }
+            else {
+                throw e
+            }
+        }
         pt.finish()
 
         if (!previouslyRun) executedClasses.addToList(className)
+
+        return res
     }
 
     /**
@@ -1934,9 +2007,10 @@ class Getl extends Script {
      * <br>runGroovyClass 'project.processed.Script1', [param1: 1, param2: 'a', param3: [1,2,3]]
      * @param groovyClass groovy script class full name
      * @param vars set values for script fields declared as "@Field"
+     * @return exit code
      */
-    void runGroovyClass(Class groovyClass, Map vars = [:]) {
-        runGroovyClass(groovyClass, false, vars)
+    Integer runGroovyClass(Class groovyClass, Map vars = [:]) {
+        return runGroovyClass(groovyClass, false, vars)
     }
 
     /**
@@ -1946,12 +2020,13 @@ class Getl extends Script {
      * @param groovyClass groovy script class full name
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
+     * @return exit code
      */
-    void runGroovyClass(Class groovyClass, Boolean runOnce, Closure vars) {
+    Integer runGroovyClass(Class groovyClass, Boolean runOnce, Closure vars) {
         def cfg = new groovy.util.ConfigSlurper()
         def cl = PrepareClosure(childOwnerObject, childThisObject, vars, vars)
         def map = cfg.parse(new ClosureScript(closure: cl))
-        runGroovyClass(groovyClass, runOnce, map)
+        return runGroovyClass(groovyClass, runOnce, map)
     }
 
     /**
@@ -1961,8 +2036,8 @@ class Getl extends Script {
      * @param groovyClass groovy script class full name
      * @param vars set values for script fields declared as "@Field"
      */
-    void runGroovyClass(Class groovyClass, Closure vars) {
-        runGroovyClass(groovyClass, false, vars)
+    Integer runGroovyClass(Class groovyClass, Closure vars) {
+        return runGroovyClass(groovyClass, false, vars)
     }
 
     /**
@@ -1973,12 +2048,12 @@ class Getl extends Script {
      * @param runOnce do not execute if previously executed
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      */
-    void runGroovyClass(Class groovyClass, Boolean runOnce, String configSection) {
+    Integer runGroovyClass(Class groovyClass, Boolean runOnce, String configSection) {
         def sectParams = Config.FindSection(configSection)
         if (sectParams == null)
             throw new ExceptionGETL("Configuration section \"$configSection\" not found!")
 
-        runGroovyClass(groovyClass, runOnce, sectParams)
+        return runGroovyClass(groovyClass, runOnce, sectParams)
     }
 
     /**
@@ -1988,8 +2063,8 @@ class Getl extends Script {
      * @param groovyClass groovy script class full name
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      */
-    void runGroovyClass(Class groovyClass, String configSection) {
-        runGroovyClass(groovyClass, false, configSection)
+    Integer runGroovyClass(Class groovyClass, String configSection) {
+        return runGroovyClass(groovyClass, false, configSection)
     }
 
     /**
@@ -2007,6 +2082,71 @@ class Getl extends Script {
                 else
                     return
             }
+
+            if (value != null)
+                switch (prop.type) {
+                    case Character:
+                        if (!(value instanceof Character))
+                            value = value.toString().toCharacter()
+                        break
+                    case String:
+                        if (!(value instanceof String))
+                            value = value.toString()
+                        break
+                    case Short:
+                        if (!(value instanceof Short))
+                            value = Short.valueOf(value.toString())
+                        break
+                    case Integer:
+                        if (!(value instanceof Integer))
+                            value = Integer.valueOf(value.toString())
+                        break
+                    case Long:
+                        if (!(value instanceof Long))
+                            value = Long.valueOf(value.toString())
+                        break
+                    case Float:
+                        if (!(value instanceof Float))
+                            value = Float.valueOf(value.toString())
+                        break
+                    case Double:
+                        if (!(value instanceof Double))
+                            value = Double.valueOf(value.toString())
+                        break
+                    case BigInteger:
+                        if (!(value instanceof BigInteger))
+                            value = new BigInteger(value.toString())
+                        break
+                    case BigDecimal:
+                        if (!(value instanceof BigDecimal))
+                            value = new BigDecimal(value.toString())
+                        break
+                    case Date:
+                        if (!(value instanceof Date)) {
+                            value = value.toString()
+                            if (value.length() == 10)
+                                value = DateUtils.ParseDate('yyyy-MM-dd', value, false)
+                            else
+                                value = DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss', value, false)
+                        }
+                        break
+                    case Boolean:
+                        if (!(value instanceof Boolean )) {
+                            value = (value.toString().toLowerCase() in ['true', '1', 'on'])
+                        }
+                        break
+                    case List:
+                        if (!(value instanceof List)) {
+                            value = Eval.me(value.toString())
+                        }
+                        break
+                    case Map:
+                        if (!(value instanceof Map)) {
+                            value = Eval.me(value.toString())
+                        }
+                        break
+                }
+
 
             try {
                 prop.setProperty(script, value)
@@ -2032,57 +2172,57 @@ class Getl extends Script {
     }
 
     /** Run closure with call parent parameter */
-    static void RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl) {
+    static def RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl) {
         if (cl == null) return
 
         def code = cl.rehydrate(parent, ownerObject, thisObject)
         code.resolveStrategy = childDelegate
-        code.call(parent)
+        return code.call(parent)
     }
 
     /** Run closure with call one parameter */
-    static void RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object param) {
+    static def RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object param) {
         if (cl == null) return
 
         def code = cl.rehydrate(parent, ownerObject, thisObject)
         code.resolveStrategy = childDelegate
-        code.call(param)
+        return code.call(param)
     }
 
     /** Run closure with call two parameters */
-    static void RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object... params) {
+    static def RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object... params) {
         if (cl == null) return
 
         def code = cl.rehydrate(parent, ownerObject, thisObject)
         code.resolveStrategy = childDelegate
-        code.call(params)
+        return code.call(params)
     }
 
     /** Run closure with call parent parameter */
-    protected void runClosure(Object parent, Closure cl) {
+    protected def runClosure(Object parent, Closure cl) {
         if (cl == null) return
 
         def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
         code.resolveStrategy = childDelegate
-        code.call(parent)
+        return code.call(parent)
     }
 
     /** Run closure with call one parameter */
-    protected void runClosure(Object parent, Closure cl, Object param) {
+    protected def runClosure(Object parent, Closure cl, Object param) {
         if (cl == null) return
 
         def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
         code.resolveStrategy = childDelegate
-        code.call(param)
+        return code.call(param)
     }
 
     /** Run closure with call two parameters */
-    protected void runClosure(Object parent, Closure cl, Object... params) {
+    protected def runClosure(Object parent, Closure cl, Object... params) {
         if (cl == null) return
 
         def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
         code.resolveStrategy = childDelegate
-        code.call(params)
+        return code.call(params)
     }
 
     /** Current configuration content */
@@ -3771,7 +3911,7 @@ class Getl extends Script {
         if (parent.rootPath == null) parent.rootPath = new File('.').absolutePath
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess("Do commands on [$parent]")
+            def pt = startProcess("Do commands on [$parent]", 'command')
             try {
                 runClosure(parent, cl)
             }
@@ -3804,7 +3944,7 @@ class Getl extends Script {
         def parent = registerFileManager(FTPMANAGER, name, registration) as FTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess("Do commands on [$parent]")
+            def pt = startProcess("Do commands on [$parent]", 'command')
             try {
                 runClosure(parent, cl)
             }
@@ -3838,7 +3978,7 @@ class Getl extends Script {
         def parent = registerFileManager(SFTPMANAGER, name, registration) as SFTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess("Do commands on [$parent]")
+            def pt = startProcess("Do commands on [$parent]", 'command')
             try {
                 runClosure(parent, cl)
             }
@@ -3872,7 +4012,7 @@ class Getl extends Script {
         def parent = registerFileManager(HDFSMANAGER, name, registration) as HDFSManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
-            def pt = startProcess("Do commands on [$parent]")
+            def pt = startProcess("Do commands on [$parent]", 'command')
             try {
                 runClosure(parent, cl)
             }
@@ -3924,7 +4064,7 @@ class Getl extends Script {
             parent.validAllowRun(allowRun)
         }
 
-        def pt = startProcess('Execution threads')
+        def pt = startProcess('Execution threads', 'thread')
         runClosure(parent, cl)
         finishProcess(pt)
 
@@ -3935,7 +4075,7 @@ class Getl extends Script {
     EMailer mail(@DelegatesTo(EMailer)
                  @ClosureParams(value = SimpleType, options = ['getl.utils.EMailer']) Closure cl) {
         def parent = new EMailer()
-        def pt = startProcess('Mailer')
+        def pt = startProcess('Mailer', 'command')
         runClosure(parent, cl)
         finishProcess(pt)
 
@@ -3954,7 +4094,7 @@ class Getl extends Script {
         if (file != null) {
             parent.fileName = (file instanceof File) ? ((file as File).path) : file.toString()
         }
-        def pt = startProcess("Processing text file${(parent.fileName != null) ? (' "' + parent.fileName + '"') : ''}")
+        def pt = startProcess("Processing text file${(parent.fileName != null) ? (' "' + parent.fileName + '"') : ''}", 'byte')
         pt.objectName = 'byte'
         parent.runClosure(cl)
         parent.save()
@@ -4038,7 +4178,7 @@ class Getl extends Script {
         parent.source = source
         parent.destination = destination
 
-        def pt = startProcess("Copy files from [$source] to [$destination]")
+        def pt = startProcess("Copy files from [$source] to [$destination]", 'file')
         if (!source.connected) source.connect()
         try {
             if (!destination.connected) destination.connect()

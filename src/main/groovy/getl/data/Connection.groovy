@@ -441,7 +441,7 @@ class Connection {
 			cl.call()
 			commitTran()
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			rollbackTran()
 			throw e
 		}

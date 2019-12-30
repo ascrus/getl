@@ -114,7 +114,7 @@ abstract class Job {
 	 * Run job process
 	 */
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	private void doRun () {
+	protected void doRun () {
 		DateUtils.init()
 		getl.deploy.Version.SayInfo()
 		prepareRun()
@@ -130,14 +130,17 @@ abstract class Job {
 		}
 		finally {
 			done()
-			Logs.Info("### Job stop")
+			Logs.Info("### Job stop${(exitCode != null)?" with code $exitCode":''}")
 			Logs.Done()
 			if (isError && ExitOnError) {
-				System.exit(1)
+				System.exit(exitCode?:1)
 			}
 		}
         if (isError) throw err
 	}
+
+	/** Exit application code */
+	public Integer exitCode
 	
 	/**
 	 * Place your code before stop job here

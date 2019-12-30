@@ -50,7 +50,7 @@ class LangSpec extends BaseSpec {
     void setProcessTimeDebug(boolean value) { params.processTimeDebug = value }
 
     /** The level of fixation in the log of process profiling records */
-    Level getProcessTimeLevelLog() { params.processTimeLevelLog?:Level.FINE }
+    Level getProcessTimeLevelLog() { params.processTimeLevelLog?:Level.FINER }
     /** The level of fixation in the log of process profiling records */
     void setProcessTimeLevelLog(Level value) { params.processTimeLevelLog = value }
 

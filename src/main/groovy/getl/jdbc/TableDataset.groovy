@@ -250,7 +250,7 @@ class TableDataset extends JDBCDataset {
 		try {
 			count = connection.executeCommand(command: sql, isUpdate: true)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (autoTran)
 				connection.rollbackTran()
 
@@ -403,7 +403,7 @@ class TableDataset extends JDBCDataset {
 
 		ProcessTime pt
 		if (getl != null)
-            pt = getl.startProcess("${fullTableName}: load files")
+            pt = getl.startProcess("${fullTableName}: load files", 'file')
 
 		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def bulkParams = MapUtils.DeepCopy(bulkLoadDirective) as Map<String, Object>
@@ -584,7 +584,7 @@ class TableDataset extends JDBCDataset {
 			if (remoteLoad) {
 				ProcessTime ptf
 				if (getl != null)
-					ptf = getl.startProcess("${fullTableName}: load files from \"$files\"")
+					ptf = getl.startProcess("${fullTableName}: load files from \"$files\"", 'file')
 
 				if (beforeLoad != null) beforeLoad.call(files)
 
@@ -615,7 +615,7 @@ class TableDataset extends JDBCDataset {
 
 					ProcessTime ptf
 					if (getl != null)
-						ptf = getl.startProcess("${fullTableName}: load file \"$fileName\" (${FileUtils.sizeBytes(tsize)})")
+						ptf = getl.startProcess("${fullTableName}: load file \"$fileName\" (${FileUtils.sizeBytes(tsize)})", 'file')
 
                     if (beforeLoad != null) beforeLoad.call(fileName)
 
@@ -716,7 +716,7 @@ class TableDataset extends JDBCDataset {
 				}
 			}
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (autoTran)
 				currentJDBCConnection.rollbackTran()
 

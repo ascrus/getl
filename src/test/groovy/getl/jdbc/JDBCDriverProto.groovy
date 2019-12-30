@@ -2,6 +2,7 @@ package getl.jdbc
 
 import getl.data.*
 import getl.driver.Driver
+import getl.lang.Getl
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TFS

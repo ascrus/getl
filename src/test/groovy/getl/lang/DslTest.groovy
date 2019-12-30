@@ -6,6 +6,7 @@ import getl.h2.*
 import getl.jdbc.TableDataset
 import getl.proc.Job
 import getl.tfs.*
+import getl.utils.BoolUtils
 import getl.utils.Config
 import getl.utils.DateUtils
 import getl.utils.FileUtils
@@ -861,14 +862,20 @@ ORDER BY t1.id'''
                 def p1 = 1
                 runGroovyClass DslTestScriptFields1, {
                     param1 = p1
-                    param2 = p1 + 1
+                    param2 = 123.45
                     param5 = [1, 2, 3]
                     param6 = [a: 1, b: 2, c: 3]
+                    param7 = DateUtils.ClearTime(new Date())
+                    param8 = DateUtils.TruncTime('HOUR', new Date())
+                    param9 = true
                     paramCountTableRow = this.table1_rows
                 }
                 assertEquals('complete test 1', configContent.testScript)
 
-                configContent.script_params = [param1: p1, param2: p1 + 1, param5: [1,2,3], param6: [a: 1, b: 2, c: 3],
+                configContent.script_params = [param1: p1, param2: 123.45, param5: [1,2,3], param6: [a: 1, b: 2, c: 3],
+                                               param7: DateUtils.ClearTime(new Date()),
+                                               param8: DateUtils.TruncTime('HOUR', new Date()),
+                                               param9: true,
                                                paramCountTableRow: this.table1_rows]
                 configContent.testScript = null
                 runGroovyClass DslTestScriptFields1, 'script_params'
@@ -883,10 +890,13 @@ ORDER BY t1.id'''
                 shouldFail {
                     runGroovyClass DslTestScriptFields1, {
                         param1 = p1
-                        param2 = p1 + 1
+                        param2 = 123.45
                         param3 = 3 // not defined paramemeter
                         param5 = [1, 2, 3]
                         param6 = [a: 1, b: 2, c: 3]
+                        param7 = DateUtils.ClearTime(new Date())
+                        param8 = DateUtils.TruncTime('HOUR', new Date())
+                        param9 = true
                         paramCountTableRow = this.table1_rows
                     }
                 }
@@ -894,9 +904,12 @@ ORDER BY t1.id'''
                 shouldFail {
                     runGroovyClass DslTestScriptFields1, {
                         param1 = p1
-                        param2 = p1 + 1
+                        param2 = 123.45
                         param5 = [1, 2, 3]
                         param6 = [a: 1, b: 2, c: 3]
+                        param7 = DateUtils.ClearTime(new Date())
+                        param8 = DateUtils.TruncTime('HOUR', new Date())
+                        param9 = true
                         //paramCountTableRow = this.table1_rows // required parameter
                     }
                 }
@@ -909,8 +922,11 @@ ORDER BY t1.id'''
 
     @Test
     void test99_03RunGetlMain() {
-        Getl.Main(['runclass=getl.lang.DslTestScriptFields1', 'vars.param1=1', 'vars.param2=2', 'vars.param5=[1, 2, 3]',
-                'vars.param6=[a:1, b:2, c:3]', 'vars.paramCountTableRow=100'])
+        Getl.Main([
+                'runclass=getl.lang.DslTestScriptFields1', 'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
+                'vars.param6=[a:1, b:2, c:3]', 'vars.param7=' + DateUtils.FormatDate(DateUtils.ClearTime(new Date())),
+                'vars.param8=' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', DateUtils.TruncTime('HOUR', new Date())),
+                'vars.param9=true', 'vars.paramCountTableRow=100'])
     }
 
     @Test
@@ -954,5 +970,11 @@ ORDER BY t1.id'''
         assertEquals(0, Config.content.testAllowThreads)
 
         Job.ExitOnError = true
+    }
+
+    @Test
+    void test99_05StopScript() {
+        Getl.Main(['runclass=getl.lang.DslTestScriptStop', 'vars.level=1'])
+        assertTrue(BoolUtils.IsValue(Config.content.test_stop))
     }
 }

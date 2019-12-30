@@ -529,7 +529,7 @@ class Dataset {
 	 */
 	protected void doInitFields (List<Field> sourceFields) {
 		if (!sourceFields.isEmpty() && !manualSchema) { 
-			updateFields(UpdateFieldType.CLEAR, sourceFields)
+			updateFields(UpdateFieldType.MERGE_EXISTS, sourceFields)
 		}
 	}
 	
@@ -689,7 +689,7 @@ class Dataset {
 		try {
 			connection.driver.bulkLoadFile(source, this, p, prepareFields)
 		}
-		catch (Throwable e) {
+		catch (Exception e) {
 			if (autoTran)
 				connection.rollbackTran()
 			throw e

@@ -27,8 +27,11 @@ package getl.utils
 import getl.proc.*
 import getl.jdbc.*
 
+/**
+ * SQL client application
+ * @author ALexsey Konstantinov
+ */
 class SQLClient extends Job {
-	
 	static main(args) {
 		new SQLClient().run(args)
 	}
