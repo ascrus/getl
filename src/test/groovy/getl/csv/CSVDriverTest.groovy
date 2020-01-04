@@ -456,7 +456,7 @@ class CSVDriverTest extends getl.test.GetlTest {
                 }
 
                 def read = {
-                    rowProcess(ds) {
+                    rowsProcess(ds) {
                         int i = 0
                         readRow { row ->
                             i++

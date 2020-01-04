@@ -236,12 +236,12 @@ datasets {
         Getl.Dsl(this) { getl ->
             clearGroupFilter()
 
-            rowsToMany([
+            rowsToMany(
                     table1: h2Table('getl.testdsl.h2:table1') { truncate() },
                     table2: h2Table('getl.testdsl.h2:table2') { truncate() }
-            ]) {
+            ) {
                 writeRow { add ->
-                    rowProcess(csvTemp('getl.testdsl.csv:table1')) {
+                    rowsProcess(csvTemp('getl.testdsl.csv:table1')) {
                         readRow { row ->
                             row.dt = DateUtils.now
                             add 'table1', row
@@ -271,7 +271,7 @@ FROM table1 t1
     INNER JOIN table2 t2 ON t1.id = t2.id
 ORDER BY t1.id'''
 
-                rowProcess {
+                rowsProcess {
                     def count = 0
                     count = 0
                     readRow { row ->
@@ -294,7 +294,7 @@ ORDER BY t1.id'''
 
             h2Table('table1') {
                 readOpts { where = 'id < 3'; order = ['id ASC'] }
-                rowProcess {
+                rowsProcess {
                     def i = 0
                     readRow { row ->
                         i++

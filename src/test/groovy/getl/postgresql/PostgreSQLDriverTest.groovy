@@ -55,7 +55,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 
 			assertEquals(count, table.countRow())
 
-			rowProcess(table) {
+			rowsProcess(table) {
 				int c = 0
 				readRow {
 					c++
@@ -63,7 +63,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 				assertEquals(count, c)
 			}
 
-			rowProcess(table) {
+			rowsProcess(table) {
 				sourceParams.limit = 1
 				int c = 0
 				readRow { c++ }

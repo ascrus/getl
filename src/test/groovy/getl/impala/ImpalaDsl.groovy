@@ -35,7 +35,7 @@ rowsTo(impalaTable('tab')) {
     }
 }
 
-rowProcess(impalaTable('tab')) {
+rowsProcess(impalaTable('tab')) {
     readRow() { row ->
         println row
     }

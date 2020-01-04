@@ -3835,8 +3835,8 @@ class Getl extends Script {
     }
 
     /** Process rows from source dataset */
-    void rowProcess(Dataset source,
-                    @DelegatesTo(FlowProcessSpec)
+    void rowsProcess(Dataset source,
+                     @DelegatesTo(FlowProcessSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
         if (source == null)
             throw new ExceptionGETL('Source dataset cannot be null!')
@@ -3850,14 +3850,14 @@ class Getl extends Script {
     }
 
     /** Process rows from source dataset */
-    void rowProcess(@DelegatesTo(FlowProcessSpec)
+    void rowsProcess(@DelegatesTo(FlowProcessSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
         if (cl == null)
             throw new ExceptionGETL('Required closure code!')
         def source = DetectClosureDelegate(cl)
         if (source == null || !(source instanceof Dataset))
             throw new ExceptionGETL('Can not detect source dataset!')
-        rowProcess(source, cl)
+        rowsProcess(source, cl)
     }
 
     /** SQL scripter */
