@@ -24,6 +24,9 @@
 
 package getl.proc
 
+import getl.proc.sub.ExecutorFactory
+import getl.proc.sub.ExecutorListElement
+import getl.proc.sub.ExecutorThread
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -99,7 +102,7 @@ class Executor {
 	}
 	
 	/** List of processing elements */
-	final List list = []
+	final List list = Collections.synchronizedList(new ArrayList())
 
 	/** List of processing elements */
 	List getList() { this.list }

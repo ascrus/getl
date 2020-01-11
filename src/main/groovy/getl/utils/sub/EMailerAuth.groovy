@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
+
  Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
@@ -22,58 +22,23 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.files
+package getl.utils.sub
 
-import getl.data.*
-import getl.driver.*
-import getl.exception.ExceptionGETL
 import groovy.transform.InheritConstructors
 
 /**
- * Files driver
+ * Emailer authenticator class
  * @author Alexsey Konstantinov
  *
  */
 @InheritConstructors
-class FilesDriver extends FileDriver {
+class EMailerAuth extends javax.mail.Authenticator {
+    String user
+    String password
 
-	@Override
-	List<Support> supported() {
-		[]
-	}
-
-	@Override
-	List<Operation> operations() {
-		[Operation.DROP]
-	}
-
-	@Override
-
-	List<Field> fields(Dataset dataset) {
-		throw new ExceptionGETL('Not support this features!')
-	}
-
-	@Override
-
-	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		throw new ExceptionGETL('Not support this features!')
-	}
-
-	@Override
-
-	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
-		throw new ExceptionGETL('Not support this features!')
-	}
-
-	@Override
-
-	void write(Dataset dataset, Map row) {
-		throw new ExceptionGETL('Not support this features!')
-	}
-
-	@Override
-
-	void closeWrite(Dataset dataset) {
-		throw new ExceptionGETL('Not support this features!')
-	}
+    @Override
+    protected javax.mail.PasswordAuthentication getPasswordAuthentication() {
+        if (user == null || password == null) return null
+        return new javax.mail.PasswordAuthentication(user, password)
+    }
 }

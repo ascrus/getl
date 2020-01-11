@@ -25,6 +25,7 @@
 package getl.utils
 
 import getl.lang.opts.BaseSpec
+import groovy.transform.AutoClone
 import groovy.transform.InheritConstructors
 import groovy.transform.CompileStatic
 import getl.utils.opts.PathVarsSpec
@@ -37,6 +38,7 @@ import getl.exception.ExceptionGETL
  * Analize and processing path value class
  * @author Alexsey Konstantinov
  */
+@AutoClone
 class Path {
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 	
@@ -129,7 +131,7 @@ class Path {
 	/** Expression mask file for SQL like */
 	String getLikeFile () { this.likeFile }
 	
-	final Map<String, Map> vars = [:]
+	Map<String, Map> vars = [:]
 
 	/**
 	 * Used variables in mask<br><br>
@@ -145,27 +147,30 @@ class Path {
 	Map<String, Map> getVars () { this.vars }
 
 	/** Mask variables */
-	final Map<String, Map<String, Object>> maskVariables = [:]
-
+	Map<String, Map<String, Object>> maskVariables = [:]
 	/** Mask variables */
 	Map<String, Map<String, Object>> getMaskVariables() { maskVariables }
 
 	/** System parameters */
-	public final Map<String, Object> sysParams = [:] as Map<String, Object>
+	Map<String, Object> sysParams = [:] as Map<String, Object>
+	/** System parameters */
+	Map<String, Object> getSysParams() { sysParams }
 
 	/** Define variable options */
 	Map variable(String name, @DelegatesTo(PathVarsSpec) Closure cl = null) {
 		if (name == null || name == '') throw new ExceptionGETL('Name required for variable!')
+
 		def var = maskVariables.get(name) as Map
 		if (var == null) {
 			var = [:]
 			maskVariables.put(name, (var as Map<String, Object>))
+			isCompile = false
 		}
 
-//		def ownerObject = sysParams.dslOwnerObject?:this
 		def thisObject = sysParams.dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
 		def parent = new PathVarsSpec(this, thisObject, true, var)
 		parent.runClosure(cl)
+		if (cl != null) isCompile = false
 
 		return parent.params
 	}
@@ -209,12 +214,12 @@ class Path {
 		likeFile = null
 		numLocalPath = -1
 	
-//		def rmask = maskStr.replace(".", "[.]").replace("*", ".*").replace("+", "\\+").replace("-", "\\-")
 		def rmask = FileUtils.FileMaskToMathExpression(maskStr)
 
 		String[] d = rmask.split("/")
 		StringBuilder rb = new StringBuilder()
-		
+
+		def listFoundVars = [] as List<String>
 		for (int i = 0; i < d.length; i++) {
 			Map p = [:]
 			p.vars = []
@@ -278,8 +283,11 @@ class Path {
 						b.append("(${pm})")
 					}
 					
-					if (p.vars.find { it == vn} != null) throw new ExceptionGETL("Duplicate variable \"${vn}\"")
+					if (vn in listFoundVars)
+						throw new ExceptionGETL("Duplicate variable \"${vn}\" in path mask \"$mask\"")
+
 					(p.vars as List).add(vn)
+					listFoundVars << vn
 					
 					f = e + 1
 				}
@@ -436,6 +444,8 @@ class Path {
 	
 	/** Analize file or directory */
 	private Map analize(String fileName, boolean isDir) {
+		if (!isCompile) compile()
+
 		def fn = fileName
 		if (fn == null) return null
 		
@@ -582,7 +592,7 @@ class Path {
 		}
 		def res = GenerationUtils.EvalText(maskFile, v)
 		
-		res
+		return res
 	}
 
 	/** Generation file name with variables */
@@ -622,7 +632,7 @@ class Path {
 				break
 		}
 		
-		value
+		return value
 	}
 
 	String toString () {
@@ -653,6 +663,7 @@ elements:
 			if (vr.size() > 0) b.append("]")
 			b.append("\n")
 		}
-		b.toString()
+
+		return b.toString()
 	}
 }

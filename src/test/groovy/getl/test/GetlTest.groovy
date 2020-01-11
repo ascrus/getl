@@ -1,5 +1,6 @@
 package getl.test
 
+import getl.lang.Getl
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
@@ -15,6 +16,7 @@ import org.junit.runners.JUnit4
 abstract class GetlTest extends GroovyTestCase {
     @BeforeClass
     static void InitTestClass() {
+        Getl.CleanGetl()
         Config.ReInit()
         Logs.Init()
         FileUtils.ListResourcePath.clear()

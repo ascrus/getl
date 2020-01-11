@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
+
  Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
@@ -22,38 +22,23 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.files
+package getl.utils.sub
 
 import groovy.transform.CompileStatic
 
 /**
- * Processing files by files.Manager.buildList method with closure code
- * @author @author Alexsey Konstantinov
+ * Сonvert closure to script object
+ * @author Alexsey Konstantonov
  *
  */
-class ManagerListProcessClosure extends ManagerListProcessing {
-	/**
-	 * Process client code 
-	 */
-	Closure getCode() { params.code as Closure }
-	void setCode(Closure value) { params.code = value }
-	
-	/**
-	 * Run code
-	 */
-	private Closure runCode
+@CompileStatic
+class ClosureScript extends Script {
+    Closure closure
 
-	@Override
-    void init() {
-		super.init()
-		if (code != null) runCode = code.clone() as Closure
-	}
-
-	@Override
-	@CompileStatic
-    boolean prepare(Map file) {
-		if (runCode != null) return runCode.call(file)
-		
-		true
-	}
+    @Override
+    Object run() {
+        closure.resolveStrategy = Closure.DELEGATE_FIRST
+        closure.delegate = this
+        closure.call()
+    }
 }

@@ -44,7 +44,7 @@ class DslTest extends getl.test.GetlTest {
             def file = textFile {
                 temporaryFile = true
                 write '12345'
-            }
+            }.fileName
             assertEquals('12345', new File(file).text)
         }
     }
@@ -72,7 +72,7 @@ datasets {
     }
 }
 """
-            }
+            }.fileName
 
             assertEquals(this.tempConfig, configFileName)
 
@@ -835,7 +835,7 @@ ORDER BY t1.id'''
             testCase {
                 clearGroupFilter()
 
-                unregisterFileManager 'getl.testdsl.files:*'
+                unregisterFilemanager 'getl.testdsl.files:*'
                 shouldFail { filemanager('getl.testdsl.files:files') }
 
                 unregisterDataset null, [H2TABLE, EMBEDDEDTABLE]

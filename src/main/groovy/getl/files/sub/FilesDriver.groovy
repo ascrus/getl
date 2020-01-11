@@ -1,10 +1,10 @@
 /*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "ETL".
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
 
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
-
+ 
  Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
@@ -22,18 +22,58 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.proc
+package getl.files.sub
 
+import getl.data.*
+import getl.driver.*
+import getl.exception.ExceptionGETL
 import groovy.transform.InheritConstructors
 
 /**
- * Exception class for FileCopier process
+ * Files driver
  * @author Alexsey Konstantinov
  *
  */
 @InheritConstructors
-class FileCopierException extends GroovyRuntimeException {
-    FileCopierException(String message) {
-        super(message)
-    }
+class FilesDriver extends FileDriver {
+
+	@Override
+	List<Support> supported() {
+		[]
+	}
+
+	@Override
+	List<Operation> operations() {
+		[Operation.DROP]
+	}
+
+	@Override
+
+	List<Field> fields(Dataset dataset) {
+		throw new ExceptionGETL('Not support this features!')
+	}
+
+	@Override
+
+	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		throw new ExceptionGETL('Not support this features!')
+	}
+
+	@Override
+
+	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
+		throw new ExceptionGETL('Not support this features!')
+	}
+
+	@Override
+
+	void write(Dataset dataset, Map row) {
+		throw new ExceptionGETL('Not support this features!')
+	}
+
+	@Override
+
+	void closeWrite(Dataset dataset) {
+		throw new ExceptionGETL('Not support this features!')
+	}
 }

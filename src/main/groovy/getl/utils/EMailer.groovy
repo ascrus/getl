@@ -24,8 +24,8 @@
 
 package getl.utils
 
-import javax.activation.DataHandler
-import javax.activation.FileDataSource
+import getl.utils.sub.EMailerAuth
+
 import javax.mail.*
 import javax.mail.internet.*
 

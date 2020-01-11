@@ -27,6 +27,7 @@ package getl.data
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -422,6 +423,7 @@ class Connection {
 	 * Clone current connection
 	 * @return
 	 */
+	@Synchronized
 	Connection cloneConnection () {
 		String className = this.class.name
 		Map p = CloneUtils.CloneMap(this.params)

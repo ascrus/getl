@@ -22,7 +22,7 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.proc
+package getl.proc.sub
 
 import groovy.transform.InheritConstructors
 

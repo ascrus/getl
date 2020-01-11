@@ -28,6 +28,9 @@ import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.files.opts.ManagerBuildListSpec
 import getl.files.opts.ManagerDownloadSpec
+import getl.files.sub.FileManagerList
+import getl.files.sub.ManagerListProcessClosure
+import getl.files.sub.ManagerListProcessing
 import getl.jdbc.*
 import getl.lang.opts.BaseSpec
 import getl.proc.Executor
@@ -52,10 +55,10 @@ abstract class Manager {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
 				 'sqlHistoryFile', 'saveOriginalDate', 'limitDirs', 'threadLevel', 'recursive',
-				 'ignoreExistInStory', 'createStory', 'takePathInStory', 'extended'])
+				 'ignoreExistInStory', 'createStory', 'takePathInStory', 'extended', 'story'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel',
-				 'ignoreExistInStory', 'createStory'])
+				 'ignoreExistInStory', 'createStory', 'extendFields', 'extendIndexes'])
 		methodParams.register('downloadFiles',
 				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
 
@@ -89,10 +92,11 @@ abstract class Manager {
 	 * Clone manager
 	 * @return new manager object
 	 */
+	@Synchronized
 	Manager cloneManager () {
 		Manager res = getClass().newInstance() as Manager
 		res.params.putAll(this.params)
-		
+
 		return res
 	}
 
@@ -110,114 +114,82 @@ abstract class Manager {
 	/** All type object */
 	static TypeFile getAllType() { TypeFile.ALL }
 	
-	/**
-	 * Parameters
-	 */
-	public final Map<String, Object> params = [:] as Map<String, Object>
+	/** Parameters */
+	final Map<String, Object> params = [:] as Map<String, Object>
+	/** Parameters */
+	Map<String, Object> getParams() { params }
 
-	/**
-	 * System parameters
-	 */
-	public final Map<String, Object> sysParams = [:] as Map<String, Object>
+	/** System parameters */
+	final Map<String, Object> sysParams = [:] as Map<String, Object>
+	/** System parameters */
+	Map<String, Object> getSysParams() { sysParams }
 	
-	/**
-	 * Root path
-	 */
+	/** Root path */
 	String getRootPath () { params.rootPath as String }
-	/**
-	 * Root path
-	 */
+	/** Root path */
 	void setRootPath (String value) {
 		params.rootPath = value
 	}
 	
-	/**
-	 * Local directory
-	 */
-	String getLocalDirectory () { params.localDirectory }
-	/**
-	 * Local directory
-	 */
+	/** Local directory */
+	String getLocalDirectory () { params.localDirectory as String }
+	/** Local directory */
 	void setLocalDirectory (String value) {
 		FileUtils.ValidPath(value)
 		params.localDirectory = value
 		localDirFile = new File(value)
 	}
 	
-	/**
-	 * Set noop time (use in list operation)
-	 */
+	/** Set noop time (use in list operation) */
 	Integer getNoopTime () { params.noopTime as Integer }
-	/**
-	 * Set noop time (use in list operation)
-	 */
+	/** Set noop time (use in list operation) */
 	void setNoopTime (Integer value) { params.noopTime = value }
 	
-	/**
-	 * Count thread for build list files 
-	 */
+	/** Count thread for build list files */
 	Integer getBuildListThread () { params.buildListThread as Integer }
-	/**
-	 * Count thread for build list files
-	 */
+	/** Count thread for build list files */
 	void setBuildListThread (Integer value) {
 		if (value != null && value <= 0) throw new ExceptionGETL("buildListThread been must great zero!")
 		params.buildListThread = value
 	}
 	
-	/**
-	 * Write to log when send noop message
-	 */
+	/** Write to log when send noop message */
 	boolean getSayNoop () { BoolUtils.IsValue(params.sayNoop, false) }
-	/**
-	 * Write to log when send noop message
-	 */
+	/** Write to log when send noop message */
 	void setSayNoop (boolean value) { params.sayNoop = value }
 	
-	/**
-	 * Log script file on running commands 
-	 */
-	String getScriptHistoryFile () { params.scriptHistoryFile }
-	/**
-	 * Log script file on running commands
-	 */
+	/** Log script file on running commands */
+	String getScriptHistoryFile () { params.scriptHistoryFile as String }
+	/** Log script file on running commands */
 	void setScriptHistoryFile (String value) {
 		params.scriptHistoryFile = value
 		fileNameScriptHistory = null 
 	}
-	
-	/**
-	 * Log script file on file list connection
-	 */
-	String getSqlHistoryFile () { params.sqlHistoryFile }
-	/**
-	 * Log script file on file list connection
-	 */
+
+	/** Log script file on file list connection */
+	String getSqlHistoryFile () { params.sqlHistoryFile as String }
+	/** Log script file on file list connection */
 	void setSqlHistoryFile (String value) {
 		params.sqlHistoryFile = value
 	}
 
-    /**
-     * Save original date and time from downloading and uploading file
-     */
+    /** Save original date and time from downloading and uploading file */
 	boolean getSaveOriginalDate() { BoolUtils.IsValue(params.saveOriginalDate, false)}
-	/**
-	 * Save original date and time from downloading and uploading file
-	 */
+	/** Save original date and time from downloading and uploading file */
 	void setSaveOriginalDate(boolean value) { params.saveOriginalDate = value }
 
-	/**
-	 * Extended attributes
-	 */
+	/** Extended attributes */
 	Map getExtended() { params.extended as Map }
-	/**
-	 * Extended attributes
-	 */
+	/** Extended attributes */
 	void setExtended (Map value) {
 		extended.clear()
 		if (value != null) extended.putAll(value)
 	}
 
+	/**
+	 * Name section parameteres value in config file
+	 * Store parameters to config file from section "files"
+	 */
 	String config
 	/**
 	 * Name section parameteres value in config file
@@ -245,14 +217,10 @@ abstract class Manager {
 		setConfig(configName)
 	}
 	
-	/**
-	 * Write errors to log
-	 */
+	/** Write errors to log */
 	public boolean writeErrorsToLog = true
 	
-	/**
-	 * File system is windows
-	 */
+	/** File system is windows */
 	protected boolean isWindowsFileSystem = false
 	
 	private final Closure doInitConfig = {
@@ -264,11 +232,8 @@ abstract class Manager {
 		Logs.Config("Load config \"files\".\"config\" for object \"${this.getClass().name}\"")
 	}
 	
-	/**
-	 * Validate parameters
-	 * @return
-	 */
-	def validateParams () {
+	/** Validate parameters */
+	void validateParams () {
 		methodParams.validation("super", params)
 	}
 	
@@ -286,43 +251,30 @@ abstract class Manager {
 		}
 	}
 	
-	/**
-	 * File name is case-sensitive
-	 * @return
-	 */
+	/** File name is case-sensitive */
 	abstract boolean isCaseSensitiveName()
 	
-	/**
-	 * Init validator methods
-	 */
+	/** Init validator methods */
 	protected void initMethods() { }
 	
-	/**
-	 * Connect to server
-	 */
+	/** Connect to server */
 	abstract void connect ()
 	
-	/**
-	 * Disconnect from server
-	 */
+	/** Disconnect from server */
 	abstract void disconnect()
 
-	/**
-	 * Connection established successfully
-	 */
+	/** Connection established successfully */
 	abstract boolean isConnected()
 	
 	/**
 	 * Return list files of current directory from server
 	 * Parameters node list: fileName, fileSize, fileDate
-	 * @param maskFiles
-	 * @return
+	 * @param maskFiles mask files
+	 * @return list of files
 	 */
 	abstract FileManagerList listDir(String maskFiles)
 
-	/**
-	 * Process list files of current directory from server
-	 */
+	/** Process list files of current directory from server */
 	@CompileStatic
 	@Synchronized
 	void list (String maskFiles,
@@ -334,51 +286,42 @@ abstract class Manager {
 		}
 	}
 	
-	/**
-	 * Process list files of current directory from server
-	 */
+	/** Process list files of current directory from server */
 	void list (@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure processCode) {
 		list(null, processCode)
 	}
 	
 	/**
 	 * Return list files of current directory from server
-	 * @param maskFiles
-	 * @return
+	 * @param maskFiles mask files
+	 * @return list of files
 	 */
 	List<Map> list (String maskFiles) {
 		List<Map> res = new LinkedList<Map>()
 		Closure addToList = { Map r -> res << r }
 		list(maskFiles, addToList)
 		
-		res
+		return res
 	}
 	
-	/**
-	 * Return list files of current directory from server
-	 * @return
-	 */
+	/** Return list files of current directory from server */
 	List<Map> list () {
 		List<Map> res = new LinkedList<Map>()
 		Closure addToList = { Map r -> res << r }
 		list(null, addToList)
 		
-		res
+		return res
 	}
 	
-	/**
-	 * Absolute current path
-	 */
+	/** Absolute current path */
 	abstract String getCurrentPath ()
 	
-	/**
-	 * Set new absolute current path
-	 */
+	/** Set new absolute current path */
 	abstract void setCurrentPath (String path)
 	
 	/**
 	 * Change current server directory
-	 * @param dir
+	 * @param dir new directory
 	 */
 	void changeDirectory (String dir) {
 		if (dir == null || dir == '') throw new ExceptionGETL("Null dir not allowed for cd operation")
@@ -419,34 +362,32 @@ abstract class Manager {
 		}
 	}
 	
-	/**
-	 * Change current directory to parent directory 
-	 */
+	/** Change current directory to parent directory */
 	abstract void changeDirectoryUp ()
 	
-	/**
-	 * Change current directory to root
-	 */
+	/** Change current directory to root */
 	void changeDirectoryToRoot () {
 		currentPath = rootPath
 	}
 	
 	/**
-	 * Download file from server
-	 * @param fileName
+	 * Download file from specified path by server
+	 * @param fileName downloaded file name
+	 * @param path path file path
+	 * @param localFileName saved file name in local directory
 	 */
 	abstract void download (String fileName, String path, String localFileName)
 	
 	/**
-	 * Download file from server
-	 * @param fileName
+	 * Download file from current directory by server
+	 * @param fileName downloaded file name
 	 */
 	void download (String fileName) {
 		download(fileName, fileName)
 	}
 	
 	/**
-	 * Download file from server
+	 * Download file to specified name in locaL directory
 	 * @param fileName
 	 * @param localFileName
 	 */
@@ -457,57 +398,53 @@ abstract class Manager {
 	}
 	
 	/**
-	 * Upload file to server
-	 * @param fileName
+	 * Upload file to specified path by server
+	 * @param path server path for uploaded
+	 * @param fileName uploaded file name by local directory
 	 */
 	abstract void upload (String path, String fileName)
 	
 	/**
-	 * Upload file to server
-	 * @param fileName
+	 * Upload file to current directory by server
+	 * @param fileName uploaded file name by local directory
 	 */
 	void upload (String fileName) {
 		upload(currentLocalDir(), fileName)
 	}
 	
 	/**
-	 * Remove file from server
-	 * @param fileName
+	 * Remove file in current directory by server
+	 * @param fileName removed file name
 	 */
 	abstract void removeFile (String fileName)
 	
 	/**
-	 * Create directory from server
-	 * @param dirName
+	 * Create directory in current directory by server
+	 * @param dirName created directory name
 	 */
 	abstract void createDir (String dirName)
 	
 	/**
-	 * Remove directory from server
-	 * @param dirName
+	 * Remove directory in current directory by server
+	 * @param dirName removed directory name
 	 */
 	void removeDir (String dirName) {
         removeDir(dirName, false)
     }
 
     /**
-     * Remove directory from server
-     * @param dirName
-     * @param recursive
+     * Remove directory and subdirectories in current directory by server
+     * @param dirName removed directory name
+     * @param recursive required subdirectories remove
      */
 	abstract void removeDir (String dirName, Boolean recursive)
 	
-	/**
-	 * Return current directory with full path
-	 */
+	/** Return current directory with full path */
 	String currentAbstractDir() {
-		currentPath
+		return currentPath
 	}
 	
-	/**
-	 * Return current directory with relative path
-	 * @return
-	 */
+	/** Return current directory with relative path */
 	String currentDir() {
 		def cur = currentPath
 		if (cur == null) throw new ExceptionGETL("Current path not set")
@@ -530,46 +467,37 @@ abstract class Manager {
 
 	
 	/**
-	 * Rename file from server
-	 * @param fileName
-	 * @param path
+	 * Rename file in specified path by server
+	 * @param fileName renamed file name
+	 * @param path server path
 	 */
 	abstract void rename (String fileName, String path)
 
+	/** Build file list */
 	TableDataset fileList
-	/**
-	 * File list
-	 */
+	/** Build file list */
 	TableDataset getFileList () { fileList }
-	
+
+	/** Table name of build file list */
 	String fileListName
-	/**
-	 * Name of table file list
-	 */
+	/** Table name of build file list */
 	String getFileListName () { fileListName }
-	/**
-	 * Name of table file list
-	 */
+	/** Table name of build file list */
 	void setFileListName (String value) {
 		fileListName = value
 	}
-	
+
+	/** Connection from table file list (if null, use TDS connection) */
 	JDBCConnection fileListConnection
-	/**
-	 * Connection from table file list (if null, use TDS connection)
-	 */
+	/** Connection from table file list (if null, use TDS connection) */
 	JDBCConnection getFileListConnection () { fileListConnection}
-	/**
-	 * Connection from table file list (if null, use TDS connection)
-	 */
+	/** Connection from table file list (if null, use TDS connection) */
 	void setFileListConnection (JDBCConnection value) { fileListConnection = value }
 
 	// History table
-	TableDataset story
+	TableDataset getStory() { params.story as TableDataset }
 	// History table
-	TableDataset getStory() { story }
-	// History table
-	void setStory(TableDataset value) { story = value }
+	void setStory(TableDataset value) { params.story = value }
 	// Use table for storing history download files
 	void useStory(TableDataset value) { setStory(value) }
 
@@ -610,12 +538,17 @@ abstract class Manager {
 	Boolean getCreateStory() { BoolUtils.IsValue(params.createStory) }
 	/** Create a history table if it does not exist */
 	void setCreateStory(Boolean value) { params.createStory = value }
-	
-	/** Count found files */
+
+	/** Count of found files */
+	private final SynchronizeObject countFileListSync = new SynchronizeObject()
+	/** Count of found files */
 	long getCountFileList () { countFileListSync.count }
-	
-	private final SynchronizeObject countFileListSync = new SynchronizeObject() 
-	
+
+	/** Size of found files */
+	private final SynchronizeObject sizeFileListSync = new SynchronizeObject()
+	/** Size of found files */
+	long getSizeFileList () { sizeFileListSync.count }
+
 	@CompileStatic
 	@Synchronized
 	private FileManagerList listDirSync(String mask) {
@@ -629,12 +562,13 @@ abstract class Manager {
 	}
 	
 	@CompileStatic
-	protected void processList (Manager man, TableDataset dest, Path path, String maskFile, Boolean recursive, Integer filelevel,
+	protected void processList(Manager man, TableDataset dest, Path path, String maskFile, Boolean recursive, Integer filelevel,
 								Boolean requiredAnalize, Integer limit, Integer threadLevel, Integer threadCount, ManagerListProcessing code) {
 		if (threadLevel == null) threadCount = null
 
 		String curPath = man.currentDir()
 		long countFiles = 0
+		long sizeFiles = 0
 		long countDirs = 0
 
 		try {
@@ -659,6 +593,7 @@ abstract class Manager {
 						if (code == null || code.prepare(file)) {
 							dest.write(file)
 							countFiles++
+							sizeFiles += (file.filesize as Long)
 						}
 					}
 					file.clear()
@@ -758,6 +693,7 @@ abstract class Manager {
 		}
 		
 		countFileListSync.addCount(countFiles)
+		sizeFileListSync.addCount(sizeFiles)
 	}
 	
 	/**
@@ -791,6 +727,8 @@ abstract class Manager {
 	 * <li>Boolean ignoreExistInStory - ignore already loaded file by story (default true)
 	 * <li>Integer limitDirs - limit processing directory
 	 * <li>Integer threadLevel - thread processing directory
+	 * <li>List<Field> extendFields - list of extended fields
+	 * <li>List<List<String>> extendIndexes - list of extended indexes
 	 * </ul>
 	 * @param params - parameters
 	 * @param code - processing code for file attributes as boolean code (Map file)
@@ -825,7 +763,11 @@ abstract class Manager {
 		if (recursive && maskFile != null)
 			throw new ExceptionGETL("Don't compatibility parameters recursive vs maskFile!")
 
+		def extendFields = lparams.extendFields as List<Field>
+		def extendIndexes = (lparams.extendIndexes as List<List<String>>)
+
 		countFileListSync.clear()
+		sizeFileListSync.clear()
 
 		// History table		
 		TableDataset storyTable = (lparams.story as TableDataset)?:story
@@ -839,15 +781,26 @@ abstract class Manager {
 		if (createStory) AddFieldsToDS(storyTable)
 
 		initFileList()
+		if (extendFields != null) fileList.addFields(extendFields)
 		path.vars.each { key, attr ->
+			def varName = key.toUpperCase()
+			if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
+				throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
+
 			def ft = (attr.type as Field.Type)?:Field.Type.STRING
 			def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
-			def field = new Field(name: key.toUpperCase(), type: ft, length: length, precision: (attr.precision as Integer)?:0)
+			def field = new Field(name: varName.toUpperCase(), type: ft, length: length, precision: (attr.precision as Integer)?:0)
 			fileList.field << field
 			if (createStory) storyTable.field << field
 		}
 		fileList.drop(ifExists: true)
-		fileList.create()
+		def fileListIndexes = [:]
+		if (extendIndexes != null) {
+			for (int i = 0; i < extendIndexes.size(); i++) {
+				fileListIndexes.put(fileList.tableName + '_' + i, [columns: extendIndexes[i]])
+			}
+		}
+		fileList.create((!fileListIndexes.isEmpty())?[indexes: fileListIndexes]:null)
 
 		if (createStory) storyTable.create()
 

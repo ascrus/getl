@@ -89,8 +89,9 @@ class NumericUtils {
 			}
 			sb.append('|')
 		}
-		
-		sb.toString().hashCode() & 0xFF
+
+		if (sb.length() < 32) sb.append(StringUtils.Replicate('\t', 32 - sb.length()))
+		return sb.toString().hashCode() & 0xFF
 	}
 
 	@SuppressWarnings(["UnnecessaryQualifiedReference", "UnnecessaryQualifiedReference"])
@@ -109,7 +110,8 @@ class NumericUtils {
 			sb.append('|')
 		}
 
-		sb.toString().hashCode() & 0xFF
+		if (sb.length() < 32) sb.append(StringUtils.Replicate('\t', 32 - sb.length()))
+		return sb.toString().hashCode() & 0xFF
 	}
 	
 	/**

@@ -27,6 +27,7 @@ package getl.utils
 //@GrabConfig(systemClassLoader=true)
 
 import getl.files.*
+import getl.files.sub.Filter
 import getl.tfs.TFS
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
@@ -43,7 +44,6 @@ import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.model.ZipParameters
-import net.lingala.zip4j.util.InternalZipConstants
 import getl.exception.ExceptionGETL
 
 /**
@@ -103,7 +103,9 @@ class FileUtils {
 	 */
 	static Boolean ValidPath(File path, Boolean deleteOnExit = false) {
 		if (path.mkdirs()) {
-			path.deleteOnExit()
+			if (deleteOnExit)
+				path.deleteOnExit()
+
 			return true
 		}
 
@@ -112,7 +114,7 @@ class FileUtils {
 	
 	/** 
 	 * Return extension of file
-	 * @param fullPath
+	 * @param fullPath path to file
 	 * @return
 	 */
 	static String FileExtension (String fullPath) {
@@ -123,13 +125,33 @@ class FileUtils {
 
 		return (dotPos != -1)?nameAndExt.substring(dotPos + 1):''
 	}
+
+	/**
+	 * Return extension of file name
+	 * @param fileName file name without path
+	 * @return extension
+	 */
+	static String ExtensionWithoutFilename(String fileName) {
+		int dotPos = fileName.lastIndexOf('.')
+		return (dotPos != -1)?fileName.substring(dotPos + 1):''
+	}
+
+	/**
+	 * Return file name without extension
+	 * @param fileName file name without path
+	 * @return file name
+	 */
+	static String FilenameWithoutExtension(String fileName) {
+		int dotPos = fileName.lastIndexOf('.')
+		return (dotPos != -1)?fileName.substring(0, dotPos):''
+	}
 	
 	/** 
 	 * Return file name without extension
 	 * @param fullPath
 	 * @return
 	 */
-	static String ExcludeFileExtension (String fullPath) {
+	static String ExcludeFileExtension(String fullPath) {
 		fullPath = ConvertToDefaultOSPath(fullPath)
 		
 		int sepPos = fullPath.lastIndexOf(File.separator)

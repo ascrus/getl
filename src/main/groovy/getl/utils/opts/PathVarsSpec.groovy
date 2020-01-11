@@ -70,4 +70,35 @@ class PathVarsSpec extends BaseSpec {
     Integer getMaximumLength() { params.lenMax as Integer }
     /** The maximum length of variable value */
     void setMaximumLength(Integer value) { params.lenMax = value }
+
+    /** Integer field type */
+    static public final Field.Type integerFieldType = Field.Type.INTEGER
+    /** Bigint field type */
+    static public final Field.Type bigintFieldType = Field.Type.BIGINT
+    /** Numeric (decimal) field type */
+    static public final Field.Type numericFieldType = Field.Type.NUMERIC
+    /** Double field type */
+    static public final Field.Type doubleFieldType = Field.Type.DOUBLE
+    /** String field type */
+    static public final Field.Type stringFieldType = Field.Type.STRING
+    /** Text (clob) field type */
+    static public final Field.Type textFieldType = Field.Type.TEXT
+    /** Date field type */
+    static public final Field.Type dateFieldType = Field.Type.DATE
+    /** Time field type */
+    static public final Field.Type timeFieldType = Field.Type.TIME
+    /** Date and time field type */
+    static public final Field.Type datetimeFieldType = Field.Type.DATETIME
+    /** Timestamp with time zone field type */
+    static public final Field.Type timestamp_with_timezoneFieldType = Field.Type.TIMESTAMP_WITH_TIMEZONE
+    /** Boolean field type */
+    static public final Field.Type booleanFieldType = Field.Type.BOOLEAN
+    /** Blob field type */
+    static public final Field.Type blobFieldType = Field.Type.BLOB
+    /** UUID field type */
+    static public final Field.Type uuidFieldType = Field.Type.UUID
+    /** RowID field type */
+    static public final Field.Type rowidFieldType = Field.Type.ROWID
+    /** Object field type */
+    static public final Field.Type objectFieldType = Field.Type.OBJECT
 }

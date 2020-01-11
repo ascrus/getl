@@ -25,6 +25,7 @@
 package getl.files
 
 import getl.exception.ExceptionGETL
+import getl.files.sub.FileManagerList
 import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import org.apache.hadoop.fs.*
@@ -346,5 +347,11 @@ class HDFSManager extends Manager {
             res = "hdfs://$server/$rootPath"
 
         return res
+    }
+
+    @Override
+    void noop () {
+        super.noop()
+        client.getStatus()
     }
 }

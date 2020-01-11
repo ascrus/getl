@@ -22,52 +22,29 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.lang
+package getl.files.sub
+
 /**
- * DSL GETL exception
+ * List files by file manager
  * @author Alexsey Konstantinov
+ *
  */
-class DslException extends Throwable {
-    DslException(Integer typeCode, Integer exitCode, String message) {
-        super(message)
-        this.typeCode = typeCode
-        this.exitCode = exitCode
-    }
+abstract class FileManagerList {
+	/**
+	 * Size of list
+	 * @return
+	 */
+	abstract Integer size ()
 
-    DslException(Integer typeCode, Integer exitCode) {
-        super()
-        this.typeCode = typeCode
-        this.exitCode = exitCode
-    }
-
-    DslException(Integer typeCode, String message) {
-        super(message)
-        this.typeCode = typeCode
-    }
-
-    DslException(Integer typeCode) {
-        super()
-        this.typeCode = typeCode
-    }
-
-    DslException() {
-        super()
-    }
-
-    /** Stop code execution of the current class */
-    static public final def STOP_CLASS = 1
-    /**
-     * Stop execution of current application code
-     */
-    static public final def STOP_APP = 2
-
-    /** Type code */
-    Integer typeCode
-    /** Type code */
-    Integer getTypeCode() { typeCode }
-
-    /** Exit code */
-    Integer exitCode
-    /** Exit code */
-    Integer getExitCode() { exitCode }
+	/**
+	 * List item by index	
+	 * @param index
+	 * @return
+	 */
+	abstract Map item (int index)
+	
+	/**
+	 * Clear list
+	 */
+	abstract void clear ()
 }

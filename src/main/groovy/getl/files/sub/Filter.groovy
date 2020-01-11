@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
-
+ 
  Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
@@ -22,23 +22,19 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.utils
+package getl.files.sub
 
-import groovy.transform.InheritConstructors
+import java.io.FilenameFilter
 
-/**
- * Emailer authenticator class
- * @author Alexsey Konstantinov
- *
- */
-@InheritConstructors
-class EMailerAuth extends javax.mail.Authenticator {
-    String user
-    String password
+class Filter implements FilenameFilter {
+	Closure code
 
-    @Override
-    protected javax.mail.PasswordAuthentication getPasswordAuthentication() {
-        if (user == null || password == null) return null
-        return new javax.mail.PasswordAuthentication(user, password)
-    }
+    Filter (Closure code) {
+		this.code = code 
+	}
+	
+	@Override
+    boolean accept(File file, String name) {
+		code.call(file, name)
+	}
 }

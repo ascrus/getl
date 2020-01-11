@@ -32,6 +32,7 @@ import getl.db2.*
 import getl.deploy.Version
 import getl.driver.Driver
 import getl.excel.*
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import getl.files.*
 import getl.firebird.FirebirdConnection
@@ -52,10 +53,13 @@ import getl.oracle.*
 import getl.postgresql.*
 import getl.proc.*
 import getl.proc.opts.*
+import getl.proc.sub.ExecutorListElement
+import getl.proc.sub.ExecutorThread
 import getl.salesforce.*
 import getl.stat.*
 import getl.tfs.*
 import getl.utils.*
+import getl.utils.sub.ClosureScript
 import getl.vertica.*
 import getl.xero.*
 import getl.xml.*
@@ -148,8 +152,8 @@ class Getl extends Script {
                 try {
                     eng.runGroovyClass(runClass, Config.vars)
                 }
-                catch (DslException e) {
-                    if (e.typeCode == DslException.STOP_APP) {
+                catch (ExceptionDSL e) {
+                    if (e.typeCode == ExceptionDSL.STOP_APP) {
                         if (e.message != null) logInfo(e.message)
                         if (e.exitCode != null) exitCode = e.exitCode
                     }
@@ -166,27 +170,27 @@ class Getl extends Script {
     /** Quit DSL Application */
     void appRunSTOP(String message = null, Integer exitCode = null) {
         if (message != null)
-            throw new DslException(DslException.STOP_APP, exitCode, message)
+            throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode, message)
         else
-            throw new DslException(DslException.STOP_APP, exitCode)
+            throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode)
     }
 
     /** Quit DSL Application */
     void appRunSTOP(Integer exitCode) {
-        throw new DslException(DslException.STOP_APP, exitCode)
+        throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode)
     }
 
     /** Stop code execution of the current class */
     void classRunSTOP(String message = null, Integer exitCode = null) {
         if (message != null)
-            throw new DslException(DslException.STOP_CLASS, exitCode, message)
+            throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode, message)
         else
-            throw new DslException(DslException.STOP_CLASS, exitCode)
+            throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode)
     }
 
     /** Stop code execution of the current class */
     void classRunSTOP(Integer exitCode) {
-        throw new DslException(DslException.STOP_CLASS, exitCode)
+        throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode)
     }
 
     /** The name of the main class of the process */
@@ -295,7 +299,7 @@ class Getl extends Script {
     private _ownerObject
 
     /** Run DSL script on getl share object */
-    static Getl Dsl(def ownerObject, Map parameters,
+    static def Dsl(def ownerObject, Map parameters,
                     @DelegatesTo(Getl)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         if (_getl == null) _getl = new Getl()
@@ -303,20 +307,20 @@ class Getl extends Script {
     }
 
     /** Run DSL script on getl share object */
-    static Getl Dsl(def thisObject,
+    static def Dsl(def thisObject,
                     @DelegatesTo(Getl)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         Dsl(thisObject, null, cl)
     }
 
     /** Run DSL script on getl share object */
-    static Getl Dsl(@DelegatesTo(Getl)
+    static def Dsl(@DelegatesTo(Getl)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         Dsl(null, null, cl)
     }
 
     /** Run DSL script on getl share object */
-    static Getl Dsl() {
+    static def Dsl() {
         Dsl(null, null, null)
     }
 
@@ -326,29 +330,31 @@ class Getl extends Script {
     }
 
     /** Run DSL script */
-    Getl runDsl(def ownerObject, Map parameters,
+    def runDsl(def ownerObject, Map parameters,
                 @DelegatesTo(Getl)
                 @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
+        def res
+
         if (ownerObject != null) _ownerObject = ownerObject
         if (cl != null) {
             def code = cl.rehydrate(this, this, _ownerObject ?: this)
             code.resolveStrategy = childDelegate
             if (parameters != null) code.properties.putAll(parameters)
-            code.call(this)
+            res = code.call(this)
         }
 
-        return this
+        return res
     }
 
     /** Run DSL script */
-    Getl runDsl(def ownerObject,
+    def runDsl(def ownerObject,
                 @DelegatesTo(Getl)
                 @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         runDsl(ownerObject, null, cl)
     }
 
     /** Run DSL script */
-    Getl runDsl(@DelegatesTo(Getl)
+    def runDsl(@DelegatesTo(Getl)
                 @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         runDsl(null, null, cl)
     }
@@ -439,7 +445,7 @@ class Getl extends Script {
 
     /** Fix start process */
     ProcessTime startProcess(String name, String objName = null) {
-        return new ProcessTime(name: name,
+        return new ProcessTime(name: name, objectName: objName,
                 logLevel: (langOpts.processTimeTracing) ? langOpts.processTimeLevelLog : Level.OFF,
                 debug: langOpts.processTimeDebug)
     }
@@ -1643,7 +1649,7 @@ class Getl extends Script {
      * @param filter object filtering code
      */
     @Synchronized
-    void unregisterHistoryPoint(String mask = null,
+    void unregisterHistorypoint(String mask = null,
                                 @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.SavePointManager'])
                                         Closure<Boolean> filter = null) {
         def list = listHistorypoints(mask, filter)
@@ -1861,7 +1867,7 @@ class Getl extends Script {
     }
 
     @Synchronized
-    void unregisterFileManager(String mask = null, List filemanagerClasses = null,
+    void unregisterFilemanager(String mask = null, List filemanagerClasses = null,
                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                        Closure<Boolean> filter = null) {
         def list = listFilemanagers(mask, filemanagerClasses, filter)
@@ -1985,8 +1991,8 @@ class Getl extends Script {
         try {
             script.run()
         }
-        catch (DslException e) {
-            if (e.typeCode == DslException.STOP_CLASS) {
+        catch (ExceptionDSL e) {
+            if (e.typeCode == ExceptionDSL.STOP_CLASS) {
                 if (e.message != null) logInfo(e.message)
                 if (e.exitCode != null) res = e.exitCode
             }
@@ -4085,9 +4091,10 @@ class Getl extends Script {
     /**
      * Processing text file
      * @param file file object or string file name
-     * @cl process code
+     * @param cl process code
+     * @return text file specification
      */
-    String textFile(def file,
+    FileTextSpec textFile(def file,
                     @DelegatesTo(FileTextSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.FileTextSpec']) Closure cl) {
         def parent = new FileTextSpec(childOwnerObject, childThisObject, false, null)
@@ -4101,11 +4108,11 @@ class Getl extends Script {
         pt.name = "Processing text file${(parent.fileName != null) ? (' "' + parent.fileName + '"') : ''}"
         finishProcess(pt, parent.countBytes)
 
-        return parent.fileName
+        return parent
     }
 
     /** Processing text file */
-    String textFile(@DelegatesTo(FileTextSpec)
+    FileTextSpec textFile(@DelegatesTo(FileTextSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.FileTextSpec']) Closure cl) {
         textFile(null, cl)
     }
@@ -4166,32 +4173,46 @@ class Getl extends Script {
         return obj.cloneSavePointManager(con) as SavePointManager
     }
 
-    /** Copying files according to the specified rules */
+    /**
+     * Copying files according to the specified rules
+     * @param source source file manager
+     * @param destination destination file manager
+     * @param cl process parameter setting code
+     * @return file copier instance
+     */
     FileCopier fileCopier(Manager source, Manager destination,
                           @DelegatesTo(FileCopier)
                           @ClosureParams(value = SimpleType, options = ['getl.proc.FileCopier']) Closure cl) {
-        if (source == null) throw new ExceptionGETL('Source file manager cannot be null!')
-        if (destination == null) throw new ExceptionGETL('Destination file manager cannot be null!')
+        fileCopier(source, [destination], cl)
+    }
+
+    /**
+     * Copying files according to the specified rules
+     * @param source source file manager
+     * @param destinations list of destination file manager
+     * @param cl process parameter setting code
+     * @return file copier instance
+     */
+    FileCopier fileCopier(Manager source, List<Manager> destinations,
+                                  @DelegatesTo(FileCopier)
+                          @ClosureParams(value = SimpleType, options = ['getl.proc.FileCopier']) Closure cl) {
+        if (source == null) throw new ExceptionGETL('Required source file manager!')
+        if (destinations == null && destinations.isEmpty()) throw new ExceptionGETL('Required destination file manager!')
+
         def parent = new FileCopier()
         parent.sysParams.dslThisObject = childThisObject
         parent.sysParams.dslOwnerObject = childOwnerObject
         parent.source = source
-        parent.destination = destination
+        parent.destinations = destinations
 
-        def pt = startProcess("Copy files from [$source] to [$destination]", 'file')
-        if (!source.connected) source.connect()
+        def ptName = "Copy files from [$source]"
+        def pt = startProcess(ptName, 'file')
         try {
-            if (!destination.connected) destination.connect()
-            try {
-                runClosure(parent, cl)
-                parent.copy()
-            }
-            finally {
-                if (destination.connected) destination.disconnect()
-            }
+            runClosure(parent, cl)
+            parent.process()
         }
         finally {
-            if (source.connected) source.disconnect()
+            parent.DisconnectFrom([parent.source] + parent.destinations)
         }
         finishProcess(pt, parent.countFiles)
 
@@ -4209,10 +4230,26 @@ class Getl extends Script {
         return parent
     }
 
-    /** Pause current process */
-    @SuppressWarnings("GrMethodMayBeStatic")
-    void pause(Long timeout) {
-        Thread.currentThread().wait(timeout)
+    /** Pause current thread process
+     * @param timeout how much to wait in ms
+     */
+    static void pause(Long timeout) {
+        def thread = Thread.currentThread()
+        synchronized (thread) {
+            thread.wait(timeout)
+        }
+    }
+
+    /**
+     * Pause main thread process
+     * @param message pause text notification
+     */
+    @Synchronized
+    void pressAnyKey(String message = null) {
+        System.in.withReader {
+            print (message?:'Press any key to continue ...')
+            println it.readLine()
+        }
     }
 
     /* TODO: add Counter repository object */

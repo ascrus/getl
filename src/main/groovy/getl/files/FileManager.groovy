@@ -25,6 +25,8 @@
 package getl.files
 
 import getl.exception.ExceptionGETL
+import getl.files.sub.FileManagerList
+import getl.files.sub.Filter
 import getl.utils.*
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors

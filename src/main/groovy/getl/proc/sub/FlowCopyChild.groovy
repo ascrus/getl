@@ -1,4 +1,4 @@
-package getl.proc
+package getl.proc.sub
 
 import getl.data.Dataset
 import groovy.transform.CompileStatic

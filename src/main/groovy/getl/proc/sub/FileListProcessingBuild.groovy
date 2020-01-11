@@ -22,45 +22,52 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.proc
+package getl.proc.sub
 
-import getl.files.ManagerListProcessing
+import getl.files.sub.ManagerListProcessing
+import getl.proc.FileListProcessing
 import getl.utils.Logs
 import getl.utils.Path
+import groovy.transform.CompileStatic
 
 /**
  * File Copy Manager Between File Systems
  * @author Alexsey Konstantinov
  */
-class FileCopierListProcessing extends ManagerListProcessing {
+@CompileStatic
+class FileListProcessingBuild extends ManagerListProcessing {
+    /** Current path */
     String curPath = ''
 
-    FileCopier filecopier
+    /** Owner file copier object */
+    FileListProcessing owner
 
+    /** Source name */
     String sourceName
 
+    /** Source mask path */
     Path sourcePath
-    Path destinationPath
-    Path renamePath
 
-    Closure onFilterDirs, onFilterFiles
+    /** Filtering directories */
+    Closure<Boolean> onFilterDirs
+    /** Filtering files */
+    Closure<Boolean> onFilterFiles
 
     @Override
     void init () {
         super.init()
 
-        filecopier = params.filecopier
+        owner = params.owner as FileListProcessing
 
-        sourcePath = filecopier.sourcePath
-        destinationPath = filecopier.destinationPath
-        renamePath = filecopier.renamePath
+        sourcePath = owner.sourcePath
 
-        if (params."prefilter_dir" != null) onFilterDirs = filecopier.onFilterDirs
-        if (params."prefilter_file" != null) onFilterFiles = filecopier.onFilterFiles
+        if (params.prefilter_dir != null) onFilterDirs = owner.onFilterDirs
+        if (params.prefilter_file != null) onFilterFiles = owner.onFilterFiles
+
+        sourceName = owner.source.toString()
     }
 
     @Override
-    @groovy.transform.CompileStatic
     boolean prepare (Map file) {
         def isNewDir = false
 
@@ -77,18 +84,7 @@ class FileCopierListProcessing extends ManagerListProcessing {
             if (!(onFilterFiles.call(file))) return false
         }
 
-        if (isNewDir) Logs.Fine("Analysis of directory \"$curPath\" in file source \"$sourceName\" ...")
-
-        if (file.filetype != 'FILE') return true
-
-        if (renamePath != null) {
-            file.localfilename = renamePath.generateFileName(file)
-        }
-        else {
-            file.localfilename = file.filename
-        }
-
-        file.outfile = destinationPath.generateFileName(file)
+        if (isNewDir) Logs.Finest("Analysis directory \"$curPath\" ...")
 
         return true
     }

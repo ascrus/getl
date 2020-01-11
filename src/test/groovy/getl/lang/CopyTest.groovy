@@ -1,105 +1,288 @@
 package getl.lang
 
 import getl.data.Field
-import getl.exception.ExceptionGETL
+import getl.files.Manager
 import getl.utils.FileUtils
+import getl.utils.Path
+import getl.utils.StringUtils
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 
-/**
-Create config file "tests/lang/copier.groovy" in projection dir as syntax:
-
-source {
- server = '<sftp host>'
- login = '<ssh user>'
- password = '<password>'
- rootPath = '<source directory of files>'
- hostKey = '<rsa public key>'
-}
-
-dest {
- server = '<sftp host>'
- login = '<ssh user>'
- password = '<password>'
- rootPath = '<source directory of files>'
- hostKey = '<rsa public key>'
-}
-*/
-
 class CopyTest extends getl.test.GetlTest {
+    static final def debug = false
+    static final def workPath = "${(debug)?'c:/tmp/getl.test':FileUtils.SystemTempDir()}/copier"
+
+    static final def sourcePathDir = "${workPath}/source"
+    static final def destPathDir = "${workPath}/dest"
+
+    static final def countFilePortions = 1024 // 10 chars *  1024 bytes = 10 kb
+
     @BeforeClass
-    static void CleanGetl() {
-        Getl.CleanGetl()
-    }
+    static void init() {
+        if (FileUtils.ExistsFile(workPath, true)) {
+            FileUtils.DeleteFolder(workPath, true)
+        }
+        FileUtils.ValidPath(workPath)
+        FileUtils.ValidPath(sourcePathDir)
 
-    @Override
-    boolean allowTests() { FileUtils.ExistsFile('tests/lang/copier.groovy') }
-
-    final def configFile = 'tests/lang/copier.groovy'
-
-    @Test
-    void testCopy() {
         Getl.Dsl(this) {
-            configuration {
-                load(this.configFile)
-            }
-
-            embeddedTable('history', true) {
-                tableName = 'history'
-            }
-
-            sftp('source', true) {
-                useConfig 'source'
-                useStory embeddedTable('history')
-            }
-
-            files('dest', true) {
-                useConfig 'dest'
-            }
-
-            fileCopier(sftp('source'), files('dest')) {
-                useSourcePath {
-                    mask = 'M2000_{region}_{m2000}/neexport_{date}/{bs_group}/A{bs_date}00+{timezone_start}-{finish_hour}00+{timezone_finish}_{bs}.xml.gz'
-                    variable('region') { format = 'CN|DV|KV|MO|NW|SB|UR|VL'}
-                    variable('date') { type = Field.dateFieldType; format = 'yyyyMMdd' }
-                    variable('bs_date') { type = Field.datetimeFieldType; format = 'yyyyMMdd.HH' }
-                    variable('timezone_start') { type = Field.integerFieldType; length = 4 }
-                    variable('timezone_finish') { type = Field.integerFieldType; length = 4 }
-                    variable('finish_hour') { type = Field.integerFieldType; length = 2 }
-                }
-
-                useDestinationPath {
-                    mask = 'm2000/{region}/{date}/{bs_date}'
-                    variable('date') { type = Field.dateFieldType; format = 'yyyyMMdd' }
-                    variable('bs_date') { type = Field.datetimeFieldType; format = 'HH-mm' }
-                }
-
-                useRenamePath {
-                    mask = '{filenameonly}.{filedate}.{fileextonly}'
-                }
-
-                inMemoryMode = true
-
-                /*source.buildList(path: sourcePath, recursive: true)
-                source.fileList.eachRow {
-                    println it.filename + ': ' + it.filedate.toString()
-                    it.filenameonly = FileUtils.ExcludeFileExtension(it.filename)
-                    it.fileextonly = FileUtils.FileExtension(it.filename)
-                    println '  ' + renamePath.generateFileName(it)
-                }*/
-
-                retryCount = 3
-                copyOrder = ['bs_date', 'region']
-
-                scriptOfSourceOnStart = 'ls'
-                scriptOfDestinationOnStart = 'dir'
-
-                scriptOfSourceOnComplete = 'ls'
-                scriptOfDestinationOnComplete = 'dir'
-
-                beforeCopyFile { s, d -> println "Start copy file $s to file $d" }
-                afterCopyFile { s, d -> println "Finish copy file $s to file $d" }
+            files('source', true) {
+                rootPath = this.sourcePathDir
+                threadLevel = 1
+                buildListThread = 2
             }
         }
+    }
+
+    protected void generateSource() {
+        if (FileUtils.ExistsFile(sourcePathDir, true)) {
+            FileUtils.DeleteFolder(sourcePathDir, true)
+        }
+        Getl.Dsl(this) {
+            thread {
+                useList(1..3)
+                run(3) { region_num ->
+                    FileUtils.ValidPath("${this.sourcePathDir}/region_$region_num")
+                    (1..3).each { day_num ->
+                        FileUtils.ValidPath("${this.sourcePathDir}/region_$region_num/2020-01-${StringUtils.AddLedZeroStr(day_num, 2)}")
+                        ['AAA', 'BBB', 'CCC'].each { obj_name ->
+                            (1..3).each { portion_num ->
+                                def fc = textFile("${this.sourcePathDir}/region_$region_num/2020-01-${StringUtils.AddLedZeroStr(day_num, 2)}/region_${region_num}_object_${obj_name}.${StringUtils.AddLedZeroStr(portion_num, 4)}.dat") {
+                                    writeln(StringUtils.Replicate('0123456789', this.countFilePortions))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @AfterClass
+    static void done() {
+        if (!debug) {
+            FileUtils.DeleteFolder(workPath, true)
+        }
+    }
+
+    static final Path sourceMask = Getl.Dsl {
+            filePath {
+                mask = 'region_{region}/{date}/region_{region_num}_object_{name}.{num}.dat'
+
+                variable('region') { type = integerFieldType; minimumLength = 1; maximumLength = 3 }
+                variable('date') { type = dateFieldType; format = 'yyyy-MM-dd' }
+                variable('region_num') { type = integerFieldType; minimumLength = 1; maximumLength = 3 }
+                variable('name') { format = 'AAA|BBB|CCC' }
+                variable('num') { type = integerFieldType; length = 4 }
+            }
+        }
+
+    protected long copy(List<Manager> dest, boolean delFiles = false, boolean delDirs = false, boolean renameFiles = false, boolean inMemoryMode = true) {
+        long res = 0
+        Getl.Dsl(this) {
+            res = fileCopier(files('source'), dest) {
+                sourcePath = this.sourceMask
+
+                useDestinationPath {
+                    mask = '{date}/region_{region}/{name}'
+                    variable('date') { type = dateFieldType; format = 'yyyyMMdd' }
+                }
+
+                if (renameFiles)
+                    useRenamePath {
+                        mask = '{filenameonly}.{filedate}.{fileextonly}'
+                    }
+
+                inMemoryMode = inMemoryMode
+
+                numberAttempts = 3
+                timeAttempts = 2
+
+                orderBy = ['date', 'region', 'name']
+                segmentBy = ['name']
+
+                sourceBeforeScript = 'dir'
+                destinationBeforeScript = 'dir'
+
+                sourceAfterScript = 'dir'
+                destinationAfterScript = 'dir'
+
+                sourceErrorScript = 'dir'
+                destinationErrorScript = 'dir'
+
+                removeFiles = delFiles
+                removeEmptyDirs = delDirs
+
+                beforeCopyFile { s, d ->
+                    assert s.region != null && s.date != null && s.region_num != null && s.name != null && s.num != null
+                    assert d.region != null && d.date != null && d.region_num != null && d.name != null && d.num != null
+                    assert s.filepath != d.filepath
+                }
+                afterCopyFile { s, d ->
+                    assert s.region != null && s.date != null && s.region_num != null && s.name != null && s.num != null
+                    assert d.region != null && d.date != null && d.region_num != null && d.name != null && d.num != null
+                    assert s.filepath != d.filepath
+                }
+            }.countFiles
+        }
+
+        return res
+    }
+
+    @Test
+    void testCopyWithSingle() {
+        generateSource()
+
+        Getl.Dsl(this) {
+            files('single', true) {
+                rootPath = "${this.destPathDir}/single"
+                createRootPath = true
+            }
+
+            def historyTable = 'history_single'
+            embeddedTable(historyTable, true) {
+                tableName = historyTable
+            }
+
+            files('source') {
+                useStory embeddedTable(historyTable)
+                createStory = true
+                if (this.debug) sqlHistoryFile = "${this.workPath}/h2-single.{date}.sql"
+            }
+
+            def countFiles = this.copy([files('single')] as List<Manager>)
+            testCase {
+                assertEquals(81, countFiles)
+                assertEquals(81, embeddedTable(historyTable).countRow())
+            }
+
+            countFiles = this.copy([files('single')] as List<Manager>)
+            testCase {
+                assertEquals(0, countFiles)
+                assertEquals(81, embeddedTable(historyTable).countRow())
+            }
+
+            embeddedTable(historyTable) { truncate( )}
+            files('source') { story = null }
+
+            countFiles = this.copy([files('single')] as List<Manager>, true)
+            testCase {
+                assertEquals(81, countFiles)
+                assertEquals(0, embeddedTable(historyTable).countRow())
+            }
+
+            files('source') {
+                def list = buildListFiles {
+                    recursive = true
+                    maskPath = this.sourceMask
+                }
+                testCase {
+                    assertEquals(0, list.countRow())
+                }
+            }
+
+            this.generateSource()
+            countFiles = this.copy([files('single')] as List<Manager>, true, true)
+            files('source') {
+                assertEquals(0, list().size())
+            }
+        }
+
+        if (!debug)
+            FileUtils.DeleteFolder("${this.destPathDir}/single", true)
+    }
+
+    @Test
+    void testCopyWithMany() {
+        generateSource()
+
+        Getl.Dsl(this) {
+            files('many.1', true) {
+                rootPath = "${this.destPathDir}/many/1"
+                createRootPath = true
+            }
+
+            files('many.2', true) {
+                rootPath = "${this.destPathDir}/many/2"
+                createRootPath = true
+            }
+
+            files('many.3', true) {
+                rootPath = "${this.destPathDir}/many/3"
+                createRootPath = true
+            }
+
+            def historyTable = 'history_many'
+            embeddedTable(historyTable, true) {
+                tableName = historyTable
+            }
+
+            files('source') {
+                useStory embeddedTable(historyTable)
+                createStory = true
+                if (this.debug) sqlHistoryFile = "${this.workPath}/h2-many.{date}.sql"
+            }
+
+            def countFiles = this.copy([files('many.1'), files('many.2'), files('many.3')] as List<Manager>, false, false, false, false)
+            testCase {
+                assertEquals(81, countFiles)
+                assertEquals(81, embeddedTable(historyTable).countRow())
+            }
+
+            countFiles = this.copy([files('many.1'), files('many.2'), files('many.3')] as List<Manager>)
+            testCase {
+                assertEquals(0, countFiles)
+                assertEquals(81, embeddedTable(historyTable).countRow())
+            }
+        }
+
+        if (!debug)
+            FileUtils.DeleteFolder("$destPathDir/many", true)
+    }
+
+    @Test
+    void testCopyWithRename() {
+        generateSource()
+
+        Getl.Dsl(this) {
+            files('rename', true) {
+                rootPath = "${this.destPathDir}/rename"
+                createRootPath = true
+            }
+
+            files('source') {
+                story = null
+                if (this.debug) sqlHistoryFile = "${this.workPath}/h2-rename.{date}.sql"
+            }
+
+            def countFiles = this.copy([files('rename')] as List<Manager>, false, false, true)
+            testCase {
+                assertEquals(81, countFiles)
+            }
+
+            files('rename') {
+                def list = buildListFiles {
+                    recursive = true
+                    useMaskPath {
+                        mask = '{date}/region_{region}/{name}/region_{region_num}_object_{objname}.{num}.{filetime}.dat'
+                        variable('region') { type = integerFieldType; minimumLength = 1; maximumLength = 3 }
+                        variable('date') { type = dateFieldType; format = 'yyyyMMdd' }
+                        variable('region_num') { type = integerFieldType; minimumLength = 1; maximumLength = 3 }
+                        variable('name') { format = 'AAA|BBB|CCC' }
+                        variable('objname') { format = 'AAA|BBB|CCC' }
+                        variable('num') { type = integerFieldType; length = 4 }
+                        variable('filetime') { type = datetimeFieldType;  format = 'yyyyMMdd_HHmmss'}
+                    }
+                }
+                testCase {
+                    assertEquals(81, list.countRow())
+                }
+            }
+
+        }
+
+        if (!debug)
+            FileUtils.DeleteFolder("${this.destPathDir}/rename", true)
     }
 }

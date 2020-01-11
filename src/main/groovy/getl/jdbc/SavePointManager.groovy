@@ -147,6 +147,7 @@ class SavePointManager {
 	protected final TableDataset table = new TableDataset(manualSchema: true)
 
 	/** Clone current dataset on specified connection */
+	@Synchronized
 	SavePointManager cloneSavePointManager (JDBCConnection newConnection = null) {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.class.name

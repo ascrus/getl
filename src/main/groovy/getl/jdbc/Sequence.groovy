@@ -60,7 +60,8 @@ class Sequence {
 	 * Clone sequence as new instance with current connection
 	 * @return
 	 */
-	Sequence newSequence () {
+	@Synchronized
+	Sequence cloneSequence() {
 		Sequence res = getClass().newInstance() as Sequence
 		res.connection = this.connection
 		res.name = this.name
@@ -74,7 +75,8 @@ class Sequence {
 	 * @param con
 	 * @return
 	 */
-	Sequence newSequence (Connection con) {
+	@Synchronized
+	Sequence cloneSequence(Connection con) {
 		Sequence res = getClass().newInstance() as Sequence
 		res.connection = con
 		res.name = this.name

@@ -47,7 +47,10 @@ class IndexSpec extends BaseSpec {
     /**
      * List of column by index
      */
-    void setColumns(List<String> value) { params.columns = value }
+    void setColumns(List<String> value) {
+        columns.clear()
+        if (value != null) columns.addAll(value)
+    }
 
     /**
      * Create unique index

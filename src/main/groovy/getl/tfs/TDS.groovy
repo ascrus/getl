@@ -93,9 +93,6 @@ class TDS extends H2Connection {
 		if (connectProperty."UNDO_LOG" == null) {
 			connectProperty."UNDO_LOG" = 0
 		}
-		/*if (connectProperty."MVCC" == null) {
-			connectProperty."MVCC" = false
-		}*/
 		if (params."config" == null) config = "getl_tds"
 	}
 

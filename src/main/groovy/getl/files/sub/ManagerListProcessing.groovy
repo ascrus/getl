@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
-
+ 
  Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
@@ -22,29 +22,52 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.files
+package getl.files.sub
+
+
+import groovy.transform.Synchronized
 
 /**
- * List files by file manager
+ * Processing files by files.Manager.buildList method
  * @author Alexsey Konstantinov
  *
  */
-abstract class FileManagerList {
-	/**
-	 * Size of list
-	 * @return
-	 */
-	abstract Integer size ()
+abstract class ManagerListProcessing {
+	/** Parameters */
+	final Map<String, Object> params = Collections.synchronizedMap(new HashMap<String, Object>())
+	/** Parameters */
+	Map<String, Object> getParams() { params }
+	/** Parameters */
+	void setParams(Map<String, Object> value) {
+		params.clear()
+		if (value != null) params.putAll(value)
+	}
+	
+	/** Clone class for use in thread */
+	@Synchronized
+	ManagerListProcessing newProcessing () {
+		ManagerListProcessing res = getClass().newInstance() as ManagerListProcessing
+		res.params.putAll(params)
 
-	/**
-	 * List item by index	
-	 * @param index
-	 * @return
-	 */
-	abstract Map item (int index)
+		return res
+	}
 	
 	/**
-	 * Clear list
+	 * Init class for build thread
 	 */
-	abstract void clear ()
+	@Synchronized
+	void init () { }
+	
+	/**
+	 * Prepare file and return allow use
+	 * @param file
+	 * @return
+	 */
+	abstract boolean prepare (Map file)
+	
+	/**
+	 * Done class after build thread
+	 */
+	@Synchronized
+	void done () { }
 }

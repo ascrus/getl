@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
+
  Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
@@ -22,49 +22,21 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.files
+package getl.proc.sub
 
-import getl.utils.*
-import groovy.transform.Synchronized
+
+import groovy.transform.InheritConstructors
+
+import java.util.concurrent.ThreadFactory
 
 /**
- * Processing files by files.Manager.buildList method
+ * Thread factory class for execution service
  * @author Alexsey Konstantinov
- *
  */
-abstract class ManagerListProcessing {
-	/**
-	 * Parameters
-	 */
-	public final Map params = Collections.synchronizedMap(new HashMap<String, Object>())
-	
-	/**
-	 * Clone class for use in thread
-	 */
-	@Synchronized
-	ManagerListProcessing newProcessing () {
-		ManagerListProcessing res = getClass().newInstance() as ManagerListProcessing
-		res.params.putAll(params)
-
-		res
-	}
-	
-	/**
-	 * Init class for build thread
-	 */
-	@Synchronized
-	void init () { }
-	
-	/**
-	 * Prepare file and return allow use
-	 * @param file
-	 * @return
-	 */
-	abstract boolean prepare (Map file)
-	
-	/**
-	 * Done class after build thread
-	 */
-	@Synchronized
-	void done () { }
+@InheritConstructors
+class ExecutorFactory implements ThreadFactory {
+    @Override
+    Thread newThread(Runnable r) {
+        return new ExecutorThread(r)
+    }
 }

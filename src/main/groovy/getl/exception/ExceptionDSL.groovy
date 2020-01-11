@@ -22,20 +22,52 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.proc
-
-import groovy.transform.InheritConstructors
-
-import java.util.concurrent.ThreadFactory
-
+package getl.exception
 /**
- * Thread factory class for execution service
+ * DSL GETL exception
  * @author Alexsey Konstantinov
  */
-@InheritConstructors
-class ExecutorFactory implements ThreadFactory {
-    @Override
-    Thread newThread(Runnable r) {
-        return new ExecutorThread(r)
+class ExceptionDSL extends Throwable {
+    ExceptionDSL(Integer typeCode, Integer exitCode, String message) {
+        super(message)
+        this.typeCode = typeCode
+        this.exitCode = exitCode
     }
+
+    ExceptionDSL(Integer typeCode, Integer exitCode) {
+        super()
+        this.typeCode = typeCode
+        this.exitCode = exitCode
+    }
+
+    ExceptionDSL(Integer typeCode, String message) {
+        super(message)
+        this.typeCode = typeCode
+    }
+
+    ExceptionDSL(Integer typeCode) {
+        super()
+        this.typeCode = typeCode
+    }
+
+    ExceptionDSL() {
+        super()
+    }
+
+    /** Stop code execution of the current class */
+    static public final def STOP_CLASS = 1
+    /**
+     * Stop execution of current application code
+     */
+    static public final def STOP_APP = 2
+
+    /** Type code */
+    Integer typeCode
+    /** Type code */
+    Integer getTypeCode() { typeCode }
+
+    /** Exit code */
+    Integer exitCode
+    /** Exit code */
+    Integer getExitCode() { exitCode }
 }

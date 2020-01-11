@@ -24,6 +24,7 @@
 
 package getl.files
 
+import getl.files.sub.FileManagerList
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import com.jcraft.jsch.*

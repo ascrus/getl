@@ -33,6 +33,7 @@ import getl.csv.CSVDataset
 import getl.driver.Driver
 import getl.utils.*
 import getl.tfs.*
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -1304,6 +1305,7 @@ class Dataset {
 	/**
 	 * Clone current dataset on specified connection
 	 */
+	@Synchronized
 	Dataset cloneDataset (Connection newConnection = null) {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.class.name
@@ -1319,6 +1321,7 @@ class Dataset {
 	/**
 	 * Clone current dataset and hear connection
 	 */
+	@Synchronized
 	Dataset cloneDatasetConnection () {
 		Connection con = this.connection.cloneConnection()
 		return cloneDataset(con)

@@ -22,23 +22,16 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.utils
-
-import groovy.transform.CompileStatic
+package getl.proc.sub
 
 /**
- * Сonvert closure to script object
- * @author Alexsey Konstantonov
- *
+ * Element for thread execution list
+ * @author Alexsey Konstantinov
  */
-@CompileStatic
-class ClosureScript extends Script {
-    Closure closure
+class ExecutorListElement {
+    /** Source object */
+    public Object source
 
-    @Override
-    Object run() {
-        closure.resolveStrategy = Closure.DELEGATE_FIRST
-        closure.delegate = this
-        closure.call()
-    }
+    /** Destination object */
+    public Object destination
 }

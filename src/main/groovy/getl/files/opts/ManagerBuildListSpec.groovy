@@ -24,6 +24,7 @@
 
 package getl.files.opts
 
+import getl.data.Field
 import getl.jdbc.TableDataset
 import getl.lang.opts.BaseSpec
 import getl.utils.Path
@@ -88,6 +89,11 @@ class ManagerBuildListSpec extends BaseSpec {
     Integer getThreadLevelNumber() { params.threadLevel as Integer }
     /** The level number in the hierarchy of directories for parallelizing file processing (default 1) */
     void setThreadLevelNumber(Integer value) { params.threadLevel = value }
+
+    /** List of extended fields */
+    List<Field> getExtendFields() { params.extendFields as List<Field> }
+    /** List of extended fields */
+    void setExtendFields(List<Field> value) { params.extendFields = value }
 
     /**
      * File processing code

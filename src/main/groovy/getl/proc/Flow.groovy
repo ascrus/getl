@@ -28,6 +28,7 @@ import getl.csv.CSVDataset
 import getl.data.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.proc.sub.FlowCopyChild
 import getl.transform.*
 import getl.utils.*
 import getl.tfs.*
