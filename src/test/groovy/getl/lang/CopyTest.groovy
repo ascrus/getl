@@ -78,21 +78,23 @@ class CopyTest extends getl.test.GetlTest {
             }
         }
 
-    protected long copy(List<Manager> dest, boolean delFiles = false, boolean delDirs = false, boolean renameFiles = false, boolean inMemoryMode = true) {
+    static final Path destMask = Getl.Dsl {
+        filePath {
+            mask = '{date}/region_{region}/{name}'
+            variable('date') { type = dateFieldType; format = 'yyyyMMdd' }
+        }
+    }
+
+    protected long copy(Manager src, Path srcMask, List<Manager> dst, Path dstMask, Path renameMask = null,
+                        boolean delFiles = false, boolean delDirs = false, boolean inMemoryMode = true) {
         long res = 0
         Getl.Dsl(this) {
-            res = fileCopier(files('source'), dest) {
-                sourcePath = this.sourceMask
+            res = fileCopier(src, dst) {
+                sourcePath = srcMask
+                destinationPath = dstMask
 
-                useDestinationPath {
-                    mask = '{date}/region_{region}/{name}'
-                    variable('date') { type = dateFieldType; format = 'yyyyMMdd' }
-                }
-
-                if (renameFiles)
-                    useRenamePath {
-                        mask = '{filenameonly}.{filedate}.{fileextonly}'
-                    }
+                if (renameMask != null)
+                    renamePath = renameMask
 
                 inMemoryMode = inMemoryMode
 
@@ -117,12 +119,12 @@ class CopyTest extends getl.test.GetlTest {
                 beforeCopyFile { s, d ->
                     assert s.region != null && s.date != null && s.region_num != null && s.name != null && s.num != null
                     assert d.region != null && d.date != null && d.region_num != null && d.name != null && d.num != null
-                    assert s.filepath != d.filepath
+                    assert (renameMask == null && s.filepath != d.filepath) || (renameMask != null && s.filepath == d.filepath)
                 }
                 afterCopyFile { s, d ->
                     assert s.region != null && s.date != null && s.region_num != null && s.name != null && s.num != null
                     assert d.region != null && d.date != null && d.region_num != null && d.name != null && d.num != null
-                    assert s.filepath != d.filepath
+                    assert (renameMask == null && s.filepath != d.filepath) || (renameMask != null && s.filepath == d.filepath)
                 }
             }.countFiles
         }
@@ -151,13 +153,13 @@ class CopyTest extends getl.test.GetlTest {
                 if (this.debug) sqlHistoryFile = "${this.workPath}/h2-single.{date}.sql"
             }
 
-            def countFiles = this.copy([files('single')] as List<Manager>)
+            def countFiles = this.copy(files('source'), sourceMask, [files('single')] as List<Manager>, destMask)
             testCase {
                 assertEquals(81, countFiles)
                 assertEquals(81, embeddedTable(historyTable).countRow())
             }
 
-            countFiles = this.copy([files('single')] as List<Manager>)
+            countFiles = this.copy(files('source'), sourceMask, [files('single')] as List<Manager>, destMask)
             testCase {
                 assertEquals(0, countFiles)
                 assertEquals(81, embeddedTable(historyTable).countRow())
@@ -166,7 +168,8 @@ class CopyTest extends getl.test.GetlTest {
             embeddedTable(historyTable) { truncate( )}
             files('source') { story = null }
 
-            countFiles = this.copy([files('single')] as List<Manager>, true)
+            countFiles = this.copy(files('source'), sourceMask, [files('single')] as List<Manager>, destMask,
+                    null, true)
             testCase {
                 assertEquals(81, countFiles)
                 assertEquals(0, embeddedTable(historyTable).countRow())
@@ -183,7 +186,8 @@ class CopyTest extends getl.test.GetlTest {
             }
 
             this.generateSource()
-            countFiles = this.copy([files('single')] as List<Manager>, true, true)
+            countFiles = this.copy(files('source'), sourceMask, [files('single')] as List<Manager>, destMask,
+                    null,true, true)
             files('source') {
                 assertEquals(0, list().size())
             }
@@ -224,13 +228,15 @@ class CopyTest extends getl.test.GetlTest {
                 if (this.debug) sqlHistoryFile = "${this.workPath}/h2-many.{date}.sql"
             }
 
-            def countFiles = this.copy([files('many.1'), files('many.2'), files('many.3')] as List<Manager>, false, false, false, false)
+            def countFiles = this.copy(files('source'), sourceMask,
+                    [files('many.1'), files('many.2'), files('many.3')] as List<Manager>, destMask)
             testCase {
                 assertEquals(81, countFiles)
                 assertEquals(81, embeddedTable(historyTable).countRow())
             }
 
-            countFiles = this.copy([files('many.1'), files('many.2'), files('many.3')] as List<Manager>)
+            countFiles = this.copy(files('source'), sourceMask,
+                    [files('many.1'), files('many.2'), files('many.3')] as List<Manager>, destMask)
             testCase {
                 assertEquals(0, countFiles)
                 assertEquals(81, embeddedTable(historyTable).countRow())
@@ -256,7 +262,13 @@ class CopyTest extends getl.test.GetlTest {
                 if (this.debug) sqlHistoryFile = "${this.workPath}/h2-rename.{date}.sql"
             }
 
-            def countFiles = this.copy([files('rename')] as List<Manager>, false, false, true)
+            def countFiles = this.copy(files('source'), sourceMask, [files('rename')] as List<Manager>,
+                    filePath { mask = '.' },
+                    filePath { mask = '{date}.{filenameonly}.{filedate}.{fileextonly}';
+                        variable('date') { format = 'yyyy_MM_dd'};
+                        variable('filedate') { format = 'yyyy_MM_dd-HH_mm_ss'}
+                    }
+            )
             testCase {
                 assertEquals(81, countFiles)
             }
@@ -265,24 +277,58 @@ class CopyTest extends getl.test.GetlTest {
                 def list = buildListFiles {
                     recursive = true
                     useMaskPath {
-                        mask = '{date}/region_{region}/{name}/region_{region_num}_object_{objname}.{num}.{filetime}.dat'
+                        mask = 'region_{region}/{date}/{objdate}.region_{objregion}_object_{name}.{num}.{filetime}.dat'
                         variable('region') { type = integerFieldType; minimumLength = 1; maximumLength = 3 }
-                        variable('date') { type = dateFieldType; format = 'yyyyMMdd' }
-                        variable('region_num') { type = integerFieldType; minimumLength = 1; maximumLength = 3 }
+                        variable('date') { type = dateFieldType; format = 'yyyy-MM-dd' }
+                        variable('objregion') { type = integerFieldType; minimumLength = 1; maximumLength = 3 }
+                        variable('objdate') { type = dateFieldType; format = 'yyyy_MM_dd' }
                         variable('name') { format = 'AAA|BBB|CCC' }
-                        variable('objname') { format = 'AAA|BBB|CCC' }
                         variable('num') { type = integerFieldType; length = 4 }
-                        variable('filetime') { type = datetimeFieldType;  format = 'yyyyMMdd_HHmmss'}
+                        variable('filetime') { type = datetimeFieldType;  format = 'yyyy_MM_dd-HH_mm_ss' }
                     }
                 }
                 testCase {
                     assertEquals(81, list.countRow())
                 }
             }
-
         }
 
         if (!debug)
             FileUtils.DeleteFolder("${this.destPathDir}/rename", true)
+    }
+
+    @Test
+    void testSimpleCopy() {
+        Getl.Dsl(this) {
+            def simplePath = "$workPath/simple"
+            if (FileUtils.ExistsFile(simplePath, true))
+                FileUtils.DeleteFolder(simplePath, true)
+
+            FileUtils.ValidPath(simplePath)
+            FileUtils.ValidPath("$simplePath/source")
+            FileUtils.ValidPath("$simplePath/dest")
+            try {
+                (1..9).each { num ->
+                    textFile("$simplePath/source/${num}.txt") {
+                        write '1234567890'
+                    }
+                }
+                fileCopier(files { rootPath =  "$simplePath/source" },
+                        files('out', true) { rootPath = "$simplePath/dest" }) {
+                    useSourcePath { mask = '*.txt' }
+                    useDestinationPath { mask = '.' }
+                }
+
+                files('out') { man ->
+                    testCase {
+                        assertEquals(9, man.list('*.txt').size())
+                    }
+                }
+            }
+            finally {
+                if (!debug)
+                    FileUtils.DeleteFolder(simplePath, true)
+            }
+        }
     }
 }

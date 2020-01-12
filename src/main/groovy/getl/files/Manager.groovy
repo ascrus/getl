@@ -47,7 +47,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-abstract class Manager {
+abstract class Manager { /* TODO: added method Operation analog FileCopier */
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 	protected File localDirFile = new File(TFS.storage.path)
 	

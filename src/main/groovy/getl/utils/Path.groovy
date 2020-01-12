@@ -230,7 +230,7 @@ class Path {
 			while (s >= 0) {
 				int e = d[i].indexOf('}', s)
 				if (e >= 0) {
-					b.append(d[i].substring(f, s))
+					b.append(d[i].substring(f, s).replace('\\', '\\\\'))
 					
 					def vn = d[i].substring(s + 1, e).toLowerCase()
 					def pm = patterns.get(vn) 
@@ -294,7 +294,7 @@ class Path {
 				s = d[i].indexOf('{', f)
 			}
 			if (f > 0 && f < d[i].length() - 1) {
-				b.append(d[i].substring(f))
+				b.append(d[i].substring(f).replace('\\', '\\\\'))
 			}
 			
 			p.mask = ((p.vars as List).size() == 0)?d[i]:b.toString()
@@ -349,7 +349,9 @@ class Path {
 			
 			likeFile = likeFile.replace("{$key}", "%")
 		}
-		likeFile = likeFile.replace('*', '%').replace('.', '\\.').replace('$', '\\$')
+		maskFile = maskFile.replace('\\', '\\\\')
+		likeFile = likeFile.replace('*', '%').replace('\\', '\\\\')
+				.replace('.', '\\.').replace('$', '\\$')
 
 		isCompile = true
 	}

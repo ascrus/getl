@@ -209,15 +209,17 @@ abstract class FileListProcessing {
         command = StringUtils.EvalMacroString(command, ProcessFileVars(formatDate, vars))
 
         def retry = 1
-        while (retry <= attempts) {
+        while (true) {
             res = man.command(command, console, err)
             if (res <= 0) break
 
+            if (retry > attempts)
+                break
+
+
+            Logs.Warning("When executing command an error occurred $res in \"$name\", attemp $retry of $attempts")
+            sleep(time * 1000)
             retry++
-            if (retry <= attempts) {
-                Logs.Warning("When executing command an error occurred $res in \"$name\", attemp $retry of $attempts")
-                sleep(time * 1000)
-            }
         }
 
         if (res != 0) {
@@ -305,13 +307,15 @@ abstract class FileListProcessing {
                     break
                 }
                 catch (Exception e) {
-                    retry++
                     if (retry > attempts) {
                         Logs.Severe("Unable to connect to \"$man\"")
                         throw e
                     }
                     Logs.Warning("Unable to connect to \"$man\", attemp $retry of $attempts")
                     sleep(time * 1000)
+
+                    retry++
+
                 }
             }
         }
@@ -392,12 +396,12 @@ abstract class FileListProcessing {
                     throw m
                 }
                 catch (Exception e) {
-                    retry++
                     if (retry > attempts)
                         throw e
 
                     Logs.Warning("Cannot do operation for \"$man\", attemp $retry of $attempts, error: ${e.message}")
                     sleep(time * 1000)
+                    retry++
 
                     try {
                         man.noop()
@@ -419,12 +423,12 @@ abstract class FileListProcessing {
                                 break
                             }
                             catch (Exception c) {
-                                retry++
                                 if (retry > attempts)
                                     throw e
 
                                 Logs.Warning("Cannot connection to \"$man\", attemp $retry of $attempts, error: ${e.message}")
                                 sleep(time * 1000)
+                                retry++
                             }
                         }
                     }

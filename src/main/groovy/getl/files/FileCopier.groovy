@@ -82,21 +82,19 @@ class FileCopier extends FileListProcessing {
     Path getRenamePath() { params.renamePath as Path }
     /** File rename mask */
     void setRenamePath(Path value) {
-        params.renamePath = value
+        if (sourcePath == null) new ExceptionFileListProcessing('You must first specify a path mask for the source!')
 
-        if (!value.vars.containsKey('filepath'))
-            value.variable('filepath')
-        if (!value.vars.containsKey('filename'))
-            value.variable('filename')
-        if (!value.vars.containsKey('filenameonly'))
-            value.variable('filenameonly')
-        if (!value.vars.containsKey('fileextonly'))
-            value.variable('fileextonly')
-        if (!value.vars.containsKey('filedate'))
-            value.variable('filedate') { type = Field.datetimeFieldType; format = 'yyyyMMDD_HHmmss' }
-        if (!value.vars.containsKey('filesize'))
-            value.variable('filesize') { type = Field.bigintFieldType }
+        def parent = value.clone() as Path
+        parent.maskVariables = MapUtils.DeepCopy(sourcePath.maskVariables) as Map<String, Object>
+        parent.variable('filepath')
+        parent.variable('filename')
+        parent.variable('filenameonly')
+        parent.variable('fileextonly')
+        parent.variable('filedate') { type = Field.datetimeFieldType; format = 'yyyyMMDD_HHmmss' }
+        parent.variable('filesize') { type = Field.bigintFieldType }
+        MapUtils.MergeMap(parent.maskVariables, value.maskVariables, true, true)
 
+        params.renamePath = parent
         if (renamePath != null && !renamePath.isCompile) renamePath.compile()
     }
     /** Use path mask for rename file name */
@@ -113,7 +111,8 @@ class FileCopier extends FileListProcessing {
         parent.variable('filesize') { type = Field.bigintFieldType }
         Getl.RunClosure(sysParams.dslOwnerObject?:this, sysParams.dslThisObject?:this, parent, cl)
 
-        setRenamePath(parent)
+        params.renamePath = parent
+        if (renamePath != null && !renamePath.isCompile) renamePath.compile()
     }
 
     /** Run the script on the source before starting the process */
@@ -186,6 +185,17 @@ class FileCopier extends FileListProcessing {
     @Override
     List<String> getUsedInternalVars() { ['_segmented_', '_outpath_'] }
 
+    /** Process destination path */
+    Path tmpDestPath
+    /** Process destination path */
+    Path getProcessDestinationPath() { tmpDestPath }
+
+    @Override
+    protected void cleanProperties() {
+        super.cleanProperties()
+        tmpDestPath = null
+    }
+
     /** Init process */
     @Override
     protected void initProcess() {
@@ -197,9 +207,16 @@ class FileCopier extends FileListProcessing {
         if (destinationPath == null)
             throw new ExceptionFileListProcessing('Destination mask path required!')
 
-        if (!destinationPath.isCompile) destinationPath.compile()
+        tmpDestPath = destinationPath
+        if (tmpDestPath.mask == '.') {
+            tmpDestPath = sourcePath.clone()
+            tmpDestPath.mask = FileUtils.ConvertToUnixPath(FileUtils.RelativePathFromFile(tmpDestPath.mask))
+        }
+
+        if (!tmpDestPath.isCompile) tmpDestPath.compile()
 
         if (renamePath != null) {
+            sourcePath.maskVariables
             if (!renamePath.isCompile) renamePath.compile()
         }
 
@@ -226,7 +243,7 @@ class FileCopier extends FileListProcessing {
             Logs.Info("Files will be copied to \"$man\"")
         }
 
-        Logs.Fine("  destination mask path: ${destinationPath.maskStr}")
+        Logs.Fine("  destination mask path: ${tmpDestPath.maskStr}")
 
         if (renamePath != null)
             Logs.Fine("  rename file mask path: ${renamePath.maskStr}")

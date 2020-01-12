@@ -62,7 +62,7 @@ class FileCopierBuild extends FileListProcessingBuild {
     void init() {
         super.init()
 
-        destinationPath = ownerCopier.destinationPath
+        destinationPath = ownerCopier.processDestinationPath
         isInheritDestPath = (destinationPath.mask == '.')
 
         renamePath = ownerCopier.renamePath
