@@ -1036,12 +1036,12 @@ class FileUtils {
 		}
 		else
 		if (avgSpeed >= 1024 * 1024) {
-			avgSpeed = NumericUtils.Round(avgSpeed / 1024 / 1024, 3)
+			avgSpeed = NumericUtils.Round(avgSpeed / 1024 / 1024, 1)
 			speedName = 'MB/sec'
 		}
 		else
 		if (avgSpeed >= 1024) {
-			avgSpeed = NumericUtils.Round(avgSpeed / 1024, 3)
+			avgSpeed = NumericUtils.Round(avgSpeed / 1024, 0)
 			speedName = 'KB/sec'
 		}
 
@@ -1062,11 +1062,11 @@ class FileUtils {
 			byteName = 'GB'
 		}
 		else if (bytes > 1024 * 1024) {
-			res = NumericUtils.Round(res / 1024 / 1024, 3)
+			res = NumericUtils.Round(res / 1024 / 1024, 1)
 			byteName = 'MB'
 		}
 		else if (bytes > 1024) {
-			res = NumericUtils.Round(res / 1024, 3)
+			res = NumericUtils.Round(res / 1024, 0)
 			byteName = 'KB'
 		}
 

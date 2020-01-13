@@ -29,6 +29,7 @@ import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.files.Manager
 import getl.jdbc.JDBCConnection
+import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.proc.sub.FileListProcessingBuild
@@ -497,6 +498,7 @@ abstract class FileListProcessing {
     /** Init process */
     protected void initProcess() {
         cleanProperties()
+        counter.clear()
 
         FileUtils.ValidPath(tempPath, true)
         if (!FileUtils.ExistsFile(tempPath, true))
@@ -609,6 +611,13 @@ abstract class FileListProcessing {
             else {
                 Logs.Info("${source.countFileList} files found, size ${FileUtils.sizeBytes(source.sizeFileList)} for source \"${source.toString()}\"")
                 processFiles()
+
+                if (removeEmptyDirs) delEmptyFolders()
+
+                Operation([source], numberAttempts, timeAttempts) { man ->
+                    man.changeDirectoryToRoot()
+                    man.changeLocalDirectoryToRoot()
+                }
             }
         }
         catch (Exception e) {
@@ -641,4 +650,40 @@ abstract class FileListProcessing {
 
     /** Processing files */
     abstract protected void processFiles()
+
+    protected void delEmptyFolders() {
+        Operation([source], numberAttempts, timeAttempts) { man ->
+            man.changeDirectoryToRoot()
+        }
+
+        def dirs = [:]
+        new QueryDataset(connection: tmpConnection, query: "SELECT DISTINCT FILEPATH FROM ${tmpProcessFiles.fullTableName} ORDER BY FILEPATH").eachRow { row ->
+            def filepath = row.get('filepath') as String
+            if (filepath == '.') return
+            String[] d = filepath.split('/')
+            Map cc = dirs
+            d.each {
+                if (cc.containsKey(it)) {
+                    cc = cc.get(it) as Map
+                }
+                else {
+                    Map n = [:]
+                    cc.put(it, n)
+                    cc = n
+                }
+            }
+        }
+
+        def deleteDirs = []
+        source.deleteEmptyDirs(dirs, true) { dirName ->
+            deleteDirs << dirName
+        }
+
+        if (!deleteDirs.isEmpty())
+            Logs.Info("In the source \"$source\" empty directories were removed: ${deleteDirs.sort()}")
+
+        Operation([source], numberAttempts, timeAttempts) { man ->
+            man.changeDirectoryToRoot()
+        }
+    }
 }

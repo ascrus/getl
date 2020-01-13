@@ -10,7 +10,7 @@ import org.junit.BeforeClass
 import org.junit.Test
 
 class CopyTest extends getl.test.GetlTest {
-    static final def debug = false
+    static final def debug = true
     static final def workPath = "${(debug)?'c:/tmp/getl.test':FileUtils.SystemTempDir()}/copier"
 
     static final def sourcePathDir = "${workPath}/source"
@@ -328,6 +328,34 @@ class CopyTest extends getl.test.GetlTest {
             finally {
                 if (!debug)
                     FileUtils.DeleteFolder(simplePath, true)
+            }
+        }
+    }
+
+    @Test
+    void testCleaner() {
+        generateSource()
+
+        Getl.Dsl(this) {
+            def historyTable = 'history_remove'
+            embeddedTable(historyTable, true) {
+                tableName = historyTable
+            }
+
+            files('source') {
+                useStory embeddedTable(historyTable)
+                createStory = true
+                if (this.debug) sqlHistoryFile = "${this.workPath}/h2-remove.{date}.sql"
+            }
+
+            def countFiles = fileCleaner(files('source')) {
+                sourcePath = this.sourceMask
+                removeFiles = true
+            }.countFiles
+
+            testCase {
+                assertEquals(81, countFiles)
+                assertEquals(81, embeddedTable(historyTable).countRow())
             }
         }
     }

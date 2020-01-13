@@ -45,7 +45,7 @@ import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
 /**
- * Copy files manager between two file systems
+ * Copy files manager between file systems
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
@@ -363,42 +363,9 @@ class FileCopier extends FileListProcessing {
             }
         }
 
-        Operation([source] + destinations, numberAttempts, timeAttempts) { man ->
+        Operation(destinations, numberAttempts, timeAttempts) { man ->
             man.changeDirectoryToRoot()
             man.changeLocalDirectoryToRoot()
-        }
-
-        if (removeEmptyDirs) {
-            def dirs = [:]
-            new QueryDataset(connection: tmpConnection, query: "SELECT DISTINCT FILEPATH FROM ${tmpProcessFiles.fullTableName} ORDER BY FILEPATH").eachRow { row ->
-                def filepath = row.get('filepath') as String
-                if (filepath == '.') return
-                String[] d = filepath.split('/')
-                Map cc = dirs
-                d.each {
-                    if (cc.containsKey(it)) {
-                        cc = cc.get(it) as Map
-                    }
-                    else {
-                        Map n = [:]
-                        cc.put(it, n)
-                        cc = n
-                    }
-                }
-            }
-
-            def deleteDirs = []
-            source.deleteEmptyDirs(dirs, true) { dirName ->
-                deleteDirs << dirName
-            }
-
-            if (!deleteDirs.isEmpty())
-                Logs.Info("In the source \"$source\" empty directories were removed: ${deleteDirs.sort()}")
-
-            Operation([source], numberAttempts, timeAttempts) { man ->
-                man.changeDirectoryToRoot()
-                man.changeLocalDirectoryToRoot()
-            }
         }
     }
 
@@ -411,10 +378,8 @@ class FileCopier extends FileListProcessing {
      */
     protected processSegment(int segment, Manager src, List<Manager> dst) {
         Logs.Finest("$segment: processing $dst")
-        def pt = profile("$segment: processing $dst", 'file')
 
         def isRemoveFile = removeFiles
-
         def files = tmpProcessFiles.cloneDatasetConnection() as TableDataset
         files.readOpts {
             where = "_SEGMENTED_ = $segment"
@@ -508,9 +473,7 @@ class FileCopier extends FileListProcessing {
             files.currentJDBCConnection.connected = false
         }
 
-        pt.name = pt.name + ' (' + FileUtils.sizeBytes(fileSize) + ')'
-        pt.finish(files.readRows)
-
         counter.addCount(files.readRows)
+        Logs.Info("[$segment]: copied ${files.readRows} files (${FileUtils.sizeBytes(fileSize)})")
     }
 }

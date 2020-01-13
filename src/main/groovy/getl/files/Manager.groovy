@@ -795,8 +795,9 @@ abstract class Manager { /* TODO: added method Operation analog FileCopier */
 		}
 		fileList.drop(ifExists: true)
 		def fileListIndexes = [:]
+		fileListIndexes.put(fileList.tableName + '_1', [columns: ['FILEPATH']])
 		if (extendIndexes != null) {
-			for (int i = 0; i < extendIndexes.size(); i++) {
+			for (int i = 2; i < extendIndexes.size(); i++) {
 				fileListIndexes.put(fileList.tableName + '_' + i, [columns: extendIndexes[i]])
 			}
 		}

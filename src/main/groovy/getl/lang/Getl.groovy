@@ -4174,20 +4174,7 @@ class Getl extends Script {
     }
 
     /**
-     * Copying files according to the specified rules
-     * @param source source file manager
-     * @param destination destination file manager
-     * @param cl process parameter setting code
-     * @return file copier instance
-     */
-    FileCopier fileCopier(Manager source, Manager destination,
-                          @DelegatesTo(FileCopier)
-                          @ClosureParams(value = SimpleType, options = ['getl.proc.FileCopier']) Closure cl) {
-        fileCopier(source, [destination], cl)
-    }
-
-    /**
-     * Copying files according to the specified rules
+     * Copying files according to the specified rules between file systems
      * @param source source file manager
      * @param destinations list of destination file manager
      * @param cl process parameter setting code
@@ -4195,7 +4182,7 @@ class Getl extends Script {
      */
     FileCopier fileCopier(Manager source, List<Manager> destinations,
                                   @DelegatesTo(FileCopier)
-                          @ClosureParams(value = SimpleType, options = ['getl.proc.FileCopier']) Closure cl) {
+                          @ClosureParams(value = SimpleType, options = ['getl.files.FileCopier']) Closure cl) {
         if (source == null) throw new ExceptionGETL('Required source file manager!')
         if (destinations == null && destinations.isEmpty()) throw new ExceptionGETL('Required destination file manager!')
 
@@ -4218,6 +4205,50 @@ class Getl extends Script {
 
         return parent
     }
+
+    /**
+     * Copying files according to the specified rules between file systems
+     * @param source source file manager
+     * @param destination destination file manager
+     * @param cl process parameter setting code
+     * @return file copier instance
+     */
+    FileCopier fileCopier(Manager source, Manager destination,
+                          @DelegatesTo(FileCopier)
+                          @ClosureParams(value = SimpleType, options = ['getl.files.FileCopier']) Closure cl) {
+        fileCopier(source, [destination], cl)
+    }
+
+    /**
+     * Cleaner files according to the specified rules from source file system
+     * @param source source file manager
+     * @param cl process parameter setting code
+     * @return file cleaner instance
+     */
+    FileCleaner fileCleaner(Manager source,
+                          @DelegatesTo(FileCleaner)
+                          @ClosureParams(value = SimpleType, options = ['getl.files.FileCleaner']) Closure cl) {
+        if (source == null) throw new ExceptionGETL('Required source file manager!')
+
+        def parent = new FileCleaner()
+        parent.sysParams.dslThisObject = childThisObject
+        parent.sysParams.dslOwnerObject = childOwnerObject
+        parent.source = source
+
+        def ptName = "Remove files from [$source]"
+        def pt = startProcess(ptName, 'file')
+        try {
+            runClosure(parent, cl)
+            parent.process()
+        }
+        finally {
+            parent.DisconnectFrom([parent.source])
+        }
+        finishProcess(pt, parent.countFiles)
+
+        return parent
+    }
+
 
     /** Test case instance */
     protected GroovyTestCase _testCase
