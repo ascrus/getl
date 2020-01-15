@@ -282,7 +282,7 @@ class FileUtilsTest extends getl.test.GetlTest {
     @Test
     void testFileMaskExpression() {
         def list = [
-                'dir1-1/file*.ext': 'dir1\\-1\\/file.*[.]ext',
+                'dir1-1/file*.ext': 'dir1\\-1/file.*[.]ext',
                 'dir?-?\\file+1.*': 'dir.\\-.\\\\file\\+1[.].*',
                 '%file*^.???': '[%]file.*[^][.]...'
         ]

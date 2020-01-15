@@ -130,7 +130,7 @@ class TDS extends H2Connection {
     protected void doDoneDisconnect () {
         super.doDoneDisconnect()
         if (!inMemory && connectURL == null && connectDatabase != null) {
-            DeleteDbFiles.execute(connectDatabase, 'getl', true)
+            DeleteDbFiles.execute(tempPath, 'getl', true)
         }
     }
 	

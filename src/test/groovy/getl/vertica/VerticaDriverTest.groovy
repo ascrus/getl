@@ -209,6 +209,11 @@ LIMIT 1'''
             assertEquals(3, vertable.updateRows)
             assertEquals(3, vertable.countRow())
 
+            vertable.with {
+                readOpts { tablesample = 100 }
+                assertEquals(3, countRow())
+            }
+
             unregisterDataset('vertica:testbulkload')
         }
     }

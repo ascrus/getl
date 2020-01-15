@@ -848,7 +848,6 @@ class FileUtils {
 	static final Map<String, String> ReplaceFileMaskRules = {
 		return [
 				'\\': '\\\\',
-				'/': '\\/',
 				'.': '[.]',
 				'?': '.',
 				'*': '.*',

@@ -50,7 +50,7 @@ class VerticaDriver extends JDBCDriver {
         addPKFieldsToUpdateStatementFromMerge = true
 
 		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy'])
-        methodParams.register('eachRow', ['label'])
+        methodParams.register('eachRow', ['label', 'tablesample'])
 		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
 				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
@@ -371,6 +371,9 @@ class VerticaDriver extends JDBCDriver {
         if (dl.label != null) {
             dir.afterselect = "/*+label(${dl.label})*/"
         }
+		if (dl.tablesample != null) {
+			dir.aftertable = "TABLESAMPLE(${dl.tablesample})"
+		}
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
