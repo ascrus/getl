@@ -746,7 +746,7 @@ class GenerationUtils {
 	 * Example:
 	 * <pre>
 	 * def code = GenerationUtils.GenerateRandomRow(dataset, ['field1'],
-	 *     ['#abs': true, field2: [minValue1:1,maxValue:100]])
+	 *     ['#abs': true, field2: [minValue:1,maxValue:100]])
 	 * def row = [:]
 	 * code(row)
 	 * </pre>

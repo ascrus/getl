@@ -183,7 +183,7 @@ class StringUtils {
 	 * @param map search keys map
 	 * @return search pattern
 	 */
-	static Pattern SearchManyPattern(final Map map) {
+	static Pattern SearchManyPattern(Map map) {
 		if (map == null) return null
 		def keys = map.keySet().toList() as List<String>
 		def list = new ArrayList(keys.size())
@@ -193,7 +193,7 @@ class StringUtils {
 			i++
 		}
 
-		final def pattern = "(?-s)(${list.join('|')})"
+		def pattern = "(?-s)(${list.join('|')})"
 		return Pattern.compile(pattern)
 	}
 
@@ -202,7 +202,7 @@ class StringUtils {
 	 * @param keys search keys list
 	 * @return search pattern
 	 */
-	static Pattern SearchManyPattern(final List keys) {
+	static Pattern SearchManyPattern(List keys) {
 		if (keys == null) return null
 		def list = new ArrayList(keys.size())
 		def i = 0
@@ -211,7 +211,7 @@ class StringUtils {
 			i++
 		}
 
-		final def pattern = "(?-s)(${list.join('|')})"
+		def pattern = "(?-s)(${list.join('|')})"
 		return Pattern.compile(pattern)
 	}
 
@@ -220,9 +220,9 @@ class StringUtils {
 	 * @param value search value
 	 * @return search pattern
 	 */
-	static Pattern SearchPattern(final String value) {
+	static Pattern SearchPattern(String value) {
 		if (value == null) return null
-		final def pattern = "(?-s)(${EscapeJava(value)})"
+		def pattern = "(?-s)(${EscapeJava(value)})"
 		return Pattern.compile(pattern)
 	}
 
@@ -249,7 +249,7 @@ class StringUtils {
 	 * @param pattern search replacement pattern (generated if not set)
 	 * @return modified text
 	 */
-	static String ReplaceMany(final String value, final Map replaceValues, Pattern pattern = null) {
+	static String ReplaceMany(String value, Map replaceValues, Pattern pattern = null) {
 		if (value == null) return null
 		if (pattern == null) pattern = SearchManyPattern(replaceValues)
 		def matcher = pattern.matcher(value)
@@ -258,7 +258,7 @@ class StringUtils {
 		while (matcher.find()) {
 			sb.append(value, pos, matcher.start())
 			pos = matcher.end()
-			sb.append(replaceValues.get(matcher.group(1)))
+			sb.append(replaceValues.get(matcher.group(0)))
 		}
 		sb.append(value, pos, value.length())
 
@@ -272,7 +272,7 @@ class StringUtils {
 	 * @param pattern search replacement pattern (generated if not set)
 	 * @return modified text
 	 */
-	static StringBuilder ReplaceMany(final StringBuilder value, final Map replaceValues, Pattern pattern = null) {
+	static StringBuilder ReplaceMany(StringBuilder value, Map replaceValues, Pattern pattern = null) {
 		if (value == null) return null
 		if (pattern == null) pattern = SearchManyPattern(replaceValues)
 		def matcher = pattern.matcher(value)

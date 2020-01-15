@@ -27,20 +27,17 @@ package getl.files
 import getl.data.Field
 import getl.exception.ExceptionFileListProcessing
 import getl.files.sub.FileCopierBuild
-import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.proc.Executor
-import getl.proc.FileListProcessing
+import getl.proc.sub.FileListProcessing
 import getl.proc.sub.FileListProcessingBuild
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.Path
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -52,7 +49,7 @@ import groovy.transform.stc.SimpleType
 class FileCopier extends FileListProcessing {
     FileCopier() {
         super()
-        params.segmentBy = [] as List<String>
+        params.segmented = [] as List<String>
         params.destinations = [] as List<Manager>
     }
 
@@ -85,7 +82,7 @@ class FileCopier extends FileListProcessing {
         if (sourcePath == null) new ExceptionFileListProcessing('You must first specify a path mask for the source!')
 
         def parent = value.clone() as Path
-        parent.maskVariables = MapUtils.DeepCopy(sourcePath.maskVariables) as Map<String, Object>
+        parent.maskVariables = (MapUtils.DeepCopy(sourcePath.maskVariables) as Map<String, Map<String, Object>>)
         parent.variable('filepath')
         parent.variable('filename')
         parent.variable('filenameonly')
@@ -131,11 +128,11 @@ class FileCopier extends FileListProcessing {
     void setDestinationErrorScript(String value) { params.destinationErrorScript = value }
 
     /** Segmentation columns */
-    List<String> getSegmentBy() { params.segmentBy as List<String> }
+    List<String> getSegmented() { params.segmented as List<String> }
     /** Segmentation columns */
-    void setSegmentBy(List<String> value) {
-        segmentBy.clear()
-        if (value != null) segmentBy.addAll(value)
+    void setSegmented(List<String> value) {
+        segmented.clear()
+        if (value != null) segmented.addAll(value)
     }
 
     /**
@@ -222,8 +219,8 @@ class FileCopier extends FileListProcessing {
 
         def vars = sourcePath.vars.keySet().toList()*.toLowerCase()
 
-        if (!segmentBy.isEmpty()) {
-            segmentBy.each { col ->
+        if (!segmented.isEmpty()) {
+            segmented.each { col ->
                 if (!((col as String).toLowerCase() in vars))
                     throw new ExceptionFileListProcessing("Field \"$col\" specified for segmenting was not found!")
             }
@@ -251,11 +248,11 @@ class FileCopier extends FileListProcessing {
         if (numberAttempts > 1)
             Logs.Fine("  ${numberAttempts} repetitions will be used in case of file operation errors until termination")
 
-        if (!orderBy.isEmpty())
-            Logs.Fine("  files will be processed in the following sort order: [${orderBy.join(', ')}]")
+        if (!order.isEmpty())
+            Logs.Fine("  files will be processed in the following sort order: [${order.join(', ')}]")
 
-        if (!segmentBy.isEmpty()) {
-            Logs.Fine("  files will be segmented by fields: [${segmentBy.join(', ')}]")
+        if (!segmented.isEmpty()) {
+            Logs.Fine("  files will be segmented by fields: [${segmented.join(', ')}]")
             if (destinations.size() == 1)
                 Logs.Warning("Segmentation will not be used because only one destintaion is specified!")
         }
@@ -275,8 +272,8 @@ class FileCopier extends FileListProcessing {
     @Override
     protected List<List<String>> getExtendedIndexes() {
         def idx = ['_SEGMENTED_']
-        if (orderBy != null)
-            idx.addAll(orderBy*.toUpperCase())
+        if (order != null)
+            idx.addAll(order*.toUpperCase() as List<String>)
 
         return [idx]
     }
@@ -319,9 +316,9 @@ class FileCopier extends FileListProcessing {
 
     @Override
     protected void processFiles() {
-        def idxColumns = [] as List<String>
-        if (!orderBy.isEmpty())
-            idxColumns = ['_SEGMENTED_'] + orderBy*.toUpperCase() + ['_OUTPATH_']
+        List<String> idxColumns
+        if (!order.isEmpty())
+            idxColumns = ['_SEGMENTED_'] + (order*.toUpperCase() as List<String>) + ['_OUTPATH_']
         else
             idxColumns = ['_SEGMENTED_', '_OUTPATH_']
 
@@ -329,7 +326,7 @@ class FileCopier extends FileListProcessing {
                 "CREATE INDEX \"idx_${tmpProcessFiles.tableName}_1\" ON ${tmpProcessFiles.fullNameDataset()} " +
                         "(${idxColumns.join(', ')})")
 
-        if (segmentBy.isEmpty() || destinations.size() == 1) {
+        if (segmented.isEmpty() || destinations.size() == 1) {
             processSegment(0, source, destinations)
         }
         else {
@@ -344,7 +341,7 @@ class FileCopier extends FileListProcessing {
                     countProc = list.size()
                     abortOnError = true
 
-                    run { segment ->
+                    run { Integer segment ->
                         def src = source.cloneManager()
                         def dst = destinations.get(segment).cloneManager()
                         ConnectTo([src, dst], na, ta)
@@ -383,8 +380,8 @@ class FileCopier extends FileListProcessing {
         def files = tmpProcessFiles.cloneDatasetConnection() as TableDataset
         files.readOpts {
             where = "_SEGMENTED_ = $segment"
-            if (!orderBy.isEmpty())
-                order = ['_SEGMENTED_'] + orderBy*.toUpperCase() + ['_OUTPATH_']
+            if (!order.isEmpty())
+                order = ['_SEGMENTED_'] + (order*.toUpperCase() as List<String>) + ['_OUTPATH_']
             else
                 order = ['_SEGMENTED_', '_OUTPATH_']
         }

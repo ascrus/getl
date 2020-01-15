@@ -189,7 +189,8 @@ abstract class FileDriver extends Driver {
 
 		def ds = dataset as FileDataset
 
-		if (isSplit) fn += ".{number}"
+		if (isSplit)
+			fn += ".{number}"
 		if (ds.extension != null) fn += ".${ds.extension}"
 		
 		def isGzFile = ds.isGzFile

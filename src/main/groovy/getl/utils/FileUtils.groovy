@@ -40,6 +40,7 @@ import net.lingala.zip4j.model.enums.EncryptionMethod
 
 import java.nio.file.*
 import java.nio.channels.*
+import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import net.lingala.zip4j.ZipFile
@@ -844,13 +845,36 @@ class FileUtils {
 		}
 	}
 
+	static final Map<String, String> ReplaceFileMaskRules = {
+		return [
+				'\\': '\\\\',
+				'/': '\\/',
+				'.': '[.]',
+				'?': '.',
+				'*': '.*',
+				'+': '\\+',
+				'-': '\\-',
+				'$': '[$]',
+				'^': '[^]',
+				'%': '[%]'
+		]
+	}.call()
+
+	static final Pattern ReplaceFileMaskPattern = {
+		def keys = ReplaceFileMaskRules.keySet().toList().collect { '\\' + it }
+		return Pattern.compile('(?-s)' + keys.join('|'))
+	}.call()
+
+	/** Convert file mask to regular expression */
 	static String FileMaskToMathExpression(String fileMask) {
-        return fileMask.replace('.', '[.]')
+		return StringUtils.ReplaceMany(fileMask, ReplaceFileMaskRules, ReplaceFileMaskPattern)
+
+		/*return fileMask.replace('.', '[.]')
                 .replace('*', '.*')
 				.replace('+', '\\+')
 				.replace('-', '\\-')
                 .replace('$', '[$]')
-				.replace('^', '[^]')
+				.replace('^', '[^]')*/
     }
 
 	/**

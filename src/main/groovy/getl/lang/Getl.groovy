@@ -100,8 +100,6 @@ class Getl extends Script {
         Config.configClassManager = new ConfigSlurper()
         CleanGetl()
 
-        def getlObj = this
-
         def job = new Job() {
             public Boolean isMain
 
@@ -131,7 +129,7 @@ class Getl extends Script {
                     throw new ExceptionGETL("Class \"$className\" not found, error: ${e.message}!")
                 }
 
-                Getl eng = Dsl()
+                Getl eng = getlInstance()
                 eng._params.mainClass = className
 
                 def initClassName = jobArgs.initclass as String
@@ -292,8 +290,14 @@ class Getl extends Script {
     @Override
     Object run() { return this }
 
-    /** Instance DSL */
+    /** Current instance GETL DSL */
     protected static Getl _getl
+
+    /** Current instance GETL DSL */
+    static Getl getlInstance() {
+        if (_getl == null) _getl = new Getl()
+        return _getl
+    }
 
     /* Owner object for instance DSL */
     private _ownerObject
@@ -302,8 +306,7 @@ class Getl extends Script {
     static def Dsl(def ownerObject, Map parameters,
                     @DelegatesTo(Getl)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
-        if (_getl == null) _getl = new Getl()
-        return _getl.runDsl(ownerObject, parameters, cl)
+        return getlInstance().runDsl(ownerObject, parameters, cl)
     }
 
     /** Run DSL script on getl share object */

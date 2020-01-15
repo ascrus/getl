@@ -24,9 +24,8 @@
 
 package getl.files
 
-import getl.jdbc.QueryDataset
-import getl.jdbc.TableDataset
-import getl.proc.FileListProcessing
+
+import getl.proc.sub.FileListProcessing
 import getl.utils.FileUtils
 import getl.utils.Logs
 import groovy.transform.InheritConstructors
@@ -62,11 +61,11 @@ class FileCleaner extends FileListProcessing {
         try {
             tmpProcessFiles.eachRow { file ->
                 if (file.filepath != curDir) {
-                    curDir = file.filepath
+                    curDir = file.filepath as String
                     ChangeDir([source], curDir, false, numberAttempts, timeAttempts)
                 }
                 Operation([source], numberAttempts, timeAttempts) { man ->
-                    man.removeFile(file.filename)
+                    man.removeFile(file.filename as String)
                 }
 
                 if (story != null) story.write(file + [fileloaded: new Date()])

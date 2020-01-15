@@ -67,9 +67,9 @@ class FileCopierBuild extends FileListProcessingBuild {
 
         renamePath = ownerCopier.renamePath
 
-        isSegmented = (!ownerCopier.segmentBy.isEmpty() && ownerCopier.destinations.size() > 1)
+        isSegmented = (!ownerCopier.segmented.isEmpty() && ownerCopier.destinations.size() > 1)
         if (isSegmented) {
-            segmentdBy = (ownerCopier.segmentBy as List<String>)*.toLowerCase()
+            segmentdBy = (ownerCopier.segmented as List<String>)*.toLowerCase()
             countSegmented = ownerCopier.destinations.size()
         }
     }

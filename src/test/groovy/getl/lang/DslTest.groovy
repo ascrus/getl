@@ -117,7 +117,7 @@ datasets {
             }
         }
 
-        assertEquals("$tempPath/getl.lang.h2.sql", Getl.Dsl().embeddedConnection('getl.testdsl.h2:h2').sqlHistoryFile)
+        assertEquals("$tempPath/getl.lang.h2.sql", Getl.getlInstance().embeddedConnection('getl.testdsl.h2:h2').sqlHistoryFile)
     }
 
     @Test

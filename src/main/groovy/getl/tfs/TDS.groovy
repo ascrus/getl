@@ -24,6 +24,7 @@
 
 package getl.tfs
 
+import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 import getl.h2.*
@@ -39,7 +40,7 @@ class TDS extends H2Connection {
 	TDS() {
 		super()
 		
-		if (connectURL == null && params."inMemory" == null) inMemory = true
+		if (connectURL == null && params."inMemory" == null) params.inMemory = true
 		if (connectURL == null && connectDatabase == null) connectDatabase = "getl"
 		if (login == null && password == null) {
 			login = "easyload"
@@ -62,22 +63,23 @@ class TDS extends H2Connection {
 		
 		if (this.getClass().name == 'getl.tfs.TDS') methodParams.validation("Super", initParams?:[:])
 		
-		if (connectURL == null && params."inMemory" == null) inMemory = true
-		if (connectURL == null && connectDatabase == null) {
-			if (inMemory) {
-				connectDatabase = "getl"
-			}
-			else {
-                _tempPath = TFS.systemPath
-				connectDatabase = "$_tempPath/getl"
+		if (connectURL == null && params."inMemory" == null) params.inMemory = true
+
+		synchronized (tempPath) {
+			if (connectURL == null && connectDatabase == null) {
+				if (inMemory) {
+					connectDatabase = "getl"
+				} else {
+					tempPath = TFS.systemPath
+					connectDatabase = "$tempPath/getl"
+					new File(connectDatabase + '.mv.db').deleteOnExit()
+					new File(connectDatabase + '.trace.db').deleteOnExit()
+				}
+			} else if (connectDatabase != null) {
+				tempPath = FileUtils.PathFromFile(connectDatabase)
 				new File(connectDatabase + '.mv.db').deleteOnExit()
 				new File(connectDatabase + '.trace.db').deleteOnExit()
 			}
-		}
-		else if (connectDatabase != null) {
-			_tempPath = FileUtils.PathFromFile(connectDatabase)
-			new File(connectDatabase + '.mv.db').deleteOnExit()
-			new File(connectDatabase + '.trace.db').deleteOnExit()
 		}
 
 		if (login == null && password == null) {
@@ -100,7 +102,7 @@ class TDS extends H2Connection {
 	public static final TDS storage = new TDS([:])
 
     /** Temp path of database file */
-    String _tempPath
+    String tempPath = TFS.systemPath
 	
 	/** Internal name in config section */
 	protected String internalConfigName() { "getl_tds" }
@@ -127,8 +129,8 @@ class TDS extends H2Connection {
     @Override
     protected void doDoneDisconnect () {
         super.doDoneDisconnect()
-        if (_tempPath != null) {
-            DeleteDbFiles.execute(_tempPath, 'getl', true)
+        if (!inMemory && connectURL == null && connectDatabase != null) {
+            DeleteDbFiles.execute(connectDatabase, 'getl', true)
         }
     }
 	
@@ -137,5 +139,24 @@ class TDS extends H2Connection {
 		def res = new TDSTable()
 		res.connection = new TDS()
 		return res
+	}
+
+	@Override
+	void setInMemory (Boolean value) {
+		def oldValue = inMemory
+		super.setInMemory(value)
+		if (BoolUtils.IsValue(value) == oldValue) return
+
+		synchronized (tempPath) {
+			if (BoolUtils.IsValue(inMemory)) {
+				connectURL = null
+				connectDatabase = "getl"
+			} else {
+				tempPath = TFS.systemPath
+				connectDatabase = "$tempPath/getl"
+				new File(connectDatabase + '.mv.db').deleteOnExit()
+				new File(connectDatabase + '.trace.db').deleteOnExit()
+			}
+		}
 	}
 }

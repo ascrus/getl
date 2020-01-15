@@ -22,33 +22,32 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.proc
+package getl.proc.sub
 
 import getl.data.Field
-import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.files.Manager
-import getl.jdbc.JDBCConnection
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.lang.Getl
+import getl.proc.Executor
 import getl.proc.sub.FileListProcessingBuild
 import getl.exception.ExceptionFileListProcessing
 import getl.stat.ProcessTime
 import getl.tfs.TDS
-import getl.tfs.TDSTable
 import getl.tfs.TFS
 import getl.utils.*
+import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
 /**
- * List of file processing manager from file system
+ * Manager file processing from file system
  * @author Alexsey Konstantinov
  */
 abstract class FileListProcessing {
     FileListProcessing() {
-        params.orderBy = [] as List<String>
+        params.order = [] as List<String>
     }
 
     /** Manager parameters */
@@ -102,11 +101,11 @@ abstract class FileListProcessing {
     }
 
     /** Sort when processing files */
-    List<String> getOrderBy() { params.orderBy as List<String> }
+    List<String> getOrder() { params.order as List<String> }
     /** Sort when processing files */
-    void setOrderBy(List<String> value) {
-        orderBy.clear()
-        if (value != null) orderBy.addAll(value)
+    void setOrder(List<String> value) {
+        order.clear()
+        if (value != null) order.addAll(value)
     }
 
     /** Filter processing directories */
@@ -172,7 +171,7 @@ abstract class FileListProcessing {
      * @param vars list of variables
      * @return processed list of variables
      */
-    @groovy.transform.CompileStatic
+    @CompileStatic
     static Map ProcessFileVars(String formatDate, Map vars) {
         Map res = [:]
         if (vars != null) res.putAll(vars)
@@ -201,7 +200,7 @@ abstract class FileListProcessing {
      */
     static int Command(Manager man, String command, int attempts, int time,
                        boolean throwOnError, String formatDate, Map vars) {
-        int res = 0
+        Integer res
         StringBuilder console = new StringBuilder()
         StringBuilder err = new StringBuilder()
 
@@ -253,7 +252,7 @@ abstract class FileListProcessing {
      * @param attempts number of operation attempts
      * @param time number of seconds between attempts to retry a command operation
      */
-    static String ChangeDir(List<Manager> mans, String path,
+    static void ChangeDir(List<Manager> mans, String path,
                             boolean isCreateDir, int attempts, Integer time) {
         Operation(mans, attempts, time) { man ->
             man.changeDirectoryToRoot()
@@ -343,7 +342,6 @@ abstract class FileListProcessing {
      * @param mans list of managers
      */
     static boolean DisconnectFrom(List<Manager> mans) {
-        def res = true
         def err = new SynchronizeObject()
 
         def code = { Manager man ->
@@ -404,6 +402,7 @@ abstract class FileListProcessing {
                     sleep(time * 1000)
                     retry++
 
+                    //noinspection GroovyUnusedCatchParameter
                     try {
                         man.noop()
                     }
@@ -411,12 +410,14 @@ abstract class FileListProcessing {
                         def curDir = man.currentDir()
                         def curLocalDir = man.currentLocalDir()
 
+                        //noinspection GroovyUnusedCatchParameter
                         try {
                             man.disconnect()
                         }
                         catch (Exception i) { }
 
                         while (true) {
+                            //noinspection GroovyUnusedCatchParameter
                             try {
                                 man.connect()
                                 man.changeDirectory(curDir)
@@ -461,8 +462,8 @@ abstract class FileListProcessing {
 
     /** List of extended indexes */
     protected List<List<String>> getExtendedIndexes() {
-        if (orderBy == null) return null
-        return [orderBy*.toUpperCase()]
+        if (order == null) return null
+        return [order*.toUpperCase()]
     }
 
     /**
@@ -542,8 +543,8 @@ abstract class FileListProcessing {
             if (it in vars) throw new ExceptionFileListProcessing("A variable named \"$it\" is not allowed!")
         }
 
-        if (!orderBy.isEmpty()) {
-            orderBy.each { col ->
+        if (!order.isEmpty()) {
+            order.each { col ->
                 if (!((col as String).toLowerCase() in vars))
                     throw new ExceptionFileListProcessing("Field \"$col\" specified for sorting was not found!")
             }
@@ -656,7 +657,7 @@ abstract class FileListProcessing {
             man.changeDirectoryToRoot()
         }
 
-        def dirs = [:]
+        def dirs = [:] as Map<String, Map>
         new QueryDataset(connection: tmpConnection, query: "SELECT DISTINCT FILEPATH FROM ${tmpProcessFiles.fullTableName} ORDER BY FILEPATH").eachRow { row ->
             def filepath = row.get('filepath') as String
             if (filepath == '.') return
@@ -669,6 +670,7 @@ abstract class FileListProcessing {
                 else {
                     Map n = [:]
                     cc.put(it, n)
+                    //noinspection GrReassignedInClosureLocalVar
                     cc = n
                 }
             }

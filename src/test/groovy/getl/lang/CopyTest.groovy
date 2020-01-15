@@ -1,6 +1,6 @@
 package getl.lang
 
-import getl.data.Field
+
 import getl.files.Manager
 import getl.utils.FileUtils
 import getl.utils.Path
@@ -10,7 +10,7 @@ import org.junit.BeforeClass
 import org.junit.Test
 
 class CopyTest extends getl.test.GetlTest {
-    static final def debug = true
+    static final def debug = false
     static final def workPath = "${(debug)?'c:/tmp/getl.test':FileUtils.SystemTempDir()}/copier"
 
     static final def sourcePathDir = "${workPath}/source"
@@ -23,7 +23,7 @@ class CopyTest extends getl.test.GetlTest {
         if (FileUtils.ExistsFile(workPath, true)) {
             FileUtils.DeleteFolder(workPath, true)
         }
-        FileUtils.ValidPath(workPath)
+        FileUtils.ValidPath(workPath, !debug)
         FileUtils.ValidPath(sourcePathDir)
 
         Getl.Dsl(this) {
@@ -101,8 +101,8 @@ class CopyTest extends getl.test.GetlTest {
                 numberAttempts = 3
                 timeAttempts = 2
 
-                orderBy = ['date', 'region', 'name']
-                segmentBy = ['name']
+                order = ['date', 'region', 'name']
+                segmented = ['name']
 
                 sourceBeforeScript = 'dir'
                 destinationBeforeScript = 'dir'
@@ -313,17 +313,18 @@ class CopyTest extends getl.test.GetlTest {
                         write '1234567890'
                     }
                 }
-                fileCopier(files { rootPath =  "$simplePath/source" },
-                        files('out', true) { rootPath = "$simplePath/dest" }) {
+                sleep(1000)
+                fileCopier(files('in', true) { rootPath =  "$simplePath/source"; saveOriginalDate = true },
+                        files('out', true) { rootPath = "$simplePath/dest"; saveOriginalDate = true }) {
                     useSourcePath { mask = '*.txt' }
                     useDestinationPath { mask = '.' }
                 }
 
-                files('out') { man ->
-                    testCase {
-                        assertEquals(9, man.list('*.txt').size())
-                    }
-                }
+                def inList = files('in').buildListFiles { useMaskPath { mask = '*.txt'} }
+                def outList = files('out').buildListFiles { useMaskPath { mask = '*.txt'} }
+
+                assertEquals(9, outList.countRow())
+                assertEquals(inList.rows(order: ['FILEPATH', 'FILENAME']), outList.rows(order: ['FILEPATH', 'FILENAME']))
             }
             finally {
                 if (!debug)

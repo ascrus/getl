@@ -278,4 +278,18 @@ class FileUtilsTest extends getl.test.GetlTest {
         def fileName2 = FileUtils.ResourceFileName(fileName1)
         assertEquals(fileName1, fileName2)
     }
+
+    @Test
+    void testFileMaskExpression() {
+        def list = [
+                'dir1-1/file*.ext': 'dir1\\-1\\/file.*[.]ext',
+                'dir?-?\\file+1.*': 'dir.\\-.\\\\file\\+1[.].*',
+                '%file*^.???': '[%]file.*[^][.]...'
+        ]
+
+        list.each { mask, rule ->
+            println "$mask: $rule"
+            assertEquals("$mask: $rule", rule, FileUtils.FileMaskToMathExpression(mask))
+        }
+    }
 }
