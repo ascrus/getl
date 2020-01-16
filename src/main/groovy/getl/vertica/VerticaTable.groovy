@@ -131,4 +131,17 @@ class VerticaTable extends TableDataset {
                                             Closure cl) {
         doBulkLoadCsv(null, cl) as VerticaBulkLoadSpec
     }
+
+    /**
+     * Drop specified interval partitions in table
+     * @param startPartition start of the partition interval
+     * @param finishPartition  enf of the partitions inrerval
+     * @param isSplit force split ros containers
+     * @param useDatePartitions partition are the dates
+     * @return function result
+     */
+    Map dropPartitions(def startPartition, def finishPartition,
+                       boolean isSplit = false, boolean useDatePartitions = false) {
+        currentVerticaConnection.dropPartitions(fullTableName, startPartition, finishPartition, isSplit, useDatePartitions)
+    }
 }

@@ -220,4 +220,48 @@ LIMIT 1'''
 
     @Override
     protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP' }
+
+    @Test
+    void testDropPartitions() {
+        Getl.Dsl(this) {
+            verticaTable { table ->
+                useConnection this.con
+                schemaName = 'public'
+                tableName = 'testDropPartitions'
+                dropOpts { ifExists = true }
+                drop()
+
+                field('id') { type = integerFieldType; isKey = true }
+                field('dt') { type = datetimeFieldType; isNull = false }
+
+                def generateData = {
+                    rowsTo(table) {
+                        writeRow { writer ->
+                            (1..12).each { month ->
+                                writer id: month, dt: DateUtils.ParseDate('yyyy-MM-dd', "2019-${StringUtils.AddLedZeroStr(month, 2)}-01")
+                            }
+                        }
+                    }
+                }
+
+                createOpts { partitionBy = 'Year(dt) * 100 + Month(dt)' }
+                create()
+                generateData.call()
+                assertEquals(12, countRow())
+                dropPartitions(201901, 201906)
+                assertEquals(6, countRow())
+
+                drop()
+                createOpts { partitionBy = 'dt::date' }
+                create()
+                generateData.call()
+                assertEquals(12, countRow())
+                dropPartitions(DateUtils.ParseDate('yyyy-MM-dd', '2019-01-01'),
+                        DateUtils.ParseDate('yyyy-MM-dd', '2019-06-01'), false, true)
+                assertEquals(6, countRow())
+
+                drop()
+            }
+        }
+    }
 }
