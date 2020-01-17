@@ -1434,8 +1434,6 @@ WHERE
 		def existsFiles = false
 		try {
 			list() { file ->
-//				if (existsFiles) return
-				
 				if (file."type" == TypeFile.DIRECTORY) {
 					if (recursive) {
 						existsFiles = deleteEmptyFolderRecurse(level + 1, file.filename as String, recursive, onDelete) || existsFiles
@@ -1460,7 +1458,7 @@ WHERE
 			removeDir(dirName)
 		}
 		
-		existsFiles
+		return existsFiles
 	}
 	
 	/**
@@ -1564,8 +1562,10 @@ WHERE
 	 */
 	void deleteEmptyFolder (boolean recursive) {
 		list() { Map file ->
-			if (file.type == TypeFile.DIRECTORY) deleteEmptyFolder(file.filename as String, recursive)
-			true
+			if (file.type == TypeFile.DIRECTORY)
+				deleteEmptyFolderRecurse(1, file.filename as String, recursive, null)
+
+			return true
 		}
 	}
 	
