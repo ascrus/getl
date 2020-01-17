@@ -60,8 +60,8 @@ class FileListProcessingBuild extends ManagerListProcessing {
 
         sourcePath = owner.sourcePath
 
-        if (params.prefilter_dir != null) onFilterDirs = owner.onFilterDirs
-        if (params.prefilter_file != null) onFilterFiles = owner.onFilterFiles
+        onFilterDirs = owner.onFilterDirs
+        onFilterFiles = owner.onFilterFiles
 
         sourceName = owner.source.toString()
     }
