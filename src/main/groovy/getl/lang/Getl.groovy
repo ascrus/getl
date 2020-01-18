@@ -2033,8 +2033,8 @@ class Getl extends Script {
      */
     Integer runGroovyClass(Class groovyClass, Boolean runOnce, Closure vars) {
         def cfg = new groovy.util.ConfigSlurper()
-        def cl = PrepareClosure(childOwnerObject, childThisObject, vars, vars)
-        def map = cfg.parse(new ClosureScript(closure: cl))
+//        def cl = PrepareClosure(childOwnerObject, childThisObject, vars, vars)
+        def map = cfg.parse(new ClosureScript(closure: vars))
         return runGroovyClass(groovyClass, runOnce, map)
     }
 
