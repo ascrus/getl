@@ -332,13 +332,22 @@ class Getl extends Script {
         _getl = null
     }
 
+    /** Run DSL from  test case class */
+    boolean isTestCaseMode = false
+    /** Run DSL from  test case class */
+    Boolean getIsTestCaseMode() { isTestCaseMode }
+
     /** Run DSL script */
     def runDsl(def ownerObject, Map parameters,
                 @DelegatesTo(Getl)
                 @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         def res
 
-        if (ownerObject != null) _ownerObject = ownerObject
+        if (ownerObject != null) {
+            _ownerObject = ownerObject
+            isTestCaseMode = (ownerObject instanceof junit.framework.TestCase)
+        }
+
         if (cl != null) {
             def code = cl.rehydrate(this, this, _ownerObject ?: this)
             code.resolveStrategy = childDelegate
