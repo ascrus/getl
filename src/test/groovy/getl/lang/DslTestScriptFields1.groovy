@@ -8,7 +8,7 @@ import groovy.transform.Field
 @BaseScript Getl main
 
 testCase {
-    assertTrue(main.testCaseMode)
+    assertTrue(main.unitTestMode)
 }
 
 @Field Integer param1 = 0; assert param1 == 1

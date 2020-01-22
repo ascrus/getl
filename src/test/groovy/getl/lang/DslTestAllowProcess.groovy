@@ -15,6 +15,8 @@ options {
     processControlDataset = embeddedTable {
         field('name') { length = 128; isKey = true }
         field('enabled') { type = booleanFieldType; isNull = false }
+        tableName = 'testDslAllowProcess'
+        drop(ifExists: true)
         create()
 
         rowsTo {

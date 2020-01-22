@@ -104,7 +104,8 @@ class Getl extends Script {
         def job = new Job() {
             static ParamMethodValidator allowArgs = {
                 def p = new ParamMethodValidator()
-                p.register('main', ['initclass', 'runclass', 'testcasemode', 'vars'])
+                p.register('main', ['config', 'environment', 'initclass', 'runclass', 'unittest', 'vars'])
+                p.register('main.config', ['path', 'filename'])
                 return p
             }.call()
 
@@ -126,7 +127,7 @@ class Getl extends Script {
                 allowArgs.validation('main', jobArgs)
 
                 def className = jobArgs.runclass as String
-                def isTestMode = BoolUtils.IsValue(jobArgs.testcasemode)
+                def isTestMode = BoolUtils.IsValue(jobArgs.unittest)
 
                 if (className == null)
                     throw new ExceptionGETL('Required argument "runclass"!')
@@ -141,7 +142,7 @@ class Getl extends Script {
 
                 Getl eng = getlInstance()
                 eng._params.mainClass = className
-                eng.setTestCaseMode(isTestMode)
+                eng.setUnitTestMode(isTestMode)
 
                 def initClassName = jobArgs.initclass as String
                 if (initClassName != null) {
@@ -217,7 +218,7 @@ class Getl extends Script {
     boolean allowProcess(String processName, Boolean throwError = false) {
         def res = true
         if (langOpts.processControlDataset != null) {
-            if (processName == null) processName = _params.mainClass
+            if (processName == null) processName = (_params.mainClass)?:this.getClass().name
             if (processName == null)
                 throw new ExceptionGETL('Required name for the process being checked!')
 
@@ -347,11 +348,11 @@ class Getl extends Script {
         _getl = null
     }
 
-    /** Run DSL from  test case class */
-    Boolean getTestCaseMode() { BoolUtils.IsValue(_params.testCaseMode) }
-    /** Run DSL from  test case class */
-    protected void setTestCaseMode(Boolean value) {
-        _params.testCaseMode = value
+    /** Work in unit test mode */
+    Boolean getUnitTestMode() { BoolUtils.IsValue(_params.unitTestMode) }
+    /** Work in unit test mode */
+    protected void setUnitTestMode(Boolean value) {
+        _params.unitTestMode = value
     }
 
     /** Run DSL script */
@@ -362,7 +363,7 @@ class Getl extends Script {
 
         if (ownerObject != null) {
             _ownerObject = ownerObject
-            if (ownerObject instanceof Test) setTestCaseMode(true)
+            if (ownerObject instanceof Test) setUnitTestMode(true)
         }
 
         if (cl != null) {
@@ -4311,6 +4312,24 @@ class Getl extends Script {
             print (message?:'Press any key to continue ...')
             println it.readLine()
         }
+    }
+
+    /**
+     * Run code if working in unit test mode
+     * @param cl
+     */
+    void ifUnitTestMode(Closure cl) {
+        if (!unitTestMode) return
+        runClosure(cl.delegate, cl)
+    }
+
+    /**
+     * Run code if working in application mode
+     * @param cl
+     */
+    void ifRunAppMode(Closure cl) {
+        if (unitTestMode) return
+        runClosure(cl.delegate, cl)
     }
 
     /* TODO: add Counter repository object */

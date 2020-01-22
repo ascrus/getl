@@ -41,7 +41,7 @@ class DslTest extends getl.test.GetlTest {
     @Test
     void test00() {
         Getl.Dsl(this) {
-            assertTrue(testCaseMode)
+            assertTrue(unitTestMode)
         }
     }
 
@@ -930,7 +930,7 @@ ORDER BY t1.id'''
     @Test
     void test99_03RunGetlMain() {
         Getl.Main([
-                'runclass=getl.lang.DslTestScriptFields1', 'testcasemode=true',
+                'runclass=getl.lang.DslTestScriptFields1', 'unittest=true',
                 'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
                 'vars.param6=[a:1, b:2, c:3]', 'vars.param7=' + DateUtils.FormatDate(DateUtils.ClearTime(new Date())),
                 'vars.param8=' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', DateUtils.TruncTime('HOUR', new Date())),
@@ -959,6 +959,14 @@ ORDER BY t1.id'''
         assertTrue(Config.content.testAllowProcess)
         assertEquals(9, Config.content.testAllowThreads)
 
+        Config.content.testAllowProcess = false
+        Config.content.testAllowThreads = 0
+        Getl.Dsl(this) {
+            runGroovyClass DslTestAllowProcess, { enabled = true; checkOnStart = true; checkForThreads = true }
+        }
+        assertTrue(Config.content.testAllowProcess)
+        assertEquals(9, Config.content.testAllowThreads)
+
         shouldFail {
             Getl.Main([
                     'runclass=getl.lang.DslTestAllowProcess',
@@ -967,6 +975,8 @@ ORDER BY t1.id'''
                     'vars.checkForThreads=true'
             ])
         }
+        assertNull(Config.content.testAllowProcess)
+        assertNull(Config.content.testAllowThreads)
 
         Getl.Main([
                 'runclass=getl.lang.DslTestAllowProcess',
@@ -984,5 +994,24 @@ ORDER BY t1.id'''
     void test99_05StopScript() {
         Getl.Main(['runclass=getl.lang.DslTestScriptStop', 'vars.level=1'])
         assertTrue(BoolUtils.IsValue(Config.content.test_stop))
+    }
+
+    @Test
+    void test99_06TestRunMode() {
+        Getl.Dsl(this) {
+            ifUnitTestMode {
+                configContent.testMode = 'debug'
+            }
+            testCase {
+                assertEquals('debug', configContent.testMode)
+            }
+
+            ifRunAppMode {
+                configContent.testMode = 'app'
+            }
+            testCase {
+                assertEquals('debug', configContent.testMode)
+            }
+        }
     }
 }
