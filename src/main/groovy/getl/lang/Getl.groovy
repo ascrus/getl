@@ -67,6 +67,7 @@ import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
+import junit.framework.Test
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
@@ -101,6 +102,12 @@ class Getl extends Script {
         CleanGetl()
 
         def job = new Job() {
+            static ParamMethodValidator allowArgs = {
+                def p = new ParamMethodValidator()
+                p.register('main', ['initclass', 'runclass', 'testcasemode', 'vars'])
+                return p
+            }.call()
+
             public Boolean isMain
 
             @Override
@@ -116,7 +123,10 @@ class Getl extends Script {
 
             @Override
             void process() {
+                allowArgs.validation('main', jobArgs)
+
                 def className = jobArgs.runclass as String
+                def isTestMode = BoolUtils.IsValue(jobArgs.testcasemode)
 
                 if (className == null)
                     throw new ExceptionGETL('Required argument "runclass"!')
@@ -131,6 +141,7 @@ class Getl extends Script {
 
                 Getl eng = getlInstance()
                 eng._params.mainClass = className
+                eng.setTestCaseMode(isTestMode)
 
                 def initClassName = jobArgs.initclass as String
                 if (initClassName != null) {
@@ -166,6 +177,7 @@ class Getl extends Script {
     }
 
     /** Quit DSL Application */
+    @SuppressWarnings("GrMethodMayBeStatic")
     void appRunSTOP(String message = null, Integer exitCode = null) {
         if (message != null)
             throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode, message)
@@ -174,11 +186,13 @@ class Getl extends Script {
     }
 
     /** Quit DSL Application */
+    @SuppressWarnings("GrMethodMayBeStatic")
     void appRunSTOP(Integer exitCode) {
         throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode)
     }
 
     /** Stop code execution of the current class */
+    @SuppressWarnings("GrMethodMayBeStatic")
     void classRunSTOP(String message = null, Integer exitCode = null) {
         if (message != null)
             throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode, message)
@@ -187,6 +201,7 @@ class Getl extends Script {
     }
 
     /** Stop code execution of the current class */
+    @SuppressWarnings("GrMethodMayBeStatic")
     void classRunSTOP(Integer exitCode) {
         throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode)
     }
@@ -303,27 +318,27 @@ class Getl extends Script {
     private _ownerObject
 
     /** Run DSL script on getl share object */
-    static def Dsl(def ownerObject, Map parameters,
+    static Object Dsl(def ownerObject, Map parameters,
                     @DelegatesTo(Getl)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         return getlInstance().runDsl(ownerObject, parameters, cl)
     }
 
     /** Run DSL script on getl share object */
-    static def Dsl(def thisObject,
+    static Object Dsl(def thisObject,
                     @DelegatesTo(Getl)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         Dsl(thisObject, null, cl)
     }
 
     /** Run DSL script on getl share object */
-    static def Dsl(@DelegatesTo(Getl)
+    static Object Dsl(@DelegatesTo(Getl)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         Dsl(null, null, cl)
     }
 
     /** Run DSL script on getl share object */
-    static def Dsl() {
+    static Object Dsl() {
         Dsl(null, null, null)
     }
 
@@ -333,19 +348,21 @@ class Getl extends Script {
     }
 
     /** Run DSL from  test case class */
-    boolean isTestCaseMode = false
+    Boolean getTestCaseMode() { BoolUtils.IsValue(_params.testCaseMode) }
     /** Run DSL from  test case class */
-    Boolean getIsTestCaseMode() { isTestCaseMode }
+    protected void setTestCaseMode(Boolean value) {
+        _params.testCaseMode = value
+    }
 
     /** Run DSL script */
-    def runDsl(def ownerObject, Map parameters,
+    Object runDsl(def ownerObject, Map parameters,
                 @DelegatesTo(Getl)
                 @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         def res
 
         if (ownerObject != null) {
             _ownerObject = ownerObject
-            isTestCaseMode = (ownerObject instanceof junit.framework.TestCase)
+            if (ownerObject instanceof Test) setTestCaseMode(true)
         }
 
         if (cl != null) {
@@ -354,27 +371,29 @@ class Getl extends Script {
             if (parameters != null) code.properties.putAll(parameters)
             res = code.call(this)
         }
+        else
+            res = null
 
         return res
     }
 
     /** Run DSL script */
-    def runDsl(def ownerObject,
+    Object runDsl(def ownerObject,
                 @DelegatesTo(Getl)
                 @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         runDsl(ownerObject, null, cl)
     }
 
     /** Run DSL script */
-    def runDsl(@DelegatesTo(Getl)
+    Object runDsl(@DelegatesTo(Getl)
                 @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         runDsl(null, null, cl)
     }
 
     /** Owner object for child objects  */
-    def getChildOwnerObject() { this }
+    Object getChildOwnerObject() { this }
     /** This object for child objects */
-    def getChildThisObject() { _ownerObject ?: this }
+    Object getChildThisObject() { _ownerObject ?: this }
     /** Delegate method for child objects */
     protected static int childDelegate = Closure.DELEGATE_FIRST
 
@@ -1982,9 +2001,11 @@ class Getl extends Script {
      * @return exit code
      */
     Integer runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:]) {
+        def res = 0
+
         def className = groovyClass.name
         def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
-        if (previouslyRun && BoolUtils.IsValue(runOnce)) return
+        if (previouslyRun && BoolUtils.IsValue(runOnce)) return res
 
         def script = (GroovyObject) groovyClass.newInstance() as Script
         if (script instanceof Getl) {
@@ -1996,8 +2017,6 @@ class Getl extends Script {
         } else if (vars != null && !vars.isEmpty()) {
             script.binding = new Binding(vars)
         }
-
-        def res = 0
 
         def pt = startProcess("Execution groovy class $className", 'class')
         try {
@@ -2042,7 +2061,6 @@ class Getl extends Script {
      */
     Integer runGroovyClass(Class groovyClass, Boolean runOnce, Closure vars) {
         def cfg = new groovy.util.ConfigSlurper()
-//        def cl = PrepareClosure(childOwnerObject, childThisObject, vars, vars)
         def map = cfg.parse(new ClosureScript(closure: vars))
         return runGroovyClass(groovyClass, runOnce, map)
     }
@@ -2190,8 +2208,8 @@ class Getl extends Script {
     }
 
     /** Run closure with call parent parameter */
-    static def RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl) {
-        if (cl == null) return
+    static Object RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl) {
+        if (cl == null) return null
 
         def code = cl.rehydrate(parent, ownerObject, thisObject)
         code.resolveStrategy = childDelegate
@@ -2199,8 +2217,8 @@ class Getl extends Script {
     }
 
     /** Run closure with call one parameter */
-    static def RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object param) {
-        if (cl == null) return
+    static Object RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object param) {
+        if (cl == null) return null
 
         def code = cl.rehydrate(parent, ownerObject, thisObject)
         code.resolveStrategy = childDelegate
@@ -2208,8 +2226,8 @@ class Getl extends Script {
     }
 
     /** Run closure with call two parameters */
-    static def RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object... params) {
-        if (cl == null) return
+    static Object RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object... params) {
+        if (cl == null) return null
 
         def code = cl.rehydrate(parent, ownerObject, thisObject)
         code.resolveStrategy = childDelegate
@@ -2217,8 +2235,8 @@ class Getl extends Script {
     }
 
     /** Run closure with call parent parameter */
-    protected def runClosure(Object parent, Closure cl) {
-        if (cl == null) return
+    protected Object runClosure(Object parent, Closure cl) {
+        if (cl == null) return null
 
         def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
         code.resolveStrategy = childDelegate
@@ -2226,8 +2244,8 @@ class Getl extends Script {
     }
 
     /** Run closure with call one parameter */
-    protected def runClosure(Object parent, Closure cl, Object param) {
-        if (cl == null) return
+    protected Object runClosure(Object parent, Closure cl, Object param) {
+        if (cl == null) return null
 
         def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
         code.resolveStrategy = childDelegate
@@ -2235,8 +2253,8 @@ class Getl extends Script {
     }
 
     /** Run closure with call two parameters */
-    protected def runClosure(Object parent, Closure cl, Object... params) {
-        if (cl == null) return
+    protected Object runClosure(Object parent, Closure cl, Object... params) {
+        if (cl == null) return null
 
         def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
         code.resolveStrategy = childDelegate

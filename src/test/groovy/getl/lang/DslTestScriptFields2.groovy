@@ -6,6 +6,8 @@ import groovy.transform.Field
 //noinspection GroovyUnusedAssignment
 @BaseScript Getl main
 
+assert testCaseMode
+
 configContent.script_params = [param1: 1, param2: 'a', param3: [1,2,3], param4: [a: 1, b: 2, c: 3], param5: 'not found']
 configuration {
     readFields 'script_params', false

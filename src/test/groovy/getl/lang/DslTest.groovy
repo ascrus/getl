@@ -39,6 +39,13 @@ class DslTest extends getl.test.GetlTest {
     }
 
     @Test
+    void test00() {
+        Getl.Dsl(this) {
+            assertTrue(testCaseMode)
+        }
+    }
+
+    @Test
     void test01_01SaveFile() {
         Getl.Dsl(this) {
             def file = textFile {
@@ -923,7 +930,8 @@ ORDER BY t1.id'''
     @Test
     void test99_03RunGetlMain() {
         Getl.Main([
-                'runclass=getl.lang.DslTestScriptFields1', 'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
+                'runclass=getl.lang.DslTestScriptFields1', 'testcasemode=true',
+                'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
                 'vars.param6=[a:1, b:2, c:3]', 'vars.param7=' + DateUtils.FormatDate(DateUtils.ClearTime(new Date())),
                 'vars.param8=' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', DateUtils.TruncTime('HOUR', new Date())),
                 'vars.param9=true', 'vars.paramCountTableRow=100'])

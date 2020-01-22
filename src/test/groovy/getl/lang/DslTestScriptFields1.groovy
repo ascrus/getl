@@ -7,6 +7,10 @@ import groovy.transform.Field
 //noinspection GroovyUnusedAssignment
 @BaseScript Getl main
 
+testCase {
+    assertTrue(main.testCaseMode)
+}
+
 @Field Integer param1 = 0; assert param1 == 1
 @Field BigDecimal param2; assert param2 == 123.45
 @Field String param4 = '123'; assert param4 == '123'
