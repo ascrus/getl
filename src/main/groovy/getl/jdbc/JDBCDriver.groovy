@@ -64,6 +64,7 @@ class JDBCDriver extends Driver {
                                                'queryParams', 'condition'])
 		methodParams.register('clearDataset', ['truncate'])
 		methodParams.register("executeCommand", ['queryParams', 'isUpdate'])
+		methodParams.register('deleteRows', [])
 	}
 
 	/** Start time connect */
@@ -2250,5 +2251,46 @@ $sql
 		target.updateRows = executeCommand(sql, [isUpdate: true, queryParams: procParams.queryParams])
 		
 		return target.updateRows
+	}
+
+	protected Map deleteRowsHint(TableDataset dataset, Map procParams) { [:] }
+
+	protected String deleteRowsPattern() { 'DELETE {afterDelete} FROM {table} {afterTable} {where} {afterWhere}'}
+
+	long deleteRows(TableDataset dataset, Map procParams) {
+		def where = procParams.where?:dataset.writeDirective.where
+		if (where != null) where = 'WHERE ' + where else where = ''
+		def hints = deleteRowsHint(dataset, procParams)?:[:]
+		def afterDelete = (hints.afterDelete)?:''
+		def afterTable = (hints.afterTable)?:''
+		def afterWhere = (hints.afterWhere)?:''
+		def sql = StringUtils.EvalMacroString(deleteRowsPattern(),
+				[afterDelete: afterDelete, table: dataset.fullTableName, afterTable: afterTable,
+				 where: where, afterWhere: afterWhere])
+
+		def con = jdbcConnection
+
+		long count = 0
+		def autoTran = isSupport(Driver.Support.TRANSACTIONAL)
+		if (autoTran) {
+			autoTran = (!con.autoCommit && con.tranCount == 0)
+		}
+
+		if (autoTran)
+			con.startTran()
+
+		try {
+			count = con.executeCommand(command: sql, isUpdate: true)
+		}
+		catch (Exception e) {
+			if (autoTran)
+				con.rollbackTran()
+
+			throw e
+		}
+		if (autoTran)
+			con.commitTran()
+
+		return count
 	}
 }

@@ -27,6 +27,7 @@ package getl.vertica
 import getl.exception.ExceptionGETL
 import getl.jdbc.QueryDataset
 import getl.utils.DateUtils
+import getl.utils.Path
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import getl.jdbc.JDBCConnection
@@ -92,18 +93,18 @@ class VerticaConnection extends JDBCConnection {
 			startPartition = '\'' + startPartition + '\''
 		else if (startPartition instanceof Date) {
 			if (useDatePartitions)
-				startPartition = '\'' + DateUtils.FormatDate('yyyy-MM-dd', startPartition) + '\'::timestamp'
+				startPartition = '\'' + DateUtils.FormatDate('yyyy-MM-dd', startPartition as Date) + '\'::timestamp'
 			else
-				startPartition = '\'' + DateUtils.FormatDateTime('yyyy-MM-dd HH:mm:ss', startPartition) + '\'::date'
+				startPartition = '\'' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', startPartition as Date) + '\'::date'
 		}
 
 		if (finishPartition instanceof String || finishPartition instanceof GString)
 			finishPartition = '\'' + finishPartition + '\''
 		else if (finishPartition instanceof Date) {
 			if (useDatePartitions)
-				finishPartition = '\'' + DateUtils.FormatDate('yyyy-MM-dd', finishPartition) + '\'::timestamp'
+				finishPartition = '\'' + DateUtils.FormatDate('yyyy-MM-dd', finishPartition as Date) + '\'::timestamp'
 			else
-				finishPartition = '\'' + DateUtils.FormatDateTime('yyyy-MM-dd HH:mm:ss', finishPartition) + '\'::date'
+				finishPartition = '\'' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', finishPartition as Date) + '\'::date'
 		}
 
 		def qry = new QueryDataset()
@@ -117,5 +118,90 @@ class VerticaConnection extends JDBCConnection {
 		}
 
 		return qry.rows()[0] as Map
+	}
+
+	final def attachedVertica = [] as List<String>
+
+	static protected String DatabaseFromConnection(VerticaConnection con) {
+		def database
+		if (con.connectURL != null) //noinspection DuplicatedCode
+		{
+			def p = new Path(mask: 'jdbc:vertica://{host}/{database}')
+			def m = p.analize(con.connectURL)
+
+			database = m.database as String
+			if (database == null)
+				throw new ExceptionGETL("Invalid connect URL, database unreachable!")
+			def i = database.indexOf('?')
+			if (i != -1) {
+				database = database.substring(0, i - 1)
+			}
+		}
+		else {
+			database = con.connectDatabase
+			if (database == null)
+				throw new ExceptionGETL("No database is specified for the connection!")
+		}
+
+		return database
+	}
+
+	/**
+	 * Create connections to another Vertica cluster for the current session
+	 * @param anotherConnection connecting to another Vertica
+	 */
+	void attachExternalVertica(VerticaConnection anotherConnection) {
+		if (anotherConnection.login == null)
+			throw new ExceptionGETL("No login is specified for the connection!")
+		if (anotherConnection.password == null)
+			throw new ExceptionGETL("No password is specified for the connection!")
+
+		def database, host, port = 5433
+		if (anotherConnection.connectURL != null) {
+			def p = new Path(mask: 'jdbc:vertica://{host}/{database}')
+			def m = p.analize(anotherConnection.connectURL)
+			host = m.host as String
+			if (host == null)
+				throw new ExceptionGETL("Invalid connect URL, host unreachable!")
+			def i = host.indexOf(':')
+			if (i != -1) {
+				port = Integer.valueOf(host.substring(i + 1))
+				host = host.substring(0, i)
+			}
+
+			database = m.database as String
+			if (database == null)
+				throw new ExceptionGETL("Invalid connect URL, database unreachable!")
+			i = database.indexOf('?')
+			if (i != -1) {
+				database = database.substring(0, i - 1)
+			}
+		}
+		else {
+			host = anotherConnection.connectHost
+			if (host == null)
+				throw new ExceptionGETL("No host is specified for the connection!")
+			port = anotherConnection.connectPortNumber?:5433
+			database = anotherConnection.connectDatabase
+			if (database == null)
+				throw new ExceptionGETL("No database is specified for the connection!")
+		}
+
+		if (database.toLowerCase() in attachedVertica)
+			throw new ExceptionGETL("The Vertica cluster with database \"$database\" is already attached to the current connection!")
+
+		executeCommand("CONNECT TO VERTICA {database} USER {login} PASSWORD '{password}' ON '{host}',{port}",
+				[host: host, port: port, database: database,
+				 login: anotherConnection.login, password: anotherConnection.password])
+
+		attachedVertica << database.toLowerCase()
+	}
+
+	void detachExternalVertica(VerticaConnection anotherConnection) {
+		def database = DatabaseFromConnection(anotherConnection)
+		if (!(database.toLowerCase() in attachedVertica))
+			throw new ExceptionGETL("The Vertica cluster with database \"$database\" is already attached to the current connection!")
+
+		executeCommand("DISCONNECT $database")
 	}
 }

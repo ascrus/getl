@@ -88,6 +88,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         else {
             table.create()
         }
+
+        assertTrue(table.exists)
     }
 
     @Test
@@ -382,7 +384,31 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     protected void truncateData() {
+        if (table.countRow() == 0) insertData()
+
         table.truncate(truncate: [con.driver.isOperation(Driver.Operation.DELETE)?false:true])
+        assertEquals(0, table.countRow())
+    }
+
+    protected void deleteRows() {
+        if (table.countRow() == 0) insertData()
+
+        table.deleteRows()
+        assertEquals(0, table.countRow())
+
+        insertData()
+        table.deleteRows('id1 > 1')
+        assertEquals(1, table.countRow())
+
+        table.deleteRows()
+        assertEquals(0, table.countRow())
+
+        insertData()
+        table.writeOpts { where = 'id1 > 1'; batchSize = 500 }
+        table.deleteRows()
+        assertEquals(1, table.countRow())
+        table.writeDirective.clear()
+        table.deleteRows()
         assertEquals(0, table.countRow())
     }
 
@@ -487,10 +513,7 @@ END FOR;
         assertTrue(con.connected)
 
         createTable()
-        assertTrue(table.exists)
-
         retrieveObject()
-
         if (insertData() > 0) {
             copyToCsv()
             updateData()
@@ -499,12 +522,11 @@ END FOR;
             runCommandUpdate()
         }
         bulkLoad(table)
-
         retrieveFields()
-
         runScript()
-
         deleteData()
+        truncateData()
+        deleteRows()
         dropTable()
 
         disconnect()

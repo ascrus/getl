@@ -61,8 +61,9 @@ class TableDataset extends JDBCDataset {
 		super()
 		type = JDBCDataset.Type.TABLE
 		sysParams.isTable = true
-		methodParams.register("unionDataset", [])
-		methodParams.register("generateDsl", [])
+		methodParams.register('unionDataset', [])
+		methodParams.register('generateDsl', [])
+		methodParams.register('deleteRows', ['where'])
 	}
 
 	/** Schema name */
@@ -233,33 +234,22 @@ class TableDataset extends JDBCDataset {
 	 * Delete rows
 	 * @param where rows filter
 	 */
-	long deleteRows(String where = null) {
+	long deleteRows(String where) {
+		deleteRows(where: where)
+	}
+
+	/**
+	 * Delete rows
+	 * @param procParams parameters
+	 */
+	long deleteRows(Map procParams = [:]) {
+		procParams = procParams?:[:]
+		methodParams.validation('deleteRows', procParams,
+				[connection.driver.methodParams.params('deleteRows')])
+
 		validConnection()
 
-		String sql = "DELETE FROM ${fullNameDataset()}" + ((where != null && where.trim().length() > 0) ? " WHERE $where" : '')
-
-		long count = 0
-		def autoTran = connection.driver.isSupport(Driver.Support.TRANSACTIONAL)
-		if (autoTran) {
-			autoTran = (!currentJDBCConnection.autoCommit && connection.tranCount == 0)
-		}
-
-		if (autoTran)
-			connection.startTran()
-
-		try {
-			count = connection.executeCommand(command: sql, isUpdate: true)
-		}
-		catch (Exception e) {
-			if (autoTran)
-				connection.rollbackTran()
-
-			throw e
-		}
-		if (autoTran)
-			connection.commitTran()
-
-		return count
+		return currentJDBCConnection.currentJDBCDriver.deleteRows(this, procParams)
 	}
 
 	/** Full table name in database */

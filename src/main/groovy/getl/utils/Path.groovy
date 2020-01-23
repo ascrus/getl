@@ -444,11 +444,11 @@ class Path {
 		return value.matches(maskPathPattern)
 	}
 	
-	/** Analize file or directory */
-	private Map analize(String fileName, boolean isDir) {
+	/** Analize object name */
+	Map analize(String objName, boolean isHierarchy = false) {
 		if (!isCompile) compile()
 
-		def fn = fileName
+		def fn = objName
 		if (fn == null) return null
 		
 		if (changeSeparator) fn = fn.replace('\\', '/')
@@ -456,8 +456,8 @@ class Path {
 		Integer countDirs
 		String pattern
 		
-		if (isDir) {
-			countDirs = fileName.split("/").length
+		if (isHierarchy) {
+			countDirs = objName.split("/").length
 			pattern = generateMaskPattern(countDirs)
 		}
 		else {

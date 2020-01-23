@@ -57,6 +57,7 @@ class VerticaDriver extends JDBCDriver {
 				 'expression', 'location', 'maskDate', 'maskTime', 'maskDateTime',
 				 'parser', 'streamName', 'files'])
 		methodParams.register('unionDataset', ['direct'])
+		methodParams.register('deleteRows', ['direct', 'label'])
 	}
 
     @Override
@@ -474,5 +475,17 @@ class VerticaDriver extends JDBCDriver {
 				throw new ExceptionGETL("When escaped is off, bulk loading with binary type fields is not allowed (fields: ${blobNames.join(', ')})!")
 			}
 		}
+	}
+
+	@Override
+	protected Map deleteRowsHint(TableDataset dataset, Map procParams) {
+		def res = super.deleteRowsHint()
+		def direct = procParams.direct?:dataset.writeDirective.direct
+		def label = procParams.label?:dataset.writeDirective.label
+		def ad = []
+		if (BoolUtils.IsValue(direct)) ad << 'direct'
+		if (label != null) ad << "label(${label})"
+		if (!ad.isEmpty()) res.afterDelete = "/*+${ad.join(', ')}*/"
+		return res
 	}
 }
