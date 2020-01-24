@@ -25,7 +25,9 @@
 package getl.utils
 
 import getl.data.Field
+import getl.utils.sub.ClosureScript
 import groovy.json.JsonBuilder
+import groovy.json.JsonGenerator
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
 import groovy.transform.CompileDynamic
@@ -46,7 +48,7 @@ class MapUtils {
 	 * @param map
 	 * @return
 	 */
-	static Map DeepCopy (Map map) {
+	static Map DeepCopy(Map map) {
 		if (map == null) return null
 		
 		Map res
@@ -400,13 +402,12 @@ class MapUtils {
 	 */
 	static String ToJson (Map value) {
 		if (value == null) return null
-		
-		JsonBuilder b = new JsonBuilder()
-		def res
-		b.call(value)
-		res = b.toPrettyString()
 
-		return res
+		def gen = new JsonGenerator.Options().timezone(TimeZone.default.getID())
+		def build = new JsonBuilder(gen.build())
+		build.call(value)
+
+		return build.toPrettyString()
 	}
 	
 	/**
@@ -918,5 +919,49 @@ class MapUtils {
 		}
 
 		return res
+	}
+
+	static Map<String, Object> ConfigObject2Map(ConfigObject data) {
+		def res = [:] as Map<String, Object>
+		data.each { k, v ->
+			if (v instanceof ConfigObject)
+				v = ConfigObject2Map(v)
+			else if (v instanceof List) {
+				def list = v as List
+				for (int i = 0; i < list.size(); i++) {
+					def l = list.get(i)
+					if (l instanceof ConfigObject) {
+						list.set(i, ConfigObject2Map(l))
+					}
+				}
+			}
+			res.put(k as String, v)
+		}
+
+		return res
+	}
+
+	/**
+	 * Convert closure to map structure
+	 * @param cl variable description code
+	 * @return
+	 */
+	static Map<String, Object> Closure2Map(Closure cl) {
+		def cfg = new groovy.util.ConfigSlurper()
+		def vars = cfg.parse(new ClosureScript(closure: cl))
+
+		return ConfigObject2Map(vars)
+	}
+
+	/**
+	 * Convert closure to map structure
+	 * @param environment use the specified environment
+	 * @param cl variable description code
+	 * @return
+	 */
+	static Map<String, Object> Closure2Map(String environment, Closure cl) {
+		def cfg = (environment == null)?new groovy.util.ConfigSlurper():new groovy.util.ConfigSlurper(environment)
+		def vars = cfg.parse(new ClosureScript(closure: cl))
+		return ConfigObject2Map(vars)
 	}
 }

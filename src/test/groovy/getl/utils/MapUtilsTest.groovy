@@ -2,6 +2,9 @@ package getl.utils
 
 import org.junit.Test
 
+import java.time.ZoneId
+import java.time.ZoneOffset
+
 class MapUtilsTest extends getl.test.GetlTest {
     @Test
     void testMergeMap() {
@@ -148,18 +151,55 @@ class MapUtilsTest extends getl.test.GetlTest {
     void testConvertString2Object() {
         def m = [s: 'abc', numbers: [i: '100', n: '123.45'], dates:[d: '2019-12-31', dt: '2019-12-31 23:59:59'], other: 999]
         def r = MapUtils.ConvertString2Object(m)
-        def s = '''{
+        def tz = Calendar.instance.zoneOffset.hours
+        def tzs = ((tz >= 0)?'+':'-') + StringUtils.AddLedZeroStr(tz, 2)
+        def s = """{
     "s": "abc",
     "numbers": {
         "i": 100,
         "n": 123.45
     },
     "dates": {
-        "d": "2019-12-30T21:00:00+0000",
-        "dt": "2019-12-31T20:59:59+0000"
+        "d": "2019-12-31T00:00:00${tzs}00",
+        "dt": "2019-12-31T23:59:59${tzs}00"
     },
     "other": 999
-}'''
+}"""
         assertEquals(s, MapUtils.ToJson(r))
+    }
+
+    @Test
+    void testClosure2Map() {
+        def map = [a: 1, b: 'a', c: [1, 2, 3],
+                   d: [i1: 1, i2: DateUtils.ParseDate('2019-12-31'), i3: [1, 2, 3], i4: [aa: 111]]]
+
+        def cl = {
+            a = 1
+            b = 'a'
+            c = [1,2, 3]
+            d {
+                i1 = 1
+                i2 = DateUtils.ParseDate('2019-12-31')
+                i3 = [1, 2, 3]
+                i4 {
+                    aa = 111
+                }
+            }
+        }
+        def res = MapUtils.Closure2Map(cl)
+        assertEquals(map, res)
+        assertNull(res.d.i4.bbb)
+
+        def cl_env = {
+            environment {
+                env1 {
+                    map = 'incorrect!'
+                }
+                env2{
+                    a = 1; b = 'a'; c = [1,2,3]; d = [i1: 1, i2: DateUtils.ParseDate('2019-12-31'), i3: [1, 2, 3]]
+                }
+            }
+        }
+        assertEquals(map, MapUtils.Closure2Map('env2', cl))
     }
 }

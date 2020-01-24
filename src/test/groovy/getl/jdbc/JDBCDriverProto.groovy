@@ -8,6 +8,7 @@ import getl.stat.ProcessTime
 import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.InheritConstructors
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 
@@ -25,20 +26,43 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
     static final countRows = 100
     JDBCConnection _con
+    static final def validConnections = [:]
     protected String defaultDatabase
     protected String defaultSchema
-    abstract protected JDBCConnection newCon()
+    protected JDBCConnection newCon() {
+        return null
+    }
 
     String getDescriptionName() { "desc'ription" }
 
     JDBCConnection getCon() {
         if (_con == null) {
-            _con = newCon()
+            def c = newCon()
+            if (c != null) {
+                if (!validConnections.containsKey(c.getClass().name)) {
+                    try {
+                        c.connected = true
+                        c.connected = false
+                        validConnections.put(c.getClass().name, true)
+                        _con = c
+                    }
+                    catch (Exception e) {
+                        validConnections.put(c.getClass().name, false)
+                        Logs.Exception(e)
+                    }
+                }
+                else {
+                    if (validConnections.get(c.getClass().name) == true)
+                        _con = c
+                }
+            }
         }
+
         return _con
     }
+
     String getTableClass() { 'getl.jdbc.TableDataset' }
-    final TableDataset table = TableDataset.CreateDataset(dataset: tableClass, connection: con, tableName: 'getl_test_data')
+    final TableDataset table = TableDataset.CreateDataset(dataset: tableClass, tableName: 'getl_test_data')
     List<Field> getFields () {
         def res =
             [
@@ -63,7 +87,12 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
     @Override
     boolean allowTests() {
-        (con != null)
+        return (con != null)
+    }
+
+    @Before
+    void initTable() {
+        table.connection = con
     }
 
     protected void connect() {

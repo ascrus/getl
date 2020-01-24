@@ -2063,7 +2063,9 @@ class Getl extends Script {
     Integer runGroovyClass(Class groovyClass, Boolean runOnce, Closure vars) {
         def cfg = new groovy.util.ConfigSlurper()
         def map = cfg.parse(new ClosureScript(closure: vars))
-        return runGroovyClass(groovyClass, runOnce, map)
+        def vmap = [:]
+        vmap.putAll(map)
+        return runGroovyClass(groovyClass, runOnce, vmap)
     }
 
     /**
@@ -4330,6 +4332,11 @@ class Getl extends Script {
     void ifRunAppMode(Closure cl) {
         if (unitTestMode) return
         runClosure(cl.delegate, cl)
+    }
+
+    /** Сonvert code variables to a map */
+    Map<String, Object> toVars(Closure cl) {
+        MapUtils.Closure2Map(configuration().enviroment, cl)
     }
 
     /* TODO: add Counter repository object */

@@ -191,8 +191,8 @@ class VerticaConnection extends JDBCConnection {
 			throw new ExceptionGETL("The Vertica cluster with database \"$database\" is already attached to the current connection!")
 
 		executeCommand("CONNECT TO VERTICA {database} USER {login} PASSWORD '{password}' ON '{host}',{port}",
-				[host: host, port: port, database: database,
-				 login: anotherConnection.login, password: anotherConnection.password])
+				[queryParams: [host: host, port: port, database: database,
+				 login: anotherConnection.login, password: anotherConnection.password]])
 
 		attachedVertica << database.toLowerCase()
 	}

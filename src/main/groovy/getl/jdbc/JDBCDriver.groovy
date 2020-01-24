@@ -63,7 +63,7 @@ class JDBCDriver extends Driver {
 		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
                                                'queryParams', 'condition'])
 		methodParams.register('clearDataset', ['truncate'])
-		methodParams.register("executeCommand", ['queryParams', 'isUpdate'])
+		methodParams.register('executeCommand', [/*'queryParams', 'isUpdate'*/])
 		methodParams.register('deleteRows', [])
 	}
 

@@ -879,11 +879,16 @@ ORDER BY t1.id'''
                 }
                 assertEquals('complete test 1', configContent.testScript)
 
-                configContent.script_params = [param1: p1, param2: 123.45, param5: [1,2,3], param6: [a: 1, b: 2, c: 3],
-                                               param7: DateUtils.ClearTime(new Date()),
-                                               param8: DateUtils.TruncTime('HOUR', new Date()),
-                                               param9: true,
-                                               paramCountTableRow: this.table1_rows]
+                configContent.script_params = toVars {
+                    param1 = p1
+                    param2 = 123.45
+                    param5 = [1, 2, 3]
+                    param6 =  [a: 1, b: 2, c: 3]
+                    param7 = DateUtils.ClearTime(new Date())
+                    param8 = DateUtils.TruncTime('HOUR', new Date())
+                    param9 = true
+                    paramCountTableRow = this.table1_rows
+                }
                 configContent.testScript = null
                 runGroovyClass DslTestScriptFields1, 'script_params'
                 assertEquals('complete test 1', configContent.testScript)
