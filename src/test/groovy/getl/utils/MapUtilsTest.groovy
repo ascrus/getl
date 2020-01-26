@@ -2,9 +2,6 @@ package getl.utils
 
 import org.junit.Test
 
-import java.time.ZoneId
-import java.time.ZoneOffset
-
 class MapUtilsTest extends getl.test.GetlTest {
     @Test
     void testMergeMap() {
@@ -201,5 +198,16 @@ class MapUtilsTest extends getl.test.GetlTest {
             }
         }
         assertEquals(map, MapUtils.Closure2Map('env2', cl))
+    }
+
+    @Test
+    void testUnknown() {
+        def a = ['one', 'two', 'three']
+        assertEquals(0, MapUtils.Unknown([one: 1, three: 3, two: 2], a).size())
+        assertEquals(['four'], MapUtils.Unknown([one: 1, three: 3, four: 4, two: 2], a))
+        assertEquals(0, MapUtils.Unknown([one: 1, three: 3, _four: 4, two: 2], a, true).size())
+        shouldFail {
+            MapUtils.CheckKeys([one: 1, three: 3, four: 4, two: 2], a)
+        }
     }
 }

@@ -479,11 +479,11 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	protected Map deleteRowsHint(TableDataset dataset, Map procParams) {
-		def res = super.deleteRowsHint()
+		def res = super.deleteRowsHint(dataset, procParams)
 		def direct = procParams.direct?:dataset.writeDirective.direct
 		def label = procParams.label?:dataset.writeDirective.label
 		def ad = []
-		if (BoolUtils.IsValue(direct)) ad << 'direct'
+		if (direct != null) ad << direct
 		if (label != null) ad << "label(${label})"
 		if (!ad.isEmpty()) res.afterDelete = "/*+${ad.join(', ')}*/"
 		return res

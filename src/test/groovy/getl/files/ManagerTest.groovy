@@ -3,6 +3,7 @@ package getl.files
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
+import getl.utils.Logs
 import getl.utils.Path
 import getl.utils.StringUtils
 import org.apache.poi.ss.usermodel.DateUtil
@@ -15,8 +16,29 @@ abstract class ManagerTest extends getl.test.GetlTest {
     abstract Manager newManager()
 
     Manager _manager
+    static final def validConnections = [:]
     Manager getManager() {
-        if (_manager == null) _manager = newManager()
+        if (_manager == null) {
+            def c = newManager()
+            if (c != null) {
+                if (!validConnections.containsKey(c.getClass().name)) {
+                    try {
+                        c.connect()
+                        c.disconnect()
+                        validConnections.put(c.getClass().name, true)
+                        _manager = c
+                    }
+                    catch (Exception e) {
+                        validConnections.put(c.getClass().name, false)
+                        Logs.Exception(e)
+                    }
+                }
+                else {
+                    if (validConnections.get(c.getClass().name) == true)
+                        _manager = c
+                }
+            }
+        }
         return _manager
     }
 

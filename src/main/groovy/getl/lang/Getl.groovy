@@ -2063,9 +2063,7 @@ class Getl extends Script {
     Integer runGroovyClass(Class groovyClass, Boolean runOnce, Closure vars) {
         def cfg = new groovy.util.ConfigSlurper()
         def map = cfg.parse(new ClosureScript(closure: vars))
-        def vmap = [:]
-        vmap.putAll(map)
-        return runGroovyClass(groovyClass, runOnce, vmap)
+        return runGroovyClass(groovyClass, runOnce, MapUtils.ConfigObject2Map(map))
     }
 
     /**

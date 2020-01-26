@@ -36,61 +36,59 @@ class ParamMethodValidator {
 
 	/**
 	 * Register list of parameters by method
-	 * @param methodName
-	 * @param parameterList
+	 * @param methodName name method
+	 * @param parameterList list of parameter by method
 	 */
-	void register (String methodName, List<String> parameterList) {
-		if (methodParams."${methodName}" == null) {
-			methodParams."${methodName}" = parameterList
+	void register(String methodName, List<String> parameterList) {
+		if (methodParams.get(methodName) == null) {
+			methodParams.put(methodName, parameterList)
 		}
 		else {
-			methodParams."${methodName}".addAll(parameterList)
+			(methodParams.get(methodName) as List<String>).addAll(parameterList)
 		}
 	}
 	
 	/**
 	 * Unregister list of parameters by method 
-	 * @param methodName
-	 * @param parameterList
+	 * @param methodName name method
+	 * @param parameterList list of parameter by method
 	 */
-	void unregister (String methodName, List<String> parameterList) {
-		List<String> params = methodParams."${methodName}"
-		if (params == null || params.isEmpty()) throw new ExceptionGETL("Unknown method \"$methodName\"")
-		methodParams."${methodName}" = params - parameterList
+	void unregister(String methodName, List<String> parameterList) {
+		def params = methodParams.get(methodName) as List<String>
+		if (params == null || params.isEmpty())
+			throw new ExceptionGETL("Unknown method \"$methodName\"")
+		methodParams.put(methodName, params - parameterList)
 	}
 	
 	/**
-	 * Allowed methods
+	 * Detect allowed methods
 	 * @return
 	 */
 	List<String> methods () {
-		List<String> res = []
-		methodParams.each { String key, value -> res << key }
-		
-		res
+		return methodParams.keySet().toList()
 	}
 	
 	/**
-	 * Allowed parameters for method
-	 * @param methodName
-	 * @return
+	 * Detect allowed parameters for specofied method
+	 * @param methodName name method
+	 * @return list of register parameter by method
 	 */
 	List<String> params(String methodName) {
-		def res = methodParams."${methodName}"
-		if (res == null) throw new ExceptionGETL("Unknown method ${methodName}")
+		def res = methodParams.get(methodName)
+		if (res == null) throw new ExceptionGETL("Unknown method $methodName")
 		
-		res
+		return res
 	} 
 	
 	/**
-	 * Validation running parameters list for method
-	 * @param methodName
-	 * @param runParams
+	 * Check passed method parameters
+	 * @param methodName name method
+	 * @param runParams list of parameters
 	 */
 	void validation(String methodName, Map runParams) {
 		def list = params(methodName)
 		
-		def unknown = MapUtils.Unknown(runParams, list, true)
+		def unknown = MapUtils.Unknown(runParams as Map<String, Object>, list, true)
 		if (unknown.isEmpty()) return
 		def slist = unknown.join(", ")
 		
@@ -98,19 +96,19 @@ class ParamMethodValidator {
 	}
 	
 	/**
-	 * Validation running parameters list for method including other parameters
-	 * @param methodName
-	 * @param runParams
-	 * @param otherValidator
+	 * Check passed method parameters
+	 * @param methodName name method
+	 * @param runParams list of parameters
+	 * @param otherValidator list of over registered parameter
 	 */
 	void validation(String methodName, Map runParams, List<List<String>> others) {
 		def list = params(methodName)
 		
-		def vlist = []
+		def vlist = [] as List<String>
 		vlist.addAll(list)
 		others.each { vlist.addAll(it) }
 		
-		def unknown = MapUtils.Unknown(runParams, vlist, true)
+		def unknown = MapUtils.Unknown(runParams as Map<String, Object>, vlist, true)
 		if (unknown.isEmpty()) return
 		def slist = unknown.join(", ")
 		
@@ -119,9 +117,10 @@ class ParamMethodValidator {
 	
 	/**
 	 * Valid map content names 
-	 * @param content
+	 * @param content data in map object
+	 * @param excludeSections list of ignored map group names
 	 */
-	void validation(Map content, String contentName, List excludeSections) {
+	void validation(Map content, String contentName, List excludeSections = []) {
 		if (content == null) return
 		validationSub(content, contentName, contentName, excludeSections?:[])
 	}
@@ -129,11 +128,12 @@ class ParamMethodValidator {
 	private void validationSub (Map<String, Object> content, String contentName, String path, List excludeSections) {
 		if (contentName in excludeSections) return
 		
-		List listMethods = methodParams."${contentName}"
+		List listMethods = methodParams.get(contentName)
 		if (listMethods == null) throw new ExceptionGETL("Content name \"$path\" not found, avaible names ${methodParams.keySet().toList()}")
 		content?.each { String key, value ->
 			if (key.substring(0, 1) == "_") return
-			if (listMethods.indexOf(key) == -1) throw new ExceptionGETL("Invalid parameter \"${path}.${key}\", allow ${listMethods}")
+			if (listMethods.indexOf(key) == -1)
+				throw new ExceptionGETL("Invalid parameter \"${path}.${key}\", allow ${listMethods}")
 			if (value instanceof Map) {
 				def subContentName = "${contentName}.${key}"
 				if (methodParams."$subContentName" != null) {
@@ -144,7 +144,8 @@ class ParamMethodValidator {
 					def subContent = methodParams."$subContentName"
 					if (subContent != null) {
 						value.each { subKey, subValue ->
-							if (!(subValue instanceof Map)) throw new ExceptionGETL("Invalid parameter \"${contentName}.${key}.${subKey}\", map expected")
+							if (!(subValue instanceof Map))
+								throw new ExceptionGETL("Invalid parameter \"${contentName}.${key}.${subKey}\", map expected")
 							validationSub(subValue, subContentName, "${contentName}.${key}.${subKey}", excludeSections)
 						}
 					}
@@ -155,14 +156,14 @@ class ParamMethodValidator {
 				def subContent = methodParams."$subContentName"
 				if (subContent != null) {
 					value.each { subValue ->
-						if (!(subValue instanceof Map)) throw new ExceptionGETL("Invalid parameter \"${contentName}.${key}.*\", map expected")
+						if (!(subValue instanceof Map))
+							throw new ExceptionGETL("Invalid parameter \"${contentName}.${key}.*\", map expected")
 						validationSub(subValue, subContentName, "${contentName}.${key}[]", excludeSections)
 					}
 				}
 			}
 		}
 	}
-
 
 	String toString() {
 		MapUtils.ToJson(methodParams)

@@ -185,11 +185,11 @@ class MapUtils {
 	 * @param ignoreComments
 	 * @return
 	 */
-	static List<String> Unknown(Map<String, Object> map, List<String> definedKey, boolean ignoreComments) {
-		if (map == null) map = [:]
+	static List<String> Unknown(Map<String, Object> map, List<String> definedKey, boolean ignoreComments = false) {
+		if (map == null) map = [:] as Map<String, Object>
 		
 		List<String> res = []
-		map.each { String k, v ->
+		(map as Map<String, Object>).each { k, v ->
 			if (ignoreComments && k.substring(0, 1) == "_") return
 			def o = definedKey.find { d ->
 				if (d.matches(".*[*]")) {
@@ -203,15 +203,17 @@ class MapUtils {
 
 		return res
 	}
-	
+
 	/**
-	 * Analize and return unknown keys in map
-	 * @param map
-	 * @param definedKey
-	 * @return
+	 * Map key verification
+	 * @param map checked map
+	 * @param definedKey list of allowed keys
+	 * @param ignoreComments ignore keys whose name begins with an underscore
 	 */
-	static List<String> Unknown(Map map, List<String> definedKey) {
-		 return Unknown(map, definedKey, false)
+	static void CheckKeys(Map<String, Object> map, List<String> definedKey, boolean ignoreComments = false) {
+		def u = Unknown(map, definedKey, ignoreComments)
+		if (u.size() != 0)
+			throw new ExceptionGETL("Unknown map keys detected: $u!")
 	}
 	
 	/**
