@@ -11,6 +11,7 @@ import getl.utils.Config
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
+import getl.utils.MapUtils
 import getl.utils.StringUtils
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
@@ -48,11 +49,14 @@ class DslTest extends getl.test.GetlTest {
     @Test
     void test01_01SaveFile() {
         Getl.Dsl(this) {
-            def file = textFile {
+            def file = textFile { f ->
                 temporaryFile = true
-                write '12345'
+                write MapUtils.ToJson(toVars { codePage = f.codePage })
             }.fileName
-            assertEquals('12345', new File(file).text)
+            def res = '''{
+    "codePage": "UTF-8"
+}'''
+            assertEquals(res, new File(file).text)
         }
     }
 

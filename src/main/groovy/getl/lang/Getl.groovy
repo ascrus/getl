@@ -704,6 +704,20 @@ class Getl extends Script {
     }
 
     /**
+     * Return list of reposotory connection objects for specified list of name
+     * @param names list of name connections
+     * @return list of connection objects
+     */
+    List<Connection> connectionObjects(List<String> names) {
+        if (names == null) return null
+        def res = [] as List<Connection>
+        names.each { connectionName ->
+            res << connection(connectionName)
+        }
+        return res
+    }
+
+    /**
      * Return list of repository connections for specified classes
      * @param connectionClasses connection class list
      * @param filter object filtering code
@@ -779,6 +793,20 @@ class Getl extends Script {
      */
     List<String> listJdbcConnections(String mask = null, Closure<Boolean> filter = null) {
         return listConnections(mask, LISTJDBCCONNECTIONCLASSES, filter)
+    }
+
+    /**
+     * Return list of reposotory jdbc connection objects for specified list of name
+     * @param names list of name jdbc connections
+     * @return list of connection objects
+     */
+    List<JDBCConnection> jdbcConnectionObjects(List<String> names) {
+        if (names == null) return null
+        def res = [] as List<JDBCConnection>
+        names.each { connectionName ->
+            res << jdbcConnection(connectionName)
+        }
+        return res
     }
 
     /**
@@ -946,7 +974,7 @@ class Getl extends Script {
     }
 
     /**
-     * Return list of repository datasets for specified mask, class and filter
+     * Return list of repository name datasets for specified mask, class and filter
      * @param mask filter mask (use Path expression syntax)
      * @param datasetClasses dataset class list
      * @param filter object filtering code
@@ -985,7 +1013,7 @@ class Getl extends Script {
     }
 
     /**
-     * Return list of repository datasets for specified class and filter
+     * Return list of repository name datasets for specified class and filter
      * @param datasetClasses dataset class list
      * @param filter object filtering code
      * @return list of dataset names according to specified conditions
@@ -997,13 +1025,27 @@ class Getl extends Script {
     }
 
     /**
-     * Return list of repository datasets for specified filter
+     * Return list of repository name datasets for specified filter
      * @param filter object filtering code
      * @return list of dataset names according to specified conditions
      */
     List<String> listDatasets(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                       Closure<Boolean> filter) {
         listDatasets(null, null, filter)
+    }
+
+    /**
+     * Return list of reposotory dataset objects for specified list of name
+     * @param names list of name datasets
+     * @return list of dataset objects
+     */
+    List<Dataset> datasetObjects(List<String> names) {
+        if (names == null) return null
+        def res = [] as List<Dataset>
+        names.each { tableName ->
+            res << dataset(tableName)
+        }
+        return res
     }
 
     /**
@@ -1123,6 +1165,20 @@ class Getl extends Script {
      */
     List<String> listJdbcTables(Closure<Boolean> filter) {
         return listDatasets(null, LISTJDBCTABLECLASSES, filter)
+    }
+
+    /**
+     * Return list of reposotory table objects for specified list of name
+     * @param names list of name tables
+     * @return list of table objects
+     */
+    List<TableDataset> tableObjects(List<String> names) {
+        if (names == null) return null
+        def res = [] as List<TableDataset>
+        names.each { tableName ->
+            res << (dataset(tableName) as TableDataset)
+        }
+        return res
     }
 
     /**
@@ -1755,6 +1811,20 @@ class Getl extends Script {
     List<String> listFilemanagers(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                           Closure<Boolean> filter) {
         listFilemanagers(null, null, filter)
+    }
+
+    /**
+     * Return list of reposotory file managers objects for specified list of name
+     * @param names list of name file managers
+     * @return list of file manager objects
+     */
+    List<Manager> filemanagerObjects(List<String> names) {
+        if (names == null) return null
+        def res = [] as List<Manager>
+        names.each { managerName ->
+            res << filemanager(managerName)
+        }
+        return res
     }
 
     /**
@@ -4334,7 +4404,9 @@ class Getl extends Script {
 
     /** Сonvert code variables to a map */
     Map<String, Object> toVars(Closure cl) {
-        MapUtils.Closure2Map(configuration().enviroment, cl)
+        def own = DetectClosureDelegate(cl)
+        def code = PrepareClosure(own, childThisObject, own, cl)
+        MapUtils.Closure2Map(configuration().enviroment, code)
     }
 
     /* TODO: add Counter repository object */
