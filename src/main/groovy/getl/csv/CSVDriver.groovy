@@ -762,6 +762,7 @@ class CSVDriver extends FileDriver {
 		count - ((dataset.header)?1:0)
 	}
 
+	@SuppressWarnings("DuplicatedCode")
 	static long prepareCSVForBulk(CSVDataset target, CSVDataset source, Map<String, String> encodeTable, Closure code) {
 		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
 		if (!(source.rowDelimiter in ['\n', '\r\n'])) throw new ExceptionGETL('Allow convert CSV files only standart row delimiter')

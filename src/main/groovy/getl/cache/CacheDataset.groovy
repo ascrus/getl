@@ -117,6 +117,7 @@ class CacheDataset extends TableDataset {
 	 * Last readed time source dataset
 	 * @return
 	 */
+	@SuppressWarnings("DuplicatedCode")
 	Date getCacheReaded () {
 		Map row
 		CacheManager cm = (CacheManager)connection

@@ -76,10 +76,12 @@ LIMIT 1'''
     @Test
     void bulkLoadFiles() {
         Getl.Dsl(this) { main ->
+            useQueryConnection this.con
+            def current_node = configContent.bulkload_node //sqlQueryRow('SELECT node_name FROM CURRENT_SESSION').node_name
+
             def vertable = verticaTable('vertica:testbulkload', true) {
                 connection = this.con
                 tableName = 'testBulkLoad'
-//                type = localTemporaryTableType
                 field('id') { type = integerFieldType; isKey = true }
                 field('name') { length = 50; isNull = false }
                 field('dt') { type = datetimeFieldType }
@@ -178,13 +180,29 @@ LIMIT 1'''
             assertEquals(3, vertable.countRow())
 
             logInfo 'Bulk load files with remote load from path mask:'
+            sftp {
+                useConfig 'vertica'
+                localDirectory = FileUtils.ConvertToUnixPath(csv.currentCsvConnection.path) + '/bulkload'
+                connect()
+                if (!existsDirectory('getl-bulkload'))
+                    createDir('getl-bulkload')
+                changeDirectory('getl-bulkload')
+                if (!existsDirectory('errors'))
+                    createDir('errors')
+                upload('vertica.bulkload.0001.csv')
+                upload('vertica.bulkload.0002.csv')
+                upload('vertica.bulkload.0003.csv')
+                upload('vertica.bulkload.0004.csv')
+            }
+
             vertable.with {
                 truncate(truncate: true)
                 bulkLoadCsv(csv) {
                     remoteLoad = true
-                    files = csv.currentCsvConnection.path + '/bulkload/*.csv'
-                    exceptionPath = main.configContent.errorPath + '/vertica.bulkload.err'
-                    rejectedPath = main.configContent.errorPath + '/vertica.bulkload.csv'
+                    location = current_node
+                    files = '/tmp/getl-bulkload/*.csv'
+                    exceptionPath = '/tmp/getl-bulkload/errors'
+                    rejectedPath = '/tmp/getl-bulkload/errors'
                 }
             }
             assertEquals(3, vertable.updateRows)

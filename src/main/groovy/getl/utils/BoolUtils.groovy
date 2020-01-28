@@ -51,7 +51,8 @@ class BoolUtils {
 					if (v instanceof Boolean) {
                         result = v
                     }
-                    else {
+                    else //noinspection DuplicatedCode
+					{
                         def s = v.toString().toLowerCase()
                         if (s in ['true', '1', 'on']) {
                             result = true
