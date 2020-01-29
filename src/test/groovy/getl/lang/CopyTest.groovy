@@ -49,7 +49,7 @@ class CopyTest extends getl.test.GetlTest {
                         ['AAA', 'BBB', 'CCC'].each { obj_name ->
                             (1..3).each { portion_num ->
                                 def fc = textFile("${this.sourcePathDir}/region_$region_num/2020-01-${StringUtils.AddLedZeroStr(day_num, 2)}/region_${region_num}_object_${obj_name}.${StringUtils.AddLedZeroStr(portion_num, 4)}.dat") {
-                                    writeln(StringUtils.Replicate('0123456789', this.countFilePortions))
+                                    writeln StringUtils.Replicate('0123456789', this.countFilePortions)
                                 }
                             }
                         }

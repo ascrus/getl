@@ -157,9 +157,20 @@ abstract class ManagerTest extends getl.test.GetlTest {
 
     private void buildList() {
         manager.changeDirectoryToRoot()
-        def p = new Path(mask: 'catalog_{catalog}/subdir_{subdir}/*.txt', vars: [catalog: [type: 'INTEGER'], subdir: [type: 'INTEGER']])
+
+        /*def p = new Path(mask: 'catalog_{catalog}/subdir_{subdir}/*.txt', vars: [catalog: [type: 'INTEGER'], subdir: [type: 'INTEGER']])
         manager.buildList(path: p, recursive: true)
-        assertEquals(9, manager.fileList.rows().size())
+        assertEquals(9, manager.fileList.rows().size())*/
+
+        def listTable = manager.buildListFiles {
+            useMaskPath {
+                mask = 'catalog_{catalog}/subdir_{subdir}/*.txt'
+                variable('catalog') { type = integerFieldType }
+                variable('subdir') { type = integerFieldType }
+            }
+            recursive = true
+        }
+        assertEquals(9, listTable.countRow())
     }
 
     private void download() {
@@ -168,7 +179,14 @@ abstract class ManagerTest extends getl.test.GetlTest {
         manager.changeLocalDirectory(downloadLocalDir)
 
         def loadFiles = 0
-        manager.downloadFiles(folders: true) { file -> if (file.filename == subdirFileName) loadFiles++ }
+        manager.downloadListFiles {
+            saveDirectoryStructure = true
+            downloadFile { file ->
+                if (file.filename == subdirFileName)
+                    loadFiles++
+            }
+        }
+//        manager.downloadFiles(folders: true) { file -> if (file.filename == subdirFileName) loadFiles++ }
         assertEquals(9, loadFiles)
 
         manager.changeDirectoryToRoot()
