@@ -69,17 +69,25 @@ class DslTest extends getl.test.GetlTest {
             def configFileName = textFile(this.tempConfig) {
                 temporaryFile = true
                 write """
-datasets {
-    table1 {
-        tableName = '${this.h2TableName}'
+environments {
+    prod {
+        datasets {
+            table1 {
+                tableName = '${this.h2TableName}'
+            }
+            
+            file1 {
+                fileName = '${this.csvFileName1}'
+            }
+            
+            file2 {
+                fileName = '${this.csvFileName2}'
+            }
+        }
     }
-    
-    file1 {
-        fileName = '${this.csvFileName1}'
-    }
-    
-    file2 {
-        fileName = '${this.csvFileName2}'
+    dev {
+        datasets {
+        }
     }
 }
 """
@@ -90,12 +98,38 @@ datasets {
             // Load configuration
             configuration {
                 path = this.tempPath
-                load('getl.conf')
+                load'getl.conf', 'dev'
+            }
+            assertTrue(configContent.datasets?.isEmpty())
+
+            configuration {
+                load'getl.conf'
+            }
+
+            assertEquals(this.csvFileName1, configContent.datasets?.file1?.fileName)
+            assertEquals(this.csvFileName2, configContent.datasets?.file2?.fileName)
+            assertEquals(this.h2TableName, configContent.datasets?.table1?.tableName)
+
+            def enmap_dev = [logins: [user1: '000', user2: '000']]
+            def enmap_prod = [logins: [user1: '1234567890', user2: 'abcdefghij']]
+            configuration {
+                loadEncrypt('resource:/config/dsl_config.store', 'getl-dsl-test', 'dev')
+                assertEquals(enmap_dev.logins, configContent.logins)
+
+                loadEncrypt('resource:/config/dsl_config.store', 'getl-dsl-test', 'prod')
+                assertEquals(enmap_prod.logins, configContent.logins)
+
+                def storeName = FileUtils.CreateTempFile().path
+                saveEncrypt(enmap_dev, storeName, 'getl-dsl-test', 'dev')
+                saveEncrypt(enmap_prod, storeName, 'getl-dsl-test', 'prod')
+
+                loadEncrypt(storeName, 'getl-dsl-test', 'dev')
+                assertEquals(enmap_dev.logins, configContent.logins)
+
+                loadEncrypt(storeName, 'getl-dsl-test', 'prod')
+                assertEquals(enmap_prod.logins, configContent.logins)
             }
         }
-
-        assertEquals(csvFileName1, Config.content.datasets?.file1?.fileName)
-        assertEquals(h2TableName, Config.content.datasets?.table1?.tableName)
     }
 
     @Test

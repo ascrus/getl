@@ -67,16 +67,79 @@ class ConfigSpec extends BaseSpec {
 
     /**
      * Load configuration file
+     * @param fileName configuration file name
+     * @param environment environment
+     * @param codePage code page file
      */
-    static void load(String fileName, String codePage = null) {
-        Config.LoadConfig([fileName: FileUtils.ResourceFileName(fileName), codePage: codePage])
+    static void load(String fileName, String environment = null, String codePage = null) {
+        Config.LoadConfig([fileName: FileUtils.ResourceFileName(fileName), codePage: codePage, environment: environment])
+    }
+
+    /**
+     * Load configuration file
+     * @param fileName configuration file name
+     * @param environment environment
+     * @param secretKey encode key string
+     */
+    static void loadEncrypt(String fileName, String secretKey, String environment) {
+        def data = ConfigStores.LoadSection(FileUtils.ResourceFileName(fileName), secretKey, environment?:manager.environment?:'prod')
+        Config.MergeConfig(data)
+    }
+
+    /**
+     * Load configuration file
+     * @param fileName configuration file name
+     * @param environment environment
+     */
+    static void loadEncrypt(String fileName, String environment) {
+        loadEncrypt(fileName, null, environment)
+    }
+
+    /**
+     * Load configuration file
+     * @param fileName configuration file name
+     */
+    static void loadEncrypt(String fileName) {
+        loadEncrypt(fileName, null, null)
     }
 
     /**
      * Save configuration file
+     * @param fileName configuration file name
+     * @param codePage code page file
      */
     static void save(String fileName, String codePage = null) {
         Config.SaveConfig(fileName: fileName, codePage: codePage)
+    }
+
+    /**
+     * Save configuration file
+     * @param data saved data
+     * @param fileName configuration file name
+     * @param environment environment
+     * @param secretKey encode key string
+     */
+    static void saveEncrypt(Map data, String fileName, String secretKey, String environment) {
+        ConfigStores.SaveSection(data, fileName, secretKey, environment?:manager.environment?:'prod')
+    }
+
+    /**
+     * Save configuration file
+     * @param data saved data
+     * @param fileName configuration file name
+     * @param environment environment
+     */
+    static void saveEncrypt(Map data, String fileName, String environment) {
+        ConfigStores.SaveSection(data, fileName, null, environment?:manager.environment?:'prod')
+    }
+
+    /**
+     * Save configuration file
+     * @param data saved data
+     * @param fileName configuration file name
+     */
+    static void saveEncrypt(Map data, String fileName) {
+        ConfigStores.SaveSection(data, fileName, null, null)
     }
 
     /**
