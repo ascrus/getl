@@ -12,10 +12,12 @@ class ConfigStoresTest extends getl.test.GetlTest {
 
     @Test
     void testSaveLoadConfig() {
-        Config.configClassManager = new ConfigStores()
+        def manager = new ConfigStores()
+        Config.configClassManager = manager
 
         def configPath = new TFS()
         def configFile = new File("${configPath}/test_config.store")
+        configFile.deleteOnExit()
         def configSection = 'test_config'
         def configKey = 'test key'
 
@@ -50,14 +52,25 @@ class ConfigStoresTest extends getl.test.GetlTest {
         assertTrue(MapUtils.CleanMap(Config.content, ['vars']).isEmpty())
 
         Config.SetValue('vars.test_var', 'variable value')
-        assertEquals(Config.vars.test_var, 'variable value')
+        assertEquals('variable value', Config.vars.test_var)
+
+        def valid = {
+            assertEquals('variable value', Config.content.var)
+
+            assertEquals('jdbc:h2:tcp://localhost/test', h2.connectURL)
+            assertEquals('sa', h2.login)
+            assertEquals('test', h2.password)
+            assertEquals('-1', h2.connectProperty.db_close_delay)
+        }
 
         Config.LoadConfig(fileName: configFile, section: configSection, secretKey: configKey)
-        assertEquals(Config.content.var, 'variable value')
+        valid()
 
-        assertEquals('jdbc:h2:tcp://localhost/test', h2.connectURL)
-        assertEquals('sa', h2.login)
-        assertEquals('test', h2.password)
-        assertEquals('-1', h2.connectProperty.db_close_delay)
+        manager.SaveSection([save2: 'ok'], configFile.path, configKey, configSection)
+        Config.ClearConfig()
+        Config.SetValue('vars.test_var', 'variable value')
+        Config.LoadConfig(fileName: configFile, section: configSection, secretKey: configKey)
+        valid()
+        assertEquals('ok', Config.content.save2)
     }
 }

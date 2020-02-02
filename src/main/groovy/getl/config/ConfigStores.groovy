@@ -125,6 +125,10 @@ class ConfigStores extends ConfigManager {
         try {
             MVMap<String, HashMap<String, Object>> map = store.openMap(section)
             data.putAll(map)
+            store.commit()
+        }
+        catch (Exception e) {
+            store.rollback()
         }
         finally {
             store.close()
@@ -155,6 +159,9 @@ class ConfigStores extends ConfigManager {
             MVMap<String, HashMap<String, Object>> map = store.openMap(section)
             map.putAll(data)
             store.commit()
+        }
+        catch (Exception e) {
+            store.rollback()
         }
         finally {
             store.close()

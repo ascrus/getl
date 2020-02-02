@@ -81,26 +81,9 @@ class ConfigSpec extends BaseSpec {
      * @param environment environment
      * @param secretKey encode key string
      */
-    static void loadEncrypt(String fileName, String secretKey, String environment) {
+    static void loadEncrypt(String fileName, String secretKey = null, String environment = null) {
         def data = ConfigStores.LoadSection(FileUtils.ResourceFileName(fileName), secretKey, environment?:manager.environment?:'prod')
         Config.MergeConfig(data)
-    }
-
-    /**
-     * Load configuration file
-     * @param fileName configuration file name
-     * @param environment environment
-     */
-    static void loadEncrypt(String fileName, String environment) {
-        loadEncrypt(fileName, null, environment)
-    }
-
-    /**
-     * Load configuration file
-     * @param fileName configuration file name
-     */
-    static void loadEncrypt(String fileName) {
-        loadEncrypt(fileName, null, null)
     }
 
     /**
@@ -119,27 +102,8 @@ class ConfigSpec extends BaseSpec {
      * @param environment environment
      * @param secretKey encode key string
      */
-    static void saveEncrypt(Map data, String fileName, String secretKey, String environment) {
+    static void saveEncrypt(Map data, String fileName, String secretKey = null, String environment = null) {
         ConfigStores.SaveSection(data, fileName, secretKey, environment?:manager.environment?:'prod')
-    }
-
-    /**
-     * Save configuration file
-     * @param data saved data
-     * @param fileName configuration file name
-     * @param environment environment
-     */
-    static void saveEncrypt(Map data, String fileName, String environment) {
-        ConfigStores.SaveSection(data, fileName, null, environment?:manager.environment?:'prod')
-    }
-
-    /**
-     * Save configuration file
-     * @param data saved data
-     * @param fileName configuration file name
-     */
-    static void saveEncrypt(Map data, String fileName) {
-        ConfigStores.SaveSection(data, fileName, null, null)
     }
 
     /**
