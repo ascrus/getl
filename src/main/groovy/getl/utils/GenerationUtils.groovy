@@ -689,16 +689,16 @@ class GenerationUtils {
 				result = new java.sql.Timestamp(GenerateDateTime().time)
 				break
             case getl.data.Field.Type.TEXT:
-				result = GenerateString(l)
+				result = GenerateString((l < 65536)?l:65536)
                 break
             case getl.data.Field.Type.BLOB:
-                result = GenerateString(l).bytes
+                result = GenerateString((l < 65536)?l:65536).bytes
                 break
 			case getl.data.Field.Type.UUID:
 				result = UUID.randomUUID().toString()
 				break
 			default:
-				result = GenerateString(l)
+				result = GenerateString((l < 65536)?l:65536)
 		}
 
         return result
@@ -1573,7 +1573,7 @@ sb << """
 					}
 				}
 				else {
-					res = "if ($value != null) _getl_stat.setObject($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.OBJECT)"
+					res = "if ($value != null) _getl_stat.setObject($paramNum, $value) else _getl_stat.setNull($paramNum, java.sql.Types.JAVA_OBJECT)"
 				}
 		}
 

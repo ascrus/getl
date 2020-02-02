@@ -58,16 +58,22 @@ class Version {
 	/**
 	 * Years development
 	 */
-	public static years = "2014-2019"
+	public static years = "2014-2020"
 
 	private static boolean sayInfo = false
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	static void SayInfo() {
+	static void SayInfo(def isJob = true) {
 		if (sayInfo) return
 		sayInfo = true
 		Logs.Init()
-		Logs.Finest("### GETL / version ${getl.deploy.Version.version} created by ${getl.deploy.Version.years} / All right reserved for EasyData company")
-		Logs.Info("### Job start")
+		def str = "Getl framework, version ${getl.deploy.Version.version} created by ${getl.deploy.Version.years}, All rights to the product belong to company EasyData Ltd Russia under license \"GNU General Public License 3.0\""
+		if (isJob) {
+			Logs.Fine('### ' + str)
+			Logs.Info('### Job start')
+		}
+		else {
+			println str
+		}
 	}
 }

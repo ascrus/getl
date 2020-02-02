@@ -219,7 +219,7 @@ class TableDataset extends JDBCDataset {
 	long countRow(String where = null, Map procParams = [:]) {
 		validConnection()
 
-		QueryDataset q = new QueryDataset(connection: connection, query: "SELECT Count(*) AS count FROM ${fullNameDataset()}")
+		QueryDataset q = new QueryDataset(connection: connection, query: "SELECT Count(*) AS count_rows FROM ${fullNameDataset()}")
 		where = where?:readDirective.where
 		if (where != null && where != '') q.query += " WHERE " + where
 		def p = [:]
@@ -227,7 +227,7 @@ class TableDataset extends JDBCDataset {
 			p.queryParams = procParams
 		def r = q.rows(p)
 
-		return Long.valueOf((r[0].count).toString()).longValue()
+		return Long.valueOf((r[0].count_rows).toString()).longValue()
 	}
 
 	/**

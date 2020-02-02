@@ -34,11 +34,6 @@ class DslTest extends getl.test.GetlTest {
     /** Count rows in table1 */
     final def table1_rows = 1000
 
-    @BeforeClass
-    static void CleanGetl() {
-        Getl.CleanGetl()
-    }
-
     @Test
     void test00() {
         Getl.Dsl(this) {
@@ -162,7 +157,7 @@ environments {
             }
         }
 
-        assertEquals("$tempPath/getl.lang.h2.sql", Getl.getlInstance().embeddedConnection('getl.testdsl.h2:h2').sqlHistoryFile)
+        assertEquals("$tempPath/getl.lang.h2.sql", Getl.GetlInstance().embeddedConnection('getl.testdsl.h2:h2').sqlHistoryFile)
     }
 
     @Test
@@ -972,7 +967,7 @@ ORDER BY t1.id'''
 
     @Test
     void test99_03RunGetlMain() {
-        Getl.Main([
+        Getl.Module([
                 'runclass=getl.lang.DslTestScriptFields1', 'unittest=true',
                 'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
                 'vars.param6=[a:1, b:2, c:3]', 'vars.param7=' + DateUtils.FormatDate(DateUtils.ClearTime(new Date())),
@@ -984,7 +979,7 @@ ORDER BY t1.id'''
     void test99_04AllowProcess() {
         Job.ExitOnError = false
 
-        Getl.Main([
+        Getl.Module([
                 'runclass=getl.lang.DslTestAllowProcess',
                 'vars.enabled=true',
                 'vars.checkOnStart=false',
@@ -993,7 +988,7 @@ ORDER BY t1.id'''
         assertTrue(Config.content.testAllowProcess)
         assertEquals(9, Config.content.testAllowThreads)
 
-        Getl.Main([
+        Getl.Module([
                 'runclass=getl.lang.DslTestAllowProcess',
                 'vars.enabled=true',
                 'vars.checkOnStart=true',
@@ -1011,7 +1006,7 @@ ORDER BY t1.id'''
         assertEquals(9, Config.content.testAllowThreads)
 
         shouldFail {
-            Getl.Main([
+            Getl.Module([
                     'runclass=getl.lang.DslTestAllowProcess',
                     'vars.enabled=false',
                     'vars.checkOnStart=true',
@@ -1021,7 +1016,7 @@ ORDER BY t1.id'''
         assertNull(Config.content.testAllowProcess)
         assertNull(Config.content.testAllowThreads)
 
-        Getl.Main([
+        Getl.Module([
                 'runclass=getl.lang.DslTestAllowProcess',
                 'vars.enabled=false',
                 'vars.checkOnStart=false',
@@ -1035,7 +1030,7 @@ ORDER BY t1.id'''
 
     @Test
     void test99_05StopScript() {
-        Getl.Main(['runclass=getl.lang.DslTestScriptStop', 'vars.level=1'])
+        Getl.Module(['runclass=getl.lang.DslTestScriptStop', 'vars.level=1'])
         assertTrue(BoolUtils.IsValue(Config.content.test_stop))
     }
 

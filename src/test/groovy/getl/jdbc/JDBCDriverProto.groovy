@@ -422,18 +422,21 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     protected void deleteRows() {
         if (table.countRow() == 0) insertData()
 
+        def drv = (con.driver as JDBCDriver)
+        def fieldName = drv.prepareFieldNameForSQL('ID1', table)
+
         table.deleteRows()
         assertEquals(0, table.countRow())
 
         insertData()
-        table.deleteRows('id1 > 1')
+        table.deleteRows("$fieldName > 1")
         assertEquals(1, table.countRow())
 
         table.deleteRows()
         assertEquals(0, table.countRow())
 
         insertData()
-        table.writeOpts { where = 'id1 > 1'; batchSize = 500 }
+        table.writeOpts { where = "$fieldName > 1"; batchSize = 500 }
         table.deleteRows()
         assertEquals(1, table.countRow())
         table.writeDirective.clear()

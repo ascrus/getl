@@ -4,7 +4,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = '4.1.1-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.1.2-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -18,8 +18,8 @@ repositories {
 }
 
 dependencies {
-	compile 'org.codehaus.groovy:groovy-all:2.5.8'
-	compile 'org.codehaus.groovy:groovy-dateutil:2.5.8'
+	compile 'org.codehaus.groovy:groovy-all:2.5.9'
+	compile 'org.codehaus.groovy:groovy-dateutil:2.5.9'
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'
 	compile 'com.h2database:h2:1.4.200'

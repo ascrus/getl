@@ -89,15 +89,92 @@ class Getl extends Script {
         init()
     }
 
-    static void main(def args) {
-        Main(args, true)
+    static void main(String[] args) {
+        Main(args.toList(), true)
+    }
+
+    static private void Help() {
+        Version.SayInfo(false)
+        println """
+The syntax for running a specified Getl Dsl script (with @BaseScript directive):
+  java getl.lang.Getl runclass=<script class name> [<arguments>]
+  java -jar getl-${Version.version}.jar runclass=<script class name> [<arguments>]
+
+The syntax for running a script that inherits from the Getl class is:
+  java <main class name> [<arguments>]
+
+List of possible arguments:
+  initclass=<class name> 
+    class name of the initialization script that runs before the main script runs
+  runclass=<class name>
+    the name of the main class of the script
+  unittest=true|false
+    set the flag that unit tests are launched
+  environment=dev|test|prod 
+    use the specified configuration environment (the default is "prod")
+  config.path=<directory>
+    path to load configuration files
+  config.filename=config1.groovy;config2.groovy
+    a semicolon separated list of configuration file names is allowed to indicate 
+    the full path or relative to the one specified in "config.path"
+  vars.name=<value>
+    set the value for the script field with the specified name, which is marked 
+    with the "@Field" directive in the code
+      
+Examples:
+  java getl.lang.Getl runclass=ru.comp.MainScript vars.message="Hello World!"
+  java -jar getl-${Version.version}.jar runclass=ru.comp.MainScript config.path=/etc/myconfig config.filename=1.groovy;2.groovy"
+  java ru.comp.MainScript initclass=ru.comp.InitScript environment=dev unittest=true
+"""
     }
 
     /**
-     * Launch GETL DSL main class
-     * @param args use runClass and vars
+     * Launch Getl Dsl script in module runtime
+     * @param args
      */
-    static void Main(def args, Boolean isMain = false) {
+    static void Module(List args) {
+        Main(args, false)
+    }
+
+    /**
+     * Run the current class inherited from the Getl as an application<br>
+     * P.S. Locate the execution script in the "run" method
+     * @param args
+     */
+    static void Application(def args) {
+        if (args instanceof String[])
+            args = args.toList()
+        def stack = new Throwable().getStackTrace()
+        def runclass = (stack[stack.length - 1] as StackTraceElement).getClassName()
+        Main(["runclass=$runclass"] + args)
+    }
+
+    /**
+     * Launch Getl Dsl script<br><br>
+     * <i>List of argument (use format name=value):</i><br>
+     * <ul>
+     * <li>initclass - class name of the initialization script that runs before the main script runs
+     * <li>runclass - the name of the main class of the script
+     * <li>unittest - set the flag that unit tests are launched
+     * <li>environment - use the specified configuration environment (the default is "prod")
+     * <li>config.path - path to load configuration files
+     * <li>config.filename - a comma separated list of configuration file names is allowed to indicate the full path or relative to the one specified in "config.path"
+     * <li>vars.name - set the value for the script field with the specified name, which is marked with the "@Field" directive in the code
+     * <li>
+     * </ul>
+     * @param args startup arguments
+     * @param isApp run as application or module
+     */
+    static void Main(List args, Boolean isApp = true) {
+        if (isApp) {
+            def a = ((args?:[]) as List<String>)*.trim()
+            a = a*.toLowerCase()
+            if (a.isEmpty() || ('-help' in a) || ('-h') in a || ('-?') in a) {
+                Help()
+                return
+            }
+        }
+
         Config.configClassManager = new ConfigSlurper()
         CleanGetl()
 
@@ -126,6 +203,7 @@ class Getl extends Script {
             void process() {
                 allowArgs.validation('main', jobArgs)
 
+
                 def className = jobArgs.runclass as String
                 def isTestMode = BoolUtils.IsValue(jobArgs.unittest)
 
@@ -140,8 +218,8 @@ class Getl extends Script {
                     throw new ExceptionGETL("Class \"$className\" not found, error: ${e.message}!")
                 }
 
-                Getl eng = getlInstance()
-                eng._params.mainClass = className
+                Getl eng = GetlInstance()
+                eng._params.mainClass = runClass.name
                 eng.setUnitTestMode(isTestMode)
 
                 def initClassName = jobArgs.initclass as String
@@ -173,7 +251,7 @@ class Getl extends Script {
                 }
             }
         }
-        job.isMain = isMain
+        job.isMain = isApp
         job.run(args)
     }
 
@@ -310,7 +388,7 @@ class Getl extends Script {
     protected static Getl _getl
 
     /** Current instance GETL DSL */
-    static Getl getlInstance() {
+    static Getl GetlInstance() {
         if (_getl == null) _getl = new Getl()
         return _getl
     }
@@ -322,7 +400,7 @@ class Getl extends Script {
     static Object Dsl(def ownerObject, Map parameters,
                     @DelegatesTo(Getl)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
-        return getlInstance().runDsl(ownerObject, parameters, cl)
+        return GetlInstance().runDsl(ownerObject, parameters, cl)
     }
 
     /** Run DSL script on getl share object */
