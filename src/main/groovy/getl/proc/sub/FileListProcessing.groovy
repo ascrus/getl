@@ -62,7 +62,16 @@ abstract class FileListProcessing {
     }
 
     /** Extended system parameters */
-    public final Map<String, Object> sysParams = [:] as Map<String, Object>
+    final Map<String, Object> sysParams = [:] as Map<String, Object>
+
+    /** System parameters */
+    Map<String, Object> getSysParams() { sysParams }
+
+    /** This object with Getl Dsl repository */
+    Object getDslThisObject() { sysParams.dslThisObject }
+
+    /** Owner object with Getl Dsl repository */
+    Object getDslOwnerObject() { sysParams.dslOwnerObject }
 
     /** Source file manager */
     Manager getSource() { params.source as Manager }
@@ -135,7 +144,7 @@ abstract class FileListProcessing {
     /** Use path mask for source file */
     void useSourcePath(@DelegatesTo(Path) Closure cl) {
         def parent = new Path()
-        Getl.RunClosure(sysParams.dslOwnerObject?:this, sysParams.dslThisObject?:this, parent, cl)
+        Getl.RunClosure(dslOwnerObject?:this, dslThisObject?:this, parent, cl)
         setSourcePath(parent)
     }
 
@@ -641,7 +650,7 @@ abstract class FileListProcessing {
 
     /** Current Getl instance */
     protected Getl getGetl() {
-        return (sysParams.dslOwnerObject instanceof Getl)?(sysParams.dslOwnerObject as Getl):null
+        return (dslOwnerObject instanceof Getl)?(dslOwnerObject as Getl):null
     }
 
     /** Create new profile object */

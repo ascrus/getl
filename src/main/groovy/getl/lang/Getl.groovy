@@ -905,6 +905,28 @@ Examples:
         processJdbcConnections(null, cl)
     }
 
+    /**
+     * Search for an object in the repository
+     * @param obj connection
+     * @return name of the object in the repository or null if not found
+     */
+    String findConnection(Connection obj) {
+        def repName = obj.dslNameObject
+        if (repName == null) return null
+
+        if (obj.dslThisObject == null) return null
+        if (obj.dslOwnerObject == null) return null
+
+        def className = obj.getClass().name
+        if (!(className in LISTCONNECTIONCLASSES)) return null
+
+        def repObj = connections.get(repObjectName(repName))
+        if (repObj == null) return null
+        if (repObj.getClass().name != className) return null
+
+        return repName
+    }
+
     /** Register connection in repository */
     @Synchronized
     protected Connection registerConnection(String connectionClassName, String name, Boolean registration = false) {
@@ -1039,8 +1061,8 @@ Examples:
             type = dataset.getClass().simpleName
             type = type.replaceFirst(type[0], type[0].toLowerCase())
 
-            if (dataset.sysParams.dslNameObject != null)
-                name = type + "('" + dataset.sysParams.dslNameObject + "')"
+            if (dataset.dslNameObject != null)
+                name = type + "('" + dataset.dslNameObject + "')"
             else
                 name = type + ' ' + name
         } else {
@@ -1334,7 +1356,7 @@ Examples:
                         def c = (it as Connection).cloneConnection()
                         c.sysParams.dslThisObject = childThisObject
                         c.sysParams.dslOwnerObject = childOwnerObject
-                        c.sysParams.dslNameObject = res.sysParams.dslNameObject
+                        c.sysParams.dslNameObject = res.dslNameObject
                         return c
                     }
             ) as JDBCConnection
@@ -1385,7 +1407,7 @@ Examples:
                         def c = (it as Connection).cloneConnection()
                         c.sysParams.dslThisObject = childThisObject
                         c.sysParams.dslOwnerObject = childOwnerObject
-                        c.sysParams.dslNameObject = res.sysParams.dslNameObject
+                        c.sysParams.dslNameObject = res.dslNameObject
                         return c
                     }
             ) as FileConnection
@@ -1437,7 +1459,7 @@ Examples:
                         def c = (it as Connection).cloneConnection()
                         c.sysParams.dslThisObject = childThisObject
                         c.sysParams.dslOwnerObject = childOwnerObject
-                        c.sysParams.dslNameObject = res.sysParams.dslNameObject
+                        c.sysParams.dslNameObject = res.dslNameObject
                         return c
                     }
             ) as Connection
@@ -1460,6 +1482,28 @@ Examples:
         _lastOtherDefaultConnection = value
 
         return value
+    }
+
+    /**
+     * Search for an object in the repository
+     * @param obj dataset
+     * @return name of the object in the repository or null if not found
+     */
+    String findDataset(Dataset obj) {
+        def repName = obj.dslNameObject
+        if (repName == null) return null
+
+        if (obj.dslThisObject == null) return null
+        if (obj.dslOwnerObject == null) return null
+
+        def className = obj.getClass().name
+        if (!(className in LISTDATASETCLASSES)) return null
+
+        def repObj = datasets.get(repObjectName(repName))
+        if (repObj == null) return null
+        if (repObj.getClass().name != className) return null
+
+        return repName
     }
 
     /** Register dataset in repository */
@@ -1539,7 +1583,7 @@ Examples:
                             if (connection == null) {
                                 c.sysParams.dslThisObject = childThisObject
                                 c.sysParams.dslOwnerObject = childOwnerObject
-                                c.sysParams.dslNameObject = (it as Connection).sysParams.dslNameObject
+                                c.sysParams.dslNameObject = (it as Connection).dslNameObject
                             }
                             return c
                         }
@@ -1633,7 +1677,7 @@ Examples:
     private Map<String, SavePointManager> _historypoints
 
     /** History points repository */
-    protected Map<String, SavePointManager> getHistoryPoints() { _historypoints }
+    protected Map<String, SavePointManager> getHistorypoints() { _historypoints }
 
     /**
      * Return list of repository history point manager
@@ -1651,7 +1695,7 @@ Examples:
         def path = (maskobject != null) ? new Path(mask: maskobject) : null
         def names = new ParseObjectName()
 
-        historyPoints.each { String name, SavePointManager obj ->
+        historypoints.each { String name, SavePointManager obj ->
             names.name = name
             if (maskgroup == null || maskgroup == names.groupName) {
                 if (path == null || path.match(names.objectName)) {
@@ -1694,6 +1738,24 @@ Examples:
     }
 
     /**
+     * Search for an object in the repository
+     * @param obj histore point manager
+     * @return name of the object in the repository or null if not found
+     */
+    String findHistorypoint(SavePointManager obj) {
+        def repName = obj.dslNameObject
+        if (repName == null) return null
+
+        if (obj.dslThisObject == null) return null
+        if (obj.dslOwnerObject == null) return null
+
+        def repObj = historypoints.get(repObjectName(repName))
+        if (repObj == null) return null
+
+        return repName
+    }
+
+    /**
      * Register history point in repository
      * @param name name in repository
      * @registration registering
@@ -1721,7 +1783,7 @@ Examples:
             }
         } else {
             def repName = repObjectName(name)
-            obj = historyPoints.get(repName)
+            obj = historypoints.get(repName)
             if (obj == null) {
                 if (registration && Thread.currentThread() instanceof ExecutorThread)
                     throw new ExceptionGETL("it is not allowed to register an history point \"$name\" inside a thread!")
@@ -1734,7 +1796,7 @@ Examples:
                 obj.sysParams.dslOwnerObject = childOwnerObject
                 obj.sysParams.dslNameObject = repName
                 if (lastJdbcDefaultConnection != null) obj.connection = lastJdbcDefaultConnection
-                historyPoints.put(repName, obj)
+                historypoints.put(repName, obj)
             }
 
             if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
@@ -1745,7 +1807,7 @@ Examples:
                                 def c = (it as Connection).cloneConnection()
                                 c.sysParams.dslThisObject = childThisObject
                                 c.sysParams.dslOwnerObject = childOwnerObject
-                                c.sysParams.dslNameObject = (it as Connection).sysParams.dslNameObject
+                                c.sysParams.dslNameObject = (it as Connection).dslNameObject
                                 return c
                             }
                     ) as JDBCConnection
@@ -1795,7 +1857,7 @@ Examples:
         def repName = repObjectName(name)
 
         if (validExist) {
-            def exObj = historyPoints.get(repName)
+            def exObj = historypoints.get(repName)
             if (exObj != null)
                 throw new ExceptionGETL("History point manager \"$name\" already registered!")
         }
@@ -1804,7 +1866,7 @@ Examples:
         obj.sysParams.dslOwnerObject = childOwnerObject
         obj.sysParams.dslNameObject = repName
 
-        historyPoints.put(repName, obj)
+        historypoints.put(repName, obj)
 
         return obj
     }
@@ -1820,7 +1882,7 @@ Examples:
                                         Closure<Boolean> filter = null) {
         def list = listHistorypoints(mask, filter)
         list.each { name ->
-            historyPoints.remove(name)
+            historypoints.remove(name)
         }
     }
 
@@ -1828,7 +1890,7 @@ Examples:
     private Map<String, Manager> _filemanagers
 
     /** File managers repository */
-    protected Map<String, Manager> getFileManagers() { _filemanagers }
+    protected Map<String, Manager> getFilemanagers() { _filemanagers }
 
     /**
      * Return list of repository file managers for specified mask, class and filter
@@ -1855,7 +1917,7 @@ Examples:
         def path = (maskobject != null) ? new Path(mask: maskobject) : null
         def names = new ParseObjectName()
 
-        fileManagers.each { String name, Manager obj ->
+        filemanagers.each { String name, Manager obj ->
             names.name = name
             if (maskgroup == null || maskgroup == names.groupName) {
                 if (path == null || path.match(names.objectName)) {
@@ -1950,6 +2012,28 @@ Examples:
         processFilemanagers(null, null, cl)
     }
 
+    /**
+     * Search for an object in the repository
+     * @param obj file manager
+     * @return name of the object in the repository or null if not found
+     */
+    String findFilemanager(Manager obj) {
+        def repName = obj.dslNameObject
+        if (repName == null) return null
+
+        if (obj.dslThisObject == null) return null
+        if (obj.dslOwnerObject == null) return null
+
+        def className = obj.getClass().name
+        if (!(className in LISTFILEMANAGERCLASSES)) return null
+
+        def repObj = filemanagers.get(repObjectName(repName))
+        if (repObj == null) return null
+        if (repObj.getClass().name != className) return null
+
+        return repName
+    }
+
     /** Register file manager in repository */
     @Synchronized
     protected Manager registerFileManager(String fileManagerClassName, String name, Boolean registration = false) {
@@ -1970,7 +2054,7 @@ Examples:
         }
 
         def repName = repObjectName(name)
-        obj = fileManagers.get(repName)
+        obj = filemanagers.get(repName)
 
         if (obj == null) {
             if (registration && Thread.currentThread() instanceof ExecutorThread)
@@ -1983,7 +2067,7 @@ Examples:
             obj.sysParams.dslThisObject = childThisObject
             obj.sysParams.dslOwnerObject = childOwnerObject
             obj.sysParams.dslNameObject = repName
-            fileManagers.put(repName, obj)
+            filemanagers.put(repName, obj)
         } else {
             if (registration)
                 throw new ExceptionGETL("File manager \"$name\" already registered for class \"${obj.getClass().name}\"!")
@@ -2032,7 +2116,7 @@ Examples:
         def repName = repObjectName(name)
 
         if (validExist) {
-            def exObj = fileManagers.get(repName)
+            def exObj = filemanagers.get(repName)
             if (exObj != null)
                 throw new ExceptionGETL("File manager \"$name\" already registered for class \"${exObj.getClass().name}\"!")
         }
@@ -2041,7 +2125,7 @@ Examples:
         obj.sysParams.dslOwnerObject = childOwnerObject
         obj.sysParams.dslNameObject = repName
 
-        fileManagers.put(repName, obj)
+        filemanagers.put(repName, obj)
 
         return obj
     }
@@ -2052,7 +2136,7 @@ Examples:
                                        Closure<Boolean> filter = null) {
         def list = listFilemanagers(mask, filemanagerClasses, filter)
         list.each { name ->
-            fileManagers.remove(name)
+            filemanagers.remove(name)
         }
     }
 

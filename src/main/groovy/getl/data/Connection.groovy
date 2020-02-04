@@ -36,7 +36,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-class Connection {
+class Connection implements Cloneable {
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 	
 	/**
@@ -92,8 +92,16 @@ class Connection {
 	 * @param params
 	 * @return created connection
 	 */
-	static Connection CreateConnection (Map params) {
-		if (params == null) params = [:]
+	static Connection CreateConnection(Map params) {
+		if (params == null)
+			params = [:]
+		else
+			params = CloneUtils.CloneMap(params)
+
+		return CreateConnectionInternal(params)
+	}
+
+	static private Connection CreateConnectionInternal(Map params) {
 		def configName = params.config
 		if (configName != null) {
 			def configParams = Config.FindSection("connections.${configName}")
@@ -103,8 +111,11 @@ class Connection {
 		}
 		def connectionClass = (String)params.connection
 		if (connectionClass == null) throw new ExceptionGETL("Required parameter \"connection\"")
-		
-		(Connection)(Class.forName(connectionClass).newInstance(MapUtils.CleanMap(params, ["connection", "config"])))
+
+		MapUtils.RemoveKeys(params, ["connection", "config"])
+		def con = (Class.forName(connectionClass).newInstance(params)) as Connection
+
+		return con
 	}
 
 	/**
@@ -200,10 +211,20 @@ class Connection {
 		if (value != null) params.putAll(value)
 	}
 	
-	/**
-	 * System parameters
-	 */
-	public final Map sysParams = [:]
+	/** System parameters */
+	final Map sysParams = [:]
+
+	/** System parameters */
+	Map<String, Object> getSysParams() { sysParams }
+
+	/** Name in Getl Dsl reposotory */
+	String getDslNameObject() { sysParams.dslNameObject }
+
+	/** This object with Getl Dsl repository */
+	Object getDslThisObject() { sysParams.dslThisObject }
+
+	/** Owner object with Getl Dsl repository */
+	Object getDslOwnerObject() { sysParams.dslOwnerObject }
 	
 	/** Auto load schema with meta file for connection datasets */
 	boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema, false) }
@@ -427,7 +448,7 @@ class Connection {
 	Connection cloneConnection () {
 		String className = this.class.name
 		Map p = CloneUtils.CloneMap(this.params)
-		CreateConnection([connection: className] + p)
+		CreateConnectionInternal([connection: className] + p)
 	}
 
 	/**
@@ -447,5 +468,10 @@ class Connection {
 			rollbackTran()
 			throw e
 		}
+	}
+
+	@Override
+	Object clone() {
+		return cloneConnection()
 	}
 }

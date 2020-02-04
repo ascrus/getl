@@ -31,47 +31,21 @@ package getl.utils
 class CloneUtils {
     /**
      * Clone object
-     * @param obj
-     * @return
+     * @param obj object for cloning
+     * @param cloneChildObjects cloning children objects
+     * @return new object
      */
-    static Object CloneObject(Object obj) {
+    static Object CloneObject(Object obj, boolean cloneChildObjects = true) {
         if (obj == null) return null
 
         Object res
         if (obj instanceof Map) {
-            res = CloneMap(obj as Map)
+            res = CloneMap(obj as Map, cloneChildObjects)
         }
         else if (obj instanceof List) {
-            res = CloneList(obj as List)
+            res = CloneList(obj as List, cloneChildObjects)
         }
-        else if (obj instanceof String) {
-            res = new String(obj as String)
-        }
-        else if (obj instanceof GString) {
-            res = new String(obj.toString())
-        }
-        else if (obj instanceof Integer) {
-            res = new Integer((obj as Integer).intValue())
-        }
-        else if (obj instanceof Long) {
-            res = new Long((obj as Long).longValue())
-        }
-        else if (obj instanceof BigInteger) {
-            res = new BigInteger((obj as BigInteger).toByteArray())
-        }
-        else if (obj instanceof BigDecimal) {
-            res = new BigDecimal((obj as BigDecimal).doubleValue())
-        }
-        else if (obj instanceof Double) {
-            res = new Double((obj as Double).doubleValue())
-        }
-        else if (obj instanceof Date) {
-            res = new Date((obj as Date).time)
-        }
-        else if (obj instanceof Boolean) {
-            res = new Boolean((obj as Boolean).booleanValue())
-        }
-        else if (obj instanceof Cloneable) {
+        else if (cloneChildObjects && obj instanceof Cloneable) {
             res = obj.clone()
         }
         else {
@@ -84,15 +58,16 @@ class CloneUtils {
 
     /**
      * Clone map
-     * @param map
-     * @return
+     * @param map map for cloning
+     * @param cloneChildObjects cloning children objects
+     * @return new map
      */
-    static Map CloneMap (Map obj) {
+    static Map CloneMap (Map obj, boolean cloneChildObjects = true) {
         if (obj == null) return null
 
         def res = obj.getClass().newInstance() as Map
         obj.each { k, v ->
-            res.put(k, CloneObject(v))
+            res.put(k, CloneObject(v, cloneChildObjects))
         }
 
         return res
@@ -100,15 +75,16 @@ class CloneUtils {
 
     /**
      * Clone list
-     * @param list
-     * @return
+     * @param list list for cloning
+     * @param cloneChildObjects cloning children objects
+     * @return new list
      */
-    static List CloneList(List obj) {
+    static List CloneList(List obj, boolean cloneChildObjects = true) {
         if (obj == null) return null
 
         def res = obj.getClass().newInstance() as List
         for (int i = 0; i < obj.size(); i++) {
-            res << CloneObject(obj[i])
+            res << CloneObject(obj[i], cloneChildObjects)
         }
 
         return res
@@ -116,8 +92,8 @@ class CloneUtils {
 
     /**
      * Clone object by stream
-     * @param obj
-     * @return
+     * @param obj object for cloning
+     * @return new object
      */
     static Object StreamClone (Object obj) {
         if (obj == null) return null

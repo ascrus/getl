@@ -42,7 +42,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-class Dataset {
+class Dataset implements Cloneable {
 	Dataset () {
 		params.manualSchema = false
 
@@ -104,9 +104,21 @@ class Dataset {
 	 * @param params
 	 * @return created dataset
 	 */
-	static Dataset CreateDataset (Map params) {
-		if (params == null) params = [:]
-		
+	static Dataset CreateDataset(Map params) {
+		if (params == null)
+			params = [:]
+		else
+			params = CloneUtils.CloneMap(params)
+
+		return CreateDatasetInternal(params)
+	}
+
+	/**
+	 * Create new dataset
+	 * @param params
+	 * @return
+	 */
+	static private Dataset CreateDatasetInternal(Map params) {
 		def configName = params.config
 		if (configName != null && params.dataset == null) {
 			def configParams = Config.FindSection("datasets.${configName}")
@@ -121,7 +133,9 @@ class Dataset {
 		if (params.containsKey("connection")) dataset.connection = params.connection as Connection
 		if (params.containsKey("config")) dataset.setConfig(params.config as String)
 		if (params.containsKey("field")) dataset.setField(params.field as List<Field>)
-		dataset.params.putAll(MapUtils.CleanMap(params, ["dataset", "connection", "config", "field"]))
+
+		MapUtils.RemoveKeys(params, ["dataset", "connection", "config", "field"])
+		dataset.params.putAll(params)
 
 		return dataset
 	}
@@ -255,10 +269,20 @@ class Dataset {
 	 */
 	void setLogWriteToConsole (boolean value) { params.logWriteToConsole = value }
 
-	/**
-	 * System parameters	
-	 */
-	public final Map<String, Object> sysParams = [:]
+	/** System parameters */
+	final Map<String, Object> sysParams = [:]
+
+	/** System parameters */
+	Map<String, Object> getSysParams() { sysParams }
+
+	/** Name in Getl Dsl reposotory */
+	String getDslNameObject() { sysParams.dslNameObject }
+
+	/** This object with Getl Dsl repository */
+	Object getDslThisObject() { sysParams.dslThisObject }
+
+	/** Owner object with Getl Dsl repository */
+	Object getDslOwnerObject() { sysParams.dslOwnerObject }
 
 	/** Dataset directives create, drop, read, write and bulkLoad */
 	Map<String, Object> directives(String group) {
@@ -497,8 +521,8 @@ class Dataset {
 	Field field(String name,
                 @DelegatesTo(Field)
                 @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure cl = null) {
-		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def ownerObject = dslOwnerObject?:this
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 
 		Field parent = fieldByName(name)
 		if (parent == null) {
@@ -1150,8 +1174,8 @@ class Dataset {
 	}
 
 	Map lookup(@DelegatesTo(DatasetLookupSpec) Closure cl) {
-		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def ownerObject = dslOwnerObject?:this
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = new DatasetLookupSpec(this, thisObject, false, null)
 		parent.runClosure(cl)
 
@@ -1306,11 +1330,11 @@ class Dataset {
 	 * Clone current dataset on specified connection
 	 */
 	@Synchronized
-	Dataset cloneDataset (Connection newConnection = null) {
+	Dataset cloneDataset(Connection newConnection = null) {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.class.name
 		Map p = CloneUtils.CloneMap(this.params)
-		Dataset ds = CreateDataset([dataset: className] + p)
+		Dataset ds = CreateDatasetInternal([dataset: className] + p)
 		if (newConnection != null) ds.connection = newConnection
 		ds.setField(this.field)
 		ds.manualSchema = this.manualSchema
@@ -1378,5 +1402,10 @@ class Dataset {
 	void validCsvTempFile(CSVDataset csvFile) {
 		validConnection()
 		connection.driver.validCsvTempFile(this, csvFile)
+	}
+
+	@Override
+	Object clone() {
+		return cloneDataset()
 	}
 }

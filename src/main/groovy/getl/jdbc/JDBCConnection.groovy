@@ -558,7 +558,7 @@ class JDBCConnection extends Connection {
         Logs.Fine("Generate GETL DSL script for $classType tables")
 
 		if (cl == null) throw new ExceptionGETL('Parameter setting code required!')
-		def thisObject = sysParams.dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
 		def p = new GenerateDslTablesSpec(this, thisObject)
 		p.runClosure(cl)
 
@@ -601,7 +601,7 @@ class JDBCConnection extends Connection {
 				throw new ExceptionGETL("Invalid resource directory \"${resourcePath}\"")
 		}
 
-		def connectionName = p.connectionName?:(sysParams.dslNameObject as String)
+		def connectionName = p.connectionName?:dslNameObject
 		if (connectionName == null)
 			throw new ExceptionGETL('Required value for "connectionName" parameter!')
 

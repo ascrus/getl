@@ -156,6 +156,12 @@ class Path {
 	/** System parameters */
 	Map<String, Object> getSysParams() { sysParams }
 
+	/** This object with Getl Dsl repository */
+	Object getDslThisObject() { sysParams.dslThisObject }
+
+	/** Owner object with Getl Dsl repository */
+	Object getDslOwnerObject() { sysParams.dslOwnerObject }
+
 	/** Define variable options */
 	Map variable(String name, @DelegatesTo(PathVarsSpec) Closure cl = null) {
 		if (name == null || name == '') throw new ExceptionGETL('Name required for variable!')
@@ -167,7 +173,7 @@ class Path {
 			isCompile = false
 		}
 
-		def thisObject = sysParams.dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
 		def parent = new PathVarsSpec(this, thisObject, true, var)
 		parent.runClosure(cl)
 		if (cl != null) isCompile = false

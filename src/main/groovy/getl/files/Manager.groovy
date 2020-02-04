@@ -47,7 +47,8 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-abstract class Manager { /* TODO: added method Operation analog FileCopier */
+abstract class Manager implements Cloneable {
+/* TODO: added method Operation analog FileCopier */
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 	protected File localDirFile = new File(TFS.storage.path)
 	
@@ -69,10 +70,20 @@ abstract class Manager { /* TODO: added method Operation analog FileCopier */
 	}
 
 	static Manager CreateManager(Map params) {
+		if (params == null)
+			params = [:]
+		else
+			params = CloneUtils.CloneMap(params)
+
+		CreateManagerInternal(params)
+	}
+
+	static Manager CreateManagerInternal(Map params) {
 		def className = params.manager as String
 		if (className == null) throw new ExceptionGETL("Reqired class name as \"manager\" property!")
 		Manager manager = Class.forName(className).newInstance() as Manager
-		manager.params.putAll(MapUtils.CleanMap(params, ['manager']))
+		MapUtils.RemoveKeys(params, ['manager'])
+		manager.params.putAll(params)
 		manager.validateParams()
 
 		return manager
@@ -83,7 +94,7 @@ abstract class Manager { /* TODO: added method Operation analog FileCopier */
 	 * @param name config name
 	 * @return
 	 */
-	static Manager BuildManager (String name) {
+	static Manager BuildManager(String name) {
 		Map fileParams = Config.content."files"?."$name"
 		CreateManager(fileParams)
 	}
@@ -94,10 +105,9 @@ abstract class Manager { /* TODO: added method Operation analog FileCopier */
 	 */
 	@Synchronized
 	Manager cloneManager () {
-		Manager res = getClass().newInstance() as Manager
-		res.params.putAll(this.params)
-
-		return res
+		String className = this.class.name
+		Map p = CloneUtils.CloneMap(this.params)
+		return CreateManagerInternal([manager: className] + p)
 	}
 
 	/**
@@ -123,6 +133,15 @@ abstract class Manager { /* TODO: added method Operation analog FileCopier */
 	final Map<String, Object> sysParams = [:] as Map<String, Object>
 	/** System parameters */
 	Map<String, Object> getSysParams() { sysParams }
+
+	/** Name in Getl Dsl reposotory */
+	String getDslNameObject() { sysParams.dslNameObject }
+
+	/** This object with Getl Dsl repository */
+	Object getDslThisObject() { sysParams.dslThisObject }
+
+	/** Owner object with Getl Dsl repository */
+	Object getDslOwnerObject() { sysParams.dslOwnerObject }
 	
 	/** Root path */
 	String getRootPath () { params.rootPath as String }
@@ -982,7 +1001,7 @@ FROM ${newFiles.fullNameDataset()} files
 
 	/** Build list of files */
 	TableDataset buildListFiles(Path maskPath, @DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = new ManagerBuildListSpec(this, thisObject, false, null)
 		if (maskPath != null) parent.maskPath = maskPath
 		parent.runClosure(cl)
@@ -1184,8 +1203,7 @@ WHERE
 
 	/** Build list of files */
 	void downloadListFiles(@DelegatesTo(ManagerDownloadSpec) Closure cl = null) {
-//		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = new ManagerDownloadSpec(this, thisObject, false, null)
 		parent.runClosure(cl)
 
@@ -1691,5 +1709,10 @@ WHERE
 	@Override
 	String toString() {
 		return (rootPath != null)?"file:$rootPath":'file'
+	}
+
+	@Override
+	Object clone() {
+		return cloneManager()
 	}
 }

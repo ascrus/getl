@@ -280,8 +280,7 @@ class CSVDataset extends FileDataset {
 	 * Read file options
 	 */
 	CSVReadSpec readOpts(@DelegatesTo(CSVReadSpec) Closure cl = null) {
-//		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = new CSVReadSpec(this, thisObject, true, readDirective)
 		parent.runClosure(cl)
 
@@ -292,8 +291,7 @@ class CSVDataset extends FileDataset {
 	 * Write file options
 	 */
 	CSVWriteSpec writeOpts(@DelegatesTo(CSVWriteSpec) Closure cl = null) {
-//		def ownerObject = sysParams.dslOwnerObject?:this
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = new CSVWriteSpec(this, thisObject, true, writeDirective)
 		parent.runClosure(cl)
 

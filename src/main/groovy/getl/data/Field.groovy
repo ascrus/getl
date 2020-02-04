@@ -26,6 +26,7 @@ package getl.data
 
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.Synchronized
 
 /**
  * Base field class
@@ -33,7 +34,7 @@ import getl.utils.*
  *
  */
 @SuppressWarnings("UnnecessaryQualifiedReference")
-class Field implements Serializable {
+class Field implements Serializable, Cloneable {
 	/**
 	 * Data type
 	 */
@@ -458,6 +459,7 @@ class Field implements Serializable {
 	/**
 	 * Clone field
 	 */
+	@Synchronized
 	Field copy() {
 		return new Field(
 				name: this.name, type: this.type, typeName: this.typeName, dbType: this.dbType, isNull: this.isNull,
@@ -603,5 +605,10 @@ class Field implements Serializable {
 		if (description != null) "description = '$description'"
 
 		return "field('$name') { ${l.join('; ')} }"
+	}
+
+	@Override
+	Object clone() {
+		return copy()
 	}
 }

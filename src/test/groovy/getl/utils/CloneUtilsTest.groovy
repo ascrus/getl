@@ -66,8 +66,14 @@ class CloneUtilsTest extends getl.test.GetlTest {
     @Test
     void testClone() {
         def c = exampleObjectByJson()
-        def n = CloneUtils.CloneObject(c)
+        def n = CloneUtils.CloneObject(c, false)
 
+        validClone(c, n)
+        validClone(c, n)
+
+        n = CloneUtils.CloneObject(c, true)
+
+        validClone(c, n)
         validClone(c, n)
     }
 

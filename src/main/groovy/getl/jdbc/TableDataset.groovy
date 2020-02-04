@@ -263,7 +263,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Generate new options object for create table */
 	protected CreateSpec genCreateTable(Closure cl) {
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = newCreateTableParams(this, thisObject, true, createDirective)
 		parent.runClosure(cl)
 
@@ -285,7 +285,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Generate new options object for drop table */
 	protected DropSpec genDropTable(Closure cl) {
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = newDropTableParams(this, thisObject, true, dropDirective)
 		parent.runClosure(cl)
 
@@ -307,7 +307,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Generate new options object for reading table */
 	protected ReadSpec genReadDirective(Closure cl) {
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = newReadTableParams(this, thisObject, true, readDirective)
 		parent.runClosure(cl)
 
@@ -329,7 +329,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Generate new options object for writing table */
 	protected WriteSpec genWriteDirective(Closure cl) {
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = newWriteTableParams(this, thisObject, true, writeDirective)
 		parent.runClosure(cl)
 
@@ -351,7 +351,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Generate new options object for writing table */
 	protected BulkLoadSpec genBulkLoadDirective(Closure cl) {
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = newBulkLoadTableParams(this, thisObject, true, bulkLoadDirective)
 		parent.runClosure(cl)
 
@@ -379,8 +379,8 @@ class TableDataset extends JDBCDataset {
 		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD))
 			throw new ExceptionGETL("Driver not supported bulk load file!")
 
-		Getl getl = (sysParams.dslOwnerObject != null && sysParams.dslOwnerObject instanceof Getl)?
-				sysParams.dslOwnerObject:null
+		Getl getl = (dslOwnerObject != null && dslOwnerObject instanceof Getl)?
+				dslOwnerObject:null
 
 		if (source == null)
 			throw new ExceptionGETL("It is required to specify a CSV dataset to load into the table!")
@@ -395,7 +395,7 @@ class TableDataset extends JDBCDataset {
 		if (getl != null)
             pt = getl.startProcess("${fullTableName}: load files", 'file')
 
-		def thisObject = sysParams.dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
+		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def bulkParams = MapUtils.DeepCopy(bulkLoadDirective) as Map<String, Object>
 		def parent = newBulkLoadTableParams(this, thisObject, true, bulkParams)
 		parent.runClosure(cl)

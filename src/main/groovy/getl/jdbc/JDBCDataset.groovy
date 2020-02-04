@@ -184,8 +184,22 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Return fields name by sql syntax with expression and exclude fields list
 	 */
-	List<String> sqlFieldsFrom (List<Field> fields, String expr) {
-		GenerationUtils.SqlFields(this, fields, expr, null)
+	List<String> sqlFieldsFrom(List<Field> fields, String expr, List<String> excludeFields) {
+		GenerationUtils.SqlFields(this, fields, expr, excludeFields)
+	}
+
+	/**
+	 * Return fields name by sql syntax with expression
+	 */
+	List<String> sqlFieldsFrom(List<Field> fields, String expr = null) {
+		sqlFieldsFrom(fields, expr, null)
+	}
+
+	/**
+	 * Return fields name by sql syntax with exclude fields list
+	 */
+	List<String> sqlFieldsFrom(List<Field> fields, List<String> excludeFields) {
+		sqlFieldsFrom(fields, null, excludeFields)
 	}
 	
 	/**

@@ -26,7 +26,9 @@ package getl.lang.opts
 
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
+import getl.utils.CloneUtils
 import getl.utils.MapUtils
+import groovy.transform.Synchronized
 
 import java.util.concurrent.ConcurrentHashMap
 
@@ -140,7 +142,30 @@ class BaseSpec {
      * Import options from map
      */
     void importFromMap(Map<String, Object> importParams) {
-        if (importParams == null) throw new ExceptionGETL('Required "importParams" value!')
+        if (importParams == null)
+            throw new ExceptionGETL('Required "importParams" value!')
+
         params.putAll(MapUtils.Copy(importParams, ignoreImportKeys(importParams)))
+    }
+
+    /** List of saved parameters */
+    final List<Map<String, Object>> savedParams = []
+
+    /** Push current options to saved list */
+    @Synchronized
+    void pushOptions() {
+        savedParams << CloneUtils.CloneMap(_params, true)
+    }
+
+    /** Pull last saved options to current options */
+    @Synchronized
+    void pullOptions() {
+        if (savedParams.isEmpty())
+            throw new ExceptionGETL("No saved options available!")
+
+        def m = savedParams[savedParams.size() - 1]
+        _params.clear()
+        _params.putAll(m)
+        savedParams.remove(savedParams.size() - 1)
     }
 }

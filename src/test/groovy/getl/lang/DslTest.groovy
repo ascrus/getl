@@ -155,6 +155,18 @@ environments {
 
                 configContent.sqlFileHistoryH2 = sqlHistoryFile
             }
+
+            def con = embeddedConnection('getl.testdsl.h2:h2')
+            assertEquals('getl.testdsl.h2:h2', findConnection(con))
+
+            def ancon = embeddedConnection()
+            assertTrue(findConnection(ancon) == null)
+            ancon.with {
+                sysParams.dslNameObject = 'getl.testdsl.h2:h2-1'
+                sysParams.dslThisObject = this
+                sysParams.dslOwnerObject = this
+            }
+            assertTrue(findConnection(ancon) == null)
         }
 
         assertEquals("$tempPath/getl.lang.h2.sql", Getl.GetlInstance().embeddedConnection('getl.testdsl.h2:h2').sqlHistoryFile)
@@ -187,6 +199,8 @@ environments {
                 create()
                 assertTrue(exists)
             }
+            def t1 = h2Table('table1')
+            assertEquals('getl.testdsl.h2:table1', findDataset(t1))
 
             registerDatasetObject cloneDataset(h2Table('table1')), 'table2', true
             h2Table('table2') {
@@ -194,6 +208,17 @@ environments {
                 create()
                 assertTrue(exists)
             }
+            def t2 = h2Table('table2')
+            assertEquals('getl.testdsl.h2:table2', findDataset(t2))
+
+            def antab = h2Table { }
+            assertTrue(findDataset(antab) == null)
+            antab.with {
+                sysParams.dslNameObject = 'table3'
+                sysParams.dslThisObject = this
+                sysParams.dslOwnerObject = this
+            }
+            assertTrue(findDataset(antab) == null)
         }
     }
 
@@ -439,6 +464,18 @@ ORDER BY t1.id'''
                 truncate()
                 assertNull(lastValue('table2').value)
             }
+
+            def hp = historypoint('getl.testdsl.h2:history1')
+            assertEquals('getl.testdsl.h2:history1', findHistorypoint(hp))
+
+            def anhp = historypoint { }
+            assertTrue(findHistorypoint(anhp) == null)
+            anhp.with {
+                sysParams.dslNameObject = 'getl.testdsl.h2:history2'
+                sysParams.dslThisObject = this
+                sysParams.dslOwnerObject = this
+            }
+            assertTrue(findHistorypoint(anhp) == null)
         }
     }
 
@@ -608,6 +645,17 @@ ORDER BY t1.id'''
                 removeLocalFile('local.txt')
                 removeLocalFile('server.txt')
             }
+            def file = files('files')
+            assertEquals('getl.testdsl.files:files', findFilemanager(file))
+
+            def anfiles = files { }
+            assertTrue(findFilemanager(anfiles) == null)
+            anfiles.with {
+                sysParams.dslNameObject = 'files-1'
+                sysParams.dslThisObject = this
+                sysParams.dslOwnerObject = this
+            }
+            assertTrue(findFilemanager(anfiles) == null)
         }
     }
 
@@ -1029,12 +1077,6 @@ ORDER BY t1.id'''
     }
 
     @Test
-    void test99_05StopScript() {
-        Getl.Module(['runclass=getl.lang.DslTestScriptStop', 'vars.level=1'])
-        assertTrue(BoolUtils.IsValue(Config.content.test_stop))
-    }
-
-    @Test
     void test99_06TestRunMode() {
         Getl.Dsl(this) {
             ifUnitTestMode {
@@ -1051,5 +1093,34 @@ ORDER BY t1.id'''
                 assertEquals('debug', configContent.testMode)
             }
         }
+    }
+
+    @Test
+    void test99_07SaveOptions() {
+        Getl.Dsl(this) {
+            def t = embeddedTable {
+                createOpts {
+                    type = localTemporaryTableType
+                    onCommit = true
+
+                    pushOptions()
+                    type = tableType
+                    onCommit = false
+
+                    assertEquals(tableType, type)
+                    assertFalse(onCommit)
+
+                    pullOptions()
+                    assertEquals(localTemporaryTableType, type)
+                    assertTrue(onCommit)
+                }
+            }
+        }
+    }
+
+    @Test
+    void test99_99StopScript() {
+        Getl.Module(['runclass=getl.lang.DslTestScriptStop', 'vars.level=1'])
+        assertTrue(BoolUtils.IsValue(Config.content.test_stop))
     }
 }

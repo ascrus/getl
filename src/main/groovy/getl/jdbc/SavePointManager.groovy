@@ -39,7 +39,7 @@ import java.sql.Timestamp
  * @author Alexsey Konstantinov
  *
  */
-class SavePointManager {
+class SavePointManager implements Cloneable {
 	SavePointManager () {
 		params.fields = [:] as Map<String, Object>
 		params.extended = [:] as Map<String, Object>
@@ -56,7 +56,20 @@ class SavePointManager {
 		if (value != null) params.putAll(value)
 	}
 
-	public final Map<String, Object> sysParams = [:] as Map<String, Object>
+	/** System parameters */
+	final Map<String, Object> sysParams = [:] as Map<String, Object>
+
+	/** System parameters */
+	Map<String, Object> getSysParams() { sysParams }
+
+	/** Name in Getl Dsl reposotory */
+	String getDslNameObject() { sysParams.dslNameObject }
+
+	/** This object with Getl Dsl repository */
+	Object getDslThisObject() { sysParams.dslThisObject }
+
+	/** Owner object with Getl Dsl repository */
+	Object getDslOwnerObject() { sysParams.dslOwnerObject }
 	
 	/** Connection */
 	private JDBCConnection connection
@@ -148,7 +161,7 @@ class SavePointManager {
 
 	/** Clone current dataset on specified connection */
 	@Synchronized
-	SavePointManager cloneSavePointManager (JDBCConnection newConnection = null) {
+	SavePointManager cloneSavePointManager(JDBCConnection newConnection = null) {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.class.name
 		Map p = CloneUtils.CloneMap(this.params)
@@ -482,5 +495,10 @@ class SavePointManager {
 	@Synchronized
 	void truncate(Map truncateParams = null) {
 		table.truncate(truncateParams)
+	}
+
+	@Override
+	Object clone() {
+		return cloneSavePointManager()
 	}
 }

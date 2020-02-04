@@ -71,7 +71,7 @@ class FileCopier extends FileListProcessing {
     /** Use path mask for destination directory */
     void useDestinationPath(@DelegatesTo(Path) Closure cl) {
         def parent = new Path()
-        Getl.RunClosure(sysParams.dslOwnerObject?:this, sysParams.dslThisObject?:this, parent, cl)
+        Getl.RunClosure(dslOwnerObject?:this, dslThisObject?:this, parent, cl)
         setDestinationPath(parent)
     }
 
@@ -106,7 +106,7 @@ class FileCopier extends FileListProcessing {
         parent.variable('fileextonly')
         parent.variable('filedate') { type = Field.datetimeFieldType; format = 'yyyyMMDD_HHmmss' }
         parent.variable('filesize') { type = Field.bigintFieldType }
-        Getl.RunClosure(sysParams.dslOwnerObject?:this, sysParams.dslThisObject?:this, parent, cl)
+        Getl.RunClosure(dslOwnerObject?:this, dslThisObject?:this, parent, cl)
 
         params.renamePath = parent
         if (renamePath != null && !renamePath.isCompile) renamePath.compile()
