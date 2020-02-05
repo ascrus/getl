@@ -42,6 +42,7 @@ class ImpalaCreateSpec extends CreateSpec {
         super.initSpec()
         if (params.tblproperties == null) params.tblproperties = [:] as Map<String, Object>
         if (params.serdeproperties == null) params.serdeproperties = [:] as Map<String, Object>
+        if (params.sortBy == null) params.sortBy = [] as List<String>
     }
 
     /** Name of type row format */
@@ -86,7 +87,11 @@ class ImpalaCreateSpec extends CreateSpec {
     void setSelect(String value) { params.select = value }
 
     /** Sort by expression */
-    String getSortBy() { params.sortBy }
+    List<String> getSortBy() { params.sortBy as List<String> }
     /** Sort by expression */
-    void setSortBy(String value) { params.sortBy = value }
+    void setSortBy(List<String> value) {
+        sortBy.clear()
+        if (value != null)
+            sortBy.addAll(value)
+    }
 }

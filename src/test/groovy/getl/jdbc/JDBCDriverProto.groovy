@@ -119,6 +119,9 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         }
 
         assertTrue(table.exists)
+
+        table.field('name').isNull = false
+        table.field(descriptionName).isNull = false
     }
 
     @Test
@@ -413,6 +416,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     protected void truncateData() {
+        if (!con.driver.isOperation(Driver.Operation.DELETE)) return
+
         if (table.countRow() == 0) insertData()
 
         table.truncate(truncate: [con.driver.isOperation(Driver.Operation.DELETE)?false:true])
@@ -420,6 +425,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     protected void deleteRows() {
+        if (!con.driver.isOperation(Driver.Operation.DELETE)) return
+
         if (table.countRow() == 0) insertData()
 
         def drv = (con.driver as JDBCDriver)

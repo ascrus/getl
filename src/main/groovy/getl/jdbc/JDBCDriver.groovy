@@ -1760,7 +1760,10 @@ $sql
 	/**
 	 * Partition key syntax for use in SQL statement
 	 */
-	protected def syntaxPartitionKey = '{column}=?'
+	protected def syntaxPartitionKey = '{column}'
+
+	/** When inserting, indicate the values of the partition fields are indicated last in the list of fields */
+	protected def syntaxPartitionLastPosInValues = true
 
 	/**
 	 * SQL insert statement pattern
@@ -1854,14 +1857,18 @@ $sql
 					dataset.fieldListPartitions.each { Field f ->
 						p << syntaxPartitionKey.replace('{column}', prepareFieldNameForSQL(f.name))
 						sp << f.name
+						v << '?'
 					}
 					if (p.isEmpty()) throw new ExceptionGETL('Required partition key fields from insert statement')
 				}
 
-				def x = [[sp, statInsert.indexOf('{partition}')],
-						 [sv, statInsert.indexOf('{values}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
-				x.each { List l ->
-					statFields.addAll(l[0] as List<String>)
+				if (syntaxPartitionLastPosInValues) {
+					statFields.addAll(sv)
+					statFields.addAll(sp)
+				}
+				else {
+					statFields.addAll(sp)
+					statFields.addAll(sv)
 				}
 
 				sb << statInsert.replace('{table}', fn).replace('{partition}', p.join(', '))
@@ -1880,7 +1887,7 @@ $sql
 				def sp = [] as List<String>
 
 				fields.each { Field f ->
-					if (!syntaxPartitionKeyInColumns && f.isPartition) return
+//					if (!syntaxPartitionKeyInColumns && f.isPartition) return
 
 					if (f.isKey) {
 						k << "${prepareFieldNameForSQL(f.name)} = ?".toString()
@@ -1899,15 +1906,16 @@ $sql
 				if (v.isEmpty()) throw new ExceptionGETL('Required fields from update statement')
 				if (k.isEmpty()) throw new ExceptionGETL("Required key fields for update statement")
 
-				if (statUpdate.indexOf('{partition}') != -1) {
+				/*if (statUpdate.indexOf('{partition}') != -1) {
 					dataset.fieldListPartitions.each { Field f ->
 						p << syntaxPartitionKey.replace('{column}', prepareFieldNameForSQL(f.name))
 						sp << f.name
+						v << '?'
 					}
 					if (p.isEmpty()) throw new ExceptionGETL('Required partition key fields from update statement')
-				}
+				}*/
 
-				def x = [[sp, statUpdate.indexOf('{partition}')],
+				def x = [/*[sp, statUpdate.indexOf('{partition}')],*/
 						 [sk, statUpdate.indexOf('{keys}')],
 						 [sv, statUpdate.indexOf('{values}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
 				x.each { List l ->
@@ -1929,7 +1937,7 @@ $sql
 				def sk = [] as List<String>
 				def sp = [] as List<String>
 				fields.each { Field f ->
-					if (!syntaxPartitionKeyInColumns && f.isPartition) return
+//					if (!syntaxPartitionKeyInColumns && f.isPartition) return
 
 					if (f.isKey) {
 						k << "${prepareFieldNameForSQL(f.name)} = ?"
@@ -1939,15 +1947,16 @@ $sql
 				
 				if (k.isEmpty()) throw new ExceptionGETL("Required key fields for delete statement")
 
-				if (statDelete.indexOf('{partition}') != -1) {
+				/*if (statDelete.indexOf('{partition}') != -1) {
 					dataset.fieldListPartitions.each { Field f ->
 						p << syntaxPartitionKey.replace('{column}', prepareFieldNameForSQL(f.name))
 						sp << f.name
+						v << '?'
 					}
 					if (p.isEmpty()) throw new ExceptionGETL('Required partition key fields from update statement')
-				}
+				}*/
 
-				def x = [[sp, statDelete.indexOf('{partition}')],
+				def x = [/*[sp, statDelete.indexOf('{partition}')],*/
 						 [sk, statDelete.indexOf('{keys}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
 
 				x.each { List l ->
@@ -1968,10 +1977,11 @@ $sql
 		}
 		def query = sb.toString()
 		//println query
-		
+
+		initOpenWrite(dataset as JDBCDataset, params, query)
+
 		saveToHistory(query)
-		
-		java.sql.Connection con = sqlConnect.connection 
+		java.sql.Connection con = sqlConnect.connection
 		PreparedStatement stat
 		try {
 			stat = con.prepareStatement(query)
@@ -1993,6 +2003,9 @@ $sql
 			wp.saveOut = new File(params.logRows as String)
 		}
 	}
+
+	/** Run before create preparing statement for writing */
+	protected void initOpenWrite(JDBCDataset dataset, Map params, String query) { }
 
 	protected String openWriteMergeSql(JDBCDataset dataset, Map params, List<Field> fields, List<String> statFields) {
 		throw new ExceptionGETL("Driver not supported \"MERGE\" operation")

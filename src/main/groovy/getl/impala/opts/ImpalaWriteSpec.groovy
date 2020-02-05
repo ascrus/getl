@@ -39,4 +39,13 @@ class ImpalaWriteSpec extends WriteSpec {
     Boolean getOverwrite() { BoolUtils.IsValue(params.overwrite) }
     /** Replace data in table then insert */
     void setOverwrite(Boolean value) { params.overwrite = value }
+
+    static final String snappyCompressionCodec = 'snappy'
+    static final String gzipCompressionCodec = 'gzip'
+    static final String noneCompressionCodec = 'none'
+
+    /** Compression codec */
+    String getCompression() { params.compression as String }
+    /** Compression codec */
+    void setCompression(String value) { params.compression = value }
 }

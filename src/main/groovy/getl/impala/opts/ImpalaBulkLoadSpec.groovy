@@ -64,4 +64,9 @@ class ImpalaBulkLoadSpec extends BulkLoadSpec {
         expression.clear()
         if (value != null) expression.putAll(value)
     }
+
+    /** Compression codec */
+    String getCompression() { params.compression as String }
+    /** Compression codec */
+    void setCompression(String value) { params.compression = value }
 }

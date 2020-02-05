@@ -28,6 +28,7 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.jdbc.JDBCDataset
 import getl.jdbc.JDBCDriver
 import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
@@ -128,7 +129,7 @@ class ImpalaDriver extends JDBCDriver {
 
         def sortBy = params.sortBy as List<String>
         if (sortBy != null && !(sortBy.isEmpty())) {
-            sb << " SORT BY (${sortBy.join(', ')})"
+            sb << "SORT BY (${sortBy.join(', ')})"
             sb << '\n'
         }
 
@@ -224,4 +225,14 @@ class ImpalaDriver extends JDBCDriver {
 
     @Override
     String getSysDualTable() { impalaConnection.dualTable?:'(SELECT 1 AS row_num) AS x' }
+
+    @Override
+    protected void initOpenWrite(JDBCDataset dataset, Map params, String query) {
+        super.initOpenWrite(dataset, params, query)
+        def compression = (params.compression as String)?.toLowerCase()
+        if (compression == null) compression = 'none'
+        dataset.currentJDBCConnection.executeCommand("set COMPRESSION_CODEC=$compression;")
+    }
+
+    /* TODO: Where bulk load? */
 }

@@ -201,7 +201,7 @@ class JDBCConnection extends Connection {
 	 */
 	void setAutoCommit (boolean value) {
 		params.autoCommit = value
-		if (connected) (driver as JDBCConnection).setAutoCommit(value)
+		if (connected) currentJDBCDriver.setAutoCommit(value)
 	}
 	
 	/**
