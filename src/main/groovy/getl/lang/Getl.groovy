@@ -2244,6 +2244,7 @@ Examples:
         if (script instanceof Getl) {
             def scriptGetl = script as Getl
             scriptGetl.setGetlParams(_params)
+            InitGetlClass(scriptGetl)
             if (vars != null && !vars.isEmpty()) {
                 FillFieldFromVars(scriptGetl, vars)
             }
@@ -2263,6 +2264,20 @@ Examples:
             else {
                 throw e
             }
+        }
+        catch (Exception e) {
+            try {
+                ErrorGetlClass(script, e)
+            }
+            catch (Exception err) {
+                Logs.Exception(err, 'method error', script.getClass().name)
+            }
+            finally {
+                throw e
+            }
+        }
+        finally {
+            DoneGetlClass(script)
         }
         pt.finish()
 
@@ -2334,6 +2349,33 @@ Examples:
      */
     Integer runGroovyClass(Class groovyClass, String configSection) {
         return runGroovyClass(groovyClass, false, configSection)
+    }
+
+    /**
+     *  Call script init method before execute script
+     */
+    static protected void InitGetlClass(Script script) {
+        def m = script.getClass().methods.find { it.name == 'init' }
+        if (m != null)
+            script.invokeMethod('init', null)
+    }
+
+    /**
+     *  Call script done method before execute script
+     */
+    static protected void DoneGetlClass(Script script) {
+        def m = script.getClass().methods.find { it.name == 'done' }
+        if (m != null)
+            script.invokeMethod('done', null)
+    }
+
+    /**
+     *  Call script error method before execute script
+     */
+    static protected void ErrorGetlClass(Script script, Exception e) {
+        def m = script.getClass().methods.find { it.name == 'error' }
+        if (m != null)
+            script.invokeMethod('error', e)
     }
 
     /**
@@ -2495,10 +2537,10 @@ Examples:
     }
 
     /** Current configuration content */
-    static Map<String, Object> getConfigContent() { Config.content }
+    Map<String, Object> getConfigContent() { Config.content }
 
     /** Current configuration vars */
-    static Map<String, Object> getConfigVars() { Config.vars }
+    Map<String, Object> getConfigVars() { Config.vars }
 
     /** Write message for specified level to log */
     static void logWrite(String level, String message) { Logs.Write(level, message) }
@@ -2549,6 +2591,9 @@ Examples:
 
         return _langOpts
     }
+
+    /** Current configuration manager */
+    protected ConfigSlurper getConfigManager() { Config.configClassManager as ConfigSlurper }
 
     /** Configuration options */
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)

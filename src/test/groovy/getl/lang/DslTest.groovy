@@ -1007,8 +1007,28 @@ ORDER BY t1.id'''
                     }
                 }
 
+                configuration { clear() }
                 runGroovyClass DslTestScriptFields2
                 assertEquals('complete test 2', configContent.testScript)
+
+                configuration { clear() }
+                runGroovyClass DslTestScriptFields3
+                assertEquals('complete test 3', configContent.doneScript)
+                assertNull(configContent.errorScript)
+
+                configuration { clear() }
+                runGroovyClass DslTestScriptFields3, { useExtVars = true; param1 = 2}
+                assertEquals('complete test 3', configContent.doneScript)
+                assertNull(configContent.errorScript)
+
+                configuration { clear() }
+                try {
+                    runGroovyClass DslTestScriptFields3, { throwError = true }
+                }
+                catch (Exception e) {
+                    assertEquals('error test 3: Throw error!', configContent.errorScript)
+                }
+                assertEquals('complete test 3', configContent.doneScript)
             }
         }
     }

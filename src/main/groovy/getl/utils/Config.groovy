@@ -43,7 +43,7 @@ class Config {
     /**
      * Current OS
      */
-    public  static String OS = System.getProperty("os.name").toLowerCase()
+    public static final String OS = System.getProperty("os.name").toLowerCase()
 
     /**
      * Current OS is Windows
