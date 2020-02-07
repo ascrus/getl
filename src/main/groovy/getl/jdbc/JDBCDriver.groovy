@@ -1300,7 +1300,7 @@ ${extend}'''
 	 * @param meta
 	 * @return
 	 */
-	protected List<Field> meta2Fields (def meta) {
+	protected List<Field> meta2Fields (def meta, boolean isTable) {
 		List<Field> result = []
         //noinspection GroovyAssignabilityCheck
         for (int i = 0; i < meta.getColumnCount(); i++) {
@@ -1308,7 +1308,7 @@ ${extend}'''
             //noinspection GroovyAssignabilityCheck
             Field f = new Field(name: prepareObjectName(meta.getColumnLabel(c)) as String, dbType: meta.getColumnType(c), typeName: meta.getColumnTypeName(c),
 								length: meta.getPrecision(c), precision: meta.getScale(c), 
-								isAutoincrement: meta.isAutoIncrement(c), isNull: meta.isNullable(c), isReadOnly: meta.isReadOnly(c)) 
+								isAutoincrement: meta.isAutoIncrement(c), isNull: meta.isNullable(c), isReadOnly: (!isTable && meta.isReadOnly(c)))
 			prepareField(f)
 
 			result << f
@@ -1356,7 +1356,7 @@ ${extend}'''
 		Map rowCopy
 		Closure copyToMap
 		def getFields = { meta ->
-			metaFields = meta2Fields(meta)
+			metaFields = meta2Fields(meta, isTable)
 			metaFields.each { prepareField(it) }
 			if (!isTable) {
 				dataset.field = metaFields
