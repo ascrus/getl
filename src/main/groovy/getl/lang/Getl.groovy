@@ -259,30 +259,30 @@ Examples:
     @SuppressWarnings("GrMethodMayBeStatic")
     void appRunSTOP(String message = null, Integer exitCode = null) {
         if (message != null)
-            throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode, message)
+            throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode?:0, message)
         else
-            throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode)
+            throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode?:0)
     }
 
     /** Quit DSL Application */
     @SuppressWarnings("GrMethodMayBeStatic")
     void appRunSTOP(Integer exitCode) {
-        throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode)
+        throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode?:0)
     }
 
     /** Stop code execution of the current class */
     @SuppressWarnings("GrMethodMayBeStatic")
     void classRunSTOP(String message = null, Integer exitCode = null) {
         if (message != null)
-            throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode, message)
+            throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode?:0, message)
         else
-            throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode)
+            throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode?:0)
     }
 
     /** Stop code execution of the current class */
     @SuppressWarnings("GrMethodMayBeStatic")
     void classRunSTOP(Integer exitCode) {
-        throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode)
+        throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode?:0)
     }
 
     /** The name of the main class of the process */
