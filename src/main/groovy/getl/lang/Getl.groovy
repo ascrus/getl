@@ -967,6 +967,9 @@ Examples:
                 if (connectionClassName != null && obj.getClass().name != connectionClassName)
                     throw new ExceptionGETL("The requested connection \"$name\" of the class \"$connectionClassName\" is already registered for the class \"${obj.getClass().name}\"!")
             }
+
+            obj.sysParams.dslThisObject = childThisObject
+            obj.sysParams.dslOwnerObject = childOwnerObject
         }
 
         if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
@@ -1572,6 +1575,9 @@ Examples:
                 if (datasetClassName != null && obj.getClass().name != datasetClassName)
                     throw new ExceptionGETL("The requested dataset \"$name\" of the class \"$datasetClassName\" is already registered for the class \"${obj.getClass().name}\"!")
             }
+
+            obj.sysParams.dslThisObject = childThisObject
+            obj.sysParams.dslOwnerObject = childOwnerObject
         }
 
         if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
@@ -1797,6 +1803,10 @@ Examples:
                 obj.sysParams.dslNameObject = repName
                 if (lastJdbcDefaultConnection != null) obj.connection = lastJdbcDefaultConnection
                 historypoints.put(repName, obj)
+            }
+            else {
+                obj.sysParams.dslThisObject = childThisObject
+                obj.sysParams.dslOwnerObject = childOwnerObject
             }
 
             if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
@@ -2075,6 +2085,9 @@ Examples:
                 if (fileManagerClassName != null && obj.getClass().name != fileManagerClassName)
                     throw new ExceptionGETL("The requested file manager \"$name\" of the class \"$fileManagerClassName\" is already registered for the class \"${obj.getClass().name}\"!")
             }
+
+            obj.sysParams.dslThisObject = childThisObject
+            obj.sysParams.dslOwnerObject = childOwnerObject
         }
 
         if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
@@ -2248,6 +2261,7 @@ Examples:
             if (vars != null && !vars.isEmpty()) {
                 FillFieldFromVars(scriptGetl, vars)
             }
+            CheckGetlClass(scriptGetl)
         } else if (vars != null && !vars.isEmpty()) {
             script.binding = new Binding(vars)
         }
@@ -2358,6 +2372,15 @@ Examples:
         def m = script.getClass().methods.find { it.name == 'init' }
         if (m != null)
             script.invokeMethod('init', null)
+    }
+
+    /**
+     *  Call script check method after setting field values
+     */
+    static protected void CheckGetlClass(Script script) {
+        def m = script.getClass().methods.find { it.name == 'check' }
+        if (m != null)
+            script.invokeMethod('check', null)
     }
 
     /**

@@ -1124,15 +1124,26 @@ ORDER BY t1.id'''
                     onCommit = true
 
                     pushOptions()
+                }
+
+                createOpts {
                     type = tableType
                     onCommit = false
 
                     assertEquals(tableType, type)
                     assertFalse(onCommit)
+                }
 
+                createOpts {
                     pullOptions()
                     assertEquals(localTemporaryTableType, type)
                     assertTrue(onCommit)
+                }
+
+                this.shouldFail {
+                    createOpts {
+                        pullOptions()
+                    }
                 }
             }
         }

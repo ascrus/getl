@@ -28,6 +28,7 @@ import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import getl.utils.CloneUtils
 import getl.utils.MapUtils
+import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 
 import java.util.concurrent.ConcurrentHashMap
@@ -148,24 +149,33 @@ class BaseSpec {
         params.putAll(MapUtils.Copy(importParams, ignoreImportKeys(importParams)))
     }
 
-    /** List of saved parameters */
-    final List<Map<String, Object>> savedParams = []
+    static protected final savedOptionsName = '__getl_saved_options__'
 
     /** Push current options to saved list */
     @Synchronized
-    void pushOptions() {
-        savedParams << CloneUtils.CloneMap(_params, true)
+    void pushOptions(boolean cloneChildrenObject = false) {
+        Stack<Map<String, Object>> savedOptions = (params.get(savedOptionsName) as Stack<Map<String, Object>>)
+        if (savedOptions == null) {
+            savedOptions = new Stack<Map<String, Object>>()
+            params.put(savedOptionsName, savedOptions)
+        }
+        def m = MapUtils.CleanMap(params, [savedOptionsName]) as Map<String, Object>
+        def n = CloneUtils.CloneMap(m, cloneChildrenObject) as Map<String, Object>
+        savedOptions.push(n)
     }
 
     /** Pull last saved options to current options */
     @Synchronized
-    void pullOptions() {
-        if (savedParams.isEmpty())
-            throw new ExceptionGETL("No saved options available!")
+    void pullOptions(boolean checkExists = true) {
+        def savedOptions = (params.get(savedOptionsName) as Stack<Map<String, Object>>)
+        if (savedOptions == null || savedOptions.isEmpty()) {
+            if (!checkExists) return
+            throw new ExceptionGETL("No saved options ${getClass().name} available!")
+        }
 
-        def m = savedParams[savedParams.size() - 1]
-        _params.clear()
-        _params.putAll(m)
-        savedParams.remove(savedParams.size() - 1)
+        def n = savedOptions.pop() as Map<String, Object>
+        params.clear()
+        params.putAll(n)
+        params.put(savedOptionsName, savedOptions)
     }
 }
