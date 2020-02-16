@@ -343,7 +343,7 @@ class Logs {
 	static void Warning (Throwable error) {
 		ToOut(Level.WARNING, error.message)
 		StackTraceUtils.sanitize(error)
-		def t = (error.stackTrace.length > 0)?" => " + error.stackTrace[0]:""
+		def t = (error.stackTrace.length > 0)?(" => " + error.stackTrace.join('\n')):""
 		def msg = error.getClass().name + ": " + FormatMessage(error.message) + t
 		logger.warning(msg)
 		event(Level.WARNING, error.message)
@@ -369,7 +369,7 @@ class Logs {
 	static void Exception (Throwable error) {
 		ToOut(Level.SEVERE, error.message)
 		StackTraceUtils.sanitize(error)
-		def t = (error.stackTrace.length > 0)?" => " + error.stackTrace[0]:""
+		def t = (error.stackTrace.length > 0)?(" => " + error.stackTrace.join('\n')):""
 		def message = FormatMessage(error.message + t)
 		logger.severe(message)
 		event(Level.SEVERE, error.message)
@@ -385,8 +385,9 @@ class Logs {
 	static void Exception (Throwable error, String typeObject, String nameObject) {
 		ToOut(Level.SEVERE, error.message)
 		def message = "<${typeObject} ${nameObject}> ${error.getClass().name}: ${FormatMessage(error.message)}"
+		StackTraceUtils.sanitize(error)
 		if (error.stackTrace.length > 0) {
-			message += " => " + StringUtils.ToText(error.stackTrace[0].toString())[0]
+			message += " => " + error.stackTrace.join('\n')
 		}
 		logger.severe(message)
 		event(Level.SEVERE, error.message)

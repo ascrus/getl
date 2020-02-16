@@ -558,7 +558,7 @@ class TableDataset extends JDBCDataset {
 		cFile.extension = null
 
 		long countRow = 0
-		BigDecimal sizeFiles = 0
+		Long sizeFiles = 0
         boolean abortOnError = parent.abortOnError
 		Closure beforeLoad = parent.onBeforeBulkLoadFile
 		Closure afterLoad = parent.onAfterBulkLoadFile
@@ -599,13 +599,13 @@ class TableDataset extends JDBCDataset {
 					cCon.path = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'')
 					cFile.fileName = file.filename
 
-					BigDecimal tsize = file.filesize
+					Long tsize = file.filesize
 
                     def fileName = cFile.fullFileName()
 
 					ProcessTime ptf
 					if (getl != null)
-						ptf = getl.startProcess("${fullTableName}: load file \"$fileName\" (${FileUtils.sizeBytes(tsize)})", 'file')
+						ptf = getl.startProcess("${fullTableName}: load file \"$fileName\" (${FileUtils.SizeBytes(tsize)})", 'file')
 
                     if (beforeLoad != null) beforeLoad.call(fileName)
 
@@ -617,7 +617,7 @@ class TableDataset extends JDBCDataset {
 					}
 					catch (Exception e) {
 						if (abortOnError) throw e
-						Logs.Severe("${fullTableName}: cannot load file \"$fileName\" (${FileUtils.sizeBytes(tsize)}), error: ${e.message}")
+						Logs.Severe("${fullTableName}: cannot load file \"$fileName\" (${FileUtils.SizeBytes(tsize)}), error: ${e.message}")
 					}
 
                     if (afterLoad != null) afterLoad.call(fileName)
@@ -628,7 +628,7 @@ class TableDataset extends JDBCDataset {
 						}
 						else if (removeFile) {
 							if (!FileUtils.DeleteFile(fileName))
-								throw new ExceptionGETL("Cannot delete file \"$fileName\" (${FileUtils.sizeBytes(tsize)})!")
+								throw new ExceptionGETL("Cannot delete file \"$fileName\" (${FileUtils.SizeBytes(tsize)})!")
 						}
 					}
 
@@ -660,10 +660,10 @@ class TableDataset extends JDBCDataset {
 					tcount = updateRows
 				}
 				catch (Exception e) {
-                    Logs.Severe("${fullTableName}: cannot load ${listFiles.size()} files (${FileUtils.sizeBytes(tsize)}), error: ${e.message}")
+                    Logs.Severe("${fullTableName}: cannot load ${listFiles.size()} files (${FileUtils.SizeBytes(tsize)}), error: ${e.message}")
                     procFiles.eachRow(order: orderProcess) { file ->
                         def fileName = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
-                        getl.Severe(level, "${fullTableName}: cannot load ${fileName} (${FileUtils.sizeBytes(file.filesize)})")
+                        getl.Severe(level, "${fullTableName}: cannot load ${fileName} (${FileUtils.SizeBytes(file.filesize)})")
                     }
                     if (abortOnError) throw e
 				}
@@ -674,7 +674,7 @@ class TableDataset extends JDBCDataset {
                     def level = getl.langOpts.processTimeLevelLog
                     procFiles.eachRow(order: orderProcess) { file ->
                         def fileName = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
-                        getl.logWrite(level, "${fullTableName}: loaded ${fileName} (${FileUtils.sizeBytes(file.filesize)})")
+                        getl.logWrite(level, "${fullTableName}: loaded ${fileName} (${FileUtils.SizeBytes(file.filesize)})")
                     }
                 }
 
@@ -717,7 +717,7 @@ class TableDataset extends JDBCDataset {
 			currentJDBCConnection.commitTran()
 
 		if (getl != null) {
-			if (!remoteLoad) pt.name = "${fullTableName}: loaded ${countFiles} files (${FileUtils.sizeBytes(sizeFiles)})"
+			if (!remoteLoad) pt.name = "${fullTableName}: loaded ${countFiles} files (${FileUtils.SizeBytes(sizeFiles)})"
 			getl.finishProcess(pt, countRow)
 		}
 

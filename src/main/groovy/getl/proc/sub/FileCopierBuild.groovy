@@ -21,10 +21,9 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-package getl.files.sub
+package getl.proc.sub
 
-import getl.files.FileCopier
-import getl.proc.sub.FileListProcessingBuild
+import getl.proc.FileCopier
 import getl.utils.FileUtils
 import getl.utils.NumericUtils
 import getl.utils.Path
@@ -33,12 +32,13 @@ import groovy.transform.InheritConstructors
 
 /**
  * File copier build manager class
+ * @author Alexsey Konstantinov
  */
 @InheritConstructors
 @CompileStatic
 class FileCopierBuild extends FileListProcessingBuild {
-    /** Copier owner */
-    private FileCopier getOwnerCopier() { owner as FileCopier }
+    /** Copier manager owner */
+    FileCopier getOwnerCopier() { owner as FileCopier }
 
     /** Destination mask path */
     Path destinationPath

@@ -174,7 +174,7 @@ class ProcessTime {
 		if (objectName?.toLowerCase() != 'byte')
 			res = "time ${time}" + ((countRow!= null)?", $countRow ${objectName}s, $rowInSec ${objectName}s per second, ${avgSpeedStr} seconds per $objectName":"")
 		else
-			res = "time ${time}" + ((countRow!= null)?", ${FileUtils.sizeBytes(countRow)}, ${FileUtils.avgSpeed(countRow, time.toMilliseconds())}":"")
+			res = "time ${time}" + ((countRow!= null)?", ${FileUtils.SizeBytes(countRow)}, ${FileUtils.AvgSpeed(countRow, time.toMilliseconds())}":"")
 
 		return res
 	}

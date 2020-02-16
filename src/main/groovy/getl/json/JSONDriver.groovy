@@ -94,18 +94,19 @@ class JSONDriver extends FileDriver {
 		generateAttrRead(dataset, initAttr, sb)
 		
 		if (limit > 0) sb << "long cur = 0\n"
-		sb << "data" + ((rootNode != ".")?"." + rootNode:"") + ".each { struct ->\n"
+		sb << 'data' + ((rootNode != ".")?("." + rootNode):'') + ".each { struct ->\n"
 		if (limit > 0) {
-			sb << "cur++"
+			sb << 'cur++'
 			sb << "if (cur > ${limit}) return"
 		}
-		sb << "	Map row = [:]\n"
+		sb << '	Map row = [:]\n'
 		int c = 0
 		dataset.field.each { Field d ->
 			c++
 			if (listFields.isEmpty() || listFields.find { it.toLowerCase() == d.name.toLowerCase() }) {
 				Field s = d.copy()
-				if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
+				if (s.type in [Field.Type.DATETIME, Field.Type.DATE, Field.Type.TIME, Field.Type.TIMESTAMP_WITH_TIMEZONE])
+					s.type = Field.Type.STRING
 				
 				String path = GenerationUtils.Field2Alias(d)
 				sb << "	row.'${d.name.toLowerCase()}' = "

@@ -22,14 +22,14 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.files
+package getl.proc
 
 import getl.data.Field
 import getl.exception.ExceptionFileListProcessing
-import getl.files.sub.FileCopierBuild
+import getl.files.Manager
+import getl.proc.sub.FileCopierBuild
 import getl.jdbc.TableDataset
 import getl.lang.Getl
-import getl.proc.Executor
 import getl.proc.sub.FileListProcessing
 import getl.proc.sub.FileListProcessingBuild
 import getl.utils.Config
@@ -153,8 +153,8 @@ class FileCopier extends FileListProcessing {
      * Map sourceFile, Map destFile
      */
     void beforeCopyFile(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
-                                   Closure value) {
-        setOnBeforeCopyFile(value)
+                                   Closure cl) {
+        setOnBeforeCopyFile(cl)
     }
 
     /**
@@ -175,8 +175,8 @@ class FileCopier extends FileListProcessing {
      * Map sourceFile, Map destFile
      */
     void afterCopyFile(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
-                                  Closure value) {
-        setOnAfterCopyFile(value)
+                                  Closure cl) {
+        setOnAfterCopyFile(cl)
     }
 
     @Override
@@ -213,7 +213,6 @@ class FileCopier extends FileListProcessing {
         if (!tmpDestPath.isCompile) tmpDestPath.compile()
 
         if (renamePath != null) {
-            sourcePath.maskVariables
             if (!renamePath.isCompile) renamePath.compile()
         }
 
@@ -261,6 +260,7 @@ class FileCopier extends FileListProcessing {
     @Override
     protected FileListProcessingBuild createBuildList() { new FileCopierBuild(params: [owner: this]) }
 
+    @Override
     protected List<Field> getExtendedFields() {
         def res = [] as List<Field>
         res << new Field(name: '_segmented_', type: Field.integerFieldType, isNull: false)
@@ -272,8 +272,9 @@ class FileCopier extends FileListProcessing {
     @Override
     protected List<List<String>> getExtendedIndexes() {
         def idx = ['_SEGMENTED_']
-        if (order != null)
+        if (!order.isEmpty())
             idx.addAll(order*.toUpperCase() as List<String>)
+        idx.add('_OUTPATH_')
 
         return [idx]
     }
@@ -316,16 +317,6 @@ class FileCopier extends FileListProcessing {
 
     @Override
     protected void processFiles() {
-        List<String> idxColumns
-        if (!order.isEmpty())
-            idxColumns = ['_SEGMENTED_'] + (order*.toUpperCase() as List<String>) + ['_OUTPATH_']
-        else
-            idxColumns = ['_SEGMENTED_', '_OUTPATH_']
-
-        tmpConnection.executeCommand(
-                "CREATE INDEX \"idx_${tmpProcessFiles.tableName}_1\" ON ${tmpProcessFiles.fullNameDataset()} " +
-                        "(${idxColumns.join(', ')})")
-
         if (segmented.isEmpty() || destinations.size() == 1) {
             processSegment(0, source, destinations)
         }
@@ -380,10 +371,10 @@ class FileCopier extends FileListProcessing {
         def files = tmpProcessFiles.cloneDatasetConnection() as TableDataset
         files.readOpts {
             where = "_SEGMENTED_ = $segment"
-            if (!order.isEmpty())
-                order = ['_SEGMENTED_'] + (order*.toUpperCase() as List<String>) + ['_OUTPATH_']
+            if (!this.order.isEmpty())
+                it.order = ['_SEGMENTED_'] + (this.order*.toUpperCase() as List<String>) + ['_OUTPATH_']
             else
-                order = ['_SEGMENTED_', '_OUTPATH_']
+                it.order = ['_SEGMENTED_', '_OUTPATH_']
         }
 
         def beforeCopy = (onBeforeCopyFile != null)?(onBeforeCopyFile.clone() as Closure):null
@@ -471,6 +462,6 @@ class FileCopier extends FileListProcessing {
         }
 
         counter.addCount(files.readRows)
-        Logs.Info("[$segment]: copied ${files.readRows} files (${FileUtils.sizeBytes(fileSize)})")
+        Logs.Info("[$segment]: copied ${files.readRows} files (${FileUtils.SizeBytes(fileSize)})")
     }
 }

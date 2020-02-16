@@ -164,7 +164,7 @@ class SavePointManager implements Cloneable {
 	SavePointManager cloneSavePointManager(JDBCConnection newConnection = null) {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.class.name
-		Map p = CloneUtils.CloneMap(this.params)
+		Map p = CloneUtils.CloneMap(this.params, false)
 		def man = Class.forName(className).newInstance() as SavePointManager
 		if (newConnection != null) man.connection = newConnection
 		man.params.putAll(p)

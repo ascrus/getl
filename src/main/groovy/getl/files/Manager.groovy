@@ -49,9 +49,6 @@ import groovy.transform.stc.SimpleType
  */
 abstract class Manager implements Cloneable {
 /* TODO: added method Operation analog FileCopier */
-	protected ParamMethodValidator methodParams = new ParamMethodValidator()
-	protected File localDirFile = new File(TFS.storage.path)
-	
 	Manager () {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
@@ -73,7 +70,7 @@ abstract class Manager implements Cloneable {
 		if (params == null)
 			params = [:]
 		else
-			params = CloneUtils.CloneMap(params)
+			params = CloneUtils.CloneMap(params, false)
 
 		CreateManagerInternal(params)
 	}
@@ -85,6 +82,9 @@ abstract class Manager implements Cloneable {
 		MapUtils.RemoveKeys(params, ['manager'])
 		manager.params.putAll(params)
 		manager.validateParams()
+
+		if (manager.localDirectory != null)
+			manager.setLocalDirectory(manager.localDirectory)
 
 		return manager
 	}
@@ -106,7 +106,7 @@ abstract class Manager implements Cloneable {
 	@Synchronized
 	Manager cloneManager () {
 		String className = this.class.name
-		Map p = CloneUtils.CloneMap(this.params)
+		Map p = CloneUtils.CloneMap(this.params, false)
 		return CreateManagerInternal([manager: className] + p)
 	}
 
@@ -250,7 +250,15 @@ abstract class Manager implements Cloneable {
 		onLoadConfig(cp)
 		Logs.Config("Load config \"files\".\"config\" for object \"${this.getClass().name}\"")
 	}
-	
+
+	/** Method parameters */
+	protected ParamMethodValidator methodParams = new ParamMethodValidator()
+
+	/** Current local directory file descriptor*/
+	protected File localDirFile = new File(TFS.storage.path)
+	/** Current local directory file descriptor*/
+	File getLocalDirectoryFile() { localDirFile }
+
 	/** Validate parameters */
 	void validateParams () {
 		methodParams.validation("super", params)
@@ -816,8 +824,8 @@ abstract class Manager implements Cloneable {
 		def fileListIndexes = [:]
 		fileListIndexes.put(fileList.tableName + '_1', [columns: ['FILEPATH']])
 		if (extendIndexes != null) {
-			for (int i = 2; i < extendIndexes.size(); i++) {
-				fileListIndexes.put(fileList.tableName + '_' + i, [columns: extendIndexes[i]])
+			for (int i = 0; i < extendIndexes.size(); i++) {
+				fileListIndexes.put(fileList.tableName + '_' + (i + 2).toString(), [columns: extendIndexes[i]])
 			}
 		}
 		fileList.create((!fileListIndexes.isEmpty())?[indexes: fileListIndexes]:null)

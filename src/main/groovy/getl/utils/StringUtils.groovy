@@ -526,4 +526,31 @@ class StringUtils {
 
 		return le
 	}
+
+	/**
+	 * Format with group delimiter
+	 * @param value numeric value
+	 * @return formatted string
+	 */
+	static String WithGroupSeparator(Integer value) {
+		return String.format('%,d', value)
+	}
+
+	/**
+	 * Format with group delimiter
+	 * @param value numeric value
+	 * @return formatted string
+	 */
+	static String WithGroupSeparator(Long value) {
+		return String.format('%,d', value)
+	}
+
+	/**
+	 * Format with group delimiter
+	 * @param value numeric value
+	 * @return formatted string
+	 */
+	static String WithGroupSeparator(BigInteger value) {
+		return String.format('%,d', value)
+	}
 }

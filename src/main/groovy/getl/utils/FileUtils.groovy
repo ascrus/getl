@@ -59,7 +59,7 @@ class FileUtils {
 	 * @param deleteOnExit deleting file after stop program (defalt false)
 	 * @return true if the directory was created or false if it already existed
 	 */
-	static Boolean ValidFilePath (String fileName, Boolean deleteOnExit = false) {
+	static Boolean ValidFilePath(String fileName, Boolean deleteOnExit = false) {
 		fileName = ConvertToDefaultOSPath(fileName)
 		return ValidFilePath(new File(fileName), deleteOnExit)
 	}
@@ -170,7 +170,7 @@ class FileUtils {
         fileName = ConvertToDefaultOSPath(fileName)
         newName = ConvertToDefaultOSPath(newName)
 		File f = new File(fileName)
-		if (!f.exists()) throw new ExceptionGETL("File \"$fileName\" not found")
+		if (!f.exists()) throw new ExceptionGETL("File \"$fileName\" not found!")
 
         if (!(File.separator in newName)) newName = PathFromFile(fileName) + File.separator + newName
 
@@ -178,68 +178,66 @@ class FileUtils {
 	}
 	
 	/**
-	 * Move file to folder
-	 * @param fileName
-	 * @param path
-	 * @param createPath
+	 * Move file to specified directory
+	 * @param file file to move
+	 * @param path destination directory
+	 * @param createPath create a directory if it is not
 	 */
-	static void MoveTo(String fileName, String path, boolean createPath) {
-		def source = new File(fileName)
+	static void MoveTo(File file, String path, boolean createPath = false) {
+		if (!file.exists()) throw new ExceptionGETL("File \"$file\" not found!")
+
+		if (createPath) ValidPath(path)
+		def dest = new File("${path}/${file.name}")
+
+		Files.move(file.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING)
+	}
+
+	/**
+	 * Move file to specified directory
+	 * @param fileName path to the file to be moved
+	 * @param path destination directory
+	 * @param createPath create a directory if it is not
+	 */
+	static void MoveTo(String fileName, String path, boolean createPath = false) {
+		MoveTo(new File(fileName), path, createPath)
+	}
+
+	/**
+	 * Copy file to specified directory
+	 * @param file file to copy
+	 * @param path destination directory
+	 * @param createPath create a directory if it is not
+	 */
+	static void CopyToDir(File file, String path, boolean createPath = false) {
+		if (!file.exists()) throw new ExceptionGETL("File \"$file\" not found!")
 		
 		if (createPath) ValidPath(path)
-		def dest = new File("${path}/${source.name}")
-//		if (dest.exists()) dest.delete()
-		
-		Files.move(source.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING)
-	}
-	
-	/**
-	 * Remove file to folder
-	 * @param fileName
-	 * @param path
-	 */
-	static void MoveTo(String fileName, String path) {
-		MoveTo(fileName, path, true)
-	}
-	
-	/**
-	 * Copy file to dir
-	 * @param fileName
-	 * @param path
-	 * @param createPath
-	 */
-	static void CopyToDir(String fileName, String path, boolean createPath) {
-		def source = new File(fileName)
-		if (!source.exists()) throw new ExceptionGETL("File \"${fileName}\" not found")
-		
-		if (createPath) ValidPath(path)
-		def dest = new File(path + File.separator + source.name)
+		def dest = new File(path + File.separator + file.name)
 		if (dest.exists()) dest.delete()
 		
-		Files.copy(source.toPath(), dest.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+		Files.copy(file.toPath(), dest.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
 	}
-	
+
 	/**
-	 * Copy file to dir
-	 * @param fileName
-	 * @param path
+	 * Copy file to specified directory
+	 * @param fileName path to the file to be moved
+	 * @param path destination directory
+	 * @param createPath create a directory if it is not
 	 */
-	static void CopyToDir(String fileName, String path) {
-		CopyToDir(fileName, path, true)
+	static void CopyToDir(String fileName, String path, boolean createPath = false) {
+		CopyToDir(new File(fileName), path, createPath)
 	}
-	
+
 	/**
 	 * Copy file to another file
-	 * @param sourceName
-	 * @param destName
-	 * @param createPath
+	 * @param source source file
+	 * @param dest destination file
+	 * @param createPath create a directory if it is not
 	 */
-	static void CopyToFile(String sourceName, String destName, boolean createPath) {
-		def source = new File(sourceName)
-		if (!source.exists()) throw new ExceptionGETL("File \"${sourceName}\" not found")
+	static void CopyToFile(File source, File dest, boolean createPath = false) {
+		if (!source.exists()) throw new ExceptionGETL("File \"$source\" not found")
 		
-		def dest = new File(destName)
-		if (createPath) ValidFilePath(destName)
+		if (createPath) ValidPath(dest.parent)
 		if (dest.exists()) dest.delete()
 		
 		Files.copy(source.toPath(), dest.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
@@ -247,11 +245,12 @@ class FileUtils {
 	
 	/**
 	 * Copy file to another file
-	 * @param sourceName
-	 * @param destName
+	 * @param sourceName source file path
+	 * @param destName the path to the destination file
+	 * @param createPath create a directory if it is not
 	 */
-	static void CopyToFile(String sourceName, String destName) {
-		CopyToFile(sourceName, destName, true)
+	static void CopyToFile(String sourceName, String destName, boolean createPath = false) {
+		CopyToFile(new File(sourceName), new File(destName), createPath)
 	}
 	
 	/**
@@ -1060,21 +1059,28 @@ class FileUtils {
 	 * @return
 	 */
 	@CompileStatic
-	static String avgSpeed(Long size, Long longTimeMs) {
+	static String AvgSpeed(Long size, Long longTimeMs) {
 		if (longTimeMs == 0) longTimeMs = 1
 		def avgSpeed = NumericUtils.Round(size / longTimeMs * 1000, 3)
 		def speedName = 'bytes/sec'
-		if (avgSpeed >= 1024 * 1024 * 1024) {
+
+		if (avgSpeed >= 1024L * 1024 * 1024 * 1024 * 1024) {
+			avgSpeed = NumericUtils.Round(avgSpeed / 1024 / 1024 / 1024 / 1024 / 1024, 3)
+			speedName = 'PB/sec'
+		}
+		else if (avgSpeed >= 1024L * 1024 * 1024 * 1024) {
+			avgSpeed = NumericUtils.Round(avgSpeed / 1024 / 1024 / 1024 / 1024, 3)
+			speedName = 'GB/sec'
+		}
+		else if (avgSpeed >= 1024L * 1024 * 1024) {
 			avgSpeed = NumericUtils.Round(avgSpeed / 1024 / 1024 / 1024, 3)
 			speedName = 'GB/sec'
 		}
-		else
-		if (avgSpeed >= 1024 * 1024) {
+		else if (avgSpeed >= 1024L * 1024) {
 			avgSpeed = NumericUtils.Round(avgSpeed / 1024 / 1024, 1)
 			speedName = 'MB/sec'
 		}
-		else
-		if (avgSpeed >= 1024) {
+		else if (avgSpeed >= 1024L) {
 			avgSpeed = NumericUtils.Round(avgSpeed / 1024, 0)
 			speedName = 'KB/sec'
 		}
@@ -1088,32 +1094,30 @@ class FileUtils {
 	 * @return
 	 */
 	@CompileStatic
-	static String sizeBytes(BigDecimal bytes) {
-		def res = bytes
+	static String SizeBytes(Long bytes) {
+		def res = BigDecimal.valueOf(bytes)
 		def byteName = 'bytes'
-		if (bytes > 1024 * 1024 * 1024) {
+		if (bytes > 1024L * 1024 * 1024 * 1024 * 1024) {
+			res = NumericUtils.Round(res / 1024 / 1024 / 1024 / 1024 / 1024, 3)
+			byteName = 'PB'
+		}
+		else if (bytes > 1024L * 1024 * 1024 * 1024) {
+			res = NumericUtils.Round(res / 1024 / 1024 / 1024 / 1024, 3)
+			byteName = 'TB'
+		}
+		else if (bytes > 1024L * 1024 * 1024) {
 			res = NumericUtils.Round(res / 1024 / 1024 / 1024, 3)
 			byteName = 'GB'
 		}
-		else if (bytes > 1024 * 1024) {
+		else if (bytes > 1024L * 1024) {
 			res = NumericUtils.Round(res / 1024 / 1024, 1)
 			byteName = 'MB'
 		}
-		else if (bytes > 1024) {
+		else if (bytes > 1024L) {
 			res = NumericUtils.Round(res / 1024, 0)
 			byteName = 'KB'
 		}
 
 		return "$res $byteName"
-	}
-
-	/**
-	 * Return size in large units
-	 * @param bytes size of bytes
-	 * @return
-	 */
-	@CompileStatic
-	static String sizeBytes(Long bytes) {
-		sizeBytes(new BigDecimal(bytes))
 	}
 }

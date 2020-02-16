@@ -71,7 +71,8 @@ class XMLDriver extends FileDriver {
 			a++
 			
 			Field s = d.copy()
-			if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
+			if (s.type in [Field.Type.DATETIME, Field.Type.DATE, Field.Type.TIME, Field.Type.TIMESTAMP_WITH_TIMEZONE])
+				s.type = Field.Type.STRING
 			
 			String path = GenerationUtils.Field2Alias(d, false)
 			sb << "attrValue.'${d.name.toLowerCase()}' = "

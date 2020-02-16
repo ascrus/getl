@@ -27,13 +27,9 @@ package getl.exception
 import groovy.transform.InheritConstructors
 
 /**
- * Exception class for FileCopier process
+ * Exception class for FileListProcessing process
  * @author Alexsey Konstantinov
- *
  */
 @InheritConstructors
-class ExceptionFileListProcessing extends GroovyRuntimeException {
-    ExceptionFileListProcessing(String message) {
-        super(message)
-    }
+class ExceptionFileListProcessing extends ExceptionGETL {
 }

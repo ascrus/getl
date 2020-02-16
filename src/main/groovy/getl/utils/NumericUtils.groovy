@@ -71,47 +71,37 @@ class NumericUtils {
 
 	/**
 	 * Calc hash value by values list	
-	 * @param args
-	 * @return
+	 * @param args columns for hashing
+	 * @return hash code
 	 */
-	@SuppressWarnings(["UnnecessaryQualifiedReference", "UnnecessaryQualifiedReference"])
-	static long Hash(List args) {
+	static Integer Hash(List args) {
 		StringBuilder sb = new StringBuilder()
 		args.each { def a ->
-			if (a instanceof Date) {
+			if (a == null)
+				sb << '\u0000'
+			else if (a instanceof Date) {
 				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", a as Date))
 			}
-			else if (a instanceof java.sql.Timestamp) {
+			/*else if (a instanceof java.sql.Timestamp) {
 				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", a as java.sql.Timestamp))
-			}
+			}*/
 			else {
 				sb.append(a.toString())
 			}
-			sb.append('|')
+			sb.append('\u0001')
 		}
 
 		if (sb.length() < 32) sb.append(StringUtils.Replicate('\t', 32 - sb.length()))
-		return sb.toString().hashCode() & 0xFF
+		return sb.toString().hashCode()
 	}
 
-	@SuppressWarnings(["UnnecessaryQualifiedReference", "UnnecessaryQualifiedReference"])
-	static long Hash(Object... args) {
-		StringBuilder sb = new StringBuilder()
-		args.each { def a ->
-			if (a instanceof Date) {
-				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", a as Date))
-			}
-			else if (a instanceof java.sql.Timestamp) {
-				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", a as java.sql.Timestamp))
-			}
-			else {
-				sb.append(a.toString())
-			}
-			sb.append('|')
-		}
-
-		if (sb.length() < 32) sb.append(StringUtils.Replicate('\t', 32 - sb.length()))
-		return sb.toString().hashCode() & 0xFF
+	/**
+	 * Calc hash value by values list
+	 * @param args columns for hashing
+	 * @return hash code
+	 */
+	static Integer Hash(Object... args) {
+		return Hash(args.toList())
 	}
 	
 	/**
@@ -120,10 +110,9 @@ class NumericUtils {
 	 * @param args
 	 * @return
 	 */
-	static int SegmentByHash(int countSegment, List args) {
-		long hash = Hash(args)
-		
-		return (hash % countSegment).intValue()
+	static Integer SegmentByHash(int countSegment, List args) {
+		def hash = Hash(args) & 0xFF
+		return (hash % countSegment)
 	}
 
 	/**
@@ -132,10 +121,8 @@ class NumericUtils {
 	 * @param args
 	 * @return
 	 */
-	static int SegmentByHash(int countSegment, Object... args) {
-		long hash = Hash(args)
-
-		return (hash % countSegment).intValue()
+	static Integer SegmentByHash(int countSegment, Object... args) {
+		return SegmentByHash(countSegment, args.toList())
 	}
 
     /**

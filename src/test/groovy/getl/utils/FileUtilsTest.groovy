@@ -1,10 +1,6 @@
 package getl.utils
 
 import getl.tfs.TFS
-import groovy.transform.Synchronized
-import net.lingala.zip4j.model.enums.AesKeyStrength
-import net.lingala.zip4j.model.enums.CompressionLevel
-import net.lingala.zip4j.model.enums.EncryptionMethod
 import org.junit.Test
 
 /**
@@ -291,5 +287,20 @@ class FileUtilsTest extends getl.test.GetlTest {
             println "$mask: $rule"
             assertEquals("$mask: $rule", rule, FileUtils.FileMaskToMathExpression(mask))
         }
+    }
+
+    @Test
+    void testSizeBytes() {
+        assertEquals('1000 bytes', FileUtils.SizeBytes(1000))
+        assertEquals('1 KB', FileUtils.SizeBytes(1024L + 200))
+        assertEquals('1.1 MB', FileUtils.SizeBytes(1024L * 1024 + 105000))
+        assertEquals('1.001 GB', FileUtils.SizeBytes(1024L * 1024 * 1024 + 1024L * 1024))
+        assertEquals('1.001 TB', FileUtils.SizeBytes(1024L * 1024 * 1024 * 1024 + 1024L * 1024 * 1024))
+        assertEquals('1.001 PB', FileUtils.SizeBytes(1024L * 1024 * 1024 * 1024 * 1024 + 1024L * 1024 * 1024 * 1024))
+    }
+
+    @Test
+    void testAvgSpeed() {
+        assertEquals('1 KB/sec', FileUtils.AvgSpeed(1024, 1000))
     }
 }

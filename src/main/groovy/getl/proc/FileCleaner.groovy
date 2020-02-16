@@ -22,7 +22,7 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.files
+package getl.proc
 
 
 import getl.proc.sub.FileListProcessing
@@ -81,6 +81,6 @@ class FileCleaner extends FileListProcessing {
         }
 
         counter.addCount(tmpProcessFiles.readRows)
-        Logs.Info("Removed ${tmpProcessFiles.readRows} files (${FileUtils.sizeBytes(fileSize)})")
+        Logs.Info("Removed ${tmpProcessFiles.readRows} files (${FileUtils.SizeBytes(fileSize)})")
     }
 }

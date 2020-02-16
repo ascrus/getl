@@ -1,5 +1,5 @@
 /*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
+ GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "ETL".
 
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
@@ -21,18 +21,15 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
+package getl.exception
 
-package getl.proc
-
-import getl.proc.sub.FileListProcessing
+import getl.proc.sub.FileProcessingElement
+import groovy.transform.InheritConstructors
 
 /**
- * Processing files from file system
+ * Exception class for FileProcessing process
  * @author Alexsey Konstantinov
  */
-class FilesProcess extends FileListProcessing {
-    @Override
-    protected void processFiles() {
-
-    }
+@InheritConstructors
+class ExceptionFileProcessing extends ExceptionGETL {
 }

@@ -31,7 +31,6 @@ import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.proc.Executor
-import getl.proc.sub.FileListProcessingBuild
 import getl.exception.ExceptionFileListProcessing
 import getl.stat.ProcessTime
 import getl.tfs.TDS
@@ -470,10 +469,7 @@ abstract class FileListProcessing {
     protected List<Field> getExtendedFields() { return null }
 
     /** List of extended indexes */
-    protected List<List<String>> getExtendedIndexes() {
-        if (order == null) return null
-        return [order*.toUpperCase()]
-    }
+    protected List<List<String>> getExtendedIndexes() { null }
 
     /**
      * Build source list of files by source mask path
@@ -555,7 +551,7 @@ abstract class FileListProcessing {
         if (!order.isEmpty()) {
             order.each { col ->
                 if (!((col as String).toLowerCase() in vars))
-                    throw new ExceptionFileListProcessing("Field \"$col\" specified for sorting was not found!")
+                    throw new ExceptionFileListProcessing("Column \"$col\" specified for sorting was not found!")
             }
         }
     }
@@ -619,7 +615,7 @@ abstract class FileListProcessing {
                 Logs.Warning("No files found for source \"${source.toString()}\"!")
             }
             else {
-                Logs.Info("${source.countFileList} files found, size ${FileUtils.sizeBytes(source.sizeFileList)} for source \"${source.toString()}\"")
+                Logs.Info("${source.countFileList} files found, size ${FileUtils.SizeBytes(source.sizeFileList)} for source \"${source.toString()}\"")
                 processFiles()
 
                 if (removeEmptyDirs) delEmptyFolders()

@@ -468,7 +468,7 @@ class Field implements Serializable, Cloneable {
 				isReadOnly: this.isReadOnly, defaultValue: this.defaultValue, compute: this.compute,
 				minValue: this.minValue, maxValue: this.maxValue, format: this.format, alias: this.alias,
 				trim: this.trim, decimalSeparator: this.decimalSeparator, description: this.description,
-				extended: CloneUtils.CloneMap(extended)
+				extended: CloneUtils.CloneMap(extended, false)
 		)
 	}
 

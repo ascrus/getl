@@ -21,57 +21,47 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
+package getl.proc.sub
 
-package getl.exception
-
+import getl.proc.FileProcessing
+import getl.utils.NumericUtils
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
- * DSL GETL exception
+ * File processing build manager class
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-class ExceptionDSL extends Throwable {
-    ExceptionDSL(Integer typeCode, Integer exitCode, String message) {
-        super(message)
-        this.typeCode = typeCode
-        this.exitCode = exitCode
+@CompileStatic
+class FileProcessingBuild extends FileListProcessingBuild {
+    /** File processing owner */
+    FileProcessing getOwnerProcessing() { owner as FileProcessing }
+
+    /** Segmented columns */
+    List<String> threadGroupColumns
+
+    @Override
+    void init() {
+        super.init()
+
+        threadGroupColumns = ownerProcessing.threadGroupColumns*.toLowerCase()
     }
 
-    ExceptionDSL(Integer typeCode, Integer exitCode) {
-        super()
-        this.typeCode = typeCode
-        this.exitCode = exitCode
+    @Override
+    boolean prepare(Map file) {
+        if (!super.prepare(file)) return false
+        if (file.filetype != 'FILE') return true
+
+        if (!threadGroupColumns.isEmpty()) {
+            def  l = []
+            threadGroupColumns.each { l << file.get(it) }
+            file.put('_hash_', NumericUtils.Hash(l))
+        }
+        else {
+            file.put('_hash_', NumericUtils.Hash(file.filepath))
+        }
+
+        return true
     }
-
-    ExceptionDSL(Integer typeCode, String message) {
-        super(message)
-        this.typeCode = typeCode
-    }
-
-    ExceptionDSL(Integer typeCode) {
-        super()
-        this.typeCode = typeCode
-    }
-
-    ExceptionDSL() {
-        super()
-    }
-
-    /** Stop code execution of the current class */
-    static public final def STOP_CLASS = 1
-    /**
-     * Stop execution of current application code
-     */
-    static public final def STOP_APP = 2
-
-    /** Type code */
-    Integer typeCode
-    /** Type code */
-    Integer getTypeCode() { typeCode }
-
-    /** Exit code */
-    Integer exitCode
-    /** Exit code */
-    Integer getExitCode() { exitCode }
 }

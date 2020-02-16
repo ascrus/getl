@@ -236,6 +236,7 @@ class Executor {
 		threadList.clear()
 		threadActive.clear()
 		counter.clear()
+		counterProcessed.clear()
 
 		if (elements == null) elements = list
 		if (elements == null || elements.isEmpty()) throw new ExceptionGETL("List of items to process is empty!")
@@ -259,8 +260,10 @@ class Executor {
 							if (onValidAllowRun != null) {
 								allowRun = onValidAllowRun.call(element)
 							}
-							if (allowRun)
+							if (allowRun) {
 								code.call(element)
+								counterProcessed.nextCount()
+							}
 							else
 								setInterrupt(true)
 						}
@@ -382,6 +385,7 @@ class Executor {
 		threadList.clear()
 		threadActive.clear()
 		counter.clear()
+		counterProcessed.clear()
 
 		if (countThread == null) countThread = countProc?:elements.size()
 
@@ -399,6 +403,7 @@ class Executor {
 						}
 						try {
 							element.call()
+							counterProcessed.nextCount()
 						}
 						finally {
 							if (Thread.currentThread() instanceof ExecutorThread) {
@@ -575,4 +580,9 @@ class Executor {
 	final def counter = new SynchronizeObject()
 	/** Synchronized counter for work between threads */
 	SynchronizeObject getCounter() { counter }
+
+	/** The number of successfully processed list items in threads */
+	protected final def counterProcessed = new SynchronizeObject()
+	/** The number of successfully processed list items in threads */
+	Long getCountProcessed() { counterProcessed.count }
 }

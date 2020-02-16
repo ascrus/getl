@@ -4580,6 +4580,36 @@ Examples:
         return parent
     }
 
+    /**
+     * Processing files according to the specified rules from source file system
+     * @param source source file manager
+     * @param archiveStorage archive file storage
+     * @param cl process parameter setting code
+     * @return file processing instance
+     */
+    FileProcessing fileProcessing(Manager source,
+                            @DelegatesTo(FileProcessing)
+                            @ClosureParams(value = SimpleType, options = ['getl.proc.FileProcessing']) Closure cl) {
+        if (source == null) throw new ExceptionGETL('Required source file manager!')
+
+        def parent = new FileProcessing()
+        parent.sysParams.dslThisObject = childThisObject
+        parent.sysParams.dslOwnerObject = childOwnerObject
+        parent.source = source
+
+        def ptName = "Processing files from [$source]"
+        def pt = startProcess(ptName, 'file')
+        try {
+            runClosure(parent, cl)
+            parent.process()
+        }
+        finally {
+            parent.DisconnectFrom([parent.source])
+        }
+        finishProcess(pt, parent.countFiles)
+
+        return parent
+    }
 
     /** Test case instance */
     protected GroovyTestCase _testCase

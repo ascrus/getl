@@ -33,7 +33,4 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class ExceptionGETL extends GroovyRuntimeException {
-	ExceptionGETL(String message) {
-		super(message)
-	}
 }

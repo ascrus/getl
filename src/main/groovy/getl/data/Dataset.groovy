@@ -108,7 +108,7 @@ class Dataset implements Cloneable {
 		if (params == null)
 			params = [:]
 		else
-			params = CloneUtils.CloneMap(params)
+			params = CloneUtils.CloneMap(params, false)
 
 		return CreateDatasetInternal(params)
 	}
@@ -1333,7 +1333,7 @@ class Dataset implements Cloneable {
 	Dataset cloneDataset(Connection newConnection = null) {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.class.name
-		Map p = CloneUtils.CloneMap(this.params)
+		Map p = CloneUtils.CloneMap(this.params, false)
 		Dataset ds = CreateDatasetInternal([dataset: className] + p)
 		if (newConnection != null) ds.connection = newConnection
 		ds.setField(this.field)

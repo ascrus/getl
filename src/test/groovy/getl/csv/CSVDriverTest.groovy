@@ -372,11 +372,11 @@ class CSVDriverTest extends getl.test.GetlTest {
 				}
 			}
             def size = new File(t.fullFileName()).size()
-            pt.name = "CSV perfomance write (${FileUtils.sizeBytes(size)})"
+            pt.name = "CSV perfomance write (${FileUtils.SizeBytes(size)})"
 			pt.finish(perfomanceRows as Long)
 
 
-			pt = new ProcessTime(name: "CSV perfomance read (${FileUtils.sizeBytes(size)})")
+			pt = new ProcessTime(name: "CSV perfomance read (${FileUtils.SizeBytes(size)})")
 			def cur = 0
 			new Flow().process(source: t) { Map<String, Object> r ->
 				cur++

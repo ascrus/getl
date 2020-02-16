@@ -96,7 +96,7 @@ class Connection implements Cloneable {
 		if (params == null)
 			params = [:]
 		else
-			params = CloneUtils.CloneMap(params)
+			params = CloneUtils.CloneMap(params, false)
 
 		return CreateConnectionInternal(params)
 	}
@@ -447,7 +447,7 @@ class Connection implements Cloneable {
 	@Synchronized
 	Connection cloneConnection () {
 		String className = this.class.name
-		Map p = CloneUtils.CloneMap(this.params)
+		Map p = CloneUtils.CloneMap(this.params, false)
 		CreateConnectionInternal([connection: className] + p)
 	}
 
