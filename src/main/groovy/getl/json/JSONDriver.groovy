@@ -155,7 +155,7 @@ class JSONDriver extends FileDriver {
 		def json = new JsonSlurper()
 		def data = null
 		
-		def reader = getFileReader(dataset, params)
+		def reader = getFileReader(dataset as FileDataset, params)
 		try {
 			if (!convertToList) {
 					data = json.parse(reader)

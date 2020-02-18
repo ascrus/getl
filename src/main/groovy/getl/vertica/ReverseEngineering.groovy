@@ -32,13 +32,11 @@ import getl.proc.Job
 import getl.tfs.TDS
 import getl.utils.BoolUtils
 import getl.utils.Config
-import getl.utils.ConvertUtils
 import getl.utils.FileUtils
 import getl.utils.GenerationUtils
 import getl.utils.ListUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
-import getl.utils.NumericUtils
 import getl.utils.StringUtils
 
 import java.util.regex.Matcher
@@ -240,7 +238,7 @@ Example:
 	 * @param quote
 	 * @return
 	 */
-	static String stat(String pattern, def value, boolean quote) {
+	static String stat(String pattern, def value, boolean quote = false) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -248,19 +246,9 @@ Example:
 	}
 
 	/**
-	 * Build reverse statement
-	 * @param pattern
-	 * @param value
-	 * @return
-	 */
-	String stat(String pattern, def value) {
-		stat(pattern, value, false)
-	}
-
-	/**
 	 * Build reverse statement with feed line
 	 */
-	static String statln(String pattern, def value, boolean quote) {
+	static String statln(String pattern, def value, boolean quote = false) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -268,23 +256,13 @@ Example:
 	}
 
 	/**
-	 * Build reverse statement with feed line
-	 * @param pattern
-	 * @param value
-	 * @return
-	 */
-	String statln(String pattern, def value) {
-		statln(pattern, value, false)
-	}
-
-	/**
 	 * Build parameter for statement
 	 * @param param
 	 * @param value
 	 * @param quote
 	 * @return
 	 */
-	static String par(String param, def value, boolean quote) {
+	static String par(String param, def value, boolean quote = false) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -292,23 +270,13 @@ Example:
 	}
 
 	/**
-	 * Build parameter for statement
-	 * @param param
-	 * @param value
-	 * @return
-	 */
-	String par(String param, def value) {
-		par(param, value, false)
-	}
-
-	/**
 	 * Build parameter for statement with feed line
 	 * @param param
 	 * @param value
 	 * @param quote
 	 * @return
 	 */
-	static String parln(String param, def value, boolean quote) {
+	static String parln(String param, def value, boolean quote = false) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -316,36 +284,20 @@ Example:
 	}
 
 	/**
-	 * Build parameter for statement with feed line
-	 * @param param
-	 * @param value
-	 * @return
-	 */
-	String parln(String param, def value) {
-		parln(param, value, false)
-	}
-
-	/**
 	 * Convert string to list
 	 * @param list
 	 * @return
 	 */
-	/**
-	 * @param list
-	 * @return
-	 */
-	static Map<String, List<String>> procList(String list, Closure valid) {
-		def res = (HashMap<String, ArrayList<String>>)[:]
+	static Map<String, List<String>> procList(String list, Closure valid = null) {
+		def res = new HashMap<String, List<String>>()
 
-		def withoutGrant = [] as ArrayList<String>
-		def withGrant = [] as ArrayList<String>
+		def withoutGrant = [] as List<String>
+		def withGrant = [] as List<String>
 
 		list = list.trim()
 		if (list != '') {
-
 			def l = list.split(',')
-//			List<String> n = []
-			l.each { String s ->
+			l.each { s ->
 				s = s.trim()
 				if (valid == null || valid(s)) {
 					if (!s.matches('.*[*]')) withoutGrant << s else withGrant << s.substring(0, s.length() - 1)
@@ -356,16 +308,6 @@ Example:
 		res.withoutGrant = withoutGrant.sort(false)
 		res.withGrant = withGrant.sort(false)
 		return res
-	}
-
-	/**
-	 * Convert string to list
-	 * @param list
-	 * @param valid
-	 * @return
-	 */
-	Map<String, List<String>> procList(String list) {
-		return procList(list, null)
 	}
 
 	/**
@@ -399,6 +341,7 @@ Example:
 	 * @param object
 	 * @return
 	 */
+	@SuppressWarnings("GroovyMissingReturnStatement")
 	Map<String, String> ddlTable(String schema, String object) {
 		def sql = ddl(schema, object)
 		StringBuilder create = new StringBuilder()
@@ -406,7 +349,10 @@ Example:
 		def finishAnalyze = false
 		def startProj = false
 		sql.eachLine { String line ->
-			if (finishAnalyze || line.trim() == '\n') return [:]
+			if (finishAnalyze || line.trim() == '\n') {
+				directive = Closure.DONE
+				return
+			}
 
 			Matcher projMatcher
 			if (!projectionTables || projectionAnalyzeSuper || projectionKsafe != null) {
@@ -414,7 +360,8 @@ Example:
 
 				if (!projectionTables && projMatcher.count == 1) {
 					finishAnalyze = true
-					return [:]
+					directive = Closure.DONE
+					return
 				}
 			}
 
@@ -487,6 +434,7 @@ Example:
 		return [create: create.toString().trim(), alter: alter.toString().trim()]
 	}
 
+	@SuppressWarnings("GroovyAssignabilityCheck")
 	void readVerticaVersion() {
 		def r = tVersion.rows()
 		def s = r[0].version

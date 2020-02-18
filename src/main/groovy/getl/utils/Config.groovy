@@ -179,14 +179,14 @@ class Config {
 			def l = [] as List<String>
 			(readParams.files as List).each {
 				if (it instanceof String)
-					l << FileUtils.ResourceFileName(it)
+					l << FileUtils.ResourceFileName(it as String)
 				else
-					l << it
+					l << it.toString()
 			}
 			readParams.files = l
 		}
 		if (readParams.fileName != null && readParams.fileName instanceof String) {
-			readParams.fileName = FileUtils.ResourceFileName(readParams.fileName)
+			readParams.fileName = FileUtils.ResourceFileName(readParams.fileName as String)
 		}
         configClassManager.loadConfig(readParams)
 		DoInitEvent()

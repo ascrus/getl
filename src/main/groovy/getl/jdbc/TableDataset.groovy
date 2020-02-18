@@ -370,6 +370,7 @@ class TableDataset extends JDBCDataset {
 	 * @param source File to load
 	 * @param cl Load setup code
 	 */
+	@SuppressWarnings("GroovyVariableNotAssigned")
 	protected BulkLoadSpec doBulkLoadCsv(CSVDataset source, Closure cl) { /* TODO: added history table */
 		readRows = 0
 		writeRows = 0
@@ -461,10 +462,11 @@ class TableDataset extends JDBCDataset {
 				throw new ExceptionGETL('For remote download, you can set in "files" only the text of the file mask!')
 		}
 		else if (files instanceof String || files instanceof GString) {
-			if (files.matches('.*(\\{|\\*).*')) {
+			def fn = files.toString()
+			if ((fn).matches('.*(\\{|\\*).*')) {
 				def maskPath = new Path()
 				maskPath.with {
-					mask = FileUtils.ConvertToUnixPath(files)
+					mask = FileUtils.ConvertToUnixPath(fn)
 					variable('date') { type = Field.datetimeFieldType; format = 'yyyy-MM-dd_HH-mm-ss' }
 					variable('num') { type = Field.integerFieldType; length = 4 }
 					compile()
@@ -481,8 +483,8 @@ class TableDataset extends JDBCDataset {
 				Manager.AddFieldFileListToDS(procFiles)
 				procFiles.create()
 				new Flow().writeTo(dest: procFiles) { add ->
-					String filePath = FileUtils.RelativePathFromFile(files)
-					String fileName = FileUtils.FileName(files)
+					String filePath = FileUtils.RelativePathFromFile(fn)
+					String fileName = FileUtils.FileName(fn)
 					def file = new File(path + File.separator + ((filePath != '.')?"${filePath}${File.separator}":'') + fileName)
 					if (!file.exists())
 						throw new ExceptionGETL("File $file not found!")
@@ -516,7 +518,7 @@ class TableDataset extends JDBCDataset {
 			Manager.AddFieldFileListToDS(procFiles)
 			procFiles.create()
 			new Flow().writeTo(dest: procFiles) { add ->
-				(files as List).each { elem ->
+				(files as List<String>).each { elem ->
 					String filePath = FileUtils.RelativePathFromFile(elem)
 					String fileName = FileUtils.FileName(elem)
 					def file = new File(path + File.separator + ((filePath != '.')?"${filePath}${File.separator}":'') + fileName)
@@ -534,7 +536,7 @@ class TableDataset extends JDBCDataset {
 		if (!remoteLoad && countFiles == 0) {
 			pt.name = "${fullTableName}: no found files for loading"
 			getl.finishProcess(pt)
-			return
+			return parent
 		}
 
 		connection.tryConnect()
@@ -599,7 +601,7 @@ class TableDataset extends JDBCDataset {
 					cCon.path = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'')
 					cFile.fileName = file.filename
 
-					Long tsize = file.filesize
+					def tsize = file.filesize as Long
 
                     def fileName = cFile.fullFileName()
 
@@ -645,9 +647,9 @@ class TableDataset extends JDBCDataset {
 			}
 			else {
 				def listFiles = []
-				BigDecimal tsize = 0
+				Long tsize = 0
 				procFiles.eachRow(order: orderProcess) { file ->
-					tsize += file.filesize
+					tsize += file.filesize as Long
 					listFiles << path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
 				}
 
@@ -663,7 +665,7 @@ class TableDataset extends JDBCDataset {
                     Logs.Severe("${fullTableName}: cannot load ${listFiles.size()} files (${FileUtils.SizeBytes(tsize)}), error: ${e.message}")
                     procFiles.eachRow(order: orderProcess) { file ->
                         def fileName = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
-                        getl.Severe(level, "${fullTableName}: cannot load ${fileName} (${FileUtils.SizeBytes(file.filesize)})")
+                        Logs.Severe("${fullTableName}: cannot load ${fileName} (${FileUtils.SizeBytes(file.filesize as Long)})")
                     }
                     if (abortOnError) throw e
 				}
@@ -674,7 +676,7 @@ class TableDataset extends JDBCDataset {
                     def level = getl.langOpts.processTimeLevelLog
                     procFiles.eachRow(order: orderProcess) { file ->
                         def fileName = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
-                        getl.logWrite(level, "${fullTableName}: loaded ${fileName} (${FileUtils.SizeBytes(file.filesize)})")
+                        getl.logWrite(level, "${fullTableName}: loaded ${fileName} (${FileUtils.SizeBytes(file.filesize as Long)})")
                     }
                 }
 

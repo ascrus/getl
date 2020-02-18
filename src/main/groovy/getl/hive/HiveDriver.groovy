@@ -33,6 +33,7 @@ import getl.jdbc.*
 import getl.proc.Flow
 import getl.tfs.TFS
 import getl.utils.*
+import groovy.transform.CompileStatic
 
 /**
  * Hive driver class
@@ -247,6 +248,7 @@ class HiveDriver extends JDBCDriver {
         bulkParams = bulkLoadFilePrepare(source, table, bulkParams, prepareCode)
         def conHive = dest.connection as HiveConnection
 
+        //noinspection GroovyUnusedAssignment
         def overwriteTable = BoolUtils.IsValue(bulkParams.overwrite)
         def hdfsHost = ListUtils.NotNullValue([bulkParams.hdfsHost, conHive.hdfsHost])
         def hdfsPort = ListUtils.NotNullValue([bulkParams.hdfsPort, conHive.hdfsPort]) as Integer
@@ -255,7 +257,7 @@ class HiveDriver extends JDBCDriver {
         def processRow = bulkParams.processRow as Closure
 
         def expression = ListUtils.NotNullValue([bulkParams.expression, [:]]) as Map<String, Object>
-        expression.each { String fieldName, String expr ->
+        expression.each { String fieldName, expr ->
             if (dest.fieldByName(fieldName) == null) throw new ExceptionGETL("Unknown field \"$fieldName\" in \"expression\" parameter")
         }
 
@@ -271,7 +273,7 @@ class HiveDriver extends JDBCDriver {
             def fm = new FileManager(rootPath: (source.connection as CSVConnection).path)
             fm.connect()
             try {
-                fm.list(bulkParams.fileMask as String).each { Map f -> files.add(f.filepath + '/' + f.filename)}
+                fm.list(bulkParams.fileMask as String).each { Map f -> files.add((f.filepath as String) + '/' + (f.filename as String))}
             }
             finally {
                 fm.disconnect()
@@ -307,7 +309,7 @@ class HiveDriver extends JDBCDriver {
                 loadFields << fieldPrefix + n.name + fieldPrefix
             }
             else {
-                loadFields << exprValue
+                loadFields << exprValue.toString()
             }
         }
 
@@ -324,7 +326,7 @@ class HiveDriver extends JDBCDriver {
                 loadFields << fieldPrefix + n.name + fieldPrefix
             }
             else {
-                loadFields << exprValue
+                loadFields << exprValue.toString()
             }
         }
 
@@ -365,7 +367,7 @@ class HiveDriver extends JDBCDriver {
             try {
                 tempTable.connection
                         .executeCommand(isUpdate: true, command: "LOAD DATA INPATH '${fileMan.rootPath}/${tempFileName}' INTO TABLE ${tempTable.tableName}")
-                def countRow = tempTable.connection
+                /*def countRow = */tempTable.connection
                         .executeCommand(isUpdate: true, command: "FROM ${tempTable.tableName} INSERT ${(overwriteTable)?'OVERWRITE':'INTO'} ${(dest as JDBCDataset).fullNameDataset()}" +
                         (!partFields.isEmpty() ? " PARTITION(${partFields.join(', ')})" : '') + " SELECT ${loadFields.join(', ')}")
                 source.readRows = count
@@ -480,7 +482,7 @@ class HiveDriver extends JDBCDriver {
         return res
     }
 
-    @groovy.transform.CompileStatic
+    @CompileStatic
     protected void saveBatch (Dataset dataset, WriterParams wp) {
         try {
             super.saveBatch(dataset, wp)

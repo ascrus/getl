@@ -71,7 +71,7 @@ class Balancer  {
 	 * Init configuration
 	 */
 	protected void onLoadConfig (Map configSection) {
-		MapUtils.MergeMap(params, configSection)
+		MapUtils.MergeMap(params as Map<String, Object>, configSection as Map<String, Object>)
 		if (params."servers" == null) params."servers" = []
 	}
 	

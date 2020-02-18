@@ -2560,9 +2560,11 @@ Examples:
     }
 
     /** Current configuration content */
+    @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> getConfigContent() { Config.content }
 
     /** Current configuration vars */
+    @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> getConfigVars() { Config.vars }
 
     /** Write message for specified level to log */
@@ -2616,6 +2618,7 @@ Examples:
     }
 
     /** Current configuration manager */
+    @SuppressWarnings("GrMethodMayBeStatic")
     protected ConfigSlurper getConfigManager() { Config.configClassManager as ConfigSlurper }
 
     /** Configuration options */

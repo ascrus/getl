@@ -127,7 +127,7 @@ class ConfigStores extends ConfigManager {
             data.putAll(map)
             store.commit()
         }
-        catch (Exception e) {
+        catch (Exception ignored) {
             store.rollback()
         }
         finally {
@@ -160,7 +160,7 @@ class ConfigStores extends ConfigManager {
             map.putAll(data)
             store.commit()
         }
-        catch (Exception e) {
+        catch (Exception ignored) {
             store.rollback()
         }
         finally {

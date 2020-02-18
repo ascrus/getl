@@ -170,7 +170,7 @@ class EMailer {
 
 	/** Init configuration */
 	protected void onLoadConfig (Map configSection) {
-		MapUtils.MergeMap(params, configSection)
+		MapUtils.MergeMap(params as Map<String, Object>, configSection as Map<String, Object>)
 	}
 
 	/** Send mail message */

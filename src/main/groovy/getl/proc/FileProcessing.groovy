@@ -31,6 +31,7 @@ import getl.exception.ExceptionGETL
 import getl.files.Manager
 import getl.jdbc.JDBCConnection
 import getl.jdbc.QueryDataset
+import getl.jdbc.TableDataset
 import getl.proc.sub.FileListProcessing
 import getl.proc.sub.FileListProcessingBuild
 import getl.proc.sub.FileProcessingBuild
@@ -312,7 +313,7 @@ class FileProcessing extends FileListProcessing {
         (1..countOfThreadProcessing).each {
             def src = source.cloneManager()
             if (source.story != null) {
-                src.story = source.story.cloneDatasetConnection()
+                src.story = source.story.cloneDatasetConnection() as TableDataset
                 src.story.currentJDBCConnection.autoCommit = true
                 src.story.openWrite(batchSize: 1)
             }
@@ -430,7 +431,7 @@ Message: $msg
                                     element.errorText += "Trace:\n" + a.stackTrace.join('\n')
                                 }
                             }
-                            catch (ExceptionFileProcessing e) {
+                            catch (ExceptionFileProcessing ignored) {
                                 def msg = StringUtils.LeftStr(element.errorText, 4096)
                                 Logs.Severe("Error processing file \"${file.filepath}/${file.filename}\": $msg")
                                 element.errorText = """File: ${file.filepath}/${file.filename}

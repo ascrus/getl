@@ -572,6 +572,7 @@ class Executor {
 	}
 
 	@Synchronized
+	@SuppressWarnings("GrMethodMayBeStatic")
 	void callSynch(Closure cl) {
 		cl.call()
 	}

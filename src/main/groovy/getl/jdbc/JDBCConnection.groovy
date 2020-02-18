@@ -33,6 +33,7 @@ import getl.jdbc.opts.GenerateDslTablesSpec
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.proc.Flow
+import getl.tfs.TDS
 import getl.utils.*
 import groovy.sql.Sql
 import groovy.transform.InheritConstructors
@@ -80,7 +81,8 @@ class JDBCConnection extends Connection {
 	@Override
 	protected void doBeforeConnect() {
 		super.doBeforeConnect()
-		currentJDBCDriver.saveToHistory("-- USER CONNECTING ${MapUtils.CopyOnly(params, ['connectURL', 'connectHost', 'connectDatabase', 'login', 'autoCommit', 'driverName', 'driverPath', 'loginTimeout'])}")
+		currentJDBCDriver.saveToHistory("-- USER CONNECTING " +
+				"${MapUtils.CopyOnly(params as Map<String, Object>, ['connectURL', 'connectHost', 'connectDatabase', 'login', 'autoCommit', 'driverName', 'driverPath', 'loginTimeout'])}")
 	}
 
 	@Override
@@ -546,7 +548,7 @@ class JDBCConnection extends Connection {
 			throw new ExceptionGETL("Connection type \"$connectionClassName\" is not supported!")
 
 		String classType
-		if (this instanceof getl.tfs.TDS) {
+		if (this instanceof TDS) {
 			classType = 'embedded'
 		}
 		else {
@@ -613,7 +615,8 @@ class JDBCConnection extends Connection {
 		if (!listTableSavedData.isEmpty()) Logs.Fine("  save data from tables ${listTableSavedData.toString()} to resource files")
 		Logs.Fine("  using filter \"${p.dbName?:'*'}\".\"${p.schemaName?:'*'}\".\"${p.tableName?:'*'}\"${(!p.types.isEmpty())?(' with types: ' + p.types.toString()):''}${(!listTableExcluded.isEmpty())?(' excluded: ' + listTableExcluded.toString()):''}")
 		if (p.tableMask != null) Logs.Fine("    processing the tables by masked: $p.tableMask")
-		if (useResource) Logs.Fine("  using resource files path \"${resourceDir.path}\"" + ((resourceRoot != null)?" with root path \"$resourceRoot\"":''))
+		if (useResource)
+			Logs.Fine("  using resource files path \"${resourceDir?.path}\"" + ((resourceRoot != null)?" with root path \"$resourceRoot\"":''))
 
 		StringBuilder sb = new StringBuilder()
 
@@ -730,7 +733,7 @@ ${tab}${tab}}
 	 * @param dataset specified table
 	 * @return resource file name
 	 */
-	protected String generateDslResourceName(TableDataset dataset) {
+	protected static String generateDslResourceName(TableDataset dataset) {
 		return (((dataset.dbName != null)?"${dataset.dbName}/":'') + ((dataset.schemaName != null)?"${dataset.schemaName}/":'')).toLowerCase()
 	}
 
@@ -738,6 +741,7 @@ ${tab}${tab}}
 	 * Generate dsl script for createOpts section table
 	 * @return
 	 */
+	@SuppressWarnings("GrMethodMayBeStatic")
 	protected List<String> generateDslCreate(TableDataset table) { [] as List<String> }
 
 	/** The path to store logins in the configuration */

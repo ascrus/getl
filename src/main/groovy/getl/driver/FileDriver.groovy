@@ -286,21 +286,11 @@ abstract class FileDriver extends Driver {
 	 * Get writer file
 	 * @param dataset
 	 * @param params
-	 * @return
-	 */
-	protected Writer getFileWriter (Dataset dataset, Map params) {
-        return getFileWriter(dataset, params, null)
-	}
-	
-	/**
-	 * Get writer file
-	 * @param dataset
-	 * @param params
 	 * @param portion
 	 * @return
 	 */
 	@CompileStatic
-	protected Writer getFileWriter (FileDataset dataset, Map params, Integer portion) {
+	protected Writer getFileWriter (FileDataset dataset, Map params, Integer portion = null) {
 		def wp = getDatasetParams(dataset, params, portion)
 
 		if (BoolUtils.IsValue(params.avaibleAfterWrite) && (portion?:0) > 1) {

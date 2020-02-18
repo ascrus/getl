@@ -174,7 +174,7 @@ class Connection implements Cloneable {
 	 * @param configSection
 	 */
 	protected void onLoadConfig (Map configSection) {
-		MapUtils.MergeMap(params, configSection)
+		MapUtils.MergeMap(params as Map<String, Object>, configSection as Map<String, Object>)
 	}
 	
 	/**
@@ -215,7 +215,7 @@ class Connection implements Cloneable {
 	final Map sysParams = [:]
 
 	/** System parameters */
-	Map<String, Object> getSysParams() { sysParams }
+	Map<String, Object> getSysParams() { sysParams as Map<String, Object> }
 
 	/** Name in Getl Dsl reposotory */
 	String getDslNameObject() { sysParams.dslNameObject }

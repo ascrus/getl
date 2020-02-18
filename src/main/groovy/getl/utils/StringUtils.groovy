@@ -233,12 +233,12 @@ class StringUtils {
 	 * @param replace replacement string
 	 */
 	static void ReplaceAll(StringBuilder sb, Pattern pattern, String replace){
-		def matcher = pattern.matcher(sb);
+		def matcher = pattern.matcher(sb)
 
-		int startIndex = 0;
+		int startIndex = 0
 		while( matcher.find(startIndex) ){
-			sb.replace(matcher.start(), matcher.end(), replace);
-			startIndex = matcher.start() + replace.length();
+			sb.replace(matcher.start(), matcher.end(), replace)
+			startIndex = matcher.start() + replace.length()
 		}
 	}
 

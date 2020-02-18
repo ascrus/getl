@@ -38,8 +38,8 @@ class FileUtilsTest extends getl.test.GetlTest {
         def destPath = "${TFS.systemPath}/test_move"
 
         new File(source).text = 'test'
-        shouldFail { FileUtils.MoveTo(source, destPath, false) }
-        FileUtils.MoveTo(source, destPath)
+        shouldFail { FileUtils.MoveTo(source, destPath) }
+        FileUtils.MoveTo(source, destPath, true)
         assertEquals('test', new File("$destPath/$fileName").text)
 
         new File(source).text = 'test 1'
@@ -59,8 +59,8 @@ class FileUtilsTest extends getl.test.GetlTest {
         def f = new File(source)
         f.deleteOnExit()
         f.text = 'test'
-        shouldFail { FileUtils.CopyToDir(source, destPath, false) }
-        FileUtils.CopyToDir(source, destPath)
+        shouldFail { FileUtils.CopyToDir(source, destPath) }
+        FileUtils.CopyToDir(source, destPath, true)
 
         assertTrue(FileUtils.DeleteFile("$destPath/$fileName"))
         assertTrue(FileUtils.DeleteDir(destPath))
@@ -76,8 +76,8 @@ class FileUtilsTest extends getl.test.GetlTest {
         def f = new File(source)
         f.deleteOnExit()
         f.text = 'test'
-        shouldFail { FileUtils.CopyToFile(source, destFileName, false) }
-        FileUtils.CopyToFile(source, destFileName)
+        shouldFail { FileUtils.CopyToFile(source, destFileName) }
+        FileUtils.CopyToFile(source, destFileName, true)
 
         assertTrue(FileUtils.DeleteFile(destFileName))
         assertTrue(FileUtils.DeleteDir(destPath))

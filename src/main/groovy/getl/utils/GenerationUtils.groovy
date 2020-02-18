@@ -893,7 +893,7 @@ class GenerationUtils {
 
 				case Field.stringFieldType:
 					if (divLength != null)
-						length = (length / divLength).intValue()
+						length = (length / divLength).intValue().toInteger()
 
 					String generate
 					if (list != null) {

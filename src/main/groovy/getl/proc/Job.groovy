@@ -113,7 +113,7 @@ abstract class Job {
 	/**
 	 * Run job process
 	 */
-	@SuppressWarnings("UnnecessaryQualifiedReference")
+	@SuppressWarnings(["UnnecessaryQualifiedReference", "GroovyVariableNotAssigned"])
 	protected void doRun () {
 		DateUtils.init()
 		getl.deploy.Version.SayInfo()
@@ -136,7 +136,9 @@ abstract class Job {
 				System.exit(exitCode?:1)
 			}
 		}
-        if (isError) throw err
+
+        if (isError)
+			throw err
 	}
 
 	/** Exit application code */

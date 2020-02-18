@@ -33,6 +33,7 @@ import getl.jdbc.JDBCDriver
 import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
 import getl.utils.Logs
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -41,6 +42,7 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class ImpalaDriver extends JDBCDriver {
+    @SuppressWarnings("UnnecessaryQualifiedReference")
     ImpalaDriver() {
         super()
 
@@ -212,8 +214,8 @@ class ImpalaDriver extends JDBCDriver {
                 "INSERT $into TABLE {table} ({columns}) PARTITION ({partition}) VALUES({values})"
     }
 
-    @groovy.transform.CompileStatic
-    protected void saveBatch (Dataset dataset, JDBCDriver.WriterParams wp) {
+    @CompileStatic
+    protected void saveBatch (Dataset dataset, WriterParams wp) {
         try {
             super.saveBatch(dataset, wp)
         }

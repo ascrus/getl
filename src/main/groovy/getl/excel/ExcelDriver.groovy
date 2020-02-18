@@ -95,13 +95,13 @@ class ExcelDriver extends Driver {
         ExcelDataset dataset = source as ExcelDataset
         String fileName = dataset.currentExcelConnection.fileName
         String fullPath = dataset.fullFileName()
-        boolean warnings = BoolUtils.IsValue([params.showWarnings, dataset.showWarnings,
-                                              dataset.currentExcelConnection.showWarnings, false])
+        /*boolean warnings = BoolUtils.IsValue([params.showWarnings, dataset.showWarnings,
+                                              dataset.currentExcelConnection.showWarnings, false])*/
 
         if (!fileName) throw new ExceptionGETL("Required \"fileName\" parameter with connection")
         if (!FileUtils.ExistsFile(fullPath)) throw new ExceptionGETL("File \"${fullPath}\" doesn't exists!")
 
-        def ln = dataset.listName?:0
+        /*def ln = dataset.listName?:0*/
         def header = BoolUtils.IsValue([params.header, dataset.header,
                                         (dataset.connection as ExcelConnection).header], true)
         if (dataset.field.isEmpty() && !header) throw new ExceptionGETL("Required fields description with dataset")

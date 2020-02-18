@@ -161,6 +161,7 @@ class BaseSpec {
         }
         def m = MapUtils.CleanMap(params, [savedOptionsName]) as Map<String, Object>
         def n = CloneUtils.CloneMap(m, cloneChildrenObject) as Map<String, Object>
+        //noinspection GroovyAssignabilityCheck
         savedOptions.push(n)
     }
 

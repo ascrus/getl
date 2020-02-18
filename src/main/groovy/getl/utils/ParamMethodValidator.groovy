@@ -74,7 +74,7 @@ class ParamMethodValidator {
 	 * @return list of register parameter by method
 	 */
 	List<String> params(String methodName) {
-		def res = methodParams.get(methodName)
+		def res = methodParams.get(methodName) as List<String>
 		if (res == null) throw new ExceptionGETL("Unknown method $methodName")
 		
 		return res
@@ -128,7 +128,7 @@ class ParamMethodValidator {
 	private void validationSub (Map<String, Object> content, String contentName, String path, List excludeSections) {
 		if (contentName in excludeSections) return
 		
-		List listMethods = methodParams.get(contentName)
+		def listMethods = methodParams.get(contentName) as List<String>
 		if (listMethods == null) throw new ExceptionGETL("Content name \"$path\" not found, avaible names ${methodParams.keySet().toList()}")
 		content?.each { String key, value ->
 			if (key.substring(0, 1) == "_") return

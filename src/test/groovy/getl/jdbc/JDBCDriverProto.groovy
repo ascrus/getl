@@ -267,7 +267,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     protected boolean getUseUuid() { con.driver.isSupport(Driver.Support.UUID) }
 
     protected long insertData() {
-        if (!con.driver.isOperation(Driver.Operation.INSERT)) return
+        if (!con.driver.isOperation(Driver.Operation.INSERT)) return 0
         def count = new Flow().writeTo(dest: table) { updater ->
             (1..countRows).each { num ->
                 Map r = GenerationUtils.GenerateRowValues(table.field, num)

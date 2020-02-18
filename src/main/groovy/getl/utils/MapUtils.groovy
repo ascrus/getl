@@ -543,8 +543,9 @@ class MapUtils {
     }
 
     @CompileDynamic
+	@SuppressWarnings("GrUnresolvedAccess")
 	static Map<String, Object> Xml2Map(def node) {
-        def rootName = node.name().localPart as String
+		def rootName = node.name().localPart as String
         def rootMap = Xml2MapAttrs(node)
         def res = [:] as Map<String, Object>
         res.put("$rootName".toString(), rootMap)
@@ -557,6 +558,7 @@ class MapUtils {
      * @return
      */
 	@CompileDynamic
+	@SuppressWarnings("GrUnresolvedAccess")
 	private static Map<String, Object> Xml2MapAttrs(def node) {
 		def res = [:] as Map<String, Object>
 
@@ -948,6 +950,7 @@ class MapUtils {
 	 * @param cl variable description code
 	 * @return
 	 */
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	static Map<String, Object> Closure2Map(Closure cl) {
 		def cfg = new groovy.util.ConfigSlurper()
 		def vars = cfg.parse(new ClosureScript(closure: cl))
@@ -961,6 +964,7 @@ class MapUtils {
 	 * @param cl variable description code
 	 * @return
 	 */
+	@SuppressWarnings("UnnecessaryQualifiedReference")
 	static Map<String, Object> Closure2Map(String environment, Closure cl) {
 		def cfg = (environment == null)?new groovy.util.ConfigSlurper():new groovy.util.ConfigSlurper(environment)
 		def vars = cfg.parse(new ClosureScript(closure: cl))

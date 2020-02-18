@@ -12,7 +12,7 @@ import org.supercsv.util.CsvContext
 class CSVFmtEscapeString extends CellProcessorAdaptor implements StringCellProcessor {
     @CompileStatic
     @Override
-    def <T> T execute(final Object value, final CsvContext context) {
+    <T> T execute(final Object value, final CsvContext context) {
         final def result = StringUtils.EscapeJavaWithoutUTF(value as String)
         return next.execute(result, context)
     }

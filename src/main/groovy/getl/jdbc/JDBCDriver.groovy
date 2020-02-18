@@ -1083,7 +1083,7 @@ ${extend}'''
 
 		def tableType = (dataset as JDBCDataset).type as JDBCDataset.Type
 		if (tableType == null || tableType != JDBCDataset.Type.LOCAL_TEMPORARY) {
-			def schemaName = ds.schemaName
+			def schemaName = ds.params.schemaName as String
 			if (schemaName == null &&
 					(dataset as JDBCDataset).type in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType,
 													  JDBCDataset.externalTable] &&
@@ -1113,8 +1113,8 @@ ${extend}'''
         JDBCDataset ds = dataset as JDBCDataset
 
 		def r = prepareObjectName(ds.params.tableName as String)
-		def schema = (ds.type != JDBCDataset.localTemporaryTableType)?prepareObjectName(ds.schemaName):null
-		if (schema != null) r = prepareObjectName(ds.schemaName) + '.' + r
+		def schema = (ds.type != JDBCDataset.localTemporaryTableType)?prepareObjectName(ds.params.schemaName as String):null
+		if (schema != null) r = prepareObjectName(ds.params.schemaName as String) + '.' + r
 		if (ds.dbName != null) {
 			if (schema != null) {
 				r = prepareObjectName(ds.dbName) + '.' + r
@@ -1300,6 +1300,7 @@ ${extend}'''
 	 * @param meta
 	 * @return
 	 */
+	@SuppressWarnings("GrUnresolvedAccess")
 	protected List<Field> meta2Fields (def meta, boolean isTable) {
 		List<Field> result = []
         //noinspection GroovyAssignabilityCheck
@@ -1884,7 +1885,7 @@ $sql
 				def p = [] as List<String>
 				def sk = [] as List<String>
 				def sv = [] as List<String>
-				def sp = [] as List<String>
+				/*def sp = [] as List<String>*/
 
 				fields.each { Field f ->
 //					if (!syntaxPartitionKeyInColumns && f.isPartition) return
@@ -1935,7 +1936,7 @@ $sql
 				def k = []
 				def p = [] as List<String>
 				def sk = [] as List<String>
-				def sp = [] as List<String>
+				/*def sp = [] as List<String>*/
 				fields.each { Field f ->
 //					if (!syntaxPartitionKeyInColumns && f.isPartition) return
 
@@ -2268,6 +2269,7 @@ $sql
 
 	protected Map deleteRowsHint(TableDataset dataset, Map procParams) { [:] }
 
+	@SuppressWarnings("GrMethodMayBeStatic")
 	protected String deleteRowsPattern() { 'DELETE {afterDelete} FROM {table} {afterTable} {where} {afterWhere}'}
 
 	long deleteRows(TableDataset dataset, Map procParams) {
@@ -2283,7 +2285,7 @@ $sql
 
 		def con = jdbcConnection
 
-		long count = 0
+		Long count
 		def autoTran = isSupport(Driver.Support.TRANSACTIONAL)
 		if (autoTran) {
 			autoTran = (!con.autoCommit && con.tranCount == 0)

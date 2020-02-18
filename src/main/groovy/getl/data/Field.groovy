@@ -157,7 +157,7 @@ class Field implements Serializable, Cloneable {
 	 */
 	void setOrdKey(Integer value) { ordKey = value }
 
-	private boolean isPartition = false
+	private Boolean isPartition = false
 	/**
 	 * Use field in partition key
 	 */
@@ -177,25 +177,25 @@ class Field implements Serializable, Cloneable {
 	 */
 	void setOrdPartition(Integer value) { this.ordPartition = value }
 	
-	private boolean isAutoincrement = false
+	private Boolean isAutoincrement = false
 	/**
 	 * Field is auto increment
 	 */
-	boolean getIsAutoincrement() { return this.isAutoincrement }
+	Boolean getIsAutoincrement() { return this.isAutoincrement }
 	/**
 	 * Field is auto increment
 	 */
-	void setIsAutoincrement(boolean value) { this.isAutoincrement = value }
+	void setIsAutoincrement(Boolean value) { this.isAutoincrement = value }
 	
-	private boolean isReadOnly = false
+	private Boolean isReadOnly = false
 	/**
 	 * Field can not write
 	 */
-	boolean getIsReadOnly() { return this.isReadOnly }
+	Boolean getIsReadOnly() { return this.isReadOnly }
 	/**
 	 * Field can not write
 	 */
-	void setIsReadOnly(boolean value) { this.isReadOnly = value }
+	void setIsReadOnly(Boolean value) { this.isReadOnly = value }
 	
 	private String defaultValue = null
 	/**
@@ -257,15 +257,15 @@ class Field implements Serializable, Cloneable {
 	 */
 	void setAlias(String value) { this.alias = value }
 	
-	private boolean trim = false
+	private Boolean trim = false
 	/**
 	 * Trim space (used for reading datasource)
 	 */
-	boolean getTrim() { return this.trim }
+	Boolean getTrim() { return this.trim }
 	/**
 	 * Trim space (used for reading datasource)
 	 */
-	void setTrim(boolean value) { this.trim = value }
+	void setTrim(Boolean value) { this.trim = value }
 	
 	private String decimalSeparator
 	/**
@@ -308,21 +308,21 @@ class Field implements Serializable, Cloneable {
 	/**
 	 * Allow length for field
 	 */
-	static boolean AllowLength(Field f) {
+	static Boolean AllowLength(Field f) {
 		return (f.type in [Field.Type.STRING, Field.Type.NUMERIC, Field.Type.BLOB, Field.Type.TEXT, Field.Type.ROWID])
 	}
 	
 	/**
 	 * Allow precision for field
 	 */
-	static boolean AllowPrecision(Field f) {
+	static Boolean AllowPrecision(Field f) {
 		return (f.type in [Field.Type.NUMERIC])
 	}
 	
 	/**
 	 * Allow create field in table
 	 */
-	static boolean AllowCreatable(Field f) {
+	static Boolean AllowCreatable(Field f) {
 		return !(f.type in [Field.Type.ROWID])
 	}
 	
@@ -366,7 +366,7 @@ class Field implements Serializable, Cloneable {
 		if (strField.name == null) throw new ExceptionGETL("Required field name: ${strField}")
 		Field.Type type = (strField.type as Field.Type)?:Field.Type.STRING
 		String typeName = strField.typeName
-		boolean isNull = BoolUtils.IsValue(strField.isNull,true)
+		Boolean isNull = BoolUtils.IsValue(strField.isNull,true)
 		def length = strField.length as Integer
 		def precision = strField.precision as Integer
 		def isKey = BoolUtils.IsValue(strField.isKey, false)
@@ -475,10 +475,10 @@ class Field implements Serializable, Cloneable {
 	/**
 	 * Valid convert one type to another
 	 */
-	static boolean IsConvertibleType(Field.Type source, Field.Type dest) {
+	static Boolean IsConvertibleType(Field.Type source, Field.Type dest) {
 		if (source == dest) return true
 		
-		boolean res = false
+		Boolean res = false
 		switch (dest) {
 			case Field.Type.STRING: case Field.Type.TEXT:
 				res = true
@@ -512,11 +512,11 @@ class Field implements Serializable, Cloneable {
     /**
      * Valid equal current object by object
      */
-    static boolean canEqual(java.lang.Object other) {
+    static Boolean canEqual(java.lang.Object other) {
         return other instanceof Field
     }
 
-	boolean equalsAll(java.lang.Object other) {
+	Boolean equalsAll(java.lang.Object other) {
 		if (other == null) return false
 		if (this.is(other)) return true
 		if (!(other instanceof Field)) return false
@@ -580,29 +580,29 @@ class Field implements Serializable, Cloneable {
 
 	String generateDsl() {
 		def l = [] as List<String>
-		l << "type = ${Field.TypeToDsl(type)}"
-		if (AllowLength(this) && length != null) l << "length = $length"
-		if (AllowPrecision(this) && precision != null) l << "precision = $precision"
+		l << "type = ${Field.TypeToDsl(type)}".toString()
+		if (AllowLength(this) && length != null) l << "length = $length".toString()
+		if (AllowPrecision(this) && precision != null) l << "precision = $precision".toString()
 		if (!isNull) l << 'isNull = false'
 		if (BoolUtils.IsValue(isKey)) {
 			l << 'isKey = true'
-			if (ordKey > 0) l << "ordKey = $ordKey"
+			if (ordKey > 0) l << "ordKey = $ordKey".toString()
 		}
 		if (BoolUtils.IsValue(isPartition)) {
 			l << 'isPartition = true'
-			if (ordPartition != null) l << "ordPartition = $ordPartition"
+			if (ordPartition != null) l << "ordPartition = $ordPartition".toString()
 		}
 		if (BoolUtils.IsValue(isAutoincrement)) l << 'isAutoincrement = true'
 		if (BoolUtils.IsValue(isReadOnly)) l << 'isReadOnly = true'
-		if (defaultValue != null) l << "defaultValue = '$defaultValue'"
-		if (compute != null) l << "compute = '$compute'"
-		if (minValue != null) l << "minValue = $minValue"
-		if (maxValue != null) l << "minValue = $maxValue"
-		if (format != null) l << "format = '$format'"
-		if (alias != null) l << "alias = '$alias'"
-		if (BoolUtils.IsValue(trim)) 'trim = true'
-		if (decimalSeparator != null) "decimalSeparator = '$decimalSeparator'"
-		if (description != null) "description = '$description'"
+		if (defaultValue != null) l << "defaultValue = '$defaultValue'".toString()
+		if (compute != null) l << "compute = '$compute'".toString()
+		if (minValue != null) l << "minValue = $minValue".toString()
+		if (maxValue != null) l << "minValue = $maxValue".toString()
+		if (format != null) l << "format = '$format'".toString()
+		if (alias != null) l << "alias = '$alias'".toString()
+		if (BoolUtils.IsValue(trim)) l << 'trim = true'
+		if (decimalSeparator != null) l << "decimalSeparator = '$decimalSeparator'".toString()
+		if (description != null) l << "description = '$description'".toString()
 
 		return "field('$name') { ${l.join('; ')} }"
 	}
