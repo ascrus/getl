@@ -189,7 +189,9 @@ class SFTPManager extends Manager {
 	@Override
 	@Synchronized
 	void connect() {
-		if (clientSession != null && clientSession.connected) throw new ExceptionGETL("SFTP already connect to server")
+		if (connected)
+			throw new ExceptionGETL('Manager already connected!')
+
 		if (server == null || port == null) throw new ExceptionGETL("Required server host and port for connect")
 		if (login == null || password == null) throw new ExceptionGETL("Required login and password for connect")
 		
@@ -209,6 +211,9 @@ class SFTPManager extends Manager {
 
 	@Override
 	void disconnect() {
+		if (!connected)
+			throw new ExceptionGETL('Manager already disconnected!')
+
 		try {
 			if (clientSession != null && clientSession.connected) {
 				writeScriptHistoryFile("CLOSE SESSION")
@@ -267,6 +272,8 @@ class SFTPManager extends Manager {
 	@CompileStatic
 	@Override
 	FileManagerList listDir(String maskFiles) {
+		validConnect()
+
 		if (maskFiles == null) maskFiles = "*"
 		writeScriptHistoryFile("COMMAND: list \"$maskFiles\"")
 		Vector< ChannelSftp.LsEntry> listFiles = channelFtp.ls(maskFiles)
@@ -279,6 +286,8 @@ class SFTPManager extends Manager {
 
 	@Override
 	String getCurrentPath() {
+		validConnect()
+
 		writeScriptHistoryFile("COMMAND: pwd")
 		def res = channelFtp.pwd()
 		writeScriptHistoryFile("PWD: \"$res\"")
@@ -288,18 +297,23 @@ class SFTPManager extends Manager {
 
 	@Override
 	void setCurrentPath(String path) {
+		validConnect()
+
 		writeScriptHistoryFile("COMMAND: cd \"$path\"")
 		channelFtp.cd(path)
 	}
 
 	@Override
 	void changeDirectoryUp() {
+		validConnect()
 		writeScriptHistoryFile("COMMAND: cd ..")
 		channelFtp.cd("..")
 	}
 
 	@Override
 	void download(String fileName, String path, String localFileName) {
+		validConnect()
+
 		def fn = ((path != null)?path + "/":"") + localFileName
 		writeScriptHistoryFile("COMMAND: get \"$fileName\" to \"$fn\"")
         def f = new File(fn)
@@ -320,6 +334,8 @@ class SFTPManager extends Manager {
 
 	@Override
 	void upload(String path, String fileName) {
+		validConnect()
+
 		def fn = ((path != null)?path + "/":"") + fileName
 		writeScriptHistoryFile("COMMAND: put \"$fn\" to \"$fileName\"")
         def f = new File(fn)
@@ -339,6 +355,8 @@ class SFTPManager extends Manager {
 
 	@Override
 	void removeFile(String fileName) {
+		validConnect()
+
 		writeScriptHistoryFile("COMMAND: remove \"$fileName\"")
 		try {
 			channelFtp.rm(fileName)
@@ -351,6 +369,8 @@ class SFTPManager extends Manager {
 
 	@Override
 	void createDir(String dirName) {
+		validConnect()
+
 		writeScriptHistoryFile("COMMAND: pwd")
 		def curDir = channelFtp.pwd()
 		writeScriptHistoryFile("PWD: \"$curDir\"")
@@ -387,6 +407,8 @@ class SFTPManager extends Manager {
 
 	@Override
 	void removeDir(String dirName, Boolean recursive) {
+		validConnect()
+
 		writeScriptHistoryFile("COMMAND: rmdir \"$dirName\"")
         if (!channelFtp.stat(dirName).isDir()) throw new ExceptionGETL("$dirName is not directory")
 		try {
@@ -429,6 +451,8 @@ class SFTPManager extends Manager {
 
 	@Override
 	void rename(String fileName, String path) {
+		validConnect()
+
 		writeScriptHistoryFile("COMMAND: rename \"$fileName\" to \"$path\"")
 		try {
 			channelFtp.rename(fileName, path)
@@ -441,6 +465,8 @@ class SFTPManager extends Manager {
 
 	@Override
 	boolean existsDirectory(String dirName) {
+		validConnect()
+
 		writeScriptHistoryFile("COMMAND: pwd \"$dirName\"")
 		def cur = channelFtp.pwd()
 		writeScriptHistoryFile("PWD: \"$cur\"")
@@ -509,13 +535,18 @@ class SFTPManager extends Manager {
 
 	@Override
 	long getLastModified(String fileName) {
+		validConnect()
+
 		def a = channelFtp.stat(fileName)
 		return new Date(a.MTime * 1000L).time
 	}
 
 	@Override
 	void setLastModified(String fileName, long time) {
-		if (saveOriginalDate) channelFtp.setMtime(fileName, (time / 1000L).intValue())
+		validConnect()
+
+		if (saveOriginalDate)
+			channelFtp.setMtime(fileName, (time / 1000L).intValue())
 	}
 
 	@Override

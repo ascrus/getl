@@ -546,17 +546,31 @@ class FileUtils {
 	
 	/**
 	 * Return relative path from file path
-	 * @param file
-	 * @return
+	 * @param pathToFile file path
+	 * @param pathSepararor separator in path
+	 * @return directory path
 	 */
-	static String RelativePathFromFile(String file) {
-		if (file == null) return null
-		file = ConvertToDefaultOSPath(file)
+	static String RelativePathFromFile(String pathToFile, String pathSepararor) {
+		if (pathToFile == null) return null
+
 		String res
-		def i = file.lastIndexOf(File.separator)
-		if (i < 0) res = '.' else res = file.substring(0, i)
+		def i = pathToFile.lastIndexOf(pathSepararor)
+		if (i < 0) res = '.' else res = pathToFile.substring(0, i)
 		
-		res
+		return res
+	}
+
+	/**
+	 * Return relative path from file path
+	 * @param pathToFile file path
+	 * @return directory path
+	 */
+	static String RelativePathFromFile(String pathToFile, Boolean isUnixPath = null) {
+		isUnixPath = BoolUtils.IsValue(isUnixPath, !Config.isWindows())
+		def sep = (isUnixPath)?'/':'\\'
+		def file = (isUnixPath)?ConvertToUnixPath(pathToFile):ConvertToWindowsPath(pathToFile)
+
+		RelativePathFromFile(file, sep)
 	}
 
 	/**
@@ -866,13 +880,6 @@ class FileUtils {
 	/** Convert file mask to regular expression */
 	static String FileMaskToMathExpression(String fileMask) {
 		return StringUtils.ReplaceMany(fileMask, ReplaceFileMaskRules, ReplaceFileMaskPattern)
-
-		/*return fileMask.replace('.', '[.]')
-                .replace('*', '.*')
-				.replace('+', '\\+')
-				.replace('-', '\\-')
-                .replace('$', '[$]')
-				.replace('^', '[^]')*/
     }
 
 	/**

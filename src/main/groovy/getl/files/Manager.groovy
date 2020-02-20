@@ -578,13 +578,13 @@ abstract class Manager implements Cloneable {
 
 	@CompileStatic
 	@Synchronized
-	private FileManagerList listDirSync(String mask) {
+	protected FileManagerList listDirSync(String mask) {
 		listDir(mask)
 	}
 	
 	@CompileStatic
 	@Synchronized
-	private void changeDirSync(String dir) {
+	protected void changeDirSync(String dir) {
 		changeDirectory(dir)
 	}
 	
@@ -763,6 +763,8 @@ abstract class Manager implements Cloneable {
 	void buildList (Map lparams, ManagerListProcessing code) {
 		lparams = lparams?:[:]
 		methodParams.validation('buildList', lparams)
+
+		validConnect()
 
 		String maskFile = lparams.maskFile?:null
 		Path path = (lparams.path as Path)?:(new Path(mask: maskFile?:"*.*"))
@@ -1702,6 +1704,12 @@ WHERE
      * @param time last-modified time, measured in milliseconds since the epoch (00:00:00 GMT, January 1, 1970)
      */
     abstract void setLastModified(String fileName, long time)
+
+	/** Verify that the connection is established */
+	protected void validConnect () {
+		if (!connected)
+			throw new ExceptionGETL("Requires a connection to the source!")
+	}
 
 	/**
 	 * Build file manager parameters to string

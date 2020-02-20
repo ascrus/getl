@@ -81,7 +81,9 @@ class FileManager extends Manager {
 	
 	@Override
 	void connect () {
-		if (connected) throw new ExceptionGETL("Client already connected")
+		if (connected)
+			throw new ExceptionGETL('Manager already connected!')
+
 		if (rootPath == null) throw new ExceptionGETL("Required value for \"rootPath\" property")
 		File rp = new File(rootPath)
 		params.rootPath = rp.absolutePath
@@ -94,14 +96,18 @@ class FileManager extends Manager {
 	
 	@Override
 	void disconnect () {
-		if (!connected) throw new ExceptionGETL("Client already disconnected")
+		if (!connected)
+			throw new ExceptionGETL('Manager already disconnected!')
+
 		currentDir = null
 		connected = false
 	}
 
 	/** Set connect status if need for operations */
+	@Override
 	protected void validConnect () {
-		if (!connected) connect() //throw new ExceptionGETL("Client not connected")
+		if (!connected)
+			connect()
 	}
 
 	/** List of files class */
@@ -164,6 +170,7 @@ class FileManager extends Manager {
 	@Override
 	String getCurrentPath () {
 		validConnect()
+
 		assert currentDir != null, "Current dir not set"
 		currentDir.path.replace("\\", "/")
 	}
@@ -255,7 +262,9 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	boolean existsDirectory (String dirName) {
+	boolean existsDirectory(String dirName) {
+		validConnect()
+
 		File f = new File("${currentDir.path}/${dirName}")
 		f.exists()
 	}
@@ -299,11 +308,15 @@ class FileManager extends Manager {
 
 	@Override
 	long getLastModified(String fileName) {
+		validConnect()
+
 		return new File("$rootPath/${currentDir()}/$fileName").lastModified()
 	}
 
 	@Override
 	void setLastModified(String fileName, long time) {
+		validConnect()
+
 		if (saveOriginalDate) new File(fileName).setLastModified(time)
 	}
 }

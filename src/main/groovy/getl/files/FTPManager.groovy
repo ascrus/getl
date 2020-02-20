@@ -142,11 +142,13 @@ class FTPManager extends Manager {
     boolean supportCommand(String cmd) { (cmd.toUpperCase() in supportCommands) }
 
 	@Override
-	boolean isConnected() { client.connected }
+	boolean isConnected() { BoolUtils.IsValue(client?.connected) }
 	
 	@Override
 	void connect () {
-		if (client.connected) throw new ExceptionGETL('FTP already connect to server')
+		if (connected)
+			throw new ExceptionGETL('Manager already connected!')
+
 		if (server == null || port == null) throw new ExceptionGETL('Required server host and port for connect')
 		if (login == null) throw new ExceptionGETL('Required login for connect')
 		
@@ -181,6 +183,9 @@ class FTPManager extends Manager {
 	
 	@Override
 	void disconnect () {
+		if (!connected)
+			throw new ExceptionGETL('Manager already disconnected!')
+
 		if (client.connected) {
 			try {
 				def numRetry = 0
@@ -249,6 +254,8 @@ class FTPManager extends Manager {
 	@CompileStatic
 	@Override
 	FileManagerList listDir(String mask) {
+		validConnect()
+
 		FTPFile[] listFiles 
 		try {
 			listFiles = (mask != null)?client.list(mask):client.list()
@@ -266,11 +273,15 @@ class FTPManager extends Manager {
 	
 	@Override
 	String getCurrentPath () {
-		client.currentDirectory()
+		validConnect()
+
+		return client.currentDirectory()
 	}
 	
 	@Override
 	void setCurrentPath (String path) {
+		validConnect()
+
 		try {
 			client.changeDirectory(path)
 		}
@@ -282,6 +293,8 @@ class FTPManager extends Manager {
 	
 	@Override
 	void changeDirectoryUp () {
+		validConnect()
+
 		try {
 			client.changeDirectoryUp()
 		}
@@ -293,6 +306,8 @@ class FTPManager extends Manager {
 	
 	@Override
 	void download (String fileName, String path, String localFileName) {
+		validConnect()
+
 		def fn = ((path != null)?path + '/':'') + localFileName
 		try {
             def f = new File(fn)
@@ -308,6 +323,8 @@ class FTPManager extends Manager {
 	
 	@Override
 	void upload (String path, String fileName) {
+		validConnect()
+
 		def fn = ((path != null)?path + '/':'') + fileName
 		try {
             def f = new File(fn)
@@ -329,6 +346,8 @@ class FTPManager extends Manager {
 	
 	@Override
 	void removeFile(String fileName) {
+		validConnect()
+
 		try {
 			client.deleteFile(fileName)
 		}
@@ -340,6 +359,8 @@ class FTPManager extends Manager {
 	
 	@Override
 	void createDir (String dirName) {
+		validConnect()
+
 		def curDir = client.currentDirectory()
 		String cdDir = null
 		try {
@@ -371,6 +392,8 @@ class FTPManager extends Manager {
 	
 	@Override
 	void removeDir (String dirName, Boolean recursive) {
+		validConnect()
+
 		try {
 			if (recursive) {
                 def l = client.list()
@@ -413,6 +436,8 @@ class FTPManager extends Manager {
 	
 	@Override
 	void rename(String fileName, String path) {
+		validConnect()
+
 		try {
 			client.rename(fileName, path)
 		}
@@ -424,6 +449,8 @@ class FTPManager extends Manager {
 	
 	@Override
 	boolean existsDirectory (String dirName) {
+		validConnect()
+
 		def cur = client.currentDirectory()
 		def isExists = true
 		try {
@@ -445,6 +472,8 @@ class FTPManager extends Manager {
 
     @Override
     long getLastModified(String fileName) {
+		validConnect()
+
         def fl = client.list(fileName)
         if (fl.length != 1) throw new ExceptionGETL('File $fileName not found!')
         return fl[0].modifiedDate.time
@@ -452,6 +481,8 @@ class FTPManager extends Manager {
 
     @Override
     void setLastModified(String fileName, long time) {
+		validConnect()
+
         if (!saveOriginalDate) return
 
         if (supportCommand('MFMT')) {

@@ -1077,13 +1077,13 @@ ${extend}'''
 	String fullNameDataset (Dataset dataset) {
 		if (!dataset instanceof TableDataset) return 'noname'
 
-        JDBCDataset ds = dataset as JDBCDataset
+        def ds = dataset as TableDataset
 		
-		def r = prepareTableNameForSQL(ds.params.tableName as String)
+		def r = prepareTableNameForSQL(ds.tableName)
 
 		def tableType = (dataset as JDBCDataset).type as JDBCDataset.Type
 		if (tableType == null || tableType != JDBCDataset.Type.LOCAL_TEMPORARY) {
-			def schemaName = ds.params.schemaName as String
+			def schemaName = ds.schemaName
 			if (schemaName == null &&
 					(dataset as JDBCDataset).type in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType,
 													  JDBCDataset.externalTable] &&
@@ -1110,11 +1110,11 @@ ${extend}'''
 	String nameDataset (Dataset dataset) {
 		if (!dataset instanceof TableDataset) return 'noname'
 
-        JDBCDataset ds = dataset as JDBCDataset
+        def ds = dataset as TableDataset
 
 		def r = prepareObjectName(ds.params.tableName as String)
-		def schema = (ds.type != JDBCDataset.localTemporaryTableType)?prepareObjectName(ds.params.schemaName as String):null
-		if (schema != null) r = prepareObjectName(ds.params.schemaName as String) + '.' + r
+		def schema = (ds.type != JDBCDataset.localTemporaryTableType)?prepareObjectName(ds.schemaName as String):null
+		if (schema != null) r = prepareObjectName(ds.schemaName as String) + '.' + r
 		if (ds.dbName != null) {
 			if (schema != null) {
 				r = prepareObjectName(ds.dbName) + '.' + r

@@ -4289,7 +4289,7 @@ Examples:
                 runClosure(parent, cl)
             }
             finally {
-                parent.disconnect()
+                if (parent.connected) parent.disconnect()
             }
             pt.name = "Do commands on [$parent]"
             finishProcess(pt)
@@ -4323,7 +4323,7 @@ Examples:
                 runClosure(parent, cl)
             }
             finally {
-                parent.disconnect()
+                if (parent.connected) parent.disconnect()
             }
             pt.name = "Do commands on [$parent]"
             finishProcess(pt)
@@ -4357,7 +4357,7 @@ Examples:
                 runClosure(parent, cl)
             }
             finally {
-                parent.disconnect()
+                if (parent.connected) parent.disconnect()
             }
             pt.name = "Do commands on [$parent]"
             finishProcess(pt)
@@ -4669,7 +4669,7 @@ Examples:
     Map<String, Object> toVars(Closure cl) {
         def own = DetectClosureDelegate(cl)
         def code = PrepareClosure(own, childThisObject, own, cl)
-        MapUtils.Closure2Map(configuration().enviroment, code)
+        MapUtils.Closure2Map(configuration().environment, code)
     }
 
     /* TODO: add Counter repository object */

@@ -303,4 +303,13 @@ class FileUtilsTest extends getl.test.GetlTest {
     void testAvgSpeed() {
         assertEquals('1 KB/sec', FileUtils.AvgSpeed(1024, 1000))
     }
+
+    @Test
+    void testRelativePathFromFile() {
+        assertEquals('c:\\dir', FileUtils.RelativePathFromFile('c:\\dir\\file.ext'))
+        assertEquals('c:\\dir', FileUtils.RelativePathFromFile('c:\\dir\\file.ext', '\\'))
+        assertEquals('c:/dir', FileUtils.RelativePathFromFile('c:\\dir\\file.ext', true))
+        assertEquals('.', FileUtils.RelativePathFromFile('c:\\dir\\file.ext', '/'))
+        assertEquals('.', FileUtils.RelativePathFromFile('file.ext'))
+    }
 }

@@ -107,8 +107,6 @@ abstract class ManagerTest extends getl.test.GetlTest {
 
         def sf = new File("${manager.currentLocalDir()}/$subdirFileName")
         sf.text = 'child file'
-
-//        sleep 1000
     }
 
     private void create() {
@@ -151,16 +149,16 @@ abstract class ManagerTest extends getl.test.GetlTest {
     }
 
     private void rename() {
+        manager.changeDirectoryToRoot()
+        manager.changeLocalDirectoryToRoot()
+        manager.changeLocalDirectory(initLocalDir)
+
         manager.rename(rootFileInitName, rootFileName)
         assertNotNull(manager.getLastModified(rootFileName))
     }
 
     private void buildList() {
         manager.changeDirectoryToRoot()
-
-        /*def p = new Path(mask: 'catalog_{catalog}/subdir_{subdir}/*.txt', vars: [catalog: [type: 'INTEGER'], subdir: [type: 'INTEGER']])
-        manager.buildList(path: p, recursive: true)
-        assertEquals(9, manager.fileList.rows().size())*/
 
         def listTable = manager.buildListFiles {
             useMaskPath {
@@ -186,7 +184,6 @@ abstract class ManagerTest extends getl.test.GetlTest {
                     loadFiles++
             }
         }
-//        manager.downloadFiles(folders: true) { file -> if (file.filename == subdirFileName) loadFiles++ }
         assertEquals(9, loadFiles)
 
         manager.changeDirectoryToRoot()

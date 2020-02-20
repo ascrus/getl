@@ -26,6 +26,7 @@ package getl.files
 
 import getl.exception.ExceptionGETL
 import getl.files.sub.FileManagerList
+import getl.utils.FileUtils
 import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import org.apache.hadoop.fs.*
@@ -86,7 +87,9 @@ class HDFSManager extends Manager {
 
     @Override
     void connect() {
-        if (client != null) throw new ExceptionGETL("HDFS already connect to server")
+        if (connected)
+            throw new ExceptionGETL('Manager already connected!')
+
         if (server == null || port == null) throw new ExceptionGETL("Required server host and port for connect")
         if (login == null) throw new ExceptionGETL("Required login for connect")
 
@@ -119,6 +122,9 @@ class HDFSManager extends Manager {
 
     @Override
     void disconnect() {
+        if (!connected)
+            throw new ExceptionGETL('Manager already disconnected!')
+
         try {
             if (client != null) client.close()
         }
@@ -136,11 +142,13 @@ class HDFSManager extends Manager {
 
     @Override
     String getCurrentPath() {
-        curPath
+        return curPath
     }
 
     @Override
     void setCurrentPath(String path) {
+        validConnect()
+
         if (path == curPath) return
 
         if (path == null || path == '/') {
@@ -216,6 +224,8 @@ class HDFSManager extends Manager {
 
     @Override
     FileManagerList listDir(String maskFiles) {
+        validConnect()
+
         HDFSList res = new HDFSList()
         res.listFiles = client.listStatus(fullPath(currentPath, null))
 
@@ -224,6 +234,8 @@ class HDFSManager extends Manager {
 
     @Override
     void changeDirectoryUp() {
+        validConnect()
+
         if (currentPath == rootPath) {
             if (writeErrorsToLog) Logs.Severe("Can not change directory to up with root directory \"$rootPath\"")
             throw new ExceptionGETL("Can not change directory to up with root directory \"$rootPath\"")
@@ -247,6 +259,8 @@ class HDFSManager extends Manager {
 
     @Override
     void download(String fileName, String path, String localFileName) {
+        validConnect()
+
         def fn = ((path != null)?path + '/':'') + localFileName
         try {
             def p = fullPath(currentPath, fileName)
@@ -262,6 +276,8 @@ class HDFSManager extends Manager {
 
     @Override
     void upload(String path, String fileName) {
+        validConnect()
+
         def fn = ((path != null)?path + "/":"") + fileName
         try {
             def p = fullPath(currentPath, fileName)
@@ -277,6 +293,8 @@ class HDFSManager extends Manager {
 
     @Override
     void removeFile(String fileName) {
+        validConnect()
+
         try {
             client.delete(fullPath(currentPath, fileName), false)
         }
@@ -288,6 +306,8 @@ class HDFSManager extends Manager {
 
     @Override
     void createDir(String dirName) {
+        validConnect()
+
         try {
             client.mkdirs(fullPath(currentPath, dirName))
         }
@@ -299,6 +319,8 @@ class HDFSManager extends Manager {
 
     @Override
     void removeDir(String dirName, Boolean recursive) {
+        validConnect()
+
         try {
             client.delete(fullPath(currentPath, dirName), recursive)
         }
@@ -310,7 +332,11 @@ class HDFSManager extends Manager {
 
     @Override
     void rename(String fileName, String path) {
+        validConnect()
+
         try {
+            if (FileUtils.RelativePathFromFile(path, '/') == '.')
+                path = fullPath(currentPath, path)
             client.rename(fullPath(currentPath, fileName), new Path(path))
         }
         catch (Exception e) {
@@ -321,18 +347,25 @@ class HDFSManager extends Manager {
 
     @Override
     boolean existsDirectory(String dirName) {
-        client.exists(fullPath(dirName, null))
+        validConnect()
+
+        return client.exists(fullPath(dirName, null))
     }
 
     @Override
     long getLastModified(String fileName) {
+        validConnect()
+
         def s = client.getFileStatus(fullPath(currentPath, fileName))
         return s.modificationTime
     }
 
     @Override
     void setLastModified(String fileName, long time) {
-        if (saveOriginalDate) client.setTimes(fullPath(currentPath, fileName), time, -1)
+        validConnect()
+
+        if (saveOriginalDate)
+            client.setTimes(fullPath(currentPath, fileName), time, -1)
     }
 
     @Override

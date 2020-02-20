@@ -129,7 +129,7 @@ class ConfigSpec extends BaseSpec {
 
     /** Current environment */
     @SuppressWarnings("GrMethodMayBeStatic")
-    String getEnviroment() {
+    String getEnvironment() {
         return manager.environment
     }
 }
