@@ -4529,11 +4529,12 @@ Examples:
         def ptName = "Copy files from [$source]"
         def pt = startProcess(ptName, 'file')
         try {
+            parent.ConnectTo([source] + destinations, 1, 1)
             runClosure(parent, cl)
             parent.process()
         }
         finally {
-            parent.DisconnectFrom([parent.source] + parent.destinations)
+            parent.DisconnectFrom([source] + destinations)
         }
         finishProcess(pt, parent.countFiles)
 
@@ -4572,11 +4573,12 @@ Examples:
         def ptName = "Remove files from [$source]"
         def pt = startProcess(ptName, 'file')
         try {
+            parent.ConnectTo([source], 1, 1)
             runClosure(parent, cl)
             parent.process()
         }
         finally {
-            parent.DisconnectFrom([parent.source])
+            parent.DisconnectFrom([source])
         }
         finishProcess(pt, parent.countFiles)
 
@@ -4603,11 +4605,12 @@ Examples:
         def ptName = "Processing files from [$source]"
         def pt = startProcess(ptName, 'file')
         try {
+            parent.ConnectTo([source], 1, 1)
             runClosure(parent, cl)
             parent.process()
         }
         finally {
-            parent.DisconnectFrom([parent.source])
+            parent.DisconnectFrom([source])
         }
         finishProcess(pt, parent.countFiles)
 

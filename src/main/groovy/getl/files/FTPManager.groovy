@@ -186,24 +186,29 @@ class FTPManager extends Manager {
 		if (!connected)
 			throw new ExceptionGETL('Manager already disconnected!')
 
-		if (client.connected) {
-			try {
-				def numRetry = 0
-				def sleepTime = ((client.autoNoopTimeout > 0)?client.autoNoopTimeout:100) as Integer
-				client.autoNoopTimeout = 0
-				
-				client.disconnect(isHardDisconnect)
-				while (client.connected) {
-					numRetry++
-					sleep(sleepTime)
-					
-					if (numRetry > 4) throw new ExceptionGETL('Can not disconnect from server') 
+		try {
+			if (client.connected) {
+				try {
+					def numRetry = 0
+					def sleepTime = ((client.autoNoopTimeout > 0) ? client.autoNoopTimeout : 100) as Integer
+					client.autoNoopTimeout = 0
+
+					client.disconnect(isHardDisconnect)
+					while (client.connected) {
+						numRetry++
+						sleep(sleepTime)
+
+						if (numRetry > 4) throw new ExceptionGETL('Can not disconnect from server')
+					}
+				}
+				catch (Exception e) {
+					if (writeErrorsToLog) Logs.Severe("Can not disconnect from $server:$port")
+					throw e
 				}
 			}
-			catch (Exception e) {
-				if (writeErrorsToLog) Logs.Severe("Can not disconnect from $server:$port")
-				throw e
-			}
+		}
+		finally {
+			_currentPath = null
 		}
 	}
 	
@@ -284,6 +289,7 @@ class FTPManager extends Manager {
 
 		try {
 			client.changeDirectory(path)
+			_currentPath = client.currentDirectory()
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Can not change directory to \"$path\"")
@@ -297,6 +303,7 @@ class FTPManager extends Manager {
 
 		try {
 			client.changeDirectoryUp()
+			_currentPath = currentPath
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe('Can not change directory to up')

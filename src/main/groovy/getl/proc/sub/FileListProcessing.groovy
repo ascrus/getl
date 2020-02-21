@@ -137,7 +137,6 @@ abstract class FileListProcessing {
     /** Source file path mask */
     void setSourcePath(Path value) {
         params.sourcePath = value
-        params.renamePath = null
         if (sourcePath != null && !sourcePath.isCompile) sourcePath.compile()
     }
     /** Use path mask for source file */

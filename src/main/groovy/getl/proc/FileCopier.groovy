@@ -26,12 +26,14 @@ package getl.proc
 
 import getl.data.Field
 import getl.exception.ExceptionFileListProcessing
+import getl.exception.ExceptionGETL
 import getl.files.Manager
 import getl.proc.sub.FileCopierBuild
 import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.proc.sub.FileListProcessing
 import getl.proc.sub.FileListProcessingBuild
+import getl.utils.CloneUtils
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
@@ -65,49 +67,64 @@ class FileCopier extends FileListProcessing {
     Path getDestinationPath() { params.destinationPath as Path }
     /** Destination directory path mask */
     void setDestinationPath(Path value) {
-        params.destinationPath = value
+        if (sourcePath == null)
+            throw new ExceptionGETL('You must first specify a path mask for the source!')
+
+        def parent = value.clone()
+        MapUtils.MergeMap(parent.maskVariables, CloneUtils.CloneMap(sourcePath.maskVariables), false, false)
+
+        params.destinationPath = parent
         if (destinationPath != null && !destinationPath.isCompile) destinationPath.compile()
     }
     /** Use path mask for destination directory */
     void useDestinationPath(@DelegatesTo(Path) Closure cl) {
+        if (sourcePath == null)
+            throw new ExceptionGETL('You must first specify a path mask for the source!')
+
         def parent = new Path()
+        parent.maskVariables.putAll(CloneUtils.CloneMap(sourcePath.maskVariables))
+
         Getl.RunClosure(dslOwnerObject?:this, dslThisObject?:this, parent, cl)
-        setDestinationPath(parent)
+        params.destinationPath = parent
+        if (!destinationPath.isCompile) destinationPath.compile()
     }
 
     /** File rename mask */
     Path getRenamePath() { params.renamePath as Path }
     /** File rename mask */
     void setRenamePath(Path value) {
-        if (sourcePath == null) new ExceptionFileListProcessing('You must first specify a path mask for the source!')
+        if (sourcePath == null)
+            throw new ExceptionGETL('You must first specify a path mask for the source!')
 
-        def parent = value.clone() as Path
-        parent.maskVariables = (MapUtils.DeepCopy(sourcePath.maskVariables) as Map<String, Map<String, Object>>)
-        parent.variable('filepath')
-        parent.variable('filename')
-        parent.variable('filenameonly')
-        parent.variable('fileextonly')
-        parent.variable('filedate') { type = Field.datetimeFieldType; format = 'yyyyMMDD_HHmmss' }
-        parent.variable('filesize') { type = Field.bigintFieldType }
-        MapUtils.MergeMap(parent.maskVariables, value.maskVariables, true, true)
+        def parent = value.clone()
+        def sm = [:]
+        sm.put('filepath', null)
+        sm.put('filename', null)
+        sm.put('filenameonly', null)
+        sm.put('fileextonly', null)
+        sm.put('filedate', [type: Field.datetimeFieldType, format: 'yyyyMMDD_HHmmss'])
+        sm.put('filesize', [type: Field.bigintFieldType])
+        MapUtils.MergeMap(parent.maskVariables, CloneUtils.CloneMap(sourcePath.maskVariables), false, false)
+        MapUtils.MergeMap(parent.maskVariables, sm, false, false)
 
         params.renamePath = parent
         if (renamePath != null && !renamePath.isCompile) renamePath.compile()
     }
     /** Use path mask for rename file name */
     void useRenamePath(@DelegatesTo(Path) Closure cl) {
-        if (sourcePath == null) new ExceptionFileListProcessing('You must first specify a path mask for the source!')
+        if (sourcePath == null)
+            throw new ExceptionGETL('You must first specify a path mask for the source!')
 
         def parent = new Path()
-        parent.maskVariables.putAll(MapUtils.DeepCopy(sourcePath.maskVariables))
+        parent.maskVariables.putAll(CloneUtils.CloneMap(sourcePath.maskVariables))
         parent.variable('filepath')
         parent.variable('filename')
         parent.variable('filenameonly')
         parent.variable('fileextonly')
         parent.variable('filedate') { type = Field.datetimeFieldType; format = 'yyyyMMDD_HHmmss' }
         parent.variable('filesize') { type = Field.bigintFieldType }
-        Getl.RunClosure(dslOwnerObject?:this, dslThisObject?:this, parent, cl)
 
+        Getl.RunClosure(dslOwnerObject?:this, dslThisObject?:this, parent, cl)
         params.renamePath = parent
         if (renamePath != null && !renamePath.isCompile) renamePath.compile()
     }

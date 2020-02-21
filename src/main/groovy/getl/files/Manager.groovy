@@ -380,10 +380,10 @@ abstract class Manager implements Cloneable {
 		}
 		else {
 			try {
-				currentPath = "$currentPath/$dir"
+				currentPath = "$_currentPath/$dir"
 			}
 			catch (Exception e) {
-				Logs.Severe("Can not change directory to \"$currentPath/$dir\"")
+				Logs.Severe("Can not change directory to \"$_currentPath/$dir\"")
 				throw e
 			}
 		}
@@ -465,15 +465,18 @@ abstract class Manager implements Cloneable {
      * @param recursive required subdirectories remove
      */
 	abstract void removeDir (String dirName, Boolean recursive)
-	
+
+	/** Cached current path */
+	protected String _currentPath
+
 	/** Return current directory with full path */
 	String currentAbstractDir() {
-		return currentPath
+		return _currentPath
 	}
 	
 	/** Return current directory with relative path */
 	String currentDir() {
-		def cur = currentPath
+		def cur = _currentPath
 		if (cur == null) throw new ExceptionGETL("Current path not set")
 
 		cur = cur.replace("\\", "/")
@@ -1482,7 +1485,7 @@ WHERE
 		}
 		
 		if (!existsFiles && level > 0) {
-			if (onDelete != null) onDelete("$currentPath/$dirName")
+			if (onDelete != null) onDelete("$_currentPath/$dirName")
 			removeDir(dirName)
 		}
 		

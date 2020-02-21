@@ -91,7 +91,7 @@ class FileManager extends Manager {
 
 		currentDir = rp
 		connected = true
-		currentPath = rootPath
+		if (rootPath != null) currentPath = rootPath
 	}
 	
 	@Override
@@ -100,6 +100,7 @@ class FileManager extends Manager {
 			throw new ExceptionGETL('Manager already disconnected!')
 
 		currentDir = null
+		_currentPath = null
 		connected = false
 	}
 
@@ -171,8 +172,10 @@ class FileManager extends Manager {
 	String getCurrentPath () {
 		validConnect()
 
-		assert currentDir != null, "Current dir not set"
-		currentDir.path.replace("\\", "/")
+		if (currentDir == null)
+			throw new ExceptionGETL("Current directory is not setting!")
+
+		return currentDir.path.replace("\\", "/")
 	}
 	
 	@Override
@@ -182,19 +185,20 @@ class FileManager extends Manager {
 		File f = new File(path)
 		if (!f.exists()) throw new ExceptionGETL("Directory \"${path}\" not found")
 		currentDir = f
+		_currentPath = currentDir.path.replace("\\", "/")
 	}
 	
 	@Override
 	void changeDirectoryUp () {
 		validConnect()
-		setCurrentPath(currentDir.parent)
+		currentPath = currentDir.parent
 	}
 	
 	@Override
 	void download (String fileName, String path, String localFileName) {
 		validConnect()
 		
-		def f = fileFromLocalDir("${currentPath}/${fileName}")
+		def f = fileFromLocalDir("${_currentPath}/${fileName}")
 		
 		def fn = ((path != null)?path + "/":"") + localFileName
 		FileUtils.CopyToFile(f.path, fn, false)

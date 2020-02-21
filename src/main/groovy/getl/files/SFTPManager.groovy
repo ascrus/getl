@@ -227,6 +227,9 @@ class SFTPManager extends Manager {
 			if (writeErrorsToLog) Logs.Severe("Can not disconnect from $server:$port")
 			throw e
 		}
+		finally {
+			_currentPath = null
+		}
 	}
 	
 	class SFTPList extends FileManagerList {
@@ -301,6 +304,7 @@ class SFTPManager extends Manager {
 
 		writeScriptHistoryFile("COMMAND: cd \"$path\"")
 		channelFtp.cd(path)
+		_currentPath = channelFtp.pwd()
 	}
 
 	@Override
@@ -308,6 +312,7 @@ class SFTPManager extends Manager {
 		validConnect()
 		writeScriptHistoryFile("COMMAND: cd ..")
 		channelFtp.cd("..")
+		_currentPath = currentPath
 	}
 
 	@Override
@@ -490,7 +495,7 @@ class SFTPManager extends Manager {
 	@Override
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
 		Integer res = null
-		command = "cd \"$currentPath\" && $command"
+		command = "cd \"$_currentPath\" && $command"
 		def channelCmd = clientSession.openChannel("exec") as ChannelExec
 		try {
 			channelCmd.setCommand(command)

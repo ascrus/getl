@@ -101,9 +101,6 @@ class HDFSManager extends Manager {
                     conf.set("fs.defaultFS", "hdfs://$server:$port")
                     conf.set("hadoop.job.ugi", login)
 
-
-//                    conf.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.getClass().name)
-//                    conf.set("fs.file.impl",org.apache.hadoop.fs.LocalFileSystem.getClass().name)
                     try {
                         client = FileSystem.get(conf)
                     }
@@ -112,7 +109,7 @@ class HDFSManager extends Manager {
                         throw e
                     }
                     homeDirectory = client.homeDirectory
-                    setCurrentPath(rootPath)
+                    if (rootPath != null) currentPath = rootPath
 
                     return null
                 }
@@ -131,25 +128,20 @@ class HDFSManager extends Manager {
         finally {
             client = null
             homeDirectory = null
-            curPath = null
+            _currentPath = null
         }
     }
 
-    /**
-     * Current path name
-     */
-    private String curPath
-
     @Override
     String getCurrentPath() {
-        return curPath
+        return _currentPath
     }
 
     @Override
     void setCurrentPath(String path) {
         validConnect()
 
-        if (path == curPath) return
+        if (path == _currentPath) return
 
         if (path == null || path == '/') {
             if (writeErrorsToLog) Logs.Severe('Invalid path: \"$path\"')
@@ -166,7 +158,7 @@ class HDFSManager extends Manager {
             if (writeErrorsToLog) Logs.Severe("Path \"$path\" non directory")
             throw new ExceptionGETL("Path \"$path\" non directory")
         }
-        curPath = path
+        _currentPath = path
     }
 
     private fullName(String dir, String file) {
@@ -227,7 +219,7 @@ class HDFSManager extends Manager {
         validConnect()
 
         HDFSList res = new HDFSList()
-        res.listFiles = client.listStatus(fullPath(currentPath, null))
+        res.listFiles = client.listStatus(fullPath(_currentPath, null))
 
         return res
     }
@@ -236,12 +228,12 @@ class HDFSManager extends Manager {
     void changeDirectoryUp() {
         validConnect()
 
-        if (currentPath == rootPath) {
+        if (_currentPath == rootPath) {
             if (writeErrorsToLog) Logs.Severe("Can not change directory to up with root directory \"$rootPath\"")
             throw new ExceptionGETL("Can not change directory to up with root directory \"$rootPath\"")
         }
 
-        String[] l = currentPath.split('/')
+        String[] l = _currentPath.split('/')
         def n = []
         for (int i = 0; i < l.length - 1; i++) {
             n << l[i]
@@ -263,13 +255,13 @@ class HDFSManager extends Manager {
 
         def fn = ((path != null)?path + '/':'') + localFileName
         try {
-            def p = fullPath(currentPath, fileName)
+            def p = fullPath(_currentPath, fileName)
             client.copyToLocalFile(false, p, new Path(fn), true)
             def f = new File(fn)
             setLocalLastModified(f, getLastModified(fileName))
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not download file \"${fullName(currentPath, fileName)}\" to \"$fn\"")
+            if (writeErrorsToLog) Logs.Severe("Can not download file \"${fullName(_currentPath, fileName)}\" to \"$fn\"")
             throw e
         }
     }
@@ -280,13 +272,13 @@ class HDFSManager extends Manager {
 
         def fn = ((path != null)?path + "/":"") + fileName
         try {
-            def p = fullPath(currentPath, fileName)
+            def p = fullPath(_currentPath, fileName)
             client.copyFromLocalFile(new Path(fn), p)
             def f = new File(fn)
             setLastModified(fileName, f.lastModified())
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fn\" to \"${fullName(currentPath, fileName)}\"")
+            if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fn\" to \"${fullName(_currentPath, fileName)}\"")
             throw e
         }
     }
@@ -296,10 +288,10 @@ class HDFSManager extends Manager {
         validConnect()
 
         try {
-            client.delete(fullPath(currentPath, fileName), false)
+            client.delete(fullPath(_currentPath, fileName), false)
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not remove file \"${fullName(currentPath, fileName)}\"")
+            if (writeErrorsToLog) Logs.Severe("Can not remove file \"${fullName(_currentPath, fileName)}\"")
             throw e
         }
     }
@@ -309,10 +301,10 @@ class HDFSManager extends Manager {
         validConnect()
 
         try {
-            client.mkdirs(fullPath(currentPath, dirName))
+            client.mkdirs(fullPath(_currentPath, dirName))
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not create dir \"${fullName(currentPath, dirName)}\"")
+            if (writeErrorsToLog) Logs.Severe("Can not create dir \"${fullName(_currentPath, dirName)}\"")
             throw e
         }
     }
@@ -322,10 +314,10 @@ class HDFSManager extends Manager {
         validConnect()
 
         try {
-            client.delete(fullPath(currentPath, dirName), recursive)
+            client.delete(fullPath(_currentPath, dirName), recursive)
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not remove dir \"${fullName(currentPath, dirName)}\"")
+            if (writeErrorsToLog) Logs.Severe("Can not remove dir \"${fullName(_currentPath, dirName)}\"")
             throw e
         }
     }
@@ -336,11 +328,11 @@ class HDFSManager extends Manager {
 
         try {
             if (FileUtils.RelativePathFromFile(path, '/') == '.')
-                path = fullPath(currentPath, path)
-            client.rename(fullPath(currentPath, fileName), new Path(path))
+                path = fullPath(_currentPath, path)
+            client.rename(fullPath(_currentPath, fileName), new Path(path))
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not rename file \"${fullName(currentPath, fileName)}\" to \"$path\"")
+            if (writeErrorsToLog) Logs.Severe("Can not rename file \"${fullName(_currentPath, fileName)}\" to \"$path\"")
             throw e
         }
     }
@@ -356,7 +348,7 @@ class HDFSManager extends Manager {
     long getLastModified(String fileName) {
         validConnect()
 
-        def s = client.getFileStatus(fullPath(currentPath, fileName))
+        def s = client.getFileStatus(fullPath(_currentPath, fileName))
         return s.modificationTime
     }
 
@@ -365,7 +357,7 @@ class HDFSManager extends Manager {
         validConnect()
 
         if (saveOriginalDate)
-            client.setTimes(fullPath(currentPath, fileName), time, -1)
+            client.setTimes(fullPath(_currentPath, fileName), time, -1)
     }
 
     @Override
