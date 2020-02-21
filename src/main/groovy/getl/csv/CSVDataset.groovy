@@ -56,7 +56,10 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Quote delimiter string
 	 */
-	void setQuoteStr (String value) { params.quoteStr = value }
+	void setQuoteStr (String value) {
+		params.quoteStr = value
+		resetPresetMode()
+	}
 	
 	/**
 	 * Field delimiter
@@ -65,7 +68,10 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Field delimiter
 	 */
-	void setFieldDelimiter (String value) { params.fieldDelimiter = value }
+	void setFieldDelimiter (String value) {
+		params.fieldDelimiter = value
+		resetPresetMode()
+	}
 	
 	/**
 	 * Row delimiter
@@ -74,7 +80,10 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Row delimiter
 	 */
-	void setRowDelimiter (String value) { params.rowDelimiter = value }
+	void setRowDelimiter (String value) {
+		params.rowDelimiter = value
+		resetPresetMode()
+	}
 	
 	/**
 	 * File has header of fields name
@@ -83,7 +92,10 @@ class CSVDataset extends FileDataset {
 	/**
 	 * File has header of fields name
 	 */
-	void setHeader (boolean value) { params.header = value }
+	void setHeader (boolean value) {
+		params.header = value
+		resetPresetMode()
+	}
 	
 	/**
 	 * Ignore header field name
@@ -126,7 +138,10 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Required convert string to escape value
 	 */
-	void setEscaped (boolean value) { params.escaped = value }
+	void setEscaped (boolean value) {
+		params.escaped = value
+		resetPresetMode()
+	}
 
 	/**
 	 * Mode of quote value 
@@ -181,6 +196,23 @@ class CSVDataset extends FileDataset {
 	 * <br>P.S. You can set locale for separately field in Field.extended.locale
 	 */
 	void setLocale(String value) { params.locale = value }
+
+	/** File settings preset */
+	String getPresetMode() { params.presetMode?:'custom' }
+	/** File settings preset */
+	void setPresetMode(String value) {
+		if (!CSVConnection.PresetModes.containsKey(value))
+			throw new ExceptionGETL("Preset \"$value\" not defined!")
+
+		params.presetMode = value
+		def p = CSVConnection.PresetModes.get(value)
+		params.putAll(p)
+	}
+
+	/** Reset preset mode to custom */
+	void resetPresetMode() {
+		params.presetMode = 'custom'
+	}
 		
 	/**
 	 * Length of the recorded file
@@ -221,6 +253,13 @@ class CSVDataset extends FileDataset {
 
 	/** Current CSV connection */
 	CSVConnection getCurrentCsvConnection() { connection as CSVConnection}
+
+	@Override
+	protected void onLoadConfig (Map configSection) {
+		super.onLoadConfig(configSection)
+		if (configSection.presetMode != null)
+			setPresetMode(presetMode)
+	}
 
 	/**
 	 * Convert from source CSV file with encoding code page and escaped

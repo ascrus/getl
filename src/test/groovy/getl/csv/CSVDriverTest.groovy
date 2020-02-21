@@ -519,4 +519,77 @@ class CSVDriverTest extends getl.test.GetlTest {
             }
         }
     }
+
+    @Test
+    void testPresetMode() {
+        Getl.Dsl(this) {
+            CSVConnection.PresetModes.each { mode, modeParams ->
+                def con = csvConnection {
+                    presetMode = mode
+                }
+                modeParams.each { k, v ->
+                    assertEquals(v, con.params.get(k))
+                }
+
+                def file = csv {
+                    presetMode = mode
+                }
+                modeParams.each { k, v ->
+                    assertEquals(v, file.params.get(k))
+                }
+            }
+
+            def configName = textFile {
+                temporaryFile = true
+                write {
+                    connections {
+                        traditionalPresetMode {
+                            presetMode = 'traditional'
+                        }
+                        rfc4180PresetMode {
+                            presetMode = 'rfc4180'
+                        }
+                        unknownPresetMode {
+                            presetMode = 'unknown'
+                        }
+                    }
+
+                    datasets {
+                        traditionalPresetMode {
+                            presetMode = 'traditional'
+                        }
+                        rfc4180PresetMode {
+                            presetMode = 'rfc4180'
+                        }
+                        unknownPresetMode {
+                            presetMode = 'unknown'
+                        }
+                    }
+                }
+            }.fileName
+
+            def con = csvConnection { config = 'traditionalPresetMode' }
+            def file = csv { config = 'traditionalPresetMode' }
+            configuration {
+                load configName
+            }
+
+            assertTrue(con.escaped)
+            assertTrue(file.escaped)
+
+            con.config = 'rfc4180PresetMode'
+            assertFalse(con.escaped)
+
+            file.config = 'rfc4180PresetMode'
+            assertFalse(file.escaped)
+
+            testCase {
+                shouldFail { con.presetMode = 'unknown' }
+                shouldFail { file.presetMode = 'unknown' }
+
+                shouldFail { con.config = 'unknownPresetMode' }
+                shouldFail { file.presetMode = 'unknownPresetMode' }
+            }
+        }
+    }
 }

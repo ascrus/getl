@@ -23,11 +23,14 @@
 */
 package getl.lang.opts
 
+import getl.config.ConfigSlurper
 import getl.exception.ExceptionGETL
 import getl.tfs.TFS
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
+import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
+import org.apache.groovy.io.StringBuilderWriter
 
 /**
  * File text procession class
@@ -109,6 +112,25 @@ class FileTextSpec extends BaseSpec {
     /** Write string */
     void write(String text) {
         buffer.append(text)
+    }
+
+    /**
+     * Write map as configuration
+     * @param data stored data
+     * @param convertVars convert $ {variable} to $ {vars.variable}
+     */
+    void write(Map data, Boolean convertVars = false) {
+        def sw = new StringBuilderWriter(buffer)
+        ConfigSlurper.SaveMap(data, sw, convertVars)
+    }
+
+    /**
+     * Write configuration
+     * @param convertVars convert $ {variable} to $ {vars.variable}
+     * @param cl configuration code
+     */
+    void write(Boolean convertVars = false, Closure cl) {
+        write(MapUtils.Closure2Map(cl), convertVars)
     }
 
     /** Read file to text buffer */

@@ -310,10 +310,11 @@ class ConfigSlurper extends ConfigManager {
 	}
 
 	/**
-	 * Save config to file
-	 * @param data
-	 * @param file
-	 * @param codePage
+	 * Save map data to file
+	 * @param data stored data
+	 * @param file configuration file name
+	 * @param codePage text encoding
+	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 */
 	static void SaveConfigFile (Map<String, Object> data, File file, String codePage = 'UTF-8', Boolean convertVars = false) {
 		Writer writer
@@ -347,6 +348,14 @@ class ConfigSlurper extends ConfigManager {
 		}
 	}
 
+	/**
+	 * Write map data
+	 * @param data stored map data
+	 * @param writer writer object
+	 * @param convertVars convert $ {variable} to $ {vars.variable}
+	 * @param tab indent when writing to text
+	 * @param isListMap data is in the list
+	 */
 	static void SaveMap(Map<String, Object> data, Writer writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		int i = 0
@@ -373,6 +382,13 @@ class ConfigSlurper extends ConfigManager {
 		}
 	}
 
+	/**
+	 * Write list data
+	 * @param data stored list data
+	 * @param writer writer object
+	 * @param convertVars convert $ {variable} to $ {vars.variable}
+	 * @param tab indent when writing to text
+	 */
 	static void SaveList(List data, Writer writer, Boolean convertVars = false, Integer tab = 0) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		int i = 0
@@ -396,6 +412,15 @@ class ConfigSlurper extends ConfigManager {
 		}
 	}
 
+	/**
+	 * Write object
+	 * @param key object name
+	 * @param value object value
+	 * @param writer writer object
+	 * @param convertVars convert $ {variable} to $ {vars.variable}
+	 * @param tab indent when writing to text
+	 * @param isListMap object is in the list
+	 */
 	static void SaveObject(def key, def value, Writer writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def eqStr = (isListMap)?':':' ='
