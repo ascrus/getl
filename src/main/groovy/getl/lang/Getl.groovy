@@ -927,6 +927,15 @@ Examples:
         return repName
     }
 
+    /**
+     * Find a connection by name
+     * @param name connection name
+     * @return found connection object or null if not found
+     */
+    Connection findConnection(String name) {
+        return connections.get(repObjectName(name))
+    }
+
     /** Register connection in repository */
     @Synchronized
     protected Connection registerConnection(String connectionClassName, String name, Boolean registration = false) {
@@ -1509,6 +1518,15 @@ Examples:
         return repName
     }
 
+    /**
+     * Find a dataset by name
+     * @param name dataset name
+     * @return found dataset object or null if not found
+     */
+    Dataset findDataset(String name) {
+        return datasets.get(repObjectName(name))
+    }
+
     /** Register dataset in repository */
     @Synchronized
     protected Dataset registerDataset(Connection connection, String datasetClassName, String name, Boolean registration = false) {
@@ -1759,6 +1777,15 @@ Examples:
         if (repObj == null) return null
 
         return repName
+    }
+
+    /**
+     * Find a history point manager by name
+     * @param name history point manager name
+     * @return found history point manager object or null if not found
+     */
+    SavePointManager findHistorypoint(String name) {
+        return historypoints.get(repObjectName(name))
     }
 
     /**
@@ -2042,6 +2069,15 @@ Examples:
         if (repObj.getClass().name != className) return null
 
         return repName
+    }
+
+    /**
+     * Find a file manager by name
+     * @param name file manager name
+     * @return found file manager object or null if not found
+     */
+    Manager findFilemanager(String name) {
+        return filemanagers.get(repObjectName(name))
     }
 
     /** Register file manager in repository */

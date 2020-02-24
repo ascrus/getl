@@ -168,6 +168,16 @@ class Connection implements Cloneable {
 	void useConfig (String configName) {
 		setConfig(configName)
 	}
+
+	/** Run on connection */
+	Closure onConnecting
+	/** Run on connection */
+	Closure getOnConnecting() { onConnecting }
+	/** Run on connection */
+	void setOnConnecting(Closure value) { onConnecting = value }
+	/** Run on connection */
+	void whenConnecting(@ClosureParams(value = SimpleType, options = ['getl.data.Connection'])
+								Closure value) { setOnConnecting(value) }
 	
 	/**
 	 * Init configuration load
@@ -338,6 +348,7 @@ class Connection implements Cloneable {
 				}
 			}
 			doDoneConnect()
+			if (onConnecting != null) onConnecting.call(this)
 		}
 		else {
 			doBeforeDisconnect()
