@@ -54,7 +54,7 @@ class FileCleaner extends FileListProcessing {
 
         long fileSize = 0
 
-        def story = source.story
+        def story = currentStory
         if (story != null) story.openWrite()
 
         def curDir = ''
@@ -77,6 +77,7 @@ class FileCleaner extends FileListProcessing {
             if (story != null) {
                 story.doneWrite()
                 story.closeWrite()
+                story.currentJDBCConnection.connected = false
             }
         }
 

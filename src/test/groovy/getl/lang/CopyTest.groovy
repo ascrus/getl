@@ -2,6 +2,7 @@ package getl.lang
 
 
 import getl.files.Manager
+import getl.tfs.TDS
 import getl.utils.FileUtils
 import getl.utils.Path
 import getl.utils.StringUtils
@@ -97,6 +98,10 @@ class CopyTest extends getl.test.GetlTest {
                     renamePath = renameMask
 
                 inMemoryMode = inMemoryMode
+
+                cacheFilePath = "${this.workPath}/filecopiercache"
+                if (!this.debug)
+                    new TDS(connectDatabase: cacheFilePath)
 
                 numberAttempts = 3
                 timeAttempts = 2
@@ -352,6 +357,9 @@ class CopyTest extends getl.test.GetlTest {
             def countFiles = fileCleaner(files('source')) {
                 sourcePath = this.sourceMask
                 removeFiles = true
+                cacheFilePath = "${this.workPath}/filecleancache"
+                if (!this.debug)
+                    new TDS(connectDatabase: cacheFilePath)
             }.countFiles
 
             testCase {

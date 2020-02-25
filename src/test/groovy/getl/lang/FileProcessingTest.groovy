@@ -1,6 +1,7 @@
 package getl.lang
 
 import getl.test.GetlTest
+import getl.tfs.TDS
 import getl.utils.CloneUtils
 import getl.utils.DateUtils
 import getl.utils.FileUtils
@@ -13,7 +14,7 @@ import org.junit.BeforeClass
 import org.junit.Test
 
 class FileProcessingTest extends GetlTest {
-    static final def debug = true
+    static final def debug = false
 
     static def countSale = 10000
     static def countDays = 3
@@ -143,7 +144,7 @@ class FileProcessingTest extends GetlTest {
                 rootNode = '.'
             }
 
-            def testProcessing = { boolean delFiles, boolean abort, boolean saveException ->
+            def testProcessing = { boolean delFiles, boolean delSkip, boolean saveException ->
                 return fileProcessing(sourceFiles) {
                     useSourcePath {
                         mask = '{date}/sales.{num}.json'
@@ -153,17 +154,25 @@ class FileProcessingTest extends GetlTest {
                     order = ['num']
                     threadGroupColumns = ['date']
                     countOfThreadProcessing = this.countFileInDay
+                    removeEmptyDirs = true
                     removeFiles = delFiles
                     storageProcessedFiles = archiveFiles
                     storageErrorFiles = errorFiles
-                    abortOnError = abort
+                    abortOnError = false
                     handleExceptions = saveException
+                    if (this.debug)
+                        cacheFilePath = "${this.workPath}/../fileprocessingcache"
+                    else {
+                        def t = new TDS(connectDatabase: "${this.workPath}/fileprocessingcache")
+                        cacheFilePath = "${this.workPath}/fileprocessingcache"
+                    }
 
                     processFile { proc ->
                         logFine "Process file \"${proc.attr.filepath}/${proc.attr.filename}\" ..."
 
                         if (proc.attr.num == 1) {
                             proc.result = proc.skipResult
+                            proc.removeFile = delSkip
                             return
                         }
 
@@ -183,6 +192,7 @@ class FileProcessingTest extends GetlTest {
                     }
                 }
             }
+
             def proc = testProcessing(false, false, true)
             assertEquals(this.countDays * this.countFileInDay - this.countDays * 4, proc.countFiles)
             assertEquals(this.countDays, proc.countSkips)
@@ -193,6 +203,27 @@ class FileProcessingTest extends GetlTest {
             assertEquals(0, proc.countFiles)
             assertEquals(this.countDays, proc.countSkips)
             assertEquals(this.countDays * 3, proc.countErrors)
+
+            sourceFiles.story = null
+            proc = testProcessing(true, false, true)
+            assertEquals(this.countDays * this.countFileInDay - this.countDays * 4, proc.countFiles)
+            assertEquals(this.countDays, proc.countSkips)
+            assertEquals(this.countDays * 3, proc.countErrors)
+
+            sourceFiles.with {
+                connect()
+                assertEquals(3, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
+            }
+
+            proc = testProcessing(true, true, true)
+            assertEquals(0, proc.countFiles)
+            assertEquals(3, proc.countSkips)
+            assertEquals(0, proc.countErrors)
+
+            sourceFiles.with {
+                connect()
+                assertEquals(0, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
+            }
         }
     }
 }

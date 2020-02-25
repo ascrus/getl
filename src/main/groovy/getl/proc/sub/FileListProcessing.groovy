@@ -25,13 +25,16 @@
 package getl.proc.sub
 
 import getl.data.Field
-import getl.exception.ExceptionGETL
+import getl.exception.ExceptionFileProcessing
 import getl.files.Manager
+import getl.h2.H2Connection
+import getl.h2.H2Table
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.proc.Executor
 import getl.exception.ExceptionFileListProcessing
+import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TDS
 import getl.tfs.TFS
@@ -166,8 +169,21 @@ abstract class FileListProcessing {
     /** Use in-memory mode to process a list of files */
     void setInMemoryMode(Boolean value) { params.inMemoryMode = value }
 
+    /** Path to file storage caching file processing history */
+    String getCacheFilePath() { params.cacheFilePath as String }
+    /** Path to file storage caching file processing history */
+    void setCacheFilePath(String value) { params.cacheFilePath = value }
+
     /** Synchronized counter files */
     protected final SynchronizeObject counter = new SynchronizeObject()
+
+    /** Connecting to a database with caching file processing history */
+    protected H2Connection cacheConnection
+    /** File processing history cache table */
+    protected H2Table cacheTable
+
+    /** Current table for writing the history of file processing by a process */
+    protected TableDataset currentStory
 
     /** Number of processed files */
     long getCountFiles () { counter.count }
@@ -491,9 +507,16 @@ abstract class FileListProcessing {
 
     /** Clean manager temporary properties */
     protected void cleanProperties() {
+        cacheConnection?.connected = false
+        cacheConnection = null
+        cacheTable = null
+        currentStory = null
+
+        tmpConnection?.connected = false
         tmpConnection = null
         tmpProcessFiles = null
-        if (tmpPath != null) FileUtils.DeleteFolder(tmpPath, true, true)
+        if (tmpPath != null)
+            FileUtils.DeleteFolder(tmpPath, true, true)
         tmpPath = null
     }
 
@@ -507,7 +530,7 @@ abstract class FileListProcessing {
 
         FileUtils.ValidPath(tempPath, true)
         if (!FileUtils.ExistsFile(tempPath, true))
-            throw new ExceptionGETL("Temporary directory \"$tempPath\" not found!")
+            throw new ExceptionFileListProcessing("Temporary directory \"$tempPath\" not found!")
 
         tmpPath = "$tempPath/${FileUtils.UniqueFileName()}.localdir"
         FileUtils.ValidPath(tmpPath, true)
@@ -528,7 +551,7 @@ abstract class FileListProcessing {
         else {
             def h2TempFileName = "$tmpPath/${FileUtils.UniqueFileName()}"
             tmpConnection = new TDS(connectDatabase: h2TempFileName,
-                    login: "getl", password: "easydata", autoCommit: true,
+                    login: "easyload", password: "easydata", autoCommit: true,
                     inMemory: false,
                     connectProperty: [
                             LOCK_MODE: 3,
@@ -553,6 +576,39 @@ abstract class FileListProcessing {
                     throw new ExceptionFileListProcessing("Column \"$col\" specified for sorting was not found!")
             }
         }
+
+        if (source.story != null && cacheFilePath != null) {
+            FileUtils.ValidFilePath(cacheFilePath)
+            cacheConnection = new H2Connection().with {
+                connectDatabase = cacheFilePath
+                login = 'easyload'
+                password = 'easydata'
+                autoCommit = true
+                connected = true
+                connectProperty.PAGE_SIZE = 8192
+
+                return it
+            }
+
+            cacheTable = new H2Table(connection: cacheConnection, tableName: 'FILEPROCESSING_STORY_CACHE')
+            cacheTable.writeOpts { batchSize = 1 }
+            if (cacheTable.exists) {
+                def foundRows = cacheTable.countRow()
+
+                if (foundRows > 0 && !source.story.exists)
+                    throw new ExceptionFileListProcessing('A history caching table was specified, but no history table was specified in the source!')
+
+                if (foundRows > 0) {
+                    source.story.currentJDBCConnection.transaction {
+                        def count = new Flow().copy(source: cacheTable, dest: source.story)
+                        if (count == 0)
+                            throw new ExceptionFileProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
+
+                        cacheTable.truncate(truncate: true)
+                    }
+                }
+            }
+        }
     }
 
     /** Inform about start in the log */
@@ -571,14 +627,10 @@ abstract class FileListProcessing {
             Logs.Fine('  after processing files, empty directories will be removed on the source')
 
         if (source.story != null) {
-            Logs.Fine("  table ${source.story.fullTableName} is used to store history")
+            Logs.Fine("  table ${source.story.fullTableName} will be used to store file processing history")
+            if (cacheFilePath != null)
+                Logs.Fine("  file \"$cacheFilePath\" will be used to cache file processing history")
         }
-    }
-
-    /** Finalization process */
-    protected void doneProcess() {
-        tmpConnection.connected = false
-        cleanProperties()
     }
 
     /** Run before processing */
@@ -615,7 +667,32 @@ abstract class FileListProcessing {
             }
             else {
                 Logs.Info("${source.countFileList} files found, size ${FileUtils.SizeBytes(source.sizeFileList)} for source \"${source.toString()}\"")
-                processFiles()
+
+                if (cacheTable != null && !cacheTable.exists) {
+                    cacheTable.field = source.story.field
+                    cacheTable.clearKeys()
+                    cacheTable.create()
+                }
+                currentStory = cacheTable?:source.story
+
+                try {
+                    processFiles()
+                }
+                finally {
+                    if (cacheTable != null) {
+                        def foundRows = cacheTable.countRow()
+                        if (foundRows > 0) {
+                            source.story.currentJDBCConnection.transaction {
+                                def count = new Flow().copy(source: cacheTable, dest: source.story)
+                                if (foundRows != count)
+                                    throw new ExceptionFileProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
+
+                                Logs.Info("$count rows of file processing history saved to table ${source.story.fullTableName}")
+                                cacheTable.truncate(truncate: true)
+                            }
+                        }
+                    }
+                }
 
                 if (removeEmptyDirs) delEmptyFolders()
 
@@ -638,7 +715,7 @@ abstract class FileListProcessing {
                 afterProcessing()
             }
             finally {
-                doneProcess()
+                cleanProperties()
             }
         }
     }

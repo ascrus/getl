@@ -27,7 +27,6 @@ package getl.proc
 import getl.data.Field
 import getl.exception.ExceptionFileListProcessing
 import getl.exception.ExceptionFileProcessing
-import getl.exception.ExceptionGETL
 import getl.files.Manager
 import getl.jdbc.JDBCConnection
 import getl.jdbc.QueryDataset
@@ -66,7 +65,7 @@ class FileProcessing extends FileListProcessing {
     /** Count of thread processing the files (default 1) */
     void setCountOfThreadProcessing(Integer value) {
         if (value < 1)
-            throw new ExceptionGETL('The number of threads must be greater than zero!')
+            throw new ExceptionFileListProcessing('The number of threads must be greater than zero!')
 
         params.countOfThreadProcessing = value
     }
@@ -117,16 +116,15 @@ class FileProcessing extends FileListProcessing {
     /** Count of skipped files */
     Long getCountSkips() { counterSkips.count }
 
-
     @Override
     protected void initProcess() {
         super.initProcess()
 
         if (onProcessFile == null)
-            throw new ExceptionGETL("Required to specify the file processing code in \"processFile\"!")
+            throw new ExceptionFileListProcessing("Required to specify the file processing code in \"processFile\"!")
 
         if (countOfThreadProcessing > 1 && threadGroupColumns.isEmpty())
-            throw new ExceptionGETL('Required to specify a list of grouping attributes for multi-threaded processing in "threadGroupColumns"!')
+            throw new ExceptionFileListProcessing('Required to specify a list of grouping attributes for multi-threaded processing in "threadGroupColumns"!')
 
         if (!threadGroupColumns.isEmpty()) {
             def vars = sourcePath.vars.keySet().toList()*.toLowerCase()
@@ -150,6 +148,7 @@ class FileProcessing extends FileListProcessing {
     @Override
     protected void cleanProperties() {
         super.cleanProperties()
+
         if (storageProcessedFiles != null) {
             DisconnectFrom([storageProcessedFiles])
         }
@@ -297,7 +296,7 @@ class FileProcessing extends FileListProcessing {
             }
         }
         if (res == null)
-            throw new ExceptionGETL('Failed to get element in pool managers!')
+            throw new ExceptionFileListProcessing('Failed to get element in pool managers!')
 
         return res
     }
@@ -312,10 +311,9 @@ class FileProcessing extends FileListProcessing {
         def sourceList = [] as List<ListPoolElement>
         (1..countOfThreadProcessing).each {
             def src = source.cloneManager()
-            if (source.story != null) {
-                src.story = source.story.cloneDatasetConnection() as TableDataset
-                src.story.currentJDBCConnection.autoCommit = true
-                src.story.openWrite(batchSize: 1)
+            if (currentStory != null) {
+                src.story = currentStory?.cloneDatasetConnection() as TableDataset
+                src.story.openWrite(operation: 'INSERT')
             }
 
             ConnectTo([src], numberAttempts, timeAttempts)
@@ -384,6 +382,7 @@ class FileProcessing extends FileListProcessing {
                         def sourceElement = FreePoolElement(sourceList)
                         def processedElement = FreePoolElement(processedList)
                         def errorElement = FreePoolElement(errorList)
+                        def delFile = removeFiles
 
                         try {
                             def filepath = file.get('filepath') as String
@@ -402,7 +401,7 @@ class FileProcessing extends FileListProcessing {
 
                             def filedesc = new File(sourceElement.man.currentLocalDir() + '/' + filename)
                             if (!filedesc.exists())
-                                throw new ExceptionGETL("The downloaded file \"$filedesc\" was not found!")
+                                throw new ExceptionFileListProcessing("The downloaded file \"$filedesc\" was not found!")
 
                             def element = new FileProcessingElement(sourceElement, processedElement,
                                     errorElement, file, filedesc)
@@ -462,7 +461,7 @@ Message: $msg
                             }
 
                             if (element.result == null) {
-                                throw new ExceptionGETL('Closure does not indicate the result of processing the file in property "result"!')
+                                throw new ExceptionFileListProcessing('Closure does not indicate the result of processing the file in property "result"!')
                             }
                             else if (element.result == FileProcessingElement.completeResult) {
                                 if (sourceElement.man.story != null) {
@@ -489,7 +488,7 @@ Message: $msg
                             }
 
                             sourceElement.man.removeLocalFile(filename)
-                            if (removeFiles && element.result != FileProcessingElement.skipResult) {
+                            if (delFile && BoolUtils.IsValue(element.removeFile, element.result != element.skipResult)) {
                                 Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
                                     man.removeFile(filename)
                                 }
@@ -512,6 +511,7 @@ Message: $msg
                 if (src.story != null) {
                     src.story.doneWrite()
                     src.story.closeWrite()
+                    src.story.currentJDBCConnection.connected = false
                 }
                 DisconnectFrom([src])
             }

@@ -512,6 +512,42 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(countRows, bulkTable.countRow())
     }
 
+    protected void copyWithBulkLoad() {
+        if (!con.driver.isOperation(Driver.Operation.BULKLOAD)) return
+
+        def bulkTable = new TableDataset(connection: con)
+        bulkTable.with {
+            tableName = 'getl_test_copy_bulk'
+            field('id') { type = integerFieldType }
+            field('name') { type = stringFieldType; length = 50 }
+            field('dt') { type = datetimeFieldType }
+            field('num') { type = numericFieldType; length = 12; precision = 2 }
+            field('bin') { type = blobFieldType; length = 50 }
+            create(ifNotExists: true)
+            truncate(truncate: [con.driver.isOperation(Driver.Operation.DELETE)?false:true])
+        }
+
+        def file = TFS.dataset()
+        file.field = bulkTable.field
+        file.escaped = true
+        def countFiles = new Flow().writeTo(dest: file) { updater ->
+            updater([:])
+            (2..countRows).each { num ->
+                Map r = GenerationUtils.GenerateRowValues(file.field, num)
+                r.id1 = num
+                r.name = """'name'\t"$num"\ntest|/,;|\\"""
+
+                updater(r)
+            }
+        }
+        assertEquals(countRows, countFiles)
+
+        def countCopy = new Flow().copy(source: file, dest: bulkTable, bulkLoad: true)
+        assertEquals(countRows, countCopy)
+        assertEquals(countRows, bulkTable.countRow())
+        bulkTable.drop()
+    }
+
     protected void runScript() {
         def table_name = table.fullNameDataset()
         def id1Name = table.sqlObjectName('ID1')
@@ -561,6 +597,7 @@ END FOR;
             runCommandUpdate()
         }
         bulkLoad(table)
+        copyWithBulkLoad()
         retrieveFields()
         runScript()
         deleteData()

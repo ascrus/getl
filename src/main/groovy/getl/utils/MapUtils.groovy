@@ -970,4 +970,12 @@ class MapUtils {
 		def vars = cfg.parse(new ClosureScript(closure: cl))
 		return ConfigObject2Map(vars)
 	}
+
+	/**
+	 * Generate new vars object
+	 * @param value source map
+	 */
+	static Map UnmodifiableMap(Map value) {
+		return Collections.unmodifiableMap(value)
+	}
 }

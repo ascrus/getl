@@ -402,7 +402,7 @@ class FileCopier extends FileListProcessing {
 
         long fileSize = 0
 
-        def story = src.story?.cloneDatasetConnection() as TableDataset
+        def story = currentStory?.cloneDatasetConnection() as TableDataset
         if (story != null) story.openWrite()
         try {
             files.eachRow { infile ->
@@ -473,6 +473,7 @@ class FileCopier extends FileListProcessing {
             if (story != null) {
                 story.doneWrite()
                 story.closeWrite()
+                story.currentJDBCConnection.connected = false
             }
 
             files.currentJDBCConnection.connected = false

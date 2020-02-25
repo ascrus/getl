@@ -448,7 +448,7 @@ class VerticaDriver extends JDBCDriver {
 		csvFile.header = true
 		csvFile.escaped = (csvFile.field.find { it.type == Field.blobFieldType && source.fieldByName(it.name) != null } != null)
 		csvFile.codePage = 'UTF-8'
-		csvFile.nullAsValue = '\u000C'
+		csvFile.nullAsValue = '\\u00B6'
 		csvFile.fieldDelimiter = ','
 		csvFile.rowDelimiter = '\n'
 		csvFile.quoteStr = '"'

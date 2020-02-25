@@ -103,7 +103,7 @@ LIMIT 1'''
                     FileUtils.ValidPath(path)
                     new File(path).deleteOnExit()
                     escaped = false
-                    nullAsValue = '\u000C'
+                    nullAsValue = '\\u00B6'
                     fieldDelimiter = ','
                     quoteStr = '"'
                     rowDelimiter = '\n'

@@ -37,8 +37,11 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class FileProcessingElement {
     static enum ResultType  { COMPLETE, ERROR, SKIP }
+    /** File processed successfully */
     static public final ResultType completeResult = ResultType.COMPLETE
+    /** File Processing Error */
     static public final ResultType errorResult = ResultType.ERROR
+    /** No file processing required */
     static public final ResultType skipResult = ResultType.SKIP
 
     FileProcessingElement(FileProcessing.ListPoolElement sourceElement,
@@ -83,6 +86,9 @@ class FileProcessingElement {
 
     /** Processing result */
     public ResultType result
+
+    /** File deletion required (if the option to delete source files is enabled) */
+    public Boolean removeFile
 
     /** Error file name */
     public String errorFileName
