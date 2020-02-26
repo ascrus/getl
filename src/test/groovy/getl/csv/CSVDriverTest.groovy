@@ -85,18 +85,27 @@ class CSVDriverTest extends getl.test.GetlTest {
             return row
         }
 
-        new Flow().writeTo(dest: csv, dest_append: true) { updater ->
-            (1..100).each { id ->
-                updater(generate_row(id))
+        if (!csv.isGzFile) {
+            new Flow().writeTo(dest: csv, dest_append: true) { updater ->
+                (1..100).each { id ->
+                    updater(generate_row(id))
+                }
+            }
+            assertEquals(100, csv.writeRows)
+            new Flow().writeTo(dest: csv, dest_append: true) { updater ->
+                (101..200).each { id ->
+                    updater(generate_row(id))
+                }
+            }
+            assertEquals(100, csv.writeRows)
+        }
+        else {
+            new Flow().writeTo(dest: csv, dest_append: false) { updater ->
+                (1..200).each { id ->
+                    updater(generate_row(id))
+                }
             }
         }
-        assertEquals(100, csv.writeRows)
-        new Flow().writeTo(dest: csv, dest_append: true) { updater ->
-            (101..200).each { id ->
-                updater(generate_row(id))
-            }
-        }
-        assertEquals(100, csv.writeRows)
 
         def csvCountRows = 0
         csv.eachRow { Map row ->
@@ -243,7 +252,7 @@ class CSVDriverTest extends getl.test.GetlTest {
     void testEscapeCsv() {
         def con = new CSVConnection(conParams +
                 [escaped: true, header: true, isGzFile: false, nullAsValue: '<NULL>', constraintsCheck: true])
-        def ds = new CSVDataset(connection: con, fileName: 'test.escape.csv')
+        def ds = new CSVDataset(connection: con, fileName: 'test.escape')
         ds.field << new Field(name: 'id', type: Field.Type.INTEGER, isKey: true)
         ds.field << new Field(name: 'name', isNull: false)
         ds.field << new Field(name: 'value', type: Field.Type.INTEGER)
@@ -590,6 +599,32 @@ class CSVDriverTest extends getl.test.GetlTest {
                 shouldFail { con.config = 'unknownPresetMode' }
                 shouldFail { file.presetMode = 'unknownPresetMode' }
             }
+        }
+    }
+
+    @Test
+    void testAppendInThreads() {
+        Getl.Dsl(this) {
+            csvTemp('test_append_threads', true) {
+                append = true
+                header = true
+                field('num') { type = integerFieldType }
+            }
+
+            thread {
+                useList ((1..5).toList())
+                countProc = 3
+                run { elem ->
+                    rowsTo(csvTemp('test_append_threads')) {
+                        writeRow { add ->
+                            (1..1000).each {
+                                add num: counter.nextCount()
+                            }
+                        }
+                    }
+                }
+            }
+            assertEquals(1000 * 5, csvTemp('test_append_threads').countRow())
         }
     }
 }

@@ -40,8 +40,9 @@ class TFSDataset extends CSVDataset {
 	TFSDataset () {
 		super()
 		manualSchema = true
-//		connection = TFS.storage
-		if (fileName == null) fileName = FileUtils.UniqueFileName()
+		isTemporaryFile = true
+		if (fileName == null)
+			fileName = FileUtils.UniqueFileName()
 	}
 
 	@Override

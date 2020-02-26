@@ -330,11 +330,11 @@ abstract class FileListProcessing {
                     break
                 }
                 catch (Exception e) {
-                    if (retry > attempts) {
-                        Logs.Severe("Unable to connect to \"$man\"")
+                    if (retry > attempts || man.connected) {
+                        Logs.Severe("Unable to connect to \"$man\", error: ${e.message}")
                         throw e
                     }
-                    Logs.Warning("Unable to connect to \"$man\", attemp $retry of $attempts")
+                    Logs.Warning("Unable to connect to \"$man\", attemp $retry of $attempts, error: ${e.message}")
                     sleep(time * 1000)
 
                     retry++
@@ -512,9 +512,12 @@ abstract class FileListProcessing {
         cacheTable = null
         currentStory = null
 
+        if (tmpProcessFiles != null)
+            tmpProcessFiles.drop(ifExists: true)
         tmpConnection?.connected = false
         tmpConnection = null
         tmpProcessFiles = null
+
         if (tmpPath != null)
             FileUtils.DeleteFolder(tmpPath, true, true)
         tmpPath = null
@@ -595,17 +598,19 @@ abstract class FileListProcessing {
             if (cacheTable.exists) {
                 def foundRows = cacheTable.countRow()
 
-                if (foundRows > 0 && !source.story.exists)
-                    throw new ExceptionFileListProcessing('A history caching table was specified, but no history table was specified in the source!')
-
                 if (foundRows > 0) {
-                    source.story.currentJDBCConnection.transaction {
-                        def count = new Flow().copy(source: cacheTable, dest: source.story)
-                        if (count == 0)
-                            throw new ExceptionFileProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
+                    if (!isCachedMode) {
+                        if (!source.story.exists)
+                            throw new ExceptionFileListProcessing('A history caching table was specified, but no history table was specified in the source!')
 
-                        cacheTable.truncate(truncate: true)
+                        source.story.currentJDBCConnection.transaction {
+                            def count = new Flow().copy(source: cacheTable, dest: source.story)
+                            if (count == 0)
+                                throw new ExceptionFileProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
+                        }
                     }
+
+                    cacheTable.truncate(truncate: true)
                 }
             }
         }
@@ -654,6 +659,24 @@ abstract class FileListProcessing {
                 Command(source, sourceAfterScript, numberAttempts, timeAttempts, true, null, Config.vars)
     }
 
+    /** Save cached history table to story in source */
+    protected void saveCacheStory() {
+        if (cacheTable == null)
+            throw new ExceptionFileListProcessing('Error saving history cache because it is disabled!')
+
+        def foundRows = cacheTable.countRow()
+        if (foundRows > 0) {
+            source.story.currentJDBCConnection.transaction {
+                def count = new Flow().copy(source: cacheTable, dest: source.story)
+                if (foundRows != count)
+                    throw new ExceptionFileProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
+
+                Logs.Info("$count rows of file processing history saved to table ${source.story.fullTableName}")
+                cacheTable.truncate(truncate: true)
+            }
+        }
+    }
+
     /** Processing files */
     void process() {
         initProcess()
@@ -677,21 +700,22 @@ abstract class FileListProcessing {
 
                 try {
                     processFiles()
+                    if (isCachedMode) {
+                        saveCachedData()
+
+                        if (cacheTable != null)
+                            saveCacheStory()
+                    }
+                }
+                catch (Throwable e) {
+                    if (isCachedMode && cacheTable != null)
+                        cacheTable.truncate(truncate: true)
+
+                    throw e
                 }
                 finally {
-                    if (cacheTable != null) {
-                        def foundRows = cacheTable.countRow()
-                        if (foundRows > 0) {
-                            source.story.currentJDBCConnection.transaction {
-                                def count = new Flow().copy(source: cacheTable, dest: source.story)
-                                if (foundRows != count)
-                                    throw new ExceptionFileProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
-
-                                Logs.Info("$count rows of file processing history saved to table ${source.story.fullTableName}")
-                                cacheTable.truncate(truncate: true)
-                            }
-                        }
-                    }
+                    if (cacheTable != null && !isCachedMode)
+                        saveCacheStory()
                 }
 
                 if (removeEmptyDirs) delEmptyFolders()
@@ -769,4 +793,10 @@ abstract class FileListProcessing {
             man.changeDirectoryToRoot()
         }
     }
+
+    /** Use cache when processing files */
+    protected boolean getIsCachedMode() { return false }
+
+    /** Save cached data */
+    protected void saveCachedData() { }
 }

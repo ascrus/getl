@@ -4082,13 +4082,13 @@ Examples:
         useFileConnection(CSVTEMPDATASET, connection) as TFS
     }
 
-    /** Create CSV temporary dataset for dataset */
-    void createCsvTemp(String name, Dataset dataset) {
+    /* Create CSV temporary dataset for dataset */
+    /*void createCsvTemp(String name, Dataset dataset) {
         if (name == null) throw new ExceptionGETL('Name cannot be null!')
         if (dataset == null) throw new ExceptionGETL('Dataset cannot be null!')
         TFSDataset csvTemp = dataset.csvTempFile
         registerDatasetObject(csvTemp, name, true)
-    }
+    }*/
 
     /** Temporary CSV file */
     TFSDataset csvTemp(String name, Boolean registration,

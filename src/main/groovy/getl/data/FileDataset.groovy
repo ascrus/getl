@@ -43,6 +43,11 @@ class FileDataset extends Dataset {
 		methodParams.register('drop', ['validExist', 'portions'])
 	}
 
+	/** The file is temporary */
+	protected boolean isTemporaryFile = false
+	/** The file is temporary */
+	boolean getIsTemporaryFile() { isTemporaryFile }
+
 	/** Current file connection */
 	FileConnection getFileConnection() { connection as FileConnection }
 	
@@ -178,20 +183,10 @@ class FileDataset extends Dataset {
 	
 	@Override
 	void openWrite (Map procParams) {
-		sysParams.deleteOnEmpty = BoolUtils.IsValue(procParams.deleteOnEmpty, deleteOnEmpty)
-		sysParams.append = procParams.append
+		/*sysParams.deleteOnEmpty = BoolUtils.IsValue(procParams.deleteOnEmpty, deleteOnEmpty)
+		sysParams.append = procParams.append*/
 		writedFiles.clear()
 		super.openWrite(procParams)
-	}
-	
-	@Override
-	void closeWrite () {
-		super.closeWrite()
-		if (isWriteError) {
-			(connection.driver as FileDriver).RemoveTempFiles(this)
-		} else {
-			(connection.driver as FileDriver).FixTempFiles(this)
-		}
 	}
 	
 	@Override

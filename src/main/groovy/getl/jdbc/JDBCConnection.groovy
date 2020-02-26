@@ -615,7 +615,7 @@ class JDBCConnection extends Connection {
 		if (!listTableSavedData.isEmpty()) Logs.Fine("  save data from tables ${listTableSavedData.toString()} to resource files")
 		Logs.Fine("  using filter \"${p.dbName?:'*'}\".\"${p.schemaName?:'*'}\".\"${p.tableName?:'*'}\"${(!p.types.isEmpty())?(' with types: ' + p.types.toString()):''}${(!listTableExcluded.isEmpty())?(' excluded: ' + listTableExcluded.toString()):''}")
 		if (p.tableMask != null) Logs.Fine("    processing the tables by masked: $p.tableMask")
-		if (useResource)
+		if (useResource && resourceDir != null)
 			Logs.Fine("  using resource files path \"${resourceDir?.path}\"" + ((resourceRoot != null)?" with root path \"$resourceRoot\"":''))
 
 		StringBuilder sb = new StringBuilder()

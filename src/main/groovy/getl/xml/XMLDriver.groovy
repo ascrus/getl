@@ -61,7 +61,7 @@ class XMLDriver extends FileDriver {
 	/**
 	 * Generate attribute read code
 	 */
-	private static void generateAttrRead (Dataset dataset, Closure<Boolean> initAttr, StringBuilder sb) {
+	private void generateAttrRead (Dataset dataset, Closure<Boolean> initAttr, StringBuilder sb) {
 		List<Field> attrs = (dataset.params.attributeField != null)?(dataset.params.attributeField as List<Field>):[]
 		if (attrs.isEmpty()) return
 		
@@ -86,7 +86,7 @@ class XMLDriver extends FileDriver {
 	}
 
 	/** Generate the default alias for field */
-	static String field2alias(Field field, Integer defaultAccessMethod) {
+	String field2alias(Field field, Integer defaultAccessMethod) {
 		if (field.alias != null && !(field.alias in ['@', '#'])) return field.alias
 		if (field.alias == '@')
 			defaultAccessMethod = XMLDataset.DEFAULT_ATTRIBUTE_ACCESS
@@ -129,7 +129,7 @@ class XMLDriver extends FileDriver {
 	/**
 	 * Read attributes and rows from dataset
 	 */
-	private static void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure<Boolean> initAttr, Closure code) {
+	private void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure<Boolean> initAttr, Closure code) {
 		def xml = dataset as XMLDataset
 		StringBuilder sb = new StringBuilder()
 		generateAttrRead(xml, initAttr, sb)
@@ -167,7 +167,7 @@ class XMLDriver extends FileDriver {
 	/**
 	 * Read only attributes from dataset
 	 */
-	static void readAttrs (Dataset dataset, Map params) {
+	void readAttrs (Dataset dataset, Map params) {
 		params = params?:[:]
 		def data = readData(dataset, params)
 		
@@ -181,7 +181,7 @@ class XMLDriver extends FileDriver {
 	/**
 	 * Read XML data from file
 	 */
-	static def readData (Dataset dataset, Map params) {
+	def readData (Dataset dataset, Map params) {
 		XMLDataset xmlDataset = dataset as XMLDataset
 		def xml = new XmlParser()
 
@@ -204,7 +204,7 @@ class XMLDriver extends FileDriver {
 	/**
 	 * Read dataset attribute and rows
 	 */
-	private static void doRead (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	private void doRead (Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
 		if (dataset.params.rootNode == null) throw new ExceptionGETL("Required \"rootNode\" parameter with dataset")
 		String rootNode = dataset.params.rootNode

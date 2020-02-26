@@ -1023,6 +1023,11 @@ class Dataset implements Cloneable {
 		connection.driver.openWrite(this, p, prepareFields)
 		status = Dataset.Status.WRITE
 	}
+
+	/** Open dataset from writing rows with synchronized */
+	void openWriteSynch(Map procParams = [:]) {
+		openWrite(procParams)
+	}
 	
 	/**
 	 * Write row
@@ -1078,21 +1083,30 @@ class Dataset implements Cloneable {
 	 * Finalization code after write to dataset
 	 */
 	void doneWrite () {
-		if (status != Dataset.Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
+		if (status != Dataset.Status.WRITE)
+			throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
+
 		connection.driver.doneWrite(this)
 	}
 
 	/**
 	 * Close dataset
 	 */
-	void closeWrite () {
+	void closeWrite() {
 		if (status != Dataset.Status.WRITE) return
 		try {
 			connection.driver.closeWrite(this)
 		}
 		finally {
 			status = Dataset.Status.AVAIBLE
+			connection.driver.cleanWrite(this)
+			driver_params = null
 		}
+	}
+
+	/** Close dataset with synchronized */
+	void closeWriteSynch() {
+		closeWrite()
 	}
 	
 	/**

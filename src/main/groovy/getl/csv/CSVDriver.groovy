@@ -36,6 +36,7 @@ import getl.csv.proc.CSVParseEscapeString
 import getl.data.opts.FileWriteOpts
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
+import org.codehaus.groovy.runtime.StringBufferWriter
 
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -532,6 +533,7 @@ class CSVDriver extends FileDriver {
 		CSVDefaultFileEncoder encoder
 		CsvPreference pref
 		String[] header
+		String headerStr
 		CellProcessor[] cp
 		Map params
 		boolean isHeader = false
@@ -566,7 +568,7 @@ class CSVDriver extends FileDriver {
 		wp.formatOutput = csv_ds.formatOutput
 
 		ReadParams p = readParamDataset(csv_ds, params)
-		boolean isAppend = p.params.isAppend
+		boolean isAppend = BoolUtils.IsValue(p.params.isAppend)
 		boolean isValid = BoolUtils.IsValue([params.isValid, csv_ds.constraintsCheck], false)
 		boolean escaped = BoolUtils.IsValue(params.escaped, csv_ds.escaped)
 		String formatDate = ListUtils.NotNullValue([params.formatDate, csv_ds.formatDate])
@@ -614,8 +616,8 @@ class CSVDriver extends FileDriver {
 
         csv_ds.params.writeCharacters = null
 		
-		File csvfile = new File(p.path)
-		boolean isExistsFile = csvfile.exists()
+//		File csvfile = new File(p.path)
+//		boolean isExistsFile = csvfile.exists()
 		
 		wp.bufWriter = getFileWriter(csv_ds, wp.params, wp.portion)
 		wp.opt = (dataset as FileDataset).writedFiles[(wp.portion?:1) - 1]
@@ -625,9 +627,34 @@ class CSVDriver extends FileDriver {
 		wp.pref = new CsvPreference.Builder(p.quoteStr as char, (p.fieldDelimiter) as int, p.rowDelimiter as String).useQuoteMode(p.qMode as QuoteMode).useEncoder(wp.encoder).build()
 		wp.writer = new CsvMapWriter(wp.bufWriter, wp.pref, false)
 
-		if ((!isAppend || !isExistsFile || wp.splitSize != null || wp.onSplitFile != null) && wp.isHeader) {
-			wp.writer.writeHeader(header)
+		if (wp.isHeader) {
+			if (!isAppend) {
+				wp.writer.writeHeader(header)
+			}
+			else {
+				def sb = new StringBuffer()
+				def strWriter = new StringBufferWriter(sb)
+				try {
+					def headerWriter = new CsvMapWriter(strWriter, wp.pref, false)
+					headerWriter.writeHeader(header)
+				}
+				finally {
+					strWriter.close()
+				}
+				wp.headerStr = sb.toString()
+			}
 		}
+	}
+
+	@Override
+	protected boolean fileHeader(FileDataset dataset) {
+		return (dataset.driver_params as WriterParams).isHeader
+	}
+
+	@Override
+	protected void saveHeaderToFile(FileDataset dataset, File file) {
+		def wp = (dataset.driver_params as WriterParams)
+		file.write(wp.headerStr, dataset.codePage, false)
 	}
 	
 	/**
@@ -704,7 +731,7 @@ class CSVDriver extends FileDriver {
 	@CompileStatic
 	@Override
 	void write(Dataset dataset, Map row) {
-		WriterParams wp = (WriterParams)dataset.driver_params
+		WriterParams wp = (dataset.driver_params as WriterParams)
 		wp.rows << row
 		wp.current++
 		
@@ -713,13 +740,13 @@ class CSVDriver extends FileDriver {
 
 	@Override
 	void doneWrite (Dataset dataset) {
-		def wp = dataset.driver_params as WriterParams
+		def wp = (dataset.driver_params as WriterParams)
 		if (!wp.rows.isEmpty()) writeRows(dataset, wp)
 	}
 
 	@Override
-	void closeWrite (Dataset dataset) {
-		def wp = dataset.driver_params as WriterParams
+	void closeWrite(Dataset dataset) {
+		def wp = (dataset.driver_params as WriterParams)
 		
 		try {
 			wp.writer.close()
@@ -729,13 +756,17 @@ class CSVDriver extends FileDriver {
 			
 			dataset.params.countWriteCharacters = wp.countCharacters
 			dataset.params.countWritePortions = wp.portion
-			dataset.driver_params = null
 		}
+
+		super.closeWrite(dataset)
 	}
-	
-	protected static long readLinesCount (CSVDataset dataset) {
-		if (!dataset.existsFile()) throw new ExceptionGETL("File \"${dataset.fullFileName()}\" not found")
-		if (!(dataset.rowDelimiter in ['\n', '\r\n'])) throw new ExceptionGETL('Allow CSV file only standart row delimiter')
+
+	protected static long readLinesCount(CSVDataset dataset) {
+		if (!dataset.existsFile())
+			throw new ExceptionGETL("File \"${dataset.fullFileName()}\" not found")
+
+		if (!(dataset.rowDelimiter in ['\n', '\r\n']))
+			throw new ExceptionGETL('Allow CSV file only standart row delimiter')
 		
 		BufferedReader reader
 		if (dataset.isGzFile) {

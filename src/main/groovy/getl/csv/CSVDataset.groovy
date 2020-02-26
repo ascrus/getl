@@ -299,20 +299,29 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Count rows of file
 	 */
-	long readRowCount (Map params) {
+	long readRowCount(Map params) {
 		long res = 0
 		eachRow((params?:[:]) + [readAsText: true]) {
 			res++
 		}
 		
-		res
+		return res
+	}
+
+	long countRow(Map params) {
+		long res = 0
+		eachRow(params) {
+			res++
+		}
+
+		return res
 	}
 	
 	/**
 	 * File lines count 
 	 */
-	long readLinesCount () {
-		currentCsvConnection.currentCSVDriver.readLinesCount(this)
+	long readLinesCount() {
+		return currentCsvConnection.currentCSVDriver.readLinesCount(this)
 	}
 
 	/**

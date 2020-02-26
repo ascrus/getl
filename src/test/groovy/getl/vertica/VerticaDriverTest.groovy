@@ -97,16 +97,17 @@ LIMIT 1'''
                 create()
             }
 
-            def csv = csvTemp {
+            def dt = new java.sql.Timestamp(DateUtils.ClearTime(DateUtils.Now()).time)
+            def rows = []
+            rows << [id: 1, name: 'one', dt: dt, value: 1, description: null]
+            rows << [id: 2, name: 'two', dt: dt, value: null, description: 'desc 2']
+            rows << [id: 3, name: 'three', dt: null, value: 3, description: 'desc 3']
+
+            def csv = csvTempWithDataset(vertable) {
                 useConnection csvTempConnection {
                     path = TFS.systemPath + '/bulkload'
                     FileUtils.ValidPath(path)
                     new File(path).deleteOnExit()
-                    escaped = false
-                    nullAsValue = '\\u00B6'
-                    fieldDelimiter = ','
-                    quoteStr = '"'
-                    rowDelimiter = '\n'
                 }
                 fileName = 'vertica.bulkload'
                 extension = 'csv'
@@ -118,9 +119,7 @@ LIMIT 1'''
 
                 rowsTo {
                     writeRow { add ->
-                        add id: 1, name: 'one', dt: DateUtils.Now(), value: 1
-                        add id: 2, name: 'two', dt: DateUtils.Now(), description: 'desc 2'
-                        add id: 3, name: 'three', value: 3, description: ''
+                        rows.each { add it }
                     }
                 }
                 assertEquals(3, writeRows)
@@ -228,8 +227,13 @@ LIMIT 1'''
             assertEquals(3, vertable.countRow())
 
             vertable.with {
-                readOpts { tablesample = 100 }
                 assertEquals(3, countRow())
+
+                def i = 0
+                eachRow(order: ['id']) { row ->
+                    assertEquals(rows[i], row)
+                    i++
+                }
             }
 
             unregisterDataset('vertica:testbulkload')

@@ -111,7 +111,7 @@ abstract class FileDriver extends Driver {
 	 * @param dataset
 	 * @return
 	 */
-	static String fullFileNameDatasetWithoutGZ (Dataset dataset) {
+	String fullFileNameDatasetWithoutGZ(Dataset dataset) {
 		String fn = fileNameWithoutExtension(dataset)
 		if (fn == null) return null
 		def ds = dataset as FileDataset
@@ -123,20 +123,12 @@ abstract class FileDriver extends Driver {
 	}
 	
 	/**
-	 * Full file name
-	 * @param dataset
-	 * @return
-	 */
-	static String fullFileNameDataset(Dataset dataset) {
-		return fullFileNameDataset(dataset, null)
-	}
-
-	/**
 	 * Clear file extension by file name	
 	 * @param dataset
 	 * @return
 	 */
-	static String fileNameWithoutExtension(Dataset dataset) {
+	@SuppressWarnings("GrMethodMayBeStatic")
+	String fileNameWithoutExtension(Dataset dataset) {
 		def ds = dataset as FileDataset
 		def fn = ds.fileName
 		if (fn == null) return null
@@ -155,7 +147,7 @@ abstract class FileDriver extends Driver {
 	 * @param portion
 	 * @return
 	 */
-	static String fullFileNameDataset(Dataset dataset, Integer portion) {
+	String fullFileNameDataset(Dataset dataset, Integer portion = null) {
 		String fn = fileNameWithoutExtension(dataset)
 		if (fn == null) return null
 		def ds = dataset as FileDataset
@@ -184,7 +176,7 @@ abstract class FileDriver extends Driver {
 	 * @param isSplit
 	 * @return
 	 */
-	static String fileMaskDataset(Dataset dataset, boolean isSplit) {
+	String fileMaskDataset(Dataset dataset, boolean isSplit) {
 		String fn = fileNameWithoutExtension(dataset)
 
 		def ds = dataset as FileDataset
@@ -228,7 +220,7 @@ abstract class FileDriver extends Driver {
 	 * @param filePath
 	 * @return
 	 */
-	protected static boolean createPath(String filePath) {
+	protected static Boolean createPath(String filePath) {
 		return FileUtils.ValidFilePath(filePath)
 	}
 	
@@ -240,7 +232,7 @@ abstract class FileDriver extends Driver {
 	 * @return
 	 */
 	@CompileStatic
-	static protected Map getDatasetParams (FileDataset dataset, Map params, Integer portion = null) {
+	protected Map getDatasetParams (FileDataset dataset, Map params, Integer portion = null) {
 		def res = [:]
 		res.fn = fullFileNameDataset(dataset, portion)
 		res.isGzFile = dataset.isGzFile
@@ -248,7 +240,7 @@ abstract class FileDriver extends Driver {
 		res.isAppend = BoolUtils.IsValue(params.append, dataset.append)
 		res.autoSchema = BoolUtils.IsValue(params.autoSchema, dataset.autoSchema)
 		res.createPath = BoolUtils.IsValue(params.createPath, dataset.createPath)
-		res.deleteOnEmpty = BoolUtils.IsValue([params.deleteOnEmpty, dataset.deleteOnEmpty], null)
+		res.deleteOnEmpty = BoolUtils.IsValue(params.deleteOnEmpty, dataset.deleteOnEmpty)
 		
 		return res
 	}
@@ -261,12 +253,16 @@ abstract class FileDriver extends Driver {
 	 * @return
 	 */
 	@CompileStatic
-	static protected Reader getFileReader (FileDataset dataset, Map params, Integer portion = null) {
+	protected Reader getFileReader (FileDataset dataset, Map params, Integer portion = null) {
 		def wp = getDatasetParams(dataset, params, portion)
 		
 		def fn = wp.fn as String
-		boolean isGzFile = wp.isGzFile 
+		boolean isGzFile = BoolUtils.IsValue(wp.isGzFile)
+		boolean isAppend = BoolUtils.IsValue(wp.isAppend)
 		def codePage = wp.codePage as String
+
+		if (isAppend && isGzFile)
+			throw new ExceptionGETL("The append operation is not allowed for gzip file \"$fn\"!")
 		
 		def reader
 		InputStream input
@@ -295,31 +291,37 @@ abstract class FileDriver extends Driver {
 
 		if (BoolUtils.IsValue(params.avaibleAfterWrite) && (portion?:0) > 1) {
 			def opt = dataset.writedFiles[portion - 2]
-			FixTempFile(dataset, opt)
+			fixTempFile(dataset, opt)
 		}
 
-		def fn = "${wp.fn}.getltemp"
-		def writeOpt = new FileWriteOpts()
-		writeOpt.with {
-			fileName = wp.fn
-			tempFileName = fn
-			partNumber = portion
-		}
-		dataset.writedFiles << writeOpt
-
-		if (wp.createPath) createPath(fn)
-		
 		boolean isGzFile = BoolUtils.IsValue(wp.isGzFile)
 		def codePage = wp.codePage as String
 		def isAppend = BoolUtils.IsValue(wp.isAppend)
+		def removeEmptyFile = BoolUtils.IsValue(wp.deleteOnEmpty)
 
+		def fn = ((!dataset.isTemporaryFile)?"${wp.fn}.getltemp":(wp.fn as String)) as String
+		if (isAppend) fn += ".${FileUtils.UniqueFileName()}"
+		def writeOpt = new FileWriteOpts()
+		writeOpt.with {
+			fileName = (!isAppend)?(wp.fn as String):(wp.fn as String).intern()
+			tempFileName = fn
+			partNumber = portion
+			append = isAppend
+			deleteOnEmpty = removeEmptyFile
+			encode = codePage
+		}
+		dataset.writedFiles << writeOpt
+
+		if (BoolUtils.IsValue(wp.createPath))
+			createPath(fn)
+		
 		def writer
 		OutputStream output
 		def file = new File(fn)
-        def dsFile = new File(dataset.fullFileName())
-        if (isAppend && dsFile.exists()) {
+        /*def dsFile = new File(dataset.fullFileName())
+        if (!dataset.isTemporaryFile && isAppend && dsFile.exists()) {
             FileUtils.CopyToFile(dataset.fullFileName(), fn)
-        }
+        }*/
 		
 		if (isGzFile) {
 			output = new GZIPOutputStream(new FileOutputStream(file, isAppend))
@@ -348,21 +350,22 @@ abstract class FileDriver extends Driver {
 	 * @param isDelete
 	 */
 	@CompileStatic
-	static void FixTempFiles(FileDataset dataset) {
+	void fixTempFiles(FileDataset dataset) {
+		def deleteOnEmpty = dataset.writedFiles[0].deleteOnEmpty
 		try {
 			dataset.writedFiles.each { opt ->
-				FixTempFile(dataset, opt)
+				fixTempFile(dataset, opt)
 			}
 		}
 		catch (Exception e) {
-			RemoveTempFiles(dataset)
+			removeTempFiles(dataset)
 			throw e
 		}
 
-		if (BoolUtils.IsValue(dataset.sysParams.deleteOnEmpty))
+		if (deleteOnEmpty)
 			dataset.writedFiles.removeAll { opt -> opt.countRows == 0 }
 
-		if (BoolUtils.IsValue(dataset.sysParams.deleteOnEmpty) && dataset.autoSchema && dataset.writeRows == 0) {
+		if (deleteOnEmpty && dataset.autoSchema && dataset.writeRows == 0) {
 			def s = new File(dataset.fullFileSchemaName())
 			if (s.exists()) s.delete()
 		}
@@ -374,25 +377,55 @@ abstract class FileDriver extends Driver {
 	 * @param isDelete
 	 */
 	@CompileStatic
-	static void FixTempFile(FileDataset dataset, FileWriteOpts opt) {
+	void fixTempFile(FileDataset dataset, FileWriteOpts opt) {
 		if (opt.readyFile) return
 
 		def f = new File(opt.fileName as String)
 		def t = new File(opt.tempFileName as String)
 
-		if (f.exists()) {
-			if (!f.delete())
-				throw new ExceptionGETL("Failed to remove file \"${opt.fileName}\"!")
-		}
+		if (opt.fileName != opt.tempFileName) {
+			if (!opt.append) {
+				def isExistsFile = f.exists()
+				if (isExistsFile && !f.delete())
+					throw new ExceptionGETL("Failed to remove file \"${opt.fileName}\"!")
 
-		if (BoolUtils.IsValue(dataset.sysParams.deleteOnEmpty) && opt.countRows == 0) {
-			if (!t.delete())
-				Logs.Severe("Failed to remove file \"${opt.tempFileName}\"!")
-		}
-		else {
-			if (!t.renameTo(f)) {
-				throw new ExceptionGETL("Failed rename temp file \"${opt.tempFileName}\" to \"${opt.fileName}\"!")
+				if (BoolUtils.IsValue(opt.deleteOnEmpty) && opt.countRows == 0) {
+					if (!t.delete())
+						Logs.Severe("Failed to remove file \"${opt.tempFileName}\"!")
+				} else if (!t.renameTo(f)) {
+					throw new ExceptionGETL("Failed rename temp file \"${opt.tempFileName}\" to \"${opt.fileName}\"!")
+				}
 			}
+			else {
+				synchronized (opt.fileName.intern()) {
+					def isExistsFile = f.exists()
+
+					def isHeader = fileHeader(dataset)
+
+					if (!isExistsFile && !isHeader) {
+						if (!t.renameTo(f))
+							throw new ExceptionGETL("Failed rename temp file \"${opt.tempFileName}\" to \"${opt.fileName}\"!")
+					} else {
+						if (!isExistsFile)
+							saveHeaderToFile(dataset, f)
+
+						def tempData = t.newInputStream()
+						try {
+							f.append(tempData)
+						}
+						finally {
+							tempData.close()
+						}
+
+						if (!t.delete())
+							Logs.Severe("Failed to remove file \"${opt.tempFileName}\"!")
+					}
+				}
+			}
+		}
+		else if (BoolUtils.IsValue(opt.deleteOnEmpty) && opt.countRows == 0) {
+			if (!f.delete())
+				Logs.Severe("Failed to remove file \"${opt.fileName}\"!")
 		}
 
 		opt.tempFileName = null
@@ -403,13 +436,16 @@ abstract class FileDriver extends Driver {
 	 * Remove temporary files
 	 * @param dataset
 	 */
+	@SuppressWarnings("GrMethodMayBeStatic")
 	@CompileStatic
-	static void RemoveTempFiles(FileDataset dataset) {
+	void removeTempFiles(FileDataset dataset) {
 		dataset.writedFiles.each { opt ->
-			if (opt.readyFile) return
-
-			if (!FileUtils.DeleteFile(opt.tempFileName))
-				Logs.Severe("Failed to remove file \"${opt.tempFileName}\"!")
+			if (!opt.readyFile && opt.fileName != opt.tempFileName) {
+				if (!FileUtils.DeleteFile(opt.tempFileName))
+					Logs.Severe("Failed to remove file \"${opt.tempFileName}\"!")
+			}
+			opt.fileName = null
+			opt.tempFileName = null
 		}
 
 		dataset.writedFiles.clear()
@@ -417,6 +453,15 @@ abstract class FileDriver extends Driver {
 	
 	@Override
 	void doneWrite (Dataset dataset) {	}
+
+	@Override
+	void closeWrite(Dataset dataset) {
+		if (dataset.isWriteError) {
+			removeTempFiles(dataset as FileDataset)
+		} else {
+			fixTempFiles(dataset as FileDataset)
+		}
+	}
 	
 	@Override
 	long executeCommand (String command, Map params) {
@@ -478,4 +523,18 @@ abstract class FileDriver extends Driver {
 	boolean isConnected() {
 		throw new ExceptionGETL('Not support this features!')
 	}
+
+	/**
+	 * Required writing header to file
+	 * @param dataset dataset object
+	 * @return header
+	 */
+	protected boolean fileHeader(FileDataset dataset) { return false }
+
+	/**
+	 * Save header to file
+	 * @param dataset dataset object
+	 * @param file file descriptor
+	 */
+	protected void saveHeaderToFile(FileDataset dataset, File file) { }
 }

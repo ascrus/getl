@@ -35,6 +35,7 @@ import getl.proc.sub.FileListProcessing
 import getl.proc.sub.FileListProcessingBuild
 import getl.proc.sub.FileProcessingBuild
 import getl.proc.sub.FileProcessingElement
+import getl.tfs.TDSTable
 import getl.utils.BoolUtils
 import getl.utils.DateUtils
 import getl.utils.FileUtils
@@ -99,12 +100,22 @@ class FileProcessing extends FileListProcessing {
     /** Storage for error files */
     void setStorageErrorFiles(Manager value) { params.storageErrorFiles = value }
 
+    /** File processing code */
     Closure getOnProcessFile() { params.onProcessFile as Closure }
+    /** File processing code */
     void setOnProcessFile(Closure value) { params.onProcessFile = value }
+    /** File processing code */
     void processFile(@ClosureParams(value = SimpleType, options = ['getl.proc.sub.FileProcessingElement'])
                              Closure cl) {
         setOnProcessFile(cl)
     }
+
+    /** Code to save cached data of processed files */
+    Closure getOnSaveCachedData() { params.saveCachedData as Closure }
+    /** Code to save cached data of processed files */
+    void setOnSaveCachedData(Closure value) { params.saveCachedData = value }
+    /** Code to save cached data of processed files */
+    void saveCachedData(Closure cl) { setOnSaveCachedData(cl) }
 
     /** Counter error files */
     final def counterErrors = new SynchronizeObject()
@@ -115,6 +126,9 @@ class FileProcessing extends FileListProcessing {
     final def counterSkips = new SynchronizeObject()
     /** Count of skipped files */
     Long getCountSkips() { counterSkips.count }
+
+    /** Files for removed (using with cached mode) */
+    private TDSTable delFilesTable
 
     @Override
     protected void initProcess() {
@@ -143,11 +157,25 @@ class FileProcessing extends FileListProcessing {
             storageErrorFiles.localDirectory = tmpPath
             ConnectTo([storageErrorFiles], numberAttempts, timeAttempts)
         }
+
+        if (isCachedMode && removeFiles) {
+            delFilesTable = tmpConnection.dataset()
+            delFilesTable.with {
+                field('filepath') { length = 1024; isKey = true }
+                field('filename') { length = 1024; isKey = true }
+                create()
+            }
+        }
     }
 
     @Override
     protected void cleanProperties() {
         super.cleanProperties()
+
+        if (delFilesTable != null) {
+            delFilesTable.drop(ifExists: true)
+            delFilesTable = null
+        }
 
         if (storageProcessedFiles != null) {
             DisconnectFrom([storageProcessedFiles])
@@ -175,6 +203,9 @@ class FileProcessing extends FileListProcessing {
 
         if (!order.isEmpty())
             Logs.Fine("  files will be processed in the following sort order: $order")
+
+        if (isCachedMode)
+            Logs.Fine("  file processing cache mode enabled")
     }
 
     @Override
@@ -208,6 +239,7 @@ class FileProcessing extends FileListProcessing {
     /** Source element */
     class ListPoolElement {
         Manager man
+        TDSTable delTable
         boolean isFree = true
         String curPath = ''
 
@@ -315,8 +347,15 @@ class FileProcessing extends FileListProcessing {
                 src.story = currentStory?.cloneDatasetConnection() as TableDataset
                 src.story.openWrite(operation: 'INSERT')
             }
-
             ConnectTo([src], numberAttempts, timeAttempts)
+
+            def element = new ListPoolElement(man: src)
+            if (delFilesTable != null) {
+                def delTable = delFilesTable.cloneDatasetConnection()
+                delTable.openWrite()
+                element.delTable = delTable
+            }
+
             sourceList << new ListPoolElement(man: src)
         }
 
@@ -383,6 +422,7 @@ class FileProcessing extends FileListProcessing {
                         def processedElement = FreePoolElement(processedList)
                         def errorElement = FreePoolElement(errorList)
                         def delFile = removeFiles
+                        def delTable = sourceElement.delTable
 
                         try {
                             def filepath = file.get('filepath') as String
@@ -489,8 +529,13 @@ Message: $msg
 
                             sourceElement.man.removeLocalFile(filename)
                             if (delFile && BoolUtils.IsValue(element.removeFile, element.result != element.skipResult)) {
-                                Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
-                                    man.removeFile(filename)
+                                if (delTable == null || element.result != element.completeResult) {
+                                    Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
+                                        man.removeFile(filename)
+                                    }
+                                }
+                                else {
+                                    delTable.write([filepath: filepath, filename: filename])
                                 }
                             }
                         }
@@ -509,10 +554,21 @@ Message: $msg
             sourceList.each { element ->
                 def src = element.man
                 if (src.story != null) {
-                    src.story.doneWrite()
-                    src.story.closeWrite()
-                    src.story.currentJDBCConnection.connected = false
+                    src.story.with {
+                        doneWrite()
+                        closeWrite()
+                        currentJDBCConnection.connected = false
+                    }
                 }
+
+                if (element.delTable != null) {
+                    element.delTable.with {
+                        doneWrite()
+                        closeWrite()
+                        currentJDBCConnection.connected = false
+                    }
+                }
+
                 DisconnectFrom([src])
             }
             sourceList.clear()
@@ -530,5 +586,27 @@ Message: $msg
             errorList.clear()
         }
         Logs.Info("Successfully processed $countFiles files, detected errors in $countErrors files, skipped $countSkips files")
+    }
+
+    /** Use cache when processing files */
+    @Override
+    protected boolean getIsCachedMode() { (onSaveCachedData != null) }
+
+    /** Save cached data */
+    @Override
+    protected void saveCachedData() {
+        if (countFiles > 0) onSaveCachedData.call(this)
+
+        if (delFilesTable != null) {
+            def curPath = ''
+            delFilesTable.eachRow(order: ['filepath', 'filename']) { file ->
+                def filepath = file.filepath
+                if (filepath != curPath) {
+                    source.changeDirectory(filepath)
+                    curPath = filepath
+                }
+                source.removeFile(file.filename)
+            }
+        }
     }
 }

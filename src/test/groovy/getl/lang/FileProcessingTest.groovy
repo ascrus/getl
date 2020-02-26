@@ -100,6 +100,21 @@ class FileProcessingTest extends GetlTest {
                     }
                 }
             }
+
+            embeddedTable('h2:sales_json', true) {
+                tableName = 'sales_json'
+                field = embeddedTable('h2:sales').field
+                clearKeys()
+                create()
+            }
+
+            json('json:sales', true) {
+                field('id') { type = integerFieldType }
+                field('sale_date') { type = dateFieldType }
+                field('price_id') { type = integerFieldType }
+                field('count') { type = integerFieldType }
+                rootNode = '.'
+            }
         }
     }
 
@@ -136,12 +151,8 @@ class FileProcessingTest extends GetlTest {
                 if (this.debug) sqlHistoryFile = "${this.workPath}/h2-processing.error.{date}.sql"
             }
 
-            json('json:sales', true) {
-                field('id') { type = integerFieldType }
-                field('sale_date') { type = dateFieldType }
-                field('price_id') { type = integerFieldType }
-                field('count') { type = integerFieldType }
-                rootNode = '.'
+            csvTempWithDataset('#cache', embeddedTable('h2:sales_json')) {
+                writeOpts { batchSize = 1000; append = true }
             }
 
             def testProcessing = { boolean delFiles, boolean delSkip, boolean saveException ->
@@ -188,7 +199,15 @@ class FileProcessingTest extends GetlTest {
                             fileName = proc.file.path
                             this.assertEquals(count, rows().size())
                         }
+
+                        copyRows(json('json:sales'), csvTemp('#cache')) { writeSynch = true }
+
                         proc.result = proc.completeResult
+                    }
+
+                    saveCachedData {
+                        copyRows(csvTemp('#cache'), embeddedTable('h2:sales_json'))
+                        csvTemp('#cache').drop()
                     }
                 }
             }
@@ -198,27 +217,34 @@ class FileProcessingTest extends GetlTest {
             assertEquals(this.countDays, proc.countSkips)
             assertEquals(this.countDays * 3, proc.countErrors)
             assertEquals(proc.countFiles, embeddedTable('h2:story_file_processing').countRow())
+            assertEquals(40000, embeddedTable('h2:sales_json').countRow())
 
+            embeddedTable('h2:sales_json').truncate(truncate: true)
             proc = testProcessing(false, false, true)
             assertEquals(0, proc.countFiles)
             assertEquals(this.countDays, proc.countSkips)
             assertEquals(this.countDays * 3, proc.countErrors)
+            assertEquals(0, embeddedTable('h2:sales_json').countRow())
 
+            embeddedTable('h2:sales_json').truncate(truncate: true)
             sourceFiles.story = null
             proc = testProcessing(true, false, true)
             assertEquals(this.countDays * this.countFileInDay - this.countDays * 4, proc.countFiles)
             assertEquals(this.countDays, proc.countSkips)
             assertEquals(this.countDays * 3, proc.countErrors)
+            assertEquals(40000, embeddedTable('h2:sales_json').countRow())
 
             sourceFiles.with {
                 connect()
                 assertEquals(3, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
             }
 
+            embeddedTable('h2:sales_json').truncate(truncate: true)
             proc = testProcessing(true, true, true)
             assertEquals(0, proc.countFiles)
             assertEquals(3, proc.countSkips)
             assertEquals(0, proc.countErrors)
+            assertEquals(0, embeddedTable('h2:sales_json').countRow())
 
             sourceFiles.with {
                 connect()

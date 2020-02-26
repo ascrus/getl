@@ -499,12 +499,12 @@ class Flow {
 
 			if (clear) dest.truncate()
 			destParams.prepare = initDest
-			writer.openWrite(destParams)
+			if (!writeSynch) writer.openWrite(destParams) else writer.openWriteSynch(destParams)
 
 			childs.each { String name, FlowCopyChild child ->
 				def childWriter = child.writer
 				def datasetParams = child.datasetParams
-				childWriter.openWrite(datasetParams)
+				if (!writeSynch)  childWriter.openWrite(datasetParams) else childWriter.openWriteSynch(datasetParams)
 			}
 			
 			if (isSaveErrors) {
@@ -590,10 +590,10 @@ class Flow {
 				throw e
 			}
 			finally {
-				writer.closeWrite()
+				if (!writeSynch) writer.closeWrite() else writer.closeWriteSynch()
 				childs.each { String name, FlowCopyChild child ->
 					def childWriter = child.writer
-					childWriter.closeWrite()
+					if (!writeSynch) childWriter.closeWrite() else childWriter.closeWriteSynch()
 				}
 				if (isSaveErrors) errorsDataset.closeWrite()
 				
@@ -765,7 +765,7 @@ class Flow {
 		
 		def isError = false
 		try {
-			writer.openWrite(destParams)
+			if (!writeSynch) writer.openWrite(destParams) else writer.openWriteSynch(destParams)
 			code.call(updateCode)
 			writer.doneWrite()
 		}
@@ -779,7 +779,10 @@ class Flow {
 			throw e
 		}
 		finally {
-			if (writer.status == Dataset.Status.WRITE) Executor.RunIgnoreErrors { writer.closeWrite() }
+			if (writer.status == Dataset.Status.WRITE)
+				Executor.RunIgnoreErrors {
+					if (!writeSynch) writer.closeWrite() else writer.closeWriteSynch()
+				}
 			if (isBulkLoad && isError) Executor.RunIgnoreErrors { bulkDS.drop() }
 		}
 		
@@ -939,7 +942,12 @@ class Flow {
 		def closeDests = { boolean isError ->
 			writer.each { String n, Dataset d ->
 				if (d.status == Dataset.Status.WRITE) {
-					if (!isError) d.closeWrite() else Executor.RunIgnoreErrors { d.closeWrite() }
+					if (!isError)
+						if (!writeSynch) d.closeWrite()  else d.closeWriteSynch()
+					else
+						Executor.RunIgnoreErrors {
+							if (!writeSynch) d.closeWrite()  else d.closeWriteSynch()
+						}
 				}
 				if (isError && bulkLoadDS.get(n) != null) Executor.RunIgnoreErrors { (bulkLoadDS.get(n) as Dataset).drop() }
 			}
@@ -974,7 +982,7 @@ class Flow {
 		
 		writer.each { String n, Dataset d ->
 			try {
-				d.openWrite(destParams.get(n) as Map)
+				if (!writeSynch) d.openWrite(destParams.get(n) as Map) else d.openWriteSynch(destParams.get(n) as Map)
 			}
 			catch (Exception e) {
 				Logs.Exception(e, getClass().name + ".writeAllTo.openWrite", d.objectName)

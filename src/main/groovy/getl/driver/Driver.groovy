@@ -121,6 +121,8 @@ abstract class Driver {
 
     abstract void closeWrite (Dataset dataset)
 
+	void cleanWrite(Dataset dataset) { }
+
     abstract void bulkLoadFile (CSVDataset source, Dataset dest, Map params, Closure prepareCode)
 
     abstract void clearDataset (Dataset dataset, Map params)

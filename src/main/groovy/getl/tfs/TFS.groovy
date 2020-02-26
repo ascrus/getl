@@ -78,6 +78,8 @@ class TFS extends CSVConnection {
 		if (params.rowDelimiter == null) rowDelimiter = "\n"
 		if (params.autoSchema == null) autoSchema = true
 		if (params.extenstion == null) extension = 'csv'
+		if (params.escaped == null) escaped = false
+		if (params.header == null) header = false
 
 		if (params.deleteOnExit == null) params.deleteOnExit = true
 		setPath((params.path as String)?:systemPath)

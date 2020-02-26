@@ -63,7 +63,7 @@ class JSONDriver extends FileDriver {
 	/**
 	 * Read only attributes from dataset
 	 */
-	private static void generateAttrRead (Dataset dataset, Closure initAttr, StringBuilder sb) {
+	private void generateAttrRead (Dataset dataset, Closure initAttr, StringBuilder sb) {
 		List<Field> attrs = (dataset.params.attributeField != null)?(dataset.params.attributeField as List<Field>):[]
 		if (attrs.isEmpty()) return
 		
@@ -89,7 +89,7 @@ class JSONDriver extends FileDriver {
 	/**
 	 * Read attributes and rows from dataset
 	 */
-	static void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure initAttr, Closure code) {
+	void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
 		generateAttrRead(dataset, initAttr, sb)
 		
@@ -130,7 +130,7 @@ class JSONDriver extends FileDriver {
 	/**
 	 * Read only attributes from dataset
 	 */
-	static void readAttrs (Dataset dataset, Map params) {
+	void readAttrs (Dataset dataset, Map params) {
 		params = params?:[:]
 		def data = readData(dataset, params)
 		
@@ -149,7 +149,7 @@ class JSONDriver extends FileDriver {
 	/**
 	 * Read JSON data from file
 	 */
-	static def readData (Dataset dataset, Map params) {
+	def readData (Dataset dataset, Map params) {
 		boolean convertToList = (dataset.params.convertToList != null)?dataset.params.convertToList:false
 		
 		def json = new JsonSlurper()
@@ -180,12 +180,12 @@ class JSONDriver extends FileDriver {
 		return data
 	}
 	
-	static void doRead(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	void doRead(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
 		if (dataset.params.rootNode == null) throw new ExceptionGETL("Required \"rootNode\" parameter with dataset")
 		String rootNode = dataset.params.rootNode
 		
-		String fn = fullFileNameDataset(dataset)
+		def fn = fullFileNameDataset(dataset)
 		if (fn == null) throw new ExceptionGETL("Required \"fileName\" parameter with dataset")
 		File f = new File(fn)
 		if (!f.exists()) throw new ExceptionGETL("File \"${fn}\" not found")

@@ -37,6 +37,12 @@ class FileWriteOpts {
     public String tempFileName
     /** Count write rows */
     public Long countRows = 0
+    /** Append to exist file */
+    public Boolean append
+    /** Delete file is empty */
+    public Boolean deleteOnEmpty
+    /** Code page file */
+    public String encode
     /** File writed */
     public Boolean readyFile = false
 }

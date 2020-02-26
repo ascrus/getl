@@ -181,9 +181,9 @@ class VerticaDriver extends JDBCDriver {
 					"delimiter = ${EscapeString(source.fieldDelimiter)}",
 					"enclosed_by = ${EscapeString(source.quoteStr)}",
 					"record_terminator = ${EscapeString(rowDelimiterChar)}",
-					"escape = ${EscapeString('\u0001')}"
+					"escape = ${EscapeString('\u0001')}",
+					"header=${source.header}"
 			]
-			if (source.header) opts << 'header=\'true\''
 
 			parserText = "\nWITH PARSER fcsvparser(${opts.join(', ')})"
 			if (source.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue)}"
@@ -445,10 +445,10 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
-		csvFile.header = true
+		csvFile.header = false
 		csvFile.escaped = (csvFile.field.find { it.type == Field.blobFieldType && source.fieldByName(it.name) != null } != null)
 		csvFile.codePage = 'UTF-8'
-		csvFile.nullAsValue = '\\u00B6'
+		csvFile.nullAsValue = null
 		csvFile.fieldDelimiter = ','
 		csvFile.rowDelimiter = '\n'
 		csvFile.quoteStr = '"'

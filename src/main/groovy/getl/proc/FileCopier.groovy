@@ -97,7 +97,7 @@ class FileCopier extends FileListProcessing {
             throw new ExceptionGETL('You must first specify a path mask for the source!')
 
         def parent = value.clone()
-        def sm = [:]
+        def sm = [:] as Map<String, Object>
         sm.put('filepath', null)
         sm.put('filename', null)
         sm.put('filenameonly', null)

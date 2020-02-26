@@ -2111,12 +2111,7 @@ $sql
 	@Override
 	void closeWrite(Dataset dataset) {
 		WriterParams wp = dataset.driver_params
-		try {
-			wp.stat.close()
-		}
-		finally {
-			dataset.driver_params = null
-		}
+		wp.stat.close()
 	}
 	
 	@Override
