@@ -171,7 +171,7 @@ class SavePointManager implements Cloneable {
 
 		return man
 	}
-	
+
 	/** Set fields mapping */
 	protected void prepareTable () {
 		assert connection != null, "Required set value for \"connection\""
@@ -200,7 +200,7 @@ class SavePointManager implements Cloneable {
 		table.tableName = tableName
 		table.field = table_field
 		
-		table.fieldByName(map.source as String).isKey = (saveMethod == "MERGE")
+		table.fieldByName(map.source as String).isKey = true //(saveMethod == "MERGE")
 		table.fieldByName(map.time as String).isKey = (saveMethod == "INSERT")
 	}
 	
@@ -216,7 +216,7 @@ class SavePointManager implements Cloneable {
 		if (ifNotExists && table.exists) return false
 		def indexes = [:]
 		if (saveMethod == "INSERT" && connection.driver.isSupport(Driver.Support.INDEX)) {
-			indexes."idx_${table.objectName.replace('.', '_')}_getl_savepoint" = [columns: [map."source", "${map."value"} DESC"]]
+			indexes."idx_${table.objectName.replace('.', '_')}_getl_savepoint" = [columns: [map.source, map.type, "${map.value} DESC"]]
 		}
 		table.create(indexes: indexes)
 		
@@ -364,8 +364,10 @@ class SavePointManager implements Cloneable {
 	 * @param value numerical or timestamp value
 	 * @param format text to timestamp format
 	 */
-	void saveValue(String source, def value, String format) {
+	void saveValue(String source, def newValue, String format) {
 		prepareTable()
+
+		def value = newValue
 		
 		if (!(value instanceof Date || value instanceof Timestamp ||
 				value instanceof Integer || value instanceof Long || 
@@ -401,21 +403,28 @@ class SavePointManager implements Cloneable {
 		def typeField = (map.type as String).toLowerCase()
 		def timeField = (map.time as String).toLowerCase()
 		def valueField = (map.value as String).toLowerCase()
+		source = source.toUpperCase()
 		
 		def row = [:]
-		row.put(sourceField, source.toUpperCase())
+		row.put(sourceField, source)
 		row.put(typeField, type)
 		row.put(timeField, DateUtils.Now())
 		row.put(valueField, value)
-		
+
 		def save = { oper ->
-			new Flow().writeTo(dest: table, dest_operation: oper, dest_where: ((oper == 'UPDATE')?"$valueField < ${value.toString()}":null)) { updater ->
+			new Flow().writeTo(dest: table, dest_operation: oper) { updater ->
 				updater(row)
 			}
 		}
-		
-		save(operation)
-		if (saveMethod == "MERGE" && table.updateRows == 0) {
+
+		if (saveMethod == 'MERGE') {
+			def lastValue = lastValue(source).value
+			if (lastValue == null)
+				save("INSERT")
+			else if (lastValue < newValue)
+				save("UPDATE")
+		}
+		else {
 			save("INSERT")
 		}
 	}

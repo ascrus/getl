@@ -49,4 +49,84 @@ class JDBCTest extends getl.test.GetlTest {
             }
         }
     }
+
+    @Test
+    void testHistoryPointMerge() {
+        Getl.Dsl(this) {
+            historypoint {
+                tableName = 'test_checkpoint_merge'
+                saveMethod = mergeSave
+                create(true)
+
+                embeddedTable('history_merge', true) {
+                    tableName = 'test_checkpoint_merge'
+                    retrieveFields()
+                    assertEquals(4, field.size())
+                    assertTrue(field('source').isKey)
+                    assertFalse(field('time').isKey)
+                }
+
+                assertNull(lastValue('source1').value)
+                def dt1 = new Date()
+                it.saveValue 'source1', dt1
+                assertEquals(dt1, lastValue('source1').value)
+                assertEquals(1, embeddedTable('history_merge').countRow())
+
+                def dt2 = new Date()
+                it.saveValue 'source1', dt2
+                assertEquals(dt2, lastValue('source1').value)
+                assertEquals(1, embeddedTable('history_merge').countRow())
+
+                it.saveValue 'source1', dt1
+                assertEquals(dt2, lastValue('source1').value)
+                assertEquals(1, embeddedTable('history_merge').countRow())
+
+                embeddedTable('history_merge') {
+                    drop()
+                }
+            }
+        }
+    }
+
+    @Test
+    void testHistoryPointInsert() {
+        Getl.Dsl(this) {
+            useEmbeddedConnection embeddedConnection {
+                sqlHistoryFile = 'c:/tmp/getl.test/h2.{date}.sql'
+            }
+
+            historypoint {
+                tableName = 'test_checkpoint_insert'
+                saveMethod = insertSave
+                create(true)
+
+                embeddedTable('history_insert', true) {
+                    tableName = 'test_checkpoint_insert'
+                    retrieveFields()
+                    assertEquals(4, field.size())
+                    assertTrue(field('source').isKey)
+                    assertTrue(field('time').isKey)
+                }
+
+                assertNull(lastValue('source1').value)
+                def dt1 = new Date()
+                it.saveValue 'source1', dt1
+                assertEquals(dt1, lastValue('source1').value)
+                assertEquals(1, embeddedTable('history_insert').countRow())
+
+                def dt2 = new Date()
+                it.saveValue 'source1', dt2
+                assertEquals(dt2, lastValue('source1').value)
+                assertEquals(2, embeddedTable('history_insert').countRow())
+
+                it.saveValue 'source1', dt1
+                assertEquals(dt2, lastValue('source1').value)
+                assertEquals(3, embeddedTable('history_insert').countRow())
+
+                embeddedTable('history_insert') {
+                    drop()
+                }
+            }
+        }
+    }
 }
