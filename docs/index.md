@@ -41,7 +41,9 @@ GETL taken into account when developing ideas and following requirements:
 * hadoop hdfs
 
 ## Documentation
-Full Russian language documentation will be posted later on www.easydata.ru site. In the future, the basic part of the documentation will be translated into English and posted on Githab site.
+Full Russian language documentation will be posted later on [EasyData](http://easydata.ru/en/) site.
 
 ## Example project:
-https://github.com/ascrus/getl-examples
+An outdated version of the examples is located at: [Getl Example](https://github.com/ascrus/getl-examples)
+
+P.S. A new version of the examples will be ready soon. It is recommended to look at Getl sources, unit tests in the [lang](https://github.com/ascrus/getl/tree/master/src/test/groovy/getl/lang) package.
