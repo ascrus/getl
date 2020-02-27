@@ -77,7 +77,7 @@ signing {
 
 jar {
 	from configurations.addJars.collect { it.isDirectory() ? it : zipTree(it) }
-	from { ['docs/getl.readme.txt', 'docs/getl.license.txt', 'docs/getl.license_rus.txt'] }
+	from { ['licenses/getl.readme.txt', 'licenses/getl.license.txt', 'licenses/getl.license_rus.txt'] }
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {

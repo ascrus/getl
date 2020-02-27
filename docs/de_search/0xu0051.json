@@ -1,0 +1,13 @@
+[
+	{ "s": "QRYFACT", "p": [35] },
+	{ "s": "QUERY", "p": [35, 29, 34] },
+	{ "s": "QUERYPARAMS", "p": [35, 29] },
+	{ "s": "QUERYPARAMS.FACT_DATE", "p": [35] },
+	{ "s": "QUERYPARAMS.MAX_VALUE", "p": [35] },
+	{ "s": "QUERYPARAMS.MIN_VALUE", "p": [35] },
+	{ "s": "QUOTATION", "p": [36] },
+	{ "s": "QUOTE", "p": [36] },
+	{ "s": "QUOTEMODE", "p": [36] },
+	{ "s": "QUOTENORMAL", "p": [36] },
+	{ "s": "QUOTESTR", "p": [36] }
+]

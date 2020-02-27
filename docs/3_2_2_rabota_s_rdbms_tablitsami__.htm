@@ -1,0 +1,500 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--[if lt IE 7]><html dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" class="ie ie6 no-js"><![endif]-->
+<!--[if IE 7 ]><html dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" class="ie ie7 no-js"><![endif]-->
+<!--[if IE 8 ]><html dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" class="ie ie8 no-js"><![endif]-->
+<!--[if IE 9 ]><html dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" class="ie ie9 no-js"><![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--><html dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><!--<![endif]-->
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+
+    <script type="text/javascript">
+    //<![CDATA[
+        drex_file_name = "3_2_2_rabota_s_rdbms_tablitsami__.htm";
+    //]]>
+    </script>
+
+    		<title>3.2.2 &#x0420;&#x0430;&#x0431;&#x043E;&#x0442;&#x0430; &#x0441; RDBMS &#x0442;&#x0430;&#x0431;&#x043B;&#x0438;&#x0446;&#x0430;&#x043C;&#x0438;&#x000D;&#x000A;</title>
+
+    <link rel="stylesheet" type="text/css" href="css/all.css" media="all" />
+    <link rel="stylesheet" href="de_style.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="custom.css" type="text/css" media="all" />
+
+    <script type="text/javascript" src="js/all.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/drexplain.data.index.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/all2.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/oembed.js" charset="utf-8"></script>
+    <script type="text/javascript">
+    //<![CDATA[
+        $(document).ready(function() {
+                $(".oembed").oembed(null,
+                        {
+                            embedMethod: "replace_with_new_size"
+                        });
+        });
+    //]]>
+    </script>
+                </head>
+<body class="b-body">
+<script type="text/javascript">
+//<![CDATA[
+    if (document.referrer == "" && navigator.userAgent == "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11")
+    {
+        var im = document.createElement("img");
+        im.src = "0";
+        document.body.appendChild(im);
+
+        $.drex_avoid_load = true;
+    }
+//]]>
+</script>
+<div class="b-pageLayout" id="pageLayout">
+<script type="text/javascript">
+//<![CDATA[
+    if ($.drex_avoid_load)
+        $("#pageLayout").addClass("hidden");
+    else if (1 == 1 && !is_touch_device())
+        $("#pageLayout").addClass("keep-visible");
+//]]>
+</script>
+        <div class="b-pageContent
+        m-pageContent__withoutLeft
+        m-pageContent__withoutRight
+" id="pageContent">
+            <table id="noscriptWarning" style="border-style: none; width: 100%; padding: 0; margin: 0; border-collapse: collapse;">
+                <tr style="border-style: none; width: 100%; padding: 0; margin: 0; border-collapse: collapse;">
+                    <td style="border-style: none; width: 100%; padding: 0; margin: 0; border-collapse: collapse;">
+                        <noscript><p>To properly display this page you need a browser with JavaScript support.</p></noscript>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="b-tree m-tree__contextMenu" id="keywordContextMenu"><table class="b-tree__layout"><tr><td class="b-tree__layoutSide"></td></tr></table></div>
+            <table class="b-pageContent__layout">
+                <tr class="b-pageContent__row m-pageContent__row__header" id="pageContentHeader">
+                    <td class="b-pageContent__side m-pageContent__side__header">
+                        <div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><table class="de_tbl_576 detbl" style="width: 100%; margin-left: 0; margin-right: auto;">
+<col style="width: 100%;" class="de_col_1_576" />
+<tr style="height: 89px;">
+<td class="de_td_576" style = "padding: 2px; padding-bottom: 1px; border-left-style: none; border-left-width: 0px; border-left-color: #000000; border-right-style: none; border-right-width: 0px; border-right-color: #000000; border-top-style: none; border-top-width: 0px; border-top-color: #000000; border-bottom-style: none; border-bottom-width: 0px; border-bottom-color: #000000;  width: 100%; vertical-align: bottom;" colspan = "1" rowspan = "1" >
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><img  alt="" style="border: solid 0px;  float: left; " width="68" height="68" class=" de_D457E58A2E" src="drex_header_custom.png"/><span style="font-family: &quot;Arial&quot;;font-size: 20pt;color:#f0f0f0;"><strong>Новый проект</strong></span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span style="font-family: &quot;Arial&quot;;font-size: 18pt;color:#f0f0f0;"><strong><sup>Руководство пользователя</sup></strong></span></div>
+</td></tr></table></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="b-pageContent__side">
+                    <table id="internal_wrapper"><!-- internal_wrapper -->
+                        <tr>
+
+                    <td class="b-pageContent__side m-pageContent__side__left" id="pageContentLeft"></td>
+                    <td class="b-pageContent__side m-pageContent__side__middle" id="pageContentMiddle">
+                        <script type="text/javascript">
+                        //<![CDATA[
+                            if (1 == 1 && !is_touch_device())
+                                $("#pageContentMiddle").addClass("hidden");
+                        //]]>
+                        </script>
+                        <div class="b-workZone
+" id="workZone">
+                            <table class="b-workZone__layout">
+                                <tr>
+                                    <td class="b-workZone__side m-workZone__side__nav" id="workZone_nav">
+                                        <div class="b-workZone__content m-workZone__content__nav" id="workZone_nav_content">
+                                        <a href="#" class="b-workZone__side__nav__dismiss" id="dismissSideNavButton">&times;</a>
+                                        <div class="b-splitter" id="splitter">
+                                            <div class="b-splitter__innerPre">
+                                                <div class="b-splitter__inner">
+                                                    <div class="b-splitter__part m-splitter__part__mainImg"></div>
+                                                    <div class="b-splitter__part m-splitter__part__topImg"></div>
+                                                    <div class="b-splitter__part m-splitter__part__bottomImg"></div>
+                                                    <div class="b-splitter__part m-splitter__part__middleImg"></div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+<div class="b-tabs">
+
+
+
+                        <div class="b-tabs__selectorItems">
+
+                            <div class="b-tabs__selectorItem m-tabs__selectorItem__selected m-tabs__selectorItem__first" id="tabSelector_menu">
+                                <span class="b-tabs__selectorItemIcon b-interfaceIcon m-interfaceIcon__menu"></span>
+                                <span class="b-tabs__selectorContent">&#x041C;&#x0435;&#x043D;&#x044E;</span>
+                            </div>
+    
+                            <div class="b-tabs__selectorItem m-tabs__selectorItem__unselected" id="tabSelector_index">
+                                <span class="b-tabs__selectorItemIcon b-interfaceIcon m-interfaceIcon__index"></span>
+                                <span class="b-tabs__selectorContent">&#x0418;&#x043D;&#x0434;&#x0435;&#x043A;&#x0441;</span>
+                             </div>
+    
+                            <div class="b-tabs__selectorItem m-tabs__selectorItem__unselected" id="tabSelector_search">
+                                <span class="b-tabs__selectorItemIcon b-interfaceIcon m-interfaceIcon__search"></span>
+                                <span class="b-tabs__selectorContent">&#x041F;&#x043E;&#x0438;&#x0441;&#x043A;</span>
+                            </div>
+
+                        </div><!-- /b-tabs__selectorItems -->
+
+                        <div class="b-tabs__wrapperItems" id="tabWrapperItems">
+                        
+                            <div class="b-tabs__wrapperItem m-tabs__wrapperItem__selected" id="tabWrapper_menu">
+                                <div class="b-tabs__wrapperItemInner">
+                                    <div class="b-tree">
+                                    </div>                              
+                                </div>
+                                
+                            </div><!-- /menu -->
+
+                            <div class="b-tabs__wrapperItem" id="tabWrapper_index">
+                                <div class="b-tabs__wrapperItemInner">
+                                    <div class="b-tree"></div></div>
+                            </div>
+
+
+                            <div class="b-tabs__wrapperItem" id="tabWrapper_search">
+
+        
+
+<div class="b-search m-search__tabs" id="tabs_searchFormWrapper">
+    <form action="#" class="b-search__form">
+        <table class="b-search__layout">
+            <tr>
+                <td class="b-search__side m-search__side__input">
+                    <div class="b-search__gap">
+                        <label id="tabs_searchInput_label" for="tabs_searchInput" class="b-search__labelPlaceholder">&#x041F;&#x043E;&#x0438;&#x0441;&#x043A;</label>
+                        <input id="tabs_searchInput" type="text" value="" class="b-search__inputText" />
+                    </div>
+                </td>
+                <td class="b-search__side m-search__side__submit">
+                    <span class="b-button b-search__button">
+                        <span class="b-button__wrapper">
+                            <span class="b-button__text"></span>
+                        </span>
+                        <input type="submit" class="b-button__submit" value="&#x041F;&#x043E;&#x0438;&#x0441;&#x043A;" id="tabs_searchSubmit" />
+                    </span>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div><!-- /search -->
+<img src="i/blocks/search/loading.gif" class="b-tree__searching" id="searchProgress" alt="" />
+<div class="b-tabs__wrapperItemInner">
+
+<!-- .b-tree -->
+<div class="b-tree">
+    <!-- .b-tree__items -->
+    &#xA0;<br />&#xA0;
+    &#xA0;<br />&#xA0;
+    &#xA0;<br />&#xA0;
+    &#xA0;<br />&#xA0;
+    <!-- /.b-tree__items -->
+</div>
+<!-- /.b-tree -->
+
+
+
+                                </div>
+                            </div><!-- /wrapperItem -->
+                        </div><!-- /wrapperItems -->
+                    </div><!-- /b-tabs -->
+
+
+
+
+
+                                        </div><!-- /b-workZone__content -->
+                                    </td><!-- /workZone__nav -->
+
+
+
+                                    <td class="b-workZone__side m-workZone__side__article" id="workZone_article">
+                                        <div class="b-workZone__content" id="workZone_article__content">
+                                            <a href="#" class="b-article__presentSideNavButton" id="presentSideNavButton"><span></span></a>
+                                            <div class="b-workZone__overlay" id="workZone_article__overlay"></div>
+<div class="b-search m-search__workZone" id="searchZone">
+    <form action="#" class="b-search__form">
+        <table class="b-search__layout">
+            <tr>
+                <td class="b-search__side m-search__side__input">
+                    <div class="b-search__gap">
+                        <span class="b-interfaceIcon m-interfaceIcon__search m-interfaceIcon__search__input b-search__inputTextIcon"></span>
+                        <label id="workZone_searchInput_label" for="workZone_searchInput" class="b-search__labelPlaceholder">&#x041F;&#x043E;&#x0438;&#x0441;&#x043A;</label>
+                        <input id="workZone_searchInput" type="text" value="" class="b-search__inputText" />
+                    </div>
+                </td>
+                <td class="b-search__side m-search__side__submit">
+                    <span class="b-button b-search__button">
+                        <span class="b-button__wrapper">
+                            <span class="b-button__text"></span>
+                        </span>
+                        <input type="submit" class="b-button__submit" value="&#x041F;&#x043E;&#x0438;&#x0441;&#x043A;" id="workZone_searchSubmit" />
+                    </span>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div><!-- /search -->
+
+
+<div class="b-article" id="article">
+    <div class="b-article__preWrapper">
+        <table class="b-article__headerLayout" id="article__header">
+            <tr>
+                <td id="headerSide__nav" class="b-article__headerSide m-article__headerSide__nav">
+                    <div id="headerSide__nav__breadCrumbs" class="b-breadCrumbs">
+                        <ul class="b-breadCrumbs__items"><li class="b-breadCrumbs__item"><a href="3__osnovy_raboty.htm" class="b-breadCrumbs__link">3. &#x041E;&#x0441;&#x043D;&#x043E;&#x0432;&#x044B; &#x0440;&#x0430;&#x0431;&#x043E;&#x0442;&#x044B;</a></li>
+
+<li class="b-breadCrumbs__item"><a href="3_2_rabota_s_obektami.htm" class="b-breadCrumbs__link">3.2 &#x0420;&#x0430;&#x0431;&#x043E;&#x0442;&#x0430; &#x0441; &#x043E;&#x0431;&#x044A;&#x0435;&#x043A;&#x0442;&#x0430;&#x043C;&#x0438;</a></li>
+
+<li class="b-breadCrumbs__item">3.2.2 &#x0420;&#x0430;&#x0431;&#x043E;&#x0442;&#x0430; &#x0441; RDBMS &#x0442;&#x0430;&#x0431;&#x043B;&#x0438;&#x0446;&#x0430;&#x043C;&#x0438;&#x000D;&#x000A;</li>
+</ul>                    </div>
+                </td>
+                <td id="headerSide__buttons" class="b-article__headerSide m-article__headerSide__buttons">
+                    <div class="b-controlButtons">
+                        <ul class="b-controlButtons__items">
+                            <li class="b-controlButtons__item m-controlButtons__item__prev"><a href="3_2_1_rabota_s_jdbc_podklyucheniyami_.htm" class="b-controlButtons__link" title="&#x041F;&#x0440;&#x0435;&#x0434;&#x044B;&#x0434;&#x0443;&#x0449;&#x0430;&#x044F;"><span class="b-controlButtons__link_icon"></span><span class="b-controlButtons__link_text">&#xa0;&#x041F;&#x0440;&#x0435;&#x0434;&#x044B;&#x0434;&#x0443;&#x0449;&#x0430;&#x044F;</span></a></li>
+                            <li class="b-controlButtons__item m-controlButtons__item__next"><a href="3_2_3_vypolnenie_skriptov_sql_dlya_istochnikov_jdbc_.htm" class="b-controlButtons__link" title="&#x0421;&#x043B;&#x0435;&#x0434;&#x0443;&#x044E;&#x0449;&#x0430;&#x044F;"><span class="b-controlButtons__link_text">&#x0421;&#x043B;&#x0435;&#x0434;&#x0443;&#x044E;&#x0449;&#x0430;&#x044F;&#xa0;</span><span class="b-controlButtons__link_icon"></span></a></li>
+                                                </ul>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <div class="b-article__wrapper">
+            <div class="b-article__innerWrapper" id="description_on_page_placeholder">
+            <a id="top" class="anchor"></a>
+            </div><!-- /innerWrapper -->
+        </div>
+        <script type="text/javascript">
+        //<![CDATA[
+            if (1 == 0 || is_touch_device())
+            {
+                $(".b-article__wrapper").append(
+                    $("<table></table>")
+                    .addClass("b-article__footerLayout")
+                    .prop("id", "article__footer")
+                    .append(
+                        $("<tr></tr>").append(
+                            $("<td></td>")
+                            .addClass("b-article__headerSide m-article__headerSide__nav")
+                        )
+                        .append(
+                            $("<td></td>")
+                            .addClass("b-article__headerSide m-article__headerSide__buttons")
+                            .append(
+                                $("<div></div>").addClass("b-controlButtons")
+                                .html($("<ul></ul>").addClass("b-controlButtons__items").html("    <li class=\"b-controlButtons__item m-controlButtons__item__prev\"><a href=\"3_2_1_rabota_s_jdbc_podklyucheniyami_.htm\" class=\"b-controlButtons__link\" title=\"&#x041F;&#x0440;&#x0435;&#x0434;&#x044B;&#x0434;&#x0443;&#x0449;&#x0430;&#x044F;\"><span class=\"b-controlButtons__link_icon\"></span><span class=\"b-controlButtons__link_text\">&#xa0;&#x041F;&#x0440;&#x0435;&#x0434;&#x044B;&#x0434;&#x0443;&#x0449;&#x0430;&#x044F;</span></a></li>\n    <li class=\"b-controlButtons__item m-controlButtons__item__next\"><a href=\"3_2_3_vypolnenie_skriptov_sql_dlya_istochnikov_jdbc_.htm\" class=\"b-controlButtons__link\" title=\"&#x0421;&#x043B;&#x0435;&#x0434;&#x0443;&#x044E;&#x0449;&#x0430;&#x044F;\"><span class=\"b-controlButtons__link_text\">&#x0421;&#x043B;&#x0435;&#x0434;&#x0443;&#x044E;&#x0449;&#x0430;&#x044F;&#xa0;</span><span class=\"b-controlButtons__link_icon\"></span></a></li>\n"))
+                            )
+                        )
+                    )
+                );
+            }
+        //]]>
+        </script>
+    </div>
+</div>
+
+
+
+                                        </div>
+                                    </td><!-- /workZone__article -->
+                                </tr>
+                            </table>
+                        </div><!-- /workZone -->
+
+                    </td><!-- /pageContentMiddle -->
+                    <td class="b-pageContent__side m-pageContent__side__right" id="pageContentRight"></td>
+                        </tr>
+                    </table> <!-- /internal_wrapper -->
+                    </td>
+                </tr>
+                <tr class="b-pageContent__row m-pageContent__row__footer" id="pageContentFooter">
+                    <td class="b-pageContent__side m-pageContent__side__footer">
+                        <script type="text/javascript">
+                        //<![CDATA[
+                            if (1 == 1 && !is_touch_device())
+                                $( "#pageContentFooter" ).addClass("hidden");
+                        //]]>
+                        </script>
+                        <div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><table class="de_tbl_576 detbl" style="width: 100%; margin-left: 0; margin-right: auto;">
+<col style="width: 100%;" class="de_col_1_576" />
+<tr style="height: 29px;">
+<td class="de_td_576" style = "padding: 2px; padding-bottom: 1px; border-left-style: none; border-left-width: 0px; border-left-color: #000000; border-right-style: none; border-right-width: 0px; border-right-color: #000000; border-top-style: none; border-top-width: 0px; border-top-color: #000000; border-bottom-style: none; border-bottom-width: 0px; border-bottom-color: #000000;  width: 100%; vertical-align: top;" colspan = "1" rowspan = "1" >
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span style="font-family: &quot;Arial&quot;;font-size: 10pt;color:#f0f0f0;">  (c) Company name, 2019</span></div>
+</td></tr></table></div>
+                    </td>
+                </tr>
+            </table>
+        </div><!-- /pageContent -->
+
+</div><!-- /pageLayout -->
+<div id="hiddenContent" class="hiddenContent">
+    <noscript>
+    <div>To properly display this page you need a browser with JavaScript support.</div>
+    </noscript>
+                <div class="description_on_page"><div class="p" style="text-align: center; direction: ltr; margin-left: 0px; text-indent: 0px;"><div class="ic"><h1><strong>3.2.2 Работа с RDBMS таблицами</strong></h1></div>
+<div class="p" style="text-align: center; direction: ltr; margin-left: 0px; text-indent: 0px;"></div></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_722558AF5B"><strong>Описание Таблицы</strong></span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">Для работы с таблицей бд необходимо указать соединение с СУБД и задать параметры:</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">def oracon = oracleConnection {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; connectURL = 'jdbc:oracle:thin:@localhost:1521:demo'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; login = 'user'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; password = 'password'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">}</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">oracleTable {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; useConnection oracon // set connection to &quot;oracon&quot;</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; schemaName = 'demo'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; tableName = 'table1'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">}</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_722558AF5B"><strong>Получение списка полей</strong></span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">Если таблица существует в базе данных, то при работе с ней будет автоматически получен список ее полей. Если нужно явно получить список полей, используйте метод «retrieveFields»:</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">def oratab = oracleTable {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; useConnection oracon</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; schemaName = 'demo'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; tableName = 'table1'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; assert field.size() == 0</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; retrieveFields()</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; assert field.size() &gt; 0</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">}</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_722558AF5B"><strong>Проверка наличия таблицы в базе данных</strong></span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">Метод &quot;exists&quot; позволяет проверить, существует ли указанная таблица в базе данных</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">oratab.with {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; if (!exists) logWarning(&quot;Table ${fullNameDataset()} not define in database!&quot;)</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">}</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_722558AF5B"><strong>Создание таблицы в базе данных</strong></span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">Если таблицы нет в базе данных и вам нужно ее создать, можно явно описать поля и вызвать создание таблицы:</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">oratab.with {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; field('id') { type = integerFieldType; isKey = true }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; field('name') { type = stringFieldType; length = 50; isNull = false }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; assert !exists</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; create()</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; assert exists</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">}</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_722558AF5B"><strong>Удаление таблицы из базы данных</strong></span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">Метод &quot;drop&quot; позволяет удалить таблицу в базе данных:</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">oratab.with {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; assert exists</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; drop()</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; assert !exists</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">}</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_722558AF5B"><strong>Полная очистка таблицы</strong></span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">Метод &quot;truncate&quot; удаляет все записи в таблице. По умолчанию вызывается оператор &quot;DELETE FROM table&quot;, может быть передан параметр &quot;truncate: true&quot; тогда очистка будет произведена с помощью оператора &quot;TRUNCATE TABLE table&quot;:</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">oratab.with {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; truncate(truncate: true)</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; assert countRow() == 0</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">}</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">Table options</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">When describing table parameters, you can specify options for creating, reading, writing, and bulk loading:</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">def vertable = verticaTable {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; useConnection verticaConnection {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; connectHost = 'localhost'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; connectDatabase = 'demo'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; login = 'user'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; password = 'password'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; schemaName = 'demo'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; tableName = 'table1'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; field('id') { type = integerFieldType; isKey = true }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; field('name') { type = stringFieldType; lenth = 100; isNull = false }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; field('dt') { type = dateFieldType; isNull = false }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; createOpts {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; orderBy = ['dt', 'id']</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; segmentedBy = 'hash(id) all nodes'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; partitionBy = 'dt'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; ifNotExists = true</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; dropOpts {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; ifExists = true</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; readOpts {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; label = 'my query hint'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; writeOpts {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; direct = 'AUTO'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; bulkLoadOpts {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; compressed = 'GZIP'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; loadMethod = 'DIRECT'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; enforceLenth = true</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">}</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_722558AF5B"><strong>Массовая загрузка файлов в таблицу (Bulk load)</strong></span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">Для DBMS H2 базы данных, Hadoop Hive и Microfocus Vertica, поддерживается batch загрузка из файлов CSV в таблицу.</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">Для этого нужно вызвать команду «bulkLoadCsv», передав ей параметр «csv» объекта, который задает имя файла, его параметры парсинга и указывает путь к хранилищу файлов в соединении. Если вместо одного файла нужно загрузить несколько по маске или списку файлов, следует использовать опцию &quot;files&quot; option:</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">def csv = csv {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; useConnection csvConnection { path = '/tmp/csv' }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; fileName = 'data1.csv'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">}</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">vertable.with {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; // Load single file</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; bulkLoadCsv(csv)</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; // Load list of files</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; bulkLoadCsv(csv) {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; files = ['data1.csv', 'data2.csv']</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; // Load files by simple mask where all the files are loaded in one command and not one file (only for Hive and Vertica tables)</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; bulkLoadCsv(csv) {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; files = 'data*.csv'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; loadAsPackage = true</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; // Load files by advanced mask where the loading order is determined by sorting by the macro field &quot;num&quot;</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; bulkLoadCsv(csv) {</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; files = main.filePath { </span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; &#160; mask = 'data{num}.csv'</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; &#160; variable('num') { type = integerFieldType }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; orderProcess = ['num']</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; // Custom code before file load </span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; beforeBulkLoadFile { println 'before: ' + it }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;">&#160;</div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; // Custom code after file load </span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; &#160; afterBulkLoadFile { println 'after: ' + it }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">&#160; }</span></div>
+<div class="p" style="text-align: left; direction: ltr; margin-left: 0px; text-indent: 0px;"><span class="de_823826CA2C">}</span></div>
+</div>                                    			
+                			                <h6 class="b-article__generatorCopyright">
+                    <a class="b-link b-article__generatorCopyrightLink" href="http://www.drexplain.ru" rel="nofollow">&#x0421;&#x043F;&#x0440;&#x0430;&#x0432;&#x043E;&#x0447;&#x043D;&#x0430;&#x044F; &#x0441;&#x0438;&#x0441;&#x0442;&#x0435;&#x043C;&#x0430; &#x0441;&#x043E;&#x0437;&#x0434;&#x0430;&#x043D;&#x0430; &#x0432; Dr.Explain</a>
+                </h6>
+                </div>
+</body>
+</html>
