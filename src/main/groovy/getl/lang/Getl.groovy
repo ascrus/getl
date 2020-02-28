@@ -4128,8 +4128,10 @@ Examples:
                 throw new ExceptionGETL("Can not read list of field from dataset $sourceDataset!")
         }
 
-        def parent = sourceDataset.csvTempFile.cloneDataset() as TFSDataset
-        parent.connection = defaultFileConnection(CSVTEMPDATASET) ?: TFS.storage
+        def parent = TFS.dataset()
+        parent.field = sourceDataset.field
+        sourceDataset.prepareCsvTempFile(parent)
+        parent.connection = defaultFileConnection(CSVTEMPDATASET)?:TFS.storage
         registerDatasetObject(parent, name, true)
         runClosure(parent, cl)
 

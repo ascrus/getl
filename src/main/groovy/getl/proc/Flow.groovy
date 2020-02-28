@@ -429,11 +429,12 @@ class Flow {
 			if (autoTran) bulkParams.autoCommit = false
 			destParams = [:]
 
-			def bulkDS = dest.csvTempFile.cloneDataset() as TFSDataset
+			if (dest.field.isEmpty()) dest.retrieveFields()
+			def bulkDS = TFS.dataset()
+			bulkDS.field = dest.field
+			dest.prepareCsvTempFile(bulkDS)
 			if (bulkEscaped != null) bulkDS.escaped = bulkEscaped
 			if (bulkAsGZIP != null) bulkDS.isGzFile = bulkAsGZIP
-			if (dest.field.isEmpty()) dest.retrieveFields()
-			bulkDS.field = dest.field
 			writer = bulkDS
 			bulkParams.source = bulkDS
 			writeSynch = false
@@ -450,11 +451,12 @@ class Flow {
 				if (child.autoTran) bulkChildParams.autoCommit = false
 				child.datasetParams?.clear()
 
-				def childDS = dataset.csvTempFile.cloneDataset() as TFSDataset
+				if (dataset.field.isEmpty()) dataset.retrieveFields()
+				def childDS = TFS.dataset()
+				childDS.field = dataset.field
+				dataset.prepareCsvTempFile(childDS)
 				if (bulkEscaped != null) childDS.escaped = bulkEscaped
 				if (bulkAsGZIP != null) childDS.isGzFile = bulkAsGZIP
-				if (dataset.field.isEmpty()) dataset.retrieveFields()
-				childDS.field = dataset.field
 
 				bulkChildParams.source = childDS
 				child.writer = childDS
@@ -640,11 +642,17 @@ class Flow {
 		catch (Exception e) {
 			Logs.Exception(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}")
 
-			if (autoTran) dest.connection.rollbackTran()
+			if (autoTran && dest.connection.isTran())
+				Executor.RunIgnoreErrors {
+					dest.connection.rollbackTran()
+				}
 			childs.each { String name, FlowCopyChild child ->
 				def dataset = child.dataset
 				def autoTranChild = BoolUtils.IsValue(child.autoTran)
-				if (autoTranChild) dataset.connection.rollbackTran()
+				if (autoTranChild && dataset.connection.isTran())
+					Executor.RunIgnoreErrors {
+						dataset.connection.rollbackTran()
+					}
 			}
 			throw e
 		}
@@ -773,8 +781,9 @@ class Flow {
 			isError = true
 			writer.isWriteError = true
 			Logs.Exception(e, getClass().name + ".writeTo", writer.objectName)
-			if (autoTran && !isBulkLoad) Executor.RunIgnoreErrors { 
-				dest.connection.rollbackTran() 
+			if (autoTran && !isBulkLoad && dest.connection.isTran())
+				Executor.RunIgnoreErrors {
+					dest.connection.rollbackTran()
 				}
 			throw e
 		}
@@ -800,9 +809,10 @@ class Flow {
 			catch (Exception e) {
 				Logs.Exception(e, getClass().name + ".writeTo", "${destDescription}")
 				
-				if (autoTran) Executor.RunIgnoreErrors { 
-					dest.connection.rollbackTran() 
-				}
+				if (autoTran && dest.connection.isTran())
+					Executor.RunIgnoreErrors {
+						dest.connection.rollbackTran()
+					}
 				
 				throw e
 			}
@@ -964,7 +974,7 @@ class Flow {
 		
 		def rollbackTrans = { List useMode ->
 			destAutoTran.each { Connection c, String mode ->
-				if (mode in useMode) {
+				if (mode in useMode && c.isTran()) {
 					Executor.RunIgnoreErrors { c.rollbackTran() }
 				}
 			}
