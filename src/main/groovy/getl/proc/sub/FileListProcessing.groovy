@@ -700,23 +700,22 @@ abstract class FileListProcessing {
 
                 try {
                     processFiles()
-                    if (isCachedMode) {
-                        saveCachedData()
-
-                        if (cacheTable != null)
-                            saveCacheStory()
-                    }
                 }
                 catch (Throwable e) {
-                    if (isCachedMode && cacheTable != null)
-                        cacheTable.truncate(truncate: true)
+                    if (isCachedMode)
+                        saveCachedData(e)
+
+                    if (cacheTable != null && !isCachedMode)
+                            saveCacheStory()
 
                     throw e
                 }
-                finally {
-                    if (cacheTable != null && !isCachedMode)
-                        saveCacheStory()
-                }
+                if (isCachedMode)
+                    saveCachedData()
+                else if (cacheTable != null)
+                    saveCacheStory()
+
+                ConnectTo([source], numberAttempts, timeAttempts)
 
                 if (removeEmptyDirs) delEmptyFolders()
 
@@ -797,6 +796,9 @@ abstract class FileListProcessing {
     /** Use cache when processing files */
     protected boolean getIsCachedMode() { return false }
 
-    /** Save cached data */
-    protected void saveCachedData() { }
+    /**
+     * Save cached data
+     * @param error exception link if a file processing error occurs
+     */
+    protected void saveCachedData(Exception error = null) { }
 }

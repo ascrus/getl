@@ -115,7 +115,10 @@ class FileProcessing extends FileListProcessing {
     /** Code to save cached data of processed files */
     void setOnSaveCachedData(Closure value) { params.saveCachedData = value }
     /** Code to save cached data of processed files */
-    void saveCachedData(Closure cl) { setOnSaveCachedData(cl) }
+    void saveCachedData(@ClosureParams(value = SimpleType, options = ['java.util.Map'])
+                                Closure cl) {
+        setOnSaveCachedData(cl)
+    }
 
     /** Counter error files */
     final def counterErrors = new SynchronizeObject()
@@ -339,20 +342,19 @@ class FileProcessing extends FileListProcessing {
         counterErrors.clear()
         counterSkips.clear()
 
+        DisconnectFrom([source])
+
         // Create pool of source manager
         def sourceList = [] as List<ListPoolElement>
         (1..countOfThreadProcessing).each {
             def src = source.cloneManager()
-            if (currentStory != null) {
+            if (currentStory != null)
                 src.story = currentStory?.cloneDatasetConnection() as TableDataset
-                src.story.openWrite(operation: 'INSERT')
-            }
             ConnectTo([src], numberAttempts, timeAttempts)
 
             def element = new ListPoolElement(man: src)
             if (delFilesTable != null) {
                 def delTable = delFilesTable.cloneDatasetConnection()
-                delTable.openWrite()
                 element.delTable = delTable
             }
 
@@ -399,11 +401,11 @@ class FileProcessing extends FileListProcessing {
                 it.order << 'FILENAME'
         }
 
-
         try {
             // Groups processing
             groups.eachRow { group ->
-                def strgroup = MapUtils.Copy(group, ['_hash_']).toString()
+                def groupfields = MapUtils.Copy(group, ['_hash_'])
+                def strgroup = groupfields.toString()
                 def pt = profile("Processing thread group $strgroup", 'byte')
 
                 // Get files by group
@@ -412,162 +414,192 @@ class FileProcessing extends FileListProcessing {
                 def filesSize = (files.sum { it.filesize }) as Long
                 Logs.Fine("Thread group $strgroup processing ${StringUtils.WithGroupSeparator(files.size())} files ${FileUtils.SizeBytes(filesSize)} ...")
 
-                // Thread processing files by group
-                def exec = new Executor(abortOnError: abortOnError, countProc: countOfThreadProcessing)
-                exec.with {
-                    useList files
-                    run { file ->
-                        // Detect free managers from pools
-                        def sourceElement = FreePoolElement(sourceList)
-                        def processedElement = FreePoolElement(processedList)
-                        def errorElement = FreePoolElement(errorList)
-                        def delFile = removeFiles
-                        def delTable = sourceElement.delTable
+                sourceList.each { element ->
+                    if (element.man.story != null)
+                        element.man.story.openWrite(operation: 'INSERT')
+                    if (element.delTable != null)
+                        element.delTable.openWrite(operation: 'INSERT')
+                }
 
-                        try {
-                            def filepath = file.get('filepath') as String
-                            def filename = file.get('filename') as String
+                try {
+                    // Thread processing files by group
+                    def exec = new Executor(abortOnError: abortOnError, countProc: countOfThreadProcessing)
+                    exec.with {
+                        useList files
+                        run { file ->
+                            // Detect free managers from pools
+                            def sourceElement = FreePoolElement(sourceList)
+                            def processedElement = FreePoolElement(processedList)
+                            def errorElement = FreePoolElement(errorList)
+                            def delFile = removeFiles
+                            def delTable = sourceElement.delTable
 
-                            if (sourceElement.curPath != filepath) {
-                                ChangeDir([sourceElement.man], filepath, false, numberAttempts, timeAttempts)
-                                synchronized (this) {
-                                    ChangeLocalDir(sourceElement.man, filepath, true)
-                                }
-                                sourceElement.curPath = filepath
-                            }
-                            Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
-                                man.download(filename)
-                            }
-
-                            def filedesc = new File(sourceElement.man.currentLocalDir() + '/' + filename)
-                            if (!filedesc.exists())
-                                throw new ExceptionFileListProcessing("The downloaded file \"$filedesc\" was not found!")
-
-                            def element = new FileProcessingElement(sourceElement, processedElement,
-                                    errorElement, file, filedesc)
                             try {
-                                onProcessFile.call(element)
-                            }
-                            catch (ExceptionFileListProcessing e) {
-                                def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
-                                Logs.Severe("Critical error processing file \"${file.filepath}/${file.filename}\": $msg")
-                                setError(onProcessFile, e)
-                                throw e
-                            }
-                            catch (AssertionError a) {
-                                def msg = StringUtils.LeftStr(a.message?.trim(), 4096)
-                                Logs.Severe("Detected assertion fail for file \"${file.filepath}/${file.filename}\" processing: $msg")
+                                def filepath = file.get('filepath') as String
+                                def filename = file.get('filename') as String
 
-                                element.result = FileProcessingElement.errorResult
-                                element.errorFileName = (file.filename as String) + '.assert.txt'
-                                element.errorText = """File: ${file.filepath}/${file.filename}
-Date: ${DateUtils.FormatDateTime(new Date())}
-Exception: ${a.getClass().name}
-Message: $msg
-"""
-                                StackTraceUtils.sanitize(a)
-                                if (a.stackTrace.length > 0) {
-                                    element.errorText += "Trace:\n" + a.stackTrace.join('\n')
-                                }
-                            }
-                            catch (ExceptionFileProcessing ignored) {
-                                def msg = StringUtils.LeftStr(element.errorText, 4096)
-                                Logs.Severe("Error processing file \"${file.filepath}/${file.filename}\": $msg")
-                                element.errorText = """File: ${file.filepath}/${file.filename}
-Date: ${DateUtils.FormatDateTime(new Date())}
-Message: ${element.errorText}
-"""
-                            }
-                            catch (Exception e) {
-                                def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
-                                Logs.Severe("Exception in file \"${file.filepath}/${file.filename}\": $msg")
-
-                                if (handleExceptions) {
-                                    element.result = FileProcessingElement.errorResult
-                                    element.errorFileName = (file.filename as String) + '.exception.txt'
-                                    element.errorText = """File: ${file.filepath}/${file.filename}
-Date: ${DateUtils.FormatDateTime(new Date())}
-Exception: ${e.getClass().name}
-Message: $msg
-"""
-                                    StackTraceUtils.sanitize(e)
-                                    if (e.stackTrace.length > 0) {
-                                        element.errorText += "Trace:\n" + e.stackTrace.join('\n')
+                                if (sourceElement.curPath != filepath) {
+                                    ChangeDir([sourceElement.man], filepath, false, numberAttempts, timeAttempts)
+                                    synchronized (this) {
+                                        ChangeLocalDir(sourceElement.man, filepath, true)
                                     }
+                                    sourceElement.curPath = filepath
                                 }
-                                else {
+                                Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
+                                    man.download(filename)
+                                }
+
+                                def filedesc = new File(sourceElement.man.currentLocalDir() + '/' + filename)
+                                if (!filedesc.exists())
+                                    throw new ExceptionFileListProcessing("The downloaded file \"$filedesc\" was not found!")
+
+                                def element = new FileProcessingElement(sourceElement, processedElement,
+                                        errorElement, file, filedesc)
+                                try {
+                                    onProcessFile.call(element)
+                                }
+                                catch (ExceptionFileListProcessing e) {
+                                    def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
+                                    Logs.Severe("Critical error processing file \"${file.filepath}/${file.filename}\": $msg")
+                                    setError(onProcessFile, e)
                                     throw e
                                 }
-                            }
+                                catch (AssertionError a) {
+                                    def msg = StringUtils.LeftStr(a.message?.trim(), 4096)
+                                    Logs.Severe("Detected assertion fail for file \"${file.filepath}/${file.filename}\" processing: $msg")
 
-                            if (element.result == null) {
-                                throw new ExceptionFileListProcessing('Closure does not indicate the result of processing the file in property "result"!')
-                            }
-                            else if (element.result == FileProcessingElement.completeResult) {
-                                if (sourceElement.man.story != null) {
-                                    sourceElement.man.story.write(file + [fileloaded: new Date()])
-                                }
-
-                                if (processedElement != null)
-                                    processedElement.uploadLocalFile(file.filename as String, file.filepath as String)
-
-                                this.counter.nextCount()
-                                counter.addCount(file.filesize as Long)
-                            } else if (element.result == FileProcessingElement.errorResult) {
-                                if (errorElement != null) {
-                                    errorElement.uploadLocalFile(file.filename as String, file.filepath as String)
-
-                                    if (element.errorText != null)
-                                        element.uploadTextToStorageError()
-                                }
-
-                                counterErrors.nextCount()
-                            }
-                            else {
-                                counterSkips.nextCount()
-                            }
-
-                            sourceElement.man.removeLocalFile(filename)
-                            if (delFile && BoolUtils.IsValue(element.removeFile, element.result != element.skipResult)) {
-                                if (delTable == null || element.result != element.completeResult) {
-                                    Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
-                                        man.removeFile(filename)
+                                    element.result = FileProcessingElement.errorResult
+                                    element.errorFileName = (file.filename as String) + '.assert.txt'
+                                    element.errorText = """File: ${file.filepath}/${file.filename}
+    Date: ${DateUtils.FormatDateTime(new Date())}
+    Exception: ${a.getClass().name}
+    Message: $msg
+    """
+                                    StackTraceUtils.sanitize(a)
+                                    if (a.stackTrace.length > 0) {
+                                        element.errorText += "Trace:\n" + a.stackTrace.join('\n')
                                     }
                                 }
-                                else {
-                                    delTable.write([filepath: filepath, filename: filename])
+                                catch (ExceptionFileProcessing ignored) {
+                                    def msg = StringUtils.LeftStr(element.errorText, 4096)
+                                    Logs.Severe("Error processing file \"${file.filepath}/${file.filename}\": $msg")
+                                    element.errorText = """File: ${file.filepath}/${file.filename}
+    Date: ${DateUtils.FormatDateTime(new Date())}
+    Message: ${element.errorText}
+    """
+                                }
+                                catch (Exception e) {
+                                    def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
+                                    Logs.Severe("Exception in file \"${file.filepath}/${file.filename}\": $msg")
+
+                                    if (handleExceptions) {
+                                        element.result = FileProcessingElement.errorResult
+                                        element.errorFileName = (file.filename as String) + '.exception.txt'
+                                        element.errorText = """File: ${file.filepath}/${file.filename}
+    Date: ${DateUtils.FormatDateTime(new Date())}
+    Exception: ${e.getClass().name}
+    Message: $msg
+    """
+                                        StackTraceUtils.sanitize(e)
+                                        if (e.stackTrace.length > 0) {
+                                            element.errorText += "Trace:\n" + e.stackTrace.join('\n')
+                                        }
+                                    } else {
+                                        throw e
+                                    }
+                                }
+
+                                if (element.result == null) {
+                                    throw new ExceptionFileListProcessing('Closure does not indicate the result of processing the file in property "result"!')
+                                } else if (element.result == FileProcessingElement.completeResult) {
+                                    if (sourceElement.man.story != null) {
+                                        sourceElement.man.story.write(file + [fileloaded: new Date()])
+                                    }
+
+                                    if (processedElement != null)
+                                        processedElement.uploadLocalFile(file.filename as String, file.filepath as String)
+
+                                    this.counter.nextCount()
+                                    counter.addCount(file.filesize as Long)
+                                } else if (element.result == FileProcessingElement.errorResult) {
+                                    if (errorElement != null) {
+                                        errorElement.uploadLocalFile(file.filename as String, file.filepath as String)
+
+                                        if (element.errorText != null)
+                                            element.uploadTextToStorageError()
+                                    }
+
+                                    counterErrors.nextCount()
+                                } else {
+                                    counterSkips.nextCount()
+                                }
+
+                                sourceElement.man.removeLocalFile(filename)
+                                if (delFile && BoolUtils.IsValue(element.removeFile, element.result != element.skipResult)) {
+                                    if (delTable == null || element.result != element.completeResult) {
+                                        Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
+                                            man.removeFile(filename)
+                                        }
+                                    } else {
+                                        delTable.write([filepath: filepath, filename: filename])
+                                    }
                                 }
                             }
-                        }
-                        finally {
-                            // Free managers in pools
-                            sourceElement.isFree = true
-                            if (processedElement != null) processedElement.isFree = true
-                            if (errorElement != null) errorElement.isFree = true
+                            finally {
+                                // Free managers in pools
+                                sourceElement.isFree = true
+                                if (processedElement != null) processedElement.isFree = true
+                                if (errorElement != null) errorElement.isFree = true
+                            }
                         }
                     }
+                    pt.finish(exec.counter.count)
                 }
-                pt.finish(exec.counter.count)
+                catch (Exception e){
+                    sourceList.each { element ->
+                        if (element.man.story != null) {
+                            if (!isCachedMode)
+                                element.man.story.doneWrite()
+                            element.man.story.closeWrite()
+                        }
+                        if (element.delTable != null)
+                            element.delTable.closeWrite()
+                    }
+
+                    if (cacheTable != null && isCachedMode)
+                        cacheTable.truncate(truncate: true)
+
+                    if (delFilesTable != null)
+                        delFilesTable.truncate(truncate: true)
+
+                    throw e
+                }
+
+                sourceList.each { element ->
+                    if (element.man.story != null) {
+                        element.man.story.doneWrite()
+                        element.man.story.closeWrite()
+                    }
+                    if (element.delTable != null) {
+                        element.delTable.doneWrite()
+                        element.delTable.closeWrite()
+                    }
+                }
+
+                if (isCachedMode)
+                    saveCachedDataGroup(groupfields)
+                else if (cacheTable != null)
+                    saveCacheStory()
             }
         }
         finally {
             sourceList.each { element ->
                 def src = element.man
-                if (src.story != null) {
-                    src.story.with {
-                        doneWrite()
-                        closeWrite()
-                        currentJDBCConnection.connected = false
-                    }
-                }
+                if (src.story != null)
+                    src.story.currentJDBCConnection.connected = false
 
-                if (element.delTable != null) {
-                    element.delTable.with {
-                        doneWrite()
-                        closeWrite()
-                        currentJDBCConnection.connected = false
-                    }
-                }
+                if (element.delTable != null)
+                    element.delTable.currentJDBCConnection.connected = false
 
                 DisconnectFrom([src])
             }
@@ -593,19 +625,43 @@ Message: $msg
     protected boolean getIsCachedMode() { (onSaveCachedData != null) }
 
     /** Save cached data */
-    @Override
-    protected void saveCachedData() {
-        if (countFiles > 0) onSaveCachedData.call(this)
+    protected void saveCachedDataGroup(Map groupFields) {
+        if (!isCachedMode)
+            throw new ExceptionFileListProcessing('Cache mode is disable!')
 
-        if (delFilesTable != null) {
-            def curPath = ''
-            delFilesTable.eachRow(order: ['filepath', 'filename']) { file ->
-                def filepath = file.filepath
-                if (filepath != curPath) {
-                    source.changeDirectory(filepath)
-                    curPath = filepath
+        try {
+            if (countFiles > 0)
+                onSaveCachedData.call(groupFields)
+        }
+        catch (Exception e) {
+            if (cacheTable != null)
+                cacheTable.truncate(truncate: true)
+
+            throw e
+        }
+
+        if (cacheTable != null)
+            saveCacheStory()
+
+        if (removeFiles) {
+            ConnectTo([source], numberAttempts, timeAttempts)
+
+            try {
+                def curPath = ''
+                delFilesTable.eachRow(order: ['filepath', 'filename']) { file ->
+                    def filepath = file.filepath
+                    if (filepath != curPath) {
+                        ChangeDir([source], filepath, false, numberAttempts, timeAttempts)
+                        curPath = filepath
+                    }
+                    Operation([source], numberAttempts, timeAttempts) { man ->
+                        man.removeFile(file.filename)
+                    }
                 }
-                source.removeFile(file.filename)
+                delFilesTable.truncate(truncate: true)
+            }
+            finally {
+                DisconnectFrom([source])
             }
         }
     }

@@ -429,7 +429,7 @@ class Flow {
 			if (autoTran) bulkParams.autoCommit = false
 			destParams = [:]
 
-			def bulkDS = dest.csvTempFile
+			def bulkDS = dest.csvTempFile.cloneDataset() as TFSDataset
 			if (bulkEscaped != null) bulkDS.escaped = bulkEscaped
 			if (bulkAsGZIP != null) bulkDS.isGzFile = bulkAsGZIP
 			if (dest.field.isEmpty()) dest.retrieveFields()
@@ -450,7 +450,7 @@ class Flow {
 				if (child.autoTran) bulkChildParams.autoCommit = false
 				child.datasetParams?.clear()
 
-				def childDS = dataset.csvTempFile
+				def childDS = dataset.csvTempFile.cloneDataset() as TFSDataset
 				if (bulkEscaped != null) childDS.escaped = bulkEscaped
 				if (bulkAsGZIP != null) childDS.isGzFile = bulkAsGZIP
 				if (dataset.field.isEmpty()) dataset.retrieveFields()

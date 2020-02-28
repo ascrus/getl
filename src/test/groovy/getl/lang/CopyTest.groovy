@@ -87,7 +87,7 @@ class CopyTest extends getl.test.GetlTest {
     }
 
     protected long copy(Manager src, Path srcMask, List<Manager> dst, Path dstMask, Path renameMask = null,
-                        boolean delFiles = false, boolean delDirs = false, boolean inMemoryMode = true) {
+                        boolean delFiles = false, boolean delDirs = false, boolean inMemoryMode = true, boolean cacheStory = true) {
         long res = 0
         Getl.Dsl(this) {
             res = fileCopier(src, dst) {
@@ -99,7 +99,8 @@ class CopyTest extends getl.test.GetlTest {
 
                 inMemoryMode = inMemoryMode
 
-                cacheFilePath = "${this.workPath}/filecopiercache"
+                if (cacheStory)
+                    cacheFilePath = "${this.workPath}/filecopiercache"
                 if (!this.debug)
                     new TDS(connectDatabase: cacheFilePath)
 
@@ -158,7 +159,8 @@ class CopyTest extends getl.test.GetlTest {
                 if (this.debug) sqlHistoryFile = "${this.workPath}/h2-single.{date}.sql"
             }
 
-            def countFiles = this.copy(files('source'), sourceMask, [files('single')] as List<Manager>, destMask)
+            def countFiles = this.copy(files('source'), sourceMask, [files('single')] as List<Manager>,
+                    destMask, null, false, false, false, false)
             testCase {
                 assertEquals(81, countFiles)
                 assertEquals(81, embeddedTable(historyTable).countRow())
