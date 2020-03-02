@@ -25,8 +25,11 @@
 package getl.jdbc
 
 import getl.data.Connection
+import getl.data.sub.WithConnection
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.lang.sub.GetlRepository
+import getl.utils.CloneUtils
 import groovy.transform.Synchronized
 
 /**
@@ -34,76 +37,131 @@ import groovy.transform.Synchronized
  * @author Alexsey Konstantinov
  *
  */
-class Sequence {
-	/** Connection for use */
-	public Connection connection
+class Sequence implements Cloneable, GetlRepository, WithConnection {
+	/** Save point manager parameters */
+	final Map<String, Object> params = [:] as Map<String, Object>
 
-	/** Use specified connection */
-	void useConnection(Connection value) {
+	/** Save point manager parameters */
+	Map getParams() { params }
+	/** Save point manager parameters */
+	void setParams(Map value) {
+		params.clear()
+		if (value != null) params.putAll(value)
+	}
+
+	/** System parameters */
+	final Map<String, Object> sysParams = [:] as Map<String, Object>
+
+	/** System parameters */
+	Map<String, Object> getSysParams() { sysParams }
+
+	/** Name in Getl Dsl reposotory */
+	String getDslNameObject() { sysParams.dslNameObject as String }
+	/** Name in Getl Dsl reposotory */
+	void setDslNameObject(String value) { sysParams.dslNameObject = value }
+
+	/** This object with Getl Dsl repository */
+	Object getDslThisObject() { sysParams.dslThisObject }
+	/** This object with Getl Dsl repository */
+	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
+
+	/** Owner object with Getl Dsl repository */
+	Object getDslOwnerObject() { sysParams.dslOwnerObject }
+	/** Owner object with Getl Dsl repository */
+	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
+
+	/** Connection */
+	JDBCConnection connection
+	/** Connection */
+	Connection getConnection() { connection }
+	/** Connection */
+	void setConnection(Connection value) {
+		if (value != null && !(value instanceof JDBCConnection))
+			throw new ExceptionGETL('Only work with JDBC connections is supported!')
+
+		if (value != null && !value.driver.isSupport(Driver.Support.SEQUENCE))
+			throw new ExceptionGETL("At connection \"$connection\" the driver does not support sequence!")
+
 		connection = value
 	}
-	
-	/**
-	 * Sequence name
-	 */
-	public String name
-	
-	/**
-	 * Sequence cache interval
-	 */
-	public long cache = 1
-	
-	private long current = 0
-	private long offs = 0
-	
-	/**
-	 * Clone sequence as new instance with current connection
-	 * @return
-	 */
-	@Synchronized
-	Sequence cloneSequence() {
-		Sequence res = getClass().newInstance() as Sequence
-		res.connection = this.connection
-		res.name = this.name
-		res.cache = this.cache
-		
-		res
-	} 
-	
-	/**
-	 * Clone sequence as new instance with other connection
-	 * @param con
-	 * @return
-	 */
-	@Synchronized
-	Sequence cloneSequence(Connection con) {
-		Sequence res = getClass().newInstance() as Sequence
-		res.connection = con
-		res.name = this.name
-		res.cache = this.cache
-		
-		res
-	}
-	
-	/**
-	 * Get next sequence value with synchronized
-	 * @return
-	 */
-	@Synchronized
-	long getNextValue() {
-		nextValueFast
+	/** Use specified connection */
+	void useConnection(JDBCConnection value) {
+		setConnection(value)
 	}
 
+	/** Sequence name */
+	String getName() { params.name as String }
+	/** Sequence name */
+	void setName(String value) { params.name = value }
+
+	/** Sequence name */
+	String getSchema() {
+		def res = params.schema as String
+		if (res  == null && name.indexOf('.') == -1)
+			res = (connection as JDBCConnection).schemaName
+
+		return res
+	}
+	/** Sequence name */
+	void setSchema(String value) { params.schema = value }
+
+	/** Sequence cache interval */
+	Long getCache() { params.cache as Long }
+	/** Sequence cache interval */
+	void setCache(Long value) { params.cache = value }
+
+	/** last received sequence value */
+	private long current = 0
+	/** Offset relative to the last received value */
+	private long offs = 0
+	
+	/** Clone sequenced and its connection */
+	@Synchronized
+	Sequence cloneSequenceConnection() {
+		cloneSequence(connection?.cloneConnection() as JDBCConnection)
+	}
+	
 	/**
-	 * Get next sequence value without synchronized	
+	 * Clone sequenced by establishing the specified connection
+	 * @param con establish a connection (null value leaves the current connection)
 	 * @return
 	 */
+	@Synchronized
+	Sequence cloneSequence(JDBCConnection con = null) {
+		Sequence res = getClass().newInstance() as Sequence
+		res.connection = con
+		res.params.putAll(CloneUtils.CloneMap(params))
+
+		return res
+	}
+
+	@Override
+	Object clone() {
+		return cloneSequence()
+	}
+
+	Object cloneConnection() {
+		Connection con = this.connection.cloneConnection()
+		return cloneSequenceConnection()
+	}
+
+	/** Sequence full name */
+	String getFullName() {
+		return (schema != null)?"${schema}.$name":name
+	}
+	
+	/** Get next sequence value with synchronized */
+	@Synchronized
+	Long getNextValue() {
+		return nextValueFast
+	}
+
+	/** Get next sequence value without synchronized */
 	long getNextValueFast() {
-		if (!connection.driver.isSupport(Driver.Support.SEQUENCE)) throw new ExceptionGETL("Driver not support sequences")
 		if ((current == 0) || (offs >= cache)) {
-				connection.tryConnect()
-				current = connection.driver.getSequence(name)
-				offs = 0
+			connection.tryConnect()
+			current = connection.driver.getSequence(fullName)
+			offs = 0
 		}
 
 		offs++
@@ -113,6 +171,6 @@ class Sequence {
 	
 	@Override
 	String toString() {
-		name
+		return fullName
 	}
 }

@@ -44,6 +44,8 @@ import getl.impala.ImpalaTable
 import getl.jdbc.*
 import getl.json.*
 import getl.lang.opts.*
+import getl.lang.sub.ParseObjectName
+import getl.lang.sub.RepositoryFilter
 import getl.mssql.*
 import getl.mysql.*
 import getl.netezza.NetezzaConnection
@@ -141,11 +143,14 @@ Examples:
      * P.S. Locate the execution script in the "run" method
      * @param args
      */
-    static void Application(def args) {
+    static void Application(Class scriptClass, def args) {
+        if (!Getl.isAssignableFrom(scriptClass))
+            throw new ExceptionDSL("Class $scriptClass is not Getl script!")
+
         if (args instanceof String[])
             args = args.toList()
-        def stack = new Throwable().getStackTrace()
-        def runclass = (stack[stack.length - 1] as StackTraceElement).getClassName()
+
+        def runclass = scriptClass.name
         Main(["runclass=$runclass"] + args)
     }
 
@@ -345,12 +350,14 @@ Examples:
         _params.repConnections = new ConcurrentHashMap<String, Connection>()
         _params.repDatasets = new ConcurrentHashMap<String, Dataset>()
         _params.repHistoryPoints = new ConcurrentHashMap<String, SavePointManager>()
+        _params.repSequences = new ConcurrentHashMap<String, SavePointManager>()
         _params.repFileManagers = new ConcurrentHashMap<String, Manager>()
 
         _langOpts = _params.langOpts as LangSpec
         _connections = _params.repConnections as Map<String, Connection>
         _datasets = _params.repDatasets as Map<String, Dataset>
         _historypoints = _params.repHistoryPoints as Map<String, SavePointManager>
+        _sequences = _params.repSequences as Map<String, Sequence>
         _filemanagers = _params.repFileManagers as Map<String, Manager>
 
         LISTCONNECTIONCLASSES = [
@@ -485,6 +492,7 @@ Examples:
         _connections = _params.repConnections as Map<String, Connection>
         _datasets = _params.repDatasets as Map<String, Dataset>
         _historypoints = _params.repHistoryPoints as Map<String, SavePointManager>
+        _sequences = _params.repSequences as Map<String, Sequence>
         _filemanagers = _params.repFileManagers as Map<String, Manager>
     }
 
@@ -590,132 +598,32 @@ Examples:
     /** list of executed script classes and call parameters */
     protected SynchronizeObject getExecutedClasses() { _params.executedClasses as SynchronizeObject }
 
+    /** Repository object filtering manager */
+    protected def repFilter = new RepositoryFilter()
     /** Specified filter when searching for objects */
-    private String _filteringGroup
-    /** Specified filter when searching for objects */
-    @Synchronized
-    String getFilteringGroup() { _filteringGroup }
+    String getFilteringGroup() { repFilter.filteringGroup }
 
     /** Use the specified filter by group name when searching for objects */
-    @Synchronized
     void forGroup(String group) {
         if (group == null || group.trim().length() == 0)
             throw new ExceptionGETL('Filter group required!')
         if (Thread.currentThread() instanceof ExecutorThread)
             throw new ExceptionGETL('Using group filtering within a threads is not allowed!')
 
-        _filteringGroup = group.trim().toLowerCase()
+        repFilter.filteringGroup = group.trim().toLowerCase()
     }
 
     /** Reset filter to search for objects */
-    @Synchronized
-    void clearGroupFilter() { _filteringGroup = null }
+    void clearGroupFilter() { repFilter.clearGroupFilter() }
 
     /** Repository object name */
     String repObjectName(String name) {
-        def names = new ParseObjectName(name)
-        if (filteringGroup != null && names.groupName == null)
-            names.groupName = filteringGroup
-
-        return names.name
-    }
-
-    /** Class for parsing object name*/
-    class ParseObjectName {
-        ParseObjectName() {
-            super()
-        }
-
-        ParseObjectName(String repName) {
-            super()
-            setName(repName)
-        }
-
-        ParseObjectName(String groupName, objectName) {
-            super()
-            setGroupName(groupName)
-            setObjectName(objectName)
-        }
-
-        /** Name object in repository */
-        String _name
-        /** Name object in repository */
-        String getName() { _name }
-        /** Name object in repository */
-        void setName(String value) {
-            if (value == null) {
-                _name = null
-                _groupName = null
-                _objectName = null
-                return
-            }
-
-            value = value.trim().toLowerCase()
-            if (value.length() == 0)
-                throw new ExceptionGETL('The naming value cannot be empty!')
-
-            def i = value.indexOf(':')
-            if (i > -1) {
-                if (i == 0)
-                    throw new ExceptionGETL("Invalid name \"$value\"")
-
-                _groupName = value.substring(0, i)
-                if (i < value.length() - 1)
-                    _objectName = value.substring(i + 1)
-                else
-                    _objectName = null
-            } else {
-                _groupName = null
-                _objectName = value
-            }
-
-            _name = value
-        }
-
-        /** Group name */
-        String _groupName
-        /** Group name */
-        String getGroupName() { _groupName }
-        /** Group name */
-        void setGroupName(String value) {
-            value = value?.trim()?.toLowerCase()
-            if (value != null && value.length() == 0)
-                throw new ExceptionGETL('The group naming value cannot be empty!')
-
-            if (value == null) {
-                _name = _objectName
-            } else if (_objectName != null) {
-                _name = value + ':' + _objectName
-            } else {
-                _name = null
-            }
-            _groupName = value
-        }
-
-        /** Object name */
-        String _objectName
-        /** Object name */
-        String getObjectName() { _objectName }
-        /** Object name */
-        void setObjectName(String value) {
-            value = value?.trim()?.toLowerCase()
-            if (value != null && value.length() == 0)
-                throw new ExceptionGETL('The object naming value cannot be empty!')
-
-            if (value == null) {
-                _name = null
-            } else if (_groupName != null) {
-                _name = _groupName + ':' + value
-            } else {
-                _name = value
-            }
-            _objectName = value
-        }
+        repFilter.objectName(name)
     }
 
     /** Parsing the name of an object from the repository into a group and the name itself */
     ParseObjectName parseName(String name) {
-        return new ParseObjectName(name)
+        return repFilter.parseName(name)
     }
 
     /**
@@ -1556,6 +1464,7 @@ Examples:
                             if (connection == null) {
                                 c.sysParams.dslThisObject = childThisObject
                                 c.sysParams.dslOwnerObject = childOwnerObject
+                                c.sysParams.dslNameObject = (it as Connection).dslNameObject
                             }
                             return c
                         }
@@ -1763,7 +1672,7 @@ Examples:
 
     /**
      * Search for an object in the repository
-     * @param obj histore point manager
+     * @param obj history point manager
      * @return name of the object in the repository or null if not found
      */
     String findHistorypoint(SavePointManager obj) {
@@ -1802,7 +1711,6 @@ Examples:
             obj = new SavePointManager()
             obj.sysParams.dslThisObject = childThisObject
             obj.sysParams.dslOwnerObject = childOwnerObject
-            if (lastJdbcDefaultConnection != null) obj.connection = lastJdbcDefaultConnection
             if (obj.connection != null && langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
                 def thread = Thread.currentThread() as ExecutorThread
                 obj.connection = thread.registerCloneObject('connections', obj.connection,
@@ -1810,6 +1718,7 @@ Examples:
                             def p = (it as Connection).cloneConnection()
                             p.sysParams.dslThisObject = childThisObject
                             p.sysParams.dslOwnerObject = childOwnerObject
+                            p.sysParams.dslNameObject = (it as Connection).dslNameObject
                             return p
                         }
                 ) as JDBCConnection
@@ -1828,7 +1737,6 @@ Examples:
                 obj.sysParams.dslThisObject = childThisObject
                 obj.sysParams.dslOwnerObject = childOwnerObject
                 obj.sysParams.dslNameObject = repName
-                if (lastJdbcDefaultConnection != null) obj.connection = lastJdbcDefaultConnection
                 historypoints.put(repName, obj)
             }
             else {
@@ -1920,6 +1828,232 @@ Examples:
         def list = listHistorypoints(mask, filter)
         list.each { name ->
             historypoints.remove(name)
+        }
+    }
+
+    /** Sequences repository link object */
+    private Map<String, Sequence> _sequences
+
+    /** Sequences repository */
+    protected Map<String, Sequence> getSequences() { _sequences }
+
+    /**
+     * Return list of repository sequences
+     * @param mask filter mask (use Path expression syntax)
+     * @param filter object filtering code
+     * @return list of sequences names according to specified conditions
+     */
+    @Synchronized
+    List<String> listSequences(String mask = null, Closure<Boolean> filter = null) {
+        def res = [] as List<String>
+
+        def masknames = parseName(mask)
+        def maskgroup = masknames.groupName ?: filteringGroup
+        def maskobject = masknames.objectName
+        def path = (maskobject != null) ? new Path(mask: maskobject) : null
+        def names = new ParseObjectName()
+
+        sequences.each { String name, Sequence obj ->
+            names.name = name
+            if (maskgroup == null || maskgroup == names.groupName) {
+                if (path == null || path.match(names.objectName)) {
+                    if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
+                }
+            }
+        }
+
+        return res
+    }
+
+    /**
+     * Return list of repository sequences
+     * @param filter object filtering code
+     * @return list of sequences names according to specified conditions
+     */
+    List<String> listSequences(Closure<Boolean> filter) {
+        listSequences(null, filter)
+    }
+
+    /**
+     * Process repository sequences for specified mask and filter
+     * @param mask filter mask (use Path expression syntax)
+     * @param filter object filtering code
+     */
+    void processSequences(String mask,
+                          @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        if (cl == null)
+            throw new ExceptionGETL('Process required closure code!')
+
+        def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
+        listSequences(mask).each { name ->
+            code.call(name)
+        }
+    }
+
+    /** Process all repository sequences */
+    void processSequences(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processSequences(null, cl)
+    }
+
+    /**
+     * Search for an object in the repository
+     * @param obj sequence
+     * @return name of the object in the repository or null if not found
+     */
+    String findSequence(Sequence obj) {
+        def repName = obj.dslNameObject
+        if (repName == null) return null
+
+        if (obj.dslThisObject == null) return null
+        if (obj.dslOwnerObject == null) return null
+
+        def repObj = sequences.get(repObjectName(repName))
+        if (repObj == null) return null
+
+        return repName
+    }
+
+    /**
+     * Find a sequences by name
+     * @param name sequences name
+     * @return found sequences object or null if not found
+     */
+    Sequence findSequence(String name) {
+        return sequences.get(repObjectName(name))
+    }
+
+    /**
+     * Register sequence in repository
+     * @param name name in repository
+     * @registration registering
+     */
+    @Synchronized
+    protected Sequence registerSequence(String name, Boolean registration = false) {
+        registration = BoolUtils.IsValue(registration)
+
+        Sequence obj
+        if (name == null) {
+            obj = new Sequence()
+            obj.sysParams.dslThisObject = childThisObject
+            obj.sysParams.dslOwnerObject = childOwnerObject
+            if (obj.connection != null && langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+                def thread = Thread.currentThread() as ExecutorThread
+                obj.connection = thread.registerCloneObject('connections', obj.connection,
+                        {
+                            def p = (it as Connection).cloneConnection()
+                            p.sysParams.dslThisObject = childThisObject
+                            p.sysParams.dslOwnerObject = childOwnerObject
+                            p.sysParams.dslNameObject = (it as Connection).dslNameObject
+                            return p
+                        }
+                ) as JDBCConnection
+            }
+        } else {
+            def repName = repObjectName(name)
+            obj = sequences.get(repName)
+            if (obj == null) {
+                if (registration && Thread.currentThread() instanceof ExecutorThread)
+                    throw new ExceptionGETL("it is not allowed to register an sequence \"$name\" inside a thread!")
+
+                if (!registration && langOpts.validRegisterObjects)
+                    throw new ExceptionGETL("Sequence \"$name\" is not exist!")
+
+                obj = new Sequence()
+                obj.sysParams.dslThisObject = childThisObject
+                obj.sysParams.dslOwnerObject = childOwnerObject
+                obj.sysParams.dslNameObject = repName
+                sequences.put(repName, obj)
+            }
+            else {
+                obj.sysParams.dslThisObject = childThisObject
+                obj.sysParams.dslOwnerObject = childOwnerObject
+            }
+
+            if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+                def thread = Thread.currentThread() as ExecutorThread
+                if (obj.connection != null) {
+                    def cloneConnection = thread.registerCloneObject('connections', obj.connection,
+                            {
+                                def c = (it as JDBCConnection).cloneConnection()
+                                c.sysParams.dslThisObject = childThisObject
+                                c.sysParams.dslOwnerObject = childOwnerObject
+                                c.sysParams.dslNameObject = (it as Connection).dslNameObject
+                                return c
+                            }
+                    ) as JDBCConnection
+                    obj = thread.registerCloneObject('sequences', obj,
+                            {
+                                def p = (it as Sequence).cloneSequence(cloneConnection)
+                                p.sysParams.dslThisObject = childThisObject
+                                p.sysParams.dslOwnerObject = childOwnerObject
+                                p.sysParams.dslNameObject = repName
+                                return p
+                            }
+                    ) as Sequence
+                } else {
+                    obj = thread.registerCloneObject('sequences', obj,
+                            {
+                                def p = (it as Sequence).cloneSequence()
+                                p.sysParams.dslThisObject = childThisObject
+                                p.sysParams.dslOwnerObject = childOwnerObject
+                                p.sysParams.dslNameObject = repName
+                                return p
+                            }
+                    ) as Sequence
+                }
+            }
+        }
+
+        return obj
+    }
+
+    /**
+     * Register sequence in repository
+     * @param obj object for registration
+     * @param name name object in repository
+     * @param validExist checking if an object is registered in the repository (default true)
+     */
+    @Synchronized
+    Sequence registerSequenceObject(Sequence obj, String name = null, Boolean validExist = true) {
+        if (obj == null)
+            throw new ExceptionGETL("Sequence object cannot be null!")
+
+        if (name == null) {
+            obj.sysParams.dslThisObject = childThisObject
+            obj.sysParams.dslOwnerObject = childOwnerObject
+            return obj
+        }
+
+        validExist = BoolUtils.IsValue(validExist, true)
+        def repName = repObjectName(name)
+
+        if (validExist) {
+            def exObj = sequences.get(repName)
+            if (exObj != null)
+                throw new ExceptionGETL("Sequence \"$name\" already registered!")
+        }
+
+        obj.sysParams.dslThisObject = childThisObject
+        obj.sysParams.dslOwnerObject = childOwnerObject
+        obj.sysParams.dslNameObject = repName
+
+        sequences.put(repName, obj)
+
+        return obj
+    }
+
+    /**
+     * Unregister sequence
+     * @param mask filter mask (use Path expression syntax)
+     * @param filter object filtering code
+     */
+    @Synchronized
+    void unregisterSequence(String mask = null,
+                            @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.Sequence'])
+                                    Closure<Boolean> filter = null) {
+        def list = listSequences(mask, filter)
+        list.each { name ->
+            sequences.remove(name)
         }
     }
 
@@ -2785,6 +2919,11 @@ Examples:
                      @ClosureParams(value = SimpleType, options = ['getl.jdbc.ViewDataset']) Closure cl = null) {
         def parent = registerDataset(connection, VIEWDATASET, name, registration) as ViewDataset
         runClosure(parent, cl)
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof JDBCConnection)
+                parent.connection = owner as JDBCConnection
+        }
 
         return parent
     }
@@ -2854,6 +2993,11 @@ Examples:
                                 @DelegatesTo(FirebirdTable)
                                 @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl) {
         def parent = registerDataset(FIREBIRDTABLE, name, registration) as FirebirdTable
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof FirebirdConnection)
+                parent.connection = owner as FirebirdConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -2910,6 +3054,11 @@ Examples:
                     @DelegatesTo(H2Table)
                     @ClosureParams(value = SimpleType, options = ['getl.h2.H2Table']) Closure cl) {
         def parent = registerDataset(H2TABLE, name, registration) as H2Table
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof H2Connection)
+                parent.connection = owner as H2Connection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -2967,6 +3116,11 @@ Examples:
                       @DelegatesTo(DB2Table)
                       @ClosureParams(value = SimpleType, options = ['getl.db2.DB2Table']) Closure cl) {
         def parent = registerDataset(DB2TABLE, name, registration) as DB2Table
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof DB2Connection)
+                parent.connection = owner as DB2Connection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3023,6 +3177,11 @@ Examples:
                         @DelegatesTo(HiveTable)
                         @ClosureParams(value = SimpleType, options = ['getl.hive.HiveTable']) Closure cl) {
         def parent = registerDataset(HIVETABLE, name, registration) as HiveTable
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof HiveConnection)
+                parent.connection = owner as HiveConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3079,6 +3238,11 @@ Examples:
                             @DelegatesTo(ImpalaTable)
                             @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaTable']) Closure cl) {
         def parent = registerDataset(IMPALATABLE, name, registration) as ImpalaTable
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof ImpalaConnection)
+                parent.connection = owner as ImpalaConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3135,6 +3299,11 @@ Examples:
                           @DelegatesTo(MSSQLTable)
                           @ClosureParams(value = SimpleType, options = ['getl.mssql.MSSQLTable']) Closure cl) {
         def parent = registerDataset(MSSQLTABLE, name, registration) as MSSQLTable
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof MSSQLConnection)
+                parent.connection = owner as MSSQLConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3191,6 +3360,11 @@ Examples:
                           @DelegatesTo(MySQLTable)
                           @ClosureParams(value = SimpleType, options = ['getl.mysql.MySQLTable']) Closure cl) {
         def parent = registerDataset(MYSQLTABLE, name, registration) as MySQLTable
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof MySQLConnection)
+                parent.connection = owner as MySQLConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3247,6 +3421,11 @@ Examples:
                               @DelegatesTo(NetezzaTable)
                               @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl) {
         def parent = registerDataset(NETEZZATABLE, name, registration) as NetezzaTable
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof NetezzaConnection)
+                parent.connection = owner as NetezzaConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3303,6 +3482,11 @@ Examples:
                             @DelegatesTo(OracleTable)
                             @ClosureParams(value = SimpleType, options = ['getl.oracle.OracleTable']) Closure cl) {
         def parent = registerDataset(ORACLETABLE, name, registration) as OracleTable
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof OracleConnection)
+                parent.connection = owner as OracleConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3359,6 +3543,11 @@ Examples:
                                     @DelegatesTo(PostgreSQLTable)
                                     @ClosureParams(value = SimpleType, options = ['getl.postgresql.PostgreSQLTable']) Closure cl) {
         def parent = registerDataset(POSTGRESQLTABLE, name, registration) as PostgreSQLTable
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof PostgreSQLConnection)
+                parent.connection = owner as PostgreSQLConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3416,6 +3605,11 @@ Examples:
                               @DelegatesTo(VerticaTable)
                               @ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaTable']) Closure cl) {
         def parent = registerDataset(VERTICATABLE, name, registration) as VerticaTable
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof VerticaConnection)
+                parent.connection = owner as VerticaConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3472,6 +3666,11 @@ Examples:
                                 @DelegatesTo(NetsuiteTable)
                                 @ClosureParams(value = SimpleType, options = ['getl.netsuite.NetsuiteTable']) Closure cl) {
         def parent = registerDataset(NETSUITETABLE, name, registration) as NetsuiteTable
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof NetsuiteConnection)
+                parent.connection = owner as NetsuiteConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3588,6 +3787,11 @@ Examples:
                        @DelegatesTo(QueryDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.jdbc.QueryDataset']) Closure cl) {
         def parent = registerDataset(connection, QUERYDATASET, name, registration) as QueryDataset
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof JDBCConnection)
+                parent.connection = owner as JDBCConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3684,6 +3888,11 @@ Examples:
                    @DelegatesTo(CSVDataset)
                    @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl) {
         def parent = registerDataset(CSVDATASET, name, registration) as CSVDataset
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof CSVConnection)
+                parent.connection = owner as CSVConnection
+        }
         if (parent.connection == null) parent.connection = new CSVConnection()
         runClosure(parent, cl)
 
@@ -3779,7 +3988,13 @@ Examples:
                        @DelegatesTo(ExcelDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.excel.ExcelDataset']) Closure cl) {
         def parent = registerDataset(EXCELDATASET, name, registration) as ExcelDataset
-        if (parent.connection == null) parent.connection = new ExcelConnection()
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof ExcelConnection)
+                parent.connection = owner as ExcelConnection
+        }
+        if (parent.connection == null)
+            parent.connection = new ExcelConnection()
         runClosure(parent, cl)
 
         return parent
@@ -3836,6 +4051,11 @@ Examples:
                      @DelegatesTo(JSONDataset)
                      @ClosureParams(value = SimpleType, options = ['getl.json.JSONDataset']) Closure cl) {
         def parent = registerDataset(JSONDATASET, name, registration) as JSONDataset
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof JSONConnection)
+                parent.connection = owner as JSONConnection
+        }
         if (parent.connection == null) parent.connection = new JSONConnection()
         runClosure(parent, cl)
 
@@ -3893,6 +4113,11 @@ Examples:
                    @DelegatesTo(XMLDataset)
                    @ClosureParams(value = SimpleType, options = ['getl.xml.XMLDataset']) Closure cl) {
         def parent = registerDataset(XMLDATASET, name, registration) as XMLDataset
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof XMLConnection)
+                parent.connection = owner as XMLConnection
+        }
         if (parent.connection == null) parent.connection = new XMLConnection()
         runClosure(parent, cl)
 
@@ -3950,6 +4175,11 @@ Examples:
                                  @DelegatesTo(SalesForceDataset)
                                  @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceDataset']) Closure cl) {
         def parent = registerDataset(SALESFORCEDATASET, name, registration) as SalesForceDataset
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof SalesForceConnection)
+                parent.connection = owner as SalesForceConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -3973,6 +4203,11 @@ Examples:
                                            @DelegatesTo(SalesForceQueryDataset)
                                            @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceQueryDataset']) Closure cl) {
         def parent = registerDataset(SALESFORCEQUERYDATASET, name, registration) as SalesForceQueryDataset
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof SalesForceConnection)
+                parent.connection = owner as SalesForceConnection
+        }
         runClosure(parent, cl)
 
         return parent
@@ -4029,6 +4264,12 @@ Examples:
                      @DelegatesTo(XeroDataset)
                      @ClosureParams(value = SimpleType, options = ['getl.xero.XeroDataset']) Closure cl) {
         def parent = registerDataset(XERODATASET, name, registration) as XeroDataset
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof XeroConnection)
+                parent.connection = owner as XeroConnection
+        }
+
         runClosure(parent, cl)
 
         return parent
@@ -4243,7 +4484,16 @@ Examples:
                     @DelegatesTo(SQLScripter)
                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl) {
         def parent = new SQLScripter()
-        parent.connection = connection ?: defaultJdbcConnection(QUERYDATASET)
+        def owner = DetectClosureDelegate(cl)
+
+        if (connection != null)
+            parent.connection = connection
+        else if (owner instanceof JDBCConnection)
+            parent.connection = owner as JDBCConnection
+        else
+            parent.connection = defaultJdbcConnection(QUERYDATASET)
+
+        parent.logEcho = _langOpts.sqlEchoLogLevel.toString()
         parent.extVars = configContent
         def pt = startProcess("Execution SQL script${(parent.connection != null) ? ' on [' + parent.connection + ']' : ''}")
         runClosure(parent, cl)
@@ -4506,21 +4756,22 @@ Examples:
         return new Path(mask: mask)
     }
 
-    /**
-     * Incremenal history point manager
-     */
+    /** Incremenal history point manager */
     SavePointManager historypoint(String name = null, Boolean registration = false,
                                   @DelegatesTo(SavePointManager)
                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl = null) {
         def parent = registerHistoryPoint(name, registration) as SavePointManager
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof JDBCConnection)
+                parent.connection = owner as JDBCConnection
+        }
         runClosure(parent, cl)
 
         return parent
     }
 
-    /**
-     * Incremenal history point manager
-     */
+    /** Incremenal history point manager */
     SavePointManager historypoint(String name,
                                   @DelegatesTo(SavePointManager)
                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl) {
@@ -4545,6 +4796,46 @@ Examples:
         return obj.cloneSavePointManager(con) as SavePointManager
     }
 
+    /** Sequence */
+    Sequence sequence(String name = null, Boolean registration = false,
+                          @DelegatesTo(Sequence)
+                          @ClosureParams(value = SimpleType, options = ['getl.jdbc.Sequence']) Closure cl = null) {
+        def parent = registerSequence(name, registration) as Sequence
+        if (parent.connection == null) {
+            def owner = DetectClosureDelegate(cl)
+            if (owner instanceof JDBCConnection)
+                parent.connection = owner as JDBCConnection
+        }
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Sequence */
+    Sequence sequence(String name,
+                      @DelegatesTo(Sequence)
+                      @ClosureParams(value = SimpleType, options = ['getl.jdbc.Sequence']) Closure cl) {
+        sequence(name, false, cl)
+    }
+
+    /** Sequence */
+    Sequence sequence(@DelegatesTo(Sequence)
+                      @ClosureParams(value = SimpleType, options = ['getl.jdbc.Sequence']) Closure cl) {
+        sequence(null, false, cl)
+    }
+
+    /**
+     * Clone sequence object
+     * @param obj object to clone
+     * @param con used connection for new sequence
+     * @return clone object
+     */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    Sequence cloneSequence(Sequence obj, JDBCConnection con = null) {
+        if (obj == null) throw new ExceptionGETL('Need object value!')
+        return obj.cloneSequence(con) as Sequence
+    }
+
     /**
      * Copying files according to the specified rules between file systems
      * @param source source file manager
@@ -4555,8 +4846,10 @@ Examples:
     FileCopier fileCopier(Manager source, List<Manager> destinations,
                                   @DelegatesTo(FileCopier)
                           @ClosureParams(value = SimpleType, options = ['getl.files.FileCopier']) Closure cl) {
-        if (source == null) throw new ExceptionGETL('Required source file manager!')
-        if (destinations == null && destinations.isEmpty()) throw new ExceptionGETL('Required destination file manager!')
+        if (source == null)
+            throw new ExceptionGETL('Required source file manager!')
+        if (destinations == null && destinations.isEmpty())
+            throw new ExceptionGETL('Required destination file manager!')
 
         def parent = new FileCopier()
         parent.sysParams.dslThisObject = childThisObject
@@ -4601,7 +4894,8 @@ Examples:
     FileCleaner fileCleaner(Manager source,
                           @DelegatesTo(FileCleaner)
                           @ClosureParams(value = SimpleType, options = ['getl.files.FileCleaner']) Closure cl) {
-        if (source == null) throw new ExceptionGETL('Required source file manager!')
+        if (source == null)
+            throw new ExceptionGETL('Required source file manager!')
 
         def parent = new FileCleaner()
         parent.sysParams.dslThisObject = childThisObject
@@ -4633,7 +4927,8 @@ Examples:
     FileProcessing fileProcessing(Manager source,
                             @DelegatesTo(FileProcessing)
                             @ClosureParams(value = SimpleType, options = ['getl.proc.FileProcessing']) Closure cl) {
-        if (source == null) throw new ExceptionGETL('Required source file manager!')
+        if (source == null)
+            throw new ExceptionGETL('Required source file manager!')
 
         def parent = new FileProcessing()
         parent.sysParams.dslThisObject = childThisObject
@@ -4662,7 +4957,8 @@ Examples:
     GroovyTestCase testCase(@DelegatesTo(GroovyTestCase)
                             @ClosureParams(value = SimpleType, options = ['junit.framework.TestCase']) Closure cl) {
         def parent = _testCase ?: new GroovyTestCase()
-        RunClosure(childOwnerObject, childThisObject, parent, cl)
+        def owner = DetectClosureDelegate(cl)
+        RunClosure(owner, childThisObject, parent, cl)
         return parent
     }
 

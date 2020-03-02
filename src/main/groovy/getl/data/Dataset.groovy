@@ -25,8 +25,10 @@
 package getl.data
 
 import getl.data.opts.DatasetLookupSpec
+import getl.data.sub.WithConnection
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
+import getl.lang.sub.GetlRepository
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
 import getl.csv.CSVDataset
@@ -42,7 +44,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-class Dataset implements Cloneable {
+class Dataset implements Cloneable, GetlRepository, WithConnection {
 	Dataset () {
 		params.manualSchema = false
 
@@ -276,13 +278,19 @@ class Dataset implements Cloneable {
 	Map<String, Object> getSysParams() { sysParams }
 
 	/** Name in Getl Dsl reposotory */
-	String getDslNameObject() { sysParams.dslNameObject }
+	String getDslNameObject() { sysParams.dslNameObject as String }
+	/** Name in Getl Dsl reposotory */
+	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
 	/** This object with Getl Dsl repository */
 	Object getDslThisObject() { sysParams.dslThisObject }
+	/** This object with Getl Dsl repository */
+	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
 
 	/** Owner object with Getl Dsl repository */
 	Object getDslOwnerObject() { sysParams.dslOwnerObject }
+	/** Owner object with Getl Dsl repository */
+	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
 
 	/** Dataset directives create, drop, read, write and bulkLoad */
 	Map<String, Object> directives(String group) {
@@ -1421,5 +1429,9 @@ class Dataset implements Cloneable {
 	@Override
 	Object clone() {
 		return cloneDataset()
+	}
+
+	Object cloneConnection() {
+		return cloneDatasetConnection()
 	}
 }

@@ -25,6 +25,7 @@
 package getl.utils
 
 import getl.lang.opts.BaseSpec
+import getl.lang.sub.GetlRepository
 import groovy.transform.AutoClone
 import groovy.transform.InheritConstructors
 import groovy.transform.CompileStatic
@@ -42,7 +43,7 @@ import getl.exception.ExceptionGETL
  * @author Alexsey Konstantinov
  */
 @AutoClone
-class Path {
+class Path implements Cloneable, GetlRepository {
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 
 	Path () {
@@ -198,11 +199,20 @@ class Path {
 	/** System parameters */
 	Map<String, Object> getSysParams() { sysParams }
 
+	/** Name in Getl Dsl reposotory */
+	String getDslNameObject() { sysParams.dslNameObject as String }
+	/** Name in Getl Dsl reposotory */
+	void setDslNameObject(String value) { sysParams.dslNameObject = value }
+
 	/** This object with Getl Dsl repository */
 	Object getDslThisObject() { sysParams.dslThisObject }
+	/** This object with Getl Dsl repository */
+	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
 
 	/** Owner object with Getl Dsl repository */
 	Object getDslOwnerObject() { sysParams.dslOwnerObject }
+	/** Owner object with Getl Dsl repository */
+	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
 
 	/** Define variable options */
 	Map variable(String name,

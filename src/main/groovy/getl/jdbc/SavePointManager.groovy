@@ -26,6 +26,8 @@ package getl.jdbc
 
 import getl.data.Connection
 import getl.data.Field
+import getl.data.sub.WithConnection
+import getl.lang.sub.GetlRepository
 import getl.proc.Flow
 import getl.utils.*
 import getl.driver.Driver
@@ -39,7 +41,7 @@ import java.sql.Timestamp
  * @author Alexsey Konstantinov
  *
  */
-class SavePointManager implements Cloneable {
+class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	SavePointManager () {
 		params.fields = [:] as Map<String, Object>
 		params.extended = [:] as Map<String, Object>
@@ -63,21 +65,29 @@ class SavePointManager implements Cloneable {
 	Map<String, Object> getSysParams() { sysParams }
 
 	/** Name in Getl Dsl reposotory */
-	String getDslNameObject() { sysParams.dslNameObject }
+	String getDslNameObject() { sysParams.dslNameObject as String }
+	/** Name in Getl Dsl reposotory */
+	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
 	/** This object with Getl Dsl repository */
 	Object getDslThisObject() { sysParams.dslThisObject }
+	/** This object with Getl Dsl repository */
+	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
 
 	/** Owner object with Getl Dsl repository */
 	Object getDslOwnerObject() { sysParams.dslOwnerObject }
+	/** Owner object with Getl Dsl repository */
+	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
 	
 	/** Connection */
 	private JDBCConnection connection
 	/** Connection */
-	JDBCConnection getConnection () { connection }
+	Connection getConnection () { connection }
 	/** Connection */
-	void setConnection(JDBCConnection value) {
-		assert value != null, "Required created connection"
+	void setConnection(Connection value) {
+		if (value != null && !(value instanceof JDBCConnection))
+			throw new ExceptionGETL('Only work with JDBC connections is supported!')
+
 		connection = value
 		map.clear()
 	}
@@ -87,7 +97,7 @@ class SavePointManager implements Cloneable {
 		setConnection(value)
 		return value
 	}
-	
+
 	/** Database name for table */
 	String getDbName () { params.dbName }
 	/** Database name for table */
@@ -170,6 +180,11 @@ class SavePointManager implements Cloneable {
 		man.params.putAll(p)
 
 		return man
+	}
+
+	@Synchronized
+	SavePointManager cloneSavePointManagerConnection() {
+		cloneSavePointManager(connection?.cloneConnection() as JDBCConnection)
 	}
 
 	/** Set fields mapping */
@@ -509,5 +524,9 @@ class SavePointManager implements Cloneable {
 	@Override
 	Object clone() {
 		return cloneSavePointManager()
+	}
+
+	Object cloneConnection() {
+		return cloneSavePointManagerConnection()
 	}
 }

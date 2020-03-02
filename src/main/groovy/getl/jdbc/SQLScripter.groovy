@@ -24,7 +24,9 @@
 
 package getl.jdbc
 
+import getl.data.Connection
 import getl.data.Field
+import getl.data.sub.WithConnection
 import getl.exception.ExceptionGETL
 import getl.exception.ExceptionSQLScripter
 import getl.utils.*
@@ -37,7 +39,7 @@ import java.util.regex.Pattern
  *
  */
 @SuppressWarnings("UnnecessaryQualifiedReference")
-class SQLScripter {
+class SQLScripter implements WithConnection, Cloneable {
 	/** 
 	 * Type of script command 
 	 */
@@ -65,51 +67,42 @@ class SQLScripter {
 	 */
 	private TypeCommand typeSql = TypeCommand.UNKNOWN
 
-	/*** 
-	 * JDBC connection 
-	 */
+	/***  JDBC connection */
 	private JDBCConnection connection
-
-	JDBCConnection getConnection() { connection }
-
-	void setConnection(JDBCConnection value) { connection = value }
-
-	/** Use specified connection */
+	/***  JDBC connection */
+	Connection getConnection() { connection }
+	/***  JDBC connection */
+	void setConnection(Connection value) { connection = value }
+	/** Use specified JDBC connection */
 	JDBCConnection useConnection(JDBCConnection value) {
 		setConnection(value)
 		return value
 	}
 	
-	/*
-	 * Connection for point manager
-	 */
+	/* Connection for point manager */
 	private JDBCConnection pointConnection
-
+	/* Connection for point manager */
 	JDBCConnection getPointConnection () { pointConnection }
+	/* Connection for point manager */
+	void setPointConnection(JDBCConnection value) { pointConnection = value }
+	
+	/**  Count proccessed rows */
+	long rowCount = 0
+	/**  Count proccessed rows */
+	long getRowCount() { rowCount }
 
-	void setPointConnection(JDBCConnection value) {
-		pointConnection = value
-	}
-	
-	/** 
-	 * Count proccessed rows 
-	 */
-	public long rowCount = 0
-	
-	/** 
-	 * Script 
-	 */
+	/** Script to execute */
 	private String script
-
+	/** Script to execute */
 	String getScript() { script }
-
+	/** Script to execute */
 	void setScript(String value) { script = (value == null)?null:((value.trim().length() == 0)?null:value) }
 	
 	private java.util.logging.Level logEcho = java.util.logging.Level.FINE
-
+	/** Echo command output level */
 	String getLogEcho () {  logEcho.toString() }
-
-	void setLogEcho (String level) {  logEcho = Logs.StrToLevel(level) }
+	/** Echo command output level */
+	void setLogEcho(String level) {  logEcho = Logs.StrToLevel(level) }
 	
 	/** 
 	 * Load script from file
@@ -649,5 +642,44 @@ class SQLScripter {
 		for (int i = 0; i < res.size(); i++) { res[i] = res[i].trim() }
 
 		return res
+	}
+
+	/**
+	 * Clone scripter
+	 * @param newConnection use specified connection (if null value using current connection)
+	 * @param newPointConnection use specified point connection (if null value using current point connection)
+	 * @return cloned object
+	 */
+	SQLScripter cloneSQLScripter(JDBCConnection newConnection = null, JDBCConnection newPointConnection = null) {
+		if (newConnection == null) newConnection = this.connection
+		if (newPointConnection == null) newPointConnection = this.pointConnection
+		def className = this.getClass().name
+		def res = Class.forName(className).newInstance() as SQLScripter
+		if (newConnection != null) res.connection = newConnection
+		if (newPointConnection != null) res.pointConnection = newPointConnection
+		res.script = this.script
+		res.logEcho = this.logEcho
+		res.vars = CloneUtils.CloneMap(vars)
+
+		return res
+	}
+
+	/**
+	 * Clone scripter and its connections
+	 * @return clone object
+	 */
+	SQLScripter cloneSQLScripterConnection() {
+		def con = connection?.cloneConnection() as JDBCConnection
+		def pointCon = pointConnection?.cloneConnection() as JDBCConnection
+		return cloneSQLScripter(con, pointConnection)
+	}
+
+	@Override
+	Object clone() {
+		return cloneSQLScripter()
+	}
+
+	Object cloneConnection() {
+		return cloneSQLScripterConnection()
 	}
 }

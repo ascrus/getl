@@ -33,6 +33,7 @@ import getl.files.sub.ManagerListProcessClosure
 import getl.files.sub.ManagerListProcessing
 import getl.jdbc.*
 import getl.lang.opts.BaseSpec
+import getl.lang.sub.GetlRepository
 import getl.proc.Executor
 import getl.proc.Flow
 import getl.utils.*
@@ -47,7 +48,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-abstract class Manager implements Cloneable {
+abstract class Manager implements Cloneable, GetlRepository {
 /* TODO: added method Operation analog FileCopier */
 	Manager () {
 		methodParams.register('super',
@@ -136,12 +137,18 @@ abstract class Manager implements Cloneable {
 
 	/** Name in Getl Dsl reposotory */
 	String getDslNameObject() { sysParams.dslNameObject }
+	/** Name in Getl Dsl reposotory */
+	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
 	/** This object with Getl Dsl repository */
 	Object getDslThisObject() { sysParams.dslThisObject }
+	/** This object with Getl Dsl repository */
+	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
 
 	/** Owner object with Getl Dsl repository */
 	Object getDslOwnerObject() { sysParams.dslOwnerObject }
+	/** Owner object with Getl Dsl repository */
+	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
 	
 	/** Root path */
 	String getRootPath () { params.rootPath as String }

@@ -26,6 +26,7 @@ package getl.data
 
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.lang.sub.GetlRepository
 import getl.utils.*
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -36,7 +37,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-class Connection implements Cloneable {
+class Connection implements Cloneable, GetlRepository {
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 	
 	/**
@@ -228,13 +229,19 @@ class Connection implements Cloneable {
 	Map<String, Object> getSysParams() { sysParams as Map<String, Object> }
 
 	/** Name in Getl Dsl reposotory */
-	String getDslNameObject() { sysParams.dslNameObject }
+	String getDslNameObject() { sysParams.dslNameObject as String }
+	/** Name in Getl Dsl reposotory */
+	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
 	/** This object with Getl Dsl repository */
 	Object getDslThisObject() { sysParams.dslThisObject }
+	/** This object with Getl Dsl repository */
+	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
 
 	/** Owner object with Getl Dsl repository */
 	Object getDslOwnerObject() { sysParams.dslOwnerObject }
+	/** Owner object with Getl Dsl repository */
+	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
 	
 	/** Auto load schema with meta file for connection datasets */
 	boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema, false) }

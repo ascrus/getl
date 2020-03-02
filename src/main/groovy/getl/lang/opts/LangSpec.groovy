@@ -107,4 +107,9 @@ class LangSpec extends BaseSpec {
     Boolean getCheckProcessForThreads() { BoolUtils.IsValue(params.checkProcessForThreads) }
     /** Check permission to work processes when they start */
     void setCheckProcessForThreads(Boolean value) { params.checkProcessForThreads = value }
+
+    /** The default output level of the echo command to the log for sql object */
+    Level getSqlEchoLogLevel() { (params.sqlEchoLogLevel as Level)?:processTimeLevelLog }
+    /** The default output level of the echo command to the log for sql object */
+    void setSqlEchoLogLevel(Level value) { params.sqlEchoLogLevel = value }
 }

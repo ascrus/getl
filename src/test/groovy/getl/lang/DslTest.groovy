@@ -133,6 +133,7 @@ environments {
             options {
                 processTimeDebug = true
                 processTimeLevelLog = Level.FINEST
+                sqlEchoLogLevel = Level.INFO
             }
 
             // Init log file
@@ -154,6 +155,12 @@ environments {
                 new File(sqlHistoryFile).deleteOnExit()
 
                 configContent.sqlFileHistoryH2 = sqlHistoryFile
+
+                // Test sql with inner connection
+                sql {
+                    exec 'SET SELECT SESSION_ID() AS session_id'
+                    assertNotNull(vars.session_id)
+                }
             }
 
             def con = embeddedConnection('getl.testdsl.h2:h2')
@@ -435,6 +442,8 @@ ORDER BY t1.id'''
             forGroup 'getl.testdsl.h2'
 
             historypoint('history1', true) {
+                useConnection embeddedConnection('getl.testdsl.h2:h2')
+
                 tableName = 'historytable'
                 saveMethod = mergeSave
                 create(true)
@@ -939,8 +948,6 @@ ORDER BY t1.id'''
                 shouldFail { embeddedConnection('getl.testdsl.h2:h2') }
             }
         }
-
-//        println new File(Config.content.sqlFileHistoryH2).text
     }
 
     @Test
@@ -1094,6 +1101,18 @@ ORDER BY t1.id'''
         assertEquals(0, Config.content.testAllowThreads)
 
         Job.ExitOnError = true
+    }
+
+    @Test
+    void test99_05RunApplication() {
+        String[] args = ['vars.field1="test application"', 'vars.field2=100']
+        DslApplication.main(args)
+        Getl.Dsl(this) {
+            assertTrue(configContent.init)
+            assertTrue(configContent.check)
+            assertTrue(configContent.run)
+            assertTrue(configContent.done)
+        }
     }
 
     @Test
