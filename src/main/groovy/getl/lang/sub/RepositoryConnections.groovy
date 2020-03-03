@@ -53,15 +53,43 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     public static final String XEROCONNECTION = 'getl.xero.XeroConnection'
     public static final String XMLCONNECTION = 'getl.xml.XMLConnection'
 
+    /** List of allowed connection classes */
+    public static final List<String> LISTCONNECTIONS = [
+        CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
+        H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION,
+        NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
+        VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION
+    ]
+
+    /** List of allowed jdbc connection classes */
+    public static final List<String> LISTJDBCCONNECTIONS = [
+        DB2CONNECTION, EMBEDDEDCONNECTION, FIREBIRDCONNECTION, H2CONNECTION, HIVECONNECTION, IMPALACONNECTION,
+        MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
+        POSTGRESQLCONNECTION, VERTICACONNECTION
+    ]
+
+    /** List of allowed other connection classes */
+    public static final List<String> LISTFILECONNECTIONS = [
+        CSVCONNECTION, CSVTEMPCONNECTION, EXCELCONNECTION, JSONCONNECTION, XMLCONNECTION
+    ]
+
+    /** List of allowed jdbc connection classes */
+    public static final List<String> LISTOTHERCONNECTIONS = [
+        SALESFORCECONNECTION, XEROCONNECTION
+    ]
+
+    /** List of allowed connection classes */
     @Override
-    List<String> getListClasses() {
-        [
-            CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
-            H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION,
-            NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
-            VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION
-        ]
-    }
+    List<String> getListClasses() { LISTCONNECTIONS }
+
+    /** List of allowed jdbc connection classes */
+    List<String> getListJdbcClasses() { LISTJDBCCONNECTIONS }
+
+    /** List of allowed file connection classes */
+    List<String> getListFileClasses() { LISTFILECONNECTIONS }
+
+    /** List of allowed other connection classes */
+    List<String> getListOtherClasses() { LISTOTHERCONNECTIONS }
 
     @Override
     protected Connection createObject(String className) {
@@ -70,4 +98,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     @Override
     protected String getNameCloneCollection() { 'connections' }
+
+    @Override
+    protected String getTypeObject() { 'Connection' }
 }

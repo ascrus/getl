@@ -24,11 +24,9 @@
 package getl.lang.sub
 
 import getl.data.Connection
-import getl.data.Dataset
 import getl.data.sub.WithConnection
 import getl.proc.sub.ExecutorThread
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 
 /**
  * Repository objects with connections manager
@@ -36,35 +34,46 @@ import groovy.transform.Synchronized
  */
 @InheritConstructors
 abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithConnection> extends RepositoryObjects {
-    @Override
-    protected void processRegisterObject(String className, String name, Boolean registration, T obj, T repObj, Map params) {
-        def connection = params?.connection as Connection
-        if (name == null) {
-            if (connection != null)
-                obj.connection = connection
-            else
-                getl.setDefaultConnection(className, obj)
-
-            if (obj.connection != null && getl.langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
-                def thread = Thread.currentThread() as ExecutorThread
-                obj.connection = thread.registerCloneObject('connections', obj.connection,
-                        {
-                            def c = (it as Connection).cloneConnection()
-                            c.sysParams.dslThisObject = getl.childThisObject
-                            c.sysParams.dslOwnerObject = getl.childOwnerObject
-                            c.sysParams.dslNameObject = (it as Connection).dslNameObject
-                            return c
-                        }
-                ) as Connection
+    protected void processRegisterObject(String className, String name, Boolean registration, T repObj, T cloneObj, Map params) {
+        if (repObj.connection == null && (registration || name == null)) {
+            if  (params.connection != null)
+                repObj.connection = params.connection as Connection
+            else if (params.classConnection != null && params.code != null) {
+                def owner = getl.DetectClosureDelegate(params.code as Closure)
+                if ((params.classConnection as Class).isInstance(owner))
+                    repObj.connection = owner as Connection
             }
         }
-        else {
+        if (repObj.connection == null && params.defaultConnection != null)
+            repObj.connection = params.defaultConnection as Connection
 
-        }
+        if (repObj.connection == null || cloneObj == null) return
+        if (!getl.langOpts.useThreadModelConnection || (cloneObj.connection != null && cloneObj.connection != repObj.connection))
+            return
+
+        def thread = Thread.currentThread() as ExecutorThread
+        cloneObj.connection = thread.registerCloneObject('connections', repObj.connection,
+                {
+                    def c = (it as Connection).cloneConnection()
+                    c.sysParams.dslThisObject = getl.childThisObject
+                    c.sysParams.dslOwnerObject = getl.childOwnerObject
+                    c.sysParams.dslNameObject = (it as Connection).dslNameObject
+                    return c
+                }
+        ) as Connection
     }
 
-    @Synchronized
-    protected T register(Connection connection, String className, String name, Boolean registration = false) {
-        return register(className, name, registration, [connection: connection])
+    /**
+     * Register an object on the specified connection
+     * @param connection connection for an object
+     * @param className object class name
+     * @param name repository object name
+     * @param registration registration required in the repository
+     * @return repository object
+     */
+    T register(Connection connection, String className, String name, Boolean registration = false,
+               Connection defaultConnection = null, Class classConnection = null, Closure cl = null) {
+        register(className, name, registration,
+                [connection: connection, defaultConnection: defaultConnection, classConnection: classConnection, code: cl]) as T
     }
 }

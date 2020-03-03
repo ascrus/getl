@@ -68,6 +68,7 @@ class FileProcessingTest extends GetlTest {
                 }
             }
 
+            useQueryConnection lastJdbcDefaultConnection
             thread {
                 useList sqlQuery('SELECT DISTINCT sale_date FROM sales ORDER BY sale_date').rows()
                 countProc = this.countFileInDay

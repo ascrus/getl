@@ -13,7 +13,6 @@ import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.StringUtils
-import org.junit.BeforeClass
 import org.junit.FixMethodOrder
 import org.junit.Test
 
@@ -674,15 +673,14 @@ ORDER BY t1.id'''
             clearGroupFilter()
 
             assertEquals(2, listConnections().size())
-            assertEquals(1, listConnections('h*').size())
-            assertEquals(1, listConnections('c*').size())
+            assertEquals(1, listConnections('getl.testdsl.h2:h*').size())
+            assertEquals(1, listConnections('getl.testdsl.csv:c*').size())
             assertEquals(5, listDatasets().size())
-            assertEquals(4, listDatasets('table*').size())
-            assertEquals(1, listDatasets('query*').size())
+            assertEquals(1, listDatasets('getl.testdsl.h2:query*').size())
             assertEquals(1, listHistorypoints().size())
-            assertEquals(1, listHistorypoints('h*').size())
+            assertEquals(1, listHistorypoints('getl.testdsl.h2:h*').size())
             assertEquals(1, listFilemanagers().size())
-            assertEquals(1, listFilemanagers('f*').size())
+            assertEquals(1, listFilemanagers('getl.testdsl.files:f*').size())
 
             forGroup 'getl.testdsl.h2'
             assertEquals(1, listConnections().size())
@@ -910,7 +908,7 @@ ORDER BY t1.id'''
 //            println scriptTable1.text
 
             try {
-                runGroovyFile(scriptFile) { createTables = true }
+                runGroovyScriptFile(scriptFile) { createTables = true }
                 assertEquals(2, listJdbcTables('getl.testdsl.temp:').size())
                 embeddedTable('getl.testdsl.temp:table1') {
                     assertTrue(exists)
@@ -935,7 +933,7 @@ ORDER BY t1.id'''
                 unregisterFilemanager 'getl.testdsl.files:*'
                 shouldFail { filemanager('getl.testdsl.files:files') }
 
-                unregisterDataset null, [H2TABLE, EMBEDDEDTABLE]
+                unregisterDataset null, [repositoryDatasets.H2TABLE, repositoryDatasets.EMBEDDEDTABLE]
                 shouldFail { dataset('getl.testdsl.h2:table1') }
                 shouldFail { dataset('getl.testdsl.h2:table2') }
                 assertEquals(listDatasets().sort(), ['getl.testdsl.csv:table1', 'getl.testdsl.csv:table2', 'getl.testdsl.h2:query1'])

@@ -45,7 +45,12 @@ import getl.jdbc.*
 import getl.json.*
 import getl.lang.opts.*
 import getl.lang.sub.ParseObjectName
+import getl.lang.sub.RepositoryConnections
+import getl.lang.sub.RepositoryDatasets
+import getl.lang.sub.RepositoryFilemanagers
 import getl.lang.sub.RepositoryFilter
+import getl.lang.sub.RepositoryHistorypoints
+import getl.lang.sub.RepositorySequences
 import getl.mssql.*
 import getl.mysql.*
 import getl.netezza.NetezzaConnection
@@ -239,7 +244,13 @@ Examples:
                         throw new ExceptionGETL("Class \"$initClassName\" not found, error: ${e.message}!")
                     }
 
-                    eng.runGroovyClass(initClass)
+                    eng._params.isInitMode = true
+                    try {
+                        eng.runGroovyClass(initClass, true)
+                    }
+                    finally {
+                        eng._params.isInitMode = false
+                    }
                 }
 
                 try {
@@ -300,18 +311,18 @@ Examples:
     @Synchronized
     boolean allowProcess(String processName, Boolean throwError = false) {
         def res = true
-        if (langOpts.processControlDataset != null) {
+        if (_langOpts.processControlDataset != null) {
             if (processName == null) processName = (_params.mainClass)?:this.getClass().name
             if (processName == null)
                 throw new ExceptionGETL('Required name for the process being checked!')
 
-            if (langOpts.processControlDataset instanceof TableDataset) {
-                def table = langOpts.processControlDataset as TableDataset
+            if (_langOpts.processControlDataset instanceof TableDataset) {
+                def table = _langOpts.processControlDataset as TableDataset
                 def row = sqlQueryRow(table.connection as JDBCConnection, "SELECT enabled FROM ${table.fullNameDataset()} WHERE name = '$processName'")
                 if (row != null && !row.isEmpty())
                     res = BoolUtils.IsValue(row.enabled)
             } else {
-                def csv = langOpts.processControlDataset as CSVDataset
+                def csv = _langOpts.processControlDataset as CSVDataset
                 def row = null
                 csv.eachRow {
                     if (it.name == processName) {
@@ -346,57 +357,32 @@ Examples:
 
         _params.executedClasses = new SynchronizeObject()
 
-        _params.langOpts = new LangSpec(this, this)
-        _params.repConnections = new ConcurrentHashMap<String, Connection>()
-        _params.repDatasets = new ConcurrentHashMap<String, Dataset>()
-        _params.repHistoryPoints = new ConcurrentHashMap<String, SavePointManager>()
-        _params.repSequences = new ConcurrentHashMap<String, SavePointManager>()
-        _params.repFileManagers = new ConcurrentHashMap<String, Manager>()
+        _langOpts = new LangSpec(this, this)
+        _repositoryConnections = new RepositoryConnections(this)
+        _repositoryDatasets = new RepositoryDatasets(this)
+        _repositoryHistorypoints = new RepositoryHistorypoints(this)
+        _repositorySequences = new RepositorySequences(this)
+        _repositoryFilemanagers = new RepositoryFilemanagers(this)
 
-        _langOpts = _params.langOpts as LangSpec
-        _connections = _params.repConnections as Map<String, Connection>
-        _datasets = _params.repDatasets as Map<String, Dataset>
-        _historypoints = _params.repHistoryPoints as Map<String, SavePointManager>
-        _sequences = _params.repSequences as Map<String, Sequence>
-        _filemanagers = _params.repFileManagers as Map<String, Manager>
-
-        LISTCONNECTIONCLASSES = [
-                CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
-                H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION,
-                NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
-                VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION
-        ]
-
-        LISTJDBCCONNECTIONCLASSES = [
-                DB2CONNECTION, EMBEDDEDCONNECTION, FIREBIRDCONNECTION, H2CONNECTION, HIVECONNECTION, IMPALACONNECTION,
-                MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
-                POSTGRESQLCONNECTION, VERTICACONNECTION
-        ]
-
-        LISTDATASETCLASSES = [
-                CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, JSONDATASET,
-                MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
-                SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET,
-                XMLDATASET
-        ]
-
-        LISTJDBCTABLECLASSES = [
-                DB2TABLE, EMBEDDEDTABLE, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE,
-                NETSUITETABLE, ORACLETABLE, POSTGRESQLTABLE, VERTICATABLE
-        ]
-
-        LISTFILEMANAGERCLASSES = [FILEMANAGER, FTPMANAGER, HDFSMANAGER, SFTPMANAGER]
+        _params.langOpts =_langOpts
+        _params.repositoryConnections = _repositoryConnections
+        _params.repositoryDatasets = _repositoryDatasets
+        _params.repositoryHistorypoints = _repositoryHistorypoints
+        _params.repositorySequences = _repositorySequences
+        _params.repositoryFilemanagers = _repositoryFilemanagers
     }
 
     @Override
-    Object run() { return this }
+    Object run() { this }
 
     /** Current instance GETL DSL */
-    protected static Getl _getl
+    private static Getl _getl
 
     /** Current instance GETL DSL */
     static Getl GetlInstance() {
-        if (_getl == null) _getl = new Getl()
+        if (_getl == null)
+            _getl = new Getl()
+
         return _getl
     }
 
@@ -407,7 +393,7 @@ Examples:
     static Object Dsl(def ownerObject, Map parameters,
                     @DelegatesTo(Getl)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
-        return GetlInstance().runDsl(ownerObject, parameters, cl)
+        GetlInstance().runDsl(ownerObject, parameters, cl)
     }
 
     /** Run DSL script on getl share object */
@@ -481,91 +467,35 @@ Examples:
     /** This object for child objects */
     Object getChildThisObject() { _ownerObject ?: this }
     /** Delegate method for child objects */
-    protected static int childDelegate = Closure.DELEGATE_FIRST
+    private static int childDelegate = Closure.DELEGATE_FIRST
 
-    protected Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
+    /** Engine parameters */
+    private Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
+
+    /** Running init script */
+    Boolean getIsInitMode() { BoolUtils.IsValue(_params.isInitMode) }
+
     /** Set language parameters */
     protected void setGetlParams(Map<String, Object> importParams) {
         _params = importParams
 
-        _langOpts = _params.langOpts as LangSpec
-        _connections = _params.repConnections as Map<String, Connection>
-        _datasets = _params.repDatasets as Map<String, Dataset>
-        _historypoints = _params.repHistoryPoints as Map<String, SavePointManager>
-        _sequences = _params.repSequences as Map<String, Sequence>
-        _filemanagers = _params.repFileManagers as Map<String, Manager>
+        if (!isInitMode)
+            setLangOpts(_params.langOpts as LangSpec)
+        else
+            _langOpts = _params.langOpts as LangSpec
+
+        _repositoryConnections.objects = (_params.repositoryConnections as RepositoryConnections).objects
+        _repositoryDatasets.objects = (_params.repositoryDatasets as RepositoryDatasets).objects
+        _repositoryHistorypoints.objects = (_params.repositoryHistorypoints as RepositoryHistorypoints).objects
+        _repositorySequences.objects = (_params.repositorySequences as RepositorySequences).objects
+        _repositoryFilemanagers.objects = (_params.repositoryFilemanagers as RepositoryFilemanagers).objects
     }
-
-    public static final String CSVCONNECTION = 'getl.csv.CSVConnection'
-    public static final String CSVTEMPCONNECTION = 'getl.tfs.TFS'
-    public static final String DB2CONNECTION = 'getl.db2.DB2Connection'
-    public static final String EXCELCONNECTION = 'getl.excel.ExcelConnection'
-    public static final String FIREBIRDCONNECTION = 'getl.firebird.FirebirdConnection'
-    public static final String H2CONNECTION = 'getl.h2.H2Connection'
-    public static final String HIVECONNECTION = 'getl.hive.HiveConnection'
-    public static final String IMPALACONNECTION = 'getl.impala.ImpalaConnection'
-    public static final String JSONCONNECTION = 'getl.json.JSONConnection'
-    public static final String MSSQLCONNECTION = 'getl.mssql.MSSQLConnection'
-    public static final String MYSQLCONNECTION = 'getl.mysql.MySQLConnection'
-    public static final String NETEZZACONNECTION = 'getl.netezza.NetezzaConnection'
-    public static final String NETSUITECONNECTION = 'getl.netsuite.NetsuiteConnection'
-    public static final String ORACLECONNECTION = 'getl.oracle.OracleConnection'
-    public static final String POSTGRESQLCONNECTION = 'getl.postgresql.PostgreSQLConnection'
-    public static final String SALESFORCECONNECTION = 'getl.salesforce.SalesForceConnection'
-    public static final String EMBEDDEDCONNECTION = 'getl.tfs.TDS'
-    public static final String VERTICACONNECTION = 'getl.vertica.VerticaConnection'
-    public static final String XEROCONNECTION = 'getl.xero.XeroConnection'
-    public static final String XMLCONNECTION = 'getl.xml.XMLConnection'
-
-    /** List of allowed connection classes */
-    public static List<String> LISTCONNECTIONCLASSES
-
-    /** List of allowed jdbc connection classes */
-    public static List<String> LISTJDBCCONNECTIONCLASSES
-
-    public static final String CSVDATASET = 'getl.csv.CSVDataset'
-    public static final String CSVTEMPDATASET = 'getl.tfs.TFSDataset'
-    public static final String DB2TABLE = 'getl.db2.DB2Table'
-    public static final String EXCELDATASET = 'getl.excel.ExcelDataset'
-    public static final String FIREBIRDTABLE = 'getl.firebird.FirebirdTable'
-    public static final String H2TABLE = 'getl.h2.H2Table'
-    public static final String HIVETABLE = 'getl.hive.HiveTable'
-    public static final String IMPALATABLE = 'getl.impala.ImpalaTable'
-    public static final String JSONDATASET = 'getl.json.JSONDataset'
-    public static final String MSSQLTABLE = 'getl.mssql.MSSQLTable'
-    public static final String MYSQLTABLE = 'getl.mysql.MySQLTable'
-    public static final String NETEZZATABLE = 'getl.netezza.NetezzaTable'
-    public static final String NETSUITETABLE = 'getl.netsuite.NetsuiteTable'
-    public static final String ORACLETABLE = 'getl.oracle.OracleTable'
-    public static final String QUERYDATASET = 'getl.jdbc.QueryDataset'
-    public static final String POSTGRESQLTABLE = 'getl.postgresql.PostgreSQLTable'
-    public static final String SALESFORCEDATASET = 'getl.salesforce.SalesForceDataset'
-    public static final String SALESFORCEQUERYDATASET = 'getl.salesforce.SalesForceQueryDataset'
-    public static final String EMBEDDEDTABLE = 'getl.tfs.TDSTable'
-    public static final String VIEWDATASET = 'getl.jdbc.ViewDataset'
-    public static final String VERTICATABLE = 'getl.vertica.VerticaTable'
-    public static final String XERODATASET = 'getl.xero.XeroDataset'
-    public static final String XMLDATASET = 'getl.xml.XMLDataset'
-
-    /** List of allowed dataset classes */
-    public static List<String> LISTDATASETCLASSES
-
-    /** List of allowed jdbc dataset classes */
-    public static List<String> LISTJDBCTABLECLASSES
-
-    public static final String FILEMANAGER = 'getl.files.FileManager'
-    public static final String FTPMANAGER = 'getl.files.FTPManager'
-    public static final String HDFSMANAGER = 'getl.files.HDFSManager'
-    public static final String SFTPMANAGER = 'getl.files.SFTPManager'
-
-    /** List of allowed file manager classes */
-    public static List<String> LISTFILEMANAGERCLASSES
 
     /** Fix start process */
     ProcessTime startProcess(String name, String objName = null) {
-        return new ProcessTime(name: name, objectName: objName,
-                logLevel: (langOpts.processTimeTracing) ? langOpts.processTimeLevelLog : Level.OFF,
-                debug: langOpts.processTimeDebug)
+        new ProcessTime(name: name, objectName: objName,
+                logLevel: (_langOpts.processTimeTracing) ? _langOpts.processTimeLevelLog : Level.OFF,
+                debug: _langOpts.processTimeDebug)
     }
 
     /** Fix finish process */
@@ -599,9 +529,9 @@ Examples:
     protected SynchronizeObject getExecutedClasses() { _params.executedClasses as SynchronizeObject }
 
     /** Repository object filtering manager */
-    protected def repFilter = new RepositoryFilter()
+    private def repositoryFilter = new RepositoryFilter()
     /** Specified filter when searching for objects */
-    String getFilteringGroup() { repFilter.filteringGroup }
+    String getFilteringGroup() { repositoryFilter.filteringGroup }
 
     /** Use the specified filter by group name when searching for objects */
     void forGroup(String group) {
@@ -610,20 +540,20 @@ Examples:
         if (Thread.currentThread() instanceof ExecutorThread)
             throw new ExceptionGETL('Using group filtering within a threads is not allowed!')
 
-        repFilter.filteringGroup = group.trim().toLowerCase()
+        repositoryFilter.filteringGroup = group.trim().toLowerCase()
     }
 
     /** Reset filter to search for objects */
-    void clearGroupFilter() { repFilter.clearGroupFilter() }
+    void clearGroupFilter() { repositoryFilter.clearGroupFilter() }
 
     /** Repository object name */
     String repObjectName(String name) {
-        repFilter.objectName(name)
+        repositoryFilter.objectName(name)
     }
 
     /** Parsing the name of an object from the repository into a group and the name itself */
     ParseObjectName parseName(String name) {
-        return repFilter.parseName(name)
+        repositoryFilter.parseName(name)
     }
 
     /**
@@ -644,11 +574,10 @@ Examples:
         return file.getText(codePage ?: 'UTF-8')
     }
 
-    /** Object link to connections repository */
-    private Map<String, Connection> _connections
-
     /** Connections repository */
-    protected Map<String, Connection> getConnections() { _connections }
+    private RepositoryConnections _repositoryConnections
+    /** Connections repository */
+    RepositoryConnections getRepositoryConnections() { _repositoryConnections }
 
     /**
      * Return list of repository connections for specified mask, classes and filter
@@ -661,32 +590,7 @@ Examples:
     List<String> listConnections(String mask = null, List connectionClasses = null,
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                          Closure<Boolean> filter = null) {
-        (connectionClasses as List<String>)?.each {
-            if (!(it in LISTCONNECTIONCLASSES))
-                throw new ExceptionGETL("\"$it\" is not connection class!")
-        }
-
-        def res = [] as List<String>
-        def classList = connectionClasses as List<String>
-
-        def masknames = parseName(mask)
-        def maskgroup = masknames.groupName ?: filteringGroup
-        def maskobject = masknames.objectName
-        def path = (maskobject != null) ? new Path(mask: maskobject) : null
-        def names = new ParseObjectName()
-
-        connections.each { name, obj ->
-            names.name = name
-            if (maskgroup == null || maskgroup == names.groupName) {
-                if (path == null || path.match(names.objectName)) {
-                    if (classList == null || obj.getClass().name in classList) {
-                        if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
-                    }
-                }
-            }
-        }
-
-        return res
+        _repositoryConnections.list(mask, connectionClasses, filter)
     }
 
     /**
@@ -733,14 +637,7 @@ Examples:
      */
     void processConnections(String mask, List connectionClasses,
                             @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        if (cl == null)
-            throw new ExceptionGETL('Process required closure code!')
-
-        def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        def list = listConnections(mask, connectionClasses)
-        list.each { name ->
-            code.call(name)
-        }
+        _repositoryConnections.processObjects(mask, connectionClasses, cl)
     }
 
     /**
@@ -778,7 +675,7 @@ Examples:
      * @return list of jdbc connection names according to specified conditions
      */
     List<String> listJdbcConnections(String mask = null, Closure<Boolean> filter = null) {
-        return listConnections(mask, LISTJDBCCONNECTIONCLASSES, filter)
+        listConnections(mask, _repositoryConnections.listJdbcClasses, filter)
     }
 
     /**
@@ -802,7 +699,7 @@ Examples:
      */
     void processJdbcConnections(String mask,
                                 @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        processConnections(mask, LISTJDBCCONNECTIONCLASSES, cl)
+        processConnections(mask, _repositoryConnections.listJdbcClasses, cl)
     }
 
     /**
@@ -819,20 +716,7 @@ Examples:
      * @return name of the object in the repository or null if not found
      */
     String findConnection(Connection obj) {
-        def repName = obj.dslNameObject
-        if (repName == null) return null
-
-        if (obj.dslThisObject == null) return null
-        if (obj.dslOwnerObject == null) return null
-
-        def className = obj.getClass().name
-        if (!(className in LISTCONNECTIONCLASSES)) return null
-
-        def repObj = connections.get(repObjectName(repName))
-        if (repObj == null) return null
-        if (repObj.getClass().name != className) return null
-
-        return repName
+        _repositoryConnections.find(obj)
     }
 
     /**
@@ -841,68 +725,13 @@ Examples:
      * @return found connection object or null if not found
      */
     Connection findConnection(String name) {
-        return connections.get(repObjectName(name))
+        _repositoryConnections.find(name)
     }
 
     /** Register connection in repository */
     @Synchronized
     protected Connection registerConnection(String connectionClassName, String name, Boolean registration = false) {
-        registration = BoolUtils.IsValue(registration)
-
-        if (connectionClassName == null && registration)
-            throw new ExceptionGETL('Connection class name cannot be null!')
-
-        if (connectionClassName != null && !(connectionClassName in LISTCONNECTIONCLASSES))
-            throw new ExceptionGETL("$connectionClassName is not connection class!")
-
-        if (name == null) {
-            def c = Connection.CreateConnection(connection: connectionClassName) as Connection
-            c.sysParams.dslThisObject = childThisObject
-            c.sysParams.dslOwnerObject = childOwnerObject
-            return c
-        }
-
-        def repName = repObjectName(name)
-        def obj = connections.get(repName)
-
-        if (obj == null) {
-            if (registration && Thread.currentThread() instanceof ExecutorThread)
-                throw new ExceptionGETL("it is not allowed to register an connection \"$name\" inside a thread!")
-
-            if (!registration && langOpts.validRegisterObjects)
-                throw new ExceptionGETL("Connection \"$name\" is not registered!")
-
-            obj = Connection.CreateConnection(connection: connectionClassName)
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-            obj.sysParams.dslNameObject = repName
-            connections.put(repName, obj)
-        } else {
-            if (registration)
-                throw new ExceptionGETL("Connection \"$name\" already registered for class \"${obj.getClass().name}\"!")
-            else {
-                if (connectionClassName != null && obj.getClass().name != connectionClassName)
-                    throw new ExceptionGETL("The requested connection \"$name\" of the class \"$connectionClassName\" is already registered for the class \"${obj.getClass().name}\"!")
-            }
-
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-        }
-
-        if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
-            def thread = Thread.currentThread() as ExecutorThread
-            obj = thread.registerCloneObject('connections', obj,
-                    {
-                        def c = (it as Connection).cloneConnection()
-                        c.sysParams.dslThisObject = childThisObject
-                        c.sysParams.dslOwnerObject = childOwnerObject
-                        c.sysParams.dslNameObject = repName
-                        return c
-                    }
-            ) as Connection
-        }
-
-        return obj
+        _repositoryConnections.register(connectionClassName, name, registration)
     }
 
     /**
@@ -913,34 +742,7 @@ Examples:
      */
     @Synchronized
     Connection registerConnectionObject(Connection obj, String name = null, Boolean validExist = true) {
-        if (obj == null) throw new ExceptionGETL("Connection object cannot be null!")
-
-        def className = obj.getClass().name
-        if (!(className in LISTCONNECTIONCLASSES))
-            throw new ExceptionGETL("Unknown connection class $className!")
-
-        if (name == null) {
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-            return obj
-        }
-
-        validExist = BoolUtils.IsValue(validExist, true)
-        def repName = repObjectName(name)
-
-        if (validExist) {
-            def exObj = connections.get(repName)
-            if (exObj != null)
-                throw new ExceptionGETL("Connection \"$name\" already registered for class \"${exObj.getClass().name}\"!")
-        }
-
-        obj.sysParams.dslThisObject = childThisObject
-        obj.sysParams.dslOwnerObject = childOwnerObject
-        obj.sysParams.dslNameObject = repName
-
-        connections.put(repName, obj)
-
-        return obj
+        _repositoryConnections.registerObject(obj, name, validExist)
     }
 
     /**
@@ -953,45 +755,13 @@ Examples:
     void unregisterConnection(String mask = null, List connectionClasses = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                       Closure<Boolean> filter = null) {
-        def list = listConnections(mask, connectionClasses, filter)
-        list.each { name ->
-            connections.remove(name)
-        }
+        _repositoryConnections.unregister(mask, connectionClasses, filter)
     }
 
-    /** Tables repository link object */
-    private Map<String, Dataset> _datasets
-
-    /** Tables repository */
-    protected Map<String, Dataset> getDatasets() { _datasets }
-
-    /**
-     * Return GETL object name for specified dataset
-     * @dataset dataset
-     * @return repository or class name
-     */
-    static String datasetObjectName(Dataset dataset) {
-        if (dataset == null)
-            return null
-
-        def name = dataset.objectFullName
-
-        def type = dataset.getClass().name
-        if (type in LISTDATASETCLASSES) {
-            type = dataset.getClass().simpleName
-            type = type.replaceFirst(type[0], type[0].toLowerCase())
-
-            if (dataset.dslNameObject != null)
-                name = type + "('" + dataset.dslNameObject + "')"
-            else
-                name = type + ' ' + name
-        } else {
-            type = dataset.getClass().simpleName
-            name = type + ' ' + name
-        }
-
-        return name
-    }
+    /** Datasets repository */
+    private RepositoryDatasets _repositoryDatasets
+    /** Datasets repository */
+    RepositoryDatasets getRepositoryDatasets() { _repositoryDatasets }
 
     /**
      * Return list of repository name datasets for specified mask, class and filter
@@ -1004,32 +774,7 @@ Examples:
     List<String> listDatasets(String mask = null, List datasetClasses = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                       Closure<Boolean> filter = null) {
-        (datasetClasses as List<String>)?.each {
-            if (!(it in LISTDATASETCLASSES))
-                throw new ExceptionGETL("\"$it\" is not dataset class!")
-        }
-
-        def res = [] as List<String>
-        def classList = datasetClasses as List<String>
-
-        def masknames = parseName(mask)
-        def maskgroup = masknames.groupName ?: filteringGroup
-        def maskobject = masknames.objectName
-        def path = (maskobject != null) ? new Path(mask: maskobject) : null
-        def names = new ParseObjectName()
-
-        datasets.each { name, obj ->
-            names.name = name
-            if (maskgroup == null || maskgroup == names.groupName) {
-                if (path == null || path.match(names.objectName)) {
-                    if (classList == null || obj.getClass().name in classList) {
-                        if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
-                    }
-                }
-            }
-        }
-
-        return res
+        _repositoryDatasets.list(mask, datasetClasses, filter)
     }
 
     /**
@@ -1076,14 +821,7 @@ Examples:
      */
     void processDatasets(String mask, List datasetClasses,
                          @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        if (cl == null)
-            throw new ExceptionGETL('Process required closure code!')
-
-        def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        def list = listDatasets(mask, datasetClasses)
-        list.each { name ->
-            code.call(name)
-        }
+        _repositoryDatasets.processObjects(mask, datasetClasses, cl)
     }
 
     /**
@@ -1124,32 +862,7 @@ Examples:
     List<ExecutorListElement> linkDatasets(List sourceList, List destList,
                                            @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                                                    Closure<Boolean> filter = null) {
-        if (sourceList == null) throw new ExceptionGETL('Required to specify the value of the source group name!')
-        if (destList == null) throw new ExceptionGETL('Required to specify the value of the destination group name!')
-
-        def parse = new ParseObjectName()
-
-        def sourceTables = [:] as Map<String, String>
-        sourceList.each { name ->
-            parse.name = name as String
-            sourceTables.put(parse.objectName, parse.name)
-        }
-
-        def destTables = [:] as Map<String, String>
-        destList.each { name ->
-            parse.name = name as String
-            destTables.put(parse.objectName, parse.name)
-        }
-
-        def res = [] as List<ExecutorListElement>
-        sourceTables.each { smallName, sourceFullName ->
-            def destFullName = destTables.get(smallName)
-            if (destFullName != null)
-                if (filter == null || filter.call(smallName))
-                    res << new ExecutorListElement(source: sourceFullName, destination: destFullName)
-        }
-
-        return res
+        _repositoryDatasets.linkDatasets(sourceList, destList, filter)
     }
 
     /**
@@ -1165,7 +878,7 @@ Examples:
         if (sourceGroup == null) throw new ExceptionGETL('Required to specify the value of the source group name!')
         if (destGroup == null) throw new ExceptionGETL('Required to specify the value of the destination group name!')
 
-        return linkDatasets(listDatasets(sourceGroup + ':'), listDatasets(destGroup + ':'), filter)
+        linkDatasets(listDatasets(sourceGroup + ':'), listDatasets(destGroup + ':'), filter)
     }
 
     /**
@@ -1175,7 +888,7 @@ Examples:
      * @return list of jdbc table names according to specified conditions
      */
     List<String> listJdbcTables(String mask = null, Closure<Boolean> filter = null) {
-        return listDatasets(mask, LISTJDBCTABLECLASSES, filter)
+        listDatasets(mask, _repositoryDatasets.listJdbcClasses, filter)
     }
 
     /**
@@ -1184,11 +897,11 @@ Examples:
      * @return list of jdbc table names according to specified conditions
      */
     List<String> listJdbcTables(Closure<Boolean> filter) {
-        return listDatasets(null, LISTJDBCTABLECLASSES, filter)
+        listJdbcConnections(null, filter)
     }
 
     /**
-     * Return list of reposotory table objects for specified list of name
+     * Return list of repository table objects for specified list of name
      * @param names list of name tables
      * @return list of table objects
      */
@@ -1208,14 +921,7 @@ Examples:
      */
     void processJdbcTables(String mask,
                            @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        if (cl == null)
-            throw new ExceptionGETL('Process required closure code!')
-
-        def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        def list = listJdbcTables(mask)
-        list.each { name ->
-            code.call(name)
-        }
+        processDatasets(mask, _repositoryDatasets.listJdbcClasses, cl)
     }
 
     /**
@@ -1231,7 +937,7 @@ Examples:
     protected void setDefaultConnection(String datasetClassName, Dataset ds) {
         if (datasetClassName == null)
             throw new ExceptionGETL('Dataset class name cannot be null!')
-        if (!(datasetClassName in LISTDATASETCLASSES))
+        if (!(datasetClassName in _repositoryDatasets.listClasses))
             throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
         if (ds instanceof JDBCDataset) {
@@ -1252,7 +958,7 @@ Examples:
     /** Last used JDBC default connection */
     JDBCConnection getLastJdbcDefaultConnection() { _lastJDBCDefaultConnection }
 
-    // /** Default JDBC connection for datasets */
+    /** Default JDBC connection for datasets */
     private def _defaultJDBCConnection = new ConcurrentHashMap<String, JDBCConnection>()
 
     /** Default JDBC connection for datasets */
@@ -1261,15 +967,15 @@ Examples:
         if (datasetClassName == null)
             res = lastJdbcDefaultConnection
         else {
-            if (!(datasetClassName in LISTDATASETCLASSES))
-                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+            if (!(datasetClassName in _repositoryDatasets.listJdbcClasses))
+                throw new ExceptionGETL("$datasetClassName is not jdbc dataset class!")
 
             res = _defaultJDBCConnection.get(datasetClassName)
-            if (res == null && lastJdbcDefaultConnection != null && datasetClassName == QUERYDATASET)
+            if (res == null && lastJdbcDefaultConnection != null && datasetClassName == _repositoryDatasets.QUERYDATASET)
                 res = lastJdbcDefaultConnection
         }
 
-        if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+        if (_langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject('connections', res,
                     {
@@ -1291,8 +997,8 @@ Examples:
             throw new ExceptionGETL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
-            if (!(datasetClassName in LISTDATASETCLASSES))
-                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+            if (!(datasetClassName in repositoryDatasets.listJdbcClasses))
+                throw new ExceptionGETL("$datasetClassName is not jdbc dataset class!")
             _defaultJDBCConnection.put(datasetClassName, value)
         }
         _lastJDBCDefaultConnection = value
@@ -1314,13 +1020,13 @@ Examples:
         if (datasetClassName == null)
             res = lastFileDefaultConnection
         else {
-            if (!(datasetClassName in LISTDATASETCLASSES))
-                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+            if (!(datasetClassName in _repositoryDatasets.listFileClasses))
+                throw new ExceptionGETL("$datasetClassName is not file dataset class!")
 
             res = _defaultFileConnection.get(datasetClassName)
         }
 
-        if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+        if (_langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject('connections', res,
                     {
@@ -1342,8 +1048,8 @@ Examples:
             throw new ExceptionGETL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
-            if (!(datasetClassName in LISTDATASETCLASSES))
-                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+            if (!(datasetClassName in _repositoryDatasets.listFileClasses))
+                throw new ExceptionGETL("$datasetClassName is not file dataset class!")
 
             _defaultFileConnection.put(datasetClassName, value)
         }
@@ -1366,13 +1072,13 @@ Examples:
         if (datasetClassName == null)
             res = lastOtherDefaultConnection
         else {
-            if (!(datasetClassName in LISTDATASETCLASSES))
+            if (!(datasetClassName in _repositoryDatasets.listOtherClasses))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
             res = _defaultOtherConnection.get(datasetClassName)
         }
 
-        if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+        if (_langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject('connections', res,
                     {
@@ -1394,7 +1100,7 @@ Examples:
             throw new ExceptionGETL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
-            if (!(datasetClassName in LISTDATASETCLASSES))
+            if (!(datasetClassName in _repositoryDatasets.listOtherClasses))
                 throw new ExceptionGETL("$datasetClassName is not dataset class!")
 
             _defaultOtherConnection.put(datasetClassName, value)
@@ -1410,20 +1116,7 @@ Examples:
      * @return name of the object in the repository or null if not found
      */
     String findDataset(Dataset obj) {
-        def repName = obj.dslNameObject
-        if (repName == null) return null
-
-        if (obj.dslThisObject == null) return null
-        if (obj.dslOwnerObject == null) return null
-
-        def className = obj.getClass().name
-        if (!(className in LISTDATASETCLASSES)) return null
-
-        def repObj = datasets.get(repObjectName(repName))
-        if (repObj == null) return null
-        if (repObj.getClass().name != className) return null
-
-        return repName
+        _repositoryDatasets.find(obj)
     }
 
     /**
@@ -1432,124 +1125,14 @@ Examples:
      * @return found dataset object or null if not found
      */
     Dataset findDataset(String name) {
-        return datasets.get(repObjectName(name))
+        _repositoryDatasets.find(name) as Dataset
     }
 
     /** Register dataset in repository */
     @Synchronized
-    protected Dataset registerDataset(Connection connection, String datasetClassName, String name, Boolean registration = false) {
-        registration = BoolUtils.IsValue(registration)
-
-        if (registration && datasetClassName == null)
-            throw new ExceptionGETL('Dataset class name cannot be null!')
-        if (datasetClassName != null && !(datasetClassName in LISTDATASETCLASSES))
-            throw new ExceptionGETL("$datasetClassName is not dataset class!")
-
-        Dataset obj
-        if (name == null) {
-            obj = Dataset.CreateDataset(dataset: datasetClassName) as Dataset
-            if (connection != null)
-                obj.connection = connection
-            else
-                setDefaultConnection(datasetClassName, obj)
-
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-
-            if (obj.connection != null && langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
-                def thread = Thread.currentThread() as ExecutorThread
-                obj.connection = thread.registerCloneObject('connections', obj.connection,
-                        {
-                            def c = (it as Connection).cloneConnection()
-                            if (connection == null) {
-                                c.sysParams.dslThisObject = childThisObject
-                                c.sysParams.dslOwnerObject = childOwnerObject
-                                c.sysParams.dslNameObject = (it as Connection).dslNameObject
-                            }
-                            return c
-                        }
-                ) as Connection
-            }
-
-            return obj
-        }
-
-        def repName = repObjectName(name)
-        obj = datasets.get(repName)
-
-        if (obj == null) {
-            if (registration && Thread.currentThread() instanceof ExecutorThread)
-                throw new ExceptionGETL("it is not allowed to register an dataset \"$name\" inside a thread!")
-
-            if (!registration && langOpts.validRegisterObjects)
-                throw new ExceptionGETL("Dataset \"$name\" is not registered!")
-
-            obj = Dataset.CreateDataset(dataset: datasetClassName) as Dataset
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-            obj.sysParams.dslNameObject = repName
-
-            if (connection != null) {
-                obj.connection = connection
-            } else {
-                setDefaultConnection(datasetClassName, obj)
-            }
-            datasets.put(repName, obj)
-        } else {
-            if (registration)
-                throw new ExceptionGETL("Dataset \"$name\" already registered for class \"${obj.getClass().name}\"!")
-            else {
-                if (datasetClassName != null && obj.getClass().name != datasetClassName)
-                    throw new ExceptionGETL("The requested dataset \"$name\" of the class \"$datasetClassName\" is already registered for the class \"${obj.getClass().name}\"!")
-            }
-
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-        }
-
-        if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
-            def thread = Thread.currentThread() as ExecutorThread
-            if (obj.connection != null) {
-                def cloneConnection = thread.registerCloneObject('connections', obj.connection,
-                        {
-                            def c = (it as Connection).cloneConnection()
-                            if (connection == null) {
-                                c.sysParams.dslThisObject = childThisObject
-                                c.sysParams.dslOwnerObject = childOwnerObject
-                                c.sysParams.dslNameObject = (it as Connection).dslNameObject
-                            }
-                            return c
-                        }
-                ) as Connection
-
-                obj = thread.registerCloneObject('datasets', obj,
-                        {
-                            def d = (it as Dataset).cloneDataset(cloneConnection)
-                            d.sysParams.dslThisObject = childThisObject
-                            d.sysParams.dslOwnerObject = childOwnerObject
-                            d.sysParams.dslNameObject = repName
-                            return d
-                        }
-                ) as Dataset
-            } else {
-                obj = thread.registerCloneObject('datasets', obj,
-                        {
-                            def d = (it as Dataset).cloneDataset()
-                            d.sysParams.dslThisObject = childThisObject
-                            d.sysParams.dslOwnerObject = childOwnerObject
-                            d.sysParams.dslNameObject = repName
-                            return d
-                        }
-                ) as Dataset
-            }
-        }
-
-        return obj
-    }
-
-    /** Register dataset in repository */
-    protected Dataset registerDataset(String datasetClassName, String name, Boolean registration = false) {
-        registerDataset(null, datasetClassName, name, registration)
+    protected Dataset registerDataset(Connection connection, String datasetClassName, String name, Boolean registration = false,
+                                      Connection defaultConnection = null, Class classConnection = null, Closure cl = null) {
+        _repositoryDatasets.register(connection, datasetClassName, name, registration, defaultConnection, classConnection, cl)
     }
 
     /**
@@ -1560,34 +1143,7 @@ Examples:
      */
     @Synchronized
     Dataset registerDatasetObject(Dataset obj, String name = null, Boolean validExist = true) {
-        if (obj == null) throw new ExceptionGETL("Dataset object cannot be null!")
-
-        def className = obj.getClass().name
-        if (!(className in LISTDATASETCLASSES))
-            throw new ExceptionGETL("Unknown dataset class $className!")
-
-        if (name == null) {
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-            return obj
-        }
-
-        validExist = BoolUtils.IsValue(validExist, true)
-        def repName = repObjectName(name)
-
-        if (validExist) {
-            def exObj = datasets.get(repName)
-            if (exObj != null)
-                throw new ExceptionGETL("Dataset \"$name\" already registered for class \"${exObj.getClass().name}\"!")
-        }
-
-        obj.sysParams.dslThisObject = childThisObject
-        obj.sysParams.dslOwnerObject = childOwnerObject
-        obj.sysParams.dslNameObject = repName
-
-        datasets.put(repName, obj)
-
-        return obj
+        _repositoryDatasets.registerObject(obj, name, validExist) as Dataset
     }
 
     /**
@@ -1600,17 +1156,13 @@ Examples:
     void unregisterDataset(String mask = null, List datasetClasses = null,
                            @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                    Closure<Boolean> filter = null) {
-        def list = listDatasets(mask, datasetClasses, filter)
-        list.each { name ->
-            datasets.remove(name)
-        }
+        _repositoryDatasets.unregister(mask, datasetClasses, filter)
     }
 
-    /** History points repository link object */
-    private Map<String, SavePointManager> _historypoints
-
     /** History points repository */
-    protected Map<String, SavePointManager> getHistorypoints() { _historypoints }
+    private RepositoryHistorypoints _repositoryHistorypoints
+    /** History points repository */
+    RepositoryHistorypoints getRepositoryHistorypoints() { _repositoryHistorypoints }
 
     /**
      * Return list of repository history point manager
@@ -1620,24 +1172,7 @@ Examples:
      */
     @Synchronized
     List<String> listHistorypoints(String mask = null, Closure<Boolean> filter = null) {
-        def res = [] as List<String>
-
-        def masknames = parseName(mask)
-        def maskgroup = masknames.groupName ?: filteringGroup
-        def maskobject = masknames.objectName
-        def path = (maskobject != null) ? new Path(mask: maskobject) : null
-        def names = new ParseObjectName()
-
-        historypoints.each { String name, SavePointManager obj ->
-            names.name = name
-            if (maskgroup == null || maskgroup == names.groupName) {
-                if (path == null || path.match(names.objectName)) {
-                    if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
-                }
-            }
-        }
-
-        return res
+        _repositoryHistorypoints.list(mask, null, filter)
     }
 
     /**
@@ -1652,20 +1187,17 @@ Examples:
     /**
      * Process repository history point managers for specified mask and filter
      * @param mask filter mask (use Path expression syntax)
-     * @param filter object filtering code
+     * @param cl process code
      */
     void processHistorypoints(String mask,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        if (cl == null)
-            throw new ExceptionGETL('Process required closure code!')
-
-        def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        listHistorypoints(mask).each { name ->
-            code.call(name)
-        }
+        _repositoryHistorypoints.processObjects(mask, null, cl)
     }
 
-    /** Process all repository history point managers */
+    /**
+     * Process repository history point managers for specified mask and filter
+     * @param cl process code
+     */
     void processHistorypoints(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         processHistorypoints(null, cl)
     }
@@ -1676,16 +1208,7 @@ Examples:
      * @return name of the object in the repository or null if not found
      */
     String findHistorypoint(SavePointManager obj) {
-        def repName = obj.dslNameObject
-        if (repName == null) return null
-
-        if (obj.dslThisObject == null) return null
-        if (obj.dslOwnerObject == null) return null
-
-        def repObj = historypoints.get(repObjectName(repName))
-        if (repObj == null) return null
-
-        return repName
+        _repositoryHistorypoints.find(obj)
     }
 
     /**
@@ -1694,7 +1217,7 @@ Examples:
      * @return found history point manager object or null if not found
      */
     SavePointManager findHistorypoint(String name) {
-        return historypoints.get(repObjectName(name))
+        _repositoryHistorypoints.find(name) as SavePointManager
     }
 
     /**
@@ -1703,83 +1226,10 @@ Examples:
      * @registration registering
      */
     @Synchronized
-    protected SavePointManager registerHistoryPoint(String name, Boolean registration = false) {
-        registration = BoolUtils.IsValue(registration)
-
-        SavePointManager obj
-        if (name == null) {
-            obj = new SavePointManager()
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-            if (obj.connection != null && langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
-                def thread = Thread.currentThread() as ExecutorThread
-                obj.connection = thread.registerCloneObject('connections', obj.connection,
-                        {
-                            def p = (it as Connection).cloneConnection()
-                            p.sysParams.dslThisObject = childThisObject
-                            p.sysParams.dslOwnerObject = childOwnerObject
-                            p.sysParams.dslNameObject = (it as Connection).dslNameObject
-                            return p
-                        }
-                ) as JDBCConnection
-            }
-        } else {
-            def repName = repObjectName(name)
-            obj = historypoints.get(repName)
-            if (obj == null) {
-                if (registration && Thread.currentThread() instanceof ExecutorThread)
-                    throw new ExceptionGETL("it is not allowed to register an history point \"$name\" inside a thread!")
-
-                if (!registration && langOpts.validRegisterObjects)
-                    throw new ExceptionGETL("History point \"$name\" is not exist!")
-
-                obj = new SavePointManager()
-                obj.sysParams.dslThisObject = childThisObject
-                obj.sysParams.dslOwnerObject = childOwnerObject
-                obj.sysParams.dslNameObject = repName
-                historypoints.put(repName, obj)
-            }
-            else {
-                obj.sysParams.dslThisObject = childThisObject
-                obj.sysParams.dslOwnerObject = childOwnerObject
-            }
-
-            if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
-                def thread = Thread.currentThread() as ExecutorThread
-                if (obj.connection != null) {
-                    def cloneConnection = thread.registerCloneObject('connections', obj.connection,
-                            {
-                                def c = (it as Connection).cloneConnection()
-                                c.sysParams.dslThisObject = childThisObject
-                                c.sysParams.dslOwnerObject = childOwnerObject
-                                c.sysParams.dslNameObject = (it as Connection).dslNameObject
-                                return c
-                            }
-                    ) as JDBCConnection
-                    obj = thread.registerCloneObject('historypoints', obj,
-                            {
-                                def p = (it as SavePointManager).cloneSavePointManager(cloneConnection)
-                                p.sysParams.dslThisObject = childThisObject
-                                p.sysParams.dslOwnerObject = childOwnerObject
-                                p.sysParams.dslNameObject = repName
-                                return p
-                            }
-                    ) as SavePointManager
-                } else {
-                    obj = thread.registerCloneObject('historypoints', obj,
-                            {
-                                def p = (it as SavePointManager).cloneSavePointManager()
-                                p.sysParams.dslThisObject = childThisObject
-                                p.sysParams.dslOwnerObject = childOwnerObject
-                                p.sysParams.dslNameObject = repName
-                                return p
-                            }
-                    ) as SavePointManager
-                }
-            }
-        }
-
-        return obj
+    protected SavePointManager registerHistoryPoint(JDBCConnection connection, String name,  Boolean registration = false,
+                                                    Closure cl = null) {
+        _repositoryHistorypoints.register(connection, _repositoryHistorypoints.SAVEPOINTMANAGER, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.QUERYDATASET), JDBCConnection, cl)
     }
 
     /**
@@ -1790,30 +1240,7 @@ Examples:
      */
     @Synchronized
     SavePointManager registerHistoryPointObject(SavePointManager obj, String name = null, Boolean validExist = true) {
-        if (obj == null) throw new ExceptionGETL("History point manager object cannot be null!")
-
-        if (name == null) {
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-            return obj
-        }
-
-        validExist = BoolUtils.IsValue(validExist, true)
-        def repName = repObjectName(name)
-
-        if (validExist) {
-            def exObj = historypoints.get(repName)
-            if (exObj != null)
-                throw new ExceptionGETL("History point manager \"$name\" already registered!")
-        }
-
-        obj.sysParams.dslThisObject = childThisObject
-        obj.sysParams.dslOwnerObject = childOwnerObject
-        obj.sysParams.dslNameObject = repName
-
-        historypoints.put(repName, obj)
-
-        return obj
+        _repositoryHistorypoints.registerObject(obj, name, validExist) as SavePointManager
     }
 
     /**
@@ -1825,17 +1252,13 @@ Examples:
     void unregisterHistorypoint(String mask = null,
                                 @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.SavePointManager'])
                                         Closure<Boolean> filter = null) {
-        def list = listHistorypoints(mask, filter)
-        list.each { name ->
-            historypoints.remove(name)
-        }
+        _repositoryHistorypoints.unregister(mask, null, filter)
     }
 
-    /** Sequences repository link object */
-    private Map<String, Sequence> _sequences
-
     /** Sequences repository */
-    protected Map<String, Sequence> getSequences() { _sequences }
+    private RepositorySequences _repositorySequences
+    /** Sequences repository */
+    RepositorySequences getRepositorySequences() { _repositorySequences }
 
     /**
      * Return list of repository sequences
@@ -1845,24 +1268,7 @@ Examples:
      */
     @Synchronized
     List<String> listSequences(String mask = null, Closure<Boolean> filter = null) {
-        def res = [] as List<String>
-
-        def masknames = parseName(mask)
-        def maskgroup = masknames.groupName ?: filteringGroup
-        def maskobject = masknames.objectName
-        def path = (maskobject != null) ? new Path(mask: maskobject) : null
-        def names = new ParseObjectName()
-
-        sequences.each { String name, Sequence obj ->
-            names.name = name
-            if (maskgroup == null || maskgroup == names.groupName) {
-                if (path == null || path.match(names.objectName)) {
-                    if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
-                }
-            }
-        }
-
-        return res
+        _repositorySequences.list(mask, null, filter)
     }
 
     /**
@@ -1877,20 +1283,17 @@ Examples:
     /**
      * Process repository sequences for specified mask and filter
      * @param mask filter mask (use Path expression syntax)
-     * @param filter object filtering code
+     * @param cl process code
      */
     void processSequences(String mask,
                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        if (cl == null)
-            throw new ExceptionGETL('Process required closure code!')
-
-        def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        listSequences(mask).each { name ->
-            code.call(name)
-        }
+        _repositorySequences.processObjects(mask, null, cl)
     }
 
-    /** Process all repository sequences */
+    /**
+     * Process all repository sequences
+     * @param cl process code
+     */
     void processSequences(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         processSequences(null, cl)
     }
@@ -1901,16 +1304,7 @@ Examples:
      * @return name of the object in the repository or null if not found
      */
     String findSequence(Sequence obj) {
-        def repName = obj.dslNameObject
-        if (repName == null) return null
-
-        if (obj.dslThisObject == null) return null
-        if (obj.dslOwnerObject == null) return null
-
-        def repObj = sequences.get(repObjectName(repName))
-        if (repObj == null) return null
-
-        return repName
+        _repositorySequences.find(obj)
     }
 
     /**
@@ -1919,7 +1313,7 @@ Examples:
      * @return found sequences object or null if not found
      */
     Sequence findSequence(String name) {
-        return sequences.get(repObjectName(name))
+        _repositorySequences.find(name) as Sequence
     }
 
     /**
@@ -1928,83 +1322,10 @@ Examples:
      * @registration registering
      */
     @Synchronized
-    protected Sequence registerSequence(String name, Boolean registration = false) {
-        registration = BoolUtils.IsValue(registration)
-
-        Sequence obj
-        if (name == null) {
-            obj = new Sequence()
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-            if (obj.connection != null && langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
-                def thread = Thread.currentThread() as ExecutorThread
-                obj.connection = thread.registerCloneObject('connections', obj.connection,
-                        {
-                            def p = (it as Connection).cloneConnection()
-                            p.sysParams.dslThisObject = childThisObject
-                            p.sysParams.dslOwnerObject = childOwnerObject
-                            p.sysParams.dslNameObject = (it as Connection).dslNameObject
-                            return p
-                        }
-                ) as JDBCConnection
-            }
-        } else {
-            def repName = repObjectName(name)
-            obj = sequences.get(repName)
-            if (obj == null) {
-                if (registration && Thread.currentThread() instanceof ExecutorThread)
-                    throw new ExceptionGETL("it is not allowed to register an sequence \"$name\" inside a thread!")
-
-                if (!registration && langOpts.validRegisterObjects)
-                    throw new ExceptionGETL("Sequence \"$name\" is not exist!")
-
-                obj = new Sequence()
-                obj.sysParams.dslThisObject = childThisObject
-                obj.sysParams.dslOwnerObject = childOwnerObject
-                obj.sysParams.dslNameObject = repName
-                sequences.put(repName, obj)
-            }
-            else {
-                obj.sysParams.dslThisObject = childThisObject
-                obj.sysParams.dslOwnerObject = childOwnerObject
-            }
-
-            if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
-                def thread = Thread.currentThread() as ExecutorThread
-                if (obj.connection != null) {
-                    def cloneConnection = thread.registerCloneObject('connections', obj.connection,
-                            {
-                                def c = (it as JDBCConnection).cloneConnection()
-                                c.sysParams.dslThisObject = childThisObject
-                                c.sysParams.dslOwnerObject = childOwnerObject
-                                c.sysParams.dslNameObject = (it as Connection).dslNameObject
-                                return c
-                            }
-                    ) as JDBCConnection
-                    obj = thread.registerCloneObject('sequences', obj,
-                            {
-                                def p = (it as Sequence).cloneSequence(cloneConnection)
-                                p.sysParams.dslThisObject = childThisObject
-                                p.sysParams.dslOwnerObject = childOwnerObject
-                                p.sysParams.dslNameObject = repName
-                                return p
-                            }
-                    ) as Sequence
-                } else {
-                    obj = thread.registerCloneObject('sequences', obj,
-                            {
-                                def p = (it as Sequence).cloneSequence()
-                                p.sysParams.dslThisObject = childThisObject
-                                p.sysParams.dslOwnerObject = childOwnerObject
-                                p.sysParams.dslNameObject = repName
-                                return p
-                            }
-                    ) as Sequence
-                }
-            }
-        }
-
-        return obj
+    protected Sequence registerSequence(Connection connection, String name, Boolean registration = false,
+                                        Closure cl = null) {
+        _repositorySequences.register(connection, _repositorySequences.SEQUENCE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.QUERYDATASET), JDBCConnection, cl)
     }
 
     /**
@@ -2015,31 +1336,7 @@ Examples:
      */
     @Synchronized
     Sequence registerSequenceObject(Sequence obj, String name = null, Boolean validExist = true) {
-        if (obj == null)
-            throw new ExceptionGETL("Sequence object cannot be null!")
-
-        if (name == null) {
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-            return obj
-        }
-
-        validExist = BoolUtils.IsValue(validExist, true)
-        def repName = repObjectName(name)
-
-        if (validExist) {
-            def exObj = sequences.get(repName)
-            if (exObj != null)
-                throw new ExceptionGETL("Sequence \"$name\" already registered!")
-        }
-
-        obj.sysParams.dslThisObject = childThisObject
-        obj.sysParams.dslOwnerObject = childOwnerObject
-        obj.sysParams.dslNameObject = repName
-
-        sequences.put(repName, obj)
-
-        return obj
+        _repositorySequences.registerObject(obj, name, validExist) as Sequence
     }
 
     /**
@@ -2051,17 +1348,13 @@ Examples:
     void unregisterSequence(String mask = null,
                             @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.Sequence'])
                                     Closure<Boolean> filter = null) {
-        def list = listSequences(mask, filter)
-        list.each { name ->
-            sequences.remove(name)
-        }
+        _repositorySequences.unregister(mask, null, filter)
     }
 
-    /** File managers repository link object */
-    private Map<String, Manager> _filemanagers
-
     /** File managers repository */
-    protected Map<String, Manager> getFilemanagers() { _filemanagers }
+    private RepositoryFilemanagers _repositoryFilemanagers
+    /** File managers repository */
+    RepositoryFilemanagers getRepositoryFilemanagers() { _repositoryFilemanagers }
 
     /**
      * Return list of repository file managers for specified mask, class and filter
@@ -2074,32 +1367,7 @@ Examples:
     List<String> listFilemanagers(String mask = null, List filemanagerClasses = null,
                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                           Closure<Boolean> filter = null) {
-        (filemanagerClasses as List<String>)?.each {
-            if (!(it in LISTFILEMANAGERCLASSES))
-                throw new ExceptionGETL("\"$it\" is not file manager class!")
-        }
-
-        def res = [] as List<String>
-        def classList = filemanagerClasses as List<String>
-
-        def masknames = parseName(mask)
-        def maskgroup = masknames.groupName ?: filteringGroup
-        def maskobject = masknames.objectName
-        def path = (maskobject != null) ? new Path(mask: maskobject) : null
-        def names = new ParseObjectName()
-
-        filemanagers.each { String name, Manager obj ->
-            names.name = name
-            if (maskgroup == null || maskgroup == names.groupName) {
-                if (path == null || path.match(names.objectName)) {
-                    if (classList == null || obj.getClass().name in classList) {
-                        if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
-                    }
-                }
-            }
-        }
-
-        return res
+        _repositoryFilemanagers.list(mask, filemanagerClasses, filter)
     }
 
     /**
@@ -2142,17 +1410,11 @@ Examples:
      * Process repository file managers for specified mask and classes
      * @param mask filter mask (use Path expression syntax)
      * @param filemanagerClasses file manager class list
-     * @param cl processing code
+     * @param cl process code
      */
     void processFilemanagers(String mask, List filemanagerClasses,
                              @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        if (cl == null)
-            throw new ExceptionGETL('Process required closure code!')
-
-        def code = PrepareClosure(childOwnerObject, childThisObject, cl.delegate, cl)
-        listFilemanagers(mask, filemanagerClasses).each { name ->
-            code.call(name)
-        }
+        _repositoryFilemanagers.processObjects(mask, filemanagerClasses, cl)
     }
 
     /**
@@ -2189,20 +1451,7 @@ Examples:
      * @return name of the object in the repository or null if not found
      */
     String findFilemanager(Manager obj) {
-        def repName = obj.dslNameObject
-        if (repName == null) return null
-
-        if (obj.dslThisObject == null) return null
-        if (obj.dslOwnerObject == null) return null
-
-        def className = obj.getClass().name
-        if (!(className in LISTFILEMANAGERCLASSES)) return null
-
-        def repObj = filemanagers.get(repObjectName(repName))
-        if (repObj == null) return null
-        if (repObj.getClass().name != className) return null
-
-        return repName
+        _repositoryFilemanagers.find(obj)
     }
 
     /**
@@ -2211,69 +1460,14 @@ Examples:
      * @return found file manager object or null if not found
      */
     Manager findFilemanager(String name) {
-        return filemanagers.get(repObjectName(name))
+        _repositoryFilemanagers.find(name)
     }
 
     /** Register file manager in repository */
     @Synchronized
-    protected Manager registerFileManager(String fileManagerClassName, String name, Boolean registration = false) {
-        registration = BoolUtils.IsValue(registration)
-
-        if (registration && fileManagerClassName == null)
-            throw new ExceptionGETL('File manager class name cannot be null!')
-        if (fileManagerClassName != null && !(fileManagerClassName in LISTFILEMANAGERCLASSES))
-            throw new ExceptionGETL("$fileManagerClassName is not file manager class!")
-
-        Manager obj
-
-        if (name == null) {
-            obj = FileManager.CreateManager(manager: fileManagerClassName) as Manager
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-            return obj
-        }
-
-        def repName = repObjectName(name)
-        obj = filemanagers.get(repName)
-
-        if (obj == null) {
-            if (registration && Thread.currentThread() instanceof ExecutorThread)
-                throw new ExceptionGETL("it is not allowed to register an file manager \"$name\" inside a thread!")
-
-            if (!registration && langOpts.validRegisterObjects)
-                throw new ExceptionGETL("File manager \"$name\" with class \"$fileManagerClassName\" is not registered!")
-
-            obj = Manager.CreateManager(manager: fileManagerClassName) as Manager
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-            obj.sysParams.dslNameObject = repName
-            filemanagers.put(repName, obj)
-        } else {
-            if (registration)
-                throw new ExceptionGETL("File manager \"$name\" already registered for class \"${obj.getClass().name}\"!")
-            else {
-                if (fileManagerClassName != null && obj.getClass().name != fileManagerClassName)
-                    throw new ExceptionGETL("The requested file manager \"$name\" of the class \"$fileManagerClassName\" is already registered for the class \"${obj.getClass().name}\"!")
-            }
-
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-        }
-
-        if (langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
-            def thread = Thread.currentThread() as ExecutorThread
-            obj = thread.registerCloneObject('filemanagers', obj,
-                    {
-                        def f = (it as Manager).cloneManager()
-                        f.sysParams.dslThisObject = childThisObject
-                        f.sysParams.dslOwnerObject = childOwnerObject
-                        f.sysParams.dslNameObject = repName
-                        return f
-                    }
-            ) as Manager
-        }
-
-        return obj
+    protected Manager registerFileManager(String fileManagerClassName, String name,
+                                          Boolean registration = false) {
+        _repositoryFilemanagers.register(fileManagerClassName, name, registration)
     }
 
     /**
@@ -2284,43 +1478,20 @@ Examples:
      */
     @Synchronized
     Manager registerFileManagerObject(Manager obj, String name = null, Boolean validExist = true) {
-        if (obj == null) throw new ExceptionGETL("File manager object cannot be null!")
-        def className = obj.getClass().name
-        if (!(className in LISTFILEMANAGERCLASSES))
-            throw new ExceptionGETL("$className is not file manager class!")
-
-        if (name == null) {
-            obj.sysParams.dslThisObject = childThisObject
-            obj.sysParams.dslOwnerObject = childOwnerObject
-            return obj
-        }
-
-        validExist = BoolUtils.IsValue(validExist, true)
-        def repName = repObjectName(name)
-
-        if (validExist) {
-            def exObj = filemanagers.get(repName)
-            if (exObj != null)
-                throw new ExceptionGETL("File manager \"$name\" already registered for class \"${exObj.getClass().name}\"!")
-        }
-
-        obj.sysParams.dslThisObject = childThisObject
-        obj.sysParams.dslOwnerObject = childOwnerObject
-        obj.sysParams.dslNameObject = repName
-
-        filemanagers.put(repName, obj)
-
-        return obj
+        _repositoryFilemanagers.registerObject(obj, name, validExist)
     }
 
+    /**
+     * Unregister file manager by a given mask or a list of their classes
+     * @param mask mask of objects (in Path format)
+     * @param connectionClasses list of processed file managers classes
+     * @param filter filter for detect connections to unregister
+     */
     @Synchronized
     void unregisterFilemanager(String mask = null, List filemanagerClasses = null,
                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                        Closure<Boolean> filter = null) {
-        def list = listFilemanagers(mask, filemanagerClasses, filter)
-        list.each { name ->
-            filemanagers.remove(name)
-        }
+        _repositoryFilemanagers.unregister(mask, filemanagerClasses, filter)
     }
 
     /**
@@ -2332,7 +1503,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyFile(String fileName, Boolean runOnce, Map vars = [:]) {
+    Integer runGroovyScriptFile(String fileName, Boolean runOnce, Map vars = [:]) {
         File sourceFile = new File(fileName)
         def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
         return runGroovyClass(groovyClass, runOnce, vars)
@@ -2346,8 +1517,8 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyFile(String fileName, Map vars = [:]) {
-        return runGroovyFile(fileName, false, vars)
+    Integer runGroovyScriptFile(String fileName, Map vars = [:]) {
+        runGroovyScriptFile(fileName, false, vars)
     }
 
     /**
@@ -2359,7 +1530,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyFile(String fileName, Boolean runOnce, Closure vars) {
+    Integer runGroovyScriptFile(String fileName, Boolean runOnce, Closure vars) {
         File sourceFile = new File(fileName)
         def groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
         return runGroovyClass(groovyClass, runOnce, vars)
@@ -2374,8 +1545,8 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer runGroovyFile(String fileName, Closure vars) {
-        return runGroovyFile(fileName, false, vars)
+    Integer runGroovyScriptFile(String fileName, Closure vars) {
+        runGroovyScriptFile(fileName, false, vars)
     }
 
     /**
@@ -2387,12 +1558,12 @@ Examples:
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
      */
-    Integer runGroovyFile(String fileName, Boolean runOnce, String configSection) {
+    Integer runGroovyScriptFile(String fileName, Boolean runOnce, String configSection) {
         def sectParams = Config.FindSection(configSection)
         if (sectParams == null)
             throw new ExceptionGETL("Configuration section \"$configSection\" not found!")
 
-        return runGroovyFile(fileName, runOnce, sectParams)
+        return runGroovyScriptFile(fileName, runOnce, sectParams)
     }
 
     /**
@@ -2403,8 +1574,8 @@ Examples:
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
      */
-    Integer runGroovyFile(String fileName, String configSection) {
-        return runGroovyFile(fileName, false, configSection)
+    Integer runGroovyScriptFile(String fileName, String configSection) {
+        runGroovyScriptFile(fileName, false, configSection)
     }
 
     /**
@@ -2479,7 +1650,7 @@ Examples:
      * @return exit code
      */
     Integer runGroovyClass(Class groovyClass, Map vars = [:]) {
-        return runGroovyClass(groovyClass, false, vars)
+        runGroovyClass(groovyClass, false, vars)
     }
 
     /**
@@ -2505,7 +1676,7 @@ Examples:
      * @param vars set values for script fields declared as "@Field"
      */
     Integer runGroovyClass(Class groovyClass, Closure vars) {
-        return runGroovyClass(groovyClass, false, vars)
+        runGroovyClass(groovyClass, false, vars)
     }
 
     /**
@@ -2532,7 +1703,7 @@ Examples:
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      */
     Integer runGroovyClass(Class groovyClass, String configSection) {
-        return runGroovyClass(groovyClass, false, configSection)
+        runGroovyClass(groovyClass, false, configSection)
     }
 
     /**
@@ -2857,9 +2028,14 @@ Examples:
     Dataset dataset(String name,
                     @DelegatesTo(Dataset)
                     @ClosureParams(value = SimpleType, options = ['getl.data.Dataset']) Closure cl = null) {
-        if (name == null) throw new ExceptionGETL('Need table name value!')
+        if (name == null)
+            throw new ExceptionDSL('Need table name value!')
 
-        def parent = registerDataset(null, name, false) as Dataset
+        def obj = findDataset(name)
+        if (obj == null)
+            throw new ExceptionDSL("Dataset \"$name\" not found!")
+
+        def parent = registerDataset(null, obj.getClass().name, name)
         runClosure(parent, cl)
 
         return parent
@@ -2889,7 +2065,8 @@ Examples:
         if (name == null) throw new ExceptionGETL('Need connection name value!')
 
         def parent = registerConnection(null, name, false) as Connection
-        if (!(parent instanceof JDBCConnection)) throw new ExceptionGETL("$name is not jdbc connection!")
+        if (!(parent instanceof JDBCConnection))
+            throw new ExceptionGETL("$name is not jdbc connection!")
 
         runClosure(parent, cl)
 
@@ -2905,61 +2082,56 @@ Examples:
     TableDataset jdbcTable(String name,
                            @DelegatesTo(TableDataset)
                            @ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset']) Closure cl = null) {
-        if (name == null) throw new ExceptionGETL('Need table name value!')
+        if (name == null)
+            throw new ExceptionGETL('Need table name value!')
 
-        def parent = registerDataset(null, name, false) as TableDataset
+        def obj = findDataset(name)
+        if (obj == null)
+            throw new ExceptionDSL("Table \"$name\" not found!")
+        if (!(obj instanceof TableDataset))
+            throw new ExceptionDSL("Dataset \"$name\" is not table!")
+
+        def parent = registerDataset(null, obj.getClass().name, name) as TableDataset
         runClosure(parent, cl)
 
         return parent
     }
 
     /** JDBC view dataset */
-    ViewDataset view(String name = null, JDBCConnection connection = null, Boolean registration = false,
+    ViewDataset view(String name = null, Boolean registration = false, JDBCConnection connection = null,
                      @DelegatesTo(ViewDataset)
                      @ClosureParams(value = SimpleType, options = ['getl.jdbc.ViewDataset']) Closure cl = null) {
-        def parent = registerDataset(connection, VIEWDATASET, name, registration) as ViewDataset
+        def parent = registerDataset(connection, _repositoryDatasets.VIEWDATASET, name, registration,
+                                        defaultJdbcConnection(_repositoryDatasets.QUERYDATASET), JDBCConnection, cl) as ViewDataset
         runClosure(parent, cl)
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof JDBCConnection)
-                parent.connection = owner as JDBCConnection
-        }
-
         return parent
     }
 
     /** JDBC view dataset */
-    ViewDataset view(String name, Boolean registration,
-                     @DelegatesTo(ViewDataset)
-                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.ViewDataset']) Closure cl = null) {
-        view(name, null, registration, cl)
-    }
-
-    /** JDBC view dataset */
-    ViewDataset view(String name,
+    ViewDataset view(String name, Boolean registration = false,
                      @DelegatesTo(ViewDataset)
                      @ClosureParams(value = SimpleType, options = ['getl.jdbc.ViewDataset']) Closure cl) {
-        view(name, null, false, cl)
+        view(name, false, null, cl)
     }
 
     /** JDBC view dataset */
     ViewDataset view(@DelegatesTo(ViewDataset)
                      @ClosureParams(value = SimpleType, options = ['getl.jdbc.ViewDataset']) Closure cl) {
-        view(null, null, false, cl)
+        view(null, false, null, cl)
     }
 
     /** JDBC view dataset */
     ViewDataset view(JDBCConnection connection,
                      @DelegatesTo(ViewDataset)
                      @ClosureParams(value = SimpleType, options = ['getl.jdbc.ViewDataset']) Closure cl) {
-        view(null, connection, false, cl)
+        view(null, false, connection, cl)
     }
 
     /** Firebird connection */
     FirebirdConnection firebirdConnection(String name, Boolean registration,
                                           @DelegatesTo(FirebirdConnection)
                                           @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl) {
-        def parent = registerConnection(FIREBIRDCONNECTION, name, registration) as FirebirdConnection
+        def parent = registerConnection(_repositoryConnections.FIREBIRDCONNECTION, name, registration) as FirebirdConnection
         runClosure(parent, cl)
 
         return parent
@@ -2980,24 +2152,20 @@ Examples:
 
     /** Firebird current connection */
     FirebirdConnection firebirdConnection() {
-        defaultJdbcConnection(FIREBIRDTABLE) as FirebirdConnection
+        defaultJdbcConnection(_repositoryDatasets.FIREBIRDTABLE) as FirebirdConnection
     }
 
     /** Use default Firebird connection for new datasets */
     FirebirdConnection useFirebirdConnection(FirebirdConnection connection) {
-        useJdbcConnection(FIREBIRDTABLE, connection) as FirebirdConnection
+        useJdbcConnection(_repositoryDatasets.FIREBIRDTABLE, connection) as FirebirdConnection
     }
 
     /** Firebird table */
     FirebirdTable firebirdTable(String name, Boolean registration,
                                 @DelegatesTo(FirebirdTable)
                                 @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl) {
-        def parent = registerDataset(FIREBIRDTABLE, name, registration) as FirebirdTable
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof FirebirdConnection)
-                parent.connection = owner as FirebirdConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.FIREBIRDTABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.FIREBIRDTABLE), FirebirdConnection, cl) as FirebirdTable
         runClosure(parent, cl)
 
         return parent
@@ -3020,7 +2188,7 @@ Examples:
     H2Connection h2Connection(String name, Boolean registration,
                               @DelegatesTo(H2Connection)
                               @ClosureParams(value = SimpleType, options = ['getl.h2.H2Connection']) Closure cl) {
-        def parent = registerConnection(H2CONNECTION, name, registration) as H2Connection
+        def parent = registerConnection(_repositoryConnections.H2CONNECTION, name, registration) as H2Connection
         runClosure(parent, cl)
 
         return parent
@@ -3041,24 +2209,20 @@ Examples:
 
     /** H2 current connection */
     H2Connection h2Connection() {
-        defaultJdbcConnection(H2TABLE) as H2Connection
+        defaultJdbcConnection(_repositoryDatasets.H2TABLE) as H2Connection
     }
 
     /** Use default H2 connection for new datasets */
     H2Connection useH2Connection(H2Connection connection) {
-        useJdbcConnection(H2TABLE, connection) as H2Connection
+        useJdbcConnection(_repositoryDatasets.H2TABLE, connection) as H2Connection
     }
 
     /** H2 table */
     H2Table h2Table(String name, Boolean registration,
                     @DelegatesTo(H2Table)
                     @ClosureParams(value = SimpleType, options = ['getl.h2.H2Table']) Closure cl) {
-        def parent = registerDataset(H2TABLE, name, registration) as H2Table
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof H2Connection)
-                parent.connection = owner as H2Connection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.H2TABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.H2TABLE), H2Connection, cl) as H2Table
         runClosure(parent, cl)
 
         return parent
@@ -3081,7 +2245,7 @@ Examples:
     DB2Connection db2Connection(String name, Boolean registration,
                                 @DelegatesTo(DB2Connection)
                                 @ClosureParams(value = SimpleType, options = ['getl.db2.DB2Connection']) Closure cl) {
-        def parent = registerConnection(DB2CONNECTION, name, registration) as DB2Connection
+        def parent = registerConnection(_repositoryConnections.DB2CONNECTION, name, registration) as DB2Connection
         runClosure(parent, cl)
 
         return parent
@@ -3103,24 +2267,20 @@ Examples:
 
     /** DB2 current connection */
     DB2Connection db2Connection() {
-        defaultJdbcConnection(DB2TABLE) as DB2Connection
+        defaultJdbcConnection(_repositoryDatasets.DB2TABLE) as DB2Connection
     }
 
     /** Use default DB2 connection for new datasets */
     DB2Connection useDb2Connection(DB2Connection connection) {
-        useJdbcConnection(DB2TABLE, connection) as DB2Connection
+        useJdbcConnection(_repositoryDatasets.DB2TABLE, connection) as DB2Connection
     }
 
     /** DB2 database table */
     DB2Table db2Table(String name, Boolean registration,
                       @DelegatesTo(DB2Table)
                       @ClosureParams(value = SimpleType, options = ['getl.db2.DB2Table']) Closure cl) {
-        def parent = registerDataset(DB2TABLE, name, registration) as DB2Table
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof DB2Connection)
-                parent.connection = owner as DB2Connection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.DB2TABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.DB2TABLE), DB2Connection, cl) as DB2Table
         runClosure(parent, cl)
 
         return parent
@@ -3143,7 +2303,7 @@ Examples:
     HiveConnection hiveConnection(String name, Boolean registration,
                                   @DelegatesTo(HiveConnection)
                                   @ClosureParams(value = SimpleType, options = ['getl.hive.HiveConnection']) Closure cl) {
-        def parent = registerConnection(HIVECONNECTION, name, registration) as HiveConnection
+        def parent = registerConnection(_repositoryConnections.HIVECONNECTION, name, registration) as HiveConnection
         runClosure(parent, cl)
 
         return parent
@@ -3164,24 +2324,20 @@ Examples:
 
     /** Hive current connection */
     HiveConnection hiveConnection() {
-        defaultJdbcConnection(HIVETABLE) as HiveConnection
+        defaultJdbcConnection(_repositoryDatasets.HIVETABLE) as HiveConnection
     }
 
     /** Use default Hive connection for new datasets */
     HiveConnection useHiveConnection(HiveConnection connection) {
-        useJdbcConnection(HIVETABLE, connection) as HiveConnection
+        useJdbcConnection(_repositoryDatasets.HIVETABLE, connection) as HiveConnection
     }
 
     /** Hive table */
     HiveTable hiveTable(String name, Boolean registration,
                         @DelegatesTo(HiveTable)
                         @ClosureParams(value = SimpleType, options = ['getl.hive.HiveTable']) Closure cl) {
-        def parent = registerDataset(HIVETABLE, name, registration) as HiveTable
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof HiveConnection)
-                parent.connection = owner as HiveConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.HIVETABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.HIVETABLE), HiveConnection, cl) as HiveTable
         runClosure(parent, cl)
 
         return parent
@@ -3204,7 +2360,7 @@ Examples:
     ImpalaConnection impalaConnection(String name, Boolean registration,
                                       @DelegatesTo(ImpalaConnection)
                                       @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaConnection']) Closure cl) {
-        def parent = registerConnection(IMPALACONNECTION, name, registration) as ImpalaConnection
+        def parent = registerConnection(_repositoryConnections.IMPALACONNECTION, name, registration) as ImpalaConnection
         runClosure(parent, cl)
 
         return parent
@@ -3225,24 +2381,20 @@ Examples:
 
     /** Impala current connection */
     ImpalaConnection impalaConnection() {
-        defaultJdbcConnection(IMPALATABLE) as ImpalaConnection
+        defaultJdbcConnection(_repositoryDatasets.IMPALATABLE) as ImpalaConnection
     }
 
     /** Use default Impala connection for new datasets */
     ImpalaConnection useImpalaConnection(ImpalaConnection connection) {
-        useJdbcConnection(IMPALATABLE, connection) as ImpalaConnection
+        useJdbcConnection(_repositoryDatasets.IMPALATABLE, connection) as ImpalaConnection
     }
 
     /** Impala table */
     ImpalaTable impalaTable(String name, Boolean registration,
                             @DelegatesTo(ImpalaTable)
                             @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaTable']) Closure cl) {
-        def parent = registerDataset(IMPALATABLE, name, registration) as ImpalaTable
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof ImpalaConnection)
-                parent.connection = owner as ImpalaConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.IMPALATABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.IMPALATABLE), ImpalaConnection, cl) as ImpalaTable
         runClosure(parent, cl)
 
         return parent
@@ -3265,7 +2417,7 @@ Examples:
     MSSQLConnection mssqlConnection(String name, Boolean registration,
                                     @DelegatesTo(MSSQLConnection)
                                     @ClosureParams(value = SimpleType, options = ['getl.mssql.MSSQLConnection']) Closure cl) {
-        def parent = registerConnection(MSSQLCONNECTION, name, registration) as MSSQLConnection
+        def parent = registerConnection(_repositoryConnections.MSSQLCONNECTION, name, registration) as MSSQLConnection
         runClosure(parent, cl)
 
         return parent
@@ -3286,24 +2438,20 @@ Examples:
 
     /** MSSQL current connection */
     MSSQLConnection mssqlConnection() {
-        defaultJdbcConnection(MSSQLTABLE) as MSSQLConnection
+        defaultJdbcConnection(_repositoryDatasets.MSSQLTABLE) as MSSQLConnection
     }
 
     /** Use default MSSQL connection for new datasets */
     MSSQLConnection useMssqlConnection(MSSQLConnection connection) {
-        useJdbcConnection(MSSQLTABLE, connection) as MSSQLConnection
+        useJdbcConnection(_repositoryDatasets.MSSQLTABLE, connection) as MSSQLConnection
     }
 
     /** MSSQL database table */
     MSSQLTable mssqlTable(String name, Boolean registration,
                           @DelegatesTo(MSSQLTable)
                           @ClosureParams(value = SimpleType, options = ['getl.mssql.MSSQLTable']) Closure cl) {
-        def parent = registerDataset(MSSQLTABLE, name, registration) as MSSQLTable
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof MSSQLConnection)
-                parent.connection = owner as MSSQLConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.MSSQLTABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.MSSQLTABLE), MSSQLConnection, cl) as MSSQLTable
         runClosure(parent, cl)
 
         return parent
@@ -3326,7 +2474,7 @@ Examples:
     MySQLConnection mysqlConnection(String name, Boolean registration,
                                     @DelegatesTo(MySQLConnection)
                                     @ClosureParams(value = SimpleType, options = ['getl.mysql.MySQLConnection']) Closure cl) {
-        def parent = registerConnection(MYSQLCONNECTION, name, registration) as MySQLConnection
+        def parent = registerConnection(_repositoryConnections.MYSQLCONNECTION, name, registration) as MySQLConnection
         runClosure(parent, cl)
 
         return parent
@@ -3347,24 +2495,20 @@ Examples:
 
     /** MySQL current connection */
     MySQLConnection mysqlConnection() {
-        defaultJdbcConnection(MYSQLTABLE) as MySQLConnection
+        defaultJdbcConnection(_repositoryDatasets.MYSQLTABLE) as MySQLConnection
     }
 
     /** Use default MySQL connection for new datasets */
     MySQLConnection useMysqlConnection(MySQLConnection connection) {
-        useJdbcConnection(MYSQLTABLE, connection) as MySQLConnection
+        useJdbcConnection(_repositoryDatasets.MYSQLTABLE, connection) as MySQLConnection
     }
 
     /** MySQL database table */
     MySQLTable mysqlTable(String name, Boolean registration,
                           @DelegatesTo(MySQLTable)
                           @ClosureParams(value = SimpleType, options = ['getl.mysql.MySQLTable']) Closure cl) {
-        def parent = registerDataset(MYSQLTABLE, name, registration) as MySQLTable
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof MySQLConnection)
-                parent.connection = owner as MySQLConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.MYSQLTABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.MYSQLTABLE), MySQLConnection, cl) as MySQLTable
         runClosure(parent, cl)
 
         return parent
@@ -3387,7 +2531,7 @@ Examples:
     NetezzaConnection netezzaConnection(String name, Boolean registration,
                                         @DelegatesTo(NetezzaConnection)
                                         @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl) {
-        def parent = registerConnection(NETEZZACONNECTION, name, registration) as NetezzaConnection
+        def parent = registerConnection(_repositoryConnections.NETEZZACONNECTION, name, registration) as NetezzaConnection
         runClosure(parent, cl)
 
         return parent
@@ -3408,24 +2552,20 @@ Examples:
 
     /** Netezza current connection */
     NetezzaConnection netezzaConnection() {
-        defaultJdbcConnection(NETEZZATABLE) as NetezzaConnection
+        defaultJdbcConnection(_repositoryDatasets.NETEZZATABLE) as NetezzaConnection
     }
 
     /** Use default Netezza connection for new datasets */
     NetezzaConnection useNetezzaConnection(NetezzaConnection connection) {
-        useJdbcConnection(NETEZZATABLE, connection) as NetezzaConnection
+        useJdbcConnection(_repositoryDatasets.NETEZZATABLE, connection) as NetezzaConnection
     }
 
     /** Netezza database table */
     NetezzaTable netezzaTable(String name, Boolean registration,
                               @DelegatesTo(NetezzaTable)
                               @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl) {
-        def parent = registerDataset(NETEZZATABLE, name, registration) as NetezzaTable
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof NetezzaConnection)
-                parent.connection = owner as NetezzaConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.NETEZZATABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.NETEZZATABLE), NetezzaConnection, cl) as NetezzaTable
         runClosure(parent, cl)
 
         return parent
@@ -3448,7 +2588,7 @@ Examples:
     OracleConnection oracleConnection(String name, Boolean registration,
                                       @DelegatesTo(OracleConnection)
                                       @ClosureParams(value = SimpleType, options = ['getl.oracle.OracleConnection']) Closure cl) {
-        def parent = registerConnection(ORACLECONNECTION, name, registration) as OracleConnection
+        def parent = registerConnection(_repositoryConnections.ORACLECONNECTION, name, registration) as OracleConnection
         runClosure(parent, cl)
 
         return parent
@@ -3469,24 +2609,20 @@ Examples:
 
     /** Oracle current connection */
     OracleConnection oracleConnection() {
-        defaultJdbcConnection(ORACLETABLE) as OracleConnection
+        defaultJdbcConnection(_repositoryDatasets.ORACLETABLE) as OracleConnection
     }
 
     /** Use default Oracle connection for new datasets */
     OracleConnection useOracleConnection(OracleConnection connection) {
-        useJdbcConnection(ORACLETABLE, connection) as OracleConnection
+        useJdbcConnection(_repositoryDatasets.ORACLETABLE, connection) as OracleConnection
     }
 
     /** Oracle table */
     OracleTable oracleTable(String name, Boolean registration,
                             @DelegatesTo(OracleTable)
                             @ClosureParams(value = SimpleType, options = ['getl.oracle.OracleTable']) Closure cl) {
-        def parent = registerDataset(ORACLETABLE, name, registration) as OracleTable
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof OracleConnection)
-                parent.connection = owner as OracleConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.ORACLETABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.ORACLETABLE), OracleConnection, cl) as OracleTable
         runClosure(parent, cl)
 
         return parent
@@ -3509,7 +2645,7 @@ Examples:
     PostgreSQLConnection postgresqlConnection(String name, Boolean registration,
                                               @DelegatesTo(PostgreSQLConnection)
                                               @ClosureParams(value = SimpleType, options = ['getl.postgresql.PostgreSQLConnection']) Closure cl) {
-        def parent = registerConnection(POSTGRESQLCONNECTION, name, registration) as PostgreSQLConnection
+        def parent = registerConnection(_repositoryConnections.POSTGRESQLCONNECTION, name, registration) as PostgreSQLConnection
         runClosure(parent, cl)
 
         return parent
@@ -3530,24 +2666,20 @@ Examples:
 
     /** PostgreSQL default connection */
     PostgreSQLConnection postgresqlConnection() {
-        defaultJdbcConnection(POSTGRESQLTABLE) as PostgreSQLConnection
+        defaultJdbcConnection(_repositoryDatasets.POSTGRESQLTABLE) as PostgreSQLConnection
     }
 
     /** Use default PostgreSQL connection for new datasets */
     PostgreSQLConnection usePostgresqlConnection(PostgreSQLConnection connection) {
-        useJdbcConnection(POSTGRESQLTABLE, connection) as PostgreSQLConnection
+        useJdbcConnection(_repositoryDatasets.POSTGRESQLTABLE, connection) as PostgreSQLConnection
     }
 
     /** PostgreSQL database table */
     PostgreSQLTable postgresqlTable(String name, Boolean registration,
                                     @DelegatesTo(PostgreSQLTable)
                                     @ClosureParams(value = SimpleType, options = ['getl.postgresql.PostgreSQLTable']) Closure cl) {
-        def parent = registerDataset(POSTGRESQLTABLE, name, registration) as PostgreSQLTable
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof PostgreSQLConnection)
-                parent.connection = owner as PostgreSQLConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.POSTGRESQLTABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.POSTGRESQLTABLE), PostgreSQLConnection, cl) as PostgreSQLTable
         runClosure(parent, cl)
 
         return parent
@@ -3571,7 +2703,7 @@ Examples:
     VerticaConnection verticaConnection(String name, Boolean registration,
                                         @DelegatesTo(VerticaConnection)
                                         @ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaConnection']) Closure cl) {
-        def parent = registerConnection(VERTICACONNECTION, name, registration) as VerticaConnection
+        def parent = registerConnection(_repositoryConnections.VERTICACONNECTION, name, registration) as VerticaConnection
         runClosure(parent, cl)
 
         return parent
@@ -3592,24 +2724,20 @@ Examples:
 
     /** Vertica default connection */
     VerticaConnection verticaConnection() {
-        defaultJdbcConnection(VERTICATABLE) as VerticaConnection
+        defaultJdbcConnection(_repositoryDatasets.VERTICATABLE) as VerticaConnection
     }
 
     /** Use default Vertica connection for new datasets */
     VerticaConnection useVerticaConnection(VerticaConnection connection) {
-        useJdbcConnection(VERTICATABLE, connection) as VerticaConnection
+        useJdbcConnection(_repositoryDatasets.VERTICATABLE, connection) as VerticaConnection
     }
 
     /** Vertica table */
     VerticaTable verticaTable(String name, Boolean registration,
                               @DelegatesTo(VerticaTable)
                               @ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaTable']) Closure cl) {
-        def parent = registerDataset(VERTICATABLE, name, registration) as VerticaTable
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof VerticaConnection)
-                parent.connection = owner as VerticaConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.VERTICATABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.VERTICATABLE), VerticaConnection, cl) as VerticaTable
         runClosure(parent, cl)
 
         return parent
@@ -3632,7 +2760,7 @@ Examples:
     NetsuiteConnection netsuiteConnection(String name, Boolean registration,
                                           @DelegatesTo(NetsuiteConnection)
                                           @ClosureParams(value = SimpleType, options = ['getl.netsuite.NetsuiteConnection']) Closure cl) {
-        def parent = registerConnection(NETSUITECONNECTION, name, registration) as NetsuiteConnection
+        def parent = registerConnection(_repositoryConnections.NETSUITECONNECTION, name, registration) as NetsuiteConnection
         runClosure(parent, cl)
 
         return parent
@@ -3653,24 +2781,20 @@ Examples:
 
     /** NetSuite default connection */
     NetsuiteConnection netsuiteConnection() {
-        defaultJdbcConnection(NETSUITETABLE) as NetsuiteConnection
+        defaultJdbcConnection(_repositoryDatasets.NETSUITETABLE) as NetsuiteConnection
     }
 
     /** Use default Netsuite connection for new datasets */
     NetsuiteConnection useNetsuiteConnection(NetsuiteConnection connection) {
-        useJdbcConnection(NETSUITETABLE, connection) as NetsuiteConnection
+        useJdbcConnection(_repositoryDatasets.NETSUITETABLE, connection) as NetsuiteConnection
     }
 
     /** Netsuite table */
     NetsuiteTable netsuiteTable(String name, Boolean registration,
                                 @DelegatesTo(NetsuiteTable)
                                 @ClosureParams(value = SimpleType, options = ['getl.netsuite.NetsuiteTable']) Closure cl) {
-        def parent = registerDataset(NETSUITETABLE, name, registration) as NetsuiteTable
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof NetsuiteConnection)
-                parent.connection = owner as NetsuiteConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.NETSUITETABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.NETSUITETABLE), NetsuiteConnection, cl) as NetsuiteTable
         runClosure(parent, cl)
 
         return parent
@@ -3692,8 +2816,8 @@ Examples:
     TDS embeddedConnection(String name, Boolean registration,
                            @DelegatesTo(TDS)
                            @ClosureParams(value = SimpleType, options = ['getl.tfs.TDS']) Closure cl) {
-        def parent = registerConnection(EMBEDDEDCONNECTION, name, registration) as TDS
-        if (parent.sqlHistoryFile == null) parent.sqlHistoryFile = langOpts.tempDBSQLHistoryFile
+        def parent = registerConnection(_repositoryConnections.EMBEDDEDCONNECTION, name, registration) as TDS
+        if (parent.sqlHistoryFile == null) parent.sqlHistoryFile = _langOpts.tempDBSQLHistoryFile
         runClosure(parent, cl)
 
         return parent
@@ -3720,17 +2844,19 @@ Examples:
 
     /** Use default temporary connection for new datasets */
     TDS useEmbeddedConnection(TDS connection = TDS.storage) {
-        useJdbcConnection(EMBEDDEDTABLE, connection) as TDS
+        useJdbcConnection(_repositoryDatasets.EMBEDDEDTABLE, connection) as TDS
     }
 
     /** Table with temporary database */
     TDSTable embeddedTable(String name, Boolean registration,
                            @DelegatesTo(TDSTable)
                            @ClosureParams(value = SimpleType, options = ['getl.tfs.TDSTable']) Closure cl) {
-        def parent = registerDataset(defaultJdbcConnection(EMBEDDEDTABLE) ?: TDS.storage, EMBEDDEDTABLE, name, registration) as TDSTable
-        if ((parent.connection as TDS).sqlHistoryFile == null)
-            (parent.connection as TDS).sqlHistoryFile = langOpts.tempDBSQLHistoryFile
-
+        def parent = registerDataset(null, _repositoryDatasets.EMBEDDEDTABLE, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.EMBEDDEDTABLE), TDS, cl) as TDSTable
+        if ((name == null || registration) && parent.connection == null)
+            parent.connection = TDS.storage
+        if (parent.connection != null && (parent.connection as TDS).sqlHistoryFile == null)
+            (parent.connection as TDS).sqlHistoryFile = _langOpts.tempDBSQLHistoryFile
         runClosure(parent, cl)
 
         return parent
@@ -3759,10 +2885,10 @@ Examples:
             if (sourceDataset.field.isEmpty()) throw new ExceptionGETL("Required field from dataset $sourceDataset")
         }
 
-        TDSTable parent = new TDSTable(connection: defaultJdbcConnection(EMBEDDEDTABLE) ?: TDS.storage)
+        TDSTable parent = new TDSTable(connection: defaultJdbcConnection(_repositoryDatasets.EMBEDDEDTABLE) ?: TDS.storage)
         parent.field = sourceDataset.field
-        if ((parent.connection as TDS).sqlHistoryFile == null)
-            (parent.connection as TDS).sqlHistoryFile = langOpts.tempDBSQLHistoryFile
+        if ((parent.connection as TDS)?.sqlHistoryFile == null)
+            (parent.connection as TDS).sqlHistoryFile = _langOpts.tempDBSQLHistoryFile
 
         registerDatasetObject(parent, name, true)
         runClosure(parent, cl)
@@ -3779,19 +2905,15 @@ Examples:
 
     /** Use default JDBC connection for query */
     JDBCConnection useQueryConnection(JDBCConnection connection) {
-        useJdbcConnection(QUERYDATASET, connection) as JDBCConnection
+        useJdbcConnection(_repositoryDatasets.QUERYDATASET, connection) as JDBCConnection
     }
 
     /** JDBC query dataset */
-    QueryDataset query(String name, JDBCConnection connection, Boolean registration,
+    QueryDataset query(String name, Boolean registration, JDBCConnection connection,
                        @DelegatesTo(QueryDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.jdbc.QueryDataset']) Closure cl) {
-        def parent = registerDataset(connection, QUERYDATASET, name, registration) as QueryDataset
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof JDBCConnection)
-                parent.connection = owner as JDBCConnection
-        }
+        def parent = registerDataset(connection, _repositoryDatasets.QUERYDATASET, name, registration,
+                defaultJdbcConnection(_repositoryDatasets.QUERYDATASET), JDBCConnection, cl) as QueryDataset
         runClosure(parent, cl)
 
         return parent
@@ -3800,61 +2922,63 @@ Examples:
     /** JDBC query dataset */
     QueryDataset query(String name, Boolean registration,
                        @DelegatesTo(QueryDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.QueryDataset']) Closure cl) {
-        query(name, null, registration, cl)
+                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.QueryDataset']) Closure cl = null) {
+        query(name, registration, null, cl)
     }
 
     /** JDBC query dataset */
     QueryDataset query(String name,
                        @DelegatesTo(QueryDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.jdbc.QueryDataset']) Closure cl = null) {
-        query(name, null, false, cl)
+        query(name, false, null, cl)
     }
 
     /** JDBC query dataset */
     QueryDataset query(@DelegatesTo(QueryDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.QueryDataset']) Closure cl) {
-        query(null, null, false, cl)
+                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.QueryDataset']) Closure cl = null) {
+        query(null,  false, null, cl)
     }
 
     /** JDBC query dataset */
     QueryDataset query(JDBCConnection connection,
                        @DelegatesTo(QueryDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.QueryDataset']) Closure cl) {
-        query(null, connection, false, cl)
+                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.QueryDataset']) Closure cl = null) {
+        query(null, false, connection, cl)
     }
 
     /** JDBC query dataset */
-    QueryDataset sqlQuery(JDBCConnection connection, String sql, Map vars = [:]) {
-        def parent = registerDataset(connection, QUERYDATASET, null, false) as QueryDataset
+    QueryDataset sqlQuery(JDBCConnection connection, String sql, Map vars = null) {
+        def parent = query(connection)
         parent.query = sql
-        parent.queryParams.putAll(vars)
+        if (vars != null) parent.queryParams.putAll(vars)
 
         return parent
     }
 
     /** JDBC query dataset */
-    QueryDataset sqlQuery(String sql, Map vars = [:]) {
+    QueryDataset sqlQuery(String sql, Map vars = null) {
         sqlQuery(null, sql, vars)
     }
 
     /** Return the first row from query */
-    Map<String, Object> sqlQueryRow(JDBCConnection connection, String sql, Map vars = [:]) {
+    Map<String, Object> sqlQueryRow(JDBCConnection connection, String sql, Map vars = null) {
         def query = sqlQuery(connection, sql, vars)
         def rows = query.rows(limit: 1)
         return (!rows.isEmpty()) ? rows[0] : null
     }
 
     /** Return the first row from query */
-    Map<String, Object> sqlQueryRow(String sql, Map vars = [:]) {
-        sqlQueryRow(null, sql, vars)
+    Map<String, Object> sqlQueryRow(String sql, Map vars = null) {
+        def query = sqlQuery(sql, vars)
+        def rows = query.rows(limit: 1)
+        return (!rows.isEmpty()) ? rows[0] : null
     }
 
     /** CSV connection */
     CSVConnection csvConnection(String name, Boolean registration,
                                 @DelegatesTo(CSVConnection)
                                 @ClosureParams(value = SimpleType, options = ['getl.csv.CSVConnection']) Closure cl) {
-        def parent = registerConnection(CSVCONNECTION, name, registration) as CSVConnection
+        def parent = registerConnection(_repositoryConnections.CSVCONNECTION, name, registration) as CSVConnection
         runClosure(parent, cl)
 
         return parent
@@ -3875,25 +2999,20 @@ Examples:
 
     /** CSV default connection */
     CSVConnection csvConnection() {
-        defaultFileConnection(CSVDATASET) as CSVConnection
+        defaultFileConnection(_repositoryDatasets.CSVDATASET) as CSVConnection
     }
 
     /** Use default CSV connection for new datasets */
     CSVConnection useCsvConnection(CSVConnection connection) {
-        useFileConnection(CSVDATASET, connection) as CSVConnection
+        useFileConnection(_repositoryDatasets.CSVDATASET, connection) as CSVConnection
     }
 
     /** CSV delimiter file */
     CSVDataset csv(String name, Boolean registration,
                    @DelegatesTo(CSVDataset)
                    @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl) {
-        def parent = registerDataset(CSVDATASET, name, registration) as CSVDataset
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof CSVConnection)
-                parent.connection = owner as CSVConnection
-        }
-        if (parent.connection == null) parent.connection = new CSVConnection()
+        def parent = registerDataset(null, _repositoryDatasets.CSVDATASET, name, registration,
+                defaultFileConnection(_repositoryDatasets.CSVDATASET), CSVConnection, cl) as CSVDataset
         runClosure(parent, cl)
 
         return parent
@@ -3916,8 +3035,11 @@ Examples:
     CSVDataset csvWithDataset(String name, Dataset sourceDataset, Boolean registration,
                               @DelegatesTo(CSVDataset)
                               @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl) {
-        if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
-        def parent = registerDataset(CSVDATASET, name, registration) as CSVDataset
+        if (sourceDataset == null)
+            throw new ExceptionGETL("Dataset cannot be null!")
+
+        def parent = registerDataset(null, _repositoryDatasets.CSVDATASET, name, registration,
+                defaultFileConnection(_repositoryDatasets.CSVDATASET), CSVConnection, cl) as CSVDataset
 
         if (sourceDataset.field.isEmpty()) {
             if (!sourceDataset.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
@@ -3928,9 +3050,7 @@ Examples:
                 throw new ExceptionGETL("Can not read list of field from dataset $sourceDataset!")
         }
         parent.field = sourceDataset.field
-
         sourceDataset.prepareCsvTempFile(parent)
-
         runClosure(parent, cl)
 
         return parent
@@ -3954,7 +3074,7 @@ Examples:
     ExcelConnection excelConnection(String name, Boolean registration,
                                     @DelegatesTo(ExcelConnection)
                                     @ClosureParams(value = SimpleType, options = ['getl.excel.ExcelConnection']) Closure cl) {
-        def parent = registerConnection(EXCELCONNECTION, name, registration) as ExcelConnection
+        def parent = registerConnection(_repositoryConnections.EXCELCONNECTION, name, registration) as ExcelConnection
         runClosure(parent, cl)
 
         return parent
@@ -3975,25 +3095,21 @@ Examples:
 
     /** Excel default connection */
     ExcelConnection excelConnection() {
-        defaultFileConnection(EXCELDATASET) as ExcelConnection
+        defaultFileConnection(_repositoryDatasets.EXCELDATASET) as ExcelConnection
     }
 
     /** Use default Excel connection for new datasets */
     ExcelConnection useExcelConnection(ExcelConnection connection) {
-        useOtherConnection(EXCELDATASET, connection) as ExcelConnection
+        useOtherConnection(_repositoryDatasets.EXCELDATASET, connection) as ExcelConnection
     }
 
     /** Excel file */
     ExcelDataset excel(String name, Boolean registration,
                        @DelegatesTo(ExcelDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.excel.ExcelDataset']) Closure cl) {
-        def parent = registerDataset(EXCELDATASET, name, registration) as ExcelDataset
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof ExcelConnection)
-                parent.connection = owner as ExcelConnection
-        }
-        if (parent.connection == null)
+        def parent = registerDataset(null, _repositoryDatasets.EXCELDATASET, name, registration,
+                defaultFileConnection(_repositoryDatasets.EXCELDATASET), ExcelConnection, cl) as ExcelDataset
+        if (parent.connection == null && (name == null || registration))
             parent.connection = new ExcelConnection()
         runClosure(parent, cl)
 
@@ -4017,7 +3133,7 @@ Examples:
     JSONConnection jsonConnection(String name, Boolean registration,
                                   @DelegatesTo(JSONConnection)
                                   @ClosureParams(value = SimpleType, options = ['getl.json.JSONConnection']) Closure cl) {
-        def parent = registerConnection(JSONCONNECTION, name, registration) as JSONConnection
+        def parent = registerConnection(_repositoryConnections.JSONCONNECTION, name, registration) as JSONConnection
         runClosure(parent, cl)
 
         return parent
@@ -4038,25 +3154,22 @@ Examples:
 
     /** JSON default connection */
     JSONConnection jsonConnection() {
-        defaultFileConnection(JSONDATASET) as JSONConnection
+        defaultFileConnection(_repositoryDatasets.JSONDATASET) as JSONConnection
     }
 
     /** Use default Json connection for new datasets */
     JSONConnection useJsonConnection(JSONConnection connection) {
-        useFileConnection(JSONDATASET, connection) as JSONConnection
+        useFileConnection(_repositoryDatasets.JSONDATASET, connection) as JSONConnection
     }
 
     /** JSON file */
     JSONDataset json(String name, Boolean registration,
                      @DelegatesTo(JSONDataset)
                      @ClosureParams(value = SimpleType, options = ['getl.json.JSONDataset']) Closure cl) {
-        def parent = registerDataset(JSONDATASET, name, registration) as JSONDataset
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof JSONConnection)
-                parent.connection = owner as JSONConnection
-        }
-        if (parent.connection == null) parent.connection = new JSONConnection()
+        def parent = registerDataset(null, _repositoryDatasets.JSONDATASET, name, registration,
+                defaultFileConnection(_repositoryDatasets.JSONDATASET), JSONConnection, cl) as JSONDataset
+        if (parent.connection == null && (name == null || registration))
+            parent.connection = new JSONConnection()
         runClosure(parent, cl)
 
         return parent
@@ -4079,7 +3192,7 @@ Examples:
     XMLConnection xmlConnection(String name, Boolean registration,
                                 @DelegatesTo(XMLConnection)
                                 @ClosureParams(value = SimpleType, options = ['getl.xml.XMLConnection']) Closure cl) {
-        def parent = registerConnection(XMLCONNECTION, name, registration) as XMLConnection
+        def parent = registerConnection(_repositoryConnections.XMLCONNECTION, name, registration) as XMLConnection
         runClosure(parent, cl)
 
         return parent
@@ -4100,25 +3213,22 @@ Examples:
 
     /** XML default connection */
     XMLConnection xmlConnection() {
-        defaultFileConnection(XMLDATASET) as XMLConnection
+        defaultFileConnection(_repositoryDatasets.XMLDATASET) as XMLConnection
     }
 
     /** Use default XML connection for new datasets */
     XMLConnection useXmlConnection(XMLConnection connection) {
-        useFileConnection(XMLCONNECTION, connection) as XMLConnection
+        useFileConnection(_repositoryDatasets.XMLDATASET, connection) as XMLConnection
     }
 
     /** XML file */
     XMLDataset xml(String name, Boolean registration,
                    @DelegatesTo(XMLDataset)
                    @ClosureParams(value = SimpleType, options = ['getl.xml.XMLDataset']) Closure cl) {
-        def parent = registerDataset(XMLDATASET, name, registration) as XMLDataset
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof XMLConnection)
-                parent.connection = owner as XMLConnection
-        }
-        if (parent.connection == null) parent.connection = new XMLConnection()
+        def parent = registerDataset(null, _repositoryDatasets.XMLDATASET, name, registration,
+                defaultFileConnection(_repositoryDatasets.XMLDATASET), XMLConnection, cl) as XMLDataset
+        if (parent.connection == null && (name == null || registration))
+            parent.connection = new XMLConnection()
         runClosure(parent, cl)
 
         return parent
@@ -4141,7 +3251,7 @@ Examples:
     SalesForceConnection salesforceConnection(String name, Boolean registration,
                                               @DelegatesTo(SalesForceConnection)
                                               @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceConnection']) Closure cl) {
-        def parent = registerConnection(SALESFORCECONNECTION, name, registration) as SalesForceConnection
+        def parent = registerConnection(_repositoryConnections.SALESFORCECONNECTION, name, registration) as SalesForceConnection
         runClosure(parent, cl)
 
         return parent
@@ -4162,24 +3272,20 @@ Examples:
 
     /** SalesForce default connection */
     SalesForceConnection salesforceConnection() {
-        defaultOtherConnection(SALESFORCEDATASET) as SalesForceConnection
+        defaultOtherConnection(_repositoryDatasets.SALESFORCEDATASET) as SalesForceConnection
     }
 
     /** Use default SalesForce connection for new datasets */
     SalesForceConnection useSalesforceConnection(SalesForceConnection connection) {
-        useOtherConnection(SALESFORCEDATASET, connection) as SalesForceConnection
+        useOtherConnection(_repositoryDatasets.SALESFORCEDATASET, connection) as SalesForceConnection
     }
 
     /** SalesForce table */
     SalesForceDataset salesforce(String name, Boolean registration,
                                  @DelegatesTo(SalesForceDataset)
                                  @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceDataset']) Closure cl) {
-        def parent = registerDataset(SALESFORCEDATASET, name, registration) as SalesForceDataset
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof SalesForceConnection)
-                parent.connection = owner as SalesForceConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.SALESFORCEDATASET, name, registration,
+                defaultOtherConnection(_repositoryDatasets.SALESFORCEDATASET), SalesForceConnection, cl) as SalesForceDataset
         runClosure(parent, cl)
 
         return parent
@@ -4202,12 +3308,8 @@ Examples:
     SalesForceQueryDataset salesforceQuery(String name, Boolean registration,
                                            @DelegatesTo(SalesForceQueryDataset)
                                            @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceQueryDataset']) Closure cl) {
-        def parent = registerDataset(SALESFORCEQUERYDATASET, name, registration) as SalesForceQueryDataset
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof SalesForceConnection)
-                parent.connection = owner as SalesForceConnection
-        }
+        def parent = registerDataset(null, _repositoryDatasets.SALESFORCEQUERYDATASET, name, registration,
+                defaultOtherConnection(_repositoryDatasets.SALESFORCEDATASET), SalesForceConnection, cl) as SalesForceQueryDataset
         runClosure(parent, cl)
 
         return parent
@@ -4230,7 +3332,7 @@ Examples:
     XeroConnection xeroConnection(String name, Boolean registration,
                                   @DelegatesTo(XeroConnection)
                                   @ClosureParams(value = SimpleType, options = ['getl.xero.XeroConnection']) Closure cl) {
-        def parent = registerConnection(XEROCONNECTION, name, registration) as XeroConnection
+        def parent = registerConnection(_repositoryConnections.XEROCONNECTION, name, registration) as XeroConnection
         runClosure(parent, cl)
 
         return parent
@@ -4251,25 +3353,20 @@ Examples:
 
     /** Xero default connection */
     XeroConnection xeroConnection() {
-        defaultOtherConnection(XERODATASET) as XeroConnection
+        defaultOtherConnection(_repositoryDatasets.XERODATASET) as XeroConnection
     }
 
     /** Use default Xero connection for new datasets */
     XeroConnection useXeroConnection(XeroConnection connection) {
-        useOtherConnection(XERODATASET, connection) as XeroConnection
+        useOtherConnection(_repositoryDatasets.XERODATASET, connection) as XeroConnection
     }
 
     /** Xero table */
     XeroDataset xero(String name, Boolean registration,
                      @DelegatesTo(XeroDataset)
                      @ClosureParams(value = SimpleType, options = ['getl.xero.XeroDataset']) Closure cl) {
-        def parent = registerDataset(XERODATASET, name, registration) as XeroDataset
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof XeroConnection)
-                parent.connection = owner as XeroConnection
-        }
-
+        def parent = registerDataset(null, _repositoryDatasets.XERODATASET, name, registration,
+                defaultOtherConnection(_repositoryDatasets.XERODATASET), XeroConnection, cl) as XeroDataset
         runClosure(parent, cl)
 
         return parent
@@ -4292,7 +3389,7 @@ Examples:
     TFS csvTempConnection(String name, Boolean registration,
                           @DelegatesTo(TFS)
                           @ClosureParams(value = SimpleType, options = ['getl.tfs.TFS']) Closure cl) {
-        def parent = registerConnection(CSVTEMPCONNECTION, name, registration) as TFS
+        def parent = registerConnection(_repositoryConnections.CSVTEMPCONNECTION, name, registration) as TFS
         runClosure(parent, cl)
 
         return parent
@@ -4314,28 +3411,22 @@ Examples:
     /** Temporary CSV file current connection */
     @SuppressWarnings("GrMethodMayBeStatic")
     TFS csvTempConnection() {
-//        defaultFileConnection(CSVTEMPDATASET) as TFS
         TFS.storage
     }
 
     /** Use default CSV temporary connection for new datasets */
     TFS useCsvTempConnection(TFS connection = TFS.storage) {
-        useFileConnection(CSVTEMPDATASET, connection) as TFS
+        useFileConnection(_repositoryDatasets.CSVTEMPDATASET, connection) as TFS
     }
-
-    /* Create CSV temporary dataset for dataset */
-    /*void createCsvTemp(String name, Dataset dataset) {
-        if (name == null) throw new ExceptionGETL('Name cannot be null!')
-        if (dataset == null) throw new ExceptionGETL('Dataset cannot be null!')
-        TFSDataset csvTemp = dataset.csvTempFile
-        registerDatasetObject(csvTemp, name, true)
-    }*/
 
     /** Temporary CSV file */
     TFSDataset csvTemp(String name, Boolean registration,
                        @DelegatesTo(TFSDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
-        TFSDataset parent = registerDataset(defaultFileConnection(CSVTEMPDATASET) ?: TFS.storage, CSVTEMPDATASET, name, registration) as TFSDataset
+        def parent = registerDataset(null, _repositoryDatasets.CSVTEMPDATASET, name, registration,
+                defaultFileConnection(_repositoryDatasets.CSVTEMPDATASET), TFS, cl) as TFSDataset
+        if ((name == null || registration) && parent.connection == null)
+            parent.connection = TFS.storage
         runClosure(parent, cl)
 
         return parent
@@ -4369,11 +3460,12 @@ Examples:
                 throw new ExceptionGETL("Can not read list of field from dataset $sourceDataset!")
         }
 
-        def parent = TFS.dataset()
+        def parent = registerDataset(null, _repositoryDatasets.CSVTEMPDATASET, name, (name != null),
+                defaultFileConnection(_repositoryDatasets.CSVTEMPDATASET), TFS, cl) as TFSDataset
+        if (parent.connection == null)
+            parent.connection = TFS.storage
         parent.field = sourceDataset.field
         sourceDataset.prepareCsvTempFile(parent)
-        parent.connection = defaultFileConnection(CSVTEMPDATASET)?:TFS.storage
-        registerDatasetObject(parent, name, true)
         runClosure(parent, cl)
 
         return parent
@@ -4491,7 +3583,7 @@ Examples:
         else if (owner instanceof JDBCConnection)
             parent.connection = owner as JDBCConnection
         else
-            parent.connection = defaultJdbcConnection(QUERYDATASET)
+            parent.connection = defaultJdbcConnection(_repositoryDatasets.QUERYDATASET)
 
         parent.logEcho = _langOpts.sqlEchoLogLevel.toString()
         parent.extVars = configContent
@@ -4535,7 +3627,7 @@ Examples:
     FileManager files(String name, Boolean registration,
                       @DelegatesTo(FileManager)
                       @ClosureParams(value = SimpleType, options = ['getl.files.FileManager']) Closure cl) {
-        def parent = registerFileManager(FILEMANAGER, name, registration) as FileManager
+        def parent = registerFileManager(_repositoryFilemanagers.FILEMANAGER, name, registration) as FileManager
         if (parent.rootPath == null) parent.rootPath = new File('.').absolutePath
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
@@ -4569,7 +3661,7 @@ Examples:
     FTPManager ftp(String name, Boolean registration,
                    @DelegatesTo(FTPManager)
                    @ClosureParams(value = SimpleType, options = ['getl.files.FTPManager']) Closure cl) {
-        def parent = registerFileManager(FTPMANAGER, name, registration) as FTPManager
+        def parent = registerFileManager(_repositoryFilemanagers.FTPMANAGER, name, registration) as FTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
             def pt = startProcess("Do commands on [$parent]", 'command')
@@ -4603,7 +3695,7 @@ Examples:
     SFTPManager sftp(String name, Boolean registration,
                      @DelegatesTo(SFTPManager)
                      @ClosureParams(value = SimpleType, options = ['getl.files.SFTPManager']) Closure cl) {
-        def parent = registerFileManager(SFTPMANAGER, name, registration) as SFTPManager
+        def parent = registerFileManager(_repositoryFilemanagers.SFTPMANAGER, name, registration) as SFTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
             def pt = startProcess("Do commands on [$parent]", 'command')
@@ -4637,7 +3729,7 @@ Examples:
     HDFSManager hdfs(String name, Boolean registration,
                      @DelegatesTo(HDFSManager)
                      @ClosureParams(value = SimpleType, options = ['getl.files.HDFSManager']) Closure cl) {
-        def parent = registerFileManager(HDFSMANAGER, name, registration) as HDFSManager
+        def parent = registerFileManager(_repositoryFilemanagers.HDFSMANAGER, name, registration) as HDFSManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
             def pt = startProcess("Do commands on [$parent]", 'command')
@@ -4685,7 +3777,7 @@ Examples:
         def parent = new Executor(abortOnError: true)
         parent.disposeThreadResource(disposeConnections)
 
-        if (langOpts.processControlDataset != null && langOpts.checkProcessForThreads) {
+        if (_langOpts.processControlDataset != null && _langOpts.checkProcessForThreads) {
             def allowRun = {
                 return allowProcess()
             }
@@ -4753,35 +3845,30 @@ Examples:
     /** File path parser */
     @SuppressWarnings("GrMethodMayBeStatic")
     Path filePath(String mask) {
-        return new Path(mask: mask)
+        new Path(mask: mask)
     }
 
     /** Incremenal history point manager */
-    SavePointManager historypoint(String name = null, Boolean registration = false,
+    SavePointManager historypoint(String name = null, Boolean registration = false, JDBCConnection connection = null,
                                   @DelegatesTo(SavePointManager)
                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl = null) {
-        def parent = registerHistoryPoint(name, registration) as SavePointManager
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof JDBCConnection)
-                parent.connection = owner as JDBCConnection
-        }
+        def parent = registerHistoryPoint(connection, name, registration, cl)
         runClosure(parent, cl)
 
         return parent
     }
 
     /** Incremenal history point manager */
-    SavePointManager historypoint(String name,
+    SavePointManager historypoint(String name, Boolean registration = false,
                                   @DelegatesTo(SavePointManager)
                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl) {
-        historypoint(name, false, cl)
+        historypoint(name, registration, null, cl)
     }
 
     /** Incremenal history point manager */
     SavePointManager historypoint(@DelegatesTo(SavePointManager)
                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl) {
-        historypoint(null, false, cl)
+        historypoint(null, false, null, cl)
     }
 
     /**
@@ -4792,36 +3879,32 @@ Examples:
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     SavePointManager cloneHistorypoint(SavePointManager obj, JDBCConnection con = null) {
-        if (obj == null) throw new ExceptionGETL('Need object value!')
+        if (obj == null)
+            throw new ExceptionGETL('Need object value!')
         return obj.cloneSavePointManager(con) as SavePointManager
     }
 
     /** Sequence */
-    Sequence sequence(String name = null, Boolean registration = false,
-                          @DelegatesTo(Sequence)
+    Sequence sequence(String name = null, Boolean registration = false, JDBCConnection connection = null,
+                      @DelegatesTo(Sequence)
                           @ClosureParams(value = SimpleType, options = ['getl.jdbc.Sequence']) Closure cl = null) {
-        def parent = registerSequence(name, registration) as Sequence
-        if (parent.connection == null) {
-            def owner = DetectClosureDelegate(cl)
-            if (owner instanceof JDBCConnection)
-                parent.connection = owner as JDBCConnection
-        }
+        def parent = registerSequence(connection, name, registration, cl)
         runClosure(parent, cl)
 
         return parent
     }
 
     /** Sequence */
-    Sequence sequence(String name,
+    Sequence sequence(String name, Boolean registration = false,
                       @DelegatesTo(Sequence)
                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.Sequence']) Closure cl) {
-        sequence(name, false, cl)
+        sequence(name, registration, null, cl)
     }
 
     /** Sequence */
     Sequence sequence(@DelegatesTo(Sequence)
                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.Sequence']) Closure cl) {
-        sequence(null, false, cl)
+        sequence(null, false, null, cl)
     }
 
     /**
@@ -4951,12 +4034,12 @@ Examples:
     }
 
     /** Test case instance */
-    protected GroovyTestCase _testCase
+    private GroovyTestCase _testCase
 
     /** Run test case code */
     GroovyTestCase testCase(@DelegatesTo(GroovyTestCase)
                             @ClosureParams(value = SimpleType, options = ['junit.framework.TestCase']) Closure cl) {
-        def parent = _testCase ?: new GroovyTestCase()
+        def parent = _testCase?:new GroovyTestCase()
         def owner = DetectClosureDelegate(cl)
         RunClosure(owner, childThisObject, parent, cl)
         return parent
@@ -4989,8 +4072,8 @@ Examples:
      * @param cl
      */
     void ifUnitTestMode(Closure cl) {
-        if (!unitTestMode) return
-        runClosure(cl.delegate, cl)
+        if (unitTestMode)
+            runClosure(cl.delegate, cl)
     }
 
     /**
@@ -4998,8 +4081,13 @@ Examples:
      * @param cl
      */
     void ifRunAppMode(Closure cl) {
-        if (unitTestMode) return
-        runClosure(cl.delegate, cl)
+        if (!unitTestMode)
+            runClosure(cl.delegate, cl)
+    }
+
+    void ifInitMode(Closure cl) {
+        if (isInitMode)
+            runClosure(cl.delegate, cl)
     }
 
     /** Сonvert code variables to a map */
@@ -5010,6 +4098,5 @@ Examples:
     }
 
     /* TODO: add Counter repository object */
-    /* TODO: add Sequence repository object */
     /* TODO: add control process history (complete process elements, analog s_copy_to_impala) */
 }

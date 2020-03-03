@@ -108,7 +108,7 @@ class JDBCDataset extends Dataset {
 	 * Name of dataset
 	 */
 	String nameDataset () {
-		JDBCDriver drv = currentJDBCConnection.currentJDBCDriver
+		JDBCDriver drv = currentJDBCConnection?.currentJDBCDriver
 		(drv != null)?drv.nameDataset(this):getClass().name
 	}
 
@@ -116,7 +116,7 @@ class JDBCDataset extends Dataset {
 	 * Full name of dataset
 	 */
 	String fullNameDataset () {
-		JDBCDriver drv = currentJDBCConnection.currentJDBCDriver
+		JDBCDriver drv = currentJDBCConnection?.currentJDBCDriver
 		(drv != null)?drv.fullNameDataset(this):getClass().name
 	}
 	

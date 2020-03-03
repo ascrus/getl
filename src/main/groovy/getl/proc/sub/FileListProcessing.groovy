@@ -800,5 +800,5 @@ abstract class FileListProcessing {
      * Save cached data
      * @param error exception link if a file processing error occurs
      */
-    protected void saveCachedData(Exception error = null) { }
+    protected void saveCachedData(Throwable error = null) { }
 }

@@ -32,6 +32,7 @@ import getl.exception.ExceptionGETL
 import getl.jdbc.opts.GenerateDslTablesSpec
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
+import getl.lang.sub.RepositoryConnections
 import getl.proc.Flow
 import getl.tfs.TDS
 import getl.utils.*
@@ -544,7 +545,7 @@ class JDBCConnection extends Connection {
 	void generateDslTables(@DelegatesTo(GenerateDslTablesSpec)
 			@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.GenerateDslTablesSpec']) Closure cl) {
 		def connectionClassName = getClass().name
-		if (!(connectionClassName in Getl.LISTJDBCCONNECTIONCLASSES))
+		if (!(connectionClassName in RepositoryConnections.LISTJDBCCONNECTIONS))
 			throw new ExceptionGETL("Connection type \"$connectionClassName\" is not supported!")
 
 		String classType

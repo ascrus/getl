@@ -26,6 +26,7 @@ package getl.jdbc
 
 import getl.csv.CSVConnection
 import getl.csv.CSVDataset
+import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.files.FileManager
@@ -33,6 +34,7 @@ import getl.files.Manager
 import getl.jdbc.opts.*
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
+import getl.lang.sub.RepositoryDatasets
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TDS
@@ -390,7 +392,7 @@ class TableDataset extends JDBCDataset {
 		if (sourceConnection == null)
 			throw new ExceptionGETL("It is required to specify connection for CSV dataset to load into the table!")
 
-        def fullTableName = Getl.datasetObjectName(this)
+        def fullTableName = GetlDatasetObjectName(this)
 
 		ProcessTime pt
 		if (getl != null)
@@ -724,5 +726,33 @@ class TableDataset extends JDBCDataset {
 		}
 
 		return parent
+	}
+
+	/**
+	 * Return GETL object name for specified dataset
+	 * @dataset dataset
+	 * @return repository or class name
+	 */
+	static String GetlDatasetObjectName(Dataset dataset) {
+		if (dataset == null)
+			return null
+
+		def name = dataset.objectFullName
+
+		def type = dataset.getClass().name
+		if (type in RepositoryDatasets.LISTDATASETS) {
+			type = dataset.getClass().simpleName
+			type = type.replaceFirst(type[0], type[0].toLowerCase())
+
+			if (dataset.dslNameObject != null)
+				name = type + "('" + dataset.dslNameObject + "')"
+			else
+				name = type + ' ' + name
+		} else {
+			type = dataset.getClass().simpleName
+			name = type + ' ' + name
+		}
+
+		return name
 	}
 }

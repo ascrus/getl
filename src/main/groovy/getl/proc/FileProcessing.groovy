@@ -354,7 +354,7 @@ class FileProcessing extends FileListProcessing {
 
             def element = new ListPoolElement(man: src)
             if (delFilesTable != null) {
-                def delTable = delFilesTable.cloneDatasetConnection()
+                def delTable = delFilesTable.cloneDatasetConnection() as TDSTable
                 element.delTable = delTable
             }
 
@@ -649,13 +649,13 @@ class FileProcessing extends FileListProcessing {
             try {
                 def curPath = ''
                 delFilesTable.eachRow(order: ['filepath', 'filename']) { file ->
-                    def filepath = file.filepath
+                    def filepath = file.filepath as String
                     if (filepath != curPath) {
                         ChangeDir([source], filepath, false, numberAttempts, timeAttempts)
                         curPath = filepath
                     }
                     Operation([source], numberAttempts, timeAttempts) { man ->
-                        man.removeFile(file.filename)
+                        man.removeFile(file.filename as String)
                     }
                 }
                 delFilesTable.truncate(truncate: true)

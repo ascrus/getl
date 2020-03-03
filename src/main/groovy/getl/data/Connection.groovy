@@ -453,7 +453,7 @@ class Connection implements Cloneable, GetlRepository {
 	 * Connect name
 	 * @return
 	 */
-	String getObjectName() { driver.getClass().name }
+	String getObjectName() { driver?.getClass().name }
 
 	@Override
 	String toString() { objectName }

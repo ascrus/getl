@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
+
  Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
@@ -21,35 +21,38 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
+package getl.lang.sub
 
-package getl.data
-
+import getl.files.Manager
 import groovy.transform.InheritConstructors
-import getl.utils.*
 
 /**
- * Base virtual dataset class 
+ * Repository files manager
  * @author Alexsey Konstantinov
- *
  */
 @InheritConstructors
-class VirtualDataset extends Dataset {
-	/**
-	 * Destinition dataset
-	 * @return
-	 */
-    Dataset getDest () { params.dest as Dataset }
+class RepositoryFilemanagers extends RepositoryObjects<Manager> {
+    public static final String FILEMANAGER = 'getl.files.FileManager'
+    public static final String FTPMANAGER = 'getl.files.FTPManager'
+    public static final String HDFSMANAGER = 'getl.files.HDFSManager'
+    public static final String SFTPMANAGER = 'getl.files.SFTPManager'
 
-    void setDest (Dataset value) { params.dest = value }
-	
-	@Override
-    List<String> excludeSaveParams () {
-		super.excludeSaveParams() + ["dest"]
-	}
-	
-	@Override
-    String getObjectName() { dest?.objectName }
-	
-	@Override
-    String getObjectFullName() { dest?.objectFullName }
+    /** List of allowed file manager classes */
+    public static final List<String> LISTFILEMANAGERS = [FILEMANAGER, FTPMANAGER, HDFSMANAGER, SFTPMANAGER]
+
+    @Override
+    List<String> getListClasses() {
+        return LISTFILEMANAGERS
+    }
+
+    @Override
+    protected Manager createObject(String className) {
+        return Manager.CreateManager(manager: className)
+    }
+
+    @Override
+    protected String getNameCloneCollection() { 'filemanagers' }
+
+    @Override
+    protected String getTypeObject() { 'Filemanager' }
 }

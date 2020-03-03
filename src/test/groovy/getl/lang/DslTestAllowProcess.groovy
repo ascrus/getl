@@ -7,9 +7,9 @@ import groovy.transform.Field
 
 @BaseScript Getl main
 
-@Field def enabled; assert enabled != null
-@Field def checkOnStart; assert checkOnStart != null
-@Field def checkForThreads; assert checkForThreads != null
+@Field Boolean enabled; assert enabled != null
+@Field Boolean checkOnStart; assert checkOnStart != null
+@Field Boolean checkForThreads; assert checkForThreads != null
 
 options {
     processControlDataset = embeddedTable {

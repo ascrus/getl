@@ -412,8 +412,6 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 			type = "F"
 		}
 		
-		def operation = (saveMethod == "MERGE")?"UPDATE":"INSERT"
-
 		def sourceField = (map.source as String).toLowerCase()
 		def typeField = (map.type as String).toLowerCase()
 		def timeField = (map.time as String).toLowerCase()

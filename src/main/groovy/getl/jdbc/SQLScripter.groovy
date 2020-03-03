@@ -72,7 +72,11 @@ class SQLScripter implements WithConnection, Cloneable {
 	/***  JDBC connection */
 	Connection getConnection() { connection }
 	/***  JDBC connection */
-	void setConnection(Connection value) { connection = value }
+	void setConnection(Connection value) {
+		if (!(value instanceof JDBCConnection))
+			throw new ExceptionGETL('The SQLScripter only supports jdbc connections!')
+		connection = value as JDBCConnection
+	}
 	/** Use specified JDBC connection */
 	JDBCConnection useConnection(JDBCConnection value) {
 		setConnection(value)
@@ -671,7 +675,7 @@ class SQLScripter implements WithConnection, Cloneable {
 	SQLScripter cloneSQLScripterConnection() {
 		def con = connection?.cloneConnection() as JDBCConnection
 		def pointCon = pointConnection?.cloneConnection() as JDBCConnection
-		return cloneSQLScripter(con, pointConnection)
+		return cloneSQLScripter(con, pointCon)
 	}
 
 	@Override

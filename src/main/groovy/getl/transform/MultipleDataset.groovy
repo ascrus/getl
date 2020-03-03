@@ -69,5 +69,5 @@ class MultipleDataset extends Dataset {
 	}
 	
 	@Override
-    String getObjectName() { dest.keySet().toList().join(', ') }
+    String getObjectName() { dest?.keySet().toList().join(', ') }
 }

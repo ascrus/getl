@@ -141,7 +141,6 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	Object cloneConnection() {
-		Connection con = this.connection.cloneConnection()
 		return cloneSequenceConnection()
 	}
 

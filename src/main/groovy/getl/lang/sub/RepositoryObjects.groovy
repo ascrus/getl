@@ -29,7 +29,6 @@ import getl.lang.Getl
 import getl.proc.sub.ExecutorThread
 import getl.utils.BoolUtils
 import getl.utils.Path
-import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import java.util.concurrent.ConcurrentHashMap
@@ -57,6 +56,10 @@ abstract class RepositoryObjects<T extends GetlRepository> {
     Map<String, T> objects
     /** Repository objects */
     Map<String, T> getObjects() { objects }
+    /** Repository objects */
+    void setObjects(Map<String, T> value) {
+        this.objects = value
+    }
 
     /** List of supported classes for objects */
     abstract List<String> getListClasses()
@@ -68,13 +71,12 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param filter object filtering code
      * @return list of names repository objects according to specified conditions
      */
-    @Synchronized
     List<String> list(String mask = null, List<String> classes = null,
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
                                          Closure<Boolean> filter = null) {
         (classes as List<String>)?.each {
             if (!(it in listClasses))
-                throw new ExceptionGETL("\"$it\" is not a supported class!")
+                throw new ExceptionGETL("\"$it\" is not a supported $typeObject class!")
         }
 
         def res = [] as List<String>
@@ -82,16 +84,20 @@ abstract class RepositoryObjects<T extends GetlRepository> {
         def masknames = getl.parseName(mask)
         def maskgroup = masknames.groupName?:getl.filteringGroup
         def maskobject = masknames.objectName
-        def path = (maskobject != null) ? new Path(mask: maskobject):null
+        def path = (maskobject != null)?new Path(mask: maskobject):null
 
         objects.each { name, obj ->
-            masknames.name = name
-            if (maskgroup == null || maskgroup == masknames.groupName) {
-                if (path == null || path.match(masknames.objectName)) {
-                    if (classes == null || obj.getClass().name in classes) {
+            def names = new ParseObjectName(name)
+            if (maskgroup != null) {
+                if (names.groupName == maskgroup)
+                    if (path == null || path.match(names.objectName))
+                        if (classes == null || obj.getClass().name in classes)
+                            if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
+            }
+            else {
+                if (path == null || (names.groupName == null && path.match(names.objectName)))
+                    if (classes == null || obj.getClass().name in classes)
                         if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
-                    }
-                }
             }
         }
 
@@ -135,18 +141,17 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param name name object in repository
      * @param validExist checking if an object is registered in the repository (default true)
      */
-    @Synchronized
-    T registerObject(T obj, String name = null, Object childThisObject, Object childOwnerObject, Boolean validExist = true) {
+    T registerObject(T obj, String name = null, Boolean validExist = true) {
         if (obj == null)
-            throw new ExceptionGETL("Object cannot be null!")
+            throw new ExceptionGETL("$typeObject cannot be null!")
 
         def className = obj.getClass().name
         if (!(className in listClasses))
-            throw new ExceptionGETL("Unknown object class $className!")
+            throw new ExceptionGETL("Unknown $typeObject class $className!")
 
         if (name == null) {
-            obj.dslThisObject = childThisObject
-            obj.dslOwnerObject = childOwnerObject
+            obj.dslThisObject = getl.childThisObject
+            obj.dslOwnerObject = getl.childOwnerObject
             return obj
         }
 
@@ -156,11 +161,11 @@ abstract class RepositoryObjects<T extends GetlRepository> {
         if (validExist) {
             def exObj = objects.get(repName)
             if (exObj != null)
-                throw new ExceptionGETL("Object \"$name\" already registered for class \"${exObj.getClass().name}\"!")
+                throw new ExceptionGETL("$typeObject \"$name\" already registered for class \"${exObj.getClass().name}\"!")
         }
 
-        obj.dslThisObject = childThisObject
-        obj.dslOwnerObject = childOwnerObject
+        obj.dslThisObject = getl.childThisObject
+        obj.dslOwnerObject = getl.childOwnerObject
         obj.dslNameObject = repName
 
         objects.put(repName, obj)
@@ -187,12 +192,15 @@ abstract class RepositoryObjects<T extends GetlRepository> {
     /** The name of the collection for storing cloned objects for threads */
     abstract protected String getNameCloneCollection()
 
+    /** Type of repository object  */
+    abstract protected String getTypeObject()
+
     /**
      * Process register object
      * @param obj instance object
      * @param repObj repository object, when object cloned in thread
      */
-    protected void processRegisterObject(String className, String name, Boolean registration, T obj, T repObj, Map params) { }
+    protected void processRegisterObject(String className, String name, Boolean registration, T repObj, T cloneObj, Map params) { }
 
     /**
      * Register an object by name or return an existing one
@@ -200,22 +208,21 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param name object name
      * @param registration register a new object or return an existing one
      */
-    @Synchronized
-    protected T register(String className, String name, Boolean registration = false, Map params = null) {
+    T register(String className, String name = null, Boolean registration = false, Map params = null) {
         registration = BoolUtils.IsValue(registration)
 
         if (className == null && registration)
             throw new ExceptionGETL('Class name cannot be null!')
 
         if (className != null && !(className in listClasses))
-            throw new ExceptionGETL("$className class is not supported by the repository!")
+            throw new ExceptionGETL("$className class is not supported by the ${typeObject}s repository!")
 
         if (name == null) {
-            def c = createObject(className)
-            c.dslThisObject = getl.childThisObject
-            c.dslOwnerObject = getl.childOwnerObject
-            processRegisterObject(className, name, registration, c, null, params)
-            return c
+            def obj = createObject(className)
+            obj.dslThisObject = getl.childThisObject
+            obj.dslOwnerObject = getl.childOwnerObject
+            processRegisterObject(className, name, registration, obj, null, params)
+            return obj
         }
 
         def repName = getl.repObjectName(name)
@@ -223,10 +230,10 @@ abstract class RepositoryObjects<T extends GetlRepository> {
 
         if (obj == null) {
             if (registration && Thread.currentThread() instanceof ExecutorThread)
-                throw new ExceptionGETL("it is not allowed to register an \"$name\" object inside a thread!")
+                throw new ExceptionGETL("it is not allowed to register an \"$name\" $typeObject inside a thread!")
 
             if (!registration && getl.langOpts.validRegisterObjects)
-                throw new ExceptionGETL("Object \"$name\" is not registered!")
+                throw new ExceptionGETL("$typeObject \"$name\" is not registered!")
 
             obj = createObject(className)
             obj.dslThisObject = getl.childThisObject
@@ -235,10 +242,10 @@ abstract class RepositoryObjects<T extends GetlRepository> {
             objects.put(repName, obj)
         } else {
             if (registration)
-                throw new ExceptionGETL("Object \"$name\" already registered for class \"${obj.getClass().name}\"!")
+                throw new ExceptionGETL("$typeObject \"$name\" already registered for class \"${obj.getClass().name}\"!")
             else {
                 if (className != null && obj.getClass().name != className)
-                    throw new ExceptionGETL("The requested object \"$name\" of the class \"$className\" is already registered for the class \"${obj.getClass().name}\"!")
+                    throw new ExceptionGETL("The requested $typeObject \"$name\" of the class \"$className\" is already registered for the class \"${obj.getClass().name}\"!")
             }
 
             obj.dslThisObject = getl.childThisObject
@@ -260,6 +267,9 @@ abstract class RepositoryObjects<T extends GetlRepository> {
             processRegisterObject(className, name, registration, obj, threadobj, params)
             obj = threadobj
         }
+        else {
+            processRegisterObject(className, name, registration, obj, null, params)
+        }
 
         return obj
     }
@@ -270,11 +280,27 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param classes list of processed classes
      * @param filter filter for detect objects to unregister
      */
-    @Synchronized
     void unregister(String mask = null, List<String> classes = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
                                       Closure<Boolean> filter = null) {
         def list = list(mask, classes, filter)
         list.each { name -> objects.remove(name) }
+    }
+
+    /**
+     * Process repository objects for specified mask and class
+     * @param mask filter mask (use Path expression syntax)
+     * @param classes list of need classes
+     * @param cl processing code
+     */
+    void processObjects(String mask, List<String> classes, Closure cl) {
+        if (cl == null)
+            throw new ExceptionGETL('Process required closure code!')
+
+        def code = getl.PrepareClosure(getl.childOwnerObject, getl.childThisObject, cl.delegate, cl)
+        def list = list(mask, classes)
+        list.each { name ->
+            code.call(name)
+        }
     }
 }

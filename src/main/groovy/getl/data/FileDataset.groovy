@@ -124,7 +124,7 @@ class FileDataset extends Dataset {
 	void setBufferSize(Integer value)  { params.bufferSize = value }
 	
 	@Override
-	String getObjectName() { fileName + ((extension != null)?".${extension}":'') }
+	String getObjectName() { (fileName != null)?(fileName + ((extension != null)?".${extension}":'')):'file' }
 	
 	@Override
 	String getObjectFullName() { fullFileName() }
@@ -133,10 +133,11 @@ class FileDataset extends Dataset {
 	 * Full file name with path
 	 */
 	String fullFileName() {
-		if (connection == null) throw new ExceptionGETL("Required connection for dataset \"$objectName\"")
+		if (connection == null)
+			throw new ExceptionGETL("Required connection for dataset \"$objectName\"")
 		FileDriver drv = connection.driver as FileDriver
 		
-		return drv.fullFileNameDataset(this)
+		return drv?.fullFileNameDataset(this)
 	}
 
 	/** File name with extenstion */
