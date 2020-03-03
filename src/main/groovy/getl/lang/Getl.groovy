@@ -1965,7 +1965,7 @@ Examples:
     /** Configuration options */
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ConfigSpec']) Closure cl = null) {
-        if (Thread.currentThread() instanceof ExecutorThread)
+        if (cl != null && Thread.currentThread() instanceof ExecutorThread)
             throw new ExceptionGETL('Changing configuration is not supported in the thread!')
 
         if (!(Config.configClassManager instanceof ConfigSlurper)) Config.configClassManager = new ConfigSlurper()
@@ -4094,7 +4094,7 @@ Examples:
     Map<String, Object> toVars(Closure cl) {
         def own = DetectClosureDelegate(cl)
         def code = PrepareClosure(own, childThisObject, own, cl)
-        MapUtils.Closure2Map(configuration().environment, code)
+        MapUtils.Closure2Map((Config.configClassManager as ConfigSlurper).environment, code)
     }
 
     /* TODO: add Counter repository object */

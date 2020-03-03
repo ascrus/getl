@@ -98,8 +98,11 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		return value
 	}
 
+	/** Current JDBC connection */
+	JDBCConnection getCurrentJDBCConnection() { connection }
+
 	/** Database name for table */
-	String getDbName () { params.dbName }
+	String getDbName () { (params.dbName as String)?:connection.dbName }
 	/** Database name for table */
 	void setDbName (String value) {
 		params.dbName = value
@@ -107,7 +110,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 	
 	/** Schema name for table */
-	String getSchemaName () { params.schemaName }
+	String getSchemaName () { (params.schemaName as String)?:connection.schemaName }
 	/** Schema name for table */
 	void setSchemaName (String value) {
 		params.schemaName = value
@@ -115,7 +118,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 	
 	/** Table name */
-	String getTableName () { params.tableName }
+	String getTableName () { params.tableName as String }
 	/** Table name */
 	void setTableName (String value) {
 		assert value != null, "Required table name" 
@@ -215,7 +218,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		table.tableName = tableName
 		table.field = table_field
 		
-		table.fieldByName(map.source as String).isKey = true //(saveMethod == "MERGE")
+		table.fieldByName(map.source as String).isKey = true
 		table.fieldByName(map.time as String).isKey = (saveMethod == "INSERT")
 	}
 	
@@ -286,23 +289,24 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		
 		def sql
 		if (saveMethod == "MERGE") {
-			sql = "SELECT ${fp}${map.type}${fpe} AS type, ${fp}${map.value}${fpe} AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fpe = '${source}'"
+			sql = "SELECT ${fp}${map.type}${fpe} AS type, ${fp}${map.value}${fpe} AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fpe = '${source}' FOR UPDATE"
 		}
 		else {
-			sql = "SELECT ${fp}${map.type}${fpe} AS type, Max(${fp}${map.value}${fpe}) AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fpe = '${source}' GROUP BY ${fp}${map.type}${fpe}"
+			sql = "SELECT ${fp}${map.type}${fpe} AS type, Max(${fp}${map.value}${fpe}) AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fpe = '${source}' GROUP BY ${fp}${map.type}${fpe} FOR UPDATE"
 		}
 		
 		QueryDataset query = new QueryDataset(connection: connection, query: sql)
+		def isAutoTran = !connection.isTran()
+		if (isAutoTran) connection.startTran()
 		def rows
-		connection.startTran()
 		try {
 			rows = query.rows()
 		}
 		catch (Exception e) {
-			connection.rollbackTran()
+			if (isAutoTran) connection.rollbackTran()
 			throw e
 		}
-		connection.commitTran()
+		if (isAutoTran) connection.commitTran()
 		
 		Map<String, Object> res = [type: null as Object, value: null as Object]
 		rows.each { row ->
@@ -431,13 +435,21 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		}
 
 		if (saveMethod == 'MERGE') {
-			def lastValue = lastValue(source).value
-			if (lastValue == null)
-				save("INSERT")
-			else if (lastValue < newValue)
-				save("UPDATE")
-		}
-		else {
+			def isAutoTran = !connection.isTran()
+			if (isAutoTran) connection.startTran()
+			try {
+				def lastValue = lastValue(source).value
+				if (lastValue == null)
+					save("INSERT")
+				else if (lastValue < newValue)
+					save("UPDATE")
+			}
+			catch (Exception e) {
+				if (isAutoTran) connection.rollbackTran()
+				throw e
+			}
+			if (isAutoTran) connection.commitTran()
+		} else {
 			save("INSERT")
 		}
 	}

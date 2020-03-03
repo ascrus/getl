@@ -89,6 +89,9 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 		setConnection(value)
 	}
 
+	/** Current JDBC connection */
+	JDBCConnection getCurrentJDBCConnection() { connection }
+
 	/** Sequence name */
 	String getName() { params.name as String }
 	/** Sequence name */

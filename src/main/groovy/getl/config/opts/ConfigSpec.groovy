@@ -41,7 +41,7 @@ class ConfigSpec extends BaseSpec {
     /**
      * Configuration manager
      */
-    static ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper}
+    static ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper }
 
     /**
      * Configuration files path
