@@ -54,6 +54,12 @@ class ExceptionDSL extends Throwable {
         this.typeCode = typeCode
     }
 
+    ExceptionDSL(String message) {
+        super(message)
+        this.typeCode = 0
+        this.exitCode = -1
+    }
+
     ExceptionDSL() {
         super()
     }

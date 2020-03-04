@@ -339,7 +339,7 @@ class Flow {
 		boolean autoConvert = BoolUtils.IsValue(params.autoConvert, true)
 		boolean autoTranParams = BoolUtils.IsValue(params.autoTran, true)
 		def autoTran = autoTranParams &&
-				dest.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) &&
+				dest.connection.isSupportTran &&
 				!dest.connection.isTran() &&
 				!BoolUtils.IsValue(dest.connection.params.autoCommit, false)
 
@@ -360,7 +360,7 @@ class Flow {
 
 			def datasetParams = childParams.datasetParams as Map
 			def autoTranChild = (autoTranParams &&
-					dataset.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) &&
+					dataset.connection.isSupportTran &&
 					!dataset.connection.isTran() &&
 					!BoolUtils.IsValue([datasetParams?.get('autoCommit'),
 										dataset.connection.params.autoCommit], false))
@@ -709,8 +709,10 @@ class Flow {
 		if (destDescription == null) destDescription = dest.objectName
 		
 		boolean autoTran = (params.autoTran != null)?params.autoTran:true
-		autoTran = autoTran && dest.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) &&
-								!BoolUtils.IsValue(dest.connection.params.autoCommit, false)
+		autoTran = autoTran &&
+				dest.connection.isSupportTran &&
+				!dest.connection.isTran() &&
+				!BoolUtils.IsValue(dest.connection.params.autoCommit, false)
 		
 		boolean isBulkLoad = (params.bulkLoad != null)?params.bulkLoad:false
 		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destinataion dataset not support bulk load")
@@ -874,7 +876,7 @@ class Flow {
 			
 			// Valid auto transaction
 			def isAutoTran = autoTran &&
-                    d.connection.driver.isSupport(Driver.Support.TRANSACTIONAL) &&
+                    d.connection.isSupportTran &&
                     !d.connection.isTran() &&
 					!BoolUtils.IsValue(d.connection.params.autoCommit, false)
 						

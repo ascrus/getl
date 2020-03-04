@@ -537,9 +537,15 @@ class JDBCDriver extends Driver {
 		sqlConnect = sql
 	}
 
-    /**
-     * Return session ID
-     */
+	/** Current transactional isolation level */
+	Integer getTransactionIsolation() { sqlConnect.getConnection().getTransactionIsolation() }
+	/** Current transactional isolation level */
+	void setTransactionIsolation(Integer value) {
+		saveToHistory("SET TRANSACTION ISOLATION TO $value")
+		sqlConnect.getConnection().setTransactionIsolation(value)
+	}
+
+    /** Return session ID */
 	protected String sessionID() { return null }
 
     /**
@@ -1142,7 +1148,8 @@ ${extend}'''
                      JDBCDataset.memoryTable, JDBCDataset.externalTable])?'TABLE':
 				((dataset as JDBCDataset).type == JDBCDataset.viewType)?'VIEW':null
 
-		if (t == null) throw new ExceptionGETL("Can not support type object \"${(dataset as JDBCDataset).type}\"")
+		if (t == null)
+			throw new ExceptionGETL("Can not support type object \"${(dataset as JDBCDataset).type}\"")
 
 		def validExists = BoolUtils.IsValue(params.ifExists)
 		if (validExists && !isSupport(Driver.Support.DROPIFEXIST)) {
@@ -2026,12 +2033,13 @@ $sql
 	@groovy.transform.CompileStatic
 	protected void saveBatch (Dataset dataset, WriterParams wp) {
 		long countComplete = 0
-//		long countError = 0
 		wp.batchCount++
 		if (wp.batchSize > 1) {
 			try {
 				int[] resUpdate = wp.stat.executeBatch()
-				resUpdate.each { int res -> if (res > 0) countComplete++ /*else if (res < 0) countError++*/ }
+				resUpdate.each { int res ->
+					if (res > 0) countComplete++
+				}
 			}
 			catch (BatchUpdateException e) {
                 validRejects(dataset, e.getUpdateCounts())
@@ -2045,9 +2053,8 @@ $sql
 		}
 		else {
 			try {
-				wp.stat.executeUpdate()
+				countComplete += wp.stat.executeUpdate()
 				wp.stat.clearParameters()
-				countComplete++
 			}
 			catch (SQLException e) {
 				/*countError++*/
@@ -2283,7 +2290,7 @@ $sql
 		Long count
 		def autoTran = isSupport(Driver.Support.TRANSACTIONAL)
 		if (autoTran) {
-			autoTran = (!con.autoCommit && con.tranCount == 0)
+			autoTran = (!con.autoCommit && !con.isTran())
 		}
 
 		if (autoTran)

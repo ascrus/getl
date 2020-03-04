@@ -25,7 +25,6 @@
 package getl.proc.sub
 
 import getl.data.Field
-import getl.exception.ExceptionFileProcessing
 import getl.files.Manager
 import getl.h2.H2Connection
 import getl.h2.H2Table
@@ -606,7 +605,7 @@ abstract class FileListProcessing {
                         source.story.currentJDBCConnection.transaction {
                             def count = new Flow().copy(source: cacheTable, dest: source.story)
                             if (count == 0)
-                                throw new ExceptionFileProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
+                                throw new ExceptionFileListProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
                         }
                     }
 
@@ -666,14 +665,20 @@ abstract class FileListProcessing {
 
         def foundRows = cacheTable.countRow()
         if (foundRows > 0) {
-            source.story.currentJDBCConnection.transaction {
+            source.story.connection.startTran(true)
+            try {
                 def count = new Flow().copy(source: cacheTable, dest: source.story)
                 if (foundRows != count)
-                    throw new ExceptionFileProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
+                    throw new ExceptionFileListProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
 
                 Logs.Info("$count rows of file processing history saved to table ${source.story.fullTableName}")
                 cacheTable.truncate(truncate: true)
             }
+            catch (Exception e) {
+                source.story.connection.rollbackTran(true)
+                throw e
+            }
+            source.story.connection.commitTran(true)
         }
     }
 

@@ -220,6 +220,8 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		
 		table.fieldByName(map.source as String).isKey = true
 		table.fieldByName(map.time as String).isKey = (saveMethod == "INSERT")
+
+		table.writeOpts { batchSize = 1 }
 	}
 	
 	/**
@@ -227,7 +229,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * @param ifNotExists do not create if already exists
 	 * @return creation result
 	 */
-	@Synchronized
+	@Synchronized('operationLock')
 	boolean create(boolean ifNotExists = false) {
 		prepareTable()
 		
@@ -246,7 +248,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * @param ifExists delete only if exists
 	 * @return delete result
 	 */
-	@Synchronized
+	@Synchronized('operationLock')
 	boolean drop(boolean ifExists = false) {
 		prepareTable()
 		
@@ -260,7 +262,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * Valid save point table exists
 	 * @return search results
 	 */
-	@Synchronized
+	@Synchronized('operationLock')
 	boolean isExists() {
 		prepareTable()
 		
@@ -279,7 +281,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * @param source name of source
 	 * @return res.type (D and N) and res.value
 	 */
-	Map<String, Object> lastValue (String source) {
+	Map<String, Object> lastValue(String source) {
 		prepareTable()
 		source = source.toUpperCase()
 		
@@ -289,24 +291,24 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		
 		def sql
 		if (saveMethod == "MERGE") {
-			sql = "SELECT ${fp}${map.type}${fpe} AS type, ${fp}${map.value}${fpe} AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fpe = '${source}' FOR UPDATE"
+			sql = "SELECT ${fp}${map.type}${fpe} AS type, ${fp}${map.value}${fpe} AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fpe = '${source}'"
 		}
 		else {
-			sql = "SELECT ${fp}${map.type}${fpe} AS type, Max(${fp}${map.value}${fpe}) AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fpe = '${source}' GROUP BY ${fp}${map.type}${fpe} FOR UPDATE"
+			sql = "SELECT ${fp}${map.type}${fpe} AS type, Max(${fp}${map.value}${fpe}) AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fpe = '${source}' GROUP BY ${fp}${map.type}${fpe}"
 		}
 		
 		QueryDataset query = new QueryDataset(connection: connection, query: sql)
 		def isAutoTran = !connection.isTran()
-		if (isAutoTran) connection.startTran()
+		if (isAutoTran) connection.startTran(true)
 		def rows
 		try {
 			rows = query.rows()
 		}
 		catch (Exception e) {
-			if (isAutoTran) connection.rollbackTran()
+			if (isAutoTran) connection.rollbackTran(true)
 			throw e
 		}
-		if (isAutoTran) connection.commitTran()
+		if (isAutoTran) connection.commitTran(true)
 		
 		Map<String, Object> res = [type: null as Object, value: null as Object]
 		rows.each { row ->
@@ -375,7 +377,6 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	void saveValue(String source, def value) {
 		saveValue(source, value, null)
 	}
-	
 
 	/**
 	 * Set new save point value to source
@@ -384,6 +385,32 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * @param format text to timestamp format
 	 */
 	void saveValue(String source, def newValue, String format) {
+		if (saveMethod == insertSave)
+			saveValueInternal(source, newValue, format)
+		else
+			saveValueSynch(source, newValue, format)
+	}
+
+	static private operationLock = new Object()
+
+	/**
+	 * Set new save point value to source
+	 * @param source name of source
+	 * @param value numerical or timestamp value
+	 * @param format text to timestamp format
+	 */
+	@Synchronized('operationLock')
+	void saveValueSynch(String source, def newValue, String format) {
+		saveValueInternal(source, newValue, format)
+	}
+
+	/**
+	 * Set new save point value to source
+	 * @param source name of source
+	 * @param value numerical or timestamp value
+	 * @param format text to timestamp format
+	 */
+	protected void saveValueInternal(String source, def newValue, String format) {
 		prepareTable()
 
 		def value = newValue
@@ -429,28 +456,42 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		row.put(valueField, value)
 
 		def save = { oper ->
-			new Flow().writeTo(dest: table, dest_operation: oper) { updater ->
+			def where = (oper == 'UPDATE')?"$valueField < $value":null
+			new Flow().writeTo(dest: table, dest_operation: oper, dest_where: where) { updater ->
 				updater(row)
 			}
+			if (table.updateRows > 1)
+				throw new ExceptionGETL("Duplicates were detected when changing the values in table $table for source \"$source\"!")
+
+			return table.updateRows
 		}
 
 		if (saveMethod == 'MERGE') {
 			def isAutoTran = !connection.isTran()
-			if (isAutoTran) connection.startTran()
+			if (isAutoTran) connection.startTran(true)
 			try {
-				def lastValue = lastValue(source).value
-				if (lastValue == null)
-					save("INSERT")
-				else if (lastValue < newValue)
-					save("UPDATE")
+				if (save("UPDATE") == 0) {
+					def last = lastValue(source).value
+					if (last == null) {
+						if (save("INSERT") == 0)
+							throw new ExceptionGETL("Error inserting new value into table $table for source \"$source\"!")
+					}
+					else if (last < newValue)
+						if (save("UPDATE") == 0) {
+							last = lastValue(source).value
+							if (last < newValue)
+								throw new ExceptionGETL("Error changing value in table $table for source \"$source\"!")
+						}
+				}
 			}
 			catch (Exception e) {
-				if (isAutoTran) connection.rollbackTran()
+				if (isAutoTran) connection.rollbackTran(true)
 				throw e
 			}
-			if (isAutoTran) connection.commitTran()
+			if (isAutoTran) connection.commitTran(true)
 		} else {
-			save("INSERT")
+			if (save("INSERT") != 1)
+				throw new ExceptionGETL("Error inserting new value into table $table for source \"$source\"!")
 		}
 	}
 	
@@ -509,7 +550,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * Clear save point value by source
 	 * @param source name of source
 	 */
-	@Synchronized
+	@Synchronized('operationLock')
 	void clearValue (String source) {
 		prepareTable()
 		
@@ -526,7 +567,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Delete all rows in history point table */
-	@Synchronized
+	@Synchronized('operationLock')
 	void truncate(Map truncateParams = null) {
 		table.truncate(truncateParams)
 	}

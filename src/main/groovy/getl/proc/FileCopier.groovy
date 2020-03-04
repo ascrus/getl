@@ -25,6 +25,7 @@
 package getl.proc
 
 import getl.data.Field
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionFileListProcessing
 import getl.exception.ExceptionGETL
 import getl.files.Manager
@@ -68,7 +69,7 @@ class FileCopier extends FileListProcessing {
     /** Destination directory path mask */
     void setDestinationPath(Path value) {
         if (sourcePath == null)
-            throw new ExceptionGETL('You must first specify a path mask for the source!')
+            throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
 
         def parent = value.clone()
         MapUtils.MergeMap(parent.maskVariables, CloneUtils.CloneMap(sourcePath.maskVariables), false, false)
@@ -79,7 +80,7 @@ class FileCopier extends FileListProcessing {
     /** Use path mask for destination directory */
     void useDestinationPath(@DelegatesTo(Path) Closure cl) {
         if (sourcePath == null)
-            throw new ExceptionGETL('You must first specify a path mask for the source!')
+            throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
 
         def parent = new Path()
         parent.maskVariables.putAll(CloneUtils.CloneMap(sourcePath.maskVariables))
@@ -94,7 +95,7 @@ class FileCopier extends FileListProcessing {
     /** File rename mask */
     void setRenamePath(Path value) {
         if (sourcePath == null)
-            throw new ExceptionGETL('You must first specify a path mask for the source!')
+            throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
 
         def parent = value.clone()
         def sm = [:] as Map<String, Object>
@@ -113,7 +114,7 @@ class FileCopier extends FileListProcessing {
     /** Use path mask for rename file name */
     void useRenamePath(@DelegatesTo(Path) Closure cl) {
         if (sourcePath == null)
-            throw new ExceptionGETL('You must first specify a path mask for the source!')
+            throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
 
         def parent = new Path()
         parent.maskVariables.putAll(CloneUtils.CloneMap(sourcePath.maskVariables))

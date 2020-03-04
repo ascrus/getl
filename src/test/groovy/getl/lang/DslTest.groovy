@@ -113,7 +113,7 @@ environments {
                 loadEncrypt('resource:/config/dsl_config.store', 'getl-dsl-test', 'prod')
                 assertEquals(enmap_prod.logins, configContent.logins)
 
-                def storeName = FileUtils.CreateTempFile().path
+                def storeName = FileUtils.CreateTempFile(null, '.store').path
                 saveEncrypt(enmap_dev, storeName, 'getl-dsl-test', 'dev')
                 saveEncrypt(enmap_prod, storeName, 'getl-dsl-test', 'prod')
 
@@ -122,6 +122,8 @@ environments {
 
                 loadEncrypt(storeName, 'getl-dsl-test', 'prod')
                 assertEquals(enmap_prod.logins, configContent.logins)
+
+                FileUtils.DeleteFile(storeName)
             }
         }
     }

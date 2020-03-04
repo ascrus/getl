@@ -586,14 +586,16 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Size of found files */
 	long getSizeFileList () { sizeFileListSync.count }
 
+	static private operationLock = new Object()
+
 	@CompileStatic
-	@Synchronized
+	@Synchronized('operationLock')
 	protected FileManagerList listDirSync(String mask) {
 		listDir(mask)
 	}
 	
 	@CompileStatic
-	@Synchronized
+	@Synchronized('operationLock')
 	protected void changeDirSync(String dir) {
 		changeDirectory(dir)
 	}
@@ -1659,7 +1661,7 @@ WHERE
 	/**
 	 * Validation script history file
 	 */
-	@Synchronized
+	@Synchronized('operationLock')
 	protected void validScriptHistoryFile () {
 		if (fileNameScriptHistory == null) {
 			fileNameScriptHistory = StringUtils.EvalMacroString(scriptHistoryFile, StringUtils.MACROS_FILE)
@@ -1671,7 +1673,7 @@ WHERE
 	 * Write to script history file 
 	 * @param text
 	 */
-	@Synchronized
+	@Synchronized('operationLock')
 	protected void writeScriptHistoryFile (String text) {
 		if (scriptHistoryFile == null) return
 		validScriptHistoryFile()

@@ -149,6 +149,11 @@ class BaseSpec {
         params.putAll(MapUtils.Copy(importParams, ignoreImportKeys(importParams)))
     }
 
+    /** Clear all options */
+    void clearOptions() {
+        params.clear()
+    }
+
     static protected final savedOptionsName = '__getl_saved_options__'
 
     /** Push current options to saved list */

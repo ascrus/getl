@@ -114,12 +114,14 @@ class ConfigStores extends ConfigManager {
     }
 
     static Map<String, Object> LoadSection(String fileName, String secretKey, String section) {
-        if (fileName == null) throw new ExceptionGETL('Required fileName parameter')
+        if (fileName == null)
+            throw new ExceptionGETL('Required fileName parameter')
 
         Map<String, Object> data = [:]
 
         if (FileUtils.FileExtension(fileName) == '') fileName += '.store'
-        if (!FileUtils.ExistsFile(fileName)) throw new ExceptionGETL("Can not find store config file \"$fileName\"")
+        if (!FileUtils.ExistsFile(fileName))
+            throw new ExceptionGETL("Can not find store config file \"$fileName\"")
 
         MVStore store = new MVStore.Builder().fileName(fileName).encryptionKey((secretKey?:(this.getClass().name)).toCharArray()).compress().open()
         try {
@@ -131,7 +133,7 @@ class ConfigStores extends ConfigManager {
             store.rollback()
         }
         finally {
-            store.close()
+            store.closeImmediately()
         }
 
         return data
@@ -164,7 +166,7 @@ class ConfigStores extends ConfigManager {
             store.rollback()
         }
         finally {
-            store.close()
+            store.closeImmediately()
         }
     }
 }

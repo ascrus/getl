@@ -777,4 +777,21 @@ ${tab}${tab}}
 		methodParams.validation("executeCommand", execParams, [driver.methodParams.params("executeCommand")])
 		driver.executeCommand(command, execParams)
 	}
+
+	static public final int transactionIsolationNone = java.sql.Connection.TRANSACTION_NONE
+	static public final int transactionIsolationReadCommitted = java.sql.Connection.TRANSACTION_READ_COMMITTED
+	static public final int transactionIsolationReadUncommitted = java.sql.Connection.TRANSACTION_READ_UNCOMMITTED
+	static public final int transactionIsolationRepeatableRead = java.sql.Connection.TRANSACTION_REPEATABLE_READ
+	static public final int transactionIsolationSerializable = java.sql.Connection.TRANSACTION_SERIALIZABLE
+
+	/** Current transactional isolation level */
+	Integer getTransactionIsolation() {
+		tryConnect()
+		return currentJDBCDriver.transactionIsolation
+	}
+	/** Current transactional isolation level */
+	void setTransactionIsolation(Integer value) {
+		tryConnect()
+		currentJDBCDriver.transactionIsolation = value
+	}
 }

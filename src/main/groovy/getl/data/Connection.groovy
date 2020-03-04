@@ -388,34 +388,43 @@ class Connection implements Cloneable, GetlRepository {
 	/** User logic if disconnection error */
 	 protected void doErrorDisconnect() {}
 	
-	/**
-	 * Validation  connected is true and connecting if has no
-	 */
+	/** Validation  connected is true and connecting if has no */
 	void tryConnect () {
 		if (driver.isSupport(Driver.Support.CONNECT)) connected = true
 	}
 	
-	/**
-	 * Connection has current transaction  
-	 */
+	/** Connection has current transaction */
 	boolean isTran () { (tranCount > 0) }
+
+	/** Connection supports transactions */
+	Boolean getIsSupportTran() { driver.isSupport(Driver.Support.TRANSACTIONAL) }
 	
-	/**
-	 * Start transaction
-	 */
-	void startTran () {
-		if (!driver.isSupport(Driver.Support.TRANSACTIONAL)) throw new ExceptionGETL("Driver not supported transactional")
+	/** Start transaction */
+	void startTran (boolean onlyIfSupported = false) {
+		if (!isSupportTran) {
+			if (onlyIfSupported)
+				return
+			else
+				throw new ExceptionGETL("Connection does not support transactions!")
+		}
+
 		tryConnect()
 		driver.startTran()
 		tranCount++
 	}
 	
-	/** 
-	 * Commit transaction
-	 */
-	void commitTran () {
-		if (!driver.isSupport(Driver.Support.TRANSACTIONAL)) throw new ExceptionGETL("Driver not supported transactional")
-		if (!isTran()) throw new ExceptionGETL("Not started transaction for commit operation")
+	/**  Commit transaction */
+	void commitTran (boolean onlyIfSupported = false) {
+		if (!isSupportTran) {
+			if (onlyIfSupported)
+				return
+			else
+				throw new ExceptionGETL("Connection does not support transactions!")
+		}
+
+		if (!isTran())
+			throw new ExceptionGETL("Not started transaction for commit operation")
+
 		driver.commitTran()
 		tranCount--
 	}
@@ -423,9 +432,17 @@ class Connection implements Cloneable, GetlRepository {
 	/**
 	 * Rollback transaction
 	 */
-	void rollbackTran () {
-		if (!driver.isSupport(Driver.Support.TRANSACTIONAL)) throw new ExceptionGETL("Driver not supported transactional")
-		if (!isTran()) throw new ExceptionGETL("Not started transaction for rollback operation")
+	void rollbackTran (boolean onlyIfSupported = false) {
+		if (!isSupportTran) {
+			if (onlyIfSupported)
+				return
+			else
+				throw new ExceptionGETL("Connection does not support transactions!")
+		}
+
+		if (!isTran())
+			throw new ExceptionGETL("Not started transaction for rollback operation")
+
 		driver.rollbackTran()
 		tranCount--
 	}
@@ -453,7 +470,7 @@ class Connection implements Cloneable, GetlRepository {
 	 * Connect name
 	 * @return
 	 */
-	String getObjectName() { driver?.getClass().name }
+	String getObjectName() { (driver != null)?driver.getClass().name:null }
 
 	@Override
 	String toString() { objectName }
@@ -474,7 +491,7 @@ class Connection implements Cloneable, GetlRepository {
 	 * @param cl your code
 	 */
 	void transaction(Closure cl) {
-		if (!driver.isSupport(Driver.Support.TRANSACTIONAL))
+		if (!isSupportTran)
 			throw new ExceptionGETL("Connection \"${toString()}\" does not support transactions!")
 
 		startTran()

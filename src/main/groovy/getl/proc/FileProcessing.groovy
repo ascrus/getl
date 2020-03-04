@@ -25,6 +25,8 @@
 package getl.proc
 
 import getl.data.Field
+import getl.driver.Driver
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionFileListProcessing
 import getl.exception.ExceptionFileProcessing
 import getl.files.Manager
@@ -79,11 +81,6 @@ class FileProcessing extends FileListProcessing {
         if (value != null)
             threadGroupColumns.addAll(value)
     }
-
-    /** Abort processing on error */
-    boolean getAbortOnError() { BoolUtils.IsValue(params.abortOnError, true)}
-    /** Abort processing on error */
-    void setAbortOnError(boolean value) { params.abortOnError = value }
 
     /** Handle exceptions and move invalid files to errors directory */
     boolean getHandleExceptions() { BoolUtils.IsValue(params.handleExceptions)}
@@ -415,15 +412,19 @@ class FileProcessing extends FileListProcessing {
                 Logs.Fine("Thread group $strgroup processing ${StringUtils.WithGroupSeparator(files.size())} files ${FileUtils.SizeBytes(filesSize)} ...")
 
                 sourceList.each { element ->
-                    if (element.man.story != null)
+                    if (element.man.story != null) {
+                        element.man.story.connection.startTran(true)
                         element.man.story.openWrite(operation: 'INSERT')
-                    if (element.delTable != null)
+                    }
+                    if (element.delTable != null) {
+                        element.delTable.connection.startTran(true)
                         element.delTable.openWrite(operation: 'INSERT')
+                    }
                 }
 
                 try {
                     // Thread processing files by group
-                    def exec = new Executor(abortOnError: abortOnError, countProc: countOfThreadProcessing)
+                    def exec = new Executor(abortOnError: true, countProc: countOfThreadProcessing, dumpErrors: false, logErrors: false)
                     exec.with {
                         useList files
                         run { file ->
@@ -483,10 +484,12 @@ class FileProcessing extends FileListProcessing {
                                 catch (ExceptionFileProcessing ignored) {
                                     def msg = StringUtils.LeftStr(element.errorText, 4096)
                                     Logs.Severe("Error processing file \"${file.filepath}/${file.filename}\": $msg")
-                                    element.errorText = """File: ${file.filepath}/${file.filename}
-    Date: ${DateUtils.FormatDateTime(new Date())}
-    Message: ${element.errorText}
-    """
+                                }
+                                catch (ExceptionDSL e) {
+                                    def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
+                                    Logs.Severe("Critical error processing file \"${file.filepath}/${file.filename}\": $msg")
+                                    setError(onProcessFile, e)
+                                    throw e
                                 }
                                 catch (Exception e) {
                                     def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
@@ -505,6 +508,7 @@ class FileProcessing extends FileListProcessing {
                                             element.errorText += "Trace:\n" + e.stackTrace.join('\n')
                                         }
                                     } else {
+                                        setError(onProcessFile, e)
                                         throw e
                                     }
                                 }
@@ -535,7 +539,10 @@ class FileProcessing extends FileListProcessing {
                                 }
 
                                 sourceElement.man.removeLocalFile(filename)
-                                if (delFile && BoolUtils.IsValue(element.removeFile, element.result != element.skipResult)) {
+
+                                if (delFile &&
+                                        BoolUtils.IsValue(element.removeFile, element.result != element.skipResult) &&
+                                        (element.result != element.errorResult || errorElement != null)) {
                                     if (delTable == null || element.result != element.completeResult) {
                                         Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
                                             man.removeFile(filename)
@@ -561,9 +568,15 @@ class FileProcessing extends FileListProcessing {
                             if (!isCachedMode)
                                 element.man.story.doneWrite()
                             element.man.story.closeWrite()
+                            if (!isCachedMode)
+                                element.man.story.connection.commitTran(true)
+                            else
+                                element.man.story.connection.rollbackTran(true)
                         }
-                        if (element.delTable != null)
+                        if (element.delTable != null) {
                             element.delTable.closeWrite()
+                            element.delTable.connection.rollbackTran(true)
+                        }
                     }
 
                     if (cacheTable != null && isCachedMode)
@@ -579,10 +592,12 @@ class FileProcessing extends FileListProcessing {
                     if (element.man.story != null) {
                         element.man.story.doneWrite()
                         element.man.story.closeWrite()
+                        element.man.story.connection.commitTran(true)
                     }
                     if (element.delTable != null) {
                         element.delTable.doneWrite()
                         element.delTable.closeWrite()
+                        element.delTable.connection.commitTran(true)
                     }
                 }
 

@@ -146,4 +146,19 @@ class FileProcessingElement {
         this.result = errorResult
         throw new ExceptionFileProcessing(errorText)
     }
+
+    /**
+     * Throw exception and save error text to error file
+     * @param errorText text of error
+     * @param fileName saved file name
+     */
+    void throwCriticalError(String errorText, String fileName = null) {
+        if (errorText == null)
+            throw new ExceptionFileListProcessing('Error text must be specified!')
+
+        this.errorText = errorText
+        this.errorFileName = fileName?:((attr.filename as String) + '.error.txt')
+        this.result = errorResult
+        throw new ExceptionFileListProcessing(errorText)
+    }
 }

@@ -148,15 +148,10 @@ class Executor {
 	 */
 	public final List<Map> threadActive = Collections.synchronizedList(new ArrayList())
 
-	/**
-	 * Interrupt flag
-	 */
+	/** Interrupt flag */
 	private boolean isInterrupt = false
 
-	/**
-	 * Set interrupt flag for current thread processes	
-	 * @param value
-	 */
+	/** Set interrupt flag for current thread processes */
 	@Synchronized
 	void setInterrupt(boolean value) { isInterrupt = true }
 
@@ -571,7 +566,9 @@ class Executor {
 		return true
 	}
 
-	@Synchronized
+	static private operationLock = new Object()
+
+	@Synchronized('operationLock')
 	@SuppressWarnings("GrMethodMayBeStatic")
 	void callSynch(Closure cl) {
 		cl.call()

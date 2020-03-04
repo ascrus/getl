@@ -618,7 +618,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		connection.tryConnect()
 		Map p = MapUtils.CleanMap(procParams, ["autoTran"])
 		def autoTran = false
-		if (connection.driver.isSupport(Driver.Support.TRANSACTIONAL)) {
+		if (connection.isSupportTran) {
 			autoTran = (procParams.autoTran != null)?procParams.autoTran:(connection.tranCount == 0)
 		}
 		if (BoolUtils.IsValue(procParams."truncate", false)) autoTran = false
@@ -710,7 +710,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		
 		Map p = MapUtils.CleanMap(procParams, ["prepare", "source"])
 
-		def autoTran = connection.driver.isSupport(Driver.Support.TRANSACTIONAL)
+		def autoTran = connection.isSupportTran
 		if (autoTran) {
 			autoTran = procParams.autoCommit?:
 						(!BoolUtils.IsValue(connection.params.autoCommit) && connection.tranCount == 0)

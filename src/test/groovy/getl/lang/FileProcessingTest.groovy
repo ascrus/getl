@@ -1,8 +1,7 @@
 package getl.lang
 
+import getl.h2.H2Connection
 import getl.test.GetlTest
-import getl.tfs.TDS
-import getl.utils.CloneUtils
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.GenerationUtils
@@ -16,9 +15,12 @@ import org.junit.Test
 class FileProcessingTest extends GetlTest {
     static final def debug = false
 
-    static def countSale = 10000
-    static def countDays = 3
+    static def countSale = 1000
+    static def countDays = 2
     static def countFileInDay = 8
+    static def countCompleteRows = 4000
+    static def countCompleteFiles = countDays * countFileInDay - countDays * 4
+    static def countErrorFiles = countDays * 3
 
     static final def workPath = "${(debug)?'c:/tmp/getl.test': FileUtils.SystemTempDir()}/fileprocess"
     static final def sourcePath = "$workPath/source"
@@ -35,13 +37,17 @@ class FileProcessingTest extends GetlTest {
         FileUtils.ValidPath(errorPath, !debug)
 
         Getl.Dsl(this) {
-            useEmbeddedConnection embeddedConnection {
-                inMemory = false
-                if (this.debug)
-                    sqlHistoryFile = "${this.workPath}/h2.{date}.sql"
-            }
+            h2Table('h2:sales', true) {
+                if (!this.debug)
+                    useConnection embeddedConnection()
+                else
+                    useConnection h2Connection {
+                        connectDatabase = "${this.workPath}/data"
+                        login = 'easyloader'
+                        password = 'easydata'
+                        sqlHistoryFile = "${this.workPath}/data.{date}.sql"
+                    }
 
-            embeddedTable('h2:sales', true) {
                 tableName = 'sales'
                 field('id') { type = integerFieldType; isKey = true }
                 field('sale_date') { type = dateFieldType; isNull = false }
@@ -52,9 +58,10 @@ class FileProcessingTest extends GetlTest {
                     index('idx_1') { columns = ['sale_date', 'id'] }
                     index('idx_2') { columns = ['sale_date'] }
                 }
+                drop(ifExists: true)
                 create()
 
-                def genSale = GenerationUtils.GenerateRandomRow(embeddedTable('h2:sales'), ['id'],
+                def genSale = GenerationUtils.GenerateRandomRow(h2Table('h2:sales'), ['id'],
                         [sale_date: [days: this.countDays - 1], price_id: [minValue: 1, maxValue: 100],
                          count: [minValue: 1, maxValue: 1000]])
                 rowsTo {
@@ -68,8 +75,85 @@ class FileProcessingTest extends GetlTest {
                 }
             }
 
-            useQueryConnection lastJdbcDefaultConnection
+            cloneDataset('h2:sales_json', h2Table('h2:sales'))
+            h2Table('h2:sales_json') {
+                tableName = 'sales_json'
+                clearKeys()
+                createOpts { indexes.clear() }
+                drop(ifExists: true)
+                create()
+            }
+
+            json('json:sales', true) {
+                field('id') { type = integerFieldType }
+                field('sale_date') { type = dateFieldType }
+                field('price_id') { type = integerFieldType }
+                field('count') { type = integerFieldType }
+                rootNode = '.'
+            }
+
+            h2Table('h2:story', true) {
+                if (!this.debug)
+                    useConnection embeddedConnection()
+                else
+                    useConnection h2Connection {
+                        connectDatabase = "${this.workPath}/history"
+                        login = 'easyloader'
+                        password = 'easydata'
+                        sqlHistoryFile = "${this.workPath}/history.{date}.sql"
+                    }
+                tableName = 'story'
+                drop(ifExists: true)
+            }
+
+            files('source', true) {
+                rootPath = this.sourcePath
+                createStory = true
+                if (this.debug)
+                    sqlHistoryFile = "${this.workPath}/h2-processing.source.{date}.sql"
+                threadLevel = 1
+                buildListThread = 3
+            }
+
+            files('archive', true) {
+                rootPath = this.archivePath
+                if (this.debug)
+                    sqlHistoryFile = "${this.workPath}/h2-processing.archive.{date}.sql"
+            }
+
+            files('errors', true) {
+                rootPath = this.errorPath
+                if (this.debug)
+                    sqlHistoryFile = "${this.workPath}/h2-processing.error.{date}.sql"
+            }
+
+            csvTempWithDataset('#cache', h2Table('h2:sales_json')) {
+                writeOpts { batchSize = 1000; append = true }
+            }
+        }
+    }
+
+    @AfterClass
+    static void done() {
+        if (!debug)
+            FileUtils.DeleteFolder(workPath, true)
+    }
+
+    void generateData() {
+        if (FileUtils.ExistsFile(sourcePath, true))
+            FileUtils.DeleteFolder(sourcePath, true)
+        if (FileUtils.ExistsFile(archivePath, true))
+            FileUtils.DeleteFolder(archivePath, true)
+        if (FileUtils.ExistsFile(errorPath, true))
+            FileUtils.DeleteFolder(errorPath, true)
+
+        FileUtils.ValidPath(sourcePath, !debug)
+        FileUtils.ValidPath(archivePath, !debug)
+        FileUtils.ValidPath(errorPath, !debug)
+
+        Getl.Dsl(this) {
             thread {
+                useQueryConnection h2Table('h2:sales').currentJDBCConnection
                 useList sqlQuery('SELECT DISTINCT sale_date FROM sales ORDER BY sale_date').rows()
                 countProc = this.countFileInDay
                 run { day ->
@@ -77,7 +161,7 @@ class FileProcessingTest extends GetlTest {
                     def path = "${this.sourcePath}/$strday"
                     FileUtils.ValidPath(path, !this.debug)
 
-                    def rows = embeddedTable('h2:sales') { sale ->
+                    def rows = h2Table('h2:sales') { sale ->
                         readOpts {
                             where = 'sale_date = \'{sale_date}\''
                             queryParams = [sale_date: day.sale_date]
@@ -101,156 +185,182 @@ class FileProcessingTest extends GetlTest {
                     }
                 }
             }
-
-            embeddedTable('h2:sales_json', true) {
-                tableName = 'sales_json'
-                field = embeddedTable('h2:sales').field
-                clearKeys()
-                create()
-            }
-
-            json('json:sales', true) {
-                field('id') { type = integerFieldType }
-                field('sale_date') { type = dateFieldType }
-                field('price_id') { type = integerFieldType }
-                field('count') { type = integerFieldType }
-                rootNode = '.'
-            }
         }
     }
 
-    @AfterClass
-    static void done() {
-        if (!debug) {
-            FileUtils.DeleteFolder(workPath, true)
+    void proc(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing) {
+        generateData()
+        Getl.Dsl(this) {
+            h2Table('h2:story') {
+                if (exists)
+                    truncate(truncate: true)
+            }
+            h2Table('h2:sales_json').truncate(truncate: true)
+
+            if (useStory)
+                files('source').story = h2Table('h2:story')
+            else
+                files('source').story = null
+        }
+        procInternal(archiveStorage, delFiles, delSkip, useStory, cacheStory, cacheProcessing, true)
+        if (useStory)
+            procInternal(archiveStorage, delFiles, delSkip, useStory, cacheStory, cacheProcessing, false)
+    }
+
+    void procInternal(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing, boolean firstRun = true) {
+        Getl.Dsl(this) {
+            logInfo "*** START PROCESSING FILES ${(firstRun)?'ONE':'TWO'}: archiveStorage=$archiveStorage, delFiles=$delFiles, delSkip=$delSkip, useStory=$useStory, cacheStory=$cacheStory, cacheProcessing=$cacheProcessing"
+
+            def res = fileProcessing(files('source')) {
+                useSourcePath {
+                    mask = '{date}/sales.{num}.json'
+                    variable('date') { type = dateFieldType; format = 'yyyy-MM-dd' }
+                    variable('num') { type = integerFieldType; length = 4 }
+                }
+                order = ['num']
+                threadGroupColumns = ['date']
+                countOfThreadProcessing = this.countFileInDay
+                removeEmptyDirs = true
+                removeFiles = delFiles
+                handleExceptions = true
+                if (archiveStorage) {
+                    storageProcessedFiles = files('archive')
+                    storageErrorFiles = files('errors')
+                }
+                if (cacheStory)
+                    if (!this.debug)
+                        cacheFilePath = "${this.workPath}/storycache"
+                    else {
+                        def t = new H2Connection(connectDatabase: "${this.workPath}/storycache")
+                        cacheFilePath = "${this.workPath}/storycache"
+                    }
+
+                processFile { proc ->
+                    logFine "Process file \"${proc.attr.filepath}/${proc.attr.filename}\" ..."
+
+                    if (proc.attr.num == 1) {
+                        proc.result = proc.skipResult
+                        proc.removeFile = delSkip
+                        return
+                    }
+
+                    if (proc.attr.num == 4)
+                        proc.throwError 'Number 4 is not like it!'
+
+                    def count = h2Table('h2:sales')
+                            .countRow('sale_date = \'{sale_date}\'', [sale_date: proc.attr.date])
+
+                    json('json:sales') {
+                        fileName = proc.file.path
+                        this.assertEquals(count, rows().size())
+                    }
+
+                    if (cacheProcessing)
+                        copyRows(json('json:sales'), csvTemp('#cache')) { writeSynch = true }
+                    else
+                        copyRows(json('json:sales'), h2Table('h2:sales_json'))
+
+                    proc.result = proc.completeResult
+                }
+
+                if (cacheProcessing)
+                    saveCachedData {
+                        copyRows(csvTemp('#cache'), h2Table('h2:sales_json'))
+                        csvTemp('#cache').drop()
+                    }
+            }
+
+            if (firstRun) {
+                assertEquals(this.countCompleteFiles, res.countFiles)
+            }
+            else {
+                assertEquals(0, res.countFiles)
+                if (!delSkip)
+                    assertEquals(this.countDays, res.countSkips)
+                else
+                    assertEquals(0, res.countSkips)
+            }
+            def countErrors = 0
+            if (firstRun || (!firstRun && (!delFiles || !archiveStorage)))
+                assertEquals(this.countErrorFiles, res.countErrors)
+            else
+                assertEquals(0, res.countErrors)
+
+            if (files('source').story != null)
+                assertEquals(this.countCompleteFiles, h2Table('h2:story').countRow())
+
+            assertEquals(this.countCompleteRows, h2Table('h2:sales_json').countRow())
+
+            if (delFiles)
+                files('source') {
+                    connect()
+                    def countFiles = 0
+                    if (!delSkip) countFiles += this.countDays
+                    if (!archiveStorage) countFiles += this.countErrorFiles
+                    assertEquals(countFiles, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
+                }
+
+            if (archiveStorage) {
+                files('archive') {
+                    connect()
+                    assertEquals(this.countCompleteFiles, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
+                }
+
+                files('errors') {
+                    connect()
+                    assertEquals(this.countErrorFiles * 2, buildListFiles('*/sales.*.*') { recursive = true }.countRow())
+                }
+            }
         }
     }
 
     @Test
-    void testParseFiles() {
-        Getl.Dsl(this) {
-            embeddedTable('h2:story_file_processing', true) {
-                tableName = 'story_file_processing'
-            }
+    void parseDefault() {
+        proc(false, false, false, false, false, false)
+    }
 
-            def sourceFiles = files {
-                rootPath = this.sourcePath
-                useStory embeddedTable('h2:story_file_processing')
-                createStory = true
-                if (this.debug) sqlHistoryFile = "${this.workPath}/h2-processing.source.{date}.sql"
-                threadLevel = 1
-                buildListThread = 3
-            }
+    @Test
+    void parseRemoveCompleted() {
+        proc(false, true, false, false, false, false)
+    }
 
-            def archiveFiles = files {
-                rootPath = this.archivePath
-                if (this.debug) sqlHistoryFile = "${this.workPath}/h2-processing.archive.{date}.sql"
-            }
+    @Test
+    void parseRemoveAll() {
+        proc(false, true, true, false, false, false)
+    }
 
-            def errorFiles = files {
-                rootPath = this.errorPath
-                if (this.debug) sqlHistoryFile = "${this.workPath}/h2-processing.error.{date}.sql"
-            }
+    @Test
+    void parseRemoveAndSave() {
+        proc(true, true, true, false, false, false)
+    }
 
-            csvTempWithDataset('#cache', embeddedTable('h2:sales_json')) {
-                writeOpts { batchSize = 1000; append = true }
-            }
+    @Test
+    void parseRemoveAndSaveWithCacheProcess() {
+        proc(true, true, true, false, false, true)
+    }
 
-            def testProcessing = { boolean delFiles, boolean delSkip, boolean saveException ->
-                return fileProcessing(sourceFiles) {
-                    useSourcePath {
-                        mask = '{date}/sales.{num}.json'
-                        variable('date') { type = dateFieldType; format = 'yyyy-MM-dd' }
-                        variable('num') { type = integerFieldType; length = 4 }
-                    }
-                    order = ['num']
-                    threadGroupColumns = ['date']
-                    countOfThreadProcessing = this.countFileInDay
-                    removeEmptyDirs = true
-                    removeFiles = delFiles
-                    storageProcessedFiles = archiveFiles
-                    storageErrorFiles = errorFiles
-                    abortOnError = false
-                    handleExceptions = saveException
-                    if (this.debug)
-                        cacheFilePath = "${this.workPath}/../fileprocessingcache"
-                    else {
-                        def t = new TDS(connectDatabase: "${this.workPath}/fileprocessingcache")
-                        cacheFilePath = "${this.workPath}/fileprocessingcache"
-                    }
+    @Test
+    void parseWithStory() {
+        proc(false, false, false, true, false, false)
+    }
 
-                    processFile { proc ->
-                        logFine "Process file \"${proc.attr.filepath}/${proc.attr.filename}\" ..."
+    @Test
+    void parseWithStoryCache() {
+        proc(false, false, false, true, true, false)
+    }
 
-                        if (proc.attr.num == 1) {
-                            proc.result = proc.skipResult
-                            proc.removeFile = delSkip
-                            return
-                        }
+    @Test
+    void parseWithStoryCacheAndRemove() {
+        proc(false, true, true, true, true, false)
+    }
 
-                        if (proc.attr.num == 4)
-                            proc.throwError 'Number 4 is not like it!'
+    @Test
+    void parseWithStoryAndDataCache() {
+        proc(false, false, false, true, true, true)
+    }
 
-                        //assert proc.attr.num != 2
-
-                        def count = embeddedTable('h2:sales')
-                                .countRow('sale_date = \'{sale_date}\'', [sale_date: proc.attr.date])
-
-                        json('json:sales') {
-                            fileName = proc.file.path
-                            this.assertEquals(count, rows().size())
-                        }
-
-                        copyRows(json('json:sales'), csvTemp('#cache')) { writeSynch = true }
-
-                        proc.result = proc.completeResult
-                    }
-
-                    saveCachedData {
-                        copyRows(csvTemp('#cache'), embeddedTable('h2:sales_json'))
-                        csvTemp('#cache').drop()
-                    }
-                }
-            }
-
-            def proc = testProcessing(false, false, true)
-            assertEquals(this.countDays * this.countFileInDay - this.countDays * 4, proc.countFiles)
-            assertEquals(this.countDays, proc.countSkips)
-            assertEquals(this.countDays * 3, proc.countErrors)
-            assertEquals(proc.countFiles, embeddedTable('h2:story_file_processing').countRow())
-            assertEquals(40000, embeddedTable('h2:sales_json').countRow())
-
-            embeddedTable('h2:sales_json').truncate(truncate: true)
-            proc = testProcessing(false, false, true)
-            assertEquals(0, proc.countFiles)
-            assertEquals(this.countDays, proc.countSkips)
-            assertEquals(this.countDays * 3, proc.countErrors)
-            assertEquals(0, embeddedTable('h2:sales_json').countRow())
-
-            embeddedTable('h2:sales_json').truncate(truncate: true)
-            sourceFiles.story = null
-            proc = testProcessing(true, false, true)
-            assertEquals(this.countDays * this.countFileInDay - this.countDays * 4, proc.countFiles)
-            assertEquals(this.countDays, proc.countSkips)
-            assertEquals(this.countDays * 3, proc.countErrors)
-            assertEquals(40000, embeddedTable('h2:sales_json').countRow())
-
-            sourceFiles.with {
-                connect()
-                assertEquals(3, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
-            }
-
-            embeddedTable('h2:sales_json').truncate(truncate: true)
-            proc = testProcessing(true, true, true)
-            assertEquals(0, proc.countFiles)
-            assertEquals(3, proc.countSkips)
-            assertEquals(0, proc.countErrors)
-            assertEquals(0, embeddedTable('h2:sales_json').countRow())
-
-            sourceFiles.with {
-                connect()
-                assertEquals(0, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
-            }
-        }
+    @Test
+    void parseWithStoryAndDataCacheAndRemove() {
+        proc(true, true, true, true, true, true)
     }
 }

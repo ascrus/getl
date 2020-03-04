@@ -33,7 +33,6 @@ import getl.deploy.Version
 import getl.driver.Driver
 import getl.excel.*
 import getl.exception.ExceptionDSL
-import getl.exception.ExceptionGETL
 import getl.files.*
 import getl.firebird.FirebirdConnection
 import getl.firebird.FirebirdTable
@@ -218,14 +217,14 @@ Examples:
                 def isTestMode = BoolUtils.IsValue(jobArgs.unittest)
 
                 if (className == null)
-                    throw new ExceptionGETL('Required argument "runclass"!')
+                    throw new ExceptionDSL('Required argument "runclass"!')
 
                 Class runClass
                 try {
                     runClass = Class.forName(className)
                 }
                 catch (Throwable e) {
-                    throw new ExceptionGETL("Class \"$className\" not found, error: ${e.message}!")
+                    throw new ExceptionDSL("Class \"$className\" not found, error: ${e.message}!")
                 }
 
                 Getl eng = GetlInstance()
@@ -241,7 +240,7 @@ Examples:
                         initClass = Class.forName(initClassName)
                     }
                     catch (Throwable e) {
-                        throw new ExceptionGETL("Class \"$initClassName\" not found, error: ${e.message}!")
+                        throw new ExceptionDSL("Class \"$initClassName\" not found, error: ${e.message}!")
                     }
 
                     eng._params.isInitMode = true
@@ -307,6 +306,8 @@ Examples:
     /** The name of the process initializing class */
     String getInitClassName() { _params.initClass }
 
+    static private operationLock = new Object()
+
     /** Checking process permission */
     @Synchronized
     boolean allowProcess(String processName, Boolean throwError = false) {
@@ -314,7 +315,7 @@ Examples:
         if (_langOpts.processControlDataset != null) {
             if (processName == null) processName = (_params.mainClass)?:this.getClass().name
             if (processName == null)
-                throw new ExceptionGETL('Required name for the process being checked!')
+                throw new ExceptionDSL('Required name for the process being checked!')
 
             if (_langOpts.processControlDataset instanceof TableDataset) {
                 def table = _langOpts.processControlDataset as TableDataset
@@ -339,7 +340,7 @@ Examples:
                 if (!throwError)
                     Logs.Warning("A flag was found to stop the process \"$processName\"!")
                 else
-                    throw new ExceptionGETL("A flag was found to stop the process \"$processName\"!")
+                    throw new ExceptionDSL("A flag was found to stop the process \"$processName\"!")
             }
         }
 
@@ -347,7 +348,6 @@ Examples:
     }
 
     /** Checking process permission */
-    @Synchronized
     boolean allowProcess(Boolean throwError = false) {
         allowProcess(null, throwError)
     }
@@ -536,9 +536,9 @@ Examples:
     /** Use the specified filter by group name when searching for objects */
     void forGroup(String group) {
         if (group == null || group.trim().length() == 0)
-            throw new ExceptionGETL('Filter group required!')
+            throw new ExceptionDSL('Filter group required!')
         if (Thread.currentThread() instanceof ExecutorThread)
-            throw new ExceptionGETL('Using group filtering within a threads is not allowed!')
+            throw new ExceptionDSL('Using group filtering within a threads is not allowed!')
 
         repositoryFilter.filteringGroup = group.trim().toLowerCase()
     }
@@ -567,9 +567,9 @@ Examples:
         def path = FileUtils.ResourceFileName(fileName)
         def file = new File(path)
         if (!file.exists())
-            throw new ExceptionGETL("File $fileName not found!")
+            throw new ExceptionDSL("File $fileName not found!")
         if (!file.isFile())
-            throw new ExceptionGETL("File $fileName not file!")
+            throw new ExceptionDSL("File $fileName not file!")
 
         return file.getText(codePage ?: 'UTF-8')
     }
@@ -808,7 +808,7 @@ Examples:
         if (names == null) return null
         def res = [] as List<Dataset>
         names.each { tableName ->
-            res << dataset(tableName)
+            res << this.dataset(tableName)
         }
         return res
     }
@@ -875,8 +875,10 @@ Examples:
     List<ExecutorListElement> linkDatasets(String sourceGroup, String destGroup,
                                            @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                                                    Closure<Boolean> filter = null) {
-        if (sourceGroup == null) throw new ExceptionGETL('Required to specify the value of the source group name!')
-        if (destGroup == null) throw new ExceptionGETL('Required to specify the value of the destination group name!')
+        if (sourceGroup == null)
+            throw new ExceptionDSL('Required to specify the value of the source group name!')
+        if (destGroup == null)
+            throw new ExceptionDSL('Required to specify the value of the destination group name!')
 
         linkDatasets(listDatasets(sourceGroup + ':'), listDatasets(destGroup + ':'), filter)
     }
@@ -909,7 +911,7 @@ Examples:
         if (names == null) return null
         def res = [] as List<TableDataset>
         names.each { tableName ->
-            res << (dataset(tableName) as TableDataset)
+            res << (this.dataset(tableName) as TableDataset)
         }
         return res
     }
@@ -936,9 +938,9 @@ Examples:
     @Synchronized
     protected void setDefaultConnection(String datasetClassName, Dataset ds) {
         if (datasetClassName == null)
-            throw new ExceptionGETL('Dataset class name cannot be null!')
+            throw new ExceptionDSL('Dataset class name cannot be null!')
         if (!(datasetClassName in _repositoryDatasets.listClasses))
-            throw new ExceptionGETL("$datasetClassName is not dataset class!")
+            throw new ExceptionDSL("$datasetClassName is not dataset class!")
 
         if (ds instanceof JDBCDataset) {
             def con = defaultJdbcConnection(datasetClassName)
@@ -968,7 +970,7 @@ Examples:
             res = lastJdbcDefaultConnection
         else {
             if (!(datasetClassName in _repositoryDatasets.listJdbcClasses))
-                throw new ExceptionGETL("$datasetClassName is not jdbc dataset class!")
+                throw new ExceptionDSL("$datasetClassName is not jdbc dataset class!")
 
             res = _defaultJDBCConnection.get(datasetClassName)
             if (res == null && lastJdbcDefaultConnection != null && datasetClassName == _repositoryDatasets.QUERYDATASET)
@@ -994,11 +996,11 @@ Examples:
     /** Use specified JDBC connection as default */
     JDBCConnection useJdbcConnection(String datasetClassName, JDBCConnection value) {
         if (Thread.currentThread() instanceof ExecutorThread)
-            throw new ExceptionGETL('Specifying the default connection is not allowed in thread!')
+            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
             if (!(datasetClassName in repositoryDatasets.listJdbcClasses))
-                throw new ExceptionGETL("$datasetClassName is not jdbc dataset class!")
+                throw new ExceptionDSL("$datasetClassName is not jdbc dataset class!")
             _defaultJDBCConnection.put(datasetClassName, value)
         }
         _lastJDBCDefaultConnection = value
@@ -1021,7 +1023,7 @@ Examples:
             res = lastFileDefaultConnection
         else {
             if (!(datasetClassName in _repositoryDatasets.listFileClasses))
-                throw new ExceptionGETL("$datasetClassName is not file dataset class!")
+                throw new ExceptionDSL("$datasetClassName is not file dataset class!")
 
             res = _defaultFileConnection.get(datasetClassName)
         }
@@ -1045,11 +1047,11 @@ Examples:
     /** Use specified file connection as default */
     FileConnection useFileConnection(String datasetClassName, FileConnection value) {
         if (Thread.currentThread() instanceof ExecutorThread)
-            throw new ExceptionGETL('Specifying the default connection is not allowed in thread!')
+            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
             if (!(datasetClassName in _repositoryDatasets.listFileClasses))
-                throw new ExceptionGETL("$datasetClassName is not file dataset class!")
+                throw new ExceptionDSL("$datasetClassName is not file dataset class!")
 
             _defaultFileConnection.put(datasetClassName, value)
         }
@@ -1073,7 +1075,7 @@ Examples:
             res = lastOtherDefaultConnection
         else {
             if (!(datasetClassName in _repositoryDatasets.listOtherClasses))
-                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+                throw new ExceptionDSL("$datasetClassName is not dataset class!")
 
             res = _defaultOtherConnection.get(datasetClassName)
         }
@@ -1097,11 +1099,11 @@ Examples:
     /** Use specified other type connection as default */
     Connection useOtherConnection(String datasetClassName, Connection value) {
         if (Thread.currentThread() instanceof ExecutorThread)
-            throw new ExceptionGETL('Specifying the default connection is not allowed in thread!')
+            throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
             if (!(datasetClassName in _repositoryDatasets.listOtherClasses))
-                throw new ExceptionGETL("$datasetClassName is not dataset class!")
+                throw new ExceptionDSL("$datasetClassName is not dataset class!")
 
             _defaultOtherConnection.put(datasetClassName, value)
         }
@@ -1561,7 +1563,7 @@ Examples:
     Integer runGroovyScriptFile(String fileName, Boolean runOnce, String configSection) {
         def sectParams = Config.FindSection(configSection)
         if (sectParams == null)
-            throw new ExceptionGETL("Configuration section \"$configSection\" not found!")
+            throw new ExceptionDSL("Configuration section \"$configSection\" not found!")
 
         return runGroovyScriptFile(fileName, runOnce, sectParams)
     }
@@ -1690,7 +1692,7 @@ Examples:
     Integer runGroovyClass(Class groovyClass, Boolean runOnce, String configSection) {
         def sectParams = Config.FindSection(configSection)
         if (sectParams == null)
-            throw new ExceptionGETL("Configuration section \"$configSection\" not found!")
+            throw new ExceptionDSL("Configuration section \"$configSection\" not found!")
 
         return runGroovyClass(groovyClass, runOnce, sectParams)
     }
@@ -1753,7 +1755,7 @@ Examples:
             MetaProperty prop = script.hasProperty(key as String)
             if (prop == null) {
                 if (validExist)
-                    throw new ExceptionGETL("Field \"$key\" not defined in script!")
+                    throw new ExceptionDSL("Field \"$key\" not defined in script!")
                 else
                     return
             }
@@ -1827,7 +1829,7 @@ Examples:
                 prop.setProperty(script, value)
             }
             catch (Exception e) {
-                throw new ExceptionGETL("Can not assign by class ${value.getClass().name} value \"$value\" to property \"$key\" with class \"${prop.type.name}\", error: ${e.message}")
+                throw new ExceptionDSL("Can not assign by class ${value.getClass().name} value \"$value\" to property \"$key\" with class \"${prop.type.name}\", error: ${e.message}")
             }
         }
     }
@@ -1942,7 +1944,7 @@ Examples:
     LangSpec options(@DelegatesTo(LangSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LangSpec']) Closure cl = null) {
         if (Thread.currentThread() instanceof ExecutorThread)
-            throw new ExceptionGETL('Changing options is not supported in the thread!')
+            throw new ExceptionDSL('Changing options is not supported in the thread!')
 
         def processDataset = _langOpts.processControlDataset
         def checkOnStart = _langOpts.checkProcessOnStart
@@ -1966,7 +1968,7 @@ Examples:
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ConfigSpec']) Closure cl = null) {
         if (cl != null && Thread.currentThread() instanceof ExecutorThread)
-            throw new ExceptionGETL('Changing configuration is not supported in the thread!')
+            throw new ExceptionDSL('Changing configuration is not supported in the thread!')
 
         if (!(Config.configClassManager instanceof ConfigSlurper)) Config.configClassManager = new ConfigSlurper()
         def parent = new ConfigSpec(childOwnerObject, childThisObject)
@@ -1979,7 +1981,7 @@ Examples:
     LogSpec logging(@DelegatesTo(LogSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LogSpec']) Closure cl = null) {
         if (Thread.currentThread() instanceof ExecutorThread)
-            throw new ExceptionGETL('Changing log file options is not supported in the thread!')
+            throw new ExceptionDSL('Changing log file options is not supported in the thread!')
 
         def parent = new LogSpec(childOwnerObject, childThisObject)
         def logFileName = parent.getLogFileName()
@@ -2000,7 +2002,8 @@ Examples:
     Connection connection(String name,
                           @DelegatesTo(Connection)
                           @ClosureParams(value = SimpleType, options = ['getl.data.Connection']) Closure cl = null) {
-        if (name == null) throw new ExceptionGETL('Need connection name value!')
+        if (name == null)
+            throw new ExceptionDSL('Need connection name value!')
 
         def parent = registerConnection(null, name, false) as Connection
         runClosure(parent, cl)
@@ -2010,13 +2013,30 @@ Examples:
 
     /**
      * Clone connection object
-     * @param obj object to clone
-     * @return clone object
+     * @param con original connection to clone
+     * @return clone connection
      */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Connection cloneConnection(Connection obj) {
-        if (obj == null) throw new ExceptionGETL('Need object value!')
-        return obj.cloneConnection()
+    Connection cloneConnection(Connection con) {
+        if (con == null)
+            throw new ExceptionDSL('Need object value!')
+        return con.cloneConnection()
+    }
+
+    /**
+     * Clone connection object and register to repository
+     * @param newName repository name for cloned dataset
+     * @param con original connection to clone
+     * @param cl cloned connection processing code
+     * @return clone connection
+     */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    Connection cloneConnection(String newName, Connection con, Closure cl = null) {
+        def res = cloneConnection(con)
+        registerConnectionObject(res, newName)
+        runClosure(res, cl)
+
+        return res
     }
 
     /**
@@ -2043,14 +2063,32 @@ Examples:
 
     /**
      * Clone dataset object
-     * @param obj object to clone
+     * @param dataset original dataset to clone
      * @param con used connection for new dataset
-     * @return clone object
+     * @return clone dataset
      */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Dataset cloneDataset(Dataset obj, Connection con = null) {
-        if (obj == null) throw new ExceptionGETL('Need object value!')
-        return obj.cloneDataset(con)
+    Dataset cloneDataset(Dataset dataset, Connection con = null) {
+        if (dataset == null)
+            throw new ExceptionDSL('Need object value!')
+        return dataset.cloneDataset(con)
+    }
+
+    /**
+     * Clone dataset object and register in repository
+     * @param newName repository name for cloned dataset
+     * @param dataset original dataset to clone
+     * @param con used connection for new dataset
+     * @param cl cloned dataset processing code
+     * @return clone dataset
+     */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    Dataset cloneDataset(String newName, Dataset dataset, Connection con = null, Closure cl = null) {
+        def res = cloneDataset(dataset, con)
+        registerDatasetObject(res, newName)
+        runClosure(res, cl)
+
+        return res
     }
 
     /**
@@ -2062,11 +2100,12 @@ Examples:
     JDBCConnection jdbcConnection(String name,
                                   @DelegatesTo(JDBCConnection)
                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.JDBCConnection']) Closure cl = null) {
-        if (name == null) throw new ExceptionGETL('Need connection name value!')
+        if (name == null)
+            throw new ExceptionDSL('Need connection name value!')
 
         def parent = registerConnection(null, name, false) as Connection
         if (!(parent instanceof JDBCConnection))
-            throw new ExceptionGETL("$name is not jdbc connection!")
+            throw new ExceptionDSL("$name is not jdbc connection!")
 
         runClosure(parent, cl)
 
@@ -2083,7 +2122,7 @@ Examples:
                            @DelegatesTo(TableDataset)
                            @ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset']) Closure cl = null) {
         if (name == null)
-            throw new ExceptionGETL('Need table name value!')
+            throw new ExceptionDSL('Need table name value!')
 
         def obj = findDataset(name)
         if (obj == null)
@@ -2879,10 +2918,11 @@ Examples:
     TDSTable embeddedTableWithDataset(String name, Dataset sourceDataset,
                                       @DelegatesTo(TDSTable)
                                       @ClosureParams(value = SimpleType, options = ['getl.tfs.TDSTable']) Closure cl = null) {
-        if (sourceDataset == null) throw new ExceptionGETL("Source dataset cannot be null!")
+        if (sourceDataset == null)
+            throw new ExceptionDSL("Source dataset cannot be null!")
         if (sourceDataset.field.isEmpty()) {
             sourceDataset.retrieveFields()
-            if (sourceDataset.field.isEmpty()) throw new ExceptionGETL("Required field from dataset $sourceDataset")
+            if (sourceDataset.field.isEmpty()) throw new ExceptionDSL("Required field from dataset $sourceDataset")
         }
 
         TDSTable parent = new TDSTable(connection: defaultJdbcConnection(_repositoryDatasets.EMBEDDEDTABLE) ?: TDS.storage)
@@ -3036,18 +3076,18 @@ Examples:
                               @DelegatesTo(CSVDataset)
                               @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl) {
         if (sourceDataset == null)
-            throw new ExceptionGETL("Dataset cannot be null!")
+            throw new ExceptionDSL("Dataset cannot be null!")
 
         def parent = registerDataset(null, _repositoryDatasets.CSVDATASET, name, registration,
                 defaultFileConnection(_repositoryDatasets.CSVDATASET), CSVConnection, cl) as CSVDataset
 
         if (sourceDataset.field.isEmpty()) {
             if (!sourceDataset.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
-                throw new ExceptionGETL("No fields are specified for dataset $sourceDataset and it supports reading fields from metadata!")
+                throw new ExceptionDSL("No fields are specified for dataset $sourceDataset and it supports reading fields from metadata!")
 
             sourceDataset.retrieveFields()
             if (sourceDataset.field.isEmpty())
-                throw new ExceptionGETL("Can not read list of field from dataset $sourceDataset!")
+                throw new ExceptionDSL("Can not read list of field from dataset $sourceDataset!")
         }
         parent.field = sourceDataset.field
         sourceDataset.prepareCsvTempFile(parent)
@@ -3449,15 +3489,16 @@ Examples:
     TFSDataset csvTempWithDataset(String name, Dataset sourceDataset,
                                   @DelegatesTo(TFSDataset)
                                   @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
-        if (sourceDataset == null) throw new ExceptionGETL("Dataset cannot be null!")
+        if (sourceDataset == null)
+            throw new ExceptionDSL("Dataset cannot be null!")
 
         if (sourceDataset.field.isEmpty()) {
             if (!sourceDataset.connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
-                throw new ExceptionGETL("No fields are specified for dataset $sourceDataset and it supports reading fields from metadata!")
+                throw new ExceptionDSL("No fields are specified for dataset $sourceDataset and it supports reading fields from metadata!")
 
             sourceDataset.retrieveFields()
             if (sourceDataset.field.isEmpty())
-                throw new ExceptionGETL("Can not read list of field from dataset $sourceDataset!")
+                throw new ExceptionDSL("Can not read list of field from dataset $sourceDataset!")
         }
 
         def parent = registerDataset(null, _repositoryDatasets.CSVTEMPDATASET, name, (name != null),
@@ -3486,9 +3527,9 @@ Examples:
                   @DelegatesTo(FlowCopySpec)
                   @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowCopySpec']) Closure cl = null) {
         if (source == null)
-            throw new ExceptionGETL('Source dataset cannot be null!')
+            throw new ExceptionDSL('Source dataset cannot be null!')
         if (destination == null)
-            throw new ExceptionGETL('Destination dataset cannot be null!')
+            throw new ExceptionDSL('Destination dataset cannot be null!')
 
         def pt = startProcess("Copy rows from $source to $destination")
         def parent = new FlowCopySpec(childOwnerObject, childThisObject, false, null)
@@ -3504,9 +3545,9 @@ Examples:
                 @DelegatesTo(FlowWriteSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteSpec']) Closure cl) {
         if (destination == null)
-            throw new ExceptionGETL('Destination dataset cannot be null!')
+            throw new ExceptionDSL('Destination dataset cannot be null!')
         if (cl == null)
-            throw new ExceptionGETL('Required closure code!')
+            throw new ExceptionDSL('Required closure code!')
 
         def pt = startProcess("Write rows to $destination")
         def parent = new FlowWriteSpec(childOwnerObject, childThisObject, false, null)
@@ -3519,10 +3560,10 @@ Examples:
     void rowsTo(@DelegatesTo(FlowWriteSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteSpec']) Closure cl) {
         if (cl == null)
-            throw new ExceptionGETL('Required closure code!')
+            throw new ExceptionDSL('Required closure code!')
         def destination = DetectClosureDelegate(cl)
         if (destination == null || !(destination instanceof Dataset))
-            throw new ExceptionGETL('Can not detect destination dataset!')
+            throw new ExceptionDSL('Can not detect destination dataset!')
 
         rowsTo(destination, cl)
     }
@@ -3532,9 +3573,9 @@ Examples:
                     @DelegatesTo(FlowWriteManySpec)
                     @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteManySpec']) Closure cl) {
         if (destinations == null || destinations.isEmpty())
-            throw new ExceptionGETL('Destination datasets cannot be null or empty!')
+            throw new ExceptionDSL('Destination datasets cannot be null or empty!')
         if (cl == null)
-            throw new ExceptionGETL('Required closure code!')
+            throw new ExceptionDSL('Required closure code!')
 
         def destNames = [] as List<String>
         (destinations as Map<String, Dataset>).each { destName, ds -> destNames.add("$destName: ${ds.toString()}".toString()) }
@@ -3550,9 +3591,9 @@ Examples:
                      @DelegatesTo(FlowProcessSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
         if (source == null)
-            throw new ExceptionGETL('Source dataset cannot be null!')
+            throw new ExceptionDSL('Source dataset cannot be null!')
         if (cl == null)
-            throw new ExceptionGETL('Required closure code!')
+            throw new ExceptionDSL('Required closure code!')
         def pt = startProcess("Read rows from $source")
         def parent = new FlowProcessSpec(childOwnerObject, childThisObject, false, null)
         parent.source = source
@@ -3564,10 +3605,10 @@ Examples:
     void rowsProcess(@DelegatesTo(FlowProcessSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
         if (cl == null)
-            throw new ExceptionGETL('Required closure code!')
+            throw new ExceptionDSL('Required closure code!')
         def source = DetectClosureDelegate(cl)
         if (source == null || !(source instanceof Dataset))
-            throw new ExceptionGETL('Can not detect source dataset!')
+            throw new ExceptionDSL('Can not detect source dataset!')
         rowsProcess(source, cl)
     }
 
@@ -3604,7 +3645,8 @@ Examples:
     Manager filemanager(String name,
                         @DelegatesTo(Manager)
                         @ClosureParams(value = SimpleType, options = ['getl.files.Manager']) Closure cl = null) {
-        if (name == null) throw new ExceptionGETL('Need file manager name value!')
+        if (name == null)
+            throw new ExceptionDSL('Need file manager name value!')
 
         def parent = registerFileManager(null, name, false) as Manager
         runClosure(parent, cl)
@@ -3613,14 +3655,31 @@ Examples:
     }
 
     /**
-     * Clone file manager object
-     * @param obj object to clone
-     * @return clone object
+     * Clone file manager
+     * @param man original file manager to clone
+     * @return cloned file manager
      */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Manager cloneFilemanager(Manager obj) {
-        if (obj == null) throw new ExceptionGETL('Need object value!')
-        return obj.cloneManager()
+    Manager cloneFilemanager(Manager man) {
+        if (man == null)
+            throw new ExceptionDSL('Need object value!')
+        return man.cloneManager()
+    }
+
+    /**
+     * Clone file manager
+     * @param newName repository name for cloned file manager
+     * @param man original file manager to clone
+     * @param cl cloned file manager processing code
+     * @return cloned file manager
+     */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    Manager cloneFilemanager(String newName, Manager man, Closure cl) {
+        def res = cloneFilemanager(man)
+        registerFileManagerObject(res, newName)
+        runClosure(res, cl)
+
+        return res
     }
 
     /** Process local file system */
@@ -3872,16 +3931,33 @@ Examples:
     }
 
     /**
-     * Clone history point manager object
-     * @param obj object to clone
+     * Clone history point manager
+     * @param point original history point manager to clone
      * @param con used connection for new history point manager
-     * @return clone object
+     * @return cloned history point manager
      */
     @SuppressWarnings("GrMethodMayBeStatic")
-    SavePointManager cloneHistorypoint(SavePointManager obj, JDBCConnection con = null) {
-        if (obj == null)
-            throw new ExceptionGETL('Need object value!')
-        return obj.cloneSavePointManager(con) as SavePointManager
+    SavePointManager cloneHistorypoint(SavePointManager point, JDBCConnection con = null) {
+        if (point == null)
+            throw new ExceptionDSL('Need object value!')
+        return point.cloneSavePointManager(con) as SavePointManager
+    }
+
+    /**
+     * Clone history point manager
+     * @param newName repository name for cloned history point manager
+     * @param point original history point manager to clone
+     * @param con used connection for new history point manager
+     * @param cl cloned history point manager processing code
+     * @return cloned history point manager
+     */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    SavePointManager cloneHistorypoint(String newName, SavePointManager point, JDBCConnection con = null, Closure cl = null) {
+        def res = cloneHistorypoint(point, con)
+        registerHistoryPointObject(res, newName)
+        runClosure(res, cl)
+
+        return res
     }
 
     /** Sequence */
@@ -3908,15 +3984,33 @@ Examples:
     }
 
     /**
-     * Clone sequence object
-     * @param obj object to clone
+     * Clone sequence
+     * @param seq sequence to clone
      * @param con used connection for new sequence
-     * @return clone object
+     * @return clone sequence
      */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Sequence cloneSequence(Sequence obj, JDBCConnection con = null) {
-        if (obj == null) throw new ExceptionGETL('Need object value!')
-        return obj.cloneSequence(con) as Sequence
+    Sequence cloneSequence(Sequence seq, JDBCConnection con = null) {
+        if (seq == null)
+            throw new ExceptionDSL('Need object value!')
+        return seq.cloneSequence(con) as Sequence
+    }
+
+    /**
+     * Clone sequence
+     * @param newName repository name for cloned sequence
+     * @param seq sequence to clone
+     * @param con used connection for new sequence
+     * @param cl cloned sequence code
+     * @return clone sequence
+     */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    Sequence cloneSequence(String newName, Sequence seq, JDBCConnection con = null, Closure cl = null) {
+        def res = cloneSequence(seq, con)
+        registerSequenceObject(res, newName)
+        runClosure(res, cl)
+
+        return res
     }
 
     /**
@@ -3930,9 +4024,9 @@ Examples:
                                   @DelegatesTo(FileCopier)
                           @ClosureParams(value = SimpleType, options = ['getl.files.FileCopier']) Closure cl) {
         if (source == null)
-            throw new ExceptionGETL('Required source file manager!')
+            throw new ExceptionDSL('Required source file manager!')
         if (destinations == null && destinations.isEmpty())
-            throw new ExceptionGETL('Required destination file manager!')
+            throw new ExceptionDSL('Required destination file manager!')
 
         def parent = new FileCopier()
         parent.sysParams.dslThisObject = childThisObject
@@ -3978,7 +4072,7 @@ Examples:
                           @DelegatesTo(FileCleaner)
                           @ClosureParams(value = SimpleType, options = ['getl.files.FileCleaner']) Closure cl) {
         if (source == null)
-            throw new ExceptionGETL('Required source file manager!')
+            throw new ExceptionDSL('Required source file manager!')
 
         def parent = new FileCleaner()
         parent.sysParams.dslThisObject = childThisObject
@@ -4011,7 +4105,7 @@ Examples:
                             @DelegatesTo(FileProcessing)
                             @ClosureParams(value = SimpleType, options = ['getl.proc.FileProcessing']) Closure cl) {
         if (source == null)
-            throw new ExceptionGETL('Required source file manager!')
+            throw new ExceptionDSL('Required source file manager!')
 
         def parent = new FileProcessing()
         parent.sysParams.dslThisObject = childThisObject
@@ -4094,7 +4188,8 @@ Examples:
     Map<String, Object> toVars(Closure cl) {
         def own = DetectClosureDelegate(cl)
         def code = PrepareClosure(own, childThisObject, own, cl)
-        MapUtils.Closure2Map((Config.configClassManager as ConfigSlurper).environment, code)
+        def env = (Config.configClassManager instanceof ConfigSlurper)?((Config.configClassManager as ConfigSlurper).environment):'prod'
+        return MapUtils.Closure2Map(env, code)
     }
 
     /* TODO: add Counter repository object */

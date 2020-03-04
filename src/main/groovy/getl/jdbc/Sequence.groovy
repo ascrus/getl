@@ -151,10 +151,15 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	String getFullName() {
 		return (schema != null)?"${schema}.$name":name
 	}
-	
+
+	/** Get next sequence value */
+	Long getNextValue() {
+		return nextValueFast
+	}
+
 	/** Get next sequence value with synchronized */
 	@Synchronized
-	Long getNextValue() {
+	Long getNextValueSynch() {
 		return nextValueFast
 	}
 

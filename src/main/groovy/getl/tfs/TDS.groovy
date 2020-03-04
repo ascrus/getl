@@ -123,7 +123,7 @@ class TDS extends H2Connection {
 			connectProperty."IFEXISTS" = "FALSE"
 		}
 		if (inMemory && connectProperty."DB_CLOSE_DELAY" == null) connectProperty."DB_CLOSE_DELAY" = -1
-		autoCommit = true
+//		autoCommit = true
 	}
 
     @Override

@@ -109,6 +109,8 @@ class Logs {
 		if (eventer == null) throw new ExceptionGETL("Eventer must be not null")
 		eventers.remove(eventer)
 	}
+
+	static private operationLock = new Object()
 	
 	/**
 	 * Call eventers
@@ -456,7 +458,7 @@ class Logs {
 	 * @param nameObject object name
 	 * @param data additional error data
 	 */
-	@Synchronized
+	@Synchronized('operationLock')
 	static void Dump (Throwable error, String typeObject, String nameObject, def data) {
 		if (fileNameHandler == null) {
 			Severe("Can not save dump, required logFileName")

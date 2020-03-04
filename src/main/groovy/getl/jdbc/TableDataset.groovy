@@ -543,7 +543,7 @@ class TableDataset extends JDBCDataset {
 
 		connection.tryConnect()
 
-		def autoTran = connection.driver.isSupport(Driver.Support.TRANSACTIONAL)
+		def autoTran = connection.isSupportTran
 		if (autoTran) {
 			autoTran = parent.autoCommit ?:
 					(!BoolUtils.IsValue(currentJDBCConnection.autoCommit) && currentJDBCConnection.tranCount == 0)
