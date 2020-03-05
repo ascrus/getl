@@ -369,6 +369,7 @@ class SalesForceDriver extends Driver {
             BatchInfo[] batchInfos = bulkConnection.getBatchInfoList(job.id).batchInfo
 
             TFS tfsArea = new TFS()
+            tfsArea.header = true
             tfsArea.fieldDelimiter = ','
             tfsArea.deleteOnExit = true
             tfsArea.quoteStr = '"'

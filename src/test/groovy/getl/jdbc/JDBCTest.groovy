@@ -170,4 +170,31 @@ class JDBCTest extends getl.test.GetlTest {
             assertEquals(8, rows[0].value)
         }
     }
+
+    @Test
+    void testSqlScripter() {
+        Getl.Dsl(this) {
+            embeddedTable {
+                tableName = 'test_sqlscripter'
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') {length = 50; isNull = false }
+                create()
+
+                rowsTo {
+                    writeRow { add ->
+                        (1..99).each { add id: it, name: "test $it" }
+                    }
+                }
+            }
+
+            sql(embeddedConnection()) {
+                exec '''SELECT *, '-' AS test FROM test_sqlscripter WHERE id = 1
+-- SELECT 1;
+UNION ALL -- SELECT 1;
+SELECT *, '-' AS test -- Comment; 
+FROM test_sqlscripter WHERE id = 2;
+'''
+            }
+        }
+    }
 }

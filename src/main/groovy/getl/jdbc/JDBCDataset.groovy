@@ -51,21 +51,21 @@ class JDBCDataset extends Dataset {
 						EXTERNAL_TABLE, SYSTEM_TABLE, UNKNOWN}
 
 	/** Table type */
-	static def tableType = Type.TABLE
+	static public Type tableType = Type.TABLE
 	/** View type */
-	static def viewType = Type.VIEW
+	static public Type viewType = Type.VIEW
 	/** Global temporary type */
-	static def globalTemporaryTableType = Type.GLOBAL_TEMPORARY
+	static public Type globalTemporaryTableType = Type.GLOBAL_TEMPORARY
 	/** Local temporary type */
-	static def localTemporaryTableType = Type.LOCAL_TEMPORARY
+	static public Type localTemporaryTableType = Type.LOCAL_TEMPORARY
 	/** External table type */
-	static def externalTable = Type.EXTERNAL_TABLE
+	static public Type externalTable = Type.EXTERNAL_TABLE
 	/** System table type */
-	static def systemTable = Type.SYSTEM_TABLE
+	static public Type systemTable = Type.SYSTEM_TABLE
 	/** Table in memory */
-	static def memoryTable = Type.MEMORY
+	static public Type memoryTable = Type.MEMORY
 	/** Query type */
-	static def queryType = Type.QUERY
+	static public Type queryType = Type.QUERY
 	
 	/**
 	 * Type of dataset

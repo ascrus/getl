@@ -637,8 +637,27 @@ class SQLScripter implements WithConnection, Cloneable {
 		List<String> res = sql.split('\n')
 		for (int i = 0; i < res.size(); i++) {
 			String s = res[i].trim()
+			def l = s.length()
+			if (l == 0) continue
+
 			if (s.matches("(?is)echo(\\s|\\t).*") || s.matches("(?is)error(\\s|\\t).*")) {
-				if (s.substring(s.length() - 1) != ';') res[i] = res[i] + ';'
+				if (s.substring(s.length() - 1) != delim) res[i] = res[i] + delim
+			}
+			else if (l > 1 && s[s.length() - 1] == delim) {
+				def f = s.lastIndexOf('--')
+				if (f >= 0) {
+					def q = 0
+					for (int y = 0; y < f; y++) {
+						if (s[y] == '\'') {
+							if (q == 0)
+								q++
+							else
+								q--
+						}
+					}
+					if (q == 0)
+						res[i] = s.substring(0, l - 1)
+				}
 			}
 		}
 		String prepare = res.join('\n')
