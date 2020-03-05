@@ -2169,7 +2169,7 @@ Examples:
     /** Firebird connection */
     FirebirdConnection firebirdConnection(String name, Boolean registration,
                                           @DelegatesTo(FirebirdConnection)
-                                          @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl) {
+                                          @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.FIREBIRDCONNECTION, name, registration) as FirebirdConnection
         runClosure(parent, cl)
 
@@ -2202,7 +2202,7 @@ Examples:
     /** Firebird table */
     FirebirdTable firebirdTable(String name, Boolean registration,
                                 @DelegatesTo(FirebirdTable)
-                                @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl) {
+                                @ClosureParams(value = SimpleType, options = ['getl.firebird.FirebirdTable']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.FIREBIRDTABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.FIREBIRDTABLE), FirebirdConnection, cl) as FirebirdTable
         runClosure(parent, cl)
@@ -2226,7 +2226,7 @@ Examples:
     /** H2 connection */
     H2Connection h2Connection(String name, Boolean registration,
                               @DelegatesTo(H2Connection)
-                              @ClosureParams(value = SimpleType, options = ['getl.h2.H2Connection']) Closure cl) {
+                              @ClosureParams(value = SimpleType, options = ['getl.h2.H2Connection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.H2CONNECTION, name, registration) as H2Connection
         runClosure(parent, cl)
 
@@ -2259,7 +2259,7 @@ Examples:
     /** H2 table */
     H2Table h2Table(String name, Boolean registration,
                     @DelegatesTo(H2Table)
-                    @ClosureParams(value = SimpleType, options = ['getl.h2.H2Table']) Closure cl) {
+                    @ClosureParams(value = SimpleType, options = ['getl.h2.H2Table']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.H2TABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.H2TABLE), H2Connection, cl) as H2Table
         runClosure(parent, cl)
@@ -2283,7 +2283,7 @@ Examples:
     /** DB2 connection */
     DB2Connection db2Connection(String name, Boolean registration,
                                 @DelegatesTo(DB2Connection)
-                                @ClosureParams(value = SimpleType, options = ['getl.db2.DB2Connection']) Closure cl) {
+                                @ClosureParams(value = SimpleType, options = ['getl.db2.DB2Connection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.DB2CONNECTION, name, registration) as DB2Connection
         runClosure(parent, cl)
 
@@ -2317,7 +2317,7 @@ Examples:
     /** DB2 database table */
     DB2Table db2Table(String name, Boolean registration,
                       @DelegatesTo(DB2Table)
-                      @ClosureParams(value = SimpleType, options = ['getl.db2.DB2Table']) Closure cl) {
+                      @ClosureParams(value = SimpleType, options = ['getl.db2.DB2Table']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.DB2TABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.DB2TABLE), DB2Connection, cl) as DB2Table
         runClosure(parent, cl)
@@ -2341,7 +2341,7 @@ Examples:
     /** Hive connection */
     HiveConnection hiveConnection(String name, Boolean registration,
                                   @DelegatesTo(HiveConnection)
-                                  @ClosureParams(value = SimpleType, options = ['getl.hive.HiveConnection']) Closure cl) {
+                                  @ClosureParams(value = SimpleType, options = ['getl.hive.HiveConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.HIVECONNECTION, name, registration) as HiveConnection
         runClosure(parent, cl)
 
@@ -2374,7 +2374,7 @@ Examples:
     /** Hive table */
     HiveTable hiveTable(String name, Boolean registration,
                         @DelegatesTo(HiveTable)
-                        @ClosureParams(value = SimpleType, options = ['getl.hive.HiveTable']) Closure cl) {
+                        @ClosureParams(value = SimpleType, options = ['getl.hive.HiveTable']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.HIVETABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.HIVETABLE), HiveConnection, cl) as HiveTable
         runClosure(parent, cl)
@@ -2398,7 +2398,7 @@ Examples:
     /** Impala connection */
     ImpalaConnection impalaConnection(String name, Boolean registration,
                                       @DelegatesTo(ImpalaConnection)
-                                      @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaConnection']) Closure cl) {
+                                      @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.IMPALACONNECTION, name, registration) as ImpalaConnection
         runClosure(parent, cl)
 
@@ -2431,7 +2431,7 @@ Examples:
     /** Impala table */
     ImpalaTable impalaTable(String name, Boolean registration,
                             @DelegatesTo(ImpalaTable)
-                            @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaTable']) Closure cl) {
+                            @ClosureParams(value = SimpleType, options = ['getl.impala.ImpalaTable']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.IMPALATABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.IMPALATABLE), ImpalaConnection, cl) as ImpalaTable
         runClosure(parent, cl)
@@ -2455,7 +2455,7 @@ Examples:
     /** MSSQL connection */
     MSSQLConnection mssqlConnection(String name, Boolean registration,
                                     @DelegatesTo(MSSQLConnection)
-                                    @ClosureParams(value = SimpleType, options = ['getl.mssql.MSSQLConnection']) Closure cl) {
+                                    @ClosureParams(value = SimpleType, options = ['getl.mssql.MSSQLConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.MSSQLCONNECTION, name, registration) as MSSQLConnection
         runClosure(parent, cl)
 
@@ -2488,7 +2488,7 @@ Examples:
     /** MSSQL database table */
     MSSQLTable mssqlTable(String name, Boolean registration,
                           @DelegatesTo(MSSQLTable)
-                          @ClosureParams(value = SimpleType, options = ['getl.mssql.MSSQLTable']) Closure cl) {
+                          @ClosureParams(value = SimpleType, options = ['getl.mssql.MSSQLTable']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.MSSQLTABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.MSSQLTABLE), MSSQLConnection, cl) as MSSQLTable
         runClosure(parent, cl)
@@ -2512,7 +2512,7 @@ Examples:
     /** MySQL connection */
     MySQLConnection mysqlConnection(String name, Boolean registration,
                                     @DelegatesTo(MySQLConnection)
-                                    @ClosureParams(value = SimpleType, options = ['getl.mysql.MySQLConnection']) Closure cl) {
+                                    @ClosureParams(value = SimpleType, options = ['getl.mysql.MySQLConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.MYSQLCONNECTION, name, registration) as MySQLConnection
         runClosure(parent, cl)
 
@@ -2545,7 +2545,7 @@ Examples:
     /** MySQL database table */
     MySQLTable mysqlTable(String name, Boolean registration,
                           @DelegatesTo(MySQLTable)
-                          @ClosureParams(value = SimpleType, options = ['getl.mysql.MySQLTable']) Closure cl) {
+                          @ClosureParams(value = SimpleType, options = ['getl.mysql.MySQLTable']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.MYSQLTABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.MYSQLTABLE), MySQLConnection, cl) as MySQLTable
         runClosure(parent, cl)
@@ -2569,7 +2569,7 @@ Examples:
     /** Netezza connection */
     NetezzaConnection netezzaConnection(String name, Boolean registration,
                                         @DelegatesTo(NetezzaConnection)
-                                        @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl) {
+                                        @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.NETEZZACONNECTION, name, registration) as NetezzaConnection
         runClosure(parent, cl)
 
@@ -2602,7 +2602,7 @@ Examples:
     /** Netezza database table */
     NetezzaTable netezzaTable(String name, Boolean registration,
                               @DelegatesTo(NetezzaTable)
-                              @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl) {
+                              @ClosureParams(value = SimpleType, options = ['getl.netezza.NetezzaTable']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.NETEZZATABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.NETEZZATABLE), NetezzaConnection, cl) as NetezzaTable
         runClosure(parent, cl)
@@ -2626,7 +2626,7 @@ Examples:
     /** Oracle connection */
     OracleConnection oracleConnection(String name, Boolean registration,
                                       @DelegatesTo(OracleConnection)
-                                      @ClosureParams(value = SimpleType, options = ['getl.oracle.OracleConnection']) Closure cl) {
+                                      @ClosureParams(value = SimpleType, options = ['getl.oracle.OracleConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.ORACLECONNECTION, name, registration) as OracleConnection
         runClosure(parent, cl)
 
@@ -2659,7 +2659,7 @@ Examples:
     /** Oracle table */
     OracleTable oracleTable(String name, Boolean registration,
                             @DelegatesTo(OracleTable)
-                            @ClosureParams(value = SimpleType, options = ['getl.oracle.OracleTable']) Closure cl) {
+                            @ClosureParams(value = SimpleType, options = ['getl.oracle.OracleTable']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.ORACLETABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.ORACLETABLE), OracleConnection, cl) as OracleTable
         runClosure(parent, cl)
@@ -2683,7 +2683,7 @@ Examples:
     /** PostgreSQL connection */
     PostgreSQLConnection postgresqlConnection(String name, Boolean registration,
                                               @DelegatesTo(PostgreSQLConnection)
-                                              @ClosureParams(value = SimpleType, options = ['getl.postgresql.PostgreSQLConnection']) Closure cl) {
+                                              @ClosureParams(value = SimpleType, options = ['getl.postgresql.PostgreSQLConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.POSTGRESQLCONNECTION, name, registration) as PostgreSQLConnection
         runClosure(parent, cl)
 
@@ -2716,7 +2716,7 @@ Examples:
     /** PostgreSQL database table */
     PostgreSQLTable postgresqlTable(String name, Boolean registration,
                                     @DelegatesTo(PostgreSQLTable)
-                                    @ClosureParams(value = SimpleType, options = ['getl.postgresql.PostgreSQLTable']) Closure cl) {
+                                    @ClosureParams(value = SimpleType, options = ['getl.postgresql.PostgreSQLTable']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.POSTGRESQLTABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.POSTGRESQLTABLE), PostgreSQLConnection, cl) as PostgreSQLTable
         runClosure(parent, cl)
@@ -2741,7 +2741,7 @@ Examples:
     /** Vertica connection */
     VerticaConnection verticaConnection(String name, Boolean registration,
                                         @DelegatesTo(VerticaConnection)
-                                        @ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaConnection']) Closure cl) {
+                                        @ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.VERTICACONNECTION, name, registration) as VerticaConnection
         runClosure(parent, cl)
 
@@ -2774,7 +2774,7 @@ Examples:
     /** Vertica table */
     VerticaTable verticaTable(String name, Boolean registration,
                               @DelegatesTo(VerticaTable)
-                              @ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaTable']) Closure cl) {
+                              @ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaTable']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.VERTICATABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.VERTICATABLE), VerticaConnection, cl) as VerticaTable
         runClosure(parent, cl)
@@ -2798,7 +2798,7 @@ Examples:
     /** NetSuite connection */
     NetsuiteConnection netsuiteConnection(String name, Boolean registration,
                                           @DelegatesTo(NetsuiteConnection)
-                                          @ClosureParams(value = SimpleType, options = ['getl.netsuite.NetsuiteConnection']) Closure cl) {
+                                          @ClosureParams(value = SimpleType, options = ['getl.netsuite.NetsuiteConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.NETSUITECONNECTION, name, registration) as NetsuiteConnection
         runClosure(parent, cl)
 
@@ -2831,7 +2831,7 @@ Examples:
     /** Netsuite table */
     NetsuiteTable netsuiteTable(String name, Boolean registration,
                                 @DelegatesTo(NetsuiteTable)
-                                @ClosureParams(value = SimpleType, options = ['getl.netsuite.NetsuiteTable']) Closure cl) {
+                                @ClosureParams(value = SimpleType, options = ['getl.netsuite.NetsuiteTable']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.NETSUITETABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.NETSUITETABLE), NetsuiteConnection, cl) as NetsuiteTable
         runClosure(parent, cl)
@@ -2854,7 +2854,7 @@ Examples:
     /** Temporary database connection */
     TDS embeddedConnection(String name, Boolean registration,
                            @DelegatesTo(TDS)
-                           @ClosureParams(value = SimpleType, options = ['getl.tfs.TDS']) Closure cl) {
+                           @ClosureParams(value = SimpleType, options = ['getl.tfs.TDS']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.EMBEDDEDCONNECTION, name, registration) as TDS
         if (parent.sqlHistoryFile == null) parent.sqlHistoryFile = _langOpts.tempDBSQLHistoryFile
         runClosure(parent, cl)
@@ -2889,7 +2889,7 @@ Examples:
     /** Table with temporary database */
     TDSTable embeddedTable(String name, Boolean registration,
                            @DelegatesTo(TDSTable)
-                           @ClosureParams(value = SimpleType, options = ['getl.tfs.TDSTable']) Closure cl) {
+                           @ClosureParams(value = SimpleType, options = ['getl.tfs.TDSTable']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.EMBEDDEDTABLE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.EMBEDDEDTABLE), TDS, cl) as TDSTable
         if ((name == null || registration) && parent.connection == null)
@@ -2951,7 +2951,7 @@ Examples:
     /** JDBC query dataset */
     QueryDataset query(String name, Boolean registration, JDBCConnection connection,
                        @DelegatesTo(QueryDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.QueryDataset']) Closure cl) {
+                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.QueryDataset']) Closure cl = null) {
         def parent = registerDataset(connection, _repositoryDatasets.QUERYDATASET, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.QUERYDATASET), JDBCConnection, cl) as QueryDataset
         runClosure(parent, cl)
@@ -3017,7 +3017,7 @@ Examples:
     /** CSV connection */
     CSVConnection csvConnection(String name, Boolean registration,
                                 @DelegatesTo(CSVConnection)
-                                @ClosureParams(value = SimpleType, options = ['getl.csv.CSVConnection']) Closure cl) {
+                                @ClosureParams(value = SimpleType, options = ['getl.csv.CSVConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.CSVCONNECTION, name, registration) as CSVConnection
         runClosure(parent, cl)
 
@@ -3050,7 +3050,7 @@ Examples:
     /** CSV delimiter file */
     CSVDataset csv(String name, Boolean registration,
                    @DelegatesTo(CSVDataset)
-                   @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl) {
+                   @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.CSVDATASET, name, registration,
                 defaultFileConnection(_repositoryDatasets.CSVDATASET), CSVConnection, cl) as CSVDataset
         runClosure(parent, cl)
@@ -3074,7 +3074,7 @@ Examples:
     /** CSV file with exists dataset */
     CSVDataset csvWithDataset(String name, Dataset sourceDataset, Boolean registration,
                               @DelegatesTo(CSVDataset)
-                              @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl) {
+                              @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl = null) {
         if (sourceDataset == null)
             throw new ExceptionDSL("Dataset cannot be null!")
 
@@ -3113,7 +3113,7 @@ Examples:
     /** Excel connection */
     ExcelConnection excelConnection(String name, Boolean registration,
                                     @DelegatesTo(ExcelConnection)
-                                    @ClosureParams(value = SimpleType, options = ['getl.excel.ExcelConnection']) Closure cl) {
+                                    @ClosureParams(value = SimpleType, options = ['getl.excel.ExcelConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.EXCELCONNECTION, name, registration) as ExcelConnection
         runClosure(parent, cl)
 
@@ -3146,7 +3146,7 @@ Examples:
     /** Excel file */
     ExcelDataset excel(String name, Boolean registration,
                        @DelegatesTo(ExcelDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.excel.ExcelDataset']) Closure cl) {
+                       @ClosureParams(value = SimpleType, options = ['getl.excel.ExcelDataset']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.EXCELDATASET, name, registration,
                 defaultFileConnection(_repositoryDatasets.EXCELDATASET), ExcelConnection, cl) as ExcelDataset
         if (parent.connection == null && (name == null || registration))
@@ -3165,14 +3165,14 @@ Examples:
 
     /** Excel file */
     ExcelDataset excel(@DelegatesTo(ExcelDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.excel.ExcelDataset']) Closure cl = null) {
+                       @ClosureParams(value = SimpleType, options = ['getl.excel.ExcelDataset']) Closure cl) {
         excel(null, false, cl)
     }
 
     /** JSON connection */
     JSONConnection jsonConnection(String name, Boolean registration,
                                   @DelegatesTo(JSONConnection)
-                                  @ClosureParams(value = SimpleType, options = ['getl.json.JSONConnection']) Closure cl) {
+                                  @ClosureParams(value = SimpleType, options = ['getl.json.JSONConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.JSONCONNECTION, name, registration) as JSONConnection
         runClosure(parent, cl)
 
@@ -3205,7 +3205,7 @@ Examples:
     /** JSON file */
     JSONDataset json(String name, Boolean registration,
                      @DelegatesTo(JSONDataset)
-                     @ClosureParams(value = SimpleType, options = ['getl.json.JSONDataset']) Closure cl) {
+                     @ClosureParams(value = SimpleType, options = ['getl.json.JSONDataset']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.JSONDATASET, name, registration,
                 defaultFileConnection(_repositoryDatasets.JSONDATASET), JSONConnection, cl) as JSONDataset
         if (parent.connection == null && (name == null || registration))
@@ -3231,7 +3231,7 @@ Examples:
     /** XML connection */
     XMLConnection xmlConnection(String name, Boolean registration,
                                 @DelegatesTo(XMLConnection)
-                                @ClosureParams(value = SimpleType, options = ['getl.xml.XMLConnection']) Closure cl) {
+                                @ClosureParams(value = SimpleType, options = ['getl.xml.XMLConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.XMLCONNECTION, name, registration) as XMLConnection
         runClosure(parent, cl)
 
@@ -3264,7 +3264,7 @@ Examples:
     /** XML file */
     XMLDataset xml(String name, Boolean registration,
                    @DelegatesTo(XMLDataset)
-                   @ClosureParams(value = SimpleType, options = ['getl.xml.XMLDataset']) Closure cl) {
+                   @ClosureParams(value = SimpleType, options = ['getl.xml.XMLDataset']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.XMLDATASET, name, registration,
                 defaultFileConnection(_repositoryDatasets.XMLDATASET), XMLConnection, cl) as XMLDataset
         if (parent.connection == null && (name == null || registration))
@@ -3290,7 +3290,7 @@ Examples:
     /** SalesForce connection */
     SalesForceConnection salesforceConnection(String name, Boolean registration,
                                               @DelegatesTo(SalesForceConnection)
-                                              @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceConnection']) Closure cl) {
+                                              @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.SALESFORCECONNECTION, name, registration) as SalesForceConnection
         runClosure(parent, cl)
 
@@ -3323,7 +3323,7 @@ Examples:
     /** SalesForce table */
     SalesForceDataset salesforce(String name, Boolean registration,
                                  @DelegatesTo(SalesForceDataset)
-                                 @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceDataset']) Closure cl) {
+                                 @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceDataset']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.SALESFORCEDATASET, name, registration,
                 defaultOtherConnection(_repositoryDatasets.SALESFORCEDATASET), SalesForceConnection, cl) as SalesForceDataset
         runClosure(parent, cl)
@@ -3347,7 +3347,7 @@ Examples:
     /** SalesForce query */
     SalesForceQueryDataset salesforceQuery(String name, Boolean registration,
                                            @DelegatesTo(SalesForceQueryDataset)
-                                           @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceQueryDataset']) Closure cl) {
+                                           @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceQueryDataset']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.SALESFORCEQUERYDATASET, name, registration,
                 defaultOtherConnection(_repositoryDatasets.SALESFORCEDATASET), SalesForceConnection, cl) as SalesForceQueryDataset
         runClosure(parent, cl)
@@ -3371,7 +3371,7 @@ Examples:
     /** Xero connection */
     XeroConnection xeroConnection(String name, Boolean registration,
                                   @DelegatesTo(XeroConnection)
-                                  @ClosureParams(value = SimpleType, options = ['getl.xero.XeroConnection']) Closure cl) {
+                                  @ClosureParams(value = SimpleType, options = ['getl.xero.XeroConnection']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.XEROCONNECTION, name, registration) as XeroConnection
         runClosure(parent, cl)
 
@@ -3404,7 +3404,7 @@ Examples:
     /** Xero table */
     XeroDataset xero(String name, Boolean registration,
                      @DelegatesTo(XeroDataset)
-                     @ClosureParams(value = SimpleType, options = ['getl.xero.XeroDataset']) Closure cl) {
+                     @ClosureParams(value = SimpleType, options = ['getl.xero.XeroDataset']) Closure cl = null) {
         def parent = registerDataset(null, _repositoryDatasets.XERODATASET, name, registration,
                 defaultOtherConnection(_repositoryDatasets.XERODATASET), XeroConnection, cl) as XeroDataset
         runClosure(parent, cl)
@@ -3428,7 +3428,7 @@ Examples:
     /** Temporary CSV file connection */
     TFS csvTempConnection(String name, Boolean registration,
                           @DelegatesTo(TFS)
-                          @ClosureParams(value = SimpleType, options = ['getl.tfs.TFS']) Closure cl) {
+                          @ClosureParams(value = SimpleType, options = ['getl.tfs.TFS']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.CSVTEMPCONNECTION, name, registration) as TFS
         runClosure(parent, cl)
 
@@ -3481,7 +3481,7 @@ Examples:
 
     /** Temporary CSV file */
     TFSDataset csvTemp(@DelegatesTo(TFSDataset)
-                       @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
+                       @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl) {
         csvTemp(null, false, cl)
     }
 
@@ -3615,7 +3615,7 @@ Examples:
     /** SQL scripter */
     SQLScripter sql(JDBCConnection connection, /* TODO: Added extended variables with table structure */
                     @DelegatesTo(SQLScripter)
-                    @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl) {
+                    @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl = null) {
         def parent = new SQLScripter()
         def owner = DetectClosureDelegate(cl)
 
@@ -3674,7 +3674,7 @@ Examples:
      * @return cloned file manager
      */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Manager cloneFilemanager(String newName, Manager man, Closure cl) {
+    Manager cloneFilemanager(String newName, Manager man, Closure cl = null) {
         def res = cloneFilemanager(man)
         registerFileManagerObject(res, newName)
         runClosure(res, cl)
@@ -3685,7 +3685,7 @@ Examples:
     /** Process local file system */
     FileManager files(String name, Boolean registration,
                       @DelegatesTo(FileManager)
-                      @ClosureParams(value = SimpleType, options = ['getl.files.FileManager']) Closure cl) {
+                      @ClosureParams(value = SimpleType, options = ['getl.files.FileManager']) Closure cl = null) {
         def parent = registerFileManager(_repositoryFilemanagers.FILEMANAGER, name, registration) as FileManager
         if (parent.rootPath == null) parent.rootPath = new File('.').absolutePath
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
@@ -3719,7 +3719,7 @@ Examples:
     /** Process ftp file system */
     FTPManager ftp(String name, Boolean registration,
                    @DelegatesTo(FTPManager)
-                   @ClosureParams(value = SimpleType, options = ['getl.files.FTPManager']) Closure cl) {
+                   @ClosureParams(value = SimpleType, options = ['getl.files.FTPManager']) Closure cl = null) {
         def parent = registerFileManager(_repositoryFilemanagers.FTPMANAGER, name, registration) as FTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
@@ -3753,7 +3753,7 @@ Examples:
     /** Process sftp file system */
     SFTPManager sftp(String name, Boolean registration,
                      @DelegatesTo(SFTPManager)
-                     @ClosureParams(value = SimpleType, options = ['getl.files.SFTPManager']) Closure cl) {
+                     @ClosureParams(value = SimpleType, options = ['getl.files.SFTPManager']) Closure cl = null) {
         def parent = registerFileManager(_repositoryFilemanagers.SFTPMANAGER, name, registration) as SFTPManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {
@@ -3787,7 +3787,7 @@ Examples:
     /** Process sftp file system */
     HDFSManager hdfs(String name, Boolean registration,
                      @DelegatesTo(HDFSManager)
-                     @ClosureParams(value = SimpleType, options = ['getl.files.HDFSManager']) Closure cl) {
+                     @ClosureParams(value = SimpleType, options = ['getl.files.HDFSManager']) Closure cl = null) {
         def parent = registerFileManager(_repositoryFilemanagers.HDFSMANAGER, name, registration) as HDFSManager
         if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
         if (cl != null) {

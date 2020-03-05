@@ -29,6 +29,7 @@ import getl.driver.Driver
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionFileListProcessing
 import getl.exception.ExceptionFileProcessing
+import getl.exception.ExceptionGETL
 import getl.files.Manager
 import getl.jdbc.JDBCConnection
 import getl.jdbc.QueryDataset
@@ -459,12 +460,6 @@ class FileProcessing extends FileListProcessing {
                                 try {
                                     onProcessFile.call(element)
                                 }
-                                catch (ExceptionFileListProcessing e) {
-                                    def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
-                                    Logs.Severe("Critical error processing file \"${file.filepath}/${file.filename}\": $msg")
-                                    setError(onProcessFile, e)
-                                    throw e
-                                }
                                 catch (AssertionError a) {
                                     def msg = StringUtils.LeftStr(a.message?.trim(), 4096)
                                     Logs.Severe("Detected assertion fail for file \"${file.filepath}/${file.filename}\" processing: $msg")
@@ -485,10 +480,25 @@ class FileProcessing extends FileListProcessing {
                                     def msg = StringUtils.LeftStr(element.errorText, 4096)
                                     Logs.Severe("Error processing file \"${file.filepath}/${file.filename}\": $msg")
                                 }
+                                catch (ExceptionFileListProcessing e) {
+                                    def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
+                                    Logs.Severe("Critical FileListProcessing error on processing file \"${file.filepath}/${file.filename}\": $msg")
+                                    setError(onProcessFile, e)
+                                    Logs.Exception(e, 'FileListProcessing', "${file.filepath}/${file.filename}")
+                                    throw e
+                                }
                                 catch (ExceptionDSL e) {
                                     def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
-                                    Logs.Severe("Critical error processing file \"${file.filepath}/${file.filename}\": $msg")
+                                    Logs.Severe("Critical Dsl error on processing file \"${file.filepath}/${file.filename}\": $msg")
                                     setError(onProcessFile, e)
+                                    Logs.Exception(e, 'Dsl', "${file.filepath}/${file.filename}")
+                                    throw e
+                                }
+                                catch (ExceptionGETL e) {
+                                    def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
+                                    Logs.Severe("Critical Getl error processing file \"${file.filepath}/${file.filename}\": $msg")
+                                    setError(onProcessFile, e)
+                                    Logs.Exception(e, 'Getl', "${file.filepath}/${file.filename}")
                                     throw e
                                 }
                                 catch (Exception e) {
@@ -509,6 +519,7 @@ class FileProcessing extends FileListProcessing {
                                         }
                                     } else {
                                         setError(onProcessFile, e)
+                                        Logs.Exception(e, 'Exception', "${file.filepath}/${file.filename}")
                                         throw e
                                     }
                                 }

@@ -88,4 +88,19 @@ class CSVReadSpec extends BaseSpec {
                         Closure<Boolean> value) {
         setOnFilter(value)
     }
+
+    /** Ignore field header when reading a file (true by default) */
+    Boolean getIgnoreHeader() { params.ignoreHeader as Boolean }
+    /** Ignore field header when reading a file (true by default) */
+    void setIgnoreHeader(Boolean value) { params.ignoreHeader = value }
+
+    /** Skip n-lines after the header */
+    Long getSkipRows() { params.skipRows as Long }
+    /** Skip n-lines after the header */
+    void setSkipRows(Long value) { params.skipRows = value }
+
+    /** Read no more than the specified number of rows */
+    Long getLimit() { params.limit as Long }
+    /** Read no more than the specified number of rows */
+    void setLimit(Long value) { params.limit = value }
 }

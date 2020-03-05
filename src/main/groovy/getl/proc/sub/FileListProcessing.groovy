@@ -608,9 +608,8 @@ abstract class FileListProcessing {
                                 throw new ExceptionFileListProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
                         }
                     }
-
-                    cacheTable.truncate(truncate: true)
                 }
+                cacheTable.drop()
             }
         }
     }
@@ -696,7 +695,10 @@ abstract class FileListProcessing {
             else {
                 Logs.Info("${source.countFileList} files found, size ${FileUtils.SizeBytes(source.sizeFileList)} for source \"${source.toString()}\"")
 
-                if (cacheTable != null && !cacheTable.exists) {
+                if (cacheTable != null) {
+                    if (source.story.field.size() == 0)
+                        source.story.retrieveFields()
+
                     cacheTable.field = source.story.field
                     cacheTable.clearKeys()
                     cacheTable.create()

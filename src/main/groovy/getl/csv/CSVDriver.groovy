@@ -67,7 +67,7 @@ class CSVDriver extends FileDriver {
 	CSVDriver () {
 		super()
 		methodParams.register('eachRow', ['isValid', 'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'isSplit', 'readAsText', 
-											'escaped', 'processError', 'filter', 'nullAsValue'])
+											'escaped', 'processError', 'filter', 'nullAsValue', 'ignoreHeader', 'skipRows', 'limit'])
 		methodParams.register('openWrite', ['batchSize', 'onSaveBatch', 'isValid', 'escaped', 'splitSize', 
 								'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'nullAsValue', 'decimalSeparator', 
 								'formatDate', 'formatTime', 'formatDateTime', 'onSplitFile'])
@@ -76,13 +76,13 @@ class CSVDriver extends FileDriver {
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
-		[Driver.Support.WRITE, Driver.Support.AUTOLOADSCHEMA, Driver.Support.AUTOSAVESCHEMA, Driver.Support.EACHROW] 
+		[Driver.Support.WRITE, Driver.Support.AUTOLOADSCHEMA, Driver.Support.AUTOSAVESCHEMA, Driver.Support.EACHROW]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Operation> operations () {
-		[Driver.Operation.DROP] 
+		[Driver.Operation.DROP, Driver.Operation.RETRIEVEFIELDS]
 	}
 
 	class ReadParams {
@@ -145,7 +145,6 @@ class CSVDriver extends FileDriver {
 	}
 	
 	@Override
-
 	List<Field> fields(Dataset dataset) {
 		def p = readParamDataset(dataset, [:]) 
 		
@@ -412,7 +411,10 @@ class CSVDriver extends FileDriver {
 		
 		boolean escaped = BoolUtils.IsValue(params.escaped, cds.escaped)
 		boolean readAsText = BoolUtils.IsValue(params.readAsText)
-		boolean ignoreHeader = BoolUtils.IsValue([params.ignoreHeader, cds.ignoreHeader], true)
+		boolean ignoreHeader = BoolUtils.IsValue(params.ignoreHeader, true)
+		Long skipRows = (params.skipRows as Long)?:0L
+		Long limit = (params.long as Long)?:0L
+
 		Closure filter = (Closure)params."filter"
 
 		long countRec = 0
@@ -440,7 +442,7 @@ class CSVDriver extends FileDriver {
 		Closure processError = (params.processError != null)?params.processError as Closure:null
 		boolean isValid = BoolUtils.IsValue([params.isValid, cds.constraintsCheck], false)
 		CsvPreference pref = new CsvPreference.Builder((char)p.quoteStr, (int)p.fieldDelimiter, (String)p.rowDelimiter).useQuoteMode((QuoteMode)p.qMode).build()
-		ICsvMapReader reader
+		CsvMapReader reader
 		if (escaped) {
 			reader = new CsvMapReader(new CSVEscapeTokenizer(bufReader, pref, p.isHeader), pref)
 		}
@@ -465,6 +467,9 @@ class CSVDriver extends FileDriver {
 			}
 			header = (header*.toLowerCase()).toArray(new String()[])
 
+			if (skipRows > 0)
+				(1..skipRows).each { reader.getHeader(false) }
+
 			ArrayList<String> listFields = new ArrayList<String>()
 			if (prepareCode != null) {
 				listFields = (ArrayList<String>)prepareCode.call(filefields)
@@ -479,6 +484,7 @@ class CSVDriver extends FileDriver {
 				boolean isError = false
 				try {
 					cur++
+					if (limit > 0 && cur > limit) break
 					row = reader.read(header, cp)
 				}
 				catch (Exception e) {

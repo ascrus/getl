@@ -43,11 +43,11 @@ class CSVDataset extends FileDataset {
 	static enum QuoteMode {ALWAYS, NORMAL, COLUMN}
 
 	/** Quotate all fields */
-	static getQuoteAlways() { QuoteMode.ALWAYS }
+	static QuoteMode getQuoteAlways() { QuoteMode.ALWAYS }
 	/** Quote text fields that have quotation marks or line feeds */
-	static getQuoteNormal() { QuoteMode.NORMAL }
+	static QuoteMode getQuoteNormal() { QuoteMode.NORMAL }
 	/** Quote only text fields */
-	static getQuoteColumn() { QuoteMode.COLUMN }
+	static QuoteMode getQuoteColumn() { QuoteMode.COLUMN }
 
 	/**
 	 * Quote delimiter string	
@@ -96,15 +96,6 @@ class CSVDataset extends FileDataset {
 		params.header = value
 		resetPresetMode()
 	}
-	
-	/**
-	 * Ignore header field name
-	 */
-	boolean getIgnoreHeader () { BoolUtils.IsValue([params.ignoreHeader, currentCsvConnection?.ignoreHeader], true) }
-	/**
-	 * Ignore header field name
-	 */
-	void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
 	
 	/**
 	 * Required format values for output to file 

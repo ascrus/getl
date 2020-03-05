@@ -627,4 +627,47 @@ class CSVDriverTest extends getl.test.GetlTest {
             assertEquals(1000 * 5, csvTemp('test_append_threads').countRow())
         }
     }
+
+    @Test
+    void testSkipRows() {
+        Getl.Dsl(this) {
+            def csv = csvTemp {
+                header = true
+                fieldDelimiter = ','
+                field('id') { type = integerFieldType }
+                field('name')
+                field('value') { type = numericFieldType; length = 12; precision = 2 }
+            }
+            textFile(csv.fullFileName()) {
+                writeln 'id,name,value'
+                writeln 'bad,,1,,string'
+                writeln 'bad2string'
+                writeln '1,"name",123.45'
+                writeln '2,"name",678.90'
+            }
+
+            csv.readOpts().skipRows = null
+            this.shouldFail { csv.rows() }
+
+            csv.readOpts().skipRows = 2
+            def rows = csv.rows()
+            assertEquals(2, rows.size())
+            assertEquals(1, rows[0].id)
+            assertEquals('name', rows[0].name)
+            assertEquals(123.45, rows[0].value)
+            assertEquals(2, rows[1].id)
+            assertEquals('name', rows[1].name)
+            assertEquals(678.90, rows[1].value)
+
+            rows = csv.rows(limit: 1)
+            assertEquals(1, rows.size())
+            assertEquals(1, rows[0].id)
+            assertEquals('name', rows[0].name)
+            assertEquals(123.45, rows[0].value)
+
+            csv.field.clear()
+            csv.retrieveFields()
+            assertEquals(3, csv.field.size())
+        }
+    }
 }
