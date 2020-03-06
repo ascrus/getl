@@ -82,7 +82,7 @@ class TFS extends CSVConnection {
 		if (params.header == null) header = false
 
 		if (params.deleteOnExit == null) params.deleteOnExit = true
-		setPath((params.path as String)?:systemPath)
+		setPath((params.path as String)?:"$systemPath/tfs-files.getl")
 	}
 	
 	/**

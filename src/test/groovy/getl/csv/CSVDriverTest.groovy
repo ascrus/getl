@@ -309,24 +309,28 @@ class CSVDriverTest extends getl.test.GetlTest {
     void testRowDelimiter() {
         def con = new CSVConnection(conParams + [header: false, rowDelimiter: '\n'])
         def ds1 = new CSVDataset(connection: con, fileName: 'test_row_delimiter_1')
-        ds1.field << new Field(name: 'Id', type: Field.Type.INTEGER, isKey: true)
+        ds1.field << new Field(name: 'Id', type: Field.integerFieldType, isKey: true)
         ds1.field << new Field(name: 'Name', length: 50, isNull: false)
+        ds1.field << new Field(name: 'Result Time', type: Field.dateFieldType, isNull: false)
         new Flow().writeTo(dest: ds1) { updater ->
             (1..3).each { num ->
-                Map row = [id: num, name: "name $num"]
+                Map row = [id: num, name: "name $num", 'result time': DateUtils.ParseDate('2020-01-01')]
                 updater(row)
             }
         }
 
         def text1 = new File(ds1.fullFileName()).text
-        assertEquals('1,name 1\n2,name 2\n3,name 3\n', text1)
+        assertEquals('1,name 1,2020-01-01\n2,name 2,2020-01-01\n3,name 3,2020-01-01\n', text1)
 
         def ds2 = new CSVDataset(connection: con, fileName: 'test_row_delimiter_2', rowDelimiter: '\r\n')
         ds2.field = ds1.field
-        new Flow().copy(source: ds1, dest: ds2)
+        ds2.field('Result Time').name = 'result_time'
+        new Flow().copy(source: ds1, dest: ds2) { i, o ->
+            o.'result_time' = i.'result time'
+        }
 
         def text2 = new File(ds2.fullFileName()).text
-        assertEquals('1,name 1\r\n2,name 2\r\n3,name 3\r\n', text2)
+        assertEquals('1,name 1,2020-01-01\r\n2,name 2,2020-01-01\r\n3,name 3,2020-01-01\r\n', text2)
 
         ds1.drop()
         ds2.drop()

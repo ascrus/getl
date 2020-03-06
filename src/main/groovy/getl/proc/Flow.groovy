@@ -484,7 +484,9 @@ class Flow {
 		}
 
 		Closure<List<String>> initSource = {
-			if (prepareSource != null) prepareSource.call()
+			List<String> result = []
+			if (prepareSource != null)
+				result = prepareSource.call() as List<String>
 			
 			if (inheritFields) {
 				assignFieldToTemp(source, writer, map, excludeFields)
@@ -521,12 +523,12 @@ class Flow {
 				errorsDataset.openWrite()
 			}
 			
-			List<String> result = []
-			if (autoMap) {
+
+			/*if (autoMap) {
 				result = generateResult.sourceFields as List<String>
-			}
+			}*/
 			
-			result
+			return result
 		}
 		
 		sourceParams.prepare = initSource

@@ -221,4 +221,11 @@ class FileDataset extends Dataset {
 		writeDirective.clear()
 		writeDirective.putAll(value)
 	}
+
+	@Override
+	Object clone() {
+		def res = super.clone() as FileDataset
+		res.isTemporaryFile = this.isTemporaryFile
+		return res
+	}
 }

@@ -1008,7 +1008,9 @@ class FileUtils {
 			if (res == null) throw new ExceptionGETL("Resource file \"$fileName\" is not found!")
 		}
 		else {
-			res = CreateTempFile('resource_', "_${FileName(fileName)}")
+			def dir = "${TFS.systemPath}/resources.getl"
+			ValidPath(dir, true)
+			res = CreateTempFile('resource_', "_${FileName(fileName)}", dir)
 			res.withOutputStream {
 				it.write(resource.getBytes())
 			}
@@ -1021,10 +1023,11 @@ class FileUtils {
 	 * Create new temporary file
 	 * @param prefix name prefix
 	 * @param suffix name suffix
+	 * @param directory file creation directory
 	 * @return file object description
 	 */
-	static File CreateTempFile(String prefix = null, String suffix = null) {
-		def file = File.createTempFile(prefix?:'getl_', suffix?:'_temp', new File(TFS.systemPath))
+	static File CreateTempFile(String prefix = null, String suffix = null, String directory = null) {
+		def file = File.createTempFile(prefix?:'getl_', suffix?:'_temp', new File(directory?:TFS.systemPath))
 		file.deleteOnExit()
 		return file
 	}
