@@ -266,6 +266,8 @@ abstract class FileListProcessing {
         return res
     }
 
+    static private createDirectoryLock = new Object()
+
     /**
      * Change current directory
      * @param mans list of file manager
@@ -278,15 +280,19 @@ abstract class FileListProcessing {
                             boolean isCreateDir, int attempts, Integer time) {
         Operation(mans, attempts, time) { man ->
             man.changeDirectoryToRoot()
-            if (!man.existsDirectory(path)) {
-                if (!isCreateDir)
-                    throw new ExceptionFileListProcessing("Directory \"$path\" not found or does not exist for \"$man\"!")
+            synchronized (createDirectoryLock) {
+                if (!man.existsDirectory(path)) {
+                    if (!isCreateDir)
+                        throw new ExceptionFileListProcessing("Directory \"$path\" not found or does not exist for \"$man\"!")
 
-                man.createDir(path)
+                    man.createDir(path)
+                }
             }
             man.changeDirectory(path)
         }
     }
+
+    static private createLocalDirectoryLock = new Object()
 
     /**
      * Change current local directory
@@ -296,11 +302,13 @@ abstract class FileListProcessing {
      */
     static void ChangeLocalDir (Manager man, String path, boolean isCreateDir) {
         man.changeLocalDirectoryToRoot()
-        if (!man.existsLocalDirectory(path)) {
-            if (!isCreateDir)
-                throw new ExceptionFileListProcessing("Local directory \"$path\" not found or does not exist for \"$man\"!")
+        synchronized (createLocalDirectoryLock) {
+            if (!man.existsLocalDirectory(path)) {
+                if (!isCreateDir)
+                    throw new ExceptionFileListProcessing("Local directory \"$path\" not found or does not exist for \"$man\"!")
 
-            man.createLocalDir(path)
+                man.createLocalDir(path)
+            }
         }
 
         try {
@@ -560,7 +568,7 @@ abstract class FileListProcessing {
         else {
             def h2TempFileName = "$tempPath/${FileUtils.UniqueFileName()}"
             tmpConnection = new TDS(connectDatabase: h2TempFileName,
-                    login: "easyload", password: "easydata", autoCommit: true,
+                    login: "easyloader", password: "easydata", autoCommit: true,
                     inMemory: false,
                     connectProperty: [
                             LOCK_MODE: 3,
@@ -590,7 +598,7 @@ abstract class FileListProcessing {
             FileUtils.ValidFilePath(cacheFilePath)
             cacheConnection = new H2Connection().with {
                 connectDatabase = cacheFilePath
-                login = 'easyload'
+                login = 'easyloader'
                 password = 'easydata'
                 autoCommit = true
                 connected = true

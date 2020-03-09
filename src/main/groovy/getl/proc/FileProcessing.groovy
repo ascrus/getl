@@ -25,7 +25,6 @@
 package getl.proc
 
 import getl.data.Field
-import getl.driver.Driver
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionFileListProcessing
 import getl.exception.ExceptionFileProcessing
@@ -108,11 +107,21 @@ class FileProcessing extends FileListProcessing {
         setOnProcessFile(cl)
     }
 
-    /** Code to save cached data of processed files */
+    /** Code to init cached data of processed files before processing group */
+    Closure getOnInitCachedData() { params.onInitCachedData as Closure }
+    /** Code to init cached data of processed files before processing group */
+    void setOnInitCachedData(Closure value) { params.onInitCachedData = value }
+    /** Code to init cached data of processed files on starting group */
+    void initCachedData(@ClosureParams(value = SimpleType, options = ['java.util.Map'])
+                                Closure cl) {
+        setOnInitCachedData(cl)
+    }
+
+    /** Code to save cached data of processed files on finished group */
     Closure getOnSaveCachedData() { params.saveCachedData as Closure }
-    /** Code to save cached data of processed files */
+    /** Code to save cached data of processed files on finished group */
     void setOnSaveCachedData(Closure value) { params.saveCachedData = value }
-    /** Code to save cached data of processed files */
+    /** Code to save cached data of processed files on finished group */
     void saveCachedData(@ClosureParams(value = SimpleType, options = ['java.util.Map'])
                                 Closure cl) {
         setOnSaveCachedData(cl)
@@ -258,9 +267,7 @@ class FileProcessing extends FileListProcessing {
 
             if (curPath != uploadPath) {
                 ChangeDir([man], uploadPath, true, numberAttempts, timeAttempts)
-                synchronized (this) {
-                    ChangeLocalDir(man, uploadPath, true)
-                }
+                ChangeLocalDir(man, uploadPath, true)
                 curPath = uploadPath
             }
 
@@ -285,9 +292,7 @@ class FileProcessing extends FileListProcessing {
 
             if (curPath != uploadPath) {
                 ChangeDir([man], uploadPath, true, numberAttempts, timeAttempts)
-                synchronized (this) {
-                    ChangeLocalDir(man, uploadPath, true)
-                }
+                ChangeLocalDir(man, uploadPath, true)
                 curPath = uploadPath
             }
             def f = new File(man.localDirectoryFile.absolutePath + File.separator + fileName)
@@ -304,9 +309,7 @@ class FileProcessing extends FileListProcessing {
         void uploadLocalFile(String localFileName, String uploadPath) {
             if (curPath != uploadPath) {
                 ChangeDir([man], uploadPath, true, numberAttempts, timeAttempts)
-                synchronized (this) {
-                    ChangeLocalDir(man, uploadPath, true)
-                }
+                ChangeLocalDir(man, uploadPath, true)
                 curPath = uploadPath
             }
 
@@ -359,7 +362,7 @@ class FileProcessing extends FileListProcessing {
                 element.delTable = delTable
             }
 
-            sourceList << new ListPoolElement(man: src)
+            sourceList << element
         }
 
         // Create pool of archive processed file manager
@@ -409,6 +412,10 @@ class FileProcessing extends FileListProcessing {
                 def strgroup = groupfields.toString()
                 def pt = profile("Processing thread group $strgroup", 'byte')
 
+                // Init group
+                if (isCachedMode && onInitCachedData)
+                    onInitCachedData.call(groupfields)
+
                 // Get files by group
                 tmpProcessFiles.readOpts { where = "\"_HASH_\" = ${group.get('_hash_')}" }
                 def files = tmpProcessFiles.rows()
@@ -445,9 +452,7 @@ class FileProcessing extends FileListProcessing {
 
                                 if (sourceElement.curPath != filepath) {
                                     ChangeDir([sourceElement.man], filepath, false, numberAttempts, timeAttempts)
-                                    synchronized (this) {
-                                        ChangeLocalDir(sourceElement.man, filepath, true)
-                                    }
+                                    ChangeLocalDir(sourceElement.man, filepath, true)
                                     sourceElement.curPath = filepath
                                 }
                                 Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
@@ -615,6 +620,7 @@ class FileProcessing extends FileListProcessing {
                     }
                 }
 
+                // Finalize group
                 if (isCachedMode)
                     saveCachedDataGroup(groupfields)
                 else if (cacheTable != null)

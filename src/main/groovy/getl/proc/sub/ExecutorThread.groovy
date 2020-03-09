@@ -43,10 +43,10 @@ class ExecutorThread extends Thread {
         Object cloneObject
     }
 
+    final def cloneObjects = ([:] as Map<String, List<CloneObject>>)
+
     /** Thread parameters */
-    final def _params = [
-            cloneObjects: [:] as Map<String, List<CloneObject>>
-    ] as Map<String, Object>
+    final def _params = ([cloneObjects: cloneObjects] as Map<String, Object>)
 
     /** Thread parameters */
     Map<String, Object> getParams() { _params as Map<String, Object> }
@@ -57,7 +57,7 @@ class ExecutorThread extends Thread {
     }
 
     /** Groups clone objects */
-    Map<String, List<CloneObject>> getCloneObjects() { params.cloneObjects as Map<String, List<CloneObject>> }
+    Map<String, List<CloneObject>> getCloneObjects() { cloneObjects }
 
 
     /** List of group clone objects */

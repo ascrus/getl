@@ -43,7 +43,7 @@ class TDS extends H2Connection {
 		if (connectURL == null && params."inMemory" == null) params.inMemory = true
 		if (connectURL == null && connectDatabase == null) connectDatabase = "getl"
 		if (login == null && password == null) {
-			login = "easyload"
+			login = "easyloader"
 			password = "easydata"
 		}
 		if (connectProperty."PAGE_SIZE" == null) {
@@ -83,7 +83,7 @@ class TDS extends H2Connection {
 		}
 
 		if (login == null && password == null) {
-			login = "easyload"
+			login = "easyloader"
 			password = "easydata"
 		}
 		if (connectProperty."PAGE_SIZE" == null) {

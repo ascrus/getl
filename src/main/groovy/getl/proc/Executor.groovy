@@ -48,7 +48,7 @@ class Executor {
 	/**
 	 * Limit elements for executed (0-unlimited)
 	 */
-	public int limit = 0
+	public Integer limit
 	
 	/**
 	 * Time waiting for check finish process 
@@ -201,7 +201,11 @@ class Executor {
 	/** Checking element permission */
 	private Closure<Boolean> onValidAllowRun
 	/** Checking element permission */
-	void validAllowRun(Closure<Boolean> value) { onValidAllowRun = value }
+	Closure<Boolean> getOnValidAllowRun() { onValidAllowRun }
+	/** Checking element permission */
+	void setOnValidAllowRun(Closure<Boolean> value) { onValidAllowRun = value }
+	/** Checking element permission */
+	void validAllowRun(Closure<Boolean> value) { setOnValidAllowRun(value) }
 
 	/** Component runs threads */
 	boolean isRunThreads = false
@@ -234,80 +238,91 @@ class Executor {
 		counterProcessed.clear()
 
 		if (elements == null) elements = list
-		if (elements == null || elements.isEmpty()) throw new ExceptionGETL("List of items to process is empty!")
+
+		if (elements == null || elements.isEmpty())
+			throw new ExceptionGETL("List of items to process is empty!")
 
 		if (countThread == null) countThread = countProc?:elements?.size()
 
 		def runCode = { Map m ->
-			def num = m.num + 1
-			def element = m.element
+			def num = m.num
+			def threadList = m.element as List
+			m.put('start',  new Date())
+			def curElement
 			try {
-				if (limit == 0 || num <= limit) {
-					if ((!isError || !abortOnError) && !isInterrupt) {
-						synchronized (m) {
-							m.put('start',  new Date())
-						}
-						synchronized (threadActive) {
-							threadActive.add(m)
-						}
+				synchronized (threadActive) {
+					threadActive.add(m)
+				}
+
+				threadList.each { element ->
+					if (!((!isError || !abortOnError) && !isInterrupt)) {
+						directive = Closure.DONE
+						return
+					}
+
+					curElement = element
+
+					def allowRun = true
+					if (onValidAllowRun != null) {
+						allowRun = onValidAllowRun.call(element)
+					}
+					if (allowRun) {
 						try {
-							def allowRun = true
-							if (onValidAllowRun != null) {
-								allowRun = onValidAllowRun.call(element)
-							}
-							if (allowRun) {
-								code.call(element)
-								counterProcessed.nextCount()
-							}
-							else
-								setInterrupt(true)
+							code.call(element)
+							counterProcessed.nextCount()
 						}
-						finally {
-							if (Thread.currentThread() instanceof ExecutorThread) {
-								def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
-								try {
-									listDisposeThreadResource.each { Closure disposeCode ->
-										disposeCode.call(cloneObjects)
-									}
-								}
-								finally {
-									cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
-										objects?.each { ExecutorThread.CloneObject obj ->
-											obj.origObject = null
-											obj.cloneObject = null
-										}
-									}
-									cloneObjects.clear()
-								}
-							}
-						}
-						synchronized (threadActive) {
-							threadActive.remove(m)
-						}
-						synchronized (m) {
-							m.put('finish', new Date())
-							m.remove('threadSubmit')
+						catch (Throwable e) {
+							if (abortOnError)
+								throw e
+
+							if (logErrors)
+								Logs.Exception(e, 'thread element', element.toString())
 						}
 					}
 				}
 			}
 			catch (Throwable e) {
-				processRunError(e, m, num, element, elements)
+				//noinspection GroovyVariableNotAssigned
+				processRunError(e, m, num, curElement, threadList)
+			}
+			finally {
+				if (Thread.currentThread() instanceof ExecutorThread) {
+					def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
+					try {
+						listDisposeThreadResource.each { Closure disposeCode ->
+							disposeCode.call(cloneObjects)
+						}
+					}
+					finally {
+						cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
+							objects?.each { ExecutorThread.CloneObject obj ->
+								obj.origObject = null
+								obj.cloneObject = null
+							}
+						}
+						cloneObjects.clear()
+					}
+				}
+			}
+			synchronized (threadActive) {
+				threadActive.remove(m)
+			}
+			synchronized (m) {
+				m.put('finish', new Date())
+				m.remove('threadSubmit')
 			}
 		}
 
-		def threadPool = Executors.newFixedThreadPool(countThread, new ExecutorFactory())
+		def listElements = ListUtils.SplitList(elements, countThread, ((limit > 0)?limit:null))
+		def threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
 		isRunThreads = true
 		try {
-			def num = 0
-			elements.each { n ->
-				Map r = Collections.synchronizedMap(new HashMap())
-				r.num = num
-				r.element = n
-				r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable)
+			for (int i = 0; i < listElements.size(); i++) {
+				def r = [:] as Map<String, Object>
+				r.num = i
+				r.element = listElements[i]
+				r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable) as Future
 				threadList << r
-
-				num++
 			}
 			threadPool.shutdown()
 
@@ -330,7 +345,7 @@ class Executor {
 
 			if (isError && abortOnError) {
 				def objects = []
-				num = 0
+				def num = 0
 				exceptions.each { obj, Throwable e ->
 					num++
 					if (debugElementOnError) {

@@ -24,6 +24,7 @@ Copyright (C) EasyData Company LTD
 
 package getl.utils
 
+import getl.exception.ExceptionGETL
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 
@@ -264,4 +265,38 @@ class ListUtils {
 
         return result
     }
+
+	/**
+	 * Divide the list of items into sub-lists by the specified number of divisor
+	 * @param list original list of items
+	 * @param divisor divisor value
+	 * @param limit split no more n-elements
+	 * @return list of lists of separated items
+	 */
+	static List<List> SplitList(List list, int divisor, Integer limit = null) {
+		if (divisor <= 0)
+			throw new ExceptionGETL('The divisor must be greater than zero!')
+		if (limit != null && limit <= 0)
+			throw new ExceptionGETL('The limit must be greater than zero!')
+
+		def res = ([] as List<List>)
+		if (list.isEmpty()) return res
+
+		def cur = 0
+		def size = 0
+		for (long i = 0; i < list.size(); i++) {
+			if (limit != null && i == limit) break
+
+			if (size == cur) {
+				res << ([] as List)
+				size++
+			}
+
+			res[cur] << list[i]
+			cur++
+			if (cur == divisor) cur = 0
+		}
+
+		return res
+	}
 }
