@@ -506,19 +506,26 @@ abstract class FileListProcessing {
 
     /** Clean manager temporary properties */
     protected void cleanProperties() {
-        cacheConnection?.connected = false
-        cacheConnection = null
+        if (cacheConnection != null) {
+            cacheConnection.connected = false
+            cacheConnection = null
+        }
+
         cacheTable = null
         currentStory = null
 
         if (tmpProcessFiles != null)
             tmpProcessFiles.drop(ifExists: true)
-        tmpConnection?.connected = false
-        tmpConnection = null
+
+        if (tmpConnection != null) {
+            tmpConnection.connected = false
+            tmpConnection = null
+        }
         tmpProcessFiles = null
 
         if (tmpPath != null)
             FileUtils.DeleteFolder(tmpPath, true, true)
+
         tmpPath = null
     }
 
@@ -551,7 +558,7 @@ abstract class FileListProcessing {
             tmpConnection = new TDS(autoCommit: true)
         }
         else {
-            def h2TempFileName = "$tmpPath/${FileUtils.UniqueFileName()}"
+            def h2TempFileName = "$tempPath/${FileUtils.UniqueFileName()}"
             tmpConnection = new TDS(connectDatabase: h2TempFileName,
                     login: "easyload", password: "easydata", autoCommit: true,
                     inMemory: false,

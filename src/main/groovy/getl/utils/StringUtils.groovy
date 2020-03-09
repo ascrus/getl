@@ -529,7 +529,7 @@ class StringUtils {
 
 	/**
 	 * Format with group delimiter
-	 * @param value numeric value
+	 * @param value integer value
 	 * @return formatted string
 	 */
 	static String WithGroupSeparator(Integer value) {
@@ -538,7 +538,7 @@ class StringUtils {
 
 	/**
 	 * Format with group delimiter
-	 * @param value numeric value
+	 * @param value long value
 	 * @return formatted string
 	 */
 	static String WithGroupSeparator(Long value) {
@@ -547,10 +547,19 @@ class StringUtils {
 
 	/**
 	 * Format with group delimiter
-	 * @param value numeric value
+	 * @param value biginteger value
 	 * @return formatted string
 	 */
 	static String WithGroupSeparator(BigInteger value) {
-		return String.format('%,d', value)
+		return String.format('%,d', value.longValue())
+	}
+
+	/**
+	 * Format with group delimiter
+	 * @param value bigdecimal value
+	 * @return formatted string
+	 */
+	static String WithGroupSeparator(BigDecimal value) {
+		return String.format('%,d', value.longValue())
 	}
 }

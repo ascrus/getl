@@ -171,19 +171,22 @@ class FileProcessing extends FileListProcessing {
 
     @Override
     protected void cleanProperties() {
-        super.cleanProperties()
+        try {
+            if (delFilesTable != null) {
+                delFilesTable.drop(ifExists: true)
+                delFilesTable = null
+            }
 
-        if (delFilesTable != null) {
-            delFilesTable.drop(ifExists: true)
-            delFilesTable = null
+            if (storageProcessedFiles != null) {
+                DisconnectFrom([storageProcessedFiles])
+            }
+
+            if (storageErrorFiles != null) {
+                DisconnectFrom([storageErrorFiles])
+            }
         }
-
-        if (storageProcessedFiles != null) {
-            DisconnectFrom([storageProcessedFiles])
-        }
-
-        if (storageErrorFiles != null) {
-            DisconnectFrom([storageErrorFiles])
+        finally {
+            super.cleanProperties()
         }
     }
 
