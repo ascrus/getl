@@ -580,4 +580,10 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	Object cloneConnection() {
 		return cloneSavePointManagerConnection()
 	}
+
+	void dslCleanProps() {
+		sysParams.dslNameObject = null
+		sysParams.dslThisObject = null
+		sysParams.dslOwnerObject = null
+	}
 }

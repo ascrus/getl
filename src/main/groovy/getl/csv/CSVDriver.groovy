@@ -404,10 +404,12 @@ class CSVDriver extends FileDriver {
 	@CompileStatic
 	@Override
 	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		if (code == null) throw new ExceptionGETL('Required process code')
+		if (code == null)
+			throw new ExceptionGETL('Required process code')
 		
 		def cds = dataset as CSVDataset
-		if (cds.fileName == null) throw new ExceptionGETL('Dataset required fileName')
+		if (cds.fileName == null)
+			throw new ExceptionGETL('Dataset required fileName')
 		
 		boolean escaped = BoolUtils.IsValue(params.escaped, cds.escaped)
 		boolean readAsText = BoolUtils.IsValue(params.readAsText)
@@ -417,28 +419,34 @@ class CSVDriver extends FileDriver {
 
 		Closure filter = (Closure)params."filter"
 
-		long countRec = 0
-		
 		def p = readParamDataset(cds, params)
-		
-		FileManager fm = new FileManager(rootPath: ((CSVConnection)cds.connection).path)
-		fm.connect()
+		long countRec = 0
+		Boolean isSplit = BoolUtils.IsValue(p.isSplit)
 
-		def fileMask = fileMaskDataset(cds, (boolean)p.isSplit)
-		def vars = [:]
-		if (p.isSplit) {
-			vars.put('number', [type: Field.Type.INTEGER, len: 4])
-		}
-		def filePath = new Path([mask: fileMask, vars: vars])
-		
-		fm.buildList(path: filePath)
-		def filesParams = (p.isSplit)?[order: ['number']]:[:]
-		def files = fm.fileList.rows(filesParams)
-		if (files.isEmpty())
-			throw new ExceptionGETL("File(s) \"${cds.fileName}\" not found or invalid path \"${((CSVConnection)cds.connection).path}\"")
+		def fileMask = fileMaskDataset(cds, isSplit)
+		List<Map> files
 		Integer portion = 0
-		Reader bufReader = getFileReader(dataset as FileDataset, params, (Integer)files[portion].number)
-		
+		Reader bufReader
+		if (isSplit) {
+			FileManager fm = new FileManager(rootPath: ((CSVConnection) cds.connection).path)
+			fm.connect()
+
+			def vars = [:]
+			vars.put('number', [type: Field.Type.INTEGER, len: 4])
+			def filePath = new Path([mask: fileMask, vars: vars])
+
+			fm.buildList(path: filePath)
+			def filesParams = [order: ['number']]
+			files = fm.fileList.rows(filesParams)
+			if (files.isEmpty())
+				throw new ExceptionGETL("File(s) \"${cds.fileName}\" not found or invalid path \"${((CSVConnection) cds.connection).path}\"")
+			bufReader = getFileReader(dataset as FileDataset, params, (Integer)files[portion].number)
+		}
+		else {
+			files = [] as List<Map>
+			bufReader = getFileReader(dataset as FileDataset, params, null)
+		}
+
 		Closure processError = (params.processError != null)?params.processError as Closure:null
 		boolean isValid = BoolUtils.IsValue([params.isValid, cds.constraintsCheck], false)
 		CsvPreference pref = new CsvPreference.Builder((char)p.quoteStr, (int)p.fieldDelimiter, (String)p.rowDelimiter).useQuoteMode((QuoteMode)p.qMode).build()
@@ -550,7 +558,7 @@ class CSVDriver extends FileDriver {
 		Long splitSize
 		boolean formatOutput = true
 		long batchSize = 500L
-		List<Map> rows = new ArrayList<Map>()
+		List<Map> rows = new LinkedList<Map>()
 		long current = 0
 		long batch = 0
 		long fieldDelimiterSize = 0
@@ -562,6 +570,18 @@ class CSVDriver extends FileDriver {
 		Integer portion
 		long countCharacters = 0
 		FileWriteOpts opt
+
+		void free() {
+			writer = null
+			encoder = null
+			pref = null
+			params = null
+			rows = null
+			onSaveBatch = null
+			onSplitFile = null
+			bufWriter = null
+			opt = null
+		}
 	}
 
 	@Override
@@ -762,9 +782,16 @@ class CSVDriver extends FileDriver {
 			
 			dataset.params.countWriteCharacters = wp.countCharacters
 			dataset.params.countWritePortions = wp.portion
+
+			wp.free()
 		}
 
-		super.closeWrite(dataset)
+		try {
+			super.closeWrite(dataset)
+		}
+		finally {
+			dataset.driver_params = null
+		}
 	}
 
 	protected static long readLinesCount(CSVDataset dataset) {

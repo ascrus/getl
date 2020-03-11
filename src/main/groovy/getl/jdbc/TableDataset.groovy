@@ -46,7 +46,7 @@ import getl.utils.MapUtils
 import getl.utils.Path
 import getl.cache.*
 import getl.exception.ExceptionGETL
-
+import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -218,18 +218,27 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Return count rows from table */
-	long countRow(String where = null, Map procParams = [:]) {
+	long countRow(String where = null, Map procParams = null) {
 		validConnection()
+		connection.tryConnect()
 
-		QueryDataset q = new QueryDataset(connection: connection, query: "SELECT Count(*) AS count_rows FROM ${fullNameDataset()}")
+		def sql = "SELECT Count(*) AS count_rows FROM ${fullNameDataset()}".toString()
 		where = where?:readDirective.where
-		if (where != null && where != '') q.query += " WHERE " + where
-		def p = [:]
-		if (!procParams?.isEmpty())
-			p.queryParams = procParams
-		def r = q.rows(p)
+		if (where != null && where != '') sql += " WHERE " + where
+		if (procParams != null && !procParams.isEmpty())
+			sql = StringUtils.EvalMacroString(sql, procParams)
 
-		return Long.valueOf((r[0].count_rows).toString()).longValue()
+		Long res = 0
+		currentJDBCConnection.sqlConnection.query(sql) { rs ->
+			rs.next()
+			res = rs.getLong(1)
+		}
+
+		/*currentJDBCConnection.sqlConnection.eachRow(sql) { row ->
+			res = Long.valueOf(row.count_rows.toString()).longValue()
+		}*/
+
+		return res
 	}
 
 	/**
@@ -396,12 +405,14 @@ class TableDataset extends JDBCDataset {
 
 		ProcessTime pt
 		if (getl != null)
-            pt = getl.startProcess("${fullTableName}: load files", 'file')
+            pt = getl.startProcess("${fullTableName}: load files", 'rows')
 
 		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def bulkParams = MapUtils.DeepCopy(bulkLoadDirective) as Map<String, Object>
+		bulkParams.put('sourceDataset', source)
 		def parent = newBulkLoadTableParams(this, thisObject, true, bulkParams)
 		parent.runClosure(cl)
+		bulkParams.remove('sourceDataset')
 
 		def files = parent.files
 		if (files == null) files = [source.fileNameWithExt()]

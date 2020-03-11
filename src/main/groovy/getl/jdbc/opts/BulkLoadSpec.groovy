@@ -24,6 +24,7 @@
 
 package getl.jdbc.opts
 
+import getl.csv.CSVDataset
 import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
 import getl.utils.BoolUtils
@@ -228,4 +229,9 @@ class BulkLoadSpec extends BaseSpec {
 
         params.moveFileTo = value
     }
+
+    /** Source file prototype for bulk load */
+    CSVDataset getSourceDataset() { params.sourceDataset as CSVDataset }
+    /** Source file prototype for bulk load */
+    void setSourceDataset(CSVDataset value) { params.sourceDataset = value }
 }

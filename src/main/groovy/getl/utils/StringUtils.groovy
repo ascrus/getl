@@ -64,7 +64,7 @@ class StringUtils {
 	static String SetValueString(String value, Map vars) {
 		vars.each { k, v ->
 			if (v == null) throw new ExceptionGETL("Invalid value null in variable \"$k\"")
-			value = value.replace('{' + k + '}', (String)v)
+			value = value.replace('{' + k + '}', v.toString())
 		}
 
 		return value
@@ -80,20 +80,31 @@ class StringUtils {
 	}
 	
 	/**
-	 * Evaluate string with macros
-	 * @param value
-	 * @param vars
-	 * @return
+	 * Set for string {variables}
+	 * @param value parsing string
+	 * @param vars variables
+	 * @param errorWhenUndefined throw an error if non-passed parameters are found in the string
+	 * @return converted string
 	 */
-	static String EvalMacroString(String value, Map vars) {
-		if (value == null) return null
-		if (vars == null) throw new ExceptionGETL("Variables can not be null!")
+	static String EvalMacroString(String value, Map vars, Boolean errorWhenUndefined = true) {
+		if (value == null)
+			return null
+
+		if (vars == null)
+			throw new ExceptionGETL("Variables can not be null!")
+
+		errorWhenUndefined = BoolUtils.IsValue(errorWhenUndefined, true)
+
 		vars.each { k, v ->
-			if (v instanceof Date) v = DateUtils.FormatDateTime((Date)v)
-			if (v != null && !(v instanceof Map) && !(v instanceof List)) value = value.replace('{' + k + '}', (String)v)
+			if (v instanceof Date)
+				v = DateUtils.FormatDateTime(v as Date)
+
+			if (v != null && !(v instanceof Map) && !(v instanceof List))
+				value = value.replace('{' + k + '}', v.toString())
 		}
 		
-		if (value.matches("(?i).*([{][a-z0-9-_]+[}]).*")) throw new ExceptionGETL("Unknown variable in \"$value\", known vars: $vars")
+		if (errorWhenUndefined && value.matches("(?i).*([{][a-z0-9-_]+[}]).*"))
+			throw new ExceptionGETL("Unknown variable in \"$value\", known vars: $vars")
 
 		return value
 	}

@@ -315,7 +315,7 @@ class VerticaDriver extends JDBCDriver {
 		if (!autoCommit) sb << 'NO COMMIT\n'
 
 		def sql = sb.toString()
-		dest.sysParams.sql = sql
+//		dest.sysParams.sql = sql
 		//println sql
 
 		dest.writeRows = 0

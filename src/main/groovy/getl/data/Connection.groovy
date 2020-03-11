@@ -390,7 +390,8 @@ class Connection implements Cloneable, GetlRepository {
 	
 	/** Validation  connected is true and connecting if has no */
 	void tryConnect () {
-		if (driver.isSupport(Driver.Support.CONNECT)) connected = true
+		if (driver.isSupport(Driver.Support.CONNECT) && !connected)
+			connected = true
 	}
 	
 	/** Connection has current transaction */
@@ -508,5 +509,11 @@ class Connection implements Cloneable, GetlRepository {
 	@Override
 	Object clone() {
 		return cloneConnection()
+	}
+
+	void dslCleanProps() {
+		sysParams.dslNameObject = null
+		sysParams.dslThisObject = null
+		sysParams.dslOwnerObject = null
 	}
 }

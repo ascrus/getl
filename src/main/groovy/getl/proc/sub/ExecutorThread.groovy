@@ -24,6 +24,8 @@
 
 package getl.proc.sub
 
+import getl.exception.ExceptionGETL
+import getl.lang.sub.GetlRepository
 import groovy.transform.InheritConstructors
 
 /**
@@ -59,14 +61,24 @@ class ExecutorThread extends Thread {
     /** Groups clone objects */
     Map<String, List<CloneObject>> getCloneObjects() { cloneObjects }
 
-
-    /** List of group clone objects */
+    /**
+     * Get a list of a group of cloned objects
+     * @param groupName object group name
+     * @return list of group clone objects
+     */
     List<CloneObject> listCloneObject(String groupName) {
+        if (groupName == null)
+            throw new ExceptionGETL('Group name required!')
+
         return cloneObjects.get(groupName) as List<CloneObject>
     }
 
 
-    /** Register group of clone object list */
+    /**
+     * Register group of clone object list
+     * @param groupName object group name
+     * @return list of registered group objects
+     */
     List<CloneObject> registerCloneObjectGroup(String groupName) {
         def list = listCloneObject(groupName)
         if (list == null) {
@@ -77,11 +89,21 @@ class ExecutorThread extends Thread {
         return list
     }
 
-    /** Register clone object for specified group */
+    /**
+     * Register clone object for specified group
+     * @param groupName object group name
+     * @param obj cloned object
+     * @param cloneCode cloning code
+     * @return cloned object
+     */
     Object registerCloneObject(String groupName, Object obj, Closure cloneCode) {
         if (obj == null) return null
         def list = registerCloneObjectGroup(groupName)
-        def clone = list.find { it.origObject == obj }
+
+        def clone = list.find {
+            it.origObject == obj
+        }
+
         if (clone == null) {
             clone = new CloneObject(origObject: obj)
             if (cloneCode != null) clone.cloneObject = cloneCode.call(obj) else clone.cloneObject = obj.clone()
@@ -89,5 +111,22 @@ class ExecutorThread extends Thread {
         }
 
         return clone.cloneObject
+    }
+
+    /**
+     * Find a cloned object by name
+     * @param groupName object group name
+     * @param name object name
+     * @return found object
+     */
+    Object findDslCloneObject(String groupName, String name) {
+        if (name == null)
+            throw new ExceptionGETL('Object name required!')
+
+        def list = registerCloneObjectGroup(groupName)
+        def res = list.find {
+            (it.cloneObject instanceof GetlRepository) && ((it.cloneObject as GetlRepository).dslNameObject == name)
+        }
+        return res?.cloneObject
     }
 }

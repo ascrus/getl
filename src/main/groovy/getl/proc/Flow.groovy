@@ -35,6 +35,8 @@ import getl.tfs.*
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
+import java.util.concurrent.ConcurrentHashMap
+
 /**
  * Data flow manager class 
  * @author Alexsey Konstantinov
@@ -49,7 +51,7 @@ class Flow {
 				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams',
 				 'autoMap', 'autoConvert', 'autoTran', 'clear', 'saveErrors', 'excludeFields', 'mirrorCSV',
 				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', /*'onWrite', */'onDone',
-				 'process', 'debug', 'writeSynch'])
+				 'process', 'debug', 'writeSynch', 'cacheName'])
 		methodParams.register('copy.destChild',
 				['dataset', 'datasetParams', 'process', 'init', 'done'])
 
@@ -153,12 +155,13 @@ class Flow {
 		return result
 	}
 	
-	/**
-	 * Transformation fields script
-	 */
+	/** Transformation fields script */
 	public String scriptMap
 
-	protected static String GenerateMap(Dataset source, Dataset dest, Map fieldMap, Boolean autoConvert, List<String> excludeFields, List<String> notConverted, Map result) {
+	/** Cache code repository */
+	private static final def cacheCode = new ConcurrentHashMap<String, Map<String, Object>>()
+
+	protected static String GenerateMap(Dataset source, Dataset dest, Map fieldMap, Boolean autoConvert, List<String> excludeFields, List<String> notConverted, String cacheName, Map result) {
 		def countMethod = (dest.field.size() / 100).intValue() + 1
 		def curMethod = 0
 
@@ -268,7 +271,25 @@ class Flow {
 		if (cf == 0)
 			throw new ExceptionGETL("No fields were found for copying data from source \"$source\" to destination \"$dest\"!")
 
-		result.code = GenerationUtils.EvalGroovyScript(scriptMap)
+		synchronized (cacheCode) {
+			if (cacheName != null) {
+				def cache = cacheCode.get(cacheName)
+				if (cache != null && (cache.hash as Integer) == scriptMap.hashCode())
+					result.code = cache.code as Closure
+			}
+
+			if (result.code == null) {
+				result.code = GenerationUtils.EvalGroovyClosure(scriptMap)
+				if (cacheName != null) {
+					def cache = cacheCode.get(cacheName)
+					if (cache == null) {
+						cache = new ConcurrentHashMap<String, Object>()
+						cacheCode.put(cacheName, cache)
+					}
+					cache.putAll([hash: scriptMap.hashCode(), code: result.code])
+				}
+			}
+		}
 		result.sourceFields = sourceFields
 		result.destFields = destFields
 
@@ -299,7 +320,10 @@ class Flow {
 		errorsDataset = null
 		countRow = 0
 
-		if (map_code == null && params.process != null) map_code = params.process as Closure
+		if (map_code == null && params.process != null)
+			map_code = params.process as Closure
+
+		String cacheName = params.cacheName
 
 		Dataset source = params.source as Dataset
 		if (source == null) throw new ExceptionGETL("Required parameter \"source\"")
@@ -475,7 +499,7 @@ class Flow {
 		def initDest = {
 			List<String> result = []
 			if (autoMap) {
-				scriptMap = GenerateMap(source, writer, map, autoConvert, excludeFields, notConverted, generateResult)
+				scriptMap = GenerateMap(source, writer, map, autoConvert, excludeFields, notConverted, cacheName, generateResult)
 				auto_map_code = generateResult.code as Closure
 				result = generateResult.destFields as List<String>
 			}

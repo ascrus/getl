@@ -586,7 +586,6 @@ Examples:
      * @param filter object filtering code
      * @return list of connection names according to specified conditions
      */
-    @Synchronized
     List<String> listConnections(String mask = null, List connectionClasses = null,
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                          Closure<Boolean> filter = null) {
@@ -729,7 +728,6 @@ Examples:
     }
 
     /** Register connection in repository */
-    @Synchronized
     protected Connection registerConnection(String connectionClassName, String name, Boolean registration = false) {
         _repositoryConnections.register(connectionClassName, name, registration)
     }
@@ -740,7 +738,6 @@ Examples:
      * @param name name object in repository
      * @param validExist checking if an object is registered in the repository (default true)
      */
-    @Synchronized
     Connection registerConnectionObject(Connection obj, String name = null, Boolean validExist = true) {
         _repositoryConnections.registerObject(obj, name, validExist)
     }
@@ -751,7 +748,6 @@ Examples:
      * @param connectionClasses list of processed connection classes
      * @param filter filter for detect connections to unregister
      */
-    @Synchronized
     void unregisterConnection(String mask = null, List connectionClasses = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                       Closure<Boolean> filter = null) {
@@ -770,7 +766,6 @@ Examples:
      * @param filter object filtering code
      * @return list of dataset names according to specified conditions
      */
-    @Synchronized
     List<String> listDatasets(String mask = null, List datasetClasses = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                       Closure<Boolean> filter = null) {
@@ -935,7 +930,6 @@ Examples:
     }
 
     /** Set default connection for use in datasets */
-    @Synchronized
     protected void setDefaultConnection(String datasetClassName, Dataset ds) {
         if (datasetClassName == null)
             throw new ExceptionDSL('Dataset class name cannot be null!')
@@ -958,7 +952,19 @@ Examples:
     private JDBCConnection _lastJDBCDefaultConnection
 
     /** Last used JDBC default connection */
-    JDBCConnection getLastJdbcDefaultConnection() { _lastJDBCDefaultConnection }
+    JDBCConnection getLastJdbcDefaultConnection() {
+        JDBCConnection res
+        synchronized (_defaultJDBCConnection) {
+            res = _lastJDBCDefaultConnection
+        }
+        return res
+    }
+    /** Last used JDBC default connection */
+    void setLastJdbcDefaultConnection(JDBCConnection value) {
+        synchronized (_defaultJDBCConnection) {
+            _lastJDBCDefaultConnection = value
+        }
+    }
 
     /** Default JDBC connection for datasets */
     private def _defaultJDBCConnection = new ConcurrentHashMap<String, JDBCConnection>()
@@ -1003,7 +1009,7 @@ Examples:
                 throw new ExceptionDSL("$datasetClassName is not jdbc dataset class!")
             _defaultJDBCConnection.put(datasetClassName, value)
         }
-        _lastJDBCDefaultConnection = value
+        setLastJdbcDefaultConnection(value)
 
         return value
     }
@@ -1012,7 +1018,19 @@ Examples:
     private FileConnection _lastFileDefaultConnection
 
     /** Last used file default connection */
-    FileConnection getLastFileDefaultConnection() { _lastFileDefaultConnection }
+    FileConnection getLastFileDefaultConnection() {
+        FileConnection res
+        synchronized (_defaultFileConnection) {
+            res = _lastFileDefaultConnection
+        }
+        return res
+    }
+    /** Last used file default connection */
+    void setLastFileDefaultConnection(FileConnection value) {
+        synchronized (_defaultFileConnection) {
+            _lastFileDefaultConnection = value
+        }
+    }
 
     private def _defaultFileConnection = new ConcurrentHashMap<String, FileConnection>()
 
@@ -1055,7 +1073,7 @@ Examples:
 
             _defaultFileConnection.put(datasetClassName, value)
         }
-        _lastFileDefaultConnection = value
+        setLastFileDefaultConnection(value)
 
         return value
     }
@@ -1064,7 +1082,19 @@ Examples:
     private Connection _lastOtherDefaultConnection
 
     /** Last used other type default connection */
-    Connection getLastOtherDefaultConnection() { _lastOtherDefaultConnection }
+    Connection getLastOtherDefaultConnection() {
+        Connection res
+        synchronized (_defaultOtherConnection) {
+            res = _lastOtherDefaultConnection
+        }
+        return res
+    }
+    /** Last used other type default connection */
+    void setLastOtherDefaultConnection(Connection value) {
+        synchronized (_defaultOtherConnection) {
+            _lastOtherDefaultConnection = value
+        }
+    }
 
     private def _defaultOtherConnection = new ConcurrentHashMap<String, Connection>()
 
@@ -1107,7 +1137,7 @@ Examples:
 
             _defaultOtherConnection.put(datasetClassName, value)
         }
-        _lastOtherDefaultConnection = value
+        setLastOtherDefaultConnection(value)
 
         return value
     }
@@ -1131,7 +1161,6 @@ Examples:
     }
 
     /** Register dataset in repository */
-    @Synchronized
     protected Dataset registerDataset(Connection connection, String datasetClassName, String name, Boolean registration = false,
                                       Connection defaultConnection = null, Class classConnection = null, Closure cl = null) {
         _repositoryDatasets.register(connection, datasetClassName, name, registration, defaultConnection, classConnection, cl)
@@ -1143,7 +1172,6 @@ Examples:
      * @param name name object in repository
      * @param validExist checking if an object is registered in the repository (default true)
      */
-    @Synchronized
     Dataset registerDatasetObject(Dataset obj, String name = null, Boolean validExist = true) {
         _repositoryDatasets.registerObject(obj, name, validExist) as Dataset
     }
@@ -1154,7 +1182,6 @@ Examples:
      * @param datasetClasses dataset class list
      * @param filter object filtering code
      */
-    @Synchronized
     void unregisterDataset(String mask = null, List datasetClasses = null,
                            @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                    Closure<Boolean> filter = null) {
@@ -1172,7 +1199,6 @@ Examples:
      * @param filter object filtering code
      * @return list of history point manager names according to specified conditions
      */
-    @Synchronized
     List<String> listHistorypoints(String mask = null, Closure<Boolean> filter = null) {
         _repositoryHistorypoints.list(mask, null, filter)
     }
@@ -1227,7 +1253,6 @@ Examples:
      * @param name name in repository
      * @registration registering
      */
-    @Synchronized
     protected SavePointManager registerHistoryPoint(JDBCConnection connection, String name,  Boolean registration = false,
                                                     Closure cl = null) {
         _repositoryHistorypoints.register(connection, _repositoryHistorypoints.SAVEPOINTMANAGER, name, registration,
@@ -1240,7 +1265,6 @@ Examples:
      * @param name name object in repository
      * @param validExist checking if an object is registered in the repository (default true)
      */
-    @Synchronized
     SavePointManager registerHistoryPointObject(SavePointManager obj, String name = null, Boolean validExist = true) {
         _repositoryHistorypoints.registerObject(obj, name, validExist) as SavePointManager
     }
@@ -1250,7 +1274,6 @@ Examples:
      * @param mask filter mask (use Path expression syntax)
      * @param filter object filtering code
      */
-    @Synchronized
     void unregisterHistorypoint(String mask = null,
                                 @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.SavePointManager'])
                                         Closure<Boolean> filter = null) {
@@ -1268,7 +1291,6 @@ Examples:
      * @param filter object filtering code
      * @return list of sequences names according to specified conditions
      */
-    @Synchronized
     List<String> listSequences(String mask = null, Closure<Boolean> filter = null) {
         _repositorySequences.list(mask, null, filter)
     }
@@ -1323,7 +1345,6 @@ Examples:
      * @param name name in repository
      * @registration registering
      */
-    @Synchronized
     protected Sequence registerSequence(Connection connection, String name, Boolean registration = false,
                                         Closure cl = null) {
         _repositorySequences.register(connection, _repositorySequences.SEQUENCE, name, registration,
@@ -1336,7 +1357,6 @@ Examples:
      * @param name name object in repository
      * @param validExist checking if an object is registered in the repository (default true)
      */
-    @Synchronized
     Sequence registerSequenceObject(Sequence obj, String name = null, Boolean validExist = true) {
         _repositorySequences.registerObject(obj, name, validExist) as Sequence
     }
@@ -1346,7 +1366,6 @@ Examples:
      * @param mask filter mask (use Path expression syntax)
      * @param filter object filtering code
      */
-    @Synchronized
     void unregisterSequence(String mask = null,
                             @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.Sequence'])
                                     Closure<Boolean> filter = null) {
@@ -1365,7 +1384,6 @@ Examples:
      * @param filter object filtering code
      * @return list of file manager names according to specified conditions
      */
-    @Synchronized
     List<String> listFilemanagers(String mask = null, List filemanagerClasses = null,
                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                           Closure<Boolean> filter = null) {
@@ -1466,7 +1484,6 @@ Examples:
     }
 
     /** Register file manager in repository */
-    @Synchronized
     protected Manager registerFileManager(String fileManagerClassName, String name,
                                           Boolean registration = false) {
         _repositoryFilemanagers.register(fileManagerClassName, name, registration)
@@ -1478,7 +1495,6 @@ Examples:
      * @param name name object in repository
      * @param validExist checking if an object is registered in the repository (default true)
      */
-    @Synchronized
     Manager registerFileManagerObject(Manager obj, String name = null, Boolean validExist = true) {
         _repositoryFilemanagers.registerObject(obj, name, validExist)
     }
@@ -1489,7 +1505,6 @@ Examples:
      * @param connectionClasses list of processed file managers classes
      * @param filter filter for detect connections to unregister
      */
-    @Synchronized
     void unregisterFilemanager(String mask = null, List filemanagerClasses = null,
                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                        Closure<Boolean> filter = null) {

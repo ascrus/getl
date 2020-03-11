@@ -1296,7 +1296,8 @@ ${extend}'''
 		if (dataset.params.queryParams != null) qp.putAll(dataset.params.queryParams as Map)
 		if (params.queryParams != null) qp.putAll(params.queryParams as Map)
 		if (!qp.isEmpty()) {
-			query = StringUtils.SetValueString(query, qp)
+//			query = StringUtils.SetValueString(query, qp)
+			query = StringUtils.EvalMacroString(query, qp, false)
 		}
 
 		return query
@@ -1309,7 +1310,7 @@ ${extend}'''
 	 */
 	@SuppressWarnings("GrUnresolvedAccess")
 	protected List<Field> meta2Fields (def meta, boolean isTable) {
-		List<Field> result = []
+		def result = [] as List<Field>
         //noinspection GroovyAssignabilityCheck
         for (int i = 0; i < meta.getColumnCount(); i++) {
 			def c = i + 1
@@ -1321,24 +1322,24 @@ ${extend}'''
 
 			result << f
 		}
-		result
+		return result
 	}
 	
 	@groovy.transform.CompileStatic
 	@Override
 	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		params = params?:[:]
+		if (params == null) params = [:]
 
-		Integer fetchSize = (Integer)(params."fetchSize")
-		Closure filter = (Closure)(params."filter")
-		List<Field> metaFields = []
-		
+		Integer fetchSize = (params.fetchSize as Integer)
+		Closure filter = (params.filter as Closure)
+		def metaFields = ([] as List<Field>)
+
 		def isTable = isTable(dataset)
 		if (isTable) {
-			def onlyFields = ListUtils.ToLowerCase((List)(params.onlyFields))
-			def excludeFields = ListUtils.ToLowerCase((List)(params.excludeFields))
+			def onlyFields = ListUtils.ToLowerCase(params.onlyFields as List<String>)
+			def excludeFields = ListUtils.ToLowerCase(params.excludeFields as List<String>)
 			
-			List<Field> lf = (!dataset.manualSchema && dataset.field.isEmpty())?fields(dataset):dataset.fieldClone()
+			def lf = (!dataset.manualSchema && dataset.field.isEmpty())?fields(dataset):(dataset.fieldClone() as List<Field>)
 			lf.each { prepareField(it) }
 			
 			if (!onlyFields && !excludeFields) {
@@ -1356,16 +1357,16 @@ ${extend}'''
 			}
 		}
 
-//		dataset.field = metaFields
 		params.putAll([useFields: metaFields])
-		String sql = sqlForDataset(dataset, params)
-		if (sql == null) throw new ExceptionGETL('Invalid sql query for dataset!')
+		def sql = sqlForDataset(dataset, params)
+		if (sql == null)
+			throw new ExceptionGETL('Invalid sql query for dataset!')
 		
 		Map rowCopy
 		Closure copyToMap
 		def getFields = { meta ->
 			metaFields = meta2Fields(meta, isTable)
-			metaFields.each { prepareField(it) }
+//			metaFields.each { prepareField(it) }
 			if (!isTable) {
 				dataset.field = metaFields
 			}
@@ -1382,9 +1383,33 @@ ${extend}'''
 					if (listFields.find { String lf -> (lf.toLowerCase() == f.name.toLowerCase()) } != null) fields << f
 				}
 			}
-			if (fields.isEmpty()) throw new ExceptionGETL("Required fields from read dataset")
-			rowCopy = GenerationUtils.GenerateRowCopy(this, fields)
-			copyToMap = (Closure)(rowCopy.code)
+			if (fields.isEmpty())
+				throw new ExceptionGETL("Required fields from read dataset")
+
+			if (dataset.sysParams.lastread != null) {
+				def lastread = dataset.sysParams.lastread as Map
+				def lastfields = lastread.fields as List<Field>
+				/*if (lastfields?.size() == fields.size()) {
+					def eq = true
+					for (int i = 0; i < fields.size(); i++) {
+						if (fields[i] != lastfields[i]) {
+							eq = false
+							break
+						}
+					}
+					if (eq) {
+						rowCopy = lastread.code as Map
+					}
+				}*/
+				if (lastfields == fields)
+					rowCopy = lastread.code as Map
+			}
+
+			if (rowCopy == null) {
+				rowCopy = GenerationUtils.GenerateRowCopy(this, fields)
+				dataset.sysParams.put('lastread', [fields: fields, code: rowCopy])
+			}
+			copyToMap = (rowCopy.code as Closure)
 		}
 		int offs = (params.offs != null)?((params.offs as Integer) + 1):0
 		int max = (params.limit != null)?(params.limit as Integer):0
@@ -1509,7 +1534,8 @@ $sql
 		if (params == null) params = [:]
 		
 		if (params.queryParams != null) {
-			command = StringUtils.SetValueString(command, params.queryParams as Map)
+//			command = StringUtils.SetValueString(command, params.queryParams as Map)
+			command = StringUtils.EvalMacroString(command, params.queryParams as Map, false)
 		}
 		
 		JDBCConnection con = jdbcConnection
@@ -1531,7 +1557,7 @@ $sql
 		}
 		
 		def warn = stat.getConnection().warnings
-		con.sysParams.warnings = []
+		con.sysParams.warnings = new LinkedList<Map>()
 		List<Map> iw = ignoreWarning
 		while (warn != null) {
 			boolean ignore = false
@@ -1548,6 +1574,7 @@ $sql
 		if (!(con.sysParams.warnings as List).isEmpty()) {
 			if (BoolUtils.IsValue(con.outputServerWarningToLog)) Logs.Warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
             saveToHistory("-- Server warning ${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
+			con.sysParams.remove('warnings')
 		}
 
 		return result
@@ -1575,6 +1602,14 @@ $sql
 		File saveOut
 		String statement
 		java.sql.Connection con
+
+		void free() {
+			onSaveBatch = null
+			stat = null
+			setStatement = null
+			saveOut = null
+			con = null
+		}
 	}
 
 	/**
@@ -1586,7 +1621,9 @@ $sql
 	 * @return
 	 */
 	protected Closure generateSetStatement (String operation, List<Field> procFields, List<String> statFields, WriterParams wp) {
-		if (statFields.isEmpty()) throw new ExceptionGETL('Required fields from generate prepared statement')
+		if (statFields.isEmpty())
+			throw new ExceptionGETL('Required fields from generate prepared statement')
+
 		def countMethod = new BigDecimal(statFields.size() / 100).intValue() + 1
 		def curMethod = 0
 
@@ -1998,7 +2035,21 @@ $sql
 			Logs.Dump(e, getClass().name, dataset.objectFullName, query)
 			throw e
 		}
-		Closure setStatement = generateSetStatement(operation, fields, statFields, wp)
+
+		Closure setStatement
+		if (dataset.sysParams.lastwrite != null) {
+			def lastwrite = (dataset.sysParams.lastwrite as Map)
+			if ((lastwrite.operation as String) == operation && (lastwrite.fields == fields) && (lastwrite.statFields == statFields)) {
+				setStatement = (lastwrite.setStatement as Closure)
+				wp.statement = (lastwrite.statement as String)
+			}
+
+		}
+		if (setStatement == null) {
+			setStatement = generateSetStatement(operation, fields, statFields, wp)
+			dataset.sysParams.put('lastwrite', [operation: operation, fields: fields, statFields: statFields,
+												setStatement: setStatement, statement: wp.statement])
+		}
 
 		wp.operation = operation
 		wp.batchSize = batchSize as Long
@@ -2071,7 +2122,7 @@ $sql
 	@groovy.transform.CompileStatic
 	@Override
 	void write(Dataset dataset, Map row) {
-		WriterParams wp = (WriterParams)(dataset.driver_params)
+		def wp = (dataset.driver_params as WriterParams)
 		
 		if (wp.saveOut != null) {
 			wp.saveOut.append("${wp.rowProc}:	${row.toString()}\n")
@@ -2118,13 +2169,19 @@ $sql
 	@Override
 	void closeWrite(Dataset dataset) {
 		WriterParams wp = dataset.driver_params
-		wp.stat.close()
+		try {
+			wp.stat.close()
+		}
+		finally {
+			wp.free()
+			dataset.driver_params = null
+		}
 	}
 	
 	@Override
 	long getSequence(String sequenceName) {
 		def r = sqlConnect.firstRow("SELECT NextVal(${sequenceName}) AS id")
-		r.id
+		return r.id
 	}
 
 	/**
@@ -2192,7 +2249,8 @@ $sql
 		p."values" = insertValues.join(", ")
 		p."keys" = keys.join(", ")
 		
-		return StringUtils.SetValueString(sql, p)
+//		return StringUtils.SetValueString(sql, p)
+		return StringUtils.EvalMacroString(sql, p, false)
 	}
 
 	/**

@@ -180,4 +180,10 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	String toString() {
 		return fullName
 	}
+
+	void dslCleanProps() {
+		sysParams.dslNameObject = null
+		sysParams.dslThisObject = null
+		sysParams.dslOwnerObject = null
+	}
 }

@@ -122,7 +122,9 @@ class JDBCDataset extends Dataset {
 	
 	@Override
 	void setConnection(Connection value) {
-		assert value == null || value instanceof JDBCConnection
+		if (value != null && !(value instanceof JDBCConnection))
+			throw new ExceptionGETL('Required jdbc connection!')
+
 		super.setConnection(value)
 	}
 	

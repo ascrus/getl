@@ -375,6 +375,7 @@ class Logs {
 		def message = FormatMessage(error.message + t)
 		logger.severe(message)
 		event(Level.SEVERE, error.message)
+		if (printStackTraceError) error.printStackTrace()
 	}
 
 	/**

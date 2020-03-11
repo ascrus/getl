@@ -55,6 +55,14 @@ class FileProcessingElement {
         this.file = file
     }
 
+    void free() {
+        sourceElement = null
+        processedElement = null
+        errorElement = null
+        attr = null
+        file = null
+    }
+
     protected FileProcessing.ListPoolElement sourceElement, processedElement, errorElement
 
     /** Source file manager */

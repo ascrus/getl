@@ -24,6 +24,7 @@
 
 package getl.proc
 
+import getl.lang.sub.GetlRepository
 import getl.proc.sub.ExecutorFactory
 import getl.proc.sub.ExecutorListElement
 import getl.proc.sub.ExecutorThread
@@ -74,31 +75,28 @@ class Executor {
 	 * Return element if error
 	 */
 	public boolean debugElementOnError = false
-	
-	/**
-	 * Allow multi-threaded execution
-	 */
-//	public boolean allowThread = true
-	
-	/**
-	 * Run has errors
-	 */
+
+	/** Run has errors */
 	private boolean hasError = false
 	
-	/**
-	 * Run has errors
-	 * @return
-	 */
-	@Synchronized
-	boolean getIsError () { hasError }
+	/** Threads has errors */
+	boolean getIsError () {
+		Boolean res
+		synchronized (hasError) {
+			res = hasError
+		}
+		return res
+	}
 	
 	/** How exceptions in process stopping execute */
-	public final Map<Object, Throwable> exceptions = [:]
-	
-	@Synchronized
+	public final Map<Object, Throwable> exceptions = ([:] as Map<Object, Throwable>)
+
+	/** Fixing error */
 	protected void setError (Object obj, Throwable except) {
-		hasError = true
-		if (obj != null) exceptions.put(obj, except)
+		synchronized (hasError) {
+			hasError = true
+			if (obj != null) exceptions.put(obj, except)
+		}
 	}
 	
 	/** List of processing elements */
@@ -141,19 +139,31 @@ class Executor {
 	/**
 	 * List of all threads
 	 */
-	public final List<Map> threadList = Collections.synchronizedList(new ArrayList())
+	public final List<Map> threadList = new LinkedList<Map>()
 
 	/**
 	 * List of active threads
 	 */
-	public final List<Map> threadActive = Collections.synchronizedList(new ArrayList())
+	public final List<Map> threadActive = new LinkedList<Map>()
 
 	/** Interrupt flag */
 	private boolean isInterrupt = false
 
-	/** Set interrupt flag for current thread processes */
-	@Synchronized
-	void setInterrupt(boolean value) { isInterrupt = true }
+	/** Interrupt flag */
+	boolean getIsInterrupt() {
+		Boolean res
+		synchronized (isInterrupt) {
+			res = isInterrupt
+		}
+		return res
+	}
+
+	/** Interrupt flag */
+	void setIsInterrupt(boolean value) {
+		synchronized (isInterrupt) {
+			isInterrupt = true
+		}
+	}
 
 	/**
 	 * Launches a single code
@@ -178,21 +188,6 @@ class Executor {
 		run(l, countThread, code)
 	}
 
-	@Synchronized
-	static private void putThreadListElement(Map m, Map values) {
-		m.putAll(values)
-	}
-
-	@Synchronized
-	private addActiveThread(Map m) {
-		threadActive.add(m)
-	}
-
-	@Synchronized
-	private void removeActiveThread(Map m) {
-		threadActive.remove(m)
-	}
-
 	/** Code on dispose resource after run the thread */
 	private List<Closure> listDisposeThreadResource = [] as List<Closure>
 	/** Added code on dispose resource after run the thread */
@@ -206,6 +201,28 @@ class Executor {
 	void setOnValidAllowRun(Closure<Boolean> value) { onValidAllowRun = value }
 	/** Checking element permission */
 	void validAllowRun(Closure<Boolean> value) { setOnValidAllowRun(value) }
+
+	/** Run initialization code when starting a thread */
+	private Closure onStartingThread
+	/** Run initialization code when starting a thread */
+	Closure getOnStartingThread() { onStartingThread }
+	/** Run initialization code when starting a thread */
+	void setOnStartingThread(Closure value) { onStartingThread = value }
+	/** Run initialization code when starting a thread */
+	void startingThread(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
+		setOnStartingThread(value)
+	}
+
+	/** Run finalization code when stoping a thread */
+	private Closure onFinishingThread
+	/** Run finalization code when stoping a thread */
+	Closure getOnFinishingThread() { onFinishingThread }
+	/** Run finalization code when stoping a thread */
+	void setOnFinishingThread(Closure value) { onFinishingThread = value }
+	/** Run finalization code when stoping a thread */
+	void finishingThread(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
+		setOnFinishingThread(value)
+	}
 
 	/** Component runs threads */
 	boolean isRunThreads = false
@@ -244,15 +261,20 @@ class Executor {
 
 		if (countThread == null) countThread = countProc?:elements?.size()
 
-		def runCode = { Map m ->
-			def num = m.num
-			def threadList = m.element as List
-			m.put('start',  new Date())
+		def runCode = { Map node ->
+			def num = node.num
+			def threadList = (node.element as List)
+			node.put('start',  new Date())
 			def curElement
+			def nodeCode = code.clone() as Closure
+
+			synchronized (threadActive) {
+				threadActive.add(node)
+			}
+
 			try {
-				synchronized (threadActive) {
-					threadActive.add(m)
-				}
+				if (onStartingThread)
+					onStartingThread.call(node)
 
 				threadList.each { element ->
 					if (!((!isError || !abortOnError) && !isInterrupt)) {
@@ -268,12 +290,14 @@ class Executor {
 					}
 					if (allowRun) {
 						try {
-							code.call(element)
+							nodeCode.call(element)
 							counterProcessed.nextCount()
 						}
 						catch (Throwable e) {
-							if (abortOnError)
+							if (abortOnError) {
+								Logs.Exception(e, 'thread element', element.toString())
 								throw e
+							}
 
 							if (logErrors)
 								Logs.Exception(e, 'thread element', element.toString())
@@ -283,37 +307,47 @@ class Executor {
 			}
 			catch (Throwable e) {
 				//noinspection GroovyVariableNotAssigned
-				processRunError(e, m, num, curElement, threadList)
+				processRunError(e, node, num, curElement, threadList)
 			}
 			finally {
-				if (Thread.currentThread() instanceof ExecutorThread) {
-					def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
-					try {
-						listDisposeThreadResource.each { Closure disposeCode ->
-							disposeCode.call(cloneObjects)
-						}
-					}
-					finally {
-						cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
-							objects?.each { ExecutorThread.CloneObject obj ->
-								obj.origObject = null
-								obj.cloneObject = null
+				try {
+					if (onFinishingThread != null)
+						onFinishingThread.call(node)
+				}
+				finally {
+					if (Thread.currentThread() instanceof ExecutorThread) {
+						def cloneObjects = (Thread.currentThread() as ExecutorThread).cloneObjects
+						try {
+							listDisposeThreadResource.each { Closure disposeCode ->
+								disposeCode.call(cloneObjects)
 							}
 						}
-						cloneObjects.clear()
+						finally {
+							cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
+								objects?.each { ExecutorThread.CloneObject obj ->
+									obj.origObject = null
+									if (obj.cloneObject != null) {
+										if (obj.cloneObject instanceof GetlRepository)
+											(obj.cloneObject as GetlRepository).dslCleanProps()
+										obj.cloneObject = null
+									}
+								}
+							}
+							cloneObjects.clear()
+						}
 					}
 				}
-			}
-			synchronized (threadActive) {
-				threadActive.remove(m)
-			}
-			synchronized (m) {
-				m.put('finish', new Date())
-				m.remove('threadSubmit')
+				synchronized (threadActive) {
+					threadActive.remove(node)
+				}
+				node.remove('threadSubmit')
+				(node.element as List).clear()
+				node.remove('element')
+				node.put('finish', new Date())
 			}
 		}
 
-		def listElements = ListUtils.SplitList(elements, countThread, ((limit > 0)?limit:null))
+		def listElements = ListUtils.SplitList(elements, countThread, ((limit?:0 > 0)?limit:null))
 		def threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
 		isRunThreads = true
 		try {
@@ -321,7 +355,7 @@ class Executor {
 				def r = [:] as Map<String, Object>
 				r.num = i
 				r.element = listElements[i]
-				r.threadSubmit = threadPool.submit({ -> runCode.call(r) } as Callable) as Future
+				r.threadSubmit = (threadPool.submit({ -> (runCode.clone() as Closure).call(r) } as Callable) as Future)
 				threadList << r
 			}
 			threadPool.shutdown()
@@ -333,8 +367,10 @@ class Executor {
 					}
 					catch (Throwable e) {
 						setError(null, e)
-						threadActive.each { Map serv ->
-							(serv.threadSubmit as Future)?.cancel(true)
+						synchronized (threadActive) {
+							threadActive.each { Map serv ->
+								(serv.threadSubmit as Future)?.cancel(true)
+							}
 						}
 						threadPool.shutdownNow()
 						throw e
@@ -360,15 +396,22 @@ class Executor {
 			if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
 		}
 		finally {
+			exceptions.clear()
+			threadList.clear()
+			threadActive.clear()
+
 			isRunThreads = false
 		}
 	}
 
-	@Synchronized
 	private void processRunError(Throwable e, Map m, Object num, Object element, List elements) {
 		try {
-			removeActiveThread(m)
-			putThreadListElement(m, [finish: new Date(), threadSubmit: null])
+			synchronized (threadActive) {
+				threadActive.remove(m)
+			}
+			synchronized (m) {
+				m.putAll([finish: new Date(), threadSubmit: null])
+			}
 			setError(element, e)
 			def errObject = (debugElementOnError)?"[${num}]: ${element}":"Element ${num}"
 			if (dumpErrors) Logs.Dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: elements])}")
@@ -403,7 +446,7 @@ class Executor {
 			def num = m.num + 1
 			def element = m.element as Closure
 			try {
-				if (limit == 0 || num <= limit) {
+				if (limit?:0 == 0 || num <= limit) {
 					if ((!isError || !abortOnError) && !isInterrupt) {
 						synchronized (m) {
 							m.put('start',  new Date())
@@ -427,7 +470,11 @@ class Executor {
 									cloneObjects.each { String name, List<ExecutorThread.CloneObject> objects ->
 										objects?.each { ExecutorThread.CloneObject obj ->
 											obj.origObject = null
-											obj.cloneObject = null
+											if (obj.cloneObject != null) {
+												if (obj.cloneObject instanceof GetlRepository)
+													(obj.cloneObject as GetlRepository).dslCleanProps()
+												obj.cloneObject = null
+											}
 										}
 									}
 									cloneObjects.clear()
@@ -440,13 +487,7 @@ class Executor {
 						synchronized (m) {
 							m.put('finish', new Date())
 							m.remove('threadSubmit')
-						}
-						synchronized (threadActive) {
-							threadActive.remove(m)
-						}
-						synchronized (m) {
-							m.put('finish', new Date())
-							m.remove('threadSubmit')
+							m.remove('element')
 						}
 					}
 				}
@@ -456,7 +497,7 @@ class Executor {
 			}
 		}
 
-		def threadPool = Executors.newFixedThreadPool(countThread, new ExecutorFactory())
+		def threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
 		isRunThreads = true
 		try {
 			def num = 0
@@ -478,8 +519,10 @@ class Executor {
 					}
 					catch (Throwable e) {
 						setError(null, e)
-						threadActive.each { Map serv ->
-							(serv.threadSubmit as Future)?.cancel(true)
+						synchronized (threadActive) {
+							threadActive.each { Map serv ->
+								(serv.threadSubmit as Future)?.cancel(true)
+							}
 						}
 						threadPool.shutdownNow()
 						throw e
@@ -505,6 +548,10 @@ class Executor {
 			if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
 		}
 		finally {
+			exceptions.clear()
+			threadList.clear()
+			threadActive.clear()
+
 			isRunThreads = false
 		}
 	}

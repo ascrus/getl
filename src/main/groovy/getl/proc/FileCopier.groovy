@@ -404,7 +404,10 @@ class FileCopier extends FileListProcessing {
         long fileSize = 0
 
         def story = currentStory?.cloneDatasetConnection() as TableDataset
-        if (story != null) story.openWrite()
+        if (story != null) {
+            story.currentJDBCConnection.startTran(true)
+            story.openWrite()
+        }
         try {
             files.eachRow { infile ->
                 def ptf = profile("[$segment]: copy file \"${infile.get('filepath')}/${infile.get('filename')}\"", 'byte')
@@ -469,14 +472,24 @@ class FileCopier extends FileListProcessing {
 
                 ptf.finish(infilesize)
             }
-        }
-        finally {
+
             if (story != null) {
                 story.doneWrite()
                 story.closeWrite()
+                story.currentJDBCConnection.commitTran(true)
+            }
+        }
+        catch (Throwable e) {
+            if (story != null) {
+                story.closeWrite()
+                story.currentJDBCConnection.rollbackTran(true)
+            }
+            throw e
+        }
+        finally {
+            if (story != null) {
                 story.currentJDBCConnection.connected = false
             }
-
             files.currentJDBCConnection.connected = false
         }
 

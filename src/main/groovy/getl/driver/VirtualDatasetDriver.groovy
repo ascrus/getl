@@ -66,7 +66,8 @@ abstract class VirtualDatasetDriver extends Driver {
 	
 	protected static Dataset getDestinition(Dataset dataset) {
 		def ds = dataset.params.dest as Dataset
-		if (ds == null) throw new ExceptionGETL("Required set param \"dest\" with dataset")
+		if (ds == null)
+			throw new ExceptionGETL("Required set param \"dest\" with dataset")
 		
 		return ds
 	}

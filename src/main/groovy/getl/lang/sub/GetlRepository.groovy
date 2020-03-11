@@ -42,4 +42,7 @@ interface GetlRepository {
     Object getDslOwnerObject()
     /** Owner object with Getl Dsl repository */
     void setDslOwnerObject(Object value)
+
+    /** Clean Dsl properties */
+    void dslCleanProps()
 }

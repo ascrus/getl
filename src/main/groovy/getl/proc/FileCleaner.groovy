@@ -55,7 +55,10 @@ class FileCleaner extends FileListProcessing {
         long fileSize = 0
 
         def story = currentStory
-        if (story != null) story.openWrite()
+        if (story != null) {
+            story.currentJDBCConnection.startTran(true)
+            story.openWrite()
+        }
 
         def curDir = ''
         try {
@@ -72,11 +75,21 @@ class FileCleaner extends FileListProcessing {
 
                 fileSize += file.filesize as Long
             }
-        }
-        finally {
+
             if (story != null) {
                 story.doneWrite()
                 story.closeWrite()
+                story.currentJDBCConnection.commitTran(true)
+            }
+        }
+        catch (Throwable e) {
+            if (story != null) {
+                story.closeWrite()
+                story.currentJDBCConnection.rollbackTran(true)
+            }
+        }
+        finally {
+            if (story != null) {
                 story.currentJDBCConnection.connected = false
             }
         }

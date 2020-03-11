@@ -37,7 +37,6 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class SorterDatasetDriver extends VirtualDatasetDriver {
-	
 	private static List<String> getFieldOrderBy(Dataset dataset) {
 		def res = dataset.params.fieldOrderBy as List<String>
 		if (res == null) throw new ExceptionGETL("Required parameter \"fieldOrderBy\" in dataset")
@@ -46,7 +45,6 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 	}
 	
 	@Override
-
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		Dataset ds = getDestinition(dataset)
 		def fieldOrderBy = getFieldOrderBy(dataset)
@@ -54,22 +52,20 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 		ds.openWrite(params)
 		if (prepareCode != null) prepareCode.call(dataset.field)
 		
-		dataset.params.sorter_code = generateSortCode(fieldOrderBy)
-		dataset.params.sorter_data = []
+		dataset.driver_params.sorter_code = generateSortCode(fieldOrderBy)
+		dataset.driver_params.sorter_data = new LinkedList<Map>()
 	}
 
 	@Override
-
 	void write(Dataset dataset, Map row) {
-		def data = dataset.params.sorter_data as List<Map>
+		def data = dataset.driver_params.sorter_data as List<Map>
 		data << row
 	}
 
 	@Override
-
 	void doneWrite(Dataset dataset) {
-		def data = dataset.params.sorter_data as List<Map>
-		def code = dataset.params.sorter_code as Closure
+		def data = dataset.driver_params.sorter_data as List<Map>
+		def code = dataset.driver_params.sorter_code as Closure
 		data.sort(true, code)
 		
 		Dataset ds = getDestinition(dataset)
@@ -80,14 +76,13 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 	}
 
 	@Override
-
 	void closeWrite(Dataset dataset) {
 		Dataset ds = getDestinition(dataset)
 		ds.closeWrite()
 		
-		dataset.params.sorter_data = null
-		dataset.params.remove("sorter_data")
-		dataset.params.remove("sorter_code")
+		(dataset.driver_params.sorter_data as List).clear()
+		dataset.driver_params.remove("sorter_data")
+		dataset.driver_params.remove("sorter_code")
 	}
 	
 	private static Closure generateSortCode(List<String> fieldOrderBy) {

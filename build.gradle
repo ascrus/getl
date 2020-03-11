@@ -4,7 +4,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = '4.3.1-7-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.3.1-16-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -57,8 +57,9 @@ dependencies {
 }
 
 test {
-	minHeapSize = '100M'
+	minHeapSize = '300M'
 	maxHeapSize = '3G'
+	jvmArgs '-XX:+CMSClassUnloadingEnabled', '-XX:+UseParallelGC'
 }
 
 tasks.withType(GroovyCompile) {

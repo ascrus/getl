@@ -39,7 +39,8 @@ class StringUtilsTest extends getl.test.GetlTest {
     @Test
     void testEvalMacroString() {
         assertEquals('begin text 123 2017-02-01 01:02:03.000 end', StringUtils.EvalMacroString('begin {var1} {var2} {var3} end', [var1: 'text', var2: 123, var3: DateUtils.ParseDateTime('2017-02-01 01:02:03.000')]))
-        shouldFail { StringUtils.EvalMacroString('{var1}', []) }
+        shouldFail { StringUtils.EvalMacroString('{var1}', [:]) }
+        assertEquals('{var1}', StringUtils.EvalMacroString('{var1}', [:], false))
     }
 
     @Test

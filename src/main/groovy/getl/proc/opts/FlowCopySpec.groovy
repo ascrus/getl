@@ -58,240 +58,134 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Destination dataset */
     void setDestination(Dataset value) { params.dest = value }
 
-    /**
-     * Temporary source name
-     */
+    /** Temporary source name */
     String getTempSourceName() { params.tempSource as String }
+    /** Temporary source name */
+    void setTempSourceName(String value) { params.tempSource = value }
 
-    /**
-     * Temporary source name
-     */
-    def setTempSourceName(String value) { params.tempSource = value }
-
-    /**
-     * Temporary destination name
-     */
+    /** Temporary destination name */
     String getTempDestName() { params.tempDest as String }
-
-    /**
-     * Temporary destination name
-     */
+    /** Temporary destination name */
     void setTempDestName(String value) { params.tempDest = value }
 
-    /**
-     * Destination fields inherit from source fields
-     */
+    /** Destination fields inherit from source fields */
     Boolean getInheritFields() { params.inheritFields as Boolean }
+    /** Destination fields inherit from source fields */
+    void setInheritFields(Boolean value) { params.inheritFields = value }
 
-    /**
-     * Destination fields inherit from source fields
-     */
-    def setInheritFields(Boolean value) { params.inheritFields = value }
-
-    /**
-     * Create destination
-     */
+    /** Create destination if not exist */
     Boolean getCreateDest() { params.createDest as Boolean }
+    /** Create destination if not exist */
+    void setCreateDest(Boolean value) { params.createDest = value }
 
-    /**
-     * Create destination
-     */
-    def setCreateDest(Boolean value) { params.createDest = value }
-
-    /**
-     * List of field from destination dataset
-     */
+    /** List of field from destination dataset */
     List<Field> getTempFields() { params.tempFields as List<Field> }
-
-    /**
-     * List of field from destination dataset
-     */
+    /** List of field from destination dataset */
     void setTempFields(List<Field> value) { params.tempFields = value }
 
-    /**
-     * Map card columns with syntax: [<destination field>:"<source field>:<convert format>"]
-     */
+    /** Map card columns with syntax: <br>[<destination field>:"<source field>:<convert format>"] */
     Map<String, String> getMap() { params.map as Map<String, String> }
-
-    /**
-     * Map card columns with syntax: [<destination field>:"<source field>:<convert format>"]
-     */
+    /** Map card columns with syntax: <br>[<destination field>:"<source field>:<convert format>"] */
     void setMap(Map<String, String> value) {
         map.clear()
         if (value != null) map.putAll(value)
     }
 
-    /**
-     * Parameters for source read process
-     */
+    /** Parameters for source read process */
     Map<String, Object> getSourceParams() { params.sourceParams as Map<String, Object> }
-
-    /**
-     * Parameters for source read process
-     */
+    /** Parameters for source read process */
     void setSourceParams(Map<String, Object> value) {
         sourceParams.clear()
         if (value != null) sourceParams.putAll(value)
     }
 
-    /**
-     * Parameters for destination write process
-     */
+    /** Parameters for destination write process */
     Map<String, Object> getDestParams() { params.destParams as Map<String, Object> }
-
-    /**
-     * Parameters for destination write process
-     */
+    /** Parameters for destination write process */
     void setDestParams(Map<String, Object> value) {
         destParams.clear()
         if (value != null) destParams.putAll(value)
     }
 
-    /**
-     * Write with synchronize main thread
-     */
+    /** Write with synchronize main thread */
     Boolean getWriteSynch() { params.writeSynch as Boolean }
+    /** Write with synchronize main thread */
+    void setWriteSynch(Boolean value) { params.writeSynch = value }
 
-    /**
-     * Write with synchronize main thread
-     */
-    def setWriteSynch(Boolean value) { params.writeSynch = value }
-
-    /**
-     * Auto mapping value from source fields to destination fields
-     */
+    /** Auto mapping value from source fields to destination fields */
     Boolean getAutoMap() { params.autoMap as Boolean }
-
-    /**
-     * Auto mapping value from source fields to destination fields
-     */
+    /** Auto mapping value from source fields to destination fields */
     void setAutoMap(Boolean value) { params.autoMap = value }
 
-    /**
-     * Auto converting type value from source fields to destination fields
-     */
+    /** Auto converting type value from source fields to destination fields */
     Boolean getAutoConvert() { params.autoConvert as Boolean }
+    /** Auto converting type value from source fields to destination fields */
+    void setAutoConvert(Boolean value) { params.autoConvert = value }
 
-    /**
-     * Auto converting type value from source fields to destination fields
-     */
-    def setAutoConvert(Boolean value) { params.autoConvert = value }
-
-    /**
-     * Auto starting and finishing transaction for copy process
-     */
+    /** Auto starting and finishing transaction for copy process */
     Boolean getAutoTran() { params.autoTran as Boolean}
-
-    /**
-     * Auto starting and finishing transaction for copy process
-     */
+    /** Auto starting and finishing transaction for copy process */
     void setAutoTran(Boolean value) { params.autoTran = value }
 
-    /**
-     * Clearing destination dataset before copy
-     */
+    /** Clearing destination dataset before copy */
     Boolean getClear() { params.clear as Boolean }
+    /** Clearing destination dataset before copy */
+    void setClear(Boolean value) { params.clear = value }
 
-    /**
-     * Clearing destination dataset before copy
-     */
-    def setClear(Boolean value) { params.clear = value }
-
-    /**
-     * Save assert errors to temporary dataset "errorsDataset"
-     */
+    /** Save assert errors to temporary dataset "errorsDataset" */
     Boolean getSaveErrors() { params.saveErrors as Boolean }
+    /** Save assert errors to temporary dataset "errorsDataset" */
+    void setSaveErrors(Boolean value) { params.saveErrors = value }
 
-    /**
-     * Save assert errors to temporary dataset "errorsDataset"
-     */
-    def setSaveErrors(Boolean value) { params.saveErrors = value }
-
-    /**
-     * List of fields destination that do not need to use
-     */
+    /** List of fields destination that do not need to use */
     List<String> getExcludeFields() { params.excludeFields as List<String> }
+    /** List of fields destination that do not need to use */
+    void setExcludeFields(List<String> value) { params.excludeFields = value }
 
-    /**
-     * List of fields destination that do not need to use
-     */
-    def setExcludeFields(List<String> value) { params.excludeFields = value }
-
-    /**
-     * List of fields destination that do not need to converted
-     */
+    /** List of fields destination that do not need to converted */
     Boolean getNotConverted() { params.notConverted as Boolean }
+    /** List of fields destination that do not need to converted */
+    void setNotConverted(Boolean value) { params.notConverted = value }
 
-    /**
-     * List of fields destination that do not need to converted
-     */
-    def setNotConverted(Boolean value) { params.notConverted = value }
-
-    /**
-     * Filename  of mirror CSV dataset
-     */
+    /** Filename  of mirror CSV dataset */
     String getMirrorCSV() { params.mirrorCSV as Boolean }
+    /** Filename  of mirror CSV dataset */
+    void setMirrorCSV(String value) { params.mirrorCSV = value }
 
-    /**
-     * Filename  of mirror CSV dataset
-     */
-    def setMirrorCSV(String value) { params.mirrorCSV = value }
-
-    /**
-     * Load to destination as bulk load (only is supported)
-     */
+    /** Load to destination as bulk load (only is supported) */
     Boolean getBulkLoad() { params.bulkLoad as Boolean }
-
-    /**
-     * Load to destination as bulk load (only is supported)
-     */
+    /** Load to destination as bulk load (only is supported) */
     void setBulkLoad(Boolean value) { params.bulkLoad = value }
 
-    /**
-     * Convert bulk file to escaped format
-     */
+    /** Convert bulk file to escaped format */
     Boolean getBulkEscaped() { params.bulkEscaped as Boolean }
+    /** Convert bulk file to escaped format */
+    void setBulkEscaped(Boolean value) { params.bulkEscaped = value }
 
-    /**
-     * Convert bulk file to escaped format
-     */
-    def setBulkEscaped(Boolean value) { params.bulkEscaped = value }
-
-    /**
-     * Compress bulk file from GZIP algorithm
-     */
+    /** Compress bulk file from GZIP algorithm */
     Boolean getBulkAsGZIP() { params.bulkAsGZIP as Boolean }
+    /** Compress bulk file from GZIP algorithm */
+    void setBulkAsGZIP(Boolean value) { params.bulkAsGZIP = value }
 
-    /**
-     * Compress bulk file from GZIP algorithm
-     */
-    def setBulkAsGZIP(Boolean value) { params.bulkAsGZIP = value }
+    /** Name in cache for reusing code without generating */
+    String getCacheName() { params.cacheName as String }
+    /** Name in cache for reusing code without generating */
+    void setCacheName(String value) { params.cacheName = value }
 
-    /**
-     * Code executed before process copy rows
-     */
+    /** Code executed before process copy rows */
     Closure getOnPrepare() { params.onInit as Closure }
-
-    /**
-     * Code executed before process copy rows
-     */
+    /** Code executed before process copy rows */
     void setOnPrepare(Closure value) { params.onInit = value }
 
-    /**
-     * Code executed before process copy rows
-     */
+    /** Code executed before process copy rows */
     void prepare(Closure value) {
         setOnPrepare(value)
     }
 
-    /**
-     * save transformation code to dumn (default false)
-     */
+    /** Save transformation code to dumn (default false) */
     Boolean getDebug() { params.debug as Boolean }
-    /**
-     * save transformation code to dumn (default false)
-     */
-    def setDebug(Boolean value) { params.debug = value }
+    /** Save transformation code to dumn (default false) */
+    void setDebug(Boolean value) { params.debug = value }
 
     /** List of child datasets */
     private Map<String, FlowCopyChildSpec> getChilds() { params._childs as Map<String, FlowCopyChildSpec> }
@@ -329,8 +223,10 @@ class FlowCopySpec extends FlowBaseSpec {
         return childs.get(name).dataset
     }
 
+    @Override
     protected boolean getNeedProcessCode() { false }
 
+    /** Preparing parameters */
     private void prepareParams() {
         params.destChild = [:] as Map<String, Dataset>
         childs.each { String name, FlowCopyChildSpec opts ->
@@ -345,9 +241,7 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Initialization code before processing */
     void initCopy(Closure value) { setOnInitCopy(value) }
 
-    /**
-     * Closure code process row
-     */
+    /** Closure code process row */
     void copyRow(@ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
                          Closure value = null) {
         doProcess(value)

@@ -148,7 +148,13 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/** Connection */
 	Connection getConnection() { return this.connection }
 	/** Connection */
-	void setConnection(Connection value) { this.connection = value }
+	void setConnection(Connection value) {
+		if (value != this.connection) {
+			sysParams.lastread = null
+			sysParams.lastwrite = null
+		}
+		this.connection = value
+	}
 
 	/**
 	 * Extended attributes
@@ -757,9 +763,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @return
 	 */
 	List<Map> rows (Map procParams = [:]) {
-		List<Map> rows = []
-		eachRow(procParams) { Map row ->
-			rows << row
+		def rows = new LinkedList<Map>()
+		eachRow(procParams) { row ->
+			rows.add(row)
 		}
 		return rows
 	}
@@ -1433,5 +1439,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 	Object cloneConnection() {
 		return cloneDatasetConnection()
+	}
+
+	void dslCleanProps() {
+		sysParams.dslNameObject = null
+		sysParams.dslThisObject = null
+		sysParams.dslOwnerObject = null
 	}
 }

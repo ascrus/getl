@@ -1140,7 +1140,7 @@ sb << """
 	 * Compile groovy script to closure
 	 */
 	static Closure EvalGroovyClosure(String value, Map<String, Object> vars = null, Boolean convertReturn = false, ClassLoader classLoader = null) {
-        return (Closure)EvalGroovyScript(value, vars, convertReturn, classLoader)
+        return EvalGroovyScript(value, vars, convertReturn, classLoader) as Closure
 	}
 
 	/**

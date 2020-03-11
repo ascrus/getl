@@ -765,4 +765,10 @@ elements:
 
 		return b.toString()
 	}
+
+	void dslCleanProps() {
+		sysParams.dslNameObject = null
+		sysParams.dslThisObject = null
+		sysParams.dslOwnerObject = null
+	}
 }

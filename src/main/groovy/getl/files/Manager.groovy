@@ -1743,4 +1743,10 @@ WHERE
 	Object clone() {
 		return cloneManager()
 	}
+
+	void dslCleanProps() {
+		sysParams.dslNameObject = null
+		sysParams.dslThisObject = null
+		sysParams.dslOwnerObject = null
+	}
 }
