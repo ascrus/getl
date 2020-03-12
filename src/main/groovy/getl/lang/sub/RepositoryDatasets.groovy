@@ -48,6 +48,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     public static final String H2TABLE = 'getl.h2.H2Table'
     public static final String HIVETABLE = 'getl.hive.HiveTable'
     public static final String IMPALATABLE = 'getl.impala.ImpalaTable'
+    public static final String TABLEDATASET = 'getl.jdbc.TableDataset'
     public static final String JSONDATASET = 'getl.json.JSONDataset'
     public static final String MSSQLTABLE = 'getl.mssql.MSSQLTable'
     public static final String MYSQLTABLE = 'getl.mysql.MySQLTable'
@@ -66,16 +67,16 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
     /** List of allowed dataset classes */
     public static final List<String> LISTDATASETS = [
-        CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, JSONDATASET,
-        MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
+        CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
+        JSONDATASET, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
         SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET,
         XMLDATASET
     ]
 
     /** List of allowed jdbc dataset classes */
     public static List<String> LISTJDBCTABLES = [
-        DB2TABLE, EMBEDDEDTABLE, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE,
-        NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, VERTICATABLE
+        DB2TABLE, EMBEDDEDTABLE, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, TABLEDATASET, MSSQLTABLE, MYSQLTABLE,
+        NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, VERTICATABLE
     ]
 
     /** List of allowed file dataset classes */

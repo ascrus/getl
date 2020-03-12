@@ -478,7 +478,7 @@ class FileProcessing extends FileListProcessing {
                         useList files
                         onStartingThread = this.onStartingThread
                         onFinishingThread = this.onFinishingThread
-                        run { file ->
+                        runSplit { file ->
                             // Detect free managers from pools
                             def sourceElement = FreePoolElement(sourceList)
                             def processedElement = FreePoolElement(processedList)

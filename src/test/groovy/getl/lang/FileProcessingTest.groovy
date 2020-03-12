@@ -163,7 +163,7 @@ class FileProcessingTest extends GetlTest {
 
                     def rows = h2Table('h2:sales') { sale ->
                         readOpts {
-                            where = 'sale_date = \'{sale_date}\''
+                            where = 'sale_date = ParseDateTime(\'{sale_date}\', \'yyyy-MM-dd HH:mm:ss\')'
                             queryParams = [sale_date: day.sale_date]
                             order = ['sale_date', 'id']
                         }
@@ -248,7 +248,7 @@ class FileProcessingTest extends GetlTest {
                         proc.throwError 'Number 4 is not like it!'
 
                     def count = h2Table('h2:sales')
-                            .countRow('sale_date = \'{sale_date}\'', [sale_date: proc.attr.date])
+                            .countRow('sale_date = ParseDateTime(\'{sale_date}\', \'yyyy-MM-dd HH:mm:ss\')', [sale_date: proc.attr.date])
 
                     json('json:sales') {
                         fileName = proc.file.path

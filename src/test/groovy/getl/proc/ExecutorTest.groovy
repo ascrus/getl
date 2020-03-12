@@ -112,10 +112,10 @@ class ExecutorTest extends getl.test.GetlTest {
 
                 waitTime = 500
                 mainCode {
-                    logFine "Rows ${counter.count}: ${FileUtils.SizeBytes(Runtime.runtime.totalMemory())}"
+                    logFine "Rows ${counter.count}, total: ${FileUtils.SizeBytes(Runtime.runtime.totalMemory())}, free: total: ${FileUtils.SizeBytes(Runtime.runtime.freeMemory())}"
                 }
 
-                run(32) {
+                runSplit(32) {
                     counter.nextCount()
 
                     def table1 = embeddedTable('table1')
@@ -144,8 +144,9 @@ class ExecutorTest extends getl.test.GetlTest {
                 assertEquals(10000, countProcessed)
                 assertEquals(10000, counter.count)
             }
+            System.gc()
             def heapSizeFinish = Runtime.runtime.totalMemory()
-            logInfo "Heap start: ${FileUtils.SizeBytes(heapSizeStart)} finish: ${FileUtils.SizeBytes(heapSizeFinish)}"
+            logInfo "Heap start: ${FileUtils.SizeBytes(heapSizeStart)} finish: ${FileUtils.SizeBytes(heapSizeFinish)} free: ${FileUtils.SizeBytes(Runtime.runtime.freeMemory())}"
             assertTrue("Start heap size: ${FileUtils.SizeBytes(heapSizeStart)}, Finish heap size: ${FileUtils.SizeBytes(heapSizeFinish)}", heapSizeFinish < 2000000000)
         }
     }

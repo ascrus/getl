@@ -97,7 +97,7 @@ class StringUtils {
 
 		vars.each { k, v ->
 			if (v instanceof Date)
-				v = DateUtils.FormatDateTime(v as Date)
+				v = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', v as Date)
 
 			if (v != null && !(v instanceof Map) && !(v instanceof List))
 				value = value.replace('{' + k + '}', v.toString())

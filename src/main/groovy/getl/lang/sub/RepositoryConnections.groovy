@@ -40,6 +40,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     public static final String H2CONNECTION = 'getl.h2.H2Connection'
     public static final String HIVECONNECTION = 'getl.hive.HiveConnection'
     public static final String IMPALACONNECTION = 'getl.impala.ImpalaConnection'
+    public static final String JDBCCONNECTION = 'getl.jdbc.JDBCConnection'
     public static final String JSONCONNECTION = 'getl.json.JSONConnection'
     public static final String MSSQLCONNECTION = 'getl.mssql.MSSQLConnection'
     public static final String MYSQLCONNECTION = 'getl.mysql.MySQLConnection'
@@ -56,7 +57,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     /** List of allowed connection classes */
     public static final List<String> LISTCONNECTIONS = [
         CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
-        H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION,
+        H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION,
         NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
         VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION
     ]
@@ -64,7 +65,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     /** List of allowed jdbc connection classes */
     public static final List<String> LISTJDBCCONNECTIONS = [
         DB2CONNECTION, EMBEDDEDCONNECTION, FIREBIRDCONNECTION, H2CONNECTION, HIVECONNECTION, IMPALACONNECTION,
-        MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
+        JDBCCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
         POSTGRESQLCONNECTION, VERTICACONNECTION
     ]
 
