@@ -40,64 +40,64 @@ class LogSpec extends BaseSpec {
     /**
      * Current logger
      */
-    static Logger getLogLogger() { Logs.logger  }
+    Logger getLogLogger() { Logs.logger  }
 
     /**
      * Current formatter
      */
-    static Logs.LogFormatter getLogFormatter() { Logs.formatter }
+    Logs.LogFormatter getLogFormatter() { Logs.formatter }
 
     /**
      * Print configuration message
      */
-    static Boolean getLogPrintConfigMessage() { Logs.printConfigMessage }
+    Boolean getLogPrintConfigMessage() { Logs.printConfigMessage }
 
     /**
      * Print configuration message
      */
-    static void setLogPrintConfigMessage(Boolean value) { Logs.printConfigMessage = value }
+    void setLogPrintConfigMessage(Boolean value) { Logs.printConfigMessage = value }
 
     /**
      * Current file name handler
      */
-    static String getLogFileNameHandler() { Logs.fileNameHandler }
+    String getLogFileNameHandler() { Logs.fileNameHandler }
 
     /**
      * Current file handler
      */
-    static FileHandler getLogFileHandler() { Logs.file }
+    FileHandler getLogFileHandler() { Logs.file }
 
     /**
      * Current file handler
      */
-    static void setLogFileHandler(FileHandler value) { Logs.file = value }
+    void setLogFileHandler(FileHandler value) { Logs.file = value }
 
     /**
      * Current log file name
      */
-    static String getLogFileName() { Logs.logFileName }
+    String getLogFileName() { Logs.logFileName }
 
     /**
      * Current log file name
      */
-    static void setLogFileName(String value) { Logs.logFileName = value; Logs.Init() }
+    void setLogFileName(String value) { Logs.logFileName = value; Logs.Init() }
 
     /**
      * Print stack trace for error
      */
-    static Boolean getLogPrintStackTraceError() { Logs.printStackTraceError }
+    Boolean getLogPrintStackTraceError() { Logs.printStackTraceError }
 
     /**
      * Print stack trace for error
      */
-    static Boolean setLogPrintStackTraceError(Boolean value) { Logs.printStackTraceError = value }
+    Boolean setLogPrintStackTraceError(Boolean value) { Logs.printStackTraceError = value }
 
     /** Convert string value level to type */
-    static Level strToLevel(String level) { Logs.StrToLevel(level) }
+    Level strToLevel(String level) { Logs.StrToLevel(level) }
 
     /** Redirect standart output to specified file */
-    static void redirectStdOut(String fileName) { Logs.RedirectStdOut(fileName) }
+    void redirectStdOut(String fileName) { Logs.RedirectStdOut(fileName) }
 
     /** Redirect errors output to specified file */
-    static void redirectErrorsOut(String fileName) { Logs.RedirectErrOut(fileName) }
+    void redirectErrorsOut(String fileName) { Logs.RedirectErrOut(fileName) }
 }

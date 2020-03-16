@@ -2005,7 +2005,7 @@ Examples:
         def logFileName = parent.getLogFileName()
         parent.runClosure(cl)
         if (logFileName != parent.getLogFileName()) {
-            Logs.Info("### GETL DSL start logging to log file")
+            Logs.Info("### GETL DSL start logging to log file ${parent.getLogFileName()}")
         }
 
         return parent
