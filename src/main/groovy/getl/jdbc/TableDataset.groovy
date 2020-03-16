@@ -177,6 +177,7 @@ class TableDataset extends JDBCDataset {
 	/** Valid exist table */
 	boolean isExists() {
 		validConnection()
+		connection.tryConnect()
 
 		if (!currentJDBCConnection.currentJDBCDriver.isTable(this))
 			throw new ExceptionGETL("${fullNameDataset()} is not a table!")
@@ -233,10 +234,6 @@ class TableDataset extends JDBCDataset {
 			rs.next()
 			res = rs.getLong(1)
 		}
-
-		/*currentJDBCConnection.sqlConnection.eachRow(sql) { row ->
-			res = Long.valueOf(row.count_rows.toString()).longValue()
-		}*/
 
 		return res
 	}
@@ -405,7 +402,7 @@ class TableDataset extends JDBCDataset {
 
 		ProcessTime pt
 		if (getl != null)
-            pt = getl.startProcess("${fullTableName}: load files", 'rows')
+            pt = getl.startProcess("${fullTableName}: load files", 'row')
 
 		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def bulkParams = MapUtils.DeepCopy(bulkLoadDirective) as Map<String, Object>

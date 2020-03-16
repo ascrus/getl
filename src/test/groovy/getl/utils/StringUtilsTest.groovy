@@ -38,7 +38,7 @@ class StringUtilsTest extends getl.test.GetlTest {
 
     @Test
     void testEvalMacroString() {
-        assertEquals('begin text 123 2017-02-01 01:02:03.000 end', StringUtils.EvalMacroString('begin {var1} {var2} {var3} end', [var1: 'text', var2: 123, var3: DateUtils.ParseDateTime('2017-02-01 01:02:03.000')]))
+        assertEquals('begin text 123 2017-02-01 01:02:03 end', StringUtils.EvalMacroString('begin {var1} {var2} {var3} end', [var1: 'text', var2: 123, var3: DateUtils.ParseDateTime('2017-02-01 01:02:03.000')]))
         shouldFail { StringUtils.EvalMacroString('{var1}', [:]) }
         assertEquals('{var1}', StringUtils.EvalMacroString('{var1}', [:], false))
     }
@@ -60,7 +60,8 @@ class StringUtilsTest extends getl.test.GetlTest {
 
     @Test
     void testCutStr() {
-        assertEquals('123 ...', StringUtils.CutStr('1234567', 3))
+        assertEquals('123', StringUtils.CutStr('1234567', 3))
+        assertEquals('12 ...', StringUtils.CutStr('1234567', 6))
     }
 
     @Test
@@ -243,5 +244,17 @@ SET SELECT * FROM table; -- test
 
         def i = StringUtils.DetectStartSQLCommand(s)
         assertEquals('SET', s.substring(i, i + 3))
+    }
+
+    @Test
+    void testCutStrByWord() {
+        assertEquals( '1234', StringUtils.CutStrByWord('1234/5678', 4))
+        assertEquals( '1234/', StringUtils.CutStrByWord('1234/5678', 5))
+        assertEquals( '1234/', StringUtils.CutStrByWord('1234/5678', 7))
+        assertEquals( '1234/5678', StringUtils.CutStrByWord('1234/5678', 9))
+
+        assertEquals( '1 22 333 4444', StringUtils.CutStrByWord('1 22 333 4444', 13))
+        assertEquals( '1 22', StringUtils.CutStrByWord('1 22 333 4444', 5))
+        assertEquals( '1 22', StringUtils.CutStrByWord('1 22 333 4444', 6))
     }
 }

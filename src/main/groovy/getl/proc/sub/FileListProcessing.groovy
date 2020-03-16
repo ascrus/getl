@@ -266,7 +266,7 @@ abstract class FileListProcessing {
         return res
     }
 
-    static private createDirectoryLock = new Object()
+    static private final Object createDirectoryLock = new Object()
 
     /**
      * Change current directory
@@ -292,7 +292,7 @@ abstract class FileListProcessing {
         }
     }
 
-    static private createLocalDirectoryLock = new Object()
+    static private final Object createLocalDirectoryLock = new Object()
 
     /**
      * Change current local directory

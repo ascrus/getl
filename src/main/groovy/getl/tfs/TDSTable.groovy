@@ -25,6 +25,7 @@
 package getl.tfs
 
 import getl.data.Connection
+import getl.exception.ExceptionGETL
 import getl.h2.H2Table
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
@@ -44,7 +45,8 @@ class TDSTable extends H2Table {
 
     @Override
     void setConnection(Connection value) {
-        assert value == null || value.getClass().name == 'getl.tfs.TDS'
+        if (value != null && !(value instanceof TDS))
+            throw new ExceptionGETL('The tds table only supports tds connections!')
         super.setConnection(value)
     }
 }

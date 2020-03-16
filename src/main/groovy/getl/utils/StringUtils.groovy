@@ -137,9 +137,34 @@ class StringUtils {
 		return (s.length() <= len)?s:s.substring(0, len)
 	}
 
+	/**
+	 * Trim string to specified length and add ellipsis
+	 * @param s original string
+	 * @param len required length
+	 * @return string of given length
+	 */
 	static String CutStr(String s, int len) {
 		if (s == null) return null
-		return (s.length() <= len)?s:s.substring(0, len) + ' ...'
+		def l = s.length()
+		if (l <= len) return s
+		return (l < 5 || len < 5)?s.substring(0, len):(s.substring(0, len - 4) + ' ...')
+	}
+
+	/**
+	 * Trim string to specified length
+	 * @param s original string
+	 * @param len required length
+	 * @return string of given length
+	 */
+	static String CutStrByWord(String s, int len) {
+		if (s == null) return null
+		if (s.length() <= len) return s
+
+		def l = s.trim().substring(0, len)
+		def m = l =~ /.+([ ]|[-]|[,]|[.]|[\/]|[\\])/
+		if (m.size() == 0) return l
+
+		return ((m[0] as List)[0] as String).trim()
 	}
 	
 	/**

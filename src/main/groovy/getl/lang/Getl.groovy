@@ -950,18 +950,19 @@ Examples:
 
     /** Last used JDBC default connection */
     private JDBCConnection _lastJDBCDefaultConnection
+    private final Object lockLastJDBCDefaultConnection = new Object()
 
     /** Last used JDBC default connection */
     JDBCConnection getLastJdbcDefaultConnection() {
         JDBCConnection res
-        synchronized (_defaultJDBCConnection) {
+        synchronized (lockLastJDBCDefaultConnection) {
             res = _lastJDBCDefaultConnection
         }
         return res
     }
     /** Last used JDBC default connection */
     void setLastJdbcDefaultConnection(JDBCConnection value) {
-        synchronized (_defaultJDBCConnection) {
+        synchronized (lockLastJDBCDefaultConnection) {
             _lastJDBCDefaultConnection = value
         }
     }
@@ -1016,18 +1017,19 @@ Examples:
 
     /** Last used file default connection */
     private FileConnection _lastFileDefaultConnection
+    private final Object lockLastFileDefaultConnection = new Object()
 
     /** Last used file default connection */
     FileConnection getLastFileDefaultConnection() {
         FileConnection res
-        synchronized (_defaultFileConnection) {
+        synchronized (lockLastFileDefaultConnection) {
             res = _lastFileDefaultConnection
         }
         return res
     }
     /** Last used file default connection */
     void setLastFileDefaultConnection(FileConnection value) {
-        synchronized (_defaultFileConnection) {
+        synchronized (lockLastFileDefaultConnection) {
             _lastFileDefaultConnection = value
         }
     }
@@ -1080,18 +1082,19 @@ Examples:
 
     /** Last used other type default connection */
     private Connection _lastOtherDefaultConnection
+    private final Object lockLastOtherDefaultConnection = new Object()
 
     /** Last used other type default connection */
     Connection getLastOtherDefaultConnection() {
         Connection res
-        synchronized (_defaultOtherConnection) {
+        synchronized (lockLastOtherDefaultConnection) {
             res = _lastOtherDefaultConnection
         }
         return res
     }
     /** Last used other type default connection */
     void setLastOtherDefaultConnection(Connection value) {
-        synchronized (_defaultOtherConnection) {
+        synchronized (lockLastOtherDefaultConnection) {
             _lastOtherDefaultConnection = value
         }
     }

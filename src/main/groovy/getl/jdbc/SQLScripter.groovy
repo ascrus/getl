@@ -73,7 +73,7 @@ class SQLScripter implements WithConnection, Cloneable {
 	Connection getConnection() { connection }
 	/***  JDBC connection */
 	void setConnection(Connection value) {
-		if (!(value instanceof JDBCConnection))
+		if (value != null && !(value instanceof JDBCConnection))
 			throw new ExceptionGETL('The SQLScripter only supports jdbc connections!')
 		connection = value as JDBCConnection
 	}

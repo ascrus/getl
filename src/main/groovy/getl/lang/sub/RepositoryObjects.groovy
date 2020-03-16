@@ -58,7 +58,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
     Map<String, T> getObjects() { objects }
     /** Repository objects */
     void setObjects(Map<String, T> value) {
-        synchronized (objects) {
+        synchronized (this) {
             this.objects = value
         }
     }
@@ -73,6 +73,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param filter object filtering code
      * @return list of names repository objects according to specified conditions
      */
+    @SuppressWarnings("GroovySynchronizationOnNonFinalField")
     List<String> list(String mask = null, List<String> classes = null,
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
                                          Closure<Boolean> filter = null) {
@@ -144,6 +145,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param name name object in repository
      * @param validExist checking if an object is registered in the repository (default true)
      */
+    @SuppressWarnings("GroovySynchronizationOnNonFinalField")
     T registerObject(T obj, String name = null, Boolean validExist = true) {
         if (obj == null)
             throw new ExceptionGETL("$typeObject cannot be null!")
@@ -213,6 +215,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param name object name
      * @param registration register a new object or return an existing one
      */
+    @SuppressWarnings("GroovySynchronizationOnNonFinalField")
     T register(String className, String name = null, Boolean registration = false, Map params = null) {
         registration = BoolUtils.IsValue(registration)
 
@@ -235,7 +238,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
         def repName = getl.repObjectName(name)
         if (!registration && isThread) {
             def thread = Thread.currentThread() as ExecutorThread
-            def threadobj = thread.findDslCloneObject(nameCloneCollection, repName)
+            def threadobj = thread.findDslCloneObject(nameCloneCollection, repName) as T
             if (threadobj != null)
                 return threadobj
         }

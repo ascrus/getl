@@ -24,6 +24,7 @@
 
 package getl.tfs
 
+import getl.exception.ExceptionGETL
 import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 
@@ -61,7 +62,8 @@ class TFSDataset extends CSVDataset {
 	
 	@Override
 	void setConnection(Connection value) {
-		assert value == null || value.getClass().name == 'getl.tfs.TFS'
+		if (value != null && !(value instanceof TFS))
+			throw new ExceptionGETL('The tfs dataset only supports tfs connections!')
 		super.setConnection(value)
 	}
 }

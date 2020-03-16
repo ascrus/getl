@@ -192,7 +192,8 @@ class FileDataset extends Dataset {
 	
 	@Override
 	void setConnection(Connection value) {
-		assert value == null || value instanceof FileConnection
+		if (value != null && !(value instanceof FileConnection))
+			throw new ExceptionGETL('The file dataset only supports file connections!')
 		super.setConnection(value)
 	}
 	

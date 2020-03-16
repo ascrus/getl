@@ -82,7 +82,7 @@ class FileCleaner extends FileListProcessing {
                 story.currentJDBCConnection.commitTran(true)
             }
         }
-        catch (Throwable e) {
+        catch (Throwable ignored) {
             if (story != null) {
                 story.closeWrite()
                 story.currentJDBCConnection.rollbackTran(true)

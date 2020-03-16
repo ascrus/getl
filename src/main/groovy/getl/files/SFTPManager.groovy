@@ -70,7 +70,7 @@ class SFTPManager extends Manager {
 	
 	@Override
 	void setRootPath (String value) {
-		if (value != null && value.substring(0, 1) != "/") value = "/" + value
+		if (value != null && value.length() > 1 && value.substring(0, 1) != "/") value = "/" + value
 		super.setRootPath(value)
 	}
 	
