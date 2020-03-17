@@ -49,7 +49,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-class FileCopier extends FileListProcessing {
+class FileCopier extends FileListProcessing { /* TODO: make copy support between one source */
     FileCopier() {
         super()
         params.segmented = [] as List<String>
