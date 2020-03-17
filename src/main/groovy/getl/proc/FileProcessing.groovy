@@ -57,7 +57,7 @@ import org.codehaus.groovy.runtime.StackTraceUtils
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-class FileProcessing extends FileListProcessing {
+class FileProcessing extends FileListProcessing { /* TODO : make support for processing files on the local system without copying files */
     FileProcessing() {
         super()
         params.threadGroupColumns = [] as List<String>

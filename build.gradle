@@ -1,3 +1,5 @@
+import java.time.LocalDateTime
+
 apply plugin: 'idea'
 apply plugin: 'groovy'
 apply plugin: 'maven'
@@ -97,6 +99,7 @@ artifacts {
 
 build.dependsOn sourcesJar
 build.dependsOn javadocJar
+build.dependsOn "updateVersion"
 
 //noinspection GroovyMissingReturnStatement
 uploadArchives {
@@ -150,4 +153,27 @@ uploadArchives {
 			}
 		}
 	}
+}
+
+task("updateVersion") {
+	def rootDir = new File("src/main/resources")
+	def file = new File("src/main/resources/getl.conf")
+	if (file.exists()) {
+		def cf = new ConfigSlurper()
+		def configMap = cf.parse(file.text)
+		if (configMap.getl?.jar?.version == version)
+			return
+	}
+
+	file.text = """/* 
+Getl Configuration File
+Generated: ${LocalDateTime.now().format('yyyy-MM-dd HH:mm')} 
+*/
+getl {
+	jar {
+    	version='$version'
+    	year='2019-${LocalDateTime.now().year}'
+	}
+}
+"""
 }

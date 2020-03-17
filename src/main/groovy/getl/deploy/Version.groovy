@@ -24,41 +24,66 @@
 
 package getl.deploy
 
+import getl.config.ConfigSlurper
+import getl.exception.ExceptionGETL
+import getl.utils.FileUtils
 import getl.utils.Logs
+import getl.utils.StringUtils
 
 /**
  * Version manager
  * @author Aleksey Konstantinov
  */
 class Version {
-	/**
-	 * GETL version
-	 */
-	public static version = "4.3.1"
-	
-	/**
-	 * GETL version as numeric
-	 */
-	public static versionNum = 4.0301
+	// Init class
+	static private boolean init = {
+		readConfig()
+		return true
+	}.call()
 
-	/**
-	 * Compatibility GETL version
-	 */
+	// Read resource file config
+	static private void readConfig() {
+		def conf = ConfigSlurper.LoadConfigFile(FileUtils.FileFromResources('/getl.conf'))
+		def getlSection = (conf.getl as Map)
+		if (getlSection == null)
+			throw new ExceptionGETL('Invalid resource file "getl.conf"!')
+		def jarSection = (conf.getl.jar as Map)
+		if (jarSection == null || jarSection.version == null || jarSection.year == null)
+			throw new ExceptionGETL('Invalid resource file "getl.conf"!')
+
+		version = jarSection.version as String
+		years = jarSection.year as String
+
+		def m = version =~ /(\d+)[.](\d+)[.](.+)/
+		def v1 = m[0][1] as String
+		def v2 = m[0][2] as String
+		def v3 = m[0][3] as String
+		def i = v3.indexOf('-')
+		if (i > -1) v3 = v3.substring(0, i)
+		def s = v1 + '.' + StringUtils.AddLedZeroStr(v2, 2) + StringUtils.AddLedZeroStr(v3, 2)
+		versionNum = new BigDecimal(s)
+	}
+
+	/** GETL version */
+	public static String version
+	
+	/** GETL version as numeric */
+	public static BigDecimal versionNum
+
+	/** Compatibility GETL version */
 	public static versionNumCompatibility = 4.0300
 	
 	/**
 	 * Valid compatibility version
-	 * @param ver
-	 * @return
+	 * @param ver - required version
+	 * @return result of valid
 	 */
 	static boolean IsCompatibility (def ver) {
 		ver >= versionNumCompatibility && ver <= versionNum 
 	}
 	
-	/**
-	 * Years development
-	 */
-	public static years = "2014-2020"
+	/** Years development */
+	public static String years
 
 	private static boolean sayInfo = false
 
