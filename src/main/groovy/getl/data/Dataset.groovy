@@ -425,8 +425,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Valid connection value
 	 */
-	void validConnection () {
-		if (connection == null) throw new ExceptionGETL("Connection required")
+	void validConnection (Boolean connecting = true) {
+		if (connection == null)
+			throw new ExceptionGETL("Connection required")
+
+		if (connecting)
+			connection.tryConnect()
 	}
 	
 	/**
@@ -441,9 +445,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Read fields from dataset schema
 	 */
-	List<Field> readFields () {
+	List<Field> readFields() {
 		validConnection()
-		connection.tryConnect()
+
 		def f = connection.driver.fields(this)
 		prepareFields(f)
 		return f
@@ -501,10 +505,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Retrieve fields from dataset
 	 */
-	List<String> retrieveFields (UpdateFieldType updateFieldType, Closure prepare = null) {
-		if (!connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS)) throw new ExceptionGETL("Driver not supported retrieve fields")
+	List<String> retrieveFields(UpdateFieldType updateFieldType, Closure prepare = null) {
 		validConnection()
-		connection.tryConnect()
+		if (!connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS)) throw new ExceptionGETL("Driver not supported retrieve fields")
 		List<Field> sourceFields = connection.driver.fields(this)
 		updateFields(updateFieldType, sourceFields, prepare)
 
@@ -580,9 +583,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Create new dataset container
 	 */
-	void create (Map procParams = [:]) {
+	void create(Map procParams = [:]) {
 		validConnection()
-		if (!connection.driver.isOperation(Driver.Operation.CREATE)) throw new ExceptionGETL("Driver not supported create dataset")
+		if (!connection.driver.isOperation(Driver.Operation.CREATE))
+			throw new ExceptionGETL("Driver not supported create dataset")
 
 		if (procParams == null) procParams = [:]
 		methodParams.validation("create", procParams, [connection.driver.methodParams.params("createDataset")])
@@ -590,16 +594,16 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def dirs = directives('create')?:[:]
 		procParams = dirs + procParams
 		
-		connection.tryConnect()
 		connection.driver.createDataset(this, procParams)
 	}
 	
 	/**
 	 * Drop exists dataset container
 	 */
-	void drop (Map procParams = [:]) {
+	void drop(Map procParams = [:]) {
 		validConnection()
-		if (!connection.driver.isOperation(Driver.Operation.DROP)) throw new ExceptionGETL("Driver not supported drop dataset")
+		if (!connection.driver.isOperation(Driver.Operation.DROP))
+			throw new ExceptionGETL("Driver not supported drop dataset")
 		
 		if (procParams == null) procParams = [:]
 		methodParams.validation("drop", procParams, [connection.driver.methodParams.params("dropDataset")])
@@ -607,21 +611,19 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def dirs = directives('drop')?:[:]
 		procParams = dirs + procParams
 		
-		connection.tryConnect()
 		connection.driver.dropDataset(this, procParams)
 	}
 
 	/**
 	 * Clear data of dataset
 	 */
-	void truncate (Map procParams = [:]) {
+	void truncate(Map procParams = [:]) {
 		validConnection()
 		if (!connection.driver.isOperation(Driver.Operation.CLEAR)) throw new ExceptionGETL("Driver not supported truncate operation")
 		
 		if (procParams == null) procParams = [:]
 		methodParams.validation("truncate", procParams, [connection.driver.methodParams.params("clearDataset")])
 		
-		connection.tryConnect()
 		Map p = MapUtils.CleanMap(procParams, ["autoTran"])
 		def autoTran = false
 		if (connection.isSupportTran) {
@@ -702,8 +704,6 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 		def removeFile = BoolUtils.IsValue(procParams.removeFile)
 		def moveFileTo = procParams.moveFileTo as String
-		
-		connection.tryConnect()
 		
 		def prepareCode = ((procParams.prepare != null)?procParams.prepare:null) as Closure
 		
@@ -922,8 +922,6 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (!connection.driver.isSupport(Driver.Support.EACHROW)) throw new ExceptionGETL("Driver is not support each row operation")
 		if (status != Dataset.Status.AVAIBLE) throw new ExceptionGETL("Dataset is not avaible for read operation (current status is ${status})")
 		
-		connection.tryConnect()
-		
 		if (field.size() == 0 && BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
 			if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA)) throw new ExceptionGETL("Can not auto load schema from dataset")
 			loadDatasetMetadata()
@@ -1015,8 +1013,6 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 		def saveSchema = BoolUtils.IsValue(procParams.autoSchema, autoSchema) 
 		if (saveSchema && !connection.driver.isSupport(Driver.Support.AUTOSAVESCHEMA)) throw new ExceptionGETL("Can not auto save schema from dataset")
-		
-		connection.tryConnect()
 		
 		def prepareCode = ((procParams.prepare != null)?procParams.prepare:null) as Closure
 		
@@ -1419,7 +1415,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param csvFile CSV dataset
 	 */
 	void prepareCsvTempFile(CSVDataset csvFile) {
-		validConnection()
+		validConnection(false)
 		connection.driver.prepareCsvTempFile(this, csvFile)
 	}
 
@@ -1428,7 +1424,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param csvFile CSV dataset
 	 */
 	void validCsvTempFile(CSVDataset csvFile) {
-		validConnection()
+		validConnection(false)
 		connection.driver.validCsvTempFile(this, csvFile)
 	}
 

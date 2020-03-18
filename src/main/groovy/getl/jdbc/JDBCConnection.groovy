@@ -30,7 +30,6 @@ import getl.data.Connection
 import getl.data.Dataset
 import getl.exception.ExceptionGETL
 import getl.jdbc.opts.GenerateDslTablesSpec
-import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.RepositoryConnections
 import getl.proc.Flow
@@ -479,7 +478,7 @@ class JDBCConnection extends Connection {
 		def res = hostName
 		if (portNumber != null) res += ":$portNumber"
 		
-		res
+		return res
 	}
 	
 	/**
@@ -547,6 +546,8 @@ class JDBCConnection extends Connection {
 		def connectionClassName = getClass().name
 		if (!(connectionClassName in RepositoryConnections.LISTJDBCCONNECTIONS))
 			throw new ExceptionGETL("Connection type \"$connectionClassName\" is not supported!")
+
+		tryConnect()
 
 		String classType
 		if (this instanceof TDS) {
@@ -774,8 +775,7 @@ ${tab}${tab}}
 	 * @param params parameters (Map queryParams and Boolean isUpdate)
 	 */
 	long executeCommand(String command, Map execParams = [:]) {
-		methodParams.validation("executeCommand", execParams, [driver.methodParams.params("executeCommand")])
-		driver.executeCommand(command, execParams)
+		executeCommand(execParams?:[:] + [command: command])
 	}
 
 	static public final int transactionIsolationNone = java.sql.Connection.TRANSACTION_NONE
@@ -786,7 +786,7 @@ ${tab}${tab}}
 
 	/** Current transactional isolation level */
 	Integer getTransactionIsolation() {
-		tryConnect()
+		checkEstablisheConnection()
 		return currentJDBCDriver.transactionIsolation
 	}
 	/** Current transactional isolation level */

@@ -95,7 +95,7 @@ class XMLDataset extends StructureFileDataset {
 	 * Read XML dataset attributes
 	 */
 	void readAttrs (Map params) {
-		validConnection()
+		validConnection(false)
 
 		currentXMLConnection.currentXMLDriver.readAttrs(this, params)
 	}

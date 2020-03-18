@@ -323,51 +323,65 @@ class Connection implements Cloneable, GetlRepository {
 	}
 	
 	/** Is connected to source */
-	boolean getConnected () { driver.isConnected() }
+	Boolean getConnected () { driver.isConnected() }
 	
 	/** Set connected to source */
-	void setConnected (boolean c) {
+	void setConnected (Boolean c) {
 		if (!driver.isSupport(Driver.Support.CONNECT)) throw new ExceptionGETL("Driver not support connect method") 
 		if (connected && c) return
 		if (!connected && !c) return
-		if (c) {
-			def countAttempts = numberConnectionAttempts?:0
-			if (countAttempts <= 0) countAttempts = 1
+		if (c)
+			connect()
+		else
+			disconnect()
+	}
 
-			def timeoutAttempts = timeoutConnectionAttempts?:0
-			if (timeoutAttempts <= 0) timeoutAttempts = 1
-			timeoutAttempts = timeoutAttempts * 1000
+	/** Connecting to database */
+	void connect() {
+		if (connected)
+			throw new ExceptionGETL('The connection is already established!')
 
-			def success = false
-			def attempt = 0
-			while (!success) {
-				doBeforeConnect()
-				try {
-					driver.connect()
-					success = true
-				}
-				catch (Exception e) {
-					doErrorConnect()
-					attempt++
-					if (attempt >= countAttempts) throw e
-					sleep(timeoutAttempts)
-					Logs.Warning("Error connect to $objectName, attempt number $attempt, error: ${e.message}")
-				}
-			}
-			doDoneConnect()
-			if (onConnecting != null) onConnecting.call(this)
-		}
-		else {
-			doBeforeDisconnect()
+		def countAttempts = numberConnectionAttempts?:0
+		if (countAttempts <= 0) countAttempts = 1
+
+		def timeoutAttempts = timeoutConnectionAttempts?:0
+		if (timeoutAttempts <= 0) timeoutAttempts = 1
+		timeoutAttempts = timeoutAttempts * 1000
+
+		def success = false
+		def attempt = 0
+		while (!success) {
+			doBeforeConnect()
 			try {
-				driver.disconnect()
+				driver.connect()
+				success = true
 			}
 			catch (Exception e) {
-				doErrorDisconnect()
-				throw e
+				doErrorConnect()
+				attempt++
+				if (attempt >= countAttempts) throw e
+				sleep(timeoutAttempts)
+				Logs.Warning("Error connect to $objectName, attempt number $attempt, error: ${e.message}")
 			}
-			doDoneDisconnect()
 		}
+		doDoneConnect()
+		if (onConnecting != null) onConnecting.call(this)
+	}
+
+	/** Disconnection from database */
+	void disconnect() {
+		if (!connected)
+			throw new ExceptionGETL('The connection is already disconnected!')
+
+		doBeforeDisconnect()
+		try {
+			driver.disconnect()
+		}
+		catch (Exception e) {
+			doErrorDisconnect()
+			throw e
+		}
+		doDoneDisconnect()
 	}
 	
 	/** User logic before connected to source */
@@ -391,7 +405,7 @@ class Connection implements Cloneable, GetlRepository {
 	/** Validation  connected is true and connecting if has no */
 	void tryConnect () {
 		if (driver.isSupport(Driver.Support.CONNECT) && !connected)
-			connected = true
+			connect()
 	}
 	
 	/** Connection has current transaction */
@@ -413,6 +427,12 @@ class Connection implements Cloneable, GetlRepository {
 		driver.startTran()
 		tranCount++
 	}
+
+	/** Check that the connection is established */
+	void checkEstablisheConnection() {
+		if (!connected)
+			throw new ExceptionGETL('Connection not established!')
+	}
 	
 	/**  Commit transaction */
 	void commitTran (boolean onlyIfSupported = false) {
@@ -423,6 +443,7 @@ class Connection implements Cloneable, GetlRepository {
 				throw new ExceptionGETL("Connection does not support transactions!")
 		}
 
+		checkEstablisheConnection()
 		if (!isTran())
 			throw new ExceptionGETL("Not started transaction for commit operation")
 
@@ -441,6 +462,8 @@ class Connection implements Cloneable, GetlRepository {
 				throw new ExceptionGETL("Connection does not support transactions!")
 		}
 
+		checkEstablisheConnection()
+
 		if (!isTran())
 			throw new ExceptionGETL("Not started transaction for rollback operation")
 
@@ -454,19 +477,21 @@ class Connection implements Cloneable, GetlRepository {
 	 * @param params	- Parameters
 	 * @return long		- Rows count 
 	 */
-	long executeCommand (Map params) {
-		if (!driver.isOperation(Driver.Operation.EXECUTE)) throw new ExceptionGETL("Driver not supported execute command")
+	long executeCommand(Map params) {
+		if (!driver.isOperation(Driver.Operation.EXECUTE))
+			throw new ExceptionGETL("Driver not supported execute command")
 		
 		if (params == null) params = [:]
 		methodParams.validation("executeCommand", params, [driver.methodParams.params("executeCommand")])
 		
 		String command = params.command
-		if (command == null) throw new ExceptionGETL("Required parameter \"command\"")
+		if (command == null)
+			throw new ExceptionGETL("Required parameter \"command\"")
 		
 		tryConnect()
 		driver.executeCommand(command, params)
 	}
-	
+
 	/**
 	 * Connect name
 	 * @return

@@ -177,7 +177,6 @@ class TableDataset extends JDBCDataset {
 	/** Valid exist table */
 	boolean isExists() {
 		validConnection()
-		connection.tryConnect()
 
 		if (!currentJDBCConnection.currentJDBCDriver.isTable(this))
 			throw new ExceptionGETL("${fullNameDataset()} is not a table!")
@@ -221,7 +220,6 @@ class TableDataset extends JDBCDataset {
 	/** Return count rows from table */
 	long countRow(String where = null, Map procParams = null) {
 		validConnection()
-		connection.tryConnect()
 
 		def sql = "SELECT Count(*) AS count_rows FROM ${fullNameDataset()}".toString()
 		where = where?:readDirective.where
@@ -548,8 +546,6 @@ class TableDataset extends JDBCDataset {
 			getl.finishProcess(pt)
 			return parent
 		}
-
-		connection.tryConnect()
 
 		def autoTran = connection.isSupportTran
 		if (autoTran) {

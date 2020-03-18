@@ -23,6 +23,7 @@ class OracleDriverTest extends JDBCDriverProto {
 		return new OracleConnection(config: 'oracle')
 	}
 
+	@Test
 	void testTZ() {
 		def ds = new OracleTable(connection: con)
 		ds.tableName = 'test_tz'
