@@ -81,12 +81,12 @@ class ExcelDriver extends Driver {
 
     /** Full file name */
     static String fullFileNameDataset(ExcelDataset dataset) {
-        if (dataset.connection == null) throw new ExceptionGETL("Required connection for excel dataset!")
+        if (dataset.connection == null)
+            throw new ExceptionGETL("Required connection for excel dataset!")
         String path = (dataset.connection as ExcelConnection).path
         String fileName = (dataset.connection as ExcelConnection).fileName
-        (path != null)?
-                FileUtils.ConvertToDefaultOSPath(path + File.separator + fileName):
-                FileUtils.ConvertToDefaultOSPath(fileName)
+        def res = (path != null)?(path + '/' + fileName):fileName
+        return FileUtils.IsResourceFileName(res)?FileUtils.ResourceFileName(res):FileUtils.ConvertToDefaultOSPath(res)
     }
 
     @Override
@@ -98,13 +98,15 @@ class ExcelDriver extends Driver {
         /*boolean warnings = BoolUtils.IsValue([params.showWarnings, dataset.showWarnings,
                                               dataset.currentExcelConnection.showWarnings, false])*/
 
-        if (!fileName) throw new ExceptionGETL("Required \"fileName\" parameter with connection")
-        if (!FileUtils.ExistsFile(fullPath)) throw new ExceptionGETL("File \"${fullPath}\" doesn't exists!")
+        if (!fileName)
+            throw new ExceptionGETL("Required \"fileName\" parameter with connection")
+        if (!FileUtils.ExistsFile(fullPath))
+            throw new ExceptionGETL("File \"${fullPath}\" doesn't exists!")
 
-        /*def ln = dataset.listName?:0*/
         def header = BoolUtils.IsValue([params.header, dataset.header,
                                         (dataset.connection as ExcelConnection).header], true)
-        if (dataset.field.isEmpty() && !header) throw new ExceptionGETL("Required fields description with dataset")
+        if (dataset.field.isEmpty() && !header)
+            throw new ExceptionGETL("Required fields description with dataset")
 		
 		def offset = (params.offset?:dataset.offset) as Map
 

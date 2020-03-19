@@ -27,6 +27,7 @@ package getl.proc
 import getl.lang.sub.GetlRepository
 import getl.proc.sub.ExecutorFactory
 import getl.proc.sub.ExecutorListElement
+import getl.proc.sub.ExecutorSplitListElement
 import getl.proc.sub.ExecutorThread
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -404,7 +405,8 @@ class Executor {
 	 * @param countThread number of threads running simultaneously
 	 * @param code list item processing code
 	 */
-	void runSplit(List elements = list, Integer countThread = countProc, Closure code) {
+	void runSplit(List elements = list, Integer countThread = countProc,
+				  @ClosureParams(value = SimpleType, options = ['getl.proc.sub.ExecutorSplitListElement']) Closure code) {
 		if (isRunThreads)
 			throw new ExceptionGETL('Cannot start "runSplit" method when threads are running!')
 
@@ -437,6 +439,8 @@ class Executor {
 				if (onStartingThread)
 					onStartingThread.call(node)
 
+				def inf = new ExecutorSplitListElement(node: node)
+
 				threadList.each { element ->
 					if (!((!isError || !abortOnError) && !isInterrupt)) {
 						directive = Closure.DONE
@@ -451,7 +455,8 @@ class Executor {
 					}
 					if (allowRun) {
 						try {
-							code.call(element)
+							inf.item = element
+							code.call(inf)
 							counterProcessed.nextCount()
 						}
 						catch (Throwable e) {

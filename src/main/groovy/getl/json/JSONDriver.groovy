@@ -75,14 +75,19 @@ class JSONDriver extends FileDriver {
 			Field s = d.copy()
 			if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
 			
-			String path = GenerationUtils.Field2Alias(d, true)
+			String path = GenerationUtils.Field2Alias(d)
 			sb << "attrValue.'${d.name.toLowerCase()}' = "
-			sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}")
+			sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}", false)
 			
 			sb << "\n"
 		}
 		sb << "dataset.params.attributeValue = attrValue\n"
-		if (initAttr != null) sb << "if (!initAttr(dataset)) return\n"
+		if (initAttr != null)
+			sb << """if (!initAttr(dataset)) { 
+	directive = Closure.DONE
+	return 
+}
+"""
 		sb << "\n"
 	}
 	
@@ -91,14 +96,20 @@ class JSONDriver extends FileDriver {
 	 */
 	void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
+		sb << "{ getl.json.JSONDataset dataset, Closure initAttr, Closure code, Object data, long limit ->\n"
 		generateAttrRead(dataset, initAttr, sb)
 		
-		if (limit > 0) sb << "long cur = 0\n"
-		sb << 'data' + ((rootNode != ".")?("." + rootNode):'') + ".each { struct ->\n"
-		if (limit > 0) {
-			sb << 'cur++'
-			sb << "if (cur > ${limit}) return"
-		}
+		sb << "long cur = 0\n"
+		sb << 'data' + ((rootNode != ".")?(".${StringUtils.QuoteObjectName(rootNode)}"):'') + ".each { struct ->\n"
+		sb << """
+if (limit > 0) {
+	cur++
+	if (cur > limit) {
+		directive = Closure.DONE
+		return
+	}
+}
+"""
 		sb << '	Map row = [:]\n'
 		int c = 0
 		dataset.field.each { Field d ->
@@ -110,21 +121,27 @@ class JSONDriver extends FileDriver {
 				
 				String path = GenerationUtils.Field2Alias(d)
 				sb << "	row.'${d.name.toLowerCase()}' = "
-				sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "struct.${path}")
+				sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "struct.${path}", false)
 				
 				sb << "\n"
 			}
 		}
 		sb << "	code.call(row)\n"
-		sb << "}"
-		
-		def vars = [dataset: dataset, initAttr: initAttr, code: code, data: data]
-		try {
-			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
+		sb << "}\n}"
+
+		def script = sb.toString()
+		def hash = script.hashCode()
+		Closure cl
+		if (((dataset.driver_params.hash_code_read as Integer)?:0) != hash) {
+			cl = GenerationUtils.EvalGroovyClosure(script)
+			dataset.driver_params.code_read = cl
+			dataset.driver_params.hash_code_read = hash
 		}
-		catch (Exception e) {
-			throw e
+		else {
+			cl = dataset.driver_params.code_read
 		}
+
+		cl.call(dataset, initAttr, code, data, limit)
 	}
 	
 	/**

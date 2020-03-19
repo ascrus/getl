@@ -105,21 +105,25 @@ abstract class FileDriver extends Driver {
 
 		return list
 	}
-	
+
 	/**
 	 * Fill file name without GZ extension
 	 * @param dataset
 	 * @return
 	 */
-	String fullFileNameDatasetWithoutGZ(Dataset dataset) {
-		String fn = fileNameWithoutExtension(dataset)
+	String fullFileNameDatasetWithoutGZ(FileDataset dataset) {
+		String fn = dataset.fileName
 		if (fn == null) return null
-		def ds = dataset as FileDataset
-		def con = ds.connection as FileConnection
-		if (ds.extension != null) fn += ".${ds.extension}"
-		if (con.path != null) fn = "${con.path}${con.fileSeparator}${fn}"
+		def con = dataset.fileConnection
+		if (dataset.extension != null) fn += ".${dataset.extension}"
+		if (con.path != null) {
+			if (FileUtils.IsResourceFileName(con.path))
+				fn = FileUtils.ConvertToUnixPath(con.path) + '/' + fn
+			else
+				fn = FileUtils.ConvertToDefaultOSPath(con.path) + con.fileSeparator + fn
+		}
 
-		return fn
+		return FileUtils.ResourceFileName(fn)
 	}
 	
 	/**
@@ -128,16 +132,13 @@ abstract class FileDriver extends Driver {
 	 * @return
 	 */
 	@SuppressWarnings("GrMethodMayBeStatic")
-	String fileNameWithoutExtension(Dataset dataset) {
-		def ds = dataset as FileDataset
-		def fn = ds.fileName
+	String fileNameWithoutExtension(FileDataset dataset) {
+		def fn = dataset.fileName
 		if (fn == null) return null
 		
-		if (ds.isGzFile && FileUtils.FileExtension(fn)?.toLowerCase() == "gz") fn = FileUtils.ExcludeFileExtension(fn)
-		if (ds.extension != null && FileUtils.FileExtension(fn)?.toLowerCase() == ds.extension.toLowerCase()) fn = FileUtils.ExcludeFileExtension(fn)
+		if (dataset.isGzFile && FileUtils.FileExtension(fn)?.toLowerCase() == "gz") fn = FileUtils.ExcludeFileExtension(fn)
+		if (dataset.extension != null && FileUtils.FileExtension(fn)?.toLowerCase() == dataset.extension.toLowerCase()) fn = FileUtils.ExcludeFileExtension(fn)
 
-		//println "${dataset.fileName}, gz=${dataset.isGzFile}, ext=${dataset.extension}, exclude: ${FileUtils.ExcludeFileExtension(fn)} => $fn"
-		
 		return fn
 	}
 	
@@ -147,17 +148,23 @@ abstract class FileDriver extends Driver {
 	 * @param portion
 	 * @return
 	 */
-	String fullFileNameDataset(Dataset dataset, Integer portion = null) {
+	String fullFileNameDataset(FileDataset dataset, Integer portion = null) {
 		String fn = fileNameWithoutExtension(dataset)
 		if (fn == null) return null
-		def ds = dataset as FileDataset
-		def con = ds.connection as FileConnection
-		if (con.path != null) fn = "${FileUtils.ConvertToDefaultOSPath(con.path)}${con.fileSeparator}${fn}"
+		def con = dataset.fileConnection
+
+		if (con.path != null) {
+			if (FileUtils.IsResourceFileName(con.path))
+				fn = FileUtils.ConvertToUnixPath(con.path) + '/' + fn
+			else
+				fn = FileUtils.ConvertToDefaultOSPath(con.path) + con.fileSeparator + fn
+		}
+
 		if (portion != null) fn = "${fn}.${StringUtils.AddLedZeroStr(portion.toString(), 4)}"
-		if (ds.extension != null) fn += ".${ds.extension}"
-		if (ds.isGzFile) fn += ".gz"
+		if (dataset.extension != null) fn += ".${dataset.extension}"
+		if (dataset.isGzFile) fn += ".gz"
 		
-		return fn
+		return FileUtils.ResourceFileName(fn)
 	}
 	
 	/**
@@ -167,7 +174,8 @@ abstract class FileDriver extends Driver {
 	 */
 	@Override
 	String fullFileNameSchema(Dataset dataset) {
-		return FileUtils.ResourceFileName(dataset.schemaFileName)?:fullFileNameDatasetWithoutGZ(dataset) + ".schema"
+		return (dataset.schemaFileName != null)?FileUtils.ResourceFileName(dataset.schemaFileName):
+				(fullFileNameDatasetWithoutGZ(dataset) + ".schema")
 	}
 	
 	/**
@@ -176,16 +184,14 @@ abstract class FileDriver extends Driver {
 	 * @param isSplit
 	 * @return
 	 */
-	String fileMaskDataset(Dataset dataset, boolean isSplit) {
+	String fileMaskDataset(FileDataset dataset, boolean isSplit) {
 		String fn = fileNameWithoutExtension(dataset)
-
-		def ds = dataset as FileDataset
 
 		if (isSplit)
 			fn += ".{number}"
-		if (ds.extension != null) fn += ".${ds.extension}"
+		if (dataset.extension != null) fn += ".${dataset.extension}"
 		
-		def isGzFile = ds.isGzFile
+		def isGzFile = dataset.isGzFile
 		if (isGzFile) fn += ".gz"
 
 		return fn
@@ -193,21 +199,22 @@ abstract class FileDriver extends Driver {
 
 	@Override
 	void dropDataset(Dataset dataset, Map params) {
+		def ds = dataset as FileDataset
         if (params.portions == null) {
-            def f = new File(fullFileNameDataset(dataset))
+            def f = new File(fullFileNameDataset(ds))
             if (f.exists()) {
                 f.delete()
             } else if (BoolUtils.IsValue(params.validExist, false)) {
-                throw new ExceptionGETL("File ${fullFileNameDataset(dataset)} not found")
+                throw new ExceptionGETL("File ${fullFileNameDataset(ds)} not found")
             }
         }
         else {
             (1..(params.portions as Integer)).each { Integer num ->
-                def f = new File(fullFileNameDataset(dataset, num))
+                def f = new File(fullFileNameDataset(ds, num))
                 if (f.exists()) {
                     f.delete()
                 } else if (BoolUtils.IsValue(params.validExist, false)) {
-                    throw new ExceptionGETL("File ${fullFileNameDataset(dataset)} not found")
+                    throw new ExceptionGETL("File ${fullFileNameDataset(ds)} not found")
                 }
             }
         }
@@ -318,11 +325,7 @@ abstract class FileDriver extends Driver {
 		def writer
 		OutputStream output
 		def file = new File(fn)
-        /*def dsFile = new File(dataset.fullFileName())
-        if (!dataset.isTemporaryFile && isAppend && dsFile.exists()) {
-            FileUtils.CopyToFile(dataset.fullFileName(), fn)
-        }*/
-		
+
 		if (isGzFile) {
 			output = new GZIPOutputStream(new FileOutputStream(file, isAppend))
 		}

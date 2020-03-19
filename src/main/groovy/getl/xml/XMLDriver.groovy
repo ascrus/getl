@@ -74,9 +74,9 @@ class XMLDriver extends FileDriver {
 			if (s.type in [Field.Type.DATETIME, Field.Type.DATE, Field.Type.TIME, Field.Type.TIMESTAMP_WITH_TIMEZONE])
 				s.type = Field.Type.STRING
 			
-			String path = GenerationUtils.Field2Alias(d, false)
+			String path = GenerationUtils.Field2Alias(d, true)
 			sb << "attrValue.'${d.name.toLowerCase()}' = "
-			sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}")
+			sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}", false)
 			
 			sb << "\n"
 		}
@@ -87,7 +87,9 @@ class XMLDriver extends FileDriver {
 
 	/** Generate the default alias for field */
 	String field2alias(Field field, Integer defaultAccessMethod) {
-		if (field.alias != null && !(field.alias in ['@', '#'])) return field.alias
+		if (field.alias != null && !(field.alias in ['@', '#']))
+			return GenerationUtils.Field2Alias(field, true)
+
 		if (field.alias == '@')
 			defaultAccessMethod = XMLDataset.DEFAULT_ATTRIBUTE_ACCESS
 		else if (field.alias == '#')
@@ -130,38 +132,54 @@ class XMLDriver extends FileDriver {
 	 * Read attributes and rows from dataset
 	 */
 	private void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure<Boolean> initAttr, Closure code) {
-		def xml = dataset as XMLDataset
 		StringBuilder sb = new StringBuilder()
-		generateAttrRead(xml, initAttr, sb)
+		sb << "{ getl.xml.XMLDataset dataset, Closure initAttr, Closure code, Object data, long limit ->\n"
+		generateAttrRead(dataset, initAttr, sb)
 		
-		if (limit > 0) sb << "long cur = 0\n"
-		sb << "data" + ((rootNode != ".")?"." + rootNode:"") + ".each { struct ->\n"
-		if (limit > 0) {
-			sb << "cur++"
-			sb << "if (cur > ${limit}) return"
-		}
+		sb << "long cur = 0\n"
+		sb << 'data' + ((rootNode != ".")?(".${StringUtils.QuoteObjectName(rootNode)}"):'') + ".each { struct ->\n"
+		sb << """
+if (limit > 0) {
+	cur++
+	if (cur > limit) {
+		directive = Closure.DONE
+		return
+	}
+}
+"""
 		sb << "	Map row = [:]\n"
 		int c = 0
-		xml.field.each { Field d ->
+		dataset.field.each { Field d ->
 			c++
 			if (listFields.isEmpty() || listFields.find { it.toLowerCase() == d.name.toLowerCase() }) {
 				
 				Field s = d.copy()
 				if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
 				
-				String path = field2alias(d, xml.defaultAccessMethod) //GenerationUtils.Field2Alias(d, false)
+				String path = field2alias(d, dataset.defaultAccessMethod) //GenerationUtils.Field2Alias(d, false)
 				sb << "	row.'${d.name.toLowerCase()}' = "
-				sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "struct.${path}")
+				sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "struct.${path}", false)
 				
 				sb << "\n"
 			}
 		}
 		sb << "	code.call(row)\n"
-		sb << "}"
+		sb << "}\n}"
 //		println sb.toString()
-		
-		def vars = [dataset: xml, initAttr: initAttr, code: code, data: data]
-		GenerationUtils.EvalGroovyScript(sb.toString(), vars)
+
+		def script = sb.toString()
+		def hash = script.hashCode()
+		Closure cl
+		if (((dataset.driver_params.hash_code_read as Integer)?:0) != hash) {
+			cl = GenerationUtils.EvalGroovyClosure(script)
+			dataset.driver_params.code_read = cl
+			dataset.driver_params.hash_code_read = hash
+		}
+		else {
+			cl = dataset.driver_params.code_read
+		}
+
+		cl.call(dataset, initAttr, code, data, limit)
 	}
 	
 	/**

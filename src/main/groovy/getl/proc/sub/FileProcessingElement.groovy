@@ -47,12 +47,14 @@ class FileProcessingElement {
     FileProcessingElement(FileProcessing.ListPoolElement sourceElement,
                           FileProcessing.ListPoolElement processedElement,
                           FileProcessing.ListPoolElement errorElement,
-                          Map<String, Object> attr, File file) {
+                          Map<String, Object> attr, File file,
+                          Map threadAttr) {
         this.sourceElement = sourceElement
         this.processedElement = processedElement
         this.errorElement = errorElement
         this.attr = attr
         this.file = file
+        this.threadAttr = threadAttr
     }
 
     void free() {
@@ -61,6 +63,7 @@ class FileProcessingElement {
         errorElement = null
         attr = null
         file = null
+        threadAttr = null
     }
 
     protected FileProcessing.ListPoolElement sourceElement, processedElement, errorElement
@@ -83,6 +86,10 @@ class FileProcessingElement {
 
         return errorElement.man
     }
+
+    Map<String, Object> threadAttr
+    /** Thread attributes */
+    Map<String, Object> getThreadAttr() { threadAttr }
 
     Map<String, Object> attr
     /** File attribute */

@@ -257,4 +257,17 @@ SET SELECT * FROM table; -- test
         assertEquals( '1 22', StringUtils.CutStrByWord('1 22 333 4444', 5))
         assertEquals( '1 22', StringUtils.CutStrByWord('1 22 333 4444', 6))
     }
+
+    @Test
+    void testQuoteObjectName() {
+        assertNull(StringUtils.QuoteObjectName(null, null))
+        assertEquals('"a"', StringUtils.QuoteObjectName('a'))
+        assertEquals('"a"."b c"."d"', StringUtils.QuoteObjectName('a.b c.d'))
+        assertEquals('"a".@"b c"."d"', StringUtils.QuoteObjectName('a.@b c.d', '@'))
+        assertEquals('"a".@"b c"."d"', StringUtils.QuoteObjectName('"a".@b c."d"', '@'))
+        assertEquals('"a"."@b c"."d"', StringUtils.QuoteObjectName('a."@b c".d', '@'))
+        assertEquals('"a"[0]."@b c"."d"', StringUtils.QuoteObjectName('a[0]."@b c".d', '@'))
+        assertEquals('"a"[0].@"b c"."d"', StringUtils.QuoteObjectName('"a"[0].@b c.d', '@'))
+        assertEquals('@"a"[0].@"b c"."d"', StringUtils.QuoteObjectName('@"a"[0].@b c.d', '@'))
+    }
 }

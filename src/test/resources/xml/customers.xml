@@ -1,0 +1,33 @@
+<list:data encoding="UTF-8" xmlns:list="http://www.w3.org/2000/09/xmldsig#" xmlns:type="http://www.w3.org/2000/09/xmldsig#">
+    <header version="1.00" object="Customers">
+        <sender time="2019-01-02T01:02:03+03:00"/>
+    </header>
+
+    <list:customers>
+        <list:customer type:customer_type="wholesale">
+            <id>1</id>
+            <name>Customer 1</name>
+            <phones>
+                <phone>+7 (001) 100-00-01</phone>
+                <phone>+7 (001) 100-00-02</phone>
+                <phone>+7 (001) 100-00-03</phone>
+            </phones>
+        </list:customer>
+        <list:customer type:customer_type="retail">
+            <id>2</id>
+            <name>Customer 2</name>
+            <phones>
+                <phone>+7 (111) 111-00-11</phone>
+                <phone>+7 (111) 111-00-12</phone>
+            </phones>
+        </list:customer>
+        <list:customer type:customer_type="retail">
+            <id>3</id>
+            <name>Customer 3</name>
+            <phones>
+                <phone>+7 (222) 222-00-11</phone>
+                <phone>+7 (222) 222-00-12</phone>
+            </phones>
+        </list:customer>
+    </list:customers>
+</list:data>

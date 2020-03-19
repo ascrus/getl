@@ -44,6 +44,7 @@ class XMLDataset extends StructureFileDataset {
 		
 		Map<String, Boolean> m = [:]
 		params.features = m
+		driver_params = [:]
 	}
 	
 	/** Feature parsing options */

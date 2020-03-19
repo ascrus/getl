@@ -165,8 +165,8 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
         if (onProcessFile == null)
             throw new ExceptionFileListProcessing("Required to specify the file processing code in \"processFile\"!")
 
-        if (countOfThreadProcessing > 1 && threadGroupColumns.isEmpty())
-            throw new ExceptionFileListProcessing('Required to specify a list of grouping attributes for multi-threaded processing in "threadGroupColumns"!')
+        /*if (countOfThreadProcessing > 1 && threadGroupColumns.isEmpty())
+            throw new ExceptionFileListProcessing('Required to specify a list of grouping attributes for multi-threaded processing in "threadGroupColumns"!')*/
 
         if (!threadGroupColumns.isEmpty()) {
             def vars = sourcePath.vars.keySet().toList()*.toLowerCase()
@@ -478,13 +478,15 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                         useList files
                         onStartingThread = this.onStartingThread
                         onFinishingThread = this.onFinishingThread
-                        runSplit { file ->
+                        runSplit { threadItem ->
                             // Detect free managers from pools
                             def sourceElement = FreePoolElement(sourceList)
                             def processedElement = FreePoolElement(processedList)
                             def errorElement = FreePoolElement(errorList)
                             def delFile = removeFiles
                             def delTable = sourceElement.delTable
+
+                            def file = threadItem.item as Map
 
                             try {
                                 def filepath = file.get('filepath') as String
@@ -504,7 +506,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                                     throw new ExceptionFileListProcessing("The downloaded file \"$filedesc\" was not found!")
 
                                 def element = new FileProcessingElement(sourceElement, processedElement,
-                                        errorElement, file, filedesc)
+                                        errorElement, file, filedesc, threadItem.node)
                                 try {
                                     try {
                                         onProcessFile.call(element)

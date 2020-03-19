@@ -9,7 +9,7 @@ import org.junit.BeforeClass
 import org.junit.Test
 
 class ExcelDriverTest extends getl.test.GetlTest {
-    static final String fileName = '/excel/test.xlsx'
+    static final String fileName = 'resource:/excel/test.xlsx'
     static String excelFileName
 
     static ExcelConnection connection
@@ -18,8 +18,7 @@ class ExcelDriverTest extends getl.test.GetlTest {
 
     @BeforeClass
     static void InitTest() {
-        excelFileName = FileUtils.FileFromResources(fileName).absolutePath
-        connection = new ExcelConnection(fileName: excelFileName)
+        connection = new ExcelConnection(fileName: fileName)
 
         excelDataset = new ExcelDataset(connection: connection)
 

@@ -598,4 +598,41 @@ class StringUtils {
 	static String WithGroupSeparator(BigDecimal value) {
 		return String.format('%,d', value.longValue())
 	}
+
+	/**
+	 * Parsing the name of the object and putting the names between the dots in quotation marks
+	 * @param value source string
+	 * @param sysChars special characters before the name of the object
+	 * @return parsed string
+	 */
+	static String QuoteObjectName(String value, String sysChars = null) {
+		if (value == null) return null
+		if (value.length() == 0) return value
+
+		def l = value.split('[.]')
+		for (int i = 0; i < l.length; i++) {
+			def s = l[i]
+			if (s.length() == 0) continue
+
+			def b = ''
+			if (sysChars != null && s[0] in sysChars) {
+				b = s[0]
+				s = s.substring(1)
+			}
+
+			def e = ''
+			def ei = s.indexOf('[')
+			if (ei > -1) {
+				if (ei == 0) continue
+				e = s.substring(ei)
+				s = s.substring(0, ei)
+			}
+
+			if (s.matches('["].+["]')) continue
+
+			s = s.replace('\\', '\\\\')
+			l[i] = b + '"' + s + '"' + e
+		}
+		return l.join('.')
+	}
 }

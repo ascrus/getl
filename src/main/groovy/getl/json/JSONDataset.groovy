@@ -46,6 +46,7 @@ class JSONDataset extends StructureFileDataset {
 	JSONDataset () {
 		super()
 		params.convertToList = false
+		driver_params = [:]
 	}
 
 	/** Added root {...} for JSON text */

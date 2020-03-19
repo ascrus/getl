@@ -55,37 +55,26 @@ class GenerationUtils {
 	
 	/**
 	 * Convert string alias as a modifier to access the value of field
-	 * @param value
-	 * @return
+	 * @param field source field
+	 * @param quote quoted name in field
+	 * @param sysChars special characters before the name of the object
+	 * @return parsed result
 	 */
-	static String ProcessAlias(String value, boolean quote) {
-		List<String> elementsPath = value.split("[.]").toList()
-		for (int i = 0; i < elementsPath.size(); i++) {
-			elementsPath[i] = ((quote)?'"':"") + elementsPath[i] + ((quote)?'"':"") + ((i < elementsPath.size() - 1)?"?":"")
-		}
-		return elementsPath.join(".")
+	static String ProcessAlias(String value, Boolean quote = true, String sysChars = null) {
+		return (quote)?StringUtils.QuoteObjectName(value, sysChars):value
 	}
 	
 	/** 
 	 * Convert alias of field as a modifier to access the value of field
-	 * @param field
-	 * @param quote
-	 * @return
+	 * @param field source field
+	 * @param quote quoted name in field
+	 * @param sysChars special characters before the name of the object
+	 * @return parsed result
 	 */
-	static String Field2Alias(Field field, boolean quote) {
+	static String Field2Alias(Field field, Boolean quote = true, String sysChars = null) {
 		String a = (field.alias != null)?field.alias:field.name
-        return ProcessAlias(a, quote)
+        return ProcessAlias(a, quote, sysChars)
 	}
-	
-	/**
-	 * Convert alias of field as a modifier to access the value of field
-	 * @param field
-	 * @return
-	 */
-	static String Field2Alias(Field field) {
-        return Field2Alias(field, true)
-	}
-	
 	
 	/**
 	 * Generation code create empty value as field type into variable
@@ -155,7 +144,7 @@ class GenerationUtils {
 	 * @param sourceValue
 	 * @return
 	 */
-	static String GenerateConvertValue(Field dest, Field source, String dataformat, String sourceValue) {
+	static String GenerateConvertValue(Field dest, Field source, String dataformat, String sourceValue, Boolean cloneObject = true) {
 		String r
 		
 		switch (dest.type) {
@@ -503,7 +492,10 @@ class GenerationUtils {
 				break
 
 			case Field.Type.OBJECT:
-				r = "($sourceValue instanceof Cloneable)?${sourceValue}?.clone():$sourceValue"
+				if (cloneObject)
+					r = "($sourceValue instanceof Cloneable)?${sourceValue}?.clone():$sourceValue"
+				else
+					r = sourceValue
 				
 				break
 
