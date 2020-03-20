@@ -2368,11 +2368,11 @@ $sql
 	/** Return options for create sequence */
 	protected List<String> createSequenceAttrs(SequenceCreateSpec opts) {
 		def res = [] as List<String>
-		if (opts.incrementBy != null) res << "INCREMENT BY ${opts.incrementBy}"
-		if (opts.minValue != null) res << "MINVALUE ${opts.minValue}"
-		if (opts.maxValue != null) res << "MAXVALUE ${opts.minValue}"
-		if (opts.startWith != null) res << "START WITH ${opts.startWith}"
-		if (opts.cacheNumbers != null) res << "CACHE ${opts.cacheNumbers}"
+		if (opts.incrementBy != null) res << "INCREMENT BY ${opts.incrementBy}".toString()
+		if (opts.minValue != null) res << "MINVALUE ${opts.minValue}".toString()
+		if (opts.maxValue != null) res << "MAXVALUE ${opts.minValue}".toString()
+		if (opts.startWith != null) res << "START WITH ${opts.startWith}".toString()
+		if (opts.cacheNumbers != null) res << "CACHE ${opts.cacheNumbers}".toString()
 		if (BoolUtils.IsValue(opts.isCycle)) res << 'CYCLE'
 		return res
 	}
