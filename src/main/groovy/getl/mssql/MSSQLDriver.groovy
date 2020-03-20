@@ -150,4 +150,8 @@ class MSSQLDriver extends JDBCDriver {
 
 	@Override
 	boolean timestampWithTimezoneConvertOnWrite() { return true }
+
+	/** Next value sequence sql script */
+	@Override
+	protected String sqlSequenceNext(String sequenceName) { "SELECT NEXT VALUE FOR ${sequenceName} AS id" }
 }

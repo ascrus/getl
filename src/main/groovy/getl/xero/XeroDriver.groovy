@@ -313,6 +313,7 @@ class XeroDriver extends Driver {
         return res
     }
 
+    @SuppressWarnings("GroovyAssignabilityCheck")
     @Override
     List<Field> fields(Dataset dataset) {
         if (dataset.objectName == null)
@@ -450,6 +451,7 @@ class XeroDriver extends Driver {
         return res.join('?.')
     }
 
+    @SuppressWarnings(["GroovyAssignabilityCheck", "GroovyAssignabilityCheck"])
     @Override
     long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
         def ds = dataset as XeroDataset
@@ -459,10 +461,10 @@ class XeroDriver extends Driver {
         def dsParams = objects.find { it.objectName == objectName }
         if (dsParams == null) throw new ExceptionGETL("Xero object \"$objectName\" not found!")
 
-        Date modifiedAfter = (params.modifiedAfter instanceof Date)?params.modifiedAfter:DateUtils.ParseDate('yyyy-MM-dd\'T\'HH:mm:ss.SSS', params.modifiedAfter)
+        Date modifiedAfter = (params.modifiedAfter instanceof Date)?(params.modifiedAfter as Date):DateUtils.ParseDate('yyyy-MM-dd\'T\'HH:mm:ss.SSS', params.modifiedAfter)
         def where = params.where as String
         def order = params.orderBY as String
-        def limit = Long.valueOf(params.limit?:0)
+        def limit = Long.valueOf((params.limit as Integer)?:0)
         Closure filter = (Closure)params.filter
 
         def fieldAttrs = fields(ds)

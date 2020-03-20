@@ -147,7 +147,6 @@ class ExecutorTest extends getl.test.GetlTest {
             System.gc()
             def heapSizeFinish = Runtime.runtime.totalMemory()
             logInfo "Heap start: ${FileUtils.SizeBytes(heapSizeStart)} finish: ${FileUtils.SizeBytes(heapSizeFinish)} free: ${FileUtils.SizeBytes(Runtime.runtime.freeMemory())}"
-            assertTrue("Start heap size: ${FileUtils.SizeBytes(heapSizeStart)}, Finish heap size: ${FileUtils.SizeBytes(heapSizeFinish)}", heapSizeFinish < 2000000000)
         }
     }
 

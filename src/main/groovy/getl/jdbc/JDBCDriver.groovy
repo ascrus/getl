@@ -24,18 +24,16 @@
 
 package getl.jdbc
 
+import getl.jdbc.opts.SequenceCreateSpec
 import groovy.sql.Sql
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
-
 import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.BatchUpdateException
 import java.sql.SQLException
 import java.sql.Statement
-
-import getl.cache.CacheDataset
 import getl.csv.CSVDataset
 import getl.data.*
 import getl.driver.Driver
@@ -685,18 +683,6 @@ class JDBCDriver extends Driver {
 
 		validTableName(dataset)
 		
-		if (dataset.sysParams.cacheDataset != null && dataset.sysParams.cacheRetrieveFields == null) {
-			dataset.sysParams.cacheRetrieveFields = true
-			try {
-				CacheDataset cds = dataset.sysParams.cacheDataset as CacheDataset
-				if (cds.field.isEmpty()) cds.retrieveFields()
-				if (!cds.field.isEmpty()) return cds.field
-			}
-			finally {
-				dataset.sysParams.cacheRetrieveFields = null
-			}
-		}
-		
 		if (dataset.params.onUpdateFields != null) (dataset.params.onUpdateFields as Closure).call(dataset)
 
 		List<Field> result = []
@@ -777,6 +763,7 @@ class JDBCDriver extends Driver {
 		return query.field
 	}
 
+	@Synchronized
 	@Override
 	void startTran() {
 		def con = jdbcConnection
@@ -789,6 +776,7 @@ class JDBCDriver extends Driver {
 		}
 	}
 
+	@Synchronized
 	@Override
 	void commitTran() {
 		def con = jdbcConnection
@@ -803,6 +791,7 @@ class JDBCDriver extends Driver {
 		}
 	}
 
+	@Synchronized
 	@Override
 	void rollbackTran() {
 		def con = jdbcConnection
@@ -848,6 +837,7 @@ ${extend}'''
 	 */
 	String getSysDualTable() { return null }
 
+	@Synchronized
 	@Override
 	void createDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
@@ -1136,6 +1126,7 @@ ${extend}'''
 	/** Drop sql statement syntax */
 	protected String dropSyntax = 'DROP {object} {ifexists} {name}'
 
+	@Synchronized
 	@Override
 	void dropDataset(Dataset dataset, Map params) {
 		validTableName(dataset)
@@ -1480,7 +1471,7 @@ ${extend}'''
 
 		return countRec
 	}
-	
+
 	@Override
 	void clearDataset(Dataset dataset, Map params) {
 		def con = jdbcConnection
@@ -2177,10 +2168,15 @@ $sql
 			dataset.driver_params = null
 		}
 	}
+
+	/** Next value sequence sql script */
+	protected String sqlSequenceNext(String sequenceName) { "SELECT NextVal('${sequenceName}') AS id;" }
 	
 	@Override
 	long getSequence(String sequenceName) {
-		def r = sqlConnect.firstRow("SELECT NextVal(${sequenceName}) AS id")
+		def sql = sqlSequenceNext(sequenceName)
+		saveToHistory(sql)
+		def r = sqlConnect.firstRow(sql)
 		return r.id
 	}
 
@@ -2367,5 +2363,40 @@ $sql
 			con.commitTran()
 
 		return count
+	}
+
+	/** Return options for create sequence */
+	protected List<String> createSequenceAttrs(SequenceCreateSpec opts) {
+		def res = [] as List<String>
+		if (opts.incrementBy != null) res << "INCREMENT BY ${opts.incrementBy}"
+		if (opts.minValue != null) res << "MINVALUE ${opts.minValue}"
+		if (opts.maxValue != null) res << "MAXVALUE ${opts.minValue}"
+		if (opts.startWith != null) res << "START WITH ${opts.startWith}"
+		if (opts.cacheNumbers != null) res << "CACHE ${opts.cacheNumbers}"
+		if (BoolUtils.IsValue(opts.isCycle)) res << 'CYCLE'
+		return res
+	}
+
+	/**
+	 * Create sequence in database
+	 * @param name full sequence name
+	 * @param ifNotExists create if not exists
+	 */
+	@Synchronized
+	protected void createSequence(String name, boolean ifNotExists, SequenceCreateSpec opts) {
+		def s1 = (ifNotExists)?'IF NOT EXISTS ':''
+		def attrs = createSequenceAttrs(opts).join(' ')
+		executeCommand("CREATE SEQUENCE ${s1}${name} $attrs")
+	}
+
+	/**
+	 * Drop sequence from database
+	 * @param name full sequence name
+	 * @param ifExists drop if exists
+	 */
+	@Synchronized
+	protected void dropSequence(String name, boolean ifExists) {
+		def s1 = (ifExists)?'IF EXISTS ':''
+		executeCommand("DROP SEQUENCE ${s1}${name}")
 	}
 }

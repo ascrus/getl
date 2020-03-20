@@ -42,12 +42,13 @@ class Version {
 	}.call()
 
 	// Read resource file config
+	@SuppressWarnings("GroovyAssignabilityCheck")
 	static private void readConfig() {
 		def conf = ConfigSlurper.LoadConfigFile(FileUtils.FileFromResources('/getl.conf'))
 		def getlSection = (conf.getl as Map)
 		if (getlSection == null)
 			throw new ExceptionGETL('Invalid resource file "getl.conf"!')
-		def jarSection = (conf.getl.jar as Map)
+		def jarSection = ((conf.getl as Map).jar as Map)
 		if (jarSection == null || jarSection.version == null || jarSection.year == null)
 			throw new ExceptionGETL('Invalid resource file "getl.conf"!')
 

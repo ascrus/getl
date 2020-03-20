@@ -175,7 +175,7 @@ abstract class FileDriver extends Driver {
 	@Override
 	String fullFileNameSchema(Dataset dataset) {
 		return (dataset.schemaFileName != null)?FileUtils.ResourceFileName(dataset.schemaFileName):
-				(fullFileNameDatasetWithoutGZ(dataset) + ".schema")
+				(fullFileNameDatasetWithoutGZ(dataset as FileDataset) + ".schema")
 	}
 	
 	/**

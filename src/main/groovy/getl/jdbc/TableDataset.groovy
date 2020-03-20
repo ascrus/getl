@@ -24,13 +24,10 @@
 
 package getl.jdbc
 
-import getl.csv.CSVConnection
-import getl.csv.CSVDataset
-import getl.data.Dataset
-import getl.data.Field
+import getl.csv.*
+import getl.data.*
 import getl.driver.Driver
-import getl.files.FileManager
-import getl.files.Manager
+import getl.files.*
 import getl.jdbc.opts.*
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
@@ -38,15 +35,8 @@ import getl.lang.sub.RepositoryDatasets
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TDS
-import getl.utils.BoolUtils
-import getl.utils.FileUtils
-import getl.utils.ListUtils
-import getl.utils.Logs
-import getl.utils.MapUtils
-import getl.utils.Path
-import getl.cache.*
+import getl.utils.*
 import getl.exception.ExceptionGETL
-import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -132,42 +122,6 @@ class TableDataset extends JDBCDataset {
 	Long getLimit() { params.limit as Long }
 	/** Read limit row */
 	void setLimit(Long value) { params.limit = value }
-
-	private CacheManager cacheManager
-	/**
-	 * Cache manager<br>
-	 * Is used to monitor changes in the structure or data
-	 */
-	CacheManager getCacheManager() { cacheManager }
-	/**
-	 * Cache manager<br>
-	 * Is used to monitor changes in the structure or data
-	 */
-	void setCacheManager(CacheManager value) {
-		if (cacheDataset != null && value != cacheManager) {
-			cacheDataset.connection = null
-			cacheDataset = null
-		}
-
-		def isNewCacheManager = (value != null && value != cacheManager)
-
-		cacheManager = value
-
-		if (isNewCacheManager) {
-			cacheDataset = new CacheDataset(connection: cacheManager, dataset: this)
-		}
-	}
-
-	/**
-	 * Cache dataset<br>
-	 * Is used to monitor changes in the structure or data
-	 */
-	private CacheDataset getCacheDataset() { sysParams.cacheDataset as CacheDataset }
-	/**
-	 * Cache dataset<br>
-	 * Is used to monitor changes in the structure or data
-	 */
-	private void setCacheDataset(CacheDataset value) { sysParams.cacheDataset = value }
 
 	/** Description of table */
 	String getDescription() { params.description }

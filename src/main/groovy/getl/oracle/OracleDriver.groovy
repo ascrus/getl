@@ -26,11 +26,13 @@ package getl.oracle
 
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
+import getl.jdbc.opts.SequenceCreateSpec
 import groovy.transform.InheritConstructors
 import getl.data.Dataset
 import getl.data.Field
 import getl.driver.Driver
 import getl.utils.*
+import groovy.transform.Synchronized
 
 
 /**
@@ -267,5 +269,47 @@ class OracleDriver extends JDBCDriver {
         }
 
         return url
+	}
+
+	/** Next value sequence sql script */
+	@Override
+	protected String sqlSequenceNext(String sequenceName) { "SELECT ${sequenceName}.nextval id FROM dual" }
+
+	@Synchronized
+	@Override
+	protected void dropSequence(String name, boolean ifExists) {
+		if (ifExists) {
+			def sql = """begin
+	for x in (select sequence_name from user_sequences where Upper(sequence_name)  = '${name.toUpperCase()}')
+	loop
+		execute immediate 'drop sequence ' || x.sequence_name;
+	end loop;
+end;
+	"""
+			executeCommand(sql)
+		}
+		else {
+			super.dropSequence(name, ifExists)
+		}
+	}
+
+	@Synchronized
+	@Override
+	protected void createSequence(String name, boolean ifNotExists, SequenceCreateSpec opts) {
+		if (ifNotExists) {
+			def attrs = createSequenceAttrs(opts).join(' ')
+			def sql = """declare count_seq number;
+begin
+	select count(*) into count_seq from user_sequences where Upper(sequence_name)  = '${name.toUpperCase()}';
+	if (count_seq = 0) then
+		execute immediate 'create sequence $name $attrs';
+	end if;
+end;
+	"""
+			executeCommand(sql)
+		}
+		else {
+			super.createSequence(name, ifNotExists, opts)
+		}
 	}
 }

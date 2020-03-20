@@ -83,4 +83,8 @@ class DB2Driver extends JDBCDriver {
 
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} = {value}' }
+
+	/** Next value sequence sql script */
+	@Override
+	protected String sqlSequenceNext(String sequenceName) { "SELECT NEXT VALUE FOR ${sequenceName} AS id" }
 }

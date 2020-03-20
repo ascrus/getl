@@ -28,9 +28,14 @@ import getl.data.Connection
 import getl.data.sub.WithConnection
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.jdbc.opts.DropSpec
+import getl.jdbc.opts.SequenceCreateSpec
+import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
 import getl.utils.CloneUtils
 import groovy.transform.Synchronized
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Sequence manager class
@@ -181,9 +186,41 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 		return fullName
 	}
 
+	/** System method */
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
 		sysParams.dslThisObject = null
 		sysParams.dslOwnerObject = null
+	}
+
+	/**
+	 * Create sequence in database
+	 * @param ifNotExists create if not exists
+	 * @param cl process create options
+	 */
+	void createSequence(boolean ifNotExists = false,
+						@DelegatesTo(SequenceCreateSpec)
+						@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.SequenceCreateSpec']) Closure cl = null) {
+		def thisObject = dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
+		def parent = new SequenceCreateSpec(this, thisObject, false, null)
+		parent.runClosure(cl)
+		connection.currentJDBCDriver.createSequence(fullName, ifNotExists, parent)
+	}
+
+	/**
+	 * Create sequence in database
+	 * @param cl process create options
+	 */
+	void createSequence(@DelegatesTo(SequenceCreateSpec)
+						@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.SequenceCreateSpec']) Closure cl) {
+		createSequence(false, cl)
+	}
+
+	/**
+	 * Drop sequence from database
+	 * @param ifExists drop if exists
+	 */
+	void dropSequence(boolean ifExists = false) {
+		connection.currentJDBCDriver.dropSequence(fullName, ifExists)
 	}
 }

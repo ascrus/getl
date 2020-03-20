@@ -124,6 +124,25 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         table.field(descriptionName).isNull = false
     }
 
+    private Sequence sequence
+    protected Sequence getSequence() { sequence }
+    protected boolean getTestSequence() { true }
+
+    protected void createSequence() {
+        if (!con.driver.isSupport(Driver.Support.SEQUENCE) || !testSequence) return
+        sequence = new Sequence()
+        sequence.with {
+            useConnection con
+            name = 'getl_test_sequence'
+            dropSequence(true)
+            cache = 10
+            createSequence(true) {
+                incrementBy = 10
+                cacheNumbers = countRows
+            }
+        }
+    }
+
     @Test
     void testLocalTable() {
         if (!con.driver.isSupport(Driver.Support.LOCAL_TEMPORARY)) {
@@ -268,10 +287,14 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
     protected long insertData() {
         if (!con.driver.isOperation(Driver.Operation.INSERT)) return 0
+
+        createSequence()
+
         def count = new Flow().writeTo(dest: table) { updater ->
             (1..countRows).each { num ->
                 Map r = GenerationUtils.GenerateRowValues(table.field, num)
-                r.id1 = num
+                if(this.sequence != null)
+                    r.id1 = this.sequence.nextValue
 
                 updater(r)
             }
@@ -283,8 +306,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
             println it
         }*/
 
-        def counter = 10
-		table.eachRow(order: ['id1'], limit: 10, offs: 10) { r ->
+        def counter = 0
+		table.eachRow(order: ['id1']) { r ->
             counter++
 			assertEquals(counter, r.id1)
 			assertNotNull(r.id2)
@@ -296,11 +319,9 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 			if (useTime) assertNotNull(r.time)
             if (useTimestampWithZone) assertNotNull(r.dtwithtz)
 			if (useBoolean) assertNotNull(r.flag)
-//			if (useClob) assertNotNull(r.text)
-//			if (useBlob) assertNotNull(r.data)
 			if (useUuid) assertNotNull(r.uniqueid)
 		}
-        assertEquals(10, table.readRows)
+        assertEquals(countRows, table.readRows)
 
         return count
     }

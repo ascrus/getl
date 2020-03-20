@@ -260,14 +260,13 @@ SET SELECT * FROM table; -- test
 
     @Test
     void testQuoteObjectName() {
-        assertNull(StringUtils.QuoteObjectName(null, null))
-        assertEquals('"a"', StringUtils.QuoteObjectName('a'))
-        assertEquals('"a"."b c"."d"', StringUtils.QuoteObjectName('a.b c.d'))
-        assertEquals('"a".@"b c"."d"', StringUtils.QuoteObjectName('a.@b c.d', '@'))
-        assertEquals('"a".@"b c"."d"', StringUtils.QuoteObjectName('"a".@b c."d"', '@'))
-        assertEquals('"a"."@b c"."d"', StringUtils.QuoteObjectName('a."@b c".d', '@'))
-        assertEquals('"a"[0]."@b c"."d"', StringUtils.QuoteObjectName('a[0]."@b c".d', '@'))
-        assertEquals('"a"[0].@"b c"."d"', StringUtils.QuoteObjectName('"a"[0].@b c.d', '@'))
-        assertEquals('@"a"[0].@"b c"."d"', StringUtils.QuoteObjectName('@"a"[0].@b c.d', '@'))
+        assertNull(StringUtils.ProcessObjectName(null, null))
+        assertEquals('a', StringUtils.ProcessObjectName('a'))
+        assertEquals('"a"', StringUtils.ProcessObjectName('a', true))
+        assertEquals('a?.b', StringUtils.ProcessObjectName('a.b', false, true))
+        assertEquals('"a"."b"', StringUtils.ProcessObjectName('a.b', true))
+        assertEquals('"a"?."b"', StringUtils.ProcessObjectName('a.b', true, true))
+        assertEquals('"a"[0]."b"[0]', StringUtils.ProcessObjectName('a[0].b[0]', true))
+        assertEquals('"a"[0]?."b"[0]', StringUtils.ProcessObjectName('a[0].b[0]', true, true))
     }
 }

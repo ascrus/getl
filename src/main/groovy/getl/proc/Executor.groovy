@@ -358,7 +358,7 @@ class Executor {
 			while (!threadPool.isTerminated()) {
 				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
 					try {
-						mainCode.call()
+						callSynch(mainCode)
 					}
 					catch (Throwable e) {
 						setError(null, e)
@@ -388,7 +388,8 @@ class Executor {
 				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
 			}
 
-			if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
+			if (mainCode != null && !isInterrupt && (!abortOnError || !isError))
+				callSynch(mainCode)
 		}
 		finally {
 			exceptions.clear()
@@ -529,7 +530,7 @@ class Executor {
 			while (!threadPool.isTerminated()) {
 				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
 					try {
-						mainCode.call()
+						callSynch(mainCode)
 					}
 					catch (Throwable e) {
 						setError(null, e)
@@ -559,7 +560,8 @@ class Executor {
 				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
 			}
 
-			if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
+			if (mainCode != null && !isInterrupt && (!abortOnError || !isError))
+				callSynch(mainCode)
 		}
 		finally {
 			exceptions.clear()
@@ -685,7 +687,7 @@ class Executor {
 			while (!threadPool.isTerminated()) {
 				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
 					try {
-						mainCode.call()
+						callSynch(mainCode)
 					}
 					catch (Throwable e) {
 						setError(null, e)
@@ -715,7 +717,8 @@ class Executor {
 				throw new ExceptionGETL("Executer has errors for run on objects:\n${objects.join('\n')}")
 			}
 
-			if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) mainCode.call()
+			if (mainCode != null && !isInterrupt && (!abortOnError || !isError))
+				callSynch(mainCode)
 		}
 		finally {
 			exceptions.clear()

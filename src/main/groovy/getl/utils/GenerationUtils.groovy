@@ -61,7 +61,7 @@ class GenerationUtils {
 	 * @return parsed result
 	 */
 	static String ProcessAlias(String value, Boolean quote = true, String sysChars = null) {
-		return (quote)?StringUtils.QuoteObjectName(value, sysChars):value
+		return StringUtils.ProcessObjectName(value, quote, true, sysChars)
 	}
 	
 	/** 

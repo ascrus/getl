@@ -131,13 +131,13 @@ class XMLDriver extends FileDriver {
 	/**
 	 * Read attributes and rows from dataset
 	 */
-	private void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure<Boolean> initAttr, Closure code) {
+	private void readRows (XMLDataset dataset, List<String> listFields, String rootNode, long limit, data, Closure<Boolean> initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
 		sb << "{ getl.xml.XMLDataset dataset, Closure initAttr, Closure code, Object data, long limit ->\n"
 		generateAttrRead(dataset, initAttr, sb)
 		
 		sb << "long cur = 0\n"
-		sb << 'data' + ((rootNode != ".")?(".${StringUtils.QuoteObjectName(rootNode)}"):'') + ".each { struct ->\n"
+		sb << 'data' + ((rootNode != ".")?(".${StringUtils.ProcessObjectName(rootNode, true, true)}"):'') + ".each { struct ->\n"
 		sb << """
 if (limit > 0) {
 	cur++
@@ -222,7 +222,7 @@ if (limit > 0) {
 	/**
 	 * Read dataset attribute and rows
 	 */
-	private void doRead (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	private void doRead (XMLDataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
 		if (dataset.params.rootNode == null) throw new ExceptionGETL("Required \"rootNode\" parameter with dataset")
 		String rootNode = dataset.params.rootNode
@@ -250,7 +250,7 @@ if (limit > 0) {
 		Closure<Boolean> filter = params."filter" as Closure<Boolean>
 		
 		long countRec = 0
-		doRead(dataset, params, prepareCode) { Map row ->
+		doRead(dataset as XMLDataset, params, prepareCode) { Map row ->
 			if (filter != null && !filter.call(row)) return
 			
 			countRec++

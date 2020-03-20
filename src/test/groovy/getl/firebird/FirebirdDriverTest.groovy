@@ -34,4 +34,6 @@ class FirebirdDriverTest extends JDBCDriverProto {
 
     @Override
     protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP' }
+
+    protected boolean getTestSequence() { false }
 }

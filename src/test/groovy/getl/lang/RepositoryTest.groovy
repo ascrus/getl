@@ -20,7 +20,7 @@ class RepositoryTest extends getl.test.GetlTest {
     void testConnections() {
         def getl = new Getl()
         def rep = new RepositoryConnections(getl, null)
-        assertEquals(20, rep.listClasses.size())
+        assertEquals(21, rep.listClasses.size())
         assertEquals(0, rep.list().size())
         assertNull(rep.find('group:con'))
         assertNull(rep.find(new H2Connection()))

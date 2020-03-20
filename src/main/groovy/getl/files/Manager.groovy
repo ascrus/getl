@@ -301,7 +301,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	abstract boolean isConnected()
 	
 	/**
-	 * Return list files of current directory from server
+	 * Return list files of current directory from server<br>
 	 * Parameters node list: fileName, fileSize, fileDate
 	 * @param maskFiles mask files
 	 * @return list of files
