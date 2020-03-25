@@ -244,6 +244,14 @@ class Executor {
 		run(null, null, cl)
 	}
 
+
+	/** Run thread code with list elements */
+	void runWithElements(Integer countThread, @ClosureParams(value = SimpleType, options = ['getl.proc.ExecutorListElement']) Closure cl) {
+		if (!(list instanceof List<ExecutorListElement>))
+			throw new ExceptionGETL('Requires List<ExecutorListElement> type for list elements!')
+		run(null, countThread, cl)
+	}
+
 	/**
 	 * Run code in threads over list items
 	 * @param elements list of processed elements (the default is specified in the "list")

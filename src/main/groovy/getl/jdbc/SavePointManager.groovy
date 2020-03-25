@@ -472,6 +472,8 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 			try {
 				if (save("UPDATE") == 0) {
 					def last = lastValue(source).value
+					if (last == newValue)
+						return
 					if (last == null) {
 						if (save("INSERT") == 0)
 							throw new ExceptionGETL("Error inserting new value into table $table for source \"$source\"!")

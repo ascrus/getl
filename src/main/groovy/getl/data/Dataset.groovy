@@ -24,11 +24,13 @@
 
 package getl.data
 
+import getl.config.ConfigSlurper
 import getl.data.opts.DatasetLookupSpec
 import getl.data.sub.WithConnection
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
+import getl.proc.sub.ExecutorThread
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
 import getl.csv.CSVDataset
@@ -201,12 +203,24 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (value != null) params.putAll(value)
 	}
 
+	private workSetField = false
 	final List<Field> field = []
 	/** Fields of dataset */
-	List<Field> getField() { return this.field }
+	List<Field> getField() {
+		if (!workSetField && !manualSchema && this.field.isEmpty() && schemaFileName != null)
+			loadDatasetMetadata()
+
+		return this.field
+	}
 	/** Fields of dataset */
 	void setField(List<Field> value) {
-		assignFields(value)
+		workSetField = true
+		try {
+			assignFields(value)
+		}
+		finally {
+			workSetField = false
+		}
 		manualSchema = true
 	}
 	
@@ -226,14 +240,15 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Add list of fields
 	 */
 	void addFields (List<Field> fields) {
-		fields.each { Field f -> this.field << f.copy() }
+		def l = getField()
+		fields.each { Field f -> l << f.copy() }
 	}
 
 	/**
 	 * Add field to list of fields dataset
 	 */
 	void addField (Field added) {
-		field << added
+		getField().add(added)
 	}
 	
 	/**
@@ -259,14 +274,13 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		params.manualSchema = value
 	}
 	
-	/**
-	 * Schema file name
-	 */
-	String getSchemaFileName () { return params.schemaFileName }
-	/**
-	 * Schema file name
-	 */
-	void setSchemaFileName (String value) { params.schemaFileName = value }
+	/** Schema file name */
+	String getSchemaFileName () { params.schemaFileName }
+	/** Schema file name */
+	void setSchemaFileName (String value) {
+		params.schemaFileName = value
+		manualSchema = false
+	}
 
 	/**
 	 * Print write rows to console
@@ -371,7 +385,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	List<Field> fieldClone () {
 		List<Field> result = []
-		this.field.each { Field f -> result << f.copy() }
+		getField().each { Field f -> result << f.copy() }
 		return result
 	}
 	
@@ -379,7 +393,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Clear primary keys flag for fields
 	 */
 	void clearKeys () {
-		this.field.each { Field f -> if (f.isKey) f.isKey = false }
+		getField().each { Field f -> if (f.isKey) f.isKey = false }
 	}
 	
 	/**
@@ -387,8 +401,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	void removeField(String name) {
 		def i = indexOfField(name)
-		if (i == -1) throw new ExceptionGETL("Field \"${name}\" not found")
-		this.field.remove(i)
+		if (i == -1)
+			throw new ExceptionGETL("Field \"${name}\" not found")
+
+		getField().remove(i)
 	}
 	
 	void removeField(Field field) {
@@ -404,9 +420,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		   def f = fieldByName(name)
 		   if (f != null) rf << f
 	   }
-	   rf.each { Field f -> 
-		   this.field.remove(f)
-		  }
+	   def l = getField()
+	   rf.each { Field f -> l.remove(f) }
    }
 	
 	/**
@@ -414,7 +429,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	void removeFields(@ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure<Boolean> where) {
 		def l = []
-		this.field.each {
+		getField().each {
 			if (where(it)) l << it
 		}
 		l.each {
@@ -468,6 +483,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (updateFieldType == UpdateFieldType.NONE) return
 		List<Field> r = []
 		def c = 0
+		def l = getField()
 		sourceFields.each { Field v ->
 			c++
 			if (updateFieldType != UpdateFieldType.CLEAR) {
@@ -476,7 +492,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 					if (prepare != null) prepare(c, v)
 					r << v
 				} else {
-					def af = field[i]
+					def af = l[i]
 					if (updateFieldType == UpdateFieldType.APPEND) {
 						r << af
 					}
@@ -509,6 +525,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		validConnection()
 		if (!connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS)) throw new ExceptionGETL("Driver not supported retrieve fields")
 		List<Field> sourceFields = connection.driver.fields(this)
+		manualSchema = true
 		updateFields(updateFieldType, sourceFields, prepare)
 
 		return field
@@ -531,7 +548,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	int indexOfField (String name) {
 		if (name == null) return -1
 		name = name.toLowerCase()
-		return field.findIndexOf { f -> (f.name?.toLowerCase() == name) }
+		return getField().findIndexOf { f -> (f.name?.toLowerCase() == name) }
 	}
 
 	/** Create or update dataset field */
@@ -544,7 +561,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		Field parent = fieldByName(name)
 		if (parent == null) {
 			parent = new Field(name: name)
-			field << parent
+			getField().add(parent)
 		}
 		Getl.RunClosure(this, thisObject, parent, cl)
 
@@ -558,7 +575,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def i = indexOfField(name)
 		if (i == -1) return null
 		
-		return field[i]
+		return this.field[i]
 	}
 	
 	/**
@@ -667,7 +684,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def bulkLoadDir = directives('bulkLoad')?:[:]
 		procParams = bulkLoadDir + procParams
 		
-		if (field.size() == 0) {
+		if (getField().size() == 0) {
 			if (BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
 				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
 					throw new ExceptionGETL("Can not auto load schema from destination dataset!")
@@ -682,13 +699,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			throw new ExceptionGETL("Destination dataset required declare fields!")
 		
 		CSVDataset source = procParams.source
-		if (source == null) throw new ExceptionGETL("Required parameter \"source\"")
+		if (source == null)
+			throw new ExceptionGETL("Required parameter \"source\"")
+
 		validCsvTempFile(source)
-		if (BoolUtils.IsValue(procParams.inheritFields, false)) {
+		if (BoolUtils.IsValue(procParams.inheritFields))
 			source.setField(field)
-		}
-		
-		if (source.field.size() == 0) { 
+
+		if (source.field.isEmpty()) {
 			if (BoolUtils.IsValue(procParams.source_autoSchema, source.autoSchema)) {
 				if (!source.connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
 					throw new ExceptionGETL("Can not auto load schema from source dataset!")
@@ -781,14 +799,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Generation closure code from process rows
 	 */
 	private Closure generateSetErrorValue (Closure processCode) {
-		return GenerationUtils.GenerateFieldCopy(field)
+		return GenerationUtils.GenerateFieldCopy(getField())
 	}
 	
 	/**
 	 * Reset all fields parameters to default
 	 */
 	void resetFieldToDefault() {
-		field.each { Field f ->
+		getField().each { Field f ->
 			f.isNull = true
 			f.isKey = false
 			f.isAutoincrement = false
@@ -819,7 +837,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	List<Field> getFieldListKeys () {
 		def res = []
-		field.each { Field field ->
+		getField().each { Field field ->
 			if (field.isKey) res << field
 		}
 		
@@ -833,7 +851,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	List<Field> getFieldListPartitions () {
 		def res = []
-		field.each { Field field ->
+		getField().each { Field field ->
 			if (field.isPartition) res << field
 		}
 
@@ -847,7 +865,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	List<String> getFieldNames () {
 		def res = []
-		field.each { Field field -> res << field.name }
+		getField().each { Field field -> res << field.name }
 		
 		return res
 	}
@@ -919,11 +937,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	void eachRow (Map procParams,
 				  @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure code) {
 		validConnection()
-		if (!connection.driver.isSupport(Driver.Support.EACHROW)) throw new ExceptionGETL("Driver is not support each row operation")
-		if (status != Dataset.Status.AVAIBLE) throw new ExceptionGETL("Dataset is not avaible for read operation (current status is ${status})")
+		if (!connection.driver.isSupport(Driver.Support.EACHROW))
+			throw new ExceptionGETL("Driver is not support each row operation")
+		if (status != Dataset.Status.AVAIBLE)
+			throw new ExceptionGETL("Dataset is not avaible for read operation (current status is ${status})")
 		
-		if (field.size() == 0 && BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
-			if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA)) throw new ExceptionGETL("Can not auto load schema from dataset")
+		if (getField().size() == 0 && BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
+			if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
+				throw new ExceptionGETL("Can not auto load schema from dataset")
 			loadDatasetMetadata()
 		}
 		
@@ -1003,8 +1024,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	void openWrite (Map procParams = [:]) {
 		validConnection()
-		if (!connection.driver.isSupport(Driver.Support.WRITE)) throw new ExceptionGETL("Driver is not support write operation")
-		if (status != Dataset.Status.AVAIBLE) throw new ExceptionGETL("Dataset is not avaible for write operation (current status is ${status})")
+		if (!connection.driver.isSupport(Driver.Support.WRITE))
+			throw new ExceptionGETL("Driver is not support write operation")
+		if (status != Dataset.Status.AVAIBLE)
+			throw new ExceptionGETL("Dataset is not avaible for write operation (current status is ${status})")
 
 		procParams = procParams?:[:]
 		methodParams.validation("openWrite", procParams, [connection.driver.methodParams.params("openWrite")])
@@ -1012,7 +1035,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		procParams = writeDir + procParams
 
 		def saveSchema = BoolUtils.IsValue(procParams.autoSchema, autoSchema) 
-		if (saveSchema && !connection.driver.isSupport(Driver.Support.AUTOSAVESCHEMA)) throw new ExceptionGETL("Can not auto save schema from dataset")
+		if (saveSchema && !connection.driver.isSupport(Driver.Support.AUTOSAVESCHEMA))
+			throw new ExceptionGETL("Can not auto save schema from dataset")
 		
 		def prepareCode = ((procParams.prepare != null)?procParams.prepare:null) as Closure
 		
@@ -1020,8 +1044,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			doInitFields(sourceFields)
 			List<String> result = []
 			if (prepareCode != null) result = prepareCode() as List<String>
-			if (saveSchema) saveDatasetMetadata(result)
-			
+			if (saveSchema)
+				saveDatasetMetadata(result, !(Thread.currentThread() instanceof ExecutorThread))
+
 			return result
 		}
 		
@@ -1120,24 +1145,26 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 	
 	/**
-	 * Save fields structure to metadata JSON file
+	 * Save fields structure to JSON file
+	 * @param writer write descriptor
+	 * @fieldList list of writing fields (by default write all fields)
 	 */
-	void saveDatasetMetadataToJSON (Writer writer, List<String> fieldList = null) {
+	@Synchronized
+	void saveDatasetMetadataToJSON(Writer writer, List<String> fieldList = null) {
 		List<Field> fl = []
 		if (fieldList == null || fieldList.isEmpty()) {
-			field.each { Field f ->
+			this.field.each { Field f ->
 				fl << f
 			}
 		}
 		else {
-			field.each { Field f ->
+			this.field.each { Field f ->
 				def n = f.name.toLowerCase()
 				if (fieldList.find { it.toLowerCase() == n } != null) fl << f
 			}
 		}
 		
 		Map p = [:]
-		//if (useParams) p.params = saveParams()
 		p.putAll(GenerationUtils.Fields2Map(fl))
 		
 		def json = MapUtils.ToJson(p)
@@ -1148,6 +1175,31 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		finally {
 			writer.close()
 		}
+	}
+
+	/**
+	 * Save fields structure to Groovy Slurper configuration file
+	 * @param file destination file
+	 * @fieldList list of writing fields (by default write all fields)
+	 */
+	@Synchronized
+	void saveDatasetMetadataToSlurper(File file, List<String> fieldList = null) {
+		List<Field> fl = []
+		if (fieldList == null || fieldList.isEmpty()) {
+			this.field.each { Field f ->
+				fl << f
+			}
+		}
+		else {
+			this.field.each { Field f ->
+				def n = f.name.toLowerCase()
+				if (fieldList.find { it.toLowerCase() == n } != null) fl << f
+			}
+		}
+
+		Map p = [:]
+		p.putAll(GenerationUtils.Fields2Map(fl))
+		ConfigSlurper.SaveConfigFile(p, file)
 	}
 
 	/**
@@ -1169,9 +1221,23 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		String key = procParams.key as String
 		if (key == null) throw new ExceptionGETL("Required parameter \"key\"!")
 		
-		if (field.isEmpty()) retrieveFields()
+		if (getField().isEmpty()) {
+			if (BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
+				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
+					throw new ExceptionGETL("Can not auto load schema from destination dataset!")
+
+				loadDatasetMetadata()
+			}
+			else {
+				if (connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
+					retrieveFields()
+			}
+		}
+
 		def keyField = fieldByName(key)
-		if (keyField == null) throw new ExceptionGETL("Key field \"$key\" not found!")
+		if (keyField == null)
+			throw new ExceptionGETL("Key field \"$key\" not found!")
+
 		key = keyField.name.toLowerCase()
 
 		Map result
@@ -1207,7 +1273,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/**
-	 * Load fields structure from metadata JSON file
+	 * Load fields structure from JSON file
+	 * @param reader reader descriptor
 	 */
 	void loadDatasetMetadataFromJSON(Reader reader) {
 		try {
@@ -1223,7 +1290,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		manualSchema = true
 	}
 	
-	/** Load fields structure from metadata JSON file */
+	/**
+	 * Load fields structure from JSON file
+	 * @param reader reader descriptor
+	 * @return list of readed fields
+	 */
 	static List<Field> LoadDatasetMetadataFromJSON(Reader reader) {
 		def b = new JsonSlurper()
 		def l = null
@@ -1235,15 +1306,52 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		}
 
 		List<Field> fl = GenerationUtils.Map2Fields(l as Map)
-		if (fl == null || fl.isEmpty()) throw new ExceptionGETL("Fields not found in json schema")
+		if (fl == null || fl.isEmpty())
+			throw new ExceptionGETL("Fields not found!")
 		
 		return fl
 	}
 
-	/** Load fields structure from metadata JSON file */
-	static List<Field> LoadDatasetMetadata(String fileName) {
+	/**
+	 * Load fields structure from Groovy Slurper file
+	 * @param file source file
+	 */
+	void loadDatasetMetadataFromSlurper(File file) {
 		try {
-			LoadDatasetMetadataFromJSON(new File(fileName).newReader("UTF-8"))
+			setField(LoadDatasetMetadataFromSlurper(file))
+		}
+		catch (ExceptionGETL e) {
+			throw e
+		}
+		catch (Exception e) {
+			Logs.Severe("Error reading schema file for dataset \"${objectName}\", error: ${e.message}")
+			throw e
+		}
+		manualSchema = true
+	}
+
+	/**
+	 * Load fields structure from Groovy Slurper file
+	 * @param file source file
+	 * @return list of readed fields
+	 */
+	static List<Field> LoadDatasetMetadataFromSlurper(File file) {
+		def p = ConfigSlurper.LoadConfigFile(file)
+		List<Field> fl = GenerationUtils.Map2Fields(p)
+		if (fl == null || fl.isEmpty())
+			throw new ExceptionGETL("Fields not found in file \"$file\"!")
+
+		return fl
+	}
+
+	/** Load fields structure from metadata file */
+	static List<Field> LoadDatasetMetadata(String fileName) {
+		def res = [] as List<Field>
+		try {
+			if (Config.configClassManager instanceof ConfigSlurper)
+				res = LoadDatasetMetadataFromSlurper(new File(fileName))
+			else
+				res = LoadDatasetMetadataFromJSON(new File(fileName).newReader("UTF-8"))
 		}
 		catch (ExceptionGETL e) {
 			throw e
@@ -1252,6 +1360,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			Logs.Severe("Error reading schema file from file \"$fileName\", error: ${e.message}")
 			throw e
 		}
+
+		return res
 	}
 
 	/**
@@ -1272,9 +1382,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 	
 	/**
-	 * Save fields structure to metadata JSON file
+	 * Save fields structure to metadata file
+	 * @fieldList list of saved fields
+	 * @overwrite save if file exist
 	 */
-	void saveDatasetMetadata(List<String> fieldList = null) {
+	@Synchronized
+	void saveDatasetMetadata(List<String> fieldList = null, boolean overwrite = true) {
 		if (isResourceFileNameSchema())
 			throw new ExceptionGETL('It is not possible to save the schema to a resource file!')
 
@@ -1283,17 +1396,31 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			throw new ExceptionGETL("Required \"schemaFileName\" for save dataset schema!")
 
 		FileUtils.ValidFilePath(fn)
-		saveDatasetMetadataToJSON(new File(fn).newWriter("UTF-8"), fieldList)
+		def file = new File(fn)
+		FileUtils.LockFile(file) {
+			if (overwrite || !file.exists()) {
+				if (Config.configClassManager instanceof ConfigSlurper)
+					saveDatasetMetadataToSlurper(file, fieldList)
+				else
+					saveDatasetMetadataToJSON(file.newWriter("UTF-8"), fieldList)
+			}
+		}
 	}
 	
 	/**
 	 * Load fields structure from metadata JSON file
 	 */
+	@Synchronized
 	void loadDatasetMetadata() {
 		def fn = fullFileSchemaName()
-		if (fn == null) throw new ExceptionGETL("Required \"schemaFileName\" for save dataset schema")
+		if (fn == null)
+			throw new ExceptionGETL("Required \"schemaFileName\" for save dataset schema")
+
 		try {
-			loadDatasetMetadataFromJSON(new File(fn).newReader("UTF-8"))
+			if (Config.configClassManager instanceof ConfigSlurper)
+				loadDatasetMetadataFromSlurper(new File(fn))
+			else
+				loadDatasetMetadataFromJSON(new File(fn).newReader("UTF-8"))
 		}
 		catch (ExceptionGETL e) {
 			throw e
@@ -1308,7 +1435,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Return values only key fields from row
 	 */
 	Map rowKeyMapValues(Map row, List excludeFields = null) {
-		return GenerationUtils.RowKeyMapValues(field, row, excludeFields)
+		GenerationUtils.RowKeyMapValues(getField(), row, excludeFields)
 	}
 	
 	/**
@@ -1340,14 +1467,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Return list of field name by field dataset	
 	 */
 	List<String> fields2list (List<String> excludeFields = null) {
-		return Fields2List(field, excludeFields)
+		Fields2List(getField(), excludeFields)
 	}
 	
 	/**
 	 * Reset typeName for all fields
 	 */
 	void resetFieldsTypeName () {
-		field.each { Field f -> f.typeName = null }
+		getField().each { Field f -> f.typeName = null }
 	}
 	
 	/**
@@ -1380,9 +1507,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
      */
 	Boolean equalsFields(List<Field> eqFields) {
         if (eqFields == null) return false
-        if (field.size() != eqFields.size()) return false
+        if (getField().size() != eqFields.size()) return false
+		def l = getField()
         for (int i = 0; i < field.size(); i++) {
-            if (!field[i].equalsAll(eqFields[i])) return false
+            if (!l[i].equalsAll(eqFields[i])) return false
         }
 
         return true
@@ -1392,8 +1520,19 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/** Create new csv temporary file for this dataset */
 	void createCsvTempFile() {
 		this.csvTempFile = TFS.dataset()
-		if (field.isEmpty() && Driver.Operation.RETRIEVEFIELDS in connection.driver.operations()) {
-			retrieveFields()
+
+		if (getField().isEmpty()) {
+			if (autoSchema) {
+				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
+					throw new ExceptionGETL("Can not auto load schema from destination dataset!")
+
+				loadDatasetMetadata()
+			}
+			else {
+				if (connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
+					retrieveFields()
+			}
+
 			if (field.isEmpty()) throw new ExceptionGETL("Dataset can not be generate temp file while not specified the fields")
 		}
 		this.csvTempFile.field = field

@@ -1,5 +1,6 @@
 package getl.utils
 
+import getl.lang.Getl
 import getl.tfs.TFS
 import org.junit.Test
 
@@ -207,7 +208,9 @@ class FileUtilsTest extends getl.test.GetlTest {
     void testCompressToZip() {
         def fileName = "${TFS.systemPath}/${FileUtils.UniqueFileName()}"
 
-        new File(fileName + '.txt').text = 'test zip archive'
+        def file = new File(fileName + '.txt')
+        file.deleteOnExit()
+        file.text = 'test zip archive'
         FileUtils.CompressToZip(fileName + '.zip', fileName + '.txt',
                 [compressionMethod: 'DEFLATE',
                  compressionLevel: 'MAXIMUM',
@@ -217,6 +220,9 @@ class FileUtilsTest extends getl.test.GetlTest {
                  password: 'TEST GETL ZIP'])
 
         assertTrue(FileUtils.ExistsFile(fileName + '.zip'))
+
+        assertTrue(FileUtils.DeleteFile(fileName + '.txt'))
+        assertTrue(FileUtils.DeleteFile(fileName + '.zip'))
     }
 
     @Test
@@ -284,7 +290,6 @@ class FileUtilsTest extends getl.test.GetlTest {
         ]
 
         list.each { mask, rule ->
-            println "$mask: $rule"
             assertEquals("$mask: $rule", rule, FileUtils.FileMaskToMathExpression(mask))
         }
     }
@@ -311,5 +316,29 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertEquals('c:/dir', FileUtils.RelativePathFromFile('c:\\dir\\file.ext', true))
         assertEquals('.', FileUtils.RelativePathFromFile('c:\\dir\\file.ext', '/'))
         assertEquals('.', FileUtils.RelativePathFromFile('file.ext'))
+    }
+
+    @Test
+    void testLockFile() {
+        Getl.Dsl(this) {
+            def counter = new SynchronizeObject()
+            thread {
+                useList (1..100)
+                run(10) {
+                    def f = new File("${TFS.systemPath}/test_file.lock")
+                    FileUtils.LockFile(f) {
+                        if (!f.exists()) {
+                            f.deleteOnExit()
+                            f.text = '12345'
+                            counter.nextCount()
+                        }
+                        else
+                            assertEquals('12345', f.text)
+                    }
+                }
+            }
+            assertEquals(1, counter.count)
+            assertTrue(FileUtils.fileLockManager.isEmpty())
+        }
     }
 }

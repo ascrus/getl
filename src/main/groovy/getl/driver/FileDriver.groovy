@@ -310,7 +310,7 @@ abstract class FileDriver extends Driver {
 		if (isAppend) fn += ".${FileUtils.UniqueFileName()}"
 		def writeOpt = new FileWriteOpts()
 		writeOpt.with {
-			fileName = (!isAppend)?(wp.fn as String):(wp.fn as String).intern()
+			fileName = (!isAppend)?(wp.fn as String):(wp.fn as String)
 			tempFileName = fn
 			partNumber = portion
 			append = isAppend
@@ -400,7 +400,7 @@ abstract class FileDriver extends Driver {
 				}
 			}
 			else {
-				synchronized (opt.fileName.intern()) {
+				FileUtils.LockFile(f) {
 					def isExistsFile = f.exists()
 
 					def isHeader = fileHeader(dataset)

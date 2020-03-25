@@ -2,16 +2,20 @@ package getl.config
 
 import getl.csv.CSVConnection
 import getl.h2.H2Connection
+import getl.lang.Getl
 import getl.tfs.TFS
 import getl.utils.Config
+import getl.utils.FileUtils
 import getl.utils.MapUtils
 import getl.utils.MapUtilsTest
 import groovy.json.JsonBuilder
+import groovy.transform.InheritConstructors
 import org.junit.Test
 
 /**
  * @author Alexsey Konstantinov
  */
+@InheritConstructors
 class ConfigSlurperTest extends getl.test.GetlTest {
     def h2 = new H2Connection(config: 'h2')
     def csv = new CSVConnection(config: 'csv')
@@ -108,5 +112,28 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         assertEquals('2019-02-01 01:02:03', Config.content.var2)
         assertEquals([a:1,b:2,c:3,d:'local variable value'], Config.content.var3[0])
         assertEquals([a:4,b:5,c:6,d:'variable value'], Config.content.var3[1])
+    }
+
+    @Test
+    void testDatasetSchema() {
+        Getl.Dsl(this) {
+            csv {
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50; isNull = false }
+                field('dt') { type = dateFieldType; isPartition = true }
+
+                def f = new File(TFS.systemPath + '/demo.schema')
+                f.deleteOnExit()
+                saveDatasetMetadataToSlurper(f)
+
+                field.clear()
+                loadDatasetMetadataFromSlurper(f)
+                assertEquals(3, field.size())
+                assertTrue(field('id').isKey)
+                assertFalse(field('name').isNull)
+                assertTrue(field('dt').isPartition
+                )
+            }
+        }
     }
 }

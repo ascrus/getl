@@ -432,6 +432,9 @@ Examples:
                 @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         def res
 
+        if (!(Config.configClassManager instanceof ConfigSlurper))
+            Config.configClassManager = new ConfigSlurper()
+
         if (ownerObject != null) {
             _ownerObject = ownerObject
             if (ownerObject instanceof Test) setUnitTestMode(true)

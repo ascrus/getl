@@ -118,10 +118,8 @@ class ExcelDriver extends Driver {
         if (prepareCode != null) prepareCode([])
 
         def workbook = getWorkbookType(fullPath) as Workbook
-
+        Sheet sheet
         try {
-            Sheet sheet
-
             if (dataset.listName != null) {
                 if (workbook.getSheetIndex(dataset.listName) == -1)
                     throw new ExceptionGETL("List \"${dataset.listName}\" not found!")

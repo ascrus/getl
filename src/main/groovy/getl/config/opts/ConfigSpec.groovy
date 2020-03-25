@@ -41,7 +41,8 @@ class ConfigSpec extends BaseSpec {
     /**
      * Configuration manager
      */
-    static ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper }
+    @SuppressWarnings("GrMethodMayBeStatic")
+    ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper }
 
     /**
      * Configuration files path
@@ -71,7 +72,7 @@ class ConfigSpec extends BaseSpec {
      * @param environment environment
      * @param codePage code page file
      */
-    static void load(String fileName, String environment = null, String codePage = null) {
+    void load(String fileName, String environment = null, String codePage = null) {
         Config.LoadConfig([fileName: FileUtils.ResourceFileName(fileName), codePage: codePage, environment: environment])
     }
 
@@ -81,7 +82,7 @@ class ConfigSpec extends BaseSpec {
      * @param environment environment
      * @param secretKey encode key string
      */
-    static void loadEncrypt(String fileName, String secretKey = null, String environment = null) {
+    void loadEncrypt(String fileName, String secretKey = null, String environment = null) {
         def data = ConfigStores.LoadSection(FileUtils.ResourceFileName(fileName), secretKey, environment?:manager.environment?:'prod')
         Config.MergeConfig(data)
     }
@@ -91,7 +92,7 @@ class ConfigSpec extends BaseSpec {
      * @param fileName configuration file name
      * @param codePage code page file
      */
-    static void save(String fileName, String codePage = null) {
+    void save(String fileName, String codePage = null) {
         Config.SaveConfig(fileName: fileName, codePage: codePage)
     }
 
@@ -102,14 +103,14 @@ class ConfigSpec extends BaseSpec {
      * @param environment environment
      * @param secretKey encode key string
      */
-    static void saveEncrypt(Map data, String fileName, String secretKey = null, String environment = null) {
+    void saveEncrypt(Map data, String fileName, String secretKey = null, String environment = null) {
         ConfigStores.SaveSection(data, fileName, secretKey, environment?:manager.environment?:'prod')
     }
 
     /**
      * Clear configuration content
      */
-    static void clear() { Config.ClearConfig() }
+    void clear() { Config.ClearConfig() }
 
     /**
      * read fields from the specified configuration section

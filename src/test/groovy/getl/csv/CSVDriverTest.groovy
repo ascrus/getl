@@ -643,6 +643,7 @@ class CSVDriverTest extends getl.test.GetlTest {
                 field('value') { type = numericFieldType; length = 12; precision = 2 }
             }
             textFile(csv.fullFileName()) {
+                temporaryFile = true
                 writeln 'id,name,value'
                 writeln 'bad,,1,,string'
                 writeln 'bad2string'

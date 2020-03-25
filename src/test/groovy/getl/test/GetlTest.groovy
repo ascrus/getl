@@ -1,5 +1,6 @@
 package getl.test
 
+import getl.config.ConfigFiles
 import getl.lang.Getl
 import getl.utils.Config
 import getl.utils.FileUtils
@@ -31,6 +32,9 @@ abstract class GetlTest extends GroovyTestCase {
 
     @Before
     void beforeTest() {
+        if (!(Config.configClassManager instanceof ConfigFiles))
+            Config.configClassManager = new ConfigFiles()
+
         org.junit.Assume.assumeTrue(allowTests());
     }
 

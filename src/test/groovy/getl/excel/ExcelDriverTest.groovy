@@ -12,20 +12,12 @@ class ExcelDriverTest extends getl.test.GetlTest {
     static final String fileName = 'resource:/excel/test.xlsx'
     static String excelFileName
 
-    static ExcelConnection connection
-    static ExcelDataset excelDataset
+    static ExcelConnection connection = new ExcelConnection(fileName: fileName)
+    static ExcelDataset excelDataset = new ExcelDataset(connection: connection)
     static final String listName = 'test'
 
-    @BeforeClass
-    static void InitTest() {
-        connection = new ExcelConnection(fileName: fileName)
-
-        excelDataset = new ExcelDataset(connection: connection)
-
-    }
-
     @Before
-    void setup() {
+    void initTest() {
         excelDataset.header = true
         excelDataset.field.clear()
         excelDataset.field << new Field(name: 'a', type: Field.Type.INTEGER)
@@ -57,8 +49,11 @@ class ExcelDriverTest extends getl.test.GetlTest {
     @Test
     void testEachRowWithoutFields() {
         def counter = 0
-		def ds = new ExcelDataset(connection: connection, header: true)
-        ds.eachRow { Map row ->
+
+        def orig = excelDataset.field
+
+		excelDataset.field.clear()
+        excelDataset.eachRow { Map row ->
 			assertNotNull(row.a)
 			assertTrue(row.a instanceof BigDecimal)
 
@@ -70,10 +65,11 @@ class ExcelDriverTest extends getl.test.GetlTest {
 
             counter++
         }
-		assertEquals(Dataset.Fields2List(ds.field), Dataset.Fields2List(excelDataset.field))
-		assertEquals(ds.fieldByName('a').type, Field.Type.NUMERIC)
-		assertEquals(ds.fieldByName('b').type, Field.Type.NUMERIC)
-		assertEquals(ds.fieldByName('c').type, Field.Type.STRING)
+
+		assertEquals(Dataset.Fields2List(orig), Dataset.Fields2List(excelDataset.field))
+		assertEquals(excelDataset.fieldByName('a').type, Field.Type.NUMERIC)
+		assertEquals(excelDataset.fieldByName('b').type, Field.Type.NUMERIC)
+		assertEquals(excelDataset.fieldByName('c').type, Field.Type.STRING)
         assertEquals(2, counter)
     }
 

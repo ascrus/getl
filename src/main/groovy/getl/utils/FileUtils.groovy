@@ -1130,4 +1130,23 @@ class FileUtils {
 
 		return "$res $byteName"
 	}
+
+	static protected def fileLockManager = new LockManager()
+
+	/**
+	 * Clean file locks objects
+	 * @param seconds file lock time in seconds
+	 */
+	static void GarbageLockFiles(int seconds = 5) {
+		fileLockManager.garbage(seconds)
+	}
+
+	/**
+	 * Lock the file from multi-threaded access and perform operations on it
+	 * @file source file
+	 * @cl file processing code
+	 */
+	static void LockFile(File file, Closure cl) {
+		fileLockManager.lockObject(file.path, cl)
+	}
 }

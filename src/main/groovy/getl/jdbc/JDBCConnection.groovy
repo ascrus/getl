@@ -674,16 +674,18 @@ import getl.lang.Getl
 			def tableName = StringUtils.TransformObjectName(dataset.tableName)
 
 			if (p.defineFields) {
-				if (dataset.field.size() == 0) dataset.retrieveFields()
-				if (dataset.field.size() == 0) throw new ExceptionGETL("Table ${dataset.fullTableName} has no fields!")
+				if (dataset.field.size() == 0)
+					dataset.retrieveFields()
+				if (dataset.field.size() == 0)
+					throw new ExceptionGETL("Table ${dataset.fullTableName} has no fields!")
 				def schemaResourceDir = ((resourceRoot != null)?"/$resourceRoot":'') + "/fields/" + generateDslResourceName(dataset)
 				FileUtils.ValidPath(resourcePath + schemaResourceDir)
-				def resourceFieldFile = new File(resourcePath + schemaResourceDir + "${tableName}.json")
-				dataset.saveDatasetMetadataToJSON(resourceFieldFile.newWriter('utf-8'))
+				def resourceFieldFile = new File(resourcePath + schemaResourceDir + "${tableName}.schema")
+				dataset.saveDatasetMetadataToSlurper(resourceFieldFile)
 				Logs.Fine("  saved ${dataset.field.size()} fields desctiption to file \"${resourceFieldFile.path}\"")
 
-				sb << "\n\n${tab}schemaFileName = 'resource:${schemaResourceDir}${tableName}.json'"
-				sb << "\n${tab}loadDatasetMetadata()"
+				sb << "\n\n${tab}schemaFileName = 'resource:${schemaResourceDir}${tableName}.schema'"
+//				sb << "\n${tab}loadDatasetMetadata()"
 			}
 
 			if (p.createTables && dataset.type in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType, JDBCDataset.externalTable]) {
