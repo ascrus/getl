@@ -611,7 +611,7 @@ class JDBCConnection extends Connection {
 
 		Logs.Fine("  with connection: $connectionName")
 		if (p.groupName != null) Logs.Fine("  group in repository: ${p.groupName}")
-		if (p.defineFields) Logs.Fine("  saving list of field in resource files")
+		if (p.defineFields) Logs.Fine("  saving list of field in resource files${(p.saveTypeNameForFields)?' with determining the type of database field':''}")
 		if (p.createTables) Logs.Fine("  generating create table operation")
 		if (p.dropTables) Logs.Fine("  generating drop table operation")
 		if (!listTableSavedData.isEmpty()) Logs.Fine("  save data from tables ${listTableSavedData.toString()} to resource files")
@@ -678,6 +678,9 @@ import getl.lang.Getl
 					dataset.retrieveFields()
 				if (dataset.field.size() == 0)
 					throw new ExceptionGETL("Table ${dataset.fullTableName} has no fields!")
+				if (!p.saveTypeNameForFields)
+					dataset.resetFieldsTypeName()
+
 				def schemaResourceDir = ((resourceRoot != null)?"/$resourceRoot":'') + "/fields/" + generateDslResourceName(dataset)
 				FileUtils.ValidPath(resourcePath + schemaResourceDir)
 				def resourceFieldFile = new File(resourcePath + schemaResourceDir + "${tableName}.schema")
@@ -777,7 +780,7 @@ ${tab}${tab}}
 	 * @param params parameters (Map queryParams and Boolean isUpdate)
 	 */
 	long executeCommand(String command, Map execParams = [:]) {
-		executeCommand(execParams?:[:] + [command: command])
+		executeCommand((execParams?:[:]) + [command: command])
 	}
 
 	static public final int transactionIsolationNone = java.sql.Connection.TRANSACTION_NONE

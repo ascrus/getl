@@ -1987,7 +1987,7 @@ Examples:
 
     /** Configuration options */
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)
-                             @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ConfigSpec']) Closure cl = null) {
+                             @ClosureParams(value = SimpleType, options = ['getl.config.opts.ConfigSpec']) Closure cl = null) {
         if (cl != null && Thread.currentThread() instanceof ExecutorThread)
             throw new ExceptionDSL('Changing configuration is not supported in the thread!')
 
@@ -2053,6 +2053,7 @@ Examples:
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     Connection cloneConnection(String newName, Connection con,
+                               @DelegatesTo(Connection)
                                @ClosureParams(value = SimpleType, options = ['getl.data.Connection']) Closure cl = null) {
         def res = cloneConnection(con)
         registerConnectionObject(res, newName)
@@ -2106,6 +2107,7 @@ Examples:
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     Dataset cloneDataset(String newName, Dataset dataset, Connection con = null,
+                         @DelegatesTo(Dataset)
                          @ClosureParams(value = SimpleType, options = ['getl.data.Dataset']) Closure cl = null) {
         def res = cloneDataset(dataset, con)
         registerDatasetObject(res, newName)
@@ -3698,6 +3700,7 @@ Examples:
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     Manager cloneFilemanager(String newName, Manager man,
+                             @DelegatesTo(Manager)
                              @ClosureParams(value = SimpleType, options = ['getl.files.Manager']) Closure cl = null) {
         def res = cloneFilemanager(man)
         registerFileManagerObject(res, newName)
@@ -3977,6 +3980,7 @@ Examples:
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     SavePointManager cloneHistorypoint(String newName, SavePointManager point, JDBCConnection con = null,
+                                       @DelegatesTo(SavePointManager)
                                        @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl = null) {
         def res = cloneHistorypoint(point, con)
         registerHistoryPointObject(res, newName)
@@ -4031,6 +4035,7 @@ Examples:
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     Sequence cloneSequence(String newName, Sequence seq, JDBCConnection con = null,
+                           @DelegatesTo(Sequence)
                            @ClosureParams(value = SimpleType, options = ['getl.jdbc.Sequence']) Closure cl = null) {
         def res = cloneSequence(seq, con)
         registerSequenceObject(res, newName)

@@ -120,7 +120,7 @@ class VerticaConnection extends JDBCConnection {
 		return qry.rows()[0] as Map
 	}
 
-	final def attachedVertica = [] as List<String>
+	final def attachedVertica = [:] as Map<String, String>
 
 	static protected String DatabaseFromConnection(VerticaConnection con) {
 		def database
@@ -146,15 +146,23 @@ class VerticaConnection extends JDBCConnection {
 		return database
 	}
 
+	/** Verify that the specified connection is attached to the current connection */
+	boolean isAttachConnection(VerticaConnection connection) {
+		attachedVertica.containsKey(connection.toString().toLowerCase())
+	}
+
 	/**
 	 * Create connections to another Vertica cluster for the current session
-	 * @param anotherConnection connecting to another Vertica
+	 * @param anotherConnection attachable connection
 	 */
 	void attachExternalVertica(VerticaConnection anotherConnection) {
+		if (isAttachConnection(anotherConnection))
+			throw new ExceptionGETL("The Vertica cluster \"$anotherConnection\" is already attached to the current connection!")
+
 		if (anotherConnection.login == null)
-			throw new ExceptionGETL("No login is specified for the connection!")
+			throw new ExceptionGETL("No login is specified for the connection \"$anotherConnection\"!")
 		if (anotherConnection.password == null)
-			throw new ExceptionGETL("No password is specified for the connection!")
+			throw new ExceptionGETL("No password is specified for the connection \"$anotherConnection\"!")
 
 		def database, host, port = 5433
 		if (anotherConnection.connectURL != null) {
@@ -162,7 +170,7 @@ class VerticaConnection extends JDBCConnection {
 			def m = p.analize(anotherConnection.connectURL)
 			host = m.host as String
 			if (host == null)
-				throw new ExceptionGETL("Invalid connect URL, host unreachable!")
+				throw new ExceptionGETL("Invalid connect URL, host unreachable in connection \"$anotherConnection\"!")
 			def i = host.indexOf(':')
 			if (i != -1) {
 				port = Integer.valueOf(host.substring(i + 1))
@@ -171,7 +179,7 @@ class VerticaConnection extends JDBCConnection {
 
 			database = m.database as String
 			if (database == null)
-				throw new ExceptionGETL("Invalid connect URL, database unreachable!")
+				throw new ExceptionGETL("Invalid connect URL, database unreachable in connection \"$anotherConnection\"!")
 			i = database.indexOf('?')
 			if (i != -1) {
 				database = database.substring(0, i - 1)
@@ -180,28 +188,30 @@ class VerticaConnection extends JDBCConnection {
 		else {
 			host = anotherConnection.connectHost
 			if (host == null)
-				throw new ExceptionGETL("No host is specified for the connection!")
+				throw new ExceptionGETL("No host is specified for the connection \"$anotherConnection\"!")
 			port = anotherConnection.connectPortNumber?:5433
 			database = anotherConnection.connectDatabase
 			if (database == null)
-				throw new ExceptionGETL("No database is specified for the connection!")
+				throw new ExceptionGETL("No database is specified for the connection \"$anotherConnection\"!")
 		}
-
-		if (database.toLowerCase() in attachedVertica)
-			throw new ExceptionGETL("The Vertica cluster with database \"$database\" is already attached to the current connection!")
 
 		executeCommand("CONNECT TO VERTICA {database} USER {login} PASSWORD '{password}' ON '{host}',{port}",
 				[queryParams: [host: host, port: port, database: database,
 				 login: anotherConnection.login, password: anotherConnection.password]])
 
-		attachedVertica << database.toLowerCase()
+		attachedVertica.put(anotherConnection.toString().toLowerCase(), database)
 	}
 
+	/**
+	 * Disconnect specified connection from current
+	 * @param anotherConnection detachable connection
+	 */
 	void detachExternalVertica(VerticaConnection anotherConnection) {
-		def database = DatabaseFromConnection(anotherConnection)
-		if (!(database.toLowerCase() in attachedVertica))
-			throw new ExceptionGETL("The Vertica cluster with database \"$database\" is already attached to the current connection!")
+		def database = attachedVertica.get(anotherConnection.toString().toLowerCase())
+		if (database == null)
+			throw new ExceptionGETL("The Vertica cluster $anotherConnection is not attached to the current connection!")
 
 		executeCommand("DISCONNECT $database")
+		attachedVertica.remove(anotherConnection.toString().toLowerCase())
 	}
 }

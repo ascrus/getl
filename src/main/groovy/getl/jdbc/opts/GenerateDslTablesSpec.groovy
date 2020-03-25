@@ -126,6 +126,11 @@ class GenerateDslTablesSpec extends BaseSpec {
     /** Save field definition in resource files */
     void setDefineFields(Boolean value) { params.saveFields = value }
 
+    /** Save database type names for fields in schema files */
+    Boolean getSaveTypeNameForFields() { BoolUtils.IsValue(params.saveTypeNameForFields) }
+    /** Save database type names for fields in schema files */
+    void setSaveTypeNameForFields(Boolean value) { params.saveTypeNameForFields = value }
+
     /** List of tables for which to save data in resource files */
     List getListTableSavedData() { params.listTableSavedData as List<String> }
     /** List of tables for which to save data in resource files */

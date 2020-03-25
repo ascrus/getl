@@ -1520,20 +1520,20 @@ $sql
 	long executeCommand(String command, Map params = [:]) {
 		Long result = 0
 		
-		if (command == null || command.trim().length() == 0) return result
+		if (command == null || command.trim().length() == 0)
+			return result
 
-		if (params == null) params = [:]
+		if (params == null)
+			params = [:]
 		
-		if (params.queryParams != null) {
-//			command = StringUtils.SetValueString(command, params.queryParams as Map)
+		if (params.queryParams != null)
 			command = StringUtils.EvalMacroString(command, params.queryParams as Map, false)
-		}
-		
+
+		saveToHistory(command)
+
 		JDBCConnection con = jdbcConnection
 		def stat = sqlConnect.connection.createStatement()
-		
-		saveToHistory(command)
-		
+
 		try {
 			if (params.isUpdate != null && params.isUpdate) {
 				result += stat.executeUpdate(command)
