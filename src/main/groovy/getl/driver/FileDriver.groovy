@@ -310,7 +310,7 @@ abstract class FileDriver extends Driver {
 		if (isAppend) fn += ".${FileUtils.UniqueFileName()}"
 		def writeOpt = new FileWriteOpts()
 		writeOpt.with {
-			fileName = (!isAppend)?(wp.fn as String):(wp.fn as String)
+			fileName = wp.fn as String //(!isAppend)?(wp.fn as String):(wp.fn as String)
 			tempFileName = fn
 			partNumber = portion
 			append = isAppend

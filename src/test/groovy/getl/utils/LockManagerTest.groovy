@@ -11,7 +11,7 @@ class LockManagerTest extends GetlTest {
     @Test
     void testScheduleLocks() {
         Getl.Dsl(this) {
-            def man = new LockManager(true, 1)
+            def man = new LockManager(true, 2)
             def counter = new SynchronizeObject()
             thread {
                 useList (1..100)
@@ -30,7 +30,7 @@ class LockManagerTest extends GetlTest {
             }
             assertEquals(1, counter.count)
             assertFalse(man.isEmpty())
-            pause 1500
+            pause 2500
             assertTrue(man.isEmpty())
         }
     }

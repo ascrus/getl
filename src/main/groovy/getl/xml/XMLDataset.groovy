@@ -81,7 +81,7 @@ class XMLDataset extends StructureFileDataset {
 	 * <br>default: DEFAULT_ATTRIBUTE_ACCESS
 	 */
 	Integer getDefaultAccessMethod() {
-		(params.defaultAccessMethod) as Integer?:(connection as XMLConnection).defaultAccessMethod
+		(params.defaultAccessMethod as Integer)?:(connection as XMLConnection).defaultAccessMethod
 	}
 	/** How read field if not specified the alias property
 	 * <br>default: DEFAULT_ATTRIBUTE_ACCESS

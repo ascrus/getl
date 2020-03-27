@@ -164,7 +164,7 @@ class ExecutorTest extends getl.test.GetlTest {
                     }
                 }
 
-                println countProcessed
+//                println countProcessed
                 assertTrue(countProcessed < 40000)
             }
         }
