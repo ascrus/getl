@@ -858,6 +858,24 @@ class FileUtils {
 		}
 	}
 
+	/**
+	 * Unzip zip file to specified directory
+	 * @param fileName zip file name
+	 * @param targerDirectory target directory
+	 * @param password zip file password
+	 */
+	static void UnzipFile(String fileName, String targerDirectory, String password = null) {
+		def file = new File(ResourceFileName(fileName))
+		if (!file.exists())
+			throw new ExceptionGETL("Zip file \"$fileName\" not found!")
+
+		def path = new File(targerDirectory)
+		ValidPath(path)
+
+		ZipFile zipFile = (password != null) ? new ZipFile(file.absolutePath, password.toCharArray()) : new ZipFile(file.absolutePath)
+		zipFile.extractAll(path.absolutePath)
+	}
+
 	static final Map<String, String> ReplaceFileMaskRules = {
 		return [
 				'\\': '\\\\',

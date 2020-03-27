@@ -205,24 +205,29 @@ class FileUtilsTest extends getl.test.GetlTest {
     }
 
     @Test
-    void testCompressToZip() {
+    void testZip() {
         def fileName = "${TFS.systemPath}/${FileUtils.UniqueFileName()}"
+        def zipName = fileName + '.zip'
+        fileName += '.txt'
+        def psw = 'TEST GETL ZIP'
+        def text = 'test zip archive'
 
-        def file = new File(fileName + '.txt')
+        def file = new File(fileName)
         file.deleteOnExit()
-        file.text = 'test zip archive'
-        FileUtils.CompressToZip(fileName + '.zip', fileName + '.txt',
-                [compressionMethod: 'DEFLATE',
-                 compressionLevel: 'MAXIMUM',
-                 encryptFiles: true,
-                 encryptionMethod: 'AES',
-                 aesKeyStrength: 'KEY_STRENGTH_256',
-                 password: 'TEST GETL ZIP'])
+        file.text = text
+        new File(zipName).deleteOnExit()
+        FileUtils.CompressToZip(zipName, fileName, [compressionMethod: 'DEFLATE', compressionLevel: 'MAXIMUM',
+                                                    encryptFiles: true, encryptionMethod: 'AES',
+                                                    aesKeyStrength: 'KEY_STRENGTH_256', password: psw])
 
-        assertTrue(FileUtils.ExistsFile(fileName + '.zip'))
+        assertTrue(FileUtils.ExistsFile(zipName))
+        assertTrue(FileUtils.DeleteFile(fileName))
 
-        assertTrue(FileUtils.DeleteFile(fileName + '.txt'))
-        assertTrue(FileUtils.DeleteFile(fileName + '.zip'))
+        FileUtils.UnzipFile(zipName, TFS.systemPath, psw)
+        assertTrue(FileUtils.ExistsFile(fileName))
+        assertEquals(text, new File(fileName).text)
+        assertTrue(FileUtils.DeleteFile(zipName))
+        assertTrue(FileUtils.DeleteFile(fileName))
     }
 
     @Test
