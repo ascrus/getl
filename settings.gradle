@@ -1,1 +1,2 @@
 rootProject.name = 'getl'
+enableFeaturePreview('GROOVY_COMPILATION_AVOIDANCE')

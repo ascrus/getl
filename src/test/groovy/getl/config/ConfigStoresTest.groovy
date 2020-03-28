@@ -47,6 +47,7 @@ class ConfigStoresTest extends getl.test.GetlTest {
         Config.content.putAll(conf.root)
         Config.SaveConfig(fileName: configFile, section: configSection, secretKey: configKey)
         assertTrue(configFile.exists())
+//        println "$configFile: ${configFile.size()}"
 
         Config.ClearConfig()
         assertTrue(MapUtils.CleanMap(Config.content, ['vars']).isEmpty())

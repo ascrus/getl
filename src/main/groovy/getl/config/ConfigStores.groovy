@@ -113,6 +113,27 @@ class ConfigStores extends ConfigManager {
         Config.MergeConfig(data)
     }
 
+    /**
+     * Open MVStore file
+     * @param fileName store file name
+     * @param secretKey password
+     * @param readOnly read only operation
+     * @return MVStore session
+     */
+    static MVStore OpenStore(String fileName, String secretKey, boolean readOnly = true) {
+        def builder = new MVStore.Builder().fileName(fileName).encryptionKey((secretKey?:(this.getClass().name)).toCharArray())
+                .pageSplitSize(1024).compressHigh()
+        if (readOnly) builder.readOnly()
+        return builder.open()
+    }
+
+    /**
+     * Load section from MVStore file
+     * @param fileName store file name
+     * @param secretKey password
+     * @param section section name
+     * @return section data
+     */
     static Map<String, Object> LoadSection(String fileName, String secretKey, String section) {
         if (fileName == null)
             throw new ExceptionGETL('Required fileName parameter')
@@ -123,14 +144,10 @@ class ConfigStores extends ConfigManager {
         if (!FileUtils.ExistsFile(fileName))
             throw new ExceptionGETL("Can not find store config file \"$fileName\"")
 
-        MVStore store = new MVStore.Builder().fileName(fileName).encryptionKey((secretKey?:(this.getClass().name)).toCharArray()).compress().open()
+        def store = OpenStore(fileName, secretKey)
         try {
             MVMap<String, HashMap<String, Object>> map = store.openMap(section)
             data.putAll(map)
-            store.commit()
-        }
-        catch (Exception ignored) {
-            store.rollback()
         }
         finally {
             store.closeImmediately()
@@ -148,6 +165,13 @@ class ConfigStores extends ConfigManager {
         SaveSection(content, fileName, secretKey, section)
     }
 
+    /**
+     * Save data to MVStore file by specified section
+     * @param data data for saving
+     * @param fileName store file name
+     * @param secretKey password
+     * @param section section name
+     */
     static void SaveSection(Map<String, Object> data, String fileName, String secretKey, String section) {
         def text = MapUtils.ToJson(data)
         def json = new JsonSlurper()
@@ -156,11 +180,12 @@ class ConfigStores extends ConfigManager {
         if (FileUtils.FileExtension(fileName) == '') fileName += '.store'
         FileUtils.ValidFilePath(fileName)
 
-        MVStore store = new MVStore.Builder().fileName(fileName).encryptionKey((secretKey?:(this.getClass().name)).toCharArray()).compress().open()
+        def store = OpenStore(fileName, secretKey, false)
         try {
             MVMap<String, HashMap<String, Object>> map = store.openMap(section)
             map.putAll(data)
             store.commit()
+            store.compactFile(1000)
         }
         catch (Exception ignored) {
             store.rollback()
