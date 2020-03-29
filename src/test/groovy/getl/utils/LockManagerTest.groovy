@@ -1,25 +1,27 @@
 package getl.utils
 
 import getl.lang.Getl
-import getl.test.GetlTest
 import getl.tfs.TFS
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
 @InheritConstructors
-class LockManagerTest extends GetlTest {
+class LockManagerTest extends getl.test.GetlTest {
     @Test
     void testScheduleLocks() {
         Getl.Dsl(this) {
-            def man = new LockManager(true, 2)
+            def man = new LockManager(true, 3000)
             def counter = new SynchronizeObject()
             thread {
                 useList (1..100)
-                run(10) {
-                    def f = new File("${TFS.systemPath}/test_file.lock")
+                abortOnError = true
+                def file = new File("${TFS.systemPath}/${FileUtils.UniqueFileName()}")
+                file.deleteOnExit()
+                def fileName = file.path
+                run(50) {
+                    def f = new File(fileName)
                     man.lockObject(f.path) {
                         if (!f.exists()) {
-                            f.deleteOnExit()
                             f.text = '12345'
                             counter.nextCount()
                         }
@@ -30,7 +32,8 @@ class LockManagerTest extends GetlTest {
             }
             assertEquals(1, counter.count)
             assertFalse(man.isEmpty())
-            pause 2500
+            man.lockLife = 1
+            pause 500
             assertTrue(man.isEmpty())
         }
     }

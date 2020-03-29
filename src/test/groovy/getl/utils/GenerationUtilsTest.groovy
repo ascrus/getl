@@ -396,7 +396,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
             assertNotNull(row.insert_time)
 
             assertTrue((row.name as String).length() <= 10)
-            assertTrue(row.code in ['1', '2', '3', '4', '5'])
+            assertTrue((row.code as String) in ['1', '2', '3', '4', '5'])
             assertTrue(row.percent >= 0 && row.percent <= 100)
             assertTrue(row.count >= 0 && row.count <= 100000)
             assertTrue(row.value >= 0)

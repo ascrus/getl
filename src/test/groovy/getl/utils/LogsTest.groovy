@@ -3,7 +3,7 @@ package getl.utils
 import getl.tfs.TFS
 import org.junit.Test
 
-class LogsTest extends GroovyTestCase {
+class LogsTest extends getl.test.GetlTest {
     @Test
     void testInit() {
         Logs.logFileName = "${TFS.storage.path}/getl.{date}.log"

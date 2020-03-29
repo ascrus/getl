@@ -1149,14 +1149,14 @@ class FileUtils {
 		return "$res $byteName"
 	}
 
-	static protected def fileLockManager = new LockManager()
+	static protected def fileLockManager = new LockManager(false)
 
 	/**
 	 * Clean file locks objects
 	 * @param seconds file lock time in seconds
 	 */
-	static void GarbageLockFiles(int seconds = 5) {
-		fileLockManager.garbage(seconds)
+	static void GarbageLockFiles(int ms = 100) {
+		fileLockManager.garbage(ms)
 	}
 
 	/**

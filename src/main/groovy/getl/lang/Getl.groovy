@@ -32,48 +32,40 @@ import getl.db2.*
 import getl.deploy.Version
 import getl.driver.Driver
 import getl.excel.*
-import getl.exception.ExceptionDSL
+import getl.exception.*
 import getl.files.*
-import getl.firebird.FirebirdConnection
-import getl.firebird.FirebirdTable
+import getl.firebird.*
 import getl.h2.*
 import getl.hive.*
-import getl.impala.ImpalaConnection
-import getl.impala.ImpalaTable
+import getl.impala.*
 import getl.jdbc.*
 import getl.json.*
 import getl.lang.opts.*
-import getl.lang.sub.ParseObjectName
-import getl.lang.sub.RepositoryConnections
-import getl.lang.sub.RepositoryDatasets
-import getl.lang.sub.RepositoryFilemanagers
-import getl.lang.sub.RepositoryFilter
-import getl.lang.sub.RepositoryHistorypoints
-import getl.lang.sub.RepositorySequences
+import getl.lang.sub.*
 import getl.mssql.*
 import getl.mysql.*
-import getl.netezza.NetezzaConnection
-import getl.netezza.NetezzaTable
+import getl.netezza.*
 import getl.netsuite.*
 import getl.oracle.*
 import getl.postgresql.*
 import getl.proc.*
 import getl.proc.opts.*
-import getl.proc.sub.ExecutorListElement
-import getl.proc.sub.ExecutorThread
+import getl.proc.sub.*
 import getl.salesforce.*
 import getl.stat.*
 import getl.tfs.*
 import getl.utils.*
-import getl.utils.sub.ClosureScript
+import getl.utils.sub.*
 import getl.vertica.*
 import getl.xero.*
 import getl.xml.*
+
+import groovy.test.GroovyAssert
+import groovy.test.GroovyTestCase
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
-import junit.framework.Test
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
@@ -437,7 +429,7 @@ Examples:
 
         if (ownerObject != null) {
             _ownerObject = ownerObject
-            if (ownerObject instanceof Test) setUnitTestMode(true)
+            if (ownerObject instanceof GroovyTestCase || ownerObject instanceof GroovyAssert) setUnitTestMode(true)
         }
 
         if (cl != null) {
@@ -4053,7 +4045,7 @@ Examples:
      */
     FileCopier fileCopier(Manager source, List<Manager> destinations,
                                   @DelegatesTo(FileCopier)
-                          @ClosureParams(value = SimpleType, options = ['getl.files.FileCopier']) Closure cl) {
+                          @ClosureParams(value = SimpleType, options = ['getl.proc.FileCopier']) Closure cl) {
         if (source == null)
             throw new ExceptionDSL('Required source file manager!')
         if (destinations == null && destinations.isEmpty())
@@ -4089,7 +4081,7 @@ Examples:
      */
     FileCopier fileCopier(Manager source, Manager destination,
                           @DelegatesTo(FileCopier)
-                          @ClosureParams(value = SimpleType, options = ['getl.files.FileCopier']) Closure cl) {
+                          @ClosureParams(value = SimpleType, options = ['getl.proc.FileCopier']) Closure cl) {
         fileCopier(source, [destination], cl)
     }
 
@@ -4101,7 +4093,7 @@ Examples:
      */
     FileCleaner fileCleaner(Manager source,
                           @DelegatesTo(FileCleaner)
-                          @ClosureParams(value = SimpleType, options = ['getl.files.FileCleaner']) Closure cl) {
+                          @ClosureParams(value = SimpleType, options = ['getl.proc.FileCleaner']) Closure cl) {
         if (source == null)
             throw new ExceptionDSL('Required source file manager!')
 
@@ -4162,8 +4154,8 @@ Examples:
     private GroovyTestCase _testCase
 
     /** Run test case code */
-    GroovyTestCase testCase(@DelegatesTo(GroovyTestCase)
-                            @ClosureParams(value = SimpleType, options = ['junit.framework.TestCase']) Closure cl) {
+    GroovyTestCase testCase(@DelegatesTo(GroovyAssert)
+                            @ClosureParams(value = SimpleType, options = ['groovy.test.GroovyTestCase']) Closure cl) {
         def parent = _testCase?:new GroovyTestCase()
         def owner = DetectClosureDelegate(cl)
         RunClosure(owner, childThisObject, parent, cl)

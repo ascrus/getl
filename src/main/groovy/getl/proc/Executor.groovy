@@ -45,37 +45,66 @@ import getl.utils.*
  */
 class Executor {
 	/** Count thread process */
-	public Integer countProc
+	Integer countProc
+	/** Count thread process */
+	@Synchronized
+	Integer getCountProc() { countProc }
+	/** Count thread process */
+	@Synchronized
+	void setCountProc(Integer value) { countProc = value }
 	
-	/**
-	 * Limit elements for executed (0-unlimited)
-	 */
-	public Integer limit
+	/** Limit elements for executed (null or 0-unlimited) */
+	Integer limit
+	/** Limit elements for executed (null or 0-unlimited) */
+	@Synchronized
+	Integer getLimit() { limit }
+	/** Limit elements for executed (null or 0-unlimited) */
+	@Synchronized
+	void setLimit(Integer value) { limit = value }
 	
-	/**
-	 * Time waiting for check finish process 
-	 */
-	public long waitTime = 500
-	
-	/**
-	 * Abort on error in any process
-	 */
-	public boolean abortOnError = false
-	
-	/**
-	 * Write thread errors to log 
-	 */
-	public boolean logErrors = true
+	/** Time waiting for check finish process (default 500ms) */
+	Long waitTime = 500
+	/** Time waiting for check finish process (default 500ms) */
+	@Synchronized
+	Long getWaitTime() { waitTime }
+	/** Time waiting for check finish process (default 500ms) */
+	@Synchronized
+	void setWaitTime(Long value) { waitTime = value }
 
-	/**
-	 * Write thread errors to dump file
-	 */
-	public boolean dumpErrors = false
+	/** Abort on error in any process (default false) */
+	Boolean abortOnError = false
+	/** Abort on error in any process (default false) */
+	@Synchronized
+	Boolean getAbortOnError() { abortOnError }
+	/** Abort on error in any process (default false) */
+	@Synchronized
+	void setAbortOnError(Boolean value) { abortOnError = value }
 	
-	/**
-	 * Return element if error
-	 */
-	public boolean debugElementOnError = false
+	/** Write thread errors to log (default true) */
+	Boolean logErrors = true
+	/** Write thread errors to log (default true) */
+	@Synchronized
+	Boolean getLogErrors() { logErrors }
+	/** Write thread errors to log (default true) */
+	@Synchronized
+	void setLogErrors(Boolean value) { logErrors = value }
+
+	/** Write thread errors to dump file (default false ) */
+	Boolean dumpErrors = false
+	/** Write thread errors to dump file (default false ) */
+	@Synchronized
+	Boolean getDumpErrors() { dumpErrors }
+	@Synchronized
+	void setDumpErrors(Boolean value) { dumpErrors = value }
+	
+	/** Return element if error (default false) */
+	Boolean debugElementOnError = false
+	/** Return element if error (default false) */
+	@Synchronized
+	Boolean getDebugElementOnError() { debugElementOnError }
+	/** Return element if error (default false) */
+	@Synchronized
+	void setDebugElementOnError(Boolean value) { debugElementOnError = value }
 
 	/** Run has errors */
 	private boolean hasError = false
@@ -91,7 +120,10 @@ class Executor {
 	}
 	
 	/** How exceptions in process stopping execute */
-	public final Map<Object, Throwable> exceptions = ([:] as Map<Object, Throwable>)
+	final Map<Object, Throwable> exceptions = ([:] as Map<Object, Throwable>)
+	/** How exceptions in process stopping execute */
+	@Synchronized
+	Map<Object, Throwable> getExceptions() { exceptions }
 
 	/** Fixing error */
 	protected void setError (Object obj, Throwable except) {
@@ -138,15 +170,17 @@ class Executor {
 	/** Main code (is executed while running threads) */
 	void mainCode(Closure value) { setMainCode(value) }
 
-	/**
-	 * List of all threads
-	 */
-	public final List<Map> threadList = new LinkedList<Map>()
+	/** List of all threads */
+	final List<Map> threadList = new LinkedList<Map>()
+	/** List of all threads */
+	@Synchronized
+	List<Map> getThreadList() { threadList }
 
-	/**
-	 * List of active threads
-	 */
-	public final List<Map> threadActive = new LinkedList<Map>()
+	/** List of active threads */
+	final List<Map> threadActive = new LinkedList<Map>()
+	/** List of active threads */
+	@Synchronized
+	List<Map> getThreadActive() { threadActive }
 
 	/** Interrupt flag */
 	private boolean isInterrupt = false

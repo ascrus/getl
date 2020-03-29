@@ -1,11 +1,10 @@
 package getl.deploy
 
-import getl.test.GetlTest
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
 @InheritConstructors
-public class VersionTest extends GetlTest {
+class VersionTest extends getl.test.GetlTest {
     @Test
     void initTest() {
         assertNotNull(Version.version)

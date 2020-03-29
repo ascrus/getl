@@ -1,6 +1,7 @@
 package getl.lang
 
 import getl.h2.H2Connection
+import getl.test.GetlDslTest
 import getl.test.GetlTest
 import getl.utils.DateUtils
 import getl.utils.FileUtils
@@ -12,7 +13,7 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 
-class FileProcessingTest extends GetlTest {
+class FileProcessingTest extends GetlDslTest {
     static final def debug = false
 
     static def countSale = 1000

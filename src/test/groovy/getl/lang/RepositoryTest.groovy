@@ -1,6 +1,6 @@
 package getl.lang
 
-import getl.data.Connection
+
 import getl.files.FileManager
 import getl.h2.H2Connection
 import getl.h2.H2Table
@@ -11,11 +11,12 @@ import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
 import getl.lang.sub.RepositoryHistorypoints
 import getl.lang.sub.RepositorySequences
+import getl.test.GetlDslTest
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
 @InheritConstructors
-class RepositoryTest extends getl.test.GetlTest {
+class RepositoryTest extends GetlDslTest {
     @Test
     void testConnections() {
         def getl = new Getl()

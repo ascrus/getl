@@ -5,6 +5,7 @@ import getl.files.FileManager
 import getl.h2.*
 import getl.jdbc.TableDataset
 import getl.proc.Job
+import getl.test.GetlDslTest
 import getl.tfs.*
 import getl.utils.BoolUtils
 import getl.utils.Config
@@ -19,13 +20,14 @@ import org.junit.Test
 import java.util.logging.Level
 
 @FixMethodOrder(org.junit.runners.MethodSorters.NAME_ASCENDING)
-class DslTest extends getl.test.GetlTest {
+class DslTest extends GetlDslTest {
     /** Temporary path */
     final def tempPath = TFS.systemPath
     /** Config file name */
     final def tempConfig = "$tempPath/getl.conf"
     /** H2 table name */
-    final def h2TableName = 'table1'
+    final def h2TableName = 'table1_dsl_test'
+    final def h2Table2Name = 'table2_dsl_test'
     /** CSV file name 1 */
     final def csvFileName1 = 'file1.csv'
     /** CSV file name 2 */
@@ -212,7 +214,7 @@ environments {
 
             registerDatasetObject cloneDataset(h2Table('table1')), 'table2', true
             h2Table('table2') {
-                tableName = 'table2'
+                tableName = this.h2Table2Name
                 create()
                 assertTrue(exists)
             }
@@ -336,13 +338,13 @@ environments {
             forGroup 'getl.testdsl.h2'
 
             query('query1', true) {
-                query = '''
+                query = """
 SELECT
     t1.id as t1_id, t1.name as t1_name, t1.dt as t1_dt,
     t2.id as t2_id, t2.name as t2_name, t2.dt as t2_dt
-FROM table1 t1 
-    INNER JOIN table2 t2 ON t1.id = t2.id
-ORDER BY t1.id'''
+FROM ${this.h2TableName} t1 
+    INNER JOIN ${this.h2Table2Name} t2 ON t1.id = t2.id
+ORDER BY t1.id"""
 
                 rowsProcess {
                     def count = 0
@@ -371,7 +373,7 @@ ORDER BY t1.id'''
                     def i = 0
                     readRow { row ->
                         i++
-                        assertTrue(row.id < 3);
+                        assertTrue(row.id < 3)
                         assertTrue(row.t1_dt < DateUtils.now )
                         assertEquals(i, row.id)
                     }
@@ -507,7 +509,7 @@ ORDER BY t1.id'''
 
                 writeOpts {
                     def count = 0
-                    splitFile { count++; (count.mod(300) == 0) }
+                    splitFile { count++; (count % 300 == 0) }
                 }
             }
 
@@ -561,7 +563,7 @@ ORDER BY t1.id'''
 
                 writeOpts {
                     def count = 0
-                    splitFile { count++; (count.mod(300) == 0) }
+                    splitFile { count++; (count % 300 == 0) }
                 }
             }
 
@@ -861,7 +863,7 @@ ORDER BY t1.id'''
             thread {
                 abortOnError = true
                 useList linkDatasets('getl.testdsl.h2', 'getl.testdsl.csv') {
-                    it != 'table2'
+                    it != this.h2Table2Name
                 }
                 runWithElements {
                     copyRows(h2Table(it.source), csvTemp(it.destination)) {
@@ -893,11 +895,11 @@ ORDER BY t1.id'''
                 defineFields = true
                 createTables = true
                 dropTables = true
-                listTableSavedData = ['table1']
+                listTableSavedData = [this.h2TableName]
                 scriptPath = scriptFile
                 overwriteScript = true
                 resourcePath = resourceDir
-                tableMask = 'table*'
+                tableMask = 'table*_dsl_test'
                 listTableExcluded = ['FILE_MANAGER_*']
 
                 filter {
@@ -912,11 +914,11 @@ ORDER BY t1.id'''
             try {
                 runGroovyScriptFile(scriptFile) { createTables = true }
                 assertEquals(2, listJdbcTables('getl.testdsl.temp:').size())
-                embeddedTable('getl.testdsl.temp:table1') {
+                embeddedTable("getl.testdsl.temp:${this.h2TableName}") {
                     assertTrue(exists)
                     assertEquals(this.table1_rows, countRow())
                 }
-                embeddedTable('getl.testdsl.temp:table2') {
+                embeddedTable("getl.testdsl.temp:${this.h2Table2Name}") {
                     assertTrue(exists)
                 }
             }
@@ -1032,7 +1034,7 @@ ORDER BY t1.id'''
                 try {
                     runGroovyClass DslTestScriptFields3, { throwError = true }
                 }
-                catch (Exception e) {
+                catch (Exception ignored) {
                     assertEquals('error test 3: Throw error!', configContent.errorScript)
                 }
                 assertEquals('complete test 3', configContent.doneScript)

@@ -6,7 +6,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = '4.4.0-2-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.4.0-3-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -54,7 +54,7 @@ dependencies {
 	configurations.compile.extendsFrom(configurations.addJars)
 
 	deployerJars "org.apache.maven.wagon:wagon-http:3.3.3"
-	testImplementation  group: 'junit', name: 'junit', version: '4.12'
+	testImplementation  group: 'junit', name: 'junit', version: '4.13'
 	testImplementation  fileTree(dir: 'tests', include: '**/*.jar')
 }
 

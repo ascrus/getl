@@ -2,6 +2,7 @@ package getl.lang
 
 
 import getl.files.Manager
+import getl.test.GetlDslTest
 import getl.tfs.TDS
 import getl.utils.FileUtils
 import getl.utils.Path
@@ -10,7 +11,7 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 
-class CopyTest extends getl.test.GetlTest {
+class CopyTest extends GetlDslTest {
     static final def debug = false
     static final def workPath = "${(debug)?'c:/tmp/getl.test':FileUtils.SystemTempDir()}/copier"
 
@@ -97,7 +98,7 @@ class CopyTest extends getl.test.GetlTest {
                 if (renameMask != null)
                     renamePath = renameMask
 
-                inMemoryMode = inMemoryMode
+                it.inMemoryMode = inMemoryMode
 
                 if (cacheStory)
                     cacheFilePath = "${this.workPath}/filecopiercache"
@@ -271,8 +272,8 @@ class CopyTest extends getl.test.GetlTest {
 
             def countFiles = this.copy(files('source'), sourceMask, [files('rename')] as List<Manager>,
                     filePath { mask = '.' },
-                    filePath { mask = '{date}.{filenameonly}.{filedate}.{fileextonly}';
-                        variable('date') { format = 'yyyy_MM_dd'};
+                    filePath { mask = '{date}.{filenameonly}.{filedate}.{fileextonly}'
+                        variable('date') { format = 'yyyy_MM_dd'}
                         variable('filedate') { format = 'yyyy_MM_dd-HH_mm_ss'}
                     }
             )

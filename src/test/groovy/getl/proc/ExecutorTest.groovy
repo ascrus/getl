@@ -147,6 +147,7 @@ class ExecutorTest extends getl.test.GetlTest {
             System.gc()
             def heapSizeFinish = Runtime.runtime.totalMemory()
             logInfo "Heap start: ${FileUtils.SizeBytes(heapSizeStart)} finish: ${FileUtils.SizeBytes(heapSizeFinish)} free: ${FileUtils.SizeBytes(Runtime.runtime.freeMemory())}"
+            embeddedTable('table1').drop(ifExists: true)
         }
     }
 

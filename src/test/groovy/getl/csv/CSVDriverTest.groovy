@@ -364,7 +364,7 @@ class CSVDriverTest extends getl.test.GetlTest {
 		t.field << new Field(name: 'Name', length: 50, isNull: false)
 		(1..perfomanceCols).each { num ->
             def f = new Field(name: "Value_$num", type: Field.Type.STRING, length: 50, isNull: false)
-            if (num.mod(10) == 0) f.isNull = true
+            if (num % 10 == 0) f.isNull = true
 			t.field << f
 		}
 
@@ -376,7 +376,7 @@ class CSVDriverTest extends getl.test.GetlTest {
 					r.id = cur
 					r.name = perfomanceStringValue
 					(1..perfomanceCols).each { Integer num ->
-                        if (num.mod(10) == 0)
+                        if (num % 10 == 0)
                             r.put("value_$num".toString(), null as String)
                         else
 						    r.put("value_$num".toString(), perfomanceStringValue)

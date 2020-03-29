@@ -19,7 +19,7 @@ void done() {
 }
 
 void error(Exception e) {
-    configContent.errorScript = "error test 3: $e.message"
+    configContent.errorScript = "error test 3: $e.message".toString()
 }
 
 @Field Boolean useExtVars = false

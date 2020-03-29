@@ -1,12 +1,11 @@
 package getl.xml
 
 import getl.lang.Getl
-import getl.test.GetlTest
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
 @InheritConstructors
-class XmlTest extends GetlTest {
+class XmlTest extends getl.test.GetlTest {
     @Test
     void testRead() {
         Getl.Dsl(this) {

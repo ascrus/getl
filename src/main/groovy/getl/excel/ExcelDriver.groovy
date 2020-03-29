@@ -33,6 +33,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.openxml4j.opc.OPCPackage
+import org.apache.poi.openxml4j.opc.PackageAccess
 import org.apache.poi.poifs.filesystem.POIFSFileSystem
 import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
@@ -49,9 +50,8 @@ import org.apache.poi.ss.usermodel.Workbook
 @InheritConstructors
 class ExcelDriver extends Driver {
     ExcelDriver () {
+        super()
         methodParams.register("eachRow", ["header", "offset", "limit", "showWarnings"])
-
-
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -67,7 +67,9 @@ class ExcelDriver extends Driver {
     }
 
     @Override
-    List<Object> retrieveObjects(Map params, Closure<Boolean> filter) { throw new ExceptionGETL('Not support this features!') }
+    List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
+        throw new ExceptionGETL('Not support this features!')
+    }
 
     @Override
     List<Field> fields(Dataset dataset) {
@@ -100,11 +102,13 @@ class ExcelDriver extends Driver {
 
         if (!fileName)
             throw new ExceptionGETL("Required \"fileName\" parameter with connection")
+
         if (!FileUtils.ExistsFile(fullPath))
             throw new ExceptionGETL("File \"${fullPath}\" doesn't exists!")
 
         def header = BoolUtils.IsValue([params.header, dataset.header,
                                         (dataset.connection as ExcelConnection).header], true)
+
         if (dataset.field.isEmpty() && !header)
             throw new ExceptionGETL("Required fields description with dataset")
 		
@@ -117,7 +121,7 @@ class ExcelDriver extends Driver {
 
         if (prepareCode != null) prepareCode([])
 
-        def workbook = getWorkbookType(fullPath) as Workbook
+        def workbook = getWorkbookType(fullPath)
         Sheet sheet
         try {
             if (dataset.listName != null) {
@@ -227,13 +231,18 @@ class ExcelDriver extends Driver {
             }
         }
         finally {
-            workbook.close()
+            try {
+                workbook.close()
+            }
+            catch (Exception e) {
+                Logs.Severe("Can not close workbook ${dataset.fullFileName()}, error: ${e.message}")
+            }
         }
 
         return countRec
     }
 
-    private static def getCellValue(final Cell cell, final Dataset dataset, final int columnIndex) {
+    private static def getCellValue(Cell cell, Dataset dataset, int columnIndex) {
 		def res
         try{
             Field.Type fieldType = dataset.field.get(columnIndex).type
@@ -294,21 +303,28 @@ class ExcelDriver extends Driver {
 		return res
     }
 
-    private static getWorkbookType(final String fileName) {
-        def ext = FileUtils.FileExtension(fileName)
-        if (!(new File(fileName).exists())) throw new ExceptionGETL("File '$fileName' doesn't exists")
-        if (!(ext in ['xls', 'xlsx'])) throw new ExceptionGETL("'$ext' is not available. Please, use 'xls' or 'xlsx'.")
+    protected Workbook getWorkbookType(String fileName) {
+        def ext = FileUtils.FileExtension(fileName).toLowerCase()
+        def file = new File(fileName)
+        if (!file.exists())
+            throw new ExceptionGETL("File '$fileName' doesn't exists")
 
+        if (!(ext in ['xls', 'xlsx']))
+            throw new ExceptionGETL("'$ext' is not available. Please, use 'xls' or 'xlsx'.")
+
+        Workbook res
         switch (ext) {
             case {fileName.endsWith(ext) && ext == 'xlsx'}:
-                new XSSFWorkbook(OPCPackage.open(new File(fileName)))
+                res = new XSSFWorkbook(OPCPackage.open(file, PackageAccess.READ))
                 break
             case {fileName.endsWith(ext) && ext == 'xls'}:
-                new HSSFWorkbook(new POIFSFileSystem(new File(fileName)))
+                res = new HSSFWorkbook(new POIFSFileSystem(file, true))
                 break
             default:
-                throw new ExceptionGETL("Something went wrong")
+                throw new ExceptionGETL("Something went wrong!")
         }
+
+        return res
     }
 
     @Override

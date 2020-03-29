@@ -45,7 +45,7 @@ class LockManager {
      * @param useCollector use lock collector
      * @param lockLife lock life in seconds
      */
-    LockManager(boolean useCollector = false, int lockLife = 1) {
+    LockManager(boolean useCollector = false, int lockLife = 100) {
         this.useCollector = useCollector
         this.lockLife = lockLife
         if (useCollector) {
@@ -62,33 +62,37 @@ class LockManager {
     /** use lock collector */
     boolean useCollector = false
     /** use lock collector */
+    @Synchronized
     boolean getUseCollector() { useCollector }
 
-    /** lock life in seconds */
-    int lockLife = 1
-    /** lock life in seconds */
+    /** lock life in ms */
+    int lockLife = 100
+    /** lock life in ms */
+    @Synchronized
     int getLockLife() { lockLife }
-    /** lock life in seconds */
+    /** lock life in ms */
+    @Synchronized
     void setLockLife(int value) {
         lockLife = value
     }
 
     /** List of lock */
-    private final Map<String, LockObject> locks = [:] as Map<String, LockObject>
+    protected final Map<String, LockObject> locks = [:] as Map<String, LockObject>
 
     /** lock list is empty */
+    @Synchronized
     boolean isEmpty() { locks.isEmpty() }
 
     /** Collector schedule */
-    private Executor shedule
+    protected Executor shedule
 
     /**
      * Clean locks objects
      * @param seconds lock time in seconds
      */
     @Synchronized('locks')
-    void garbage(int seconds = 1) {
-        def lastDate = DateUtils.AddDate('ss', -seconds, new Date())
+    void garbage(int ms = 100) {
+        def lastDate = DateUtils.AddDate('SSS', -ms, new Date())
         def deletedElem = [] as List<String>
         locks.each { name, obj ->
             if (obj.countReader == 0 && obj.lastWorkTime != null && obj.lastWorkTime <= lastDate) {

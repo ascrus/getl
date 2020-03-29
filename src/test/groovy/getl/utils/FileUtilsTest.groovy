@@ -329,11 +329,14 @@ class FileUtilsTest extends getl.test.GetlTest {
             def counter = new SynchronizeObject()
             thread {
                 useList (1..100)
-                run(10) {
-                    def f = new File("${TFS.systemPath}/test_file.lock")
+                abortOnError = true
+                def file = new File("${TFS.systemPath}/${FileUtils.UniqueFileName()}")
+                file.deleteOnExit()
+                def fileName = file.path
+                run(50) {
+                    def f = new File(fileName)
                     FileUtils.LockFile(f) {
                         if (!f.exists()) {
-                            f.deleteOnExit()
                             f.text = '12345'
                             counter.nextCount()
                         }
