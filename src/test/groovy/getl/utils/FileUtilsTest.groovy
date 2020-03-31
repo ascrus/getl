@@ -228,6 +228,14 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertEquals(text, new File(fileName).text)
         assertTrue(FileUtils.DeleteFile(zipName))
         assertTrue(FileUtils.DeleteFile(fileName))
+
+        FileUtils.UnzipFile('resource:/zip/test.zip', TFS.systemPath, null, 'cp866')
+        try {
+            assertEquals('12345', new File("${TFS.systemPath}/тест.txt").text)
+        }
+        finally {
+            FileUtils.DeleteFile("${TFS.systemPath}/тест.txt")
+        }
     }
 
     @Test

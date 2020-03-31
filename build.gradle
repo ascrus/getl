@@ -6,7 +6,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = '4.4.0-3-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.4.0-4-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -25,7 +25,7 @@ dependencies {
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'
 	compile 'com.h2database:h2:1.4.200'
-	compile 'net.lingala.zip4j:zip4j:2.2.3'
+	compile 'net.lingala.zip4j:zip4j:2.5.1'
 	compile 'com.sun.mail:smtp:1.6.4'
 	compile 'com.sun.mail:mailapi:1.6.4'
 

@@ -38,6 +38,7 @@ import net.lingala.zip4j.model.enums.CompressionLevel
 import net.lingala.zip4j.model.enums.CompressionMethod
 import net.lingala.zip4j.model.enums.EncryptionMethod
 
+import java.nio.charset.Charset
 import java.nio.file.*
 import java.nio.channels.*
 import java.util.regex.Pattern
@@ -830,6 +831,7 @@ class FileUtils {
         if (params.encryptFiles != null) parameters.setEncryptFiles(params.encryptFiles as Boolean)
         if (params.encryptionMethod != null) parameters.setEncryptionMethod(EncryptionMethod.valueOf(params.encryptionMethod as String))
         if (params.aesKeyStrength != null) parameters.setAesKeyStrength(AesKeyStrength.valueOf(params.aesKeyStrength as String))
+		if (params.charsetFileName != null) zipFile.charset = Charset.forName(params.charsetFileName as String)
 
 		String fileMask = MaskFile(path)
 		if (fileMask == null) {
@@ -864,7 +866,7 @@ class FileUtils {
 	 * @param targerDirectory target directory
 	 * @param password zip file password
 	 */
-	static void UnzipFile(String fileName, String targerDirectory, String password = null) {
+	static void UnzipFile(String fileName, String targerDirectory, String password = null, String charsetFileName = null) {
 		def file = new File(ResourceFileName(fileName))
 		if (!file.exists())
 			throw new ExceptionGETL("Zip file \"$fileName\" not found!")
@@ -873,6 +875,9 @@ class FileUtils {
 		ValidPath(path)
 
 		ZipFile zipFile = (password != null) ? new ZipFile(file.absolutePath, password.toCharArray()) : new ZipFile(file.absolutePath)
+		if (charsetFileName != null)
+			zipFile.charset = Charset.forName(charsetFileName)
+
 		zipFile.extractAll(path.absolutePath)
 	}
 
