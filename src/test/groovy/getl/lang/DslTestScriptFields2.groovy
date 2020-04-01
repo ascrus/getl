@@ -1,10 +1,11 @@
 package getl.lang
 
+import getl.test.TestRunner
 import groovy.transform.BaseScript
 import groovy.transform.Field
 
 //noinspection GroovyUnusedAssignment
-@BaseScript Getl main
+@BaseScript TestRunner main
 
 assert unitTestMode
 

@@ -26,7 +26,6 @@ package getl.test
 
 import getl.config.ConfigFiles
 import getl.config.ConfigManager
-import getl.lang.Getl
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
@@ -46,18 +45,17 @@ import org.junit.runners.JUnit4
 @InheritConstructors
 @RunWith(JUnit4.class)
 abstract class GetlTest extends GroovyTestCase {
-    GetlTest() {
-        super()
+    /** Configuration manager class to use */
+    protected Class<ConfigManager> useConfigManager() { ConfigFiles }
 
-        if (classConfigManager != Config.configClassManager.getClass())
-            Config.configClassManager = classConfigManager.newInstance()
+    /** Install the required configuration manager */
+    protected InstallConfigManager() {
+        if (!useConfigManager().isInstance(Config.configClassManager))
+            Config.configClassManager = useConfigManager().newInstance()
     }
-
-    protected Class<ConfigManager> getClassConfigManager() { ConfigFiles }
 
     @BeforeClass
     static void InitTestClass() {
-        Getl.CleanGetl()
         Config.ReInit()
         Logs.Init()
         FileUtils.ListResourcePath.clear()
@@ -65,20 +63,13 @@ abstract class GetlTest extends GroovyTestCase {
 
     @AfterClass
     static void DoneTestClass() {
-        Getl.CleanGetl()
-        Config.ReInit()
         Logs.Done()
         FileUtils.ListResourcePath.clear()
     }
 
     @Before
     void beforeTest() {
-        /*if (!(Config.configClassManager instanceof ConfigFiles))
-            Config.configClassManager = new ConfigFiles()*/
-
-        if (classConfigManager != Config.configClassManager.getClass())
-            Config.configClassManager = classConfigManager.newInstance()
-
+        InstallConfigManager()
         org.junit.Assume.assumeTrue(allowTests())
     }
 

@@ -3,17 +3,26 @@ package getl.lang
 
 import getl.files.Manager
 import getl.test.GetlDslTest
+import getl.test.TestInit
+import getl.test.TestRunner
 import getl.tfs.TDS
 import getl.utils.FileUtils
 import getl.utils.Path
 import getl.utils.StringUtils
+import static getl.test.TestRunner.Dsl
+
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 
 class CopyTest extends GetlDslTest {
+    @Override
+    Class<Getl> useInitClass() { TestInit }
+    @Override
+    Class<Getl> useGetlClass() { TestRunner }
+
     static final def debug = false
-    static final def workPath = "${(debug)?'c:/tmp/getl.test':FileUtils.SystemTempDir()}/copier"
+    static final def workPath = "${(debug)?"${System.getenv().GETL_TEST}/getl.test":FileUtils.SystemTempDir()}/copier"
 
     static final def sourcePathDir = "${workPath}/source"
     static final def destPathDir = "${workPath}/dest"
@@ -28,7 +37,7 @@ class CopyTest extends GetlDslTest {
         FileUtils.ValidPath(workPath, !debug)
         FileUtils.ValidPath(sourcePathDir)
 
-        Getl.Dsl(this) {
+        Dsl(this) {
             files('source', true) {
                 rootPath = this.sourcePathDir
                 threadLevel = 1
@@ -41,7 +50,8 @@ class CopyTest extends GetlDslTest {
         if (FileUtils.ExistsFile(sourcePathDir, true)) {
             FileUtils.DeleteFolder(sourcePathDir, true)
         }
-        Getl.Dsl(this) {
+
+        Dsl(this) {
             thread {
                 useList(1..3)
                 run(3) { region_num ->
@@ -68,7 +78,7 @@ class CopyTest extends GetlDslTest {
         }
     }
 
-    static final Path sourceMask = Getl.Dsl {
+    static final Path sourceMask = Dsl {
             filePath {
                 mask = 'region_{region}/{date}/region_{region_num}_object_{name}.{num}.dat'
 
@@ -80,7 +90,7 @@ class CopyTest extends GetlDslTest {
             }
         }
 
-    static final Path destMask = Getl.Dsl {
+    static final Path destMask = Dsl {
         filePath {
             mask = '{date}/region_{region}/{name}'
             variable('date') { type = dateFieldType; format = 'yyyyMMdd' }
@@ -90,7 +100,7 @@ class CopyTest extends GetlDslTest {
     protected long copy(Manager src, Path srcMask, List<Manager> dst, Path dstMask, Path renameMask = null,
                         boolean delFiles = false, boolean delDirs = false, boolean inMemoryMode = true, boolean cacheStory = true) {
         long res = 0
-        Getl.Dsl(this) {
+        Dsl(this) {
             res = fileCopier(src, dst) {
                 sourcePath = srcMask
                 destinationPath = dstMask
@@ -143,7 +153,7 @@ class CopyTest extends GetlDslTest {
     void testCopyWithSingle() {
         generateSource()
 
-        Getl.Dsl(this) {
+        Dsl(this) {
             files('single', true) {
                 rootPath = "${this.destPathDir}/single"
                 createRootPath = true
@@ -209,7 +219,7 @@ class CopyTest extends GetlDslTest {
     void testCopyWithMany() {
         generateSource()
 
-        Getl.Dsl(this) {
+        Dsl(this) {
             files('many.1', true) {
                 rootPath = "${this.destPathDir}/many/1"
                 createRootPath = true
@@ -259,7 +269,7 @@ class CopyTest extends GetlDslTest {
     void testCopyWithRename() {
         generateSource()
 
-        Getl.Dsl(this) {
+        Dsl(this) {
             files('rename', true) {
                 rootPath = "${this.destPathDir}/rename"
                 createRootPath = true
@@ -307,7 +317,7 @@ class CopyTest extends GetlDslTest {
 
     @Test
     void testSimpleCopy() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             def simplePath = "$workPath/simple"
             if (FileUtils.ExistsFile(simplePath, true))
                 FileUtils.DeleteFolder(simplePath, true)
@@ -345,7 +355,7 @@ class CopyTest extends GetlDslTest {
     void testCleaner() {
         generateSource()
 
-        Getl.Dsl(this) {
+        Dsl(this) {
             def historyTable = 'history_remove'
             embeddedTable(historyTable, true) {
                 tableName = historyTable

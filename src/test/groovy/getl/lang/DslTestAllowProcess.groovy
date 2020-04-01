@@ -1,11 +1,12 @@
 package getl.lang
 
+import getl.test.TestRunner
 import getl.utils.BoolUtils
 import getl.utils.SynchronizeObject
 import groovy.transform.BaseScript
 import groovy.transform.Field
 
-@BaseScript Getl main
+@BaseScript TestRunner main
 
 @Field Boolean enabled; assert enabled != null
 @Field Boolean checkOnStart; assert checkOnStart != null

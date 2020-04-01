@@ -6,6 +6,8 @@ import getl.h2.*
 import getl.jdbc.TableDataset
 import getl.proc.Job
 import getl.test.GetlDslTest
+import getl.test.TestInit
+import getl.test.TestRunner
 import getl.tfs.*
 import getl.utils.BoolUtils
 import getl.utils.Config
@@ -14,13 +16,24 @@ import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.StringUtils
+import static getl.test.TestRunner.Dsl
+
+import groovy.transform.InheritConstructors
 import org.junit.FixMethodOrder
 import org.junit.Test
 
 import java.util.logging.Level
 
 @FixMethodOrder(org.junit.runners.MethodSorters.NAME_ASCENDING)
+@InheritConstructors
 class DslTest extends GetlDslTest {
+    @Override
+    Class<Getl> useInitClass() { TestInit }
+    @Override
+    Class<Getl> useGetlClass() { TestRunner }
+    @Override
+    Boolean onceRunInitClass() { true }
+
     /** Temporary path */
     final def tempPath = TFS.systemPath
     /** Config file name */
@@ -37,14 +50,15 @@ class DslTest extends GetlDslTest {
 
     @Test
     void test00() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             assertTrue(unitTestMode)
+            assertTrue(BoolUtils.IsValue(configGlobal.inittest))
         }
     }
 
     @Test
     void test01_01SaveFile() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             def file = textFile { f ->
                 temporaryFile = true
                 write MapUtils.ToJson(toVars { codePage = f.codePage })
@@ -58,7 +72,7 @@ class DslTest extends GetlDslTest {
 
     @Test
     void test01_02GenerateAndLoadConfig() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             logInfo "Use temporary path: ${this.tempPath}"
 
             // Generate configuration file
@@ -66,7 +80,7 @@ class DslTest extends GetlDslTest {
                 temporaryFile = true
                 write """
 environments {
-    prod {
+    dev {
         datasets {
             table1 {
                 tableName = '${this.h2TableName}'
@@ -81,7 +95,7 @@ environments {
             }
         }
     }
-    dev {
+    prod {
         datasets {
         }
     }
@@ -94,7 +108,7 @@ environments {
             // Load configuration
             configuration {
                 path = this.tempPath
-                load'getl.conf', 'dev'
+                load'getl.conf', 'prod'
             }
             assertTrue(configContent.datasets?.isEmpty())
 
@@ -132,7 +146,7 @@ environments {
 
     @Test
     void test01_03InitLogFile() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             options {
                 processTimeDebug = true
                 processTimeLevelLog = Level.FINEST
@@ -151,7 +165,7 @@ environments {
 
     @Test
     void test02_01CreateH2Connection() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             // Register connection as H2
             useH2Connection embeddedConnection('getl.testdsl.h2:h2', true) {
                 sqlHistoryFile = "${this.tempPath}/getl.lang.h2.sql"
@@ -184,7 +198,7 @@ environments {
 
     @Test
     void test02_02CreateTables() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup 'getl.testdsl.h2'
 
             // Create and generate data to H2 temporary table
@@ -234,7 +248,7 @@ environments {
 
     @Test
     void test02_03GenerateDataToTable1() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup 'getl.testdsl.h2'
 
             rowsTo(h2Table('table1')) {
@@ -248,7 +262,7 @@ environments {
 
     @Test
     void test02_04DefineFilesFromTablesStructure() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup 'getl.testdsl.csv'
 
             registerConnectionObject csvTempConnection(), 'csv'
@@ -284,7 +298,7 @@ environments {
 
     @Test
     void test02_05CopyTable1ToFile1() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             clearGroupFilter()
 
             copyRows(h2Table('getl.testdsl.h2:table1'), csvTemp('getl.testdsl.csv:table1')) {
@@ -308,7 +322,7 @@ environments {
 
     @Test
     void test02_06LoadFile1ToTable1AndTable2() {
-        Getl.Dsl(this) { getl ->
+        Dsl(this) { getl ->
             clearGroupFilter()
 
             rowsToMany(
@@ -334,7 +348,7 @@ environments {
 
     @Test
     void test02_07SelectQuery() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup 'getl.testdsl.h2'
 
             query('query1', true) {
@@ -364,7 +378,7 @@ ORDER BY t1.id"""
 
     @Test
     void test02_08ReadTable1WithFilter() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup 'getl.testdsl.h2'
 
             h2Table('table1') {
@@ -386,7 +400,7 @@ ORDER BY t1.id"""
 
     @Test
     void test02_09CopyTable1ToTwoFiles() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             clearGroupFilter()
 
             copyRows(h2Table('getl.testdsl.h2:table1'), csvTemp('getl.testdsl.csv:table1')) {
@@ -408,7 +422,7 @@ ORDER BY t1.id"""
 
     @Test
     void test02_10CopyFile1ToTwoTables() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup 'getl.testdsl.h2'
 
             h2Table('table1') {
@@ -441,7 +455,7 @@ ORDER BY t1.id"""
 
     @Test
     void test02_11HistoryPoint() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup 'getl.testdsl.h2'
 
             historypoint('history1', true) {
@@ -493,7 +507,7 @@ ORDER BY t1.id"""
 
     @Test
     void test02_12BulkLoad() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             clearGroupFilter()
 
             def con = csvConnection('#csv', true) {
@@ -554,7 +568,7 @@ ORDER BY t1.id"""
 
     @Test
     void test02_13BulkLoadWithTemp() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             clearGroupFilter()
 
             def csv = csvTempWithDataset(h2Table('getl.testdsl.h2:table1')) {
@@ -604,7 +618,7 @@ ORDER BY t1.id"""
 
     @Test
     void test03_01FileManagers() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup 'getl.testdsl.files'
 
             def fileRootPath = "$systemTempPath/root"
@@ -673,7 +687,7 @@ ORDER BY t1.id"""
 
     @Test
     void test04_01ProcessRepositoryObjects() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             clearGroupFilter()
 
             assertEquals(2, listConnections().size())
@@ -708,7 +722,7 @@ ORDER BY t1.id"""
 
     @Test
     void test04_02WorkWithPrototype() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup 'fail-test'
             testCase {
                 assertTrue(connection('getl.testdsl.h2:h2') instanceof TDS)
@@ -723,7 +737,7 @@ ORDER BY t1.id"""
 
     @Test
     void test04_03LinkDatasets() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup 'getl.testdsl.h2'
 
             def map = linkDatasets(filteringGroup, 'getl.testdsl.csv').sort { a, b -> a.source <=> b.source }
@@ -736,7 +750,7 @@ ORDER BY t1.id"""
 
     @Test
     void test05_01ThreadConnections() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             def h2Con = embeddedConnection('getl.testdsl.h2:h2')
             def csvCon = csvTempConnection('getl.testdsl.csv:csv')
 
@@ -761,7 +775,7 @@ ORDER BY t1.id"""
 
     @Test
     void test05_02ThreadDatasets() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             def h2Table = h2Table('getl.testdsl.h2:table1')
             def csvFile = csvTemp('getl.testdsl.csv:table1') {
                 readOpts {
@@ -796,7 +810,7 @@ ORDER BY t1.id"""
 
     @Test
     void test05_03ThreadFilemanagers() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             def fmfiles = filemanager('getl.testdsl.files:files')
 
             thread {
@@ -819,7 +833,7 @@ ORDER BY t1.id"""
 
     @Test
     void test05_04ThreadHistoryPoints() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup 'getl.testdsl.h2'
             def point1 = historypoint('history1')
 
@@ -842,7 +856,7 @@ ORDER BY t1.id"""
 
     @Test
     void test05_05ThreadSql() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             useQueryConnection embeddedConnection('getl.testdsl.h2:h2')
             def tableName = h2Table('table1').tableName
             thread {
@@ -859,7 +873,7 @@ ORDER BY t1.id"""
 
     @Test
     void test05_06CopyDatasets() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             thread {
                 abortOnError = true
                 useList linkDatasets('getl.testdsl.h2', 'getl.testdsl.csv') {
@@ -877,7 +891,7 @@ ORDER BY t1.id"""
 
     @Test
     void test06GenerateDslTables() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             forGroup  'getl.testdsl.h2'
 
             def tempDir = TFS.systemPath + '/dsl/generate'
@@ -930,7 +944,7 @@ ORDER BY t1.id"""
 
     @Test
     void test99_01UnregisterObjects() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             testCase {
                 clearGroupFilter()
 
@@ -954,7 +968,7 @@ ORDER BY t1.id"""
 
     @Test
     void test99_02RunGetlScript() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             testCase {
                 def p1 = 1
                 runGroovyClass DslTestScriptFields1, {
@@ -1076,7 +1090,7 @@ ORDER BY t1.id"""
 
         Config.content.testAllowProcess = false
         Config.content.testAllowThreads = 0
-        Getl.Dsl(this) {
+        Dsl(this) {
             runGroovyClass DslTestAllowProcess, { enabled = true; checkOnStart = true; checkForThreads = true }
         }
         assertTrue(Config.content.testAllowProcess)
@@ -1109,7 +1123,7 @@ ORDER BY t1.id"""
     void test99_05RunApplication() {
         String[] args = ['vars.field1="test application"', 'vars.field2=100']
         DslApplication.main(args)
-        Getl.Dsl(this) {
+        Dsl(this) {
             assertTrue(configContent.init)
             assertTrue(configContent.check)
             assertTrue(configContent.run)
@@ -1119,7 +1133,7 @@ ORDER BY t1.id"""
 
     @Test
     void test99_06TestRunMode() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             ifUnitTestMode {
                 configContent.testMode = 'debug'
             }
@@ -1138,7 +1152,7 @@ ORDER BY t1.id"""
 
     @Test
     void test99_07SaveOptions() {
-        Getl.Dsl(this) {
+        Dsl(this) {
             def t = embeddedTable {
                 createOpts {
                     type = localTemporaryTableType

@@ -24,10 +24,14 @@
 
 package getl.test
 
-import getl.config.ConfigFiles
 import getl.config.ConfigManager
 import getl.config.ConfigSlurper
+import getl.lang.Getl
+
 import groovy.transform.InheritConstructors
+import org.junit.AfterClass
+import org.junit.Before
+import org.junit.BeforeClass
 
 /**
  * Dsl language functional testing base class
@@ -36,5 +40,45 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class GetlDslTest extends GetlTest {
-    protected Class<ConfigManager> getClassConfigManager() { ConfigSlurper }
+    @Override
+    protected Class<ConfigManager> useConfigManager() { ConfigSlurper }
+
+    /** Use this initialization class at application startup if it is not explicitly specified */
+    Class<Getl> useInitClass() { null }
+    /** Run initialization only once */
+    Boolean onceRunInitClass() { false }
+    /** Used class for Getl */
+    Class<Getl> useGetlClass() { null }
+
+    @BeforeClass
+    static void InitDslTestClass() {
+        Getl.CleanGetl()
+    }
+
+    @AfterClass
+    static void DoneDslTestClass() {
+        Getl.CleanGetl()
+    }
+
+    /** Status init script */
+    private boolean initWasRun = false
+
+    @Before
+    void beforeDslTest() {
+        if (!Getl.GetlInstanceCreated())
+            Getl.GetlInstance(useGetlClass().newInstance())
+
+        Getl.Dsl(this) {
+            if (configuration().environment != 'dev')
+                configuration().environment = 'dev'
+        }
+
+        def initClass = useInitClass()
+        if (initClass != null && (!this.onceRunInitClass() || !initWasRun)) {
+            Getl.Dsl(this) {
+                runGroovyClass initClass
+            }
+            initWasRun = true
+        }
+    }
 }

@@ -6,7 +6,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = '4.4.0-4-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.4.0-15-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -68,7 +68,8 @@ tasks.withType(GroovyCompile) {
   groovyOptions.optimizationOptions.indy = false
   options.incremental = true
   groovyOptions.fork = true
-  groovyOptions.forkOptions.jvmArgs += [/*"-Dgroovy.antlr4=false", */'-Xmx1g', /*'-Dgroovy.antlr4.cache.threshold=1000'*/]
+/*"-Dgroovy.antlr4=false", */ /*'-Dgroovy.antlr4.cache.threshold=1000'*/
+  groovyOptions.forkOptions.jvmArgs += ['-Xmx1g']
 }
 
 task copyDependencies(type: Copy) {

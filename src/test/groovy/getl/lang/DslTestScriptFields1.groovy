@@ -1,14 +1,17 @@
 package getl.lang
 
+import getl.test.TestRunner
+import getl.utils.BoolUtils
 import getl.utils.DateUtils
 import groovy.transform.BaseScript
 import groovy.transform.Field
 
 //noinspection GroovyUnusedAssignment
-@BaseScript Getl main
+@BaseScript TestRunner main
 
 testCase {
     assertTrue(main.unitTestMode)
+    assertTrue(BoolUtils.IsValue(configGlobal.inittest))
 }
 
 @Field Integer param1 = 0; assert param1 == 1

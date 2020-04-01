@@ -48,7 +48,6 @@ class ConfigFilesTest extends getl.test.GetlTest {
         Config.content.putAll(conf.root)
         Config.SaveConfig(fileName: configFile)
         assertTrue(configFile.exists())
-        //        FileUtils.CopyToDir("${configPath.path}/test_config.conf", 'c:/tmp')
 
         Config.ClearConfig()
         assertTrue(MapUtils.CleanMap(Config.content, ['vars']).isEmpty())

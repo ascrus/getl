@@ -1022,7 +1022,9 @@ FROM ${newFiles.fullNameDataset()} files
 	}
 
 	/** Build list of files */
-	TableDataset buildListFiles(Path maskPath, @DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
+	TableDataset buildListFiles(Path maskPath,
+								@ClosureParams(value = SimpleType, options = ['getl.files.opts.ManagerBuildListSpec'])
+								@DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
 		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = new ManagerBuildListSpec(this, thisObject, false, null)
 		if (maskPath != null) parent.maskPath = maskPath
@@ -1033,13 +1035,16 @@ FROM ${newFiles.fullNameDataset()} files
 	}
 
 	/** Build list of files */
-	TableDataset buildListFiles(String mask, @DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
+	TableDataset buildListFiles(String mask,
+								@ClosureParams(value = SimpleType, options = ['getl.files.opts.ManagerBuildListSpec'])
+								@DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
 		def maskPath = (mask != null)?new Path(mask: mask):null
 		buildListFiles(maskPath, cl)
 	}
 
 	/** Build list of files */
-	TableDataset buildListFiles(@DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
+	TableDataset buildListFiles(@ClosureParams(value = SimpleType, options = ['getl.files.opts.ManagerBuildListSpec'])
+								@DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
 		buildListFiles(null as Path, cl)
 	}
 	
@@ -1224,7 +1229,8 @@ WHERE
 	}
 
 	/** Build list of files */
-	void downloadListFiles(@DelegatesTo(ManagerDownloadSpec) Closure cl = null) {
+	void downloadListFiles(@ClosureParams(value = SimpleType, options = ['getl.files.opts.ManagerDownloadSpec'])
+						   @DelegatesTo(ManagerDownloadSpec) Closure cl = null) {
 		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
 		def parent = new ManagerDownloadSpec(this, thisObject, false, null)
 		parent.runClosure(cl)

@@ -2,11 +2,14 @@ package getl.lang
 
 import getl.h2.H2Connection
 import getl.test.GetlDslTest
-import getl.test.GetlTest
+import getl.test.TestInit
+import getl.test.TestRunner
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.GenerationUtils
 import getl.utils.StringUtils
+import static getl.test.TestRunner.Dsl
+
 import groovy.json.JsonGenerator
 import groovy.json.StreamingJsonBuilder
 import org.junit.AfterClass
@@ -14,6 +17,11 @@ import org.junit.BeforeClass
 import org.junit.Test
 
 class FileProcessingTest extends GetlDslTest {
+    @Override
+    Class<Getl> useInitClass() { TestInit }
+    @Override
+    Class<Getl> useGetlClass() { TestRunner }
+
     static final def debug = false
 
     static def countSale = 1000
@@ -23,7 +31,7 @@ class FileProcessingTest extends GetlDslTest {
     static def countCompleteFiles = countDays * countFileInDay - countDays * 4
     static def countErrorFiles = countDays * 3
 
-    static final def workPath = "${(debug)?'c:/tmp/getl.test': FileUtils.SystemTempDir()}/fileprocess"
+    static final def workPath = "${(debug)?"${System.getenv().GETL_TEMP}/getl.test": FileUtils.SystemTempDir()}/fileprocess"
     static final def sourcePath = "$workPath/source"
     static final def archivePath = "$workPath/archive"
     static final def errorPath = "$workPath/errors"
@@ -37,7 +45,7 @@ class FileProcessingTest extends GetlDslTest {
         FileUtils.ValidPath(archivePath, !debug)
         FileUtils.ValidPath(errorPath, !debug)
 
-        Getl.Dsl(this) {
+        Dsl(this) {
             h2Table('h2:sales', true) {
                 if (!this.debug)
                     useConnection embeddedConnection()
@@ -152,7 +160,7 @@ class FileProcessingTest extends GetlDslTest {
         FileUtils.ValidPath(archivePath, !debug)
         FileUtils.ValidPath(errorPath, !debug)
 
-        Getl.Dsl(this) {
+        Dsl(this) {
             thread {
                 useQueryConnection h2Table('h2:sales').currentJDBCConnection
                 useList sqlQuery('SELECT DISTINCT sale_date FROM sales ORDER BY sale_date').rows()
@@ -191,7 +199,7 @@ class FileProcessingTest extends GetlDslTest {
 
     void proc(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing) {
         generateData()
-        Getl.Dsl(this) {
+        Dsl(this) {
             h2Table('h2:story') {
                 if (exists)
                     truncate(truncate: true)
@@ -209,7 +217,7 @@ class FileProcessingTest extends GetlDslTest {
     }
 
     void procInternal(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing, boolean firstRun = true) {
-        Getl.Dsl(this) {
+        Dsl(this) {
             logInfo "*** START PROCESSING FILES ${(firstRun)?'ONE':'TWO'}: archiveStorage=$archiveStorage, delFiles=$delFiles, delSkip=$delSkip, useStory=$useStory, cacheStory=$cacheStory, cacheProcessing=$cacheProcessing"
 
             def res = fileProcessing(files('source')) {

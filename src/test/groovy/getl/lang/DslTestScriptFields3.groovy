@@ -1,11 +1,12 @@
 package getl.lang
 
 import getl.exception.ExceptionGETL
+import getl.test.TestRunner
 import groovy.transform.BaseScript
 import groovy.transform.Field
 
 //noinspection GroovyUnusedAssignment
-@BaseScript Getl main
+@BaseScript TestRunner main
 
 void init() {
     configuration {

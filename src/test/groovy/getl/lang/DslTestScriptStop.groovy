@@ -1,9 +1,10 @@
 package getl.lang
 
+import getl.test.TestRunner
 import groovy.transform.BaseScript
 import groovy.transform.Field
 
-@BaseScript Getl main
+@BaseScript TestRunner main
 
 @Field Short level
 

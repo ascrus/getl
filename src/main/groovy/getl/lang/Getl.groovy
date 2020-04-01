@@ -147,8 +147,11 @@ Examples:
             args = args.toList()
 
         def runclass = scriptClass.name
-        Main(["runclass=$runclass"] + args)
+        Main(args + ["runclass=$runclass"])
     }
+
+    /** Use this initialization class at application startup if it is not explicitly specified */
+    protected Class useInitClass() { null }
 
     /**
      * Launch Getl Dsl script<br><br>
@@ -204,7 +207,6 @@ Examples:
             void process() {
                 allowArgs.validation('main', jobArgs)
 
-
                 def className = jobArgs.runclass as String
                 def isTestMode = BoolUtils.IsValue(jobArgs.unittest)
 
@@ -219,28 +221,36 @@ Examples:
                     throw new ExceptionDSL("Class \"$className\" not found, error: ${e.message}!")
                 }
 
-                Getl eng = GetlInstance()
-                eng._params.mainClass = runClass.name
+                Getl eng = GetlInstance(runClass.newInstance() as Getl)
+                eng.setGetlSystemParameter('mainClass', runClass.name)
                 eng.setUnitTestMode(isTestMode)
 
-                def initClassName = jobArgs.initclass as String
-                if (initClassName != null) {
-                    eng._params.initClass = initClassName
+                def initClasses = [] as List<Class>
 
-                    Class initClass
+                if (eng.useInitClass() != null)
+                    initClasses << eng.useInitClass()
+
+                def initClassName = (jobArgs.initclass as String)
+                if (initClassName != null) {
+                    eng.setGetlSystemParameter('initClass', initClassName)
+
                     try {
-                        initClass = Class.forName(initClassName)
+                        initClasses << Class.forName(initClassName)
                     }
                     catch (Throwable e) {
                         throw new ExceptionDSL("Class \"$initClassName\" not found, error: ${e.message}!")
                     }
+                }
 
-                    eng._params.isInitMode = true
+                if (!initClasses.isEmpty()) {
+                    eng.setGetlSystemParameter('isInitMode', true)
                     try {
-                        eng.runGroovyClass(initClass, true)
+                        initClasses.each { initClass ->
+                            eng.runGroovyClass(initClass, true)
+                        }
                     }
                     finally {
-                        eng._params.isInitMode = false
+                        eng.setGetlSystemParameter('isInitMode', false)
                     }
                 }
 
@@ -367,16 +377,24 @@ Examples:
     @Override
     Object run() { this }
 
-    /** Current instance GETL DSL */
+    /** Instance of GETL DSL */
     private static Getl _getl
 
-    /** Current instance GETL DSL */
-    static Getl GetlInstance() {
-        if (_getl == null)
-            _getl = new Getl()
+    /** Get Getl instance (created if not exists) */
+    static Getl GetlInstance(Getl instance) {
+        if (_getl == null) {
+            if (instance != null)
+                _getl = instance
+            else {
+                _getl = this.newInstance()
+            }
+        }
 
         return _getl
     }
+
+    /** check that Getl instance is created */
+    static boolean GetlInstanceCreated() { _getl != null }
 
     /* Owner object for instance DSL */
     private _ownerObject
@@ -407,8 +425,13 @@ Examples:
     }
 
     /** Clean Getl instance */
-    static void CleanGetl() {
-        _getl = null
+    static void CleanGetl(boolean softClean = false) {
+        if (softClean && _getl != null) {
+            _getl = _getl.getClass().newInstance()
+        }
+        else {
+            _getl = null
+        }
     }
 
     /** Work in unit test mode */
@@ -466,6 +489,10 @@ Examples:
 
     /** Engine parameters */
     private Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
+    /** Set engine parameters */
+    protected setGetlSystemParameter(String key, Object value) {
+        _params.put(key, value)
+    }
 
     /** Running init script */
     Boolean getIsInitMode() { BoolUtils.IsValue(_params.isInitMode) }
@@ -1915,13 +1942,25 @@ Examples:
         return code.call(params)
     }
 
-    /** Current configuration content */
+    /** Configuration content */
     @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> getConfigContent() { Config.content }
 
-    /** Current configuration vars */
+    /** Configuration variables */
     @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> getConfigVars() { Config.vars }
+
+    /** Init section configuration options */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    Map<String, Object> getConfigInit() { Config.content.init as Map<String, Object> }
+
+    /** Global section configuration options */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    Map<String, Object> getConfigGlobal() { Config.content.global as Map<String, Object> }
+
+    /** OS variables */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    Map<String, String> getSysVars() { System.getenv() }
 
     /** Write message for specified level to log */
     static void logWrite(String level, String message) { Logs.Write(level, message) }
