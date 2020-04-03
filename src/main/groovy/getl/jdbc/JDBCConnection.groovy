@@ -30,6 +30,7 @@ import getl.data.Connection
 import getl.data.Dataset
 import getl.exception.ExceptionGETL
 import getl.jdbc.opts.GenerateDslTablesSpec
+import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.RepositoryConnections
 import getl.proc.Flow
@@ -620,19 +621,18 @@ class JDBCConnection extends Connection {
 		if (useResource && resourceDir != null)
 			Logs.Fine("  using resource files path \"${resourceDir?.path}\"" + ((resourceRoot != null)?" with root path \"$resourceRoot\"":''))
 
+		def getlClassName = Getl.GetlInstance().getClass().name
+
 		StringBuilder sb = new StringBuilder()
 
 		sb << """/* GETL DSL script generator */
 package $p.packageName
 
 import groovy.transform.BaseScript
-import groovy.transform.Field
-import getl.lang.Getl
 
 //noinspection GroovyUnusedAssignment
-@BaseScript Getl main
-"""
-		if (p.createTables) sb << '\n@Field Boolean createTables = false'
+@BaseScript $getlClassName main"""
+		if (p.createTables) sb << '\n@groovy.transform.Field Boolean createTables = false'
 		sb << "\n\nuse${classType.capitalize()}Connection ${classType}Connection('$connectionName')"
 		if (p.groupName != null) sb << "\nforGroup '${p.groupName}'"
 

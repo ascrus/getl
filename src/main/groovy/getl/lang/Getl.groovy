@@ -302,6 +302,11 @@ Examples:
         throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode?:0)
     }
 
+    /** Abort execution with the specified error */
+    void abortWithError(String message) {
+        throw new Exception(message)
+    }
+
     /** The name of the main class of the process */
     String getMainClassName() { _params.mainClass }
 
@@ -2039,7 +2044,7 @@ Examples:
         def logFileName = parent.getLogFileName()
         parent.runClosure(cl)
         if (logFileName != parent.getLogFileName()) {
-            Logs.Info("### GETL DSL start logging to log file ${parent.getLogFileName()}")
+            Logs.Info("### Getl start logging to log file ${parent.getLogFileName()}")
         }
 
         return parent
