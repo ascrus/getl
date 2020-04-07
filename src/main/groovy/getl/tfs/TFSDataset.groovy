@@ -36,7 +36,6 @@ import getl.data.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class TFSDataset extends CSVDataset {
 	TFSDataset () {
 		super()

@@ -45,7 +45,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class JDBCDriver extends Driver {
 	JDBCDriver () {
 		super()
@@ -2398,5 +2397,24 @@ $sql
 	protected void dropSequence(String name, boolean ifExists) {
 		def s1 = (ifExists)?'IF EXISTS ':''
 		executeCommand("DROP SEQUENCE ${s1}${name}")
+	}
+
+	/** Count row */
+	long countRow(TableDataset table, String where = null, Map procParams = null) {
+		def sql = "SELECT Count(*) AS count_rows FROM ${fullNameDataset(table)}".toString()
+		where = where?:(table.readDirective.where)
+		if (where != null && where != '') sql += " WHERE " + where
+		if (procParams != null && !procParams.isEmpty())
+			sql = StringUtils.EvalMacroString(sql, procParams)
+
+		saveToHistory(sql)
+
+		Long res = 0
+		table.currentJDBCConnection.sqlConnection.query(sql) { rs ->
+			rs.next()
+			res = rs.getLong(1)
+		}
+
+		return res
 	}
 }

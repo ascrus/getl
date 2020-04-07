@@ -47,7 +47,6 @@ import org.apache.poi.ss.usermodel.Workbook
  * @author Dmitry Shaldin
  *
  */
-@InheritConstructors
 class ExcelDriver extends Driver {
     ExcelDriver () {
         super()

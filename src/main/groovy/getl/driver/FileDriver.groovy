@@ -41,7 +41,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 abstract class FileDriver extends Driver {
 	static enum RetrieveObjectType {FILE, DIR}
 

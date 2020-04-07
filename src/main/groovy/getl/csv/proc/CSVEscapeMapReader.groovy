@@ -39,7 +39,6 @@ import javax.sql.rowset.serial.SerialClob
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class CSVEscapeMapReader extends CsvMapReader {
 	CSVEscapeMapReader (Reader reader, CsvPreference preferences) {
 		super(reader, preferences)

@@ -31,10 +31,11 @@ import org.supercsv.cellprocessor.*
 import org.supercsv.cellprocessor.ift.*
 import org.supercsv.util.*
 
-import getl.utils.StringUtils
-
-@InheritConstructors
-class CSVConvertToNullProcessor extends CellProcessorAdaptor 
+/**
+ * Csv null processor
+ * @author Alexsey Konstantinov
+ */
+class CSVConvertToNullProcessor extends CellProcessorAdaptor
 						implements BoolCellProcessor, DateCellProcessor, DoubleCellProcessor, 
 									LongCellProcessor, StringCellProcessor {
 	

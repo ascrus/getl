@@ -34,7 +34,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class JDBCDataset extends Dataset {
 	JDBCDataset() {
 		super()

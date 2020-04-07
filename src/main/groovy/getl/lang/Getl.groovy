@@ -62,7 +62,6 @@ import getl.xml.*
 
 import groovy.test.GroovyAssert
 import groovy.test.GroovyTestCase
-import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -75,16 +74,15 @@ import java.util.logging.Level
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class Getl extends Script {
     protected Getl() {
         super()
-        init()
+        initInstance()
     }
 
     protected Getl(Binding binding) {
         super(binding)
-        init()
+        initInstance()
     }
 
     static void main(String[] args) {
@@ -255,7 +253,7 @@ Examples:
                 }
 
                 try {
-                    eng.runGroovyClass(runClass, Config.vars)
+                    eng.runGroovyInstance(eng, Config.vars)
                 }
                 catch (ExceptionDSL e) {
                     if (e.typeCode == ExceptionDSL.STOP_APP) {
@@ -359,7 +357,8 @@ Examples:
         allowProcess(null, throwError)
     }
 
-    private void init() {
+    /** Init Getl instance */
+    protected void initInstance() {
         Version.SayInfo()
 
         _params.executedClasses = new SynchronizeObject()
@@ -385,14 +384,18 @@ Examples:
     /** Instance of GETL DSL */
     private static Getl _getl
 
+    /** The object is a static instance */
+    protected boolean _getlInstance = false
+
     /** Get Getl instance (created if not exists) */
     static Getl GetlInstance(Getl instance) {
         if (_getl == null) {
             if (instance != null)
                 _getl = instance
-            else {
+            else
                 _getl = this.newInstance()
-            }
+
+            _getl._getlInstance = true
         }
 
         return _getl
@@ -408,6 +411,9 @@ Examples:
     static Object Dsl(def ownerObject, Map parameters,
                     @DelegatesTo(Getl)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
+        if (_getl != null && !_getl._getlInstance)
+            throw new ExceptionDSL('Cannot be called during Getl object initialization!')
+
         GetlInstance().runDsl(ownerObject, parameters, cl)
     }
 
@@ -433,6 +439,7 @@ Examples:
     static void CleanGetl(boolean softClean = false) {
         if (softClean && _getl != null) {
             _getl = _getl.getClass().newInstance()
+            _getl._getlInstance = true
         }
         else {
             _getl = null
@@ -450,24 +457,28 @@ Examples:
     Object runDsl(def ownerObject, Map parameters,
                 @DelegatesTo(Getl)
                 @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
-        def res
+        Object res = null
 
         if (!(Config.configClassManager instanceof ConfigSlurper))
             Config.configClassManager = new ConfigSlurper()
 
-        if (ownerObject != null) {
-            _ownerObject = ownerObject
-            if (ownerObject instanceof GroovyTestCase || ownerObject instanceof GroovyAssert) setUnitTestMode(true)
-        }
+        def oldOwnerObject = _ownerObject
+        try {
+            if (ownerObject != null) {
+                _ownerObject = ownerObject
+                if (ownerObject instanceof GroovyTestCase || ownerObject instanceof GroovyAssert) setUnitTestMode(true)
+            }
 
-        if (cl != null) {
-            def code = cl.rehydrate(this, this, _ownerObject ?: this)
-            code.resolveStrategy = childDelegate
-            if (parameters != null) code.properties.putAll(parameters)
-            res = code.call(this)
+            if (cl != null) {
+                def code = cl.rehydrate(this, this, _ownerObject ?: this)
+                code.resolveStrategy = childDelegate
+                if (parameters != null) code.properties.putAll(parameters)
+                res = code.call(this)
+            }
         }
-        else
-            res = null
+        finally {
+            _ownerObject = oldOwnerObject
+        }
 
         return res
     }
@@ -494,7 +505,9 @@ Examples:
 
     /** Engine parameters */
     private Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
-    /** Set engine parameters */
+    /** Get engine parameter */
+    protected Object getGetlSystemParameter(String key) { _params.get(key) }
+    /** Set engine parameter */
     protected setGetlSystemParameter(String key, Object value) {
         _params.put(key, value)
     }
@@ -1635,13 +1648,27 @@ Examples:
      * @return exit code
      */
     Integer runGroovyClass(Class groovyClass, Boolean runOnce, Map vars = [:]) {
-        def res = 0
-
         def className = groovyClass.name
         def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
-        if (previouslyRun && BoolUtils.IsValue(runOnce)) return res
+        if (previouslyRun && BoolUtils.IsValue(runOnce)) return 0
 
-        def script = (GroovyObject) groovyClass.newInstance() as Script
+        def script = (GroovyObject)groovyClass.newInstance() as Script
+        def res = runGroovyInstance(script, vars)
+
+        if (!previouslyRun) executedClasses.addToList(className)
+
+        return res
+    }
+
+    /**
+     * Run groovy script object
+     * @param script groovy script object
+     * @param vars set values for script fields declared as "@Field"
+     * @return exit code
+     */
+    protected Integer runGroovyInstance(Script script, Map vars = [:]) {
+        def res = 0
+
         if (script instanceof Getl) {
             def scriptGetl = script as Getl
             scriptGetl.setGetlParams(_params)
@@ -1654,7 +1681,7 @@ Examples:
             script.binding = new Binding(vars)
         }
 
-        def pt = startProcess("Execution groovy class $className", 'class')
+        def pt = startProcess("Execution groovy script ${script.getClass().name}", 'class')
         try {
             script.run()
         }
@@ -1682,8 +1709,6 @@ Examples:
             DoneGetlClass(script)
         }
         pt.finish()
-
-        if (!previouslyRun) executedClasses.addToList(className)
 
         return res
     }

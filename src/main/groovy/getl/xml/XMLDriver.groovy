@@ -35,7 +35,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class XMLDriver extends FileDriver {
 	XMLDriver () {
 		methodParams.register("eachRow", ["fields", "filter", "initAttr"])

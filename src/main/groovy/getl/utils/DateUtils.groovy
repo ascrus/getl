@@ -108,6 +108,9 @@ class DateUtils {
 	 * @param timeZone
 	 */
 	static setDefaultTimeZone(String timeZone) {
+		if (timeZone == null)
+			throw new IllegalArgumentException("Argument timeZone is empty!")
+
 		TimeZone.setDefault(TimeZone.getTimeZone(timeZone))
 		defaultTimeZoneOffs = TimeZone.default.rawOffset
 		offsTimeZone = origTimeZoneOffs - defaultTimeZoneOffs
@@ -305,13 +308,14 @@ class DateUtils {
 	 */
 	static Date TruncTime(int part, Date date) {
 		if (date == null) return null
+
 		Calendar c = Calendar.getInstance()
 		c.setTime(date)
 		//noinspection GroovyFallthrough,GroovyDuplicateSwitchBranch
 		switch (part) {
 			case Calendar.HOUR:
 				c.set(Calendar.MINUTE, 0)
-			case Calendar.HOUR: case Calendar.MINUTE: 
+			case Calendar.HOUR: case Calendar.MINUTE:
 				c.set(Calendar.SECOND, 0)
 			case Calendar.HOUR: case Calendar.MINUTE: case Calendar.SECOND:
 				c.set(Calendar.MILLISECOND, 0)
@@ -323,19 +327,26 @@ class DateUtils {
 		return c.getTime()
 	}
 
+	/**
+	 * Truncate the date to the specified part
+	 * @part date part (HOUR, HH, MINUTE, mm, SECOND, ss, MILLISECOND, sss)
+	 */
 	static Date TruncTime(String part, Date date) {
 		Integer partNum
-		switch (part.toUpperCase()) {
-			case 'HOUR':
+		if (part.toUpperCase() in ['HOUR', 'MINUTE', 'SECOND', 'MILLISECOND'])
+			part = part.toUpperCase()
+
+		switch (part) {
+			case 'HOUR': case 'HH':
 				partNum = Calendar.HOUR
 				break
-			case 'MINUTE':
+			case 'MINUTE': case 'mm':
 				partNum = Calendar.MINUTE
 				break
-			case 'SECOND':
+			case 'SECOND': case 'ss':
 				partNum = Calendar.SECOND
 				break
-			case 'MILLISECOND':
+			case 'MILLISECOND': case 'SSS':
 				partNum = Calendar.MILLISECOND
 				break
 			default:
@@ -343,6 +354,12 @@ class DateUtils {
 		}
 
 		return TruncTime(partNum, date)
+	}
+
+	/** Truncate the date to the first day of the month */
+	static Date TruncDay(Date date) {
+		if (date == null) return null
+		return ParseDate('yyyy-MM-dd', FormatDate('yyyy-MM', date) + '-01')
 	}
 	
 	/**
@@ -415,8 +432,6 @@ class DateUtils {
 	 * @return
 	 */
 	static Date AddDate(String dateType, int nb, Date date) {
-		if (dateType == null) throw new ExceptionGETL("Required dateType parameters")
-		
 		if (date == null) return null
 
 		Calendar c1 = Calendar.getInstance()
@@ -451,18 +466,7 @@ class DateUtils {
 	 * @param ignoreDST
 	 * @return
 	 */
-	static long DiffDate(Date date1, Date date2, String dateType, boolean ignoreDST) {
-		if (date1 == null) {
-			date1 = new Date(0)
-		}
-		if (date2 == null) {
-			date2 = new Date(0)
-		}
-
-		if (dateType == null) {
-			dateType = "SSS"
-		}
-
+	static long DiffDate(Date date1, Date date2, String dateType, boolean ignoreDST = false) {
 		// ignore DST
 		int addDSTSavings = 0
 		if (ignoreDST) {
@@ -482,25 +486,28 @@ class DateUtils {
 		c1.setTime(date1)
 		c2.setTime(date2)
 
-		if (dateType.equalsIgnoreCase("yyyy")) { //$NON-NLS-1$
-			return c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR)
-		} else if (dateType == "MM") { //$NON-NLS-1$
-			return (c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR)) * 12 + (c1.get(Calendar.MONTH) - c2.get(Calendar.MONTH))
+		if (dateType.equalsIgnoreCase("yyyy")) {
+			def diff = (c1.get(Calendar.DAY_OF_MONTH) < c2.get(Calendar.DAY_OF_MONTH))?1:0
+			def diffMonths = (c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR)) * 12 + (c1.get(Calendar.MONTH) - c2.get(Calendar.MONTH)) - diff
+			return diffMonths.intdiv(12).toInteger()
+		} else if (dateType == "MM") {
+			def diff = (c1.get(Calendar.DAY_OF_MONTH) < c2.get(Calendar.DAY_OF_MONTH))?1:0
+			return (c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR)) * 12 + (c1.get(Calendar.MONTH) - c2.get(Calendar.MONTH)) - diff
 		} else {
 			long diffTime = date1.getTime() - date2.getTime() + addDSTSavings
 
-			if (dateType.equalsIgnoreCase("HH")) { //$NON-NLS-1$
+			if (dateType.equalsIgnoreCase("HH")) {
 				return (Long)diffTime.intdiv(1000 * 60 * 60)
-			} else if (dateType == "mm") { //$NON-NLS-1$
+			} else if (dateType == "mm") {
 				return (Long)diffTime.intdiv(1000 * 60)
-			} else if (dateType.equalsIgnoreCase("ss")) { //$NON-NLS-1$
+			} else if (dateType.equalsIgnoreCase("ss")) {
 				return (Long)diffTime.intdiv(1000)
-			} else if (dateType.equalsIgnoreCase("SSS")) { //$NON-NLS-1$
+			} else if (dateType.equalsIgnoreCase("SSS")) {
 				return diffTime
 			} else if (dateType.equalsIgnoreCase("dd")) {
 				return (Long)diffTime.intdiv(1000 * 60 * 60 * 24)
 			} else {
-				throw new RuntimeException("Can't support the dateType: " + dateType)
+				throw new ExceptionGETL("Can't support the dateType: " + dateType)
 			}
 		}
 	}
@@ -513,8 +520,7 @@ class DateUtils {
 	 * @return the specified part value.
 	 */
 	static int PartOfDate(String partName, Date date) {
-
-		if (partName == null || date == null) return 0
+		if (/*partName == null || */date == null) return 0
 		partName = partName.toUpperCase()
 
 		int ret = 0
@@ -561,7 +567,6 @@ class DateUtils {
 			ret = c.get(Calendar.WEEK_OF_YEAR)
 			break
 		case 11:
-//			ret = ((int)(c.get(Calendar.ZONE_OFFSET))).intdiv(1000 * 60 * 60)
             ret = ((Long)Long.divideUnsigned(Long.valueOf(c.get(Calendar.ZONE_OFFSET)), 1000L * 60 * 60)).intValue()
 			break
 		default:
@@ -577,7 +582,7 @@ class DateUtils {
 	 * @return
 	 */
 	static BigDecimal Timestamp2Value(Date value) {
-		if (value == null) return null as BigDecimal
+		if (value == null) return null
 
 		return Timestamp2Value(new Timestamp(value.time))
 	}
@@ -588,7 +593,7 @@ class DateUtils {
 	 * @return
 	 */
 	static BigDecimal Timestamp2Value(Timestamp value) {
-		if ((Object)value == null) return null as BigDecimal
+		if ((Object)value == null) return null
 
         def t = Long.divideUnsigned(value.time, 1000)
 		def n = new BigDecimal(value.nanos).divide(BigDecimal.valueOf(1000000000), 9, RoundingMode.UNNECESSARY)

@@ -41,7 +41,6 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class JSONDataset extends StructureFileDataset {
 	JSONDataset () {
 		super()

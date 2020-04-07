@@ -37,7 +37,6 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class MSSQLDriver extends JDBCDriver {
 	MSSQLDriver () {
 		super()

@@ -45,7 +45,6 @@ import groovy.transform.InheritConstructors
  *
  */
 //noinspection GroovyAssignabilityCheck
-@InheritConstructors
 class XeroDriver extends Driver {
     private XeroClient client
 

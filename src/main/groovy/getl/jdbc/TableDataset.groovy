@@ -46,7 +46,6 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class TableDataset extends JDBCDataset {
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	TableDataset() {
@@ -175,19 +174,7 @@ class TableDataset extends JDBCDataset {
 	long countRow(String where = null, Map procParams = null) {
 		validConnection()
 
-		def sql = "SELECT Count(*) AS count_rows FROM ${fullNameDataset()}".toString()
-		where = where?:readDirective.where
-		if (where != null && where != '') sql += " WHERE " + where
-		if (procParams != null && !procParams.isEmpty())
-			sql = StringUtils.EvalMacroString(sql, procParams)
-
-		Long res = 0
-		currentJDBCConnection.sqlConnection.query(sql) { rs ->
-			rs.next()
-			res = rs.getLong(1)
-		}
-
-		return res
+		return currentJDBCConnection.currentJDBCDriver.countRow(this, where, procParams)
 	}
 
 	/**

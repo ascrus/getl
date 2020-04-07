@@ -37,7 +37,6 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class XMLDataset extends StructureFileDataset {
 	XMLDataset () {
 		super()

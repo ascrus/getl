@@ -36,7 +36,6 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class FileManager extends Manager {
 	/** Connect status */
 	private Boolean connected = false

@@ -38,7 +38,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class H2Driver extends JDBCDriver {
 	H2Driver() {
 		super()

@@ -33,7 +33,6 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class XMLConnection extends FileConnection {
 	XMLConnection () {
 		super([driver: XMLDriver])

@@ -41,7 +41,6 @@ import getl.csv.CSVDriver.WriterParams
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 	private Boolean header
 	private String quote

@@ -43,7 +43,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 	
 	private final String dateFormat

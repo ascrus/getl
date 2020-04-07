@@ -36,7 +36,6 @@ import getl.utils.FileUtils
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class TFS extends CSVConnection {
 	private static String _systemPath
 

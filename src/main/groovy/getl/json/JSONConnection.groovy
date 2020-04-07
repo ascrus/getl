@@ -32,7 +32,6 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class JSONConnection extends FileConnection {
 	JSONConnection () {
 		super([driver: JSONDriver])

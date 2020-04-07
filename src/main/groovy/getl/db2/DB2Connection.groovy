@@ -32,7 +32,6 @@ import getl.jdbc.JDBCConnection
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class DB2Connection extends JDBCConnection {
 	DB2Connection() {
 		super(driver: DB2Driver)

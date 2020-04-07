@@ -35,7 +35,6 @@ import org.h2.tools.DeleteDbFiles
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class TDS extends H2Connection {
 	TDS() {
 		super()

@@ -32,7 +32,6 @@ import getl.jdbc.JDBCConnection
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class MSSQLConnection extends JDBCConnection {
 	MSSQLConnection() {
 		super(driver: MSSQLDriver)

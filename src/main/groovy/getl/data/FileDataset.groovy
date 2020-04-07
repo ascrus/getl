@@ -36,7 +36,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class FileDataset extends Dataset {
 	FileDataset () {
 		methodParams.register('openWrite', ['deleteOnEmpty', 'append'])

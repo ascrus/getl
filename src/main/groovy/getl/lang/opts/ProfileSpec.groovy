@@ -36,7 +36,6 @@ import java.util.logging.Level
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class ProfileSpec extends BaseSpec {
     ProfileSpec(def ownerObject, def thisObject, String name, String objectName = null, boolean isProfile = false) {
         super(ownerObject, thisObject)

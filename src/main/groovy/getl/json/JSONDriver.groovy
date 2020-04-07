@@ -36,7 +36,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class JSONDriver extends FileDriver {
 	JSONDriver () {
 		methodParams.register("eachRow", ["fields", "filter", "initAttr"])

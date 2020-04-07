@@ -35,7 +35,6 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class TDSTable extends H2Table {
     TDSTable() {
         super()

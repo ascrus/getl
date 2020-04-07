@@ -174,17 +174,24 @@ class SQLScripter implements WithConnection, Cloneable {
 				valStr = "null"
 			}
 			else if (val instanceof List) {
-				def sb = new StringBuffer()
+				/*TODO: variable list???*/
+				/*def sb = new StringBuffer()
 				sb << "\n"
 				val.each {
 					sb << "				"
 					sb << it.toString()
 					sb << "\n"
 				}
-				valStr = sb.toString()
+				valStr = sb.toString()*/
+				valStr = (val as List).join(', ')
 			}
 			else {
-				valStr = val.toString().replace('$', '\\$')
+				if (val instanceof Date)
+					valStr = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', val)
+				else if (val instanceof String || val instanceof GString)
+					valStr = val.toString().replace('$', '\\$')
+				else
+					valStr = val
 			}
 			m.appendReplacement(b, valStr)
 		}

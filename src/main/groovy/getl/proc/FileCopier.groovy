@@ -48,7 +48,6 @@ import groovy.transform.stc.SimpleType
  * Copy files manager between file systems
  * @author Alexsey Konstantinov
  */
-@InheritConstructors
 class FileCopier extends FileListProcessing { /* TODO: make copy support between one source */
     FileCopier() {
         super()

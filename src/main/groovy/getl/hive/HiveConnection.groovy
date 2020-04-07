@@ -32,7 +32,6 @@ import groovy.transform.InheritConstructors
  * Hive connection
  * @author Aleksey Konstantinov
  */
-@InheritConstructors
 class HiveConnection extends JDBCConnection {
     HiveConnection() {
         super(driver: HiveDriver)

@@ -36,7 +36,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class H2Connection extends JDBCConnection {
 	H2Connection() {
 		super(driver: H2Driver)

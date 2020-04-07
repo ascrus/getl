@@ -33,7 +33,6 @@ import getl.jdbc.JDBCConnection
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class MySQLConnection extends JDBCConnection {
 	MySQLConnection() {
 		super(driver: MySQLDriver)

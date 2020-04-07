@@ -32,7 +32,6 @@ import groovy.transform.InheritConstructors
  * @author Dmitry Shaldin
  *
  */
-@InheritConstructors
 class ExcelConnection extends Connection {
     ExcelConnection () {
         super(driver: ExcelDriver)

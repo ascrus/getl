@@ -40,7 +40,6 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 abstract class FileConnection extends Connection {
 	FileConnection (Map params) {
 		super(params)

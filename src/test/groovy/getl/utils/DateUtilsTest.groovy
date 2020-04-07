@@ -72,6 +72,13 @@ class DateUtilsTest extends getl.test.GetlTest {
     }
 
     @Test
+    void testTruncDay() {
+        assertNull(DateUtils.TruncDay(null))
+
+        assertEquals(DateUtils.ParseDate('2020-01-01'), DateUtils.TruncDay(DateUtils.ParseDate('2020-01-31')))
+    }
+
+    @Test
     void testFormatDate() {
         assertNull(DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', null))
 
@@ -94,7 +101,6 @@ class DateUtilsTest extends getl.test.GetlTest {
     @Test
     void testPartOfDate() {
         assertEquals(0, DateUtils.PartOfDate('YEAR', null))
-        assertEquals(0, DateUtils.PartOfDate(null, exampleDate))
 
         def d = exampleDateTime
         assertEquals(2016, DateUtils.PartOfDate('YEAR', d))
@@ -160,6 +166,8 @@ class DateUtilsTest extends getl.test.GetlTest {
     void testDateDiff() {
         def d1 = DateUtils.ParseDateTime('2019-01-01 00:00:00.000')
         def d2 = DateUtils.ParseDateTime('2020-02-02 01:01:01.000')
+        assertEquals(1, DateUtils.DiffDate(d2, d1, 'yyyy'))
+        assertEquals(13, DateUtils.DiffDate(d2, d1, 'MM'))
         assertEquals(397, DateUtils.DiffDate(d2, d1, 'dd', false))
         assertEquals(9529, DateUtils.DiffDate(d2, d1, 'HH', false))
         assertEquals(571741, DateUtils.DiffDate(d2, d1, 'mm', false))
