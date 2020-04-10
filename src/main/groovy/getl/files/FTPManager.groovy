@@ -273,7 +273,7 @@ class FTPManager extends Manager {
 		FTPList res = new FTPList()
 		res.listFiles = listFiles
 		
-		res
+		return res
 	}
 	
 	@Override
@@ -453,24 +453,7 @@ class FTPManager extends Manager {
 			throw e
 		}
 	}
-	
-	@Override
-	boolean existsDirectory (String dirName) {
-		validConnect()
 
-		def cur = client.currentDirectory()
-		def isExists = true
-		try {
-			client.changeDirectory(dirName)
-		}
-		catch (Exception ignored) {
-			isExists = false
-		}
-		client.changeDirectory(cur)
-		
-		isExists
-	}
-	
 	@Override
 	void noop () {
 		super.noop()

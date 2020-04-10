@@ -1445,11 +1445,40 @@ WHERE
 	}
 	
 	/**
-	 * Validate path
-	 * @param dir
-	 * @return
+	 * Check existence directory
+	 * @param dirName directory path
+	 * @return result of checking
 	 */
-	abstract boolean existsDirectory (String dirName)
+	boolean existsDirectory (String dirName) {
+		validConnect()
+
+		def res = false
+		try {
+			def list = list()
+			res = (list.find { e -> e.filename == dirName && e.type == TypeFile.DIRECTORY} != null)
+		}
+		catch (Exception ignored) { }
+
+		return res
+	}
+
+	/**
+	 * Check existence file
+	 * @param fileName file path
+	 * @return result of checking
+	 */
+	boolean existsFile(String fileName) {
+		validConnect()
+
+		def res = false
+		try {
+			def list = list('./' + fileName)
+			res = (list.size() == 1 && list[0].type == TypeFile.FILE)
+		}
+		catch (Exception ignored) { }
+
+		return res
+	}
 
 	boolean deleteEmptyFolder(String dirName, boolean recursive) {
 		deleteEmptyFolder(dirName, recursive, null)
@@ -1755,4 +1784,12 @@ WHERE
 		sysParams.dslThisObject = null
 		sysParams.dslOwnerObject = null
 	}
+
+	/** Windows OS */
+	static public final def winOS = 'win'
+	/** Unix compatibility OS */
+	static public final def unixOS = 'unix'
+
+	/** host OS (null - unknown, win - Windows, unix - unix compatibility */
+	String getHostOS() { return null }
 }

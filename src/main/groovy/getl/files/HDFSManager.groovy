@@ -337,12 +337,19 @@ class HDFSManager extends Manager {
         }
     }
 
-    @Override
+    /*@Override
     boolean existsDirectory(String dirName) {
         validConnect()
 
         return client.exists(fullPath(dirName, null))
     }
+
+    @Override
+    boolean existsFile(String fileName) {
+        validConnect()
+
+        return client.exists(fullPath(dirName, null))
+    }*/
 
     @Override
     long getLastModified(String fileName) {

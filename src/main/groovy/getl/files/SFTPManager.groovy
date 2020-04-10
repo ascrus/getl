@@ -59,7 +59,7 @@ class SFTPManager extends Manager {
 	protected void initMethods () {
 		super.initMethods()
 		methodParams.register('super', ['server', 'port', 'login', 'password', 'knownHostsFile',
-										'identityFile', 'codePage', 'aliveInterval', 'aliveCountMax', 'hostKey'])
+										'identityFile', 'codePage', 'aliveInterval', 'aliveCountMax', 'hostKey', 'hostOS'])
 	}
 	
 	@Override
@@ -197,6 +197,9 @@ class SFTPManager extends Manager {
 		
 		clientSession = newSession()
 		try {
+			if (hostOS == null)
+				hostOS = detectOS()
+
 			channelFtp = clientSession.openChannel("sftp") as ChannelSftp
 			writeScriptHistoryFile("OPEN CHANNEL: sftp")
 			channelFtp.connect()
@@ -469,33 +472,12 @@ class SFTPManager extends Manager {
 	}
 
 	@Override
-	boolean existsDirectory(String dirName) {
-		validConnect()
-
-		writeScriptHistoryFile("COMMAND: pwd \"$dirName\"")
-		def cur = channelFtp.pwd()
-		writeScriptHistoryFile("PWD: \"$cur\"")
-		def isExists = true
-		try {
-			writeScriptHistoryFile("COMMAND: cd \"$dirName\"")
-			channelFtp.cd(dirName)
-		}
-		catch (Exception ignored) {
-			isExists = false
-		}
-		writeScriptHistoryFile("COMMAND: cd \"$cur\"")
-		channelFtp.cd(cur)
-		
-		isExists
-	}
-	
-	@Override
 	boolean isAllowCommand() { true }
 	
 	@Override
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
 		Integer res = null
-		command = "cd \"$_currentPath\" && $command"
+//		if (_currentPath != null) command = "cd \"$_currentPath\" && $command"
 		def channelCmd = clientSession.openChannel("exec") as ChannelExec
 		try {
 			channelCmd.setCommand(command)
@@ -530,6 +512,27 @@ class SFTPManager extends Manager {
 		
 		return res
 	}
+
+	/** Detect host OS */
+	String detectOS() {
+		StringBuilder out = new StringBuilder(), err = new StringBuilder()
+		def res = doCommand('echo %OS%', out, err)
+		if (res != 0)
+			return null
+
+		def line = out.toString().readLines()[0]
+		if (line.matches('Windows.*'))
+			return winOS
+
+		if (line == '%OS%')
+			return unixOS
+
+		return null
+	}
+
+	@Override
+	String getHostOS() { params.hostOS as String }
+	void setHostOS(String value) { params.hostOS = value }
 
 	@Override
 	void noop () {

@@ -61,6 +61,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
     void testWork() {
         manager.connect()
         init()
+        command()
         create()
         upload()
         rename()
@@ -115,6 +116,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
 
         (1..3).each { catalogNum ->
             manager.createDir("${catalogDirName}_$catalogNum")
+            assertTrue(manager.existsDirectory("${catalogDirName}_$catalogNum"))
             manager.changeDirectory("${catalogDirName}_$catalogNum")
             (1..3).each { subdirNum ->
                 manager.createDir("${subdirDirName}_$subdirNum")
@@ -136,6 +138,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
             (1..3).each { subdirNum ->
                 manager.changeDirectory("${subdirDirName}_$subdirNum")
                 manager.upload(subdirFileName)
+                assertTrue(manager.existsFile(subdirFileName))
                 manager.changeDirectoryUp()
             }
             manager.changeDirectoryUp()
@@ -214,5 +217,24 @@ abstract class ManagerTest extends getl.test.GetlTest {
         manager.changeLocalDirectoryToRoot()
         manager.removeLocalDirs(initLocalDir)
         manager.removeLocalDirs(downloadLocalDir)
+    }
+
+    private void command() {
+        if (!manager.allowCommand) return
+        assert manager.hostOS in [Manager.winOS, Manager.unixOS]
+
+        StringBuilder out = new StringBuilder(), err = new StringBuilder()
+
+        def cmd
+        if (manager.hostOS == Manager.winOS)
+            cmd = 'dir c:\\'
+        else
+            cmd = 'ls /'
+
+        def res = manager.doCommand(cmd, out, err)
+        if (res != 0)
+            println err.toString()
+
+        assertEquals(err.toString(), 0, res)
     }
 }

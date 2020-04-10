@@ -269,19 +269,41 @@ class FileManager extends Manager {
 		validConnect()
 
 		File f = new File("${currentDir.path}/${dirName}")
-		f.exists()
+		return f.exists() && f.isDirectory()
+	}
+
+	@Override
+	boolean existsFile(String fileName) {
+		validConnect()
+
+		File f = new File("${currentDir.path}/${fileName}")
+		return f.exists() && f.isFile()
+	}
+
+	@Override
+	String getHostOS() {
+		String res = null
+		if (Config.isWindows())
+			res = winOS
+		else if (Config.isUnix())
+			res = unixOS
+
+		return res
 	}
 	
 	@Override
 	boolean isAllowCommand() { true }
-	
+
 	@Override
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
 		Process p
 		try {
-			String[] env = []
+			def env = []
+			System.getenv().each { k, v ->
+				env << '$k=$v'
+			}
 			if (Config.isWindows()) command = "cmd /c $command"
-			p = Runtime.getRuntime().exec(command, env, currentDir)
+			p = Runtime.getRuntime().exec(command, env.toArray(String[]) as String[], currentDir)
 		}
 		catch (IOException e) {
 			err.append(e.message)
