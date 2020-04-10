@@ -1454,7 +1454,9 @@ WHERE
 
 		def res = false
 		try {
-			def list = list()
+			def list = list(dirName + '/..')
+			def i = dirName.lastIndexOf('/')
+			if (i != -1) dirName = dirName.substring(i + 1)
 			res = (list.find { e -> e.filename == dirName && e.type == TypeFile.DIRECTORY} != null)
 		}
 		catch (Exception ignored) { }
@@ -1472,7 +1474,10 @@ WHERE
 
 		def res = false
 		try {
-			def list = list('./' + fileName)
+			def i = fileName.lastIndexOf('/')
+			if (i == -1) fileName = './' + fileName
+
+			def list = list(fileName)
 			res = (list.size() == 1 && list[0].type == TypeFile.FILE)
 		}
 		catch (Exception ignored) { }

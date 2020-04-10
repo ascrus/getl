@@ -479,7 +479,7 @@ class SFTPManager extends Manager {
 		Integer res = null
 		if (_currentPath != null) {
 			if (hostOS == winOS)
-				command = "cmd /c cd \"${FileUtils.ConvertToWindowsPath(_currentPath.substring(1))}\" && $command"
+				command = "powershell Set-Location \"${FileUtils.ConvertToWindowsPath(_currentPath.substring(1))}\"; Invoke-Command -ScriptBlock { $command }"
 			else
 				command = "cd \"$_currentPath\" && $command"
 		}

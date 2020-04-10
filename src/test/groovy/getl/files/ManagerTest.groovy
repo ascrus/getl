@@ -61,9 +61,9 @@ abstract class ManagerTest extends getl.test.GetlTest {
     void testWork() {
         manager.connect()
         init()
-        command()
         create()
         upload()
+        command()
         rename()
         buildList()
         download()
@@ -116,13 +116,14 @@ abstract class ManagerTest extends getl.test.GetlTest {
 
         (1..3).each { catalogNum ->
             manager.createDir("${catalogDirName}_$catalogNum")
-            assertTrue(manager.existsDirectory("${catalogDirName}_$catalogNum"))
             manager.changeDirectory("${catalogDirName}_$catalogNum")
             (1..3).each { subdirNum ->
                 manager.createDir("${subdirDirName}_$subdirNum")
             }
             manager.changeDirectoryUp()
         }
+        manager.changeDirectoryToRoot()
+        assertTrue(manager.existsDirectory("${catalogDirName}_1/${subdirDirName}_1"))
     }
 
     private void upload() {
@@ -225,16 +226,21 @@ abstract class ManagerTest extends getl.test.GetlTest {
 
         StringBuilder out = new StringBuilder(), err = new StringBuilder()
 
+        manager.changeDirectoryToRoot()
+        manager.changeDirectory("${catalogDirName}_1")
+        manager.changeDirectory("${subdirDirName}_1")
+
         def cmd
         if (manager.hostOS == Manager.winOS)
-            cmd = 'dir c:\\'
+            cmd = "type $subdirFileName"
         else
-            cmd = 'ls /'
+            cmd = "cat $subdirFileName"
 
         def res = manager.doCommand(cmd, out, err)
         if (res != 0)
             println err.toString()
 
         assertEquals(err.toString(), 0, res)
+        assertEquals('child file\n', out.toString())
     }
 }

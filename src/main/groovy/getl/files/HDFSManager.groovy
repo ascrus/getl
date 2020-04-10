@@ -163,6 +163,7 @@ class HDFSManager extends Manager {
 
     private fullName(String dir, String file) {
         if (dir != null && dir[0] == '/' && StringUtils.LeftStr(dir, 6) != '/user/') dir = dir.substring(1)
+        if (dir == null) dir = currentPath
         if (!((dir + '/').matches(rootPath + '/.*'))) dir = rootPath + '/' + dir
         return ((dir != null)?dir:'') + ((file != null)?"/$file":'')
     }
@@ -337,19 +338,29 @@ class HDFSManager extends Manager {
         }
     }
 
-    /*@Override
+    @Override
     boolean existsDirectory(String dirName) {
         validConnect()
 
-        return client.exists(fullPath(dirName, null))
+        def path = fullPath(dirName, null)
+        def res = client.exists(path)
+        if (res)
+            res = client.getFileStatus(path).directory
+
+        return res
     }
 
     @Override
     boolean existsFile(String fileName) {
         validConnect()
 
-        return client.exists(fullPath(dirName, null))
-    }*/
+        def path = fullPath(null, fileName)
+        def res = client.exists(path)
+        if (res)
+            res = client.getFileStatus(path).file
+
+        return res
+    }
 
     @Override
     long getLastModified(String fileName) {
