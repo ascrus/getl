@@ -477,7 +477,12 @@ class SFTPManager extends Manager {
 	@Override
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
 		Integer res = null
-//		if (_currentPath != null) command = "cd \"$_currentPath\" && $command"
+		if (_currentPath != null) {
+			if (hostOS == winOS)
+				command = "cmd /c cd \"${FileUtils.ConvertToWindowsPath(_currentPath.substring(1))}\" && $command"
+			else
+				command = "cd \"$_currentPath\" && $command"
+		}
 		def channelCmd = clientSession.openChannel("exec") as ChannelExec
 		try {
 			channelCmd.setCommand(command)
