@@ -48,7 +48,7 @@ class GetlDslTest extends GetlTest {
     /** Run initialization only once */
     Boolean onceRunInitClass() { false }
     /** Used class for Getl */
-    Class<Getl> useGetlClass() { null }
+    Class<Getl> useGetlClass() { Getl }
 
     @BeforeClass
     static void InitDslTestClass() {
