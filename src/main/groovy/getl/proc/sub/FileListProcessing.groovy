@@ -144,7 +144,7 @@ abstract class FileListProcessing {
     /** Use path mask for source file */
     void useSourcePath(@DelegatesTo(Path) Closure cl) {
         def parent = new Path()
-        Getl.RunClosure(dslOwnerObject?:this, dslThisObject?:this, parent, cl)
+        parent.with(cl)
         setSourcePath(parent)
     }
 

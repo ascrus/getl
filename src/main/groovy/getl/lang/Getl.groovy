@@ -414,7 +414,7 @@ Examples:
         if (_getl != null && !_getl._getlInstance)
             throw new ExceptionDSL('Cannot be called during Getl object initialization!')
 
-        GetlInstance().runDsl(ownerObject, parameters, cl)
+        GetlInstance().runDsl(ownerObject, cl)
     }
 
     /** Run DSL script on getl share object */
@@ -454,9 +454,9 @@ Examples:
     }
 
     /** Run DSL script */
-    Object runDsl(def ownerObject, Map parameters,
-                @DelegatesTo(Getl)
-                @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
+    Object runDsl(def ownerObject,
+                  @DelegatesTo(Getl)
+                  @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         Object res = null
 
         if (!(Config.configClassManager instanceof ConfigSlurper))
@@ -470,10 +470,7 @@ Examples:
             }
 
             if (cl != null) {
-                def code = cl.rehydrate(this, this, _ownerObject ?: this)
-                code.resolveStrategy = childDelegate
-                if (parameters != null) code.properties.putAll(parameters)
-                res = code.call(this)
+                res = this.with(cl)
             }
         }
         finally {
@@ -484,16 +481,9 @@ Examples:
     }
 
     /** Run DSL script */
-    Object runDsl(def ownerObject,
-                @DelegatesTo(Getl)
-                @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
-        runDsl(ownerObject, null, cl)
-    }
-
-    /** Run DSL script */
     Object runDsl(@DelegatesTo(Getl)
                 @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
-        runDsl(null, null, cl)
+        runDsl(null, cl)
     }
 
     /** Owner object for child objects  */
@@ -547,10 +537,10 @@ Examples:
     void profile(String name, String objName = null,
                  @DelegatesTo(ProfileSpec)
                  @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ProfileSpec']) Closure cl) {
-        def stat = new ProfileSpec(this, this, name, objName, true)
-        stat.startProfile()
-        runClosure(stat, cl)
-        stat.finishProfile()
+        def parent = new ProfileSpec(this, this, name, objName, true)
+        parent.startProfile()
+        runClosure(parent, cl)
+        parent.finishProfile()
     }
 
 
@@ -1910,66 +1900,10 @@ Examples:
         return obj
     }
 
-    /** Preparing closure code for specified object */
-    static Closure PrepareClosure(def ownerObject, def thisObject, def parent, Closure cl) {
-        if (cl == null) return null
-        def code = cl.rehydrate(parent, ownerObject, thisObject)
-        code.resolveStrategy = childDelegate
-        return code
-    }
-
-    /** Run closure with call parent parameter */
-    static Object RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl) {
-        if (cl == null) return null
-
-        def code = cl.rehydrate(parent, ownerObject, thisObject)
-        code.resolveStrategy = childDelegate
-        return code.call(parent)
-    }
-
-    /** Run closure with call one parameter */
-    static Object RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object param) {
-        if (cl == null) return null
-
-        def code = cl.rehydrate(parent, ownerObject, thisObject)
-        code.resolveStrategy = childDelegate
-        return code.call(param)
-    }
-
-    /** Run closure with call two parameters */
-    static Object RunClosure(Object ownerObject, Object thisObject, Object parent, Closure cl, Object... params) {
-        if (cl == null) return null
-
-        def code = cl.rehydrate(parent, ownerObject, thisObject)
-        code.resolveStrategy = childDelegate
-        return code.call(params)
-    }
-
     /** Run closure with call parent parameter */
     protected Object runClosure(Object parent, Closure cl) {
         if (cl == null) return null
-
-        def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
-        code.resolveStrategy = childDelegate
-        return code.call(parent)
-    }
-
-    /** Run closure with call one parameter */
-    protected Object runClosure(Object parent, Closure cl, Object param) {
-        if (cl == null) return null
-
-        def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
-        code.resolveStrategy = childDelegate
-        return code.call(param)
-    }
-
-    /** Run closure with call two parameters */
-    protected Object runClosure(Object parent, Closure cl, Object... params) {
-        if (cl == null) return null
-
-        def code = cl.rehydrate(parent, childOwnerObject, childThisObject)
-        code.resolveStrategy = childDelegate
-        return code.call(params)
+        return parent.with(cl)
     }
 
     /** Configuration content */
@@ -2054,7 +1988,7 @@ Examples:
 
         if (!(Config.configClassManager instanceof ConfigSlurper)) Config.configClassManager = new ConfigSlurper()
         def parent = new ConfigSpec(childOwnerObject, childThisObject)
-        parent.runClosure(cl)
+        runClosure(parent, cl)
 
         return parent
     }
@@ -2067,7 +2001,7 @@ Examples:
 
         def parent = new LogSpec(childOwnerObject, childThisObject)
         def logFileName = parent.getLogFileName()
-        parent.runClosure(cl)
+        runClosure(parent, cl)
         if (logFileName != parent.getLogFileName()) {
             Logs.Info("### Getl start logging to log file ${parent.getLogFileName()}")
         }
@@ -2116,11 +2050,11 @@ Examples:
     Connection cloneConnection(String newName, Connection con,
                                @DelegatesTo(Connection)
                                @ClosureParams(value = SimpleType, options = ['getl.data.Connection']) Closure cl = null) {
-        def res = cloneConnection(con)
-        registerConnectionObject(res, newName)
-        runClosure(res, cl)
+        def parent = cloneConnection(con)
+        registerConnectionObject(parent, newName)
+        runClosure(parent, cl)
 
-        return res
+        return parent
     }
 
     /**
@@ -2170,11 +2104,11 @@ Examples:
     Dataset cloneDataset(String newName, Dataset dataset, Connection con = null,
                          @DelegatesTo(Dataset)
                          @ClosureParams(value = SimpleType, options = ['getl.data.Dataset']) Closure cl = null) {
-        def res = cloneDataset(dataset, con)
-        registerDatasetObject(res, newName)
-        runClosure(res, cl)
+        def parent = cloneDataset(dataset, con)
+        registerDatasetObject(parent, newName)
+        runClosure(parent, cl)
 
-        return res
+        return parent
     }
 
     /**
@@ -3621,7 +3555,7 @@ Examples:
         def parent = new FlowCopySpec(childOwnerObject, childThisObject, false, null)
         parent.source = source
         parent.destination = destination
-        parent.runClosure(cl)
+        runClosure(parent, cl)
         if (!parent.isProcessed) parent.copyRow(null)
         finishProcess(pt, parent.countRow)
     }
@@ -3638,7 +3572,7 @@ Examples:
         def pt = startProcess("Write rows to $destination")
         def parent = new FlowWriteSpec(childOwnerObject, childThisObject, false, null)
         parent.destination = destination
-        parent.runClosure(cl)
+        runClosure(parent, cl)
         finishProcess(pt, parent.countRow)
     }
 
@@ -3668,7 +3602,7 @@ Examples:
         def pt = startProcess("Write rows to $destNames")
         def parent = new FlowWriteManySpec(childOwnerObject, childThisObject, false, null)
         parent.destinations = destinations
-        parent.runClosure(cl)
+        runClosure(parent, cl)
         finishProcess(pt)
     }
 
@@ -3683,7 +3617,7 @@ Examples:
         def pt = startProcess("Read rows from $source")
         def parent = new FlowProcessSpec(childOwnerObject, childThisObject, false, null)
         parent.source = source
-        parent.runClosure(cl)
+        runClosure(parent, cl)
         finishProcess(pt, parent.countRow)
     }
 
@@ -3763,11 +3697,11 @@ Examples:
     Manager cloneFilemanager(String newName, Manager man,
                              @DelegatesTo(Manager)
                              @ClosureParams(value = SimpleType, options = ['getl.files.Manager']) Closure cl = null) {
-        def res = cloneFilemanager(man)
-        registerFileManagerObject(res, newName)
-        runClosure(res, cl)
+        def parent = cloneFilemanager(man)
+        registerFileManagerObject(parent, newName)
+        runClosure(parent, cl)
 
-        return res
+        return parent
     }
 
     /** Process local file system */
@@ -3964,7 +3898,7 @@ Examples:
         }
         def pt = startProcess("Processing text file${(parent.fileName != null) ? (' "' + parent.fileName + '"') : ''}", 'byte')
         pt.objectName = 'byte'
-        parent.runClosure(cl)
+        runClosure(parent, cl)
         parent.save()
         pt.name = "Processing text file${(parent.fileName != null) ? (' "' + parent.fileName + '"') : ''}"
         finishProcess(pt, parent.countBytes)
@@ -4043,11 +3977,11 @@ Examples:
     SavePointManager cloneHistorypoint(String newName, SavePointManager point, JDBCConnection con = null,
                                        @DelegatesTo(SavePointManager)
                                        @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl = null) {
-        def res = cloneHistorypoint(point, con)
-        registerHistoryPointObject(res, newName)
-        runClosure(res, cl)
+        def parent = cloneHistorypoint(point, con)
+        registerHistoryPointObject(parent, newName)
+        runClosure(parent, cl)
 
-        return res
+        return parent
     }
 
     /** Sequence */
@@ -4098,11 +4032,11 @@ Examples:
     Sequence cloneSequence(String newName, Sequence seq, JDBCConnection con = null,
                            @DelegatesTo(Sequence)
                            @ClosureParams(value = SimpleType, options = ['getl.jdbc.Sequence']) Closure cl = null) {
-        def res = cloneSequence(seq, con)
-        registerSequenceObject(res, newName)
-        runClosure(res, cl)
+        def parent = cloneSequence(seq, con)
+        registerSequenceObject(parent, newName)
+        runClosure(parent, cl)
 
-        return res
+        return parent
     }
 
     /**
@@ -4226,8 +4160,7 @@ Examples:
     GroovyTestCase testCase(@DelegatesTo(GroovyAssert)
                             @ClosureParams(value = SimpleType, options = ['groovy.test.GroovyTestCase']) Closure cl) {
         def parent = _testCase?:new GroovyTestCase()
-        def owner = DetectClosureDelegate(cl)
-        RunClosure(owner, childThisObject, parent, cl)
+        runClosure(parent, cl)
         return parent
     }
 
@@ -4259,7 +4192,7 @@ Examples:
      */
     void ifUnitTestMode(Closure cl) {
         if (unitTestMode)
-            runClosure(cl.delegate, cl)
+            cl.call()
     }
 
     /**
@@ -4268,20 +4201,20 @@ Examples:
      */
     void ifRunAppMode(Closure cl) {
         if (!unitTestMode)
-            runClosure(cl.delegate, cl)
+            cl.call()
     }
 
     void ifInitMode(Closure cl) {
         if (isInitMode)
-            runClosure(cl.delegate, cl)
+            cl.call()
     }
 
     /** Сonvert code variables to a map */
     Map<String, Object> toVars(Closure cl) {
-        def own = DetectClosureDelegate(cl)
-        def code = PrepareClosure(own, childThisObject, own, cl)
+        /*def own = DetectClosureDelegate(cl)
+        def code = PrepareClosure(own, childThisObject, own, cl)*/
         def env = (Config.configClassManager instanceof ConfigSlurper)?((Config.configClassManager as ConfigSlurper).environment):'prod'
-        return MapUtils.Closure2Map(env, code)
+        return MapUtils.Closure2Map(env, cl)
     }
 
     /* TODO: add Counter repository object */

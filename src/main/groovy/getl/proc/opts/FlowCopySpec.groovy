@@ -206,7 +206,7 @@ class FlowCopySpec extends FlowBaseSpec {
         }
         if (parent.dataset == null) throw new ExceptionGETL("Child dataset \"$name\" required dataset!")
 
-        prepareClosure(parent, cl).call()
+        runClosure(parent, cl)
         childs.put(name, parent)
     }
 

@@ -563,7 +563,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			parent = new Field(name: name)
 			getField().add(parent)
 		}
-		Getl.RunClosure(this, thisObject, parent, cl)
+		if (cl != null) parent.with(cl)
 
 		return parent
 	}

@@ -71,8 +71,9 @@ class FlowBaseSpec extends BaseSpec {
      * Closure code process row
      */
     protected void doProcess(Closure value) {
-        if (value != null) setOnProcess(prepareClosure(value))
-        if (needProcessCode && onProcess == null) throw new ExceptionGETL('Required "process" code!')
+        if (value != null) setOnProcess(value)
+        if (needProcessCode && onProcess == null)
+            throw new ExceptionGETL('Required "process" code!')
 
         Flow flow = new Flow()
         isProcessed = true

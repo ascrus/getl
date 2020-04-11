@@ -77,56 +77,16 @@ class BaseSpec {
     /** This object for owner object */
     protected def ownerObject
 
-    /** Preparing closure code for this object */
-    Closure prepareClosure(Closure cl) {
-        Closure res
-        if (thisObject instanceof Getl)
-            res = Getl.PrepareClosure(ownerObject?:this, thisObject?:this, this, cl)
-        else {
-            cl.setDelegate(this)
-            cl.setResolveStrategy(Closure.DELEGATE_FIRST)
-            res = cl
-        }
-
-        return res
-    }
-
-    /** Preparing closure code for specified object */
-    Closure prepareClosure(def parent, Closure cl) {
-        Closure res
-        if (thisObject instanceof Getl)
-            res = Getl.PrepareClosure(ownerObject?:this, thisObject?:this, parent?:this, cl)
-        else {
-            cl.setDelegate(parent)
-            cl.setResolveStrategy(Closure.DELEGATE_FIRST)
-            res = cl
-        }
-
-        return res
-    }
-
     /** Run closure for this object */
     void runClosure(Closure cl) {
         if (cl == null) return
-        if (thisObject instanceof Getl)
-            Getl.RunClosure(ownerObject?:this, thisObject?:this, this, cl)
-        else {
-            cl.setDelegate(this)
-            cl.setResolveStrategy(Closure.DELEGATE_FIRST)
-            cl.call(this)
-        }
+        this.with(cl)
     }
 
     /** Run closure for specified object */
-    void runClosure(def parent, Closure cl) {
+    void runClosure(Object parent, Closure cl) {
         if (cl == null) return
-        if (thisObject instanceof Getl)
-            Getl.RunClosure(ownerObject?:this, thisObject?:this, parent?:this, cl)
-        else {
-            cl.setDelegate(parent)
-            cl.setResolveStrategy(Closure.DELEGATE_FIRST)
-            cl.call(parent)
-        }
+        parent.with(cl)
     }
 
     Map<String, Object> _params = new ConcurrentHashMap<String, Object>()

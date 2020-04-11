@@ -122,7 +122,7 @@ class Executor {
 	/** How exceptions in process stopping execute */
 	final Map<Object, Throwable> exceptions = ([:] as Map<Object, Throwable>)
 	/** How exceptions in process stopping execute */
-	@Synchronized
+	@Synchronized('exceptions')
 	Map<Object, Throwable> getExceptions() { exceptions }
 
 	/** Fixing error */
@@ -173,13 +173,13 @@ class Executor {
 	/** List of all threads */
 	final List<Map> threadList = new LinkedList<Map>()
 	/** List of all threads */
-	@Synchronized
+	@Synchronized('threadList')
 	List<Map> getThreadList() { threadList }
 
 	/** List of active threads */
 	final List<Map> threadActive = new LinkedList<Map>()
 	/** List of active threads */
-	@Synchronized
+	@Synchronized('threadActive')
 	List<Map> getThreadActive() { threadActive }
 
 	/** Interrupt flag */

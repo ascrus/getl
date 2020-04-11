@@ -84,7 +84,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         def parent = new Path()
         parent.maskVariables.putAll(CloneUtils.CloneMap(sourcePath.maskVariables))
 
-        Getl.RunClosure(dslOwnerObject?:this, dslThisObject?:this, parent, cl)
+        parent.with(cl)
         params.destinationPath = parent
         if (!destinationPath.isCompile) destinationPath.compile()
     }
@@ -124,7 +124,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         parent.variable('filedate') { type = Field.datetimeFieldType; format = 'yyyyMMDD_HHmmss' }
         parent.variable('filesize') { type = Field.bigintFieldType }
 
-        Getl.RunClosure(dslOwnerObject?:this, dslThisObject?:this, parent, cl)
+        parent.with(cl)
         params.renamePath = parent
         if (renamePath != null && !renamePath.isCompile) renamePath.compile()
     }

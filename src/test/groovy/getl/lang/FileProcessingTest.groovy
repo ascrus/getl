@@ -45,16 +45,16 @@ class FileProcessingTest extends GetlDslTest {
         FileUtils.ValidPath(archivePath, !debug)
         FileUtils.ValidPath(errorPath, !debug)
 
-        Dsl(this) {
+        Dsl() {
             h2Table('h2:sales', true) {
-                if (!this.debug)
+                if (!debug)
                     useConnection embeddedConnection()
                 else
                     useConnection h2Connection {
-                        connectDatabase = "${this.workPath}/data"
+                        connectDatabase = "${workPath}/data"
                         login = 'easyloader'
                         password = 'easydata'
-                        sqlHistoryFile = "${this.workPath}/data.{date}.sql"
+                        sqlHistoryFile = "${workPath}/data.{date}.sql"
                     }
 
                 tableName = 'sales'
@@ -71,11 +71,11 @@ class FileProcessingTest extends GetlDslTest {
                 create()
 
                 def genSale = GenerationUtils.GenerateRandomRow(h2Table('h2:sales'), ['id'],
-                        [sale_date: [days: this.countDays - 1], price_id: [minValue: 1, maxValue: 100],
+                        [sale_date: [days: countDays - 1], price_id: [minValue: 1, maxValue: 100],
                          count: [minValue: 1, maxValue: 1000]])
                 rowsTo {
                     writeRow { adder ->
-                        (1..this.countSale).each { id ->
+                        (1..countSale).each { id ->
                             def row = [id: id]
                             genSale.call(row)
                             adder row
@@ -102,38 +102,38 @@ class FileProcessingTest extends GetlDslTest {
             }
 
             h2Table('h2:story', true) {
-                if (!this.debug)
+                if (!debug)
                     useConnection embeddedConnection()
                 else
                     useConnection h2Connection {
-                        connectDatabase = "${this.workPath}/history"
+                        connectDatabase = "${workPath}/history"
                         login = 'easyloader'
                         password = 'easydata'
-                        sqlHistoryFile = "${this.workPath}/history.{date}.sql"
+                        sqlHistoryFile = "${workPath}/history.{date}.sql"
                     }
                 tableName = 'story'
                 drop(ifExists: true)
             }
 
             files('source', true) {
-                rootPath = this.sourcePath
+                rootPath = sourcePath
                 createStory = true
-                if (this.debug)
-                    sqlHistoryFile = "${this.workPath}/h2-processing.source.{date}.sql"
+                if (debug)
+                    sqlHistoryFile = "${workPath}/h2-processing.source.{date}.sql"
                 threadLevel = 1
                 buildListThread = 3
             }
 
             files('archive', true) {
-                rootPath = this.archivePath
-                if (this.debug)
-                    sqlHistoryFile = "${this.workPath}/h2-processing.archive.{date}.sql"
+                rootPath = archivePath
+                if (debug)
+                    sqlHistoryFile = "${workPath}/h2-processing.archive.{date}.sql"
             }
 
             files('errors', true) {
-                rootPath = this.errorPath
-                if (this.debug)
-                    sqlHistoryFile = "${this.workPath}/h2-processing.error.{date}.sql"
+                rootPath = errorPath
+                if (debug)
+                    sqlHistoryFile = "${workPath}/h2-processing.error.{date}.sql"
             }
 
             csvTempWithDataset('#cache', h2Table('h2:sales_json')) {
@@ -160,15 +160,15 @@ class FileProcessingTest extends GetlDslTest {
         FileUtils.ValidPath(archivePath, !debug)
         FileUtils.ValidPath(errorPath, !debug)
 
-        Dsl(this) {
+        Dsl() {
             thread {
                 useQueryConnection h2Table('h2:sales').currentJDBCConnection
                 useList sqlQuery('SELECT DISTINCT sale_date FROM sales ORDER BY sale_date').rows()
-                countProc = this.countFileInDay
+                countProc = countFileInDay
                 run { day ->
                     def strday = DateUtils.FormatDate(day.sale_date)
-                    def path = "${this.sourcePath}/$strday"
-                    FileUtils.ValidPath(path, !this.debug)
+                    def path = "${sourcePath}/$strday"
+                    FileUtils.ValidPath(path, !debug)
 
                     def rows = h2Table('h2:sales') { sale ->
                         readOpts {
@@ -179,8 +179,8 @@ class FileProcessingTest extends GetlDslTest {
                     }.rows()
 
                     thread {
-                        useList (1..this.countFileInDay)
-                        countProc = this.countDays
+                        useList (1..countFileInDay)
+                        countProc = countDays
                         run { Integer num ->
                             def writer = new File("$path/sales.${StringUtils.AddLedZeroStr(num, 4)}.json").newWriter()
                             def builder = new StreamingJsonBuilder(writer,
@@ -199,7 +199,7 @@ class FileProcessingTest extends GetlDslTest {
 
     void proc(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing) {
         generateData()
-        Dsl(this) {
+        Dsl() {
             h2Table('h2:story') {
                 if (exists)
                     truncate(truncate: true)
@@ -217,7 +217,7 @@ class FileProcessingTest extends GetlDslTest {
     }
 
     void procInternal(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing, boolean firstRun = true) {
-        Dsl(this) {
+        Dsl() {
             logInfo "*** START PROCESSING FILES ${(firstRun)?'ONE':'TWO'}: archiveStorage=$archiveStorage, delFiles=$delFiles, delSkip=$delSkip, useStory=$useStory, cacheStory=$cacheStory, cacheProcessing=$cacheProcessing"
 
             def res = fileProcessing(files('source')) {
@@ -228,7 +228,7 @@ class FileProcessingTest extends GetlDslTest {
                 }
                 order = ['num']
                 threadGroupColumns = ['date']
-                countOfThreadProcessing = this.countFileInDay
+                countOfThreadProcessing = countFileInDay
                 removeEmptyDirs = true
                 removeFiles = delFiles
                 handleExceptions = true
@@ -237,11 +237,11 @@ class FileProcessingTest extends GetlDslTest {
                     storageErrorFiles = files('errors')
                 }
                 if (cacheStory)
-                    if (!this.debug)
-                        cacheFilePath = "${this.workPath}/storycache"
+                    if (!debug)
+                        cacheFilePath = "${workPath}/storycache"
                     else {
-                        def t = new H2Connection(connectDatabase: "${this.workPath}/storycache")
-                        cacheFilePath = "${this.workPath}/storycache"
+                        def t = new H2Connection(connectDatabase: "${workPath}/storycache")
+                        cacheFilePath = "${workPath}/storycache"
                     }
 
                 processFile { proc ->
@@ -261,7 +261,7 @@ class FileProcessingTest extends GetlDslTest {
 
                     json('json:sales') {
                         fileName = proc.file.path
-                        this.assertEquals(count, rows().size())
+                        assertEquals(count, rows().size())
                     }
 
                     if (cacheProcessing)
@@ -280,44 +280,44 @@ class FileProcessingTest extends GetlDslTest {
             }
 
             if (firstRun) {
-                assertEquals(this.countCompleteFiles, res.countFiles)
+                assertEquals(countCompleteFiles, res.countFiles)
             }
             else {
                 assertEquals(0, res.countFiles)
                 if (!delSkip)
-                    assertEquals(this.countDays, res.countSkips)
+                    assertEquals(countDays, res.countSkips)
                 else
                     assertEquals(0, res.countSkips)
             }
             def countErrors = 0
             if (firstRun || (!firstRun && (!delFiles || !archiveStorage)))
-                assertEquals(this.countErrorFiles, res.countErrors)
+                assertEquals(countErrorFiles, res.countErrors)
             else
                 assertEquals(0, res.countErrors)
 
             if (files('source').story != null)
-                assertEquals(this.countCompleteFiles, h2Table('h2:story').countRow())
+                assertEquals(countCompleteFiles, h2Table('h2:story').countRow())
 
-            assertEquals(this.countCompleteRows, h2Table('h2:sales_json').countRow())
+            assertEquals(countCompleteRows, h2Table('h2:sales_json').countRow())
 
             if (delFiles)
                 files('source') {
                     connect()
                     def countFiles = 0
-                    if (!delSkip) countFiles += this.countDays
-                    if (!archiveStorage) countFiles += this.countErrorFiles
+                    if (!delSkip) countFiles += countDays
+                    if (!archiveStorage) countFiles += countErrorFiles
                     assertEquals(countFiles, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
                 }
 
             if (archiveStorage) {
                 files('archive') {
                     connect()
-                    assertEquals(this.countCompleteFiles, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
+                    assertEquals(countCompleteFiles, buildListFiles('*/sales.*.json') { recursive = true }.countRow())
                 }
 
                 files('errors') {
                     connect()
-                    assertEquals(this.countErrorFiles * 2, buildListFiles('*/sales.*.*') { recursive = true }.countRow())
+                    assertEquals(countErrorFiles * 2, buildListFiles('*/sales.*.*') { recursive = true }.countRow())
                 }
             }
         }

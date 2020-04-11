@@ -105,16 +105,14 @@ class StructureFileDataset extends FileDataset {
 
 	/** Dataset attribute field */
 	Field attributeField(String name,
-						 @DelegatesTo(Field) @ClosureParams(value = SimpleType, options = ['getl.data.Field'])
-								 Closure cl) {
-		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-
+						 @DelegatesTo(Field)
+						 @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure cl) {
 		Field parent = attributeByName(name)
 		if (parent == null) {
 			parent = new Field(name: name)
 			attributeField << parent
 		}
-		Getl.RunClosure(this, thisObject, parent, cl)
+		if (cl != null) parent.with(cl)
 
 		return parent
 	}

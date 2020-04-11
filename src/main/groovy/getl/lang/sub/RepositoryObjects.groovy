@@ -319,10 +319,9 @@ abstract class RepositoryObjects<T extends GetlRepository> {
         if (cl == null)
             throw new ExceptionGETL('Process required closure code!')
 
-        def code = getl.PrepareClosure(getl.childOwnerObject, getl.childThisObject, cl.delegate, cl)
         def list = list(mask, classes)
         list.each { name ->
-            code.call(name)
+            cl.call(name)
         }
     }
 }
