@@ -140,16 +140,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Name in Getl Dsl reposotory */
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	/** This object with Getl Dsl repository */
-	Object getDslThisObject() { sysParams.dslThisObject }
-	/** This object with Getl Dsl repository */
-	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
-
-	/** Owner object with Getl Dsl repository */
-	Object getDslOwnerObject() { sysParams.dslOwnerObject }
-	/** Owner object with Getl Dsl repository */
-	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
-	
 	/** Root path */
 	String getRootPath () { params.rootPath as String }
 	/** Root path */
@@ -230,7 +220,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		config = value
 		if (config != null) {
 			if (Config.ContainsSection("files.${this.config}")) {
-				doInitConfig()
+				doInitConfig.call()
 			}
 			else {
 				Config.RegisterOnInit(doInitConfig)
@@ -1025,8 +1015,7 @@ FROM ${newFiles.fullNameDataset()} files
 	TableDataset buildListFiles(Path maskPath,
 								@ClosureParams(value = SimpleType, options = ['getl.files.opts.ManagerBuildListSpec'])
 								@DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
-		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-		def parent = new ManagerBuildListSpec(this, thisObject, false, null)
+		def parent = new ManagerBuildListSpec()
 		if (maskPath != null) parent.maskPath = maskPath
 		parent.runClosure(cl)
 		buildList(parent.params)
@@ -1231,8 +1220,7 @@ WHERE
 	/** Build list of files */
 	void downloadListFiles(@ClosureParams(value = SimpleType, options = ['getl.files.opts.ManagerDownloadSpec'])
 						   @DelegatesTo(ManagerDownloadSpec) Closure cl = null) {
-		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-		def parent = new ManagerDownloadSpec(this, thisObject, false, null)
+		def parent = new ManagerDownloadSpec()
 		parent.runClosure(cl)
 
 		downloadFiles(parent.params)
@@ -1786,8 +1774,6 @@ WHERE
 
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
-		sysParams.dslThisObject = null
-		sysParams.dslOwnerObject = null
 	}
 
 	/** Windows OS */

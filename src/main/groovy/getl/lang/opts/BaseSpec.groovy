@@ -26,6 +26,7 @@ package getl.lang.opts
 
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
+import getl.lang.sub.GetlRepository
 import getl.utils.CloneUtils
 import getl.utils.MapUtils
 import groovy.transform.CompileStatic
@@ -43,15 +44,7 @@ class BaseSpec {
         initSpec()
     }
 
-    BaseSpec(def ownerObject, def thisObject) {
-        this.ownerObject = ownerObject
-        this.thisObject = thisObject
-        initSpec()
-    }
-
-    BaseSpec(def ownerObject, def thisObject, Boolean useExternalParams, Map<String, Object> importParams) {
-        this.ownerObject = ownerObject
-        this.thisObject = thisObject
+    BaseSpec(Boolean useExternalParams, Map<String, Object> importParams) {
         if (importParams != null) {
             if (useExternalParams) {
                 _params = importParams
@@ -66,16 +59,7 @@ class BaseSpec {
     protected void initSpec() { }
 
     /** Detect delegate object for closure code */
-    static Object DetectClosureDelegate(Object obj) {
-        while (obj instanceof Closure) obj = (obj as Closure).delegate
-        return obj
-    }
-
-    /** This object for this object */
-    protected def thisObject
-
-    /** This object for owner object */
-    protected def ownerObject
+    static Object DetectClosureDelegate(Object obj) { Getl.DetectClosureDelegate(obj) }
 
     /** Run closure for this object */
     void runClosure(Closure cl) {

@@ -200,7 +200,7 @@ class FlowCopySpec extends FlowBaseSpec {
 
         def parent = childs.get(name)
         if (parent == null) {
-            parent = new FlowCopyChildSpec(ownerObject, thisObject, false, null)
+            parent = new FlowCopyChildSpec()
             parent.dataset = dataset
             childs.put(name, parent)
         }

@@ -73,7 +73,7 @@ class Flow {
 		config = value
 		if (config != null) {
 			if (Config.ContainsSection("flows.${this.config}")) {
-				doInitConfig()
+				doInitConfig.call()
 			}
 			else {
 				Config.RegisterOnInit(doInitConfig)

@@ -62,9 +62,8 @@ class ImpalaTable extends TableDataset {
     ImpalaConnection getCurrentImpalaConnection() { connection as ImpalaConnection }
 
     @Override
-    protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                              Map<String, Object> opts) {
-        new ImpalaCreateSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new ImpalaCreateSpec(useExternalParams, opts)
     }
 
     ImpalaCreateSpec createOpts(@DelegatesTo(ImpalaCreateSpec)
@@ -74,9 +73,8 @@ class ImpalaTable extends TableDataset {
     }
 
     @Override
-    protected WriteSpec newWriteTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                            Map<String, Object> opts) {
-        new ImpalaWriteSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new ImpalaWriteSpec(useExternalParams, opts)
     }
 
     /** Options for writing to Hive table */
@@ -87,9 +85,8 @@ class ImpalaTable extends TableDataset {
     }
 
     @Override
-    protected BulkLoadSpec newBulkLoadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                                  Map<String, Object> opts) {
-        new ImpalaBulkLoadSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new ImpalaBulkLoadSpec(useExternalParams, opts)
     }
 
     /** Options for loading csv files to Hive table */

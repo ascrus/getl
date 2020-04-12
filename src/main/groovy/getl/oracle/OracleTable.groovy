@@ -58,9 +58,8 @@ class OracleTable extends TableDataset {
     OracleConnection getCurrentOracleConnection() { connection as OracleConnection }
 
     @Override
-    protected ReadSpec newReadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                          Map<String, Object> opts) {
-        new OracleReadSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new OracleReadSpec(useExternalParams, opts)
     }
 
     /**

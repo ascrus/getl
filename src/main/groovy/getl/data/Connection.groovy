@@ -157,7 +157,7 @@ class Connection implements Cloneable, GetlRepository {
 		config = value
 		if (config != null) {
 			if (Config.ContainsSection("connections.${this.config}")) {
-				doInitConfig()
+				doInitConfig.call()
 			}
 			else {
 				Config.RegisterOnInit(doInitConfig)
@@ -233,16 +233,6 @@ class Connection implements Cloneable, GetlRepository {
 	/** Name in Getl Dsl reposotory */
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	/** This object with Getl Dsl repository */
-	Object getDslThisObject() { sysParams.dslThisObject }
-	/** This object with Getl Dsl repository */
-	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
-
-	/** Owner object with Getl Dsl repository */
-	Object getDslOwnerObject() { sysParams.dslOwnerObject }
-	/** Owner object with Getl Dsl repository */
-	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
-	
 	/** Auto load schema with meta file for connection datasets */
 	boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema, false) }
 	/** Auto load schema with meta file for connection datasets */
@@ -538,7 +528,5 @@ class Connection implements Cloneable, GetlRepository {
 
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
-		sysParams.dslThisObject = null
-		sysParams.dslOwnerObject = null
 	}
 }

@@ -65,16 +65,6 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	/** Name in Getl Dsl reposotory */
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	/** This object with Getl Dsl repository */
-	Object getDslThisObject() { sysParams.dslThisObject }
-	/** This object with Getl Dsl repository */
-	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
-
-	/** Owner object with Getl Dsl repository */
-	Object getDslOwnerObject() { sysParams.dslOwnerObject }
-	/** Owner object with Getl Dsl repository */
-	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
-
 	/** Connection */
 	JDBCConnection connection
 	/** Connection */
@@ -189,8 +179,6 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	/** System method */
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
-		sysParams.dslThisObject = null
-		sysParams.dslOwnerObject = null
 	}
 
 	/**
@@ -201,8 +189,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	void createSequence(boolean ifNotExists = false,
 						@DelegatesTo(SequenceCreateSpec)
 						@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.SequenceCreateSpec']) Closure cl = null) {
-		def thisObject = dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
-		def parent = new SequenceCreateSpec(this, thisObject, false, null)
+		def parent = new SequenceCreateSpec()
 		parent.runClosure(cl)
 		connection.currentJDBCDriver.createSequence(fullName, ifNotExists, parent)
 	}

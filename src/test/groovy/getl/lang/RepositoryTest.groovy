@@ -19,14 +19,14 @@ import org.junit.Test
 class RepositoryTest extends GetlDslTest {
     @Test
     void testConnections() {
-        def getl = new Getl()
+        def getl = Getl.GetlInstance()
         def rep = new RepositoryConnections()
         assertEquals(21, rep.listClasses.size())
         assertEquals(0, rep.list().size())
         assertNull(rep.find('group:con'))
         assertNull(rep.find(new H2Connection()))
 
-        shouldFail { rep.register('UNHNOWN') }
+        shouldFail { rep.register('UNNOWN') }
         assertTrue(rep.register(rep.H2CONNECTION) instanceof H2Connection)
         assertEquals(0, rep.list().size())
 
@@ -36,8 +36,6 @@ class RepositoryTest extends GetlDslTest {
         con.with { extended.test = 'test' }
         assertTrue(con instanceof H2Connection)
         assertSame(con, rep.register(null, 'group:con') )
-        assertSame(getl, con.dslOwnerObject)
-        assertSame(getl, con.dslThisObject)
         assertEquals('group:con', con.dslNameObject)
         assertEquals('test', rep.register(null, 'group:con').extended.test)
 
@@ -71,8 +69,6 @@ class RepositoryTest extends GetlDslTest {
                     assertTrue(tcon instanceof H2Connection)
                     assertNotSame(con, tcon)
                     assertSame(tcon, rep.register(null, 'group:con') )
-                    assertSame(getl, tcon.dslOwnerObject)
-                    assertSame(getl, tcon.dslThisObject)
                     assertEquals('group:con', tcon.dslNameObject)
                     assertEquals('test', tcon.extended.test)
                 }

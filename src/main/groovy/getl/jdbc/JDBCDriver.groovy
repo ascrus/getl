@@ -1317,7 +1317,7 @@ ${extend}'''
 	
 	@groovy.transform.CompileStatic
 	@Override
-	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (params == null) params = [:]
 
 		Integer fetchSize = (params.fetchSize as Integer)
@@ -1356,7 +1356,6 @@ ${extend}'''
 		Closure copyToMap
 		def getFields = { meta ->
 			metaFields = meta2Fields(meta, isTable)
-//			metaFields.each { prepareField(it) }
 			if (!isTable) {
 				dataset.field = metaFields
 			}
@@ -1379,23 +1378,12 @@ ${extend}'''
 			if (dataset.sysParams.lastread != null) {
 				def lastread = dataset.sysParams.lastread as Map
 				def lastfields = lastread.fields as List<Field>
-				/*if (lastfields?.size() == fields.size()) {
-					def eq = true
-					for (int i = 0; i < fields.size(); i++) {
-						if (fields[i] != lastfields[i]) {
-							eq = false
-							break
-						}
-					}
-					if (eq) {
-						rowCopy = lastread.code as Map
-					}
-				}*/
 				if (lastfields == fields)
 					rowCopy = lastread.code as Map
 			}
 
 			if (rowCopy == null) {
+				//noinspection GrReassignedInClosureLocalVar
 				rowCopy = GenerationUtils.GenerateRowCopy(this, fields)
 				dataset.sysParams.put('lastread', [fields: fields, code: rowCopy])
 			}

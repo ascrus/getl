@@ -33,16 +33,6 @@ interface GetlRepository {
     /** Name in Getl Dsl reposotory */
     void setDslNameObject(String value)
 
-    /** This object with Getl Dsl repository */
-    Object getDslThisObject()
-    /** This object with Getl Dsl repository */
-    void setDslThisObject(Object value)
-
-    /** Owner object with Getl Dsl repository */
-    Object getDslOwnerObject()
-    /** Owner object with Getl Dsl repository */
-    void setDslOwnerObject(Object value)
-
     /** Clean Dsl properties */
     void dslCleanProps()
 }

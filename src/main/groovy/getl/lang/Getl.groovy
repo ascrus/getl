@@ -363,7 +363,7 @@ Examples:
 
         _params.executedClasses = new SynchronizeObject()
 
-        _langOpts = new LangSpec(this, this)
+        _langOpts = new LangSpec()
         _repositoryConnections = new RepositoryConnections()
         _repositoryDatasets = new RepositoryDatasets()
         _repositoryHistorypoints = new RepositoryHistorypoints()
@@ -385,18 +385,19 @@ Examples:
     private static Getl _getl
 
     /** The object is a static instance */
-    protected boolean _getlInstance = false
+    private boolean _getlInstance = false
+
+    static protected _setGetlInstance(Getl instance) {
+        if (_getl == instance) return
+        if (_getl != null) _getl._getlInstance = false
+        _getl = instance
+        _getl?._getlInstance = true
+    }
 
     /** Get Getl instance (created if not exists) */
     static Getl GetlInstance(Getl instance) {
-        if (_getl == null) {
-            if (instance != null)
-                _getl = instance
-            else
-                _getl = this.newInstance()
-
-            _getl._getlInstance = true
-        }
+        if (_getl == null)
+            _setGetlInstance((instance != null)?instance:(this.newInstance() as Getl))
 
         return _getl
     }
@@ -537,7 +538,7 @@ Examples:
     void profile(String name, String objName = null,
                  @DelegatesTo(ProfileSpec)
                  @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ProfileSpec']) Closure cl) {
-        def parent = new ProfileSpec(this, this, name, objName, true)
+        def parent = new ProfileSpec(name, objName, true)
         parent.startProfile()
         runClosure(parent, cl)
         parent.finishProfile()
@@ -1019,8 +1020,6 @@ Examples:
             res = thread.registerCloneObject('connections', res,
                     {
                         def c = (it as Connection).cloneConnection()
-                        c.sysParams.dslThisObject = childThisObject
-                        c.sysParams.dslOwnerObject = childOwnerObject
                         c.sysParams.dslNameObject = res.dslNameObject
                         return c
                     }
@@ -1083,8 +1082,6 @@ Examples:
             res = thread.registerCloneObject('connections', res,
                     {
                         def c = (it as Connection).cloneConnection()
-                        c.sysParams.dslThisObject = childThisObject
-                        c.sysParams.dslOwnerObject = childOwnerObject
                         c.sysParams.dslNameObject = res.dslNameObject
                         return c
                     }
@@ -1148,8 +1145,6 @@ Examples:
             res = thread.registerCloneObject('connections', res,
                     {
                         def c = (it as Connection).cloneConnection()
-                        c.sysParams.dslThisObject = childThisObject
-                        c.sysParams.dslOwnerObject = childOwnerObject
                         c.sysParams.dslNameObject = res.dslNameObject
                         return c
                     }
@@ -1658,47 +1653,53 @@ Examples:
      */
     protected Integer runGroovyInstance(Script script, Map vars = [:]) {
         def res = 0
-
-        if (script instanceof Getl) {
-            def scriptGetl = script as Getl
-            scriptGetl.setGetlParams(_params)
-            InitGetlClass(scriptGetl)
-            if (vars != null && !vars.isEmpty()) {
-                FillFieldFromVars(scriptGetl, vars)
-            }
-            CheckGetlClass(scriptGetl)
-        } else if (vars != null && !vars.isEmpty()) {
-            script.binding = new Binding(vars)
-        }
-
-        def pt = startProcess("Execution groovy script ${script.getClass().name}", 'class')
+        def oldGetl = _getl
         try {
-            script.run()
-        }
-        catch (ExceptionDSL e) {
-            if (e.typeCode == ExceptionDSL.STOP_CLASS) {
-                if (e.message != null) logInfo(e.message)
-                if (e.exitCode != null) res = e.exitCode
+            if (script instanceof Getl) {
+                def scriptGetl = script as Getl
+                _setGetlInstance(scriptGetl)
+                scriptGetl.setGetlParams(_params)
+
+                InitGetlClass(scriptGetl)
+                if (vars != null && !vars.isEmpty()) {
+                    FillFieldFromVars(scriptGetl, vars)
+                }
+                CheckGetlClass(scriptGetl)
+            } else if (vars != null && !vars.isEmpty()) {
+                script.binding = new Binding(vars)
             }
-            else {
-                throw e
-            }
-        }
-        catch (Exception e) {
+
+            def pt = startProcess("Execution groovy script ${script.getClass().name}", 'class')
             try {
-                ErrorGetlClass(script, e)
+                script.run()
             }
-            catch (Exception err) {
-                Logs.Exception(err, 'method error', script.getClass().name)
+            catch (ExceptionDSL e) {
+                if (e.typeCode == ExceptionDSL.STOP_CLASS) {
+                    if (e.message != null) logInfo(e.message)
+                    if (e.exitCode != null) res = e.exitCode
+                } else {
+                    throw e
+                }
+            }
+            catch (Exception e) {
+                try {
+                    ErrorGetlClass(script, e)
+                }
+                catch (Exception err) {
+                    Logs.Exception(err, 'method error', script.getClass().name)
+                }
+                finally {
+                    throw e
+                }
             }
             finally {
-                throw e
+                DoneGetlClass(script)
             }
+            pt.finish()
         }
         finally {
-            DoneGetlClass(script)
+            _setGetlInstance(oldGetl)
         }
-        pt.finish()
 
         return res
     }
@@ -1987,7 +1988,7 @@ Examples:
             throw new ExceptionDSL('Changing configuration is not supported in the thread!')
 
         if (!(Config.configClassManager instanceof ConfigSlurper)) Config.configClassManager = new ConfigSlurper()
-        def parent = new ConfigSpec(childOwnerObject, childThisObject)
+        def parent = new ConfigSpec()
         runClosure(parent, cl)
 
         return parent
@@ -1999,7 +2000,7 @@ Examples:
         if (Thread.currentThread() instanceof ExecutorThread)
             throw new ExceptionDSL('Changing log file options is not supported in the thread!')
 
-        def parent = new LogSpec(childOwnerObject, childThisObject)
+        def parent = new LogSpec()
         def logFileName = parent.getLogFileName()
         runClosure(parent, cl)
         if (logFileName != parent.getLogFileName()) {
@@ -3552,7 +3553,7 @@ Examples:
             throw new ExceptionDSL('Destination dataset cannot be null!')
 
         def pt = startProcess("Copy rows from $source to $destination")
-        def parent = new FlowCopySpec(childOwnerObject, childThisObject, false, null)
+        def parent = new FlowCopySpec()
         parent.source = source
         parent.destination = destination
         runClosure(parent, cl)
@@ -3570,7 +3571,7 @@ Examples:
             throw new ExceptionDSL('Required closure code!')
 
         def pt = startProcess("Write rows to $destination")
-        def parent = new FlowWriteSpec(childOwnerObject, childThisObject, false, null)
+        def parent = new FlowWriteSpec()
         parent.destination = destination
         runClosure(parent, cl)
         finishProcess(pt, parent.countRow)
@@ -3600,7 +3601,7 @@ Examples:
         def destNames = [] as List<String>
         (destinations as Map<String, Dataset>).each { destName, ds -> destNames.add("$destName: ${ds.toString()}".toString()) }
         def pt = startProcess("Write rows to $destNames")
-        def parent = new FlowWriteManySpec(childOwnerObject, childThisObject, false, null)
+        def parent = new FlowWriteManySpec()
         parent.destinations = destinations
         runClosure(parent, cl)
         finishProcess(pt)
@@ -3615,7 +3616,7 @@ Examples:
         if (cl == null)
             throw new ExceptionDSL('Required closure code!')
         def pt = startProcess("Read rows from $source")
-        def parent = new FlowProcessSpec(childOwnerObject, childThisObject, false, null)
+        def parent = new FlowProcessSpec()
         parent.source = source
         runClosure(parent, cl)
         finishProcess(pt, parent.countRow)
@@ -3892,7 +3893,7 @@ Examples:
     FileTextSpec textFile(def file,
                     @DelegatesTo(FileTextSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.FileTextSpec']) Closure cl) {
-        def parent = new FileTextSpec(childOwnerObject, childThisObject, false, null)
+        def parent = new FileTextSpec()
         if (file != null) {
             parent.fileName = (file instanceof File) ? ((file as File).path) : file.toString()
         }
@@ -3916,8 +3917,6 @@ Examples:
     Path filePath(@DelegatesTo(Path)
                   @ClosureParams(value = SimpleType, options = ['getl.utils.Path']) Closure cl) {
         def parent = new Path()
-        parent.sysParams.dslThisObject = childThisObject
-        parent.sysParams.dslOwnerObject = childOwnerObject
         runClosure(parent, cl)
 
         return parent
@@ -4055,8 +4054,6 @@ Examples:
             throw new ExceptionDSL('Required destination file manager!')
 
         def parent = new FileCopier()
-        parent.sysParams.dslThisObject = childThisObject
-        parent.sysParams.dslOwnerObject = childOwnerObject
         parent.source = source
         parent.destinations = destinations
 
@@ -4101,8 +4098,6 @@ Examples:
             throw new ExceptionDSL('Required source file manager!')
 
         def parent = new FileCleaner()
-        parent.sysParams.dslThisObject = childThisObject
-        parent.sysParams.dslOwnerObject = childOwnerObject
         parent.source = source
 
         def ptName = "Remove files from [$source]"
@@ -4134,8 +4129,6 @@ Examples:
             throw new ExceptionDSL('Required source file manager!')
 
         def parent = new FileProcessing()
-        parent.sysParams.dslThisObject = childThisObject
-        parent.sysParams.dslOwnerObject = childOwnerObject
         parent.source = source
 
         def ptName = "Processing files from [$source]"

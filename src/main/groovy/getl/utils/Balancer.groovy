@@ -49,7 +49,7 @@ class Balancer  {
 		config = value
 		if (config != null) {
 			if (Config.ContainsSection("balancers.${this.config}")) {
-				doInitConfig()
+				doInitConfig.call()
 			}
 			else {
 				Config.RegisterOnInit(doInitConfig)

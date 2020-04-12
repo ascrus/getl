@@ -80,8 +80,7 @@ class JSONDataset extends StructureFileDataset {
 	JSONReadSpec readOpts(@DelegatesTo(JSONReadSpec)
 						  @ClosureParams(value = SimpleType, options = ['getl.json.opts.JSONReadSpec'])
 								  Closure cl = null) {
-		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-		def parent = new JSONReadSpec(this, thisObject, true, readDirective)
+		def parent = new JSONReadSpec(true, readDirective)
 		parent.runClosure(cl)
 
 		return parent

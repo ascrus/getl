@@ -179,7 +179,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		this.config = value
 		if (config != null) {
 			if (Config.ContainsSection("datasets.${this.config}")) {
-				doInitConfig()
+				doInitConfig.call()
 			}
 			else {
 				Config.RegisterOnInit(doInitConfig)
@@ -302,16 +302,6 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/** Name in Getl Dsl reposotory */
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	/** This object with Getl Dsl repository */
-	Object getDslThisObject() { sysParams.dslThisObject }
-	/** This object with Getl Dsl repository */
-	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
-
-	/** Owner object with Getl Dsl repository */
-	Object getDslOwnerObject() { sysParams.dslOwnerObject }
-	/** Owner object with Getl Dsl repository */
-	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
-
 	/** Dataset directives create, drop, read, write and bulkLoad */
 	Map<String, Object> directives(String group) {
 		(params.directive as Map<String, Map<String, Object>>).get(group) as Map<String, Object>
@@ -321,12 +311,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Init configuration
 	 */
 	protected void onLoadConfig (Map configSection) {
-		MapUtils.MergeMap(params, MapUtils.CleanMap(configSection, ["fields"]))
+		MapUtils.MergeMap(params as Map<String, Object>, MapUtils.CleanMap(configSection, ["fields"]) as Map<String, Object>)
 		if (configSection.containsKey("fields")) {
-			List<Map> l = configSection.fields
+			List<Map> l = configSection.fields as List<Map>
 			try {
 				List<Field> fl = []
-				l.each { Map n ->
+				l.each { n ->
 					fl << Field.ParseMap(n)
 				}
 				setField(fl)
@@ -370,7 +360,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def res = [:]
 		
 		def cp = inheriteConnectionParams()
-		if (!cp.isEmpty()) res.putAll(MapUtils.CopyOnly(connection.params, cp))
+		if (!cp.isEmpty()) res.putAll(MapUtils.CopyOnly(connection.params as Map<String, Object>, cp))
 		
 		res.putAll(params)
 		
@@ -523,12 +513,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	List<String> retrieveFields(UpdateFieldType updateFieldType, Closure prepare = null) {
 		validConnection()
-		if (!connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS)) throw new ExceptionGETL("Driver not supported retrieve fields")
-		List<Field> sourceFields = connection.driver.fields(this)
+		if (!connection.driver.isOperation(Driver.Operation.RETRIEVEFIELDS))
+			throw new ExceptionGETL("Driver not supported retrieve fields")
+
+		def sourceFields = connection.driver.fields(this)
 		manualSchema = true
 		updateFields(updateFieldType, sourceFields, prepare)
 
-		return field
+		return sourceFields.collect { f -> f.name } as List<String>
 	}
 
 	/**
@@ -555,9 +547,6 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	Field field(String name,
                 @DelegatesTo(Field)
                 @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure cl = null) {
-		def ownerObject = dslOwnerObject?:this
-		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-
 		Field parent = fieldByName(name)
 		if (parent == null) {
 			parent = new Field(name: name)
@@ -698,7 +687,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (field.isEmpty())
 			throw new ExceptionGETL("Destination dataset required declare fields!")
 		
-		CSVDataset source = procParams.source
+		CSVDataset source = procParams.source as CSVDataset
 		if (source == null)
 			throw new ExceptionGETL("Required parameter \"source\"")
 
@@ -836,8 +825,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Return key fields as field list
 	 */
 	List<Field> getFieldListKeys () {
-		def res = []
-		getField().each { Field field ->
+		def res = [] as List<Field>
+		field.each { Field field ->
 			if (field.isKey) res << field
 		}
 		
@@ -850,12 +839,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Return partition fields as field list
 	 */
 	List<Field> getFieldListPartitions () {
-		def res = []
+		def res = [] as List<Field>
 		getField().each { Field field ->
 			if (field.isPartition) res << field
 		}
 
-		res.sort(true) { Field a, Field b -> (a.ordPartition?:999999) <=> (b.ordPartition?:999999) }
+		res.sort(true) { a, b -> (a.ordPartition?:999999) <=> (b.ordPartition?:999999) }
 
 		return res
 	}
@@ -1197,7 +1186,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			}
 		}
 
-		Map p = [:]
+		def p = [:] as Map<String, Object>
 		p.putAll(GenerationUtils.Fields2Map(fl))
 		ConfigSlurper.SaveConfigFile(p, file)
 	}
@@ -1241,7 +1230,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		key = keyField.name.toLowerCase()
 
 		Map result
-		LookupStrategy strategy = procParams.strategy
+		def strategy = procParams.strategy as LookupStrategy
 		if (strategy == null || strategy == LookupStrategy.HASH) {
 			result = [:]
 		}
@@ -1264,9 +1253,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	Map lookup(@DelegatesTo(DatasetLookupSpec) Closure cl) {
-		def ownerObject = dslOwnerObject?:this
-		def thisObject = dslThisObject?:BaseSpec.DetectClosureDelegate(cl)
-		def parent = new DatasetLookupSpec(this, thisObject, false, null)
+		def parent = new DatasetLookupSpec()
 		parent.runClosure(cl)
 
 		return lookup(parent.params)
@@ -1346,7 +1333,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 	/** Load fields structure from metadata file */
 	static List<Field> LoadDatasetMetadata(String fileName) {
-		def res = [] as List<Field>
+		List<Field> res
 		try {
 			if (Config.configClassManager instanceof ConfigSlurper)
 				res = LoadDatasetMetadataFromSlurper(new File(fileName))
@@ -1578,7 +1565,5 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
-		sysParams.dslThisObject = null
-		sysParams.dslOwnerObject = null
 	}
 }

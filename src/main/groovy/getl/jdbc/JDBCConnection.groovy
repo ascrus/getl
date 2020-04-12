@@ -562,8 +562,7 @@ class JDBCConnection extends Connection {
         Logs.Fine("Generate GETL DSL script for $classType tables")
 
 		if (cl == null) throw new ExceptionGETL('Parameter setting code required!')
-		def thisObject = dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
-		def p = new GenerateDslTablesSpec(this, thisObject)
+		def p = new GenerateDslTablesSpec()
 		p.runClosure(cl)
 
 		def packageName = p.packageName

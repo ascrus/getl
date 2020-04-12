@@ -63,9 +63,8 @@ class HiveTable extends TableDataset {
     HiveConnection getCurrentHiveConnection() { connection as HiveConnection }
 
     @Override
-    protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                              Map<String, Object> opts) {
-        new HiveCreateSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new HiveCreateSpec(useExternalParams, opts)
     }
 
     HiveCreateSpec createOpts(@DelegatesTo(HiveCreateSpec)
@@ -75,9 +74,8 @@ class HiveTable extends TableDataset {
     }
 
     @Override
-    protected WriteSpec newWriteTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                            Map<String, Object> opts) {
-        new HiveWriteSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new HiveWriteSpec(useExternalParams, opts)
     }
 
     /** Options for writing to Hive table */
@@ -88,9 +86,8 @@ class HiveTable extends TableDataset {
     }
 
     @Override
-    protected BulkLoadSpec newBulkLoadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                                  Map<String, Object> opts) {
-        new HiveBulkLoadSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new HiveBulkLoadSpec(useExternalParams, opts)
     }
 
     /** Options for loading csv files to Hive table */

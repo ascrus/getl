@@ -222,6 +222,7 @@ class MapUtils {
 	 * @param section
 	 * @return
 	 */
+	@SuppressWarnings("GrReassignedInClosureLocalVar")
 	static Map FindSection (Map content, String section) {
 		if (content == null) return null
 		

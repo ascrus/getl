@@ -53,7 +53,7 @@ class Lexer {
 
 	/**
 	 * Parameter of command
-	 * @author owner
+	 * @author Alexsey Konstantinov
 	 *
 	 */
 	class CommandParam {

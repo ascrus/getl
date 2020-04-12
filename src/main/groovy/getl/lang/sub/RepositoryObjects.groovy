@@ -113,9 +113,6 @@ abstract class RepositoryObjects<T extends GetlRepository> {
         def repName = obj.dslNameObject
         if (repName == null) return null
 
-        if (obj.dslThisObject == null) return null
-        if (obj.dslOwnerObject == null) return null
-
         def className = obj.getClass().name
         if (!(className in listClasses)) return null
 
@@ -151,8 +148,6 @@ abstract class RepositoryObjects<T extends GetlRepository> {
             throw new ExceptionGETL("Unknown $typeObject class $className!")
 
         if (name == null) {
-            obj.dslThisObject = getl.childThisObject
-            obj.dslOwnerObject = getl.childOwnerObject
             return obj
         }
 
@@ -166,8 +161,6 @@ abstract class RepositoryObjects<T extends GetlRepository> {
                     throw new ExceptionGETL("$typeObject \"$name\" already registered for class \"${exObj.getClass().name}\"!")
             }
 
-            obj.dslThisObject = getl.childThisObject
-            obj.dslOwnerObject = getl.childOwnerObject
             obj.dslNameObject = repName
 
             objects.put(repName, obj)
@@ -223,8 +216,6 @@ abstract class RepositoryObjects<T extends GetlRepository> {
 
         if (name == null) {
             def obj = createObject(className)
-            obj.dslThisObject = getl.childThisObject
-            obj.dslOwnerObject = getl.childOwnerObject
             processRegisterObject(className, name, registration, obj, null, params)
             return obj
         }
@@ -251,8 +242,6 @@ abstract class RepositoryObjects<T extends GetlRepository> {
                     throw new ExceptionGETL("$typeObject \"$name\" is not registered!")
 
                 obj = createObject(className)
-                obj.dslThisObject = getl.childThisObject
-                obj.dslOwnerObject = getl.childOwnerObject
                 obj.dslNameObject = repName
                 objects.put(repName, obj)
             } else {
@@ -262,9 +251,6 @@ abstract class RepositoryObjects<T extends GetlRepository> {
                     if (className != null && obj.getClass().name != className)
                         throw new ExceptionGETL("The requested $typeObject \"$name\" of the class \"$className\" is already registered for the class \"${obj.getClass().name}\"!")
                 }
-
-                obj.dslThisObject = getl.childThisObject
-                obj.dslOwnerObject = getl.childOwnerObject
             }
         }
 
@@ -273,8 +259,6 @@ abstract class RepositoryObjects<T extends GetlRepository> {
             def threadobj = thread.registerCloneObject(nameCloneCollection, obj,
                     {
                         def c = cloneObject(it as T)
-                        c.dslThisObject = getl.childThisObject
-                        c.dslOwnerObject = getl.childOwnerObject
                         c.dslNameObject = repName
                         return c
                     }

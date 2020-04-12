@@ -69,16 +69,6 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	/** Name in Getl Dsl reposotory */
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	/** This object with Getl Dsl repository */
-	Object getDslThisObject() { sysParams.dslThisObject }
-	/** This object with Getl Dsl repository */
-	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
-
-	/** Owner object with Getl Dsl repository */
-	Object getDslOwnerObject() { sysParams.dslOwnerObject }
-	/** Owner object with Getl Dsl repository */
-	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
-	
 	/** Connection */
 	private JDBCConnection connection
 	/** Connection */
@@ -585,7 +575,5 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
-		sysParams.dslThisObject = null
-		sysParams.dslOwnerObject = null
 	}
 }

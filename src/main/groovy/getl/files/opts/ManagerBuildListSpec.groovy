@@ -47,8 +47,6 @@ class ManagerBuildListSpec extends BaseSpec {
     void useMaskPath(@DelegatesTo(Path)
                      @ClosureParams(value = SimpleType, options = ['getl.utils.Path']) Closure cl) {
         def parent = new Path()
-        parent.sysParams.dslThisObject = thisObject
-        parent.sysParams.dslOwnerObject = ownerObject
         runClosure(parent, cl)
         if (!parent.isCompile) parent.compile()
 

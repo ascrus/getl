@@ -187,8 +187,6 @@ environments {
             assertTrue(findConnection(ancon) == null)
             ancon.with {
                 sysParams.dslNameObject = 'getl.testdsl.h2:h2-1'
-                sysParams.dslThisObject = this
-                sysParams.dslOwnerObject = this
             }
             assertTrue(findConnection(ancon) == null)
         }
@@ -239,8 +237,6 @@ environments {
             assertTrue(findDataset(antab) == null)
             antab.with {
                 sysParams.dslNameObject = 'table3'
-                sysParams.dslThisObject = this
-                sysParams.dslOwnerObject = this
             }
             assertTrue(findDataset(antab) == null)
         }
@@ -498,8 +494,6 @@ ORDER BY t1.id"""
             assertTrue(findHistorypoint(anhp) == null)
             anhp.with {
                 sysParams.dslNameObject = 'getl.testdsl.h2:history2'
-                sysParams.dslThisObject = this
-                sysParams.dslOwnerObject = this
             }
             assertTrue(findHistorypoint(anhp) == null)
         }
@@ -678,8 +672,6 @@ ORDER BY t1.id"""
             assertTrue(findFilemanager(anfiles) == null)
             anfiles.with {
                 sysParams.dslNameObject = 'files-1'
-                sysParams.dslThisObject = this
-                sysParams.dslOwnerObject = this
             }
             assertTrue(findFilemanager(anfiles) == null)
         }

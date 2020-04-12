@@ -204,16 +204,6 @@ class Path implements Cloneable, GetlRepository {
 	/** Name in Getl Dsl reposotory */
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	/** This object with Getl Dsl repository */
-	Object getDslThisObject() { sysParams.dslThisObject }
-	/** This object with Getl Dsl repository */
-	void setDslThisObject(Object value) { sysParams.dslThisObject = value }
-
-	/** Owner object with Getl Dsl repository */
-	Object getDslOwnerObject() { sysParams.dslOwnerObject }
-	/** Owner object with Getl Dsl repository */
-	void setDslOwnerObject(Object value) { sysParams.dslOwnerObject = value }
-
 	/** Define variable options */
 	Map variable(String name,
 				 @DelegatesTo(PathVarsSpec) @ClosureParams(value = SimpleType, options = ['getl.utils.opts.PathVarSpec'])
@@ -227,8 +217,7 @@ class Path implements Cloneable, GetlRepository {
 			isCompile = false
 		}
 
-		def thisObject = dslThisObject?: BaseSpec.DetectClosureDelegate(cl)
-		def parent = new PathVarsSpec(this, thisObject, true, var)
+		def parent = new PathVarsSpec(true, var)
 		parent.runClosure(cl)
 		if (cl != null) isCompile = false
 
@@ -768,7 +757,5 @@ elements:
 
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
-		sysParams.dslThisObject = null
-		sysParams.dslOwnerObject = null
 	}
 }

@@ -37,13 +37,13 @@ import java.util.logging.Level
  *
  */
 class ProfileSpec extends BaseSpec {
-    ProfileSpec(def ownerObject, def thisObject, String name, String objectName = null, boolean isProfile = false) {
-        super(ownerObject, thisObject)
+    ProfileSpec(String name, String objectName = null, boolean isProfile = false) {
+        super()
         this.isProfile = isProfile
         statistics = new ProcessTime(
                 name: name,
-                logLevel: (isProfile)?Level.INFO:(geltOwner().langOpts.processTimeLevelLog),
-                debug: (isProfile)?true:(geltOwner().langOpts.processTimeDebug),
+                logLevel: (isProfile)?Level.INFO:(Getl.GetlInstance().langOpts.processTimeLevelLog),
+                debug: (isProfile)?true:(Getl.GetlInstance().langOpts.processTimeDebug),
                 objectName: objectName?:'row',
                 abbrName: (isProfile)?'<PROFILE>':'<STAT>'
         )
@@ -51,9 +51,6 @@ class ProfileSpec extends BaseSpec {
 
     /** Getl profile block */
     boolean isProfile = false
-
-    /** Getl main class */
-    protected Getl geltOwner() { ownerObject as Getl }
 
     /** Profile statistics object */
     ProcessTime statistics

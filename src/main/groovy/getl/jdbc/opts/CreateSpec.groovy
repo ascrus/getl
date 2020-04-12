@@ -103,9 +103,8 @@ class CreateSpec extends BaseSpec {
     /**
      * Create new parameters object for create index
      */
-    protected static IndexSpec newIndexParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                              Map<String, Object> opts) {
-        new IndexSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected static IndexSpec newIndexParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new IndexSpec(useExternalParams, opts)
     }
 
     /**
@@ -117,7 +116,7 @@ class CreateSpec extends BaseSpec {
             indexOpts = [:] as  Map<String, Object>
             indexes.put(name, indexOpts)
         }
-        def parent = newIndexParams(ownerObject, thisObject, true, indexOpts)
+        def parent = newIndexParams(true, indexOpts)
         parent.runClosure(cl)
 
         return parent

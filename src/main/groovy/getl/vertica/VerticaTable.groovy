@@ -59,9 +59,8 @@ class VerticaTable extends TableDataset {
     VerticaConnection getCurrentVerticaConnection() { connection as VerticaConnection }
 
     @Override
-    protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                              Map<String, Object> opts) {
-        new VerticaCreateSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new VerticaCreateSpec(useExternalParams, opts)
     }
 
     /** Options for creating Vertica table */
@@ -72,9 +71,8 @@ class VerticaTable extends TableDataset {
     }
 
     @Override
-    protected ReadSpec newReadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                          Map<String, Object> opts) {
-        new VerticaReadSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new VerticaReadSpec(useExternalParams, opts)
     }
 
     /** Options for reading from Vertica table */
@@ -85,9 +83,8 @@ class VerticaTable extends TableDataset {
     }
 
     @Override
-    protected WriteSpec newWriteTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                            Map<String, Object> opts) {
-        new VerticaWriteSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new VerticaWriteSpec(useExternalParams, opts)
     }
 
     /** Options for writing to Vertica table */
@@ -98,9 +95,8 @@ class VerticaTable extends TableDataset {
     }
 
     @Override
-    protected BulkLoadSpec newBulkLoadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                                  Map<String, Object> opts) {
-        new VerticaBulkLoadSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new VerticaBulkLoadSpec(useExternalParams, opts)
     }
 
     /** Options for loading csv files to Vertica table */

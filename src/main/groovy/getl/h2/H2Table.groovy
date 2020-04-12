@@ -60,9 +60,8 @@ class H2Table extends TableDataset {
     H2Connection getCurrentH2Connection() { connection as H2Connection }
 
     @Override
-    protected CreateSpec newCreateTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                              Map<String, Object> opts) {
-        return new H2CreateSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        return new H2CreateSpec(useExternalParams, opts)
     }
 
     /** Options for creating Vertica table */
@@ -73,9 +72,8 @@ class H2Table extends TableDataset {
     }
 
     @Override
-    protected BulkLoadSpec newBulkLoadTableParams(def ownerObject, def thisObject, Boolean useExternalParams,
-                                                  Map<String, Object> opts) {
-        return new H2BulkLoadSpec(ownerObject, thisObject, useExternalParams, opts)
+    protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
+        return new H2BulkLoadSpec(useExternalParams, opts)
     }
 
     /** Options for loading csv files to Vertica table */

@@ -124,8 +124,7 @@ class ConfigSpec extends BaseSpec {
         if (vars.isEmpty())
             return
 
-        def getl = (ownerObject as Getl)
-        getl.FillFieldFromVars(getl, vars, validExist)
+        Getl.FillFieldFromVars(Getl.GetlInstance(), vars, validExist)
     }
 
     /** Current environment */

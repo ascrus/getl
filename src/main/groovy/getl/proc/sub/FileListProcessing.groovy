@@ -68,12 +68,6 @@ abstract class FileListProcessing {
     /** System parameters */
     Map<String, Object> getSysParams() { sysParams }
 
-    /** This object with Getl Dsl repository */
-    Object getDslThisObject() { sysParams.dslThisObject }
-
-    /** Owner object with Getl Dsl repository */
-    Object getDslOwnerObject() { sysParams.dslOwnerObject }
-
     /** Source file manager */
     Manager getSource() { params.source as Manager }
     /** Source file manager */
@@ -766,9 +760,7 @@ abstract class FileListProcessing {
     }
 
     /** Current Getl instance */
-    protected Getl getGetl() {
-        return (dslOwnerObject instanceof Getl)?(dslOwnerObject as Getl):null
-    }
+    protected Getl getGetl() { Getl.GetlInstance() }
 
     /** Create new profile object */
     protected ProcessTime profile(String name, String objName) {
