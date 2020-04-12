@@ -38,11 +38,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @param <T> class of objects
  */
 abstract class RepositoryObjects<T extends GetlRepository> {
-    RepositoryObjects(Getl getlInstance, Map<String, T> importObjects = null) {
-        if (getlInstance == null)
-            throw new ExceptionDSL('Getl instance not specified!')
-
-        this.getl = getlInstance
+    RepositoryObjects(Map<String, T> importObjects = null) {
         if (importObjects != null)
             this.objects = importObjects
         else
@@ -50,7 +46,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
     }
 
     /** Getl instance */
-    protected Getl getl
+    Getl getGetl() { Getl.GetlInstance() }
 
     /** Repository objects */
     private Map<String, T> objects

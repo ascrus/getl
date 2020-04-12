@@ -364,11 +364,11 @@ Examples:
         _params.executedClasses = new SynchronizeObject()
 
         _langOpts = new LangSpec(this, this)
-        _repositoryConnections = new RepositoryConnections(this)
-        _repositoryDatasets = new RepositoryDatasets(this)
-        _repositoryHistorypoints = new RepositoryHistorypoints(this)
-        _repositorySequences = new RepositorySequences(this)
-        _repositoryFilemanagers = new RepositoryFilemanagers(this)
+        _repositoryConnections = new RepositoryConnections()
+        _repositoryDatasets = new RepositoryDatasets()
+        _repositoryHistorypoints = new RepositoryHistorypoints()
+        _repositorySequences = new RepositorySequences()
+        _repositoryFilemanagers = new RepositoryFilemanagers()
 
         _params.langOpts =_langOpts
         _params.repositoryConnections = _repositoryConnections

@@ -20,7 +20,7 @@ class RepositoryTest extends GetlDslTest {
     @Test
     void testConnections() {
         def getl = new Getl()
-        def rep = new RepositoryConnections(getl, null)
+        def rep = new RepositoryConnections()
         assertEquals(21, rep.listClasses.size())
         assertEquals(0, rep.list().size())
         assertNull(rep.find('group:con'))
@@ -87,7 +87,7 @@ class RepositoryTest extends GetlDslTest {
     @Test
     void testDatasets() {
         def getl = new Getl()
-        def rep = new RepositoryDatasets(getl, null)
+        def rep = new RepositoryDatasets()
 
         getl.h2Connection('group:con', true) { }
         def con = getl.h2Connection('group:con')
@@ -121,7 +121,7 @@ class RepositoryTest extends GetlDslTest {
     @Test
     void testHistoryPoint() {
         def getl = new Getl()
-        def rep = new RepositoryHistorypoints(getl, null)
+        def rep = new RepositoryHistorypoints()
 
         getl.h2Connection('group:con', true) { }
         def con = getl.h2Connection('group:con')
@@ -155,7 +155,7 @@ class RepositoryTest extends GetlDslTest {
     @Test
     void testSequence() {
         def getl = new Getl()
-        def rep = new RepositorySequences(getl, null)
+        def rep = new RepositorySequences()
 
         getl.h2Connection('group:con', true) { }
         def con = getl.h2Connection('group:con')
@@ -189,7 +189,7 @@ class RepositoryTest extends GetlDslTest {
     @Test
     void testFiles() {
         def getl = new Getl()
-        def rep = new RepositoryFilemanagers(getl, null)
+        def rep = new RepositoryFilemanagers()
 
         def obj = rep.register(rep.FILEMANAGER, 'group:obj', true)
         obj.with { rootPath = 'test' }
