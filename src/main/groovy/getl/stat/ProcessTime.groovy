@@ -172,7 +172,9 @@ class ProcessTime {
 	String lastStat () {
 		def res
 		if (objectName?.toLowerCase() != 'byte')
-			res = "time ${time}" + ((countRow!= null)?", $countRow ${objectName}s, $rowInSec ${objectName}s per second, ${avgSpeedStr} seconds per $objectName":"")
+			res = "time ${time}" + ((countRow!= null)?", ${StringUtils.WithGroupSeparator(countRow)} ${objectName}s, " +
+					"${StringUtils.WithGroupSeparator(rowInSec)} ${objectName}s per second, " +
+					"$avgSpeedStr seconds per $objectName":"")
 		else
 			res = "time ${time}" + ((countRow!= null)?", ${FileUtils.SizeBytes(countRow)}, ${FileUtils.AvgSpeed(countRow, time.toMilliseconds())}":"")
 
