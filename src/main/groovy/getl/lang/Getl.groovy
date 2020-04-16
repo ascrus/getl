@@ -25,7 +25,6 @@
 package getl.lang
 
 import getl.config.*
-import getl.config.opts.*
 import getl.csv.*
 import getl.data.*
 import getl.db2.*
@@ -364,6 +363,9 @@ Examples:
         _params.executedClasses = new SynchronizeObject()
 
         _langOpts = new LangSpec()
+        _configOpts = new ConfigSpec()
+        _logOpts = new LogSpec()
+
         _repositoryConnections = new RepositoryConnections()
         _repositoryDatasets = new RepositoryDatasets()
         _repositoryHistorypoints = new RepositoryHistorypoints()
@@ -371,6 +373,9 @@ Examples:
         _repositoryFilemanagers = new RepositoryFilemanagers()
 
         _params.langOpts =_langOpts
+        _params.configOpts = _configOpts
+        _params.logOpts = _logOpts
+
         _params.repositoryConnections = _repositoryConnections
         _params.repositoryDatasets = _repositoryDatasets
         _params.repositoryHistorypoints = _repositoryHistorypoints
@@ -510,10 +515,17 @@ Examples:
     protected void setGetlParams(Map<String, Object> importParams) {
         _params = importParams
 
-        if (!isInitMode)
-            setLangOpts(_params.langOpts as LangSpec)
-        else
+        _langOpts = _params.langOpts as LangSpec
+        _configOpts = _params.configOpts as ConfigSpec
+        _logOpts = _params.logOpts as LogSpec
+
+        /*if (!isInitMode) {
+            _langOpts.params.clear()
+            _langOpts.params.putAll((_params.langOpts as LangSpec).params)
+        }
+        else {
             _langOpts = _params.langOpts as LangSpec
+        }*/
 
         _repositoryConnections.objects = (_params.repositoryConnections as RepositoryConnections).objects
         _repositoryDatasets.objects = (_params.repositoryDatasets as RepositoryDatasets).objects
@@ -545,16 +557,11 @@ Examples:
     }
 
 
-    /** GETL DSL options */
+    /** Engine options */
     private LangSpec _langOpts
 
-    /** GETL DSL options */
+    /** Engine options */
     LangSpec getLangOpts() { _langOpts }
-    /** GETL DSL options */
-    void setLangOpts(LangSpec value) {
-        _langOpts.params.clear()
-        _langOpts.params.putAll(value.params)
-    }
 
     /** list of executed script classes and call parameters */
     protected SynchronizeObject getExecutedClasses() { _params.executedClasses as SynchronizeObject }
@@ -1981,18 +1988,23 @@ Examples:
     @SuppressWarnings("GrMethodMayBeStatic")
     protected ConfigSlurper getConfigManager() { Config.configClassManager as ConfigSlurper }
 
+    /** Configuration options instance */
+    private ConfigSpec _configOpts
+
     /** Configuration options */
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)
-                             @ClosureParams(value = SimpleType, options = ['getl.config.opts.ConfigSpec']) Closure cl = null) {
+                             @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ConfigSpec']) Closure cl = null) {
         if (cl != null && Thread.currentThread() instanceof ExecutorThread)
             throw new ExceptionDSL('Changing configuration is not supported in the thread!')
 
         if (!(Config.configClassManager instanceof ConfigSlurper)) Config.configClassManager = new ConfigSlurper()
-        def parent = new ConfigSpec()
-        runClosure(parent, cl)
+        runClosure(_configOpts, cl)
 
-        return parent
+        return _configOpts
     }
+
+    /** Log options instance */
+    private LogSpec _logOpts
 
     /** Log options */
     LogSpec logging(@DelegatesTo(LogSpec)
@@ -2000,14 +2012,13 @@ Examples:
         if (Thread.currentThread() instanceof ExecutorThread)
             throw new ExceptionDSL('Changing log file options is not supported in the thread!')
 
-        def parent = new LogSpec()
-        def logFileName = parent.getLogFileName()
-        runClosure(parent, cl)
-        if (logFileName != parent.getLogFileName()) {
-            Logs.Info("### Getl start logging to log file ${parent.getLogFileName()}")
+        def logFileName = _logOpts.getLogFileName()
+        runClosure(_logOpts, cl)
+        if (logFileName != _logOpts.getLogFileName()) {
+            Logs.Info("### Getl start logging to log file ${_logOpts.getLogFileName()}")
         }
 
-        return parent
+        return _logOpts
     }
 
     /**

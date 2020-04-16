@@ -22,7 +22,7 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.config.opts
+package getl.lang.opts
 
 import getl.lang.opts.BaseSpec
 import getl.utils.*

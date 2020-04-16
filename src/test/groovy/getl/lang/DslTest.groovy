@@ -123,20 +123,20 @@ environments {
             def enmap_dev = [logins: [user1: '000', user2: '000']]
             def enmap_prod = [logins: [user1: '1234567890', user2: 'abcdefghij']]
             configuration {
-                loadEncrypt('resource:/config/dsl_config.store', 'getl-dsl-test', 'dev')
+                loadEncrypt('resource:/config/dsl_config.store', 'dev', 'getl-dsl-test')
                 assertEquals(enmap_dev.logins, configContent.logins)
 
-                loadEncrypt('resource:/config/dsl_config.store', 'getl-dsl-test', 'prod')
+                loadEncrypt('resource:/config/dsl_config.store', 'prod', 'getl-dsl-test')
                 assertEquals(enmap_prod.logins, configContent.logins)
 
                 def storeName = FileUtils.CreateTempFile(null, '.store').path
-                saveEncrypt(enmap_dev, storeName, 'getl-dsl-test', 'dev')
-                saveEncrypt(enmap_prod, storeName, 'getl-dsl-test', 'prod')
+                saveEncrypt(enmap_dev, storeName, 'dev', 'getl-dsl-test')
+                saveEncrypt(enmap_prod, storeName, 'prod', 'getl-dsl-test' )
 
-                loadEncrypt(storeName, 'getl-dsl-test', 'dev')
+                loadEncrypt(storeName, 'dev', 'getl-dsl-test')
                 assertEquals(enmap_dev.logins, configContent.logins)
 
-                loadEncrypt(storeName, 'getl-dsl-test', 'prod')
+                loadEncrypt(storeName, 'prod', 'getl-dsl-test')
                 assertEquals(enmap_prod.logins, configContent.logins)
 
                 FileUtils.DeleteFile(storeName)

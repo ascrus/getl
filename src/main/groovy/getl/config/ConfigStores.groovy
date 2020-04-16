@@ -131,22 +131,25 @@ class ConfigStores extends ConfigManager {
      * Load section from MVStore file
      * @param fileName store file name
      * @param secretKey password
-     * @param section section name
+     * @param sectionName section name
      * @return section data
      */
-    static Map<String, Object> LoadSection(String fileName, String secretKey, String section) {
+    static Map<String, Object> LoadSection(String fileName, String secretKey, String sectionName) {
         if (fileName == null)
-            throw new ExceptionGETL('Required fileName parameter')
+            throw new ExceptionGETL('Required file name!')
+
+        if (sectionName == null)
+            throw new ExceptionGETL('Required section name!')
 
         Map<String, Object> data = [:]
 
         if (FileUtils.FileExtension(fileName) == '') fileName += '.store'
         if (!FileUtils.ExistsFile(fileName))
-            throw new ExceptionGETL("Can not find store config file \"$fileName\"")
+            throw new ExceptionGETL("Can not find store file \"$fileName\"!")
 
         def store = OpenStore(fileName, secretKey)
         try {
-            MVMap<String, HashMap<String, Object>> map = store.openMap(section)
+            MVMap<String, HashMap<String, Object>> map = store.openMap(sectionName)
             data.putAll(map)
         }
         finally {
@@ -170,9 +173,15 @@ class ConfigStores extends ConfigManager {
      * @param data data for saving
      * @param fileName store file name
      * @param secretKey password
-     * @param section section name
+     * @param sectionName section name
      */
-    static void SaveSection(Map<String, Object> data, String fileName, String secretKey, String section) {
+    static void SaveSection(Map<String, Object> data, String fileName, String secretKey, String sectionName) {
+        if (fileName == null)
+            throw new ExceptionGETL('Required file name!')
+
+        if (sectionName == null)
+            throw new ExceptionGETL('Required section name!')
+
         def text = MapUtils.ToJson(data)
         def json = new JsonSlurper()
         data = MapUtils.Lazy2HashMap(json.parseText(text) as Map)
@@ -182,7 +191,7 @@ class ConfigStores extends ConfigManager {
 
         def store = OpenStore(fileName, secretKey, false)
         try {
-            MVMap<String, HashMap<String, Object>> map = store.openMap(section)
+            MVMap<String, HashMap<String, Object>> map = store.openMap(sectionName)
             map.putAll(data)
             store.commit()
             store.compactFile(1000)

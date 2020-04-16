@@ -22,7 +22,7 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.config.opts
+package getl.lang.opts
 
 import getl.config.*
 import getl.exception.ExceptionGETL
@@ -82,8 +82,8 @@ class ConfigSpec extends BaseSpec {
      * @param environment environment
      * @param secretKey encode key string
      */
-    void loadEncrypt(String fileName, String secretKey = null, String environment = null) {
-        def data = ConfigStores.LoadSection(FileUtils.ResourceFileName(fileName), secretKey, environment?:manager.environment?:'prod')
+    void loadEncrypt(String fileName, String environment = null, String secretKey = null) {
+        def data = ConfigStores.LoadSection(FileUtils.ResourceFileName(fileName), secretKey, environment?:manager.environment?:'all')
         Config.MergeConfig(data)
     }
 
@@ -103,8 +103,8 @@ class ConfigSpec extends BaseSpec {
      * @param environment environment
      * @param secretKey encode key string
      */
-    void saveEncrypt(Map data, String fileName, String secretKey = null, String environment = null) {
-        ConfigStores.SaveSection(data, fileName, secretKey, environment?:manager.environment?:'prod')
+    void saveEncrypt(Map data, String fileName, String environment = null, String secretKey = null) {
+        ConfigStores.SaveSection(data, fileName, secretKey, environment?:manager.environment?:'all')
     }
 
     /**
