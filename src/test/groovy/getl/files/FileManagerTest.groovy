@@ -14,7 +14,7 @@ class FileManagerTest extends ManagerTest {
         FileUtils.ValidPath(usepath)
         new File(usepath).deleteOnExit()
         def rootPath = usepath
-        return new FileManager(rootPath: rootPath)
+        return new FileManager(rootPath: rootPath, codePage: 'cp866')
     }
 
     void renameTest() {

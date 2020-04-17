@@ -477,13 +477,26 @@ class SFTPManager extends Manager {
 	@Override
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
 		Integer res = null
+
+		def channelCmd = clientSession.openChannel("exec") as ChannelExec
+
+		def psfile
 		if (_currentPath != null) {
-			if (hostOS == winOS)
-				command = "powershell Set-Location \"${FileUtils.ConvertToWindowsPath(_currentPath.substring(1))}\"; Invoke-Command -ScriptBlock { $command }"
+			if (hostOS == winOS) {
+				def curpath = _currentPath.substring(1)
+				psfile = FileUtils.UniqueFileName() + '.ps1'
+				new File(currentLocalDir() + '/' + psfile).text = """
+Set-Location "$curpath"
+cmd /c "${command.replace('`', '``').replace('"', '`"').replace('\'', '`\'').replace('$', '`$')}"
+exit \$LastExitCode
+"""
+				upload(psfile)
+				command = "powershell -NoProfile -NonInteractive -ExecutionPolicy unrestricted -Command \"$curpath/$psfile\""
+			}
 			else
 				command = "cd \"$_currentPath\" && $command"
 		}
-		def channelCmd = clientSession.openChannel("exec") as ChannelExec
+
 		try {
 			channelCmd.setCommand(command)
 			
@@ -499,8 +512,7 @@ class SFTPManager extends Manager {
 			String line
 			
 			while (!channelCmd.isClosed()) sleep 100
-			res = channelCmd.getExitStatus()
-			
+
 			while ((line = reader.readLine()) != null) {
 				out.append(line)
 				out.append('\n')
@@ -509,12 +521,23 @@ class SFTPManager extends Manager {
 			if (os.count > 0) {
 				err.append(os.toString(codePage))
 			}
+
+			res = channelCmd.getExitStatus()
 		}
 		finally {
-			channelCmd.setErrStream(null)
-			channelCmd.disconnect()
+			try {
+				channelCmd.setInputStream(null)
+				channelCmd.setErrStream(null)
+				channelCmd.disconnect()
+			}
+			finally {
+				if (psfile != null) {
+					removeLocalFile(psfile)
+					removeFile(psfile)
+				}
+			}
 		}
-		
+
 		return res
 	}
 

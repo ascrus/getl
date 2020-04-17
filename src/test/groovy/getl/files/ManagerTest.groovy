@@ -232,15 +232,25 @@ abstract class ManagerTest extends getl.test.GetlTest {
 
         def cmd
         if (manager.hostOS == Manager.winOS)
-            cmd = "type $subdirFileName"
+            cmd = "type \"$subdirFileName\""
         else
-            cmd = "cat $subdirFileName"
+            cmd = "cat \"$subdirFileName\""
 
         def res = manager.doCommand(cmd, out, err)
-        if (res != 0)
-            println err.toString()
-
         assertEquals(err.toString(), 0, res)
         assertEquals('child file\n', out.toString())
+
+        out = new StringBuilder()
+        err = new StringBuilder()
+        res = manager.doCommand(cmd + '1', out, err)
+        assertEquals(err.toString(), 1, res)
+
+        if (manager.hostOS == Manager.winOS) {
+            out = new StringBuilder()
+            err = new StringBuilder()
+            res = manager.doCommand('echo [{\'$"123"$\'}]', out, err)
+            assertEquals(err.toString(), 0, res)
+            assertEquals('[{\'$"123"$\'}]\n', out.toString())
+        }
     }
 }
