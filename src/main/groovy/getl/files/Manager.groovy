@@ -1440,6 +1440,10 @@ WHERE
 	boolean existsDirectory (String dirName) {
 		validConnect()
 
+		if (dirName in ['.', '..', '/']) return true
+		if (dirName == null || dirName == '')
+			throw new ExceptionGETL("Invalid empty directory name!")
+
 		def res = false
 		try {
 			def list = list(dirName + '/..')
