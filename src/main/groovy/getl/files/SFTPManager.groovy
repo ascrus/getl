@@ -204,6 +204,8 @@ class SFTPManager extends Manager {
 			writeScriptHistoryFile("OPEN CHANNEL: sftp")
 			channelFtp.connect()
 			if (rootPath != null) currentPath = rootPath
+			if (channelFtp.serverVersion > 5)
+				channelFtp.filenameEncoding = codePage.toUpperCase()
 		}
 		catch (Exception e) {
 			if (channelFtp != null && channelFtp.connected) channelFtp.disconnect()
