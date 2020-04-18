@@ -1023,11 +1023,11 @@ ORDER BY t1.id"""
                 }
 
                 configuration { clear() }
-                runGroovyClass DslTestScriptFields2
+                runScripts DslTestScriptFields2
                 assertEquals('complete test 2', configContent.testScript)
 
                 configuration { clear() }
-                runGroovyClass DslTestScriptFields3
+                runScripts DslTestScriptFields3
                 assertEquals('complete test 3', configContent.doneScript)
                 assertNull(configContent.errorScript)
 

@@ -1777,6 +1777,16 @@ Examples:
     }
 
     /**
+     * Run the listed Getl scripts, if they have not already been run previously
+     * @scripts list of Getl scripts to run
+     */
+    void runScripts(Class<Getl>... scripts) {
+        scripts.each { script ->
+            runGroovyClass(script, true)
+        }
+    }
+
+    /**
      *  Call script init method before execute script
      */
     static protected void InitGetlClass(Script script) {
