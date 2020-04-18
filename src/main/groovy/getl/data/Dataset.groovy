@@ -297,10 +297,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/** System parameters */
 	Map<String, Object> getSysParams() { sysParams }
 
-	/** Name in Getl Dsl reposotory */
 	String getDslNameObject() { sysParams.dslNameObject as String }
-	/** Name in Getl Dsl reposotory */
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
+
+	Object getDslCreator() { sysParams.dslCreator }
+	void setDslCreator(Object value) { sysParams.dslCreator = value }
 
 	/** Dataset directives create, drop, read, write and bulkLoad */
 	Map<String, Object> directives(String group) {
@@ -1565,5 +1566,6 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
+		sysParams.dslCreator = null
 	}
 }

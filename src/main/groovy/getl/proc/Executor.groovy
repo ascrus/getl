@@ -272,7 +272,7 @@ class Executor {
 	}
 
 	/** Run thread code with list elements */
-	void runWithElements(@ClosureParams(value = SimpleType, options = ['getl.proc.ExecutorListElement']) Closure cl) {
+	void runWithElements(@ClosureParams(value = SimpleType, options = ['getl.proc.sub.ExecutorListElement']) Closure cl) {
 		if (!(list instanceof List<ExecutorListElement>))
 			throw new ExceptionGETL('Requires List<ExecutorListElement> type for list elements!')
 		run(null, null, cl)
@@ -280,7 +280,7 @@ class Executor {
 
 
 	/** Run thread code with list elements */
-	void runWithElements(Integer countThread, @ClosureParams(value = SimpleType, options = ['getl.proc.ExecutorListElement']) Closure cl) {
+	void runWithElements(Integer countThread, @ClosureParams(value = SimpleType, options = ['getl.proc.sub.ExecutorListElement']) Closure cl) {
 		if (!(list instanceof List<ExecutorListElement>))
 			throw new ExceptionGETL('Requires List<ExecutorListElement> type for list elements!')
 		run(null, countThread, cl)

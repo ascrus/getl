@@ -228,10 +228,11 @@ class Connection implements Cloneable, GetlRepository {
 	/** System parameters */
 	Map<String, Object> getSysParams() { sysParams as Map<String, Object> }
 
-	/** Name in Getl Dsl reposotory */
 	String getDslNameObject() { sysParams.dslNameObject as String }
-	/** Name in Getl Dsl reposotory */
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
+
+	Object getDslCreator() { sysParams.dslCreator }
+	void setDslCreator(Object value) { sysParams.dslCreator = value }
 
 	/** Auto load schema with meta file for connection datasets */
 	boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema, false) }
@@ -528,5 +529,6 @@ class Connection implements Cloneable, GetlRepository {
 
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
+		sysParams.dslCreator = null
 	}
 }

@@ -148,6 +148,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
             throw new ExceptionGETL("Unknown $typeObject class $className!")
 
         if (name == null) {
+            obj.dslCreator = Getl.GetlInstance()
             return obj
         }
 
@@ -162,6 +163,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
             }
 
             obj.dslNameObject = repName
+            obj.dslCreator = Getl.GetlInstance()
 
             objects.put(repName, obj)
         }
@@ -216,6 +218,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
 
         if (name == null) {
             def obj = createObject(className)
+            obj.dslCreator = Getl.GetlInstance()
             processRegisterObject(className, name, registration, obj, null, params)
             return obj
         }
@@ -243,6 +246,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
 
                 obj = createObject(className)
                 obj.dslNameObject = repName
+                obj.dslCreator = Getl.GetlInstance()
                 objects.put(repName, obj)
             } else {
                 if (registration)
@@ -286,6 +290,19 @@ abstract class RepositoryObjects<T extends GetlRepository> {
         def list = list(mask, classes, filter)
         list.each { name ->
             objects.remove(name)?.dslCleanProps()
+        }
+    }
+
+    /**
+     * Release temporary object
+     * @param creator object creator
+     */
+    void releaseTemporary(Object creator = null) {
+        def list = list('#*')
+        list.each { name ->
+            def obj = objects.get(name)
+            if (creator == null || obj.dslCreator == creator)
+                objects.remove(name)?.dslCleanProps()
         }
     }
 

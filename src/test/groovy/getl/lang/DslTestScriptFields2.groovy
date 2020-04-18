@@ -18,5 +18,12 @@ configuration {
 @Field String param2; assert param2 == 'a'
 @Field List param3 = [0,0]; assert param3 == [1, 2, 3]
 @Field Map param4 = [a:0]; assert param4 == [a:1, b:2, c:3]
+@Field String tableName
+
+assert tableName != null && tableName == '#scripttable2'
+assert embeddedTable(tableName).tableName == 'test_script_2'
+
+cloneDataset('#scripttable2_new', embeddedTable(tableName))
+assert !listDatasets('#scripttable2_new').isEmpty()
 
 configContent.testScript = 'complete test 2'

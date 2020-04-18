@@ -1705,10 +1705,20 @@ Examples:
             pt.finish()
         }
         finally {
+            releaseTemporaryObjects(script)
             _setGetlInstance(oldGetl)
         }
 
         return res
+    }
+
+    /** Release temporary objects by name mask "#*" */
+    protected void releaseTemporaryObjects(Object creator) {
+        _repositoryConnections.releaseTemporary(creator)
+        _repositoryDatasets.releaseTemporary(creator)
+        _repositoryFilemanagers.releaseTemporary(creator)
+        _repositoryHistorypoints.releaseTemporary(creator)
+        _repositorySequences.releaseTemporary(creator)
     }
 
     /**
@@ -1927,38 +1937,51 @@ Examples:
                     case Character:
                         if (!(value instanceof Character))
                             value = value.toString().toCharacter()
+
                         break
                     case String:
-                        if (!(value instanceof String))
+                        if (value instanceof GetlRepository) {
+                            value = (value as GetlRepository).dslNameObject
+                        }
+                        else if (!(value instanceof String)) {
                             value = value.toString()
+                        }
+
                         break
                     case Short:
                         if (!(value instanceof Short))
                             value = Short.valueOf(value.toString())
+
                         break
                     case Integer:
                         if (!(value instanceof Integer))
                             value = Integer.valueOf(value.toString())
+
                         break
                     case Long:
                         if (!(value instanceof Long))
                             value = Long.valueOf(value.toString())
+
                         break
                     case Float:
                         if (!(value instanceof Float))
                             value = Float.valueOf(value.toString())
+
                         break
                     case Double:
                         if (!(value instanceof Double))
                             value = Double.valueOf(value.toString())
+
                         break
                     case BigInteger:
                         if (!(value instanceof BigInteger))
                             value = new BigInteger(value.toString())
+
                         break
                     case BigDecimal:
                         if (!(value instanceof BigDecimal))
                             value = new BigDecimal(value.toString())
+
                         break
                     case Date:
                         if (!(value instanceof Date)) {
@@ -1968,21 +1991,25 @@ Examples:
                             else
                                 value = DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss', value, false)
                         }
+
                         break
                     case Boolean:
                         if (!(value instanceof Boolean )) {
                             value = (value.toString().toLowerCase() in ['true', '1', 'on'])
                         }
+
                         break
                     case List:
                         if (!(value instanceof List)) {
                             value = Eval.me(value.toString())
                         }
+
                         break
                     case Map:
                         if (!(value instanceof Map)) {
                             value = Eval.me(value.toString())
                         }
+
                         break
                 }
 

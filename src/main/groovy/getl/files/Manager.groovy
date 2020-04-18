@@ -135,10 +135,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** System parameters */
 	Map<String, Object> getSysParams() { sysParams }
 
-	/** Name in Getl Dsl reposotory */
 	String getDslNameObject() { sysParams.dslNameObject }
-	/** Name in Getl Dsl reposotory */
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
+
+	Object getDslCreator() { sysParams.dslCreator }
+	void setDslCreator(Object value) { sysParams.dslCreator = value }
 
 	/** Root path */
 	String getRootPath () { params.rootPath as String }
@@ -1778,6 +1779,7 @@ WHERE
 
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
+		sysParams.dslCreator = null
 	}
 
 	/** Windows OS */

@@ -11,7 +11,7 @@ import groovy.transform.Field
 
 testCase {
     assertTrue(main.unitTestMode)
-    assertTrue(BoolUtils.IsValue(configGlobal.inittest))
+    assertTrue(BoolUtils.IsValue(main.configGlobal.inittest))
 }
 
 @Field Integer param1 = 0; assert param1 == 1
@@ -24,4 +24,4 @@ testCase {
 @Field Boolean param9; assert param9 != null && param9
 @Field Long paramCountTableRow; assert paramCountTableRow != null
 
-configContent.testScript = 'complete test 1'
+main.configContent.testScript = 'complete test 1'

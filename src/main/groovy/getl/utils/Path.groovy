@@ -199,10 +199,11 @@ class Path implements Cloneable, GetlRepository {
 	/** System parameters */
 	Map<String, Object> getSysParams() { sysParams }
 
-	/** Name in Getl Dsl reposotory */
 	String getDslNameObject() { sysParams.dslNameObject as String }
-	/** Name in Getl Dsl reposotory */
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
+
+	Object getDslCreator() { sysParams.dslCreator }
+	void setDslCreator(Object value) { sysParams.dslCreator = value }
 
 	/** Define variable options */
 	Map variable(String name,
@@ -757,5 +758,6 @@ elements:
 
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
+		sysParams.dslCreator = null
 	}
 }
