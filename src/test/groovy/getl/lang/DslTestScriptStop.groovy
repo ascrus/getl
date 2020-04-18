@@ -11,11 +11,11 @@ import groovy.transform.Field
 configContent.test_stop = false
 
 if (level == 1) {
-    runGroovyClass getl.lang.DslTestScriptStop, { level = 2 }
+    callScript getl.lang.DslTestScriptStop, { level = 2 }
     assert 0 == 1
 }
 else if (level == 2) {
-    def res = runGroovyClass getl.lang.DslTestScriptStop, { level = 3 }
+    def res = callScript getl.lang.DslTestScriptStop, { level = 3 }
     assert res == 3
     configContent.test_stop = true
     appRunSTOP(2)

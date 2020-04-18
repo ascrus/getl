@@ -76,7 +76,7 @@ class GetlDslTest extends GetlTest {
         def initClass = useInitClass()
         if (initClass != null && (!this.onceRunInitClass() || !initWasRun)) {
             Getl.Dsl(this) {
-                runGroovyClass initClass
+                callScript initClass
             }
             initWasRun = true
         }

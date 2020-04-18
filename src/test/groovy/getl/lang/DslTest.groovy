@@ -963,7 +963,7 @@ ORDER BY t1.id"""
         Dsl(this) {
             testCase {
                 def p1 = 1
-                runGroovyClass DslTestScriptFields1, {
+                callScript DslTestScriptFields1, {
                     param1 = p1
                     param2 = 123.45
                     param5 = [1, 2, 3]
@@ -986,17 +986,17 @@ ORDER BY t1.id"""
                     paramCountTableRow = this.table1_rows
                 }
                 configContent.testScript = null
-                runGroovyClass DslTestScriptFields1, 'script_params'
+                callScript DslTestScriptFields1, 'script_params'
                 assertEquals('complete test 1', configContent.testScript)
 
                 configContent.script_params.param3 = 3 // not defined paramemeter
                 configContent.testScript = null
                 shouldFail {
-                    runGroovyClass DslTestScriptFields1, 'script_params'
+                    callScript DslTestScriptFields1, 'script_params'
                 }
 
                 shouldFail {
-                    runGroovyClass DslTestScriptFields1, {
+                    callScript DslTestScriptFields1, {
                         param1 = p1
                         param2 = 123.45
                         param3 = 3 // not defined paramemeter
@@ -1010,7 +1010,7 @@ ORDER BY t1.id"""
                 }
 
                 shouldFail {
-                    runGroovyClass DslTestScriptFields1, {
+                    callScript DslTestScriptFields1, {
                         param1 = p1
                         param2 = 123.45
                         param5 = [1, 2, 3]
@@ -1023,22 +1023,22 @@ ORDER BY t1.id"""
                 }
 
                 configuration { clear() }
-                runScripts DslTestScriptFields2
+                callScripts DslTestScriptFields2
                 assertEquals('complete test 2', configContent.testScript)
 
                 configuration { clear() }
-                runScripts DslTestScriptFields3
+                callScripts DslTestScriptFields3
                 assertEquals('complete test 3', configContent.doneScript)
                 assertNull(configContent.errorScript)
 
                 configuration { clear() }
-                runGroovyClass DslTestScriptFields3, { useExtVars = true; param1 = 2}
+                callScript DslTestScriptFields3, { useExtVars = true; param1 = 2}
                 assertEquals('complete test 3', configContent.doneScript)
                 assertNull(configContent.errorScript)
 
                 configuration { clear() }
                 try {
-                    runGroovyClass DslTestScriptFields3, { throwError = true }
+                    callScript DslTestScriptFields3, { throwError = true }
                 }
                 catch (Exception ignored) {
                     assertEquals('error test 3: Throw error!', configContent.errorScript)
@@ -1083,7 +1083,7 @@ ORDER BY t1.id"""
         Config.content.testAllowProcess = false
         Config.content.testAllowThreads = 0
         Dsl(this) {
-            runGroovyClass DslTestAllowProcess, { enabled = true; checkOnStart = true; checkForThreads = true }
+            callScript DslTestAllowProcess, { enabled = true; checkOnStart = true; checkForThreads = true }
         }
         assertTrue(Config.content.testAllowProcess)
         assertEquals(9, Config.content.testAllowThreads)
