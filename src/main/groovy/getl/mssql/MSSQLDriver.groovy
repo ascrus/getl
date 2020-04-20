@@ -67,7 +67,8 @@ class MSSQLDriver extends JDBCDriver {
 	@Override
 	List<Driver.Operation> operations() {
 		return super.operations() +
-				[Driver.Operation.CLEAR, Driver.Operation.DROP, Driver.Operation.EXECUTE, Driver.Operation.CREATE]
+				[Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
+				 Driver.Operation.CREATE]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

@@ -54,7 +54,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 		methodParams.register('create', [])
 		methodParams.register('drop', [])
-		methodParams.register('truncate', ['autoTran'])
+		methodParams.register('truncate', [])
 		methodParams.register('bulkLoadFile', ['source', 'prepare', 'map', 'autoMap', 'autoCommit',
 											   'abortOnError', 'inheritFields', 'removeFile', 'moveFileTo'])
 		methodParams.register('eachRow', ['prepare', 'offs', 'limit', 'saveErrors', 'autoSchema'])
@@ -626,27 +626,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	void truncate(Map procParams = [:]) {
 		validConnection()
-		if (!connection.driver.isOperation(Driver.Operation.CLEAR)) throw new ExceptionGETL("Driver not supported truncate operation")
-		
+
 		if (procParams == null) procParams = [:]
 		methodParams.validation("truncate", procParams, [connection.driver.methodParams.params("clearDataset")])
-		
-		Map p = MapUtils.CleanMap(procParams, ["autoTran"])
-		def autoTran = false
-		if (connection.isSupportTran) {
-			autoTran = (procParams.autoTran != null)?procParams.autoTran:(connection.tranCount == 0)
-		}
-		if (BoolUtils.IsValue(procParams."truncate", false)) autoTran = false
-		
-		if (autoTran) connection.startTran()
-		try {
-			connection.driver.clearDataset(this, p)
-		}
-		catch (Exception e) {
-			if (autoTran) connection.rollbackTran()
-			throw e
-		}
-		if (autoTran) connection.commitTran()
+
+		connection.driver.clearDataset(this, procParams)
 	}
 	
 	/**

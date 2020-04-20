@@ -525,7 +525,7 @@ class Flow {
 
             if (createDest) dest.create()
 
-			if (clear) dest.truncate()
+			if (clear) dest.truncate(truncate: false)
 			destParams.prepare = initDest
 			if (!writeSynch) writer.openWrite(destParams) else writer.openWriteSynch(destParams)
 
@@ -797,7 +797,7 @@ class Flow {
 			dest.connection.startTran()
 		}
 		
-		if (clear) dest.truncate()
+		if (clear) dest.truncate(truncate: false)
 		
 		def isError = false
 		try {

@@ -59,9 +59,9 @@ class JDBCDriver extends Driver {
 		methodParams.register('bulkLoadFile', ['allowMapAlias'])
 		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
                                                'queryParams', 'condition'])
-		methodParams.register('clearDataset', ['truncate'])
-		methodParams.register('executeCommand', [/*'queryParams', 'isUpdate'*/])
+		methodParams.register('executeCommand', [])
 		methodParams.register('deleteRows', [])
+		methodParams.register('clearDataset', ['autoTran', 'truncate'])
 	}
 
 	/** Start time connect */
@@ -1461,23 +1461,39 @@ ${extend}'''
 
 	@Override
 	void clearDataset(Dataset dataset, Map params) {
+		validTableName(dataset)
+		def fn = fullNameDataset(dataset)
 		def con = jdbcConnection
 
-		validTableName(dataset)
-		def truncate = BoolUtils.IsValue(params.truncate)
-		
-		def fn = fullNameDataset(dataset)
-		String q = (truncate)?"TRUNCATE TABLE $fn":"DELETE FROM $fn"
+		def truncate = BoolUtils.IsValue(params.truncate, true)
+		if (truncate) {
+			if (!isOperation(Driver.Operation.TRUNCATE))
+				throw new ExceptionGETL("Driver not supported truncate operation!")
+		}
+		else {
+			if (!isOperation(Driver.Operation.DELETE))
+				throw new ExceptionGETL("Driver not supported delete operation!")
+		}
 
+		def autoTran = false
+		if (con.isSupportTran)
+			autoTran = BoolUtils.IsValue(params.autoTran, (connection.tranCount == 0))
+		autoTran = (autoTran && (!truncate || (truncate && transactionalTruncate)))
+
+		String q = (truncate)?"TRUNCATE TABLE $fn":"DELETE FROM $fn"
+		Map p = MapUtils.CleanMap(params, ['autoTran', 'truncate'])
 		try {
-			if (transactionalTruncate) con.startTran()
-			def count = executeCommand(q, params + [isUpdate: (!truncate)])
+			if (autoTran)
+				con.startTran()
+			def count = executeCommand(q, p + [isUpdate: true])
 			dataset.updateRows = count
 
-			if (transactionalTruncate) con.commitTran()
+			if (autoTran)
+				con.commitTran()
 		}
 		catch (Exception e) {
-			if (transactionalTruncate) con.rollbackTran()
+			if (autoTran)
+				con.rollbackTran()
 			throw e
 		}
 	}

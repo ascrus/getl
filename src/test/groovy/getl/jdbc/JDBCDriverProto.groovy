@@ -437,12 +437,16 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     protected void truncateData() {
-        if (!con.driver.isOperation(Driver.Operation.DELETE)) return
+        if (!(con.driver.isOperation(Driver.Operation.DELETE) || con.driver.isOperation(Driver.Operation.TRUNCATE))) return
 
         if (table.countRow() == 0) insertData()
-
-        table.truncate(truncate: [(!con.driver.isOperation(Driver.Operation.DELETE))])
+        truncateTable(table)
         assertEquals(0, table.countRow())
+    }
+
+    private truncateTable(TableDataset source) {
+        if (!(con.driver.isOperation(Driver.Operation.DELETE) || con.driver.isOperation(Driver.Operation.TRUNCATE))) return
+        source.truncate(truncate: con.driver.isOperation(Driver.Operation.TRUNCATE))
     }
 
     protected void deleteRows() {
@@ -526,8 +530,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         }
         assertEquals(countRows, count)
 
-        bulkTable.truncate(truncate: [(!con.driver.isOperation(Driver.Operation.DELETE))])
-                
+        truncateTable(bulkTable)
+
         bulkTable.bulkLoadFile(source: file)
         assertEquals(countRows, bulkTable.updateRows)
         assertEquals(countRows, bulkTable.countRow())
@@ -545,8 +549,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
             field('num') { type = numericFieldType; length = 12; precision = 2 }
             field('bin') { type = blobFieldType; length = 50 }
             create(ifNotExists: true)
-            truncate(truncate: [(!con.driver.isOperation(Driver.Operation.DELETE))])
         }
+        truncateTable(bulkTable)
 
         def file = TFS.dataset()
         file.field = bulkTable.field

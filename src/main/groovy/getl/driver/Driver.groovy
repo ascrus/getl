@@ -69,8 +69,8 @@ abstract class Driver {
 	}
 
     static enum Operation {
-		CREATE, DROP, CLEAR, BULKLOAD, EXECUTE, RETRIEVEFIELDS, INSERT, UPDATE, DELETE, MERGE,
-		READ_METADATA
+		CREATE, DROP, BULKLOAD, EXECUTE, RETRIEVEFIELDS, INSERT, UPDATE, DELETE, MERGE,
+		READ_METADATA, TRUNCATE
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

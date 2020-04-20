@@ -482,7 +482,7 @@ class SFTPManager extends Manager {
 
 		def channelCmd = clientSession.openChannel("exec") as ChannelExec
 
-		def psfile
+		String psfile
 		if (_currentPath != null) {
 			if (hostOS == winOS) {
 				def curpath = _currentPath.substring(1)
