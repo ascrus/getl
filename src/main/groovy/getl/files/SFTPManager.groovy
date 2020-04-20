@@ -197,9 +197,6 @@ class SFTPManager extends Manager {
 		
 		clientSession = newSession()
 		try {
-			if (hostOS == null)
-				hostOS = detectOS()
-
 			channelFtp = clientSession.openChannel("sftp") as ChannelSftp
 			writeScriptHistoryFile("OPEN CHANNEL: sftp")
 			channelFtp.connect()
@@ -561,7 +558,7 @@ exit \$LastExitCode
 	}
 
 	@Override
-	String getHostOS() { params.hostOS as String }
+	String getHostOS() { (params.hostOS as String)?:unixOS }
 	void setHostOS(String value) { params.hostOS = value }
 
 	@Override
