@@ -53,13 +53,14 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     public static final String VERTICACONNECTION = 'getl.vertica.VerticaConnection'
     public static final String XEROCONNECTION = 'getl.xero.XeroConnection'
     public static final String XMLCONNECTION = 'getl.xml.XMLConnection'
+    public static final String YAMLCONNECTION = 'getl.yaml.YAMLConnection'
 
     /** List of allowed connection classes */
     public static final List<String> LISTCONNECTIONS = [
         CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
         H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION,
         NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
-        VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION
+        VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION, YAMLCONNECTION
     ]
 
     /** List of allowed jdbc connection classes */
@@ -71,7 +72,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     /** List of allowed other connection classes */
     public static final List<String> LISTFILECONNECTIONS = [
-        CSVCONNECTION, CSVTEMPCONNECTION, EXCELCONNECTION, JSONCONNECTION, XMLCONNECTION
+        CSVCONNECTION, CSVTEMPCONNECTION, EXCELCONNECTION, JSONCONNECTION, XMLCONNECTION, YAMLCONNECTION
     ]
 
     /** List of allowed jdbc connection classes */

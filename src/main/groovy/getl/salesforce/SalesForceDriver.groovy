@@ -71,6 +71,8 @@ class SalesForceDriver extends Driver {
 	private boolean connected = false
 
     SalesForceDriver () {
+        super()
+
 		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
 		methodParams.register('retrieveObjects', [])
         methodParams.register('bulkUnload', ['where', 'limit', 'orderBy', 'chunkSize'])

@@ -71,7 +71,7 @@ class JSONDataset extends StructureFileDataset {
 	
 	/** Read JSON dataset attributes */
 	void readAttrs (Map params) {
-		((JSONDriver)(connection.driver)).readAttrs(this, params)
+		currentJSONConnection.currentJSONDriver.readAttrs(this, params)
 	}
 
 	/**

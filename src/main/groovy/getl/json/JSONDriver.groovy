@@ -25,6 +25,7 @@
 package getl.json
 
 import groovy.json.JsonSlurper
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import getl.data.*
 import getl.driver.*
@@ -38,6 +39,7 @@ import getl.utils.*
  */
 class JSONDriver extends FileDriver {
 	JSONDriver () {
+		super()
 		methodParams.register("eachRow", ["fields", "filter", "initAttr"])
 	}
 
@@ -54,16 +56,19 @@ class JSONDriver extends FileDriver {
 	}
 
 	@Override
-
 	List<Field> fields(Dataset dataset) {
 		return null
 	}
 	
 	/**
 	 * Read only attributes from dataset
+	 * @param dataset source dataset
+	 * @param initAttr attributes initialization code
+	 * @param sb text buffer for generated script
 	 */
-	private void generateAttrRead (Dataset dataset, Closure initAttr, StringBuilder sb) {
-		List<Field> attrs = (dataset.params.attributeField != null)?(dataset.params.attributeField as List<Field>):[]
+	@CompileStatic
+	protected void generateAttrRead(JSONDataset dataset, Closure initAttr, StringBuilder sb) {
+		List<Field> attrs = dataset.attributeField?:[]
 		if (attrs.isEmpty()) return
 		
 		sb << "Map<String, Object> attrValue = [:]\n"
@@ -80,7 +85,7 @@ class JSONDriver extends FileDriver {
 			
 			sb << "\n"
 		}
-		sb << "dataset.params.attributeValue = attrValue\n"
+		sb << "dataset.attributeValue = attrValue\n"
 		if (initAttr != null)
 			sb << """if (!initAttr(dataset)) { 
 	directive = Closure.DONE
@@ -92,8 +97,16 @@ class JSONDriver extends FileDriver {
 	
 	/**
 	 * Read attributes and rows from dataset
+	 * @param dataset source dataset
+	 * @param listFields list of read fields
+	 * @param rootNode start read node name
+	 * @param limit limit read rows (0 for unlimited)
+	 * @data json data object
+	 * @param initAttr attributes initialization code
+	 * @param code row process code
 	 */
-	void readRows (Dataset dataset, List<String> listFields, String rootNode, long limit, data, Closure initAttr, Closure code) {
+	@CompileStatic
+	protected void readRows(JSONDataset dataset, List<String> listFields, String rootNode, long limit, def data, Closure initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
 		sb << "{ getl.json.JSONDataset dataset, Closure initAttr, Closure code, Object data, long limit ->\n"
 		generateAttrRead(dataset, initAttr, sb)
@@ -131,13 +144,14 @@ if (limit > 0) {
 		def script = sb.toString()
 		def hash = script.hashCode()
 		Closure cl
-		if (((dataset.driver_params.hash_code_read as Integer)?:0) != hash) {
+		Map<String, Object> driverParams = (dataset.driver_params as Map)
+		if (((driverParams.hash_code_read as Integer)?:0) != hash) {
 			cl = GenerationUtils.EvalGroovyClosure(script)
-			dataset.driver_params.code_read = cl
-			dataset.driver_params.hash_code_read = hash
+			driverParams.code_read = cl
+			driverParams.hash_code_read = hash
 		}
 		else {
-			cl = dataset.driver_params.code_read
+			cl = driverParams.code_read as Closure
 		}
 
 		cl.call(dataset, initAttr, code, data, limit)
@@ -145,8 +159,11 @@ if (limit > 0) {
 	
 	/**
 	 * Read only attributes from dataset
+	 * @param dataset source dataset
+	 * @param params process parameters
 	 */
-	void readAttrs (Dataset dataset, Map params) {
+	@CompileStatic
+	void readAttrs (JSONDataset dataset, Map params) {
 		params = params?:[:]
 		def data = readData(dataset, params)
 		
@@ -154,24 +171,22 @@ if (limit > 0) {
 		generateAttrRead(dataset, null, sb)
 		
 		def vars = [dataset: dataset, data: data]
-		try {
-			GenerationUtils.EvalGroovyScript(sb.toString(), vars)
-		}
-		catch (Exception e) {
-			throw e
-		}
+		GenerationUtils.EvalGroovyScript(sb.toString(), vars)
 	}
 	
 	/**
 	 * Read JSON data from file
+	 * @param dataset source dataset
+	 * @params process parameters
 	 */
-	def readData (Dataset dataset, Map params) {
-		boolean convertToList = (dataset.params.convertToList != null)?dataset.params.convertToList:false
+	@CompileStatic
+	protected def readData(JSONDataset dataset, Map params) {
+		boolean convertToList = BoolUtils.IsValue(dataset.convertToList)
 		
 		def json = new JsonSlurper()
 		def data = null
 		
-		def reader = getFileReader(dataset as FileDataset, params)
+		def reader = getFileReader(dataset, params)
 		try {
 			if (!convertToList) {
 					data = json.parse(reader)
@@ -195,16 +210,28 @@ if (limit > 0) {
 		
 		return data
 	}
-	
-	void doRead(JSONDataset dataset, Map params, Closure prepareCode, Closure code) {
-		if (dataset.field.isEmpty()) throw new ExceptionGETL("Required fields description with dataset")
-		if (dataset.params.rootNode == null) throw new ExceptionGETL("Required \"rootNode\" parameter with dataset")
-		String rootNode = dataset.params.rootNode
+
+	/**
+	 * Read and process JSON file
+	 * @param dataset processed file
+	 * @param params process parameters
+	 * @param prepareCode prepare field code
+	 * @param code process row code
+	 */
+	@CompileStatic
+	protected void doRead(JSONDataset dataset, Map params, Closure prepareCode, Closure code) {
+		if (dataset.field.isEmpty())
+			throw new ExceptionGETL("Required fields description with dataset!")
+		if (dataset.rootNode == null)
+			throw new ExceptionGETL("Required \"rootNode\" parameter with dataset!")
+		String rootNode = dataset.rootNode
 		
 		def fn = fullFileNameDataset(dataset)
-		if (fn == null) throw new ExceptionGETL("Required \"fileName\" parameter with dataset")
+		if (fn == null)
+			throw new ExceptionGETL("Required \"fileName\" parameter with dataset!")
 		File f = new File(fn)
-		if (!f.exists()) throw new ExceptionGETL("File \"${fn}\" not found")
+		if (!f.exists())
+			throw new ExceptionGETL("File \"${fn}\" not found!")
 		
 		Long limit = (params.limit != null)?(params.limit as Long):0
 
@@ -214,11 +241,13 @@ if (limit > 0) {
 		if (prepareCode != null) {
 			prepareCode.call(fields)
 		}
-		else if (params.fields != null) fields = params.fields as List<String>
+		else if (params.fields != null)
+			fields = params.fields as List<String>
 		
 		readRows(dataset, fields, rootNode, limit, data, params.initAttr as Closure, code)
 	}
-	
+
+	@CompileStatic
 	@Override
 	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		Closure<Boolean> filter = params."filter" as Closure<Boolean>
@@ -231,7 +260,7 @@ if (limit > 0) {
 			code.call(row)
 		}
 		
-		countRec
+		return countRec
 	}
 
 	@Override

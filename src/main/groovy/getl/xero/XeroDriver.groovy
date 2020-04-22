@@ -49,6 +49,8 @@ class XeroDriver extends Driver {
     private XeroClient client
 
     XeroDriver() {
+        super()
+
         methodParams.register('retrieveObjects', ['xeroObjectName', 'xeroListName'])
         methodParams.register('eachRow', ['modifiedAfter', 'where', 'orderBy', 'limit', 'includeArchived', 'filter'])
         methodParams.register('rows', ['modifiedAfter', 'where', 'orderBy', 'limit', 'includeArchived', 'filter'])

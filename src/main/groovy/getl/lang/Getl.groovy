@@ -58,7 +58,8 @@ import getl.utils.sub.*
 import getl.vertica.*
 import getl.xero.*
 import getl.xml.*
-
+import getl.yaml.YAMLConnection
+import getl.yaml.YAMLDataset
 import groovy.test.GroovyAssert
 import groovy.test.GroovyTestCase
 import groovy.transform.Synchronized
@@ -3438,6 +3439,65 @@ Examples:
     XMLDataset xml(@DelegatesTo(XMLDataset)
                    @ClosureParams(value = SimpleType, options = ['getl.xml.XMLDataset']) Closure cl) {
         xml(null, false, cl)
+    }
+
+    /** YAML connection */
+    YAMLConnection yamlConnection(String name, Boolean registration,
+                                  @DelegatesTo(YAMLConnection)
+                                  @ClosureParams(value = SimpleType, options = ['getl.yaml.YAMLConnection']) Closure cl = null) {
+        def parent = registerConnection(_repositoryConnections.YAMLCONNECTION, name, registration) as YAMLConnection
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** YAML connection */
+    YAMLConnection yamlConnection(String name,
+                                  @DelegatesTo(YAMLConnection)
+                                  @ClosureParams(value = SimpleType, options = ['getl.yaml.YAMLConnection']) Closure cl = null) {
+        yamlConnection(name, false, cl)
+    }
+
+    /** YAML connection */
+    YAMLConnection yamlConnection(@DelegatesTo(YAMLConnection)
+                                  @ClosureParams(value = SimpleType, options = ['getl.yaml.YAMLConnection']) Closure cl) {
+        yamlConnection(null, false, cl)
+    }
+
+    /** YAML default connection */
+    YAMLConnection yamlConnection() {
+        defaultFileConnection(_repositoryDatasets.YAMLDATASET) as YAMLConnection
+    }
+
+    /** Use default Yaml connection for new datasets */
+    YAMLConnection useYamlConnection(YAMLConnection connection) {
+        useFileConnection(_repositoryDatasets.YAMLDATASET, connection) as YAMLConnection
+    }
+
+    /** YAML file */
+    YAMLDataset yaml(String name, Boolean registration,
+                     @DelegatesTo(YAMLDataset)
+                     @ClosureParams(value = SimpleType, options = ['getl.yaml.YAMLDataset']) Closure cl = null) {
+        def parent = registerDataset(null, _repositoryDatasets.YAMLDATASET, name, registration,
+                defaultFileConnection(_repositoryDatasets.YAMLDATASET), YAMLConnection, cl) as YAMLDataset
+        if (parent.connection == null && (name == null || registration))
+            parent.connection = new YAMLConnection()
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** YAML file */
+    YAMLDataset yaml(String name,
+                     @DelegatesTo(YAMLDataset)
+                     @ClosureParams(value = SimpleType, options = ['getl.yaml.YAMLDataset']) Closure cl = null) {
+        yaml(name, false, cl)
+    }
+
+    /** YAML file */
+    YAMLDataset yaml(@DelegatesTo(YAMLDataset)
+                     @ClosureParams(value = SimpleType, options = ['getl.yaml.YAMLDataset']) Closure cl) {
+        yaml(null, false, cl)
     }
 
     /** SalesForce connection */

@@ -6,7 +6,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = '4.4.0-50-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.4.0' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -22,6 +22,7 @@ repositories {
 dependencies {
 	compile 'org.codehaus.groovy:groovy-all:3.0.3'
 	compile 'org.codehaus.groovy:groovy-dateutil:3.0.3'
+	compile 'org.codehaus.groovy:groovy-yaml:3.0.3'
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'
 	compile 'com.h2database:h2:1.4.200'
@@ -45,7 +46,7 @@ dependencies {
 	compile 'org.apache.hadoop:hadoop-hdfs-client:3.2.1'
 	compile 'org.apache.hadoop:hadoop-common:3.2.1'
 	
-	implementation 'com.fasterxml:aalto-xml:1.2.2'
+//	implementation 'com.fasterxml:aalto-xml:1.2.2'
 	
 	compile group: 'com.force.api', name: 'force-partner-api', version: '49.1.0'
 

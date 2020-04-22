@@ -1,0 +1,2656 @@
+PriceCalculationRule:
+  -
+    #Абакан
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA46
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-100,101-200,201-300,301-400,401-500,501-600,601-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,(3.79670*X^0.62380+15.00000)*1+0,(3.79670*X^0.62380+15.00000)*0.3333+1,(3.79670*X^0.62380+15.00000)*1.3333+0.3333,(3.79670*X^0.62380+15.00000)*1.3333+(-0.3333),(3.79670*X^0.62380+15.00000)*1.44445+0,(3.79670*X^0.62380+15.00000)*0+1,(3.79670*X^0.62380+15.00000)*1+1.44445
+
+      - specCharCode: CRCH-FUNC-COEF-D      #не более 4 знаков после запятой
+        value: 0,1,0.3333,1.3333,1.3333,1.44445,0,1
+
+      - specCharCode: CRCH-FUNC-COEF-E      #не более 4 знаков после запятой
+        value: 0,0,1,0.3333,-0.3333,0,1,1.44445
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA46
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 24.00000*X^0.21000+20.00000,295
+    dependency: NoDependency
+  -
+    #Архангельск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA69
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,2.15000*X^0.71500+26.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA69
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 55.00000*X^0.14000+12.00000,360
+    dependency: NoDependency
+  -
+    #Астрахань
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA25
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,7.20000*X^0.43000+85.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA25
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 45.00000*X^0.16500+20.00000,393
+    dependency: NoDependency
+  -
+    #Барнаул
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA55
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,2.00000*X^0.64000+111.50000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA55
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 81.00000*X^0.09000+10.00000,330
+    dependency: NoDependency
+  -
+    #Белгород
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA61
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.57000*X^0.82000+58.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA61
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 46.14700*X^0.11000+33.00000,312
+    dependency: NoDependency
+  -
+    #Биробиджан
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA66
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,2.45330*X^0.70500+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA66
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 28.00000*X^0.20000+12.00000,295
+    dependency: NoDependency
+  -
+    #Благовещенск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA65
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,2.70000*X^0.52000+100.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA65
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 65.00000*X^0.14000+16.00000,400
+    dependency: NoDependency
+  -
+    #Брянск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA7
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,3.00000*X^0.60000+31.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA7
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 51.00000*X^0.17000+16.00000,380
+    dependency: NoDependency
+  -
+    #Великий Новгород
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA54
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,3.13560*X^0.64070+5.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA54
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 48.00000*X^0.17000+25.00000,360
+    dependency: NoDependency
+  -
+    #Владивосток
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA12
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.34660*X^0.79900+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA12
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 35.00000*X^0.16000+0.00000,290
+    dependency: NoDependency
+  -
+    #Владикавказ
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA74
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.45350*X^0.72820+5.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA74
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 27.71900*X^0.24190+0.00000,393
+    dependency: NoDependency
+  -
+    #Владимир
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA9
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,7.22130*X^0.54000+0.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA9
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 25.00000*X^0.21500+10.00000,300
+    dependency: NoDependency
+  -
+    #Волгоград
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA32
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,3.00000*X^0.52000+71.10070
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA32
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 35.00000*X^0.19000+0.00000,327
+    dependency: NoDependency
+  -
+    #Вологда
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA4
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.49280*X^0.92000+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA4
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-2048,3072-4096,5120-6144,7168-8192,9216-10240,11264-12288,13312-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: (50.00000*X^0.15000+25.00000)*0+0,(50.00000*X^0.15000+25.00000)*1+1,(50.00000*X^0.15000+25.00000)*0.3333+0.0.000000001,(50.00000*X^0.15000+25.00000)*1.3333+(-0.3333),(50.00000*X^0.15000+25.00000)*1.3333+0,(50.00000*X^0.15000+25.00000)*1.44445+1,(50.00000*X^0.15000+25.00000)*0+1.44445,410
+
+      - specCharCode: CRCH-FUNC-COEF-D      #не более 4 знаков после запятой
+        value: 0,1,0.3333,1.3333,1.3333,1.44445,0,1
+
+      - specCharCode: CRCH-FUNC-COEF-E      #не более 4 знаков после запятой
+        value: 0,1,0.000000001,-0.3333,0,1,1.44445,0
+    dependency: NoDependency
+  -
+    #Воронеж
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA35
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.72000*X^0.84480+20.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA35
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 46.14700*X^0.11000+0.00000,320
+    dependency: NoDependency
+  -
+    #Горно-Алтайск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA62
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,2.10000*X^0.64000+110.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA62
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 53.00000*X^0.13000+0.00000,300
+    dependency: NoDependency
+  -
+    #Грозный
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA45
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,26.00000*X^0.26000+48.37040
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA45
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 43.00000*X^0.16500+19.00000,396
+    dependency: NoDependency
+  -
+    #Екатеринбург
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA47
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-99,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,(0.70290*X^0.80000+23.00000)*1+0,(0.70290*X^0.80000+23.00000)*0.5+1
+
+      - specCharCode: CRCH-FUNC-COEF-D      #не более 4 знаков после запятой
+        value: 0,1,0.5
+
+      - specCharCode: CRCH-FUNC-COEF-E      #не более 4 знаков после запятой
+        value: 0,0,1
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA47
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-2048,30725-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: (61.00000*X^0.11500+0.00000)*2+1,(61.00000*X^0.11500+0.00000)*0.5+2,245
+
+      - specCharCode: CRCH-FUNC-COEF-D      #не более 4 знаков после запятой
+        value: 2,0.5,1
+
+      - specCharCode: CRCH-FUNC-COEF-E      #не более 4 знаков после запятой
+        value: 1,2,0
+    dependency: NoDependency
+  -
+    #Иваново
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA58
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,2.79810*X^0.60140+0.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA58
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 10.00000*X^0.22000+0.00000,159
+    dependency: NoDependency
+  -
+    #Ижевск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA49
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.56160*X^0.79000+14.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA49
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 42.00000*X^0.17000+5.00000,320
+    dependency: NoDependency
+  -
+    #Иркутск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA14
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,3.90000*X^0.59000+24.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA14
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 48.00000*X^0.10000+10.00000,306
+    dependency: NoDependency
+  -
+    #Йошкар-Ола
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA24
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,2.20000*X^0.60000+101.10850
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA24
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 33.00000*X^0.16000+20.00000,240
+    dependency: NoDependency
+  -
+    #Казань
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA22
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,2.33110*X^0.68850+0.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA22
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 23.00000*X^0.19250+0.00000,215
+    dependency: NoDependency
+  -
+    #Калининград
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA51
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,4.00000*X^0.55000+44.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA51
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 45.00000*X^0.18000+0.00000,360
+    dependency: NoDependency
+  -
+    #Калуга
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA11
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,6.23670*X^0.45000+45.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA11
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 24.50000*X^0.22400+22.00000,330
+    dependency: NoDependency
+  -
+    #Кемерово
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA38
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.98410*X^0.59700+60.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA38
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 40.00000*X^0.10000+30.00000,333
+    dependency: NoDependency
+  -
+    #Киров
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA40
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.40000*X^0.83000+67.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA40
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 44.00000*X^0.16000+26.00000,345
+    dependency: NoDependency
+  -
+    #Кострома
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA5
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,6.00000*X^0.47000+80.30000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA5
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 61.00000*X^0.10500+5.00000,297
+    dependency: NoDependency
+  -
+    #Краснодар
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA15
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,7.70000*X^0.44000+97.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA15
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 26.50000*X^0.19000+1.00000,275
+    dependency: NoDependency
+  -
+    #Красноярск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA27
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,2.88650*X^0.59540+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA27
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 40.50000*X^0.16000+0.00000,262
+    dependency: NoDependency
+  -
+    #Курган
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA78
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.68000*X^0.85130+25.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA78
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 52.00000*X^0.08000+30.00000,318
+    dependency: NoDependency
+  -
+    #Курск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA8
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,200-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.80000*X^0.82680+62.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA8
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 46.14700*X^0.11790+35.00000,324
+    dependency: NoDependency
+  -
+    #Кызыл
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA39
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,2.27570*X^0.69500+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA39
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 49.00000*X^0.16000+1.00000,330
+    dependency: NoDependency
+  -
+    #Липецк
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA16
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.20000*X^0.76720+53.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA16
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 46.14700*X^0.11000+9.00000,285
+    dependency: NoDependency
+  -
+    #Магадан
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA79
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,4.30000*X^0.58000+42.30400
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA79
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 36.00000*X^0.23900+15.00000,688
+    dependency: NoDependency
+  -
+    #Магас
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA71
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,25.00000*X^0.26000+42.23450
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA71
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 43.00000*X^0.16500+28.00000,405
+    dependency: NoDependency
+  -
+    #Майкоп
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA70
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,7.70000*X^0.44000+97.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA70
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 26.50000*X^0.19000+1.00000,275
+    dependency: NoDependency
+  -
+    #Махачкала
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA44
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.59000*X^0.81500+69.50000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA44
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 72.00000*X^0.14500+0.00000,435
+    dependency: NoDependency
+  -
+    #Москва
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA2
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-100,101-200,201-300,301-400,401-500,501-600,601-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,(4.35980*X^0.58000+18.00000)*1+0,(4.35980*X^0.58000+18.00000)*0.3333+1,(4.35980*X^0.58000+18.00000)*1.3333+0.3333,(4.35980*X^0.58000+18.00000)*1.3333+(-0.3333),(4.35980*X^0.58000+18.00000)*1.44445+0,(4.35980*X^0.58000+18.00000)*0+1,(4.35980*X^0.58000+18.00000)*1+1.44445
+
+      - specCharCode: CRCH-FUNC-COEF-D      #не более 4 знаков после запятой
+        value: 0,1,0.3333,1.3333,1.3333,1.44445,0,1
+
+      - specCharCode: CRCH-FUNC-COEF-E      #не более 4 знаков после запятой
+        value: 0,0,1,0.3333,-0.3333,0,1,1.44445
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA2
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-2048,3072-4096,5120-6144,7168-8192,9216-10240,11264-12288,13312-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: (90.00000*X^0.11900+15.00000)*1+0,(90.00000*X^0.11900+15.00000)*0+1.44445,(90.00000*X^0.11900+15.00000)*1.44445+1,(90.00000*X^0.11900+15.00000)*1.3333+0,(90.00000*X^0.11900+15.00000)*1.3333+(-0.3333),(90.00000*X^0.11900+15.00000)*0.3333+0.3333,(90.00000*X^0.11900+15.00000)*1+1,370
+
+      - specCharCode: CRCH-FUNC-COEF-D      #не более 4 знаков после запятой
+        value: 1,0,1.44445,1.3333,1.3333,0.3333,1,0
+
+      - specCharCode: CRCH-FUNC-COEF-E      #не более 4 знаков после запятой
+        value: 0,1.44445,1,0,-0.3333,0.3333,1,0
+    dependency: NoDependency
+  -
+    #Мурманск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA57
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.97540*X^0.79800+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA57
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 53.00000*X^0.18270+4.00000,455
+    dependency: NoDependency
+  -
+    #Нальчик
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA73
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,6.00000*X^0.50000+65.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA73
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 65.00000*X^0.14000+0.00000,355
+    dependency: NoDependency
+  -
+    #Нижний Новгород
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA56
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,6.00000*X^0.52970+22.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA56
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 33.00000*X^0.13000+0.00000,300
+    dependency: NoDependency
+  -
+    #Новосибирск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA19
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,3.60000*X^0.45000+89.00270
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA19
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 49.00000*X^0.13000+27.00000,327
+    dependency: NoDependency
+  -
+    #Омск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA18
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.50000*X^0.90000+0.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA18
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 47.00000*X^0.14000+10.00000,296
+    dependency: NoDependency
+  -
+    #Орёл
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA10
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.75650*X^0.82520+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA10
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 50.00000*X^0.14000+5.00000,265
+    dependency: NoDependency
+  -
+    #Оренбург
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA28
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.77000*X^0.68000+122.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA28
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 54.00000*X^0.15000+25.00000,390
+    dependency: NoDependency
+  -
+    #Пенза
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA21
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.16890*X^0.74880+15.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA21
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 44.00000*X^0.17700+7.00000,360
+    dependency: NoDependency
+  -
+    #Пермь
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA36
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.45000*X^0.92550+52.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA36
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 44.00000*X^0.11300+1.00000,280
+    dependency: NoDependency
+  -
+    #Петрозаводск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA52
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,4.01060*X^0.61000+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA52
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 34.47400*X^0.21200+0.00000,375
+    dependency: NoDependency
+  -
+    #Петропавловск-Камчатский
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA80
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,200-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.95000*X^0.71000+19.70000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA80
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 63.00000*X^0.18000+16.00000,636
+    dependency: NoDependency
+  -
+    #Псков
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA53
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,2.59850*X^0.65200+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA53
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 60.00000*X^0.11000+0.00000,295
+    dependency: NoDependency
+  -
+    #Ростов-на-Дону
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA43
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.51420*X^0.77000+5.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA43
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 50.00000*X^0.17000+0.00000,386
+    dependency: NoDependency
+  -
+    #Рязань
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA50
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.79940*X^0.71290+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA50
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 30.00000*X^0.21000+15.00000,342
+    dependency: NoDependency
+  -
+    #Салехард
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA77
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.30000*X^1.00000+50.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA77
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 48.00000*X^0.11000+28.00000,290
+    dependency: NoDependency
+  -
+    #Самара
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA30
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.30000*X^0.93000+91.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA30
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 75.00000*X^0.10000+55.00000,417
+    dependency: NoDependency
+  -
+    #Санкт-Петербург
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA1
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-100,101-200,201-300,301-400,401-500,501-600,601-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,(0.81300*X^0.85500+0.00000)*1+0,(0.81300*X^0.85500+0.00000)*0.3333+1,(0.81300*X^0.85500+0.00000)1.3333+0.3333,(0.81300*X^0.85500+0.00000)*1.3333+(-0.3333),(0.81300*X^0.85500+0.00000)*1.44445+0,(0.81300*X^0.85500+0.00000)*0+1,(0.81300*X^0.85500+0.00000)*1+1.44445
+
+      - specCharCode: CRCH-FUNC-COEF-D      #не более 4 знаков после запятой
+        value: 0,1,0.3333,1.3333,1.3333,1.44445,0,1
+
+      - specCharCode: CRCH-FUNC-COEF-E      #не более 4 знаков после запятой
+        value: 0,0,1,0.3333,-0.3333,0,1,1.44445
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA1
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-2048,3072-4096,5120-6144,7168-8192,9216-10240,11264-12288,13312-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: (57.50000*X^0.16400+0.00000)*1+0,(57.50000*X^0.16400+0.00000)*0+1.44445,(57.50000*X^0.16400+0.00000)*1.44445+1,(57.50000*X^0.16400+0.00000)*1.3333+0,(57.50000*X^0.16400+0.00000)*1.3333+(-0.3333),(57.50000*X^0.16400+0.00000)*0.3333+0.000000001,(57.50000*X^0.16400+0.00000)*1+1,420
+
+      - specCharCode: CRCH-FUNC-COEF-D      #не более 4 знаков после запятой
+        value: 1,0,1.44445,1.3333,1.3333,0.3333,1,0
+
+      - specCharCode: CRCH-FUNC-COEF-E      #не более 4 знаков после запятой
+        value: 0,1.44445,1,0,-0.3333,0.000000001,1,0
+    dependency: NoDependency
+  -
+    #Саранск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA34
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.62360*X^0.72590+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA34
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 30.00000*X^0.19500+15.00000,295
+    dependency: NoDependency
+  -
+    #Саратов
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA33
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.28000*X^0.93000+81.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA33
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 34.00000*X^0.21000+40.00000,428
+    dependency: NoDependency
+  -
+    #Смоленск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA60
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.58000*X^0.84000+100.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA60
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 48.00000*X^0.12500+23.00000,322
+    dependency: NoDependency
+  -
+    #Ставрополь
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA37
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,18.00000*X^0.31000+74.55000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA37
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 50.00000*X^0.14500+17.00000,320
+    dependency: NoDependency
+  -
+    #Сыктывкар
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA76
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.65530*X^0.79940+5.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA76
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 68.00000*X^0.14000+0.00000,405
+    dependency: NoDependency
+  -
+    #Тамбов
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA17
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,7.00000*X^0.49190+45.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA17
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 50.00000*X^0.12500+16.00000,288
+    dependency: NoDependency
+  -
+    #Тверь
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA59
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.39660*X^0.72340+17.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA59
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 40.00000*X^0.18000+8.00000,330
+    dependency: NoDependency
+  -
+    #Томск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA20
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.80000*X^0.84480+52.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA20
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 46.14700*X^0.11000+10.00000,270
+    dependency: NoDependency
+  -
+    #Тула
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA6
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.30000*X^1.00000+25.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA6
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 48.00000*X^0.09500+20.00000,265
+    dependency: NoDependency
+  -
+    #Тюмень
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA41
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,200-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.22000*X^1.05000+72.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA41
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 44.00000*X^0.13000+47.00000,300
+    dependency: NoDependency
+  -
+    #Улан-Удэ
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA64
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.32380*X^0.92070+15.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA64
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 14.00000*X^0.22000+0.00000,250
+    dependency: NoDependency
+  -
+    #Ульяновск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA23
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,3.85000*X^0.61000+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA23
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 50.00000*X^0.14000+0.00000,275
+    dependency: NoDependency
+  -
+    #Уфа
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA29
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.70000*X^0.60000+100.42670
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA29
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 37.00000*X^0.14400+19.00000,293
+    dependency: NoDependency
+  -
+    #Хабаровск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA13
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,3.00000*X^0.62500+56.16000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA13
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 90.00000*X^0.11000+0.00000,420
+    dependency: NoDependency
+  -
+    #Ханты-Мансийск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA42
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.30000*X^0.80000+50.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA42
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 45.00000*X^0.09500+20.00000,255
+    dependency: NoDependency
+  -
+    #Чебоксары
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA26
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,3.10000*X^0.50000+102.42860
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA26
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 33.00000*X^0.14500+32.00000,220
+    dependency: NoDependency
+  -
+    #Челябинск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA48
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.70000*X^0.84480+10.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA48
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 44.00000*X^0.11000+1.00000,335
+    dependency: NoDependency
+  -
+    #Черкесск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA72
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,16.00000*X^0.28000+71.50000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA72
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 63.00000*X^0.14500+25.00000,450
+    dependency: NoDependency
+  -
+    #Чита
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA67
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.40000*X^0.80000+101.04620
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA67
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 80.00000*X^0.12000+24.00000,363
+    dependency: NoDependency
+  -
+    #Элиста
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA31
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,14.50000*X^0.37000+50.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA31
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 3072-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 45.00000*X^0.16500+16.00000,340
+    dependency: NoDependency
+  -
+    #Южно-Сахалинск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA75
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.28680*X^0.69120+17.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA75
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 66.00000*X^0.14800+0.00000,370
+    dependency: NoDependency
+  -
+    #Якутск
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA68
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,100-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,0.35000*X^0.85000+90.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA68
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 55.00000*X^0.17000+79.00000,543
+    dependency: NoDependency
+  -
+    #Ярославль
+    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA3
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: minute
+        value: 0,1-2000
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 0,1.97690*X^0.65000+5.00000
+    dependency: NoDependency
+  -
+    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA3
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
+    specCode: PCRS-ANY-YOTA
+    charValueUse:
+      -
+        specCharCode: CRCH-RESOURCE-INTERVALS
+        unitOfMeasure: mb
+        value: 1024-51200,unlimited
+      -
+        specCharCode: CRCH-RESOURCE-STEP
+        value: 1024
+      -
+        specCharCode: CRCH-TARIFF-CALC-FORMULA
+        value: 16.00000*X^0.18000+5.00000,163
+    dependency: NoDependency

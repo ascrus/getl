@@ -64,13 +64,14 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     public static final String VERTICATABLE = 'getl.vertica.VerticaTable'
     public static final String XERODATASET = 'getl.xero.XeroDataset'
     public static final String XMLDATASET = 'getl.xml.XMLDataset'
+    public static final String YAMLDATASET = 'getl.yaml.YAMLDataset'
 
     /** List of allowed dataset classes */
     public static final List<String> LISTDATASETS = [
         CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
         JSONDATASET, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
         SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET,
-        XMLDATASET
+        XMLDATASET, YAMLDATASET
     ]
 
     /** List of allowed jdbc dataset classes */
@@ -81,7 +82,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
     /** List of allowed file dataset classes */
     public static List<String> LISTFILES = [
-        CSVDATASET, CSVTEMPDATASET, EXCELDATASET, JSONDATASET, XMLDATASET
+        CSVDATASET, CSVTEMPDATASET, EXCELDATASET, JSONDATASET, XMLDATASET, YAMLDATASET
     ]
 
     /** List of allowed other dataset classes */
