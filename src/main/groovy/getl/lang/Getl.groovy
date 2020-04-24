@@ -576,7 +576,7 @@ Examples:
     void forGroup(String group) {
         if (group == null || group.trim().length() == 0)
             throw new ExceptionDSL('Filter group required!')
-        if (Thread.currentThread() instanceof ExecutorThread)
+        if (isCurrentProcessInThread())
             throw new ExceptionDSL('Using group filtering within a threads is not allowed!')
 
         repositoryFilter.filteringGroup = group.trim().toLowerCase()
@@ -1023,7 +1023,7 @@ Examples:
                 res = lastJdbcDefaultConnection
         }
 
-        if (_langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+        if (_langOpts.useThreadModelConnection && isCurrentProcessInThread()) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject('connections', res,
                     {
@@ -1039,7 +1039,7 @@ Examples:
 
     /** Use specified JDBC connection as default */
     JDBCConnection useJdbcConnection(String datasetClassName, JDBCConnection value) {
-        if (Thread.currentThread() instanceof ExecutorThread)
+        if (isCurrentProcessInThread())
             throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
@@ -1085,7 +1085,7 @@ Examples:
             res = _defaultFileConnection.get(datasetClassName)
         }
 
-        if (_langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+        if (_langOpts.useThreadModelConnection && isCurrentProcessInThread()) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject('connections', res,
                     {
@@ -1101,7 +1101,7 @@ Examples:
 
     /** Use specified file connection as default */
     FileConnection useFileConnection(String datasetClassName, FileConnection value) {
-        if (Thread.currentThread() instanceof ExecutorThread)
+        if (isCurrentProcessInThread())
             throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
@@ -1148,7 +1148,7 @@ Examples:
             res = _defaultOtherConnection.get(datasetClassName)
         }
 
-        if (_langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) {
+        if (_langOpts.useThreadModelConnection && isCurrentProcessInThread()) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject('connections', res,
                     {
@@ -1164,7 +1164,7 @@ Examples:
 
     /** Use specified other type connection as default */
     Connection useOtherConnection(String datasetClassName, Connection value) {
-        if (Thread.currentThread() instanceof ExecutorThread)
+        if (isCurrentProcessInThread())
             throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
@@ -2086,10 +2086,13 @@ Examples:
     /** System temporary directory */
     static String getSystemTempPath() { TFS.systemPath }
 
+    boolean isCurrentProcessInThread() { Thread.currentThread() instanceof ExecutorThread }
+
     /** GETL DSL options */
+    @Synchronized("_langOpts")
     LangSpec options(@DelegatesTo(LangSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LangSpec']) Closure cl = null) {
-        if (Thread.currentThread() instanceof ExecutorThread)
+        if (cl != null && isCurrentProcessInThread())
             throw new ExceptionDSL('Changing options is not supported in the thread!')
 
         def processDataset = _langOpts.processControlDataset
@@ -2114,9 +2117,10 @@ Examples:
     private ConfigSpec _configOpts
 
     /** Configuration options */
+    @Synchronized('_configOpts')
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ConfigSpec']) Closure cl = null) {
-        if (cl != null && Thread.currentThread() instanceof ExecutorThread)
+        if (cl != null && isCurrentProcessInThread())
             throw new ExceptionDSL('Changing configuration is not supported in the thread!')
 
         if (!(Config.configClassManager instanceof ConfigSlurper)) Config.configClassManager = new ConfigSlurper()
@@ -2129,9 +2133,10 @@ Examples:
     private LogSpec _logOpts
 
     /** Log options */
+    @Synchronized('_logOpts')
     LogSpec logging(@DelegatesTo(LogSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LogSpec']) Closure cl = null) {
-        if (Thread.currentThread() instanceof ExecutorThread)
+        if (cl != null && isCurrentProcessInThread())
             throw new ExceptionDSL('Changing log file options is not supported in the thread!')
 
         def logFileName = _logOpts.getLogFileName()

@@ -72,9 +72,9 @@ class XMLDataset extends StructureFileDataset {
 	XMLConnection getCurrentXMLConnection() { connection as XMLConnection }
 
 	/** Use default the attribute access method (default) */
-	static final DEFAULT_ATTRIBUTE_ACCESS = 0
+	static final def DEFAULT_ATTRIBUTE_ACCESS = 0
 	/** Use default the node access method */
-	static final DEFAULT_NODE_ACCESS = 1
+	static final def DEFAULT_NODE_ACCESS = 1
 
 	/** How read field if not specified the alias property
 	 * <br>default: DEFAULT_ATTRIBUTE_ACCESS

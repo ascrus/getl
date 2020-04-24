@@ -298,12 +298,13 @@ class FileManager extends Manager {
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
 		Process p
 		try {
-			def env = []
+			def env = [] as List<String>
 			System.getenv().each { k, v ->
-				env << '$k=$v'
+				env << "$k=$v"
 			}
-			if (Config.isWindows()) command = "cmd /c $command"
-			p = Runtime.getRuntime().exec(command, env.toArray(String[]) as String[], currentDir)
+			if (Config.isWindows()) command = "cmd /c $command".toString()
+			String[] envList = env.toArray(String[])
+			p = Runtime.getRuntime().exec(command, envList, currentDir)
 		}
 		catch (IOException e) {
 			err.append(e.message)
