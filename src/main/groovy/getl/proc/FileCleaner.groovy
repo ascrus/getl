@@ -36,6 +36,11 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class FileCleaner extends FileListProcessing {
+    FileCleaner() {
+        super()
+        removeFiles = true
+    }
+
     @Override
     protected List<List<String>> getExtendedIndexes() {
         return [['FILEPATH', 'FILENAME']]

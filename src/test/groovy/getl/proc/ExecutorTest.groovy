@@ -1,11 +1,9 @@
 package getl.proc
 
-import getl.jdbc.QueryDataset
 import getl.lang.Getl
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
-import getl.utils.NumericUtils
 import org.junit.Test
 
 import java.util.logging.Level

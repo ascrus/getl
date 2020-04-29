@@ -39,7 +39,6 @@ import getl.jdbc.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class VerticaDriver extends JDBCDriver {
 	VerticaDriver () {
 		super()

@@ -63,13 +63,7 @@ import groovy.transform.InheritConstructors
  * SalesForce Driver class
  * @author Dmitry Shaldin
  */
-@InheritConstructors
 class SalesForceDriver extends Driver {
-	private ConnectorConfig config
-	private PartnerConnection partnerConnection
-    private BulkConnection bulkConnection
-	private boolean connected = false
-
     SalesForceDriver () {
         super()
 
@@ -79,7 +73,12 @@ class SalesForceDriver extends Driver {
 		methodParams.register('rows', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
 	}
 
-	@Override
+    private ConnectorConfig config
+    private PartnerConnection partnerConnection
+    private BulkConnection bulkConnection
+    private boolean connected = false
+
+    @Override
 	List<Support> supported() { return [Support.EACHROW, Support.CONNECT, Support.CLOB, Support.AUTOLOADSCHEMA] }
 
 	@Override

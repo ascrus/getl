@@ -34,6 +34,7 @@ import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
+import groovy.xml.XmlParser
 import org.apache.groovy.json.internal.LazyMap
 
 /**

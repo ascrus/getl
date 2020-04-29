@@ -2,7 +2,6 @@ package getl.files
 
 import getl.tfs.TFS
 import getl.utils.FileUtils
-import org.junit.Test
 
 /**
  * @author Alexsey Konstantinov

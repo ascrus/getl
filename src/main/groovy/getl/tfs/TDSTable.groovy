@@ -38,7 +38,6 @@ import groovy.transform.InheritConstructors
 class TDSTable extends H2Table {
     TDSTable() {
         super()
-        //connection = new TDS()
         tableName = "TDS_" + StringUtils.TransformObjectName(StringUtils.RandomStr()).toUpperCase()
     }
 

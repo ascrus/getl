@@ -47,7 +47,6 @@ import getl.utils.MapUtils
 import getl.utils.StringUtils
 import getl.utils.SynchronizeObject
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import org.codehaus.groovy.runtime.StackTraceUtils

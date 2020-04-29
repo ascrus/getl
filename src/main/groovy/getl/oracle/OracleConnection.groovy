@@ -33,7 +33,6 @@ import getl.jdbc.JDBCConnection
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class OracleConnection extends JDBCConnection {
 	OracleConnection() {
 		super(driver: OracleDriver)

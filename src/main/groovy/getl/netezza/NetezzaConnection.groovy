@@ -31,7 +31,6 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class NetezzaConnection extends JDBCConnection {
     NetezzaConnection() {
         super(driver: NetezzaDriver)

@@ -40,7 +40,6 @@ import groovy.transform.Synchronized
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class OracleDriver extends JDBCDriver {
 	OracleDriver () {
 		super()

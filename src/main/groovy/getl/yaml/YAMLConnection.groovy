@@ -43,5 +43,5 @@ class YAMLConnection extends FileConnection {
     }
 
     /** Current JSON connection driver */
-    YAMLDriver getCurrentYAMLDriver() { driver }
+    YAMLDriver getCurrentYAMLDriver() { driver as YAMLDriver }
 }

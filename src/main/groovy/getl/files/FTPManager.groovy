@@ -211,7 +211,8 @@ class FTPManager extends Manager {
 			_currentPath = null
 		}
 	}
-	
+
+	@InheritConstructors
 	class FTPList extends FileManagerList {
 		public FTPFile[] listFiles
 		

@@ -1,7 +1,5 @@
 package getl.tfs
 
-import getl.csv.CSVConnection
-import getl.data.Field
 import org.junit.Test
 
 /**

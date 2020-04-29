@@ -127,6 +127,12 @@ class TableDataset extends JDBCDataset {
 	/** Description of table */
 	void setDescription(String value) { params.description = value }
 
+	/** Check table name */
+	void validTableName() {
+		if (tableName == null)
+			throw new ExceptionGETL("Table name is not specified!")
+	}
+
 	/** Valid exist table */
 	boolean isExists() {
 		validConnection()
@@ -134,13 +140,8 @@ class TableDataset extends JDBCDataset {
 		if (!currentJDBCConnection.currentJDBCDriver.isTable(this))
 			throw new ExceptionGETL("${fullNameDataset()} is not a table!")
 
-		def dbName = dbName
-		def schemaName = schemaName
-		def tblName = tableName
-		if (tblName == null)
-			throw new ExceptionGETL("Table name is not specified for ${fullNameDataset()}!")
-
-		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName, tableName: tblName)
+		validTableName()
+		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName, tableName: tableName)
 
 		return (!ds.isEmpty())
 	}
@@ -148,6 +149,7 @@ class TableDataset extends JDBCDataset {
 	/** Insert/Update/Delete/Merge records from other dataset */
 	long unionDataset(Map procParams = [:]) {
 		validConnection()
+		validTableName()
 
 		if (procParams == null) procParams = [:]
 		methodParams.validation("unionDataset", procParams, [connection.driver.methodParams.params("unionDataset")])
@@ -173,6 +175,7 @@ class TableDataset extends JDBCDataset {
 	/** Return count rows from table */
 	long countRow(String where = null, Map procParams = null) {
 		validConnection()
+		validTableName()
 
 		return currentJDBCConnection.currentJDBCDriver.countRow(this, where, procParams)
 	}
@@ -190,11 +193,12 @@ class TableDataset extends JDBCDataset {
 	 * @param procParams parameters
 	 */
 	long deleteRows(Map procParams = [:]) {
+		validConnection()
+		validTableName()
+
 		procParams = procParams?:[:]
 		methodParams.validation('deleteRows', procParams,
 				[connection.driver.methodParams.params('deleteRows')])
-
-		validConnection()
 
 		return currentJDBCConnection.currentJDBCDriver.deleteRows(this, procParams)
 	}
@@ -314,6 +318,7 @@ class TableDataset extends JDBCDataset {
 		updateRows = 0
 
 		validConnection()
+		validTableName()
 		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD))
 			throw new ExceptionGETL("Driver not supported bulk load file!")
 

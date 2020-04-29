@@ -147,14 +147,13 @@ class HDFSManager extends Manager {
             if (writeErrorsToLog) Logs.Severe('Invalid path: \"$path\"')
             throw new ExceptionGETL('Invalid null path')
         }
-//        if (path[0] == '/' && StringUtils.LeftStr(path, 6) != '/user/') path = path.substring(1)
         path = fullName(path, null)
         def p = new Path(path)
         if (!client.exists(p)) {
             if (writeErrorsToLog) Logs.Severe("Path \"$path\" not found")
             throw new ExceptionGETL("Path \"$path\" not found")
         }
-        if (!client.exists(p) || !client.isDirectory(p)) { /* todo: rewrite */
+        if (!client.exists(p) || !client.getFileStatus(p).isDirectory()) {
             if (writeErrorsToLog) Logs.Severe("Path \"$path\" non directory")
             throw new ExceptionGETL("Path \"$path\" non directory")
         }

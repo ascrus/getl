@@ -34,7 +34,6 @@ import getl.exception.ExceptionGETL
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class SorterDataset extends VirtualDataset {
 	SorterDataset () {
 		super()

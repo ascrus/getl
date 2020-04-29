@@ -34,7 +34,6 @@ import getl.exception.ExceptionGETL
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class AggregatorDataset extends VirtualDataset {
 	AggregatorDataset () {
 		super()

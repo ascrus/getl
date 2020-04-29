@@ -33,8 +33,11 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class FirebirdConnection extends JDBCConnection {
+    FirebirdConnection() {
+        super(driver: FirebirdDriver)
+    }
+
     FirebirdConnection(Map params) {
         super(new HashMap([driver: FirebirdDriver]) + params?:[:])
 

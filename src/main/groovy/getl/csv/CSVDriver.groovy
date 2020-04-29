@@ -62,7 +62,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class CSVDriver extends FileDriver {
 	CSVDriver () {
 		super()

@@ -37,7 +37,6 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class MutlipleDatasetDriver extends Driver {
-
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Support> supported() {

@@ -34,7 +34,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class MultipleDataset extends Dataset {
 	MultipleDataset () {
 		super()

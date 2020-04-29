@@ -35,7 +35,7 @@ import groovy.transform.InheritConstructors
  */
 class XMLConnection extends FileConnection {
 	XMLConnection () {
-		super([driver: XMLDriver])
+		super(driver: XMLDriver)
 	}
 	
 	XMLConnection (Map params) {

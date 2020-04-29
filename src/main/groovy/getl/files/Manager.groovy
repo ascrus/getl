@@ -28,6 +28,7 @@ import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.files.opts.ManagerBuildListSpec
 import getl.files.opts.ManagerDownloadSpec
+import getl.files.opts.ManagerProcessSpec
 import getl.files.sub.FileManagerList
 import getl.files.sub.ManagerListProcessClosure
 import getl.files.sub.ManagerListProcessing
@@ -57,7 +58,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 				 'ignoreExistInStory', 'createStory', 'takePathInStory', 'extended', 'story'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel',
-				 'ignoreExistInStory', 'createStory', 'extendFields', 'extendIndexes'])
+				 'ignoreExistInStory', 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory'])
 		methodParams.register('downloadFiles',
 				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
 
@@ -779,6 +780,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 		boolean ignoreExistInStory = (lparams.ignoreExistInStory != null)?
 				BoolUtils.IsValue(lparams.ignoreExistInStory, true):this.ignoreExistInStory
 		boolean createStory = (lparams.createStory != null)?BoolUtils.IsValue(lparams.createStory):this.createStory
+		boolean onlyFromStory = BoolUtils.IsValue(lparams.onlyFromStory)
+		boolean ignoreStory = BoolUtils.IsValue(lparams.ignoreStory)
 		
 		Integer limit = (lparams.limitDirs as Integer)?:this.limitDirs
 		if (limit != null && limit <= 0)
@@ -802,7 +805,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		sizeFileListSync.clear()
 
 		// History table		
-		TableDataset storyTable = (lparams.story as TableDataset)?:story
+		TableDataset storyTable = (!ignoreStory)?((lparams.story as TableDataset)?:story):null
 
 		// Init file list
 		fileList = new TableDataset(connection: fileListConnection?:new TDS(), 
@@ -956,7 +959,7 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 SELECT ID
 FROM ${validFiles.fullNameDataset()} f
 WHERE 
-	NOT EXISTS(
+	${(!onlyFromStory)?'NOT ':''}EXISTS(
 		SELECT *
 		FROM ${storyTable.fullNameDataset()} h
 		WHERE h.FILENAME = f.LOCALFILENAME ${(takePathInStory)?'AND h.FILEPATH = f.FILEPATH':''}
@@ -1657,24 +1660,34 @@ WHERE
 	
 	/**
 	 * Run command on server
-	 * @param command - single command for command processor server
-	 * @param out - output console log
-	 * @param err - error console log
+	 * @param command single command for command processor server
+	 * @param out output console log
+	 * @param err error console log
 	 * @return - 0 on sucessfull, greater 0 on error, -1 on invalid command
 	 */
 	Integer command(String command, StringBuilder out, StringBuilder err) {
 		out.setLength(0)
 		err.setLength(0)
 		
-		if (!allowCommand) throw new ExceptionGETL("Run command is not allowed by \"server\" server")
+		if (!allowCommand)
+			throw new ExceptionGETL("Run command is not allowed by server!")
 		
 		writeScriptHistoryFile("COMMAND: $command")
 		
 		def res = doCommand(command, out, err)
 		writeScriptHistoryFile("OUT:\n${out.toString()}")
-		if (err.length() > 0) writeScriptHistoryFile("ERROR: ${err.toString()}")
+		if (err.length() > 0) writeScriptHistoryFile("ERROR:\n${err.toString()}")
 
 		return res
+	}
+
+	/** Running OS programs */
+	ManagerProcessSpec processes(@DelegatesTo(ManagerProcessSpec)
+							   @ClosureParams(value = SimpleType, options = ['getl.files.opts.ManagerProcessSpec']) Closure cl) {
+		def parent = new ManagerProcessSpec(this)
+		parent.runClosure(cl)
+
+		return parent
 	}
 	
 	/**

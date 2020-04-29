@@ -26,7 +26,13 @@ class VerticaDriverTest extends JDBCDriverProto {
     protected JDBCConnection newCon() {
         if (!FileUtils.ExistsFile(configName)) return null
         Config.LoadConfig(fileName: configName)
-        return new VerticaConnection(config: 'vertica')
+        def c = new VerticaConnection(config: 'vertica')
+        c.with {
+            loginsConfigStore = 'logins'
+            useLogin 'developer'
+        }
+
+        return c
     }
 
     @Test
@@ -244,45 +250,89 @@ LIMIT 1'''
     protected String getCurrentTimestampFuncName() { 'CURRENT_TIMESTAMP' }
 
     @Test
-    void testDropPartitions() {
+    void testVerticaTableFunc() {
         Getl.Dsl(this) {
+            def generateData = { VerticaTable table ->
+                rowsTo(table) {
+                    writeRow { writer ->
+                        (1..12).each { month ->
+                            writer id: month, dt: DateUtils.ParseDate('yyyy-MM-dd', "2019-${StringUtils.AddLedZeroStr(month, 2)}-01")
+                        }
+                    }
+                }
+            }
+
             verticaTable { table ->
                 useConnection this.con
                 schemaName = 'public'
-                tableName = 'testDropPartitions'
+                tableName = 'testVerticaTable'
                 dropOpts { ifExists = true }
                 drop()
 
                 field('id') { type = integerFieldType; isKey = true }
                 field('dt') { type = datetimeFieldType; isNull = false }
 
-                def generateData = {
-                    rowsTo(table) {
-                        writeRow { writer ->
-                            (1..12).each { month ->
-                                writer id: month, dt: DateUtils.ParseDate('yyyy-MM-dd', "2019-${StringUtils.AddLedZeroStr(month, 2)}-01")
-                            }
-                        }
-                    }
-                }
-
                 createOpts { partitionBy = 'Year(dt) * 100 + Month(dt)' }
                 create()
-                generateData.call()
+                generateData.call(table)
                 assertEquals(12, countRow())
+
+                verticaTable { repTable ->
+                    useConnection this.con
+                    schemaName = 'public'
+                    tableName = 'testVerticaTableClone'
+                    drop(ifExists: true)
+
+                    createLike(table, true, true, true)
+                    assertTrue(exists)
+
+                    table.copyPartitionsToTable(201901, 201912, repTable)
+                    analyzeStatistics(10, ['id', 'dt'])
+                    assertEquals(12, countRow())
+                    deleteRows()
+                    purgeTable()
+
+                    table.movePartitionsToTable(201901, 201912, repTable)
+                    assertEquals(12, countRow())
+                    assertEquals(0, table.countRow())
+
+                    swapPartitionsBetweenTables(201901, 201912, table)
+                    assertEquals(0, countRow())
+                    assertEquals(12, table.countRow())
+                }
+
                 dropPartitions(201901, 201906)
                 assertEquals(6, countRow())
-
                 drop()
+
                 createOpts { partitionBy = 'dt::date' }
                 create()
-                generateData.call()
+                generateData.call(table)
                 assertEquals(12, countRow())
+
                 dropPartitions(DateUtils.ParseDate('yyyy-MM-dd', '2019-01-01'),
                         DateUtils.ParseDate('yyyy-MM-dd', '2019-06-01'), false, true)
                 assertEquals(6, countRow())
-
                 drop()
+            }
+        }
+    }
+
+    @Test
+    void testVerticaConnectionFunc() {
+        Getl.Dsl {
+            (this.con as VerticaConnection).with {
+                useLogin 'dbadmin'
+                try {
+                    analyzeWorkload('getl_demo', true)
+                    processWorkload(analyzeWorkload('getl_demo', DateUtils.ParseDate('2020-01-01')))
+                    analyzeStatistics(10)
+                    purgeTables { table -> table.schemaName.toLowerCase() == 'getl_demo' }
+
+                }
+                finally {
+                    useLogin 'developer'
+                }
             }
         }
     }

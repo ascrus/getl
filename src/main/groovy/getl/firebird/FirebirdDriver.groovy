@@ -34,7 +34,6 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class FirebirdDriver extends JDBCDriver{
     FirebirdDriver() {
         super()

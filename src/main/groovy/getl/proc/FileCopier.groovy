@@ -25,13 +25,10 @@
 package getl.proc
 
 import getl.data.Field
-import getl.exception.ExceptionDSL
 import getl.exception.ExceptionFileListProcessing
-import getl.exception.ExceptionGETL
 import getl.files.Manager
 import getl.proc.sub.FileCopierBuild
 import getl.jdbc.TableDataset
-import getl.lang.Getl
 import getl.proc.sub.FileListProcessing
 import getl.proc.sub.FileListProcessingBuild
 import getl.utils.CloneUtils
@@ -40,7 +37,6 @@ import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.Path
-import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 

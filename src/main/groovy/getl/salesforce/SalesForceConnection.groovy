@@ -31,7 +31,6 @@ import groovy.transform.InheritConstructors
  * SalesForce Connection class
  * @author Dmitry Shaldin
  */
-@InheritConstructors
 class SalesForceConnection extends Connection {
     SalesForceConnection () {
 		super(driver: SalesForceDriver)

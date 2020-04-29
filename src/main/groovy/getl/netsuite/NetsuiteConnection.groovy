@@ -32,7 +32,6 @@ import groovy.transform.InheritConstructors
  * @author Dmitry Shaldin
  *
  */
-@InheritConstructors
 class NetsuiteConnection extends JDBCConnection {
 	NetsuiteConnection() {
 		super(driver: NetsuiteDriver)

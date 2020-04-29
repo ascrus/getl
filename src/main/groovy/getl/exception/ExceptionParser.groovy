@@ -31,7 +31,6 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class ExceptionParser extends ExceptionGETL {
 	/**
 	 * Tokens from parsing

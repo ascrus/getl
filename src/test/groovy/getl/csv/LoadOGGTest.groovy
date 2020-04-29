@@ -4,8 +4,6 @@ import getl.utils.DateUtils
 import getl.utils.FileUtils
 import org.junit.Test
 
-import java.sql.Timestamp
-
 class LoadOGGTest extends getl.test.GetlTest {
     @Test
     void testReadOGG() {

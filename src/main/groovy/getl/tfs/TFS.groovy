@@ -37,9 +37,7 @@ import getl.utils.FileUtils
  *
  */
 class TFS extends CSVConnection {
-	private static String _systemPath
-
-	TFS () {
+	TFS() {
 		super(driver: TFSDriver)
 
 		methodParams.register("Super", ["deleteOnExit"])
@@ -48,7 +46,7 @@ class TFS extends CSVConnection {
 		initParams()
 	}
 
-	TFS (Map params) {
+	TFS(Map params) {
 		super(new HashMap([driver: TFSDriver]) + params?:[:])
 
 		methodParams.register("Super", ["deleteOnExit"])
@@ -56,6 +54,8 @@ class TFS extends CSVConnection {
 
 		initParams()
 	}
+
+	private static String _systemPath
 
 	static def getSystemPath() {
         if (_systemPath == null) {

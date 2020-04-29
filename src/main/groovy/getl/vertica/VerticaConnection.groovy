@@ -26,18 +26,20 @@ package getl.vertica
 
 import getl.exception.ExceptionGETL
 import getl.jdbc.QueryDataset
-import getl.utils.DateUtils
+import getl.stat.ProcessTime
+import getl.utils.BoolUtils
+import getl.utils.Logs
 import getl.utils.Path
-import getl.utils.StringUtils
-import groovy.transform.InheritConstructors
+import static getl.utils.StringUtils.WithGroupSeparator
 import getl.jdbc.JDBCConnection
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Vertica connection class
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class VerticaConnection extends JDBCConnection {
 	VerticaConnection () {
 		super(driver: VerticaDriver)
@@ -71,59 +73,11 @@ class VerticaConnection extends JDBCConnection {
 		return query.rows()[0]
 	}
 
-	/**
-	 * Drop specified interval partitions in table
-	 * @param fullTableName schema and table name
-	 * @param startPartition start of the partition interval
-	 * @param finishPartition  enf of the partitions inrerval
-	 * @param isSplit force split ros containers
-	 * @param useDatePartitions partition are the dates
-	 * @return function result
-	 */
-	Map dropPartitions(String fullTableName, def startPartition, def finishPartition,
-					   boolean isSplit = false, boolean useDatePartitions = false) {
-		if (fullTableName == null)
-			throw new ExceptionGETL('Required value for parameter "fullTableName"!')
-		if (startPartition == null)
-			throw new ExceptionGETL('Required value for parameter "startPartition"!')
-		if (finishPartition == null)
-			throw new ExceptionGETL('Required value for parameter "finishPartition"!')
-
-		if (startPartition instanceof String || startPartition instanceof GString)
-			startPartition = '\'' + startPartition + '\''
-		else if (startPartition instanceof Date) {
-			if (useDatePartitions)
-				startPartition = '\'' + DateUtils.FormatDate('yyyy-MM-dd', startPartition as Date) + '\'::timestamp'
-			else
-				startPartition = '\'' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', startPartition as Date) + '\'::date'
-		}
-
-		if (finishPartition instanceof String || finishPartition instanceof GString)
-			finishPartition = '\'' + finishPartition + '\''
-		else if (finishPartition instanceof Date) {
-			if (useDatePartitions)
-				finishPartition = '\'' + DateUtils.FormatDate('yyyy-MM-dd', finishPartition as Date) + '\'::timestamp'
-			else
-				finishPartition = '\'' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', finishPartition as Date) + '\'::date'
-		}
-
-		def qry = new QueryDataset()
-		qry.with {
-			useConnection this
-			query = "SELECT DROP_PARTITIONS('{table}', {start}, {finish}, {split})"
-			queryParams.table = fullTableName
-			queryParams.start = startPartition
-			queryParams.finish = finishPartition
-			queryParams.split = isSplit
-		}
-
-		return qry.rows()[0] as Map
-	}
-
 	final def attachedVertica = [:] as Map<String, String>
 
+	/** Detect database name from connection */
 	static protected String DatabaseFromConnection(VerticaConnection con) {
-		def database
+		String database
 		if (con.connectURL != null) //noinspection DuplicatedCode
 		{
 			def p = new Path(mask: 'jdbc:vertica://{host}/{database}')
@@ -156,6 +110,8 @@ class VerticaConnection extends JDBCConnection {
 	 * @param anotherConnection attachable connection
 	 */
 	void attachExternalVertica(VerticaConnection anotherConnection) {
+		tryConnect()
+
 		if (isAttachConnection(anotherConnection))
 			throw new ExceptionGETL("The Vertica cluster \"$anotherConnection\" is already attached to the current connection!")
 
@@ -207,11 +163,214 @@ class VerticaConnection extends JDBCConnection {
 	 * @param anotherConnection detachable connection
 	 */
 	void detachExternalVertica(VerticaConnection anotherConnection) {
+		tryConnect()
+
 		def database = attachedVertica.get(anotherConnection.toString().toLowerCase())
 		if (database == null)
 			throw new ExceptionGETL("The Vertica cluster $anotherConnection is not attached to the current connection!")
 
 		executeCommand("DISCONNECT $database")
 		attachedVertica.remove(anotherConnection.toString().toLowerCase())
+	}
+
+	/**
+	 * Purge tables with deleted records
+	 * @param filter the need for table processing
+	 * @result count of purged tables
+	 */
+	Integer purgeTables(@ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaTable']) Closure<Boolean> filter) {
+		purgeTables(20, filter)
+	}
+
+	/**
+	 * Purge tables with deleted records
+	 * @param percentOfDeleteRows percentage of deleted records threshold of total
+	 * @param filter the need for table processing
+	 * @result count of purged tables
+	 */
+	Integer purgeTables(Integer percentOfDeleteRows = 20,
+					 @ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaTable']) Closure<Boolean> filter = null) {
+		tryConnect()
+
+		Integer res = 0
+
+		new QueryDataset().with {
+			useConnection this
+
+			query = """
+SELECT 
+	p.projection_schema as table_schema, 
+	p.anchor_table_name AS table_name, 
+	Sum(total_row_count) AS total_row_count, 
+	Sum(deleted_row_count) AS deleted_row_count,
+	Round(Sum(deleted_row_count) / Sum(total_row_count) * 100, 0)::int AS threshold
+FROM storage_containers c
+	INNER JOIN projections p ON p.projection_id = c.projection_id AND p.is_super_projection
+GROUP BY p.projection_schema, p.anchor_table_name
+HAVING Round(Sum(deleted_row_count) / Sum(total_row_count) * 100, 0)::int > $percentOfDeleteRows
+ORDER BY threshold DESC, table_name;
+		"""
+
+			def rows = rows()
+
+			rows.each { row ->
+				def table = new VerticaTable(connection: this, schemaName: row.table_schema, tableName: row.table_name)
+				if (filter == null || filter(table)) {
+					Logs.Fine("Purging table $table with threshold ${row.threshold} " +
+							"(total ${WithGroupSeparator(row.total_row_count as Long)} rows, " +
+							"marked for deletion ${WithGroupSeparator(row.deleted_row_count as Long)} rows)")
+					try {
+						table.purgeTable()
+						res++
+					}
+					catch (Exception e) {
+						Logs.Severe(e.message)
+					}
+				}
+			}
+		}
+
+		return res
+	}
+
+	/**
+	 * Collects and aggregates data samples and storage information from all tables in schema
+	 * @param percent percentage of data to read from disk
+	 * @return 0 — Success
+	 */
+	Integer analyzeStatistics(Integer percent) {
+		analyzeStatistics(null, percent)
+	}
+
+	/**
+	 * Collects and aggregates data samples and storage information from all tables in schema
+	 * @param schema storage scheme of analyzed tables (default all schemas)
+	 * @param percent percentage of data to read from disk
+	 * @return 0 — Success
+	 */
+	Integer analyzeStatistics(String schema = null, Integer percent = null) {
+		tryConnect()
+		if (percent != null && (percent <= 0 || percent > 100))
+			throw new ExceptionGETL("Invalid percentage value \"$percent\"!")
+
+		def qry = new QueryDataset()
+		qry.with {
+			useConnection this
+			query = "SELECT ANALYZE_STATISTICS('{schema}'{percent}) AS res"
+			queryParams.schema = (schema?:'')
+			queryParams.percent = (percent != null)?", $percent":''
+		}
+
+		return qry.rows()[0].res as Integer
+	}
+
+	/**
+	 * Runs Workload Analyzer, a utility that analyzes system information held in system tables
+	 * @param scope specifies the catalog objects to analyze, as follows
+	 * @param saveData specifies whether to save returned values from ANALYZE_WORKLOAD
+	 * @return Returns aggregated tuning recommendations from TUNING_RECOMMENDATIONS
+	 */
+	List<Map<String, Object>> analyzeWorkload(String scope = null, Boolean saveData = null) {
+		doAnalyzeWorkload(scope, null, saveData)
+	}
+
+	/**
+	 * Runs Workload Analyzer, a utility that analyzes system information held in system tables
+	 * @param saveData specifies whether to save returned values from ANALYZE_WORKLOAD
+	 * @return Returns aggregated tuning recommendations from TUNING_RECOMMENDATIONS
+	 */
+	List<Map<String, Object>> analyzeWorkload(Boolean saveData) {
+		doAnalyzeWorkload(null, null, saveData)
+	}
+
+	/**
+	 * Runs Workload Analyzer, a utility that analyzes system information held in system tables
+	 * @param scope specifies the catalog objects to analyze, as follows
+	 * @param specifiedTime specifies the start time for the analysis time span, which continues up to the current system status, inclusive
+	 * @return Returns aggregated tuning recommendations from TUNING_RECOMMENDATIONS
+	 */
+	List<Map<String, Object>> analyzeWorkload(String scope, Date specifiedTime) {
+		doAnalyzeWorkload(scope, specifiedTime, false)
+	}
+
+	/**
+	 * Runs Workload Analyzer, a utility that analyzes system information held in system tables
+	 * @param specifiedTime specifies the start time for the analysis time span, which continues up to the current system status, inclusive
+	 * @return Returns aggregated tuning recommendations from TUNING_RECOMMENDATIONS
+	 */
+	List<Map<String, Object>> analyzeWorkload(Date specifiedTime) {
+		doAnalyzeWorkload(null, specifiedTime, false)
+	}
+
+	/**
+	 * Runs Workload Analyzer, a utility that analyzes system information held in system tables
+	 * @param scope specifies the catalog objects to analyze, as follows
+	 * @param specifiedTime specifies the start time for the analysis time span, which continues up to the current system status, inclusive
+	 * @param saveData specifies whether to save returned values from ANALYZE_WORKLOAD
+	 * @return Returns aggregated tuning recommendations from TUNING_RECOMMENDATIONS
+	 */
+	private List<Map<String, Object>> doAnalyzeWorkload(String scope, Date specifiedTime, Boolean saveData) {
+		tryConnect()
+
+		def qry = new QueryDataset()
+		qry.with {
+			useConnection this
+			if (specifiedTime != null) {
+				query = "SELECT ANALYZE_WORKLOAD('{scope}', '{time}'::timestamp)"
+				queryParams.time = specifiedTime
+			}
+			else {
+				query = "SELECT ANALYZE_WORKLOAD('{scope}', {save})"
+				queryParams.save = BoolUtils.IsValue(saveData)
+			}
+			queryParams.scope = (scope?:'')
+		}
+
+		return qry.rows()
+	}
+
+	/**
+	 * Runs Workload Analyzer and recommendations issued
+	 * @param tunningRows rows from system table v_monitor.tuning_recommendations or the result of calling function "analyzeWorkload"
+	 * @return count of recommendations processed
+	 */
+	Integer processWorkload(List<Map<String, Object>> analyzeRows) {
+		def tempTables = new QueryDataset(connection: this).with {
+			query = '''
+SELECT Lower(table_schema || '.' || table_name) AS name 
+FROM tables 
+WHERE NOT is_temp_table 
+ORDER BY name
+'''
+			return rows().collect { row -> row.name }
+		} as List<String>
+
+		def res = 0
+		analyzeRows.each { row ->
+			if ((row.tuning_description as String).substring(0, 18).toLowerCase() == 'analyze statistics') {
+				def t = (row.tuning_parameter as String).toLowerCase()
+				if (t.matches(".*[.].*[.].*"))
+					t = t.substring(0, t.lastIndexOf("."))
+
+				if (!(t in tempTables)) {
+					def ptw = new ProcessTime(name: row.tuning_description, debug: true)
+					def queryStat = (row.tuning_command as String).replace('"', '')
+					try {
+						executeCommand(command: queryStat)
+						ptw.finish()
+						Logs.Info("Rebuild statistics for $t complete")
+						res++
+					}
+					catch (Exception e) {
+						Logs.Severe("Found error for $t: ${e.message}")
+					}
+				}
+			}
+			else {
+				Logs.Fine("Skip recommendation ${row.tuning_description}")
+			}
+		}
+
+		return res
 	}
 }

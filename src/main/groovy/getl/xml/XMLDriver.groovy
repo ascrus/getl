@@ -30,6 +30,7 @@ import getl.data.*
 import getl.driver.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.xml.XmlParser
 
 /**
  * XML driver class

@@ -2,11 +2,8 @@ package getl.files
 
 import getl.tfs.TFS
 import getl.utils.DateUtils
-import getl.utils.FileUtils
 import getl.utils.Logs
-import getl.utils.Path
 import getl.utils.StringUtils
-import org.apache.poi.ss.usermodel.DateUtil
 import org.junit.Test
 
 /**
@@ -224,8 +221,6 @@ abstract class ManagerTest extends getl.test.GetlTest {
         if (!manager.allowCommand) return
         assert manager.hostOS in [Manager.winOS, Manager.unixOS]
 
-        StringBuilder out = new StringBuilder(), err = new StringBuilder()
-
         manager.changeDirectoryToRoot()
         manager.changeDirectory("${catalogDirName}_1")
         manager.changeDirectory("${subdirDirName}_1")
@@ -236,21 +231,22 @@ abstract class ManagerTest extends getl.test.GetlTest {
         else
             cmd = "cat \"$subdirFileName\""
 
-        def res = manager.doCommand(cmd, out, err)
-        assertEquals(err.toString(), 0, res)
-        assertEquals('child file\n', out.toString())
+        manager.with {
+            processes {
+                run cmd
+                assertEquals(lastErrors, 0, lastResult)
+                assertEquals(lastErrors, 'child file\n', lastConsole)
 
-        out = new StringBuilder()
-        err = new StringBuilder()
-        res = manager.doCommand(cmd + '1', out, err)
-        assertEquals(err.toString(), 1, res)
+                run cmd + '1'
+                assertEquals(lastErrors, 1, lastResult)
+                assertNotNull(lastErrors)
 
-        if (manager.hostOS == Manager.winOS) {
-            out = new StringBuilder()
-            err = new StringBuilder()
-            res = manager.doCommand('echo [{\'$"123"$\'}]', out, err)
-            assertEquals(err.toString(), 0, res)
-            assertEquals('[{\'$"123"$\'}]\n', out.toString())
+                if (hostOS == Manager.winOS) {
+                    run'echo [{\'$"123"$\'}]'
+                    assertEquals(lastErrors, 0, lastResult)
+                    assertEquals(lastErrors, '[{\'$"123"$\'}]\n', lastConsole)
+                }
+            }
         }
     }
 }

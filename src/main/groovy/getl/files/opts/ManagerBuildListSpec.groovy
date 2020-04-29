@@ -63,6 +63,16 @@ class ManagerBuildListSpec extends BaseSpec {
     /** Create history table if not exists (default false) */
     void setCreateHistoryTable(Boolean value) {params.createStory = value }
 
+    /** Include in the list only files that are in the processing history */
+    Boolean getOnlyFromStory() { params.onlyFromStory as Boolean }
+    /** Include in the list only files that are in the processing history */
+    void setOnlyFromStory(Boolean value) { params.onlyFromStory = value }
+
+    /** Ignore file processing history */
+    Boolean getIgnoreStory() { params.ignoreStory as Boolean }
+    /** Ignore file processing history */
+    void setIgnoreStory(Boolean value) { params.ignoreStory = value }
+
     /** Processing subdirectories (default false) */
     Boolean getRecursive() { params.recursive as Boolean }
     /** Processing subdirectories (default false) */

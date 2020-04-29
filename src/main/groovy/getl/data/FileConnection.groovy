@@ -41,6 +41,10 @@ import groovy.transform.stc.SimpleType
  *
  */
 abstract class FileConnection extends Connection {
+	FileConnection () {
+		super()
+	}
+
 	FileConnection (Map params) {
 		super(params)
 		if (!BoolUtils.ClassInstanceOf(params.driver as Class, FileDriver)) throw new ExceptionGETL("Requider FileDriver instance class for connection")

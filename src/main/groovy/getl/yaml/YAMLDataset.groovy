@@ -52,6 +52,7 @@ class YAMLDataset extends StructureFileDataset {
     /** Use specified connection */
     YAMLConnection useConnection(YAMLConnection value) {
         setConnection(value)
+        return value
     }
 
     /** Current YAML connection */

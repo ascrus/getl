@@ -300,7 +300,7 @@ class FileManager extends Manager {
 		try {
 			def env = [] as List<String>
 			System.getenv().each { k, v ->
-				env << "$k=$v"
+				env << ("$k=$v").toString()
 			}
 			if (Config.isWindows()) command = "cmd /c $command".toString()
 			String[] envList = env.toArray(String[])

@@ -33,7 +33,6 @@ import getl.jdbc.JDBCDriver
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class PostgreSQLConnection extends JDBCConnection {
 	PostgreSQLConnection() {
 		super(driver: PostgreSQLDriver)

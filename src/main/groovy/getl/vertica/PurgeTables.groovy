@@ -29,12 +29,14 @@ import getl.proc.*
 import getl.utils.*
 import getl.jdbc.*
 import getl.stat.*
+import groovy.transform.InheritConstructors
 
 /**
  * Run purge on Vertica defragmentation tables 
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class PurgeTables extends Job {
 	VerticaConnection cVertica = new VerticaConnection(config: "vertica")
 	QueryDataset qTables = new QueryDataset(connection: cVertica)

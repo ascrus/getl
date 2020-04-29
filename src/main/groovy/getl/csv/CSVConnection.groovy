@@ -36,7 +36,6 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
 class CSVConnection extends FileConnection {
 	CSVConnection () {
 		super([driver: CSVDriver])

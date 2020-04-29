@@ -38,6 +38,7 @@ import getl.utils.ListUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.StringUtils
+import groovy.transform.InheritConstructors
 
 import java.util.regex.Matcher
 
@@ -45,6 +46,7 @@ import java.util.regex.Matcher
  * Reverse engineering database model to sql file as DDL operators
  * @author Aleksey Konstantinov
  */
+@InheritConstructors
 class ReverseEngineering extends Job {
 	final static version = 1.1
 

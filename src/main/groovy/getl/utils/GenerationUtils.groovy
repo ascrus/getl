@@ -1238,7 +1238,7 @@ sb << """
 	
 	/**
 	 * Convert all dataset fields to string
-	 * @param dataset
+	 * @param dataset source dataset
 	 */
 	@groovy.transform.CompileStatic
 	static void ConvertToStringFields (Dataset dataset) {
@@ -1246,11 +1246,12 @@ sb << """
 	}
 	
 	/**
-	 * Return object name with SQL syntax
-	 * @param name
-	 * @return
+	 * Return field name with SQL syntax
+	 * @param dataset source dataset
+	 * @param name field name
+	 * @return processed field name
 	 */
-	static String SqlObjectName (JDBCDataset dataset, String name) {
+	static String SqlObjectName(JDBCDataset dataset, String name) {
 		JDBCDriver drv = dataset.connection.driver as JDBCDriver
 
         return drv.prepareObjectNameForSQL(name, dataset)
@@ -1258,21 +1259,21 @@ sb << """
 
 	/**
 	 * Return object name with SQL syntax
-	 * @param connection
-	 * @param name
-	 * @return
+	 * @param connection source connection
+	 * @param name field name
+	 * @return processed field name
 	 */
-	static String SqlObjectName (JDBCConnection connection, String name) {
+	static String SqlObjectName(JDBCConnection connection, String name) {
 		JDBCDriver drv = connection.driver as JDBCDriver
 
 		return drv.prepareObjectNameForSQL(name)
 	}
 	
 	/**
-	 * Return list object name with SQL syntax 
-	 * @param connection
-	 * @param listNames
-	 * @return
+	 * Return list object name with SQL syntax
+	 * @param dataset source dataaset
+	 * @param listNames list of field name
+	 * @return list of processed field name
 	 */
 	static List<String> SqlListObjectName (JDBCDataset dataset, List<String> listNames) {
 		List<String> res = []
@@ -1285,10 +1286,27 @@ sb << """
         return res
 	}
 
+	/**
+	 * Return list object name with SQL syntax
+	 * @param connection source connection
+	 * @param listNames list of field name
+	 * @return list of processed field name
+	 */
+	static List<String> SqlListObjectName (JDBCConnection connection, List<String> listNames) {
+		List<String> res = []
+		JDBCDriver drv = connection.driver as JDBCDriver
+
+		listNames.each { name ->
+			res << drv.prepareObjectNameForSQL(name)
+		}
+
+		return res
+	}
+
     /**
      * Remove all pseudo character in field name
-     * @param fieldName
-     * @return
+     * @param fieldName field name
+     * @return processed field name
      */
 	static String Field2ParamName(String fieldName) {
 		if (fieldName == null) return null

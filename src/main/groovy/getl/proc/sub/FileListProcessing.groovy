@@ -73,6 +73,16 @@ abstract class FileListProcessing {
     /** Source file manager */
     void setSource(Manager value) { params.source = value }
 
+    /** Include in the list only files that are in the processing history */
+    Boolean getOnlyFromStory() { BoolUtils.IsValue(params.onlyFromStory) }
+    /** Include in the list only files that are in the processing history */
+    void setOnlyFromStory(Boolean value) { params.onlyFromStory = value }
+
+    /** Ignore file processing history */
+    Boolean getIgnoreStory() { BoolUtils.IsValue(params.ignoreStory) }
+    /** Ignore file processing history */
+    void setIgnoreStory(Boolean value) { params.ignoreStory = value }
+
     /** Temporary directory path */
     String getTempPath() { (params.tempPath as String)?:TFS.systemPath }
     /** Temporary directory path */
@@ -492,8 +502,9 @@ abstract class FileListProcessing {
      */
     protected void buildList () {
         def pt = profile("Getting a list of files from the source ${source.toString()}", "file")
-        source.buildList([path: sourcePath, recursive: true, takePathInStory: true,
-                          extendFields: extendedFields, extendIndexes: extendedIndexes], createBuildList())
+        source.buildList([path: sourcePath, recursive: true, takePathInStory: true, onlyFromStory: onlyFromStory,
+                          ignoreStory: ignoreStory, extendFields: extendedFields, extendIndexes: extendedIndexes],
+                createBuildList())
         pt.finish(source.countFileList)
 
         tmpProcessFiles = source.fileList
@@ -588,7 +599,7 @@ abstract class FileListProcessing {
             }
         }
 
-        if (source.story != null && cacheFilePath != null) {
+        if (source.story != null && cacheFilePath != null && !ignoreStory && !onlyFromStory) {
             FileUtils.ValidFilePath(cacheFilePath)
             cacheConnection = new H2Connection().with {
                 connectDatabase = cacheFilePath
@@ -638,10 +649,12 @@ abstract class FileListProcessing {
         if (removeEmptyDirs)
             Logs.Fine('  after processing files, empty directories will be removed on the source')
 
-        if (source.story != null) {
+        if (source.story != null && !ignoreStory) {
             Logs.Fine("  table ${source.story.fullTableName} will be used to store file processing history")
             if (cacheFilePath != null)
                 Logs.Fine("  file \"$cacheFilePath\" will be used to cache file processing history")
+            if (onlyFromStory)
+                Logs.Fine("  only files that are present in the processing history will be processed")
         }
     }
 
@@ -712,7 +725,7 @@ abstract class FileListProcessing {
                     cacheTable.clearKeys()
                     cacheTable.create()
                 }
-                currentStory = cacheTable?:source.story
+                currentStory = (!ignoreStory && !onlyFromStory)?(cacheTable?:source.story):null
 
                 try {
                     processFiles()

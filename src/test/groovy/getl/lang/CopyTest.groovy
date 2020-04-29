@@ -112,8 +112,6 @@ class CopyTest extends GetlDslTest {
 
                 if (cacheStory)
                     cacheFilePath = "${this.workPath}/filecopiercache"
-                if (!this.debug)
-                    new TDS(connectDatabase: cacheFilePath)
 
                 numberAttempts = 3
                 timeAttempts = 2
@@ -353,13 +351,13 @@ class CopyTest extends GetlDslTest {
 
     @Test
     void testCleaner() {
-        generateSource()
-
         Dsl(this) {
             def historyTable = 'history_remove'
             embeddedTable(historyTable, true) {
                 tableName = historyTable
             }
+
+            this.generateSource()
 
             files('source') {
                 useStory embeddedTable(historyTable)
@@ -369,16 +367,57 @@ class CopyTest extends GetlDslTest {
 
             def countFiles = fileCleaner(files('source')) {
                 sourcePath = this.sourceMask
-                removeFiles = true
                 cacheFilePath = "${this.workPath}/filecleancache"
-                if (!this.debug)
-                    new TDS(connectDatabase: cacheFilePath)
             }.countFiles
-
             testCase {
                 assertEquals(81, countFiles)
                 assertEquals(81, embeddedTable(historyTable).countRow())
             }
+
+            this.generateSource()
+            countFiles = fileCleaner(files('source')) {
+                sourcePath = this.sourceMask
+                cacheFilePath = "${this.workPath}/filecleancache"
+            }.countFiles
+            testCase {
+                assertEquals(0, countFiles)
+                assertEquals(81, embeddedTable(historyTable).countRow())
+            }
+
+            countFiles = fileCleaner(files('source')) {
+                sourcePath = this.sourceMask
+                cacheFilePath = "${this.workPath}/filecleancache"
+                onlyFromStory = true
+            }.countFiles
+            testCase {
+                assertEquals(81, countFiles)
+                assertEquals(81, embeddedTable(historyTable).countRow())
+            }
+
+            this.generateSource()
+            countFiles = fileCleaner(files('source')) {
+                sourcePath = this.sourceMask
+                cacheFilePath = "${this.workPath}/filecleancache"
+                ignoreStory = true
+            }.countFiles
+            testCase {
+                assertEquals(81, countFiles)
+                assertEquals(81, embeddedTable(historyTable).countRow())
+            }
+
+            files('source').story.truncate()
+            this.generateSource()
+            countFiles = fileCleaner(files('source')) {
+                sourcePath = this.sourceMask
+                cacheFilePath = "${this.workPath}/filecleancache"
+                ignoreStory = true
+            }.countFiles
+            testCase {
+                assertEquals(81, countFiles)
+                assertEquals(0, embeddedTable(historyTable).countRow())
+            }
+
+            embeddedTable(historyTable).drop()
         }
     }
 }
