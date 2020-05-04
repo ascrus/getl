@@ -137,7 +137,7 @@ class EMailer {
 	/** Emailer enabled */
 	Boolean getActive () { BoolUtils.IsValue(params.active, true) }
 	/** Emailer enabled */
-	void setActive (boolean value) { params.active = value }
+	void setActive (Boolean value) { params.active = value }
 
 	/** Subject for mail */
 	String getSubject() { params.subject as String }
