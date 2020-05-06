@@ -35,10 +35,12 @@ import groovy.json.JsonSlurper
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings("DuplicatedCode")
 class ConfigFiles extends ConfigManager {
     @Override
     boolean getEvalVars() { true }
 
+    @SuppressWarnings("DuplicatedCode")
     @Override
     void init(Map<String, Object> initParams) {
         if (initParams?.config == null) return
@@ -195,6 +197,7 @@ class ConfigFiles extends ConfigManager {
         return data as Map<String, Object>
 	}
 
+    @SuppressWarnings("DuplicatedCode")
     @Override
     void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
         def fp = (saveParams?.path as String)?:this.path

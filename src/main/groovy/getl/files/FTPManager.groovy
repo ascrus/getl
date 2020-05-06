@@ -483,6 +483,7 @@ class FTPManager extends Manager {
         }
     }
 
+	@SuppressWarnings("DuplicatedCode")
 	@Override
 	String toString() {
 		if (server == null) return 'ftp'

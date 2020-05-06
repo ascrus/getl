@@ -294,6 +294,7 @@ class FileManager extends Manager {
 	@Override
 	boolean isAllowCommand() { true }
 
+	@SuppressWarnings("DuplicatedCode")
 	@Override
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) {
 		Process p

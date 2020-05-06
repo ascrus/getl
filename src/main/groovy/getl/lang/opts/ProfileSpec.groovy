@@ -42,8 +42,8 @@ class ProfileSpec extends BaseSpec {
         this.isProfile = isProfile
         statistics = new ProcessTime(
                 name: name,
-                logLevel: (isProfile)?Level.INFO:(Getl.GetlInstance().langOpts.processTimeLevelLog),
-                debug: (isProfile)?true:(Getl.GetlInstance().langOpts.processTimeDebug),
+                logLevel: (isProfile)?Level.INFO:(Getl.GetlInstance().options().processTimeLevelLog),
+                debug: (isProfile)?true:(Getl.GetlInstance().options().processTimeDebug),
                 objectName: objectName?:'row',
                 abbrName: (isProfile)?'<PROFILE>':'<STAT>'
         )

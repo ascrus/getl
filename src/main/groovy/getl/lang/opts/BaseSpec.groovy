@@ -73,7 +73,7 @@ class BaseSpec {
         parent.with(cl)
     }
 
-    Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
+    private Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
     /** Object parameters */
     Map<String, Object> getParams() { _params }
 

@@ -378,6 +378,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
         return res
     }
 
+    @SuppressWarnings("DuplicatedCode")
     @Override
     protected void processFiles() {
         counterErrors.clear()

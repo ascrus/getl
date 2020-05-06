@@ -312,6 +312,7 @@ class Flow {
 	/**
 	 * Copy rows from dataset to other dataset
 	 */
+	@SuppressWarnings("DuplicatedCode")
 	long copy (Map params,
 			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
 					   Closure map_code = null) {
@@ -710,6 +711,7 @@ class Flow {
 	 *
 	 * @param params - parameters
 	 */
+	@SuppressWarnings("DuplicatedCode")
 	long writeTo(Map params,
 				 @ClosureParams(value = SimpleType, options = ['groovy.lang.Closure'])
 						 Closure code = null) {
@@ -1093,6 +1095,7 @@ class Flow {
 	/**
 	 * Read and proccessed data from dataset
 	 */
+	@SuppressWarnings("DuplicatedCode")
 	long process(Map params,
 				 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 						 Closure code = null) {

@@ -292,6 +292,7 @@ class Executor {
 	 * @param countThread number of threads running simultaneously
 	 * @param code list item processing code
 	 */
+	@SuppressWarnings(["DuplicatedCode"])
 	void run(List elements = list, Integer countThread = countProc, Closure code) {
 		if (isRunThreads)
 			throw new ExceptionGETL('Cannot start "run" method when threads are running!')

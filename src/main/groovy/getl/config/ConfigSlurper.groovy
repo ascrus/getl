@@ -33,7 +33,9 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings("DuplicatedCode")
 class ConfigSlurper extends ConfigManager {
+	@SuppressWarnings("DuplicatedCode")
 	@Override
 	void init(Map<String, Object> initParams) {
 		if (Job.jobArgs.environment != null) environment = Job.jobArgs.environment
@@ -288,6 +290,7 @@ class ConfigSlurper extends ConfigManager {
 		return res
 	}
 
+	@SuppressWarnings("DuplicatedCode")
 	@Override
 	void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
 		def fp = (saveParams?.path as String)?:this.path

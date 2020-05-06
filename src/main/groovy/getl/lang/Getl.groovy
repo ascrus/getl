@@ -301,17 +301,16 @@ Examples:
     }
 
     /** Abort execution with the specified error */
+    @SuppressWarnings("GrMethodMayBeStatic")
     void abortWithError(String message) {
         throw new Exception(message)
     }
 
     /** The name of the main class of the process */
-    String getMainClassName() { _params.mainClass }
+    String getMainClassName() { _params.mainClass as String }
 
     /** The name of the process initializing class */
-    String getInitClassName() { _params.initClass }
-
-    static private operationLock = new Object()
+    String getInitClassName() { _params.initClass as String }
 
     /** Checking process permission */
     @Synchronized
@@ -367,21 +366,23 @@ Examples:
         _configOpts = new ConfigSpec()
         _logOpts = new LogSpec()
 
+        _listRepository = new ConcurrentHashMap<String, RepositoryObjects>() as Map<String, RepositoryObjects>
         _repositoryConnections = new RepositoryConnections()
         _repositoryDatasets = new RepositoryDatasets()
         _repositoryHistorypoints = new RepositoryHistorypoints()
         _repositorySequences = new RepositorySequences()
         _repositoryFilemanagers = new RepositoryFilemanagers()
 
-        _params.langOpts =_langOpts
+        _params.langOpts = _langOpts
         _params.configOpts = _configOpts
         _params.logOpts = _logOpts
 
-        _params.repositoryConnections = _repositoryConnections
-        _params.repositoryDatasets = _repositoryDatasets
-        _params.repositoryHistorypoints = _repositoryHistorypoints
-        _params.repositorySequences = _repositorySequences
-        _params.repositoryFilemanagers = _repositoryFilemanagers
+        _params.listRepository = _listRepository
+        registerRepository('connections', _repositoryConnections)
+        registerRepository('datasets', _repositoryDatasets)
+        registerRepository('historypoints', _repositoryHistorypoints)
+        registerRepository('sequences', _repositorySequences)
+        registerRepository('filemanagers', _repositoryFilemanagers)
     }
 
     @Override
@@ -412,7 +413,9 @@ Examples:
     static boolean GetlInstanceCreated() { _getl != null }
 
     /* Owner object for instance DSL */
-    private _ownerObject
+    private Object _ownerObject
+    /* Owner object for instance DSL */
+    Object getGetlOwnerObject() { _ownerObject }
 
     /** Run DSL script on getl share object */
     static Object Dsl(def ownerObject, Map parameters,
@@ -493,13 +496,6 @@ Examples:
         runDsl(null, cl)
     }
 
-    /** Owner object for child objects  */
-    Object getChildOwnerObject() { this }
-    /** This object for child objects */
-    Object getChildThisObject() { _ownerObject ?: this }
-    /** Delegate method for child objects */
-    private static int childDelegate = Closure.DELEGATE_FIRST
-
     /** Engine parameters */
     private Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
     /** Get engine parameter */
@@ -509,30 +505,36 @@ Examples:
         _params.put(key, value)
     }
 
+    /** list of repository managers instance */
+    private Map<String, RepositoryObjects> _listRepository
+    /** Register repository in list */
+    protected void registerRepository(String name, RepositoryObjects repository) {
+        if (_listRepository.containsKey(name))
+            throw new ExceptionDSL("Repository \"$name\" already registering!")
+
+        _listRepository.put(name, repository)
+    }
+
     /** Running init script */
     Boolean getIsInitMode() { BoolUtils.IsValue(_params.isInitMode) }
 
     /** Set language parameters */
-    protected void setGetlParams(Map<String, Object> importParams) {
-        _params = importParams
+    protected void importGetlParams(Map<String, Object> importParams) {
+        if (importParams == null) return
 
-        _langOpts = _params.langOpts as LangSpec
-        _configOpts = _params.configOpts as ConfigSpec
-        _logOpts = _params.logOpts as LogSpec
+        _params.putAll(MapUtils.Copy(importParams, ['listRepository']))
 
-        /*if (!isInitMode) {
-            _langOpts.params.clear()
-            _langOpts.params.putAll((_params.langOpts as LangSpec).params)
+        _langOpts = importParams.langOpts as LangSpec
+        _configOpts = importParams.configOpts as ConfigSpec
+        _logOpts = importParams.logOpts as LogSpec
+
+        def listReps = importParams.listRepository as Map<String, RepositoryObjects>
+        if (listReps != null) {
+            def l = _listRepository
+            listReps.each { name, rep ->
+                l.get(name).objects = rep.objects
+            }
         }
-        else {
-            _langOpts = _params.langOpts as LangSpec
-        }*/
-
-        _repositoryConnections.objects = (_params.repositoryConnections as RepositoryConnections).objects
-        _repositoryDatasets.objects = (_params.repositoryDatasets as RepositoryDatasets).objects
-        _repositoryHistorypoints.objects = (_params.repositoryHistorypoints as RepositoryHistorypoints).objects
-        _repositorySequences.objects = (_params.repositorySequences as RepositorySequences).objects
-        _repositoryFilemanagers.objects = (_params.repositoryFilemanagers as RepositoryFilemanagers).objects
     }
 
     /** Fix start process */
@@ -557,20 +559,13 @@ Examples:
         parent.finishProfile()
     }
 
-
-    /** Engine options */
-    private LangSpec _langOpts
-
-    /** Engine options */
-    LangSpec getLangOpts() { _langOpts }
-
     /** list of executed script classes and call parameters */
     protected SynchronizeObject getExecutedClasses() { _params.executedClasses as SynchronizeObject }
 
     /** Repository object filtering manager */
-    private def repositoryFilter = new RepositoryFilter()
+    private def _repositoryFilter = new RepositoryFilter()
     /** Specified filter when searching for objects */
-    String getFilteringGroup() { repositoryFilter.filteringGroup }
+    String getFilteringGroup() { _repositoryFilter.filteringGroup }
 
     /** Use the specified filter by group name when searching for objects */
     void forGroup(String group) {
@@ -579,20 +574,20 @@ Examples:
         if (isCurrentProcessInThread())
             throw new ExceptionDSL('Using group filtering within a threads is not allowed!')
 
-        repositoryFilter.filteringGroup = group.trim().toLowerCase()
+        _repositoryFilter.filteringGroup = group.trim().toLowerCase()
     }
 
     /** Reset filter to search for objects */
-    void clearGroupFilter() { repositoryFilter.clearGroupFilter() }
+    void clearGroupFilter() { _repositoryFilter.clearGroupFilter() }
 
     /** Repository object name */
     String repObjectName(String name) {
-        repositoryFilter.objectName(name)
+        _repositoryFilter.objectName(name)
     }
 
     /** Parsing the name of an object from the repository into a group and the name itself */
     ParseObjectName parseName(String name) {
-        repositoryFilter.parseName(name)
+        _repositoryFilter.parseName(name)
     }
 
     /**
@@ -615,8 +610,6 @@ Examples:
 
     /** Connections repository */
     private RepositoryConnections _repositoryConnections
-    /** Connections repository */
-    RepositoryConnections getRepositoryConnections() { _repositoryConnections }
 
     /**
      * Return list of repository connections for specified mask, classes and filter
@@ -795,8 +788,6 @@ Examples:
 
     /** Datasets repository */
     private RepositoryDatasets _repositoryDatasets
-    /** Datasets repository */
-    RepositoryDatasets getRepositoryDatasets() { _repositoryDatasets }
 
     /**
      * Return list of repository name datasets for specified mask, class and filter
@@ -989,19 +980,19 @@ Examples:
 
     /** Last used JDBC default connection */
     private JDBCConnection _lastJDBCDefaultConnection
-    private final Object lockLastJDBCDefaultConnection = new Object()
+    private final Object _lockLastJDBCDefaultConnection = new Object()
 
     /** Last used JDBC default connection */
     JDBCConnection getLastJdbcDefaultConnection() {
         JDBCConnection res
-        synchronized (lockLastJDBCDefaultConnection) {
+        synchronized (_lockLastJDBCDefaultConnection) {
             res = _lastJDBCDefaultConnection
         }
         return res
     }
     /** Last used JDBC default connection */
     void setLastJdbcDefaultConnection(JDBCConnection value) {
-        synchronized (lockLastJDBCDefaultConnection) {
+        synchronized (_lockLastJDBCDefaultConnection) {
             _lastJDBCDefaultConnection = value
         }
     }
@@ -1043,7 +1034,7 @@ Examples:
             throw new ExceptionDSL('Specifying the default connection is not allowed in thread!')
 
         if (datasetClassName != null) {
-            if (!(datasetClassName in repositoryDatasets.listJdbcClasses))
+            if (!(datasetClassName in _repositoryDatasets.listJdbcClasses))
                 throw new ExceptionDSL("$datasetClassName is not jdbc dataset class!")
             _defaultJDBCConnection.put(datasetClassName, value)
         }
@@ -1054,19 +1045,19 @@ Examples:
 
     /** Last used file default connection */
     private FileConnection _lastFileDefaultConnection
-    private final Object lockLastFileDefaultConnection = new Object()
+    private final Object _lockLastFileDefaultConnection = new Object()
 
     /** Last used file default connection */
     FileConnection getLastFileDefaultConnection() {
         FileConnection res
-        synchronized (lockLastFileDefaultConnection) {
+        synchronized (_lockLastFileDefaultConnection) {
             res = _lastFileDefaultConnection
         }
         return res
     }
     /** Last used file default connection */
     void setLastFileDefaultConnection(FileConnection value) {
-        synchronized (lockLastFileDefaultConnection) {
+        synchronized (_lockLastFileDefaultConnection) {
             _lastFileDefaultConnection = value
         }
     }
@@ -1117,19 +1108,19 @@ Examples:
 
     /** Last used other type default connection */
     private Connection _lastOtherDefaultConnection
-    private final Object lockLastOtherDefaultConnection = new Object()
+    private final Object _lockLastOtherDefaultConnection = new Object()
 
     /** Last used other type default connection */
     Connection getLastOtherDefaultConnection() {
         Connection res
-        synchronized (lockLastOtherDefaultConnection) {
+        synchronized (_lockLastOtherDefaultConnection) {
             res = _lastOtherDefaultConnection
         }
         return res
     }
     /** Last used other type default connection */
     void setLastOtherDefaultConnection(Connection value) {
-        synchronized (lockLastOtherDefaultConnection) {
+        synchronized (_lockLastOtherDefaultConnection) {
             _lastOtherDefaultConnection = value
         }
     }
@@ -1226,8 +1217,6 @@ Examples:
 
     /** History points repository */
     private RepositoryHistorypoints _repositoryHistorypoints
-    /** History points repository */
-    RepositoryHistorypoints getRepositoryHistorypoints() { _repositoryHistorypoints }
 
     /**
      * Return list of repository history point manager
@@ -1318,8 +1307,6 @@ Examples:
 
     /** Sequences repository */
     private RepositorySequences _repositorySequences
-    /** Sequences repository */
-    RepositorySequences getRepositorySequences() { _repositorySequences }
 
     /**
      * Return list of repository sequences
@@ -1410,8 +1397,6 @@ Examples:
 
     /** File managers repository */
     private RepositoryFilemanagers _repositoryFilemanagers
-    /** File managers repository */
-    RepositoryFilemanagers getRepositoryFilemanagers() { _repositoryFilemanagers }
 
     /**
      * Return list of repository file managers for specified mask, class and filter
@@ -1666,7 +1651,7 @@ Examples:
             if (script instanceof Getl) {
                 def scriptGetl = script as Getl
                 _setGetlInstance(scriptGetl)
-                scriptGetl.setGetlParams(_params)
+                scriptGetl.importGetlParams(_params)
 
                 InitGetlClass(scriptGetl)
                 if (vars != null && !vars.isEmpty()) {
@@ -2031,6 +2016,7 @@ Examples:
     }
 
     /** Run closure with call parent parameter */
+    @SuppressWarnings("GrMethodMayBeStatic")
     protected Object runClosure(Object parent, Closure cl) {
         if (cl == null) return null
         return parent.with(cl)
@@ -2086,9 +2072,13 @@ Examples:
     /** System temporary directory */
     static String getSystemTempPath() { TFS.systemPath }
 
+    @SuppressWarnings("GrMethodMayBeStatic")
     boolean isCurrentProcessInThread() { Thread.currentThread() instanceof ExecutorThread }
 
-    /** GETL DSL options */
+    /** Getl options instance */
+    private LangSpec _langOpts
+
+    /** Getl options */
     @Synchronized("_langOpts")
     LangSpec options(@DelegatesTo(LangSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LangSpec']) Closure cl = null) {
@@ -3015,7 +3005,8 @@ Examples:
                            @DelegatesTo(TDS)
                            @ClosureParams(value = SimpleType, options = ['getl.tfs.TDS']) Closure cl = null) {
         def parent = registerConnection(_repositoryConnections.EMBEDDEDCONNECTION, name, registration) as TDS
-        if (parent.sqlHistoryFile == null) parent.sqlHistoryFile = _langOpts.tempDBSQLHistoryFile
+        if (parent.sqlHistoryFile == null)
+            parent.sqlHistoryFile = _langOpts.tempDBSQLHistoryFile
         runClosure(parent, cl)
 
         return parent
@@ -4400,13 +4391,9 @@ Examples:
     }
 
     /** Сonvert code variables to a map */
+    @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> toVars(Closure cl) {
-        /*def own = DetectClosureDelegate(cl)
-        def code = PrepareClosure(own, childThisObject, own, cl)*/
         def env = (Config.configClassManager instanceof ConfigSlurper)?((Config.configClassManager as ConfigSlurper).environment):'prod'
         return MapUtils.Closure2Map(env, cl)
     }
-
-    /* TODO: add Counter repository object */
-    /* TODO: add control process history (complete process elements, analog s_copy_to_impala) */
 }

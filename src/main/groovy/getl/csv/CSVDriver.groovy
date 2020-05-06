@@ -996,6 +996,7 @@ class CSVDriver extends FileDriver {
 		if (code != null) code.call(values)
 	}
 
+	@SuppressWarnings("DuplicatedCode")
 	static long decodeBulkCSV (CSVDataset target, CSVDataset source) {
 		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
 		

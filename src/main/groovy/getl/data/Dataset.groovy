@@ -1123,6 +1123,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param writer write descriptor
 	 * @fieldList list of writing fields (by default write all fields)
 	 */
+	@SuppressWarnings("DuplicatedCode")
 	@Synchronized
 	void saveDatasetMetadataToJSON(Writer writer, List<String> fieldList = null) {
 		List<Field> fl = []
@@ -1156,6 +1157,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param file destination file
 	 * @fieldList list of writing fields (by default write all fields)
 	 */
+	@SuppressWarnings("DuplicatedCode")
 	@Synchronized
 	void saveDatasetMetadataToSlurper(File file, List<String> fieldList = null) {
 		List<Field> fl = []

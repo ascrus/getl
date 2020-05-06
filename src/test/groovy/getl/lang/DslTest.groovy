@@ -4,6 +4,7 @@ import getl.csv.CSVConnection
 import getl.files.FileManager
 import getl.h2.*
 import getl.jdbc.TableDataset
+import getl.lang.sub.RepositoryDatasets
 import getl.proc.Job
 import getl.test.GetlDslTest
 import getl.test.TestInit
@@ -943,7 +944,7 @@ ORDER BY t1.id"""
                 unregisterFilemanager 'getl.testdsl.files:*'
                 shouldFail { filemanager('getl.testdsl.files:files') }
 
-                unregisterDataset null, [repositoryDatasets.H2TABLE, repositoryDatasets.EMBEDDEDTABLE]
+                unregisterDataset null, [RepositoryDatasets.H2TABLE, RepositoryDatasets.EMBEDDEDTABLE]
                 shouldFail { dataset('getl.testdsl.h2:table1') }
                 shouldFail { dataset('getl.testdsl.h2:table2') }
                 assertEquals(listDatasets().sort(), ['getl.testdsl.csv:table1', 'getl.testdsl.csv:table2', 'getl.testdsl.h2:query1'])

@@ -223,7 +223,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
             return obj
         }
 
-        def isThread = (getl.langOpts.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread)
+        def isThread = (getl.options().useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread)
 
         def repName = getl.repObjectName(name)
         if (!registration && isThread) {
@@ -241,7 +241,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
                 if (registration && isThread)
                     throw new ExceptionGETL("it is not allowed to register an \"$name\" $typeObject inside a thread!")
 
-                if (!registration && getl.langOpts.validRegisterObjects)
+                if (!registration && getl.options().validRegisterObjects)
                     throw new ExceptionGETL("$typeObject \"$name\" is not registered!")
 
                 obj = createObject(className)
