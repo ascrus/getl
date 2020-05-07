@@ -23,12 +23,36 @@
 */
 package getl.lang.sub
 
+import getl.csv.CSVDataset
 import getl.data.Connection
 import getl.data.Dataset
+import getl.db2.DB2Table
+import getl.excel.ExcelDataset
 import getl.exception.ExceptionGETL
+import getl.firebird.FirebirdTable
 import getl.h2.H2Connection
 import getl.h2.H2Table
+import getl.hive.HiveTable
+import getl.impala.ImpalaTable
+import getl.jdbc.QueryDataset
+import getl.jdbc.TableDataset
+import getl.jdbc.ViewDataset
+import getl.json.JSONDataset
+import getl.mssql.MSSQLTable
+import getl.mysql.MySQLTable
+import getl.netezza.NetezzaTable
+import getl.netsuite.NetsuiteTable
+import getl.oracle.OracleTable
+import getl.postgresql.PostgreSQLTable
 import getl.proc.sub.ExecutorListElement
+import getl.salesforce.SalesForceDataset
+import getl.salesforce.SalesForceQueryDataset
+import getl.tfs.TDSTable
+import getl.tfs.TFSDataset
+import getl.vertica.VerticaTable
+import getl.xero.XeroDataset
+import getl.xml.XMLDataset
+import getl.yaml.YAMLDataset
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -40,31 +64,31 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
-    public static final String CSVDATASET = 'getl.csv.CSVDataset'
-    public static final String CSVTEMPDATASET = 'getl.tfs.TFSDataset'
-    public static final String DB2TABLE = 'getl.db2.DB2Table'
-    public static final String EXCELDATASET = 'getl.excel.ExcelDataset'
-    public static final String FIREBIRDTABLE = 'getl.firebird.FirebirdTable'
-    public static final String H2TABLE = 'getl.h2.H2Table'
-    public static final String HIVETABLE = 'getl.hive.HiveTable'
-    public static final String IMPALATABLE = 'getl.impala.ImpalaTable'
-    public static final String TABLEDATASET = 'getl.jdbc.TableDataset'
-    public static final String JSONDATASET = 'getl.json.JSONDataset'
-    public static final String MSSQLTABLE = 'getl.mssql.MSSQLTable'
-    public static final String MYSQLTABLE = 'getl.mysql.MySQLTable'
-    public static final String NETEZZATABLE = 'getl.netezza.NetezzaTable'
-    public static final String NETSUITETABLE = 'getl.netsuite.NetsuiteTable'
-    public static final String ORACLETABLE = 'getl.oracle.OracleTable'
-    public static final String QUERYDATASET = 'getl.jdbc.QueryDataset'
-    public static final String POSTGRESQLTABLE = 'getl.postgresql.PostgreSQLTable'
-    public static final String SALESFORCEDATASET = 'getl.salesforce.SalesForceDataset'
-    public static final String SALESFORCEQUERYDATASET = 'getl.salesforce.SalesForceQueryDataset'
-    public static final String EMBEDDEDTABLE = 'getl.tfs.TDSTable'
-    public static final String VIEWDATASET = 'getl.jdbc.ViewDataset'
-    public static final String VERTICATABLE = 'getl.vertica.VerticaTable'
-    public static final String XERODATASET = 'getl.xero.XeroDataset'
-    public static final String XMLDATASET = 'getl.xml.XMLDataset'
-    public static final String YAMLDATASET = 'getl.yaml.YAMLDataset'
+    public static final String CSVDATASET = CSVDataset.name
+    public static final String CSVTEMPDATASET = TFSDataset.name
+    public static final String DB2TABLE = DB2Table.name
+    public static final String EXCELDATASET = ExcelDataset.name
+    public static final String FIREBIRDTABLE = FirebirdTable.name
+    public static final String H2TABLE = H2Table.name
+    public static final String HIVETABLE = HiveTable.name
+    public static final String IMPALATABLE = ImpalaTable.name
+    public static final String TABLEDATASET = TableDataset.name
+    public static final String JSONDATASET = JSONDataset.name
+    public static final String MSSQLTABLE = MSSQLTable.name
+    public static final String MYSQLTABLE = MySQLTable.name
+    public static final String NETEZZATABLE = NetezzaTable.name
+    public static final String NETSUITETABLE = NetsuiteTable.name
+    public static final String ORACLETABLE = OracleTable.name
+    public static final String QUERYDATASET = QueryDataset.name
+    public static final String POSTGRESQLTABLE = PostgreSQLTable.name
+    public static final String SALESFORCEDATASET = SalesForceDataset.name
+    public static final String SALESFORCEQUERYDATASET = SalesForceQueryDataset.name
+    public static final String EMBEDDEDTABLE = TDSTable.name
+    public static final String VIEWDATASET = ViewDataset.name
+    public static final String VERTICATABLE = VerticaTable.name
+    public static final String XERODATASET = XeroDataset.name
+    public static final String XMLDATASET = XMLDataset.name
+    public static final String YAMLDATASET = YAMLDataset.name
 
     /** List of allowed dataset classes */
     public static final List<String> LISTDATASETS = [
@@ -107,12 +131,6 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     protected Dataset createObject(String className) {
         Dataset.CreateDataset(dataset: className)
     }
-
-    @Override
-    protected String getNameCloneCollection() { 'datasets' }
-
-    @Override
-    protected String getTypeObject() { 'Dataset' }
 
     /**
      * Return a list of objects associated with the names of two groups

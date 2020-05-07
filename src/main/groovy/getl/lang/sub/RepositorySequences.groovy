@@ -32,7 +32,7 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
-    public static final String SEQUENCE = 'getl.jdbc.Sequence'
+    public static final String SEQUENCE = Sequence.name
 
     /** List of allowed sequence classes */
     public static final List<String> LISTSEQUENCES = [SEQUENCE]
@@ -46,10 +46,4 @@ class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
     protected Sequence createObject(String className) {
         return new Sequence()
     }
-
-    @Override
-    protected String getNameCloneCollection() { 'sequences' }
-
-    @Override
-    protected String getTypeObject() { 'Sequence' }
 }

@@ -378,11 +378,11 @@ Examples:
         _params.logOpts = _logOpts
 
         _params.listRepository = _listRepository
-        registerRepository('connections', _repositoryConnections)
-        registerRepository('datasets', _repositoryDatasets)
-        registerRepository('historypoints', _repositoryHistorypoints)
-        registerRepository('sequences', _repositorySequences)
-        registerRepository('filemanagers', _repositoryFilemanagers)
+        registerRepository(RepositoryConnections.simpleName, _repositoryConnections)
+        registerRepository(RepositoryDatasets.simpleName, _repositoryDatasets)
+        registerRepository(RepositoryHistorypoints.simpleName, _repositoryHistorypoints)
+        registerRepository(RepositorySequences.simpleName, _repositorySequences)
+        registerRepository(RepositoryFilemanagers.simpleName, _repositoryFilemanagers)
     }
 
     @Override
@@ -513,6 +513,17 @@ Examples:
             throw new ExceptionDSL("Repository \"$name\" already registering!")
 
         _listRepository.put(name, repository)
+    }
+    /**
+     * Get Getl repository object
+     * @param name repository name
+     * @return repository object
+     */
+    RepositoryObjects getlRepository(String name) {
+        def rep = _listRepository.get(name)
+        if (rep == null)
+            throw new ExceptionDSL("Repository \"$name\" not found!")
+        return rep
     }
 
     /** Running init script */
@@ -1016,7 +1027,7 @@ Examples:
 
         if (_langOpts.useThreadModelConnection && isCurrentProcessInThread()) {
             def thread = Thread.currentThread() as ExecutorThread
-            res = thread.registerCloneObject('connections', res,
+            res = thread.registerCloneObject(_repositoryConnections.nameCloneCollection, res,
                     {
                         def c = (it as Connection).cloneConnection()
                         c.sysParams.dslNameObject = res.dslNameObject
@@ -1078,7 +1089,7 @@ Examples:
 
         if (_langOpts.useThreadModelConnection && isCurrentProcessInThread()) {
             def thread = Thread.currentThread() as ExecutorThread
-            res = thread.registerCloneObject('connections', res,
+            res = thread.registerCloneObject(_repositoryConnections.nameCloneCollection, res,
                     {
                         def c = (it as Connection).cloneConnection()
                         c.sysParams.dslNameObject = res.dslNameObject
@@ -1141,7 +1152,7 @@ Examples:
 
         if (_langOpts.useThreadModelConnection && isCurrentProcessInThread()) {
             def thread = Thread.currentThread() as ExecutorThread
-            res = thread.registerCloneObject('connections', res,
+            res = thread.registerCloneObject(_repositoryConnections.nameCloneCollection, res,
                     {
                         def c = (it as Connection).cloneConnection()
                         c.sysParams.dslNameObject = res.dslNameObject

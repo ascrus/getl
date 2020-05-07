@@ -188,10 +188,10 @@ abstract class RepositoryObjects<T extends GetlRepository> {
     }
 
     /** The name of the collection for storing cloned objects for threads */
-    abstract protected String getNameCloneCollection()
+    String getNameCloneCollection() { this.class.name }
 
     /** Type of repository object  */
-    abstract protected String getTypeObject()
+    String getTypeObject() {  this.class.simpleName }
 
     /**
      * Process register object

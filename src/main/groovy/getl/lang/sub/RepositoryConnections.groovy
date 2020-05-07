@@ -23,7 +23,29 @@
 */
 package getl.lang.sub
 
+import getl.csv.CSVConnection
 import getl.data.Connection
+import getl.db2.DB2Connection
+import getl.excel.ExcelConnection
+import getl.firebird.FirebirdConnection
+import getl.h2.H2Connection
+import getl.hive.HiveConnection
+import getl.impala.ImpalaConnection
+import getl.jdbc.JDBCConnection
+import getl.json.JSONConnection
+import getl.mssql.MSSQLConnection
+import getl.mysql.MySQLConnection
+import getl.netezza.NetezzaConnection
+import getl.netsuite.NetsuiteConnection
+import getl.oracle.OracleConnection
+import getl.postgresql.PostgreSQLConnection
+import getl.salesforce.SalesForceConnection
+import getl.tfs.TDS
+import getl.tfs.TFS
+import getl.vertica.VerticaConnection
+import getl.xero.XeroConnection
+import getl.xml.XMLConnection
+import getl.yaml.YAMLConnection
 import groovy.transform.InheritConstructors
 
 /**
@@ -32,28 +54,28 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class RepositoryConnections extends RepositoryObjects<Connection> {
-    public static final String CSVCONNECTION = 'getl.csv.CSVConnection'
-    public static final String CSVTEMPCONNECTION = 'getl.tfs.TFS'
-    public static final String DB2CONNECTION = 'getl.db2.DB2Connection'
-    public static final String EXCELCONNECTION = 'getl.excel.ExcelConnection'
-    public static final String FIREBIRDCONNECTION = 'getl.firebird.FirebirdConnection'
-    public static final String H2CONNECTION = 'getl.h2.H2Connection'
-    public static final String HIVECONNECTION = 'getl.hive.HiveConnection'
-    public static final String IMPALACONNECTION = 'getl.impala.ImpalaConnection'
-    public static final String JDBCCONNECTION = 'getl.jdbc.JDBCConnection'
-    public static final String JSONCONNECTION = 'getl.json.JSONConnection'
-    public static final String MSSQLCONNECTION = 'getl.mssql.MSSQLConnection'
-    public static final String MYSQLCONNECTION = 'getl.mysql.MySQLConnection'
-    public static final String NETEZZACONNECTION = 'getl.netezza.NetezzaConnection'
-    public static final String NETSUITECONNECTION = 'getl.netsuite.NetsuiteConnection'
-    public static final String ORACLECONNECTION = 'getl.oracle.OracleConnection'
-    public static final String POSTGRESQLCONNECTION = 'getl.postgresql.PostgreSQLConnection'
-    public static final String SALESFORCECONNECTION = 'getl.salesforce.SalesForceConnection'
-    public static final String EMBEDDEDCONNECTION = 'getl.tfs.TDS'
-    public static final String VERTICACONNECTION = 'getl.vertica.VerticaConnection'
-    public static final String XEROCONNECTION = 'getl.xero.XeroConnection'
-    public static final String XMLCONNECTION = 'getl.xml.XMLConnection'
-    public static final String YAMLCONNECTION = 'getl.yaml.YAMLConnection'
+    public static final String CSVCONNECTION = CSVConnection.name
+    public static final String CSVTEMPCONNECTION = TFS.name
+    public static final String DB2CONNECTION = DB2Connection.name
+    public static final String EXCELCONNECTION = ExcelConnection.name
+    public static final String FIREBIRDCONNECTION = FirebirdConnection.name
+    public static final String H2CONNECTION = H2Connection.name
+    public static final String HIVECONNECTION = HiveConnection.name
+    public static final String IMPALACONNECTION = ImpalaConnection.name
+    public static final String JDBCCONNECTION = JDBCConnection.name
+    public static final String JSONCONNECTION = JSONConnection.name
+    public static final String MSSQLCONNECTION = MSSQLConnection.name
+    public static final String MYSQLCONNECTION = MySQLConnection.name
+    public static final String NETEZZACONNECTION = NetezzaConnection.name
+    public static final String NETSUITECONNECTION = NetsuiteConnection.name
+    public static final String ORACLECONNECTION = OracleConnection.name
+    public static final String POSTGRESQLCONNECTION = PostgreSQLConnection.name
+    public static final String SALESFORCECONNECTION = SalesForceConnection.name
+    public static final String EMBEDDEDCONNECTION = TDS.name
+    public static final String VERTICACONNECTION = VerticaConnection.name
+    public static final String XEROCONNECTION = XeroConnection.name
+    public static final String XMLCONNECTION = XMLConnection.name
+    public static final String YAMLCONNECTION = YAMLConnection.name
 
     /** List of allowed connection classes */
     public static final List<String> LISTCONNECTIONS = [
@@ -97,10 +119,4 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     protected Connection createObject(String className) {
         Connection.CreateConnection(connection: className)
     }
-
-    @Override
-    protected String getNameCloneCollection() { 'connections' }
-
-    @Override
-    protected String getTypeObject() { 'Connection' }
 }

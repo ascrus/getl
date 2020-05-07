@@ -25,6 +25,7 @@ package getl.lang.sub
 
 import getl.data.Connection
 import getl.data.sub.WithConnection
+import getl.lang.Getl
 import getl.proc.sub.ExecutorThread
 import groovy.transform.InheritConstructors
 
@@ -52,8 +53,8 @@ abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithCo
             return
 
         def thread = Thread.currentThread() as ExecutorThread
-        cloneObj.connection = thread.registerCloneObject('connections', repObj.connection,
-                {
+        cloneObj.connection = thread.registerCloneObject(Getl.GetlInstance().getlRepository(RepositoryConnections.simpleName).nameCloneCollection,
+                repObj.connection,{
                     def c = (it as Connection).cloneConnection()
                     c.sysParams.dslNameObject = (it as Connection).dslNameObject
                     return c

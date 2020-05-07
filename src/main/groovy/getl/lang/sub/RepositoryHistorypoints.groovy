@@ -32,7 +32,7 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class RepositoryHistorypoints extends RepositoryObjectsWithConnection<SavePointManager> {
-    public static final String SAVEPOINTMANAGER = 'getl.jdbc.SavePointManager'
+    public static final String SAVEPOINTMANAGER = SavePointManager.name
 
     /** List of allowed history point manager classes */
     public static final List<String> LISTHISTORYPOINTS = [SAVEPOINTMANAGER]
@@ -46,10 +46,4 @@ class RepositoryHistorypoints extends RepositoryObjectsWithConnection<SavePointM
     protected SavePointManager createObject(String className) {
         return new SavePointManager()
     }
-
-    @Override
-    protected String getNameCloneCollection() {'historypoints' }
-
-    @Override
-    protected String getTypeObject() { 'Historypoint' }
 }
