@@ -562,7 +562,7 @@ class JDBCConnection extends Connection {
         Logs.Fine("Generate GETL DSL script for $classType tables")
 
 		if (cl == null) throw new ExceptionGETL('Parameter setting code required!')
-		def p = new GenerateDslTablesSpec()
+		def p = new GenerateDslTablesSpec(this)
 		p.runClosure(cl)
 
 		def packageName = p.packageName
@@ -619,7 +619,7 @@ class JDBCConnection extends Connection {
 		if (useResource && resourceDir != null)
 			Logs.Fine("  using resource files path \"${resourceDir?.path}\"" + ((resourceRoot != null)?" with root path \"$resourceRoot\"":''))
 
-		def getlClassName = Getl.GetlInstance().getClass().name
+		def getlClassName = (dslCreator != null)?dslCreator.class.name:Getl.class.name
 
 		StringBuilder sb = new StringBuilder()
 

@@ -33,6 +33,7 @@ import getl.lang.opts.BaseSpec
  */
 class ManagerProcessSpec extends BaseSpec {
     ManagerProcessSpec(Manager owner) {
+        super(owner)
         if (owner == null)
             throw new ExceptionGETL('Owner required!')
         this.manager = owner

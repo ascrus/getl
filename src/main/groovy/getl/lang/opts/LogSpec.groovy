@@ -24,7 +24,6 @@
 
 package getl.lang.opts
 
-import getl.lang.opts.BaseSpec
 import getl.utils.*
 import groovy.transform.InheritConstructors
 

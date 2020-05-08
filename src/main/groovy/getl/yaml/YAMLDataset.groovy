@@ -64,7 +64,7 @@ class YAMLDataset extends StructureFileDataset {
     YAMLReadSpec readOpts(@DelegatesTo(YAMLReadSpec)
                           @ClosureParams(value = SimpleType, options = ['getl.yaml.opts.YAMLReadSpec'])
                                   Closure cl = null) {
-        def parent = new YAMLReadSpec(true, readDirective)
+        def parent = new YAMLReadSpec(this, true, readDirective)
         parent.runClosure(cl)
 
         return parent

@@ -300,8 +300,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	String getDslNameObject() { sysParams.dslNameObject as String }
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	Object getDslCreator() { sysParams.dslCreator }
-	void setDslCreator(Object value) { sysParams.dslCreator = value }
+	Getl getDslCreator() { sysParams.dslCreator as Getl }
+	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Dataset directives create, drop, read, write and bulkLoad */
 	Map<String, Object> directives(String group) {
@@ -1240,7 +1240,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	Map lookup(@DelegatesTo(DatasetLookupSpec) Closure cl) {
-		def parent = new DatasetLookupSpec()
+		def parent = new DatasetLookupSpec(this)
 		parent.runClosure(cl)
 
 		return lookup(parent.params)

@@ -138,7 +138,7 @@ abstract class FileConnection extends Connection {
 	/** Return the list of files by the specified conditions */
 	List<File> listFiles(@DelegatesTo(FileDatasetRetrieveObjectsSpec)
 						 @ClosureParams(value = SimpleType, options = ['java.io.File']) Closure<Boolean> cl) {
-		def parent = new FileDatasetRetrieveObjectsSpec()
+		def parent = new FileDatasetRetrieveObjectsSpec(this)
 		parent.runClosure(cl)
 
 		return retrieveObjects(parent.params) as List<File>

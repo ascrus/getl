@@ -63,7 +63,7 @@ class ImpalaTable extends TableDataset {
 
     @Override
     protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new ImpalaCreateSpec(useExternalParams, opts)
+        new ImpalaCreateSpec(this, useExternalParams, opts)
     }
 
     ImpalaCreateSpec createOpts(@DelegatesTo(ImpalaCreateSpec)
@@ -74,7 +74,7 @@ class ImpalaTable extends TableDataset {
 
     @Override
     protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new ImpalaWriteSpec(useExternalParams, opts)
+        new ImpalaWriteSpec(this, useExternalParams, opts)
     }
 
     /** Options for writing to Hive table */
@@ -86,7 +86,7 @@ class ImpalaTable extends TableDataset {
 
     @Override
     protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new ImpalaBulkLoadSpec(useExternalParams, opts)
+        new ImpalaBulkLoadSpec(this, useExternalParams, opts)
     }
 
     /** Options for loading csv files to Hive table */

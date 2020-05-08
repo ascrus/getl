@@ -76,7 +76,7 @@ class Balancer  {
 	}
 	
 	/**
-	 * Call init configuraion
+	 * Call init configuration
 	 */
 	private final Closure doInitConfig = {
 		if (config == null) return

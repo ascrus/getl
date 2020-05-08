@@ -23,6 +23,8 @@
 */
 package getl.lang.sub
 
+import getl.lang.Getl
+
 /**
  * Getl repository registration and operation interface
  * @author Alexsey Konstantinov
@@ -33,10 +35,10 @@ interface GetlRepository {
     /** Name in Getl Dsl reposotory */
     void setDslNameObject(String value)
 
-    /** Object creator */
-    Object getDslCreator()
-    /** Object creator */
-    void setDslCreator(Object value)
+    /** Getl creator */
+    Getl getDslCreator()
+    /** Getl creator */
+    void setDslCreator(Getl value)
 
     /** Clean Dsl properties */
     void dslCleanProps()

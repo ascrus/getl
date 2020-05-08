@@ -35,12 +35,16 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithConnection> extends RepositoryObjects {
-    protected void processRegisterObject(String className, String name, Boolean registration, T repObj, T cloneObj, Map params) {
+    @Override
+    protected void processRegisterObject(Getl getl, String className, String name, Boolean registration, GetlRepository repObj,
+                                         GetlRepository cloneObj, Map params) {
+        repObj = repObj as T
+        cloneObj = cloneObj as T
         if (repObj.connection == null && (registration || name == null)) {
             if  (params.connection != null)
                 repObj.connection = params.connection as Connection
             else if (params.classConnection != null && params.code != null) {
-                def owner = getl.DetectClosureDelegate(params.code as Closure)
+                def owner = Getl.DetectClosureDelegate(params.code as Closure)
                 if ((params.classConnection as Class).isInstance(owner))
                     repObj.connection = owner as Connection
             }
@@ -53,10 +57,12 @@ abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithCo
             return
 
         def thread = Thread.currentThread() as ExecutorThread
-        cloneObj.connection = thread.registerCloneObject(Getl.GetlInstance().getlRepository(RepositoryConnections.simpleName).nameCloneCollection,
-                repObj.connection,{
-                    def c = (it as Connection).cloneConnection()
-                    c.sysParams.dslNameObject = (it as Connection).dslNameObject
+        cloneObj.connection = thread.registerCloneObject(getl.getlRepository(RepositoryConnections.simpleName).nameCloneCollection,
+                repObj.connection,{ par ->
+                    par = par as Connection
+                    def c = par.cloneConnection()
+                    c.dslNameObject = par.dslNameObject
+                    c.dslCreator = par.dslCreator
                     return c
                 }
         ) as Connection
@@ -70,9 +76,9 @@ abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithCo
      * @param registration registration required in the repository
      * @return repository object
      */
-    T register(Connection connection, String className, String name, Boolean registration = false,
+    T register(Getl getl, Connection connection, String className, String name, Boolean registration = false,
                Connection defaultConnection = null, Class classConnection = null, Closure cl = null) {
-        register(className, name, registration,
+        register(getl, className, name, registration,
                 [connection: connection, defaultConnection: defaultConnection, classConnection: classConnection, code: cl]) as T
     }
 }

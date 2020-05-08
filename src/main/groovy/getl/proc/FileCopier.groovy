@@ -27,6 +27,8 @@ package getl.proc
 import getl.data.Field
 import getl.exception.ExceptionFileListProcessing
 import getl.files.Manager
+import getl.lang.Getl
+import getl.lang.sub.GetlRepository
 import getl.proc.sub.FileCopierBuild
 import getl.jdbc.TableDataset
 import getl.proc.sub.FileListProcessing

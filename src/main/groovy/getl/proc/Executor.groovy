@@ -24,6 +24,7 @@
 
 package getl.proc
 
+import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.proc.sub.ExecutorFactory
 import getl.proc.sub.ExecutorListElement
@@ -43,7 +44,7 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-class Executor {
+class Executor implements GetlRepository {
 	/** Count thread process */
 	Integer countProc
 	/** Count thread process */
@@ -861,4 +862,21 @@ class Executor {
 	protected final def counterProcessed = new SynchronizeObject()
 	/** The number of successfully processed list items in threads */
 	Long getCountProcessed() { counterProcessed.count }
+
+	private String _dslNameObject
+	@Override
+	String getDslNameObject() { _dslNameObject }
+	@Override
+	void setDslNameObject(String value) { _dslNameObject = value }
+
+	private Getl _dslCreator
+	@Override
+	Getl getDslCreator() { _dslCreator }
+	@Override
+	void setDslCreator(Getl value) { _dslCreator = value }
+	@Override
+	void dslCleanProps() {
+		_dslNameObject = null
+		_dslCreator = null
+	}
 }

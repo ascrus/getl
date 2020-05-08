@@ -25,9 +25,8 @@
 package getl.lang.opts
 
 import getl.config.*
-import getl.exception.ExceptionGETL
+import getl.exception.ExceptionDSL
 import getl.lang.Getl
-import getl.lang.opts.BaseSpec
 import getl.utils.*
 import groovy.transform.InheritConstructors
 
@@ -120,11 +119,11 @@ class ConfigSpec extends BaseSpec {
     void readFields(String section, Boolean validExist = true) {
         def vars = Config.FindSection(section)
         if (vars == null)
-            throw new ExceptionGETL("Configuration section \"$section\" not found!")
+            throw new ExceptionDSL("Configuration section \"$section\" not found!")
         if (vars.isEmpty())
             return
 
-        Getl.FillFieldFromVars(Getl.GetlInstance(), vars, validExist)
+        Getl.FillFieldFromVars(ownerObject as Script, vars, validExist)
     }
 
     /** Current environment */

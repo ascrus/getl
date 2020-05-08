@@ -59,7 +59,7 @@ class OracleTable extends TableDataset {
 
     @Override
     protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new OracleReadSpec(useExternalParams, opts)
+        new OracleReadSpec(this, useExternalParams, opts)
     }
 
     /**

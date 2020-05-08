@@ -27,6 +27,7 @@ package getl.jdbc
 import getl.data.Connection
 import getl.data.Field
 import getl.data.sub.WithConnection
+import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.proc.Flow
 import getl.utils.*
@@ -67,8 +68,8 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	String getDslNameObject() { sysParams.dslNameObject as String }
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	Object getDslCreator() { sysParams.dslCreator }
-	void setDslCreator(Object value) { sysParams.dslCreator = value }
+	Getl getDslCreator() { sysParams.dslCreator as Getl }
+	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Connection */
 	private JDBCConnection connection

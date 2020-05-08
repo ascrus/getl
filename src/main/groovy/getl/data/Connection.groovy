@@ -26,6 +26,7 @@ package getl.data
 
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.utils.*
 import groovy.transform.Synchronized
@@ -231,8 +232,8 @@ class Connection implements Cloneable, GetlRepository {
 	String getDslNameObject() { sysParams.dslNameObject as String }
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	Object getDslCreator() { sysParams.dslCreator }
-	void setDslCreator(Object value) { sysParams.dslCreator = value }
+	Getl getDslCreator() { sysParams.dslCreator as Getl }
+	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Auto load schema with meta file for connection datasets */
 	boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema, false) }

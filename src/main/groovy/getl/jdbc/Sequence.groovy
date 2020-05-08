@@ -30,6 +30,7 @@ import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.jdbc.opts.DropSpec
 import getl.jdbc.opts.SequenceCreateSpec
+import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
 import getl.utils.CloneUtils
@@ -63,8 +64,8 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	String getDslNameObject() { sysParams.dslNameObject as String }
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	Object getDslCreator() { sysParams.dslCreator }
-	void setDslCreator(Object value) { sysParams.dslCreator = value }
+	Getl getDslCreator() { sysParams.dslCreator as Getl }
+	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Connection */
 	JDBCConnection connection
@@ -191,7 +192,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	void createSequence(boolean ifNotExists = false,
 						@DelegatesTo(SequenceCreateSpec)
 						@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.SequenceCreateSpec']) Closure cl = null) {
-		def parent = new SequenceCreateSpec()
+		def parent = new SequenceCreateSpec(this)
 		parent.runClosure(cl)
 		connection.currentJDBCDriver.createSequence(fullName, ifNotExists, parent)
 	}

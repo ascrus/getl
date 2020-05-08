@@ -31,6 +31,7 @@ import getl.h2.H2Table
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.lang.Getl
+import getl.lang.sub.GetlRepository
 import getl.proc.Executor
 import getl.exception.ExceptionFileListProcessing
 import getl.proc.Flow
@@ -46,7 +47,7 @@ import groovy.transform.stc.SimpleType
  * Manager file processing from file system
  * @author Alexsey Konstantinov
  */
-abstract class FileListProcessing {
+abstract class FileListProcessing implements GetlRepository {
     FileListProcessing() {
         params.order = [] as List<String>
     }
@@ -773,7 +774,7 @@ abstract class FileListProcessing {
     }
 
     /** Current Getl instance */
-    protected Getl getGetl() { Getl.GetlInstance() }
+    protected Getl getGetl() { dslCreator?:Getl.GetlInstance() }
 
     /** Create new profile object */
     protected ProcessTime profile(String name, String objName) {
@@ -828,4 +829,19 @@ abstract class FileListProcessing {
      * @param error exception link if a file processing error occurs
      */
     protected void saveCachedData(Throwable error = null) { }
+
+    @Override
+    String getDslNameObject() { sysParams.dslNameObject as String }
+    @Override
+    void setDslNameObject(String value) { sysParams.dslNameObject = value }
+
+    @Override
+    Getl getDslCreator() { sysParams.dslCreator as Getl }
+    @Override
+    void setDslCreator(Getl value) { sysParams.dslCreator = value }
+    @Override
+    void dslCleanProps() {
+        sysParams.dslNameObject = null
+        sysParams.dslCreator = null
+    }
 }

@@ -102,7 +102,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     void parser(@DelegatesTo(VerticaBulkLoadParserSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaBulkLoadParserSpec'])
                         Closure cl) {
-        def parent = new VerticaBulkLoadParserSpec(true, parser)
+        def parent = new VerticaBulkLoadParserSpec(ownerObject, true, parser)
         parent.runClosure(cl)
         parser = parent.params
     }

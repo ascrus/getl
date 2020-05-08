@@ -25,8 +25,7 @@ package getl.lang.opts
 
 import getl.csv.CSVDataset
 import getl.data.*
-import getl.exception.ExceptionGETL
-import getl.jdbc.JDBCDataset
+import getl.exception.ExceptionDSL
 import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
@@ -80,19 +79,19 @@ class LangSpec extends BaseSpec {
     void setProcessControlDataset(Dataset value) {
         if (value != null) {
             if (!(value instanceof TableDataset || value instanceof CSVDataset))
-                throw new ExceptionGETL('To control the operation of processes, a dataset with types "table" or "csv" can be used!')
+                throw new ExceptionDSL('To control the operation of processes, a dataset with types "table" or "csv" can be used!')
 
             def name = value.fieldByName('name')
             if (name == null)
-                throw new ExceptionGETL('Required field "name"!')
+                throw new ExceptionDSL('Required field "name"!')
             if (name.type != Field.stringFieldType)
-                throw new ExceptionGETL('Field "name" must be of string type"!')
+                throw new ExceptionDSL('Field "name" must be of string type"!')
 
             def enabled = value.fieldByName('enabled')
             if (enabled == null)
-                throw new ExceptionGETL('Required field "enabled"!')
+                throw new ExceptionDSL('Required field "enabled"!')
             if (!(enabled.type in [Field.stringFieldType, Field.integerFieldType, Field.bigintFieldType, Field.booleanFieldType]))
-                throw new ExceptionGETL('Field "name" must be of string, integer or boolean type"!')
+                throw new ExceptionDSL('Field "name" must be of string, integer or boolean type"!')
         }
 
         params.processControlDataset = value

@@ -37,13 +37,13 @@ import java.util.logging.Level
  *
  */
 class ProfileSpec extends BaseSpec {
-    ProfileSpec(String name, String objectName = null, boolean isProfile = false) {
-        super()
+    ProfileSpec(Object owner, String name, String objectName = null, boolean isProfile = false) {
+        super(owner)
         this.isProfile = isProfile
         statistics = new ProcessTime(
                 name: name,
-                logLevel: (isProfile)?Level.INFO:(Getl.GetlInstance().options().processTimeLevelLog),
-                debug: (isProfile)?true:(Getl.GetlInstance().options().processTimeDebug),
+                logLevel: (isProfile)?Level.INFO:((owner as Getl).options().processTimeLevelLog),
+                debug: (isProfile)?true:((owner as Getl).options().processTimeDebug),
                 objectName: objectName?:'row',
                 abbrName: (isProfile)?'<PROFILE>':'<STAT>'
         )

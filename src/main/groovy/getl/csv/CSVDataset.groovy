@@ -319,7 +319,7 @@ class CSVDataset extends FileDataset {
 	 * Read file options
 	 */
 	CSVReadSpec readOpts(@DelegatesTo(CSVReadSpec) Closure cl = null) {
-		def parent = new CSVReadSpec(true, readDirective)
+		def parent = new CSVReadSpec(this, true, readDirective)
 		parent.runClosure(cl)
 
 		return parent
@@ -329,7 +329,7 @@ class CSVDataset extends FileDataset {
 	 * Write file options
 	 */
 	CSVWriteSpec writeOpts(@DelegatesTo(CSVWriteSpec) Closure cl = null) {
-		def parent = new CSVWriteSpec(true, writeDirective)
+		def parent = new CSVWriteSpec(this, true, writeDirective)
 		parent.runClosure(cl)
 
 		return parent

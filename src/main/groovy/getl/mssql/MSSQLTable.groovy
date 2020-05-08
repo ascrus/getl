@@ -59,7 +59,7 @@ class MSSQLTable extends TableDataset {
 
     @Override
     protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new MSSQLReadSpec(useExternalParams, opts)
+        new MSSQLReadSpec(this, useExternalParams, opts)
     }
 
     /**

@@ -58,14 +58,12 @@ import getl.utils.sub.*
 import getl.vertica.*
 import getl.xero.*
 import getl.xml.*
-import getl.yaml.YAMLConnection
-import getl.yaml.YAMLDataset
+import getl.yaml.*
 import groovy.test.GroovyAssert
 import groovy.test.GroovyTestCase
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
-
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 
@@ -219,7 +217,8 @@ Examples:
                     throw new ExceptionDSL("Class \"$className\" not found, error: ${e.message}!")
                 }
 
-                Getl eng = GetlInstance(runClass.newInstance() as Getl)
+                Getl eng = runClass.newInstance() as Getl
+                GetlSetInstance(eng)
                 eng.setGetlSystemParameter('mainClass', runClass.name)
                 eng.setUnitTestMode(isTestMode)
 
@@ -307,10 +306,13 @@ Examples:
     }
 
     /** The name of the main class of the process */
-    String getMainClassName() { _params.mainClass as String }
+    String getGetlMainClassName() { _params.mainClass as String }
 
     /** The name of the process initializing class */
-    String getInitClassName() { _params.initClass as String }
+    String getGetlInitClassName() { _params.initClass as String }
+
+    /** Main Getl instance */
+    Getl getGetlMainInstance() { _params.mainInstance as Getl }
 
     /** Checking process permission */
     @Synchronized
@@ -362,22 +364,18 @@ Examples:
 
         _params.executedClasses = new SynchronizeObject()
 
-        _langOpts = new LangSpec()
-        _configOpts = new ConfigSpec()
-        _logOpts = new LogSpec()
-
+        _langOpts = new LangSpec(this)
         _listRepository = new ConcurrentHashMap<String, RepositoryObjects>() as Map<String, RepositoryObjects>
-        _repositoryConnections = new RepositoryConnections()
-        _repositoryDatasets = new RepositoryDatasets()
-        _repositoryHistorypoints = new RepositoryHistorypoints()
-        _repositorySequences = new RepositorySequences()
-        _repositoryFilemanagers = new RepositoryFilemanagers()
+
+        _repositoryConnections = new RepositoryConnections(this)
+        _repositoryDatasets = new RepositoryDatasets(this)
+        _repositoryHistorypoints = new RepositoryHistorypoints(this)
+        _repositorySequences = new RepositorySequences(this)
+        _repositoryFilemanagers = new RepositoryFilemanagers(this)
 
         _params.langOpts = _langOpts
-        _params.configOpts = _configOpts
-        _params.logOpts = _logOpts
-
         _params.listRepository = _listRepository
+
         registerRepository(RepositoryConnections.simpleName, _repositoryConnections)
         registerRepository(RepositoryDatasets.simpleName, _repositoryDatasets)
         registerRepository(RepositoryHistorypoints.simpleName, _repositoryHistorypoints)
@@ -386,7 +384,9 @@ Examples:
     }
 
     @Override
-    Object run() { this }
+    Object run() {
+        return this
+    }
 
     /** Instance of GETL DSL */
     private static Getl _getl
@@ -394,19 +394,27 @@ Examples:
     /** The object is a static instance */
     private boolean _getlInstance = false
 
-    static protected _setGetlInstance(Getl instance) {
-        if (_getl == instance) return
-        if (_getl != null) _getl._getlInstance = false
-        _getl = instance
-        _getl?._getlInstance = true
+    /** Set current Getl instance */
+    protected _setGetlInstance() {
+        if (_getl == this) return
+
+        if (_getl != null)
+            _getl._getlInstance = false
+
+        _getl = this
+        _getl._getlInstance = true
     }
 
-    /** Get Getl instance (created if not exists) */
-    static Getl GetlInstance(Getl instance) {
-        if (_getl == null)
-            _setGetlInstance((instance != null)?instance:(this.newInstance() as Getl))
+    /** Get current Getl instance */
+    static Getl GetlInstance() { return _getl }
 
-        return _getl
+    /** Set current Getl instance */
+    static void GetlSetInstance(Getl instance) {
+        if (instance == null)
+            throw new ExceptionDSL('Instance can not be null!')
+
+        instance._setGetlInstance()
+        instance.setGetlSystemParameter('mainInstance', instance)
     }
 
     /** check that Getl instance is created */
@@ -421,10 +429,15 @@ Examples:
     static Object Dsl(def ownerObject, Map parameters,
                     @DelegatesTo(Getl)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
-        if (_getl != null && !_getl._getlInstance)
-            throw new ExceptionDSL('Cannot be called during Getl object initialization!')
+        if (_getl != null) {
+            if (!_getl._getlInstance)
+                throw new ExceptionDSL('Cannot be called during Getl object initialization!')
+        }
+        else {
+            GetlSetInstance(new Getl())
+        }
 
-        GetlInstance().runDsl(ownerObject, cl)
+        _getl.runDsl(ownerObject, cl)
     }
 
     /** Run DSL script on getl share object */
@@ -450,6 +463,7 @@ Examples:
         if (softClean && _getl != null) {
             _getl = _getl.getClass().newInstance()
             _getl._getlInstance = true
+            _getl.setGetlSystemParameter('mainInstance', _getl)
         }
         else {
             _getl = null
@@ -523,6 +537,7 @@ Examples:
         def rep = _listRepository.get(name)
         if (rep == null)
             throw new ExceptionDSL("Repository \"$name\" not found!")
+
         return rep
     }
 
@@ -533,19 +548,16 @@ Examples:
     protected void importGetlParams(Map<String, Object> importParams) {
         if (importParams == null) return
 
-        _params.putAll(MapUtils.Copy(importParams, ['listRepository']))
+        _params.putAll(importParams)
 
         _langOpts = importParams.langOpts as LangSpec
-        _configOpts = importParams.configOpts as ConfigSpec
-        _logOpts = importParams.logOpts as LogSpec
 
-        def listReps = importParams.listRepository as Map<String, RepositoryObjects>
-        if (listReps != null) {
-            def l = _listRepository
-            listReps.each { name, rep ->
-                l.get(name).objects = rep.objects
-            }
-        }
+        _listRepository = _params.listRepository as Map<String, RepositoryObjects>
+        _repositoryConnections = getlRepository(RepositoryConnections.simpleName) as RepositoryConnections
+        _repositoryDatasets = getlRepository(RepositoryDatasets.simpleName) as RepositoryDatasets
+        _repositoryHistorypoints = getlRepository(RepositoryHistorypoints.simpleName) as RepositoryHistorypoints
+        _repositorySequences = getlRepository(RepositorySequences.simpleName) as RepositorySequences
+        _repositoryFilemanagers = getlRepository(RepositoryFilemanagers.simpleName) as RepositoryFilemanagers
     }
 
     /** Fix start process */
@@ -564,7 +576,7 @@ Examples:
     void profile(String name, String objName = null,
                  @DelegatesTo(ProfileSpec)
                  @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ProfileSpec']) Closure cl) {
-        def parent = new ProfileSpec(name, objName, true)
+        def parent = new ProfileSpec(this, name, objName, true)
         parent.startProfile()
         runClosure(parent, cl)
         parent.finishProfile()
@@ -574,7 +586,7 @@ Examples:
     protected SynchronizeObject getExecutedClasses() { _params.executedClasses as SynchronizeObject }
 
     /** Repository object filtering manager */
-    private def _repositoryFilter = new RepositoryFilter()
+    private def _repositoryFilter = new RepositoryFilter(this)
     /** Specified filter when searching for objects */
     String getFilteringGroup() { _repositoryFilter.filteringGroup }
 
@@ -632,7 +644,7 @@ Examples:
     List<String> listConnections(String mask = null, List connectionClasses = null,
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                          Closure<Boolean> filter = null) {
-        _repositoryConnections.list(mask, connectionClasses, filter)
+        _repositoryConnections.list(this, mask, connectionClasses, filter)
     }
 
     /**
@@ -679,7 +691,7 @@ Examples:
      */
     void processConnections(String mask, List connectionClasses,
                             @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        _repositoryConnections.processObjects(mask, connectionClasses, cl)
+        _repositoryConnections.processObjects(this, mask, connectionClasses, cl)
     }
 
     /**
@@ -758,7 +770,7 @@ Examples:
      * @return name of the object in the repository or null if not found
      */
     String findConnection(Connection obj) {
-        _repositoryConnections.find(obj)
+        _repositoryConnections.find(this, obj)
     }
 
     /**
@@ -767,12 +779,12 @@ Examples:
      * @return found connection object or null if not found
      */
     Connection findConnection(String name) {
-        _repositoryConnections.find(name)
+        _repositoryConnections.find(this, name)
     }
 
     /** Register connection in repository */
     protected Connection registerConnection(String connectionClassName, String name, Boolean registration = false) {
-        _repositoryConnections.register(connectionClassName, name, registration)
+        _repositoryConnections.register(this, connectionClassName, name, registration)
     }
 
     /**
@@ -782,7 +794,7 @@ Examples:
      * @param validExist checking if an object is registered in the repository (default true)
      */
     Connection registerConnectionObject(Connection obj, String name = null, Boolean validExist = true) {
-        _repositoryConnections.registerObject(obj, name, validExist)
+        _repositoryConnections.registerObject(this, obj, name, validExist)
     }
 
     /**
@@ -794,7 +806,7 @@ Examples:
     void unregisterConnection(String mask = null, List connectionClasses = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                       Closure<Boolean> filter = null) {
-        _repositoryConnections.unregister(mask, connectionClasses, filter)
+        _repositoryConnections.unregister(this, mask, connectionClasses, filter)
     }
 
     /** Datasets repository */
@@ -810,7 +822,7 @@ Examples:
     List<String> listDatasets(String mask = null, List datasetClasses = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                       Closure<Boolean> filter = null) {
-        _repositoryDatasets.list(mask, datasetClasses, filter)
+        _repositoryDatasets.list(this, mask, datasetClasses, filter)
     }
 
     /**
@@ -857,7 +869,7 @@ Examples:
      */
     void processDatasets(String mask, List datasetClasses,
                          @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        _repositoryDatasets.processObjects(mask, datasetClasses, cl)
+        _repositoryDatasets.processObjects(this, mask, datasetClasses, cl)
     }
 
     /**
@@ -1186,7 +1198,7 @@ Examples:
      * @return name of the object in the repository or null if not found
      */
     String findDataset(Dataset obj) {
-        _repositoryDatasets.find(obj)
+        _repositoryDatasets.find(this, obj)
     }
 
     /**
@@ -1195,13 +1207,13 @@ Examples:
      * @return found dataset object or null if not found
      */
     Dataset findDataset(String name) {
-        _repositoryDatasets.find(name) as Dataset
+        _repositoryDatasets.find(this, name) as Dataset
     }
 
     /** Register dataset in repository */
     protected Dataset registerDataset(Connection connection, String datasetClassName, String name, Boolean registration = false,
                                       Connection defaultConnection = null, Class classConnection = null, Closure cl = null) {
-        _repositoryDatasets.register(connection, datasetClassName, name, registration, defaultConnection, classConnection, cl)
+        _repositoryDatasets.register(this, connection, datasetClassName, name, registration, defaultConnection, classConnection, cl)
     }
 
     /**
@@ -1211,7 +1223,7 @@ Examples:
      * @param validExist checking if an object is registered in the repository (default true)
      */
     Dataset registerDatasetObject(Dataset obj, String name = null, Boolean validExist = true) {
-        _repositoryDatasets.registerObject(obj, name, validExist) as Dataset
+        _repositoryDatasets.registerObject(this, obj, name, validExist) as Dataset
     }
 
     /**
@@ -1223,7 +1235,7 @@ Examples:
     void unregisterDataset(String mask = null, List datasetClasses = null,
                            @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                    Closure<Boolean> filter = null) {
-        _repositoryDatasets.unregister(mask, datasetClasses, filter)
+        _repositoryDatasets.unregister(this, mask, datasetClasses, filter)
     }
 
     /** History points repository */
@@ -1236,7 +1248,7 @@ Examples:
      * @return list of history point manager names according to specified conditions
      */
     List<String> listHistorypoints(String mask = null, Closure<Boolean> filter = null) {
-        _repositoryHistorypoints.list(mask, null, filter)
+        _repositoryHistorypoints.list(this, mask, null, filter)
     }
 
     /**
@@ -1255,7 +1267,7 @@ Examples:
      */
     void processHistorypoints(String mask,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        _repositoryHistorypoints.processObjects(mask, null, cl)
+        _repositoryHistorypoints.processObjects(this, mask, null, cl)
     }
 
     /**
@@ -1272,7 +1284,7 @@ Examples:
      * @return name of the object in the repository or null if not found
      */
     String findHistorypoint(SavePointManager obj) {
-        _repositoryHistorypoints.find(obj)
+        _repositoryHistorypoints.find(this, obj)
     }
 
     /**
@@ -1281,7 +1293,7 @@ Examples:
      * @return found history point manager object or null if not found
      */
     SavePointManager findHistorypoint(String name) {
-        _repositoryHistorypoints.find(name) as SavePointManager
+        _repositoryHistorypoints.find(this, name) as SavePointManager
     }
 
     /**
@@ -1291,7 +1303,7 @@ Examples:
      */
     protected SavePointManager registerHistoryPoint(JDBCConnection connection, String name,  Boolean registration = false,
                                                     Closure cl = null) {
-        _repositoryHistorypoints.register(connection, _repositoryHistorypoints.SAVEPOINTMANAGER, name, registration,
+        _repositoryHistorypoints.register(this, connection, _repositoryHistorypoints.SAVEPOINTMANAGER, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.QUERYDATASET), JDBCConnection, cl)
     }
 
@@ -1302,7 +1314,7 @@ Examples:
      * @param validExist checking if an object is registered in the repository (default true)
      */
     SavePointManager registerHistoryPointObject(SavePointManager obj, String name = null, Boolean validExist = true) {
-        _repositoryHistorypoints.registerObject(obj, name, validExist) as SavePointManager
+        _repositoryHistorypoints.registerObject(this, obj, name, validExist) as SavePointManager
     }
 
     /**
@@ -1313,7 +1325,7 @@ Examples:
     void unregisterHistorypoint(String mask = null,
                                 @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.SavePointManager'])
                                         Closure<Boolean> filter = null) {
-        _repositoryHistorypoints.unregister(mask, null, filter)
+        _repositoryHistorypoints.unregister(this, mask, null, filter)
     }
 
     /** Sequences repository */
@@ -1326,7 +1338,7 @@ Examples:
      * @return list of sequences names according to specified conditions
      */
     List<String> listSequences(String mask = null, Closure<Boolean> filter = null) {
-        _repositorySequences.list(mask, null, filter)
+        _repositorySequences.list(this, mask, null, filter)
     }
 
     /**
@@ -1345,7 +1357,7 @@ Examples:
      */
     void processSequences(String mask,
                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        _repositorySequences.processObjects(mask, null, cl)
+        _repositorySequences.processObjects(this, mask, null, cl)
     }
 
     /**
@@ -1362,7 +1374,7 @@ Examples:
      * @return name of the object in the repository or null if not found
      */
     String findSequence(Sequence obj) {
-        _repositorySequences.find(obj)
+        _repositorySequences.find(this, obj)
     }
 
     /**
@@ -1371,7 +1383,7 @@ Examples:
      * @return found sequences object or null if not found
      */
     Sequence findSequence(String name) {
-        _repositorySequences.find(name) as Sequence
+        _repositorySequences.find(this, name) as Sequence
     }
 
     /**
@@ -1381,7 +1393,7 @@ Examples:
      */
     protected Sequence registerSequence(Connection connection, String name, Boolean registration = false,
                                         Closure cl = null) {
-        _repositorySequences.register(connection, _repositorySequences.SEQUENCE, name, registration,
+        _repositorySequences.register(this, connection, _repositorySequences.SEQUENCE, name, registration,
                 defaultJdbcConnection(_repositoryDatasets.QUERYDATASET), JDBCConnection, cl)
     }
 
@@ -1392,7 +1404,7 @@ Examples:
      * @param validExist checking if an object is registered in the repository (default true)
      */
     Sequence registerSequenceObject(Sequence obj, String name = null, Boolean validExist = true) {
-        _repositorySequences.registerObject(obj, name, validExist) as Sequence
+        _repositorySequences.registerObject(this, obj, name, validExist) as Sequence
     }
 
     /**
@@ -1403,7 +1415,7 @@ Examples:
     void unregisterSequence(String mask = null,
                             @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.Sequence'])
                                     Closure<Boolean> filter = null) {
-        _repositorySequences.unregister(mask, null, filter)
+        _repositorySequences.unregister(this, mask, null, filter)
     }
 
     /** File managers repository */
@@ -1419,7 +1431,7 @@ Examples:
     List<String> listFilemanagers(String mask = null, List filemanagerClasses = null,
                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                           Closure<Boolean> filter = null) {
-        _repositoryFilemanagers.list(mask, filemanagerClasses, filter)
+        _repositoryFilemanagers.list(this, mask, filemanagerClasses, filter)
     }
 
     /**
@@ -1466,7 +1478,7 @@ Examples:
      */
     void processFilemanagers(String mask, List filemanagerClasses,
                              @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        _repositoryFilemanagers.processObjects(mask, filemanagerClasses, cl)
+        _repositoryFilemanagers.processObjects(this, mask, filemanagerClasses, cl)
     }
 
     /**
@@ -1503,7 +1515,7 @@ Examples:
      * @return name of the object in the repository or null if not found
      */
     String findFilemanager(Manager obj) {
-        _repositoryFilemanagers.find(obj)
+        _repositoryFilemanagers.find(this, obj)
     }
 
     /**
@@ -1512,13 +1524,13 @@ Examples:
      * @return found file manager object or null if not found
      */
     Manager findFilemanager(String name) {
-        _repositoryFilemanagers.find(name)
+        _repositoryFilemanagers.find(this, name)
     }
 
     /** Register file manager in repository */
     protected Manager registerFileManager(String fileManagerClassName, String name,
                                           Boolean registration = false) {
-        _repositoryFilemanagers.register(fileManagerClassName, name, registration)
+        _repositoryFilemanagers.register(this, fileManagerClassName, name, registration)
     }
 
     /**
@@ -1528,7 +1540,7 @@ Examples:
      * @param validExist checking if an object is registered in the repository (default true)
      */
     Manager registerFileManagerObject(Manager obj, String name = null, Boolean validExist = true) {
-        _repositoryFilemanagers.registerObject(obj, name, validExist)
+        _repositoryFilemanagers.registerObject(this, obj, name, validExist)
     }
 
     /**
@@ -1540,7 +1552,7 @@ Examples:
     void unregisterFilemanager(String mask = null, List filemanagerClasses = null,
                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                        Closure<Boolean> filter = null) {
-        _repositoryFilemanagers.unregister(mask, filemanagerClasses, filter)
+        _repositoryFilemanagers.unregister(this, mask, filemanagerClasses, filter)
     }
 
     /**
@@ -1661,8 +1673,8 @@ Examples:
         try {
             if (script instanceof Getl) {
                 def scriptGetl = script as Getl
-                _setGetlInstance(scriptGetl)
                 scriptGetl.importGetlParams(_params)
+                scriptGetl._setGetlInstance()
 
                 InitGetlClass(scriptGetl)
                 if (vars != null && !vars.isEmpty()) {
@@ -1702,20 +1714,19 @@ Examples:
             pt.finish()
         }
         finally {
-            releaseTemporaryObjects(script)
-            _setGetlInstance(oldGetl)
+            if (script instanceof Getl)
+                releaseTemporaryObjects(script as Getl)
+            oldGetl._setGetlInstance()
         }
 
         return res
     }
 
     /** Release temporary objects by name mask "#*" */
-    protected void releaseTemporaryObjects(Object creator) {
-        _repositoryConnections.releaseTemporary(creator)
-        _repositoryDatasets.releaseTemporary(creator)
-        _repositoryFilemanagers.releaseTemporary(creator)
-        _repositoryHistorypoints.releaseTemporary(creator)
-        _repositorySequences.releaseTemporary(creator)
+    void releaseTemporaryObjects(Getl creator) {
+        _listRepository.each { name, rep ->
+            rep.releaseTemporary(creator)
+        }
     }
 
     /**
@@ -2115,7 +2126,7 @@ Examples:
     protected ConfigSlurper getConfigManager() { Config.configClassManager as ConfigSlurper }
 
     /** Configuration options instance */
-    private ConfigSpec _configOpts
+    private final ConfigSpec _configOpts = new ConfigSpec(this)
 
     /** Configuration options */
     @Synchronized('_configOpts')
@@ -2131,7 +2142,7 @@ Examples:
     }
 
     /** Log options instance */
-    private LogSpec _logOpts
+    private final LogSpec _logOpts = new LogSpec(this)
 
     /** Log options */
     @Synchronized('_logOpts')
@@ -3312,6 +3323,7 @@ Examples:
                 defaultFileConnection(_repositoryDatasets.EXCELDATASET), ExcelConnection, cl) as ExcelDataset
         if (parent.connection == null && (name == null || registration))
             parent.connection = new ExcelConnection()
+
         runClosure(parent, cl)
 
         return parent
@@ -3371,6 +3383,7 @@ Examples:
                 defaultFileConnection(_repositoryDatasets.JSONDATASET), JSONConnection, cl) as JSONDataset
         if (parent.connection == null && (name == null || registration))
             parent.connection = new JSONConnection()
+
         runClosure(parent, cl)
 
         return parent
@@ -3430,6 +3443,7 @@ Examples:
                 defaultFileConnection(_repositoryDatasets.XMLDATASET), XMLConnection, cl) as XMLDataset
         if (parent.connection == null && (name == null || registration))
             parent.connection = new XMLConnection()
+
         runClosure(parent, cl)
 
         return parent
@@ -3489,6 +3503,7 @@ Examples:
                 defaultFileConnection(_repositoryDatasets.YAMLDATASET), YAMLConnection, cl) as YAMLDataset
         if (parent.connection == null && (name == null || registration))
             parent.connection = new YAMLConnection()
+
         runClosure(parent, cl)
 
         return parent
@@ -3752,7 +3767,7 @@ Examples:
             throw new ExceptionDSL('Destination dataset cannot be null!')
 
         def pt = startProcess("Copy rows from $source to $destination")
-        def parent = new FlowCopySpec()
+        def parent = new FlowCopySpec(this)
         parent.source = source
         parent.destination = destination
         runClosure(parent, cl)
@@ -3770,7 +3785,7 @@ Examples:
             throw new ExceptionDSL('Required closure code!')
 
         def pt = startProcess("Write rows to $destination")
-        def parent = new FlowWriteSpec()
+        def parent = new FlowWriteSpec(this)
         parent.destination = destination
         runClosure(parent, cl)
         finishProcess(pt, parent.countRow)
@@ -3800,7 +3815,7 @@ Examples:
         def destNames = [] as List<String>
         (destinations as Map<String, Dataset>).each { destName, ds -> destNames.add("$destName: ${ds.toString()}".toString()) }
         def pt = startProcess("Write rows to $destNames")
-        def parent = new FlowWriteManySpec()
+        def parent = new FlowWriteManySpec(this)
         parent.destinations = destinations
         runClosure(parent, cl)
         finishProcess(pt)
@@ -3815,7 +3830,7 @@ Examples:
         if (cl == null)
             throw new ExceptionDSL('Required closure code!')
         def pt = startProcess("Read rows from $source")
-        def parent = new FlowProcessSpec()
+        def parent = new FlowProcessSpec(this)
         parent.source = source
         runClosure(parent, cl)
         finishProcess(pt, parent.countRow)
@@ -3837,6 +3852,7 @@ Examples:
                     @DelegatesTo(SQLScripter)
                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl = null) {
         def parent = new SQLScripter()
+        parent.dslCreator = this
         def owner = DetectClosureDelegate(cl)
 
         if (connection != null)
@@ -4056,6 +4072,7 @@ Examples:
         }
 
         def parent = new Executor(abortOnError: true)
+        parent.dslCreator = this
         parent.disposeThreadResource(disposeConnections)
 
         if (_langOpts.processControlDataset != null && _langOpts.checkProcessForThreads) {
@@ -4076,6 +4093,7 @@ Examples:
     EMailer mail(@DelegatesTo(EMailer)
                  @ClosureParams(value = SimpleType, options = ['getl.utils.EMailer']) Closure cl) {
         def parent = new EMailer()
+        parent.dslCreator = this
         def pt = startProcess('Mailer', 'command')
         runClosure(parent, cl)
         finishProcess(pt)
@@ -4092,7 +4110,7 @@ Examples:
     FileTextSpec textFile(def file,
                     @DelegatesTo(FileTextSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.FileTextSpec']) Closure cl) {
-        def parent = new FileTextSpec()
+        def parent = new FileTextSpec(this)
         if (file != null) {
             parent.fileName = (file instanceof File) ? ((file as File).path) : file.toString()
         }
@@ -4116,6 +4134,7 @@ Examples:
     Path filePath(@DelegatesTo(Path)
                   @ClosureParams(value = SimpleType, options = ['getl.utils.Path']) Closure cl) {
         def parent = new Path()
+        parent.dslCreator = this
         runClosure(parent, cl)
 
         return parent
@@ -4124,7 +4143,9 @@ Examples:
     /** File path parser */
     @SuppressWarnings("GrMethodMayBeStatic")
     Path filePath(String mask) {
-        new Path(mask: mask)
+        def parent = new Path(mask: mask)
+        parent.dslCreator = this
+        return parent
     }
 
     /** Incremenal history point manager */
@@ -4253,6 +4274,7 @@ Examples:
             throw new ExceptionDSL('Required destination file manager!')
 
         def parent = new FileCopier()
+        parent.dslCreator = this
         parent.source = source
         parent.destinations = destinations
 
@@ -4297,6 +4319,7 @@ Examples:
             throw new ExceptionDSL('Required source file manager!')
 
         def parent = new FileCleaner()
+        parent.dslCreator = this
         parent.source = source
 
         def ptName = "Remove files from [$source]"
@@ -4328,6 +4351,7 @@ Examples:
             throw new ExceptionDSL('Required source file manager!')
 
         def parent = new FileProcessing()
+        parent.dslCreator = this
         parent.source = source
 
         def ptName = "Processing files from [$source]"

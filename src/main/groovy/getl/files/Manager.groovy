@@ -33,6 +33,7 @@ import getl.files.sub.FileManagerList
 import getl.files.sub.ManagerListProcessClosure
 import getl.files.sub.ManagerListProcessing
 import getl.jdbc.*
+import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
 import getl.proc.Executor
@@ -139,8 +140,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 	String getDslNameObject() { sysParams.dslNameObject }
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	Object getDslCreator() { sysParams.dslCreator }
-	void setDslCreator(Object value) { sysParams.dslCreator = value }
+	Getl getDslCreator() { sysParams.dslCreator as Getl }
+	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Root path */
 	String getRootPath () { params.rootPath as String }
@@ -1019,7 +1020,7 @@ FROM ${newFiles.fullNameDataset()} files
 	TableDataset buildListFiles(Path maskPath,
 								@ClosureParams(value = SimpleType, options = ['getl.files.opts.ManagerBuildListSpec'])
 								@DelegatesTo(ManagerBuildListSpec) Closure cl = null) {
-		def parent = new ManagerBuildListSpec()
+		def parent = new ManagerBuildListSpec(this)
 		if (maskPath != null) parent.maskPath = maskPath
 		parent.runClosure(cl)
 		buildList(parent.params)
@@ -1224,7 +1225,7 @@ WHERE
 	/** Build list of files */
 	void downloadListFiles(@ClosureParams(value = SimpleType, options = ['getl.files.opts.ManagerDownloadSpec'])
 						   @DelegatesTo(ManagerDownloadSpec) Closure cl = null) {
-		def parent = new ManagerDownloadSpec()
+		def parent = new ManagerDownloadSpec(this)
 		parent.runClosure(cl)
 
 		downloadFiles(parent.params)

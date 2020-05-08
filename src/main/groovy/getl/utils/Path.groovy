@@ -24,6 +24,7 @@
 
 package getl.utils
 
+import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
 import groovy.transform.AutoClone
@@ -202,8 +203,8 @@ class Path implements Cloneable, GetlRepository {
 	String getDslNameObject() { sysParams.dslNameObject as String }
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
-	Object getDslCreator() { sysParams.dslCreator }
-	void setDslCreator(Object value) { sysParams.dslCreator = value }
+	Getl getDslCreator() { sysParams.dslCreator as Getl }
+	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Define variable options */
 	Map variable(String name,
@@ -218,7 +219,7 @@ class Path implements Cloneable, GetlRepository {
 			isCompile = false
 		}
 
-		def parent = new PathVarsSpec(true, var)
+		def parent = new PathVarsSpec(dslCreator, true, var)
 		parent.runClosure(cl)
 		if (cl != null) isCompile = false
 

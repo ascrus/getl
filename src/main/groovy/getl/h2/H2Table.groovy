@@ -61,7 +61,7 @@ class H2Table extends TableDataset {
 
     @Override
     protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        return new H2CreateSpec(useExternalParams, opts)
+        return new H2CreateSpec(this, useExternalParams, opts)
     }
 
     /** Options for creating Vertica table */
@@ -73,7 +73,7 @@ class H2Table extends TableDataset {
 
     @Override
     protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        return new H2BulkLoadSpec(useExternalParams, opts)
+        return new H2BulkLoadSpec(this, useExternalParams, opts)
     }
 
     /** Options for loading csv files to Vertica table */

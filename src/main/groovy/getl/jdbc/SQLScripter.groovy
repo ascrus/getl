@@ -29,6 +29,8 @@ import getl.data.Field
 import getl.data.sub.WithConnection
 import getl.exception.ExceptionGETL
 import getl.exception.ExceptionSQLScripter
+import getl.lang.Getl
+import getl.lang.sub.GetlRepository
 import getl.utils.*
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -39,10 +41,25 @@ import java.util.regex.Pattern
  *
  */
 @SuppressWarnings("UnnecessaryQualifiedReference")
-class SQLScripter implements WithConnection, Cloneable {
-	/** 
-	 * Type of script command 
-	 */
+class SQLScripter implements WithConnection, Cloneable, GetlRepository {
+	private String _dslNameObject
+	@Override
+	String getDslNameObject() { _dslNameObject }
+	@Override
+	void setDslNameObject(String value) { _dslNameObject = value }
+
+	private Getl _dslCreator
+	@Override
+	Getl getDslCreator() { _dslCreator }
+	@Override
+	void setDslCreator(Getl value) { _dslCreator = value }
+
+	@Override
+	void dslCleanProps() {
+		_dslNameObject = null
+		_dslCreator = null
+	}
+
 	static enum TypeCommand {
 		UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR, EXIT, LOAD_POINT, SAVE_POINT, BLOCK
 	}

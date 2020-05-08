@@ -61,7 +61,7 @@ class VerticaTable extends TableDataset {
 
     @Override
     protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new VerticaCreateSpec(useExternalParams, opts)
+        new VerticaCreateSpec(this, useExternalParams, opts)
     }
 
     /** Options for creating Vertica table */
@@ -73,7 +73,7 @@ class VerticaTable extends TableDataset {
 
     @Override
     protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new VerticaReadSpec(useExternalParams, opts)
+        new VerticaReadSpec(this, useExternalParams, opts)
     }
 
     /** Options for reading from Vertica table */
@@ -85,7 +85,7 @@ class VerticaTable extends TableDataset {
 
     @Override
     protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new VerticaWriteSpec(useExternalParams, opts)
+        new VerticaWriteSpec(this, useExternalParams, opts)
     }
 
     /** Options for writing to Vertica table */
@@ -97,7 +97,7 @@ class VerticaTable extends TableDataset {
 
     @Override
     protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new VerticaBulkLoadSpec(useExternalParams, opts)
+        new VerticaBulkLoadSpec(this, useExternalParams, opts)
     }
 
     /** Options for loading csv files to Vertica table */

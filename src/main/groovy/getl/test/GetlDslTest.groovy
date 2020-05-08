@@ -65,8 +65,10 @@ class GetlDslTest extends GetlTest {
 
     @Before
     void beforeDslTest() {
-        if (!Getl.GetlInstanceCreated())
-            Getl.GetlInstance(useGetlClass().newInstance())
+        if (!Getl.GetlInstanceCreated()) {
+            def eng = useGetlClass().newInstance()
+            Getl.GetlSetInstance(eng)
+        }
 
         Getl.Dsl(this) {
             if (configuration().environment != 'dev')

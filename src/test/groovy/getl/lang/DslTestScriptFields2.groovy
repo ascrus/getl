@@ -7,9 +7,9 @@ import groovy.transform.Field
 //noinspection GroovyUnusedAssignment
 @BaseScript TestRunner main
 
-assert unitTestMode
+assert main.unitTestMode
 
-configContent.script_params = [param1: 1, param2: 'a', param3: [1,2,3], param4: [a: 1, b: 2, c: 3], param5: 'not found']
+main.configContent.script_params = [param1: 1, param2: 'a', param3: [1,2,3], param4: [a: 1, b: 2, c: 3], param5: 'not found']
 configuration {
     readFields 'script_params', false
 }
@@ -26,4 +26,4 @@ assert embeddedTable(tableName).tableName == 'test_script_2'
 cloneDataset('#scripttable2_new', embeddedTable(tableName))
 assert !listDatasets('#scripttable2_new').isEmpty()
 
-configContent.testScript = 'complete test 2'
+main.configContent.testScript = 'complete test 2'

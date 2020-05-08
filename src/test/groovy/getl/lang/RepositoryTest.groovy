@@ -1,6 +1,6 @@
 package getl.lang
 
-
+import getl.data.Dataset
 import getl.files.FileManager
 import getl.h2.H2Connection
 import getl.h2.H2Table
@@ -20,55 +20,56 @@ class RepositoryTest extends GetlDslTest {
     @Test
     void testConnections() {
         def getl = Getl.GetlInstance()
-        def rep = new RepositoryConnections()
+        getl.CleanGetl(true)
+        def rep = new RepositoryConnections(getl)
         assertEquals(22, rep.listClasses.size())
-        assertEquals(0, rep.list().size())
-        assertNull(rep.find('group:con'))
-        assertNull(rep.find(new H2Connection()))
+        assertEquals(0, rep.list(getl).size())
+        assertNull(rep.find(getl,'group:con'))
+        assertNull(rep.find(getl,new H2Connection()))
 
-        shouldFail { rep.register('UNNOWN') }
-        assertTrue(rep.register(rep.H2CONNECTION) instanceof H2Connection)
-        assertEquals(0, rep.list().size())
+        shouldFail { rep.register(getl, 'UNNOWN') }
+        assertTrue(rep.register(getl, rep.H2CONNECTION) instanceof H2Connection)
+        assertEquals(0, rep.list(getl).size())
 
-        shouldFail { rep.register(null, 'group:con', true) }
-        shouldFail { rep.register(null, 'group:con') }
-        def con = rep.register(rep.H2CONNECTION, 'group:con', true)
+        shouldFail { rep.register(getl, null, 'group:con', true) }
+        shouldFail { rep.register(getl, null, 'group:con') }
+        def con = rep.register(getl, rep.H2CONNECTION, 'group:con', true)
         con.with { extended.test = 'test' }
         assertTrue(con instanceof H2Connection)
-        assertSame(con, rep.register(null, 'group:con') )
+        assertSame(con, rep.register(getl, null, 'group:con') )
         assertEquals('group:con', con.dslNameObject)
-        assertEquals('test', rep.register(null, 'group:con').extended.test)
+        assertEquals('test', rep.register(getl, null, 'group:con').extended.test)
 
-        assertTrue(rep.find('group:con') == con)
-        assertTrue(rep.find(con) == 'group:con')
+        assertTrue(rep.find(getl, 'group:con') == con)
+        assertTrue(rep.find(getl, con) == 'group:con')
 
-        assertEquals(1, rep.list().size())
-        assertEquals(1, rep.list('group:con').size())
-        assertEquals(1, rep.list('group:*').size())
+        assertEquals(1, rep.list(getl).size())
+        assertEquals(1, rep.list(getl, 'group:con').size())
+        assertEquals(1, rep.list(getl, 'group:*').size())
 
         getl.forGroup('group')
-        assertEquals(1, rep.list('con').size())
+        assertEquals(1, rep.list(getl, 'con').size())
         getl.clearGroupFilter()
-        assertEquals(0, rep.list('con').size())
-        assertEquals(1, rep.list('group:con').size())
+        assertEquals(0, rep.list(getl, 'con').size())
+        assertEquals(1, rep.list(getl, 'group:con').size())
 
-        assertEquals(1, rep.list(null, [RepositoryConnections.H2CONNECTION]).size())
-        assertEquals(0, rep.list(null, [RepositoryConnections.CSVCONNECTION]).size())
+        assertEquals(1, rep.list(getl, null, [RepositoryConnections.H2CONNECTION]).size())
+        assertEquals(0, rep.list(getl, null, [RepositoryConnections.CSVCONNECTION]).size())
 
-        assertEquals(1, rep.list(null, null) { n, c -> n == 'group:con' }.size() )
-        assertEquals(1, rep.list(null, null) { n, c -> c == con }.size() )
-        assertEquals(0, rep.list(null, null) { n, c -> !(c instanceof H2Connection) }.size() )
+        assertEquals(1, rep.list(getl, null, null) { n, c -> n == 'group:con' }.size() )
+        assertEquals(1, rep.list(getl, null, null) { n, c -> c == con }.size() )
+        assertEquals(0, rep.list(getl, null, null) { n, c -> !(c instanceof H2Connection) }.size() )
 
-        Getl.Dsl(this) {
+        Getl.Dsl {
             thread {
                 abortOnError = true
                 addThread {
-                    assertTrue(rep.register(rep.H2CONNECTION) instanceof H2Connection)
-                    shouldFail { rep.register(rep.H2CONNECTION, 'group.thread:con', true) }
-                    def tcon = rep.register(null, 'group:con')
+                    assertTrue(rep.register(getl, rep.H2CONNECTION) instanceof H2Connection)
+                    shouldFail { rep.register(getl, rep.H2CONNECTION, 'group.thread:con', true) }
+                    def tcon = rep.register(getl, null, 'group:con')
                     assertTrue(tcon instanceof H2Connection)
                     assertNotSame(con, tcon)
-                    assertSame(tcon, rep.register(null, 'group:con') )
+                    assertSame(tcon, rep.register(getl, null, 'group:con') )
                     assertEquals('group:con', tcon.dslNameObject)
                     assertEquals('test', tcon.extended.test)
                 }
@@ -76,38 +77,39 @@ class RepositoryTest extends GetlDslTest {
             }
         }
 
-        rep.unregister('group:')
-        assertTrue(rep.list().isEmpty())
+        rep.unregister(getl, 'group:')
+        assertTrue(rep.list(getl).isEmpty())
     }
 
     @Test
     void testDatasets() {
-        def getl = new Getl()
-        def rep = new RepositoryDatasets()
+        def getl = Getl.GetlInstance()
+        getl.CleanGetl(true)
+        def rep = new RepositoryDatasets(getl)
 
         getl.h2Connection('group:con', true) { }
         def con = getl.h2Connection('group:con')
         assertSame(con, getl.h2Connection('group:con'))
 
-        def obj = rep.register(con, rep.H2TABLE, 'group:obj', true)
+        def obj = rep.register(getl, con, rep.H2TABLE, 'group:obj', true)
         obj.with { params.test = 'test' }
 
         assertSame(con, obj.connection)
         assertTrue(obj instanceof H2Table)
-        assertSame(obj, rep.register(rep.H2TABLE, 'group:obj') )
-        assertEquals('test', rep.register(rep.H2TABLE, 'group:obj').params.test)
+        assertSame(obj, rep.register(getl, rep.H2TABLE, 'group:obj') )
+        assertEquals('test', (rep.register(getl, rep.H2TABLE, 'group:obj') as Dataset).params.test)
 
         getl.with {
             thread {
                 abortOnError = true
                 addThread {
-                    def tobj = rep.register(rep.H2TABLE, 'group:obj')
+                    def tobj = rep.register(getl, rep.H2TABLE, 'group:obj') as Dataset
                     assertNotSame(obj, tobj)
                     assertEquals('test', tobj.params.test)
                     assertNotSame(con, getl.h2Connection('group:con'))
                     assertSame(getl.h2Connection('group:con'), tobj.connection)
                     assertNotSame(con, tobj.connection)
-                    assertSame(tobj.connection, rep.register(rep.H2TABLE, 'group:obj').connection)
+                    assertSame(tobj.connection, (rep.register(getl, rep.H2TABLE, 'group:obj') as Dataset).connection)
                 }
                 exec()
             }
@@ -116,32 +118,33 @@ class RepositoryTest extends GetlDslTest {
 
     @Test
     void testHistoryPoint() {
-        def getl = new Getl()
-        def rep = new RepositoryHistorypoints()
+        def getl = Getl.GetlInstance()
+        getl.CleanGetl(true)
+        def rep = new RepositoryHistorypoints(getl)
 
         getl.h2Connection('group:con', true) { }
         def con = getl.h2Connection('group:con')
         assertSame(con, getl.h2Connection('group:con'))
 
-        def obj = rep.register(con, rep.SAVEPOINTMANAGER, 'group:obj', true)
+        def obj = rep.register(getl, con, rep.SAVEPOINTMANAGER, 'group:obj', true)
         obj.with { params.test = 'test' }
 
         assertSame(con, obj.connection)
         assertTrue(obj instanceof SavePointManager)
-        assertSame(obj, rep.register(rep.SAVEPOINTMANAGER, 'group:obj') )
-        assertEquals('test', rep.register(rep.SAVEPOINTMANAGER, 'group:obj').params.test)
+        assertSame(obj, rep.register(getl,rep.SAVEPOINTMANAGER, 'group:obj') )
+        assertEquals('test', (rep.register(getl, rep.SAVEPOINTMANAGER, 'group:obj') as SavePointManager).params.test)
 
         getl.with {
             thread {
                 abortOnError = true
                 addThread {
-                    def tobj = rep.register(rep.SAVEPOINTMANAGER, 'group:obj')
+                    def tobj = rep.register(getl, rep.SAVEPOINTMANAGER, 'group:obj') as SavePointManager
                     assertNotSame(obj, tobj)
                     assertEquals('test', tobj.params.test)
                     assertNotSame(con, getl.h2Connection('group:con'))
                     assertSame(getl.h2Connection('group:con'), tobj.connection)
                     assertNotSame(con, tobj.connection)
-                    assertSame(tobj.connection, rep.register(rep.SAVEPOINTMANAGER, 'group:obj').connection)
+                    assertSame(tobj.connection, (rep.register(getl, rep.SAVEPOINTMANAGER, 'group:obj') as SavePointManager).connection)
                 }
                 exec()
             }
@@ -150,32 +153,33 @@ class RepositoryTest extends GetlDslTest {
 
     @Test
     void testSequence() {
-        def getl = new Getl()
-        def rep = new RepositorySequences()
+        def getl = Getl.GetlInstance()
+        getl.CleanGetl(true)
+        def rep = new RepositorySequences(getl)
 
         getl.h2Connection('group:con', true) { }
         def con = getl.h2Connection('group:con')
         assertSame(con, getl.h2Connection('group:con'))
 
-        def obj = rep.register(con, rep.SEQUENCE, 'group:obj', true)
+        def obj = rep.register(getl, con, rep.SEQUENCE, 'group:obj', true)
         obj.with { params.test = 'test' }
 
         assertSame(con, obj.connection)
         assertTrue(obj instanceof Sequence)
-        assertSame(obj, rep.register(rep.SEQUENCE, 'group:obj') )
-        assertEquals('test', rep.register(rep.SEQUENCE, 'group:obj').params.test)
+        assertSame(obj, rep.register(getl, rep.SEQUENCE, 'group:obj') )
+        assertEquals('test', (rep.register(getl, rep.SEQUENCE, 'group:obj') as Sequence).params.test)
 
         getl.with {
             thread {
                 abortOnError = true
                 addThread {
-                    def tobj = rep.register(rep.SEQUENCE, 'group:obj')
+                    def tobj = rep.register(getl, rep.SEQUENCE, 'group:obj') as Sequence
                     assertNotSame(obj, tobj)
                     assertEquals('test', tobj.params.test)
                     assertNotSame(con, getl.h2Connection('group:con'))
                     assertSame(getl.h2Connection('group:con'), tobj.connection)
                     assertNotSame(con, tobj.connection)
-                    assertSame(tobj.connection, rep.register(rep.SEQUENCE, 'group:obj').connection)
+                    assertSame(tobj.connection, (rep.register(getl, rep.SEQUENCE, 'group:obj') as Sequence).connection)
                 }
                 exec()
             }
@@ -184,21 +188,22 @@ class RepositoryTest extends GetlDslTest {
 
     @Test
     void testFiles() {
-        def getl = new Getl()
-        def rep = new RepositoryFilemanagers()
+        def getl = Getl.GetlInstance()
+        getl.CleanGetl(true)
+        def rep = new RepositoryFilemanagers(getl)
 
-        def obj = rep.register(rep.FILEMANAGER, 'group:obj', true)
+        def obj = rep.register(getl, rep.FILEMANAGER, 'group:obj', true)
         obj.with { rootPath = 'test' }
 
         assertTrue(obj instanceof FileManager)
-        assertSame(obj, rep.register(rep.FILEMANAGER, 'group:obj') )
-        assertEquals('test', rep.register(rep.FILEMANAGER, 'group:obj').rootPath)
+        assertSame(obj, rep.register(getl, rep.FILEMANAGER, 'group:obj') )
+        assertEquals('test', rep.register(getl, rep.FILEMANAGER, 'group:obj').rootPath)
 
         getl.with {
             thread {
                 abortOnError = true
                 addThread {
-                    def tobj = rep.register(rep.FILEMANAGER, 'group:obj')
+                    def tobj = rep.register(getl, rep.FILEMANAGER, 'group:obj')
                     assertNotSame(obj, tobj)
                     assertEquals('test', tobj.rootPath)
                 }

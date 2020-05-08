@@ -64,7 +64,7 @@ class HiveTable extends TableDataset {
 
     @Override
     protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new HiveCreateSpec(useExternalParams, opts)
+        new HiveCreateSpec(this, useExternalParams, opts)
     }
 
     HiveCreateSpec createOpts(@DelegatesTo(HiveCreateSpec)
@@ -75,7 +75,7 @@ class HiveTable extends TableDataset {
 
     @Override
     protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new HiveWriteSpec(useExternalParams, opts)
+        new HiveWriteSpec(this, useExternalParams, opts)
     }
 
     /** Options for writing to Hive table */
@@ -87,7 +87,7 @@ class HiveTable extends TableDataset {
 
     @Override
     protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new HiveBulkLoadSpec(useExternalParams, opts)
+        new HiveBulkLoadSpec(this, useExternalParams, opts)
     }
 
     /** Options for loading csv files to Hive table */

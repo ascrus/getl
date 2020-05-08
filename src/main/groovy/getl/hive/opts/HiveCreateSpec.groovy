@@ -58,7 +58,7 @@ class HiveCreateSpec extends CreateSpec {
     HiveClusteredSpec clustered(@DelegatesTo(HiveClusteredSpec)
                                 @ClosureParams(value = SimpleType, options = ['getl.hive.opts.HiveClusteredSpec'])
                                         Closure cl = null) {
-        def parent = new HiveClusteredSpec(true, clustered)
+        def parent = new HiveClusteredSpec(ownerObject,true, clustered)
         parent.runClosure(cl)
 
         return parent
@@ -79,7 +79,7 @@ class HiveCreateSpec extends CreateSpec {
     HiveSkewedSpec skewed(@DelegatesTo(HiveSkewedSpec)
                           @ClosureParams(value = SimpleType, options = ['getl.hive.opts.HiveClusteredSpec'])
                                   Closure cl = null) {
-        def parent = new HiveSkewedSpec(true, skewed)
+        def parent = new HiveSkewedSpec(ownerObject, true, skewed)
         parent.runClosure(cl)
 
         return parent

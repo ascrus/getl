@@ -24,6 +24,8 @@
 
 package getl.utils
 
+import getl.lang.Getl
+import getl.lang.sub.GetlRepository
 import getl.utils.sub.EMailerAuth
 
 import javax.mail.*
@@ -31,7 +33,7 @@ import javax.mail.internet.*
 
 import getl.exception.ExceptionGETL
 
-class EMailer {
+class EMailer implements GetlRepository {
 	/** Emailer parameters */
 	final Map params = [:]
 
@@ -261,5 +263,22 @@ class EMailer {
 			Logs.Severe("emailer: failed send message for param $mprops")
 			throw e
 		}
+	}
+
+	private String _dslNameObject
+	@Override
+	String getDslNameObject() { _dslNameObject }
+	@Override
+	void setDslNameObject(String value) { _dslNameObject = value }
+
+	private Getl _dslCreator
+	@Override
+	Getl getDslCreator() { _dslCreator }
+	@Override
+	void setDslCreator(Getl value) { _dslCreator = value }
+	@Override
+	void dslCleanProps() {
+		_dslNameObject = null
+		_dslCreator = null
 	}
 }

@@ -40,11 +40,15 @@ import java.util.concurrent.ConcurrentHashMap
  *
  */
 class BaseSpec {
-    BaseSpec() {
+    /** Create options instance */
+    BaseSpec(Object owner) {
+        _owner = owner
         initSpec()
     }
 
-    BaseSpec(Boolean useExternalParams, Map<String, Object> importParams) {
+    /** Create options instance */
+    BaseSpec(Object owner, Boolean useExternalParams, Map<String, Object> importParams) {
+        _owner = owner
         if (importParams != null) {
             if (useExternalParams) {
                 _params = importParams
@@ -54,6 +58,11 @@ class BaseSpec {
         }
         initSpec()
     }
+
+    /** Options owner */
+    private Object _owner
+    /** Options owner */
+    Object getOwnerObject() { _owner }
 
     /** Init options after create object */
     protected void initSpec() { }

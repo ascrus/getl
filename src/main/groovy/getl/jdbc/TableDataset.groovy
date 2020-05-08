@@ -208,7 +208,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Create new options object for create table */
 	protected CreateSpec newCreateTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-		new CreateSpec(useExternalParams, opts)
+		new CreateSpec(this, useExternalParams, opts)
 	}
 
 	/** Generate new options object for create table */
@@ -228,7 +228,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Create new options object for drop table */
 	protected static DropSpec newDropTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-		new DropSpec(useExternalParams, opts)
+		new DropSpec(this, useExternalParams, opts)
 	}
 
 	/** Generate new options object for drop table */
@@ -248,7 +248,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Create new options object for reading table */
 	protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-		new ReadSpec(useExternalParams, opts)
+		new ReadSpec(this, useExternalParams, opts)
 	}
 
 	/** Generate new options object for reading table */
@@ -268,7 +268,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Create new options object for writing table */
 	protected WriteSpec newWriteTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-		new WriteSpec(useExternalParams, opts)
+		new WriteSpec(this, useExternalParams, opts)
 	}
 
 	/** Generate new options object for writing table */
@@ -288,7 +288,7 @@ class TableDataset extends JDBCDataset {
 
 	/** Create new options object for writing table */
 	protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
-		new BulkLoadSpec(useExternalParams, opts)
+		new BulkLoadSpec(this, useExternalParams, opts)
 	}
 
 	/** Generate new options object for writing table */
@@ -322,7 +322,7 @@ class TableDataset extends JDBCDataset {
 		if (!connection.driver.isOperation(Driver.Operation.BULKLOAD))
 			throw new ExceptionGETL("Driver not supported bulk load file!")
 
-		Getl getl = Getl.GetlInstance()
+		Getl getl = dslCreator?:Getl.GetlInstance()
 
 		if (source == null)
 			throw new ExceptionGETL("It is required to specify a CSV dataset to load into the table!")

@@ -91,7 +91,7 @@ class BoolUtils {
 	}*/
 	
 	/**
-	 * Validation instaceof use class for super class
+	 * Validation instanceof use class for super class
 	 * @param useClass
 	 * @param superClass
 	 * @return

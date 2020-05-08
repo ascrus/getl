@@ -24,6 +24,7 @@
 package getl.lang.sub
 
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.proc.sub.ExecutorThread
 import groovy.transform.Synchronized
 
@@ -32,6 +33,15 @@ import groovy.transform.Synchronized
  * @author Alexsey Konstantinov
  */
 class RepositoryFilter {
+    RepositoryFilter(Getl owner) {
+        _getlOwner = owner
+    }
+
+    /** Getl owner */
+    private Getl _getlOwner
+    /** Getl owner */
+    Getl getGetlOwner() { _getlOwner }
+
     /** Specified filter when searching for objects */
     private String _filteringGroup
     /** Specified filter when searching for objects */

@@ -103,8 +103,8 @@ class CreateSpec extends BaseSpec {
     /**
      * Create new parameters object for create index
      */
-    protected static IndexSpec newIndexParams(Boolean useExternalParams, Map<String, Object> opts) {
-        new IndexSpec(useExternalParams, opts)
+    protected IndexSpec newIndexParams(Boolean useExternalParams, Map<String, Object> opts) {
+        new IndexSpec(ownerObject, useExternalParams, opts)
     }
 
     /**
