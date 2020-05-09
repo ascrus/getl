@@ -36,16 +36,28 @@ import java.util.concurrent.ConcurrentHashMap
  * Repository objects manager
  * @param <T> class of objects
  */
-abstract class RepositoryObjects<T extends GetlRepository> {
-    RepositoryObjects(Getl owner) {
-        this._getlOwner = owner
+abstract class RepositoryObjects<T extends GetlRepository> implements GetlRepository {
+    RepositoryObjects() {
         this.objects = new ConcurrentHashMap<String, T>()
     }
 
-    /** Getl owner */
-    private Getl _getlOwner
-    /** Getl owner */
-    Getl getGetlOwner() { _getlOwner }
+    private String dslNameObject
+    @Override
+    String getDslNameObject() { dslNameObject }
+    @Override
+    void setDslNameObject(String value) { dslNameObject = value }
+
+    private Getl dslCreator
+    @Override
+    Getl getDslCreator() { dslCreator }
+    @Override
+    void setDslCreator(Getl value) { dslCreator = value }
+
+    @Override
+    void dslCleanProps() {
+        dslNameObject = null
+        dslCreator = null
+    }
 
     /** Repository objects */
     private Map<String, T> objects
@@ -69,9 +81,9 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @return list of names repository objects according to specified conditions
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
-    List<String> list(Getl getl, String mask = null, List<String> classes = null,
-                                 @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
-                                         Closure<Boolean> filter = null) {
+    List<String> list(String mask = null, List<String> classes = null,
+                      @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
+                            Closure<Boolean> filter = null) {
         (classes as List<String>)?.each {
             if (!(it in listClasses))
                 throw new ExceptionDSL("\"$it\" is not a supported $typeObject class!")
@@ -79,8 +91,8 @@ abstract class RepositoryObjects<T extends GetlRepository> {
 
         def res = [] as List<String>
 
-        def masknames = getl.parseName(mask)
-        def maskgroup = masknames.groupName?:getl.filteringGroup
+        def masknames = dslCreator.parseName(mask)
+        def maskgroup = masknames.groupName?:dslCreator.filteringGroup
         def maskobject = masknames.objectName
         def path = (maskobject != null)?new Path(mask: maskobject):null
 
@@ -108,14 +120,14 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param obj object
      * @return name of the object in the repository or null if not found
      */
-    String find(Getl getl, T obj) {
+    String find(T obj) {
         def repName = obj.dslNameObject
         if (repName == null) return null
 
         def className = obj.getClass().name
         if (!(className in listClasses)) return null
 
-        def repObj = objects.get(getl.repObjectName(repName))
+        def repObj = objects.get(dslCreator.repObjectName(repName))
         if (repObj == null) return null
         if (repObj.getClass().name != className) return null
 
@@ -127,8 +139,8 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param name repository name
      * @return found object or null if not found
      */
-    T find(Getl getl, String name) {
-        return objects.get(getl.repObjectName(name))
+    T find(String name) {
+        return objects.get(dslCreator.repObjectName(name))
     }
 
     /**
@@ -138,7 +150,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param validExist checking if an object is registered in the repository (default true)
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
-    T registerObject(Getl getl, T obj, String name = null, Boolean validExist = true) {
+    T registerObject(Getl creator, T obj, String name = null, Boolean validExist = true) {
         if (obj == null)
             throw new ExceptionDSL("$typeObject cannot be null!")
 
@@ -147,12 +159,12 @@ abstract class RepositoryObjects<T extends GetlRepository> {
             throw new ExceptionDSL("Unknown $typeObject class $className!")
 
         if (name == null) {
-            obj.dslCreator = getlOwner
+            obj.dslCreator = creator
             return obj
         }
 
         validExist = BoolUtils.IsValue(validExist, true)
-        def repName = getl.repObjectName(name)
+        def repName = dslCreator.repObjectName(name, true)
 
         synchronized (objects) {
             if (validExist) {
@@ -162,7 +174,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
             }
 
             obj.dslNameObject = repName
-            obj.dslCreator = (repName[0] == '#')?getl:getlOwner
+            obj.dslCreator = (repName[0] == '#')?creator:dslCreator
 
             objects.put(repName, obj)
         }
@@ -201,7 +213,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param cloneObj cloned object
      * @param params extended parameters
      */
-    protected void processRegisterObject(Getl getl, String className, String name, Boolean registration, GetlRepository repObj,
+    protected void processRegisterObject(Getl creator, String className, String name, Boolean registration, GetlRepository repObj,
                                          GetlRepository cloneObj, Map params) { }
 
     /**
@@ -211,7 +223,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param registration register a new object or return an existing one
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
-    T register(Getl getl, String className, String name = null, Boolean registration = false, Map params = null) {
+    T register(Getl creator, String className, String name = null, Boolean registration = false, Map params = null) {
         registration = BoolUtils.IsValue(registration)
 
         if (className == null && registration)
@@ -222,14 +234,14 @@ abstract class RepositoryObjects<T extends GetlRepository> {
 
         if (name == null) {
             def obj = createObject(className)
-            obj.dslCreator = getlOwner
-            processRegisterObject(getl, className, name, registration, obj, null, params)
+            obj.dslCreator = creator
+            processRegisterObject(creator, className, name, registration, obj, null, params)
             return obj
         }
 
-        def isThread = (getl.options().useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread)
+        def isThread = (dslCreator.options().useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread)
 
-        def repName = getl.repObjectName(name)
+        def repName = dslCreator.repObjectName(name, true)
         if (!registration && isThread) {
             def thread = Thread.currentThread() as ExecutorThread
             def threadobj = thread.findDslCloneObject(nameCloneCollection, repName) as T
@@ -245,12 +257,12 @@ abstract class RepositoryObjects<T extends GetlRepository> {
                 if (registration && isThread)
                     throw new ExceptionDSL("it is not allowed to register an \"$name\" $typeObject inside a thread!")
 
-                if (!registration && getl.options().validRegisterObjects)
+                if (!registration && dslCreator.options().validRegisterObjects)
                     throw new ExceptionDSL("$typeObject \"$name\" is not registered!")
 
                 obj = createObject(className)
                 obj.dslNameObject = repName
-                obj.dslCreator = (repName[0] == '#')?getl:getlOwner
+                obj.dslCreator = (repName[0] == '#')?creator:dslCreator
                 objects.put(repName, obj)
             } else {
                 if (registration)
@@ -274,11 +286,11 @@ abstract class RepositoryObjects<T extends GetlRepository> {
                     }
             ) as T
 
-            processRegisterObject(getl, className, name, registration, obj, threadobj, params)
+            processRegisterObject(creator, className, name, registration, obj, threadobj, params)
             obj = threadobj
         }
         else {
-            processRegisterObject(getl, className, name, registration, obj, null, params)
+            processRegisterObject(creator, className, name, registration, obj, null, params)
         }
 
         return obj
@@ -290,10 +302,10 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param classes list of processed classes
      * @param filter filter for detect objects to unregister
      */
-    void unregister(Getl getl, String mask = null, List<String> classes = null,
+    void unregister(String mask = null, List<String> classes = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
                                       Closure<Boolean> filter = null) {
-        def list = list(getl, mask, classes, filter)
+        def list = list(mask, classes, filter)
         list.each { name ->
             objects.remove(name)?.dslCleanProps()
         }
@@ -304,7 +316,7 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param creator object creator
      */
     void releaseTemporary(Getl creator = null) {
-        def list = list(getlOwner,'#*')
+        def list = list('#*')
         list.each { name ->
             def obj = objects.get(name)
             if (creator == null || obj.dslCreator == creator)
@@ -318,11 +330,11 @@ abstract class RepositoryObjects<T extends GetlRepository> {
      * @param classes list of need classes
      * @param cl processing code
      */
-    void processObjects(Getl getl, String mask, List<String> classes, Closure cl) {
+    void processObjects(String mask, List<String> classes, Closure cl) {
         if (cl == null)
             throw new ExceptionDSL('Process required closure code!')
 
-        def list = list(getl, mask, classes)
+        def list = list(mask, classes)
         list.each { name ->
             cl.call(name)
         }

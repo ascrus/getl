@@ -23,6 +23,7 @@
 */
 package getl.lang.sub
 
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 
 /**
@@ -130,11 +131,27 @@ class ParseObjectName {
     }
 
     /** Repository object name */
-    static String ObjectName(String name, String filteringGroup = null) {
+    static String ObjectName(String name, String filteringGroup = null, boolean checkName = false) {
         def names = Parse(name)
         if (filteringGroup != null && names.groupName == null)
             names.groupName = filteringGroup
 
+        if (checkName)
+            names.validName()
+
         return names.name
+    }
+
+    /** Check object name */
+    void validName() {
+        if (name.matches('(?i)([:]|[+]|[*]|[%]|[&]|[|]|[\\"])'))
+            throw new ExceptionDSL("The name \"$name\" contains invalid characters!")
+        if (groupName != null && groupName[0] == '#')
+            throw new ExceptionDSL('The group name cannot begin with the character "#"!')
+    }
+
+    /** Check object name */
+    static void ValidName(String name) {
+        Parse(name).validName()
     }
 }

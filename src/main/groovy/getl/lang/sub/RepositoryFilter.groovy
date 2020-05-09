@@ -23,30 +23,22 @@
 */
 package getl.lang.sub
 
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
-import getl.lang.Getl
+import getl.lang.opts.BaseSpec
 import getl.proc.sub.ExecutorThread
+import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 
 /**
  * Repository object filtering manager
  * @author Alexsey Konstantinov
  */
-class RepositoryFilter {
-    RepositoryFilter(Getl owner) {
-        _getlOwner = owner
-    }
-
-    /** Getl owner */
-    private Getl _getlOwner
-    /** Getl owner */
-    Getl getGetlOwner() { _getlOwner }
-
-    /** Specified filter when searching for objects */
-    private String _filteringGroup
+@InheritConstructors
+class RepositoryFilter extends BaseSpec {
     /** Specified filter when searching for objects */
     @Synchronized
-    String getFilteringGroup() { _filteringGroup }
+    String getFilteringGroup() { params.filteringGroup as String }
     /** Specified filter when searching for objects */
     @Synchronized
     void setFilteringGroup(String group) {
@@ -55,20 +47,27 @@ class RepositoryFilter {
         if (Thread.currentThread() instanceof ExecutorThread)
             throw new ExceptionGETL('Using group filtering within a threads is not allowed!')
 
-        _filteringGroup = group.trim().toLowerCase()
+        def value = parseName(group)
+        if (value.groupName != null)
+            throw new ExceptionDSL("Invalid group name \"$group\"!")
+        if (value.name[0] == '#')
+            throw new ExceptionDSL('The group name cannot begin with the character "#"!')
+
+        params.filteringGroup = value.name
     }
 
     /** Reset filter to search for objects */
     @Synchronized
-    void clearGroupFilter() { _filteringGroup = null }
+    void clearGroupFilter() { params.remove('filteringGroup') }
 
     /**
      * Repository object name
-     * @name name of object
+     * @param name name of object
+     * @param checkName name validation required
      * @return repository object name
      */
-    String objectName(String name) {
-        ParseObjectName.ObjectName(name, filteringGroup)
+    String objectName(String name, boolean checkName = false) {
+        ParseObjectName.ObjectName(name, filteringGroup, checkName)
     }
 
     /**
@@ -76,7 +75,7 @@ class RepositoryFilter {
      * @param name repository object name
      * @return parse result
      */
-    ParseObjectName parseName(String name) {
+    static ParseObjectName parseName(String name) {
         ParseObjectName.Parse(name)
     }
 }

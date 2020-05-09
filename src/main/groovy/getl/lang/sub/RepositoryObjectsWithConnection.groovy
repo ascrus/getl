@@ -36,8 +36,8 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithConnection> extends RepositoryObjects {
     @Override
-    protected void processRegisterObject(Getl getl, String className, String name, Boolean registration, GetlRepository repObj,
-                                         GetlRepository cloneObj, Map params) {
+    protected void processRegisterObject(Getl creator, String className, String name, Boolean registration,
+                                         GetlRepository repObj, GetlRepository cloneObj, Map params) {
         repObj = repObj as T
         cloneObj = cloneObj as T
         if (repObj.connection == null && (registration || name == null)) {
@@ -53,11 +53,11 @@ abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithCo
             repObj.connection = params.defaultConnection as Connection
 
         if (repObj.connection == null || cloneObj == null) return
-        if (!getl.options().useThreadModelConnection || (cloneObj.connection != null && cloneObj.connection != repObj.connection))
+        if (!dslCreator.options().useThreadModelConnection || (cloneObj.connection != null && cloneObj.connection != repObj.connection))
             return
 
         def thread = Thread.currentThread() as ExecutorThread
-        cloneObj.connection = thread.registerCloneObject(getl.getlRepository(RepositoryConnections.simpleName).nameCloneCollection,
+        cloneObj.connection = thread.registerCloneObject(dslCreator.getlRepository(RepositoryConnections.simpleName).nameCloneCollection,
                 repObj.connection,{ par ->
                     par = par as Connection
                     def c = par.cloneConnection()
@@ -76,9 +76,9 @@ abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithCo
      * @param registration registration required in the repository
      * @return repository object
      */
-    T register(Getl getl, Connection connection, String className, String name, Boolean registration = false,
+    T register(Getl creator, Connection connection, String className, String name, Boolean registration = false,
                Connection defaultConnection = null, Class classConnection = null, Closure cl = null) {
-        register(getl, className, name, registration,
+        register(creator, className, name, registration,
                 [connection: connection, defaultConnection: defaultConnection, classConnection: classConnection, code: cl]) as T
     }
 }

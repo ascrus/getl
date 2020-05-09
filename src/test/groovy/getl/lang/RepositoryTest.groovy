@@ -21,15 +21,15 @@ class RepositoryTest extends GetlDslTest {
     void testConnections() {
         def getl = Getl.GetlInstance()
         getl.CleanGetl(true)
-        def rep = new RepositoryConnections(getl)
+        def rep = new RepositoryConnections(dslCreator: getl)
         assertEquals(22, rep.listClasses.size())
-        assertEquals(0, rep.list(getl).size())
-        assertNull(rep.find(getl,'group:con'))
-        assertNull(rep.find(getl,new H2Connection()))
+        assertEquals(0, rep.list().size())
+        assertNull(rep.find('group:con'))
+        assertNull(rep.find(new H2Connection()))
 
         shouldFail { rep.register(getl, 'UNNOWN') }
         assertTrue(rep.register(getl, rep.H2CONNECTION) instanceof H2Connection)
-        assertEquals(0, rep.list(getl).size())
+        assertEquals(0, rep.list().size())
 
         shouldFail { rep.register(getl, null, 'group:con', true) }
         shouldFail { rep.register(getl, null, 'group:con') }
@@ -40,25 +40,25 @@ class RepositoryTest extends GetlDslTest {
         assertEquals('group:con', con.dslNameObject)
         assertEquals('test', rep.register(getl, null, 'group:con').extended.test)
 
-        assertTrue(rep.find(getl, 'group:con') == con)
-        assertTrue(rep.find(getl, con) == 'group:con')
+        assertTrue(rep.find('group:con') == con)
+        assertTrue(rep.find(con) == 'group:con')
 
-        assertEquals(1, rep.list(getl).size())
-        assertEquals(1, rep.list(getl, 'group:con').size())
-        assertEquals(1, rep.list(getl, 'group:*').size())
+        assertEquals(1, rep.list().size())
+        assertEquals(1, rep.list('group:con').size())
+        assertEquals(1, rep.list('group:*').size())
 
         getl.forGroup('group')
-        assertEquals(1, rep.list(getl, 'con').size())
+        assertEquals(1, rep.list('con').size())
         getl.clearGroupFilter()
-        assertEquals(0, rep.list(getl, 'con').size())
-        assertEquals(1, rep.list(getl, 'group:con').size())
+        assertEquals(0, rep.list('con').size())
+        assertEquals(1, rep.list('group:con').size())
 
-        assertEquals(1, rep.list(getl, null, [RepositoryConnections.H2CONNECTION]).size())
-        assertEquals(0, rep.list(getl, null, [RepositoryConnections.CSVCONNECTION]).size())
+        assertEquals(1, rep.list(null, [RepositoryConnections.H2CONNECTION]).size())
+        assertEquals(0, rep.list(null, [RepositoryConnections.CSVCONNECTION]).size())
 
-        assertEquals(1, rep.list(getl, null, null) { n, c -> n == 'group:con' }.size() )
-        assertEquals(1, rep.list(getl, null, null) { n, c -> c == con }.size() )
-        assertEquals(0, rep.list(getl, null, null) { n, c -> !(c instanceof H2Connection) }.size() )
+        assertEquals(1, rep.list(null, null) { n, c -> n == 'group:con' }.size() )
+        assertEquals(1, rep.list(null, null) { n, c -> c == con }.size() )
+        assertEquals(0, rep.list(null, null) { n, c -> !(c instanceof H2Connection) }.size() )
 
         Getl.Dsl {
             thread {
@@ -77,15 +77,15 @@ class RepositoryTest extends GetlDslTest {
             }
         }
 
-        rep.unregister(getl, 'group:')
-        assertTrue(rep.list(getl).isEmpty())
+        rep.unregister('group:')
+        assertTrue(rep.list().isEmpty())
     }
 
     @Test
     void testDatasets() {
         def getl = Getl.GetlInstance()
         getl.CleanGetl(true)
-        def rep = new RepositoryDatasets(getl)
+        def rep = new RepositoryDatasets(dslCreator: getl)
 
         getl.h2Connection('group:con', true) { }
         def con = getl.h2Connection('group:con')
@@ -120,7 +120,7 @@ class RepositoryTest extends GetlDslTest {
     void testHistoryPoint() {
         def getl = Getl.GetlInstance()
         getl.CleanGetl(true)
-        def rep = new RepositoryHistorypoints(getl)
+        def rep = new RepositoryHistorypoints(dslCreator: getl)
 
         getl.h2Connection('group:con', true) { }
         def con = getl.h2Connection('group:con')
@@ -155,7 +155,7 @@ class RepositoryTest extends GetlDslTest {
     void testSequence() {
         def getl = Getl.GetlInstance()
         getl.CleanGetl(true)
-        def rep = new RepositorySequences(getl)
+        def rep = new RepositorySequences(dslCreator: getl)
 
         getl.h2Connection('group:con', true) { }
         def con = getl.h2Connection('group:con')
@@ -190,7 +190,7 @@ class RepositoryTest extends GetlDslTest {
     void testFiles() {
         def getl = Getl.GetlInstance()
         getl.CleanGetl(true)
-        def rep = new RepositoryFilemanagers(getl)
+        def rep = new RepositoryFilemanagers(dslCreator: getl)
 
         def obj = rep.register(getl, rep.FILEMANAGER, 'group:obj', true)
         obj.with { rootPath = 'test' }
