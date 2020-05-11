@@ -29,9 +29,11 @@ import getl.files.sub.FileManagerList
 import getl.utils.FileUtils
 import getl.utils.StringUtils
 import groovy.transform.CompileStatic
-import org.apache.hadoop.fs.*
-import org.apache.hadoop.conf.*
+import org.apache.hadoop.fs.FileStatus
+import org.apache.hadoop.fs.FileSystem
 import getl.utils.Logs
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.security.UserGroupInformation
 import java.security.PrivilegedExceptionAction
 

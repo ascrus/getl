@@ -32,10 +32,10 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class RepositoryFilemanagers extends RepositoryObjects<Manager> {
-    public static final String FILEMANAGER = FileManager.name
-    public static final String FTPMANAGER = FTPManager.name
-    public static final String HDFSMANAGER = HDFSManager.name
-    public static final String SFTPMANAGER = SFTPManager.name
+    public static final String FILEMANAGER = 'getl.files.FileManager'
+    public static final String FTPMANAGER = 'getl.files.FTPManager'
+    public static final String HDFSMANAGER = 'getl.files.HDFSManager'
+    public static final String SFTPMANAGER = 'getl.files.SFTPManager'
 
     /** List of allowed file manager classes */
     public static final List<String> LISTFILEMANAGERS = [FILEMANAGER, FTPMANAGER, HDFSMANAGER, SFTPMANAGER]
