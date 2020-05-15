@@ -148,7 +148,7 @@ Examples:
     }
 
     /** Use this initialization class at application startup if it is not explicitly specified */
-    protected Class useInitClass() { null }
+    protected Class<Script> useInitClass() { null }
 
     /**
      * Launch Getl Dsl script<br><br>
@@ -223,7 +223,7 @@ Examples:
                 eng.setGetlSystemParameter('mainClass', runClass.name)
                 eng.setUnitTestMode(isTestMode)
 
-                def initClasses = [] as List<Class>
+                def initClasses = [] as List<Class<Script>>
 
                 if (eng.useInitClass() != null)
                     initClasses << eng.useInitClass()
@@ -233,7 +233,9 @@ Examples:
                     eng.setGetlSystemParameter('initClass', initClassName)
 
                     try {
-                        initClasses << Class.forName(initClassName)
+                        def initClass = Class.forName(initClassName)
+                        Script.isAssignableFrom(initClass)
+                        initClasses << (initClass as Class<Script>)
                     }
                     catch (Throwable e) {
                         throw new ExceptionDSL("Class \"$initClassName\" not found, error: ${e.message}!")
