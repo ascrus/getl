@@ -63,10 +63,13 @@ abstract class Manager implements Cloneable, GetlRepository {
 		methodParams.register('downloadFiles',
 				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
 
-
-		params.extended = [:] as Map<String, Object>
-		
+		initParams()
 		initMethods()
+	}
+
+	/** Initialization dataset parameters */
+	protected void initParams() {
+		params.extended = [:] as Map<String, Object>
 	}
 
 	static Manager CreateManager(Map params) {
@@ -130,7 +133,14 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Parameters */
 	final Map<String, Object> params = [:] as Map<String, Object>
 	/** Parameters */
-	Map<String, Object> getParams() { params }
+	Map getParams() { params }
+	/** Parameters */
+	void setParams(Map value) {
+		params.clear()
+		initParams()
+		if (value != null)
+			params.putAll(value)
+	}
 
 	/** System parameters */
 	final Map<String, Object> sysParams = [:] as Map<String, Object>
@@ -306,10 +316,12 @@ abstract class Manager implements Cloneable, GetlRepository {
 	@Synchronized
 	void list (String maskFiles,
 			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure processCode) {
-		if (processCode == null) throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager")
+		if (processCode == null)
+			throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager")
+
 		FileManagerList l = listDir(maskFiles)
 		for (int i = 0; i < l.size(); i++) {
-            (processCode as Closure).call(l.item(i))
+            processCode.call(l.item(i))
 		}
 	}
 	
@@ -594,7 +606,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	@CompileStatic
-	protected void processList(Manager man, TableDataset dest, Path path, String maskFile, Boolean recursive, Integer filelevel,
+	protected void processList(Manager man, TableDataset dest, Path path, String maskFile, Path maskPath, Boolean recursive, Integer filelevel,
 								Boolean requiredAnalize, Integer limit, Integer threadLevel, Integer threadCount, ManagerListProcessing code) {
 		if (threadLevel == null) threadCount = null
 
@@ -604,21 +616,35 @@ abstract class Manager implements Cloneable, GetlRepository {
 		long countDirs = 0
 
 		try {
-			FileManagerList listFiles = man.listDir(maskFile)
+			FileManagerList listFiles = man.listDir((!recursive)?maskFile:null)
 			List<String> threadDirs = null
 			if (threadCount != null) threadDirs = new LinkedList<String>()
 			for (int i = 0; i < listFiles.size(); i++) {
 				Map file = listFiles.item(i)
 
 				if (file.type == TypeFile.FILE) {
-					String fn = "${((recursive && curPath != '.') ? curPath + '/' : '')}${file.filename}"
-					Map m = path.analizeFile(fn)
-					if (m != null) {
+					boolean addFile = true
+					Map m
+					if (path != null) {
+						String fn = "${((recursive && curPath != '.')?curPath + '/' : '')}${file.filename}"
+						if (requiredAnalize) {
+							m = path.analizeFile(fn)
+							addFile = (m != null)
+						}
+						else {
+							addFile = path.match(fn)
+						}
+					}
+					else if (maskPath != null) {
+						addFile = maskPath.match(file.filename as String)
+					}
+					if (addFile) {
 						file.filepath = curPath
 						file.filetype = file.type.toString()
 						file.localfilename = file.filename
 						file.filelevel = filelevel
-						m.each { var, value ->
+						//noinspection GroovyVariableNotAssigned
+						m?.each { var, value ->
 							file.put(((String) var).toLowerCase(), value)
 						}
 
@@ -659,8 +685,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 					if (b) {
 						if (threadCount == null || filelevel != threadLevel) {
 							man.changeDirectory((String) (file.filename))
-							processList(man, dest, path, maskFile, recursive, filelevel + 1, requiredAnalize, limit,
-									threadLevel, threadCount, code)
+							processList(man, dest, path, maskFile, maskPath, recursive, filelevel + 1, requiredAnalize,
+										limit, threadLevel, threadCount, code)
 							man.changeDirectory('..')
 						} else {
 							threadDirs << (String) (file.filename)
@@ -697,8 +723,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 							TableDataset newDest = (dest.cloneDataset(null)) as TableDataset
 							newDest.openWrite(batchSize: 100)
 							try {
-								processList(newMan, newDest, path, maskFile, recursive, filelevel + 1, requiredAnalize,
-										limit, threadLevel, threadCount, newCode)
+								processList(newMan, newDest, path, maskFile, maskPath, recursive, filelevel + 1,
+											requiredAnalize, limit, threadLevel, threadCount, newCode)
 							}
 							finally {
 								newDest.doneWrite()
@@ -772,15 +798,14 @@ abstract class Manager implements Cloneable, GetlRepository {
 		validConnect()
 
 		String maskFile = lparams.maskFile?:null
-		Path path = (lparams.path as Path)?:(new Path(mask: maskFile?:"*.*"))
-		if (!path.isCompile) path.compile()
-		boolean requiredAnalize = !(path.vars.isEmpty())
-		boolean recursive = (lparams.recursive != null)?BoolUtils.IsValue(lparams.recursive):this.recursive
-		boolean takePathInStory =  (lparams.takePathInStory != null)?
-				BoolUtils.IsValue(lparams.takePathInStory, true):this.takePathInStory
-		boolean ignoreExistInStory = (lparams.ignoreExistInStory != null)?
-				BoolUtils.IsValue(lparams.ignoreExistInStory, true):this.ignoreExistInStory
-		boolean createStory = (lparams.createStory != null)?BoolUtils.IsValue(lparams.createStory):this.createStory
+		def maskPath = (maskFile != null)?new Path(mask: maskFile):null
+		Path path = lparams.path as Path
+		if (path != null && !path.isCompile) path.compile()
+		boolean requiredAnalize = (path != null && !(path.vars.isEmpty()))
+		boolean recursive = BoolUtils.IsValue(lparams.recursive, this.recursive)
+		boolean takePathInStory =  BoolUtils.IsValue(lparams.takePathInStory, this.takePathInStory)
+		boolean ignoreExistInStory = BoolUtils.IsValue(lparams.ignoreExistInStory, this.ignoreExistInStory)
+		boolean createStory = BoolUtils.IsValue(lparams.createStory, this.createStory)
 		boolean onlyFromStory = BoolUtils.IsValue(lparams.onlyFromStory)
 		boolean ignoreStory = BoolUtils.IsValue(lparams.ignoreStory)
 		
@@ -796,8 +821,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (threadCount != null && threadCount <= 0)
 			throw new ExceptionGETL("buildListThread value been must great zero!")
 		
-		if (recursive && maskFile != null)
-			throw new ExceptionGETL("Don't compatibility parameters recursive vs maskFile!")
+		if (path != null && maskFile != null)
+			throw new ExceptionGETL("Don't compatibility parameters path vs maskFile!")
 
 		def extendFields = lparams.extendFields as List<Field>
 		def extendIndexes = (lparams.extendIndexes as List<List<String>>)
@@ -818,17 +843,18 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		initFileList()
 		if (extendFields != null) fileList.addFields(extendFields)
-		path.vars.each { key, attr ->
-			def varName = key.toUpperCase()
-			if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
-				throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
+		if (path != null)
+			path.vars.each { key, attr ->
+				def varName = key.toUpperCase()
+				if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
+					throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
 
-			def ft = (attr.type as Field.Type)?:Field.Type.STRING
-			def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
-			def field = new Field(name: varName.toUpperCase(), type: ft, length: length, precision: (attr.precision as Integer)?:0)
-			fileList.field << field
-			if (createStory) storyTable.field << field
-		}
+				def ft = (attr.type as Field.Type)?:Field.Type.STRING
+				def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
+				def field = new Field(name: varName.toUpperCase(), type: ft, length: length, precision: (attr.precision as Integer)?:0)
+				fileList.field << field
+				if (createStory) storyTable.field << field
+			}
 		fileList.drop(ifExists: true)
 		def fileListIndexes = [:]
 		fileListIndexes.put(fileList.tableName + '_1', [columns: ['FILEPATH']])
@@ -883,7 +909,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 			try {
 				newFiles.openWrite(batchSize: 100)
 				try {
-					processList(this, newFiles, path, maskFile, recursive, 1, requiredAnalize, limit, threadLevel, threadCount, code)
+					processList(this, newFiles, path, maskFile, maskPath, recursive, 1, requiredAnalize, limit,
+								threadLevel, threadCount, code)
 				}
 				finally {
 					newFiles.doneWrite()
@@ -1591,6 +1618,29 @@ WHERE
 		
 		changeDirectoryToRoot()
 		deleteEmptyDirs(dirs, ignoreErrors, onDelete)
+	}
+
+	/**
+	 * Build a tree of directories
+	 * @return tree of directories
+	 */
+	Map<String, Object> buildTreeDirs() {
+		def res = [:] as Map<String, Object>
+		def objects = listDir()
+		for (int i = 0; i < objects.size(); i++) {
+			def obj = objects.item(i)
+			if (obj.type == TypeFile.DIRECTORY) {
+				changeDirectory(obj.filename as String)
+				try {
+					res.put(obj.filename as String, buildTreeDirs())
+				}
+				finally {
+					changeDirectoryUp()
+				}
+			}
+		}
+
+		return res
 	}
 	
 	/**

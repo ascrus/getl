@@ -44,14 +44,24 @@ import groovy.transform.stc.SimpleType
  *
  */
 class Sequence implements Cloneable, GetlRepository, WithConnection {
+	Sequence() {
+		initParams()
+	}
+
 	/** Save point manager parameters */
 	final Map<String, Object> params = [:] as Map<String, Object>
+
+	/**
+	 * Initialization parameters
+	 */
+	protected void initParams() { }
 
 	/** Save point manager parameters */
 	Map getParams() { params }
 	/** Save point manager parameters */
 	void setParams(Map value) {
 		params.clear()
+		initParams()
 		if (value != null) params.putAll(value)
 	}
 

@@ -4,7 +4,7 @@
  GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
  transform and load data into programs written in Groovy, or Java, as well as from any software that supports
  the work with Java classes.
- 
+
  Copyright (C) EasyData Company LTD
 
  This program is free software: you can redistribute it and/or modify
@@ -22,41 +22,19 @@
  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package getl.jdbc
-
-import groovy.transform.InheritConstructors
+package getl.lang.sub
 
 /**
- * View dataset class
+ * Object configuration file class
  * @author Alexsey Konstantinov
- *
  */
-class ViewDataset extends TableDataset {
-	@SuppressWarnings("UnnecessaryQualifiedReference")
-	ViewDataset() {
-		super()
-		sysParams.isView = true
-//		type = JDBCDataset.Type.VIEW
-	}
+class RepositoryObjectConfig {
+    /** Relative path to store object configuration */
+    public String path
 
-	@Override
-	Type getType() { super.getType()?:viewType }
+    /** Object configuration file name */
+    public String fileName
 
-	/** Use specified connection */
-	JDBCConnection useConnection(JDBCConnection value) {
-		setConnection(value)
-		return value
-	}
-
-	/**
-	 * Validation exists view
-	 * @return
-	 */
-	@Override
-	boolean isExists() {
-		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName,
-					tableName: tableName, type: ["VIEW"])
-		
-		(!ds.isEmpty())
-	}
+    /** Object configuration parameters */
+    public Map params
 }

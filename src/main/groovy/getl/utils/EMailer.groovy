@@ -34,6 +34,15 @@ import javax.mail.internet.*
 import getl.exception.ExceptionGETL
 
 class EMailer implements GetlRepository {
+	EMailer() {
+		initParams()
+	}
+
+	/**
+	 * Initialization parameters
+	 */
+	protected void initParams() { }
+
 	/** Emailer parameters */
 	final Map params = [:]
 
@@ -42,6 +51,7 @@ class EMailer implements GetlRepository {
 	/** Emailer parameters */
 	void setParams(Map value) {
 		params.clear()
+		initParams()
 		if (value != null) params.putAll(value)
 	}
 

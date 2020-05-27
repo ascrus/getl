@@ -40,10 +40,13 @@ import groovy.transform.stc.SimpleType
 class XMLDataset extends StructureFileDataset {
 	XMLDataset () {
 		super()
-		
-		Map<String, Boolean> m = [:]
-		params.features = m
 		driver_params = [:]
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+		params.features = [:] as Map<String, Boolean>
 	}
 	
 	/** Feature parsing options */

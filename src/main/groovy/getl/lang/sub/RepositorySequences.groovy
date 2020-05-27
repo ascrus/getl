@@ -23,7 +23,9 @@
 */
 package getl.lang.sub
 
+import getl.exception.ExceptionDSL
 import getl.jdbc.Sequence
+import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -45,5 +47,30 @@ class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
     @Override
     protected Sequence createObject(String className) {
         return new Sequence()
+    }
+
+    @Override
+    Map exportConfig(String name) {
+        def obj = find(name)
+        if (obj == null)
+            throw new ExceptionDSL("Sequence \"$name\" not found!")
+        if (obj.connection == null)
+            throw new ExceptionDSL("No connection specified for sequence \"$name\"!")
+        if (obj.connection.dslNameObject == null)
+            throw new ExceptionDSL("Connection for sequence \"$name\" not found in repository!")
+        if (obj.fullName == null)
+            throw new ExceptionDSL("No name specified for sequence \"$name\"!")
+
+        return [connection: obj.connection.dslNameObject] + obj.params
+    }
+
+    @Override
+    GetlRepository importConfig(Map config) {
+        def connectionName = config.connection as String
+        def con = dslCreator.connection(connectionName)
+        def obj = new Sequence()
+        obj.params = MapUtils.Copy(config, ['connection'])
+        obj.setConnection(con)
+        return obj
     }
 }

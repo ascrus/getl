@@ -37,13 +37,14 @@ import getl.utils.*
 class MultipleDataset extends Dataset {
 	MultipleDataset () {
 		super()
-		
-		Map<String, Dataset> d = [:]
-		params.dest = d
-		
-		Map<String, Closure> cond = [:]
-		params.condition = cond
 		connection = new Connection([driver: MutlipleDatasetDriver])
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+		params.dest = [:] as Map<String, Dataset>
+		params.condition = [:] as Map<String, Closure>
 	}
 	
 	/**

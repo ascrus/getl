@@ -38,14 +38,11 @@ import groovy.transform.stc.SimpleType
  *
  */
 class StructureFileDataset extends FileDataset {
-	StructureFileDataset () {
-		super()
-		
-		List<Field> l = []
-		params.attributeField = l
-		
-		Map<String, Object> m = [:]
-		params.attributeValue = m
+	@Override
+	protected void initParams() {
+		super.initParams()
+		params.attributeField = [] as List<Field>
+		params.attributeValue = [:] as Map<String, Object>
 	}
 	
 	@Override

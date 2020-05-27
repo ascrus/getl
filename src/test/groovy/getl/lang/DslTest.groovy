@@ -4,7 +4,11 @@ import getl.csv.CSVConnection
 import getl.files.FileManager
 import getl.h2.*
 import getl.jdbc.TableDataset
+import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
+import getl.lang.sub.RepositoryFilemanagers
+import getl.lang.sub.RepositoryHistorypoints
+import getl.lang.sub.RepositorySequences
 import getl.proc.Job
 import getl.test.GetlDslTest
 import getl.test.TestInit
@@ -710,6 +714,16 @@ ORDER BY t1.id"""
             assertEquals(0, listDatasets().size())
             assertEquals(0, listHistorypoints().size())
             assertEquals(1, listFilemanagers().size())
+
+            clearGroupFilter()
+            repositoryStorageManager {
+                storagePath = 'c:/tmp/getl.dsl/repository'
+                saveToStorage(RepositoryConnections.simpleName)
+                saveToStorage(RepositoryDatasets.simpleName)
+                saveToStorage(RepositoryHistorypoints.simpleName)
+                saveToStorage(RepositorySequences.simpleName)
+                saveToStorage(RepositoryFilemanagers.simpleName)
+            }
         }
     }
 

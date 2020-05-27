@@ -37,6 +37,11 @@ import groovy.transform.InheritConstructors
  *
  */
 class FileManager extends Manager {
+	FileManager () {
+		super()
+		isWindowsFileSystem = (File.separator == "\\")
+	}
+
 	/** Connect status */
 	private Boolean connected = false
 	/** Connect status */
@@ -44,12 +49,7 @@ class FileManager extends Manager {
 
 	/** Current directory file handler */
 	private File currentDir
-	
-	FileManager () {
-		super()
-		isWindowsFileSystem = (File.separator == "\\")
-	}
-	
+
 	@Override
 	protected void initMethods () {
 		super.initMethods()

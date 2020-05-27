@@ -27,6 +27,7 @@ import getl.csv.CSVConnection
 import getl.data.Connection
 import getl.db2.DB2Connection
 import getl.excel.ExcelConnection
+import getl.exception.ExceptionDSL
 import getl.firebird.FirebirdConnection
 import getl.h2.H2Connection
 import getl.hive.HiveConnection
@@ -42,6 +43,7 @@ import getl.postgresql.PostgreSQLConnection
 import getl.salesforce.SalesForceConnection
 import getl.tfs.TDS
 import getl.tfs.TFS
+import getl.utils.MapUtils
 import getl.vertica.VerticaConnection
 import getl.xero.XeroConnection
 import getl.xml.XMLConnection
@@ -118,5 +120,19 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     @Override
     protected Connection createObject(String className) {
         Connection.CreateConnection(connection: className)
+    }
+
+    @Override
+    Map exportConfig(String name) {
+        def obj = find(name)
+        if (obj == null)
+            throw new ExceptionDSL("Connection \"$name\" not found!")
+
+        return [connection: obj.class.name] + obj.params
+    }
+
+    @Override
+    GetlRepository importConfig(Map config) {
+        return Connection.CreateConnection(config)
     }
 }

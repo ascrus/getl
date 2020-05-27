@@ -43,8 +43,6 @@ import java.util.concurrent.ConcurrentHashMap
  *
  */
 class Flow {
-	protected ParamMethodValidator methodParams = new ParamMethodValidator()
-	
 	Flow () {
 		methodParams.register('copy',
 				['source', 'tempSource', 'dest', 'destChild', 'tempDest', 'inheritFields', 'createDest',
@@ -63,7 +61,17 @@ class Flow {
 
 		methodParams.register('process', ['source', 'source_*', 'sourceParams', 'tempSource', 'saveErrors',
 										  'onInit', 'onDone', 'process'])
+
+		initParams()
 	}
+
+	/**
+	 * Initialization parameters
+	 */
+	protected void initParams() { }
+
+	/** Parameters validator */
+	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 	
 	private String config
 	/** Name in config from section "flows" */
@@ -104,6 +112,7 @@ class Flow {
 	/** Flow parameters */
 	void setParams(Map value) {
 		params.clear()
+		initParams()
 		if (value != null) params.putAll(value)
 	}
 

@@ -81,4 +81,32 @@ abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithCo
         register(creator, className, name, registration,
                 [connection: connection, defaultConnection: defaultConnection, classConnection: classConnection, code: cl]) as T
     }
+
+    /**
+     * Register object in repository
+     * @param obj object for registration
+     * @param name name object in repository
+     * @param validExist checking if an object is registered in the repository (default true)
+     */
+    T registerObject(Getl creator, T obj, String name = null, Boolean validExist = true) {
+        super.registerObject(creator, obj, name, validExist)
+    }
+
+    /**
+     * Find a object by name
+     * @param name repository name
+     * @return found object or null if not found
+     */
+    T find(String name) {
+        return super.find(name) as T
+    }
+
+    /**
+     * Search for an object in the repository
+     * @param obj object
+     * @return name of the object in the repository or null if not found
+     */
+    String find(T obj) {
+        super.find(obj)
+    }
 }

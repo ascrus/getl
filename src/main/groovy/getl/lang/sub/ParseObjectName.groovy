@@ -154,4 +154,14 @@ class ParseObjectName {
     static void ValidName(String name) {
         Parse(name).validName()
     }
+
+    /** Convert object name to file name */
+    String toFileName() {
+        return groupName + '@' + objectName
+    }
+
+    /** Convert group name to path */
+    String toFilePath() {
+        return groupName?.replace('.', '/')
+    }
 }

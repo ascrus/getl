@@ -37,15 +37,14 @@ import getl.exception.ExceptionGETL
 class AggregatorDataset extends VirtualDataset {
 	AggregatorDataset () {
 		super()
-		
 		connection = new Connection([driver: AggregatorDatasetDriver])
-		
-		List<String> fieldByGroup = []
-		params.fieldByGroup = fieldByGroup
-		
-		Map<String, Map> fieldCalc = [:]
-		params.fieldCalc = fieldCalc
-		
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+		params.fieldByGroup = [] as List<String>
+		params.fieldCalc = [:] as Map<String, Map>
 		params.algorithm = "HASH"
 	}
 

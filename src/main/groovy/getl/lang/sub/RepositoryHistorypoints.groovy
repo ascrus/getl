@@ -23,7 +23,9 @@
 */
 package getl.lang.sub
 
+import getl.exception.ExceptionDSL
 import getl.jdbc.SavePointManager
+import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -45,5 +47,30 @@ class RepositoryHistorypoints extends RepositoryObjectsWithConnection<SavePointM
     @Override
     protected SavePointManager createObject(String className) {
         return new SavePointManager()
+    }
+
+    @Override
+    Map exportConfig(String name) {
+        def obj = find(name)
+        if (obj == null)
+            throw new ExceptionDSL("History point \"$name\" not found!")
+        if (obj.connection == null)
+            throw new ExceptionDSL("No connection specified for history point \"$name\"!")
+        if (obj.connection.dslNameObject == null)
+            throw new ExceptionDSL("Connection for history point \"$name\" not found in repository!")
+        if (obj.fullTableName == null)
+            throw new ExceptionDSL("No table specified for history point \"$name\"!")
+
+        return [connection: obj.connection.dslNameObject] + obj.params
+    }
+
+    @Override
+    GetlRepository importConfig(Map config) {
+        def connectionName = config.connection as String
+        def con = dslCreator.connection(connectionName)
+        def obj = new SavePointManager()
+        obj.params = MapUtils.Copy(config, ['connection'])
+        obj.setConnection(con)
+        return obj
     }
 }

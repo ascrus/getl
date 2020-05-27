@@ -319,7 +319,7 @@ class ConfigSlurper extends ConfigManager {
 	 * @param codePage text encoding
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 */
-	static void SaveConfigFile (Map<String, Object> data, File file, String codePage = 'UTF-8', Boolean convertVars = false) {
+	static void SaveConfigFile (Map data, File file, String codePage = 'UTF-8', Boolean convertVars = false) {
 		Writer writer
 		try {
 			if (file.exists()) file.delete()
@@ -330,15 +330,15 @@ class ConfigSlurper extends ConfigManager {
 			throw e
 		}
 
-		def content = MapUtils.DeepCopy(data)
-		def vars = content.vars as Map
+		def vars = data.vars as Map
 		if (vars != null && !vars.isEmpty()) {
-			content.remove('vars')
-			content = ['configvars': vars] + content
+			data = [configvars: vars] + MapUtils.Copy(data, ['vars'])
 		}
 
 		try {
-			SaveMap(content, writer, convertVars)
+			StringBuilder sb = new StringBuilder()
+			SaveMap(data, sb, convertVars)
+			writer.write(sb.toString())
 		}
 		catch (Exception e) {
 			Logs.Severe("Error save configuration to file \"$file\", error: ${e.message}")
@@ -358,31 +358,56 @@ class ConfigSlurper extends ConfigManager {
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 * @param tab indent when writing to text
 	 * @param isListMap data is in the list
+	 * @return count saved items
 	 */
-	static void SaveMap(Map<String, Object> data, Writer writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
+	static int SaveMap(Map data, StringBuilder writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		int i = 0
 		int count = data.size()
+		def res = 0
 		data.each { key, value ->
 			i++
+			def added = false
 			if (value instanceof Map) {
-				def eqStr = (isListMap)?':':''
-				writer.println("${tabStr}${key}${eqStr} {")
-				SaveMap(value as Map, writer, convertVars, tab + 1)
-				writer.print("${tabStr}}")
+				def map = value as Map
+				if (!map.isEmpty()) {
+					def sb = new StringBuilder()
+					if (SaveMap(map, sb, convertVars, tab + 1) > 0) {
+						def eqStr = (isListMap)?':':''
+						writer.append("${tabStr}${key}${eqStr} {\n")
+						writer.append(sb)
+						writer.append("${tabStr}}")
+						res++
+						added = true
+					}
+				}
 			}
 			else if (value instanceof List) {
-				def eqStr = (isListMap)?':':' ='
-				writer.println("${tabStr}${key}${eqStr} [")
-				SaveList(value as List, writer, convertVars, tab + 1)
-				writer.print("${tabStr}]")
+				def list = value as List
+				if (!list.isEmpty()) {
+					def sb = new StringBuilder()
+					if (SaveList(list, sb, convertVars, tab + 1) > 0) {
+						def eqStr = (isListMap) ? ':' : ' ='
+						writer.append("${tabStr}${key}${eqStr} [\n")
+						writer.append(sb)
+						writer.append("${tabStr}]")
+						res++
+						added = true
+					}
+				}
 			}
 			else {
-				SaveObject(key, value, writer, convertVars, tab, isListMap)
+				if (SaveObject(key, value, writer, convertVars, tab, isListMap)) {
+					res++
+					added = true
+				}
 			}
 
-			if (isListMap && i < count) writer.println(',') else writer.println()
+			if (added)
+				if (isListMap && i < count) writer.append(',\n') else writer.append('\n')
 		}
+
+		return res
 	}
 
 	/**
@@ -391,28 +416,54 @@ class ConfigSlurper extends ConfigManager {
 	 * @param writer writer object
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 * @param tab indent when writing to text
+	 * @return count saved items
 	 */
-	static void SaveList(List data, Writer writer, Boolean convertVars = false, Integer tab = 0) {
+	static int SaveList(List data, StringBuilder writer, Boolean convertVars = false, Integer tab = 0) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		int i = 0
 		int count = data.size()
+		def res = 0
 		data.each { value ->
 			i++
+			def added = false
 			if (value instanceof Map) {
-				writer.println("${tabStr}[")
-				SaveMap(value as Map, writer, convertVars, tab + 1, true)
-				writer.print("${tabStr}]")
+				def map = value as Map
+				if (!map.isEmpty()) {
+					def sb = new StringBuilder()
+					if (SaveMap(map, sb, convertVars, tab + 1, true) > 0) {
+						writer.append("${tabStr}[\n")
+						writer.append(sb)
+						writer.append("${tabStr}]")
+						res++
+						added = true
+					}
+				}
 			}
 			else if (value instanceof List) {
-				writer.println("${tabStr}[")
-				SaveList(value as List, writer, convertVars, tab + 1)
-				writer.print("${tabStr}]")
+				def list = value as List
+				if (!list.isEmpty()) {
+					def sb = new StringBuilder()
+					if (SaveList(list, sb, convertVars, tab + 1) > 0) {
+						writer.append("${tabStr}[\n")
+						writer.append(sb)
+						writer.append("${tabStr}]")
+						res++
+						added = true
+					}
+				}
 			}
 			else {
-				SaveObject(null, value, writer, convertVars, tab)
+				if (SaveObject(null, value, writer, convertVars, tab)) {
+					res++
+					added = true
+				}
 			}
-			if (i < count) writer.println(',') else writer.println()
+
+			if (added)
+				if (i < count) writer.append(',\n') else writer.append('\n')
 		}
+
+		return res
 	}
 
 	/**
@@ -423,25 +474,35 @@ class ConfigSlurper extends ConfigManager {
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 * @param tab indent when writing to text
 	 * @param isListMap object is in the list
+	 * @return object saved
 	 */
-	static void SaveObject(def key, def value, Writer writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
+	static boolean SaveObject(def key, def value, StringBuilder writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
+		if (value instanceof Closure) return false
+
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def eqStr = (isListMap)?':':' ='
 		def keyStr = (key != null)?"$key$eqStr ":''
 		if (value instanceof Date) {
-			writer.print("${tabStr}${keyStr}new java.sql.Timestamp(Date.parse('yyyy-MM-dd HH:mm:ss.SSS', '${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', value as Date)}').time)")
+			writer.append("${tabStr}${keyStr}new java.sql.Timestamp(Date.parse('yyyy-MM-dd HH:mm:ss.SSS', '${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', value as Date)}').time)")
 		}
-		else if (value instanceof String || value instanceof GString) {
+		else if (value instanceof Enum) {
+			def e = value as Enum
+			def str = e.class.name.replace('$', '.') + '.' + e.name()
+			writer.append("${tabStr}${keyStr}$str")
+		}
+		else if (value instanceof String || value instanceof GString || value instanceof Enum) {
 			def str = value.toString()
 			def quote = (str.indexOf('${') == -1)?'\'':'"'
 			if (convertVars) {
 				value = value.toString().replace('${', '${vars.')
 			}
-			writer.print("${tabStr}${keyStr}${quote}${StringUtils.EscapeJavaWithoutUTF(value.toString())}${quote}")
+			writer.append("${tabStr}${keyStr}${quote}${StringUtils.EscapeJavaWithoutUTF(value.toString())}${quote}")
 		}
 		else {
-			writer.print("${tabStr}${keyStr}${value.toString()}")
+			writer.append("${tabStr}${keyStr}${value.toString()}")
 		}
+
+		return true
 	}
 
 	static void main(def args) {

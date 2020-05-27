@@ -60,11 +60,9 @@ class SalesForceDataset extends Dataset {
 	/** Current SalesForce connection*/
 	SalesForceConnection getCurrentSalesForceConnection() { connection as SalesForceConnection }
 
-	/**
-	 * SalesForce object name
-	 * @return
-	 */
+	/** SalesForce object name */
 	String getSfObjectName () { params.sfObjectName }
+	/** SalesForce object name */
 	void setSfObjectName (final String value) { params.sfObjectName = value }
 
 	@Override

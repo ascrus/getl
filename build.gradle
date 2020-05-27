@@ -1,12 +1,12 @@
 import java.time.LocalDateTime
 
-apply plugin: 'idea'
+//apply plugin: 'idea'
 apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = '4.4.3-1-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.4.3-2-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -19,9 +19,11 @@ repositories {
 }
 
 dependencies {
-	compile 'org.codehaus.groovy:groovy-all:3.0.3'
-	compile 'org.codehaus.groovy:groovy-dateutil:3.0.3'
-	compile 'org.codehaus.groovy:groovy-yaml:3.0.3'
+	compile('org.codehaus.groovy:groovy-all:3.0.4') {
+		exclude(group: 'org.codehaus.groovy', module: 'groovy-testng')
+	}
+	compile 'org.codehaus.groovy:groovy-dateutil:3.0.4'
+	compile 'org.codehaus.groovy:groovy-yaml:3.0.4'
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'
 	addJars 'com.h2database:h2:1.4.200'

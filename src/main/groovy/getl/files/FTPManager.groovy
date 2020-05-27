@@ -38,7 +38,10 @@ import it.sauronsoftware.ftp4j.*
  */
 @InheritConstructors
 class FTPManager extends Manager {
-	public FTPClient client = new FTPClient()
+	/** FTP driver */
+	final FTPClient client = new FTPClient()
+	/** FTP driver */
+	FTPClient getClient() { client }
 	
 	@Override
 	protected void initMethods () {

@@ -64,7 +64,7 @@ class TDS extends H2Connection {
 		
 		if (connectURL == null && params."inMemory" == null) params.inMemory = true
 
-		synchronized (tempPath) {
+		synchronized (lock) {
 			if (connectURL == null && connectDatabase == null) {
 				if (inMemory) {
 					connectDatabase = "getl"
@@ -98,7 +98,14 @@ class TDS extends H2Connection {
 	}
 
 	/** Global temporary database connection object */
-	public static final TDS storage = new TDS([:])
+	public static final TDS storage
+	/** Global locker object */
+	private static final Object lock
+
+	static {
+		lock = new Object()
+		storage = new TDS([:])
+	}
 
     /** Temp path of database file */
     String tempPath = TFS.systemPath

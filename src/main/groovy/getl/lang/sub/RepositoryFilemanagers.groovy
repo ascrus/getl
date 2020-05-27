@@ -23,7 +23,9 @@
 */
 package getl.lang.sub
 
+import getl.exception.ExceptionDSL
 import getl.files.*
+import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -48,5 +50,19 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
     @Override
     protected Manager createObject(String className) {
         return Manager.CreateManager(manager: className)
+    }
+
+    @Override
+    Map exportConfig(String name) {
+        def obj = find(name)
+        if (obj == null)
+            throw new ExceptionDSL("File manager \"$name\" not found!")
+
+        return [manager: obj.class.name] + obj.params
+    }
+
+    @Override
+    GetlRepository importConfig(Map config) {
+        return Manager.CreateManager(config)
     }
 }

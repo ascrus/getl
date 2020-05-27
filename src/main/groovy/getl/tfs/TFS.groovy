@@ -40,24 +40,25 @@ class TFS extends CSVConnection {
 	TFS() {
 		super(driver: TFSDriver)
 
+		validParams()
+
 		methodParams.register("Super", ["deleteOnExit"])
 		if (this.getClass().name == 'getl.tfs.TFS') methodParams.validation("Super", params)
-
-		initParams()
 	}
 
 	TFS(Map params) {
 		super(new HashMap([driver: TFSDriver]) + params?:[:])
 
+		validParams()
+
 		methodParams.register("Super", ["deleteOnExit"])
 		if (this.getClass().name == 'getl.tfs.TFS') methodParams.validation("Super", params?:[:])
-
-		initParams()
 	}
 
 	private static String _systemPath
 
-	static def getSystemPath() {
+	/** Used temporary directory */
+	static String getSystemPath() {
         if (_systemPath == null) {
 			_systemPath = "${FileUtils.SystemTempDir()}/getl/${FileUtils.UniqueFileName()}"
 			FileUtils.ValidPath(_systemPath)
@@ -69,10 +70,8 @@ class TFS extends CSVConnection {
 	/** Global temporary file connection object */
 	public static final TFS storage = new TFS([:])
 
-	/**
-	 * Init on creating
-	 */
-	protected void initParams() {
+	/** Validation parameters */
+	protected void validParams() {
 		if (params.fieldDelimiter == null) fieldDelimiter = "|"
 		if (params.rowDelimiter == null) rowDelimiter = "\n"
 		if (params.autoSchema == null) autoSchema = true
@@ -84,12 +83,9 @@ class TFS extends CSVConnection {
 		setPath((params.path as String)?:"$systemPath/tfs-files.getl")
 	}
 	
-	/**
-	 * Delete temporary directories and files after exit is program
-	 * @return
-	 */
+	/** Delete temporary directories and files after exit is program */
 	boolean getDeleteOnExit () { params.deleteOnExit }
-
+	/** Delete temporary directories and files after exit is program */
 	void setDeleteOnExit (boolean value) { params.deleteOnExit = value }
 	
 	@Override
@@ -143,5 +139,11 @@ class TFS extends CSVConnection {
 	 */
 	static TFSDataset dataset(TFS connection) {
 		dataset(connection, FileUtils.UniqueFileName(), false)
+	}
+
+	@Override
+	void setParams(Map value) {
+		super.setParams(value)
+		validParams()
 	}
 }

@@ -39,6 +39,11 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class ManagerBuildListSpec extends BaseSpec {
+    /** File search mask */
+    String getMaskFile() { params.maskFile as String }
+    /** File search mask */
+    void setMaskFile(String value) { params.maskFile = value }
+
     /** File path search mask */
     Path getMaskPath() { params.path as Path }
     /** File path search mask */

@@ -50,12 +50,15 @@ class TableDataset extends JDBCDataset {
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	TableDataset() {
 		super()
-		type = JDBCDataset.Type.TABLE
+//		type = JDBCDataset.Type.TABLE
 		sysParams.isTable = true
 		methodParams.register('unionDataset', [])
 		methodParams.register('generateDsl', [])
 		methodParams.register('deleteRows', ['where'])
 	}
+
+	@Override
+	Type getType() { super.getType()?:tableType }
 
 	/** Schema name */
 	String getSchemaName() { ListUtils.NotNullValue([params.schemaName, currentJDBCConnection?.schemaName]) }

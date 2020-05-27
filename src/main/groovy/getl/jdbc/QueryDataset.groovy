@@ -35,19 +35,23 @@ import getl.utils.StringUtils
  */
 @InheritConstructors
 class QueryDataset extends JDBCDataset {
+	QueryDataset() {
+		super()
+		sysParams.isQuery = true
+	}
+
 	/** Use specified connection */
 	JDBCConnection useConnection(JDBCConnection value) {
 		setConnection(value)
 		return value
 	}
 
-	/**
-	 * SQL query text
-	 */
+	@Override
+	Type getType() { super.getType()?:queryType }
+
+	/** SQL query text */
 	String getQuery () { params.query as String }
-	/**
-	 * SQL query text
-	 */
+	/** SQL query text */
 	void setQuery (String value) { params.query = value }
 	
 	@Override

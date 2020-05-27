@@ -61,7 +61,6 @@ import getl.xml.*
 import getl.yaml.*
 import groovy.test.GroovyAssert
 import groovy.test.GroovyTestCase
-import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -377,9 +376,12 @@ Examples:
         _repositorySequences = new RepositorySequences()
         _repositoryFilemanagers = new RepositoryFilemanagers()
 
+        _repositoryStorageManager = new RepositoryStorageManager(this)
+
         _params.langOpts = _langOpts
         _params.repositoryFilter = _repositoryFilter
         _params.listRepository = _listRepository
+        _params.repositoryStorageManager = _repositoryStorageManager
 
         registerRepository(RepositoryConnections.simpleName, _repositoryConnections)
         registerRepository(RepositoryDatasets.simpleName, _repositoryDatasets)
@@ -550,6 +552,15 @@ Examples:
         return rep
     }
 
+    private RepositoryStorageManager _repositoryStorageManager
+    /** Managing repository object storage */
+    RepositoryStorageManager repositoryStorageManager(@DelegatesTo(RepositoryStorageManager)
+                                               @ClosureParams(value = SimpleType, options = ['getl.lang.sub.RepositoryStorageManager'])
+                                                       Closure cl) {
+        runClosure(_repositoryStorageManager, cl)
+        return _repositoryStorageManager
+    }
+
     /** Running init script */
     Boolean getIsInitMode() { BoolUtils.IsValue(_params.isInitMode) }
 
@@ -559,6 +570,7 @@ Examples:
 
         _langOpts = _params.langOpts as LangSpec
         _repositoryFilter = _params.repositoryFilter as RepositoryFilter
+        _repositoryStorageManager = _params.repositoryStorageManager as RepositoryStorageManager
         _listRepository = _params.listRepository as Map<String, RepositoryObjects>
         _repositoryConnections = getlRepository(RepositoryConnections.simpleName) as RepositoryConnections
         _repositoryDatasets = getlRepository(RepositoryDatasets.simpleName) as RepositoryDatasets

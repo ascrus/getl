@@ -3,6 +3,7 @@ package getl.files
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.Logs
+import getl.utils.MapUtils
 import getl.utils.StringUtils
 import org.junit.Test
 
@@ -62,6 +63,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
         upload()
         command()
         rename()
+        buildTreeDirs()
         buildList()
         download()
         remove()
@@ -162,6 +164,17 @@ abstract class ManagerTest extends getl.test.GetlTest {
         manager.changeDirectoryToRoot()
 
         def listTable = manager.buildListFiles {
+            recursive = true
+        }
+        assertEquals(13, listTable.countRow())
+
+        listTable = manager.buildListFiles {
+            maskFile = 'subdir*.txt'
+            recursive = true
+        }
+        assertEquals(9, listTable.countRow())
+
+        listTable = manager.buildListFiles {
             useMaskPath {
                 mask = 'catalog_{catalog}/subdir_{subdir}/*.txt'
                 variable('catalog') { type = integerFieldType }
@@ -170,6 +183,29 @@ abstract class ManagerTest extends getl.test.GetlTest {
             recursive = true
         }
         assertEquals(9, listTable.countRow())
+    }
+
+    private void buildTreeDirs() {
+        manager.changeDirectoryToRoot()
+        def tree = manager.buildTreeDirs()
+        def orig = MapUtils.Closure2Map {
+            catalog_1 {
+                subdir_1 { }
+                subdir_2 { }
+                subdir_3 { }
+            }
+            catalog_2 {
+                subdir_1 { }
+                subdir_2 { }
+                subdir_3 { }
+            }
+            catalog_3 {
+                subdir_1 { }
+                subdir_2 { }
+                subdir_3 { }
+            }
+        }
+        assertEquals(orig, tree)
     }
 
     private void download() {

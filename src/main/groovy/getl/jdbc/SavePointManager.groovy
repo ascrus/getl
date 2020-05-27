@@ -44,6 +44,13 @@ import java.sql.Timestamp
  */
 class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	SavePointManager () {
+		initParams()
+	}
+
+	/**
+	 * Initialization parameters
+	 */
+	protected void initParams() {
 		params.fields = [:] as Map<String, Object>
 		params.extended = [:] as Map<String, Object>
 	}
@@ -56,6 +63,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	/** Save point manager parameters */
 	void setParams(Map value) {
 		params.clear()
+		initParams()
 		if (value != null) params.putAll(value)
 	}
 

@@ -330,7 +330,8 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param classes list of need classes
      * @param cl processing code
      */
-    void processObjects(String mask, List<String> classes, Closure cl) {
+    void processObjects(String mask, List<String> classes,
+                        @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
             throw new ExceptionDSL('Process required closure code!')
 
@@ -339,4 +340,30 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             cl.call(name)
         }
     }
+
+    /**
+     * Process repository objects for specified mask and class
+     * @param mask filter mask (use Path expression syntax)
+     * @param classes list of need classes
+     * @param cl processing code
+     */
+    void processObjects(String mask,
+                        @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processObjects(mask, null, cl)
+    }
+
+    /**
+     * Object parameters for export
+     * @param name the name of the object in the repository
+     * @return configuration object
+     */
+    abstract Map exportConfig(String name)
+
+    /**
+     * Import object from parameters
+     * @param name the name of the object in the repository
+     * @param params object parameters
+     * @return registered object
+     */
+    abstract GetlRepository importConfig(Map config)
 }

@@ -40,20 +40,20 @@ import groovy.transform.Synchronized
 
 @InheritConstructors
 class SFTPManager extends Manager {
-	/**
-	 * SSH client
-	 */
-	public static final JSch client = new JSch()
+	/** SSH driver */
+	final JSch client = new JSch()
+	/** SSH driver */
+	JSch getClient() { client }
 	
-	/**
-	 * SSH session
-	 */
-	public Session clientSession
+	/** SSH session */
+	Session clientSession
+	/** SSH session */
+	Session getClientSession() { clientSession }
 	
-	/**
-	 * STP channel
-	 */
-	public ChannelSftp channelFtp
+	/** STP channel */
+	ChannelSftp channelFtp
+	/** STP channel */
+	ChannelSftp getChannelFtp() { channelFtp }
 	
 	@Override
 	protected void initMethods () {

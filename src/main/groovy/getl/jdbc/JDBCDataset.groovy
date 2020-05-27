@@ -66,13 +66,9 @@ class JDBCDataset extends Dataset {
 	/** Query type */
 	static public Type queryType = Type.QUERY
 	
-	/**
-	 * Type of dataset
-	 */
-	Type getType () { directives('create').type as Type}
-	/**
-	 * Type of dataset
-	 */
+	/** Type of dataset	*/
+	Type getType() { directives('create').type as Type }
+	/** Type of dataset */
 	void setType(Type value) { directives('create').type = value }
 	
 	/**
@@ -237,12 +233,12 @@ class JDBCDataset extends Dataset {
 	/** Dataset is temporary table */
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	Boolean getIsTemporaryTable() {
-		((directives('create').type as JDBCDataset.Type) in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
+		(type in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
 	}
 
 	/** Dataset is external table */
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	Boolean getIsExternalTable() {
-		(directives('create').type as JDBCDataset.Type == JDBCDataset.Type.EXTERNAL_TABLE)
+		(type as JDBCDataset.Type == JDBCDataset.Type.EXTERNAL_TABLE)
 	}
 }

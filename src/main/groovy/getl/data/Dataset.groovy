@@ -63,7 +63,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Initialization dataset parameters */
-	private void initParams() {
+	protected void initParams() {
 		params.extended = [:] as Map<String, Object>
 
 		def dirs = [:] as Map<String, Object>
@@ -200,6 +200,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/** Dataset parameters */
 	void setParams(Map value) {
 		params.clear()
+		initParams()
 		if (value != null) params.putAll(value)
 	}
 

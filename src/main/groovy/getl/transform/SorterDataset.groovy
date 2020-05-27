@@ -37,11 +37,13 @@ import getl.exception.ExceptionGETL
 class SorterDataset extends VirtualDataset {
 	SorterDataset () {
 		super()
-		
 		connection = new Connection([driver: SorterDatasetDriver])
-		
-		List<String> fieldOrderBy = []
-		params.fieldOrderBy = fieldOrderBy
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+		params.fieldOrderBy = [] as List<String>
 	}
 
 	/** List of sort column */

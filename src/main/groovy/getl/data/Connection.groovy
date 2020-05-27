@@ -59,7 +59,7 @@ class Connection implements Cloneable, GetlRepository {
 	Connection(Map parameters) {
 		registerParameters()
 
-		params.extended = [:] as Map<String, Object>
+		initParams()
 		
 		Class driverClass = parameters.driver as Class
 		if (driverClass == null) throw new ExceptionGETL("Required parameter \"driver\" (driver class name)")
@@ -70,6 +70,13 @@ class Connection implements Cloneable, GetlRepository {
 		MapUtils.MergeMap(this.params as Map<String, Object>,
 				MapUtils.CleanMap(parameters, ['driver', 'config']) as Map<String, Object> )
 		doInitConnection()
+	}
+
+	/**
+	 * Initialization parameters
+	 */
+	protected void initParams() {
+		params.extended = [:] as Map<String, Object>
 	}
 	
 	/**
@@ -111,7 +118,7 @@ class Connection implements Cloneable, GetlRepository {
 			MapUtils.MergeMap(configParams, params)
 			params = configParams
 		}
-		def connectionClass = (String)params.connection
+		def connectionClass = params.connection as String
 		if (connectionClass == null) throw new ExceptionGETL("Required parameter \"connection\"")
 
 		MapUtils.RemoveKeys(params, ["connection", "config"])
@@ -220,6 +227,7 @@ class Connection implements Cloneable, GetlRepository {
 	/** Connection parameters */
 	void setParams(Map value) {
 		params.clear()
+		initParams()
 		if (value != null) params.putAll(value)
 	}
 	

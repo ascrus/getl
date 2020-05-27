@@ -31,10 +31,8 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class SalesForceQueryDataset extends SalesForceDataset {
-	/**
-	 * SOQL query text
-	 * @return
-	 */
+	/** SOQL query text */
 	String getQuery () { params.query }
+	/** SOQL query text */
 	void setQuery (String value) { params.query = value }
 }

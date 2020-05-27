@@ -24,13 +24,12 @@
 package getl.lang.sub
 
 import getl.csv.CSVDataset
-import getl.data.Connection
 import getl.data.Dataset
 import getl.db2.DB2Table
 import getl.excel.ExcelDataset
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import getl.firebird.FirebirdTable
-import getl.h2.H2Connection
 import getl.h2.H2Table
 import getl.hive.HiveTable
 import getl.impala.ImpalaTable
@@ -49,12 +48,13 @@ import getl.salesforce.SalesForceDataset
 import getl.salesforce.SalesForceQueryDataset
 import getl.tfs.TDSTable
 import getl.tfs.TFSDataset
+import getl.utils.GenerationUtils
+import getl.utils.MapUtils
 import getl.vertica.VerticaTable
 import getl.xero.XeroDataset
 import getl.xml.XMLDataset
 import getl.yaml.YAMLDataset
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -132,6 +132,34 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
         Dataset.CreateDataset(dataset: className)
     }
 
+    @Override
+    Map exportConfig(String name) {
+        def obj = find(name)
+        if (obj == null)
+            throw new ExceptionDSL("Dataset \"$name\" not found!")
+        if (obj.connection == null)
+            throw new ExceptionDSL("No connection specified for dataset \"$name\"!")
+        if (obj.connection.dslNameObject == null)
+            throw new ExceptionDSL("Connection for dataset \"$name\" not found in repository!")
+        if (obj.field.isEmpty())
+            throw new ExceptionDSL("Dataset \"$name\" does not have a description of the fields!")
+
+        def fields = GenerationUtils.Fields2Map(obj.field)
+
+        return [dataset: obj.class.name, connection: obj.connection.dslNameObject] + obj.params + fields
+    }
+
+    @Override
+    GetlRepository importConfig(Map config) {
+        def connectionName = config.connection as String
+        def con = dslCreator.connection(connectionName)
+        def fields = config.fields as Map
+        def obj = Dataset.CreateDataset(MapUtils.Copy(config, ['connection', 'fields']))
+        obj.setConnection(con)
+        obj.field = GenerationUtils.Map2Fields(fields)
+        return obj
+    }
+
     /**
      * Return a list of objects associated with the names of two groups
      * @param sourceList List of name source objects
@@ -171,4 +199,6 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
         return res
     }
+
+
 }

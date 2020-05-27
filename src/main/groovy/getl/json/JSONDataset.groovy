@@ -44,8 +44,13 @@ import groovy.transform.InheritConstructors
 class JSONDataset extends StructureFileDataset {
 	JSONDataset () {
 		super()
-		params.convertToList = false
 		driver_params = [:]
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+		params.convertToList = false
 	}
 
 	/** Added root {...} for JSON text */
