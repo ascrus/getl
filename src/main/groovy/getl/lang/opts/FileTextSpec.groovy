@@ -117,11 +117,10 @@ class FileTextSpec extends BaseSpec {
     /**
      * Write map as configuration
      * @param data stored data
-     * @param convertVars convert $ {variable} to $ {vars.variable}
+     * @param convertVars convert ${variable} to ${vars.variable}
      */
     void write(Map data, Boolean convertVars = false) {
-        def sw = new StringBuilderWriter(buffer)
-        ConfigSlurper.SaveMap(data, sw, convertVars)
+        ConfigSlurper.SaveMap(data, buffer, convertVars)
     }
 
     /**

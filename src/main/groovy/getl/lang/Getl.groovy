@@ -385,8 +385,8 @@ Examples:
 
         registerRepository(RepositoryConnections.simpleName, _repositoryConnections)
         registerRepository(RepositoryDatasets.simpleName, _repositoryDatasets)
-        registerRepository(RepositoryHistorypoints.simpleName, _repositoryHistorypoints)
         registerRepository(RepositorySequences.simpleName, _repositorySequences)
+        registerRepository(RepositoryHistorypoints.simpleName, _repositoryHistorypoints)
         registerRepository(RepositoryFilemanagers.simpleName, _repositoryFilemanagers)
     }
 
@@ -528,15 +528,28 @@ Examples:
         _params.put(key, value)
     }
 
-    /** list of repository managers instance */
+    /** List of repository managers instance */
     private Map<String, RepositoryObjects> _listRepository
+    /** list of Getl repositories */
+    List<String> getlListRepository() {
+        def list = [] as List<List>
+        _listRepository.each { name, rep ->
+            list << [name, rep.priority]
+        }
+        list.sort(true) { elem1, elem2 -> elem1[1] <=> elem2[1] }
+        def res = list.collect { elem -> elem[0] }
+        return res
+    }
     /** Register repository in list */
-    protected void registerRepository(String name, RepositoryObjects repository) {
+    protected void registerRepository(String name, RepositoryObjects repository, Integer priority = null) {
         if (_listRepository.containsKey(name))
             throw new ExceptionDSL("Repository \"$name\" already registering!")
 
+        if (priority == null) priority = _listRepository.size() + 1
+
         repository.setDslNameObject(name)
         repository.setDslCreator(getlMainInstance?:this)
+        repository.setPriority(priority)
         _listRepository.put(name, repository)
     }
     /**
@@ -3296,6 +3309,7 @@ Examples:
                 throw new ExceptionDSL("Can not read list of field from dataset $sourceDataset!")
         }
         parent.field = sourceDataset.field
+        parent.resetFieldsTypeName()
         sourceDataset.prepareCsvTempFile(parent)
         runClosure(parent, cl)
 

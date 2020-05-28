@@ -24,6 +24,7 @@
 package getl.lang.sub
 
 import getl.config.ConfigSlurper
+import getl.exception.ExceptionDSL
 import getl.files.FileManager
 import getl.lang.Getl
 import getl.utils.FileUtils
@@ -48,21 +49,64 @@ class RepositoryStorageManager {
     void setStoragePath(String value) { storagePath = value }
 
     /**
+     * Clear objects in all Getl repositories
+     * @param mask object name mask
+     */
+    void clearReporitories(String mask = null) {
+        dslCreator.getlListRepository().each { name ->
+            dslCreator.getlRepository(name).unregister(mask)
+        }
+    }
+
+    /**
+     * Save objects from all repositories to storage
+     * @param mask object name mask
+     */
+    void saveRepositoriesToStorage(String mask = null) {
+        dslCreator.getlListRepository().each { name ->
+            saveRepositoryToStorage(name, mask)
+        }
+    }
+
+    /**
      * Save objects from repository to storage
      * @param repositoryName name of the repository to be saved
      * @param mask object name mask
+     * @return count of saved objects
      */
-    void saveToStorage(String repositoryName, String mask = null) {
+    int saveRepositoryToStorage(String repositoryName, String mask = null) {
+        def res = 0
         def repository = dslCreator.getlRepository(repositoryName)
+        def repositoryClassName = repository.class.simpleName
+        FileUtils.ValidPath(storagePath + '/' + repositoryClassName)
         repository.processObjects(mask) { name ->
             def objname = ParseObjectName.Parse(name)
+            if (objname.groupName == null && objname.objectName[0] == '#') return
+
             def objparams = repository.exportConfig(name)
-            def fileName = storagePath + '/' + repository.class.simpleName + '/'
-            if (objname.groupName != null)
+            def fileName = storagePath + '/' + repositoryClassName + '/'
+            if (objname.groupName != null) {
                 fileName += objname.toFilePath() + '/'
-            fileName += objname.objectName + '.conf'
-            FileUtils.ValidFilePath(fileName)
+                FileUtils.ValidPath(fileName)
+            }
+            fileName += 'obj_' + objname.objectName + '.conf'
+            def file = new File(fileName)
             ConfigSlurper.SaveConfigFile(objparams, new File(fileName), 'utf-8')
+            if (!file.exists())
+                throw new ExceptionDSL("Error saving object \"$name\" from repository \"$repositoryClassName\" to file \"$file\"!")
+
+            res++
+        }
+        return res
+    }
+
+    /**
+     * Load objects to all repositories from storage
+     * @param mask object name mask
+     */
+    void loadRepositoriesFromStorage(String mask = null) {
+        dslCreator.getlListRepository().each { name ->
+            loadRepositoryFromStorage(name, mask)
         }
     }
 
@@ -70,27 +114,32 @@ class RepositoryStorageManager {
      * Load objects to repository from storage
      * @param repositoryName name of the repository to be uploaded
      * @param mask object name mask
+     * @return count of saved objects
      */
-    void loadFromStorage(String repositoryName, String mask = null) {
+    int loadRepositoryFromStorage(String repositoryName, String mask = null) {
+        def res = 0
         def repository = dslCreator.getlRepository(repositoryName)
         def maskPath = (mask != null)?new Path(mask: mask):null
         def fm = new FileManager()
         fm.rootPath = storagePath + '/' + repository.class.simpleName
         def dirs = fm.buildListFiles {
-            maskFile = '*.conf'
+            maskFile = 'obj_*.conf'
             recursive = true
         }
         dirs.eachRow { file ->
             def groupName = (file.filepath != '.')?(file.filepath as String).replace('/', '.').toLowerCase():null
-            def objectName = FileUtils.FilenameWithoutExtension(file.filename as String).toLowerCase()
+            def objectName = FileUtils.FilenameWithoutExtension(file.filename as String).substring(4).toLowerCase()
             def name = new ParseObjectName(groupName, objectName).name
             if (maskPath == null || maskPath.match(name)) {
                 def fileName = fm.rootPath + '/' + ((file.filepath != '.')?(file.filepath + '/'):'') + file.filename
                 def objparams = ConfigSlurper.LoadConfigFile(new File(fileName), 'utf-8')
                 def obj = repository.importConfig(objparams)
                 repository.registerObject(dslCreator, obj, name, true)
+                res++
             }
         }
         dirs.drop()
+
+        return res
     }
 }

@@ -153,10 +153,9 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     GetlRepository importConfig(Map config) {
         def connectionName = config.connection as String
         def con = dslCreator.connection(connectionName)
-        def fields = config.fields as Map
         def obj = Dataset.CreateDataset(MapUtils.Copy(config, ['connection', 'fields']))
         obj.setConnection(con)
-        obj.field = GenerationUtils.Map2Fields(fields)
+        obj.field = GenerationUtils.Map2Fields(config)
         return obj
     }
 

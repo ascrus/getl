@@ -12,11 +12,15 @@ import getl.lang.sub.RepositoryFilemanagers
 import getl.lang.sub.RepositoryHistorypoints
 import getl.lang.sub.RepositorySequences
 import getl.test.GetlDslTest
+import getl.tfs.TFS
+import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
 @InheritConstructors
 class RepositoryTest extends GetlDslTest {
+    final def isdebug = true
+
     @Test
     void testConnections() {
         def getl = Getl.GetlInstance()
@@ -34,11 +38,11 @@ class RepositoryTest extends GetlDslTest {
         shouldFail { rep.register(getl, null, 'group:con', true) }
         shouldFail { rep.register(getl, null, 'group:con') }
         def con = rep.register(getl, rep.H2CONNECTION, 'group:con', true)
-        con.with { extended.test = 'test' }
+        con.with { attributes.test = 'test' }
         assertTrue(con instanceof H2Connection)
         assertSame(con, rep.register(getl, null, 'group:con') )
         assertEquals('group:con', con.dslNameObject)
-        assertEquals('test', rep.register(getl, null, 'group:con').extended.test)
+        assertEquals('test', rep.register(getl, null, 'group:con').attributes.test)
 
         assertTrue(rep.find('group:con') == con)
         assertTrue(rep.find(con) == 'group:con')
@@ -71,7 +75,7 @@ class RepositoryTest extends GetlDslTest {
                     assertNotSame(con, tcon)
                     assertSame(tcon, rep.register(getl, null, 'group:con') )
                     assertEquals('group:con', tcon.dslNameObject)
-                    assertEquals('test', tcon.extended.test)
+                    assertEquals('test', tcon.attributes.test)
                 }
                 exec()
             }
@@ -209,6 +213,87 @@ class RepositoryTest extends GetlDslTest {
                 }
                 exec()
             }
+        }
+    }
+
+    @Test
+    void testRepositoryStorageManager() {
+        Getl.Dsl {
+            def reppath = (this.isdebug)?'c:/tmp/getl.dsl/repository':"${TFS.systemPath}/repository"
+            if (!isdebug) FileUtils.ValidPath(reppath, true)
+
+            embeddedConnection('con', true)
+            h2Connection('h2:con', true) {
+                login = 'sa'
+                password = 'easydata'
+                connectProperty.page_size = 8096
+            }
+            csvTempConnection('csv.group:con', true) {
+                path = reppath
+                fieldDelimiter = '\t'
+                quoteMode = quoteNormal
+            }
+            assertEquals(3, listConnections().size)
+
+            embeddedTable('table', true) {
+                useConnection embeddedConnection('con')
+                schemaName = 'public'
+                tableName = 'table1'
+                field('id') { type = integerFieldType; isKey = true; ordKey = 0 }
+                field('name') { length = 50; isNull = false }
+                field('dt') { type = datetimeFieldType }
+                createOpts {
+                    type = localTemporaryTableType
+                }
+                create()
+                retrieveFields()
+            }
+            csvWithDataset('csv', embeddedTable('table')) {
+                useConnection csvTempConnection('csv.group:con')
+                fileName = 'table'
+                field('dt') { format = 'yyyy-MM-dd HH:mm:ss'; extended.check = true }
+            }
+            assertEquals(2, listDatasets().size)
+
+            sequence('sequence', true) {
+                useConnection h2Connection('h2:con')
+                schema = 'public'
+                name = 's_table'
+            }
+            assertEquals(1, listSequences().size())
+
+            historypoint('point', true) {
+                useConnection h2Connection('h2:con')
+                schemaName = 'public'
+                tableName = 's_history'
+                saveMethod = mergeSave
+            }
+            assertEquals(1, listHistorypoints().size())
+
+            files('file', true) {
+                rootPath = reppath
+            }
+            assertEquals(1, listFilemanagers().size())
+
+            repositoryStorageManager {
+                storagePath = reppath
+                saveRepositoriesToStorage()
+                clearReporitories()
+            }
+            assertTrue(listConnections().isEmpty())
+            assertTrue(listDatasets().isEmpty())
+            assertTrue(listHistorypoints().isEmpty())
+            assertTrue(listSequences().isEmpty())
+            assertTrue(listFilemanagers().isEmpty())
+
+            repositoryStorageManager {
+                loadRepositoriesFromStorage()
+            }
+            assertEquals(3, listConnections().size)
+            assertEquals(2, listDatasets().size)
+            assertEquals(1, listSequences().size())
+            assertEquals(1, listHistorypoints().size())
+            assertEquals(1, listFilemanagers().size())
         }
     }
 }

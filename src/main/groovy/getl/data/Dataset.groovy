@@ -28,7 +28,6 @@ import getl.config.ConfigSlurper
 import getl.data.opts.DatasetLookupSpec
 import getl.data.sub.WithConnection
 import getl.lang.Getl
-import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
 import getl.proc.sub.ExecutorThread
 import groovy.json.JsonSlurper
@@ -64,7 +63,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 	/** Initialization dataset parameters */
 	protected void initParams() {
-		params.extended = [:] as Map<String, Object>
+		params.attributes = [:] as Map<String, Object>
 
 		def dirs = [:] as Map<String, Object>
 		params.directive = dirs
@@ -158,16 +157,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		this.connection = value
 	}
 
-	/**
-	 * Extended attributes
-	 */
-	Map getExtended() { params.extended as Map }
-	/**
-	 * Extended attributes
-	 */
-	void setExtended (Map value) {
-		extended.clear()
-		if (value != null) extended.putAll(value)
+	/** Extended attributes */
+	Map getAttributes() { params.attributes as Map }
+	/** Extended attributes */
+	void setAttributes(Map value) {
+		attributes.clear()
+		if (value != null) attributes.putAll(value)
 	}
 
 	/** Name in config from section "datasets" */

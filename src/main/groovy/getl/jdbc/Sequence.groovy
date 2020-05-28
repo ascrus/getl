@@ -54,7 +54,9 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Initialization parameters
 	 */
-	protected void initParams() { }
+	protected void initParams() {
+		params.attributes = [:] as Map<String, Object>
+	}
 
 	/** Save point manager parameters */
 	Map getParams() { params }
@@ -63,6 +65,14 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 		params.clear()
 		initParams()
 		if (value != null) params.putAll(value)
+	}
+
+	/** Extended attributes */
+	Map getAttributes() { params.attributes as Map }
+	/** Extended attributes */
+	void setAttributes(Map value) {
+		attributes.clear()
+		if (value != null) attributes.putAll(value)
 	}
 
 	/** System parameters */

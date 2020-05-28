@@ -50,6 +50,13 @@ class CSVConnection extends FileConnection {
 		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation('Super', params?:[:])
 	}
 
+	/** Quotate all fields */
+	static QuoteMode getQuoteAlways() { QuoteMode.ALWAYS }
+	/** Quote text fields that have quotation marks or line feeds */
+	static QuoteMode getQuoteNormal() { QuoteMode.NORMAL }
+	/** Quote only text fields */
+	static QuoteMode getQuoteColumn() { QuoteMode.COLUMN }
+
 	/** Current CSV connection driver */
 	CSVDriver getCurrentCSVDriver() { driver as CSVDriver }
 	

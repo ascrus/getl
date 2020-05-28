@@ -337,8 +337,8 @@ class ConfigSlurper extends ConfigManager {
 
 		try {
 			StringBuilder sb = new StringBuilder()
-			SaveMap(data, sb, convertVars)
-			writer.write(sb.toString())
+			if (SaveMap(data, sb, convertVars) > 0)
+				writer.append(sb)
 		}
 		catch (Exception e) {
 			Logs.Severe("Error save configuration to file \"$file\", error: ${e.message}")

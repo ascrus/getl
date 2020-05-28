@@ -714,16 +714,6 @@ ORDER BY t1.id"""
             assertEquals(0, listDatasets().size())
             assertEquals(0, listHistorypoints().size())
             assertEquals(1, listFilemanagers().size())
-
-            clearGroupFilter()
-            repositoryStorageManager {
-                storagePath = 'c:/tmp/getl.dsl/repository'
-                saveToStorage(RepositoryConnections.simpleName)
-                saveToStorage(RepositoryDatasets.simpleName)
-                saveToStorage(RepositoryHistorypoints.simpleName)
-                saveToStorage(RepositorySequences.simpleName)
-                saveToStorage(RepositoryFilemanagers.simpleName)
-            }
         }
     }
 

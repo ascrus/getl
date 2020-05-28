@@ -59,8 +59,6 @@ class Connection implements Cloneable, GetlRepository {
 	Connection(Map parameters) {
 		registerParameters()
 
-		initParams()
-		
 		Class driverClass = parameters.driver as Class
 		if (driverClass == null) throw new ExceptionGETL("Required parameter \"driver\" (driver class name)")
 		this.driver = driverClass.newInstance() as Driver
@@ -69,6 +67,7 @@ class Connection implements Cloneable, GetlRepository {
 		if (load_config != null) setConfig(load_config)
 		MapUtils.MergeMap(this.params as Map<String, Object>,
 				MapUtils.CleanMap(parameters, ['driver', 'config']) as Map<String, Object> )
+		initParams()
 		doInitConnection()
 	}
 
@@ -76,7 +75,7 @@ class Connection implements Cloneable, GetlRepository {
 	 * Initialization parameters
 	 */
 	protected void initParams() {
-		params.extended = [:] as Map<String, Object>
+		params.attributes = [:] as Map<String, Object>
 	}
 	
 	/**
@@ -85,7 +84,7 @@ class Connection implements Cloneable, GetlRepository {
 	protected void registerParameters () {
 		methodParams.register('Super',
 				['driver', 'config', 'autoSchema', 'dataset', 'connection', 'numberConnectionAttempts',
-				 'timeoutConnectionAttempts', 'extended'])
+				 'timeoutConnectionAttempts', 'attributes'])
 		methodParams.register('retrieveObjects', [])
 		methodParams.register('executeCommand', ['command', 'queryParams', 'isUpdate'])
 	}
@@ -130,13 +129,13 @@ class Connection implements Cloneable, GetlRepository {
 	/**
 	 * Extended attributes
 	 */
-	Map getExtended() { params.extended as Map }
+	Map getAttributes() { params.attributes as Map }
 	/**
 	 * Extended attributes
 	 */
-	void setExtended (Map value) {
-		extended.clear()
-		if (value != null) extended.putAll(value)
+	void setAttributes(Map value) {
+		attributes.clear()
+		if (value != null) attributes.putAll(value)
 	}
 
 	/** Connection driver manager class*/

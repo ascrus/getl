@@ -164,4 +164,7 @@ class ParseObjectName {
     String toFilePath() {
         return groupName?.replace('.', '/')
     }
+
+    @Override
+    String toString() { name?:'noname' }
 }

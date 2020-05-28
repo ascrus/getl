@@ -34,7 +34,6 @@ import getl.files.sub.ManagerListProcessClosure
 import getl.files.sub.ManagerListProcessing
 import getl.jdbc.*
 import getl.lang.Getl
-import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
 import getl.proc.Executor
 import getl.proc.Flow
@@ -56,7 +55,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
 				 'sqlHistoryFile', 'saveOriginalDate', 'limitDirs', 'threadLevel', 'recursive',
-				 'ignoreExistInStory', 'createStory', 'takePathInStory', 'extended', 'story'])
+				 'ignoreExistInStory', 'createStory', 'takePathInStory', 'attributes', 'story'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel',
 				 'ignoreExistInStory', 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory'])
@@ -69,7 +68,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	/** Initialization dataset parameters */
 	protected void initParams() {
-		params.extended = [:] as Map<String, Object>
+		params.attributes = [:] as Map<String, Object>
 	}
 
 	static Manager CreateManager(Map params) {
@@ -208,11 +207,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 	void setSaveOriginalDate(boolean value) { params.saveOriginalDate = value }
 
 	/** Extended attributes */
-	Map getExtended() { params.extended as Map }
+	Map getAttributes() { params.attributes as Map }
 	/** Extended attributes */
-	void setExtended (Map value) {
-		extended.clear()
-		if (value != null) extended.putAll(value)
+	void setAttributes(Map value) {
+		attributes.clear()
+		if (value != null) attributes.putAll(value)
 	}
 
 	/**

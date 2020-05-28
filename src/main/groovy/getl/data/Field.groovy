@@ -351,7 +351,8 @@ class Field implements Serializable, Cloneable {
 		if (trim) n.trim = trim
 		if (decimalSeparator != null) n.decimalSeparator = decimalSeparator
 		if (description != null) n.description = description
-		
+		if (!extended.isEmpty()) n.extended = MapUtils.Copy(extended)
+
 		return n
 	}
 	

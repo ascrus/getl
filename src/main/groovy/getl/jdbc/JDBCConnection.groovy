@@ -56,6 +56,12 @@ class JDBCConnection extends Connection {
 		if (this.getClass().name == 'getl.jdbc.JDBCConnection') methodParams.validation("Super", params?:[:])
 	}
 
+	@Override
+	void initParams() {
+		super.initParams()
+		fileNameSqlHistory = null
+	}
+
 	/** Current JDBC connection driver */
 	JDBCDriver getCurrentJDBCDriver() { driver as JDBCDriver }
 	
@@ -158,13 +164,9 @@ class JDBCConnection extends Connection {
 	 */
 	void setBalancer (Balancer value) { params.balancer = value }
 	
-	/**
-	 * JDBC driver name
-	 */
+	/** JDBC driver name */
 	String getDriverName() { params.driverName as String }
-	/**
-	 * JDBC driver name
-	 */
+	/** JDBC driver name */
 	void setDriverName(String value) { params.driverName = value }
 
     /**

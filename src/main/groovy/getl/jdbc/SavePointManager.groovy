@@ -52,7 +52,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 */
 	protected void initParams() {
 		params.fields = [:] as Map<String, Object>
-		params.extended = [:] as Map<String, Object>
+		params.attributes = [:] as Map<String, Object>
 	}
 
 	/** Save point manager parameters */
@@ -151,11 +151,11 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Extended attributes */
-	Map getExtended() { params.extended as Map }
+	Map getAttributes() { params.attributes as Map }
 	/** Extended attributes */
-	void setExtended (Map value) {
-		extended.clear()
-		if (value != null) extended.putAll(value)
+	void setAttributes(Map value) {
+		attributes.clear()
+		if (value != null) attributes.putAll(value)
 	}
 
 	/** Preparing map fields */

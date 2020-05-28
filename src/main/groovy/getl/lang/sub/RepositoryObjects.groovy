@@ -41,6 +41,13 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         this.objects = new ConcurrentHashMap<String, T>()
     }
 
+    /** Repository priority order */
+    private Integer _priority
+    /** Repository priority order */
+    Integer getPriority() { _priority }
+    /** Repository priority order */
+    void setPriority(Integer value) { _priority = value }
+
     private String dslNameObject
     @Override
     String getDslNameObject() { dslNameObject }

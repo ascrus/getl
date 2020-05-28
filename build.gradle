@@ -71,8 +71,8 @@ tasks.withType(GroovyCompile) {
   groovyOptions.optimizationOptions.indy = false
   options.incremental = true
   groovyOptions.fork = true
-/*"-Dgroovy.antlr4=false", */ /*'-Dgroovy.antlr4.cache.threshold=1000'*/
-  groovyOptions.forkOptions.jvmArgs += ['-Xmx1g']
+/*'-Dgroovy.antlr4=false'*/
+  groovyOptions.forkOptions.jvmArgs += ['-Xmx1g', '-Dgroovy.antlr4.cache.threshold=250']
 }
 
 task copyDependencies(type: Copy) {
