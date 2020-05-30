@@ -177,7 +177,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             if (validExist) {
                 def exObj = objects.get(repName)
                 if (exObj != null)
-                    throw new ExceptionDSL("$typeObject \"$name\" already registered for class \"${exObj.getClass().name}\"!")
+                    throw new ExceptionDSL("\"$name\" already registered for class \"${exObj.getClass().name}\" in \"$typeObject\" repository!")
             }
 
             obj.dslNameObject = repName
@@ -373,4 +373,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @return registered object
      */
     abstract GetlRepository importConfig(Map config)
+
+    /** Repository objects require configuration storage separately for different environments */
+    boolean needEnvConfig() { false }
 }

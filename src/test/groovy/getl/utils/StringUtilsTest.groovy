@@ -269,4 +269,14 @@ SET SELECT * FROM table; -- test
         assertEquals('"a"[0]."b"[0]', StringUtils.ProcessObjectName('a[0].b[0]', true))
         assertEquals('"a"[0]?."b"[0]', StringUtils.ProcessObjectName('a[0].b[0]', true, true))
     }
+
+    @Test
+    void testEncrypt() {
+        String text = 'Original text from testing method encryption and decryption'
+        String password = 'Test unit password'
+        def encrypt = StringUtils.Encrypt(text, password)
+        assertEquals('CBDE4E89C229A963F4C63CD1626E3DFCFDDBDE61BEDD4658BEC59F10E87984E38651DC259325A88FECF3FEC65B17889499681A3D57D187CAEEAB8F444743926A', encrypt)
+        def result = StringUtils.Decrypt(encrypt, password)
+        assertEquals(text, result)
+    }
 }

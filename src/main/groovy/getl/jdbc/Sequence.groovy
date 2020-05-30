@@ -128,7 +128,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	/** Sequence cache interval */
 	Long getCache() { params.cache as Long }
 	/** Sequence cache interval */
-	void setCache(Long value) { params.cache = value }
+	void setCache(Long value) { params.cache = value } /* TODO: automatic read metadata if cache is not set */
 
 	/** last received sequence value */
 	private long current = 0

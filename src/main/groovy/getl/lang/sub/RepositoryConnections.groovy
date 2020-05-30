@@ -128,11 +128,17 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
         if (obj == null)
             throw new ExceptionDSL("Connection \"$name\" not found!")
 
-        return [connection: obj.class.name] + obj.params
+        def res = [connection: obj.class.name] + obj.params
+        if (res.password != null) res.password = dslCreator.repositoryStorageManager().encryptText(res.password)
+        return res
     }
 
     @Override
     GetlRepository importConfig(Map config) {
+        if (config.password != null) config.password = dslCreator.repositoryStorageManager().decryptText(config.password)
         return Connection.CreateConnection(config)
     }
+
+    @Override
+    boolean needEnvConfig() { true }
 }

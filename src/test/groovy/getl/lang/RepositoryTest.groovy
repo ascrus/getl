@@ -219,19 +219,22 @@ class RepositoryTest extends GetlDslTest {
     @Test
     void testRepositoryStorageManager() {
         Getl.Dsl {
-            def reppath = (this.isdebug)?'c:/tmp/getl.dsl/repository':"${TFS.systemPath}/repository"
+            def reppath = FileUtils.ConvertToDefaultOSPath((this.isdebug)?
+                    'c:/tmp/getl.dsl/repository':"${TFS.systemPath}/repository")
             if (!isdebug) FileUtils.ValidPath(reppath, true)
 
             embeddedConnection('con', true)
             h2Connection('h2:con', true) {
+                connectHost = 'localhost'
+                connectDatabase = 'test'
                 login = 'sa'
                 password = 'easydata'
-                connectProperty.page_size = 8096
+                connectProperty.PAGE_SIZE = 8192
             }
             csvTempConnection('csv.group:con', true) {
                 path = reppath
                 fieldDelimiter = '\t'
-                quoteMode = quoteNormal
+                quoteMode = quoteAlways
             }
             assertEquals(3, listConnections().size)
 
@@ -239,7 +242,7 @@ class RepositoryTest extends GetlDslTest {
                 useConnection embeddedConnection('con')
                 schemaName = 'public'
                 tableName = 'table1'
-                field('id') { type = integerFieldType; isKey = true; ordKey = 0 }
+                field('id') { type = integerFieldType; isKey = true }
                 field('name') { length = 50; isNull = false }
                 field('dt') { type = datetimeFieldType }
                 createOpts {
@@ -247,6 +250,7 @@ class RepositoryTest extends GetlDslTest {
                 }
                 create()
                 retrieveFields()
+                field('id') { type = integerFieldType; isKey = true; ordKey = 0 }
             }
             csvWithDataset('csv', embeddedTable('table')) {
                 useConnection csvTempConnection('csv.group:con')
@@ -256,9 +260,10 @@ class RepositoryTest extends GetlDslTest {
             assertEquals(2, listDatasets().size)
 
             sequence('sequence', true) {
-                useConnection h2Connection('h2:con')
+                useConnection embeddedConnection('con')
                 schema = 'public'
                 name = 's_table'
+                cache = 500
             }
             assertEquals(1, listSequences().size())
 
@@ -270,14 +275,21 @@ class RepositoryTest extends GetlDslTest {
             }
             assertEquals(1, listHistorypoints().size())
 
-            files('file', true) {
-                rootPath = reppath
+            ftp('files:ftp', true) {
+                server = 'localhost'
+                port = 21
+                rootPath = '/root'
+                login = 'user'
+                password = 'password'
+                autoNoopTimeout = 10
+                passive = true
+                timeZone = 3
             }
             assertEquals(1, listFilemanagers().size())
 
             repositoryStorageManager {
                 storagePath = reppath
-                saveRepositoriesToStorage()
+                saveRepositories()
                 clearReporitories()
             }
             assertTrue(listConnections().isEmpty())
@@ -287,13 +299,124 @@ class RepositoryTest extends GetlDslTest {
             assertTrue(listFilemanagers().isEmpty())
 
             repositoryStorageManager {
-                loadRepositoriesFromStorage()
+                loadRepositories()
             }
             assertEquals(3, listConnections().size)
             assertEquals(2, listDatasets().size)
             assertEquals(1, listSequences().size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(1, listFilemanagers().size())
+
+            h2Connection('h2:con') {
+                assertEquals('localhost', connectHost)
+                assertEquals('test', connectDatabase)
+                assertEquals('sa', login)
+                assertEquals('easydata', password)
+                assertEquals(8192, connectProperty.PAGE_SIZE)
+            }
+            csvTempConnection('csv.group:con') {
+                assertEquals(reppath, path)
+                assertEquals('\t', fieldDelimiter)
+                assertEquals(quoteAlways, quoteMode)
+            }
+
+            embeddedTable('table') {
+                assertEquals(embeddedConnection('con'), currentH2Connection)
+                assertEquals('public', schemaName)
+                assertEquals('table1', tableName)
+                assertEquals(3, field.size())
+                field('id') {
+                    assertEquals(integerFieldType, type)
+                    assertTrue(isKey)
+                    assertEquals(0, ordKey)
+                    assertEquals('INTEGER', typeName)
+                }
+                field('name') {
+                    assertEquals(50, length)
+                    assertFalse(isNull)
+                    assertEquals('VARCHAR', typeName)
+                }
+                field('dt') {
+                    assertEquals(datetimeFieldType, type)
+                    assertTrue(isNull)
+                    assertEquals('TIMESTAMP', typeName)
+                }
+                createOpts {
+                    assertEquals(localTemporaryTableType, type)
+                }
+            }
+            csv('csv') {
+                assertEquals(csvTempConnection('csv.group:con'), currentCsvConnection)
+                assertEquals('table', fileName)
+                field('dt') {
+                    assertEquals('yyyy-MM-dd HH:mm:ss', format)
+                    assertTrue(extended.check)
+                }
+            }
+
+            sequence('sequence') {
+                assertEquals(embeddedConnection('con'), currentJDBCConnection)
+                assertEquals('public', schema)
+                assertEquals('s_table', name)
+            }
+
+            historypoint('point') {
+                assertEquals(h2Connection('h2:con'), currentJDBCConnection)
+                assertEquals('public', schemaName)
+                assertEquals('s_history', tableName)
+                assertEquals(mergeSave, saveMethod)
+            }
+
+            ftp('files:ftp') {
+                assertEquals('localhost', server)
+                assertEquals(21, port)
+                assertEquals('/root', rootPath)
+                assertEquals('user', login)
+                assertEquals('password', password)
+                assertEquals(10, autoNoopTimeout)
+                assertTrue(passive)
+                assertEquals(3, timeZone)
+            }
+
+            repositoryStorageManager {
+                clearReporitories()
+                shouldFail {
+                    loadObject(RepositoryConnections, 'unknown')
+                }
+                shouldFail {
+                    loadObject(RepositoryDatasets, 'table')
+                }
+                loadObject(RepositoryConnections, 'con')
+                assertNotNull(embeddedConnection('con'))
+                loadObject(RepositoryDatasets, 'table')
+                assertNotNull(embeddedTable('table'))
+
+                loadObject(RepositorySequences, 'sequence')
+                assertNotNull(sequence('sequence'))
+                removeStorage(RepositorySequences)
+                assertFalse(objectFile(RepositorySequences, 'sequence').exists())
+                shouldFail {
+                    loadObject(RepositoryConnections, 'sequence')
+                }
+                saveObject(RepositorySequences, 'sequence')
+                assertTrue(objectFile(RepositorySequences, 'sequence').exists())
+                unregisterSequence()
+                loadObject(RepositorySequences, 'sequence')
+                assertNotNull(sequence('sequence'))
+                assertTrue(objectFile(RepositorySequences, 'sequence').delete())
+                assertFalse(objectFile(RepositorySequences, 'sequence').exists())
+                shouldFail {
+                    loadObject(RepositoryConnections, 'sequence')
+                }
+                saveObject(RepositorySequences, 'sequence')
+                assertTrue(objectFile(RepositorySequences, 'sequence').exists())
+                unregisterSequence()
+                loadObject(RepositorySequences, 'sequence')
+                assertNotNull(sequence('sequence'))
+            }
+
+            if (!isdebug)
+                FileUtils.DeleteFolder(reppath, true)
         }
     }
 }

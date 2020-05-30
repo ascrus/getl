@@ -58,11 +58,17 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
         if (obj == null)
             throw new ExceptionDSL("File manager \"$name\" not found!")
 
-        return [manager: obj.class.name] + obj.params
+        def res = [manager: obj.class.name] + obj.params
+        if (res.password != null) res.password = dslCreator.repositoryStorageManager().encryptText(res.password)
+        return res
     }
 
     @Override
     GetlRepository importConfig(Map config) {
+        if (config.password != null) config.password = dslCreator.repositoryStorageManager().decryptText(config.password)
         return Manager.CreateManager(config)
     }
+
+    @Override
+    boolean needEnvConfig() { true }
 }

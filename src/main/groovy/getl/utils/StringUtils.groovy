@@ -28,7 +28,10 @@ import getl.exception.ExceptionGETL
 import  groovy.json.StringEscapeUtils
 import groovy.transform.CompileStatic
 
+import javax.crypto.Cipher
+import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.DatatypeConverter
+import java.security.Key
 import java.util.regex.Pattern
 
 /**
@@ -644,5 +647,54 @@ class StringUtils {
 			l[i] = s
 		}
 		return l.join('.')
+	}
+
+	/**
+	 * Encrypt text with password
+	 * @param text original text
+	 * @param password 128 bit key
+	 * @return encrypted text
+	 */
+	static String Encrypt(String text, String password) {
+		if (text == null) return null
+		if (password == null || password.length() < 16)
+			throw new ExceptionGETL('Invalid passsword value!')
+
+		def l = password.length()
+		if ((l % 8) != 0) {
+			def i = (l.intdiv(8))
+			def x = (i + 1) * 8 - l
+			password += StringUtils.Replicate('#', x)
+		}
+
+		Key aesKey = new SecretKeySpec(password.getBytes(), "AES");
+		Cipher cipher = Cipher.getInstance("AES");
+		cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+		byte[] encrypted = cipher.doFinal(text.getBytes());
+		return RawToHex(encrypted)
+	}
+
+	/**
+	 * Decrypt text with password
+	 * @param text encrypted text
+	 * @param password 128 bit key
+	 * @return original text
+	 */
+	static String Decrypt(String text, String password) {
+		if (text == null) return null
+		if (password == null || password.length() < 16)
+			throw new ExceptionGETL('Invalid passsword value!')
+
+		def l = password.length()
+		if ((l % 8) != 0) {
+			def i = (l.intdiv(8))
+			def x = (i + 1) * 8 - l
+			password += StringUtils.Replicate('#', x)
+		}
+
+		Key aesKey = new SecretKeySpec(password.getBytes(), "AES");
+		Cipher cipher = Cipher.getInstance("AES");
+		cipher.init(Cipher.DECRYPT_MODE, aesKey);
+		return new String(cipher.doFinal(HexToRaw(text)));
 	}
 }

@@ -367,27 +367,24 @@ Examples:
         _params.executedClasses = new SynchronizeObject()
 
         _langOpts = new LangSpec(this)
-        _listRepository = new ConcurrentHashMap<String, RepositoryObjects>() as Map<String, RepositoryObjects>
         _repositoryFilter = new RepositoryFilter(this)
 
+        _repositoryStorageManager = new RepositoryStorageManager(this)
         _repositoryConnections = new RepositoryConnections()
         _repositoryDatasets = new RepositoryDatasets()
         _repositoryHistorypoints = new RepositoryHistorypoints()
         _repositorySequences = new RepositorySequences()
         _repositoryFilemanagers = new RepositoryFilemanagers()
 
-        _repositoryStorageManager = new RepositoryStorageManager(this)
-
         _params.langOpts = _langOpts
         _params.repositoryFilter = _repositoryFilter
-        _params.listRepository = _listRepository
         _params.repositoryStorageManager = _repositoryStorageManager
 
-        registerRepository(RepositoryConnections.simpleName, _repositoryConnections)
-        registerRepository(RepositoryDatasets.simpleName, _repositoryDatasets)
-        registerRepository(RepositorySequences.simpleName, _repositorySequences)
-        registerRepository(RepositoryHistorypoints.simpleName, _repositoryHistorypoints)
-        registerRepository(RepositoryFilemanagers.simpleName, _repositoryFilemanagers)
+        _repositoryStorageManager.registerRepository(RepositoryConnections.simpleName, _repositoryConnections)
+        _repositoryStorageManager.registerRepository(RepositoryDatasets.simpleName, _repositoryDatasets)
+        _repositoryStorageManager.registerRepository(RepositorySequences.simpleName, _repositorySequences)
+        _repositoryStorageManager.registerRepository(RepositoryHistorypoints.simpleName, _repositoryHistorypoints)
+        _repositoryStorageManager.registerRepository(RepositoryFilemanagers.simpleName, _repositoryFilemanagers)
     }
 
     @Override
@@ -528,43 +525,6 @@ Examples:
         _params.put(key, value)
     }
 
-    /** List of repository managers instance */
-    private Map<String, RepositoryObjects> _listRepository
-    /** list of Getl repositories */
-    List<String> getlListRepository() {
-        def list = [] as List<List>
-        _listRepository.each { name, rep ->
-            list << [name, rep.priority]
-        }
-        list.sort(true) { elem1, elem2 -> elem1[1] <=> elem2[1] }
-        def res = list.collect { elem -> elem[0] }
-        return res
-    }
-    /** Register repository in list */
-    protected void registerRepository(String name, RepositoryObjects repository, Integer priority = null) {
-        if (_listRepository.containsKey(name))
-            throw new ExceptionDSL("Repository \"$name\" already registering!")
-
-        if (priority == null) priority = _listRepository.size() + 1
-
-        repository.setDslNameObject(name)
-        repository.setDslCreator(getlMainInstance?:this)
-        repository.setPriority(priority)
-        _listRepository.put(name, repository)
-    }
-    /**
-     * Get Getl repository object
-     * @param name repository name
-     * @return repository object
-     */
-    RepositoryObjects getlRepository(String name) {
-        def rep = _listRepository.get(name)
-        if (rep == null)
-            throw new ExceptionDSL("Repository \"$name\" not found!")
-
-        return rep
-    }
-
     private RepositoryStorageManager _repositoryStorageManager
     /** Managing repository object storage */
     RepositoryStorageManager repositoryStorageManager(@DelegatesTo(RepositoryStorageManager)
@@ -584,12 +544,11 @@ Examples:
         _langOpts = _params.langOpts as LangSpec
         _repositoryFilter = _params.repositoryFilter as RepositoryFilter
         _repositoryStorageManager = _params.repositoryStorageManager as RepositoryStorageManager
-        _listRepository = _params.listRepository as Map<String, RepositoryObjects>
-        _repositoryConnections = getlRepository(RepositoryConnections.simpleName) as RepositoryConnections
-        _repositoryDatasets = getlRepository(RepositoryDatasets.simpleName) as RepositoryDatasets
-        _repositoryHistorypoints = getlRepository(RepositoryHistorypoints.simpleName) as RepositoryHistorypoints
-        _repositorySequences = getlRepository(RepositorySequences.simpleName) as RepositorySequences
-        _repositoryFilemanagers = getlRepository(RepositoryFilemanagers.simpleName) as RepositoryFilemanagers
+        _repositoryConnections = _repositoryStorageManager.repository(RepositoryConnections.simpleName) as RepositoryConnections
+        _repositoryDatasets = _repositoryStorageManager.repository(RepositoryDatasets.simpleName) as RepositoryDatasets
+        _repositoryHistorypoints = _repositoryStorageManager.repository(RepositoryHistorypoints.simpleName) as RepositoryHistorypoints
+        _repositorySequences = _repositoryStorageManager.repository(RepositorySequences.simpleName) as RepositorySequences
+        _repositoryFilemanagers = _repositoryStorageManager.repository(RepositoryFilemanagers.simpleName) as RepositoryFilemanagers
     }
 
     /** Fix start process */
@@ -1771,7 +1730,8 @@ Examples:
 
     /** Release temporary objects by name mask "#*" */
     void releaseTemporaryObjects(Getl creator) {
-        _listRepository.each { name, rep ->
+        _repositoryStorageManager.listRepositories.each { name ->
+            def rep = _repositoryStorageManager.repository(name)
             rep.releaseTemporary(creator)
         }
     }
@@ -3789,6 +3749,7 @@ Examples:
         if (parent.connection == null)
             parent.connection = TFS.storage
         parent.field = sourceDataset.field
+        parent.resetFieldsTypeName()
         sourceDataset.prepareCsvTempFile(parent)
         runClosure(parent, cl)
 
