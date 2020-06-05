@@ -45,7 +45,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 				truncate()
 			}
 
-			rowsTo(table) {
+			etl.rowsTo(table) {
 				writeRow { add ->
 					(1..count).each {
 						add id: it, name: "test $it", dt: DateUtils.now
@@ -55,7 +55,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 
 			assertEquals(count, table.countRow())
 
-			rowsProcess(table) {
+			etl.rowsProcess(table) {
 				int c = 0
 				readRow {
 					c++
@@ -63,7 +63,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 				assertEquals(count, c)
 			}
 
-			rowsProcess(table) {
+			etl.rowsProcess(table) {
 				sourceParams.limit = 1
 				int c = 0
 				readRow { c++ }

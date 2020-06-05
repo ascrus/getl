@@ -13,13 +13,16 @@ import getl.lang.sub.RepositoryHistorypoints
 import getl.lang.sub.RepositorySequences
 import getl.test.GetlDslTest
 import getl.tfs.TFS
+import getl.utils.DateUtils
 import getl.utils.FileUtils
+import groovy.time.TimeCategory
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
 @InheritConstructors
 class RepositoryTest extends GetlDslTest {
-    final def isdebug = true
+    final def isdebug = false
+    final def repConfigFileName = 'tests/repository/vars.conf'
 
     @Test
     void testConnections() {
@@ -217,26 +220,66 @@ class RepositoryTest extends GetlDslTest {
     }
 
     @Test
-    void testRepositoryStorageManager() {
-        Getl.Dsl {
-            def reppath = FileUtils.ConvertToDefaultOSPath((this.isdebug)?
-                    'c:/tmp/getl.dsl/repository':"${TFS.systemPath}/repository")
-            if (!isdebug) FileUtils.ValidPath(reppath, true)
+    void testRepositoryStorageManagerWithEnv() {
+        def reppath = FileUtils.ConvertToDefaultOSPath((this.isdebug)?
+                'c:/tmp/getl.dsl/repository1':"${TFS.systemPath}/repository1")
+        if (!isdebug) FileUtils.ValidPath(reppath, true)
 
+        Getl.Dsl {
+            repositoryStorageManager {
+                storagePath = reppath
+                envDirs.all = 'src/main/resources'
+                envDirs.dev = 'src/test/resources'
+            }
+        }
+
+        processRepStorage()
+
+        if (!isdebug)
+            FileUtils.DeleteFolder(reppath, true)
+    }
+
+    @Test
+    void testRepositoryStorageManagerWithoutEnv() {
+        def reppath = FileUtils.ConvertToDefaultOSPath((this.isdebug)?
+                'c:/tmp/getl.dsl/repository2':"${TFS.systemPath}/repository2")
+        if (!isdebug) FileUtils.ValidPath(reppath, true)
+
+        Getl.Dsl {
+            repositoryStorageManager {
+                storagePath = reppath
+            }
+        }
+
+        processRepStorage()
+
+        if (!isdebug)
+            FileUtils.DeleteFolder(reppath, true)
+    }
+
+    void processRepStorage() {
+        Getl.Dsl {
             embeddedConnection('con', true)
             h2Connection('h2:con', true) {
                 connectHost = 'localhost'
                 connectDatabase = 'test'
-                login = 'sa'
-                password = 'easydata'
+                login = 'user'
+                password = 'password'
                 connectProperty.PAGE_SIZE = 8192
+                storedLogins = [user1: 'password1', user2: 'password2']
             }
             csvTempConnection('csv.group:con', true) {
-                path = reppath
+                path = repositoryStorageManager().storagePath
                 fieldDelimiter = '\t'
                 quoteMode = quoteAlways
             }
-            assertEquals(3, listConnections().size)
+            verticaConnection('ver:con', true) {
+                connectHost = 'localhost'
+                connectDatabase = 'demo'
+                login = 'user'
+                password = 'password'
+            }
+            assertEquals(4, listConnections().size)
 
             embeddedTable('table', true) {
                 useConnection embeddedConnection('con')
@@ -257,7 +300,23 @@ class RepositoryTest extends GetlDslTest {
                 fileName = 'table'
                 field('dt') { format = 'yyyy-MM-dd HH:mm:ss'; extended.check = true }
             }
-            assertEquals(2, listDatasets().size)
+            h2Table('rules:table', true) {
+                useConnection h2Connection('h2:con')
+                schemaName = 'monitor'
+                tableName = 'monitor_status'
+            }
+            verticaTable('ver:table', true) {
+                useConnection verticaConnection('ver:con')
+                schemaName = 'public'
+                tableName = 'table1'
+                setField csv('csv').field
+            }
+            query('rules:query', true) {
+                useConnection h2Connection('h2:con')
+                setQuery 'SELECT Max(dt) FROM table1 WHERE \'{region}\' = \'all\' OR region = \'{region}\''
+                queryParams.region = 'all'
+            }
+            assertEquals(5, listDatasets().size)
 
             sequence('sequence', true) {
                 useConnection embeddedConnection('con')
@@ -275,20 +334,77 @@ class RepositoryTest extends GetlDslTest {
             }
             assertEquals(1, listHistorypoints().size())
 
-            ftp('files:ftp', true) {
+            sftp('files:sftp', true) {
                 server = 'localhost'
-                port = 21
+                port = 22
                 rootPath = '/root'
+                strictHostKeyChecking = false
+
                 login = 'user'
                 password = 'password'
-                autoNoopTimeout = 10
-                passive = true
-                timeZone = 3
+                storedLogins = [user1: 'password1', user2: 'password2']
             }
-            assertEquals(1, listFilemanagers().size())
+            files('files:resources', true) {
+                rootPath = 'resource:'
+            }
+            assertEquals(2, listFilemanagers().size())
+
+            models.referenceFiles('files', true) {
+                useSourceManager 'files:resources'
+                useDestinationManager 'files:sftp'
+
+                unpackCommand = '{cmd7z} "{file}"'
+                modelVars.cmd7z = '7z x -y -bd'
+
+                referenceFromFile('zip/test.zip') {
+                    destinationPath = 'test'
+                }
+            }
+            assertEquals(1, models.listReferenceFiles().size())
+
+            models.mapTables('map', true) {
+                useSourceConnection 'con'
+                useDestinationConnection 'csv.group:con'
+
+                mapTable('table') {
+                    linkTo 'csv'
+                    listPartitions = [DateUtils.ParseDate('2020-01-01'), DateUtils.ParseDate('2020-02-01')]
+                    partitionFieldName = 'dt'
+                    objectVars.var1 = 'test'
+                }
+            }
+            assertEquals(1, models.listMapTables().size())
+
+            models.monitorRules('rules', true) {
+                countThreads = 1
+                useStatusTable 'rules:table'
+
+                rule('rules:query') {
+                    description = 'Check table1'
+                    use (TimeCategory) {
+                        lagTime = 1.hours
+                        checkFrequency = 30.minutes
+                        notificationTime = 2.hours
+                    }
+                }
+            }
+            assertEquals(1, models.listMonitorRules().size())
+
+            models.referenceVerticaTables('proc1', true) {
+                useReferenceConnection 'ver:con'
+                referenceSchemaName = '_reference'
+
+                referenceFromTable('ver:table') {
+                    whereCopy = '\'{region}\' = \'all\' or region = \'{region}\''
+                    objectVars.region = 'all'
+                    sampleCopy = 10
+                    limitCopy = 1000000
+                    allowCopy = true
+                }
+            }
+            assertEquals(1, models.listReferenceVerticaTables().size())
 
             repositoryStorageManager {
-                storagePath = reppath
                 saveRepositories()
                 clearReporitories()
             }
@@ -297,25 +413,34 @@ class RepositoryTest extends GetlDslTest {
             assertTrue(listHistorypoints().isEmpty())
             assertTrue(listSequences().isEmpty())
             assertTrue(listFilemanagers().isEmpty())
+            assertTrue(models.listReferenceFiles().isEmpty())
+            assertTrue(models.listMapTables().isEmpty())
+            assertTrue(models.listMonitorRules().isEmpty())
+            assertTrue(models.listReferenceVerticaTables().isEmpty())
 
             repositoryStorageManager {
                 loadRepositories()
             }
-            assertEquals(3, listConnections().size)
-            assertEquals(2, listDatasets().size)
+            assertEquals(4, listConnections().size)
+            assertEquals(5, listDatasets().size)
             assertEquals(1, listSequences().size())
             assertEquals(1, listHistorypoints().size())
-            assertEquals(1, listFilemanagers().size())
+            assertEquals(2, listFilemanagers().size())
+            assertEquals(1, models.listReferenceFiles().size())
+            assertEquals(1, models.listMapTables().size())
+            assertEquals(1, models.listMonitorRules().size())
+            assertEquals(1, models.listReferenceVerticaTables().size())
 
             h2Connection('h2:con') {
                 assertEquals('localhost', connectHost)
                 assertEquals('test', connectDatabase)
-                assertEquals('sa', login)
-                assertEquals('easydata', password)
+                assertEquals('user', login)
+                assertEquals('password', password)
+                assertEquals([user1: 'password1', user2: 'password2'], storedLogins)
                 assertEquals(8192, connectProperty.PAGE_SIZE)
             }
             csvTempConnection('csv.group:con') {
-                assertEquals(reppath, path)
+                assertEquals(repositoryStorageManager().storagePath, path)
                 assertEquals('\t', fieldDelimiter)
                 assertEquals(quoteAlways, quoteMode)
             }
@@ -353,6 +478,11 @@ class RepositoryTest extends GetlDslTest {
                     assertTrue(extended.check)
                 }
             }
+            query('rules:query') {
+                assertEquals(h2Connection('h2:con'), currentJDBCConnection)
+                assertEquals('SELECT Max(dt) FROM table1 WHERE \'{region}\' = \'all\' OR region = \'{region}\'', query)
+                assertEquals('all', queryParams.region)
+            }
 
             sequence('sequence') {
                 assertEquals(embeddedConnection('con'), currentJDBCConnection)
@@ -367,15 +497,65 @@ class RepositoryTest extends GetlDslTest {
                 assertEquals(mergeSave, saveMethod)
             }
 
-            ftp('files:ftp') {
+            sftp('files:sftp') {
                 assertEquals('localhost', server)
-                assertEquals(21, port)
+                assertEquals(22, port)
                 assertEquals('/root', rootPath)
                 assertEquals('user', login)
                 assertEquals('password', password)
-                assertEquals(10, autoNoopTimeout)
-                assertTrue(passive)
-                assertEquals(3, timeZone)
+                assertEquals([user1: 'password1', user2: 'password2'], storedLogins)
+                assertFalse(strictHostKeyChecking)
+            }
+
+            models.referenceFiles('files') {
+                assertEquals(files('files:resources'), sourceManager)
+                assertEquals(sftp('files:sftp'), destinationManager)
+
+                assertEquals('{cmd7z} "{file}"', unpackCommand)
+                assertEquals('7z x -y -bd', modelVars.cmd7z)
+
+                referenceFromFile('zip/test.zip') {
+                    assertEquals('test', destinationPath)
+                }
+            }
+
+            models.mapTables('map') {
+                assertEquals('con', sourceConnectionName)
+                assertEquals('csv.group:con', destinationConnectionName)
+
+                mapTable('table') {
+                    assertEquals('csv', destinationName)
+                    assertEquals([DateUtils.ParseDate('2020-01-01'), DateUtils.ParseDate('2020-02-01')], listPartitions)
+                    assertEquals('dt', partitionFieldName)
+                    assertEquals('test', objectVars.var1)
+                }
+            }
+
+            models.monitorRules('rules') {
+                assertEquals(1, countThreads)
+                assertEquals('rules:table', statusTableName)
+
+                rule('rules:query') {
+                    assertEquals('Check table1', description)
+                    use (TimeCategory) {
+                        assertEquals(1.hours, lagTime)
+                        assertEquals(30.minutes, checkFrequency)
+                        assertEquals(2.hours, notificationTime)
+                    }
+                }
+            }
+
+            models.referenceVerticaTables('proc1') {
+                assertEquals('ver:con', referenceConnectionName)
+                assertEquals('_reference', referenceSchemaName)
+
+                referenceFromTable('ver:table') {
+                    assertEquals('\'{region}\' = \'all\' or region = \'{region}\'', whereCopy)
+                    assertEquals('all', objectVars.region)
+                    assertEquals(10, sampleCopy)
+                    assertEquals(1000000, limitCopy)
+                    assertTrue(allowCopy)
+                }
             }
 
             repositoryStorageManager {
@@ -414,9 +594,19 @@ class RepositoryTest extends GetlDslTest {
                 loadObject(RepositorySequences, 'sequence')
                 assertNotNull(sequence('sequence'))
             }
+        }
+    }
 
-            if (!isdebug)
-                FileUtils.DeleteFolder(reppath, true)
+    @Test
+    void testWorkWithRepository() {
+        if (!FileUtils.ExistsFile(repConfigFileName)) return
+
+        Getl.Dsl {
+            configuration { load repConfigFileName }
+            repositoryStorageManager {
+                storagePath = 'resource:/repository'
+                loadRepositories()
+            }
         }
     }
 }

@@ -25,7 +25,7 @@ class JDBCTest extends getl.test.GetlTest {
                 assertTrue(field('id2').isKey)
                 assertEquals(2, field('id2').ordKey)
 
-                rowsTo {
+                etl.rowsTo {
                     writeRow { added ->
                         added id1: 1, id2: DateUtils.ParseDateTime('2019-12-31 23:59:59.000'), name: 'test', value: 123.45
                     }
@@ -180,7 +180,7 @@ class JDBCTest extends getl.test.GetlTest {
                 field('name') {length = 50; isNull = false }
                 create()
 
-                rowsTo {
+                etl.rowsTo {
                     writeRow { add ->
                         (1..99).each { add id: it, name: "test $it" }
                     }

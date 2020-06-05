@@ -85,7 +85,7 @@ class ExecutorTest extends getl.test.GetlTest {
                 field('id') { type = integerFieldType; isKey = true }
                 field('name') { length = 50; isNull = false }
                 create()
-                rowsTo {
+                etl.rowsTo {
                     writeRow { add ->
                         (1..10).each {
                             add id: it, name: "name $it"
@@ -100,7 +100,7 @@ class ExecutorTest extends getl.test.GetlTest {
 
             csvTempWithDataset('file2', embeddedTable('table1')) {
                 clearKeys()
-                copyRows(embeddedTable('table1'), it)
+                etl.copyRows(embeddedTable('table1'), it)
             }
 
             def heapSizeStart = Runtime.runtime.totalMemory()
@@ -130,7 +130,7 @@ class ExecutorTest extends getl.test.GetlTest {
                     assertEquals('name 1', rows[0].name)
 
                     def file1 = csvTemp('file1')
-                    copyRows(table1, file1) {
+                    etl.copyRows(table1, file1) {
                         cacheName = 'testBigThreads'
                     }
                     assertEquals(10, table1.readRows)

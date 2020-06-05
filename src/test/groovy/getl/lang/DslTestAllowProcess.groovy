@@ -20,7 +20,7 @@ options {
         drop(ifExists: true)
         create()
 
-        rowsTo {
+        etl.rowsTo {
             writeRow { add ->
                 add name: 'getl.lang.DslTestAllowProcess', enabled: BoolUtils.IsValue(enabled)
             }

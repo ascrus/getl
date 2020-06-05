@@ -36,5 +36,5 @@ interface WithConnection {
     void setConnection(Connection value)
 
     /** Clone object and its connection */
-    Object cloneConnection()
+    Object cloneWithConnection()
 }

@@ -306,8 +306,8 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                 curPath = uploadPath
             }
 
-            if (uploadFile.parentFile.absolutePath != man.localDirectoryFile.absolutePath) {
-                FileUtils.CopyToDir(uploadFile, man.localDirectoryFile.absolutePath)
+            if (uploadFile.parentFile.canonicalPath != man.localDirectoryFile.canonicalPath) {
+                FileUtils.CopyToDir(uploadFile, man.localDirectoryFile.canonicalPath)
             }
 
             Operation([man], numberAttempts, timeAttempts) { man ->
@@ -330,7 +330,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                 ChangeLocalDir(man, uploadPath, true)
                 curPath = uploadPath
             }
-            def f = new File(man.localDirectoryFile.absolutePath + File.separator + fileName)
+            def f = new File(man.localDirectoryFile.canonicalPath + File.separator + fileName)
             f.setText(uploadText, 'utf-8')
             uploadFile(f, uploadPath)
             f.delete()
@@ -348,7 +348,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                 curPath = uploadPath
             }
 
-            if (!new File(man.localDirectoryFile.absolutePath + File.separator + localFileName).exists())
+            if (!new File(man.localDirectoryFile.canonicalPath + File.separator + localFileName).exists())
                 throw new ExceptionFileListProcessing("Local file \"$localFileName\" not found!")
 
             Operation([man], numberAttempts, timeAttempts) { man ->
@@ -389,7 +389,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
         // Create pool of source manager
         def sourceList = [] as List<ListPoolElement>
         (1..countOfThreadProcessing).each {
-            def src = source.cloneManager()
+            def src = source.cloneManager(localDirectory: source.localDirectory)
             if (currentStory != null)
                 src.story = currentStory?.cloneDatasetConnection() as TableDataset
             ConnectTo([src], numberAttempts, timeAttempts)
@@ -407,7 +407,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
         def processedList = [] as List<ListPoolElement>
         if (storageProcessedFiles != null) {
             (1..countOfThreadProcessing).each {
-                def src = storageProcessedFiles.cloneManager()
+                def src = storageProcessedFiles.cloneManager(localDirectory: source.localDirectory)
                 ConnectTo([src], numberAttempts, timeAttempts)
                 processedList << new ListPoolElement(man: src)
             }
@@ -417,7 +417,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
         def errorList = [] as List<ListPoolElement>
         if (storageErrorFiles != null) {
             (1..countOfThreadProcessing).each {
-                def src = storageErrorFiles.cloneManager()
+                def src = storageErrorFiles.cloneManager(localDirectory: source.localDirectory)
                 ConnectTo([src], numberAttempts, timeAttempts)
                 errorList << new ListPoolElement(man: src)
             }

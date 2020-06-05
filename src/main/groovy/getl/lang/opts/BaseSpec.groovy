@@ -21,7 +21,6 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.lang.opts
 
 import getl.exception.ExceptionGETL
@@ -52,15 +51,16 @@ class BaseSpec {
         if (importParams != null) {
             if (useExternalParams) {
                 _params = importParams
+                initSpec()
             } else {
+                initSpec()
                 importFromMap(importParams)
             }
         }
-        initSpec()
     }
 
     /** Options owner */
-    private Object _owner
+    protected Object _owner
     /** Options owner */
     Object getOwnerObject() { _owner }
 

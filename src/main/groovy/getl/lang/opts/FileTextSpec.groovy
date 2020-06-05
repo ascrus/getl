@@ -82,7 +82,7 @@ class FileTextSpec extends BaseSpec {
         else {
             file = File.createTempFile('text.', '.getltemp', new File(TFS.storage.path))
             file.deleteOnExit()
-            fileName = file.absolutePath
+            fileName = file.canonicalPath
         }
 
         def writer = file.newWriter(codePage?:'UTF-8', append, false)

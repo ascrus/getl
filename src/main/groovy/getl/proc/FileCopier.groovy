@@ -348,14 +348,16 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                     abortOnError = true
 
                     run { Integer segment ->
-                        def src = source.cloneManager()
-                        def dst = destinations.get(segment).cloneManager()
+                        def src = source.cloneManager(localDirectory: "${source.localDirectory}.${segment}")
+                        FileUtils.ValidPath(src.localDirectory, true)
+                        def dst = destinations.get(segment).cloneManager(localDirectory: src.localDirectory)
                         ConnectTo([src, dst], na, ta)
 
                         try {
                             processSegment(segment, src, [dst])
                         }
                         finally {
+                            FileUtils.DeleteFolder(src.localDirectory, true)
                             DisconnectFrom([src, dst])
                         }
                     }
@@ -488,6 +490,11 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                 story.currentJDBCConnection.connected = false
             }
             files.currentJDBCConnection.connected = false
+
+            Operation([src], numberAttempts, timeAttempts) { man ->
+                man.changeLocalDirectoryToRoot()
+                man.removeLocalDirs('.')
+            }
         }
 
         counter.addCount(files.readRows)

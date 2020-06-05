@@ -25,8 +25,11 @@
 package getl.config
 
 import getl.exception.ExceptionGETL
+import getl.lang.opts.BaseSpec
 import getl.proc.Job
 import getl.utils.*
+import groovy.time.Duration
+import groovy.time.TimeCategory
 
 /**
  * Slurper configuration manager class
@@ -363,22 +366,18 @@ class ConfigSlurper extends ConfigManager {
 	static int SaveMap(Map data, StringBuilder writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		int i = 0
-		int count = data.size()
 		def res = 0
+		def lines = [] as List<String>
 		data.each { key, value ->
 			i++
-			def added = false
 			if (value instanceof Map) {
 				def map = value as Map
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
 					if (SaveMap(map, sb, convertVars, tab + 1) > 0) {
 						def eqStr = (isListMap)?':':''
-						writer.append("${tabStr}${key}${eqStr} {\n")
-						writer.append(sb)
-						writer.append("${tabStr}}")
+						lines.add("${tabStr}${key}${eqStr} {\n" + sb.toString() + "${tabStr}}")
 						res++
-						added = true
 					}
 				}
 			}
@@ -388,24 +387,37 @@ class ConfigSlurper extends ConfigManager {
 					def sb = new StringBuilder()
 					if (SaveList(list, sb, convertVars, tab + 1) > 0) {
 						def eqStr = (isListMap) ? ':' : ' ='
-						writer.append("${tabStr}${key}${eqStr} [\n")
-						writer.append(sb)
-						writer.append("${tabStr}]")
+						lines.add("${tabStr}${key}${eqStr} [\n" + sb.toString() + "${tabStr}]")
 						res++
-						added = true
+					}
+				}
+			}
+			else if (value instanceof BaseSpec) {
+				def map = (value as BaseSpec).params
+				if (!map.isEmpty()) {
+					def sb = new StringBuilder()
+					if (SaveMap(map, sb, convertVars, tab + 1) > 0) {
+						def eqStr = (isListMap)?':':''
+						lines.add("${tabStr}${key}${eqStr} {\n" + sb.toString() + "${tabStr}}")
+						res++
 					}
 				}
 			}
 			else {
-				if (SaveObject(key, value, writer, convertVars, tab, isListMap)) {
+				def sb = new StringBuilder()
+				if (SaveObject(key, value, sb, convertVars, tab, isListMap)) {
+					lines.add(sb.toString())
 					res++
-					added = true
 				}
 			}
-
-			if (added)
-				if (isListMap && i < count) writer.append(',\n') else writer.append('\n')
 		}
+
+		if (isListMap)
+			writer.append(lines.join(',\n'))
+		else
+			writer.append(lines.join('\n'))
+
+		writer.append('\n')
 
 		return res
 	}
@@ -421,21 +433,17 @@ class ConfigSlurper extends ConfigManager {
 	static int SaveList(List data, StringBuilder writer, Boolean convertVars = false, Integer tab = 0) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		int i = 0
-		int count = data.size()
 		def res = 0
+		def lines = [] as List<String>
 		data.each { value ->
 			i++
-			def added = false
 			if (value instanceof Map) {
 				def map = value as Map
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
 					if (SaveMap(map, sb, convertVars, tab + 1, true) > 0) {
-						writer.append("${tabStr}[\n")
-						writer.append(sb)
-						writer.append("${tabStr}]")
+						lines.add("${tabStr}[\n" + sb.toString() + "${tabStr}]")
 						res++
-						added = true
 					}
 				}
 			}
@@ -444,24 +452,32 @@ class ConfigSlurper extends ConfigManager {
 				if (!list.isEmpty()) {
 					def sb = new StringBuilder()
 					if (SaveList(list, sb, convertVars, tab + 1) > 0) {
-						writer.append("${tabStr}[\n")
-						writer.append(sb)
-						writer.append("${tabStr}]")
+						lines.add("${tabStr}[\n" + sb.toString() + "${tabStr}]")
 						res++
-						added = true
+					}
+				}
+			}
+			else if (value instanceof BaseSpec) {
+				def map = (value as BaseSpec).params
+				if (!map.isEmpty()) {
+					def sb = new StringBuilder()
+					if (SaveMap(map, sb, convertVars, tab + 1, true) > 0) {
+						lines.add("${tabStr}[\n" + sb.toString() + "${tabStr}]")
+						res++
 					}
 				}
 			}
 			else {
-				if (SaveObject(null, value, writer, convertVars, tab)) {
+				def sb = new StringBuilder()
+				if (SaveObject(null, value, sb, convertVars, tab)) {
+					lines.add(sb.toString())
 					res++
-					added = true
 				}
 			}
-
-			if (added)
-				if (i < count) writer.append(',\n') else writer.append('\n')
 		}
+
+		writer.append(lines.join(',\n'))
+		writer.append('\n')
 
 		return res
 	}
@@ -483,7 +499,13 @@ class ConfigSlurper extends ConfigManager {
 		def eqStr = (isListMap)?':':' ='
 		def keyStr = (key != null)?"$key$eqStr ":''
 		if (value instanceof Date) {
-			writer.append("${tabStr}${keyStr}new java.sql.Timestamp(Date.parse('yyyy-MM-dd HH:mm:ss.SSS', '${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', value as Date)}').time)")
+			def str = "new java.sql.Timestamp(Date.parse('yyyy-MM-dd HH:mm:ss.SSS', '${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', value as Date)}').time)"
+			writer.append("${tabStr}${keyStr}$str")
+		}
+		else if (value instanceof Duration) {
+			def dur = value as Duration
+			def str = "new groovy.time.Duration(${dur.days}, ${dur.hours}, ${dur.minutes}, ${dur.seconds}, ${dur.millis})"
+			writer.append("${tabStr}${keyStr}$str")
 		}
 		else if (value instanceof Enum) {
 			def e = value as Enum

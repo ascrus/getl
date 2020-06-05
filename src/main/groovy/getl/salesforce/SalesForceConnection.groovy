@@ -25,18 +25,20 @@
 package getl.salesforce
 
 import getl.data.Connection
+import getl.exception.ExceptionGETL
+import getl.lang.sub.UserLogins
 import groovy.transform.InheritConstructors
 
 /**
  * SalesForce Connection class
  * @author Dmitry Shaldin
  */
-class SalesForceConnection extends Connection {
-    SalesForceConnection () {
+class SalesForceConnection extends Connection implements UserLogins {
+    SalesForceConnection() {
 		super(driver: SalesForceDriver)
 	}
 
-	SalesForceConnection (Map params) {
+	SalesForceConnection(Map params) {
 		super(new HashMap([driver: SalesForceDriver]) + params?:[:])
 
 		if (this.getClass().name == 'getl.salesforce.SalesForceConnection') {
@@ -48,13 +50,19 @@ class SalesForceConnection extends Connection {
 	SalesForceDriver getCurrentSalesForceDriver() { driver as SalesForceDriver }
 
 	@Override
-	protected void registerParameters () {
+	void initParams() {
+		super.initParams()
+		params.storedLogins = [:] as Map<String, String>
+	}
+
+	@Override
+	protected void registerParameters() {
 		super.registerParameters()
 		methodParams.register('Super', ['login', 'password', 'connectURL', 'batchSize'])
 	}
 
 	@Override
-	protected void onLoadConfig (Map configSection) {
+	protected void onLoadConfig(Map configSection) {
 		super.onLoadConfig(configSection)
 
 		if (this.getClass().name == 'getl.salesforce.SalesForceConnection') {
@@ -63,34 +71,58 @@ class SalesForceConnection extends Connection {
 	}
 
 	/** SalesForce login */
-	String getLogin () { params.login }
+	@Override
+	String getLogin() { params.login }
 	/** SalesForce login */
-    void setLogin (String value) { params.login = value }
+	@Override
+    void setLogin(String value) { params.login = value }
 
 	/** SalesForce password and token */
-	String getPassword () { params.password }
+	@Override
+	String getPassword() { params.password }
 	/** SalesForce password and token */
-    void setPassword (String value) { params.password = value }
+	@Override
+    void setPassword(String value) { params.password = value }
+
+	@Override
+	Map<String, String> getStoredLogins() { params.storedLogins as Map<String, String> }
+	@Override
+	void setStoredLogins(Map<String, String> value) {
+		storedLogins.clear()
+		if (value != null) storedLogins.putAll(value)
+	}
 
 	/**
 	 * SalesForce SOAP Auth Endpoint
 	 * Example: https://login.salesforce.com/services/Soap/u/40.0
 	 */
-	String getConnectURL () { params.connectURL }
+	String getConnectURL() { params.connectURL }
 	/**
 	 * SalesForce SOAP Auth Endpoint
 	 * <br>Example: https://login.salesforce.com/services/Soap/u/40.0
 	 */
-    void setConnectURL (String value) { params.connectURL = value }
+    void setConnectURL(String value) { params.connectURL = value }
 
 	/**
 	 * Batch Size for SalesForce connection
      * <br>This param do nothing for readAsBulk.
 	 */
-	int getBatchSize () { (params.batchSize as int)?:200 }
+	int getBatchSize() { (params.batchSize as int)?:200 }
 	/**
 	 * Batch Size for SalesForce connection
 	 * <br>This param do nothing for readAsBulk.
 	 */
-    void setBatchSize (int value) { params.batchSize = value }
+    void setBatchSize(int value) { params.batchSize = value }
+
+	@Override
+	void useLogin(String user) {
+		if (!storedLogins.containsKey(user))
+			throw new ExceptionGETL("User \"$user\" not found in in configuration!")
+
+		def pwd = storedLogins.get(user)
+
+		if (login != user && connected) connected = false
+		login = user
+		password = pwd
+	}
 }

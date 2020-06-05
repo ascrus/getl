@@ -8,6 +8,7 @@ import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.InheritConstructors
 import org.junit.BeforeClass
+import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -28,7 +29,7 @@ class VerticaDriverTest extends JDBCDriverProto {
         Config.LoadConfig(fileName: configName)
         def c = new VerticaConnection(config: 'vertica')
         c.with {
-            loginsConfigStore = 'logins'
+            storedLogins = Config.content.logins
             useLogin 'developer'
         }
 
@@ -123,7 +124,7 @@ LIMIT 1'''
                     splitFile { true }
                 }
 
-                rowsTo {
+                etl.rowsTo {
                     writeRow { add ->
                         rows.each { add it }
                     }
@@ -253,7 +254,7 @@ LIMIT 1'''
     void testVerticaTableFunc() {
         Getl.Dsl(this) {
             def generateData = { VerticaTable table ->
-                rowsTo(table) {
+                etl.rowsTo(table) {
                     writeRow { writer ->
                         (1..12).each { month ->
                             writer id: month, dt: DateUtils.ParseDate('yyyy-MM-dd', "2019-${StringUtils.AddLedZeroStr(month, 2)}-01")
@@ -319,6 +320,7 @@ LIMIT 1'''
     }
 
     @Test
+    @Ignore
     void testVerticaConnectionFunc() {
         Getl.Dsl {
             (this.con as VerticaConnection).with {

@@ -47,8 +47,6 @@ import groovy.transform.stc.SimpleType
  */
 class Dataset implements Cloneable, GetlRepository, WithConnection {
 	Dataset () {
-		params.manualSchema = false
-
 		initParams()
 
 		methodParams.register('create', [])
@@ -250,24 +248,27 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Auto load schema with meta file
 	 */
-	boolean getAutoSchema () { return BoolUtils.IsValue([params.autoSchema, connection.autoSchema]) }
+	boolean getAutoSchema () { BoolUtils.IsValue([params.autoSchema, connection.autoSchema]) }
 	/**
 	 * Auto load schema with meta file
 	 */
 	void setAutoSchema (boolean value) {
 		params.autoSchema = value
-		if (value) params.manualSchema = true
+		if (value) manualSchema = true
 	}
 	
 	/**
 	 * Use manual schema for dataset
 	 */
-	boolean getManualSchema () { return params.manualSchema }
+	boolean getManualSchema () { BoolUtils.IsValue(params.manualSchema) }
 	/**
 	 * Use manual schema for dataset
 	 */
 	void setManualSchema (boolean value) {
-		params.manualSchema = value
+		if (value)
+			params.manualSchema = true
+		else
+			params.remove('manualSchema')
 	}
 	
 	/** Schema file name */
@@ -1451,15 +1452,17 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Clone current dataset on specified connection
 	 */
 	@Synchronized
-	Dataset cloneDataset(Connection newConnection = null) {
+	Dataset cloneDataset(Connection newConnection = null, Map otherParams = [:]) {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.class.name
 		Map p = CloneUtils.CloneMap(this.params, false)
+		p.remove('manualSchema')
+		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		Dataset ds = CreateDatasetInternal([dataset: className] + p)
 		if (newConnection != null) ds.connection = newConnection
 		ds.setField(this.field)
 		ds.manualSchema = this.manualSchema
-		
+
 		return ds
 	}
 
@@ -1467,9 +1470,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Clone current dataset and hear connection
 	 */
 	@Synchronized
-	Dataset cloneDatasetConnection () {
+	Dataset cloneDatasetConnection(Map otherParams = [:]) {
 		Connection con = this.connection.cloneConnection()
-		return cloneDataset(con)
+		return cloneDataset(con, otherParams)
 	}
 
     /**
@@ -1542,7 +1545,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		return cloneDataset()
 	}
 
-	Object cloneConnection() {
+	Object cloneWithConnection() {
 		return cloneDatasetConnection()
 	}
 

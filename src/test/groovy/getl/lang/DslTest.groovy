@@ -38,6 +38,8 @@ class DslTest extends GetlDslTest {
     Class<Getl> useGetlClass() { TestRunner }
     @Override
     Boolean onceRunInitClass() { true }
+    @Override
+    protected boolean cleanGetlBeforeTest() { false }
 
     /** Temporary path */
     final def tempPath = TFS.systemPath
@@ -252,7 +254,7 @@ environments {
         Dsl(this) {
             forGroup 'getl.testdsl.h2'
 
-            rowsTo(h2Table('table1')) {
+            etl.rowsTo(h2Table('table1')) {
                 writeRow { append ->
                     (1..this.table1_rows).each { append id: it, name: "test $it", dt: DateUtils.now }
                 }
@@ -302,7 +304,7 @@ environments {
         Dsl(this) {
             clearGroupFilter()
 
-            copyRows(h2Table('getl.testdsl.h2:table1'), csvTemp('getl.testdsl.csv:table1')) {
+            etl.copyRows(h2Table('getl.testdsl.h2:table1'), csvTemp('getl.testdsl.csv:table1')) {
                 copyRow { t, f ->
                     f.name = StringUtils.ToCamelCase(t.name)
                     f.dt = DateUtils.now
@@ -313,7 +315,7 @@ environments {
             def c = csvTemp('#file', true)
             def t = h2Table('#table', true) { tableName = this.h2TableName }
             thread {
-                addThread { copyRows(h2Table('#table'), csvTemp('#file')) { inheritFields = true } }
+                addThread { etl.copyRows(h2Table('#table'), csvTemp('#file')) { inheritFields = true } }
                 exec()
             }
 
@@ -326,12 +328,12 @@ environments {
         Dsl(this) { getl ->
             clearGroupFilter()
 
-            rowsToMany(
+            etl.rowsToMany(
                     table1: h2Table('getl.testdsl.h2:table1') { truncate() },
                     table2: h2Table('getl.testdsl.h2:table2') { truncate() }
             ) {
                 writeRow { add ->
-                    rowsProcess(csvTemp('getl.testdsl.csv:table1')) {
+                    etl.rowsProcess(csvTemp('getl.testdsl.csv:table1')) {
                         readRow { row ->
                             row.dt = DateUtils.now
                             add 'table1', row
@@ -361,7 +363,7 @@ FROM ${this.h2TableName} t1
     INNER JOIN ${this.h2Table2Name} t2 ON t1.id = t2.id
 ORDER BY t1.id"""
 
-                rowsProcess {
+                etl.rowsProcess {
                     def count = 0
                     count = 0
                     readRow { row ->
@@ -384,7 +386,7 @@ ORDER BY t1.id"""
 
             h2Table('table1') {
                 readOpts { where = 'id < 3'; order = ['id ASC'] }
-                rowsProcess {
+                etl.rowsProcess {
                     def i = 0
                     readRow { row ->
                         i++
@@ -404,7 +406,7 @@ ORDER BY t1.id"""
         Dsl(this) {
             clearGroupFilter()
 
-            copyRows(h2Table('getl.testdsl.h2:table1'), csvTemp('getl.testdsl.csv:table1')) {
+            etl.copyRows(h2Table('getl.testdsl.h2:table1'), csvTemp('getl.testdsl.csv:table1')) {
                 childs(csvTemp('getl.testdsl.csv:table2')) {
                     writeRow { add, sourceRow ->
                         sourceRow.name = (sourceRow.name as String).toLowerCase()
@@ -436,7 +438,7 @@ ORDER BY t1.id"""
                 assertEquals(0, countRow())
             }
 
-            copyRows(csvTemp('getl.testdsl.csv:table1'), h2Table('table1')) {
+            etl.copyRows(csvTemp('getl.testdsl.csv:table1'), h2Table('table1')) {
                 childs(h2Table('table2')) {
                     writeRow { add, sourceRow ->
                         add sourceRow
@@ -526,7 +528,7 @@ ORDER BY t1.id"""
                 }
             }
 
-            copyRows(h2Table('getl.testdsl.h2:table1'), csv)
+            etl.copyRows(h2Table('getl.testdsl.h2:table1'), csv)
             assertEquals(4, csv.countWritePortions)
 
             TableDataset list
@@ -580,7 +582,7 @@ ORDER BY t1.id"""
                 }
             }
 
-            copyRows(h2Table('getl.testdsl.h2:table1'), csv)
+            etl.copyRows(h2Table('getl.testdsl.h2:table1'), csv)
             assertEquals(4, csv.countWritePortions)
 
             TableDataset list
@@ -877,7 +879,7 @@ ORDER BY t1.id"""
                     it != this.h2Table2Name
                 }
                 runWithElements {
-                    copyRows(h2Table(it.source), csvTemp(it.destination)) {
+                    etl.copyRows(h2Table(it.source), csvTemp(it.destination)) {
                         copyRow()
                         assertEquals(source.readRows, destination.writeRows)
                     }

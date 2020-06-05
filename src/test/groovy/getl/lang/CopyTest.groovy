@@ -20,6 +20,8 @@ class CopyTest extends GetlDslTest {
     Class<Getl> useInitClass() { TestInit }
     @Override
     Class<Getl> useGetlClass() { TestRunner }
+    @Override
+    protected boolean cleanGetlBeforeTest() { false }
 
     static final def debug = false
     static final def workPath = "${(debug)?"${System.getenv().GETL_TEST}/getl.test":FileUtils.SystemTempDir()}/copier"
@@ -101,7 +103,7 @@ class CopyTest extends GetlDslTest {
                         boolean delFiles = false, boolean delDirs = false, boolean inMemoryMode = true, boolean cacheStory = true) {
         long res = 0
         Dsl(this) {
-            res = fileCopier(src, dst) {
+            res = fileman.copier(src, dst) {
                 sourcePath = srcMask
                 destinationPath = dstMask
 
@@ -330,7 +332,7 @@ class CopyTest extends GetlDslTest {
                     }
                 }
                 sleep(1000)
-                fileCopier(files('in', true) { rootPath =  "$simplePath/source"; saveOriginalDate = true },
+                fileman.copier(files('in', true) { rootPath =  "$simplePath/source"; saveOriginalDate = true },
                         files('out', true) { rootPath = "$simplePath/dest"; saveOriginalDate = true }) {
                     useSourcePath { mask = '*.txt' }
                     useDestinationPath { mask = '.' }
@@ -365,7 +367,7 @@ class CopyTest extends GetlDslTest {
                 if (this.debug) sqlHistoryFile = "${this.workPath}/h2-remove.{date}.sql"
             }
 
-            def countFiles = fileCleaner(files('source')) {
+            def countFiles = fileman.cleaner(files('source')) {
                 sourcePath = this.sourceMask
                 cacheFilePath = "${this.workPath}/filecleancache"
             }.countFiles
@@ -375,7 +377,7 @@ class CopyTest extends GetlDslTest {
             }
 
             this.generateSource()
-            countFiles = fileCleaner(files('source')) {
+            countFiles = fileman.cleaner(files('source')) {
                 sourcePath = this.sourceMask
                 cacheFilePath = "${this.workPath}/filecleancache"
             }.countFiles
@@ -384,7 +386,7 @@ class CopyTest extends GetlDslTest {
                 assertEquals(81, embeddedTable(historyTable).countRow())
             }
 
-            countFiles = fileCleaner(files('source')) {
+            countFiles = fileman.cleaner(files('source')) {
                 sourcePath = this.sourceMask
                 cacheFilePath = "${this.workPath}/filecleancache"
                 onlyFromStory = true
@@ -395,7 +397,7 @@ class CopyTest extends GetlDslTest {
             }
 
             this.generateSource()
-            countFiles = fileCleaner(files('source')) {
+            countFiles = fileman.cleaner(files('source')) {
                 sourcePath = this.sourceMask
                 cacheFilePath = "${this.workPath}/filecleancache"
                 ignoreStory = true
@@ -407,7 +409,7 @@ class CopyTest extends GetlDslTest {
 
             files('source').story.truncate()
             this.generateSource()
-            countFiles = fileCleaner(files('source')) {
+            countFiles = fileman.cleaner(files('source')) {
                 sourcePath = this.sourceMask
                 cacheFilePath = "${this.workPath}/filecleancache"
                 ignoreStory = true

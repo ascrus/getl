@@ -174,10 +174,11 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 
 	/** Clone current dataset on specified connection */
 	@Synchronized
-	SavePointManager cloneSavePointManager(JDBCConnection newConnection = null) {
+	SavePointManager cloneSavePointManager(JDBCConnection newConnection = null, Map otherParams = [:]) {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.class.name
 		Map p = CloneUtils.CloneMap(this.params, false)
+		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		def man = Class.forName(className).newInstance() as SavePointManager
 		if (newConnection != null) man.connection = newConnection
 		man.params.putAll(p)
@@ -186,8 +187,8 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	@Synchronized
-	SavePointManager cloneSavePointManagerConnection() {
-		cloneSavePointManager(connection?.cloneConnection() as JDBCConnection)
+	SavePointManager cloneSavePointManagerConnection(Map otherParams = [:]) {
+		cloneSavePointManager(connection?.cloneConnection() as JDBCConnection, otherParams)
 	}
 
 	/** Set fields mapping */
@@ -579,7 +580,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		return cloneSavePointManager()
 	}
 
-	Object cloneConnection() {
+	Object cloneWithConnection() {
 		return cloneSavePointManagerConnection()
 	}
 

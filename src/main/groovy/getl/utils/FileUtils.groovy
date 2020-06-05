@@ -354,14 +354,14 @@ class FileUtils {
 					else if (vf.isFile()) {
 						if (onDelete != null) onDelete(vf)
 						if (!vf.delete()) {
-                            if (throwError) throw new ExceptionGETL("Can not delete file \"${vf.absolutePath}\"")
+                            if (throwError) throw new ExceptionGETL("Can not delete file \"${vf.canonicalPath}\"")
                             isError = true
                         }
 					}
 				}
 				if (onDelete != null) onDelete(df)
 				if (!isError && !df.deleteDir()) {
-                    if (throwError) throw new ExceptionGETL("Can not delete directory \"${df.absolutePath}\"")
+                    if (throwError) throw new ExceptionGETL("Can not delete directory \"${df.canonicalPath}\"")
                     isError = true
                 }
 
@@ -370,14 +370,14 @@ class FileUtils {
             else {
                 if (onDelete != null) onDelete(df)
                 if (!df.delete()) {
-                    if (throwError) throw new ExceptionGETL("Can not delete file \"${df.absolutePath}\"")
+                    if (throwError) throw new ExceptionGETL("Can not delete file \"${df.canonicalPath}\"")
                     res = false
                 }
             }
 		}
 		if (res && deleteRoot) {
 			if (!root.deleteDir()) {
-                if (throwError) throw new ExceptionGETL("Can not delete directory \"${root.absolutePath}\"")
+                if (throwError) throw new ExceptionGETL("Can not delete directory \"${root.canonicalPath}\"")
                 res = false
             }
 		}
@@ -536,7 +536,7 @@ class FileUtils {
 		file = ConvertToDefaultOSPath(file)
 		String res
 		if (MaskFile(file) != null) {
-			res = new File(RelativePathFromFile(file)).absolutePath
+			res = new File(RelativePathFromFile(file)).canonicalPath
 		}
 		else {
 			res = new File(file).parent
@@ -569,9 +569,9 @@ class FileUtils {
 	static String RelativePathFromFile(String pathToFile, Boolean isUnixPath = null) {
 		isUnixPath = BoolUtils.IsValue(isUnixPath, !Config.isWindows())
 		def sep = (isUnixPath)?'/':'\\'
-		def file = (isUnixPath)?ConvertToUnixPath(pathToFile):ConvertToWindowsPath(pathToFile)
+		def filePath = (isUnixPath)?ConvertToUnixPath(pathToFile):ConvertToWindowsPath(pathToFile)
 
-		RelativePathFromFile(file, sep)
+		RelativePathFromFile(filePath, sep)
 	}
 
 	/**
@@ -820,7 +820,7 @@ class FileUtils {
 	static void CompressToZip(String zipName, String path, Map params,
 							  @ClosureParams(value = SimpleType, options = ['java.io.File', 'java.lang.String'])
 									  Closure validFile) {
-		zipName = new File(zipName).absolutePath
+		zipName = new File(zipName).canonicalPath
 		def password = params.password as String
 		ZipFile zipFile = (password != null)?new ZipFile(zipName, password.toCharArray()):new ZipFile(zipName)
         params = params?:[:]
@@ -874,11 +874,11 @@ class FileUtils {
 		def path = new File(targerDirectory)
 		ValidPath(path)
 
-		ZipFile zipFile = (password != null) ? new ZipFile(file.absolutePath, password.toCharArray()) : new ZipFile(file.absolutePath)
+		ZipFile zipFile = (password != null) ? new ZipFile(file.canonicalPath, password.toCharArray()) : new ZipFile(file.canonicalPath)
 		if (charsetFileName != null)
 			zipFile.charset = Charset.forName(charsetFileName)
 
-		zipFile.extractAll(path.absolutePath)
+		zipFile.extractAll(path.canonicalPath)
 	}
 
 	static final Map<String, String> ReplaceFileMaskRules = {
@@ -925,7 +925,7 @@ class FileUtils {
 			mask = FileName(path)
 			if (mask.indexOf('*') == -1 && mask.indexOf('?') == -1) throw new ExceptionGETL("File \"$path\" not found")
 		}
-		FileManager fileMan = new FileManager(rootPath: pathFile.absolutePath)
+		FileManager fileMan = new FileManager(rootPath: pathFile.canonicalPath)
 		fileMan.connect()
 		try {
 			fileMan.list(mask) { Map file ->
@@ -979,8 +979,8 @@ class FileUtils {
 	/** Convert specified path to list */
 	static List<String> Path2List(String path) {
 		if (path == null) throw new ExceptionGETL('Path parameter is required!')
-		def absolutePath = new File(path).absolutePath
-		return absolutePath.split('[' + StringUtils.EscapeJava(File.separator) + ']').toList() as List<String>
+		def canonicalPath = new File(path).canonicalPath
+		return canonicalPath.split('[' + StringUtils.EscapeJava(File.separator) + ']').toList() as List<String>
 	}
 
 	/** Find parent directory by nearest specified elements in path */
@@ -996,9 +996,11 @@ class FileUtils {
      * Get file from classpath or resources folder
      * @param fileName file name in resource catalog
      * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
+	 * @param classLoader use the specified classloader to access resources
+	 * @param destFile place the resource in the specified file
      */
-	@Memoized
-	static File FileFromResources(String fileName, def otherPath = null, ClassLoader classLoader = null) {
+//	@Memoized
+	static File FileFromResources(String fileName, def otherPath = null, ClassLoader classLoader = null, File destFile = null) {
 		URL resource = (classLoader == null)?GroovyClassLoader.getResource(fileName):classLoader.getResource(fileName)
 		File res
 		if (resource == null) {
@@ -1028,14 +1030,26 @@ class FileUtils {
 				}
 			}
 
-			if (res == null) throw new ExceptionGETL("Resource file \"$fileName\" is not found!")
+			if (res == null)
+				throw new ExceptionGETL("Resource file \"$fileName\" is not found!")
 		}
 		else {
-			def dir = "${TFS.systemPath}/resources.getl"
-			ValidPath(dir, true)
-			res = CreateTempFile('resource_', "_${FileName(fileName)}", dir)
-			res.withOutputStream {
-				it.write(resource.getBytes())
+			if (destFile != null) {
+				res = destFile
+			}
+			else {
+				def dir = "${TFS.systemPath}/resources.getl"
+				ValidPath(dir, true)
+
+				def fn = "$dir/resource_" + fileName.replaceAll('(\\\\|\\/|\\:|\\"|\\\'|\\||\\?|\\$|\\%)', '_')
+				res = new File(fn)
+			}
+
+			if (!res.exists()) {
+				res.deleteOnExit()
+				res.withOutputStream {
+					it.write(resource.getBytes())
+				}
 			}
 		}
 
@@ -1066,7 +1080,7 @@ class FileUtils {
 		String res
 		if (IsResourceFileName(fileName)) {
 			def file = FileFromResources(fileName.substring(9))
-			res = file.absolutePath
+			res = file.canonicalPath
 		}
 		else {
 			res = fileName

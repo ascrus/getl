@@ -25,6 +25,7 @@
 package getl.files
 
 import getl.files.sub.FileManagerList
+import getl.lang.sub.UserLogins
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import com.jcraft.jsch.*
@@ -39,7 +40,13 @@ import groovy.transform.Synchronized
  */
 
 @InheritConstructors
-class SFTPManager extends Manager {
+class SFTPManager extends Manager implements UserLogins {
+	@Override
+	void initParams() {
+		super.initParams()
+		params.storedLogins = [:] as Map<String, String>
+	}
+
 	/** SSH driver */
 	final JSch client = new JSch()
 	/** SSH driver */
@@ -56,54 +63,63 @@ class SFTPManager extends Manager {
 	ChannelSftp getChannelFtp() { channelFtp }
 	
 	@Override
-	protected void initMethods () {
+	protected void initMethods() {
 		super.initMethods()
 		methodParams.register('super', ['server', 'port', 'login', 'password', 'knownHostsFile',
-										'identityFile', 'codePage', 'aliveInterval', 'aliveCountMax', 'hostKey', 'hostOS'])
+										'identityFile', 'codePage', 'aliveInterval', 'aliveCountMax', 'hostKey',
+										'hostOS', 'storedLogins', 'strictHostKeyChecking'])
 	}
 	
 	@Override
-	protected void onLoadConfig (Map configSection) {
+	protected void onLoadConfig(Map configSection) {
 		super.onLoadConfig(configSection)
 		if (rootPath != null && rootPath.substring(0, 1) != "/") rootPath = "/" + rootPath
 	}
 	
 	@Override
-	void setRootPath (String value) {
+	void setRootPath(String value) {
 		if (value != null && value.length() > 1 && value.substring(0, 1) != "/") value = "/" + value
 		super.setRootPath(value)
 	}
 	
 	/** Server address */
-	String getServer () { params.server }
+	String getServer() { params.server }
 	/** Server address */
-	void setServer (String value) { params.server = value }
+	void setServer(String value) { params.server = value }
 	
 	/** Server port */
-	Integer getPort () { (params.port != null)?(params.port as Integer):22 }
+	Integer getPort() { (params.port != null)?(params.port as Integer):22 }
 	/** Server port */
-	void setPort (Integer value) { params.port = value }
+	void setPort(Integer value) { params.port = value }
 	
-	/** Login user */
-	String getLogin () { params.login }
-	/** Login user */
-	void setLogin (String value) { params.login = value }
-	
-	/** Password user */
-	String getPassword () { params.password }
-	/** Password user */
-	void setPassword (String value) { params.password = value }
+	@Override
+	String getLogin() { params.login }
+	@Override
+	void setLogin(String value) { params.login = value }
+
+	@Override
+	String getPassword() { params.password }
+	@Override
+	void setPassword(String value) { params.password = value }
+
+	@Override
+	Map<String, String> getStoredLogins() { params.storedLogins as Map<String, String> }
+	@Override
+	void setStoredLogins(Map<String, String> value) {
+		storedLogins.clear()
+		if (value != null) storedLogins.putAll(value)
+	}
 	
 	/**
 	 * Known hosts file name
 	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
-	String getKnownHostsFile () { params.knownHostsFile }
+	String getKnownHostsFile() { params.knownHostsFile }
 	/**
 	 * Known hosts file name
 	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
-	void setKnownHostsFile (String value) { params.knownHostsFile = value }
+	void setKnownHostsFile(String value) { params.knownHostsFile = value }
 
 	/**
 	 * Host key
@@ -115,32 +131,37 @@ class SFTPManager extends Manager {
 	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
 	void setHostKey(String value) { params.hostKey = value }
+
+	/** Need checking RSA host key (default true) */
+	Boolean getStrictHostKeyChecking() { BoolUtils.IsValue(params.strictHostKeyChecking, true) }
+	/** Need checking RSA host key (default true) */
+	void setStrictHostKeyChecking(Boolean value) { params.strictHostKeyChecking = value }
 	
 	/** Identity file name */
-	String getIdentityFile () { params.identityFile }
+	String getIdentityFile() { params.identityFile }
 	/** Identity file name */
-	void setIdentityFile (String value) { params.identityFile = value }
+	void setIdentityFile(String value) { params.identityFile = value }
 	
 	/** Code page on command console */
-	String getCodePage () { params.codePage?:"utf-8" }
+	String getCodePage() { params.codePage?:"utf-8" }
 	/** Code page on command console */
-	void setCodePage (String value) { params.codePage = value }
+	void setCodePage(String value) { params.codePage = value }
 	
 	/** Alive interval (in seconds) */
-	Integer getAliveInterval () { params."aliveInterval" as Integer }
+	Integer getAliveInterval() { params."aliveInterval" as Integer }
 	/** Alive interval (in seconds) */
-	void setAliveInterval (Integer value) { params."aliveInterval" = value }
+	void setAliveInterval(Integer value) { params."aliveInterval" = value }
 	
 	/** Alive retry count max */
-	Integer getAliveCountMax () { params."aliveCountMax" as Integer }
+	Integer getAliveCountMax() { params."aliveCountMax" as Integer }
 	/** Alive retry count max */
-	void setAliveCountMax (Integer value) { params."aliveCountMax" = value }
+	void setAliveCountMax(Integer value) { params."aliveCountMax" = value }
 	
 	@Override
-	boolean isCaseSensitiveName () { true }
+	boolean isCaseSensitiveName() { true }
 
 	/** Create new session manager */
-	private Session newSession () {
+	private Session newSession() {
 		Session s = client.getSession(login, server, port)
 		try {
 			s.setPassword(password)
@@ -159,6 +180,9 @@ class SFTPManager extends Manager {
 				h += ", identity file \"$identityFile\""
 				client.addIdentity(identityFile)
 			}
+
+			if (!strictHostKeyChecking)
+				s.setConfig('StrictHostKeyChecking', 'no')
 			
 			writeScriptHistoryFile(h)
 			
@@ -192,8 +216,10 @@ class SFTPManager extends Manager {
 		if (connected)
 			throw new ExceptionGETL('Manager already connected!')
 
-		if (server == null || port == null) throw new ExceptionGETL("Required server host and port for connect")
-		if (login == null || password == null) throw new ExceptionGETL("Required login and password for connect")
+		if (server == null || port == null)
+			throw new ExceptionGETL('Required server host and port for connect')
+		if (login == null || password == null)
+			throw new ExceptionGETL('Required login and password for connect')
 		
 		clientSession = newSession()
 		try {
@@ -597,5 +623,19 @@ exit \$LastExitCode
 			res = "sftp $loginStr$server/$rootPath"
 
 		return res
+	}
+
+	@Override
+	void useLogin(String user) {
+		if (!storedLogins.containsKey(user))
+			throw new ExceptionGETL("User \"$user\" not found in in configuration!")
+
+		def pwd = storedLogins.get(user)
+
+		def reconnect = (login != user && connected)
+		if (reconnect) disconnect()
+		login = user
+		password = pwd
+		if (reconnect) connect()
 	}
 }

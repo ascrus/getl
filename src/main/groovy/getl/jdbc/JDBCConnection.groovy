@@ -33,6 +33,7 @@ import getl.jdbc.opts.GenerateDslTablesSpec
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.RepositoryConnections
+import getl.lang.sub.UserLogins
 import getl.proc.Flow
 import getl.tfs.TDS
 import getl.utils.*
@@ -46,12 +47,12 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-class JDBCConnection extends Connection {
-	JDBCConnection () {
+class JDBCConnection extends Connection implements UserLogins {
+	JDBCConnection() {
 		super(driver: JDBCDriver)
 	}
 	
-	JDBCConnection (Map params) {
+	JDBCConnection(Map params) {
 		super(new HashMap([driver: JDBCDriver]) + params?:[:])
 		if (this.getClass().name == 'getl.jdbc.JDBCConnection') methodParams.validation("Super", params?:[:])
 	}
@@ -60,6 +61,7 @@ class JDBCConnection extends Connection {
 	void initParams() {
 		super.initParams()
 		fileNameSqlHistory = null
+		params.storedLogins = [:] as Map<String, String>
 	}
 
 	/** Current JDBC connection driver */
@@ -69,13 +71,13 @@ class JDBCConnection extends Connection {
 	 * Register connection parameters with method validator
 	 */
 	@Override
-	protected void registerParameters () {
+	protected void registerParameters() {
 		super.registerParameters()
 		methodParams.register('Super', [
 				'login', 'password', 'connectURL', 'sqlHistoryFile', 'autoCommit', 'connectProperty', 'dbName',
 				'javaConnection', 'maskDate', 'maskDateTime', 'sessionProperty', 'maskTime', 'schemaName',
 				'driverName', 'driverPath', 'connectHost', 'connectDatabase', 'balancer', 'fetchSize', 'loginTimeout',
-				'queryTimeout', 'sqlHistoryOutput', 'loginsConfigStore'])
+				'queryTimeout', 'sqlHistoryOutput', 'storedLogins'])
 	}
 	
 	@Override
@@ -117,52 +119,52 @@ class JDBCConnection extends Connection {
 	/**
 	 * Use exists JDBC connection 
 	 */
-	java.sql.Connection getJavaConnection () { params.javaConnection as java.sql.Connection }
+	java.sql.Connection getJavaConnection() { params.javaConnection as java.sql.Connection }
 	/**
 	 * Use exists JDBC connection
 	 */
-	void setJavaConnection (java.sql.Connection value) { params.javaConnection = value }
+	void setJavaConnection(java.sql.Connection value) { params.javaConnection = value }
 	
 	/**
 	 * JDBC connection URL
 	 */
-	String getConnectURL () { params.connectURL as String }
+	String getConnectURL() { params.connectURL as String }
 	/**
 	 * JDBC connection URL
 	 */
-	void setConnectURL (String value) { params.connectURL = value }
+	void setConnectURL(String value) { params.connectURL = value }
 	
 	/**
 	 * Build jdbc connection url
 	 */
-	String currentConnectURL () { sysParams.currentConnectURL as String }
+	String currentConnectURL() { sysParams.currentConnectURL as String }
 	
 	/**
 	 * Server host and port for connection url
 	 */
-	String getConnectHost () { params.connectHost as String }
+	String getConnectHost() { params.connectHost as String }
 	/**
 	 * Server host and port for connection url
 	 */
-	void setConnectHost (String value) { params.connectHost = value }
+	void setConnectHost(String value) { params.connectHost = value }
 	
 	/**
 	 * Database name for connection url
 	 */
-	String getConnectDatabase () { params.connectDatabase as String }
+	String getConnectDatabase() { params.connectDatabase as String }
 	/**
 	 * Database name for connection url
 	 */
-	void setConnectDatabase (String value) { params.connectDatabase = value }
+	void setConnectDatabase(String value) { params.connectDatabase = value }
 	
 	/**
 	 * Connection balancer
 	 */
-	Balancer getBalancer () { params.balancer as Balancer }
+	Balancer getBalancer() { params.balancer as Balancer }
 	/**
 	 * Connection balancer
 	 */
-	void setBalancer (Balancer value) { params.balancer = value }
+	void setBalancer(Balancer value) { params.balancer = value }
 	
 	/** JDBC driver name */
 	String getDriverName() { params.driverName as String }
@@ -178,32 +180,24 @@ class JDBCConnection extends Connection {
 	 */
     void setDriverPath(String value) { params.driverPath = value }
 	
-	/**
-	 * Connection login
-	 */
-	String getLogin () { params.login as String }
-	/**
-	 * Connection login
-	 */
-	void setLogin (String value) { params.login = value }
+	@Override
+	String getLogin() { params.login as String }
+	@Override
+	void setLogin(String value) { params.login = value }
 	
-	/**
-	 * Connection password
-	 */
-	String getPassword () { params.password as String }
-	/**
-	 * Connection password
-	 */
-	void setPassword (String value) { params.password = value }
+	@Override
+	String getPassword() { params.password as String }
+	@Override
+	void setPassword(String value) { params.password = value }
 	
 	/**
 	 * Auto commit transaction
 	 */
-	boolean getAutoCommit () { BoolUtils.IsValue(params.autoCommit, false) }
+	boolean getAutoCommit() { BoolUtils.IsValue(params.autoCommit, false) }
 	/**
 	 * Auto commit transaction
 	 */
-	void setAutoCommit (boolean value) {
+	void setAutoCommit(boolean value) {
 		params.autoCommit = value
 		if (connected) currentJDBCDriver.setAutoCommit(value)
 	}
@@ -211,32 +205,32 @@ class JDBCConnection extends Connection {
 	/**
 	 * Database name from access to objects in datasets
 	 */
-	String getDbName () { params.dbName as String }
+	String getDbName() { params.dbName as String }
 	/**
 	 * Database name from access to objects in datasets
 	 */
-	void setDbName (String value) { params.dbName = value }
+	void setDbName(String value) { params.dbName = value }
 
 	/**
 	 * Schema name from access to objects in datasets
 	 */
-	String getSchemaName () { params.schemaName as String }
+	String getSchemaName() { params.schemaName as String }
 	/**
 	 * Schema name from access to objects in datasets
 	 */
-	void setSchemaName (String value) { params.schemaName = value }
+	void setSchemaName(String value) { params.schemaName = value }
 	
 	/**
 	 * Extend connection properties
 	 */
-	Map getConnectProperty () {
+	Map getConnectProperty() {
 		if (params.connectProperty == null) params.connectProperty = [:]
 		return params.connectProperty as Map
 	}
 	/**
 	 * Extend connection properties
 	 */
-	void setConnectProperty (Map value) {
+	void setConnectProperty(Map value) {
 		connectProperty.clear()
 		addConnectionProperty(value)
 	}
@@ -244,21 +238,21 @@ class JDBCConnection extends Connection {
 	/**
 	 * Merge connection properties
 	 */
-	void addConnectionProperty (Map value) {
+	void addConnectionProperty(Map value) {
 		connectProperty.putAll(value)
 	}
 	
 	/**
 	 * Session properties
 	 */
-	Map getSessionProperty () {
+	Map getSessionProperty() {
 		if (params.sessionProperty == null) params.sessionProperty = [:]
 		return params.sessionProperty as Map
 	}
 	/**
 	 * Session properties
 	 */
-	void setSessionProperty (Map value) {
+	void setSessionProperty(Map value) {
 		sessionProperty.clear()
 		addSessionProperty(value)
 	}
@@ -266,45 +260,45 @@ class JDBCConnection extends Connection {
 	/**
 	 * Merge session properties
 	 */
-	def addSessionProperty (Map value) {
+	def addSessionProperty(Map value) {
 		sessionProperty.putAll(value)
 	}
 	
 	/**
 	 * Default mask for date values
 	 */
-	String getMaskDate () { params.maskDate as String }
+	String getMaskDate() { params.maskDate as String }
 	/**
 	 * Default mask for date values
 	 */
-	void setMaskDate (String value) { params.maskDate = value }
+	void setMaskDate(String value) { params.maskDate = value }
 	
 	/**
 	 * Default mask for time values
 	 */
-	String getMaskTime () { params.maskTime as String }
+	String getMaskTime() { params.maskTime as String }
 	/**
 	 * Default mask for time values
 	 */
-	void setMaskTime (String value) { params.maskTime = value }
+	void setMaskTime(String value) { params.maskTime = value }
 	
 	/**
 	 * Default mask for datetime values
 	 */
-	String getMaskDateTime () { params.maskDateTime as String }
+	String getMaskDateTime() { params.maskDateTime as String }
 	/**
 	 * Default mask for datetime values
 	 */
-	void setMaskDateTime (String value) { params.maskDateTime = value }
+	void setMaskDateTime(String value) { params.maskDateTime = value }
 	
 	/**
 	 * Name of file history sql commands
 	 */
-	String getSqlHistoryFile () { params.sqlHistoryFile as String }
+	String getSqlHistoryFile() { params.sqlHistoryFile as String }
 	/**
 	 * Name of file history sql commands
 	 */
-    void setSqlHistoryFile (String value) {
+    void setSqlHistoryFile(String value) {
         params.sqlHistoryFile = value
         fileNameSqlHistory = null
     }
@@ -321,50 +315,50 @@ class JDBCConnection extends Connection {
     /**
      * Output sql commands to console
      */
-    Boolean getSqlHistoryOutput () { BoolUtils.IsValue(params.sqlHistoryOutput, false) }
+    Boolean getSqlHistoryOutput() { BoolUtils.IsValue(params.sqlHistoryOutput, false) }
 	/**
 	 * Output sql commands to console
 	 */
-    void setSqlHistoryOutput (Boolean value) {
+    void setSqlHistoryOutput(Boolean value) {
         params.sqlHistoryOutput = value
     }
 	
 	/**
 	 * Fetch size records for read query 
 	 */
-	Integer getFetchSize () { params.fetchSize as Integer }
+	Integer getFetchSize() { params.fetchSize as Integer }
 	/**
 	 * Fetch size records for read query
 	 */
-	void setFetchSize (Integer value) { params.fetchSize = value }
+	void setFetchSize(Integer value) { params.fetchSize = value }
 	
 	/**
 	 * Set login timeout for connection driver (in seconds) 
 	 */
-	Integer getLoginTimeout () { params.loginTimeout as Integer }
+	Integer getLoginTimeout() { params.loginTimeout as Integer }
 	/**
 	 * Set login timeout for connection driver (in seconds)
 	 */
-	void setLoginTimeout (Integer value) { params.loginTimeout = value }
+	void setLoginTimeout(Integer value) { params.loginTimeout = value }
 	
 	/**
 	 * Set statement timeout for connection driver (in seconds)
 	 */
-	Integer getQueryTimeout () { params.queryTimeout as Integer }
+	Integer getQueryTimeout() { params.queryTimeout as Integer }
 	/**
 	 * Set statement timeout for connection driver (in seconds)
 	 */
-	void setQueryTimeout (Integer value) { params.queryTimeout = value }
+	void setQueryTimeout(Integer value) { params.queryTimeout = value }
 	
 	/**
 	 * Return using groovy SQL connection
 	 */
-	Sql getSqlConnection () { sysParams.sqlConnect as Sql }
+	Sql getSqlConnection() { sysParams.sqlConnect as Sql }
 	
 	/**
 	 * Return session ID (if supported RDBMS driver)
 	 */
-	String getSessionID () { sysParams.sessionID as String }
+	String getSessionID() { sysParams.sessionID as String }
 	
 	/**
 	 * Return datasets list by parameters
@@ -414,20 +408,20 @@ class JDBCConnection extends Connection {
 	/**
 	 * Return datasets list
 	 */
-	List<Dataset> retrieveDatasets () {
+	List<Dataset> retrieveDatasets() {
 		retrieveDatasets([:], null)
 	}
 	
 	/**
 	 * Return datasets list
 	 */
-	List<Dataset> retrieveDatasets (@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
+	List<Dataset> retrieveDatasets(@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 											Closure<Boolean> filter) {
 		retrieveDatasets([:], filter)
 	}
 
 	@Override
-	String getObjectName () { toString() }
+	String getObjectName() { toString() }
 	
 	/**
 	 * Save sql to history file
@@ -439,12 +433,12 @@ class JDBCConnection extends Connection {
 	/**
 	 * Return used balancer server attributes
 	 */
-	Map getBalancerServer () { sysParams.balancerServer as Map }
+	Map getBalancerServer() { sysParams.balancerServer as Map }
 
 	/**
 	 * Build connection params for connect url 
 	 */
-	String buildConnectParams () {
+	String buildConnectParams() {
 		currentJDBCDriver.buildConnectParams()
 	}
 	
@@ -486,14 +480,14 @@ class JDBCConnection extends Connection {
 	/**
 	 * Current host name
 	 */
-	String getConnectHostName () {
+	String getConnectHostName() {
 		ConnectHost2HostName(connectHost)
 	}
 	
 	/**
 	 * Current port number
 	 */
-	Integer getConnectPortNumber () {
+	Integer getConnectPortNumber() {
 		ConnectHost2PortNumber(connectHost)
 	}
 	
@@ -505,7 +499,7 @@ class JDBCConnection extends Connection {
 	/**
 	 * Validation script history file
 	 */
-	protected validSqlHistoryFile () {
+	protected validSqlHistoryFile() {
 		if (fileNameSqlHistory == null) {
 			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile, StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(fileNameSqlHistory)
@@ -717,7 +711,7 @@ ${tab}${tab}${tab}useConnection csvConnection { path = getl.utils.FileUtils.Path
 ${tab}${tab}${tab}fileName = "${tableName}.csv"
 ${tab}${tab}${tab}field = table.field; codePage = 'utf-8'; fieldDelimiter = ','; escaped = false; nullAsValue = '<NULL>'
 ${tab}${tab}}
-${tab}${tab}copyRows(initDataFile, table) {
+${tab}${tab}etl.copyRows(initDataFile, table) {
 ${tab}${tab}${tab}copyRow()
 ${tab}${tab}${tab}logInfo "Loaded \$countRow rows to table \${table.fullTableName}"
 ${tab}${tab}}
@@ -751,23 +745,20 @@ ${tab}${tab}}
 	@SuppressWarnings("GrMethodMayBeStatic")
 	protected List<String> generateDslCreate(TableDataset table) { [] as List<String> }
 
-	/** The path to store logins in the configuration */
-	String getLoginsConfigStore() { params.loginsConfigStore as String }
-	/** The path to store logins in the configuration */
-	void setLoginsConfigStore(String value) { params.loginsConfigStore = value }
+	@Override
+	Map<String, String> getStoredLogins() { params.storedLogins as Map<String, String> }
+	@Override
+	void setStoredLogins(Map<String, String> value) {
+		storedLogins.clear()
+		if (value != null) storedLogins.putAll(value)
+	}
 
-	/** Use login to connect */
+	@Override
 	void useLogin(String user) {
-		if (loginsConfigStore == null)
-			throw new ExceptionGETL('Login storage path not specified in configuration!')
-
-		def logins = Config.FindSection(loginsConfigStore)
-		if (logins == null)
-			throw new ExceptionGETL("Login storage path \"$loginsConfigStore\" not found in configuration!")
-
-		if (!logins.containsKey(user))
+		if (!storedLogins.containsKey(user))
 			throw new ExceptionGETL("User \"$user\" not found in in configuration!")
-		def pwd = logins.get(user)
+
+		def pwd = storedLogins.get(user)
 
 		if (login != user && connected) connected = false
 		login = user

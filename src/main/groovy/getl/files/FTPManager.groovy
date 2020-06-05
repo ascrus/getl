@@ -26,6 +26,7 @@ package getl.files
 
 import getl.exception.ExceptionGETL
 import getl.files.sub.FileManagerList
+import getl.lang.sub.UserLogins
 import getl.utils.*
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
@@ -37,104 +38,118 @@ import it.sauronsoftware.ftp4j.*
  *
  */
 @InheritConstructors
-class FTPManager extends Manager {
+class FTPManager extends Manager implements UserLogins {
 	/** FTP driver */
 	final FTPClient client = new FTPClient()
 	/** FTP driver */
 	FTPClient getClient() { client }
-	
+
 	@Override
-	protected void initMethods () {
-		super.initMethods()
-		methodParams.register('super', ['server', 'port', 'login', 'password', 'passive', 'isHardDisconnect',
-										'autoNoopTimeout', 'closeTimeout', 'connectionTimeout', 'readTimeout',
-                                        'timeZone'])
+	void initParams() {
+		super.initParams()
+		params.storedLogins = [:] as Map<String, String>
 	}
 	
 	@Override
-	protected void onLoadConfig (Map configSection) {
+	protected void initMethods() {
+		super.initMethods()
+		methodParams.register('super', ['server', 'port', 'login', 'password', 'passive', 'isHardDisconnect',
+										'autoNoopTimeout', 'closeTimeout', 'connectionTimeout', 'readTimeout',
+                                        'timeZone', 'storedLogins'])
+	}
+	
+	@Override
+	protected void onLoadConfig(Map configSection) {
 		super.onLoadConfig(configSection)
 		if (rootPath != null && rootPath.substring(0, 1) != '/') rootPath = '/' + rootPath
 	}
 	
 	@Override
-	void setRootPath (String value) {
+	void setRootPath(String value) {
 		if (value != null && value.length() > 1 && value.substring(0, 1) != '/') value = '/' + value
 		super.setRootPath(value)
 	}
 	
 	/** Server address */
-	String getServer () { params.server }
+	String getServer() { params.server }
 	/** Server address */
-	void setServer (String value) { params.server = value }
+	void setServer(String value) { params.server = value }
 	
 	/** Server port */
-	Integer getPort () { (params.port != null)?(params.port as Integer):21 }
+	Integer getPort() { (params.port != null)?(params.port as Integer):21 }
 	/** Server port */
-	void setPort (Integer value) { params.port = value }
+	void setPort(Integer value) { params.port = value }
 	
-	/** Login user */
-	String getLogin () { params.login }
-	/** Login user */
-	void setLogin (String value) { params.login = value }
+	@Override
+	String getLogin() { params.login }
+	@Override
+	void setLogin(String value) { params.login = value }
 	
-	/** Password user */
-	String getPassword () { params.password }
-	/** Password user */
-	void setPassword (String value) { params.password = value }
+	@Override
+	String getPassword() { params.password }
+	@Override
+	void setPassword(String value) { params.password = value }
+
+	@Override
+	Map<String, String> getStoredLogins() { params.storedLogins as Map<String, String> }
+	@Override
+	void setStoredLogins(Map<String, String> value) {
+		storedLogins.clear()
+		if (value != null) storedLogins.putAll(value)
+	}
 	
 	/** Passive mode */
-	boolean getPassive () { (params.passive != null)?params.passive:true }
+	boolean getPassive() { (params.passive != null)?params.passive:true }
 	/** Passive mode */
-	void setPassive (boolean value) {
+	void setPassive(boolean value) {
 		if (client.connected) client.setPassive(value) 
 		params.passive = value 
 	}
 	
 	/** Hard disconnect */
-	boolean getIsHardDisconnect () { (params.isHardDisconnect != null)?params.isHardDisconnect:false }
+	boolean getIsHardDisconnect() { (params.isHardDisconnect != null)?params.isHardDisconnect:false }
 	/** Hard disconnect */
-	void setIsHardDisconnect (boolean value) { params.isHardDisconnect = value }
+	void setIsHardDisconnect(boolean value) { params.isHardDisconnect = value }
 	
 	/** Auto noop timeout in seconds */
-	Integer getAutoNoopTimeout () { params.autoNoopTimeout as Integer }
+	Integer getAutoNoopTimeout() { params.autoNoopTimeout as Integer }
 	/** Auto noop timeout in seconds */
-	void setAutoNoopTimeout (Integer value) {
+	void setAutoNoopTimeout(Integer value) {
 		if (client.connected) client.setAutoNoopTimeout(value * 1000)
 		params.autoNoopTimeout = value
 	}
 	
 	/** Close timeout */
-	Integer getCloseTimeout () { params.closeTimeout as Integer }
+	Integer getCloseTimeout() { params.closeTimeout as Integer }
 	/** Close timeout */
-	void setCloseTimeout (Integer value) {
+	void setCloseTimeout(Integer value) {
 		if (client.connected) client.connector.closeTimeout = value
 		params.closeTimeout = value
 	}
 	
 	/** Connection timeout */
-	Integer getConnectionmTimeout () { params.connectionTimeout as Integer }
+	Integer getConnectionmTimeout() { params.connectionTimeout as Integer }
 	/** Connection timeout */
-	void setConnectionTimeout (Integer value) {
+	void setConnectionTimeout(Integer value) {
 		if (client.connected) client.connector.connectionTimeout = value
 		params.connectionTimeout = value
 	}
 	
 	/** Read timeout */
-	Integer getReadTimeout () { params.readTimeout as Integer }
+	Integer getReadTimeout() { params.readTimeout as Integer }
 	/** Read timeout */
-	void setReadTimeout (Integer value) {
+	void setReadTimeout(Integer value) {
 		if (client.connected) client.connector.readTimeout = value
 		params.readTimeout = value
 	}
 
     /** FTP server time zone */
-    Integer getTimeZone () { (params.timeZone as Integer)?:0 }
+    Integer getTimeZone() { (params.timeZone as Integer)?:0 }
 	/** FTP server time zone */
-	void setTimeZone (Integer value) { params.timeZone = value }
+	void setTimeZone(Integer value) { params.timeZone = value }
 	
 	@Override
-	boolean isCaseSensitiveName () { true }
+	boolean isCaseSensitiveName() { true }
 
     final private supportCommands = []
     /**
@@ -148,7 +163,7 @@ class FTPManager extends Manager {
 	boolean isConnected() { BoolUtils.IsValue(client?.connected) }
 	
 	@Override
-	void connect () {
+	void connect() {
 		if (connected)
 			throw new ExceptionGETL('Manager already connected!')
 
@@ -185,7 +200,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	void disconnect () {
+	void disconnect() {
 		if (!connected)
 			throw new ExceptionGETL('Manager already disconnected!')
 
@@ -221,13 +236,13 @@ class FTPManager extends Manager {
 		
 		@CompileStatic
 		@Override
-		Integer size () {
+		Integer size() {
 			listFiles.length
 		}
 		
 		@CompileStatic
 		@Override
-		Map item (int index) {
+		Map item(int index) {
 			FTPFile f = listFiles[index]
 
 			Map<String, Object> m = new HashMap<String, Object>()
@@ -255,7 +270,7 @@ class FTPManager extends Manager {
 
 		@CompileStatic
 		@Override
-		void clear () {
+		void clear() {
 			listFiles = []
 		}
 	}
@@ -281,14 +296,14 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	String getCurrentPath () {
+	String getCurrentPath() {
 		validConnect()
 
 		return client.currentDirectory()
 	}
 	
 	@Override
-	void setCurrentPath (String path) {
+	void setCurrentPath(String path) {
 		validConnect()
 
 		try {
@@ -302,7 +317,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	void changeDirectoryUp () {
+	void changeDirectoryUp() {
 		validConnect()
 
 		try {
@@ -316,7 +331,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	void download (String fileName, String path, String localFileName) {
+	void download(String fileName, String path, String localFileName) {
 		validConnect()
 
 		def fn = ((path != null)?path + '/':'') + localFileName
@@ -333,7 +348,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	void upload (String path, String fileName) {
+	void upload(String path, String fileName) {
 		validConnect()
 
 		def fn = ((path != null)?path + '/':'') + fileName
@@ -369,7 +384,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	void createDir (String dirName) {
+	void createDir(String dirName) {
 		validConnect()
 
 		def curDir = client.currentDirectory()
@@ -402,7 +417,7 @@ class FTPManager extends Manager {
 	}
 	
 	@Override
-	void removeDir (String dirName, Boolean recursive) {
+	void removeDir(String dirName, Boolean recursive) {
 		validConnect()
 
 		try {
@@ -459,7 +474,7 @@ class FTPManager extends Manager {
 	}
 
 	@Override
-	void noop () {
+	void noop() {
 		super.noop()
 		client.noop()
 	}
@@ -500,5 +515,19 @@ class FTPManager extends Manager {
 			res = "ftp://$loginStr$server/$rootPath"
 
 		return res
+	}
+
+	@Override
+	void useLogin(String user) {
+		if (!storedLogins.containsKey(user))
+			throw new ExceptionGETL("User \"$user\" not found in in configuration!")
+
+		def pwd = storedLogins.get(user)
+
+		def reconnect = (login != user && connected)
+		if (reconnect) disconnect()
+		login = user
+		password = pwd
+		if (reconnect) connect()
 	}
 }

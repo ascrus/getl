@@ -27,6 +27,10 @@ import getl.config.ConfigSlurper
 import getl.exception.ExceptionDSL
 import getl.files.FileManager
 import getl.lang.Getl
+import getl.models.sub.RepositoryMapTables
+import getl.models.sub.RepositoryMonitorRules
+import getl.models.sub.RepositoryReferenceFiles
+import getl.models.sub.RepositoryReferenceVerticaTables
 import getl.utils.FileUtils
 import getl.utils.Path
 import getl.utils.StringUtils
@@ -39,6 +43,7 @@ import java.util.concurrent.ConcurrentHashMap
 class RepositoryStorageManager {
     RepositoryStorageManager(Getl owner) {
         dslCreator = owner
+        initRepositories()
     }
 
     /** Getl owner */
@@ -48,14 +53,19 @@ class RepositoryStorageManager {
     private def _listRepositories = new ConcurrentHashMap<String, RepositoryObjects>()
 
     /** Storage path for repository files */
-    String storagePath
+    private String storagePath
     /** Storage path for repository files */
     String getStoragePath() { storagePath }
     /** Storage path for repository files */
     void setStoragePath(String value) { storagePath = value }
 
+    /** Subdirectories for storing files for different environments */
+    private final Map<String, String> envDirs = [:] as Map<String, String>
+    /** Subdirectories for storing files for different environments */
+    Map<String, String> getEnvDirs() { envDirs }
+
     /** Storage encryption password */
-    byte[] storagePassword = 'Getl storage password'.bytes
+    private byte[] storagePassword = 'Getl storage password'.bytes
     /** Storage encryption password */
     String getStoragePassword() { new String(storagePassword) }
     /** Storage encryption password */
@@ -66,6 +76,19 @@ class RepositoryStorageManager {
 
     /** Decrypt text */
     String decryptText(String text) { StringUtils.Decrypt(text, new String(storagePassword) ) }
+
+    /** Create and register repositories */
+    protected void initRepositories() {
+        registerRepository(RepositoryConnections)
+        registerRepository(RepositoryDatasets)
+        registerRepository(RepositorySequences)
+        registerRepository(RepositoryHistorypoints)
+        registerRepository(RepositoryFilemanagers)
+        registerRepository(RepositoryReferenceVerticaTables)
+        registerRepository(RepositoryReferenceFiles)
+        registerRepository(RepositoryMonitorRules)
+        registerRepository(RepositoryMapTables)
+    }
 
     /** List of registered repositories */
     List<String> getListRepositories() {
@@ -91,6 +114,12 @@ class RepositoryStorageManager {
         _listRepositories.put(name, repository)
     }
 
+    /** Register repository in list */
+    void registerRepository(Class<RepositoryObjects> classRepository, Integer priority = null) {
+        def parent = classRepository.newInstance()
+        registerRepository(classRepository.name, parent, priority)
+    }
+
     /**
      * Get Getl repository object
      * @param name repository name
@@ -102,6 +131,15 @@ class RepositoryStorageManager {
             throw new ExceptionDSL("Repository \"$name\" not found!")
 
         return rep
+    }
+
+    /**
+     * Get Getl repository object
+     * @param repositoryClass repository class
+     * @return repository object
+     */
+    RepositoryObjects repository(Class<RepositoryObjects> repositoryClass) {
+        repository(repositoryClass.name)
     }
 
     /**
@@ -126,13 +164,14 @@ class RepositoryStorageManager {
     }
 
     /** Repository storage path */
-    String repositoryFilePath(RepositoryObjects repository) {
-        return storagePath + '/' + repository.class.simpleName
+    String repositoryFilePath(RepositoryObjects repository, String env = 'all') {
+        repositoryFilePath(repository.class, env)
     }
 
     /** Repository storage path */
-    String repositoryFilePath(Class<RepositoryObjects> repositoryClass) {
-        return storagePath + '/' + repositoryClass.simpleName
+    String repositoryFilePath(Class<RepositoryObjects> repositoryClass, String env = 'all') {
+        def subdir = (envDirs.containsKey(env))?('/' + envDirs.get(env)):''
+        return FileUtils.ConvertToDefaultOSPath(storagePath + subdir + '/' + repositoryClass.name)
     }
 
     /**
@@ -145,7 +184,8 @@ class RepositoryStorageManager {
     int saveRepository(String repositoryName, String mask = null, String env = null) {
         def res = 0
         def repository = repository(repositoryName)
-        FileUtils.ValidPath(repositoryFilePath(repository))
+        env = envFromRep(repository, env)
+        FileUtils.ValidPath(repositoryFilePath(repository, env))
         repository.processObjects(mask) { name ->
             def objname = ParseObjectName.Parse(name)
             if (objname.groupName == null && objname.objectName[0] == '#') return
@@ -163,7 +203,7 @@ class RepositoryStorageManager {
      * @return count of saved objects
      */
     int saveRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null) {
-        saveRepository(repositoryClass.simpleName, mask, env)
+        saveRepository(repositoryClass.name, mask, env)
     }
 
     /**
@@ -180,7 +220,7 @@ class RepositoryStorageManager {
         ConfigSlurper.SaveConfigFile(objparams, new File(fileName), 'utf-8')
         if (!file.exists())
             throw new ExceptionDSL("Error saving object \"${objname.name}\" from repository " +
-                                    "\"${repository.class.simpleName}\" to file \"$file\"!")
+                                    "\"${repository.class.name}\" to file \"$file\"!")
     }
 
     /**
@@ -191,8 +231,6 @@ class RepositoryStorageManager {
      */
     void saveObject(String repositoryName, String name, String env = null) {
         def repository = repository(repositoryName)
-        def repositoryClassName = repository.class.simpleName
-        FileUtils.ValidPath(storagePath + '/' + repositoryClassName)
         def objname = ParseObjectName.Parse(name)
         saveObjectToStorage(repository, objname, env)
     }
@@ -204,7 +242,7 @@ class RepositoryStorageManager {
      * @param env used environment
      */
     void saveObject(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
-        saveObject(repositoryClass.simpleName, name, env)
+        saveObject(repositoryClass.name, name, env)
     }
 
     /**
@@ -216,6 +254,18 @@ class RepositoryStorageManager {
         listRepositories.each { name ->
             loadRepository(name, mask, env)
         }
+    }
+
+    static private def objectNamePath = new Path(mask: 'getl_{name}.conf')
+    static private def objectNamePathEnv = new Path(mask: 'getl_{name}.{env}.conf')
+
+    /** Return object name from file name */
+    static Map<String, String> ObjectNameFromFileName(String fileName, boolean useEnv) {
+        def res = ((useEnv)?objectNamePathEnv.analizeFile(fileName):objectNamePath.analizeFile(fileName)) as Map<String, String>
+        if (res.isEmpty())
+            throw new ExceptionDSL("Invalid repository configuration file name \"$fileName\"!")
+
+        return res
     }
 
     /**
@@ -230,15 +280,18 @@ class RepositoryStorageManager {
         def repository = repository(repositoryName)
         def maskPath = (mask != null)?new Path(mask: mask):null
         def fm = new FileManager()
-        fm.rootPath = repositoryFilePath(repository)
+        env = envFromRep(repository, env)
+        fm.rootPath = repositoryFilePath(repository, env)
         def dirs = fm.buildListFiles {
-            maskFile = 'getl.*.' + objectFileExtensionInStorage(repository, env)
+            maskFile = (repository.needEnvConfig())?('getl_*.' + envFromRep(repository, env) + '.conf'):'getl_*.conf'
             recursive = true
         }
         dirs.eachRow { file ->
             def groupName = (file.filepath != '.')?(file.filepath as String).replace('/', '.').toLowerCase():null
-            def objectName = FileUtils.FilenameWithoutExtension(file.filename as String).substring(5).toLowerCase()
-            def name = new ParseObjectName(groupName, objectName).name
+            def objectName = ObjectNameFromFileName(file.filename as String, repository.needEnvConfig())
+            if (repository.needEnvConfig() && objectName.env != env)
+                throw new ExceptionDSL("Discrepancy of storage of file \"${file.filepath}/${file.filename}\" was detected for environment \"$env\"!")
+            def name = new ParseObjectName(groupName, objectName.name as String).name
             if (maskPath == null || maskPath.match(name)) {
                 def fileName = FileUtils.ConvertToDefaultOSPath(fm.rootPath + '/' +
                                                 ((file.filepath != '.')?(file.filepath + '/'):'') + file.filename)
@@ -261,7 +314,7 @@ class RepositoryStorageManager {
      * @return count of saved objects
      */
     int loadRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null) {
-        loadRepository(repositoryClass.simpleName, mask, env)
+        loadRepository(repositoryClass.name, mask, env)
     }
 
     /**
@@ -277,7 +330,7 @@ class RepositoryStorageManager {
         def file = new File(fileName)
         if (!file.exists())
             throw new ExceptionDSL("It is not possible to load object \"$name\" to " +
-                                    "repository \"${repository.class.simpleName}\": file \"$file\" was not found!")
+                                    "repository \"${repository.class.name}\": file \"$file\" was not found!")
 
         def objparams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
         def obj = repository.importConfig(objparams)
@@ -291,23 +344,30 @@ class RepositoryStorageManager {
      * @param env used environment
      */
     void loadObject(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
-        loadObject(repositoryClass.simpleName, name, env)
+        loadObject(repositoryClass.name, name, env)
     }
 
     /**
      * Delete files in repository storage
      * @param repositoryName repository name
      */
-    Boolean removeStorage(String repositoryName) {
-        FileUtils.DeleteFolder(repositoryFilePath(repository(repositoryName)), true)
+    Boolean removeStorage(String repositoryName, String env = null) {
+        if (env != null || envDirs.isEmpty())
+            FileUtils.DeleteFolder(repositoryFilePath(repository(repositoryName), env), true)
+        else
+            envDirs.keySet().toList().each { e ->
+                def dirPath = repositoryFilePath(repository(repositoryName), e)
+                if (FileUtils.ExistsFile(dirPath, true))
+                    FileUtils.DeleteFolder(dirPath, true)
+            }
     }
 
     /**
      * Delete files in repository storage
      * @param repositoryClass repository class
      */
-    Boolean removeStorage(Class<RepositoryObjects> repositoryClass) {
-        removeStorage(repositoryClass.simpleName)
+    Boolean removeStorage(Class<RepositoryObjects> repositoryClass, String env = null) {
+        removeStorage(repositoryClass.name, env)
     }
 
     /**
@@ -316,7 +376,7 @@ class RepositoryStorageManager {
      * @param env used environment
      * @return file extension
      */
-    protected String objectFileExtensionInStorage(RepositoryObjects repository, String env) {
+    protected String envFromRep(RepositoryObjects repository, String env) {
         if (!repository.needEnvConfig()) {
             env = 'all'
         }
@@ -335,13 +395,16 @@ class RepositoryStorageManager {
      * @return file path
      */
     protected String objectFilePathInStorage(RepositoryObjects repository, ParseObjectName objname, String env) {
-        def fileName = repositoryFilePath(repository) + '/'
+        env = envFromRep(repository, env)
+        def fileName = repositoryFilePath(repository, env) + '/'
         if (objname.groupName != null) {
             fileName += objname.toFilePath() + '/'
             FileUtils.ValidPath(fileName)
         }
-        env = objectFileExtensionInStorage(repository, env)
-        fileName += 'getl.' + objname.objectName + '.' + env
+        if (repository.needEnvConfig())
+            fileName += 'getl_' + objname.objectName + '.' + env + '.conf'
+        else
+            fileName += 'getl_' + objname.objectName + '.conf'
 
         return FileUtils.ConvertToDefaultOSPath(fileName)
     }
@@ -365,7 +428,7 @@ class RepositoryStorageManager {
      * @return file path
      */
     String objectFilePath(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
-        objectFilePathInStorage(repository(repositoryClass.simpleName), ParseObjectName.Parse(name), env)
+        objectFilePathInStorage(repository(repositoryClass.name), ParseObjectName.Parse(name), env)
     }
 
     /**

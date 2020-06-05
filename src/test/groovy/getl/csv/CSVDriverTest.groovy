@@ -420,7 +420,7 @@ class CSVDriverTest extends getl.test.GetlTest {
                 }
             }
 
-            rowsTo(csv) {
+            etl.rowsTo(csv) {
                 writeRow { add ->
                     (1..3).each { num ->
                         add id: num, name: "name $num"
@@ -460,7 +460,7 @@ class CSVDriverTest extends getl.test.GetlTest {
                 field('v5') { type = booleanFieldType }
 
                 def write = {
-                    rowsTo(ds) {
+                    etl.rowsTo(ds) {
                         writeRow { add ->
                             add id: 1, name: 'one', v1: 1, v2: '"string"', v3: DateUtils.ParseDate('2019-12-31'), v4: 123.45, v5: true
                             add id: 2, name: 'two'
@@ -469,7 +469,7 @@ class CSVDriverTest extends getl.test.GetlTest {
                 }
 
                 def read = {
-                    rowsProcess(ds) {
+                    etl.rowsProcess(ds) {
                         int i = 0
                         readRow { row ->
                             i++
@@ -619,7 +619,7 @@ class CSVDriverTest extends getl.test.GetlTest {
                 useList ((1..5).toList())
                 countProc = 3
                 run { elem ->
-                    rowsTo(csvTemp('test_append_threads')) {
+                    etl.rowsTo(csvTemp('test_append_threads')) {
                         writeRow { add ->
                             (1..1000).each {
                                 add num: counter.nextCount()

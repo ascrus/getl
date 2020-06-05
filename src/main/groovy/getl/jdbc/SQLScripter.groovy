@@ -717,7 +717,8 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 */
 	SQLScripter cloneSQLScripterConnection() {
 		def con = connection?.cloneConnection() as JDBCConnection
-		def pointCon = pointConnection?.cloneConnection() as JDBCConnection
+		def pointCon = (pointConnection != null)?
+				((connection != pointConnection)?(pointConnection.cloneConnection() as JDBCConnection):con):null
 		return cloneSQLScripter(con, pointCon)
 	}
 
@@ -726,7 +727,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		return cloneSQLScripter()
 	}
 
-	Object cloneConnection() {
+	Object cloneWithConnection() {
 		return cloneSQLScripterConnection()
 	}
 }

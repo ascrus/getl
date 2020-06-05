@@ -667,10 +667,10 @@ class StringUtils {
 			password += StringUtils.Replicate('#', x)
 		}
 
-		Key aesKey = new SecretKeySpec(password.getBytes(), "AES");
-		Cipher cipher = Cipher.getInstance("AES");
-		cipher.init(Cipher.ENCRYPT_MODE, aesKey);
-		byte[] encrypted = cipher.doFinal(text.getBytes());
+		Key aesKey = new SecretKeySpec(password.getBytes(), "AES")
+		Cipher cipher = Cipher.getInstance("AES")
+		cipher.init(Cipher.ENCRYPT_MODE, aesKey)
+		byte[] encrypted = cipher.doFinal(text.getBytes())
 		return RawToHex(encrypted)
 	}
 
@@ -692,9 +692,9 @@ class StringUtils {
 			password += StringUtils.Replicate('#', x)
 		}
 
-		Key aesKey = new SecretKeySpec(password.getBytes(), "AES");
-		Cipher cipher = Cipher.getInstance("AES");
-		cipher.init(Cipher.DECRYPT_MODE, aesKey);
-		return new String(cipher.doFinal(HexToRaw(text)));
+		Key aesKey = new SecretKeySpec(password.getBytes(), "AES")
+		Cipher cipher = Cipher.getInstance("AES")
+		cipher.init(Cipher.DECRYPT_MODE, aesKey)
+		return new String(cipher.doFinal(HexToRaw(text)))
 	}
 }

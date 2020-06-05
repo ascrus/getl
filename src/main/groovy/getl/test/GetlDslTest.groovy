@@ -63,8 +63,16 @@ class GetlDslTest extends GetlTest {
     /** Status init script */
     private boolean initWasRun = false
 
+    /** Clean Getl on every test */
+    protected boolean cleanGetlBeforeTest() { true }
+
     @Before
     void beforeDslTest() {
+        if (cleanGetlBeforeTest()) {
+            Getl.CleanGetl(false)
+            initWasRun = false
+        }
+
         if (!Getl.GetlInstanceCreated()) {
             def eng = useGetlClass().newInstance()
             Getl.GetlSetInstance(eng)

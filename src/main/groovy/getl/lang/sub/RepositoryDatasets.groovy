@@ -141,8 +141,6 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
             throw new ExceptionDSL("No connection specified for dataset \"$name\"!")
         if (obj.connection.dslNameObject == null)
             throw new ExceptionDSL("Connection for dataset \"$name\" not found in repository!")
-        if (obj.field.isEmpty())
-            throw new ExceptionDSL("Dataset \"$name\" does not have a description of the fields!")
 
         def fields = GenerationUtils.Fields2Map(obj.field)
 

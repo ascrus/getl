@@ -21,15 +21,14 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.files
 
 import getl.exception.ExceptionGETL
 import getl.files.sub.FileManagerList
+import getl.files.sub.FilesList
 import getl.files.sub.Filter
 import getl.utils.*
 import groovy.transform.CompileStatic
-import groovy.transform.InheritConstructors
 
 /**
  * File manager 
@@ -85,7 +84,7 @@ class FileManager extends Manager {
 
 		if (rootPath == null) throw new ExceptionGETL("Required value for \"rootPath\" property")
 		File rp = new File(rootPath)
-		params.rootPath = rp.absolutePath
+		params.rootPath = rp.canonicalPath
 		if (!rp.exists() && createRootPath) rp.mkdirs() 
 
 		currentDir = rp
@@ -110,37 +109,6 @@ class FileManager extends Manager {
 			connect()
 	}
 
-	/** List of files class */
-	class FilesList extends FileManagerList {
-		public File[] listFiles
-
-		@CompileStatic
-		@Override
-		Integer size () {
-			listFiles.length
-		}
-		
-		@CompileStatic
-		@Override
-		Map item (int index) {
-			File f = listFiles[index]
-
-			Map<String, Object> m =  new HashMap<String, Object>()
-			m.filename = f.name
-			m.filedate = new Date(f.lastModified())
-			m.filesize = f.length()
-			if (f.isDirectory()) m.type = Manager.TypeFile.DIRECTORY else m.type = Manager.TypeFile.FILE
-		  
-			return m
-		}
-
-		@CompileStatic
-		@Override
-		void clear () {
-			listFiles = []
-		}
-	}
-	
 	@CompileStatic
 	@Override
 	FileManagerList listDir(String mask) {
@@ -160,11 +128,10 @@ class FileManager extends Manager {
 		}
 		
 		File[] listFiles = currentDir.listFiles(new Filter(filter))
-		
-		FilesList res = new FilesList()
+
+		def res = new FilesList()
 		res.listFiles = listFiles
-		
-		res
+		return res
 	}
 	
 	@Override
@@ -199,8 +166,8 @@ class FileManager extends Manager {
 		
 		def f = fileFromLocalDir("${_currentPath}/${fileName}")
 		
-		def fn = ((path != null)?path + "/":"") + localFileName
-		FileUtils.CopyToFile(f.path, fn, false)
+		def fn = path + '/' + localFileName
+		FileUtils.CopyToFile(f.canonicalPath, fn, false)
 
         def fDest = new File(fn)
         setLocalLastModified(fDest, f.lastModified())
@@ -212,7 +179,7 @@ class FileManager extends Manager {
 		
 		def fn = ((path != null)?path + "/":"") + fileName
 
-		def dest = "${currentDir.path}/${fileName}"
+		def dest = "${currentDir.canonicalPath}/${fileName}"
 		FileUtils.CopyToFile(fn, dest, false)
 
 		def fSource = fileFromLocalDir(fn)
@@ -224,30 +191,30 @@ class FileManager extends Manager {
 	void removeFile (String fileName) {
 		validConnect()
 		
-		def f = fileFromLocalDir("${currentDir.path}/${fileName}")
-		if (!f.delete()) throw new ExceptionGETL("Can not remove file ${f.path}")
+		def f = fileFromLocalDir("${currentDir.canonicalPath}/${fileName}")
+		if (!f.delete()) throw new ExceptionGETL("Can not remove file ${f.canonicalPath}")
 	}
 	
 	@Override
 	void createDir (String dirName) {
 		validConnect()
 		
-		File f = new File("${currentDir.path}/${dirName}")
-		if (f.exists()) throw new ExceptionGETL("Directory \"${f.path}\" already exists")
-		if (!f.mkdirs()) throw new ExceptionGETL("Can not create directory \"${f.path}\"")
+		File f = new File("${currentDir.canonicalPath}/${dirName}")
+		if (f.exists()) throw new ExceptionGETL("Directory \"${f.canonicalPath}\" already exists")
+		if (!f.mkdirs()) throw new ExceptionGETL("Can not create directory \"${f.canonicalPath}\"")
 	}
 	
 	@Override
 	void removeDir (String dirName, Boolean recursive) {
 		validConnect()
 		
-		File f = new File("${currentDir.path}/${dirName}")
-		if (!f.exists()) throw new ExceptionGETL("Directory \"${f.path}\" not found")
+		File f = new File("${currentDir.canonicalPath}/${dirName}")
+		if (!f.exists()) throw new ExceptionGETL("Directory \"${f.canonicalPath}\" not found")
         if (recursive) {
-            if (!f.deleteDir()) throw new ExceptionGETL("Can not remove directory \"${f.path}\"")
+            if (!f.deleteDir()) throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\"")
         }
         else {
-            if (!f.delete()) throw new ExceptionGETL("Can not remove directory \"${f.path}\"")
+            if (!f.delete()) throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\"")
         }
 	}
 	
@@ -255,11 +222,11 @@ class FileManager extends Manager {
 	void rename(String fileName, String path) {
 		validConnect()
 
-		def sourceFile = fileFromLocalDir("${currentDir.path}/${fileName}")
+		def sourceFile = fileFromLocalDir("${currentDir.canonicalPath}/${fileName}")
 
 		def destPath = FileUtils.ConvertToUnixPath(path)
 		def destFile = new File((destPath.indexOf('/') != -1)?"${rootPath}/${destPath}":
-				"${currentDir.path}/${destPath}")
+				"${currentDir.canonicalPath}/${destPath}")
 
 		if (!sourceFile.renameTo(destFile)) throw new ExceptionGETL("Can not rename file \"$fileName\" to \"$path\"")
 	}
@@ -268,7 +235,7 @@ class FileManager extends Manager {
 	boolean existsDirectory(String dirName) {
 		validConnect()
 
-		File f = new File("${currentDir.path}/${dirName}")
+		File f = new File("${currentDir.canonicalPath}/${dirName}")
 		return f.exists() && f.isDirectory()
 	}
 
@@ -276,7 +243,7 @@ class FileManager extends Manager {
 	boolean existsFile(String fileName) {
 		validConnect()
 
-		File f = new File("${currentDir.path}/${fileName}")
+		File f = new File("${currentDir.canonicalPath}/${fileName}")
 		return f.exists() && f.isFile()
 	}
 

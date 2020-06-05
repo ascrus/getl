@@ -74,7 +74,7 @@ class ImpalaDriverTest extends JDBCDriverProto {
                 drop()
                 create()
 
-                rowsTo {
+                etl.rowsTo {
                     writeRow() { add ->
                         (1..3).each { num ->
                             add id: num, name: "name $num", dt: DateUtils.Now(), flag: true,

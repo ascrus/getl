@@ -26,6 +26,7 @@ package getl.files
 
 import getl.exception.ExceptionGETL
 import getl.files.sub.FileManagerList
+import getl.lang.sub.UserLogins
 import getl.utils.FileUtils
 import getl.utils.StringUtils
 import groovy.transform.CompileStatic
@@ -41,35 +42,46 @@ import java.security.PrivilegedExceptionAction
  * HDFS manager
  * @author Alexsey Konstantinov
  */
-class HDFSManager extends Manager {
+class HDFSManager extends Manager implements UserLogins {
     @Override
-    protected void initMethods () {
+    void initParams() {
+        super.initParams()
+        params.storedLogins = [:] as Map<String, String>
+    }
+
+    @Override
+    protected void initMethods() {
         super.initMethods()
-        methodParams.register("super", ["server", "port", "login"])
+        methodParams.register('super', ['server', 'port', 'login', 'storedLogins'])
     }
 
     /** Server address */
-    String getServer () { params.server }
+    String getServer() { params.server }
     /** Server address */
-    void setServer (String value) { params.server = value }
+    void setServer(String value) { params.server = value }
 
     /** Server port */
-    Integer getPort () { (params.port != null)?(params.port as Integer):8022 }
+    Integer getPort() { (params.port != null)?(params.port as Integer):8022 }
     /** Server port */
-    void setPort (Integer value) { params.port = value }
+    void setPort(Integer value) { params.port = value }
 
-    /** Login user */
-    String getLogin () { params.login }
-    /** Login user */
-    void setLogin (String value) { params.login = value }
+    @Override
+    String getLogin() { params.login }
+    @Override
+    void setLogin(String value) { params.login = value }
 
-    /*
-     * Password user
-     */
-    /*
-    public String getPassword () { params.password }
-    public void setPassword (String value) { params.password = value }
-    */
+    @Override
+    String getPassword() { params.password }
+    @Override
+    void setPassword(String value) { params.password = value }
+
+    @Override
+    Map<String, String> getStoredLogins() { params.storedLogins as Map<String, String> }
+    @Override
+    void setStoredLogins(Map<String, String> value) {
+        storedLogins.clear()
+        if (value != null) storedLogins.putAll(value)
+    }
 
     /** File system driver */
     private FileSystem client
@@ -397,5 +409,19 @@ class HDFSManager extends Manager {
     void noop () {
         super.noop()
         client.getStatus()
+    }
+
+    @Override
+    void useLogin(String user) {
+        if (!storedLogins.containsKey(user))
+            throw new ExceptionGETL("User \"$user\" not found in in configuration!")
+
+        def pwd = storedLogins.get(user)
+
+        def reconnect = (login != user && connected)
+        if (reconnect) disconnect()
+        login = user
+        password = pwd
+        if (reconnect) connect()
     }
 }

@@ -555,7 +555,7 @@ abstract class FileListProcessing implements GetlRepository {
         if (!FileUtils.ExistsFile(tempPath, true))
             throw new ExceptionFileListProcessing("Temporary directory \"$tempPath\" not found!")
 
-        tmpPath = "$tempPath/${FileUtils.UniqueFileName()}.localdir"
+        tmpPath = "$tempPath/files_${FileUtils.UniqueFileName()}.localdir"
         FileUtils.ValidPath(tmpPath, true)
 
         if (source == null)
@@ -748,11 +748,6 @@ abstract class FileListProcessing implements GetlRepository {
                 ConnectTo([source], numberAttempts, timeAttempts)
 
                 if (removeEmptyDirs) delEmptyFolders()
-
-                Operation([source], numberAttempts, timeAttempts) { man ->
-                    man.changeDirectoryToRoot()
-                    man.changeLocalDirectoryToRoot()
-                }
             }
         }
         catch (Exception e) {
@@ -764,6 +759,12 @@ abstract class FileListProcessing implements GetlRepository {
             }
         }
         finally {
+            Operation([source], numberAttempts, timeAttempts) { man ->
+                man.changeDirectoryToRoot()
+                man.changeLocalDirectoryToRoot()
+                man.removeLocalDirs('.')
+            }
+
             try {
                 afterProcessing()
             }

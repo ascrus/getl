@@ -51,7 +51,7 @@ import groovy.transform.stc.SimpleType
  */
 abstract class Manager implements Cloneable, GetlRepository {
 /* TODO: added method Operation analog FileCopier */
-	Manager () {
+	Manager() {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
 				 'sqlHistoryFile', 'saveOriginalDate', 'limitDirs', 'threadLevel', 'recursive',
@@ -61,6 +61,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 				 'ignoreExistInStory', 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory'])
 		methodParams.register('downloadFiles',
 				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
+
+		def tempDirFile = new File(TFS.systemPath + '/files.localdir')
+		tempDirFile.deleteOnExit()
+		setLocalDirectory(tempDirFile.canonicalPath + '/' + this.class.simpleName + '_' + FileUtils.UniqueFileName())
+		new File(localDirectory).deleteOnExit()
 
 		initParams()
 		initMethods()
@@ -84,12 +89,13 @@ abstract class Manager implements Cloneable, GetlRepository {
 		def className = params.manager as String
 		if (className == null) throw new ExceptionGETL("Reqired class name as \"manager\" property!")
 		Manager manager = Class.forName(className).newInstance() as Manager
-		MapUtils.RemoveKeys(params, ['manager'])
+		def locDir = params.localDirectory as String
+		MapUtils.RemoveKeys(params, ['manager', 'localDirectory'])
 		manager.params.putAll(params)
 		manager.validateParams()
 
-		if (manager.localDirectory != null)
-			manager.setLocalDirectory(manager.localDirectory)
+		if (locDir != null)
+			manager.setLocalDirectory(locDir)
 
 		return manager
 	}
@@ -109,9 +115,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @return new manager object
 	 */
 	@Synchronized
-	Manager cloneManager () {
+	Manager cloneManager(Map otherParams = [:]) {
 		String className = this.class.name
 		Map p = CloneUtils.CloneMap(this.params, false)
+		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		return CreateManagerInternal([manager: className] + p)
 	}
 
@@ -153,51 +160,51 @@ abstract class Manager implements Cloneable, GetlRepository {
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Root path */
-	String getRootPath () { params.rootPath as String }
+	String getRootPath() { params.rootPath as String }
 	/** Root path */
-	void setRootPath (String value) {
-		params.rootPath = value
-	}
-	
+	void setRootPath(String value) { params.rootPath = value }
+
 	/** Local directory */
-	String getLocalDirectory () { params.localDirectory as String }
+	private String _localDirectory
 	/** Local directory */
-	void setLocalDirectory (String value) {
+	String getLocalDirectory() { _localDirectory }
+	/** Local directory */
+	void setLocalDirectory(String value) {
 		FileUtils.ValidPath(value)
-		params.localDirectory = value
+		_localDirectory = value
 		localDirFile = new File(value)
 	}
 	
 	/** Set noop time (use in list operation) */
-	Integer getNoopTime () { params.noopTime as Integer }
+	Integer getNoopTime() { params.noopTime as Integer }
 	/** Set noop time (use in list operation) */
-	void setNoopTime (Integer value) { params.noopTime = value }
+	void setNoopTime(Integer value) { params.noopTime = value }
 	
 	/** Count thread for build list files */
-	Integer getBuildListThread () { params.buildListThread as Integer }
+	Integer getBuildListThread() { params.buildListThread as Integer }
 	/** Count thread for build list files */
-	void setBuildListThread (Integer value) {
+	void setBuildListThread(Integer value) {
 		if (value != null && value <= 0) throw new ExceptionGETL("buildListThread been must great zero!")
 		params.buildListThread = value
 	}
 	
 	/** Write to log when send noop message */
-	boolean getSayNoop () { BoolUtils.IsValue(params.sayNoop, false) }
+	boolean getSayNoop() { BoolUtils.IsValue(params.sayNoop, false) }
 	/** Write to log when send noop message */
-	void setSayNoop (boolean value) { params.sayNoop = value }
+	void setSayNoop(boolean value) { params.sayNoop = value }
 	
 	/** Log script file on running commands */
-	String getScriptHistoryFile () { params.scriptHistoryFile as String }
+	String getScriptHistoryFile() { params.scriptHistoryFile as String }
 	/** Log script file on running commands */
-	void setScriptHistoryFile (String value) {
+	void setScriptHistoryFile(String value) {
 		params.scriptHistoryFile = value
 		fileNameScriptHistory = null 
 	}
 
 	/** Log script file on file list connection */
-	String getSqlHistoryFile () { params.sqlHistoryFile as String }
+	String getSqlHistoryFile() { params.sqlHistoryFile as String }
 	/** Log script file on file list connection */
-	void setSqlHistoryFile (String value) {
+	void setSqlHistoryFile(String value) {
 		params.sqlHistoryFile = value
 	}
 
@@ -223,12 +230,12 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * Name section parameteres value in config file
 	 * Store parameters to config file from section "files"
 	 */
-	String getConfig () { config }
+	String getConfig() { config }
 	/**
 	 * Name section parameteres value in config file
 	 * Store parameters to config file from section "files"
 	 */
-	void setConfig (String value) {
+	void setConfig(String value) {
 		config = value
 		if (config != null) {
 			if (Config.ContainsSection("files.${this.config}")) {
@@ -241,7 +248,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** Use specified configuration from section "files" */
-	void useConfig (String configName) {
+	void useConfig(String configName) {
 		setConfig(configName)
 	}
 	
@@ -264,12 +271,12 @@ abstract class Manager implements Cloneable, GetlRepository {
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 
 	/** Current local directory file descriptor*/
-	protected File localDirFile = new File(TFS.storage.path)
+	protected File localDirFile
 	/** Current local directory file descriptor*/
 	File getLocalDirectoryFile() { localDirFile }
 
 	/** Validate parameters */
-	void validateParams () {
+	void validateParams() {
 		methodParams.validation("super", params)
 	}
 	
@@ -277,13 +284,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * Init configuration load
 	 * @param configSection
 	 */
-	protected void onLoadConfig (Map configSection) {
+	protected void onLoadConfig(Map configSection) {
 		MapUtils.MergeMap(params, configSection)
 		if (configSection.containsKey("localDirectory")) {
-			setLocalDirectory(params.localDirectory as String)
-		}
-		else {
-			params.localDirectory = localDirFile.absolutePath
+			setLocalDirectory(configSection.localDirectory as String)
 		}
 	}
 	
@@ -294,7 +298,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	protected void initMethods() { }
 	
 	/** Connect to server */
-	abstract void connect ()
+	abstract void connect()
 	
 	/** Disconnect from server */
 	abstract void disconnect()
@@ -313,8 +317,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Process list files of current directory from server */
 	@CompileStatic
 	@Synchronized
-	void list (String maskFiles,
+	void list(String maskFiles,
 			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure processCode) {
+		validRootPath()
 		if (processCode == null)
 			throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager")
 
@@ -325,7 +330,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/** Process list files of current directory from server */
-	void list (@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure processCode) {
+	void list(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure processCode) {
 		list(null, processCode)
 	}
 	
@@ -334,7 +339,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param maskFiles mask files
 	 * @return list of files
 	 */
-	List<Map> list (String maskFiles) {
+	List<Map> list(String maskFiles) {
 		List<Map> res = new LinkedList<Map>()
 		Closure addToList = { Map r -> res << r }
 		list(maskFiles, addToList)
@@ -343,7 +348,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/** Return list files of current directory from server */
-	List<Map> list () {
+	List<Map> list() {
 		List<Map> res = new LinkedList<Map>()
 		Closure addToList = { Map r -> res << r }
 		list(null, addToList)
@@ -352,17 +357,19 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/** Absolute current path */
-	abstract String getCurrentPath ()
+	abstract String getCurrentPath()
 	
 	/** Set new absolute current path */
-	abstract void setCurrentPath (String path)
+	abstract void setCurrentPath(String path)
 	
 	/**
 	 * Change current server directory
 	 * @param dir new directory
 	 */
-	void changeDirectory (String dir) {
-		if (dir == null || dir == '') throw new ExceptionGETL("Null dir not allowed for cd operation")
+	void changeDirectory(String dir) {
+		validRootPath()
+		if (dir == null || dir == '')
+			throw new ExceptionGETL("Null dir not allowed for cd operation")
 		if (dir == '.') return
 		if (dir == '..') {
 			changeDirectoryUp()
@@ -401,10 +408,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/** Change current directory to parent directory */
-	abstract void changeDirectoryUp ()
+	abstract void changeDirectoryUp()
 	
 	/** Change current directory to root */
-	void changeDirectoryToRoot () {
+	void changeDirectoryToRoot() {
+		validRootPath()
 		currentPath = rootPath
 	}
 	
@@ -414,13 +422,13 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param path path file path
 	 * @param localFileName saved file name in local directory
 	 */
-	abstract void download (String fileName, String path, String localFileName)
+	abstract void download(String fileName, String path, String localFileName)
 	
 	/**
 	 * Download file from current directory by server
 	 * @param fileName downloaded file name
 	 */
-	void download (String fileName) {
+	void download(String fileName) {
 		download(fileName, fileName)
 	}
 	
@@ -429,9 +437,12 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param fileName
 	 * @param localFileName
 	 */
-	void download (String fileName, String localFileName) {
+	void download(String fileName, String localFileName) {
 		def ld = currentLocalDir()
 		if (ld != null) FileUtils.ValidPath(ld)
+		if (localFileName[0] in ['/', '\\'] )
+			localFileName = localFileName.substring(1)
+
 		download(fileName, ld, localFileName)
 	}
 	
@@ -440,13 +451,13 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param path server path for uploaded
 	 * @param fileName uploaded file name by local directory
 	 */
-	abstract void upload (String path, String fileName)
+	abstract void upload(String path, String fileName)
 	
 	/**
 	 * Upload file to current directory by server
 	 * @param fileName uploaded file name by local directory
 	 */
-	void upload (String fileName) {
+	void upload(String fileName) {
 		upload(currentLocalDir(), fileName)
 	}
 	
@@ -454,19 +465,19 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * Remove file in current directory by server
 	 * @param fileName removed file name
 	 */
-	abstract void removeFile (String fileName)
+	abstract void removeFile(String fileName)
 	
 	/**
 	 * Create directory in current directory by server
 	 * @param dirName created directory name
 	 */
-	abstract void createDir (String dirName)
+	abstract void createDir(String dirName)
 	
 	/**
 	 * Remove directory in current directory by server
 	 * @param dirName removed directory name
 	 */
-	void removeDir (String dirName) {
+	void removeDir(String dirName) {
         removeDir(dirName, false)
     }
 
@@ -475,7 +486,7 @@ abstract class Manager implements Cloneable, GetlRepository {
      * @param dirName removed directory name
      * @param recursive required subdirectories remove
      */
-	abstract void removeDir (String dirName, Boolean recursive)
+	abstract void removeDir(String dirName, Boolean recursive)
 
 	/** Cached current path */
 	protected String _currentPath
@@ -484,15 +495,21 @@ abstract class Manager implements Cloneable, GetlRepository {
 	String currentAbstractDir() {
 		return _currentPath
 	}
+
+	void validRootPath() {
+		if (rootPath == null || rootPath.length() == 0)
+			throw new ExceptionGETL('No root path specified!')
+	}
 	
 	/** Return current directory with relative path */
 	String currentDir() {
+		validRootPath()
+
 		def cur = _currentPath
 		if (cur == null) throw new ExceptionGETL("Current path not set")
 
 		cur = cur.replace("\\", "/")
-		if (rootPath == null || rootPath.length() == 0) throw new ExceptionGETL("Root path not set")
-		 
+
 		def root = rootPath
 		root = root.replace("\\", "/")
 		
@@ -512,28 +529,28 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param fileName renamed file name
 	 * @param path server path
 	 */
-	abstract void rename (String fileName, String path)
+	abstract void rename(String fileName, String path)
 
 	/** Build file list */
 	TableDataset fileList
 	/** Build file list */
-	TableDataset getFileList () { fileList }
+	TableDataset getFileList() { fileList }
 
 	/** Table name of build file list */
 	String fileListName
 	/** Table name of build file list */
-	String getFileListName () { fileListName }
+	String getFileListName() { fileListName }
 	/** Table name of build file list */
-	void setFileListName (String value) {
+	void setFileListName(String value) {
 		fileListName = value
 	}
 
 	/** Connection from table file list (if null, use TDS connection) */
 	JDBCConnection fileListConnection
 	/** Connection from table file list (if null, use TDS connection) */
-	JDBCConnection getFileListConnection () { fileListConnection}
+	JDBCConnection getFileListConnection() { fileListConnection}
 	/** Connection from table file list (if null, use TDS connection) */
-	void setFileListConnection (JDBCConnection value) { fileListConnection = value }
+	void setFileListConnection(JDBCConnection value) { fileListConnection = value }
 
 	// History table
 	TableDataset getStory() { params.story as TableDataset }
@@ -583,12 +600,12 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Count of found files */
 	private final SynchronizeObject countFileListSync = new SynchronizeObject()
 	/** Count of found files */
-	long getCountFileList () { countFileListSync.count }
+	long getCountFileList() { countFileListSync.count }
 
 	/** Size of found files */
 	private final SynchronizeObject sizeFileListSync = new SynchronizeObject()
 	/** Size of found files */
-	long getSizeFileList () { sizeFileListSync.count }
+	long getSizeFileList() { sizeFileListSync.count }
 
 	static private operationLock = new Object()
 
@@ -703,7 +720,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 						newCode.init()
 					}
 					try {
-						Manager newMan = cloneManager()
+						Manager newMan = cloneManager(localDirectory: localDirectory)
 						int countConnect = 3
 						while (countConnect != 0) {
 							try {
@@ -765,7 +782,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param params - parameters
 	 * @param code - processing code for file attributes as boolean code (Map file)
 	 */
-	void buildList (Map lparams,
+	void buildList(Map lparams,
 					@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> filter) {
 		ManagerListProcessClosure p = new ManagerListProcessClosure(code: filter)
 		buildList(lparams, p)  
@@ -790,7 +807,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param params - parameters
 	 * @param code - processing code for file attributes as boolean code (Map file)
 	 */
-	void buildList (Map lparams, ManagerListProcessing code) {
+	void buildList(Map lparams, ManagerListProcessing code) {
 		lparams = lparams?:[:]
 		methodParams.validation('buildList', lparams)
 
@@ -1022,14 +1039,14 @@ FROM ${newFiles.fullNameDataset()} files
 	/**
 	 * Download files of list
 	 */
-	void buildList () {
+	void buildList() {
 		buildList([:], null as Closure)
 	}
 	
 	/**
 	 * Build list files with path processor<br>
 	 */
-	void buildList (Map params) {
+	void buildList(Map params) {
 		ManagerListProcessClosure p = (params.code != null)?
 				new ManagerListProcessClosure(code: (params.code as Closure)):null
 		buildList(MapUtils.Copy(params, ['code']), p)
@@ -1085,7 +1102,9 @@ FROM ${newFiles.fullNameDataset()} files
 	void downloadFiles(Map params,
 					   @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure onDownloadFile) {
 		methodParams.validation('downloadFiles', params)
-		if (fileList == null || fileList.field.isEmpty()) throw new ExceptionGETL("Before download build fileList dataset!")
+		validRootPath()
+		if (fileList == null || fileList.field.isEmpty())
+			throw new ExceptionGETL("Before download build fileList dataset!")
 		
 		boolean deleteLoadedFile = BoolUtils.IsValue(params.deleteLoadedFile)
 		TableDataset ds = params.story as TableDataset
@@ -1336,7 +1355,7 @@ WHERE
 			f = new File("${localDirFile.path}/${dir}")
 		}
 		
-		return f.absolutePath
+		return f.canonicalPath
 	}
 	
 	/**
@@ -1344,7 +1363,7 @@ WHERE
 	 * @param dir
 	 * @param throwError
 	 */
-	void createLocalDir (String dir, boolean throwError) {
+	void createLocalDir(String dir, boolean throwError) {
 		def fn = "${currentLocalDir()}/${dir}"
 		if (!new File(fn).mkdirs() && throwError) throw new ExceptionGETL("Cannot create local directory \"${fn}\"")
 	}
@@ -1353,7 +1372,7 @@ WHERE
 	 * Create new local directory
 	 * @param dir
 	 */
-	void createLocalDir (String dir) {
+	void createLocalDir(String dir) {
 		createLocalDir(dir, true)
 	}
 	
@@ -1362,7 +1381,7 @@ WHERE
 	 * @param dir
 	 * @param throwError
 	 */
-	void removeLocalDir (String dir, boolean throwError) {
+	void removeLocalDir(String dir, boolean throwError) {
 		def fn = "${currentLocalDir()}/${dir}"
 		if (!new File(fn).delete() && throwError) throw new ExceptionGETL("Can not remove local directory \"${fn}\"")
 	}
@@ -1371,7 +1390,7 @@ WHERE
 	 * Remove local directory
 	 * @param dir
 	 */
-	void removeLocalDir (String dir) {
+	void removeLocalDir(String dir) {
 		removeLocalDir(dir, true)
 	}
 	
@@ -1380,22 +1399,17 @@ WHERE
 	 * @param dirName
 	 * @param throwError
 	 */
-	Boolean removeLocalDirs (String dirName, boolean throwError) {
-//		String[] dirs = dirName.replace("\\", "/").split("/")
-//		dirs.each { dir -> changeLocalDirectory(dir) }
-//		for (int i = dirs.length; i--; i >= 0) {
-//			changeLocalDirectoryUp()
-//			removeLocalDir(dirs[i])
-//		}
-        def fullDirName = "${currentLocalDir()}/$dirName"
-        return FileUtils.DeleteFolder(fullDirName, true, throwError)
+	Boolean removeLocalDirs(String dirName, boolean throwError) {
+        def fullDirName = new File("${currentLocalDir()}/$dirName").canonicalPath
+		def deleteRoot = (fullDirName != new File(localDirectory).canonicalPath)
+        return FileUtils.DeleteFolder(fullDirName, deleteRoot, throwError)
 	}
 
 	/**
 	 * Remove local directories
 	 * @param dirName
 	 */
-	Boolean removeLocalDirs (String dirName) {
+	Boolean removeLocalDirs(String dirName) {
 		return removeLocalDirs(dirName, true)
 	}
 	
@@ -1403,7 +1417,7 @@ WHERE
 	 * Remove local file
 	 * @param fileName
 	 */
-	void removeLocalFile (String fileName) {
+	void removeLocalFile(String fileName) {
 		def fn = "${currentLocalDir()}/$fileName"
 		if (!new File(fn).delete()) throw new ExceptionGETL("Can not remove Local file \"$fn\"")
 	}
@@ -1412,15 +1426,15 @@ WHERE
 	 * Current local directory path	
 	 * @return
 	 */
-	String currentLocalDir () {
-		localDirFile.absolutePath.replace("\\", "/")
+	String currentLocalDir() {
+		localDirFile.canonicalPath.replace("\\", "/")
 	}
 	
 	/**
 	 * Change local directory
 	 * @param dir
 	 */
-	void changeLocalDirectory (String dir) {
+	void changeLocalDirectory(String dir) {
 		if (dir == '.') return
 		if (dir == '..') {
 			changeLocalDirectoryUp()
@@ -1443,14 +1457,14 @@ WHERE
 	/**
 	 * Change local directory to up
 	 */
-	void changeLocalDirectoryUp () {
+	void changeLocalDirectoryUp() {
 		setCurrentLocalPath(localDirFile.parent)
 	}
 
 	/**
 	 * 	Change local directory to root
 	 */
-	void changeLocalDirectoryToRoot () {
+	void changeLocalDirectoryToRoot() {
 		setCurrentLocalPath(localDirectory)
 	}
 	
@@ -1468,7 +1482,7 @@ WHERE
 	 * @param dirName directory path
 	 * @return result of checking
 	 */
-	boolean existsDirectory (String dirName) {
+	boolean existsDirectory(String dirName) {
 		validConnect()
 
 		if (dirName in ['.', '..', '/']) return true
@@ -1686,7 +1700,7 @@ WHERE
 	 * Delete empty directories for current directory
 	 * @param recursive
 	 */
-	void deleteEmptyFolder (boolean recursive) {
+	void deleteEmptyFolder(boolean recursive) {
 		list() { Map file ->
 			if (file.type == TypeFile.DIRECTORY)
 				deleteEmptyFolderRecurse(1, file.filename as String, recursive, null)
@@ -1699,7 +1713,7 @@ WHERE
 	 * Delete empty directories for current directory
 	 * @param recursive
 	 */
-	void deleteEmptyFolder () {
+	void deleteEmptyFolder() {
 		deleteEmptyFolder(true)
 	}
 	
@@ -1758,7 +1772,7 @@ WHERE
 	 * Validation script history file
 	 */
 	@Synchronized('operationLock')
-	protected void validScriptHistoryFile () {
+	protected void validScriptHistoryFile() {
 		if (fileNameScriptHistory == null) {
 			fileNameScriptHistory = StringUtils.EvalMacroString(scriptHistoryFile, StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(fileNameScriptHistory)
@@ -1770,7 +1784,7 @@ WHERE
 	 * @param text
 	 */
 	@Synchronized('operationLock')
-	protected void writeScriptHistoryFile (String text) {
+	protected void writeScriptHistoryFile(String text) {
 		if (scriptHistoryFile == null) return
 		validScriptHistoryFile()
 		def f = new File(fileNameScriptHistory).newWriter("utf-8", true)
@@ -1785,7 +1799,7 @@ WHERE
 	/**
 	 * Send noop command to server
 	 */
-	void noop () {
+	void noop() {
 		if (sayNoop) Logs.Fine("files.manager: NOOP")
 	}
 
@@ -1814,7 +1828,7 @@ WHERE
     abstract void setLastModified(String fileName, long time)
 
 	/** Verify that the connection is established */
-	protected void validConnect () {
+	protected void validConnect() {
 		if (!connected)
 			throw new ExceptionGETL("Requires a connection to the source!")
 	}

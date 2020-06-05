@@ -1,12 +1,12 @@
 import java.time.LocalDateTime
 
-//apply plugin: 'idea'
+apply plugin: 'idea'
 apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = '4.4.3-2-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.4.3-3-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {

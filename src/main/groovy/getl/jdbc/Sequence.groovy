@@ -34,6 +34,7 @@ import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
 import getl.utils.CloneUtils
+import getl.utils.MapUtils
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -137,8 +138,8 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	
 	/** Clone sequenced and its connection */
 	@Synchronized
-	Sequence cloneSequenceConnection() {
-		cloneSequence(connection?.cloneConnection() as JDBCConnection)
+	Sequence cloneSequenceConnection(Map otherParams = [:]) {
+		cloneSequence(connection?.cloneConnection() as JDBCConnection, otherParams)
 	}
 	
 	/**
@@ -147,10 +148,12 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	 * @return
 	 */
 	@Synchronized
-	Sequence cloneSequence(JDBCConnection con = null) {
+	Sequence cloneSequence(JDBCConnection con = null, Map otherParams = [:]) {
+		Map p = CloneUtils.CloneMap(this.params, false)
+		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		Sequence res = getClass().newInstance() as Sequence
 		res.connection = con
-		res.params.putAll(CloneUtils.CloneMap(params))
+		res.params.putAll(p)
 
 		return res
 	}
@@ -160,7 +163,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 		return cloneSequence()
 	}
 
-	Object cloneConnection() {
+	Object cloneWithConnection() {
 		return cloneSequenceConnection()
 	}
 

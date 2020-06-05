@@ -10,7 +10,6 @@ import org.junit.Test
 
 class ExcelDriverTest extends getl.test.GetlTest {
     static final String fileName = 'resource:/excel/test.xlsx'
-    static String excelFileName
 
     static ExcelConnection connection = new ExcelConnection(fileName: fileName)
     static ExcelDataset excelDataset = new ExcelDataset(connection: connection)

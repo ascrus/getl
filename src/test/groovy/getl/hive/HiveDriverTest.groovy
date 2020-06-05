@@ -62,7 +62,7 @@ class HiveDriverTest extends JDBCDriverProto {
                     splitFile { true }
                 }
 
-                rowsTo {
+                etl.rowsTo {
                     writeRow { add ->
                         add id: 1, name: 'one', dt: DateUtils.Now()
                         add id: 2, name: 'one', dt: DateUtils.Now()

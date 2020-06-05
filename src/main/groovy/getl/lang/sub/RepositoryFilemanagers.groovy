@@ -38,9 +38,10 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
     public static final String FTPMANAGER = 'getl.files.FTPManager'
     public static final String HDFSMANAGER = 'getl.files.HDFSManager'
     public static final String SFTPMANAGER = 'getl.files.SFTPManager'
+    public static final String RESOURCEMANAGER = 'getl.files.ResourceManager'
 
     /** List of allowed file manager classes */
-    public static final List<String> LISTFILEMANAGERS = [FILEMANAGER, FTPMANAGER, HDFSMANAGER, SFTPMANAGER]
+    public static final List<String> LISTFILEMANAGERS = [FILEMANAGER, FTPMANAGER, HDFSMANAGER, SFTPMANAGER, RESOURCEMANAGER]
 
     @Override
     List<String> getListClasses() {
@@ -59,14 +60,30 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
             throw new ExceptionDSL("File manager \"$name\" not found!")
 
         def res = [manager: obj.class.name] + obj.params
-        if (res.password != null) res.password = dslCreator.repositoryStorageManager().encryptText(res.password)
+        if (obj instanceof UserLogins) {
+            if (res.password != null)
+                res.password = dslCreator.repositoryStorageManager().encryptText(res.password as String)
+            if (res.storedLogins != null) {
+                def storedLogins = res.storedLogins as Map<String, String>
+                storedLogins.each { user ->
+                    if (user.value != null) user.value = dslCreator.repositoryStorageManager().encryptText(user.value)
+                }
+            }
+        }
         return res
     }
 
     @Override
     GetlRepository importConfig(Map config) {
-        if (config.password != null) config.password = dslCreator.repositoryStorageManager().decryptText(config.password)
-        return Manager.CreateManager(config)
+        def obj = Manager.CreateManager(config)
+        if (obj instanceof UserLogins) {
+            def lo = obj as UserLogins
+            if (lo.password != null) lo.password = dslCreator.repositoryStorageManager().decryptText(lo.password)
+            lo.storedLogins.each { user ->
+                if (user.value != null) user.value = dslCreator.repositoryStorageManager().decryptText(user.value)
+            }
+        }
+        return obj
     }
 
     @Override

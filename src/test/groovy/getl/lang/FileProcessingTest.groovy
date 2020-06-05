@@ -21,6 +21,8 @@ class FileProcessingTest extends GetlDslTest {
     Class<Getl> useInitClass() { TestInit }
     @Override
     Class<Getl> useGetlClass() { TestRunner }
+    @Override
+    protected boolean cleanGetlBeforeTest() { false }
 
     static final def debug = false
 
@@ -73,7 +75,7 @@ class FileProcessingTest extends GetlDslTest {
                 def genSale = GenerationUtils.GenerateRandomRow(h2Table('h2:sales'), ['id'],
                         [sale_date: [days: countDays - 1], price_id: [minValue: 1, maxValue: 100],
                          count: [minValue: 1, maxValue: 1000]])
-                rowsTo {
+                etl.rowsTo {
                     writeRow { adder ->
                         (1..countSale).each { id ->
                             def row = [id: id]
@@ -220,7 +222,7 @@ class FileProcessingTest extends GetlDslTest {
         Dsl() {
             logInfo "*** START PROCESSING FILES ${(firstRun)?'ONE':'TWO'}: archiveStorage=$archiveStorage, delFiles=$delFiles, delSkip=$delSkip, useStory=$useStory, cacheStory=$cacheStory, cacheProcessing=$cacheProcessing"
 
-            def res = fileProcessing(files('source')) {
+            def res = fileman.processing(files('source')) {
                 useSourcePath {
                     mask = '{date}/sales.{num}.json'
                     variable('date') { type = dateFieldType; format = 'yyyy-MM-dd' }
@@ -265,16 +267,16 @@ class FileProcessingTest extends GetlDslTest {
                     }
 
                     if (cacheProcessing)
-                        copyRows(json('json:sales'), csvTemp('#cache')) { writeSynch = true }
+                        etl.copyRows(json('json:sales'), csvTemp('#cache')) { writeSynch = true }
                     else
-                        copyRows(json('json:sales'), h2Table('h2:sales_json'))
+                        etl.copyRows(json('json:sales'), h2Table('h2:sales_json'))
 
                     proc.result = proc.completeResult
                 }
 
                 if (cacheProcessing)
                     saveCachedData {
-                        copyRows(csvTemp('#cache'), h2Table('h2:sales_json'))
+                        etl.copyRows(csvTemp('#cache'), h2Table('h2:sales_json'))
                         csvTemp('#cache').drop()
                     }
             }
