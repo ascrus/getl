@@ -271,7 +271,7 @@ class FTPManager extends Manager implements UserLogins {
 		@CompileStatic
 		@Override
 		void clear() {
-			listFiles = []
+			listFiles = null
 		}
 	}
 	

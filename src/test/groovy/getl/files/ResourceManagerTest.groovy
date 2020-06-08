@@ -1,5 +1,6 @@
 package getl.files
 
+import getl.files.sub.ResourceCatalogElem
 import getl.lang.Getl
 import getl.test.GetlDslTest
 import getl.utils.FileUtils
@@ -8,14 +9,13 @@ import org.junit.Test
 
 @InheritConstructors
 class ResourceManagerTest extends GetlDslTest {
-    @Test
-    void testReadFiles() {
-        def catalog = ResourceManager.ListDirFiles('src/test/resources/repository')
+    private void testListDir(ResourceCatalogElem rootNode) {
+        def catalog = rootNode.files
         assertEquals(6, catalog.size())
         def repCon = catalog.find { it.filename == 'getl.lang.sub.RepositoryConnections' && it.type == Manager.directoryType }
         assertNotNull(repCon)
         assertEquals(2, repCon.files.size())
-        assertNull(repCon.parent)
+        assertEquals(rootNode, repCon.parent)
         assertEquals('/getl.lang.sub.RepositoryConnections', repCon.filepath)
         def h2Group = repCon.files.find { it.filename == 'h2' && it.type == Manager.directoryType }
         assertNotNull(h2Group)
@@ -29,22 +29,77 @@ class ResourceManagerTest extends GetlDslTest {
     }
 
     @Test
-    void testOperations() {
+    void testReadFromFiles() {
+        testListDir(ResourceManager.ListDirFiles('src/test/resources/repository'))
+    }
+
+    @Test
+    void testReadFromJar() {
+        def file = FileUtils.FileFromResources('/zip/repository.jar')
+        testListDir(ResourceManager.ListDirJar("file:$file!/repository"))
+    }
+
+    @Test
+    void testDownload() {
         Getl.Dsl {
             resourceFiles {
-                try {
-                    def conFile = '/repository/getl.lang.sub.RepositoryConnections/getl_con.dev.conf'
-                    download(conFile)
-                    assertTrue(new File(localDirectory + conFile).exists())
+                useResourcePath '/repository'
+                connect()
 
-                    rootPath = '/repository'
-                    def dsFile = 'getl.lang.sub.RepositoryDatasets/getl_table.conf'
-                    download(dsFile)
-                    assertTrue(new File(localDirectory + '/' + dsFile).exists())
-                }
-                finally {
-                    FileUtils.DeleteFolder(localDirectoryFile.canonicalPath, true)
-                }
+                def resFile = new File(localDirectory + '/getl.lang.sub.RepositoryConnections/h2/getl_con.dev.conf')
+
+                def conFile = '/getl.lang.sub.RepositoryConnections/h2/getl_con.dev.conf'
+                download(conFile)
+                assertTrue(resFile.exists())
+                assertTrue(getLastModified(conFile) > 0)
+                resFile.delete()
+
+                changeDirectory '/getl.lang.sub.RepositoryConnections'
+
+                conFile = '/getl.lang.sub.RepositoryConnections/h2/getl_con.dev.conf'
+                download(conFile)
+                assertTrue(resFile.exists())
+                assertTrue(getLastModified(conFile) > 0)
+                resFile.delete()
+
+                conFile = 'h2/getl_con.dev.conf'
+                download(conFile)
+                assertTrue(resFile.exists())
+                assertTrue(getLastModified(conFile) > 0)
+                resFile.delete()
+
+                changeDirectory 'h2'
+
+                conFile = '/getl.lang.sub.RepositoryConnections/h2/getl_con.dev.conf'
+                download(conFile)
+                assertTrue(resFile.exists())
+                assertTrue(getLastModified(conFile) > 0)
+                resFile.delete()
+
+                conFile = '../h2/getl_con.dev.conf'
+                download(conFile)
+                assertTrue(resFile.exists())
+                assertTrue(getLastModified(conFile) > 0)
+                resFile.delete()
+
+                conFile = 'getl_con.dev.conf'
+                download(conFile)
+                assertTrue(resFile.exists())
+                assertTrue(getLastModified(conFile) > 0)
+                resFile.delete()
+            }
+        }
+    }
+
+    @Test
+    void testBuildList() {
+        Getl.Dsl {
+            resourceFiles {
+                useResourcePath '/repository'
+                connect()
+
+                def list = buildListFiles('*.conf') { recursive = true }
+                assertEquals(9, list.countRow())
             }
         }
     }

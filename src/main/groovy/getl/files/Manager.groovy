@@ -73,6 +73,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	/** Initialization dataset parameters */
 	protected void initParams() {
+		params.rootPath = '/'
 		params.attributes = [:] as Map<String, Object>
 	}
 
@@ -162,7 +163,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Root path */
 	String getRootPath() { params.rootPath as String }
 	/** Root path */
-	void setRootPath(String value) { params.rootPath = value }
+	void setRootPath(String value) { params.rootPath = FileUtils.ConvertToUnixPath(value) }
 
 	/** Local directory */
 	private String _localDirectory

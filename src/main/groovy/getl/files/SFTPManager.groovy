@@ -296,7 +296,7 @@ class SFTPManager extends Manager implements UserLogins {
 		@CompileStatic
 		@Override
 		void clear () {
-			listFiles.clear()
+			listFiles = null
 		}
 	}
 

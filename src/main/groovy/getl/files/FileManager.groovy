@@ -25,7 +25,6 @@ package getl.files
 
 import getl.exception.ExceptionGETL
 import getl.files.sub.FileManagerList
-import getl.files.sub.FilesList
 import getl.files.sub.Filter
 import getl.utils.*
 import groovy.transform.CompileStatic
@@ -107,6 +106,36 @@ class FileManager extends Manager {
 	protected void validConnect () {
 		if (!connected)
 			connect()
+	}
+
+	class FilesList extends FileManagerList {
+		public File[] listFiles
+
+		@CompileStatic
+		@Override
+		Integer size () {
+			listFiles.length
+		}
+
+		@CompileStatic
+		@Override
+		Map item (int index) {
+			File f = listFiles[index]
+
+			Map<String, Object> m =  new HashMap<String, Object>()
+			m.filename = f.name
+			m.filedate = new Date(f.lastModified())
+			m.filesize = f.length()
+			if (f.isDirectory()) m.type = Manager.TypeFile.DIRECTORY else m.type = Manager.TypeFile.FILE
+
+			return m
+		}
+
+		@CompileStatic
+		@Override
+		void clear () {
+			listFiles = null
+		}
 	}
 
 	@CompileStatic
