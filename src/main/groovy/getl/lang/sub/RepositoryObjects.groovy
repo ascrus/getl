@@ -361,10 +361,10 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
     /**
      * Object parameters for export
-     * @param name the name of the object in the repository
+     * @param obj exported object
      * @return configuration object
      */
-    abstract Map exportConfig(String name)
+    abstract Map exportConfig(GetlRepository obj)
 
     /**
      * Import object from parameters

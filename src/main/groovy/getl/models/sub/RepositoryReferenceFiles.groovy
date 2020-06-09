@@ -44,12 +44,8 @@ class RepositoryReferenceFiles extends RepositoryObjects<ReferenceFiles>  {
     }
 
     @Override
-    Map exportConfig(String name) {
-        def obj = find(name)
-        if (obj == null)
-            throw new ExceptionDSL("Reference files model \"$name\" not found!")
-
-        return obj.params
+    Map exportConfig(GetlRepository repobj) {
+        return (repobj as ReferenceFiles).params
     }
 
     @Override

@@ -54,36 +54,13 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
     }
 
     @Override
-    Map exportConfig(String name) {
-        def obj = find(name)
-        if (obj == null)
-            throw new ExceptionDSL("File manager \"$name\" not found!")
-
-        def res = [manager: obj.class.name] + obj.params
-        if (obj instanceof UserLogins) {
-            if (res.password != null)
-                res.password = dslCreator.repositoryStorageManager().encryptText(res.password as String)
-            if (res.storedLogins != null) {
-                def storedLogins = res.storedLogins as Map<String, String>
-                storedLogins.each { user ->
-                    if (user.value != null) user.value = dslCreator.repositoryStorageManager().encryptText(user.value)
-                }
-            }
-        }
-        return res
+    Map exportConfig(GetlRepository repobj) {
+        return [manager: repobj.class.name] + ((repobj as Manager).params)
     }
 
     @Override
     GetlRepository importConfig(Map config) {
-        def obj = Manager.CreateManager(config)
-        if (obj instanceof UserLogins) {
-            def lo = obj as UserLogins
-            if (lo.password != null) lo.password = dslCreator.repositoryStorageManager().decryptText(lo.password)
-            lo.storedLogins.each { user ->
-                if (user.value != null) user.value = dslCreator.repositoryStorageManager().decryptText(user.value)
-            }
-        }
-        return obj
+        return Manager.CreateManager(config)
     }
 
     @Override

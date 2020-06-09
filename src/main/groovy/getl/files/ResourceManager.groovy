@@ -70,17 +70,24 @@ class ResourceManager extends Manager {
     @Override
     protected void initParams() {
         super.initParams()
-        params.resourcePaths = [] as List<String>
+        params.resourceDirectories = [] as List<String>
     }
 
     @Override
     protected void initMethods () {
         super.initMethods()
-        methodParams.register("super", ["resourcePaths", "classLoader"])
+        methodParams.register('super', ['resourcePath', 'classLoader', 'resourceDirectories'])
     }
 
     @Override
     boolean isCaseSensitiveName() { return true }
+
+    @Override
+    void setRootPath(String value) {
+        super.setRootPath(value)
+        if (connected)
+            setCurrentDirectory(directoryFromPath(rootPath))
+    }
 
     /** Connect status */
     private Boolean connected = false
@@ -208,7 +215,7 @@ class ResourceManager extends Manager {
             throw new ExceptionGETL("There is no directory \"$resourcePath\" in the resources!")
 
         rootNode = (res.protocol == 'file')?ListDirFiles(res.file):ListDirJar(res.file)
-        setCurrentDirectory(rootNode)
+        setCurrentDirectory(directoryFromPath(rootPath))
     }
 
     @Override
@@ -270,13 +277,20 @@ class ResourceManager extends Manager {
     FileManagerList listDir(String mask) {
         validConnect()
 
+        def dir = directoryFromPath(mask)
+
         Path p
         if (mask != null) {
-            p = new Path()
-            p.compile(mask: mask)
+            def strmask = FileUtils.MaskFile(mask)
+            if (strmask != null) {
+                p = new Path()
+                p.compile(mask: strmask)
+            }
         }
 
-        def files = currentDirectory.files.findAll {  (mask == null || p.match(it.filename)) }
+        def files = dir.files.findAll {
+            return (p == null || p.match(it.filename))
+        }
 
         def res = new ResourceFileList()
         res.listFiles = files
@@ -313,18 +327,35 @@ class ResourceManager extends Manager {
 
     private ResourceCatalogElem directoryFromPath(String path) {
         def cp = FileUtils.ConvertToUnixPath(path)
+        if (cp == null)
+            return currentDirectory
+
+        def mask = FileUtils.MaskFile(path)
+
         def dirs = cp.split('/')
+        def size = dirs.length - ((mask != null)?1:0)
+
         def cd = (cp[0] == '/')?rootNode:currentDirectory
-        dirs.each { dir ->
-            if (dir == '' || dir == '.') return
+        for (int i = 0; i < size; i++) {
+            def dir = dirs[i]
+
+            if (dir == '' || dir == '.')
+                continue
+
             if (dir == '..') {
                 cd = cd.parent
-                return
+                continue
             }
 
-            cd = cd.files.find { it.filename == dir }
-            if (cd == null)
+            def child = cd.files.find { it.filename == dir }
+            if (child.type == Manager.fileType) {
+                if (mask == null && i == size - 1) break
+                child = null
+            }
+            if (child == null)
                 throw new ExceptionGETL("Path \"$path\" not found!")
+
+            cd = child
         }
 
         return cd

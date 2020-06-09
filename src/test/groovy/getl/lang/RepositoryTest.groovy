@@ -21,7 +21,7 @@ import org.junit.Test
 
 @InheritConstructors
 class RepositoryTest extends GetlDslTest {
-    final def isdebug = false
+    final def isdebug = true
     final def repConfigFileName = 'tests/repository/vars.conf'
 
     @Test

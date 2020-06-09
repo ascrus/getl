@@ -50,16 +50,14 @@ class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
     }
 
     @Override
-    Map exportConfig(String name) {
-        def obj = find(name)
-        if (obj == null)
-            throw new ExceptionDSL("Sequence \"$name\" not found!")
+    Map exportConfig(GetlRepository repobj) {
+        def obj = repobj as Sequence
         if (obj.connection == null)
-            throw new ExceptionDSL("No connection specified for sequence \"$name\"!")
+            throw new ExceptionDSL("No connection specified for sequence \"${obj.dslNameObject}\"!")
         if (obj.connection.dslNameObject == null)
-            throw new ExceptionDSL("Connection for sequence \"$name\" not found in repository!")
+            throw new ExceptionDSL("Connection for sequence \"${obj.dslNameObject}\" not found in repository!")
         if (obj.fullName == null)
-            throw new ExceptionDSL("No name specified for sequence \"$name\"!")
+            throw new ExceptionDSL("No name specified for sequence \"${obj.dslNameObject}\"!")
 
         return [connection: obj.connection.dslNameObject] + obj.params
     }

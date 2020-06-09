@@ -133,14 +133,12 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     }
 
     @Override
-    Map exportConfig(String name) {
-        def obj = find(name)
-        if (obj == null)
-            throw new ExceptionDSL("Dataset \"$name\" not found!")
+    Map exportConfig(GetlRepository repobj) {
+        def obj = repobj as Dataset
         if (obj.connection == null)
-            throw new ExceptionDSL("No connection specified for dataset \"$name\"!")
+            throw new ExceptionDSL("No connection specified for dataset \"${obj.dslNameObject}\"!")
         if (obj.connection.dslNameObject == null)
-            throw new ExceptionDSL("Connection for dataset \"$name\" not found in repository!")
+            throw new ExceptionDSL("Connection for dataset \"${obj.dslNameObject}\" not found in repository!")
 
         def fields = GenerationUtils.Fields2Map(obj.field)
 

@@ -43,6 +43,7 @@ import getl.postgresql.PostgreSQLConnection
 import getl.salesforce.SalesForceConnection
 import getl.tfs.TDS
 import getl.tfs.TFS
+import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.vertica.VerticaConnection
 import getl.xero.XeroConnection
@@ -123,36 +124,13 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     }
 
     @Override
-    Map exportConfig(String name) {
-        def obj = find(name)
-        if (obj == null)
-            throw new ExceptionDSL("Connection \"$name\" not found!")
-
-        def res = [connection: obj.class.name] + obj.params
-        if (obj instanceof UserLogins) {
-            if (res.password != null)
-                res.password = dslCreator.repositoryStorageManager().encryptText(res.password as String)
-            if (res.storedLogins != null) {
-                def storedLogins = res.storedLogins as Map<String, String>
-                storedLogins.each { user ->
-                    if (user.value != null) user.value = dslCreator.repositoryStorageManager().encryptText(user.value)
-                }
-            }
-        }
-        return res
+    Map exportConfig(GetlRepository repobj) {
+        return [connection: repobj.class.name] + ((repobj as Connection).params)
     }
 
     @Override
     GetlRepository importConfig(Map config) {
-        def obj = Connection.CreateConnection(config)
-        if (obj instanceof UserLogins) {
-            def lo = obj as UserLogins
-            if (lo.password != null) lo.password = dslCreator.repositoryStorageManager().decryptText(lo.password)
-            lo.storedLogins.each { user ->
-                if (user.value != null) user.value = dslCreator.repositoryStorageManager().decryptText(user.value)
-            }
-        }
-        return obj
+        return Connection.CreateConnection(config)
     }
 
     @Override

@@ -86,13 +86,20 @@ abstract class Manager implements Cloneable, GetlRepository {
 		CreateManagerInternal(params)
 	}
 
-	static Manager CreateManagerInternal(Map params) {
-		def className = params.manager as String
-		if (className == null) throw new ExceptionGETL("Reqired class name as \"manager\" property!")
+	static Manager CreateManagerInternal(Map parameters) {
+		def className = parameters.manager as String
+		if (className == null)
+			throw new ExceptionGETL("Reqired class name as \"manager\" property!")
+
 		Manager manager = Class.forName(className).newInstance() as Manager
-		def locDir = params.localDirectory as String
-		MapUtils.RemoveKeys(params, ['manager', 'localDirectory'])
-		manager.params.putAll(params)
+
+		def locDir = parameters.localDirectory as String
+		def load_config = parameters.config as String
+		if (load_config != null) manager.setConfig(load_config)
+
+		MapUtils.MergeMap(manager.params as Map<String, Object>,
+				MapUtils.CleanMap(parameters, ['manager', 'config', 'localDirectory']) as Map<String, Object>)
+
 		manager.validateParams()
 
 		if (locDir != null)
@@ -163,7 +170,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Root path */
 	String getRootPath() { params.rootPath as String }
 	/** Root path */
-	void setRootPath(String value) { params.rootPath = FileUtils.ConvertToUnixPath(value) }
+	void setRootPath(String value) {
+		validRootPath(value)
+		params.rootPath = FileUtils.ConvertToUnixPath(value)
+	}
 
 	/** Local directory */
 	private String _localDirectory
@@ -497,8 +507,13 @@ abstract class Manager implements Cloneable, GetlRepository {
 		return _currentPath
 	}
 
-	void validRootPath() {
-		if (rootPath == null || rootPath.length() == 0)
+	/**
+	 * Valid rootPath value
+	 * @param value
+	 */
+	protected void validRootPath(String value = null) {
+		if (value == null) value = rootPath
+		if (value == null || value.length() == 0)
 			throw new ExceptionGETL('No root path specified!')
 	}
 	

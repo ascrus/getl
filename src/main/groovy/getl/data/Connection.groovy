@@ -65,7 +65,7 @@ class Connection implements Cloneable, GetlRepository {
 		if (driverClass == null) throw new ExceptionGETL("Required parameter \"driver\" (driver class name)")
 		this.driver = driverClass.newInstance() as Driver
 		this.driver.connection = this
-		def load_config = (String)parameters.config
+		def load_config = parameters.config as String
 		if (load_config != null) setConfig(load_config)
 		MapUtils.MergeMap(this.params as Map<String, Object>,
 				MapUtils.CleanMap(parameters, ['driver', 'config']) as Map<String, Object> )

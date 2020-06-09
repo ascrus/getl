@@ -26,12 +26,15 @@ package getl.lang.sub
 import getl.config.ConfigSlurper
 import getl.exception.ExceptionDSL
 import getl.files.FileManager
+import getl.files.Manager
+import getl.files.ResourceManager
 import getl.lang.Getl
 import getl.models.sub.RepositoryMapTables
 import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
 import getl.utils.FileUtils
+import getl.utils.Logs
 import getl.utils.Path
 import getl.utils.StringUtils
 import java.util.concurrent.ConcurrentHashMap
@@ -57,7 +60,15 @@ class RepositoryStorageManager {
     /** Storage path for repository files */
     String getStoragePath() { storagePath }
     /** Storage path for repository files */
-    void setStoragePath(String value) { storagePath = value }
+    void setStoragePath(String value) {
+        storagePath = value
+        isResourceStoragePath = FileUtils.IsResourceFileName(value)
+    }
+
+    /** Repository files are stored in project resources */
+    private Boolean isResourceStoragePath
+    /** Repository files are stored in project resources */
+    Boolean getIsResourceStoragePath() { isResourceStoragePath }
 
     /** Subdirectories for storing files for different environments */
     private final Map<String, String> envDirs = [:] as Map<String, String>
@@ -170,8 +181,9 @@ class RepositoryStorageManager {
 
     /** Repository storage path */
     String repositoryFilePath(Class<RepositoryObjects> repositoryClass, String env = 'all') {
-        def subdir = (envDirs.containsKey(env))?('/' + envDirs.get(env)):''
-        return FileUtils.ConvertToDefaultOSPath(storagePath + subdir + '/' + repositoryClass.name)
+        def subdir = (env != null && envDirs.containsKey(env))?('/' + envDirs.get(env)):''
+        def dirPath = subdir + '/' + repositoryClass.name
+        return (isResourceStoragePath)?dirPath:FileUtils.ConvertToDefaultOSPath(storagePath + dirPath)
     }
 
     /**
@@ -185,7 +197,10 @@ class RepositoryStorageManager {
         def res = 0
         def repository = repository(repositoryName)
         env = envFromRep(repository, env)
-        FileUtils.ValidPath(repositoryFilePath(repository, env))
+        def repFilePath = repositoryFilePath(repository, env)
+        if (isResourceStoragePath)
+            throw new ExceptionDSL('Cannot be saved to the resource directory!')
+        FileUtils.ValidPath(repFilePath)
         repository.processObjects(mask) { name ->
             def objname = ParseObjectName.Parse(name)
             if (objname.groupName == null && objname.objectName[0] == '#') return
@@ -213,11 +228,22 @@ class RepositoryStorageManager {
      * @param env used environment
      */
     protected void saveObjectToStorage(RepositoryObjects repository, ParseObjectName objname, String env) {
-        def objparams = repository.exportConfig(objname.name)
+        if (isResourceStoragePath)
+            throw new ExceptionDSL('Cannot be saved to the resource directory!')
+
+        def obj = repository.find(objname.name)
+        if (obj == null)
+            throw new ExceptionDSL("Object \"${objname.name}\" not found in repository \"${repository.class.name}\"!")
+
+        def objparams = repository.exportConfig(obj)
+        if (obj instanceof UserLogins)
+            encryptObject(objname.name, objparams)
+
         def fileName = objectFilePathInStorage(repository, objname, env)
         FileUtils.ValidFilePath(fileName)
         def file = new File(fileName)
         ConfigSlurper.SaveConfigFile(objparams, new File(fileName), 'utf-8')
+
         if (!file.exists())
             throw new ExceptionDSL("Error saving object \"${objname.name}\" from repository " +
                                     "\"${repository.class.name}\" to file \"$file\"!")
@@ -279,24 +305,46 @@ class RepositoryStorageManager {
         def res = 0
         def repository = repository(repositoryName)
         def maskPath = (mask != null)?new Path(mask: mask):null
-        def fm = new FileManager()
+
         env = envFromRep(repository, env)
-        fm.rootPath = repositoryFilePath(repository, env)
+        def repFilePath = repositoryFilePath(repository, env)
+        def isEnvConfig = repository.needEnvConfig()
+
+        Manager fm
+        if (isResourceStoragePath) {
+            fm = new ResourceManager()
+            fm.resourcePath = storagePath.substring('resource:'.length())
+            if (!fm.existsDirectory(repFilePath)) return 0
+        }
+        else {
+            fm = new FileManager()
+        }
+        fm.rootPath = repFilePath
+
         def dirs = fm.buildListFiles {
-            maskFile = (repository.needEnvConfig())?('getl_*.' + envFromRep(repository, env) + '.conf'):'getl_*.conf'
+            maskFile = (isEnvConfig)?('getl_*.' + env + '.conf'):'getl_*.conf'
             recursive = true
         }
         dirs.eachRow { file ->
             def groupName = (file.filepath != '.')?(file.filepath as String).replace('/', '.').toLowerCase():null
-            def objectName = ObjectNameFromFileName(file.filename as String, repository.needEnvConfig())
-            if (repository.needEnvConfig() && objectName.env != env)
+            def objectName = ObjectNameFromFileName(file.filename as String, isEnvConfig)
+            if (isEnvConfig && objectName.env != env)
                 throw new ExceptionDSL("Discrepancy of storage of file \"${file.filepath}/${file.filename}\" was detected for environment \"$env\"!")
             def name = new ParseObjectName(groupName, objectName.name as String).name
             if (maskPath == null || maskPath.match(name)) {
-                def fileName = FileUtils.ConvertToDefaultOSPath(fm.rootPath + '/' +
-                                                ((file.filepath != '.')?(file.filepath + '/'):'') + file.filename)
+                String fileName
+                if (isResourceStoragePath) {
+                    fileName = FileUtils.ResourceFileName(storagePath + repFilePath + '/' +
+                            ((file.filepath != '.') ? (file.filepath + '/') : '') + file.filename)
+                }
+                else {
+                    fileName = FileUtils.ConvertToDefaultOSPath(fm.rootPath + '/' +
+                            ((file.filepath != '.') ? (file.filepath + '/') : '') + file.filename)
+                }
                 def objparams = ConfigSlurper.LoadConfigFile(new File(fileName), 'utf-8')
                 def obj = repository.importConfig(objparams)
+                if (obj instanceof UserLogins)
+                    decryptLoginObject(name, obj)
                 repository.registerObject(dslCreator, obj, name, true)
                 res++
             }
@@ -352,6 +400,9 @@ class RepositoryStorageManager {
      * @param repositoryName repository name
      */
     Boolean removeStorage(String repositoryName, String env = null) {
+        if (isResourceStoragePath)
+            throw new ExceptionDSL('Cannot delete the resource directory!')
+
         if (env != null || envDirs.isEmpty())
             FileUtils.DeleteFolder(repositoryFilePath(repository(repositoryName), env), true)
         else
@@ -451,5 +502,41 @@ class RepositoryStorageManager {
      */
     File objectFile(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
         return new File(objectFilePath(repositoryClass, name, env))
+    }
+
+    /** Decrypt passwords for object */
+    void decryptLoginObject(String name, UserLogins obj) {
+        if (obj.password != null) {
+            try {
+                obj.password = decryptText(obj.password)
+            }
+            catch (Exception e) {
+                Logs.Severe("Unable to decode password for login \"${obj.login}\" for \"$name\"!")
+                throw e
+            }
+        }
+        obj.storedLogins.each { user ->
+            if (user.value != null) {
+                try {
+                    user.value = dslCreator.repositoryStorageManager().decryptText(user.value)
+                }
+                catch (Exception e) {
+                    Logs.Severe("Unable to decode password for login \"${user.key}\" for \"$name\"!")
+                    throw e
+                }
+            }
+        }
+    }
+
+    /** Encrypt passwords for object */
+    void encryptObject(String name, Map res) {
+        if (res.password != null)
+            res.password = encryptText(res.password as String)
+        if (res.storedLogins != null) {
+            def storedLogins = res.storedLogins as Map<String, String>
+            storedLogins.each { user ->
+                if (user.value != null) user.value = encryptText(user.value)
+            }
+        }
     }
 }

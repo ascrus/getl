@@ -44,12 +44,8 @@ class RepositoryReferenceVerticaTables extends RepositoryObjects<ReferenceVertic
     }
 
     @Override
-    Map exportConfig(String name) {
-        def obj = find(name)
-        if (obj == null)
-            throw new ExceptionDSL("Reference tables model \"$name\" not found!")
-
-        return obj.params
+    Map exportConfig(GetlRepository repobj) {
+        return (repobj as ReferenceVerticaTables).params
     }
 
     @Override

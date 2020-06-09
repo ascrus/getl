@@ -2,6 +2,7 @@ package getl.files
 
 import getl.files.sub.ResourceCatalogElem
 import getl.lang.Getl
+import getl.lang.sub.RepositoryConnections
 import getl.test.GetlDslTest
 import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
@@ -100,6 +101,14 @@ class ResourceManagerTest extends GetlDslTest {
 
                 def list = buildListFiles('*.conf') { recursive = true }
                 assertEquals(9, list.countRow())
+                assertTrue(existsDirectory('/' + RepositoryConnections.name))
+                assertTrue(existsDirectory(RepositoryConnections.name))
+
+                rootPath = '/' + RepositoryConnections.name
+                list = buildListFiles('*.conf') { recursive = true }
+                assertEquals(2, list.countRow())
+                assertTrue(existsDirectory('/' + RepositoryConnections.name))
+                assertTrue(existsDirectory('../' + RepositoryConnections.name))
             }
         }
     }

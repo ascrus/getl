@@ -44,12 +44,8 @@ class RepositoryMonitorRules extends RepositoryObjects<MonitorRules>  {
     }
 
     @Override
-    Map exportConfig(String name) {
-        def obj = find(name)
-        if (obj == null)
-            throw new ExceptionDSL("Monitor rule model \"$name\" not found!")
-
-        return obj.params
+    Map exportConfig(GetlRepository repobj) {
+        return (repobj as MonitorRules).params
     }
 
     @Override

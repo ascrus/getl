@@ -50,16 +50,14 @@ class RepositoryHistorypoints extends RepositoryObjectsWithConnection<SavePointM
     }
 
     @Override
-    Map exportConfig(String name) {
-        def obj = find(name)
-        if (obj == null)
-            throw new ExceptionDSL("History point \"$name\" not found!")
+    Map exportConfig(GetlRepository repobj) {
+        def obj = repobj as SavePointManager
         if (obj.connection == null)
-            throw new ExceptionDSL("No connection specified for history point \"$name\"!")
+            throw new ExceptionDSL("No connection specified for history point \"${obj.dslNameObject}\"!")
         if (obj.connection.dslNameObject == null)
-            throw new ExceptionDSL("Connection for history point \"$name\" not found in repository!")
+            throw new ExceptionDSL("Connection for history point \"${obj.dslNameObject}\" not found in repository!")
         if (obj.fullTableName == null)
-            throw new ExceptionDSL("No table specified for history point \"$name\"!")
+            throw new ExceptionDSL("No table specified for history point \"${obj.dslNameObject}\"!")
 
         return [connection: obj.connection.dslNameObject] + obj.params
     }
