@@ -325,27 +325,34 @@ class RepositoryStorageManager {
             maskFile = (isEnvConfig)?('getl_*.' + env + '.conf'):'getl_*.conf'
             recursive = true
         }
-        dirs.eachRow { file ->
-            def groupName = (file.filepath != '.')?(file.filepath as String).replace('/', '.').toLowerCase():null
-            def objectName = ObjectNameFromFileName(file.filename as String, isEnvConfig)
+        dirs.eachRow { fileAttr ->
+            def groupName = (fileAttr.filepath != '.')?(fileAttr.filepath as String).replace('/', '.').toLowerCase():null
+            def objectName = ObjectNameFromFileName(fileAttr.filename as String, isEnvConfig)
             if (isEnvConfig && objectName.env != env)
-                throw new ExceptionDSL("Discrepancy of storage of file \"${file.filepath}/${file.filename}\" was detected for environment \"$env\"!")
+                throw new ExceptionDSL("Discrepancy of storage of file \"${fileAttr.filepath}/${fileAttr.filename}\" was detected for environment \"$env\"!")
             def name = new ParseObjectName(groupName, objectName.name as String).name
             if (maskPath == null || maskPath.match(name)) {
                 String fileName
                 if (isResourceStoragePath) {
                     fileName = FileUtils.ResourceFileName(storagePath + repFilePath + '/' +
-                            ((file.filepath != '.') ? (file.filepath + '/') : '') + file.filename)
+                            ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename)
                 }
                 else {
                     fileName = FileUtils.ConvertToDefaultOSPath(fm.rootPath + '/' +
-                            ((file.filepath != '.') ? (file.filepath + '/') : '') + file.filename)
+                            ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename)
                 }
-                def objparams = ConfigSlurper.LoadConfigFile(new File(fileName), 'utf-8')
-                def obj = repository.importConfig(objparams)
-                if (obj instanceof UserLogins)
-                    decryptLoginObject(name, obj)
-                repository.registerObject(dslCreator, obj, name, true)
+                def file = new File(fileName)
+                try {
+                    def objparams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
+                    def obj = repository.importConfig(objparams)
+                    if (obj instanceof UserLogins)
+                        decryptLoginObject(name, obj)
+                    repository.registerObject(dslCreator, obj, name, true)
+                }
+                finally {
+                    if (isResourceStoragePath)
+                        file.delete()
+                }
                 res++
             }
         }
@@ -378,11 +385,15 @@ class RepositoryStorageManager {
         def file = new File(fileName)
         if (!file.exists())
             throw new ExceptionDSL("It is not possible to load object \"$name\" to " +
-                                    "repository \"${repository.class.name}\": file \"$file\" was not found!")
-
-        def objparams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
-        def obj = repository.importConfig(objparams)
-        repository.registerObject(dslCreator, obj, name, true)
+                    "repository \"${repository.class.name}\": file \"$file\" was not found!")
+        try {
+            def objparams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
+            def obj = repository.importConfig(objparams)
+            repository.registerObject(dslCreator, obj, name, true)
+        }
+        finally {
+            if (isResourceStoragePath) file.delete()
+        }
     }
 
     /**
@@ -432,7 +443,7 @@ class RepositoryStorageManager {
             env = 'all'
         }
         else if (env == null) {
-            env = dslCreator.configuration().environment.toLowerCase()
+            env = dslCreator.configuration().environment?.toLowerCase()?:'prod'
         }
 
         return env
