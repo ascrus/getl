@@ -275,10 +275,11 @@ class RepositoryStorageManager {
      * Load objects to all repositories from storage
      * @param mask object name mask
      * @param env used environment
+     * @param ignoreExists don't load existing ones
      */
-    void loadRepositories(String mask = null, String env = null) {
+    void loadRepositories(String mask = null, String env = null, Boolean ignoreExists = true) {
         listRepositories.each { name ->
-            loadRepository(name, mask, env)
+            loadRepository(name, mask, env, ignoreExists)
         }
     }
 
@@ -299,9 +300,10 @@ class RepositoryStorageManager {
      * @param repositoryName name of the repository to be uploaded
      * @param mask object name mask
      * @param env used environment
+     * @param ignoreExists don't load existing ones
      * @return count of saved objects
      */
-    int loadRepository(String repositoryName, String mask = null, String env = null) {
+    int loadRepository(String repositoryName, String mask = null, String env = null, Boolean ignoreExists = true) {
         def res = 0
         def repository = repository(repositoryName)
         def maskPath = (mask != null)?new Path(mask: mask):null
@@ -325,6 +327,9 @@ class RepositoryStorageManager {
             maskFile = (isEnvConfig)?('getl_*.' + env + '.conf'):'getl_*.conf'
             recursive = true
         }
+
+        def existsObject = repository.objects.keySet().toList()
+
         dirs.eachRow { fileAttr ->
             def groupName = (fileAttr.filepath != '.')?(fileAttr.filepath as String).replace('/', '.').toLowerCase():null
             def objectName = ObjectNameFromFileName(fileAttr.filename as String, isEnvConfig)
@@ -332,6 +337,13 @@ class RepositoryStorageManager {
                 throw new ExceptionDSL("Discrepancy of storage of file \"${fileAttr.filepath}/${fileAttr.filename}\" was detected for environment \"$env\"!")
             def name = new ParseObjectName(groupName, objectName.name as String).name
             if (maskPath == null || maskPath.match(name)) {
+                def isExists = (name in existsObject)
+                if (isExists) {
+                    if (ignoreExists) return
+                    throw new ExceptionDSL("Object \"$name\" from file \"${fileAttr.filepath}/${fileAttr.filename}\"" +
+                            " is already registered in repository \"${repository.class.name}\"!")
+                }
+
                 String fileName
                 if (isResourceStoragePath) {
                     fileName = FileUtils.ResourceFileName(storagePath + repFilePath + '/' +
@@ -353,6 +365,7 @@ class RepositoryStorageManager {
                     if (isResourceStoragePath)
                         file.delete()
                 }
+
                 res++
             }
         }
@@ -366,9 +379,10 @@ class RepositoryStorageManager {
      * @param repositoryClass class of the repository to be uploaded
      * @param mask object name mask
      * @param env used environment
+     * @param ignoreExists don't load existing ones
      * @return count of saved objects
      */
-    int loadRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null) {
+    int loadRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null, Boolean ignoreExists = true) {
         loadRepository(repositoryClass.name, mask, env)
     }
 
@@ -377,8 +391,9 @@ class RepositoryStorageManager {
      * @param repositoryName repository name
      * @param name object name
      * @param env used environment
+     * @param overloading load over existing
      */
-    void loadObject(String repositoryName, String name, String env = null) {
+    void loadObject(String repositoryName, String name, String env = null, Boolean overloading = false) {
         def repository = repository(repositoryName)
         def objname = ParseObjectName.Parse(name)
         def fileName = objectFilePathInStorage(repository, objname, env)
@@ -386,9 +401,14 @@ class RepositoryStorageManager {
         if (!file.exists())
             throw new ExceptionDSL("It is not possible to load object \"$name\" to " +
                     "repository \"${repository.class.name}\": file \"$file\" was not found!")
+
         try {
             def objparams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
             def obj = repository.importConfig(objparams)
+
+            if (overloading && repository.find(objname.name) != null)
+                repository.unregister(objname.name)
+
             repository.registerObject(dslCreator, obj, name, true)
         }
         finally {
@@ -401,9 +421,10 @@ class RepositoryStorageManager {
      * @param repositoryClass repository class
      * @param name object name
      * @param env used environment
+     * @param overloading load over existing
      */
-    void loadObject(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
-        loadObject(repositoryClass.name, name, env)
+    void loadObject(Class<RepositoryObjects> repositoryClass, String name, String env = null, Boolean overloading = false) {
+        loadObject(repositoryClass.name, name, env, overloading)
     }
 
     /**
