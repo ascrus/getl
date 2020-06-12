@@ -21,11 +21,11 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.vertica
 
 import getl.exception.ExceptionGETL
 import getl.jdbc.QueryDataset
+import getl.jdbc.TableDataset
 import getl.stat.ProcessTime
 import getl.utils.BoolUtils
 import getl.utils.Logs
@@ -373,4 +373,7 @@ ORDER BY name
 
 		return res
 	}
+
+	@Override
+	protected Class<TableDataset> getTableClass() { VerticaTable }
 }

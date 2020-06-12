@@ -21,12 +21,10 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.oracle
 
-import getl.jdbc.JDBCDriver
-import groovy.transform.InheritConstructors
 import getl.jdbc.JDBCConnection
+import getl.jdbc.TableDataset
 
 /**
  * Oracle connection class
@@ -63,4 +61,7 @@ class OracleConnection extends JDBCConnection {
 		super.doInitConnection()
 		driverName = 'oracle.jdbc.OracleDriver'
 	}
+
+	@Override
+	protected Class<TableDataset> getTableClass() { OracleTable }
 }

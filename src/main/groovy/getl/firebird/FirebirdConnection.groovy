@@ -21,12 +21,10 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.firebird
 
-import getl.h2.H2Driver
 import getl.jdbc.JDBCConnection
-import groovy.transform.InheritConstructors
+import getl.jdbc.TableDataset
 
 /**
  * Firebird connection class
@@ -58,4 +56,7 @@ class FirebirdConnection extends JDBCConnection {
         super.doInitConnection()
         driverName = 'org.firebirdsql.jdbc.FBDriver'
     }
+
+    @Override
+    protected Class<TableDataset> getTableClass() { FirebirdTable }
 }

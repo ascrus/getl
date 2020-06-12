@@ -21,10 +21,9 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.db2
 
-import groovy.transform.InheritConstructors
+import getl.jdbc.TableDataset
 import getl.jdbc.JDBCConnection
 
 /**
@@ -56,4 +55,7 @@ class DB2Connection extends JDBCConnection {
 		super.doInitConnection()
 		driverName = "com.ibm.db2.jcc.DB2Driver"
 	}
+
+	@Override
+	protected Class<TableDataset> getTableClass() { DB2Table }
 }

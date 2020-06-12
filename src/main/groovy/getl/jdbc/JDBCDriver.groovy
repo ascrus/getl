@@ -48,7 +48,7 @@ import getl.utils.*
 class JDBCDriver extends Driver {
 	JDBCDriver () {
 		super()
-		methodParams.register('retrieveObjects', ['dbName', 'schemaName', 'tableName', 'type', 'tableMask'])
+		methodParams.register('retrieveObjects', ['dbName', 'schemaName', 'tableName', 'type', 'tableMask', 'filter'])
 		methodParams.register('createDataset', ['ifNotExists', 'onCommit', 'indexes', 'hashPrimaryKey',
                                                 'useNativeDBType', 'type'])
 		methodParams.register('dropDataset', ['ifExists'])
@@ -598,6 +598,8 @@ class JDBCDriver extends Driver {
 
 	@Override
 	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
+		if (filter == null && params.filter != null) filter = params.filter as Closure<Boolean>
+
 		def isMultiDB = isSupport(Driver.Support.MULTIDATABASE)
 		String catalog = (isMultiDB)?(prepareObjectName(params."dbName" as String)?:defaultDBName):null
 		String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName

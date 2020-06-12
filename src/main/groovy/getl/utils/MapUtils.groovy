@@ -954,10 +954,7 @@ class MapUtils {
 	 */
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	static Map<String, Object> Closure2Map(Closure cl) {
-		def cfg = new groovy.util.ConfigSlurper()
-		def vars = cfg.parse(new ClosureScript(closure: cl))
-
-		return ConfigObject2Map(vars)
+		return Closure2Map(null, cl)
 	}
 
 	/**

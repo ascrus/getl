@@ -183,21 +183,34 @@ class MapUtilsTest extends getl.test.GetlTest {
                 }
             }
         }
-        def res = MapUtils.Closure2Map(cl)
-        assertEquals(map, res)
-        assertNull(res.d.i4.bbb)
-
-        def cl_env = {
-            environment {
-                env1 {
-                    map = 'incorrect!'
-                }
-                env2{
-                    a = 1; b = 'a'; c = [1,2,3]; d = [i1: 1, i2: DateUtils.ParseDate('2019-12-31'), i3: [1, 2, 3]]
+        def res1 = MapUtils.Closure2Map {
+            a = 1
+            b = 'a'
+            c = [1,2, 3]
+            d {
+                i1 = 1
+                i2 = DateUtils.ParseDate('2019-12-31')
+                i3 = [1, 2, 3]
+                i4 {
+                    aa = 111
                 }
             }
         }
-        assertEquals(map, MapUtils.Closure2Map('env2', cl))
+
+        assertEquals(map, res1)
+        assertNull(res1.d.i4.bbb)
+
+        def res2 = MapUtils.Closure2Map('env2') {
+            environments {
+                env1 {
+                    map = 'incorrect!'
+                }
+                env2 {
+                    a = 1; b = 'a'; c = [1,2,3]; d = [i1: 1, i2: DateUtils.ParseDate('2019-12-31'), i3: [1, 2, 3], i4: [aa: 111]]
+                }
+            }
+        }
+        assertEquals(map, res2)
     }
 
     @Test

@@ -1,6 +1,7 @@
 package getl.lang
 
 import getl.data.Dataset
+import getl.data.Field
 import getl.files.FileManager
 import getl.h2.H2Connection
 import getl.h2.H2Table
@@ -21,7 +22,7 @@ import org.junit.Test
 
 @InheritConstructors
 class RepositoryTest extends GetlDslTest {
-    final def isdebug = true
+    final def isdebug = false
     final def repConfigFileName = 'tests/repository/vars.conf'
 
     @Test
@@ -598,14 +599,133 @@ class RepositoryTest extends GetlDslTest {
     }
 
     @Test
-    void testWorkWithRepository() {
+    void testLoadRepositoriesFromResources() {
         if (!FileUtils.ExistsFile(repConfigFileName)) return
 
         Getl.Dsl {
-            configuration { load repConfigFileName }
+            configuration.load repConfigFileName
             repositoryStorageManager {
                 storagePath = 'resource:/repository'
                 loadRepositories()
+            }
+            assertEquals(2, listConnections().size)
+            assertEquals(2, listDatasets().size)
+            assertEquals(1, listSequences().size())
+            assertEquals(1, listHistorypoints().size())
+            assertEquals(2, listFilemanagers().size())
+            assertEquals(1, models.listReferenceFiles().size())
+            assertEquals(0, models.listMapTables().size())
+            assertEquals(0, models.listMonitorRules().size())
+            assertEquals(0, models.listReferenceVerticaTables().size())
+            assertNotNull(embeddedConnection('h2:con'))
+            assertNotNull(verticaConnection('ver:con'))
+
+            repositoryStorageManager {
+                clearReporitories()
+                loadRepositories('h2:*')
+            }
+
+            assertEquals(1, listConnections().size)
+            assertEquals(1, listDatasets().size)
+            assertEquals(0, listSequences().size())
+            assertEquals(1, listHistorypoints().size())
+            assertEquals(0, listFilemanagers().size())
+            assertEquals(0, models.listReferenceFiles().size())
+            assertEquals(0, models.listMapTables().size())
+            assertEquals(0, models.listMonitorRules().size())
+            assertEquals(0, models.listReferenceVerticaTables().size())
+            assertNotNull(embeddedConnection('h2:con'))
+            shouldFail { verticaConnection('ver:con') }
+
+            repositoryStorageManager.clearReporitories()
+            registerConnectionsFromStorage('ver:*')
+            registerDatasetsFromStorage('ver:*')
+            registerSequencesFromStorage('ver:*')
+
+            assertEquals(1, listConnections().size)
+            assertEquals(1, listDatasets().size)
+            assertEquals(1, listSequences().size())
+            assertEquals(0, listHistorypoints().size())
+            assertEquals(0, listFilemanagers().size())
+            assertEquals(0, models.listReferenceFiles().size())
+            assertEquals(0, models.listMapTables().size())
+            assertEquals(0, models.listMonitorRules().size())
+            assertEquals(0, models.listReferenceVerticaTables().size())
+            shouldFail { embeddedConnection('h2:con') }
+            assertNotNull(verticaConnection('ver:con'))
+        }
+    }
+
+    @Test
+    void testAddJdbcTablesToRepository() {
+        Getl.Dsl {
+            useEmbeddedConnection embeddedConnection('h2:con', true) {
+                executeCommand 'CREATE SCHEMA reporitory_tables'
+            }
+
+            embeddedTable {
+                schemaName = 'reporitory_tables'
+                tableName = 'table_rep_1'
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50; isNull = false }
+                create()
+            }
+            embeddedTable {
+                schemaName = 'reporitory_tables'
+                tableName = 'table_rep_2'
+                field('main_id') { type = integerFieldType; isKey = true }
+                field('dt') { type = datetimeFieldType; isKey = true }
+                field('value') { type = integerFieldType; isNull = false }
+                create()
+            }
+
+            def tables = embeddedConnection('h2:con').retrieveDatasets {
+                schemaName = 'reporitory_tables'
+                tableMask << 'table_rep_*'
+            }
+            assertEquals(2, tables.size())
+
+            embeddedConnection('h2:con').addTablesToRepository(tables, 'h2')
+            assertEquals(2, listDatasets('h2:table_rep_*').size())
+
+            unregisterDataset()
+            assertTrue(listDatasets().isEmpty())
+
+            embeddedConnection('h2:con').addTablesToRepository(tables)
+            assertEquals(2, listDatasets('table_rep_*').size())
+
+            embeddedTable('table_rep_1') {
+                assertEquals('REPORITORY_TABLES', schemaName)
+                assertEquals('TABLE_REP_1', tableName)
+                assertEquals(2, field.size())
+                field('id') {
+                    assertEquals(integerFieldType, type)
+                    assertTrue(isKey)
+                    assertFalse(isNull)
+                }
+                field('name') {
+                    assertEquals(stringFieldType, type)
+                    assertFalse(isNull)
+                }
+            }
+            embeddedTable('table_rep_2') {
+                assertEquals('REPORITORY_TABLES', schemaName)
+                assertEquals('TABLE_REP_2', tableName)
+                assertEquals(3, field.size())
+                field('main_id') {
+                    assertEquals(integerFieldType, type)
+                    assertTrue(isKey)
+                    assertFalse(isNull)
+                }
+                field('dt') {
+                    assertEquals(datetimeFieldType, type)
+                    assertTrue(isKey)
+                    assertFalse(isNull)
+                }
+                field('value') {
+                    assertEquals(integerFieldType, type)
+                    assertFalse(isNull)
+                }
             }
         }
     }

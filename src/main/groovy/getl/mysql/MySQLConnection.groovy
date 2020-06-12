@@ -21,11 +21,10 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.mysql
 
+import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
-import groovy.transform.InheritConstructors
 import getl.jdbc.JDBCConnection
 
 /**
@@ -68,4 +67,7 @@ class MySQLConnection extends JDBCConnection {
 		super.doInitConnection()
 		driverName = (!BoolUtils.IsValue(usedOldDriver))?'com.mysql.cj.jdbc.Driver':'com.mysql.jdbc.Driver'
 	}
+
+	@Override
+	protected Class<TableDataset> getTableClass() { MySQLTable }
 }

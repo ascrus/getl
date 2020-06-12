@@ -21,7 +21,6 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.jdbc.opts
 
 import getl.exception.ExceptionGETL

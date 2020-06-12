@@ -21,11 +21,10 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.netsuite
 
 import getl.jdbc.JDBCConnection
-import groovy.transform.InheritConstructors
+import getl.jdbc.TableDataset
 
 /**
  * Netsuite connection class
@@ -78,4 +77,7 @@ class NetsuiteConnection extends JDBCConnection {
 	Integer getAccountId () { params.accountId as Integer }
 	/** Account ID */
     void setAccountId (Integer value) { params.accountId = value }
+
+	@Override
+	protected Class<TableDataset> getTableClass() { NetsuiteTable }
 }

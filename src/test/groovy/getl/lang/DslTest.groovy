@@ -246,6 +246,12 @@ environments {
                 sysParams.dslNameObject = 'table3'
             }
             assertTrue(findDataset(antab) == null)
+
+            embeddedConnection('h2') {
+                addTablesToRepository([h2Table('table1').clone() as TableDataset, h2Table('table2').clone() as TableDataset], 'test.add')
+            }
+            assertEquals(["test.add:${this.h2TableName}".toString(), "test.add:${this.h2Table2Name}"], listJdbcTables('test.add:*'))
+            unregisterDataset('test.add:*')
         }
     }
 

@@ -518,8 +518,14 @@ Examples:
         _params.put(key, value)
     }
 
+    /** Managing repository object storage instance */
     protected RepositoryStorageManager _repositoryStorageManager
     /** Managing repository object storage */
+    @Synchronized('_repositoryStorageManager')
+    RepositoryStorageManager getRepositoryStorageManager() { _repositoryStorageManager }
+
+    /** Managing repository object storage */
+    @Synchronized('_repositoryStorageManager')
     RepositoryStorageManager repositoryStorageManager(@DelegatesTo(RepositoryStorageManager)
                                                @ClosureParams(value = SimpleType, options = ['getl.lang.sub.RepositoryStorageManager'])
                                                        Closure cl) {
@@ -797,6 +803,16 @@ Examples:
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                       Closure<Boolean> filter = null) {
         _repositoryStorageManager.repository(RepositoryConnections).unregister(mask, connectionClasses, filter)
+    }
+
+    /**
+     * Register connections from storage configuration files to repository
+     * @param mask connection name mask
+     * @param env environment
+     * @return number of registered connections
+     */
+    int registerConnectionsFromStorage(String mask = null, String env = null) {
+        return repositoryStorageManager().loadRepository(RepositoryConnections, mask, env)
     }
 
     /**
@@ -1226,6 +1242,15 @@ Examples:
     }
 
     /**
+     * Register datasets from storage configuration files to repository
+     * @param mask connection name mask
+     * @return number of registered datasets
+     */
+    int registerDatasetsFromStorage(String mask = null) {
+        return repositoryStorageManager().loadRepository(RepositoryDatasets, mask, null)
+    }
+
+    /**
      * Return list of repository history point manager
      * @param mask filter mask (use Path expression syntax)
      * @param filter object filtering code
@@ -1313,6 +1338,16 @@ Examples:
     }
 
     /**
+     * Register history point managers from storage configuration files to repository
+     * @param mask history point manager name mask
+     * @param env environment
+     * @return number of registered history point managers
+     */
+    int registerHistorypointsFromStorage(String mask = null) {
+        return repositoryStorageManager().loadRepository(RepositoryHistorypoints, mask, null)
+    }
+
+    /**
      * Return list of repository sequences
      * @param mask filter mask (use Path expression syntax)
      * @param filter object filtering code
@@ -1397,6 +1432,16 @@ Examples:
                             @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.Sequence'])
                                     Closure<Boolean> filter = null) {
         _repositoryStorageManager.repository(RepositorySequences).unregister(mask, null, filter)
+    }
+
+    /**
+     * Register sequences from storage configuration files to repository
+     * @param mask sequence name mask
+     * @param env environment
+     * @return number of registered sequences
+     */
+    int registerSequencesFromStorage(String mask = null) {
+        return repositoryStorageManager().loadRepository(RepositorySequences, mask, null)
     }
 
     /**
@@ -1531,6 +1576,16 @@ Examples:
                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                        Closure<Boolean> filter = null) {
         _repositoryStorageManager.repository(RepositoryFilemanagers).unregister(mask, filemanagerClasses, filter)
+    }
+
+    /**
+     * Register file managers from storage configuration files to repository
+     * @param mask file manager name mask
+     * @param env environment
+     * @return number of registered file managers
+     */
+    int registerFilemanagersFromStorage(String mask = null, String env = null) {
+        return repositoryStorageManager().loadRepository(RepositoryFilemanagers, mask, env)
     }
 
     /**
@@ -2113,6 +2168,10 @@ Examples:
 
     /** Configuration options */
     @Synchronized('_configOpts')
+    ConfigSpec getConfiguration() { _configOpts }
+
+    /** Configuration options */
+    @Synchronized('_configOpts')
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ConfigSpec']) Closure cl = null) {
         if (cl != null && isCurrentProcessInThread())
@@ -2126,6 +2185,10 @@ Examples:
 
     /** Log options instance */
     private final LogSpec _logOpts = new LogSpec(this)
+
+    /** Log options */
+    @Synchronized('_logOpts')
+    LogSpec getLogging() { _logOpts }
 
     /** Log options */
     @Synchronized('_logOpts')
@@ -2148,10 +2211,28 @@ Examples:
     /** Etl manager */
     EtlSpec getEtl() { _etl }
 
+    /** Etl manager */
+    @Synchronized('_etl')
+    EtlSpec etl(@DelegatesTo(EtlSpec)
+                @ClosureParams(value = SimpleType, options = ['getl.lang.opts.EtlSpec']) Closure cl = null) {
+        runClosure(_etl, cl)
+
+        return _etl
+    }
+
     /** Model manager */
     private ModelSpec _models
     /** Model manager */
     ModelSpec getModels() { _models }
+
+    /** Model manager */
+    @Synchronized('_models')
+    ModelSpec models(@DelegatesTo(ModelSpec)
+                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ModelSpec']) Closure cl = null) {
+        runClosure(_models, cl)
+
+        return _models
+    }
 
     /**
      * Existing connection from repository

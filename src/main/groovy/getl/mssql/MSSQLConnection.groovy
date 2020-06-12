@@ -21,11 +21,10 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.mssql
 
-import groovy.transform.InheritConstructors
 import getl.jdbc.JDBCConnection
+import getl.jdbc.TableDataset
 
 /**
  * MSSQL connection class
@@ -56,4 +55,7 @@ class MSSQLConnection extends JDBCConnection {
 		super.doInitConnection()
 		driverName = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 	}
+
+	@Override
+	protected Class<TableDataset> getTableClass() { MSSQLTable }
 }

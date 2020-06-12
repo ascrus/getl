@@ -21,12 +21,11 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.tfs
 
+import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
-import groovy.transform.InheritConstructors
 import getl.h2.*
 import org.h2.tools.DeleteDbFiles
 
@@ -165,4 +164,7 @@ class TDS extends H2Connection {
 			}
 		}
 	}
+
+	@Override
+	protected Class<TableDataset> getTableClass() { TDSTable }
 }

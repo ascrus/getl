@@ -21,14 +21,11 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.h2
 
-import groovy.transform.InheritConstructors
-
 import getl.jdbc.JDBCDriver
-import getl.driver.Driver
 import getl.jdbc.JDBCConnection
+import getl.jdbc.TableDataset
 import getl.utils.*
 
 /**
@@ -85,4 +82,7 @@ class H2Connection extends JDBCConnection {
         if (connected && exclusive != value) (driver as JDBCDriver).changeSessionProperty('exclusive', value)
         sessionProperty.exclusive = value
     }
+
+	@Override
+	protected Class<TableDataset> getTableClass() { H2Table }
 }

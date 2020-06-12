@@ -21,12 +21,10 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.postgresql
 
-import groovy.transform.InheritConstructors
 import getl.jdbc.JDBCConnection
-import getl.jdbc.JDBCDriver
+import getl.jdbc.TableDataset
 
 /**
  * PostgreSQL connection class
@@ -57,4 +55,7 @@ class PostgreSQLConnection extends JDBCConnection {
 		super.doInitConnection()
 		driverName = "org.postgresql.Driver"
 	}
+
+	@Override
+	protected Class<TableDataset> getTableClass() { PostgreSQLTable }
 }

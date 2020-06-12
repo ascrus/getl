@@ -101,18 +101,19 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         def masknames = dslCreator.parseName(mask)
         def maskgroup = masknames.groupName?:dslCreator.filteringGroup
         def maskobject = masknames.objectName
-        def path = (maskobject != null)?new Path(mask: maskobject):null
+        def grouppath = (maskgroup != null)?new Path(mask: maskgroup):null
+        def objectpath = (maskobject != null)?new Path(mask: maskobject):null
 
         synchronized (objects) {
             objects.each { name, obj ->
                 def names = new ParseObjectName(name)
-                if (maskgroup != null) {
-                    if (names.groupName == maskgroup)
-                        if (path == null || path.match(names.objectName))
+                if (grouppath != null) {
+                    if (grouppath.match(names.groupName))
+                        if (objectpath == null || objectpath.match(names.objectName))
                             if (classes == null || obj.getClass().name in classes)
                                 if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
                 } else {
-                    if (path == null || (names.groupName == null && path.match(names.objectName)))
+                    if (objectpath == null || (names.groupName == null && objectpath.match(names.objectName)))
                         if (classes == null || obj.getClass().name in classes)
                             if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
                 }

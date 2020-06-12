@@ -28,11 +28,14 @@ import getl.csv.CSVConnection
 import getl.csv.CSVDataset
 import getl.data.Connection
 import getl.data.Dataset
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import getl.jdbc.opts.GenerateDslTablesSpec
+import getl.jdbc.opts.RetrieveDatasetsSpec
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.RepositoryConnections
+import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.UserLogins
 import getl.proc.Flow
 import getl.tfs.TDS
@@ -260,7 +263,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Merge session properties
 	 */
-	def addSessionProperty(Map value) {
+	void addSessionProperty(Map value) {
 		sessionProperty.putAll(value)
 	}
 	
@@ -359,10 +362,31 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * Return session ID (if supported RDBMS driver)
 	 */
 	String getSessionID() { sysParams.sessionID as String }
+
+	/**
+	 * Return datasets list by parameters
+	 * @param params retrive params by specified connection driver (dbName, schemaName, tableName, tableMask, type)
+	 * @filter user filter code
+	 */
+	List<TableDataset> retrieveDatasets(@DelegatesTo(RetrieveDatasetsSpec)
+										@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.RetrieveDatasetsSpec'])
+												Closure cl) {
+		tryConnect()
+
+		if (cl == null)
+			throw new ExceptionGETL('Option code not specified!')
+		def p = new RetrieveDatasetsSpec(this)
+		p.runClosure(cl)
+
+		retrieveDatasets(p.params)
+	}
+
+	/** Table class used */
+	protected Class<TableDataset> getTableClass() { TableDataset }
 	
 	/**
 	 * Return datasets list by parameters
-	 * @param params retrive params by specified connection driver
+	 * @param params retrive params by specified connection driver (dbName, schemaName, tableName, tableMask, type)
 	 * @filter user filter code
 	 */
 	List<TableDataset> retrieveDatasets(Map params,
@@ -377,16 +401,16 @@ class JDBCConnection extends Connection implements UserLogins {
 					d = new ViewDataset(type: JDBCDataset.viewType)
 					break
 				case 'GLOBAL TEMPORARY':
-					d = new TableDataset(type: JDBCDataset.globalTemporaryTableType)
+					d = tableClass.newInstance(type: JDBCDataset.globalTemporaryTableType)
 					break
 				case 'LOCAL TEMPORARY':
-					d = new TableDataset(type: JDBCDataset.localTemporaryTableType)
+					d = tableClass.newInstance(type: JDBCDataset.localTemporaryTableType)
 					break
 				case 'TABLE':
-					d = new TableDataset(type: JDBCDataset.tableType)
+					d = tableClass.newInstance(type: JDBCDataset.tableType)
 					break
 				case 'SYSTEM TABLE':
-					d = new TableDataset(type: JDBCDataset.systemTable)
+					d = tableClass.newInstance(type: JDBCDataset.systemTable)
 					break
 				default:
 					throw new ExceptionGETL("Not support dataset type \"${row.type}\"")
@@ -412,14 +436,6 @@ class JDBCConnection extends Connection implements UserLogins {
 		retrieveDatasets([:], null)
 	}
 	
-	/**
-	 * Return datasets list
-	 */
-	List<Dataset> retrieveDatasets(@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
-											Closure<Boolean> filter) {
-		retrieveDatasets([:], filter)
-	}
-
 	@Override
 	String getObjectName() { toString() }
 	
@@ -535,11 +551,42 @@ class JDBCConnection extends Connection implements UserLogins {
 	}
 
 	/**
+	 * Register specified tables from the list in Getl repository!
+	 * @param tables list of tables to register
+	 * @param groupName group in repository
+	 */
+	void addTablesToRepository(List<TableDataset> tables, String groupName = null) {
+		def getl = dslCreator
+		if (getl == null)
+			throw new ExceptionDSL('The connection was not created from the Getl instance!')
+
+		def connectionClassName = this.class.name
+		if (!(connectionClassName in RepositoryConnections.LISTJDBCCONNECTIONS))
+			throw new ExceptionDSL("Connection type \"$connectionClassName\" is not supported!")
+
+		tables.each { tbl ->
+			def tableClassName = tbl.class.name
+			if (!(tableClassName in RepositoryDatasets.LISTJDBCTABLES))
+				throw new ExceptionDSL("Table type \"$tableClassName\" is not supported!")
+
+			if (tbl.tableName == null)
+				throw new ExceptionDSL('The table does not have a name!')
+			def repname = ((groupName != null)?(groupName + ':'):'') + tbl.tableName
+
+			if (tbl.field.isEmpty()) tbl.retrieveFields()
+			if (tbl.field.isEmpty())
+				throw new ExceptionDSL("Fields are not defined for table $tbl!")
+
+				getl.registerDatasetObject(tbl, repname, true)
+		}
+	}
+
+	/**
 	 * Generate tables and views by name mask
 	 */
 	void generateDslTables(@DelegatesTo(GenerateDslTablesSpec)
 			@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.GenerateDslTablesSpec']) Closure cl) {
-		def connectionClassName = getClass().name
+		def connectionClassName = this.class.name
 		if (!(connectionClassName in RepositoryConnections.LISTJDBCCONNECTIONS))
 			throw new ExceptionGETL("Connection type \"$connectionClassName\" is not supported!")
 
@@ -554,10 +601,12 @@ class JDBCConnection extends Connection implements UserLogins {
 			def classNames = classPath.analizeFile(connectionClassName)
 			classType = (classNames?.classtype as String)?.toLowerCase()
 		}
-		if (classType == null) throw new ExceptionGETL("Connection type \"$connectionClassName\" is no supported!")
+		if (classType == null)
+			throw new ExceptionGETL("Connection type \"$connectionClassName\" is no supported!")
         Logs.Fine("Generate GETL DSL script for $classType tables")
 
-		if (cl == null) throw new ExceptionGETL('Parameter setting code required!')
+		if (cl == null)
+			throw new ExceptionGETL('Option code not specified!')
 		def p = new GenerateDslTablesSpec(this)
 		p.runClosure(cl)
 

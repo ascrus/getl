@@ -21,12 +21,11 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.hive
 
 import getl.exception.ExceptionGETL
 import getl.jdbc.JDBCConnection
-import groovy.transform.InheritConstructors
+import getl.jdbc.TableDataset
 
 /**
  * Hive connection
@@ -119,4 +118,7 @@ class HiveConnection extends JDBCConnection {
     String getHdfsDir () { params.hdfsDir as String }
     /** HDFS directory for bulkload files */
     void setHdfsDir (String value) { params.hdfsDir = value }
+
+    @Override
+    protected Class<TableDataset> getTableClass() { HiveTable }
 }

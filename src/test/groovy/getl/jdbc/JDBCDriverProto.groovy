@@ -271,7 +271,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     protected void retrieveObject() {
-        def d = con.retrieveDatasets(tableName: 'getl_test_data')
+        def d = con.retrieveDatasets { tableMask = 'getl_test_data' }
         assertEquals(1, d.size())
         def l = con.retrieveObjects(tableMask: 'getl_test_dat*')
         assertEquals(1, l.size())

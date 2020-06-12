@@ -24,7 +24,7 @@
 package getl.netezza
 
 import getl.jdbc.JDBCConnection
-import groovy.transform.InheritConstructors
+import getl.jdbc.TableDataset
 
 /**
  * Netezza connection class
@@ -55,4 +55,7 @@ class NetezzaConnection extends JDBCConnection {
         super.doInitConnection()
         driverName = 'org.netezza.Driver'
     }
+
+    @Override
+    protected Class<TableDataset> getTableClass() { NetezzaTable }
 }

@@ -27,7 +27,6 @@ package getl.salesforce
 import getl.data.Connection
 import getl.exception.ExceptionGETL
 import getl.lang.sub.UserLogins
-import groovy.transform.InheritConstructors
 
 /**
  * SalesForce Connection class

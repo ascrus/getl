@@ -25,6 +25,7 @@ package getl.lang.opts
 
 import getl.exception.ExceptionModel
 import getl.lang.Getl
+import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryObjects
 import getl.models.MapTables
 import getl.models.MonitorRules
@@ -86,6 +87,16 @@ class ModelSpec extends BaseSpec {
     }
 
     /**
+     * Register reference Vertica tables models from storage configuration files to repository
+     * @param mask model name mask
+     * @param env environment
+     * @return number of registered models
+     */
+    int registerReferenceVerticaTablesFromStorage(String mask = null, String env = null) {
+        return getl.repositoryStorageManager().loadRepository(RepositoryReferenceVerticaTables, mask, env)
+    }
+
+    /**
      * Return a list of reference tables models
      * @param mask search mask
      * @param filter filter code
@@ -132,6 +143,16 @@ class ModelSpec extends BaseSpec {
     /** Unregister reference files models */
     void unregisterReferenceFiles(String mask) {
         repository(RepositoryReferenceFiles).unregister(mask)
+    }
+
+    /**
+     * Register reference files models from storage configuration files to repository
+     * @param mask model name mask
+     * @param env environment
+     * @return number of registered models
+     */
+    int registerReferenceFilesFromStorage(String mask = null, String env = null) {
+        return getl.repositoryStorageManager().loadRepository(RepositoryReferenceFiles, mask, env)
     }
 
     /**
@@ -184,6 +205,15 @@ class ModelSpec extends BaseSpec {
     }
 
     /**
+     * Register monitor rules models from storage configuration files to repository
+     * @param mask model name mask
+     * @return number of registered models
+     */
+    int registerMonitorRulesFromStorage(String mask = null) {
+        return getl.repositoryStorageManager().loadRepository(RepositoryMonitorRules, mask, null)
+    }
+
+    /**
      * Return a list of monitor tables models
      * @param mask search mask
      * @param filter filter code
@@ -229,6 +259,15 @@ class ModelSpec extends BaseSpec {
     /** Unregister map tables models */
     void unregisterMapTables(String mask) {
         repository(RepositoryMapTables).unregister(mask)
+    }
+
+    /**
+     * Register map tables models from storage configuration files to repository
+     * @param mask model name mask
+     * @return number of registered models
+     */
+    int registerMapTablesFromStorage(String mask = null) {
+        return getl.repositoryStorageManager().loadRepository(RepositoryMapTables, mask, null)
     }
 
     /**

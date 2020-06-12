@@ -24,6 +24,7 @@
 package getl.impala
 
 import getl.jdbc.JDBCConnection
+import getl.jdbc.TableDataset
 import groovy.transform.InheritConstructors
 
 /**
@@ -86,4 +87,7 @@ class ImpalaConnection extends JDBCConnection {
     String getDualTable() { params.dualTable }
     /** Pseudo dual table name*/
     void setDualTable(String value) { params.dualTable = value }
+
+    @Override
+    protected Class<TableDataset> getTableClass() { ImpalaTable }
 }
