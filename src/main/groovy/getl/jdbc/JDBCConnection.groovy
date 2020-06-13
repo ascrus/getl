@@ -407,7 +407,7 @@ class JDBCConnection extends Connection implements UserLogins {
 					d = tableClass.newInstance(type: JDBCDataset.localTemporaryTableType)
 					break
 				case 'TABLE':
-					d = tableClass.newInstance(type: JDBCDataset.tableType)
+					d = tableClass.newInstance()
 					break
 				case 'SYSTEM TABLE':
 					d = tableClass.newInstance(type: JDBCDataset.systemTable)
@@ -418,10 +418,10 @@ class JDBCConnection extends Connection implements UserLogins {
 			d.connection = this
 			d.with {
 				d.autoSchema = true
-				d.dbName = row.dbName
-				d.schemaName = row.schemaName
+				if (row.dbName != null) d.dbName = row.dbName
+				if (row.schemaName != null) d.schemaName = row.schemaName
 				d.tableName = row.tableName
-				d.description = row.description
+				if (row.description != null) d.description = row.description
 			}
 			result << d
 		}

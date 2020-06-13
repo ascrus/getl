@@ -275,7 +275,7 @@ class RepositoryStorageManager {
      * Load objects to all repositories from storage
      * @param mask object name mask
      * @param env used environment
-     * @param ignoreExists don't load existing ones
+     * @param ignoreExists don't load existing ones (default true)
      */
     void loadRepositories(String mask = null, String env = null, Boolean ignoreExists = true) {
         listRepositories.each { name ->
@@ -300,7 +300,7 @@ class RepositoryStorageManager {
      * @param repositoryName name of the repository to be uploaded
      * @param mask object name mask
      * @param env used environment
-     * @param ignoreExists don't load existing ones
+     * @param ignoreExists don't load existing ones (default true)
      * @return count of saved objects
      */
     int loadRepository(String repositoryName, String mask = null, String env = null, Boolean ignoreExists = true) {
@@ -379,7 +379,7 @@ class RepositoryStorageManager {
      * @param repositoryClass class of the repository to be uploaded
      * @param mask object name mask
      * @param env used environment
-     * @param ignoreExists don't load existing ones
+     * @param ignoreExists don't load existing ones (default true)
      * @return count of saved objects
      */
     int loadRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null, Boolean ignoreExists = true) {
@@ -391,7 +391,7 @@ class RepositoryStorageManager {
      * @param repositoryName repository name
      * @param name object name
      * @param env used environment
-     * @param overloading load over existing
+     * @param overloading load over existing (default false)
      */
     void loadObject(String repositoryName, String name, String env = null, Boolean overloading = false) {
         def repository = repository(repositoryName)
@@ -421,7 +421,7 @@ class RepositoryStorageManager {
      * @param repositoryClass repository class
      * @param name object name
      * @param env used environment
-     * @param overloading load over existing
+     * @param overloading load over existing (default false)
      */
     void loadObject(Class<RepositoryObjects> repositoryClass, String name, String env = null, Boolean overloading = false) {
         loadObject(repositoryClass.name, name, env, overloading)

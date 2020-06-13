@@ -809,10 +809,30 @@ Examples:
      * Register connections from storage configuration files to repository
      * @param mask connection name mask
      * @param env environment
+     * @param ignoreExists don't load existing ones (default true)
      * @return number of registered connections
      */
-    int registerConnectionsFromStorage(String mask = null, String env = null) {
-        return repositoryStorageManager().loadRepository(RepositoryConnections, mask, env)
+    int registerConnectionsFromStorage(String mask, String env, Boolean ignoreExists = true) {
+        return repositoryStorageManager().loadRepository(RepositoryConnections, mask, env, ignoreExists)
+    }
+
+    /**
+     * Register connections from storage configuration files to repository
+     * @param mask connection name mask
+     * @param ignoreExists don't load existing ones (default true)
+     * @return number of registered connections
+     */
+    int registerConnectionsFromStorage(String mask = null, Boolean ignoreExists = true) {
+        return repositoryStorageManager().loadRepository(RepositoryConnections, mask, null, ignoreExists)
+    }
+
+    /**
+     * Register connections from storage configuration files to repository
+     * @param ignoreExists don't load existing ones
+     * @return number of registered connections
+     */
+    int registerConnectionsFromStorage(Boolean ignoreExists) {
+        return repositoryStorageManager().loadRepository(RepositoryConnections, null, null, ignoreExists)
     }
 
     /**
@@ -1244,10 +1264,31 @@ Examples:
     /**
      * Register datasets from storage configuration files to repository
      * @param mask connection name mask
+     * @param env environment
+     * @param ignoreExists don't load existing ones (default true)
      * @return number of registered datasets
      */
-    int registerDatasetsFromStorage(String mask = null) {
-        return repositoryStorageManager().loadRepository(RepositoryDatasets, mask, null)
+    int registerDatasetsFromStorage(String mask, String env, Boolean ignoreExists = true) {
+        return repositoryStorageManager().loadRepository(RepositoryDatasets, mask, env, ignoreExists)
+    }
+
+    /**
+     * Register datasets from storage configuration files to repository
+     * @param mask connection name mask
+     * @param ignoreExists don't load existing ones (default true)
+     * @return number of registered datasets
+     */
+    int registerDatasetsFromStorage(String mask = null, Boolean ignoreExists = true) {
+        return repositoryStorageManager().loadRepository(RepositoryDatasets, mask, null, ignoreExists)
+    }
+
+    /**
+     * Register datasets from storage configuration files to repository
+     * @param ignoreExists don't load existing ones
+     * @return number of registered datasets
+     */
+    int registerDatasetsFromStorage(Boolean ignoreExists) {
+        return repositoryStorageManager().loadRepository(RepositoryDatasets, null, null, ignoreExists)
     }
 
     /**
@@ -1341,10 +1382,30 @@ Examples:
      * Register history point managers from storage configuration files to repository
      * @param mask history point manager name mask
      * @param env environment
+     * @param ignoreExists don't load existing ones (default true)
      * @return number of registered history point managers
      */
-    int registerHistorypointsFromStorage(String mask = null) {
-        return repositoryStorageManager().loadRepository(RepositoryHistorypoints, mask, null)
+    int registerHistorypointsFromStorage(String mask, String env, Boolean ignoreExists = true) {
+        return repositoryStorageManager().loadRepository(RepositoryHistorypoints, mask, env, ignoreExists)
+    }
+
+    /**
+     * Register history point managers from storage configuration files to repository
+     * @param mask history point manager name mask
+     * @param ignoreExists don't load existing ones (default true)
+     * @return number of registered history point managers
+     */
+    int registerHistorypointsFromStorage(String mask = null, Boolean ignoreExists = true) {
+        return repositoryStorageManager().loadRepository(RepositoryHistorypoints, mask, null, ignoreExists)
+    }
+
+    /**
+     * Register history point managers from storage configuration files to repository
+     * @param ignoreExists don't load existing ones
+     * @return number of registered history point managers
+     */
+    int registerHistorypointsFromStorage(Boolean ignoreExists) {
+        return repositoryStorageManager().loadRepository(RepositoryHistorypoints, null, null, ignoreExists)
     }
 
     /**
@@ -1438,10 +1499,30 @@ Examples:
      * Register sequences from storage configuration files to repository
      * @param mask sequence name mask
      * @param env environment
+     * @param ignoreExists don't load existing ones (default true)
      * @return number of registered sequences
      */
-    int registerSequencesFromStorage(String mask = null) {
-        return repositoryStorageManager().loadRepository(RepositorySequences, mask, null)
+    int registerSequencesFromStorage(String mask, String env, Boolean ignoreExists = true) {
+        return repositoryStorageManager().loadRepository(RepositorySequences, mask, env, ignoreExists)
+    }
+
+    /**
+     * Register sequences from storage configuration files to repository
+     * @param mask sequence name mask
+     * @param ignoreExists don't load existing ones (default true)
+     * @return number of registered sequences
+     */
+    int registerSequencesFromStorage(String mask = null, Boolean ignoreExists = true) {
+        return repositoryStorageManager().loadRepository(RepositorySequences, mask, null, ignoreExists)
+    }
+
+    /**
+     * Register sequences from storage configuration files to repository
+     * @param ignoreExists don't load existing ones
+     * @return number of registered sequences
+     */
+    int registerSequencesFromStorage(Boolean ignoreExists) {
+        return repositoryStorageManager().loadRepository(RepositorySequences, null, null, ignoreExists)
     }
 
     /**
@@ -1582,10 +1663,30 @@ Examples:
      * Register file managers from storage configuration files to repository
      * @param mask file manager name mask
      * @param env environment
+     * @param ignoreExists don't load existing ones (default true)
      * @return number of registered file managers
      */
-    int registerFilemanagersFromStorage(String mask = null, String env = null) {
-        return repositoryStorageManager().loadRepository(RepositoryFilemanagers, mask, env)
+    int registerFilemanagersFromStorage(String mask, String env, Boolean ignoreExists = true) {
+        return repositoryStorageManager().loadRepository(RepositoryFilemanagers, mask, env, ignoreExists)
+    }
+
+    /**
+     * Register file managers from storage configuration files to repository
+     * @param mask file manager name mask
+     * @param ignoreExists don't load existing ones (default true)
+     * @return number of registered file managers
+     */
+    int registerFilemanagersFromStorage(String mask = null, Boolean ignoreExists = true) {
+        return repositoryStorageManager().loadRepository(RepositoryFilemanagers, mask, null, ignoreExists)
+    }
+
+    /**
+     * Register file managers from storage configuration files to repository
+     * @param ignoreExists don't load existing ones
+     * @return number of registered file managers
+     */
+    int registerFilemanagersFromStorage(Boolean ignoreExists) {
+        return repositoryStorageManager().loadRepository(RepositoryFilemanagers, null, null, ignoreExists)
     }
 
     /**
@@ -2137,6 +2238,10 @@ Examples:
 
     /** Getl options instance */
     private LangSpec _langOpts
+
+    /** Getl options */
+    @Synchronized("_langOpts")
+    LangSpec getOptions() { _langOpts }
 
     /** Getl options */
     @Synchronized("_langOpts")
