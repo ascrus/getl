@@ -12,6 +12,7 @@ import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
 import getl.lang.sub.RepositoryHistorypoints
 import getl.lang.sub.RepositorySequences
+import getl.test.Config
 import getl.test.GetlDslTest
 import getl.tfs.TFS
 import getl.utils.DateUtils
@@ -539,9 +540,9 @@ class RepositoryTest extends GetlDslTest {
                 rule('rules:query') {
                     assertEquals('Check table1', description)
                     use (TimeCategory) {
-                        assertEquals(1.hours, lagTime)
-                        assertEquals(30.minutes, checkFrequency)
-                        assertEquals(2.hours, notificationTime)
+                        assertEquals(1.hours.toMilliseconds(), lagTime.toMilliseconds())
+                        assertEquals(30.minutes.toMilliseconds(), checkFrequency.toMilliseconds())
+                        assertEquals(2.hours.toMilliseconds(), notificationTime.toMilliseconds())
                     }
                 }
             }
@@ -599,7 +600,32 @@ class RepositoryTest extends GetlDslTest {
     }
 
     @Test
-    void testLoadRepositoriesFromResources() {
+    void testLoadRepositoriesFromResourcesDefault() {
+        Getl.Dsl {
+            assertEquals('dev', configuration.environment)
+        }
+        loadRepositoriesFromResources()
+    }
+
+    @Test
+    @Config(env = 'dev')
+    void testLoadRepositoriesFromResourcesDev() {
+        Getl.Dsl {
+            assertEquals('dev', configuration.environment)
+        }
+        loadRepositoriesFromResources()
+    }
+
+    @Test
+    @Config(env = 'prod')
+    void testLoadRepositoriesFromResourcesProd() {
+        Getl.Dsl {
+            assertEquals('prod', configuration.environment)
+        }
+        loadRepositoriesFromResources()
+    }
+
+    private void loadRepositoriesFromResources() {
         if (!FileUtils.ExistsFile(repConfigFileName)) return
 
         Getl.Dsl {

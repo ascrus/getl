@@ -990,7 +990,7 @@ class FileUtils {
 		return StringUtils.ExtractParentFromChild(path, findPath, Config.isWindows())
 	}
 
-	static final List<String> ListResourcePath = []
+	static public final List<String> ListResourcePath = []
 
 	/**
      * Get file from classpath or resources folder

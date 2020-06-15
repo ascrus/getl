@@ -107,7 +107,7 @@ class DateUtils {
 	 * Set new default time zone
 	 * @param timeZone
 	 */
-	static setDefaultTimeZone(String timeZone) {
+	static void setDefaultTimeZone(String timeZone) {
 		if (timeZone == null)
 			throw new IllegalArgumentException("Argument timeZone is empty!")
 

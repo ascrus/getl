@@ -785,6 +785,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			f.trim = false
 			f.compute = null
 			f.alias = null
+			if (f.length != null && !Field.AllowLength(f)) f.length = null
+			if (f.precision != null && !Field.AllowPrecision(f)) f.precision = null
 		}
 	}
 	

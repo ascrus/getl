@@ -90,14 +90,14 @@ class CopyTest extends GetlDslTest {
                 variable('name') { format = 'AAA|BBB|CCC' }
                 variable('num') { type = integerFieldType; length = 4 }
             }
-        }
+        } as Path
 
     static final Path destMask = Dsl {
         filePath {
             mask = '{date}/region_{region}/{name}'
             variable('date') { type = dateFieldType; format = 'yyyyMMdd' }
         }
-    }
+    } as Path
 
     protected long copy(Manager src, Path srcMask, List<Manager> dst, Path dstMask, Path renameMask = null,
                         boolean delFiles = false, boolean delDirs = false, boolean inMemoryMode = true, boolean cacheStory = true) {

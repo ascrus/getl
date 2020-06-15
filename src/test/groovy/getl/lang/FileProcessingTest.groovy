@@ -168,7 +168,7 @@ class FileProcessingTest extends GetlDslTest {
                 useList sqlQuery('SELECT DISTINCT sale_date FROM sales ORDER BY sale_date').rows()
                 countProc = countFileInDay
                 run { day ->
-                    def strday = DateUtils.FormatDate(day.sale_date)
+                    def strday = DateUtils.FormatDate(day.sale_date as Date)
                     def path = "${sourcePath}/$strday"
                     FileUtils.ValidPath(path, !debug)
 

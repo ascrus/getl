@@ -21,7 +21,6 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.test
 
 import getl.config.ConfigFiles
@@ -29,29 +28,26 @@ import getl.config.ConfigManager
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
-import groovy.test.GroovyTestCase
-import groovy.transform.InheritConstructors
+import groovy.test.GroovyAssert
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 
 /**
  * Getl functional testing base class
  * @author Alexsey Konstantinov
  *
  */
-@InheritConstructors
-@RunWith(JUnit4.class)
-abstract class GetlTest extends GroovyTestCase {
+//@InheritConstructors
+//@RunWith(JUnit4.class)
+abstract class GetlTest extends GroovyAssert {
     /** Configuration manager class to use */
     protected Class<ConfigManager> useConfigManager() { ConfigFiles }
 
     /** Install the required configuration manager */
     protected InstallConfigManager() {
         if (!useConfigManager().isInstance(Config.configClassManager))
-            Config.configClassManager = useConfigManager().newInstance()
+            Config.configClassManager = useConfigManager().newInstance() as ConfigManager
     }
 
     @BeforeClass

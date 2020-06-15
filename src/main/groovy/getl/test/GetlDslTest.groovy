@@ -21,17 +21,19 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.test
 
 import getl.config.ConfigManager
 import getl.config.ConfigSlurper
 import getl.lang.Getl
-
 import groovy.transform.InheritConstructors
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
+import org.junit.Rule
+import org.junit.rules.TestRule
+import org.junit.rules.TestWatcher
+import org.junit.runner.Description
 
 /**
  * Dsl language functional testing base class
@@ -40,6 +42,9 @@ import org.junit.BeforeClass
  */
 @InheritConstructors
 class GetlDslTest extends GetlTest {
+    /** Environment for running method */
+    protected String configEnvironment = 'dev'
+
     @Override
     protected Class<ConfigManager> useConfigManager() { ConfigSlurper }
 
@@ -49,6 +54,18 @@ class GetlDslTest extends GetlTest {
     Boolean onceRunInitClass() { false }
     /** Used class for Getl */
     Class<Getl> useGetlClass() { Getl }
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        @Override
+        protected void starting(Description description) {
+            def a = description.getAnnotation(getl.test.Config)
+            if (a != null)
+                configEnvironment = a.env()
+            else
+                configEnvironment = 'dev'
+        }
+    }
 
     @BeforeClass
     static void InitDslTestClass() {
@@ -79,8 +96,8 @@ class GetlDslTest extends GetlTest {
         }
 
         Getl.Dsl(this) {
-            if (configuration().environment != 'dev')
-                configuration().environment = 'dev'
+            if (configuration().environment != configEnvironment)
+                configuration().environment = configEnvironment
         }
 
         def initClass = useInitClass()

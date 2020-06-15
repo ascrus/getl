@@ -21,10 +21,10 @@ class DateUtilsTest extends getl.test.GetlTest {
 		def date = DateUtils.Now()
 		def hour_orig = DateUtils.PartOfDate('hour', date)
 
-        DateUtils.defaultTimeZone = 'Europe/Moscow'
+        DateUtils.setDefaultTimeZone('Europe/Moscow')
         def hour1 = DateUtils.PartOfDate('hour', date)
 
-        DateUtils.defaultTimeZone = 'UTC'
+        DateUtils.setDefaultTimeZone('UTC')
         def hour2 = DateUtils.PartOfDate('hour', date)
 
         assertEquals(hour1, (hour2 + 3 < 24)?(hour2 + 3):(hour2 + 3 - 24))
@@ -45,13 +45,13 @@ class DateUtilsTest extends getl.test.GetlTest {
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss.'000000000'")
 
-        DateUtils.defaultTimeZone = 'Europe/Moscow'
+        DateUtils.setDefaultTimeZone('Europe/Moscow')
         assertNull(DateUtils.ParseDate("yyyy-MM-dd:HH:mm:ss.'000000000'", '1982-04-01 00:00:00.000000000'))
         assertNull(DateUtils.ParseDate(sdf, '1982-04-01 00:00:00.000000000'))
 
-        DateUtils.defaultTimeZone = 'UTC'
-        assertNotNull(DateUtils.ParseDate("yyyy-MM-dd:HH:mm:ss.'000000000'", '1982-04-01 00:00:00.000000000'), false)
-        assertNotNull(DateUtils.ParseDate(sdf, '1982-04-01 00:00:00.000000000'), false)
+        DateUtils.setDefaultTimeZone('UTC')
+        assertNotNull(DateUtils.ParseDate("yyyy-MM-dd:HH:mm:ss.'000000000'", '1982-04-01 00:00:00.000000000'))
+        assertNotNull(DateUtils.ParseDate(sdf, '1982-04-01 00:00:00.000000000'))
 
         DateUtils.RestoreOrigDefaultTimeZone()
     }
@@ -116,7 +116,7 @@ class DateUtilsTest extends getl.test.GetlTest {
         assertNull(DateUtils.Timestamp2Value(null))
 
         def b = BigDecimal.valueOf(1483228739.000000000)
-        DateUtils.defaultTimeZone = 'UTC'
+        DateUtils.setDefaultTimeZone('UTC')
         assertEquals(b, DateUtils.Timestamp2Value(exampleDateTime))
 
         DateUtils.RestoreOrigDefaultTimeZone()
@@ -126,7 +126,7 @@ class DateUtilsTest extends getl.test.GetlTest {
     void testValue2Timestamp() {
         assertNull(DateUtils.Value2Timestamp(null))
         def b = BigDecimal.valueOf(1483228739.000000000)
-        DateUtils.defaultTimeZone = 'UTC'
+        DateUtils.setDefaultTimeZone('UTC')
         assertEquals(exampleDateTime, DateUtils.Value2Timestamp(b))
 
         DateUtils.RestoreOrigDefaultTimeZone()

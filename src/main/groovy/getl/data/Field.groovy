@@ -569,8 +569,8 @@ class Field implements Serializable, Cloneable {
 		if (this.isNull != o.isNull) return false
 		if (this.isKey != o.isKey) return false
 		if (this.isPartition != o.isPartition) return false
-		if (AllowLength(this) && this.length != o.length) return false
-		if (AllowPrecision(this) && this.precision != o.precision) return false
+		if (AllowLength(this) && (this.length?:-1) != (o.length?:-1)) return false
+		if (AllowPrecision(this) && (this.precision?:-1) != (o.precision?:-1)) return false
 		if (this.isAutoincrement != o.isAutoincrement) return false
 
 		return true

@@ -37,8 +37,8 @@ class CSVDriverTest extends getl.test.GetlTest {
 
     @BeforeClass
     static void InitTest() {
-        FileUtils.ValidPath(conParams.path)
-        new File(conParams.path).deleteOnExit()
+        FileUtils.ValidPath(conParams.path as String)
+        new File(conParams.path as String).deleteOnExit()
     }
 
     @Test
@@ -180,7 +180,7 @@ class CSVDriverTest extends getl.test.GetlTest {
             assertEquals(DateUtils.ParseDateTime('2016-10-16 09:15:30.123'), row.datetime)
             assertEquals(123456789.12, row.double)
             assertEquals(NumericUtils.Round(new BigDecimal(123456789.12), 2), row.numeric)
-            assertTrue(row.boolean)
+            assertTrue(row.boolean as Boolean)
             assertEquals("text \"$id\"\tand\nnew line", row.text)
             assertEquals('abcdef'.bytes, row.blob)
         }
