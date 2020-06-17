@@ -33,6 +33,8 @@ import org.apache.groovy.dateutil.extensions.DateUtilExtensions
 import java.sql.Time
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * Data and time library functions class
@@ -130,9 +132,11 @@ class DateUtils {
 		Date result = null
 		if (value == null) return result
 		try {
-			def sdf = new SimpleDateFormat(format)
-			sdf.setLenient(false)
-			result = sdf.parse(value.toString())
+			def isTime = (format.indexOf('H') > 0)
+			if (isTime)
+				result = LocalDateTime.parse(value.toString(), format).toDate()
+			else
+				result = LocalDate.parse(value.toString(), format).toDate()
 		}
 		catch (Exception  e) {
 			if (ignoreError) return null

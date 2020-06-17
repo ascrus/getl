@@ -258,7 +258,7 @@ class HDFSManager extends Manager implements UserLogins {
             currentPath = c
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not change directory to up")
+            if (writeErrorsToLog) Logs.Severe("Can not change directory to up: ${e.message}")
             throw e
         }
     }

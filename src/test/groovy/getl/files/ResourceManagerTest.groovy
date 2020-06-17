@@ -20,11 +20,11 @@ class ResourceManagerTest extends GetlDslTest {
         assertEquals('/getl.lang.sub.RepositoryConnections', repCon.filepath)
         def h2Group = repCon.files.find { it.filename == 'h2' && it.type == Manager.directoryType }
         assertNotNull(h2Group)
-        assertEquals(1, h2Group.files.size())
+        assertEquals(2, h2Group.files.size())
         assertEquals(repCon, h2Group.parent)
         assertEquals('/getl.lang.sub.RepositoryConnections/h2', h2Group.filepath)
-        def h2con = h2Group.files[0]
-        assertEquals('getl_con.dev.conf', h2con.filename)
+        def h2con = h2Group.files.find { it.filename == 'getl_con.dev.conf' }
+        assertNotNull(h2con)
         assertEquals(h2Group, h2con.parent)
         assertEquals('/getl.lang.sub.RepositoryConnections/h2/getl_con.dev.conf', h2con.filepath)
     }
@@ -100,13 +100,13 @@ class ResourceManagerTest extends GetlDslTest {
                 connect()
 
                 def list = buildListFiles('*.conf') { recursive = true }
-                assertEquals(9, list.countRow())
+                assertEquals(14, list.countRow())
                 assertTrue(existsDirectory('/' + RepositoryConnections.name))
                 assertTrue(existsDirectory(RepositoryConnections.name))
 
                 rootPath = '/' + RepositoryConnections.name
                 list = buildListFiles('*.conf') { recursive = true }
-                assertEquals(2, list.countRow())
+                assertEquals(4, list.countRow())
                 assertTrue(existsDirectory('/' + RepositoryConnections.name))
                 assertTrue(existsDirectory('../' + RepositoryConnections.name))
             }

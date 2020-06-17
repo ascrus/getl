@@ -203,10 +203,10 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         List<String> s = []
         Field.Type.values().each {
             d.field << new Field(name: "FIELD_${it.toString()}", type: it)
-            if (it != Field.Type.ROWID) s << "\"FIELD_${it.toString()}\""
+            if (!(it in [Field.Type.ROWID, Field.Type.BLOB])) s << "\"FIELD_${it.toString()}\""
         }
-        def f = GenerationUtils.Fields2List(d, ['FIELD_ROWID'])
-        assertEquals(s, f)
+        def f = GenerationUtils.Fields2List(d, ['FIELD_ROWID', 'FIELD_BLOB'])
+        assertTrue(s.equals(f))
     }
 
     @Test
@@ -276,7 +276,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         stat.code.call(c.javaConnection, r, d)
         r."field_text" = r."field_text".getSubString(1L, r."field_text".length() as Integer)
         r."field_blob" = r."field_blob".getBytes(1L, r."field_blob".length() as Integer)
-        assertEquals(r, d)
+        assertTrue(r.equals(d))
     }
 
     @Test

@@ -29,7 +29,7 @@ class TDSTest extends getl.test.GetlTest {
         con.connected = true
         assertTrue(con.connected)
         assertFalse(con.inMemory)
-        assertEquals("${TFS.systemPath}/getl_test_static", con.connectDatabase)
+        assertEquals("${TFS.systemPath}/getl_test_static".toString(), con.connectDatabase)
         def dbFileName = "${con.connectDatabase}.mv.db"
         assertTrue(new File(dbFileName).exists())
         con.connected = false

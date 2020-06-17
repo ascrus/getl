@@ -167,7 +167,7 @@ class JDBCTest extends getl.test.GetlTest {
             assertEquals(8, historypoint('history_threads').lastValue('threads').value)
             def rows = embeddedTable('history_threads').rows()
             assertEquals(1, rows.size)
-            assertEquals(8, rows[0].value)
+            assertEquals((8).doubleValue(), rows[0].value as Double, 0)
         }
     }
 

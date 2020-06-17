@@ -2,7 +2,6 @@ package getl.jdbc
 
 import getl.data.*
 import getl.driver.Driver
-import getl.lang.Getl
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TFS
@@ -271,7 +270,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     protected void retrieveObject() {
-        def d = con.retrieveDatasets { tableMask = 'getl_test_data' }
+        def d = con.retrieveDatasets { tableMask = ['getl_test_data'] }
         assertEquals(1, d.size())
         def l = con.retrieveObjects(tableMask: 'getl_test_dat*')
         assertEquals(1, l.size())
@@ -309,7 +308,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         def counter = 0
 		table.eachRow(order: ['id1']) { r ->
             counter++
-			assertEquals(counter, r.id1)
+            Integer id1 = r.id1
+			assertEquals(counter, id1)
 			assertNotNull(r.id2)
 			assertNotNull(r.name)
 			assertNotNull(r.get(descriptionName))
@@ -356,19 +356,19 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
 		i = 0
         table.eachRow(order: ['id1']) { r ->
-            assertEquals("id: $r.id1", rows[i].name, r.name)
-			assertEquals("id: $r.id1", rows[i].descriptionName, r.descriptionName)
-            assertEquals("id: $r.id1", rows[i].value, r.value)
-            assertNotNull("id: $r.id1", r.double)
-			if (useDate) assertEquals("id: $r.id1", rows[i].date, r.date)
-			if (useTime) assertEquals("id: $r.id1", rows[i].time.toString(), r.time.toString())
+            assertEquals("id: $r.id1".toString(), rows[i].name, r.name)
+			assertEquals("id: $r.id1".toString(), rows[i].descriptionName, r.descriptionName)
+            assertEquals("id: $r.id1".toString(), rows[i].value, r.value)
+            assertNotNull("id: $r.id1".toString(), r.double)
+			if (useDate) assertEquals("id: $r.id1".toString(), rows[i].date, r.date)
+			if (useTime) assertEquals("id: $r.id1".toString(), rows[i].time.toString(), r.time.toString())
             /* TODO: incorrect work for Oracle! */
-//            if (useTimestampWithZone) assertEquals("id: $r.id1", rows[i].dtwithtz, r.dtwithtz)
-           if (useTimestampWithZone) assertNotNull("id: $r.id1", r.dtwithtz)
-           if (useBoolean) assertEquals("id: $r.id1", rows[i].flag, r.flag)
+//            if (useTimestampWithZone) assertEquals("id: $r.id1".toString(), rows[i].dtwithtz, r.dtwithtz)
+           if (useTimestampWithZone) assertNotNull("id: $r.id1".toString(), r.dtwithtz)
+           if (useBoolean) assertEquals("id: $r.id1".toString(), rows[i].flag, r.flag)
            /*if (useClob) assertNotNull(r.text)
            if (useBlob) assertNotNull(r.data)*/
-			if (useUuid) assertEquals("id: $r.id1", rows[i].uniqueid.toString().toLowerCase(), r.uniqueid.toString().toLowerCase())
+			if (useUuid) assertEquals("id: $r.id1".toString(), rows[i].uniqueid.toString().toLowerCase(), r.uniqueid.toString().toLowerCase())
 
 			i++
         }
@@ -421,7 +421,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('name')} IS NOT NULL AND ${table.sqlObjectName(descriptionName)} IS NOT NULL")
         def rows = q.rows()
         assertEquals(1, rows.size())
-        assertEquals(countRows, rows[0].count_rows)
+        Integer cr = rows[0].count_rows
+        assertEquals(countRows, cr)
     }
 
     protected void deleteData() {
@@ -483,25 +484,29 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         def q1 = new QueryDataset(connection: con, query: "SELECT * FROM ${table.objectFullName} WHERE $fieldName = :param1")
         def r1 = q1.rows(sqlParams: [param1: 1])
         assertEquals(1, r1.size())
-        assertEquals(1, r1[0].id1)
+        Integer id1 = r1[0].id1
+        assertEquals(1, id1)
 
         def q2 = new QueryDataset(connection: con, query: "SELECT * FROM ${table.objectFullName} WHERE $fieldName = {param1}")
         def r2 = q2.rows(queryParams: [param1: 2])
         assertEquals(1, r2.size())
-        assertEquals(2, r2[0].id1)
+        Integer id2 = r2[0].id1
+        assertEquals(2, id2)
 
         def q3 = new QueryDataset(connection: con)
         q3.loadFile('resource:/sql/test_query.sql')
         def r3 = q3.rows(queryParams: [table: table.objectFullName, field: fieldName, param1: 2])
         assertEquals(1, r3.size())
-        assertEquals(2, r3[0].id1)
+        Integer id3 = r3[0].id1
+        assertEquals(2, id3)
     }
 
     protected void validCountZero() {
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()}")
         def rows = q.rows()
         assertEquals(1, rows.size())
-        assertEquals(0, rows[0].count_rows)
+        Integer cr = rows[0].count_rows
+        assertEquals(0, cr)
     }
 
     protected void runCommandUpdate() {

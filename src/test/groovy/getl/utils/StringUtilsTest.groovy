@@ -127,7 +127,7 @@ class StringUtilsTest extends getl.test.GetlTest {
 
     @Test
     void testHexToRaw() {
-        assertEquals('12345'.bytes, StringUtils.HexToRaw('3132333435'))
+        assertArrayEquals('12345'.bytes, StringUtils.HexToRaw('3132333435'))
     }
 
     @Test

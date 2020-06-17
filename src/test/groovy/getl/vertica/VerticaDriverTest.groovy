@@ -238,7 +238,7 @@ LIMIT 1'''
 
                 def i = 0
                 eachRow(order: ['id']) { row ->
-                    assertEquals(rows[i], row)
+                    assertTrue(row.equals(rows[i]))
                     i++
                 }
             }

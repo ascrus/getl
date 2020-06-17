@@ -59,15 +59,22 @@ abstract class ManagerTest extends getl.test.GetlTest {
     void testWork() {
         manager.connect()
         init()
-        create()
-        upload()
-        command()
-        rename()
-        buildTreeDirs()
-        buildList()
-        download()
-        remove()
-        manager.disconnect()
+        try {
+            create()
+            upload()
+            command()
+            rename()
+            buildTreeDirs()
+            buildList()
+            download()
+            remove()
+            manager.disconnect()
+        }
+        finally {
+            manager.changeLocalDirectoryToRoot()
+            manager.removeLocalDirs(initLocalDir)
+            manager.removeLocalDirs(downloadLocalDir)
+        }
     }
 
     private void init() {
@@ -247,10 +254,6 @@ abstract class ManagerTest extends getl.test.GetlTest {
         manager.rootPath = origRootPath
         manager.changeDirectoryToRoot()
         manager.removeDir(rootDirName)
-
-        manager.changeLocalDirectoryToRoot()
-        manager.removeLocalDirs(initLocalDir)
-        manager.removeLocalDirs(downloadLocalDir)
     }
 
     private void command() {

@@ -46,12 +46,12 @@ class DateUtilsTest extends getl.test.GetlTest {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss.'000000000'")
 
         DateUtils.setDefaultTimeZone('Europe/Moscow')
-        assertNull(DateUtils.ParseDate("yyyy-MM-dd:HH:mm:ss.'000000000'", '1982-04-01 00:00:00.000000000'))
+        assertNull(DateUtils.ParseDate('yyyy-MM-dd:HH:mm:ss.SSSSSSSSS', '1982-04-01 00:00:00.000000000'))
         assertNull(DateUtils.ParseDate(sdf, '1982-04-01 00:00:00.000000000'))
 
         DateUtils.setDefaultTimeZone('UTC')
-        assertNotNull(DateUtils.ParseDate("yyyy-MM-dd:HH:mm:ss.'000000000'", '1982-04-01 00:00:00.000000000'))
-        assertNotNull(DateUtils.ParseDate(sdf, '1982-04-01 00:00:00.000000000'))
+        assertNotNull(DateUtils.ParseDate('yyyy-MM-dd:HH:mm:ss.SSSSSSSSS', '1982-04-01:00:00:00.000000000'))
+        assertNotNull(DateUtils.ParseDate(sdf, '1982-04-01:00:00:00.000000000'))
 
         DateUtils.RestoreOrigDefaultTimeZone()
     }
@@ -115,7 +115,7 @@ class DateUtilsTest extends getl.test.GetlTest {
     void testTimestamp2Value() {
         assertNull(DateUtils.Timestamp2Value(null))
 
-        def b = BigDecimal.valueOf(1483228739.000000000)
+        def b = (1483228739.000000000).toBigDecimal()
         DateUtils.setDefaultTimeZone('UTC')
         assertEquals(b, DateUtils.Timestamp2Value(exampleDateTime))
 

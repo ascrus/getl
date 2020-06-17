@@ -36,7 +36,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
             map {
                 list=['a', 1, "${vars.config_var}", "${configvars.local_var}", null]
             }
-            var1="${vars.config_var}"
+            var1="${vars.config_var}".toString()
             var2='2019-02-01 01:02:03'
             var3=[
                 {
@@ -88,10 +88,10 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         assertEquals('variable value', Config.content.var1)
         assertEquals('2019-02-01 01:02:03', Config.content.var2)
 
-        assertEquals([a:1,b:2,c:3,d:'variable value'], Config.content.var3[0])
-        assertEquals([a:4,b:5,c:6,d:'variable value'], Config.content.var3[1])
+        assertTrue([a:1,b:2,c:3,d:'variable value'].equals(Config.content.var3[0]))
+        assertTrue([a:4,b:5,c:6,d:'variable value'].equals(Config.content.var3[1]))
 
-        assertEquals(['a', 1, 'variable value', 'local variable value', null], Config.content.map.list)
+        assertTrue(['a', 1, 'variable value', 'local variable value', null].equals(Config.content.map.list))
 
         (Config.configClassManager as ConfigSlurper).path = configPath
         Config.content.var1 = '${configvars.local_var}'
@@ -108,10 +108,10 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         Config.LoadConfig(fileName: configPath.path + '/' + 'test_config.groovy')
 //        println '----------------'
 //        println MapUtils.ToJson(Config.content)
-        assertEquals(Config.content.var1, 'local variable value')
+        assertEquals(Config.content.var1.toString(), 'local variable value')
         assertEquals('2019-02-01 01:02:03', Config.content.var2)
-        assertEquals([a:1,b:2,c:3,d:'local variable value'], Config.content.var3[0])
-        assertEquals([a:4,b:5,c:6,d:'variable value'], Config.content.var3[1])
+        assertTrue([a:1,b:2,c:3,d:'local variable value'].equals(Config.content.var3[0]))
+        assertTrue([a:4,b:5,c:6,d:'variable value'].equals(Config.content.var3[1]))
     }
 
     @Test

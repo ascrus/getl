@@ -161,7 +161,7 @@ class MapUtilsTest extends getl.test.GetlTest {
         "dt": "2019-12-31T23:59:59${tzs}00"
     },
     "other": 999
-}"""
+}""".toString()
         assertEquals(s, MapUtils.ToJson(r))
     }
 

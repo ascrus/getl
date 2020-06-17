@@ -44,7 +44,7 @@ class DslTest extends GetlDslTest {
     /** Temporary path */
     final def tempPath = TFS.systemPath
     /** Config file name */
-    final def tempConfig = "$tempPath/getl.conf"
+    final def tempConfig = "$tempPath/getl.conf".toString()
     /** H2 table name */
     final def h2TableName = 'table1_dsl_test'
     final def h2Table2Name = 'table2_dsl_test'
@@ -167,7 +167,7 @@ environments {
             }
         }
 
-        assertEquals("${tempPath}/getl.{date}.logs", Logs.logFileName)
+        assertEquals("${tempPath}/getl.{date}.logs".toString(), Logs.logFileName)
     }
 
     @Test
@@ -198,7 +198,7 @@ environments {
             assertTrue(findConnection(ancon) == null)
         }
 
-        assertEquals("$tempPath/getl.lang.h2.sql", Getl.GetlInstance().embeddedConnection('getl.testdsl.h2:h2').sqlHistoryFile)
+        assertEquals("$tempPath/getl.lang.h2.sql".toString(), Getl.GetlInstance().embeddedConnection('getl.testdsl.h2:h2').sqlHistoryFile)
     }
 
     @Test
@@ -250,7 +250,7 @@ environments {
             embeddedConnection('h2') {
                 addTablesToRepository([h2Table('table1').clone() as TableDataset, h2Table('table2').clone() as TableDataset], 'test.add')
             }
-            assertEquals(["test.add:${this.h2TableName}".toString(), "test.add:${this.h2Table2Name}"], listJdbcTables('test.add:*'))
+            assertEquals(["test.add:${this.h2TableName}".toString(), "test.add:${this.h2Table2Name}".toString()], listJdbcTables('test.add:*'))
             unregisterDataset('test.add:*')
         }
     }
@@ -1071,7 +1071,7 @@ ORDER BY t1.id"""
                 'runclass=getl.lang.DslTestScriptFields1', 'unittest=true',
                 'vars.param1=1', 'vars.param2=123.45', 'vars.param5=[1, 2, 3]',
                 'vars.param6=[a:1, b:2, c:3]', 'vars.param7=' + DateUtils.FormatDate(DateUtils.ClearTime(new Date())),
-                'vars.param8=' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', DateUtils.TruncTime('HOUR', new Date())),
+                'vars.param8="' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', DateUtils.TruncTime('HOUR', new Date())) + '"',
                 'vars.param9=true', 'vars.paramCountTableRow=100'])
     }
 

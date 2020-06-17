@@ -303,7 +303,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         ]
 
         list.each { mask, rule ->
-            assertEquals("$mask: $rule", rule, FileUtils.FileMaskToMathExpression(mask))
+            assertEquals("$mask: $rule".toString(), rule, FileUtils.FileMaskToMathExpression(mask))
         }
     }
 

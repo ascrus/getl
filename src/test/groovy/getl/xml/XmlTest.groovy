@@ -28,7 +28,7 @@ class XmlTest extends getl.test.GetlTest {
                 eachRow { row ->
                     i++
                     assertEquals(i, row.id)
-                    assertEquals("Customer $i", row.name)
+                    assertEquals("Customer $i".toString(), row.name)
                     assertTrue(!(row.phones as List).isEmpty())
                 }
                 assertEquals(3, readRows)
