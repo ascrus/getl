@@ -21,7 +21,6 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-
 package getl.jdbc
 
 import getl.csv.CSVConnection
@@ -422,6 +421,7 @@ class JDBCConnection extends Connection implements UserLogins {
 				if (row.schemaName != null) d.schemaName = row.schemaName
 				d.tableName = row.tableName
 				if (row.description != null) d.description = row.description
+				true
 			}
 			result << d
 		}

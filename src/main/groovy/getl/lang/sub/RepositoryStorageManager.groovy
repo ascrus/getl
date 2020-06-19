@@ -481,7 +481,7 @@ class RepositoryStorageManager {
         env = envFromRep(repository, env)
         def fileName = repositoryFilePath(repository, env) + '/'
         if (objname.groupName != null) {
-            fileName += objname.toFilePath() + '/'
+            fileName += objname.toPath() + '/'
             FileUtils.ValidPath(fileName)
         }
         if (repository.needEnvConfig())

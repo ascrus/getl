@@ -152,6 +152,12 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     }
 
     /**
+     * Initialize registered object
+     * @param obj object registered object
+     */
+    protected void initRegisteredObject(T obj) { }
+
+    /**
      * Register object in repository
      * @param obj object for registration
      * @param name name object in repository
@@ -185,6 +191,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             obj.dslCreator = (repName[0] == '#')?creator:dslCreator
 
             objects.put(repName, obj)
+            initRegisteredObject(obj)
         }
 
         return obj
@@ -272,6 +279,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                 obj.dslNameObject = repName
                 obj.dslCreator = (repName[0] == '#')?creator:dslCreator
                 objects.put(repName, obj)
+                initRegisteredObject(obj)
             } else {
                 if (registration)
                     throw new ExceptionDSL("$typeObject \"$name\" already registered for class \"${obj.getClass().name}\"!")

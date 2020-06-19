@@ -43,6 +43,7 @@ import getl.postgresql.PostgreSQLConnection
 import getl.salesforce.SalesForceConnection
 import getl.tfs.TDS
 import getl.tfs.TFS
+import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.vertica.VerticaConnection
@@ -135,4 +136,12 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     @Override
     boolean needEnvConfig() { true }
+
+    @Override
+    protected void initRegisteredObject(Connection obj) {
+        if (obj instanceof JDBCConnection && dslCreator.options.jdbcConnectionLoggingPath != null) {
+            def objname = ParseObjectName.Parse(obj.dslNameObject)
+            (obj as JDBCConnection).sqlHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.jdbcConnectionLoggingPath + '/' + objname.toFileName() + '/{date}.sql')
+        }
+    }
 }

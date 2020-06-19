@@ -155,13 +155,13 @@ class ParseObjectName {
         Parse(name).validName()
     }
 
-    /** Convert object name to file name */
+    /** Convert object name to file path */
     String toFileName() {
-        return groupName + '@' + objectName
+        return ((groupName != null)?groupName + '@':'') + objectName
     }
 
     /** Convert group name to path */
-    String toFilePath() {
+    String toPath() {
         return groupName?.replace('.', '/')
     }
 

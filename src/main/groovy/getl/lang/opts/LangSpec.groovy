@@ -28,6 +28,7 @@ import getl.data.*
 import getl.exception.ExceptionDSL
 import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
+import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 import java.util.logging.Level
 
@@ -111,4 +112,20 @@ class LangSpec extends BaseSpec {
     Level getSqlEchoLogLevel() { (params.sqlEchoLogLevel as Level)?:processTimeLevelLog }
     /** The default output level of the echo command to the log for sql object */
     void setSqlEchoLogLevel(Level value) { params.sqlEchoLogLevel = value }
+
+    /** Logging path of sql statements for connections */
+    String getJdbcConnectionLoggingPath() { params.jdbcConnectionLoggingPath as String }
+    /** Logging path of sql statements for connections */
+    void setJdbcConnectionLoggingPath(String value) {
+        FileUtils.ValidPath(value)
+        params.jdbcConnectionLoggingPath = value
+    }
+
+    /** Command logging path for file managers */
+    String getFileManagerLoggingPath() { params.fileManagerLoggingPath as String }
+    /** Command logging path for file managers */
+    void setFileManagerLoggingPath(String value) {
+        FileUtils.ValidPath(value)
+        params.fileManagerLoggingPath = value
+    }
 }

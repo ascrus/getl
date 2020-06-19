@@ -25,6 +25,7 @@ package getl.impala
 
 import getl.csv.CSVDataset
 import getl.data.Connection
+import getl.data.Field
 import getl.exception.ExceptionGETL
 import getl.impala.opts.ImpalaBulkLoadSpec
 import getl.impala.opts.ImpalaCreateSpec
@@ -47,7 +48,7 @@ class ImpalaTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof ImpalaConnection))
-            throw new ExceptionGETL('Сonnection to ImpalaConnection class is allowed!')
+            throw new ExceptionGETL('Connection to ImpalaConnection class is allowed!')
 
         super.setConnection(value)
     }
@@ -116,5 +117,71 @@ class ImpalaTable extends TableDataset {
                                  @ClosureParams(value = SimpleType, options = ['getl.impala.opts.ImpalaBulkLoadSpec'])
                                          Closure cl) {
         doBulkLoadCsv(null, cl) as ImpalaBulkLoadSpec
+    }
+
+    /**
+     * Convert fields from another DBMS to the appropriate Impala field types
+     * @param table source table
+     * @return fields for Impala
+     */
+    static List<Field> ProcessFields(TableDataset table) {
+        if (table.field.isEmpty())
+            table.retrieveFields()
+
+        def res = [] as List<Field>
+        table.field.each { verField ->
+            def field = verField.clone() as Field
+            field.typeName = null
+            field.isAutoincrement = false
+            field.isPartition = false
+            field.isKey = false
+            field.isNull = true
+
+            switch (field.type) {
+                case Field.dateFieldType:
+                    field.type = Field.datetimeFieldType
+                    break
+                case Field.booleanFieldType:
+                    field.type = Field.integerFieldType
+                    break
+            }
+
+            res << field
+        }
+
+        return res
+    }
+
+    /**
+     * Convert fields from another DBMS to the appropriate Impala field types
+     * @param table source table
+     */
+    void setRdbmsFields(TableDataset table) {
+        setField(ProcessFields(table))
+    }
+
+    /**
+     * Generate a list of expressions in INSERT SELECT with casting if necessary
+     * @param source source Impala table
+     * @param dest destination Impala table
+     * @return List of SQL expressions
+     */
+    static List<String> SelectListForInsert(ImpalaTable source, ImpalaTable dest) {
+        def res = [] as List<String>
+        source.field.each { ef ->
+            def df = dest.fieldByName(ef.name)
+            if (df == null)
+                return
+
+            def fn = dest.currentImpalaConnection.currentImpalaDriver.prepareFieldNameForSQL(ef.name)
+            if (ef.typeName == df.typeName) {
+                res << fn
+            }
+            else {
+                res << "CAST($fn AS ${df.typeName})".toString()
+            }
+        }
+
+        return res
     }
 }

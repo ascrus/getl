@@ -26,10 +26,13 @@ package getl.vertica
 
 import getl.csv.CSVDataset
 import getl.data.Connection
+import getl.data.Field
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.jdbc.opts.*
+import getl.oracle.OracleTable
 import getl.utils.DateUtils
+import getl.utils.Logs
 import getl.vertica.opts.*
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -45,7 +48,7 @@ class VerticaTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof VerticaConnection))
-            throw new ExceptionGETL('Сonnection to VerticaConnection class is allowed!')
+            throw new ExceptionGETL('Connection to VerticaConnection class is allowed!')
 
         super.setConnection(value)
     }
@@ -179,7 +182,7 @@ class VerticaTable extends TableDataset {
     /**
      * Drop specified interval partitions in table
      * @param startPartition start of the partition interval
-     * @param finishPartition  enf of the partitions inrerval
+     * @param finishPartition  enf of the partitions interval
      * @param isSplit force split ros containers
      * @param truncateToDate truncate partition timestamp value to date
      * @return function result
@@ -206,7 +209,7 @@ class VerticaTable extends TableDataset {
     /**
      * Copies partitions from one table to another
      * @param startPartition start of the partition interval
-     * @param finishPartition  enf of the partitions inrerval
+     * @param finishPartition  enf of the partitions interval
      * @param isSplit force split ros containers
      * @param truncateToDate truncate partition timestamp value to date
      * @return function result
@@ -240,7 +243,7 @@ class VerticaTable extends TableDataset {
     /**
      * Moves partitions from one table to another
      * @param startPartition start of the partition interval
-     * @param finishPartition  enf of the partitions inrerval
+     * @param finishPartition  enf of the partitions interval
      * @param isSplit force split ros containers
      * @param truncateToDate truncate partition timestamp value to date
      * @return function result
@@ -274,7 +277,7 @@ class VerticaTable extends TableDataset {
     /**
      * Moves partitions from one table to another
      * @param startPartition start of the partition interval
-     * @param finishPartition  enf of the partitions inrerval
+     * @param finishPartition  enf of the partitions interval
      * @param isSplit force split ros containers
      * @param truncateToDate truncate partition timestamp value to date
      * @return function result
@@ -368,5 +371,87 @@ class VerticaTable extends TableDataset {
         p.proj = (inheritProjections)?'INCLUDING PROJECTIONS':'EXCLUDING PROJECTIONS'
         p.grant = (inheritePrivelegesSchema)?'INCLUDE SCHEMA PRIVILEGES':'EXCLUDE SCHEMA PRIVILEGES'
         currentVerticaConnection.executeCommand('CREATE TABLE {exists} {table} LIKE {source} {proj} {grant}', [queryParams: p])
+    }
+
+    /**
+     * Convert Oracle table fields to suitable Vertica field types
+     * @param oraTable Oracle table
+     * @param allowClob allow clob fields
+     * @param allowNumericWithoutLength convert numeric fields with no length specified
+     * @return converted list of fields for Vertica
+     */
+    static List<Field> ProcessOracleFields(OracleTable oraTable, Boolean allowClob = true, Boolean allowNumericWithoutLength = true) {
+        if (oraTable.field.isEmpty())
+            oraTable.retrieveFields()
+
+        def res = [] as List<Field>
+        oraTable.field.each { oraField ->
+            def field = oraField.clone() as Field
+            field.typeName = null
+            res << field
+
+            if (field.type == Field.stringFieldType) {
+                assert (field.length ?: 0) > 0
+                field.length = field.length * 2
+                return
+            }
+
+            if (field.type == Field.textFieldType) {
+                if (!allowClob)
+                    throw new ExceptionGETL("Table ${oraTable.tableName} has clob field ${field.name}!")
+
+                if (field.length <= 65000) field.length = 65000
+                Logs.Warning "Table ${oraTable.tableName} has clob field ${field.name}!"
+
+                return
+            }
+
+            if (field.type == Field.numericFieldType) {
+                if ((field.precision ?: 0) == 0) {
+                    if (field.name.matches('(?i).+[_]ID')) {
+                        field.type = Field.bigintFieldType
+                        field.length = null
+                        field.precision = null
+                        return
+                    }
+
+                    if ((field.length ?: 0) > 0) {
+                        if ((field.length ?: 0) < 10) {
+                            field.type = Field.integerFieldType
+                            field.length = null
+                            field.precision = null
+                            return
+                        } else if ((field.length ?: 0) < 20) {
+                            field.type = Field.bigintFieldType
+                            field.length = null
+                            field.precision = null
+
+                            return
+                        }
+                    }
+                }
+
+                if ((field.length ?: 0) == 0) {
+                    if (!allowNumericWithoutLength)
+                        throw new ExceptionGETL("Table ${oraTable.tableName} has numeric field ${field.name} without def lenght!")
+
+                    field.length = 38
+                    field.precision = 12
+                    Logs.Warning "Table ${oraTable.tableName} has numeric field ${field.name} without def lenght!"
+                }
+            }
+        }
+
+        return res
+    }
+
+    /**
+     * Convert Oracle table fields to suitable Vertica field types
+     * @param oraTable Oracle table
+     * @param allowClob allow clob fields
+     * @param allowNumericWithoutLength convert numeric fields with no length specified
+     */
+    void setOracleFields(OracleTable oraTable, Boolean allowClob = true, Boolean allowNumericWithoutLength = true) {
+        setField(ProcessOracleFields(oraTable, allowClob, allowNumericWithoutLength))
     }
 }

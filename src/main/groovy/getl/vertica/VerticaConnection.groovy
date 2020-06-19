@@ -331,7 +331,7 @@ ORDER BY threshold DESC, table_name;
 
 	/**
 	 * Runs Workload Analyzer and recommendations issued
-	 * @param tunningRows rows from system table v_monitor.tuning_recommendations or the result of calling function "analyzeWorkload"
+	 * @param analyzeRows rows from system table v_monitor.tuning_recommendations or the result of calling function "analyzeWorkload"
 	 * @return count of recommendations processed
 	 */
 	Integer processWorkload(List<Map<String, Object>> analyzeRows) {
@@ -376,4 +376,12 @@ ORDER BY name
 
 	@Override
 	protected Class<TableDataset> getTableClass() { VerticaTable }
+
+	/**
+	 * Return the number of cluster nodes
+	 * @return number of nodes
+	 */
+	Integer countNodes() {
+		new QueryDataset(connection: this, query: 'SELECT Count(*) AS count_nodes FROM v_catalog.nodes').rows()[0].count_nodes as Integer
+	}
 }

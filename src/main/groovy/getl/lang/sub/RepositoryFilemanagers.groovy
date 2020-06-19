@@ -23,8 +23,10 @@
 */
 package getl.lang.sub
 
+import getl.data.Connection
 import getl.exception.ExceptionDSL
 import getl.files.*
+import getl.utils.FileUtils
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 
@@ -65,4 +67,10 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
 
     @Override
     boolean needEnvConfig() { true }
+
+    @Override
+    protected void initRegisteredObject(Manager obj) {
+        if (dslCreator.options.fileManagerLoggingPath != null)
+            obj.scriptHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.fileManagerLoggingPath + '/' + objname.toFileName() + '/{date}.txt')
+    }
 }

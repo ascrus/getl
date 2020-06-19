@@ -89,7 +89,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	static Manager CreateManagerInternal(Map parameters) {
 		def className = parameters.manager as String
 		if (className == null)
-			throw new ExceptionGETL("Reqired class name as \"manager\" property!")
+			throw new ExceptionGETL("Required class name as \"manager\" property!")
 
 		Manager manager = Class.forName(className).newInstance() as Manager
 
@@ -233,17 +233,17 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/**
-	 * Name section parameteres value in config file
+	 * Name section parameters value in config file
 	 * Store parameters to config file from section "files"
 	 */
 	String config
 	/**
-	 * Name section parameteres value in config file
+	 * Name section parameters value in config file
 	 * Store parameters to config file from section "files"
 	 */
 	String getConfig() { config }
 	/**
-	 * Name section parameteres value in config file
+	 * Name section parameters value in config file
 	 * Store parameters to config file from section "files"
 	 */
 	void setConfig(String value) {
@@ -444,7 +444,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/**
-	 * Download file to specified name in locaL directory
+	 * Download file to specified name in local directory
 	 * @param fileName
 	 * @param localFileName
 	 */
@@ -639,7 +639,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	
 	@CompileStatic
 	protected void processList(Manager man, TableDataset dest, Path path, String maskFile, Path maskPath, Boolean recursive, Integer filelevel,
-								Boolean requiredAnalize, Integer limit, Integer threadLevel, Integer threadCount, ManagerListProcessing code) {
+								Boolean requiredAnalyze, Integer limit, Integer threadLevel, Integer threadCount, ManagerListProcessing code) {
 		if (threadLevel == null) threadCount = null
 
 		String curPath = man.currentDir()
@@ -659,7 +659,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 					Map m
 					if (path != null) {
 						String fn = "${((recursive && curPath != '.')?curPath + '/' : '')}${file.filename}"
-						if (requiredAnalize) {
+						if (requiredAnalyze) {
 							m = path.analizeFile(fn)
 							addFile = (m != null)
 						}
@@ -692,7 +692,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 					if (limit != null && countDirs > limit) break
 
 					def b = true
-					if (requiredAnalize) {
+					if (requiredAnalyze) {
 						b = false
 						def fn = "${(curPath != '.' && curPath != "") ? curPath + '/' : ''}${file.filename}"
 						def m = path.analizeDir(fn)
@@ -717,7 +717,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 					if (b) {
 						if (threadCount == null || filelevel != threadLevel) {
 							man.changeDirectory((String) (file.filename))
-							processList(man, dest, path, maskFile, maskPath, recursive, filelevel + 1, requiredAnalize,
+							processList(man, dest, path, maskFile, maskPath, recursive, filelevel + 1, requiredAnalyze,
 										limit, threadLevel, threadCount, code)
 							man.changeDirectory('..')
 						} else {
@@ -756,7 +756,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 							newDest.openWrite(batchSize: 100)
 							try {
 								processList(newMan, newDest, path, maskFile, maskPath, recursive, filelevel + 1,
-											requiredAnalize, limit, threadLevel, threadCount, newCode)
+											requiredAnalyze, limit, threadLevel, threadCount, newCode)
 							}
 							finally {
 								newDest.doneWrite()
@@ -833,7 +833,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		def maskPath = (maskFile != null)?new Path(mask: maskFile):null
 		Path path = lparams.path as Path
 		if (path != null && !path.isCompile) path.compile()
-		boolean requiredAnalize = (path != null && !(path.vars.isEmpty()))
+		boolean requiredAnalyze = (path != null && !(path.vars.isEmpty()))
 		boolean recursive = BoolUtils.IsValue(lparams.recursive, this.recursive)
 		boolean takePathInStory =  BoolUtils.IsValue(lparams.takePathInStory, this.takePathInStory)
 		boolean ignoreExistInStory = BoolUtils.IsValue(lparams.ignoreExistInStory, this.ignoreExistInStory)
@@ -941,7 +941,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 			try {
 				newFiles.openWrite(batchSize: 100)
 				try {
-					processList(this, newFiles, path, maskFile, maskPath, recursive, 1, requiredAnalize, limit,
+					processList(this, newFiles, path, maskFile, maskPath, recursive, 1, requiredAnalyze, limit,
 								threadLevel, threadCount, code)
 				}
 				finally {
@@ -1743,7 +1743,7 @@ WHERE
 	 * @param command single command for command processor server
 	 * @param out output console log
 	 * @param err error console log
-	 * @return - 0 on sucessfull, greater 0 on error, -1 on invalid command
+	 * @return - 0: successfully, greater 0: error, -1: invalid command
 	 */
 	Integer command(String command, StringBuilder out, StringBuilder err) {
 		out.setLength(0)
@@ -1882,4 +1882,19 @@ WHERE
 
 	/** host OS (null - unknown, win - Windows, unix - unix compatibility */
 	String getHostOS() { return null }
+
+	/**
+	 * Removing directories in the current directory using the specified mask
+	 * @param man HDFS manager
+	 * @param maskDirs directory removal mask
+	 */
+	void removeDirs(String maskDirs) {
+		def p = new Path(mask: maskDirs)
+		list().each { file ->
+			if (file.type == directoryType && p.match(file.filename as String)) {
+				Logs.Fine("Remove directory \"${file.filename}\"")
+				removeDir(file.filename as String, true)
+			}
+		}
+	}
 }
