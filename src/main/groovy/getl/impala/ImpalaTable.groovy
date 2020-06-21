@@ -156,7 +156,7 @@ class ImpalaTable extends TableDataset {
      * Convert fields from another DBMS to the appropriate Impala field types
      * @param table source table
      */
-    void setRdbmsFields(TableDataset table) {
+    void useFieldsFromTable(TableDataset table) {
         setField(ProcessFields(table))
     }
 
