@@ -6,7 +6,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = '4.4.3-20-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.5.0' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -33,7 +33,6 @@ dependencies {
 	addJars 'com.jcraft:jsch:0.1.55'
 
 	addJars files('file:libs/ftp4j-1.7.2.jar')
-//	addJars files('file:libs/jsch-0.1.53x.jar')
 
 	compile fileTree(dir: 'jdbc')
 
@@ -46,8 +45,6 @@ dependencies {
 	compile 'org.apache.hadoop:hadoop-auth:3.2.1'
 	compile 'org.apache.hadoop:hadoop-hdfs-client:3.2.1'
 	compile 'org.apache.hadoop:hadoop-common:3.2.1'
-	
-//	implementation 'com.fasterxml:aalto-xml:1.2.2'
 	
 	compile group: 'com.force.api', name: 'force-partner-api', version: '49.1.0'
 

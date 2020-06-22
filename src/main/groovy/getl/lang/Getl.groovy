@@ -2413,7 +2413,7 @@ Examples:
      * Clone dataset object
      * @param dataset original dataset to clone
      * @param con used connection for new dataset
-     * @return clone dataset
+     * @return cloned dataset
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     Dataset cloneDataset(Dataset dataset, Connection con = null) {
@@ -2423,18 +2423,50 @@ Examples:
     }
 
     /**
+     * Clone dataset object
+     * @param dataset original dataset to clone
+     * @param cloneConnection clone dataset connection
+     * @return cloned dataset
+     */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    Dataset cloneDataset(Dataset dataset, boolean cloneConnection) {
+        if (dataset == null)
+            throw new ExceptionDSL('Need object value!')
+        return (cloneConnection)?dataset.cloneDatasetConnection():dataset.cloneDataset()
+    }
+
+    /**
      * Clone dataset object and register in repository
      * @param newName repository name for cloned dataset
      * @param dataset original dataset to clone
      * @param con used connection for new dataset
      * @param cl cloned dataset processing code
-     * @return clone dataset
+     * @return cloned dataset
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     Dataset cloneDataset(String newName, Dataset dataset, Connection con = null,
                          @DelegatesTo(Dataset)
                          @ClosureParams(value = SimpleType, options = ['getl.data.Dataset']) Closure cl = null) {
         def parent = cloneDataset(dataset, con)
+        registerDatasetObject(parent, newName)
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /**
+     * Clone dataset object and register in repository
+     * @param newName repository name for cloned dataset
+     * @param dataset original dataset to clone
+     * @param cloneConnection clone dataset connection
+     * @param cl cloned dataset processing code
+     * @return cloned dataset
+     */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    Dataset cloneDataset(String newName, Dataset dataset, boolean cloneConnection,
+                         @DelegatesTo(Dataset)
+                         @ClosureParams(value = SimpleType, options = ['getl.data.Dataset']) Closure cl = null) {
+        def parent = cloneDataset(dataset, cloneConnection)
         registerDatasetObject(parent, newName)
         runClosure(parent, cl)
 

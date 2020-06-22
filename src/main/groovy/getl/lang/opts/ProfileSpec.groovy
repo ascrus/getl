@@ -71,7 +71,7 @@ class ProfileSpec extends BaseSpec {
     void setProfileName(String value) { statistics.name = value }
 
     /** Count processed row */
-    Integer getCountRow() { statistics.countRow }
+    Long getCountRow() { statistics.countRow }
     /** Count processed row */
-    void setCountRow(Integer value) { statistics.countRow = value }
+    void setCountRow(Long value) { statistics.countRow = value }
 }
