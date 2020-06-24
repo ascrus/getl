@@ -70,7 +70,9 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
 
     @Override
     protected void initRegisteredObject(Manager obj) {
-        if (dslCreator.options.fileManagerLoggingPath != null)
+        if (dslCreator.options.fileManagerLoggingPath != null) {
+            def objname = ParseObjectName.Parse(obj.dslNameObject)
             obj.scriptHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.fileManagerLoggingPath + '/' + objname.toFileName() + '/{date}.txt')
+        }
     }
 }

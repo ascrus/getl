@@ -25,10 +25,12 @@ package getl.models
 
 import getl.data.Connection
 import getl.data.Dataset
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
 import getl.models.opts.BaseSpec
 import getl.models.opts.MapTableSpec
 import getl.models.sub.TablesModel
+import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -49,7 +51,7 @@ class MapTables extends TablesModel<MapTableSpec> {
     Connection getSourceConnection() { modelConnection }
 
     /** List of used mapping tables */
-    List<MapTableSpec> usedMapping() { usedObjects as List<MapTableSpec> }
+    List<MapTableSpec> getUsedMapping() { usedObjects as List<MapTableSpec> }
 
     /** Connection name in the repository for destination tables */
     String getDestinationConnectionName() { params.destinationConnectionName as String }
@@ -111,11 +113,41 @@ class MapTables extends TablesModel<MapTableSpec> {
             throw new ExceptionModel("The destination connection is not specified!")
 
         super.checkModel(checkObjects)
+
+        if (checkObjects)
+            checkMapping()
     }
 
     @Override
     void checkObject(BaseSpec obj) {
         super.checkObject(obj)
         validDataset((obj as MapTableSpec).destination, destinationConnectionName)
+    }
+
+    /**
+     * Check attribute naming and generate an unknown error
+     * @param allowAttrs list of allowed attribute names
+     */
+    void checkAttrs(List<String> allowAttrs) {
+        if (allowAttrs == null)
+            throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')
+        usedMapping.each { node ->
+            def ukeys = MapUtils.Unknown(node.attrs, allowAttrs)
+            if (!ukeys.isEmpty())
+                throw new ExceptionDSL("Unknown attributes were detected in \"${node.sourceName}\":  $ukeys, allow attributes: $allowAttrs")
+        }
+    }
+
+    /** Validate the mapping */
+    void checkMapping(@DelegatesTo(MapTableSpec)
+                      @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec'])
+                              Closure cl = null) {
+        usedMapping.each { node ->
+            if (node.destinationName == null)
+                throw new ExceptionDSL("The destination is not specified for table \"${node.sourceName}\"!")
+
+            if (cl != null)
+                node.with(cl)
+        }
     }
 }

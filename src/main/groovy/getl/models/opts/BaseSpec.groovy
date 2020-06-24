@@ -25,6 +25,8 @@ package getl.models.opts
 
 import getl.models.sub.BaseModel
 
+import java.util.concurrent.ConcurrentHashMap
+
 class BaseSpec extends getl.lang.opts.BaseSpec {
     BaseSpec(BaseModel model) {
         super(model)
@@ -37,7 +39,7 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        params.objectVars = [:] as Map<String, Object>
+        params.objectVars = new ConcurrentHashMap<String, Object>()
     }
 
     /** Owner model */

@@ -29,12 +29,16 @@ import getl.exception.ExceptionModel
 import getl.models.MapTables
 import groovy.transform.InheritConstructors
 
+import java.util.concurrent.ConcurrentHashMap
+
 @InheritConstructors
 class MapTableSpec extends TableSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        params.listPartitions = []
+        params.listPartitions = Collections.synchronizedList(new ArrayList())
+        params.attrs = new ConcurrentHashMap<String, Object>()
+        params.map = new ConcurrentHashMap<String, String>()
     }
 
     /** Owner processing model */
@@ -92,5 +96,23 @@ class MapTableSpec extends TableSpec {
         listPartitions.clear()
         if (value != null)
             listPartitions.addAll(value)
+    }
+
+    /** Mapping the relationship of the fields of the destination table to the source table (map.destfield = 'sourcefield') */
+    Map<String, String> getMap() { params.map as Map<String, String> }
+    /** Mapping the relationship of the fields of the destination table to the source table (map.destfield = 'sourcefield') */
+    void setMap(Map<String, String> value) {
+        map.clear()
+        if (value != null)
+            map.putAll(value)
+    }
+
+    /** Mapping attributes */
+    Map<String, Object> getAttrs() { params.attrs as Map<String, Object> }
+    /** Mapping attributes */
+    void setAttrs(Map<String, Object> value) {
+        attrs.clear()
+        if (value != null)
+            attrs.putAll(value)
     }
 }
