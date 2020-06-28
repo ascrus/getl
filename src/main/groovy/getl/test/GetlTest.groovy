@@ -30,11 +30,9 @@ import getl.utils.FileUtils
 import getl.utils.Logs
 import groovy.test.GroovyAssert
 import groovy.time.Duration
-import groovy.time.TimeDuration
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
-
 /**
  * Getl functional testing base class
  * @author Alexsey Konstantinov

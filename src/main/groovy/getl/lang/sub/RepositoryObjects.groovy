@@ -159,7 +159,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                     try {
                         obj = repositoryStorageManager.loadObject(repClass, repName) as T
                     }
-                    catch (ExceptionDSL ignored) { obj = null }
+                    catch (ExceptionDSL ignored) { }
                 }
 
                 return true
