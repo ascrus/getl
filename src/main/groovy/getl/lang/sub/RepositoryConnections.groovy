@@ -141,7 +141,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     protected void initRegisteredObject(Connection obj) {
         if (obj instanceof JDBCConnection && dslCreator.options.jdbcConnectionLoggingPath != null) {
             def objname = ParseObjectName.Parse(obj.dslNameObject)
-            (obj as JDBCConnection).sqlHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.jdbcConnectionLoggingPath + '/' + objname.toFileName() + '/{date}.sql')
+            (obj as JDBCConnection).sqlHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.jdbcConnectionLoggingPath + '/' + objname.toFileName() + "/${dslCreator.configuration.environment}.{date}.sql")
         }
     }
 }

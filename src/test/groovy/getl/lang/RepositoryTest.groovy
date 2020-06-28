@@ -807,4 +807,19 @@ class RepositoryTest extends GetlDslTest {
             }
         }
     }
+
+    @Test
+    void testRepName() {
+        Getl.Dsl {
+            shouldFail { embeddedTable('#group:name', true) }
+            shouldFail { embeddedTable('group:#name', true) }
+            shouldFail { embeddedTable('$group:name', true) }
+            shouldFail { embeddedTable('group:$name', true) }
+            shouldFail { embeddedTable('group*:name', true) }
+            shouldFail { embeddedTable('group:name*', true) }
+            shouldFail { embeddedTable('group:name:1', true) }
+            assertNotNull(embeddedTable('group:name_1', true))
+            assertNotNull(embeddedTable('#name', true))
+        }
+    }
 }

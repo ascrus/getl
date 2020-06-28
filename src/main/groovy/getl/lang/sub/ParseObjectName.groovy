@@ -25,6 +25,10 @@ package getl.lang.sub
 
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
+import getl.utils.Path
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 /**
  * Repository object name parser
@@ -142,12 +146,21 @@ class ParseObjectName {
         return names.name
     }
 
+    static final private namePattern = Pattern.compile('([\\:\\+\\*\\%\\&\\$\\"\\\']+)')
+
     /** Check object name */
     void validName() {
-        if (name.matches('(?i)([:]|[+]|[*]|[%]|[&]|[|]|[\\"])'))
-            throw new ExceptionDSL("The name \"$name\" contains invalid characters!")
-        if (groupName != null && groupName[0] == '#')
-            throw new ExceptionDSL('The group name cannot begin with the character "#"!')
+        if (namePattern.matcher(objectName).find())
+            throw new ExceptionDSL("The object name \"$objectName\" contains invalid characters!")
+        if (objectName[0] == '#' && groupName != null)
+            throw new ExceptionDSL('Not allowed to use the group name for the temporary objects!')
+
+        if (groupName != null) {
+            if (groupName[0] == '#')
+                throw new ExceptionDSL('The group name cannot begin with the character "#"!')
+            if (namePattern.matcher(groupName).find())
+                throw new ExceptionDSL("The group name \"$groupName\" contains invalid characters!")
+        }
     }
 
     /** Check object name */

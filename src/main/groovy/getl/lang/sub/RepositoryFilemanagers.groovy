@@ -72,7 +72,7 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
     protected void initRegisteredObject(Manager obj) {
         if (dslCreator.options.fileManagerLoggingPath != null) {
             def objname = ParseObjectName.Parse(obj.dslNameObject)
-            obj.scriptHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.fileManagerLoggingPath + '/' + objname.toFileName() + '/{date}.txt')
+            obj.scriptHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.fileManagerLoggingPath + '/' + objname.toFileName() + "/${dslCreator.configuration.environment}.{date}.txt")
         }
     }
 }
