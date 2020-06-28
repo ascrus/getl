@@ -93,7 +93,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                             Closure<Boolean> filter = null) {
         (classes as List<String>)?.each {
             if (!(it in listClasses))
-                throw new ExceptionDSL("\"$it\" is not a supported $typeObject class!")
+                throw new ExceptionDSL("\"$it\" is not a supported class for $typeObject!")
         }
 
         def res = [] as List<String>
@@ -148,7 +148,24 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @return found object or null if not found
      */
     T find(String name) {
-        return objects.get(dslCreator.repObjectName(name))
+        def repName = dslCreator.repObjectName(name)
+        def obj = objects.get(repName)
+        if (obj == null) {
+            def repClass = this.class.name
+            dslCreator.with {
+                if (obj == null && options.validRegisterObjects &&
+                        repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&
+                        repName[0] != '#') {
+                    try {
+                        obj = repositoryStorageManager.loadObject(repClass, repName) as T
+                    }
+                    catch (ExceptionDSL ignored) { obj = null }
+                }
+
+                return true
+            }
+        }
+        return obj
     }
 
     /**
@@ -166,11 +183,11 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
     T registerObject(Getl creator, T obj, String name = null, Boolean validExist = true) {
         if (obj == null)
-            throw new ExceptionDSL("$typeObject cannot be null!")
+            throw new ExceptionDSL("Object cannot be null for $typeObject!")
 
         def className = obj.getClass().name
         if (!(className in listClasses))
-            throw new ExceptionDSL("Unknown $typeObject class $className!")
+            throw new ExceptionDSL("Unknown class $className for $typeObject!")
 
         if (name == null) {
             obj.dslCreator = creator
@@ -184,7 +201,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             if (validExist) {
                 def exObj = objects.get(repName)
                 if (exObj != null)
-                    throw new ExceptionDSL("\"$name\" already registered for class \"${exObj.getClass().name}\" in \"$typeObject\" repository!")
+                    throw new ExceptionDSL("\"$name\" already registered as class \"${exObj.getClass().name}\" for \"$typeObject\"!")
             }
 
             obj.dslNameObject = repName
@@ -245,7 +262,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             throw new ExceptionDSL('Class name cannot be null!')
 
         if (className != null && !(className in listClasses))
-            throw new ExceptionDSL("$className class is not supported by the ${typeObject}s repository!")
+            throw new ExceptionDSL("$className class is not supported for ${typeObject}!")
 
         if (name == null) {
             def obj = createObject(className)
@@ -254,7 +271,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             return obj
         }
 
-        def isThread = (dslCreator.options().useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread)
+        def isThread = (dslCreator.options.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread)
 
         def repName = dslCreator.repObjectName(name, true)
         if (!registration && isThread) {
@@ -268,12 +285,28 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         synchronized (objects) {
             obj = objects.get(repName)
 
+            def repClass = this.class.name
+            dslCreator.with {
+                if (!registration && obj == null && options.validRegisterObjects &&
+                        repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&
+                        repName[0] != '#') {
+                    try {
+                        obj = repositoryStorageManager.loadObject(repClass, repName) as T
+                    }
+                    catch (ExceptionDSL ignored) {
+                        throw new ExceptionDSL("\"$name\" is not registered for $typeObject!")
+                    }
+                }
+
+                return true
+            }
+
             if (obj == null) {
                 if (registration && isThread)
-                    throw new ExceptionDSL("it is not allowed to register an \"$name\" $typeObject inside a thread!")
+                    throw new ExceptionDSL("it is not allowed to register an \"$name\" inside a thread for $typeObject!")
 
-                if (!registration && dslCreator.options().validRegisterObjects)
-                    throw new ExceptionDSL("$typeObject \"$name\" is not registered!")
+                if (!registration && dslCreator.options.validRegisterObjects)
+                    throw new ExceptionDSL("\"$name\" is not registered for $typeObject!")
 
                 obj = createObject(className)
                 obj.dslNameObject = repName
@@ -282,10 +315,10 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                 initRegisteredObject(obj)
             } else {
                 if (registration)
-                    throw new ExceptionDSL("$typeObject \"$name\" already registered for class \"${obj.getClass().name}\"!")
+                    throw new ExceptionDSL("\"$name\" already registered as class \"${obj.getClass().name}\" for $typeObject!")
                 else {
                     if (className != null && obj.getClass().name != className)
-                        throw new ExceptionDSL("The requested $typeObject \"$name\" of the class \"$className\" is already registered for the class \"${obj.getClass().name}\"!")
+                        throw new ExceptionDSL("The requested \"$name\" of the class \"$className\" is already registered as class \"${obj.getClass().name}\" for $typeObject!")
                 }
             }
         }

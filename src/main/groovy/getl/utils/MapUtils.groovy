@@ -290,7 +290,7 @@ class MapUtils {
 	 * @param added
      * @param mergeList
 	 */
-	static void MergeMap (Map<String, Object> source, Map<String, Object> added, boolean existUpdate = true, boolean mergeList = false) {
+	static void MergeMap(Map<String, Object> source, Map<String, Object> added, boolean existUpdate = true, boolean mergeList = false) {
 		if (source == null || added == null) return
 		added.each { String key, value ->
 			MergeMapChildren(source, value, key, existUpdate, mergeList)

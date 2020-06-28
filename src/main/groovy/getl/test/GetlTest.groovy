@@ -29,6 +29,8 @@ import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
 import groovy.test.GroovyAssert
+import groovy.time.Duration
+import groovy.time.TimeDuration
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
@@ -71,4 +73,23 @@ abstract class GetlTest extends GroovyAssert {
 
     /** Allow to run tests */
     boolean allowTests() { true }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param message message text
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(String message, Duration expected, Duration actual) {
+        assertEquals(message, expected.toString(), actual.toString())
+    }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(Duration expected, Duration actual) {
+        assertEquals(null as String, expected, actual)
+    }
 }

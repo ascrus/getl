@@ -5,7 +5,6 @@ import getl.files.Manager
 import getl.test.GetlDslTest
 import getl.test.TestInit
 import getl.test.TestRunner
-import getl.tfs.TDS
 import getl.utils.FileUtils
 import getl.utils.Path
 import getl.utils.StringUtils

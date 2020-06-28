@@ -67,7 +67,7 @@ class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
         def connectionName = config.connection as String
         def con = dslCreator.connection(connectionName)
         def obj = new Sequence()
-        obj.params = MapUtils.Copy(config, ['connection'])
+        MapUtils.MergeMap(obj.params as Map<String, Object>, MapUtils.CleanMap(config, ['connection']) as Map<String, Object>)
         obj.setConnection(con)
         return obj
     }

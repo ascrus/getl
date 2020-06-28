@@ -416,7 +416,6 @@ class JDBCConnection extends Connection implements UserLogins {
 			}
 			d.connection = this
 			d.with {
-				d.autoSchema = true
 				if (row.dbName != null) d.dbName = row.dbName
 				if (row.schemaName != null) d.schemaName = row.schemaName
 				d.tableName = row.tableName

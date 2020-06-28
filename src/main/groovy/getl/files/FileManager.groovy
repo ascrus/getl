@@ -190,12 +190,12 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	void download (String fileName, String path, String localFileName) {
+	void download (String filePath, String localPath, String localFileName) {
 		validConnect()
 		
-		def f = fileFromLocalDir("${_currentPath}/${fileName}")
+		def f = fileFromLocalDir("${_currentPath}/${filePath}")
 		
-		def fn = path + '/' + localFileName
+		def fn = localPath + '/' + localFileName
 		FileUtils.CopyToFile(f.canonicalPath, fn, false)
 
         def fDest = new File(fn)

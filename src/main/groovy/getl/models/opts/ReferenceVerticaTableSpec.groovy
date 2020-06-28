@@ -42,7 +42,9 @@ class ReferenceVerticaTableSpec extends TableSpec {
     /** Owner reference model */
     protected ReferenceVerticaTables getOwnerRef() { ownerModel as ReferenceVerticaTables }
 
-    /** Worging table  */
+    /** Work table name */
+    String getWorkTableName() { datasetName }
+    /** Work table  */
     VerticaTable getWorkTable() { dataset as VerticaTable }
 
     /** Reference table name */

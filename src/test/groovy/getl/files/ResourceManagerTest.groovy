@@ -36,7 +36,7 @@ class ResourceManagerTest extends GetlDslTest {
 
     @Test
     void testReadFromJar() {
-        def file = FileUtils.FileFromResources('/zip/repository.jar')
+        def file = FileUtils.FileFromResources('/reference/zip/repository.jar')
         testListDir(ResourceManager.ListDirJar("file:$file!/repository"))
     }
 

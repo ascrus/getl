@@ -116,4 +116,7 @@ class NetsuiteDriver extends JDBCDriver {
 
 		return url
 	}
+
+	@Override
+	String getNowFunc() { 'GETDATE()' }
 }

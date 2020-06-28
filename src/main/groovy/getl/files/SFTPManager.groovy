@@ -344,25 +344,25 @@ class SFTPManager extends Manager implements UserLogins {
 	}
 
 	@Override
-	void download(String fileName, String path, String localFileName) {
+	void download(String filePath, String localPath, String localFileName) {
 		validConnect()
 
-		def fn = ((path != null)?path + "/":"") + localFileName
-		writeScriptHistoryFile("COMMAND: get \"$fileName\" to \"$fn\"")
+		def fn = ((localPath != null)?localPath + "/":"") + localFileName
+		writeScriptHistoryFile("COMMAND: get \"$filePath\" to \"$fn\"")
         def f = new File(fn)
 		OutputStream s = f.newOutputStream()
 		try {
-			channelFtp.get(fileName, s)
+			channelFtp.get(filePath, s)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not download file \"$fileName\" to \"$fn\"")
+			if (writeErrorsToLog) Logs.Severe("Can not download file \"$filePath\" to \"$fn\"")
 			throw e
 		}
 		finally {
 			s.close()
 		}
 
-        setLocalLastModified(f, getLastModified(fileName))
+        setLocalLastModified(f, getLastModified(filePath))
 	}
 
 	@Override

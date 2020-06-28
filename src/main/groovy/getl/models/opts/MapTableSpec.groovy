@@ -47,7 +47,7 @@ class MapTableSpec extends TableSpec {
     /** Repository source dataset name */
     String getSourceName() { datasetName }
     /** Source dataset */
-    Dataset getSource() { ownerModel.dslCreator.dataset(sourceName) }
+    Dataset getSource() { ownerModel.dslCreator.dataset(datasetName) }
 
     /** Repository destination dataset name */
     String getDestinationName() { params.destinationName as String }
@@ -60,7 +60,7 @@ class MapTableSpec extends TableSpec {
 
         def ds = ownerModel.dslCreator.dataset(destinationName)
         def name = ds.dslNameObject
-        if (name == sourceName)
+        if (name == datasetName)
             throw new ExceptionModel('You cannot use the same dataset for source and destination!')
 
         params.destinationName = name
@@ -74,7 +74,7 @@ class MapTableSpec extends TableSpec {
         if (name == null)
             throw new ExceptionModel("The dataset $destinationDataset must be registered in the repository!")
 
-        if (name == sourceName)
+        if (name == datasetName)
             throw new ExceptionModel('You cannot use the same dataset for source and destination!')
 
         params.destinationName = name

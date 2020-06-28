@@ -126,7 +126,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         try {
             usedFiles.each { modelFile ->
                 def fileName = FileUtils.FileName(modelFile.filePath)
-                source.download(modelFile.filePath)
+                source.download(modelFile.filePath, fileName)
                 try {
                     dest.changeDirectoryToRoot()
                     if (modelFile.destinationPath != null)
@@ -155,7 +155,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                     }
                 }
                 finally {
-                    dest.removeLocalFile(fileName)
+                    source.removeLocalFile(fileName)
                 }
             }
         }

@@ -312,4 +312,7 @@ end;
 			super.createSequence(name, ifNotExists, opts)
 		}
 	}
+
+	@Override
+	String getNowFunc() { 'LOCALTIMESTAMP' }
 }

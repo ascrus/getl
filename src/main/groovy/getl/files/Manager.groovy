@@ -429,32 +429,32 @@ abstract class Manager implements Cloneable, GetlRepository {
 	
 	/**
 	 * Download file from specified path by server
-	 * @param fileName downloaded file name
-	 * @param path path file path
+	 * @param filePath downloaded file name
+	 * @param localPath path to file on server
 	 * @param localFileName saved file name in local directory
 	 */
-	abstract void download(String fileName, String path, String localFileName)
+	abstract void download(String filePath, String localPath, String localFileName)
 	
 	/**
 	 * Download file from current directory by server
-	 * @param fileName downloaded file name
+	 * @param filePath file path on server
 	 */
-	void download(String fileName) {
-		download(fileName, fileName)
+	void download(String filePath) {
+		download(filePath, filePath)
 	}
 	
 	/**
 	 * Download file to specified name in local directory
-	 * @param fileName
-	 * @param localFileName
+	 * @param filePath file path on server
+	 * @param localFileName file download path to local directory
 	 */
-	void download(String fileName, String localFileName) {
+	void download(String filePath, String localFileName) {
 		def ld = currentLocalDir()
 		if (ld != null) FileUtils.ValidPath(ld)
 		if (localFileName[0] in ['/', '\\'] )
 			localFileName = localFileName.substring(1)
 
-		download(fileName, ld, localFileName)
+		download(filePath, ld, localFileName)
 	}
 	
 	/**
@@ -483,6 +483,19 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param dirName created directory name
 	 */
 	abstract void createDir(String dirName)
+
+	/**
+	 * Create directories in current directory by server if not exists
+	 * @param dirPath created directory path
+	 */
+	void createDirs(String dirPath) {
+		def dirs = FileUtils.ConvertToUnixPath(dirPath).split('/')
+		dirs.each { dir ->
+			if (!existsDirectory(dir))
+				createDir(dir)
+			changeDirectory(dir)
+		}
+	}
 	
 	/**
 	 * Remove directory in current directory by server

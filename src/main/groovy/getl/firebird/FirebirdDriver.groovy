@@ -103,4 +103,7 @@ class FirebirdDriver extends JDBCDriver{
     /** Next value sequence sql script */
     @Override
     protected String sqlSequenceNext(String sequenceName) { "SELECT NEXT VALUE FOR ${sequenceName} AS id FROMM $sysDualTable" }
+
+    @Override
+    String getNowFunc() { 'cast(\'NOW\' as timestamp)' }
 }

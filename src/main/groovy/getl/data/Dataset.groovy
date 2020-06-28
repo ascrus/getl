@@ -135,8 +135,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (params.containsKey("config")) dataset.setConfig(params.config as String)
 		if (params.containsKey("field")) dataset.setField(params.field as List<Field>)
 
-		MapUtils.RemoveKeys(params, ["dataset", "connection", "config", "field"])
-		dataset.params.putAll(params)
+		MapUtils.MergeMap(dataset.params as Map<String, Object>, MapUtils.CleanMap(params, ["dataset", "connection", "config", "field"]) as Map<String, Object>)
 
 		return dataset
 	}

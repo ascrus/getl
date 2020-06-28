@@ -264,18 +264,18 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    void download(String fileName, String path, String localFileName) {
+    void download(String filePath, String localPath, String localFileName) {
         validConnect()
 
-        def fn = ((path != null)?path + '/':'') + localFileName
+        def fn = ((localPath != null)?localPath + '/':'') + localFileName
         try {
-            def p = fullPath(_currentPath, fileName)
+            def p = fullPath(_currentPath, filePath)
             client.copyToLocalFile(false, p, new Path(fn), true)
             def f = new File(fn)
-            setLocalLastModified(f, getLastModified(fileName))
+            setLocalLastModified(f, getLastModified(filePath))
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not download file \"${fullName(_currentPath, fileName)}\" to \"$fn\"")
+            if (writeErrorsToLog) Logs.Severe("Can not download file \"${fullName(_currentPath, filePath)}\" to \"$fn\"")
             throw e
         }
     }

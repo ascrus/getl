@@ -833,10 +833,11 @@ ${extend}'''
 	protected String memoryTablePrefix = 'MEMORY'
 	protected String externalTablePrefix = 'EXTERNAL'
 
-	/**
-	 * Name dual system table
-	 */
+	/** Name dual system table */
 	String getSysDualTable() { return null }
+
+	/** Name of current date time function */
+	String getNowFunc() { 'NOW()' }
 
 	@Synchronized
 	@Override

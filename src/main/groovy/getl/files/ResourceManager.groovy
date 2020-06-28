@@ -279,18 +279,24 @@ class ResourceManager extends Manager {
 
         def dir = directoryFromPath(mask)
 
-        Path p
+        List<ResourceCatalogElem> files
         if (mask != null) {
             def strmask = FileUtils.MaskFile(mask)
             if (strmask != null) {
-                p = new Path()
+                def p = new Path()
                 p.compile(mask: strmask)
+                files = dir.files.findAll { p.match(it.filename) }
+            }
+            else {
+                def fileName = FileUtils.FileName(mask)
+                if (fileName != null)
+                    files = [dir.files.find { it.filename = fileName}] as List<ResourceCatalogElem>
+                else
+                    files = dir.files
             }
         }
-
-        def files = dir.files.findAll {
-            return (p == null || p.match(it.filename))
-        }
+        else
+            files = dir.files
 
         def res = new ResourceFileList()
         res.listFiles = files
@@ -376,7 +382,7 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    void download(String filePath, String path, String localFileName) {
+    void download(String filePath, String localPath, String localFileName) {
         validConnect()
 
         def cd = directoryFromPath(FileUtils.RelativePathFromFile(filePath, true))
@@ -386,7 +392,7 @@ class ResourceManager extends Manager {
             throw new ExceptionGETL("File \"$filePath\" not found!")
         def fp = resourcePath + file.filepath
 
-        def destFile = new File(path + cd.filepath + '/' + fileName)
+        def destFile = new File(localPath + '/' + localFileName)
         FileUtils.ValidFilePath(destFile)
 
         def destDir = destFile.parentFile

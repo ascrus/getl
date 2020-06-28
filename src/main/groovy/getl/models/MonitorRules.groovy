@@ -202,7 +202,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     }
 
     /** Get current date query */
-    private QueryDataset queryCurrentDate = new QueryDataset(query: 'SELECT GETDATE() AS curdate {from}', queryParams: [from: ''])
+    private QueryDataset queryCurrentDate = new QueryDataset(query: 'SELECT {now} AS curdate {from}')
 
     Date currentDateTime
     /** Get current date */
@@ -212,6 +212,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
             return this.currentDateTime
 
         queryCurrentDate.with {
+            queryParams.now = currentJDBCConnection.currentJDBCDriver.nowFunc
             queryParams.from = (currentJDBCConnection.currentJDBCDriver.sysDualTable != null)?
                     "FROM ${currentJDBCConnection.currentJDBCDriver.sysDualTable}" : ''
         }

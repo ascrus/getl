@@ -492,4 +492,7 @@ class HiveDriver extends JDBCDriver {
             throw e
         }
     }
+
+    @Override
+    String getNowFunc() { 'CURRENT_TIMESTAMP' }
 }

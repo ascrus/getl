@@ -592,7 +592,7 @@ class FileUtils {
 			res = new File(file).name
 		}
 		
-		res
+		(!(res in ['.', '..']))?res:null
 	}
 
     /**

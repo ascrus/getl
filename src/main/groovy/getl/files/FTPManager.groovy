@@ -331,18 +331,18 @@ class FTPManager extends Manager implements UserLogins {
 	}
 	
 	@Override
-	void download(String fileName, String path, String localFileName) {
+	void download(String filePath, String localPath, String localFileName) {
 		validConnect()
 
-		def fn = ((path != null)?path + '/':'') + localFileName
+		def fn = ((localPath != null)?localPath + '/':'') + localFileName
 		try {
             def f = new File(fn)
-			client.download(fileName, f)
-            setLocalLastModified(f, getLastModified(fileName))
+			client.download(filePath, f)
+            setLocalLastModified(f, getLastModified(filePath))
 
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not download file \"$fileName\" to \"$fn\"")
+			if (writeErrorsToLog) Logs.Severe("Can not download file \"$filePath\" to \"$fn\"")
 			throw e
 		}
 	}

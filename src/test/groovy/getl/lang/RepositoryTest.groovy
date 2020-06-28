@@ -562,38 +562,37 @@ class RepositoryTest extends GetlDslTest {
 
             repositoryStorageManager {
                 clearReporitories()
+                autoLoadFromStorage = true
                 shouldFail {
-                    loadObject(RepositoryConnections, 'unknown')
+                    embeddedConnection('unknown')
                 }
-                shouldFail {
-                    loadObject(RepositoryDatasets, 'table')
-                }
-                loadObject(RepositoryConnections, 'con')
                 assertNotNull(embeddedConnection('con'))
-                loadObject(RepositoryDatasets, 'table')
                 assertNotNull(embeddedTable('table'))
 
-                loadObject(RepositorySequences, 'sequence')
                 assertNotNull(sequence('sequence'))
                 removeStorage(RepositorySequences)
                 assertFalse(objectFile(RepositorySequences, 'sequence').exists())
-                shouldFail {
-                    loadObject(RepositoryConnections, 'sequence')
-                }
-                saveObject(RepositorySequences, 'sequence')
-                assertTrue(objectFile(RepositorySequences, 'sequence').exists())
+                def seq = sequence('sequence')
                 unregisterSequence()
-                loadObject(RepositorySequences, 'sequence')
+                shouldFail {
+                    sequence('sequence')
+                }
+                registerSequenceObject(seq, 'sequence')
+                saveObject(RepositorySequences, 'sequence')
+                unregisterSequence()
+                assertTrue(objectFile(RepositorySequences, 'sequence').exists())
+
                 assertNotNull(sequence('sequence'))
                 assertTrue(objectFile(RepositorySequences, 'sequence').delete())
                 assertFalse(objectFile(RepositorySequences, 'sequence').exists())
+                unregisterSequence()
                 shouldFail {
-                    loadObject(RepositoryConnections, 'sequence')
+                    sequence('sequence')
                 }
+                registerSequenceObject(seq, 'sequence')
                 saveObject(RepositorySequences, 'sequence')
                 assertTrue(objectFile(RepositorySequences, 'sequence').exists())
                 unregisterSequence()
-                loadObject(RepositorySequences, 'sequence')
                 assertNotNull(sequence('sequence'))
             }
         }
@@ -634,17 +633,29 @@ class RepositoryTest extends GetlDslTest {
                 storagePath = 'resource:/repository'
                 loadRepositories()
             }
-            assertEquals(2, listConnections().size)
-            assertEquals(2, listDatasets().size)
+            assertEquals(3, listConnections().size())
+            assertEquals(6, listDatasets().size())
             assertEquals(1, listSequences().size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(2, listFilemanagers().size())
             assertEquals(1, models.listReferenceFiles().size())
             assertEquals(0, models.listMapTables().size())
-            assertEquals(0, models.listMonitorRules().size())
+            assertEquals(1, models.listMonitorRules().size())
             assertEquals(0, models.listReferenceVerticaTables().size())
             assertNotNull(embeddedConnection('h2:con'))
             assertNotNull(verticaConnection('ver:con'))
+            verticaTable('ver:table1') {
+                assertFalse(autoSchema)
+                assertEquals('public', schemaName)
+                assertEquals('getl_table1', tableName)
+                createOpts {
+                    assertEquals('Year(DT) * 100 + Month(DT)', partitionBy)
+                }
+                assertNull(readDirective.where)
+                writeOpts {
+                    assertNull(batchSize)
+                }
+            }
 
             repositoryStorageManager {
                 clearReporitories()
@@ -721,6 +732,7 @@ class RepositoryTest extends GetlDslTest {
             assertEquals(2, listDatasets('table_rep_*').size())
 
             embeddedTable('table_rep_1') {
+                assertFalse(autoSchema)
                 assertEquals('REPORITORY_TABLES', schemaName)
                 assertEquals('TABLE_REP_1', tableName)
                 assertEquals(2, field.size())
@@ -752,6 +764,46 @@ class RepositoryTest extends GetlDslTest {
                     assertEquals(integerFieldType, type)
                     assertFalse(isNull)
                 }
+            }
+        }
+    }
+
+    @Test
+    void testLoadDevWithFiles() {
+        Getl.Dsl {
+            repositoryStorageManager {
+                storagePath = 'src/test/resources/repository'
+                autoLoadFromStorage = true
+                assertNotNull(embeddedConnection('h2:con'))
+                assertNotNull(jdbcTable('h2:table1'))
+                loadRepositories()
+            }
+        }
+    }
+
+    @Test
+    void testLoadDevWithResources() {
+        Getl.Dsl {
+            repositoryStorageManager {
+                storagePath = 'resource:/repository'
+                autoLoadFromStorage = true
+                assertNotNull(embeddedConnection('h2:con'))
+                assertNotNull(jdbcTable('h2:table1'))
+                loadRepositories()
+            }
+        }
+    }
+
+    @Test
+    @Config(env = 'prod')
+    void testLoadProd() {
+        Getl.Dsl {
+            repositoryStorageManager {
+                storagePath = 'resource:/repository'
+                autoLoadFromStorage = true
+                assertNotNull(embeddedConnection('h2:con'))
+                assertNotNull(jdbcTable('h2:table1'))
+                loadRepositories()
             }
         }
     }
