@@ -25,12 +25,13 @@ package getl.lang.opts
 
 import getl.exception.ExceptionModel
 import getl.lang.Getl
-import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryObjects
+import getl.models.ListTables
 import getl.models.MapTables
 import getl.models.MonitorRules
 import getl.models.ReferenceFiles
 import getl.models.ReferenceVerticaTables
+import getl.models.sub.RepositoryListTables
 import getl.models.sub.RepositoryMapTables
 import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
@@ -290,5 +291,62 @@ class ModelSpec extends BaseSpec {
     void processMapTables(String mask,
                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         repository(RepositoryMapTables).processObjects(mask, null, cl)
+    }
+
+    /** List tables model description */
+    ListTables listTables(String modelName, Boolean registration = false,
+                          @DelegatesTo(ListTables)
+                          @ClosureParams(value = SimpleType, options = ['getl.models.ListTables'])
+                                  Closure cl = null) {
+        if (modelName == null)
+            throw new ExceptionModel('Missing model name!')
+
+        def parent = (repository(RepositoryListTables) as RepositoryListTables).register(getl, ListTables.name, modelName, registration)
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** List tables model description */
+    ListTables listTables(String modelName,
+                          @DelegatesTo(ListTables)
+                          @ClosureParams(value = SimpleType, options = ['getl.models.ListTables']) Closure cl) {
+        listTables(modelName, false, cl)
+    }
+
+    /** Unregister list tables models */
+    void unregisterListTables(String mask) {
+        repository(RepositoryListTables).unregister(mask)
+    }
+
+    /**
+     * Register list tables models from storage configuration files to repository
+     * @param mask model name mask
+     * @return number of registered models
+     */
+    int registerListTablesFromStorage(String mask = null) {
+        return getl.repositoryStorageManager().loadRepository(RepositoryListTables, mask, null)
+    }
+
+    /**
+     * Return a list of list tables models
+     * @param mask search mask
+     * @param filter filter code
+     * @return list of names of found models
+     */
+    List<String> listListTables(String mask = null,
+                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.ListTables'])
+                                        Closure<Boolean> filter = null) {
+        repository(RepositoryListTables).list(mask, null, filter)
+    }
+
+    /**
+     * Process a list of list tables models
+     * @param mask search mask
+     * @param cl process code
+     */
+    void processListTables(String mask,
+                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        repository(RepositoryListTables).processObjects(mask, null, cl)
     }
 }

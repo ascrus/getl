@@ -29,6 +29,7 @@ import getl.files.FileManager
 import getl.files.Manager
 import getl.files.ResourceManager
 import getl.lang.Getl
+import getl.models.sub.RepositoryListTables
 import getl.models.sub.RepositoryMapTables
 import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
@@ -108,6 +109,7 @@ class RepositoryStorageManager {
         registerRepository(RepositoryReferenceFiles)
         registerRepository(RepositoryMonitorRules)
         registerRepository(RepositoryMapTables)
+        registerRepository(RepositoryListTables)
     }
 
     /** List of registered repositories */

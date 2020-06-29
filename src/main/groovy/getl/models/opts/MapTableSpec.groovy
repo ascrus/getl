@@ -32,17 +32,16 @@ import groovy.transform.InheritConstructors
 import java.util.concurrent.ConcurrentHashMap
 
 @InheritConstructors
-class MapTableSpec extends TableSpec {
+class MapTableSpec extends DatasetSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
         params.listPartitions = Collections.synchronizedList(new ArrayList())
-        params.attrs = new ConcurrentHashMap<String, Object>()
         params.map = new ConcurrentHashMap<String, String>()
     }
 
     /** Owner processing model */
-    protected MapTables getOwnerProc() { ownerModel as MapTables }
+    protected MapTables getOwnerMapModel() { ownerModel as MapTables }
 
     /** Repository source dataset name */
     String getSourceName() { datasetName }
@@ -105,14 +104,5 @@ class MapTableSpec extends TableSpec {
         map.clear()
         if (value != null)
             map.putAll(value)
-    }
-
-    /** Mapping attributes */
-    Map<String, Object> getAttrs() { params.attrs as Map<String, Object> }
-    /** Mapping attributes */
-    void setAttrs(Map<String, Object> value) {
-        attrs.clear()
-        if (value != null)
-            attrs.putAll(value)
     }
 }

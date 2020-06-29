@@ -103,13 +103,14 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
     }
 
     /**
-     * Check model settings
-     * @param validObjects check model objects
+     * Check model parameters
+     * @param validObjects check parameters of model objects
      */
     void checkModel(boolean checkObjects = true) {
-        usedObjects.each { obj -> checkObject(obj) }
+        if (checkObjects)
+            usedObjects.each { obj -> checkObject(obj) }
     }
 
-    /** Check object settings */
+    /** Check object parameter */
     void checkObject(BaseSpec object) { }
 }

@@ -23,31 +23,21 @@
 */
 package getl.models.opts
 
-import getl.data.Dataset
-import getl.models.sub.TablesModel
+import getl.jdbc.TableDataset
+import getl.models.ListTables
+import groovy.transform.InheritConstructors
 
 /**
- * Base model dataset specification
+ * Table specification
  * @author ALexsey Konstantinov
  */
-class TableSpec extends BaseSpec {
-    TableSpec(TablesModel model, String tableName) {
-        super(model)
-        setDatasetName(tableName)
-    }
+@InheritConstructors
+class TableSpec extends DatasetSpec {
+    /** Owner list tables model */
+    protected ListTables getOwnerListTables() { ownerModel as ListTables }
 
-    TableSpec(TablesModel model, Map importParams) {
-        super(model, importParams)
-    }
-
-    /** Model dataset name */
-    protected String getDatasetName() { params.datasetName as String }
-    /** Model dataset name */
-    protected void setDatasetName(String value) { params.datasetName = value }
-
-    /** Model dataset */
-    protected Dataset getDataset() { ownerModel.dslCreator.dataset(datasetName) }
-
-    @Override
-    String toString() { datasetName }
+    /** Repository table name */
+    String getSourceTableName() { datasetName }
+    /** Repository table */
+    TableDataset getSourceTable() { ownerModel.dslCreator.jdbcTable(datasetName) }
 }

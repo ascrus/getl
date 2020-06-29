@@ -29,7 +29,7 @@ import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
 import getl.models.opts.BaseSpec
 import getl.models.opts.MapTableSpec
-import getl.models.sub.TablesModel
+import getl.models.sub.DatasetsModel
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -40,20 +40,20 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-class MapTables extends TablesModel<MapTableSpec> {
-    /** Connection name in the repository for source tables */
+class MapTables extends DatasetsModel<MapTableSpec> {
+    /** Repository connection name for source dataasets */
     String getSourceConnectionName() { modelConnectionName }
     /** Use specified connection for source datasets */
     void useSourceConnection(String connectionName) { useModelConnection(connectionName) }
     /** Use specified connection for source datasets */
     void useSourceConnection(Connection connection) { useModelConnection(connection) }
-    /** Source datasets connection */
+    /** Used source connection */
     Connection getSourceConnection() { modelConnection }
 
-    /** List of used mapping tables */
+    /** Used mapping datasets */
     List<MapTableSpec> getUsedMapping() { usedObjects as List<MapTableSpec> }
 
-    /** Connection name in the repository for destination tables */
+    /** Repository cnnection name for destination dataasets */
     String getDestinationConnectionName() { params.destinationConnectionName as String }
     /** Use specified connection for destination datasets */
     void useDestinationConnection(String connectionName) {
@@ -76,20 +76,20 @@ class MapTables extends TablesModel<MapTableSpec> {
     Connection getDestinationConnection() { dslCreator.connection(destinationConnectionName) }
 
     /**
-     * Define a table for the mapping model
-     * @param tableName repository table name
+     * Use dataset for the mapping
+     * @param datasetName repository dataset name
      * @param cl defining code
      * @return mapping spec
      */
-    MapTableSpec mapTable(String sourceTableName,
+    MapTableSpec mapTable(String datasetName,
                           @DelegatesTo(MapTableSpec)
                           @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec'])
                                   Closure cl = null) {
-        super.modelTable(sourceTableName, cl)
+        super.dataset(datasetName, cl)
     }
 
     /**
-     * Define a table for the mapping model
+     * Use dataset for mapping
      * @param cl defining code
      * @return mapping spec
      */
@@ -98,14 +98,20 @@ class MapTables extends TablesModel<MapTableSpec> {
         mapTable(null as String, cl)
     }
 
-    /** Use table in the mapping model  */
-    MapTableSpec mapTable(Dataset sourceTable,
+    /**
+     * Use dataset for mapping
+     * @param dataset repository dataset
+     * @param cl defining code
+     * @return mapping spec
+     */
+    MapTableSpec mapTable(Dataset dataset,
                           @DelegatesTo(MapTableSpec)
                           @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec'])
                                   Closure cl = null) {
-        super.useModelTable(sourceTable, cl)
+        super.useDataset(dataset, cl)
     }
 
+    @Override
     void checkModel(boolean checkObjects = true) {
         if (sourceConnectionName == null)
             throw new ExceptionModel("The source connection is not specified!")
@@ -125,23 +131,11 @@ class MapTables extends TablesModel<MapTableSpec> {
     }
 
     /**
-     * Check attribute naming and generate an unknown error
-     * @param allowAttrs list of allowed attribute names
+     * Check mapping objects
+     * @param cl validation code
      */
-    void checkAttrs(List<String> allowAttrs) {
-        if (allowAttrs == null)
-            throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')
-        usedMapping.each { node ->
-            def ukeys = MapUtils.Unknown(node.attrs, allowAttrs)
-            if (!ukeys.isEmpty())
-                throw new ExceptionDSL("Unknown attributes were detected in \"${node.sourceName}\":  $ukeys, allow attributes: $allowAttrs")
-        }
-    }
-
-    /** Validate the mapping */
     void checkMapping(@DelegatesTo(MapTableSpec)
-                      @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec'])
-                              Closure cl = null) {
+                      @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec']) Closure cl = null) {
         usedMapping.each { node ->
             if (node.destinationName == null)
                 throw new ExceptionDSL("The destination is not specified for table \"${node.sourceName}\"!")

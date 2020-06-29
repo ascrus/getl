@@ -21,22 +21,34 @@
  GNU Lesser General Public License along with this program.
  If not, see <http://www.gnu.org/licenses/>.
 */
-package getl.models.opts
+package getl.models.sub
 
-import getl.models.ReferenceFiles
+import getl.lang.sub.GetlRepository
+import getl.lang.sub.RepositoryObjects
+import getl.models.ListTables
 import groovy.transform.InheritConstructors
 
 /**
- * Model file specification
+ * Repository models of list tables
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-class ReferenceFileSpec extends FileSpec {
-    /** Owner reference model */
-    protected ReferenceFiles getOwnerReferenceFilesModel() { ownerModel as ReferenceFiles }
+class RepositoryListTables extends RepositoryObjects<ListTables> {
+    @Override
+    List<String> getListClasses() { [ListTables.name] }
 
-    /** Destination file storage path */
-    String getDestinationPath() { params.destinationPath as String }
-    /** Destination file storage path */
-    void setDestinationPath(String value) { params.destinationPath = value }
+    @Override
+    ListTables createObject(String className) {
+        new ListTables(this)
+    }
+
+    @Override
+    Map exportConfig(GetlRepository repobj) {
+        return (repobj as ListTables).params
+    }
+
+    @Override
+    GetlRepository importConfig(Map config) {
+        return new ListTables(dslCreator, false, config)
+    }
 }

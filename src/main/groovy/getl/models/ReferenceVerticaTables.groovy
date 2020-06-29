@@ -27,7 +27,7 @@ import getl.data.Dataset
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.models.opts.ReferenceVerticaTableSpec
-import getl.models.sub.TablesModel
+import getl.models.sub.DatasetsModel
 import getl.utils.Logs
 import getl.vertica.VerticaConnection
 import getl.vertica.VerticaTable
@@ -40,7 +40,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-class ReferenceVerticaTables extends TablesModel<ReferenceVerticaTableSpec> {
+class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     /** Vertica connection name in the repository */
     String getReferenceConnectionName() { modelConnectionName }
     /** Use specified Vertica connection */
@@ -68,7 +68,7 @@ class ReferenceVerticaTables extends TablesModel<ReferenceVerticaTableSpec> {
                                                  @DelegatesTo(ReferenceVerticaTableSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec'])
                                      Closure cl = null) {
-        super.modelTable(tableName, cl) as ReferenceVerticaTableSpec
+        super.dataset(tableName, cl) as ReferenceVerticaTableSpec
     }
 
     /**
@@ -82,18 +82,17 @@ class ReferenceVerticaTables extends TablesModel<ReferenceVerticaTableSpec> {
         referenceFromTable(null, cl)
     }
 
-    /**
-     * Valid table attributes
-     * @param ds validation table
-     */
     @Override
-    protected void validDataset(Dataset ds) {
-        super.validDataset(ds)
+    protected void validDataset(Dataset ds, String connectionName = null) {
+        super.validDataset(ds, connectionName)
+
+        def dsn = ds.dslNameObject
         if (!(ds instanceof VerticaTable))
-            throw new ExceptionModel('For reference models only Vertica tables are allowed!')
-        def verTable = ds as VerticaTable
-        if (verTable.schemaName.toLowerCase() == referenceSchemaName.toLowerCase())
-            throw new ExceptionModel("The schema of table $ds cannot be a model schema!")
+            throw new ExceptionModel("Table \"$dsn\" [$ds] is not a Vertica table!")
+
+        def vtb = ds as VerticaTable
+        if (vtb.schemaName.toLowerCase() == referenceSchemaName.toLowerCase())
+            throw new ExceptionModel("The schema of table \"$dsn\" [$ds] cannot be a model schema!")
     }
 
     /**

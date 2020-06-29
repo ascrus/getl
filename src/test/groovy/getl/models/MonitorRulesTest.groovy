@@ -4,9 +4,7 @@ import getl.test.TestRepository
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import groovy.time.TimeCategory
-import groovy.time.TimeDuration
 import org.junit.Test
-
 import static getl.test.TestRunner.Dsl
 
 class MonitorRulesTest extends TestRepository {

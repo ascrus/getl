@@ -23,6 +23,7 @@
 */
 package getl.models
 
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
@@ -114,12 +115,16 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     /** Check the query is correct */
     @SuppressWarnings("GrMethodMayBeStatic")
     void validQuery(QueryDataset query) {
-        if (query.connection == null)
-            throw new ExceptionModel("The connection for the query is not specified!")
-        if (query.query == null)
-            throw new ExceptionModel("Query does not have a sql text!")
+        if (query == null)
+            throw new ExceptionDSL('No query specified!')
         if (query.dslNameObject == null)
             throw new ExceptionModel("Query is not registered in the repository!")
+        def dsn = query.dslNameObject
+        if (query.connection == null)
+            throw new ExceptionModel("The connection for the query \"$dsn\" is not specified!")
+        if (query.query == null)
+            throw new ExceptionModel("Query \"$dsn\" does not have a sql text!")
+
     }
 
     /**

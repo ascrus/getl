@@ -23,7 +23,6 @@
 */
 package getl.models.sub
 
-import getl.exception.ExceptionDSL
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.RepositoryObjects
 import getl.models.MapTables

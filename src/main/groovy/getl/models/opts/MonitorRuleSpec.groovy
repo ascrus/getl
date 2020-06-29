@@ -43,7 +43,7 @@ class MonitorRuleSpec extends BaseSpec {
     }
 
     /** Owner monitor */
-    MonitorRules getOwnerMonitor() { ownerModel as MonitorRules }
+    MonitorRules getOwnerMonitorModel() { ownerModel as MonitorRules }
 
     /** Repository query name*/
     String getQueryName() { params.queryName as String }

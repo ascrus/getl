@@ -39,6 +39,9 @@ class FileSpec extends BaseSpec {
         super(model, importParams)
     }
 
+    /** Owner processing model */
+    protected FilesModel getOwnerFilesModel() { ownerModel as FilesModel }
+
     /** Path to file */
     String getFilePath() { params.filePath as String }
 

@@ -23,6 +23,7 @@
 */
 package getl.models.opts
 
+
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.models.ReferenceVerticaTables
@@ -38,14 +39,14 @@ import groovy.transform.InheritConstructors
  * @author ALexsey Konstantinov
  */
 @InheritConstructors
-class ReferenceVerticaTableSpec extends TableSpec {
+class ReferenceVerticaTableSpec extends DatasetSpec {
     /** Owner reference model */
-    protected ReferenceVerticaTables getOwnerRef() { ownerModel as ReferenceVerticaTables }
+    protected ReferenceVerticaTables getOwnerReferenceVerticaTableModel() { ownerModel as ReferenceVerticaTables }
 
     /** Work table name */
     String getWorkTableName() { datasetName }
     /** Work table  */
-    VerticaTable getWorkTable() { dataset as VerticaTable }
+    VerticaTable getWorkTable() { modelDataset as VerticaTable }
 
     /** Reference table name */
     String getReferenceTableName() { "m_${workTable.schemaName}_${workTable.tableName}" }
@@ -54,8 +55,8 @@ class ReferenceVerticaTableSpec extends TableSpec {
     VerticaTable getReferenceTable() {
         def destTable = new VerticaTable()
         destTable.with {
-            useConnection ownerRef.referenceConnection
-            schemaName = ownerRef.referenceSchemaName
+            useConnection ownerReferenceVerticaTableModel.referenceConnection
+            schemaName = ownerReferenceVerticaTableModel.referenceSchemaName
             tableName = referenceTableName
         }
 
@@ -97,9 +98,9 @@ class ReferenceVerticaTableSpec extends TableSpec {
         }
 
         if (exists)
-            ownerRef.referenceConnection.executeCommand("DROP TABLE IF EXISTS ${refTable.fullTableName} CASCADE")
+            ownerReferenceVerticaTableModel.referenceConnection.executeCommand("DROP TABLE IF EXISTS ${refTable.fullTableName} CASCADE")
 
-        ownerRef.referenceConnection.executeCommand("CREATE TABLE ${refTable.fullTableName} LIKE ${sourceTable.fullTableName} INCLUDING PROJECTIONS")
+        ownerReferenceVerticaTableModel.referenceConnection.executeCommand("CREATE TABLE ${refTable.fullTableName} LIKE ${sourceTable.fullTableName} INCLUDING PROJECTIONS")
         if (exists)
             Logs.Info("Reference table \"$datasetName\" successfully recreated")
         else
@@ -124,7 +125,7 @@ class ReferenceVerticaTableSpec extends TableSpec {
 
         def destTable = referenceTable as VerticaTable
 
-        def sourceRows = sourceTable.countRow(whereCopy, ownerRef.modelVars + objectVars)
+        def sourceRows = sourceTable.countRow(whereCopy, ownerReferenceVerticaTableModel.modelVars + objectVars)
         if (sourceRows == 0) {
             destTable.truncate(truncate: true)
             def msgWhere = (whereCopy != null)?" for given conditions \"$whereCopy\"":''
@@ -142,7 +143,7 @@ class ReferenceVerticaTableSpec extends TableSpec {
             }
         }
 
-        ownerRef.referenceConnection.with {
+        ownerReferenceVerticaTableModel.referenceConnection.with {
             transaction {
                 def p = [_model_sourcetable_: sourceTable.fullTableName, _model_desttable_:destTable.fullTableName, where: '', sample: '']
                 if (whereCopy != null) p.where = 'WHERE ' + whereCopy
@@ -184,7 +185,7 @@ class ReferenceVerticaTableSpec extends TableSpec {
             throw new ExceptionModel("Source table $sourceTable not found in Vertica cluster!")
 
         def destTable = referenceTable
-        def sourceRows = sourceTable.countRow(whereCopy, ownerRef.modelVars + objectVars)
+        def sourceRows = sourceTable.countRow(whereCopy, ownerReferenceVerticaTableModel.modelVars + objectVars)
         if (sourceRows == 0) {
             destTable.truncate(truncate: true)
             def msgWhere = (whereCopy != null)?" for given conditions \"$whereCopy\"":''
@@ -195,7 +196,7 @@ class ReferenceVerticaTableSpec extends TableSpec {
 
         def cols = [] as List<String>
         new QueryDataset().with {
-            useConnection ownerRef.referenceConnection
+            useConnection ownerReferenceVerticaTableModel.referenceConnection
             query = '''
 SELECT column_name
 FROM columns 
@@ -223,7 +224,7 @@ ORDER BY ordinal_position'''
 
         externalConnection.with {
             def p = [:]
-            p.putAll(ownerRef.modelVars)
+            p.putAll(ownerReferenceVerticaTableModel.modelVars)
             p.putAll(objectVars)
             p._model_sourcetable_ = sourceTable.fullTableName
             p._model_destdatabase_ = externalConnection.connectDatabase
@@ -283,7 +284,7 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
         if (sourceRows > 0) {
             def tableAttrs = new QueryDataset()
             tableAttrs.with {
-                useConnection ownerRef.referenceConnection
+                useConnection ownerReferenceVerticaTableModel.referenceConnection
                 query = '''
 SELECT NullIf(partition_expression, '') AS partition_expression
 FROM tables
@@ -295,7 +296,7 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
             def partExpression = (tableAttrs.rows()[0].partition_expression as String)
             def startPart, finishPart
             if (partExpression == null) {
-                ownerRef.referenceConnection.with {
+                ownerReferenceVerticaTableModel.referenceConnection.with {
                     transaction {
                         executeCommand '''INSERT /*+direct*/ INTO {dest} SELECT * FROM {source}''',
                                 [queryParams: [source: sourceTable.fullTableName, dest: destTable.fullTableName]]
@@ -304,7 +305,7 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
             } else {
                 def partDays = new QueryDataset()
                 partDays.with {
-                    useConnection ownerRef.referenceConnection
+                    useConnection ownerReferenceVerticaTableModel.referenceConnection
                     query = 'SELECT Min({part_expr}) AS part_min, Max({part_expr}) AS part_max FROM {table}'
                     queryParams.table = sourceTable.fullTableName
                     queryParams.part_expr = partExpression
@@ -312,7 +313,7 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
                 def partRow = partDays.rows()[0]
                 startPart = partRow.part_min
                 finishPart = partRow.part_max
-                ownerRef.referenceConnection.executeCommand '''SELECT COPY_PARTITIONS_TO_TABLE('{source}', '{start}', '{finish}', '{dest}', true)''',
+                ownerReferenceVerticaTableModel.referenceConnection.executeCommand '''SELECT COPY_PARTITIONS_TO_TABLE('{source}', '{start}', '{finish}', '{dest}', true)''',
                         [queryParams: [source: sourceTable.fullTableName, dest: destTable.fullTableName, start: startPart, finish: finishPart]]
             }
 
