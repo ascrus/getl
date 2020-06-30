@@ -26,12 +26,12 @@ package getl.lang.opts
 import getl.exception.ExceptionModel
 import getl.lang.Getl
 import getl.lang.sub.RepositoryObjects
-import getl.models.ListTables
+import getl.models.SetOfTables
 import getl.models.MapTables
 import getl.models.MonitorRules
 import getl.models.ReferenceFiles
 import getl.models.ReferenceVerticaTables
-import getl.models.sub.RepositoryListTables
+import getl.models.sub.RepositorySetOfTables
 import getl.models.sub.RepositoryMapTables
 import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
@@ -60,9 +60,6 @@ class ModelSpec extends BaseSpec {
                                                   @DelegatesTo(ReferenceVerticaTables)
                                                   @ClosureParams(value = SimpleType, options = ['getl.models.ReferenceVerticaTables'])
                                                           Closure cl = null) {
-        if (modelName == null)
-            throw new ExceptionModel('Missing model name!')
-
         def parent = (repository(RepositoryReferenceVerticaTables) as RepositoryReferenceVerticaTables).register(getl, ReferenceVerticaTables.name, modelName, registration)
         if (parent.referenceConnectionName == null) {
             def own = DetectClosureDelegate(cl)
@@ -80,6 +77,13 @@ class ModelSpec extends BaseSpec {
                                                   @ClosureParams(value = SimpleType, options = ['getl.models.ReferenceVerticaTables'])
                                                           Closure cl) {
         referenceVerticaTables(modelName, false, cl)
+    }
+
+    /** Reference tables model description */
+    ReferenceVerticaTables referenceVerticaTables(@DelegatesTo(ReferenceVerticaTables)
+                                                  @ClosureParams(value = SimpleType, options = ['getl.models.ReferenceVerticaTables'])
+                                                          Closure cl) {
+        referenceVerticaTables(null, false, cl)
     }
 
     /** Unregister reference tables models */
@@ -124,9 +128,6 @@ class ModelSpec extends BaseSpec {
                                   @DelegatesTo(ReferenceFiles)
                                   @ClosureParams(value = SimpleType, options = ['getl.models.ReferenceFiles'])
                                           Closure cl = null) {
-        if (modelName == null)
-            throw new ExceptionModel('Missing model name!')
-
         def parent = (repository(RepositoryReferenceFiles) as RepositoryReferenceFiles).register(getl, ReferenceFiles.name, modelName, registration)
         runClosure(parent, cl)
 
@@ -139,6 +140,13 @@ class ModelSpec extends BaseSpec {
                                   @ClosureParams(value = SimpleType, options = ['getl.models.ReferenceFiles'])
                                           Closure cl) {
         referenceFiles(modelName, false, cl)
+    }
+
+    /** Reference files model description */
+    ReferenceFiles referenceFiles(@DelegatesTo(ReferenceFiles)
+                                  @ClosureParams(value = SimpleType, options = ['getl.models.ReferenceFiles'])
+                                          Closure cl) {
+        referenceFiles(null, false, cl)
     }
 
     /** Unregister reference files models */
@@ -183,9 +191,6 @@ class ModelSpec extends BaseSpec {
                               @DelegatesTo(MonitorRules)
                               @ClosureParams(value = SimpleType, options = ['getl.models.MonitorRules'])
                                       Closure cl = null) {
-        if (modelName == null)
-            throw new ExceptionModel('Missing model name!')
-
         def parent = (repository(RepositoryMonitorRules) as RepositoryMonitorRules).register(getl, MonitorRules.name, modelName, registration)
         runClosure(parent, cl)
 
@@ -198,6 +203,13 @@ class ModelSpec extends BaseSpec {
                               @ClosureParams(value = SimpleType, options = ['getl.models.MonitorRules'])
                                       Closure cl) {
         monitorRules(modelName, false, cl)
+    }
+
+    /** Monitor tables model description */
+    MonitorRules monitorRules(@DelegatesTo(MonitorRules)
+                              @ClosureParams(value = SimpleType, options = ['getl.models.MonitorRules'])
+                                      Closure cl) {
+        monitorRules(null, false, cl)
     }
 
     /** Unregister monitor tables models */
@@ -241,9 +253,6 @@ class ModelSpec extends BaseSpec {
                         @DelegatesTo(MapTables)
                         @ClosureParams(value = SimpleType, options = ['getl.models.MapTables'])
                                 Closure cl = null) {
-        if (modelName == null)
-            throw new ExceptionModel('Missing model name!')
-
         def parent = (repository(RepositoryMapTables) as RepositoryMapTables).register(getl, MapTables.name, modelName, registration)
         runClosure(parent, cl)
 
@@ -255,6 +264,12 @@ class ModelSpec extends BaseSpec {
                         @DelegatesTo(MapTables)
                         @ClosureParams(value = SimpleType, options = ['getl.models.MapTables']) Closure cl) {
         mapTables(modelName, false, cl)
+    }
+
+    /** Map tables model description */
+    MapTables mapTables(@DelegatesTo(MapTables)
+                        @ClosureParams(value = SimpleType, options = ['getl.models.MapTables']) Closure cl) {
+        mapTables(null, false, cl)
     }
 
     /** Unregister map tables models */
@@ -294,29 +309,32 @@ class ModelSpec extends BaseSpec {
     }
 
     /** List tables model description */
-    ListTables listTables(String modelName, Boolean registration = false,
-                          @DelegatesTo(ListTables)
-                          @ClosureParams(value = SimpleType, options = ['getl.models.ListTables'])
+    SetOfTables setOfTables(String modelName, Boolean registration = false,
+                            @DelegatesTo(SetOfTables)
+                            @ClosureParams(value = SimpleType, options = ['getl.models.SetOfTables'])
                                   Closure cl = null) {
-        if (modelName == null)
-            throw new ExceptionModel('Missing model name!')
-
-        def parent = (repository(RepositoryListTables) as RepositoryListTables).register(getl, ListTables.name, modelName, registration)
+        def parent = (repository(RepositorySetOfTables) as RepositorySetOfTables).register(getl, SetOfTables.name, modelName, registration)
         runClosure(parent, cl)
 
         return parent
     }
 
     /** List tables model description */
-    ListTables listTables(String modelName,
-                          @DelegatesTo(ListTables)
-                          @ClosureParams(value = SimpleType, options = ['getl.models.ListTables']) Closure cl) {
-        listTables(modelName, false, cl)
+    SetOfTables setOfTables(String modelName,
+                            @DelegatesTo(SetOfTables)
+                            @ClosureParams(value = SimpleType, options = ['getl.models.SetOfTables']) Closure cl) {
+        setOfTables(modelName, false, cl)
+    }
+
+    /** List tables model description */
+    SetOfTables setOfTables(@DelegatesTo(SetOfTables)
+                          @ClosureParams(value = SimpleType, options = ['getl.models.SetOfTables']) Closure cl) {
+        setOfTables(null, false, cl)
     }
 
     /** Unregister list tables models */
-    void unregisterListTables(String mask) {
-        repository(RepositoryListTables).unregister(mask)
+    void unregisterSetOfTables(String mask) {
+        repository(RepositorySetOfTables).unregister(mask)
     }
 
     /**
@@ -324,8 +342,8 @@ class ModelSpec extends BaseSpec {
      * @param mask model name mask
      * @return number of registered models
      */
-    int registerListTablesFromStorage(String mask = null) {
-        return getl.repositoryStorageManager().loadRepository(RepositoryListTables, mask, null)
+    int registerSetOfTablesFromStorage(String mask = null) {
+        return getl.repositoryStorageManager().loadRepository(RepositorySetOfTables, mask, null)
     }
 
     /**
@@ -334,10 +352,10 @@ class ModelSpec extends BaseSpec {
      * @param filter filter code
      * @return list of names of found models
      */
-    List<String> listListTables(String mask = null,
-                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.ListTables'])
+    List<String> listSetOfTables(String mask = null,
+                                 @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.SetOfTables'])
                                         Closure<Boolean> filter = null) {
-        repository(RepositoryListTables).list(mask, null, filter)
+        repository(RepositorySetOfTables).list(mask, null, filter)
     }
 
     /**
@@ -345,8 +363,8 @@ class ModelSpec extends BaseSpec {
      * @param mask search mask
      * @param cl process code
      */
-    void processListTables(String mask,
-                           @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        repository(RepositoryListTables).processObjects(mask, null, cl)
+    void processSetOfTables(String mask,
+                            @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        repository(RepositorySetOfTables).processObjects(mask, null, cl)
     }
 }

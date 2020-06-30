@@ -24,7 +24,7 @@
 package getl.models.opts
 
 import getl.jdbc.TableDataset
-import getl.models.ListTables
+import getl.models.SetOfTables
 import groovy.transform.InheritConstructors
 
 /**
@@ -34,7 +34,7 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class TableSpec extends DatasetSpec {
     /** Owner list tables model */
-    protected ListTables getOwnerListTables() { ownerModel as ListTables }
+    protected SetOfTables getOwnerSetOfTables() { ownerModel as SetOfTables }
 
     /** Repository table name */
     String getSourceTableName() { datasetName }

@@ -5,11 +5,11 @@ import getl.test.TestRepository
 import org.junit.Test
 import static getl.test.TestRunner.Dsl
 
-class ListTablesTest extends TestRepository {
+class setOfTablesTest extends TestRepository {
     @Test
-    void testListTables() {
+    void testSetOfTables() {
         Dsl {
-            models.listTables('list1', true) {
+            models.setOfTables('list1', true) {
                 useSourceConnection embeddedConnection('h2:con')
                 table('h2:table1') {
                     assertEquals('h2:table1', sourceTableName)

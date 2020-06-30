@@ -25,7 +25,7 @@ package getl.models.sub
 
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.RepositoryObjects
-import getl.models.ListTables
+import getl.models.SetOfTables
 import groovy.transform.InheritConstructors
 
 /**
@@ -33,22 +33,22 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-class RepositoryListTables extends RepositoryObjects<ListTables> {
+class RepositorySetOfTables extends RepositoryObjects<SetOfTables> {
     @Override
-    List<String> getListClasses() { [ListTables.name] }
+    List<String> getListClasses() { [getl.models.SetOfTables.name] }
 
     @Override
-    ListTables createObject(String className) {
-        new ListTables(this)
+    SetOfTables createObject(String className) {
+        new SetOfTables(this)
     }
 
     @Override
     Map exportConfig(GetlRepository repobj) {
-        return (repobj as ListTables).params
+        return (repobj as SetOfTables).params
     }
 
     @Override
     GetlRepository importConfig(Map config) {
-        return new ListTables(dslCreator, false, config)
+        return new SetOfTables(dslCreator, false, config)
     }
 }

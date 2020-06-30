@@ -38,7 +38,7 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 @InheritConstructors
-class ListTables extends DatasetsModel<TableSpec> {
+class SetOfTables extends DatasetsModel<TableSpec> {
     /** Connection name in the repository */
     String getSourceConnectionName() { modelConnectionName }
     /** Use specified repository connection name */
