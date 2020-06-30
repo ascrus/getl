@@ -38,6 +38,9 @@ source code posted on the GitHub project [getl.vertica](https://github.com/ascru
 * Examples of working with Getl on the basis of H2 Database can be viewed on the GitHub project 
 [Getl examples](https://github.com/ascrus/getl-examples)
 
+## Architecture
+![Getl architecture](https://github.com/ascrus/getl/blob/master/manuals/Architect.png)
+
 ## Examples
 Registration of connections to Oracle and Vertica:
 ```groovy
