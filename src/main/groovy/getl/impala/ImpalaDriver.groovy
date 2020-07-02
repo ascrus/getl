@@ -111,7 +111,7 @@ class ImpalaDriver extends JDBCDriver {
     }
 
     @Override
-    protected String createDatasetExtend(Dataset dataset, Map params) {
+    protected String createDatasetExtend(JDBCDataset dataset, Map params) {
         def sb = new StringBuilder()
 
         def partitionFields = [] as List<Field>
@@ -207,7 +207,7 @@ class ImpalaDriver extends JDBCDriver {
     }
 
     @Override
-    protected String syntaxInsertStatement(Dataset dataset, Map params) {
+    protected String syntaxInsertStatement(JDBCDataset dataset, Map params) {
         String into = (BoolUtils.IsValue([params.overwrite, (dataset as TableDataset).params.overwrite]))?'OVERWRITE':'INTO'
         return ((dataset.fieldListPartitions.isEmpty()))?
                 "INSERT $into TABLE {table} ({columns}) VALUES({values})":
@@ -215,7 +215,7 @@ class ImpalaDriver extends JDBCDriver {
     }
 
     @CompileStatic
-    protected void saveBatch (Dataset dataset, WriterParams wp) {
+    protected void saveBatch(Dataset dataset, WriterParams wp) {
         try {
             super.saveBatch(dataset, wp)
         }

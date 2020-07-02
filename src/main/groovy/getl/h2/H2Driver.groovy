@@ -104,7 +104,7 @@ class H2Driver extends JDBCDriver {
 	}
 
 	@Override
-	protected String createDatasetExtend(Dataset dataset, Map params) {
+	protected String createDatasetExtend(JDBCDataset dataset, Map params) {
 		String result = ""
 		def temporary = (dataset as JDBCDataset).isTemporaryTable
 		if (BoolUtils.IsValue(params."not_persistent")) result += "NOT PERSISTENT "

@@ -101,7 +101,7 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	@Override
-	protected String createDatasetExtend(Dataset dataset, Map params) {
+	protected String createDatasetExtend(JDBCDataset dataset, Map params) {
 		def result = ''
 		def temporary = (((dataset as JDBCDataset).type as JDBCDataset.Type) in
 				[JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
@@ -357,7 +357,7 @@ class VerticaDriver extends JDBCDriver {
 
 	@SuppressWarnings("DuplicatedCode")
 	@Override
-	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+	void sqlTableDirective (JDBCDataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
 		if (params.limit != null) {
 			dir.afterOrderBy = ((dir.afterOrderBy != null)?(dir.afterOrderBy + '\n'):'') + "LIMIT ${params.limit}"
@@ -424,19 +424,19 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	@Override
-	protected String syntaxInsertStatement(Dataset dataset, Map params) {
+	protected String syntaxInsertStatement(JDBCDataset dataset, Map params) {
 		return "INSERT ${writeHints(params)} INTO {table} ({columns}) VALUES({values})"
 	}
 
 	@Override
-	protected String syntaxUpdateStatement(Dataset dataset, Map params) {
+	protected String syntaxUpdateStatement(JDBCDataset dataset, Map params) {
 		def res = "UPDATE ${writeHints(params)} {table} SET {values} WHERE {keys}"
 		if (params.where != null) res += " AND (${params.where})"
 		return res
 	}
 
 	@Override
-	protected String syntaxDeleteStatement(Dataset dataset, Map params){
+	protected String syntaxDeleteStatement(JDBCDataset dataset, Map params){
 		def res = "DELETE ${writeHints(params)} FROM {table} WHERE {keys}"
 		if (params.where != null) res += " AND (${params.where})"
 		return res

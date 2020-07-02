@@ -161,7 +161,7 @@ class Field implements Serializable, Cloneable {
 	/**
 	 * Use field in partition key
 	 */
-	Boolean getInPartition() { return this.isPartition}
+	Boolean getIsPartition() { return this.isPartition}
 	/**
 	 * Use field in partition key
 	 */

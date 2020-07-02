@@ -227,7 +227,8 @@ class JDBCDataset extends Dataset {
 	/** Query parameters */
 	void setQueryParams (Map value) {
 		queryParams.clear()
-		queryParams.putAll(value)
+		if (value != null)
+			queryParams.putAll(value)
 	}
 
 	/** Dataset is temporary table */

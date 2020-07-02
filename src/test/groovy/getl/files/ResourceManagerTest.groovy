@@ -12,10 +12,10 @@ import org.junit.Test
 class ResourceManagerTest extends GetlDslTest {
     private void testListDir(ResourceCatalogElem rootNode) {
         def catalog = rootNode.files
-        assertEquals(6, catalog.size())
+        assertEquals(9, catalog.size())
         def repCon = catalog.find { it.filename == 'getl.lang.sub.RepositoryConnections' && it.type == Manager.directoryType }
         assertNotNull(repCon)
-        assertEquals(2, repCon.files.size())
+        assertEquals(3, repCon.files.size())
         assertEquals(rootNode, repCon.parent)
         assertEquals('/getl.lang.sub.RepositoryConnections', repCon.filepath)
         def h2Group = repCon.files.find { it.filename == 'h2' && it.type == Manager.directoryType }
@@ -47,7 +47,7 @@ class ResourceManagerTest extends GetlDslTest {
                 useResourcePath '/repository'
                 connect()
 
-                def resFile = new File(localDirectory + '/getl.lang.sub.RepositoryConnections/h2/getl_con.dev.conf')
+                def resFile = new File(localDirectory + '/getl_con.dev.conf')
 
                 def conFile = '/getl.lang.sub.RepositoryConnections/h2/getl_con.dev.conf'
                 download(conFile)
@@ -55,7 +55,7 @@ class ResourceManagerTest extends GetlDslTest {
                 assertTrue(getLastModified(conFile) > 0)
                 resFile.delete()
 
-                changeDirectory '/getl.lang.sub.RepositoryConnections'
+                changeDirectory ('/getl.lang.sub.RepositoryConnections')
 
                 conFile = '/getl.lang.sub.RepositoryConnections/h2/getl_con.dev.conf'
                 download(conFile)
@@ -69,7 +69,7 @@ class ResourceManagerTest extends GetlDslTest {
                 assertTrue(getLastModified(conFile) > 0)
                 resFile.delete()
 
-                changeDirectory 'h2'
+                changeDirectory ('h2')
 
                 conFile = '/getl.lang.sub.RepositoryConnections/h2/getl_con.dev.conf'
                 download(conFile)
@@ -100,13 +100,13 @@ class ResourceManagerTest extends GetlDslTest {
                 connect()
 
                 def list = buildListFiles('*.conf') { recursive = true }
-                assertEquals(14, list.countRow())
+                assertEquals(21, list.countRow())
                 assertTrue(existsDirectory('/' + RepositoryConnections.name))
                 assertTrue(existsDirectory(RepositoryConnections.name))
 
                 rootPath = '/' + RepositoryConnections.name
                 list = buildListFiles('*.conf') { recursive = true }
-                assertEquals(4, list.countRow())
+                assertEquals(6, list.countRow())
                 assertTrue(existsDirectory('/' + RepositoryConnections.name))
                 assertTrue(existsDirectory('../' + RepositoryConnections.name))
             }

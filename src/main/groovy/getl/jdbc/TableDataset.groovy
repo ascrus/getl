@@ -54,7 +54,7 @@ class TableDataset extends JDBCDataset {
 		sysParams.isTable = true
 		methodParams.register('unionDataset', [])
 		methodParams.register('generateDsl', [])
-		methodParams.register('deleteRows', ['where'])
+		methodParams.register('deleteRows', [])
 	}
 
 	@Override

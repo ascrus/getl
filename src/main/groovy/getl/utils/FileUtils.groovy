@@ -509,31 +509,46 @@ class FileUtils {
 		def f = new File(System.getProperty("user.home"))
 		ConvertToUnixPath(f.path)
 	}
-	
+
 	/**
-	 * Return mask from file path
-	 * @param file
-	 * @return
+	 * Determine if mask is used in the file name
+	 * @param filePath file path
+	 * @return result of checking
 	 */
-	static String MaskFile(String file) {
-		if (file == null) return null
-		file = ConvertToDefaultOSPath(file)
-		if (!file.matches('.*([?]|[*]).*')) return null
-		def i = file.lastIndexOf(File.separator)
-		def res
-		if (i < 0) res = file else res = file.substring(i + 1)
-		
-		res
+	static Boolean IsMaskFileName(String filePath) {
+		if (filePath == null) return null
+		return FileName(filePath)?.matches('.*([?]|[*]).*')
+	}
+
+	/**
+	 * Determine if mask is used in the path from file path
+	 * @param filePath file path
+	 * @return result of checking
+	 */
+	static Boolean IsMaskPath(String filePath) {
+		if (filePath == null) return null
+		return PathFromFile(filePath)?.matches('.*([?]|[*]).*')
+	}
+
+	/**
+	 * Determine if mask is used in the file path
+	 * @param filePath file path
+	 * @return result of checking
+	 */
+	static Boolean IsMaskFilePath(String filePath) {
+		if (filePath == null) return null
+		return filePath.matches('.*([?]|[*]).*')
 	}
 	
 	/**
-	 * Return path from file from file path
-	 * @param file
-	 * @return
+	 * Return path without file name from file path
+	 * @param filePath file path
+	 * @return parent path
 	 */
-	static String PathFromFile(String file) {
-		if (file == null) return null
-		file = ConvertToDefaultOSPath(file)
+	static String PathFromFile(String filePath, Boolean isUnix = null) {
+		if (filePath == null) return null
+
+		/*file = ConvertToDefaultOSPath(file)
 		String res
 		if (MaskFile(file) != null) {
 			res = new File(RelativePathFromFile(file)).canonicalPath
@@ -542,7 +557,18 @@ class FileUtils {
 			res = new File(file).parent
 		}
 		
-		res
+		res*/
+
+		def res = new File(filePath).parent
+		if (res == null || res in ['.', '..']) return null
+		if (isUnix != null) {
+			if (isUnix)
+				res = ConvertToUnixPath(res)
+			else
+				res = ConvertToWindowsPath(res)
+		}
+
+		return res
 	}
 	
 	/**
@@ -571,28 +597,39 @@ class FileUtils {
 		def sep = (isUnixPath)?'/':'\\'
 		def filePath = (isUnixPath)?ConvertToUnixPath(pathToFile):ConvertToWindowsPath(pathToFile)
 
-		RelativePathFromFile(filePath, sep)
+		return RelativePathFromFile(filePath, sep)
 	}
 
 	/**
-	 * Return name from file without path
-	 * @param file
-	 * @return
+	 * Return file name without path using standard class File to determine file name
+	 * @param filePath file path
+	 * @param isUnix return format (true-unix, false-windows, null-default os)
+	 * @return file name
 	 */
-	static String FileName(String file) {
-		if (file == null) return null
+	static String FileName(String filePath, Boolean isUnix = null) {
+		if (filePath == null) return null
 		
-		file = ConvertToDefaultOSPath(file)
-		String res
-		if (MaskFile(file) != null) {
-			def i = file.lastIndexOf(File.separator)
-			if (i < 0) res = file  else res = file.substring(i + 1)
+		/*String res
+		if (MaskFile(filePath) != null) {
+			def i = ConvertToUnixPath(filePath).lastIndexOf('/')
+			if (i < 0) res = filePath  else res = filePath.substring(i + 1)
 		}
 		else {
-			res = new File(file).name
+			res = new File(filePath).name
 		}
 		
-		(!(res in ['.', '..']))?res:null
+		return (!(res in ['.', '..']))?res:null*/
+
+		def res = new File(filePath).name
+		if (res in ['.', '..']) return null
+		if (isUnix != null) {
+			if (isUnix)
+				res = ConvertToUnixPath(res)
+			else
+				res = ConvertToWindowsPath(res)
+		}
+
+		return res
 	}
 
     /**
@@ -833,26 +870,23 @@ class FileUtils {
         if (params.aesKeyStrength != null) parameters.setAesKeyStrength(AesKeyStrength.valueOf(params.aesKeyStrength as String))
 		if (params.charsetFileName != null) zipFile.charset = Charset.forName(params.charsetFileName as String)
 
-		String fileMask = MaskFile(path)
-		if (fileMask == null) {
-			if (new File(path).directory) {
-				fileMask = '*'
-				path += (File.separator + fileMask)
-			}
-			else {
-				fileMask = FileName(path)
-			}
+		String fileMask
+		if (new File(path).directory) {
+			fileMask = '*'
+			path += (File.separator + fileMask)
 		}
+		else
+			fileMask = FileName(path)
+
 		String filePath = PathFromFile(path)
 		
-		Path p = new Path()
-		p.compile(mask: fileMask)
-		
+		Path p = new Path(mask: fileMask)
+
 		def filter = { File pathFile, String name ->
-			def accept = name.matches(p.maskPath)
+			def accept = p.match(name) //name.matches(p.maskPath)
 			if (accept && validFile != null) accept = (validFile(pathFile, name) == true)
 			
-			accept
+			return accept
 		}
 		
 		new File(filePath).listFiles(new Filter(filter)).each { File f ->

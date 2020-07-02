@@ -118,7 +118,7 @@ class OracleDriver extends JDBCDriver {
 	}
 	
 	@Override
-	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+	void sqlTableDirective (JDBCDataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
 		Map<String, Object> dl = ((dataset as TableDataset).readDirective?:[:]) + (params as Map<String, Object>)
 		if (dl.scn != null) {

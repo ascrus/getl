@@ -130,10 +130,10 @@ class FileUtilsTest extends getl.test.GetlTest {
 
     @Test
     void testMaskFile() {
-        assertNull(FileUtils.MaskFile(null))
-        assertNull(FileUtils.MaskFile('/tmp/test.getl/test123_a.txt'))
-        assertEquals('*.txt', FileUtils.MaskFile('*.txt'))
-        assertEquals('test???_*.txt', FileUtils.MaskFile('/tmp/test.getl/test???_*.txt'))
+        assertNull(FileUtils.IsMaskFileName(null))
+        assertFalse(FileUtils.IsMaskFileName('/tmp/test.getl/test123_a.txt'))
+        assertTrue(FileUtils.IsMaskFileName('*.txt'))
+        assertTrue(FileUtils.IsMaskFileName('/tmp/test.getl/test???_*.txt'))
     }
 
     @Test
@@ -206,7 +206,7 @@ class FileUtilsTest extends getl.test.GetlTest {
 
     @Test
     void testZip() {
-        def fileName = "${TFS.systemPath}/${FileUtils.UniqueFileName()}"
+        def fileName = "${TFS.systemPath}/zip.${FileUtils.UniqueFileName()}"
         def zipName = fileName + '.zip'
         fileName += '.txt'
         def psw = 'TEST GETL ZIP'
@@ -216,7 +216,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         file.deleteOnExit()
         file.text = text
         new File(zipName).deleteOnExit()
-        FileUtils.CompressToZip(zipName, fileName, [compressionMethod: 'DEFLATE', compressionLevel: 'MAXIMUM',
+        FileUtils.CompressToZip(zipName, "${TFS.systemPath}/zip.*.txt", [compressionMethod: 'DEFLATE', compressionLevel: 'MAXIMUM',
                                                     encryptFiles: true, encryptionMethod: 'AES',
                                                     aesKeyStrength: 'KEY_STRENGTH_256', password: psw])
 
@@ -229,7 +229,7 @@ class FileUtilsTest extends getl.test.GetlTest {
         assertTrue(FileUtils.DeleteFile(zipName))
         assertTrue(FileUtils.DeleteFile(fileName))
 
-        FileUtils.UnzipFile('resource:/zip/test.zip', TFS.systemPath, null, 'cp866')
+        FileUtils.UnzipFile('resource:/reference/zip/test.zip', TFS.systemPath, null, 'cp866')
         try {
             assertEquals('12345', new File("${TFS.systemPath}/тест.txt").text)
         }

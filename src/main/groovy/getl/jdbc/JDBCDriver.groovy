@@ -26,7 +26,6 @@ package getl.jdbc
 
 import getl.jdbc.opts.SequenceCreateSpec
 import groovy.sql.Sql
-import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import java.sql.DriverManager
 import java.sql.PreparedStatement
@@ -53,14 +52,14 @@ class JDBCDriver extends Driver {
                                                 'useNativeDBType', 'type'])
 		methodParams.register('dropDataset', ['ifExists'])
 		methodParams.register('openWrite', ['operation', 'batchSize', 'updateField', 'logRows',
-                                            'onSaveBatch', 'where'])
+                                            'onSaveBatch', 'where', 'queryParams'])
 		methodParams.register('eachRow', ['onlyFields', 'excludeFields', 'where', 'order',
                                           'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
 		methodParams.register('bulkLoadFile', ['allowMapAlias'])
 		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
                                                'queryParams', 'condition'])
 		methodParams.register('executeCommand', [])
-		methodParams.register('deleteRows', [])
+		methodParams.register('deleteRows', ['where', 'queryParams'])
 		methodParams.register('clearDataset', ['autoTran', 'truncate'])
 	}
 
@@ -661,8 +660,9 @@ class JDBCDriver extends Driver {
 	 * Valid not null table name
 	 * @param dataset
 	 */
-	static validTableName (Dataset dataset) {
-		if (dataset.params.tableName == null) throw new ExceptionGETL("Required table name from dataset")
+	static validTableName(JDBCDataset dataset) {
+		if (dataset.params.tableName == null)
+			throw new ExceptionGETL("Required table name from dataset")
 	}
 
 	/** Prepare database, schema and table name for retrieve field operation */
@@ -680,9 +680,10 @@ class JDBCDriver extends Driver {
 
 	@Override
 	List<Field> fields(Dataset dataset) {
-		if (!dataset instanceof TableDataset) throw new ExceptionGETL('Listing fields is supported only for TableDataset objects!')
+		if (!(dataset instanceof TableDataset))
+			throw new ExceptionGETL('Listing fields is supported only for TableDataset objects!')
 
-		validTableName(dataset)
+		validTableName(dataset as TableDataset)
 		
 		if (dataset.params.onUpdateFields != null) (dataset.params.onUpdateFields as Closure).call(dataset)
 
@@ -842,7 +843,7 @@ ${extend}'''
 	@Synchronized
 	@Override
 	void createDataset(Dataset dataset, Map params) {
-		validTableName(dataset)
+		validTableName(dataset as JDBCDataset)
 
         params = params?:[:]
 
@@ -881,7 +882,7 @@ ${extend}'''
 		boolean useNativeDBType = BoolUtils.IsValue(params."useNativeDBType", true)
 		
 		def p = MapUtils.CleanMap(params, ["ifNotExists", "indexes", "hashPrimaryKey", "useNativeDBType"])
-		def extend = createDatasetExtend(dataset, p)
+		def extend = createDatasetExtend(dataset as JDBCDataset, p)
 		
 		def defFields = []
 		def defPrimary = GenerationUtils.SqlKeyFields(dataset as JDBCDataset, dataset.field, null, null)
@@ -998,7 +999,7 @@ ${extend}'''
 		return generateColumnDefinition(f, useNativeDBType)
 	}
 	
-	protected String createDatasetExtend(Dataset dataset, Map params) {
+	protected String createDatasetExtend(JDBCDataset dataset, Map params) {
 		return ""
 	}
 	
@@ -1105,8 +1106,13 @@ ${extend}'''
 		return r
 	}
 
-	String nameDataset (Dataset dataset) {
-		if (!dataset instanceof TableDataset) return 'noname'
+	String nameDataset(JDBCDataset dataset) {
+		if (!dataset instanceof TableDataset) {
+			if (!dataset instanceof QueryDataset)
+				return 'jdbcdataset'
+			else
+				return 'query'
+		}
 
         def ds = dataset as TableDataset
 
@@ -1131,7 +1137,7 @@ ${extend}'''
 	@Synchronized
 	@Override
 	void dropDataset(Dataset dataset, Map params) {
-		validTableName(dataset)
+		validTableName(dataset as JDBCDataset)
 
         params = params?:[:]
 
@@ -1199,7 +1205,7 @@ ${extend}'''
 	 * <li>finish
 	 * </ul> 
 	 */
-	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+	void sqlTableDirective(JDBCDataset dataset, Map params, Map dir) {
 		if (params.where != null) dir.where = params.where
 		if (params.orderBy != null) dir.orderBy = params.orderBy
 		dir.forUpdate = BoolUtils.IsValue(params.forUpdate)
@@ -1208,7 +1214,7 @@ ${extend}'''
     /**
      * Build sql select statement for read rows in table
      */
-    String sqlTableBuildSelect(Dataset dataset, Map params) {
+    String sqlTableBuildSelect(JDBCDataset dataset, Map params) {
         // Load statement directive by driver
         def dir = [:] as Map<String, String>
         sqlTableDirective(dataset, params, dir)
@@ -1246,7 +1252,7 @@ ${extend}'''
 	 * @param params
 	 * @return
 	 */
-	String sqlForDataset (Dataset dataset, Map params) {
+	String sqlForDataset(JDBCDataset dataset, Map params) {
 		String query
 		if (isTable(dataset)) {
 			def table = dataset as TableDataset
@@ -1265,7 +1271,10 @@ ${extend}'''
 			
 			def selectFields = fields.join(",")
 
-			def where = params.where
+			def where = params.where as String
+			if (where != null)
+				where = StringUtils.EvalMacroString(where,
+						dataset.queryParams + ((params.queryParams as Map)?:[:]), false)
 
 			def order = params.order as List<String>
 			String orderBy = null
@@ -1282,15 +1291,8 @@ ${extend}'''
 		} 
 		else {
 			assert dataset.params.query != null, "Required value in \"query\" from dataset"
-			query = dataset.params.query
-		}
-
-		def qp = [:] as Map<String, Object>
-		if (dataset.params.queryParams != null) qp.putAll(dataset.params.queryParams as Map)
-		if (params.queryParams != null) qp.putAll(params.queryParams as Map)
-		if (!qp.isEmpty()) {
-//			query = StringUtils.SetValueString(query, qp)
-			query = StringUtils.EvalMacroString(query, qp, false)
+			query = StringUtils.EvalMacroString(dataset.params.query as String,
+					dataset.queryParams + ((params.queryParams as Map)?:[:]), false)
 		}
 
 		return query
@@ -1351,7 +1353,7 @@ ${extend}'''
 		}
 
 		params.putAll([useFields: metaFields])
-		def sql = sqlForDataset(dataset, params)
+		def sql = sqlForDataset(dataset as JDBCDataset, params)
 		if (sql == null)
 			throw new ExceptionGETL('Invalid sql query for dataset!')
 		
@@ -1464,7 +1466,7 @@ ${extend}'''
 
 	@Override
 	void clearDataset(Dataset dataset, Map params) {
-		validTableName(dataset)
+		validTableName(dataset as JDBCDataset)
 		def fn = fullNameDataset(dataset)
 		def con = jdbcConnection
 
@@ -1685,7 +1687,7 @@ $sql
 	 * @param prepareCode
 	 * @return
 	 */
-	protected List<Field> prepareFieldFromWrite (Dataset dataset, Closure prepareCode) {
+	protected List<Field> prepareFieldFromWrite(JDBCDataset dataset, Closure prepareCode) {
 		boolean loadedField = (!dataset.field.isEmpty())
 		List<Field> tableFields
 		if (!loadedField && !dataset.manualSchema) {
@@ -1810,25 +1812,27 @@ $sql
 	/**
 	 * SQL insert statement pattern
 	 */
-	protected String syntaxInsertStatement(Dataset dataset, Map params) {
+	protected String syntaxInsertStatement(JDBCDataset dataset, Map params) {
 		return 'INSERT INTO {table} ({columns}) VALUES({values})'
 	}
 
 	/**
 	 * SQL update statement pattern
 	 */
-	protected String syntaxUpdateStatement(Dataset dataset, Map params) {
+	protected String syntaxUpdateStatement(JDBCDataset dataset, Map params) {
 		def res =  'UPDATE {table} SET {values} WHERE ({keys})'
-		if (params.where != null) res += " AND (${params.where})"
+		if (params.where != null)
+			res += " AND (${StringUtils.EvalMacroString(params.where as String, dataset.queryParams + ((params.queryParams as Map)?:[:]), false)})"
 		return res
 	}
 
 	/**
 	 * SQL delete statement pattern
 	 */
-	protected String syntaxDeleteStatement(Dataset dataset, Map params){
+	protected String syntaxDeleteStatement(JDBCDataset dataset, Map params){
 		def res = 'DELETE FROM {table} WHERE ({keys})'
-		if (params.where != null) res += " AND (${params.where})"
+		if (params.where != null)
+			res += " AND (${StringUtils.EvalMacroString(params.where as String, dataset.queryParams + ((params.queryParams as Map)?:[:]), false)})"
 		return res
 	}
 	
@@ -1837,7 +1841,7 @@ $sql
 		def wp = new WriterParams()
 		dataset.driver_params = wp
 		
-		validTableName(dataset)
+		validTableName(dataset as JDBCDataset)
 
 		def fn = fullNameDataset(dataset)
 		def operation = (params.operation != null)?(params.operation as String).toUpperCase():"INSERT"
@@ -1860,7 +1864,7 @@ $sql
 		def batchSize = (!isSupport(Driver.Support.BATCH)?1:((params.batchSize != null)?params.batchSize:500L))
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch as Closure
 		
-		def fields = prepareFieldFromWrite(dataset, prepareCode)
+		def fields = prepareFieldFromWrite(dataset as JDBCDataset, prepareCode)
 		
 		def updateField = [] as List<String>
 		if (params.updateField != null && !(params.updateField as List).isEmpty()) {
@@ -1879,7 +1883,7 @@ $sql
 		def sb = new StringBuilder()
 		switch (operation) {
 			case "INSERT":
-				def statInsert = syntaxInsertStatement(dataset, params)
+				def statInsert = syntaxInsertStatement(dataset as JDBCDataset, params)
 
 				def h = [] as List<String>
 				def v = [] as List<String>
@@ -1919,7 +1923,7 @@ $sql
 				break
 				
 			case "UPDATE":
-				def statUpdate = syntaxUpdateStatement(dataset, params)
+				def statUpdate = syntaxUpdateStatement(dataset as JDBCDataset, params)
 
 				def k = [] as List<String>
 				def v = [] as List<String>
@@ -1948,17 +1952,7 @@ $sql
 				if (v.isEmpty()) throw new ExceptionGETL('Required fields from update statement')
 				if (k.isEmpty()) throw new ExceptionGETL("Required key fields for update statement")
 
-				/*if (statUpdate.indexOf('{partition}') != -1) {
-					dataset.fieldListPartitions.each { Field f ->
-						p << syntaxPartitionKey.replace('{column}', prepareFieldNameForSQL(f.name))
-						sp << f.name
-						v << '?'
-					}
-					if (p.isEmpty()) throw new ExceptionGETL('Required partition key fields from update statement')
-				}*/
-
-				def x = [/*[sp, statUpdate.indexOf('{partition}')],*/
-						 [sk, statUpdate.indexOf('{keys}')],
+				def x = [[sk, statUpdate.indexOf('{keys}')],
 						 [sv, statUpdate.indexOf('{values}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
 				x.each { List l ->
 					statFields.addAll(l[0] as List<String>)
@@ -1972,15 +1966,12 @@ $sql
 				break
 				
 			case "DELETE":
-				def statDelete = syntaxDeleteStatement(dataset, params)
+				def statDelete = syntaxDeleteStatement(dataset as JDBCDataset, params)
 
 				def k = []
 				def p = [] as List<String>
 				def sk = [] as List<String>
-				/*def sp = [] as List<String>*/
 				fields.each { Field f ->
-//					if (!syntaxPartitionKeyInColumns && f.isPartition) return
-
 					if (f.isKey) {
 						k << "${prepareFieldNameForSQL(f.name)} = ?"
 						sk << f.name
@@ -1989,17 +1980,7 @@ $sql
 				
 				if (k.isEmpty()) throw new ExceptionGETL("Required key fields for delete statement")
 
-				/*if (statDelete.indexOf('{partition}') != -1) {
-					dataset.fieldListPartitions.each { Field f ->
-						p << syntaxPartitionKey.replace('{column}', prepareFieldNameForSQL(f.name))
-						sp << f.name
-						v << '?'
-					}
-					if (p.isEmpty()) throw new ExceptionGETL('Required partition key fields from update statement')
-				}*/
-
-				def x = [/*[sp, statDelete.indexOf('{partition}')],*/
-						 [sk, statDelete.indexOf('{keys}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
+				def x = [[sk, statDelete.indexOf('{keys}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
 
 				x.each { List l ->
 					statFields.addAll(l[0] as List<String>)
@@ -2079,7 +2060,7 @@ $sql
 	}
 	
 	@groovy.transform.CompileStatic
-	protected void saveBatch (Dataset dataset, WriterParams wp) {
+	protected void saveBatch(Dataset dataset, WriterParams wp) {
 		long countComplete = 0
 		wp.batchCount++
 		if (wp.batchSize > 1) {
@@ -2324,7 +2305,7 @@ $sql
 		}
 //		println sql
 		
-		target.updateRows = executeCommand(sql, [isUpdate: true, queryParams: procParams.queryParams])
+		target.updateRows = executeCommand(sql, [isUpdate: true, queryParams: target.queryParams + ((procParams.queryParams as Map)?:[:])])
 		
 		return target.updateRows
 	}
@@ -2335,8 +2316,10 @@ $sql
 	protected String deleteRowsPattern() { 'DELETE {afterDelete} FROM {table} {afterTable} {where} {afterWhere}'}
 
 	long deleteRows(TableDataset dataset, Map procParams) {
-		def where = procParams.where?:dataset.writeDirective.where
-		if (where != null) where = 'WHERE ' + where else where = ''
+		def where = (procParams.where as String)?:(dataset.writeDirective.where as String)
+		if (where != null)
+			where = ('WHERE ' + StringUtils.EvalMacroString(where, (dataset.queryParams + ((procParams.queryParams as Map)?:[:]))))
+		else where = ''
 		def hints = deleteRowsHint(dataset, procParams)?:[:]
 		def afterDelete = (hints.afterDelete)?:''
 		def afterTable = (hints.afterTable)?:''
@@ -2410,9 +2393,8 @@ $sql
 	long countRow(TableDataset table, String where = null, Map procParams = null) {
 		def sql = "SELECT Count(*) AS count_rows FROM ${fullNameDataset(table)}".toString()
 		where = where?:(table.readDirective.where)
-		if (where != null && where != '') sql += " WHERE " + where
-		if (procParams != null && !procParams.isEmpty())
-			sql = StringUtils.EvalMacroString(sql, procParams)
+		if (where != null && where != '')
+			sql += " WHERE " + StringUtils.EvalMacroString(where, table.queryParams + (procParams?:[:]))
 
 		saveToHistory(sql)
 

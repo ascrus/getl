@@ -280,19 +280,15 @@ class ResourceManager extends Manager {
         def dir = directoryFromPath(mask)
 
         List<ResourceCatalogElem> files
-        if (mask != null) {
-            def strmask = FileUtils.MaskFile(mask)
-            if (strmask != null) {
+        def fileName = FileUtils.FileName(mask)
+        if (fileName != null) {
+            if (FileUtils.IsMaskFilePath(fileName)) {
                 def p = new Path()
-                p.compile(mask: strmask)
+                p.compile(mask: fileName)
                 files = dir.files.findAll { p.match(it.filename) }
             }
             else {
-                def fileName = FileUtils.FileName(mask)
-                if (fileName != null)
-                    files = [dir.files.find { it.filename = fileName}] as List<ResourceCatalogElem>
-                else
-                    files = dir.files
+                files = [dir.files.find { it.filename = fileName}] as List<ResourceCatalogElem>
             }
         }
         else
@@ -336,10 +332,10 @@ class ResourceManager extends Manager {
         if (cp == null)
             return currentDirectory
 
-        def mask = FileUtils.MaskFile(path)
+        def isMask = FileUtils.IsMaskFileName(path)
 
         def dirs = cp.split('/')
-        def size = dirs.length - ((mask != null)?1:0)
+        def size = dirs.length - ((isMask)?1:0)
 
         def cd = (cp[0] == '/')?rootNode:currentDirectory
         for (int i = 0; i < size; i++) {
@@ -355,7 +351,7 @@ class ResourceManager extends Manager {
 
             def child = cd.files.find { it.filename == dir }
             if (child.type == Manager.fileType) {
-                if (mask == null && i == size - 1) break
+                if (isMask && i == size - 1) break
                 child = null
             }
             if (child == null)

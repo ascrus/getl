@@ -440,21 +440,29 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param filePath file path on server
 	 */
 	void download(String filePath) {
-		download(filePath, filePath)
+		download(filePath, null)
 	}
 	
 	/**
 	 * Download file to specified name in local directory
 	 * @param filePath file path on server
-	 * @param localFileName file download path to local directory
+	 * @param localFilePath file download path to local directory
 	 */
-	void download(String filePath, String localFileName) {
-		def ld = currentLocalDir()
-		if (ld != null) FileUtils.ValidPath(ld)
-		if (localFileName[0] in ['/', '\\'] )
-			localFileName = localFileName.substring(1)
+	void download(String filePath, String localFilePath) {
+		if (localFilePath == null)
+			localFilePath = FileUtils.FileName(filePath)
 
-		download(filePath, ld, localFileName)
+		def ld = FileUtils.PathFromFile(localFilePath)
+		if (ld == null)
+			ld = currentLocalDir()
+		else if (localFilePath[0] in ['/', '\\'])
+			ld = localFilePath
+		else
+			ld += '/' + localFilePath
+
+		FileUtils.ValidPath(ld)
+
+		download(filePath, ld, FileUtils.FileName(localFilePath))
 	}
 	
 	/**

@@ -107,7 +107,7 @@ class HiveDriver extends JDBCDriver {
     }
 
     @Override
-    protected String createDatasetExtend(Dataset dataset, Map params) {
+    protected String createDatasetExtend(JDBCDataset dataset, Map params) {
         def sb = new StringBuilder()
 
         def partitionFields = [] as List<Field>
@@ -235,7 +235,7 @@ class HiveDriver extends JDBCDriver {
     }
 
     @Override
-    protected String syntaxInsertStatement(Dataset dataset, Map params) {
+    protected String syntaxInsertStatement(JDBCDataset dataset, Map params) {
         String into = (BoolUtils.IsValue([params.overwrite, dataset.directives('write').overwrite]))?'OVERWRITE':'INTO'
         return ((dataset.fieldListPartitions.isEmpty()))?
                 "INSERT $into TABLE {table} ({columns}) VALUES({values})":

@@ -25,6 +25,7 @@
 package getl.mssql
 
 import getl.data.Field
+import getl.jdbc.JDBCDataset
 import getl.jdbc.TableDataset
 import getl.data.Dataset
 import getl.driver.Driver
@@ -94,7 +95,7 @@ class MSSQLDriver extends JDBCDriver {
 	}
 	
 	@Override
-	void sqlTableDirective (Dataset dataset, Map params, Map dir) {
+	void sqlTableDirective (JDBCDataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)
 		def dl = ((dataset as TableDataset).readDirective?:[:]) + (params as Map<String, Object>)
 		if (dl.with != null) {
