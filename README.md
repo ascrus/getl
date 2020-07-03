@@ -38,8 +38,26 @@ source code posted on the GitHub project [getl.vertica](https://github.com/ascru
 * Examples of working with Getl on the basis of H2 Database can be viewed on the GitHub project 
 [Getl examples](https://github.com/ascrus/getl-examples)
 
-## Architecture
-![Getl architecture](https://github.com/ascrus/getl/blob/master/manuals/Architect.png)
+## Principles
+![Getl architecture](https://github.com/ascrus/getl/blob/master/manuals/layers.png)
+
+Groovy is a Java compatible high-level language whose code is compiled into Java byte code. 
+It was written in Getl, which extends Groovy with its Dsl language. 
+The language is focused on the easy development of ETL and ELT processes of any complexity.
+
+![Getl architecture](https://github.com/ascrus/getl/blob/master/manuals/modules.png)
+
+You can connect multiple data sources and file systems to Getl as objects of its repository. 
+Connected objects can be grouped into specialized models and set rules for working with them. 
+Objects from the repository can be used in your tasks, they will be visible from the Dsl language. 
+To automate common tasks, Getl allows you to design and run reusable patterns.
+
+![Getl architecture](https://github.com/ascrus/getl/blob/master/manuals/using.png)
+
+Using the IDE, which supports Groovy, you can use Getl to implement a complete project to automate the capture, 
+delivery and processing of data for your DWH. It is recommended to use IntelliJ Idea or Eclipse to development and 
+debugging of project tasks.
+
 
 ## Examples
 Registration of connections to Oracle and Vertica:
