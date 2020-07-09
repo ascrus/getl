@@ -209,22 +209,30 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     /** Get current date query */
     private QueryDataset queryCurrentDate = new QueryDataset(query: 'SELECT {now} AS curdate {from}')
 
-    Date currentDateTime
-    /** Get current date */
+    /** Current date time on server */
+    private Date _currentDateTime
+    /** Current date time on server */
     @Synchronized
     Date getCurrentDateTime() {
-        if (this.currentDateTime != null)
-            return this.currentDateTime
-
-        queryCurrentDate.with {
-            queryParams.now = currentJDBCConnection.currentJDBCDriver.nowFunc
-            queryParams.from = (currentJDBCConnection.currentJDBCDriver.sysDualTable != null)?
-                    "FROM ${currentJDBCConnection.currentJDBCDriver.sysDualTable}" : ''
+        if (_currentDateTime == null) {
+            queryCurrentDate.useConnection(statusTable.currentJDBCConnection)
+            try {
+                queryCurrentDate.with {
+                    queryParams.now = currentJDBCConnection.currentJDBCDriver.nowFunc
+                    queryParams.from = (currentJDBCConnection.currentJDBCDriver.sysDualTable != null) ?
+                            "FROM ${currentJDBCConnection.currentJDBCDriver.sysDualTable}" : ''
+                }
+                _currentDateTime = DateUtils.TruncTime(Calendar.SECOND, queryCurrentDate.rows()[0].curdate as Date)
+            }
+            finally {
+                queryCurrentDate.connection = null
+            }
         }
-        return queryCurrentDate.rows()[0].curdate as Date
+
+        return _currentDateTime
     }
     @Synchronized
-    void setCurrentDateTime(Date value) { this.currentDateTime = value }
+    void setCurrentDateTime(Date value) { this._currentDateTime = value }
 
     @Override
     void checkModel(boolean checkObjects = true) {
@@ -256,7 +264,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
     /**
      * Checking the status of rules
-     * @return true if everything is correct and false if error reporting is required
+     * @return returns true if it is not required to notify by a change in the state of the monitor
      */
     boolean check() {
         checkModel(true)
@@ -267,141 +275,134 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
             StatusTableSetFields(statusTable)
 
         def stattab = statusTable
+        _currentDateTime = null
 
-        queryCurrentDate.useConnection(statusTable.currentJDBCConnection)
-        try {
-            // Copy status table to temp
-            new Flow().copy(source: stattab, dest: lastCheckStatusTable, clear: true) { s, d ->
-                d.operation = 'NONE'
-                d.is_notification = false
-            }
-
-            // Threading rules
-            new Executor(abortOnError: true).run(usedRules, countThreads) { elem ->
-                def rule = elem as MonitorRuleSpec
-
-                // Clone temp status table
-                def hTab = lastCheckStatusTable.cloneDatasetConnection()
-                // Detect rows by rule
-                def hRows = hTab.rows(where: "rule_name = '${rule.queryName}'")
-                // Detect last check time
-                def hMinStat = (!hRows.isEmpty())?((hRows.min { r -> r.check_time }).check_time as Date):null
-
-                // Detect current server time
-                def curDate = getCurrentDateTime()
-
-                // Return if verification time is not exceeded
-                if (hMinStat != null && TimeCategory.minus(curDate, hMinStat) < rule.checkFrequency) {
-                    Logs.Fine("Rule \"${rule.queryName}\" is skipped by check time")
-                    return
-                }
-
-                if (hMinStat != null)
-                    Logs.Fine("Check rule \"${rule.queryName}\" (last check was ${DateUtils.FormatDate('yyyy-MM-dd HH:mm', hMinStat)}) ...")
-                else
-                    Logs.Fine("Check rule \"${rule.queryName}\"")
-
-                // Retrieving rows from a rule query
-                def ruleQuery = rule.query.cloneDatasetConnection() as QueryDataset
-                ruleQuery.queryParams.putAll(rule.objectVars + modelVars)
-                def statRows = ruleQuery.rows()
-                if (statRows.isEmpty()) {
-                    Logs.Fine("Rule \"${rule.queryName}\" has no rows and is skipped")
-                    return
-                }
-
-                if (ruleQuery.fieldByName('value') == null)
-                    throw new ExceptionModel("State field \"value\" was not found in rule \"$rule.queryName\"!")
-
-                def useGroups = (ruleQuery.field.size() > 1)
-                if (useGroups) {
-                    if (ruleQuery.fieldByName('code') == null)
-                        throw new ExceptionModel("Group field \"code\" was not found in rule \"$rule.queryName\"!")
-
-                    def validTable = TDS.dataset()
-                    validTable.with {
-                        field('code') { length = 512; isNull = false }
-                        create()
-                    }
-                    new Flow().writeTo(dest: validTable) { add ->
-                        statRows.each { row -> add([code: (row.code as String)]) }
-                    }
-                    new QueryDataset(connection: validTable.connection).with {
-                        setQuery 'SELECT code FROM {table} GROUP BY code HAVING Count(*) > 1 ORDER BY code'
-                        queryParams.table = validTable.fullTableName
-                        def invalidGroups = rows()
-                        if (!invalidGroups.isEmpty()) {
-                            def names = invalidGroups.collect { row -> row.code }
-                            throw new ExceptionModel("For rule \"${rule.queryName}\" duplicates were revealed by codes: $names!")
-                        }
-                    }
-
-                    validTable.drop()
-                }
-
-                new Flow().writeTo(dest: hTab, dest_operation: 'MERGE') { writeState ->
-                    // Row group processing
-                    statRows.each { statRow ->
-                        // Skip empty value code
-                        if (statRow.value == null)
-                            return
-
-                        // Current group value
-                        def groupCode = (statRow.code?:'<-|None|->').toString()
-
-                        // Search for a group rows in status
-                        def groupRows = hRows.findAll { r -> r.code == groupCode }
-                        if (groupRows.size() > 1)
-                            throw new ExceptionModel("Identified multiple rows for rule \"${rule.queryName}\" with group code \"$groupCode\" from status table!")
-                        def isNewStatRow = groupRows.isEmpty()
-
-                        // Current group row for status table
-                        def groupRow = (!isNewStatRow)?(groupRows[0] + [operation: 'UPDATE']):
-                                [rule_name: rule.queryName, code: groupCode, open_incident: false, operation: 'INSERT']
-
-                        // Current status time
-                        def stateTime = statRow.value as Date
-                        // Current lag
-                        def curLag = TimeCategory.minus(curDate, stateTime)
-                        // Correct status
-                        def isCorrect = (curLag <= rule.lagTime)
-                        // Set notification status
-                        def isNotification = !isCorrect && !groupRow.open_incident
-                        if (isNotification && !isNewStatRow && rule.notificationTime != null && groupRow.last_error_time != null) {
-                            isNotification = !(TimeCategory.minus(curDate, groupRow.last_error_time as Date) < rule.notificationTime)
-                        }
-
-                        // Set field status
-                        groupRow.check_time = curDate
-                        groupRow.state_time = stateTime
-                        groupRow.is_correct = isCorrect
-                        groupRow.is_notification = isNotification
-                        if (isCorrect) {
-                            groupRow.first_error_time = null
-                            groupRow.last_error_time = null
-                        }
-                        else if (groupRow.last_error_time == null || isNotification) {
-                            if (groupRow.first_error_time == null)
-                                groupRow.first_error_time = curDate
-                            groupRow.last_error_time = curDate
-                        }
-
-                        writeState.call(groupRow)
-
-                        if (!isCorrect)
-                            Logs.Warning("For rule \"${rule.queryName}\" of group \"$groupCode\" " +
-                                    "a lag of $curLag was revealed  from the last " +
-                                    "time ${DateUtils.FormatDate('yyyy-MM-dd HH:mm', stateTime)}!")
-                        else
-                            Logs.Info("For rule \"${rule.queryName}\" of group \"$groupCode\" , a lag in work was " +
-                                    "found within the normal range and is $curLag from the last " +
-                                    "time ${DateUtils.FormatDate('yyyy-MM-dd HH:mm', stateTime)}")
-                    }
-                }
-            }
+        // Copy status table to temp
+        new Flow().copy(source: stattab, dest: lastCheckStatusTable, clear: true) { s, d ->
+            d.operation = 'NONE'
+            d.is_notification = false
         }
-        finally {
-            queryCurrentDate.connection = null
+
+        // Threading rules
+        new Executor(abortOnError: true).run(usedRules, countThreads) { elem ->
+            def rule = elem as MonitorRuleSpec
+
+            // Clone temp status table
+            def hTab = lastCheckStatusTable.cloneDatasetConnection()
+            // Detect rows by rule
+            def hRows = hTab.rows(where: "rule_name = '${rule.queryName}'")
+            // Detect last check time
+            def hMinStat = (!hRows.isEmpty())?((hRows.min { r -> r.check_time }).check_time as Date):null
+
+            // Detect current server time
+            def curDate = currentDateTime
+
+            // Return if verification time is not exceeded
+            if (hMinStat != null && TimeCategory.minus(curDate, hMinStat) < rule.checkFrequency) {
+                Logs.Info("Rule \"${rule.queryName}\" is skipped by check time")
+                return
+            }
+
+            if (hMinStat != null)
+                Logs.Finest("Check rule \"${rule.queryName}\" (last check was ${DateUtils.FormatDate('yyyy-MM-dd HH:mm', hMinStat)}) ...")
+            else
+                Logs.Finest("Check rule \"${rule.queryName}\" ...")
+
+            // Retrieving rows from a rule query
+            def ruleQuery = rule.query.cloneDatasetConnection() as QueryDataset
+            ruleQuery.queryParams.putAll(rule.objectVars + modelVars)
+            def statRows = ruleQuery.rows()
+            if (statRows.isEmpty()) {
+                Logs.Warning("Rule \"${rule.queryName}\" has no rows and is skipped")
+                return
+            }
+
+            if (ruleQuery.fieldByName('value') == null)
+                throw new ExceptionModel("State field \"value\" was not found in rule \"$rule.queryName\"!")
+
+            def useGroups = (ruleQuery.field.size() > 1)
+            if (useGroups) {
+                if (ruleQuery.fieldByName('code') == null)
+                    throw new ExceptionModel("Group field \"code\" was not found in rule \"$rule.queryName\"!")
+
+                def validTable = TDS.dataset()
+                validTable.with {
+                    field('code') { length = 512; isNull = false }
+                    create()
+                }
+                new Flow().writeTo(dest: validTable) { add ->
+                    statRows.each { row -> add([code: (row.code as String)]) }
+                }
+                new QueryDataset(connection: validTable.connection).with {
+                    setQuery 'SELECT code FROM {table} GROUP BY code HAVING Count(*) > 1 ORDER BY code'
+                    queryParams.table = validTable.fullTableName
+                    def invalidGroups = rows()
+                    if (!invalidGroups.isEmpty()) {
+                        def names = invalidGroups.collect { row -> row.code }
+                        throw new ExceptionModel("For rule \"${rule.queryName}\" duplicates were revealed by codes: $names!")
+                    }
+                }
+
+                validTable.drop()
+            }
+
+            new Flow().writeTo(dest: hTab, dest_operation: 'MERGE') { writeState ->
+                // Row group processing
+                statRows.each { statRow ->
+                    // Skip empty value code
+                    if (statRow.value == null)
+                        return
+
+                    // Current group value
+                    def groupCode = (statRow.code?:'<-|None|->').toString()
+
+                    // Search for a group rows in status
+                    def groupRows = hRows.findAll { r -> r.code == groupCode }
+                    if (groupRows.size() > 1)
+                        throw new ExceptionModel("Identified multiple rows for rule \"${rule.queryName}\" with group code \"$groupCode\" from status table!")
+                    def isNewStatRow = groupRows.isEmpty()
+
+                    // Current group row for status table
+                    def groupRow = (!isNewStatRow)?(groupRows[0] + [operation: 'UPDATE']):
+                            [rule_name: rule.queryName, code: groupCode, open_incident: false, operation: 'INSERT']
+
+                    // Current status time
+                    def stateTime = DateUtils.TruncTime(Calendar.SECOND, statRow.value as Date)
+                    // Current lag
+                    def curLag = TimeCategory.minus(curDate, stateTime)
+                    // Correct status
+                    def isCorrect = (curLag <= rule.lagTime)
+                    // Set notification status
+                    def isNotification = (!groupRow.open_incident && (!isCorrect || (!isNewStatRow && isCorrect && !(groupRows[0].is_correct as Boolean))))
+                    if (!isCorrect && isNotification && !isNewStatRow && rule.notificationTime != null && groupRow.last_error_time != null) {
+                        isNotification = !(TimeCategory.minus(curDate, groupRow.last_error_time as Date) < rule.notificationTime)
+                    }
+
+                    // Set field status
+                    groupRow.check_time = curDate
+                    groupRow.state_time = stateTime
+                    groupRow.is_correct = isCorrect
+                    groupRow.is_notification = isNotification
+                    if (isCorrect)
+                        groupRow.last_error_time = null
+                    else if (groupRow.last_error_time == null || isNotification) {
+                        if (groupRow.first_error_time == null || groupRows[0].is_correct as Boolean)
+                            groupRow.first_error_time = curDate
+                        groupRow.last_error_time = curDate
+                    }
+
+                    writeState.call(groupRow)
+
+                    if (!isCorrect)
+                        Logs.Warning("For rule \"${rule.queryName}\" of group \"$groupCode\" " +
+                                "a lag of $curLag was revealed  from the last " +
+                                "time ${DateUtils.FormatDate('yyyy-MM-dd HH:mm', stateTime)}!")
+                    else
+                        Logs.Info("For rule \"${rule.queryName}\" of group \"$groupCode\" , a lag in work was " +
+                                "found within the normal range and is $curLag from the last " +
+                                "time ${DateUtils.FormatDate('yyyy-MM-dd HH:mm', stateTime)}")
+                }
+            }
         }
 
         new Flow().with {
@@ -429,9 +430,9 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
         sb << """
 <html>
-<title>Identified Monitor Errors "$dslNameObject"</title>
+<title>Checking the status of rules for monitor "$dslNameObject"</title>
 <body>
-<h1>${lastCheckStatusTable.countRow('NOT is_correct')} errors were detected while checking rules</h1>
+<h1>${lastCheckStatusTable.countRow('NOT is_correct')} errors detected, ${lastCheckStatusTable.countRow('is_notification AND is_correct')} errors were closed</h1>
 <table border="1" cellpadding="10">
 <tr bgcolor="Gainsboro">
     <th>Rule</th>
@@ -445,13 +446,17 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
         Integer lastGroupError = null
         String curRule
-        lastCheckStatusTable.eachRow(where: 'NOT is_correct', order: ['(first_error_time = check_time) DESC', 'open_incident', 'rule_name', 'code']) { row ->
+        lastCheckStatusTable.eachRow(where: 'NOT is_correct OR (is_correct AND is_notification)',
+                queryParams: [dt: currentDateTime],
+                order: ['is_correct', '(first_error_time = ParseDateTime(\'{dt}\', \'yyyy-MM-dd HH:mm:ss\')) DESC', 'open_incident', 'rule_name', 'code']) { row ->
             def rule = findRule(row.rule_name as String)
             if (rule == null)
                 throw new ExceptionModel("Unknown rule \"${row.rule_name}\"")
 
             Integer groupError
-            if (row.first_error_time == row.check_time)
+            if (row.is_notification as Boolean && row.is_correct as Boolean)
+                groupError = 0
+            else if (row.first_error_time == currentDateTime)
                 groupError = 1
             else if (!row.open_incident)
                 groupError = 2
@@ -463,6 +468,9 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                 curRule = ''
 
                 switch (groupError) {
+                    case 0:
+                        sb << "\n<tr bgcolor=\"Gainsboro\"><td>CLOSED ERRORS:</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>"
+                        break
                     case 1:
                         sb << "\n<tr bgcolor=\"Gainsboro\"><td>NEW ERRORS:</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>"
                         break
@@ -492,7 +500,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     <td>${DateUtils.FormatDate('yyyy-MM-dd HH:mm', row.state_time as Date)}</td>
     <td>${rule.lagTime}</td>
     <td>${DateUtils.FormatDate('yyyy-MM-dd HH:mm', row.first_error_time as Date)}</td>
-    <td>${TimeCategory.minus(row.check_time as Date, row.state_time as Date)}</td>
+    <td>${TimeCategory.minus(currentDateTime, row.state_time as Date)}</td>
 </tr>"""
         }
         sb <<
@@ -510,8 +518,11 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
      */
     void sendToSmtp(EMailer smtpServer) {
         smtpServer.with {
+            Logs.Finest("Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients: $toAddress")
             def text = htmlNotification()
-            sendMail(toAddress, "Monitor \"${this.dslNameObject}\" detected ${lastCheckStatusTable.countRow('NOT is_correct')} errors", text, true)
+            sendMail(toAddress, "Monitor \"${this.dslNameObject}\" detected " +
+                    "${lastCheckStatusTable.countRow('NOT is_correct')} active errors and " +
+                    "${lastCheckStatusTable.countRow('is_notification AND is_correct')} closed errors", text, true)
         }
     }
 }

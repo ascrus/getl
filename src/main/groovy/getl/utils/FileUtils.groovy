@@ -1064,8 +1064,8 @@ class FileUtils {
 				}
 			}
 
-			if (res == null)
-				throw new ExceptionGETL("Resource file \"$fileName\" is not found!")
+			/*if (res == null)
+				throw new ExceptionGETL("Resource file \"$fileName\" is not found!")*/
 		}
 		else {
 			if (destFile != null) {
@@ -1114,6 +1114,8 @@ class FileUtils {
 		String res
 		if (IsResourceFileName(fileName)) {
 			def file = FileFromResources(fileName.substring(9))
+			if (file == null)
+				throw new ExceptionGETL("Resource file \"$fileName\" not found!")
 			res = file.canonicalPath
 		}
 		else {

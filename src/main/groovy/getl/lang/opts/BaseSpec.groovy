@@ -107,34 +107,32 @@ class BaseSpec {
         params.clear()
     }
 
-    static protected final savedOptionsName = '__getl_saved_options__'
+    /** Options stack */
+    final private Stack<Map<String, Object>> _savedOptions = new Stack<Map<String, Object>>()
 
-    /** Push current options to saved list */
+    /**
+     * Save current options to stack
+     * @param resetToDefault reset options to default after saving (default false)
+     * @param cloneChildrenObject clone childs objects when saving (default false)
+     */
     @Synchronized
-    void pushOptions(boolean cloneChildrenObject = false) {
-        Stack<Map<String, Object>> savedOptions = (params.get(savedOptionsName) as Stack<Map<String, Object>>)
-        if (savedOptions == null) {
-            savedOptions = new Stack<Map<String, Object>>()
-            params.put(savedOptionsName, savedOptions)
-        }
-        def m = MapUtils.CleanMap(params, [savedOptionsName]) as Map<String, Object>
-        def n = CloneUtils.CloneMap(m, cloneChildrenObject) as Map<String, Object>
-        //noinspection GroovyAssignabilityCheck
-        savedOptions.push(n)
+    void pushOptions(boolean resetToDefault = false, boolean cloneChildrenObject = false) {
+        _savedOptions.push(CloneUtils.CloneMap(_params, cloneChildrenObject) as Map<String, Object>)
+        if (resetToDefault) clearOptions()
     }
 
-    /** Pull last saved options to current options */
+    /**
+     * Restore last saved options from stack
+     * @param throwIfNotExist generate an error if options were not saved (default true)
+     */
     @Synchronized
-    void pullOptions(boolean checkExists = true) {
-        def savedOptions = (params.get(savedOptionsName) as Stack<Map<String, Object>>)
-        if (savedOptions == null || savedOptions.isEmpty()) {
-            if (!checkExists) return
-            throw new ExceptionGETL("No saved options ${getClass().name} available!")
+    void pullOptions(boolean throwIfNotExist = true) {
+        if (_savedOptions.isEmpty()) {
+            if (!throwIfNotExist) return
+            throw new ExceptionGETL("No saved options for ${getClass().name} object available!")
         }
 
-        def n = savedOptions.pop() as Map<String, Object>
-        params.clear()
-        params.putAll(n)
-        params.put(savedOptionsName, savedOptions)
+        clearOptions()
+        _params.putAll(_savedOptions.pop() as Map<String, Object>)
     }
 }

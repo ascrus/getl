@@ -182,11 +182,16 @@ class ConfigSlurper extends ConfigManager {
 
 	/**
 	 * Load configuration from file
-	 * @param file
-	 * @param codePage
+	 * @param file loaded file descriptor
+	 * @param codePage encode page
+	 * @param environment load specified environment
+	 * @return configuration
 	 */
-	static Map<String, Object> LoadConfigFile (File file, String codePage = 'UTF-8', String environment = null) {
-		if (!file.exists()) throw new ExceptionGETL("Configuration file \"$file\" not found!")
+	static Map<String, Object> LoadConfigFile(File file, String codePage = 'UTF-8', String environment = null) {
+		if (file == null)
+			throw new ExceptionGETL("No file specified!")
+		if (!file.exists())
+			throw new ExceptionGETL("Configuration file \"$file\" not found!")
 
 		String text
 		try {
@@ -317,8 +322,8 @@ class ConfigSlurper extends ConfigManager {
 
 	/**
 	 * Save map data to file
-	 * @param data stored data
-	 * @param file configuration file name
+	 * @param data saved configuration
+	 * @param file saved file descriptor
 	 * @param codePage text encoding
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 */

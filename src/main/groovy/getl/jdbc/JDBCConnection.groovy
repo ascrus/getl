@@ -431,7 +431,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Return datasets list
 	 */
-	List<Dataset> retrieveDatasets() {
+	List<TableDataset> retrieveDatasets() {
 		retrieveDatasets([:], null)
 	}
 	

@@ -399,7 +399,8 @@ class ResourceManager extends Manager {
         }
         delDirs.reverse().each { dir -> dir.deleteOnExit() }
 
-        FileUtils.FileFromResources(fp, resourceDirectories, classLoader, destFile)
+        if (FileUtils.FileFromResources(fp, resourceDirectories, classLoader, destFile) == null)
+            throw new ExceptionGETL("Resource file \"$fp\" not found!")
     }
 
     @Override

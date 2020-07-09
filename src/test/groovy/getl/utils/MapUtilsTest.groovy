@@ -223,4 +223,26 @@ class MapUtilsTest extends getl.test.GetlTest {
             MapUtils.CheckKeys([one: 1, three: 3, four: 4, two: 2], a)
         }
     }
+
+    @Test
+    void testCompareMap() {
+        def a = [a:1, b: [1,2,3], c: [d: 1, e: [1,2,3], f: [g: 1]], h: null]
+        def b = [a:null, b: [1,2,3], c: [d: 1, e: [1,2,3], j: [g: 1]], h: 1]
+        assertTrue(MapUtils.CompareMap(a, a).isEmpty())
+        assertTrue(MapUtils.CompareMap(b, b).isEmpty())
+
+        def res = '''{
+    "a [unequal]": "1 <==> null",
+    "c [unequal]": {
+        "f [missing]": {
+            "g [missing]": 1
+        },
+        "j [excess]": {
+            "g [excess]": 1
+        }
+    },
+    "h [excess]": 1
+}'''
+        assertEquals(res, MapUtils.ToJson(MapUtils.CompareMap(a, b)))
+    }
 }

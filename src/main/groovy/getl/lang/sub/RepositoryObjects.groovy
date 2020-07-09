@@ -99,7 +99,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         def res = [] as List<String>
 
         def masknames = dslCreator.parseName(mask)
-        def maskgroup = masknames.groupName?:dslCreator.filteringGroup
+        def maskgroup = masknames.groupName
         def maskobject = masknames.objectName
         def grouppath = (maskgroup != null)?new Path(mask: maskgroup):null
         def objectpath = (maskobject != null)?new Path(mask: maskobject):null

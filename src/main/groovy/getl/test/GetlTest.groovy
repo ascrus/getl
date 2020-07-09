@@ -28,19 +28,19 @@ import getl.config.ConfigManager
 import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
+import getl.utils.MapUtils
 import groovy.test.GroovyAssert
 import groovy.time.Duration
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
+
 /**
  * Getl functional testing base class
  * @author Alexsey Konstantinov
  *
  */
-//@InheritConstructors
-//@RunWith(JUnit4.class)
-abstract class GetlTest extends GroovyAssert {
+class GetlTest extends GroovyAssert {
     /** Configuration manager class to use */
     protected Class<ConfigManager> useConfigManager() { ConfigFiles }
 
@@ -88,6 +88,27 @@ abstract class GetlTest extends GroovyAssert {
      * @param actual the value to check against expected
      */
     static void assertEquals(Duration expected, Duration actual) {
+        assertEquals(null as String, expected, actual)
+    }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param message message text
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(String message, Map expected, Map actual) {
+        def res = MapUtils.CompareMap(expected, actual)
+        if (!res.isEmpty())
+            throw new AssertionError('maps difference: ' + MapUtils.ToJson(res))
+    }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(Map expected, Map actual) {
         assertEquals(null as String, expected, actual)
     }
 }

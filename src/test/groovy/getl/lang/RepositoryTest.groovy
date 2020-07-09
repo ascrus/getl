@@ -812,7 +812,7 @@ class RepositoryTest extends GetlDslTest {
     void testRepName() {
         Getl.Dsl {
             shouldFail { embeddedTable('#group:name', true) }
-            shouldFail { embeddedTable('group:#name', true) }
+            assertEquals('#name_1', embeddedTable('group:#name_1', true).dslNameObject)
             shouldFail { embeddedTable('$group:name', true) }
             shouldFail { embeddedTable('group:$name', true) }
             shouldFail { embeddedTable('group*:name', true) }
@@ -821,5 +821,29 @@ class RepositoryTest extends GetlDslTest {
             assertNotNull(embeddedTable('group:name_1', true))
             assertNotNull(embeddedTable('#name', true))
         }
+    }
+
+    @Test
+    void testTempObjects() {
+        Getl.Dsl {
+            forGroup 'test'
+
+            files('#main', true).rootPath = '/tmp/main'
+            assert files('#main').rootPath == '/tmp/main'
+
+            callScript RepositoryScript
+            assert files('#main').rootPath == '/tmp/main'
+            println 'main: ' + files('#main').rootPath
+            shouldFail { files('#child') }
+
+            files('#child', true).rootPath = '/tmp/child'
+            assert files('#child').rootPath == '/tmp/child'
+            println 'child: ' + files('#child').rootPath
+
+            shouldFail { callScript RepositoryScript }
+            assert files('#main').rootPath == '/tmp/main'
+            assert files('#child').rootPath == '/tmp/child'
+            println 'main: ' + files('#main').rootPath
+            println 'child: ' + files('#child').rootPath        }
     }
 }

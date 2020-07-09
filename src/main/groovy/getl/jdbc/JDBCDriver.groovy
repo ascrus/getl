@@ -1291,11 +1291,10 @@ ${extend}'''
 		} 
 		else {
 			assert dataset.params.query != null, "Required value in \"query\" from dataset"
-			query = StringUtils.EvalMacroString(dataset.params.query as String,
-					dataset.queryParams + ((params.queryParams as Map)?:[:]), false)
+			query = dataset.params.query as String
 		}
 
-		return query
+		return StringUtils.EvalMacroString(query, dataset.queryParams + ((params.queryParams as Map)?:[:]), false)
 	}
 
 	/**

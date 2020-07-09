@@ -333,7 +333,7 @@ class DateUtils {
 
 	/**
 	 * Truncate the date to the specified part
-	 * @part date part (HOUR, HH, MINUTE, mm, SECOND, ss, MILLISECOND, sss)
+	 * @part date part (HOUR, HH, MINUTE, mm, SECOND, ss)
 	 */
 	static Date TruncTime(String part, Date date) {
 		Integer partNum
@@ -349,9 +349,6 @@ class DateUtils {
 				break
 			case 'SECOND': case 'ss':
 				partNum = Calendar.SECOND
-				break
-			case 'MILLISECOND': case 'SSS':
-				partNum = Calendar.MILLISECOND
 				break
 			default:
 				throw new ExceptionGETL("Unknown part of date \"$part\"")

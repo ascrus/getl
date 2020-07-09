@@ -4,6 +4,7 @@ import getl.test.TestRepository
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import groovy.time.TimeCategory
+import org.junit.Ignore
 import org.junit.Test
 import static getl.test.TestRunner.Dsl
 
@@ -64,7 +65,7 @@ class MonitorRulesTest extends TestRepository {
                 rule('valid_table2') { rule ->
                     objectVars.table = embeddedTable('table1').fullTableName
                     use (TimeCategory) {
-                        lagTime = 1.hour
+                        lagTime = 3.hours
                         checkFrequency = 1.second
                         notificationTime = 1.second
                         description = 'Table ' + objectVars.table
@@ -76,9 +77,28 @@ class MonitorRulesTest extends TestRepository {
         }
     }
 
+    void checkStatusTable() {
+        Dsl {
+            models.monitorRules('rules') {
+                println "Current server time: ${DateUtils.FormatDateTime(currentDateTime)}"
+                lastCheckStatusTable.eachRow(where: 'NOT is_correct OR (is_correct AND is_notification)',
+                        queryParams: [dt: currentDateTime],
+                        order: ['is_correct', '(first_error_time = ParseDateTime(\'{dt}\', \'yyyy-MM-dd HH:mm:ss\')) DESC', 'open_incident', 'rule_name', 'code']) { row ->
+                    println row
+                }
+            }
+        }
+    }
+
     @Test
     void testMonitorCheck() {
         Dsl {
+            def emailer
+            if (FileUtils.ExistsFile('tests/emailer/monitor.conf')) {
+                configuration { load 'tests/emailer/monitor.conf' }
+                emailer = mail { useConfig 'smtp' }
+            }
+
             forGroup 'monitor'
             models.monitorRules('rules') {
                 assertFalse(statusTable.exists)
@@ -103,7 +123,7 @@ class MonitorRulesTest extends TestRepository {
 
                 rule('valid_table2') {
                     use (TimeCategory) {
-                        assertEquals(1.hour, lagTime)
+                        assertEquals(3.hours, lagTime)
                         assertEquals(1.second, checkFrequency)
                         assertEquals(1.second, notificationTime)
                         assertEquals('Table ' + objectVars.table, description)
@@ -112,10 +132,19 @@ class MonitorRulesTest extends TestRepository {
 
                 assertFalse(check())
                 assertTrue(statusTable.exists)
-                assertEquals(3, statusTable.countRow('NOT is_correct'))
-                assertEquals(3, lastCheckStatusTable.countRow('operation = \'INSERT\' AND is_notification'))
+//                checkStatusTable()
+                if (emailer != null) sendToSmtp emailer
+                assertEquals(1, statusTable.countRow('NOT is_correct'))
+                assertEquals(1, lastCheckStatusTable.countRow('operation = \'INSERT\' AND is_notification'))
 
                 pause 1000
+                rule('valid_table2') { rule ->
+                    objectVars.table = embeddedTable('table1').fullTableName
+                    use(TimeCategory) {
+                        lagTime = 1.hour
+                    }
+                }
+
                 embeddedTable('table1') {
                     etl.rowsTo {
                         writeRow { add ->
@@ -125,6 +154,8 @@ class MonitorRulesTest extends TestRepository {
                     }
                 }
                 assertFalse(check())
+//                checkStatusTable()
+                if (emailer != null) sendToSmtp emailer
                 assertEquals(3, statusTable.countRow('NOT is_correct'))
                 assertEquals(3, lastCheckStatusTable.countRow('operation = \'UPDATE\' AND is_notification'))
 
@@ -135,6 +166,8 @@ class MonitorRulesTest extends TestRepository {
                     }
                 }
                 assertFalse(check())
+//                checkStatusTable()
+                if (emailer != null) sendToSmtp emailer
                 assertEquals(3, statusTable.countRow('NOT is_correct'))
                 assertEquals(1, lastCheckStatusTable.countRow('operation = \'UPDATE\' AND is_notification'))
 
@@ -152,7 +185,15 @@ class MonitorRulesTest extends TestRepository {
                         }
                     }
                 }
+                assertFalse(check())
+//                checkStatusTable()
+                if (emailer != null) sendToSmtp emailer
+                assertEquals(3, statusTable.countRow('is_correct'))
+                assertEquals(3, lastCheckStatusTable.countRow('is_notification'))
+
                 assertTrue(check())
+//                checkStatusTable()
+                if (emailer != null) sendToSmtp emailer
                 assertEquals(3, statusTable.countRow('is_correct'))
                 assertEquals(0, lastCheckStatusTable.countRow('is_notification'))
             }

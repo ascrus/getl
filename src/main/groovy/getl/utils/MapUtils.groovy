@@ -977,4 +977,59 @@ class MapUtils {
 	static Map UnmodifiableMap(Map value) {
 		return Collections.unmodifiableMap(value)
 	}
+
+	/**
+	 * Compare two maps and return the differences
+	 * @param original original map
+	 * @param comparison comparison map
+	 * @return
+	 */
+	static Map<String, Object> CompareMap(Map original, Map comparison) {
+		def res = [:] as Map<String, Object>
+		def empty = [:]
+		original.each { key, value ->
+			def isMissing = comparison.containsKey(key)
+			if (!isMissing) {
+				if (value instanceof Map)
+					res.put(key.toString() + ' [missing]', CompareMap(value as Map, empty))
+				else
+					res.put(key.toString() + ' [missing]', value)
+
+				return
+			}
+
+			def cv = comparison.get(key)
+			if (value != null && cv == null ) {
+				if (value instanceof Map)
+					res.put(key.toString() + ' [unequal]', CompareMap(value as Map, empty))
+				else
+					res.put(key.toString() + ' [unequal]', "$value <==> null".toString())
+			}
+			else if (value == null && cv != null) {
+				if (cv instanceof Map)
+					res.put(key.toString() + ' [excess]', CompareMap([:], cv as Map))
+				else
+					res.put(key.toString() + ' [excess]', cv)
+			}
+			else if (value instanceof Map) {
+				def cm = CompareMap(value as Map, cv as Map)
+				if (!cm.isEmpty())
+					res.put(key.toString() + ' [unequal]', cm)
+			}
+			else if (value != cv)
+				res.put(key.toString() + ' [unequal]', "$value <==> $cv".toString())
+		}
+
+		comparison.each { key, value ->
+			if (value == null) return
+			if (!original.containsKey(key)) {
+				if (value instanceof Map)
+					res.put(key.toString() + ' [excess]', CompareMap([:], value as Map))
+				else
+					res.put(key.toString() + ' [excess]', value)
+			}
+		}
+
+		return res
+	}
 }

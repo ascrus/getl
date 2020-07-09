@@ -24,6 +24,7 @@
 
 package getl.jdbc
 
+import getl.exception.ExceptionGETL
 import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 import getl.utils.StringUtils
@@ -73,6 +74,9 @@ class QueryDataset extends JDBCDataset {
 	 * @param codePage file use specified encoding page (default utf-8)
 	 */
 	void loadResource(String fileName, def otherPath = null, String codePage = 'utf-8') {
-		setQuery(FileUtils.FileFromResources(fileName, otherPath).getText(codePage?:'utf-8'))
+		def file = FileUtils.FileFromResources(fileName, otherPath)
+		if (file == null)
+			throw new ExceptionGETL("Resource file \"$fileName\" not found!")
+		setQuery(file.getText(codePage?:'utf-8'))
 	}
 }

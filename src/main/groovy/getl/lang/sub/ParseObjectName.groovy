@@ -24,10 +24,6 @@
 package getl.lang.sub
 
 import getl.exception.ExceptionDSL
-import getl.exception.ExceptionGETL
-import getl.utils.Path
-
-import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 /**
@@ -35,19 +31,14 @@ import java.util.regex.Pattern
  * @author Alexsey Konstantinov
  */
 class ParseObjectName {
-    ParseObjectName() {
-        super()
-    }
+    ParseObjectName() { }
 
     ParseObjectName(String repName) {
-        super()
         setName(repName)
     }
 
     ParseObjectName(String groupName, objectName) {
-        super()
-        setGroupName(groupName)
-        setObjectName(objectName)
+        setName(((groupName != null)?(groupName + ':'):'') + ((objectName != null)?objectName:''))
     }
 
     /** Name object in repository */
@@ -65,16 +56,21 @@ class ParseObjectName {
 
         value = value.trim().toLowerCase()
         if (value.length() == 0)
-            throw new ExceptionGETL('The naming value cannot be empty!')
+            throw new ExceptionDSL('The naming value cannot be empty!')
 
         def i = value.indexOf(':')
         if (i > -1) {
             if (i == 0)
-                throw new ExceptionGETL("Invalid name \"$value\"")
+                throw new ExceptionDSL("Invalid name \"$value\"")
 
-            _groupName = value.substring(0, i)
-            if (i < value.length() - 1)
-                _objectName = value.substring(i + 1)
+            _groupName = value.substring(0, i).trim()
+            if (_groupName[0] == '#')
+                throw new ExceptionDSL('The group name cannot begin with the character "#" in object \"$value\"!')
+
+            if (i < value.length() - 1) {
+                _objectName = value.substring(i + 1).trim()
+                if (_objectName[0] == '#') _groupName = null
+            }
             else
                 _objectName = null
         } else {
@@ -82,7 +78,7 @@ class ParseObjectName {
             _objectName = value
         }
 
-        _name = value
+        _name = ((_groupName != null)?(_groupName + ':'):'') + ((_objectName != null)?_objectName:'')
     }
 
     /** Group name */
@@ -91,16 +87,21 @@ class ParseObjectName {
     String getGroupName() { _groupName }
     /** Group name */
     void setGroupName(String value) {
+        if (_objectName != null && _objectName[0] == '#')
+            throw new ExceptionDSL("It is not permitted to assign a group \"$value\" to temporary object \"$_name\"!")
+
         value = value?.trim()?.toLowerCase()
         if (value != null && value.length() == 0)
-            throw new ExceptionGETL('The group naming value cannot be empty!')
+            throw new ExceptionDSL('The group naming value cannot be empty!')
+        if (value != null && value[0] == '#')
+            throw new ExceptionDSL("The group name \"$value\" cannot begin with the character \"#\"!")
 
         if (value == null) {
             _name = _objectName
         } else if (_objectName != null) {
             _name = value + ':' + _objectName
         } else {
-            _name = null
+            _name = value + ':'
         }
         _groupName = value
     }
@@ -113,11 +114,13 @@ class ParseObjectName {
     void setObjectName(String value) {
         value = value?.trim()?.toLowerCase()
         if (value != null && value.length() == 0)
-            throw new ExceptionGETL('The object naming value cannot be empty!')
+            throw new ExceptionDSL('The object naming value cannot be empty!')
 
         if (value == null) {
             _name = null
         } else if (_groupName != null) {
+            if (value[0] == '#')
+                throw new ExceptionDSL("It is not permitted to assign a temporary name \"$value\" to an object that has a group name \"$_groupName\"!")
             _name = _groupName + ':' + value
         } else {
             _name = value
@@ -137,7 +140,7 @@ class ParseObjectName {
     /** Repository object name */
     static String ObjectName(String name, String filteringGroup = null, boolean checkName = false) {
         def names = Parse(name)
-        if (filteringGroup != null && names.groupName == null)
+        if (filteringGroup != null && names.groupName == null && (names.objectName == null || names.objectName[0] != '#'))
             names.groupName = filteringGroup
 
         if (checkName)
@@ -152,14 +155,12 @@ class ParseObjectName {
     void validName() {
         if (namePattern.matcher(objectName).find())
             throw new ExceptionDSL("The object name \"$objectName\" contains invalid characters!")
-        if (objectName[0] == '#' && groupName != null)
-            throw new ExceptionDSL('Not allowed to use the group name for the temporary objects!')
 
         if (groupName != null) {
             if (groupName[0] == '#')
-                throw new ExceptionDSL('The group name cannot begin with the character "#"!')
+                throw new ExceptionDSL('The group name cannot begin with the character "#" in object \"$name\"!')
             if (namePattern.matcher(groupName).find())
-                throw new ExceptionDSL("The group name \"$groupName\" contains invalid characters!")
+                throw new ExceptionDSL("The group name \"$groupName\" contains invalid characters in object \"$name\"!")
         }
     }
 
@@ -170,14 +171,14 @@ class ParseObjectName {
 
     /** Convert object name to file path */
     String toFileName() {
-        return ((groupName != null)?groupName + '@':'') + objectName
+        return ((_groupName != null)?_groupName + '@':'') + _objectName
     }
 
     /** Convert group name to path */
     String toPath() {
-        return groupName?.replace('.', '/')
+        return _groupName?.replace('.', '/')
     }
 
     @Override
-    String toString() { name?:'noname' }
+    String toString() { _name?:'noname' }
 }

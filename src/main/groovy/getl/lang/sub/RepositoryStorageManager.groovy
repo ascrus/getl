@@ -440,7 +440,7 @@ class RepositoryStorageManager {
         def objname = ParseObjectName.Parse(name)
         def fileName = objectFilePathInStorage(repository, objname, env)
         def file = (isResourceStoragePath)?FileUtils.FileFromResources(fileName):new File(fileName)
-        if (!file.exists())
+        if (file == null || !file.exists())
             throw new ExceptionDSL("It is not possible to load object \"$name\" to " +
                     "repository \"${repository.class.name}\": file \"$file\" was not found!")
 

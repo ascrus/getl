@@ -51,6 +51,7 @@ import getl.proc.*
 import getl.proc.sub.*
 import getl.salesforce.*
 import getl.stat.*
+import getl.test.GetlTest
 import getl.tfs.*
 import getl.utils.*
 import getl.utils.sub.*
@@ -1805,7 +1806,7 @@ Examples:
      */
     protected Integer runGroovyInstance(Script script, Map vars = [:]) {
         def res = 0
-        _repositoryFilter.pushOptions()
+        _repositoryFilter.pushOptions(true)
         try {
             if (script instanceof Getl) {
                 def scriptGetl = script as Getl
@@ -4414,12 +4415,12 @@ Examples:
     FilemanSpec getFileman() { _fileman }
 
     /** Test case instance */
-    private GroovyTestCase _testCase
+    private GetlTest _testCase
 
     /** Run test case code */
-    GroovyTestCase testCase(@DelegatesTo(GroovyAssert)
-                            @ClosureParams(value = SimpleType, options = ['groovy.test.GroovyTestCase']) Closure cl) {
-        def parent = _testCase?:new GroovyTestCase()
+    GetlTest testCase(@DelegatesTo(GetlTest)
+                            @ClosureParams(value = SimpleType, options = ['getl.test.GetlTest']) Closure cl) {
+        def parent = _testCase?:new GetlTest()
         runClosure(parent, cl)
         return parent
     }

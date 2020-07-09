@@ -47,7 +47,7 @@ class RepositoryFilter extends BaseSpec {
         if (Thread.currentThread() instanceof ExecutorThread)
             throw new ExceptionGETL('Using group filtering within a threads is not allowed!')
 
-        def value = parseName(group)
+        def value = ParseObjectName.Parse(group)
         if (value.groupName != null)
             throw new ExceptionDSL("Invalid group name \"$group\"!")
         if (value.name[0] == '#')
@@ -75,7 +75,7 @@ class RepositoryFilter extends BaseSpec {
      * @param name repository object name
      * @return parse result
      */
-    static ParseObjectName parseName(String name) {
-        ParseObjectName.Parse(name)
+    ParseObjectName parseName(String name) {
+        ParseObjectName.Parse(ParseObjectName.ObjectName(name, filteringGroup))
     }
 }
