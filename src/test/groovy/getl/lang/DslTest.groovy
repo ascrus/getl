@@ -1037,7 +1037,7 @@ ORDER BY t1.id"""
 
                 configuration { clear() }
                 embeddedTable('#scripttable2', true) { tableName = 'test_script_2' }
-                callScript DslTestScriptFields2, { tableName = embeddedTable('#scripttable2') }
+                callScript new DslTestScriptFields2(tableName: embeddedTable('#scripttable2').dslNameObject)
                 assertEquals('complete test 2', configContent.testScript)
                 assert listDatasets('#scripttable2_new').isEmpty()
                 assert !listDatasets('#scripttable2').isEmpty()

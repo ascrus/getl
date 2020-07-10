@@ -1087,6 +1087,7 @@ class FileUtils {
 			}
 		}
 
+		//noinspection GroovyVariableNotAssigned
 		return res
 	}
 

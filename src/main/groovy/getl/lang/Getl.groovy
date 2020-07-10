@@ -1692,8 +1692,6 @@ Examples:
 
     /**
      * Load and run groovy script file
-     * <br><br>Example:
-     * <br>runGroovyFile './scripts/script1.groovy', false, [param1: 1, param2: 'a', param3: [1,2,3]]
      * @param fileName script file path
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
@@ -1707,8 +1705,6 @@ Examples:
 
     /**
      * Load and run groovy script file
-     * <br><br>Example:
-     * <br>runGroovyFile './scripts/script1.groovy', [param1: 1, param2: 'a', param3: [1,2,3]]
      * @param fileName script file path
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
@@ -1719,8 +1715,6 @@ Examples:
 
     /**
      * Load and run groovy script file
-     * <br><br>Example:
-     * <br>runGroovyFile './scripts/script1.groovy', false, { param1 = 1; param2 = 'a'; param3 = [1,2,3] }
      * @param fileName script file path
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
@@ -1734,8 +1728,6 @@ Examples:
 
     /**
      * Load and run groovy script file
-     * <br><br>Example:
-     * <br>runGroovyFile './scripts/script1.groovy', { param1 = 1; param2 = 'a'; param3 = [1,2,3] }
      * @param fileName script file path
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
@@ -1747,8 +1739,6 @@ Examples:
 
     /**
      * Load and run groovy script file
-     * <br><br>Example:
-     * <br>runGroovyFile './scripts/script1.groovy', false, 'processes.process1'
      * @param fileName script file path
      * @param runOnce do not execute if previously executed
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
@@ -1764,8 +1754,6 @@ Examples:
 
     /**
      * Load and run groovy script file
-     * <br><br>Example:
-     * <br>runGroovyFile './scripts/script1.groovy', 'processes.process1'
      * @param fileName script file path
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
@@ -1778,9 +1766,7 @@ Examples:
 
     /**
      * Run groovy script class
-     * <br><br>Example:
-     * <br>runGroovyClass project.processed.Script1, false, [param1: 1, param2: 'a', param3: [1,2,3]]
-     * @param groovyClass groovy script class full name
+     * @param groovyClass groovy script class
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
@@ -1871,9 +1857,7 @@ Examples:
 
     /**
      * Run groovy script class
-     * <br><br>Example:
-     * <br>runGroovyClass project.processed.Script1, [param1: 1, param2: 'a', param3: [1,2,3]]
-     * @param groovyClass groovy script class full name
+     * @param groovyClass groovy script class
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
@@ -1883,9 +1867,7 @@ Examples:
 
     /**
      * Run groovy script class
-     * <br><br>Example:
-     * <br>runGroovyClass project.processed.Script1, false, { param1 = 1; param2 = 'a'; param3 = [1,2,3] }
-     * @param groovyClass groovy script class full name
+     * @param groovyClass groovy script class
      * @param runOnce do not execute if previously executed
      * @param clVars set values for script fields declared as "@Field"
      * @return exit code
@@ -1898,9 +1880,7 @@ Examples:
 
     /**
      * Run groovy script class
-     * <br><br>Example:
-     * <br>runGroovyClass project.processed.Script1, { param1 = 1; param2 = 'a'; param3 = [1,2,3] }
-     * @param groovyClass groovy script class full name
+     * @param groovyClass groovy script class
      * @param clVars set values for script fields declared as "@Field"
      * @return exit code
      */
@@ -1910,9 +1890,7 @@ Examples:
 
     /**
      * Run groovy script class
-     * <br><br>Example:
-     * <br>runGroovyClass project.processed.Script1, false, 'processes.process1'
-     * @param groovyClass groovy script class full name
+     * @param groovyClass groovy script class
      * @param runOnce do not execute if previously executed
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
@@ -1927,9 +1905,7 @@ Examples:
 
     /**
      * Run groovy script class
-     * <br><br>Example:
-     * <br>runGroovyClass project.processed.Script1, 'processes.process1'
-     * @param groovyClass groovy script class full name
+     * @param groovyClass groovy script class
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
      */
@@ -1944,9 +1920,9 @@ Examples:
      * @scripts list of Getl scripts to run
      * @return list of exit code
      */
-    List<Integer> callScripts(Class<Getl>... scripts) {
+    List<Integer> callScripts(Class<Getl>... scriptClasses) {
         def res = [] as List<Integer>
-        scripts.each { script ->
+        scriptClasses.each { script ->
             res << runGroovyClass(script, true)
         }
 
@@ -1955,77 +1931,83 @@ Examples:
 
     /**
      * Call Getl script
-     * <br><br>Example:
-     * <br>callScript project.processed.GetlScript1, false, [param1: 1, param2: 'a', param3: [1,2,3]]
-     * @param script Getl script class full name
+     * @param scriptClass Getl script class
      * @param runOnce do not execute if previously executed
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer callScript(Class<Getl> script, Boolean runOnce, Map vars = [:]) {
-        return runGroovyClass(script, runOnce, vars)
+    Integer callScript(Class<Getl> scriptClass, Boolean runOnce, Map vars = [:]) {
+        return runGroovyClass(scriptClass, runOnce, vars)
     }
 
     /**
      * Call Getl script
-     * <br><br>Example:
-     * <br>callScript project.processed.GetlScript1, [param1: 1, param2: 'a', param3: [1,2,3]]
-     * @param script Getl script class full name
+     * @param scriptClass Getl script class
      * @param vars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer callScript(Class<Getl> script, Map vars = [:]) {
-        return runGroovyClass(script, false, vars)
+    Integer callScript(Class<Getl> scriptClass, Map vars = [:]) {
+        return runGroovyClass(scriptClass, false, vars)
     }
 
     /**
      * Call Getl script
-     * <br><br>Example:
-     * <br>callScript project.processed.GetlScript1, false, { param1 = 1; param2 = 'a'; param3 = [1,2,3] }
-     * @param script Getl script class full name
+     * @param scriptClass Getl script class
      * @param runOnce do not execute if previously executed
      * @param clVars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer callScript(Class<Getl> script, Boolean runOnce, Closure clVars) {
-        return runGroovyClass(script, runOnce, clVars)
+    Integer callScript(Class<Getl> scriptClass, Boolean runOnce, Closure clVars) {
+        return runGroovyClass(scriptClass, runOnce, clVars)
     }
 
     /**
      * Call Getl script
-     * <br><br>Example:
-     * <br>callScript project.processed.GetlScript1, { param1 = 1; param2 = 'a'; param3 = [1,2,3] }
-     * @param script Getl script class full name
+     * @param scriptClass Getl script class
      * @param clVars set values for script fields declared as "@Field"
      * @return exit code
      */
-    Integer callScript(Class<Getl> script, Closure clVars) {
-        return runGroovyClass(script, false, clVars)
+    Integer callScript(Class<Getl> scriptClass, Closure clVars) {
+        return runGroovyClass(scriptClass, false, clVars)
     }
 
     /**
      * Call Getl script
-     * <br><br>Example:
-     * <br>runGroovyClass project.processed.GetlScript1, false, 'processes.process1'
-     * @param groovyClass groovy script class full name
+     * @param groovyClass groovy script class
      * @param runOnce do not execute if previously executed
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
      */
-    Integer callScript(Class<Getl> script, Boolean runOnce, String configSection) {
-        return runGroovyClass(script, runOnce, configSection)
+    Integer callScript(Class<Getl> scriptClass, Boolean runOnce, String configSection) {
+        return runGroovyClass(scriptClass, runOnce, configSection)
     }
 
     /**
      * Call Getl script
-     * <br><br>Example:
-     * <br>runGroovyClass project.processed.GetlScript1, 'processes.process1'
-     * @param groovyClass groovy script class full name
+     * @param groovyClass groovy script class
      * @param configSection set values for script fields declared as "@Field" from the specified configuration section
      * @return exit code
      */
-    Integer callScript(Class<Getl> script, String configSection) {
-        return runGroovyClass(script, false, configSection)
+    Integer callScript(Class<Getl> scriptClass, String configSection) {
+        return runGroovyClass(scriptClass, false, configSection)
+    }
+
+    /**
+     * Call Getl instance script
+     * @param script Getl script instance
+     * @param runOnce do not execute if previously executed
+     * @return exit code
+     */
+    Integer callScript(Getl script, Boolean runOnce = false) {
+        def className = script.class.name
+        def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
+        if (previouslyRun && BoolUtils.IsValue(runOnce)) return 0
+
+        def res = runGroovyInstance(script, null)
+
+        if (!previouslyRun) executedClasses.addToList(className)
+
+        return res
     }
 
     /**
