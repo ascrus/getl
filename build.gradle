@@ -6,7 +6,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = '4.5.3-1-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.5.3-3-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -176,7 +176,7 @@ Generated: ${LocalDateTime.now().format('yyyy-MM-dd HH:mm')}
 getl {
 	jar {
     	version='$version'
-    	year='2019-${LocalDateTime.now().year}'
+    	year='2012-${LocalDateTime.now().year}'
 	}
 }
 """

@@ -202,6 +202,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
             field('is_correct') { type = booleanFieldType; isNull = false }
             field('first_error_time') { type = datetimeFieldType }
             field('last_error_time') { type = datetimeFieldType }
+            field('send_time') { type = datetimeFieldType }
             field('open_incident') { type = booleanFieldType; isNull = false }
         }
     }
@@ -374,8 +375,9 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                     def isCorrect = (curLag <= rule.lagTime)
                     // Set notification status
                     def isNotification = (!groupRow.open_incident && (!isCorrect || (!isNewStatRow && isCorrect && !(groupRows[0].is_correct as Boolean))))
-                    if (!isCorrect && isNotification && !isNewStatRow && rule.notificationTime != null && groupRow.last_error_time != null) {
-                        isNotification = !(TimeCategory.minus(curDate, groupRow.last_error_time as Date) < rule.notificationTime)
+                    def last_send_time = (groupRow.send_time as Date)?:(groupRow.last_error_time as Date)
+                    if (!isCorrect && isNotification && !isNewStatRow && rule.notificationTime != null && last_send_time != null) {
+                        isNotification = !(TimeCategory.minus(curDate, last_send_time) < rule.notificationTime)
                     }
 
                     // Set field status
@@ -425,7 +427,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     }
 
     /** Generate html notification */
-    String htmlNotification() {
+    String htmlNotification(List<Map> rows) {
         StringBuilder sb = new StringBuilder()
 
         sb << """
@@ -446,9 +448,10 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
         Integer lastGroupError = null
         String curRule
+
         lastCheckStatusTable.eachRow(where: 'NOT is_correct OR (is_correct AND is_notification)',
                 queryParams: [dt: currentDateTime],
-                order: ['is_correct', '(first_error_time = ParseDateTime(\'{dt}\', \'yyyy-MM-dd HH:mm:ss\')) DESC', 'open_incident', 'rule_name', 'code']) { row ->
+                order: ['is_correct DESC', '(first_error_time = ParseDateTime(\'{dt}\', \'yyyy-MM-dd HH:mm:ss\')) DESC', 'open_incident', 'rule_name', 'code']) { row ->
             def rule = findRule(row.rule_name as String)
             if (rule == null)
                 throw new ExceptionModel("Unknown rule \"${row.rule_name}\"")
@@ -487,15 +490,15 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
             if (curRule == null || row.rule_name != curRule) {
                 curRule = row.rule_name
                 if (rule.description != null)
-                    ruleName = StringUtils.ReplaceMany(rule.description, ['<': '&lt;', '>':'&gt;', '&': '&amp;'])
+                    ruleName = StringUtils.ReplaceMany(rule.description, ['<': '&lt;', '>': '&gt;', '&': '&amp;'])
                 else
-                    ruleName = StringUtils.ReplaceMany(row.rule_name as String, ['<': '&lt;', '>':'&gt;', '&': '&amp;'])
+                    ruleName = StringUtils.ReplaceMany(row.rule_name as String, ['<': '&lt;', '>': '&gt;', '&': '&amp;'])
             }
 
             sb << """
 <tr>
     <td>$ruleName</td>
-    <td>${(row.code != '<-|None|->')?row.code:''}
+    <td>${(row.code != '<-|None|->') ? row.code : ''}
     <td>${DateUtils.FormatDate('yyyy-MM-dd HH:mm', row.check_time as Date)}</td>
     <td>${DateUtils.FormatDate('yyyy-MM-dd HH:mm', row.state_time as Date)}</td>
     <td>${rule.lagTime}</td>
@@ -504,11 +507,12 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 </tr>"""
         }
         sb <<
-                """
-</table>    
-</body>
-</html>
-"""
+                    """
+    </table>    
+    </body>
+    </html>
+    """
+
         return sb.toString()
     }
 
@@ -517,12 +521,27 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
      * @param smtpServer
      */
     void sendToSmtp(EMailer smtpServer) {
+        def rows = lastCheckStatusTable.rows(where: 'NOT is_correct OR (is_correct AND is_notification)',
+                queryParams: [dt: currentDateTime],
+                order: ['is_correct DESC', '(first_error_time = ParseDateTime(\'{dt}\', \'yyyy-MM-dd HH:mm:ss\')) DESC',
+                        'open_incident', 'rule_name', 'code'])
+        if (rows.isEmpty()) {
+            Logs.Warning('No active events for email notification found!')
+            return
+        }
+
         smtpServer.with {
             Logs.Finest("Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients: $toAddress")
-            def text = htmlNotification()
+            def text = htmlNotification(rows)
             sendMail(toAddress, "Monitor \"${this.dslNameObject}\" detected " +
                     "${lastCheckStatusTable.countRow('NOT is_correct')} active errors and " +
                     "${lastCheckStatusTable.countRow('is_notification AND is_correct')} closed errors", text, true)
+        }
+
+        new Flow().writeTo(dest: statusTable, destParams: [operation: 'UPDATE', updateField: ['send_time']]) { updater ->
+            rows.each { row ->
+                updater.call(row + [send_time: currentDateTime])
+            }
         }
     }
 }

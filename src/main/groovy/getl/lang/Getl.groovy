@@ -511,10 +511,8 @@ Examples:
     /** Engine parameters */
     protected final Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
     /** Get engine parameter */
-    @Synchronized('_params')
     protected Object getGetlSystemParameter(String key) { _params.get(key) }
     /** Set engine parameter */
-    @Synchronized('_params')
     protected setGetlSystemParameter(String key, Object value) {
         _params.put(key, value)
     }
@@ -522,11 +520,9 @@ Examples:
     /** Managing repository object storage instance */
     protected RepositoryStorageManager _repositoryStorageManager
     /** Managing repository object storage */
-    @Synchronized('_repositoryStorageManager')
     RepositoryStorageManager getRepositoryStorageManager() { _repositoryStorageManager }
 
     /** Managing repository object storage */
-    @Synchronized('_repositoryStorageManager')
     RepositoryStorageManager repositoryStorageManager(@DelegatesTo(RepositoryStorageManager)
                                                @ClosureParams(value = SimpleType, options = ['getl.lang.sub.RepositoryStorageManager'])
                                                        Closure cl) {
@@ -577,9 +573,7 @@ Examples:
     /** Repository object filtering manager */
     private RepositoryFilter _repositoryFilter
     /** Repository object filtering manager */
-    @Synchronized('_repositoryFilter')
     RepositoryFilter getRepositoryFilter() { _repositoryFilter }
-    @Synchronized('_repositoryFilter')
     /** Specified filter when searching for objects */
     String getFilteringGroup() { _repositoryFilter.filteringGroup }
 
@@ -2223,11 +2217,9 @@ Examples:
     private LangSpec _langOpts
 
     /** Getl options */
-    @Synchronized("_langOpts")
     LangSpec getOptions() { _langOpts }
 
     /** Getl options */
-    @Synchronized("_langOpts")
     LangSpec options(@DelegatesTo(LangSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LangSpec']) Closure cl = null) {
         if (cl != null && isCurrentProcessInThread())
@@ -2255,11 +2247,9 @@ Examples:
     private final ConfigSpec _configOpts = new ConfigSpec(this)
 
     /** Configuration options */
-    @Synchronized('_configOpts')
     ConfigSpec getConfiguration() { _configOpts }
 
     /** Configuration options */
-    @Synchronized('_configOpts')
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ConfigSpec']) Closure cl = null) {
         if (cl != null && isCurrentProcessInThread())
@@ -2275,11 +2265,9 @@ Examples:
     private final LogSpec _logOpts = new LogSpec(this)
 
     /** Log options */
-    @Synchronized('_logOpts')
     LogSpec getLogging() { _logOpts }
 
     /** Log options */
-    @Synchronized('_logOpts')
     LogSpec logging(@DelegatesTo(LogSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LogSpec']) Closure cl = null) {
         if (cl != null && isCurrentProcessInThread())
@@ -2300,7 +2288,6 @@ Examples:
     EtlSpec getEtl() { _etl }
 
     /** Etl manager */
-    @Synchronized('_etl')
     EtlSpec etl(@DelegatesTo(EtlSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.lang.opts.EtlSpec']) Closure cl = null) {
         runClosure(_etl, cl)
@@ -2314,7 +2301,6 @@ Examples:
     ModelSpec getModels() { _models }
 
     /** Model manager */
-    @Synchronized('_models')
     ModelSpec models(@DelegatesTo(ModelSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ModelSpec']) Closure cl = null) {
         runClosure(_models, cl)

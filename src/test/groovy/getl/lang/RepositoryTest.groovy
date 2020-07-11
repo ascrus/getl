@@ -790,6 +790,18 @@ class RepositoryTest extends GetlDslTest {
                 assertNotNull(embeddedConnection('h2:con'))
                 assertNotNull(jdbcTable('h2:table1'))
                 loadRepositories()
+                clearReporitories()
+
+                assertEquals(0, listJdbcConnections().size())
+
+                thread {
+                    useList (0..100)
+                    setCountProc 10
+                    run {
+                        assertNotNull(embeddedConnection('h2:con'))
+                        assertNotNull(jdbcTable('h2:table1'))
+                    }
+                }
             }
         }
     }

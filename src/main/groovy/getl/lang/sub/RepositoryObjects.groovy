@@ -148,21 +148,25 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @return found object or null if not found
      */
     T find(String name) {
+        T obj
         def repName = dslCreator.repObjectName(name)
-        def obj = objects.get(repName)
-        if (obj == null) {
-            def repClass = this.class.name
-            dslCreator.with {
-                if (obj == null && options.validRegisterObjects &&
-                        repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&
-                        repName[0] != '#') {
-                    try {
-                        obj = repositoryStorageManager.loadObject(repClass, repName) as T
+        synchronized (objects) {
+            obj = objects.get(repName)
+            if (obj == null) {
+                def repClass = this.class.name
+                dslCreator.with {
+                    if (obj == null && options.validRegisterObjects &&
+                            repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&
+                            repName[0] != '#') {
+                        try {
+                            obj = repositoryStorageManager.loadObject(repClass, repName) as T
+                        }
+                        catch (ExceptionDSL ignored) {
+                        }
                     }
-                    catch (ExceptionDSL ignored) { }
-                }
 
-                return true
+                    return true
+                }
             }
         }
         return obj
@@ -203,8 +207,8 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                 def exObj = objects.get(repName)
                 if (exObj != null)
                     throw new ExceptionDSL("\"$name\" already registered as class \"${exObj.getClass().name}\" for \"$typeObject\"!")
-                else if (isThread)
-                    throw new ExceptionDSL("it is not allowed to register an \"$name\" inside a thread for $typeObject!")
+                /*else if (isThread)
+                    throw new ExceptionDSL("it is not allowed to register an \"$name\" inside a thread for $typeObject!")*/
             }
 
             obj.dslNameObject = repName
@@ -296,8 +300,8 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                     try {
                         obj = repositoryStorageManager.loadObject(repClass, repName) as T
                     }
-                    catch (ExceptionDSL ignored) {
-                        throw new ExceptionDSL("\"$name\" is not registered for $typeObject!")
+                    catch (ExceptionDSL e) {
+                        throw new ExceptionDSL("\"$name\" is not registered for $typeObject: ${e.message}")
                     }
                 }
 
