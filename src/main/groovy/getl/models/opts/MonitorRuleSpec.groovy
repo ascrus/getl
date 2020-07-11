@@ -32,7 +32,7 @@ import groovy.time.Duration
  * Table tracking options
  * @author Alexsey Konstantinov
  */
-class MonitorRuleSpec extends BaseSpec {
+class MonitorRuleSpec extends BaseSpec { /*TODO: added ignore property */
     MonitorRuleSpec(MonitorRules owner, String queryName) {
         super(owner)
         setQueryName(queryName)
