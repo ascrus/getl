@@ -1217,8 +1217,8 @@ class FileUtils {
 
 	/**
 	 * Lock the file from multi-threaded access and perform operations on it
-	 * @file source file
-	 * @cl file processing code
+	 * @param file source file
+	 * @param cl file processing code
 	 */
 	static void LockFile(File file, Closure cl) {
 		fileLockManager.lockObject(file.path, cl)

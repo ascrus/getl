@@ -73,14 +73,9 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 		StringUtils.NewLocale(localeStr)
 	}
 	
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @throws SuperCsvCellProcessorException
-	 *             if value is null or is not a Date, or if dateFormat is not a valid date format
-	 */
 	@SuppressWarnings("unchecked")
 	@CompileStatic
+	@Override
     Object execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context)
 		

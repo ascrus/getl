@@ -671,7 +671,7 @@ class TableDataset extends JDBCDataset {
 
 	/**
 	 * Return GETL object name for specified dataset
-	 * @dataset dataset
+	 * @param dataset dataset
 	 * @return repository or class name
 	 */
 	static String GetlDatasetObjectName(Dataset dataset) {

@@ -70,7 +70,7 @@ class YAMLDriver extends FileDriver {
      * @param listFields list of read fields
      * @param rootNode start read node name
      * @param limit limit read rows (0 for unlimited)
-     * @data json data object
+     * @param data json data object
      * @param initAttr attributes initialization code
      * @param code row process code
      */
@@ -128,7 +128,7 @@ if (limit > 0) {
     /**
      * Read YAML data from file
      * @param dataset source dataset
-     * @params process parameters
+     * @param params process parameters
      */
     @CompileStatic
     protected def readData(YAMLDataset dataset, Map params) {

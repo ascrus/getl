@@ -109,7 +109,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
 
     /**
      * Filling reference data from source table
-     * @onlyForEmpty copy data for empty table only (default true)
+     * @param onlyForEmpty copy data for empty table only (default true)
      * @return reference data was copied
      */
     @SuppressWarnings("DuplicatedCode")
@@ -169,8 +169,8 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
 
     /**
      * Fill the reference table with data from the table of the specified Vertica connection
-     * @externalConnection Vertica cluster from which to copy data
-     * @onlyForEmpty copy data for empty tables only (default true)
+     * @param externalConnection Vertica cluster from which to copy data
+     * @param onlyForEmpty copy data for empty tables only (default true)
      * @return reference data was copied
      */
     @SuppressWarnings("DuplicatedCode")

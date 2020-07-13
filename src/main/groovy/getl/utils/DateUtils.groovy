@@ -333,7 +333,8 @@ class DateUtils {
 
 	/**
 	 * Truncate the date to the specified part
-	 * @part date part (HOUR, HH, MINUTE, mm, SECOND, ss)
+	 * @param part date part (HOUR, HH, MINUTE, mm, SECOND, ss)
+	 * @return modified date
 	 */
 	static Date TruncTime(String part, Date date) {
 		Integer partNum

@@ -1343,8 +1343,11 @@ Examples:
 
     /**
      * Register history point in repository
+     * @param connection used connection
      * @param name name in repository
-     * @registration registering
+     * @param registration registering in repository
+     * @param cl user code
+     * @return history point manager object
      */
     protected SavePointManager registerHistoryPoint(JDBCConnection connection, String name,  Boolean registration = false,
                                                     Closure cl = null) {
@@ -1460,8 +1463,11 @@ Examples:
 
     /**
      * Register sequence in repository
+     * @param connection used connection
      * @param name name in repository
-     * @registration registering
+     * @param registration registering in repository
+     * @param cl user code
+     * @return sequence object
      */
     protected Sequence registerSequence(Connection connection, String name, Boolean registration = false,
                                         Closure cl = null) {
@@ -1911,7 +1917,7 @@ Examples:
      * Call the listed Getl scripts, if they have not already been run previously
      * <br><br>Example:
      * <br>callScripts project.processed.GetlScript1, project.processed.GetlScript2
-     * @scripts list of Getl scripts to run
+     * @param scripts list of Getl scripts to run
      * @return list of exit code
      */
     List<Integer> callScripts(Class<Getl>... scriptClasses) {

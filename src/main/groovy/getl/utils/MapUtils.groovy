@@ -681,7 +681,7 @@ class MapUtils {
 	@CompileDynamic
 	/**
 	 * Process XSD file with resource and convert to Map
-	 * @classLoader - class loader for resource
+	 * @param classLoader - class loader for resource
 	 * @param path - path from resource
 	 * @param fileName - xsd file name
 	 * @return

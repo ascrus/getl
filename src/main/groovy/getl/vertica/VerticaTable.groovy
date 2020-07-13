@@ -136,7 +136,7 @@ class VerticaTable extends TableDataset {
      * Process partition parameters
      * @param startPartition partition start parameter
      * @param finishPartition partition finish parameter
-     * @result parameter processing result
+     * @return parameter processing result
      */
     protected Map<String, Object> processPartitionParams(def startPartition, def finishPartition, boolean truncateToDate) {
         def res = [:] as Map<String, Object>

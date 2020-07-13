@@ -1119,7 +1119,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Save fields structure to JSON file
 	 * @param writer write descriptor
-	 * @fieldList list of writing fields (by default write all fields)
+	 * @param fieldList list of writing fields (by default write all fields)
 	 */
 	@SuppressWarnings("DuplicatedCode")
 	@Synchronized
@@ -1153,7 +1153,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Save fields structure to Groovy Slurper configuration file
 	 * @param file destination file
-	 * @fieldList list of writing fields (by default write all fields)
+	 * @param fieldList list of writing fields (by default write all fields)
 	 */
 	@SuppressWarnings("DuplicatedCode")
 	@Synchronized
@@ -1355,8 +1355,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	
 	/**
 	 * Save fields structure to metadata file
-	 * @fieldList list of saved fields
-	 * @overwrite save if file exist
+	 * @param fieldList list of saved fields
+	 * @param overwrite save if file exist
 	 */
 	@Synchronized
 	void saveDatasetMetadata(List<String> fieldList = null, boolean overwrite = true) {

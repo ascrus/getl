@@ -365,7 +365,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Return datasets list by parameters
 	 * @param params retrive params by specified connection driver (dbName, schemaName, tableName, tableMask, type)
-	 * @filter user filter code
+	 * @param filter user filter code
 	 */
 	List<TableDataset> retrieveDatasets(@DelegatesTo(RetrieveDatasetsSpec)
 										@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.RetrieveDatasetsSpec'])
@@ -386,7 +386,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Return datasets list by parameters
 	 * @param params retrive params by specified connection driver (dbName, schemaName, tableName, tableMask, type)
-	 * @filter user filter code
+	 * @param filter user filter code
 	 */
 	List<TableDataset> retrieveDatasets(Map params,
 										 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])

@@ -176,7 +176,7 @@ class VerticaConnection extends JDBCConnection {
 	/**
 	 * Purge tables with deleted records
 	 * @param filter the need for table processing
-	 * @result count of purged tables
+	 * @return count of purged tables
 	 */
 	Integer purgeTables(@ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaTable']) Closure<Boolean> filter) {
 		purgeTables(20, filter)
@@ -186,7 +186,7 @@ class VerticaConnection extends JDBCConnection {
 	 * Purge tables with deleted records
 	 * @param percentOfDeleteRows percentage of deleted records threshold of total
 	 * @param filter the need for table processing
-	 * @result count of purged tables
+	 * @return count of purged tables
 	 */
 	Integer purgeTables(Integer percentOfDeleteRows = 20,
 					 @ClosureParams(value = SimpleType, options = ['getl.vertica.VerticaTable']) Closure<Boolean> filter = null) {

@@ -49,7 +49,7 @@ abstract class ConfigManager {
 
     /**
      * Load configuration
-     * @readParams
+     * @param readParams
      */
     abstract void loadConfig(Map<String, Object> readParams = [:])
 

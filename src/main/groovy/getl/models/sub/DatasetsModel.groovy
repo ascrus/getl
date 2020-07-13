@@ -69,7 +69,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     /**
      * Use dataset in model
      * @param datasetName name dataset in repository
-     * @cl parameter description code
+     * @param cl parameter description code
      */
     protected T dataset(String datasetName, Closure cl) {
         if (datasetName == null) {
@@ -99,7 +99,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     /**
      * Use dataset in model
      * @param dataset dataset in repository
-     * @cl parameter description code
+     * @param cl parameter description code
      */
     protected T useDataset(Dataset dataset, Closure cl = null) {
         if (dataset.dslNameObject == null)

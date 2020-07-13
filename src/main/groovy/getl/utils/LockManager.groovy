@@ -104,8 +104,8 @@ class LockManager {
 
     /**
      * Lock from multi-threaded access and perform operations on it
-     * @name source name
-     * @cl processing code
+     * @param name source name
+     * @param cl processing code
      */
     void lockObject(String name, Closure cl) {
         if (cl == null)
