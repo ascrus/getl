@@ -10,6 +10,7 @@ import getl.utils.MapUtils
 import getl.utils.MapUtilsTest
 import groovy.json.JsonBuilder
 import groovy.transform.InheritConstructors
+import org.junit.Before
 import org.junit.Test
 
 /**
@@ -17,16 +18,15 @@ import org.junit.Test
  */
 @InheritConstructors
 class ConfigSlurperTest extends getl.test.GetlTest {
+    def configPath = new TFS()
+    def configFile = new File("${configPath.path}/test_config.conf")
+
     def h2 = new H2Connection(config: 'h2')
     def csv = new CSVConnection(config: 'csv')
 
-    @Test
-    void testLoadConfig() {
-        Config.configClassManager = new ConfigSlurper()
-
-        def configPath = new TFS()
-        def configFile = new File("${configPath.path}/test_config.conf")
-        configFile.deleteOnExit()
+    @Before
+    void setUp() {
+        if (configFile.exists()) return
 
         def conf = '''
             configvars {
@@ -69,11 +69,17 @@ class ConfigSlurperTest extends getl.test.GetlTest {
             }
         '''
         configFile.setText(conf, 'utf-8')
+        configFile.deleteOnExit()
+    }
+
+    @Test
+    void testLoadConfig() {
+        Config.configClassManager = new ConfigSlurper()
         assertTrue(configFile.exists())
 
         Config.SetValue('vars.config_var', 'variable value')
         assertEquals(Config.vars.config_var, 'variable value')
-        Config.LoadConfig(fileName: configFile)
+        Config.LoadConfig(fileName: configFile.path)
         assertEquals(Config.vars.config_var, 'variable value')
         assertEquals(Config.vars.local_var, 'local variable value')
 
@@ -117,6 +123,8 @@ class ConfigSlurperTest extends getl.test.GetlTest {
     @Test
     void testDatasetSchema() {
         Getl.Dsl(this) {
+            configuration { load configFile.path }
+
             csv {
                 field('id') { type = integerFieldType; isKey = true }
                 field('name') { length = 50; isNull = false }
@@ -133,6 +141,16 @@ class ConfigSlurperTest extends getl.test.GetlTest {
                 assertFalse(field('name').isNull)
                 assertTrue(field('dt').isPartition
                 )
+            }
+        }
+    }
+
+    @Test
+    void testLoadDatasets() {
+        Getl.Dsl {
+            configuration {
+                configuration { load configFile.path }
+                load 'resource:/config/source.dwh.conf'
             }
         }
     }

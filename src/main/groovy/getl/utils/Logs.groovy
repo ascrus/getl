@@ -273,8 +273,10 @@ class Logs {
 	@Synchronized
 	static void ToOut(Level level, String message) {
 		if (level == Level.OFF) return
-		def lr = new LogRecord(level, FormatMessage(message))
-		print formatter.format(lr)
+		def lr = new LogRecord(level,
+				FormatMessage(message.replace('\r', '').replace('\n', ' ').replace('\t', ' ')))
+		def str = formatter.format(lr)
+		System.out.print(str)
 	}
 
 	/**
