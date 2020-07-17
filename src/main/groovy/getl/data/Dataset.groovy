@@ -46,6 +46,8 @@ import groovy.transform.stc.SimpleType
  *
  */
 class Dataset implements Cloneable, GetlRepository, WithConnection {
+	static enum FormatSchemaFile {JSON, SLURPER}
+
 	Dataset () {
 		initParams()
 
@@ -251,10 +253,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Auto load schema with meta file
 	 */
-	void setAutoSchema (boolean value) {
-		params.autoSchema = value
-		if (value) manualSchema = true
-	}
+	void setAutoSchema (boolean value) { params.autoSchema = value }
 	
 	/**
 	 * Use manual schema for dataset
@@ -273,10 +272,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/** Schema file name */
 	String getSchemaFileName () { params.schemaFileName }
 	/** Schema file name */
-	void setSchemaFileName (String value) {
-		params.schemaFileName = value
-		manualSchema = false
-	}
+	void setSchemaFileName (String value) { params.schemaFileName = value }
 
 	/**
 	 * Print write rows to console
@@ -1352,6 +1348,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	String toString() {
 		return objectName
 	}
+
+	/** Format for reading and writing schema files */
+	public static FormatSchemaFile formatSchemaFile
 	
 	/**
 	 * Save fields structure to metadata file
@@ -1371,7 +1370,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def file = new File(fn)
 		FileUtils.LockFile(file) {
 			if (overwrite || !file.exists()) {
-				if (Config.configClassManager instanceof ConfigSlurper)
+				if (formatSchemaFile == FormatSchemaFile.SLURPER || (formatSchemaFile == null && Config.configClassManager instanceof ConfigSlurper))
 					saveDatasetMetadataToSlurper(file, fieldList)
 				else
 					saveDatasetMetadataToJSON(file.newWriter("UTF-8"), fieldList)
@@ -1389,7 +1388,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			throw new ExceptionGETL("Required \"schemaFileName\" for save dataset schema")
 
 		try {
-			if (Config.configClassManager instanceof ConfigSlurper)
+			if (formatSchemaFile == FormatSchemaFile.SLURPER || (formatSchemaFile == null && Config.configClassManager instanceof ConfigSlurper))
 				loadDatasetMetadataFromSlurper(new File(fn))
 			else
 				loadDatasetMetadataFromJSON(new File(fn).newReader("UTF-8"))

@@ -867,7 +867,7 @@ class FileUtils {
 		parameters.setCompressionLevel((params.compressionLevel != null)?(CompressionLevel.valueOf(params.compressionLevel as String)):CompressionLevel.NORMAL)
         if (params.encryptFiles != null) parameters.setEncryptFiles(params.encryptFiles as Boolean)
         if (params.encryptionMethod != null) parameters.setEncryptionMethod(EncryptionMethod.valueOf(params.encryptionMethod as String))
-        if (params.aesKeyStrength != null) parameters.setAesKeyStrength(AesKeyStrength.valueOf(params.aesKeyStrength as String))
+        if (params.aesKeyStrength != null) parameters.setAesKeyStrength(AesKeyStrength.valueOf(params.aesKeyStrength.toString()))
 		if (params.charsetFileName != null) zipFile.charset = Charset.forName(params.charsetFileName as String)
 
 		String fileMask

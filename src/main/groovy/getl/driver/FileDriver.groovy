@@ -41,7 +41,7 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-abstract class FileDriver extends Driver {
+class FileDriver extends Driver {
 	static enum RetrieveObjectType {FILE, DIR}
 
 	static enum RetrieveObjectSort {NONE, NAME, DATE, SIZE}
@@ -53,7 +53,13 @@ abstract class FileDriver extends Driver {
 		methodParams.register('openWrite', ['append', 'codePage', 'createPath', 'deleteOnEmpty',
 											'avaibleAfterWrite'])
 	}
-	
+
+	@Override
+	List<Support> supported() { [] as List<Support> }
+
+	@Override
+	List<Operation> operations() { [Operation.DROP] }
+
 	@Override
 	List<Object> retrieveObjects (Map params, Closure<Boolean> filter) {
 		def path = (connection as FileConnection).path
@@ -105,7 +111,11 @@ abstract class FileDriver extends Driver {
 		return list
 	}
 
-	/**
+	@Override
+	List<Field> fields(Dataset dataset) {
+		return null
+	}
+/**
 	 * Fill file name without GZ extension
 	 * @param dataset
 	 * @return
@@ -220,7 +230,18 @@ abstract class FileDriver extends Driver {
 
         super.dropDataset(dataset, params)
 	}
-	
+
+	@Override
+	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		return 0
+	}
+
+	@Override
+	void openWrite(Dataset dataset, Map params, Closure prepareCode) { }
+
+	@Override
+	void write(Dataset dataset, Map row) { }
+
 	/**
 	 * Create path to file
 	 * @param filePath

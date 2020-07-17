@@ -53,7 +53,10 @@ class Path implements Cloneable, GetlRepository {
 
 	Path (Map params) {
 		registerMethod()
-		compile(params)
+		if (params?.vars != null) {
+			setMaskVariables(params.vars as Map)
+		}
+		compile(MapUtils.CleanMap(params, ['vars']))
 	}
 
 	private void registerMethod () {
@@ -255,7 +258,6 @@ class Path implements Cloneable, GetlRepository {
 
 		elements.clear()
 		likeElements.clear()
-//		vars = MapUtils.UnmodifiableMap(new HashMap<String, Map>())
 		rootPath = null
 		maskPath = null
 		maskPathPattern = null
@@ -336,7 +338,7 @@ class Path implements Cloneable, GetlRepository {
 					}
 
 					if (vn in listFoundVars)
-						throw new ExceptionGETL("Duplicate variable \"${vn}\" in path mask \"$mask\"")
+						throw new ExceptionGETL("Duplicate variable \"${vn}\" in path mask \"$maskStr\"")
 
 					(p.vars as List).add(vn)
 					listFoundVars << vn
@@ -421,10 +423,13 @@ class Path implements Cloneable, GetlRepository {
 				MapUtils.MergeMap(cm, value, false, false)
 				compVars.put(name, value)
 			}
+			else if (!compVars.containsKey(name)) {
+				compVars.put(name, value)
+			}
 		}
 
 		vars = (MapUtils.UnmodifiableMap(compVars) as Map<String, Map>)
-
+		mask = maskStr
 		isCompile = true
 	}
 

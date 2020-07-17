@@ -1,5 +1,6 @@
 package getl.utils
 
+import getl.data.Field
 import org.junit.Test
 
 /**
@@ -14,6 +15,7 @@ class PathTest extends getl.test.GetlTest {
         variable('year') {
             calc { (it.date != null)?DateUtils.PartOfDate('year', it.date):(null as Integer) }
         }
+        variable('field1') { type = stringFieldType; length = 50 }
         compile()
 
         return it
@@ -41,6 +43,9 @@ class PathTest extends getl.test.GetlTest {
         assertEquals('yyyy-MM-dd', p.vars.date?.format)
         assertEquals(2, p.vars.num.len)
         assertEquals(p.variable('year').calc, p.vars.year?.calc)
+        assertNotNull(p.vars.field1)
+        assertEquals(Field.stringFieldType, p.vars.field1.type)
+        assertEquals(50, p.vars.field1.len)
     }
 
     @Test
