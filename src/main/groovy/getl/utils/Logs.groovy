@@ -570,4 +570,9 @@ class Logs {
 			errStream = null
 		}
 	}
+
+	@Synchronized('logger')
+	static void Consistently(Closure cl) {
+		if (cl != null) cl.call()
+	}
 }

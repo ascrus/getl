@@ -434,7 +434,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 <html>
 <title>Checking the status of rules for monitor "$dslNameObject"</title>
 <body>
-<h1>${lastCheckStatusTable.countRow('NOT is_correct')} errors detected, ${lastCheckStatusTable.countRow('is_notification AND is_correct')} errors were closed</h1>
+<h1>${lastCheckStatusTable.countRow('NOT is_correct')} errors detected, ${lastCheckStatusTable.countRow('is_notification AND is_correct')} errors has been cleared</h1>
 <table border="1" cellpadding="10">
 <tr bgcolor="Gainsboro">
     <th>Rule</th>

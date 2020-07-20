@@ -40,6 +40,7 @@ import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.CompileStatic
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -704,10 +705,12 @@ abstract class FileListProcessing implements GetlRepository {
         }
     }
 
+    static private final Object infoLock = new Object()
+
     /** Processing files */
     void process() {
         initProcess()
-        infoProcess()
+        Logs.Consistently { infoProcess() }
 
         beforeProcessing()
         try {

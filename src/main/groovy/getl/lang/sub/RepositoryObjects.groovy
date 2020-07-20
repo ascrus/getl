@@ -150,6 +150,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     T find(String name) {
         T obj
         def repName = dslCreator.repObjectName(name)
+        //noinspection GroovySynchronizationOnNonFinalField
         synchronized (objects) {
             obj = objects.get(repName)
             if (obj == null) {
@@ -200,15 +201,12 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
         validExist = BoolUtils.IsValue(validExist, true)
         def repName = dslCreator.repObjectName(name, true)
-        def isThread = (dslCreator.options.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread)
 
         synchronized (objects) {
             if (validExist) {
                 def exObj = objects.get(repName)
                 if (exObj != null)
                     throw new ExceptionDSL("\"$name\" already registered as class \"${exObj.getClass().name}\" for \"$typeObject\"!")
-                /*else if (isThread)
-                    throw new ExceptionDSL("it is not allowed to register an \"$name\" inside a thread for $typeObject!")*/
             }
 
             obj.dslNameObject = repName

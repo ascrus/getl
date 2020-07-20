@@ -2186,6 +2186,9 @@ Examples:
     @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, String> getSysVars() { System.getenv() }
 
+    /** Execute a synchronized sequence of logging commands */
+    static void logConsistently(Closure cl) { Logs.Consistently(cl) }
+
     /** Write message for specified level to log */
     static void logWrite(String level, String message) { Logs.Write(level, message) }
 
@@ -3980,7 +3983,18 @@ Examples:
             throw new ExceptionDSL('Need file manager name value!')
 
         def parent = registerFileManager(null, name, false) as Manager
-        runClosure(parent, cl)
+
+        if (cl != null) {
+            def pt = startProcess("Do commands on [$parent]", 'command')
+            try {
+                runClosure(parent, cl)
+            }
+            finally {
+                if (parent.connected) parent.disconnect()
+            }
+            pt.name = "Do commands on [$parent]"
+            finishProcess(pt)
+        }
 
         return parent
     }
