@@ -638,14 +638,17 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                             if (!isCachedMode)
                                 element.man.story.doneWrite()
                             element.man.story.closeWrite()
-                            if (!isCachedMode)
-                                element.man.story.connection.commitTran(true)
-                            else
-                                element.man.story.connection.rollbackTran(true)
+                            if (!element.man.story.currentJDBCConnection.autoCommit) {
+                                if (!isCachedMode)
+                                    element.man.story.connection.commitTran(true)
+                                else
+                                    element.man.story.connection.rollbackTran(true)
+                            }
                         }
                         if (element.delTable != null) {
                             element.delTable.closeWrite()
-                            element.delTable.connection.rollbackTran(true)
+                            if (!element.delTable.currentJDBCConnection.autoCommit)
+                                element.delTable.connection.rollbackTran(true)
                         }
                     }
 
@@ -662,12 +665,14 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                     if (element.man.story != null) {
                         element.man.story.doneWrite()
                         element.man.story.closeWrite()
-                        element.man.story.connection.commitTran(true)
+                        if (!element.man.story.currentJDBCConnection.autoCommit)
+                            element.man.story.connection.commitTran(true)
                     }
                     if (element.delTable != null) {
                         element.delTable.doneWrite()
                         element.delTable.closeWrite()
-                        element.delTable.connection.commitTran(true)
+                        if (!element.delTable.currentJDBCConnection.autoCommit)
+                            element.delTable.connection.commitTran(true)
                     }
                 }
 

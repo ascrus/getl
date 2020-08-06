@@ -782,8 +782,16 @@ class JDBCDriver extends Driver {
 	@Override
 	void commitTran() {
 		def con = jdbcConnection
-        if (!isSupport(Driver.Support.TRANSACTIONAL)) return
-		if (con == null) throw new ExceptionGETL("Can not commit from disconnected connection")
+
+        if (!isSupport(Driver.Support.TRANSACTIONAL))
+			return
+
+		if (con.autoCommit)
+			throw new ExceptionGETL("Cannot use commit while connection is in auto-commit mode")
+
+		if (con == null)
+			throw new ExceptionGETL("Can not commit from disconnected connection")
+
 		if (con.tranCount == 1) {
 			saveToHistory("COMMIT")
 			sqlConnect.commit()
@@ -797,8 +805,15 @@ class JDBCDriver extends Driver {
 	@Override
 	void rollbackTran() {
 		def con = jdbcConnection
-        if (!isSupport(Driver.Support.TRANSACTIONAL)) return
-		if (con == null) throw new ExceptionGETL("Can not rollback from disconnected connection")
+        if (!isSupport(Driver.Support.TRANSACTIONAL))
+			return
+
+		if (con.autoCommit)
+			throw new ExceptionGETL("Cannot use rollback while connection is in auto-commit mode")
+
+		if (con == null)
+			throw new ExceptionGETL("Can not rollback from disconnected connection")
+
 		if (con.tranCount == 1) {
 			saveToHistory("ROLLBACK")
 			sqlConnect.rollback()

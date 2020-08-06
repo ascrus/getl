@@ -593,11 +593,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Connection from table file list (if null, use TDS connection) */
 	void setFileListConnection(JDBCConnection value) { fileListConnection = value }
 
-	// History table
+	/** History table */
 	TableDataset getStory() { params.story as TableDataset }
-	// History table
+	/** History table */
 	void setStory(TableDataset value) { params.story = value }
-	// Use table for storing history download files
+	/** Use table for storing history download files */
 	void useStory(TableDataset value) { setStory(value) }
 
 	/** Directory level for which to enable parallelization */
@@ -828,6 +828,39 @@ abstract class Manager implements Cloneable, GetlRepository {
 		ManagerListProcessClosure p = new ManagerListProcessClosure(code: filter)
 		buildList(lparams, p)  
 	}
+
+	private static final _synchCreate = new Object()
+
+	/**
+	 * Create story table if not exists
+	 * @param storyTable created table
+	 * @param path path mask
+	 * @param prepareField field processing code
+	 */
+	@Synchronized('_synchCreate')
+	boolean createStoryTable(TableDataset storyTable, Path path = null,
+							 @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure prepareField = null) {
+		storyTable.field.clear()
+		AddFieldsToDS(storyTable)
+		if (path != null && !path.isCompile)
+			path.compile()
+		path?.vars?.each { key, attr ->
+			def varName = key.toUpperCase()
+			if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
+				throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
+
+			def ft = (attr.type as Field.Type)?:Field.Type.STRING
+			def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
+			def field = new Field(name: varName.toUpperCase(), type: ft, length: length, precision: (attr.precision as Integer)?:0)
+			if (prepareField != null) prepareField.call(field)
+			storyTable.field << field
+		}
+		if (!storyTable.exists) {
+			storyTable.create()
+			return true
+		}
+		return false
+	}
 	
 	/**
 	 * Build list files with path processor<br>
@@ -889,29 +922,25 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		// History table		
 		TableDataset storyTable = (!ignoreStory)?((lparams.story as TableDataset)?:story):null
+		if (createStory && storyTable != null) createStoryTable(storyTable, path)
 
 		// Init file list
 		fileList = new TableDataset(connection: fileListConnection?:new TDS(), 
 									tableName: fileListName?:"FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}")
 		if (sqlHistoryFile != null) ((JDBCConnection)fileList.connection).sqlHistoryFile = sqlHistoryFile
 
-		createStory = (createStory && storyTable != null && !storyTable.exists)
-		if (createStory) AddFieldsToDS(storyTable)
-
 		initFileList()
 		if (extendFields != null) fileList.addFields(extendFields)
-		if (path != null)
-			path.vars.each { key, attr ->
-				def varName = key.toUpperCase()
-				if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
-					throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
+		path?.vars?.each { key, attr ->
+			def varName = key.toUpperCase()
+			if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
+				throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
 
-				def ft = (attr.type as Field.Type)?:Field.Type.STRING
-				def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
-				def field = new Field(name: varName.toUpperCase(), type: ft, length: length, precision: (attr.precision as Integer)?:0)
-				fileList.field << field
-				if (createStory) storyTable.field << field
-			}
+			def ft = (attr.type as Field.Type)?:Field.Type.STRING
+			def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
+			def field = new Field(name: varName.toUpperCase(), type: ft, length: length, precision: (attr.precision as Integer)?:0)
+			fileList.field << field
+		}
 		fileList.drop(ifExists: true)
 		def fileListIndexes = [:]
 		fileListIndexes.put(fileList.tableName + '_1', [columns: ['FILEPATH']])
@@ -922,10 +951,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 		}
 		fileList.create((!fileListIndexes.isEmpty())?[indexes: fileListIndexes]:null)
 
-		if (createStory) storyTable.create()
-
 		def tableType = (threadCount == null)?JDBCDataset.localTemporaryTableType:JDBCDataset.tableType
-		
+
 		def newFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
 		newFiles.field = [new Field(name: 'ID', type: 'INTEGER', isNull: false, isAutoincrement: true)] + fileList.field
 		newFiles.removeField('FILEINSTORY')
@@ -998,10 +1025,13 @@ INSERT INTO ${doubleFiles.fullNameDataset()} (LOCALFILENAME${(takePathInStory)?'
 				countDouble = newFiles.connection.executeCommand(command: sqlDetectDouble, isUpdate: true)
 			}
 			catch (Exception e) {
-				newFiles.connection.rollbackTran()
+				if (!newFiles.currentJDBCConnection.autoCommit)
+					newFiles.connection.rollbackTran()
+
 				throw e
 			}
-			newFiles.connection.commitTran()
+			if (!newFiles.currentJDBCConnection.autoCommit)
+				newFiles.connection.commitTran()
 			
 			if (countDouble > 0) {
 				Logs.Fine("warning, found $countDouble double files name for build list files in filemanager!")
@@ -1015,11 +1045,15 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 					countDelete = newFiles.connection.executeCommand(command: sqlDeleteDouble, isUpdate: true)
 				}
 				catch (Exception e) {
-					newFiles.connection.rollbackTran()
+					if (!newFiles.currentJDBCConnection.autoCommit)
+						newFiles.connection.rollbackTran()
+
 					throw e
 				}
-				newFiles.connection.commitTran()
-				if (countDouble != countDelete) throw new ExceptionGETL("internal error on delete double files name for build list files in filemanager!")
+				if (!newFiles.currentJDBCConnection.autoCommit)
+					newFiles.connection.commitTran()
+				if (countDouble != countDelete)
+					throw new ExceptionGETL("internal error on delete double files name for build list files in filemanager!")
 			}
 			doubleFiles.drop(ifExists: true)
 			
@@ -1258,10 +1292,13 @@ WHERE
 			}
 			
 			if (useStory) ds.doneWrite()
-			if (useStory) ds.connection.commitTran()
+			if (useStory && !ds.currentJDBCConnection.autoCommit)
+				ds.connection.commitTran()
 		}
 		catch (Exception e) {
-			if (useStory && ds.connection.connected) ds.connection.rollbackTran()
+			if (useStory && ds.connection.connected && !ds.currentJDBCConnection.autoCommit)
+				ds.connection.rollbackTran()
+
 			throw e
 		}
 		finally {

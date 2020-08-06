@@ -475,13 +475,15 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
             if (story != null) {
                 story.doneWrite()
                 story.closeWrite()
-                story.currentJDBCConnection.commitTran(true)
+                if (!story.currentJDBCConnection.autoCommit)
+                    story.currentJDBCConnection.commitTran(true)
             }
         }
         catch (Throwable e) {
             if (story != null) {
                 story.closeWrite()
-                story.currentJDBCConnection.rollbackTran(true)
+                if (!story.currentJDBCConnection.autoCommit)
+                    story.currentJDBCConnection.rollbackTran(true)
             }
             throw e
         }
