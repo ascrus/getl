@@ -19,13 +19,16 @@ import org.junit.Test
 @InheritConstructors
 class ConfigSlurperTest extends getl.test.GetlTest {
     def configPath = new TFS()
-    def configFile = new File("${configPath.path}/test_config.conf")
+    def configFile = new File("${configPath.path}/test_config.getl")
 
     def h2 = new H2Connection(config: 'h2')
     def csv = new CSVConnection(config: 'csv')
 
     @Before
     void setUp() {
+        Config.configClassManager = new ConfigSlurper()
+        (Config.configClassManager as ConfigSlurper).path = configPath
+
         if (configFile.exists()) return
 
         def conf = '''
@@ -74,7 +77,6 @@ class ConfigSlurperTest extends getl.test.GetlTest {
 
     @Test
     void testLoadConfig() {
-        Config.configClassManager = new ConfigSlurper()
         assertTrue(configFile.exists())
 
         Config.SetValue('vars.config_var', 'variable value')
@@ -99,7 +101,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
 
         assertTrue(['a', 1, 'variable value', 'local variable value', null].equals(Config.content.map.list))
 
-        (Config.configClassManager as ConfigSlurper).path = configPath
+
         Config.content.var1 = '${configvars.local_var}'
         Config.content.var3[0].d = '${configvars.local_var}'
         Config.content.var3[1].d = '${vars.config_var}'

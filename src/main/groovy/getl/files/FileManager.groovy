@@ -46,7 +46,7 @@ class FileManager extends Manager {
 	boolean getConnected () { connected }
 
 	/** Current directory file handler */
-	private File currentDir
+	private File currentDirectory
 
 	@Override
 	protected void initMethods () {
@@ -86,7 +86,7 @@ class FileManager extends Manager {
 		params.rootPath = rp.canonicalPath
 		if (!rp.exists() && createRootPath) rp.mkdirs() 
 
-		currentDir = rp
+		currentDirectory = rp
 		connected = true
 		if (rootPath != null) currentPath = rootPath
 	}
@@ -96,7 +96,7 @@ class FileManager extends Manager {
 		if (!connected)
 			throw new ExceptionGETL('Manager already disconnected!')
 
-		currentDir = null
+		currentDirectory = null
 		_currentPath = null
 		connected = false
 	}
@@ -156,7 +156,7 @@ class FileManager extends Manager {
 			filter = { File file, String name -> true }
 		}
 		
-		File[] listFiles = currentDir.listFiles(new Filter(filter))
+		File[] listFiles = currentDirectory.listFiles(new Filter(filter))
 
 		def res = new FilesList()
 		res.listFiles = listFiles
@@ -167,10 +167,10 @@ class FileManager extends Manager {
 	String getCurrentPath () {
 		validConnect()
 
-		if (currentDir == null)
+		if (currentDirectory == null)
 			throw new ExceptionGETL("Current directory is not setting!")
 
-		return currentDir.path.replace("\\", "/")
+		return currentDirectory.path.replace("\\", "/")
 	}
 	
 	@Override
@@ -179,14 +179,14 @@ class FileManager extends Manager {
 		
 		File f = new File(path)
 		if (!f.exists()) throw new ExceptionGETL("Directory \"${path}\" not found")
-		currentDir = f
-		_currentPath = currentDir.path.replace("\\", "/")
+		currentDirectory = f
+		_currentPath = currentDirectory.path.replace("\\", "/")
 	}
 	
 	@Override
 	void changeDirectoryUp () {
 		validConnect()
-		currentPath = currentDir.parent
+		currentPath = currentDirectory.parent
 	}
 	
 	@Override
@@ -208,7 +208,7 @@ class FileManager extends Manager {
 		
 		def fn = ((path != null)?path + "/":"") + fileName
 
-		def dest = "${currentDir.canonicalPath}/${fileName}"
+		def dest = "${currentDirectory.canonicalPath}/${fileName}"
 		FileUtils.CopyToFile(fn, dest, false)
 
 		def fSource = fileFromLocalDir(fn)
@@ -220,7 +220,7 @@ class FileManager extends Manager {
 	void removeFile (String fileName) {
 		validConnect()
 		
-		def f = fileFromLocalDir("${currentDir.canonicalPath}/${fileName}")
+		def f = fileFromLocalDir("${currentDirectory.canonicalPath}/${fileName}")
 		if (!f.delete()) throw new ExceptionGETL("Can not remove file ${f.canonicalPath}")
 	}
 	
@@ -228,7 +228,7 @@ class FileManager extends Manager {
 	void createDir (String dirName) {
 		validConnect()
 		
-		File f = new File("${currentDir.canonicalPath}/${dirName}")
+		File f = new File("${currentDirectory.canonicalPath}/${dirName}")
 		if (f.exists()) throw new ExceptionGETL("Directory \"${f.canonicalPath}\" already exists")
 		if (!f.mkdirs()) throw new ExceptionGETL("Can not create directory \"${f.canonicalPath}\"")
 	}
@@ -237,7 +237,7 @@ class FileManager extends Manager {
 	void removeDir (String dirName, Boolean recursive) {
 		validConnect()
 		
-		File f = new File("${currentDir.canonicalPath}/${dirName}")
+		File f = new File("${currentDirectory.canonicalPath}/${dirName}")
 		if (!f.exists()) throw new ExceptionGETL("Directory \"${f.canonicalPath}\" not found")
         if (recursive) {
             if (!f.deleteDir()) throw new ExceptionGETL("Can not remove directory \"${f.canonicalPath}\"")
@@ -251,11 +251,11 @@ class FileManager extends Manager {
 	void rename(String fileName, String path) {
 		validConnect()
 
-		def sourceFile = fileFromLocalDir("${currentDir.canonicalPath}/${fileName}")
+		def sourceFile = fileFromLocalDir("${currentDirectory.canonicalPath}/${fileName}")
 
 		def destPath = FileUtils.ConvertToUnixPath(path)
 		def destFile = new File((destPath.indexOf('/') != -1)?"${rootPath}/${destPath}":
-				"${currentDir.canonicalPath}/${destPath}")
+				"${currentDirectory.canonicalPath}/${destPath}")
 
 		if (!sourceFile.renameTo(destFile)) throw new ExceptionGETL("Can not rename file \"$fileName\" to \"$path\"")
 	}
@@ -264,7 +264,7 @@ class FileManager extends Manager {
 	boolean existsDirectory(String dirName) {
 		validConnect()
 
-		File f = new File("${currentDir.canonicalPath}/${dirName}")
+		File f = new File("${currentDirectory.canonicalPath}/${dirName}")
 		return f.exists() && f.isDirectory()
 	}
 
@@ -272,7 +272,7 @@ class FileManager extends Manager {
 	boolean existsFile(String fileName) {
 		validConnect()
 
-		File f = new File("${currentDir.canonicalPath}/${fileName}")
+		File f = new File("${currentDirectory.canonicalPath}/${fileName}")
 		return f.exists() && f.isFile()
 	}
 
@@ -301,7 +301,7 @@ class FileManager extends Manager {
 			}
 			if (Config.isWindows()) command = "cmd /c $command".toString()
 			String[] envList = env.toArray(String[])
-			p = Runtime.getRuntime().exec(command, envList, currentDir)
+			p = Runtime.getRuntime().exec(command, envList, currentDirectory)
 		}
 		catch (IOException e) {
 			err.append(e.message)
@@ -332,8 +332,10 @@ class FileManager extends Manager {
 	@Override
 	long getLastModified(String fileName) {
 		validConnect()
-
-		return new File("$rootPath/${currentDir()}/$fileName").lastModified()
+		def cd = currentDir()
+		String filePath = "$rootPath/$cd/$fileName"
+		def file = new File(filePath)
+		return file.lastModified()
 	}
 
 	@Override

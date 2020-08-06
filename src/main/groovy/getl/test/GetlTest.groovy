@@ -79,6 +79,9 @@ class GetlTest extends GroovyAssert {
      * @param actual the value to check against expected
      */
     static void assertEquals(String message, Duration expected, Duration actual) {
+        if (expected == null && actual == null)
+            return
+
         assertEquals(message, expected.toString(), actual.toString())
     }
 
@@ -98,6 +101,11 @@ class GetlTest extends GroovyAssert {
      * @param actual the value to check against expected
      */
     static void assertEquals(String message, Map expected, Map actual) {
+        if (expected == null && actual == null)
+            return
+        if ((expected == null && actual != null) || (expected != null && actual == null))
+            throw new AssertionError('Parameters do not match, one of them is null!')
+
         def res = MapUtils.CompareMap(expected, actual)
         if (!res.isEmpty())
             throw new AssertionError('maps difference: ' + MapUtils.ToJson(res))

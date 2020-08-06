@@ -236,7 +236,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * Name section parameters value in config file
 	 * Store parameters to config file from section "files"
 	 */
-	String config
+	private String config
 	/**
 	 * Name section parameters value in config file
 	 * Store parameters to config file from section "files"
@@ -377,6 +377,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * Change current server directory
 	 * @param dir new directory
 	 */
+	@CompileStatic
 	void changeDirectory(String dir) {
 		validRootPath()
 		if (dir == null || dir == '')
@@ -448,6 +449,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param filePath file path on server
 	 * @param localFilePath file download path to local directory
 	 */
+	@CompileStatic
 	void download(String filePath, String localFilePath) {
 		if (localFilePath == null)
 			localFilePath = FileUtils.FileName(filePath)
@@ -496,6 +498,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * Create directories in current directory by server if not exists
 	 * @param dirPath created directory path
 	 */
+	@CompileStatic
 	void createDirs(String dirPath) {
 		def dirs = FileUtils.ConvertToUnixPath(dirPath).split('/')
 		dirs.each { dir ->
@@ -539,6 +542,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/** Return current directory with relative path */
+	@CompileStatic
 	String currentDir() {
 		validRootPath()
 

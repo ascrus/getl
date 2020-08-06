@@ -6,7 +6,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 //noinspection GroovyUnusedAssignment
-version = '4.5.5-4-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.5.5-5' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -19,15 +19,15 @@ repositories {
 }
 
 dependencies {
-	compile('org.codehaus.groovy:groovy-all:3.0.4') {
+	compile('org.codehaus.groovy:groovy-all:3.0.5') {
 		exclude(group: 'org.codehaus.groovy', module: 'groovy-testng')
 	}
-	compile 'org.codehaus.groovy:groovy-dateutil:3.0.4'
-	compile 'org.codehaus.groovy:groovy-yaml:3.0.4'
+	compile 'org.codehaus.groovy:groovy-dateutil:3.0.5'
+	compile 'org.codehaus.groovy:groovy-yaml:3.0.5'
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'
 	addJars 'com.h2database:h2:1.4.200'
-	addJars 'net.lingala.zip4j:zip4j:2.5.2'
+	addJars 'net.lingala.zip4j:zip4j:2.6.1'
 	addJars 'com.sun.mail:smtp:1.6.5'
 	addJars 'com.sun.mail:mailapi:1.6.5'
 	addJars 'com.jcraft:jsch:0.1.55'
@@ -42,18 +42,18 @@ dependencies {
 		exclude group: 'stax'
 	}
 	implementation 'org.apache.poi:ooxml-schemas:1.4'
-	implementation 'org.apache.hadoop:hadoop-auth:3.2.1'
-	implementation 'org.apache.hadoop:hadoop-hdfs-client:3.2.1'
-	implementation 'org.apache.hadoop:hadoop-common:3.2.1'
+	implementation 'org.apache.hadoop:hadoop-auth:3.3.0'
+	implementation 'org.apache.hadoop:hadoop-hdfs-client:3.3.0'
+	implementation 'org.apache.hadoop:hadoop-common:3.3.0'
 
-	implementation(group: 'com.force.api', name: 'force-partner-api', version: '49.1.0')
+	implementation(group: 'com.force.api', name: 'force-partner-api', version: '49.3.0')
 
 	implementation 'com.github.xeroapi:xero-java:2.1.3'
 	implementation 'com.github.xeroapi:xeroapi-schemas:1.0.0'
 
 	configurations.compile.extendsFrom(configurations.addJars)
 
-	deployerJars "org.apache.maven.wagon:wagon-http:3.3.4"
+	deployerJars "org.apache.maven.wagon:wagon-http:3.4.1"
 	testImplementation  group: 'junit', name: 'junit', version: '4.13'
 	testImplementation  fileTree(dir: 'tests', include: '**/*.jar')
 }

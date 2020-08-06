@@ -985,6 +985,9 @@ class MapUtils {
 	 * @return
 	 */
 	static Map<String, Object> CompareMap(Map original, Map comparison) {
+		if (original == null || comparison == null)
+			throw new NullPointerException('Parameters cannot be null!')
+
 		def res = [:] as Map<String, Object>
 		def empty = [:]
 		original.each { key, value ->

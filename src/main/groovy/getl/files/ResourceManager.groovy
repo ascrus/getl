@@ -351,10 +351,11 @@ class ResourceManager extends Manager {
 
             def child = cd.files.find { it.filename == dir }
             if (child.type == Manager.fileType) {
-                if (isMask && i == size - 1) break
-                child = null
+                break
+                /*if (isMask && i == size - 1) break
+                child = null*/
             }
-            if (child == null)
+            else if (child == null)
                 throw new ExceptionGETL("Path \"$path\" not found!")
 
             cd = child

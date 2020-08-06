@@ -70,6 +70,10 @@ abstract class ManagerTest extends getl.test.GetlTest {
             remove()
             manager.disconnect()
         }
+        catch (Exception e) {
+            Logs.Exception(e)
+            throw e
+        }
         finally {
             manager.changeLocalDirectoryToRoot()
             manager.removeLocalDirs(initLocalDir)
@@ -155,7 +159,8 @@ abstract class ManagerTest extends getl.test.GetlTest {
         manager.changeLocalDirectoryToRoot()
         manager.changeLocalDirectory(initLocalDir)
         def rf = new File("${manager.currentLocalDir()}/$rootFileInitName")
-        assertEquals(new Date(rf.lastModified()), new Date(manager.getLastModified(rootFileInitName)))
+        def dt = new Date(manager.getLastModified(rootFileInitName))
+        assertEquals(new Date(rf.lastModified()), dt)
     }
 
     private void rename() {
