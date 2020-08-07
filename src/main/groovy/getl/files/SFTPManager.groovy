@@ -83,7 +83,7 @@ class SFTPManager extends Manager implements UserLogins {
 	}
 	
 	/** Server address */
-	String getServer() { params.server }
+	String getServer() { params.server as String }
 	/** Server address */
 	void setServer(String value) { params.server = value }
 	
@@ -93,12 +93,12 @@ class SFTPManager extends Manager implements UserLogins {
 	void setPort(Integer value) { params.port = value }
 	
 	@Override
-	String getLogin() { params.login }
+	String getLogin() { params.login as String }
 	@Override
 	void setLogin(String value) { params.login = value }
 
 	@Override
-	String getPassword() { params.password }
+	String getPassword() { params.password as String }
 	@Override
 	void setPassword(String value) { params.password = value }
 
@@ -114,7 +114,7 @@ class SFTPManager extends Manager implements UserLogins {
 	 * Known hosts file name
 	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
-	String getKnownHostsFile() { params.knownHostsFile }
+	String getKnownHostsFile() { params.knownHostsFile as String }
 	/**
 	 * Known hosts file name
 	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
@@ -125,7 +125,7 @@ class SFTPManager extends Manager implements UserLogins {
 	 * Host key
 	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
 	 */
-	String getHostKey() { params.hostKey }
+	String getHostKey() { params.hostKey as String }
 	/**
 	 * Host key
 	 * <br>use "ssh-keyscan -t rsa <IP address>" for get key
@@ -138,12 +138,17 @@ class SFTPManager extends Manager implements UserLogins {
 	void setStrictHostKeyChecking(Boolean value) { params.strictHostKeyChecking = value }
 	
 	/** Identity file name */
-	String getIdentityFile() { params.identityFile }
+	String getIdentityFile() { params.identityFile as String }
 	/** Identity file name */
 	void setIdentityFile(String value) { params.identityFile = value }
-	
+
+	/** Password for identity file */
+	String getPassphrase() { params.passphrase as String }
+	/** Password for identity file */
+	void setPassphrase(String value) { params.passphrase = value }
+
 	/** Code page on command console */
-	String getCodePage() { params.codePage?:"utf-8" }
+	String getCodePage() { (params.codePage as String)?:"utf-8" }
 	/** Code page on command console */
 	void setCodePage(String value) { params.codePage = value }
 	
@@ -162,47 +167,69 @@ class SFTPManager extends Manager implements UserLogins {
 
 	/** Create new session manager */
 	private Session newSession() {
-		Session s = client.getSession(login, server, port)
-		try {
-			s.setPassword(password)
-			String h = "CREATE SESSION: host $server:$port, login $login"
-			if (knownHostsFile != null) {
-				h += ", hosts file \"$knownHostsFile\""
-				client.setKnownHosts(knownHostsFile)
-			}
+		String h = "CREATE SESSION: host $server:$port, login $login"
+		client.identityRepository.removeAll()
+		if (identityFile != null) {
+			def f = new File(identityFile)
+			if (!f.exists())
+				throw new ExceptionGETL("RSA file \"$f\" not found!")
 
-			if (hostKey != null) {
-				byte[] key = Base64.decoder.decode(hostKey)
-				client.getHostKeyRepository().add(new HostKey(server, key ), null)
-			}
-			
-			if (identityFile != null) {
+			if (passphrase == null) {
+				client.addIdentity(f.absolutePath)
 				h += ", identity file \"$identityFile\""
-				client.addIdentity(identityFile)
+			}
+			else {
+				client.addIdentity(f.absolutePath, passphrase.bytes)
+				h += ", identity file \"$identityFile\" with \"${StringUtils.Replicate('*', passphrase.length())}\""
+			}
+		}
+
+		Session res = client.getSession(login, server, port)
+		try {
+			if (password != null && identityFile == null) {
+				res.setPassword(password)
+				h += ", used password \"${StringUtils.Replicate('*', password.length())}\""
 			}
 
-			if (!strictHostKeyChecking)
-				s.setConfig('StrictHostKeyChecking', 'no')
-			
+			if (!strictHostKeyChecking) {
+				res.setConfig('StrictHostKeyChecking', 'no')
+				h += ', disable strict host key checking'
+			}
+			else {
+				if (hostKey != null) {
+					byte[] key = Base64.decoder.decode(hostKey)
+					client.getHostKeyRepository().add(new HostKey(server, key), null)
+					h += ", used host key \"${StringUtils.LeftStr(hostKey, 16)}\""
+				}
+				else if (knownHostsFile != null) {
+					h += ", hosts file \"$knownHostsFile\""
+					client.setKnownHosts(knownHostsFile)
+				}
+			}
+
 			writeScriptHistoryFile(h)
 			
 			try {
-				s.connect()
+				res.connect()
 			}
 			catch (Exception e) {
-				if (writeErrorsToLog) Logs.Severe("Can not connect to $server:$port or invalid login/password")
+				if (writeErrorsToLog)
+					Logs.Severe("Can not connect to $server:$port or invalid login/password")
+
 				throw e
 			}
 			
-			if (aliveInterval != null) s.setServerAliveInterval(aliveInterval * 1000)
-			if (aliveCountMax != null) s.setServerAliveCountMax(aliveCountMax)
+			if (aliveInterval != null) res.setServerAliveInterval(aliveInterval * 1000)
+			if (aliveCountMax != null) res.setServerAliveCountMax(aliveCountMax)
 		}
 		catch (Exception e) {
-			if (s.connected) clientSession.disconnect()
+			if (res.connected)
+				clientSession.disconnect()
+
 			throw e
 		}
 		
-		s
+		return res
 	}
 
 	@Override
@@ -218,7 +245,7 @@ class SFTPManager extends Manager implements UserLogins {
 
 		if (server == null || port == null)
 			throw new ExceptionGETL('Required server host and port for connect')
-		if (login == null || password == null)
+		if (login == null || (password == null && identityFile == null))
 			throw new ExceptionGETL('Required login and password for connect')
 		
 		clientSession = newSession()
