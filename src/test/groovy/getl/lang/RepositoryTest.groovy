@@ -297,10 +297,21 @@ class RepositoryTest extends GetlDslTest {
                 retrieveFields()
                 field('id') { type = integerFieldType; isKey = true; ordKey = 0 }
             }
+            cloneDataset('table1', embeddedTable('table'))
             csvWithDataset('csv', embeddedTable('table')) {
                 useConnection csvTempConnection('csv.group:con')
                 fileName = 'table'
                 field('dt') { format = 'yyyy-MM-dd HH:mm:ss'; extended.check = true }
+            }
+            csvTemp('partitions', true) {
+                fileName = 'partitions'
+                field('value') { type = dateFieldType }
+                etl.rowsTo {
+                    writeRow {add ->
+                        add value: DateUtils.ParseDate('2020-01-01')
+                        add value: DateUtils.ParseDate('2020-02-01')
+                    }
+                }
             }
             h2Table('rules:table', true) {
                 useConnection h2Connection('h2:con')
@@ -318,7 +329,7 @@ class RepositoryTest extends GetlDslTest {
                 setQuery 'SELECT Max(dt) FROM table1 WHERE \'{region}\' = \'all\' OR region = \'{region}\''
                 queryParams.region = 'all'
             }
-            assertEquals(5, listDatasets().size)
+            assertEquals(7, listDatasets().size)
 
             sequence('sequence', true) {
                 useConnection embeddedConnection('con')
@@ -371,8 +382,11 @@ class RepositoryTest extends GetlDslTest {
                 mapTable('table') {
                     linkTo 'csv'
                     listPartitions = [DateUtils.ParseDate('2020-01-01'), DateUtils.ParseDate('2020-02-01')]
-                    partitionFieldName = 'dt'
                     objectVars.var1 = 'test'
+                }
+                mapTable('table1') {
+                    linkTo 'csv'
+                    usePartitionsFrom csvTemp('partitions')
                 }
             }
             assertEquals(1, models.listMapTables().size())
@@ -424,7 +438,7 @@ class RepositoryTest extends GetlDslTest {
                 loadRepositories()
             }
             assertEquals(4, listConnections().size)
-            assertEquals(5, listDatasets().size)
+            assertEquals(7, listDatasets().size)
             assertEquals(1, listSequences().size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(2, listFilemanagers().size())
@@ -477,7 +491,7 @@ class RepositoryTest extends GetlDslTest {
                 assertEquals('table', fileName)
                 field('dt') {
                     assertEquals('yyyy-MM-dd HH:mm:ss', format)
-                    assertTrue(extended.check)
+                    assertTrue(extended.check as Boolean)
                 }
             }
             query('rules:query') {
@@ -528,8 +542,12 @@ class RepositoryTest extends GetlDslTest {
                 mapTable('table') {
                     assertEquals('csv', destinationName)
                     assertEquals([DateUtils.ParseDate('2020-01-01'), DateUtils.ParseDate('2020-02-01')], listPartitions)
-                    assertEquals('dt', partitionFieldName)
                     assertEquals('test', objectVars.var1)
+                }
+
+                mapTable('table1') {
+                    assertEquals('csv', destinationName)
+                    assertEquals([DateUtils.ParseDate('2020-01-01'), DateUtils.ParseDate('2020-02-01')], readListPartitions())
                 }
             }
 

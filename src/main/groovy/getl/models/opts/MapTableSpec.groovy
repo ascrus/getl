@@ -55,38 +55,31 @@ class MapTableSpec extends DatasetSpec {
     /** Set destination table name */
     void linkTo(String destinationName) {
         if (destinationName == null)
-            throw new ExceptionModel('Destination name can not be null!')
+            throw new ExceptionModel("$sourceName: destination name can not be null!")
 
         def ds = ownerModel.dslCreator.dataset(destinationName)
         def name = ds.dslNameObject
         if (name == datasetName)
-            throw new ExceptionModel('You cannot use the same dataset for source and destination!')
+            throw new ExceptionModel("$sourceName: you cannot use the same dataset for source and destination!")
 
         params.destinationName = name
     }
     /** Set destination table name */
     void linkTo(Dataset destinationDataset) {
         if (destinationDataset == null)
-            throw new ExceptionModel('Destination can not be null!')
+            throw new ExceptionModel("$sourceName: destination can not be null!")
 
         def name = destinationDataset.dslNameObject
         if (name == null)
-            throw new ExceptionModel("The dataset $destinationDataset must be registered in the repository!")
+            throw new ExceptionModel("$sourceName: the dataset $destinationDataset must be registered in the repository!")
 
         if (name == datasetName)
-            throw new ExceptionModel('You cannot use the same dataset for source and destination!')
+            throw new ExceptionModel("$sourceName: you cannot use the same dataset for source and destination!")
 
         params.destinationName = name
     }
     /** Destination dataset */
     Dataset getDestination() { ownerModel.dslCreator.dataset(destinationName) }
-
-    /** Source dataset partition field name */
-    String getPartitionFieldName() { params.partitionFieldName as String }
-    /** Source dataset partition field name */
-    void setPartitionFieldName(String value) { params.partitionFieldName = value }
-    /** Source dataset partition field */
-    Field getPartitionField() { source.fieldByName(partitionFieldName) }
 
     /** List of key values for partitions being processed */
     List getListPartitions() { params.listPartitions as List }
@@ -97,6 +90,29 @@ class MapTableSpec extends DatasetSpec {
             listPartitions.addAll(value)
     }
 
+    /** Get a list of partitions from the specified dataset */
+    String getPartitionsDatasetName() { params.partitionsDatasetName as String }
+    /** Get a list of partitions from the specified dataset */
+    protected void setPartitionsDatasetName(String value) { params.partitionsDatasetName = value }
+    /** Get a list of partitions from the specified dataset */
+    Dataset getPartitionsDataset() {
+        return (partitionsDatasetName != null)?ownerModel.dslCreator.dataset(partitionsDatasetName):null
+    }
+    /** Use a list of partitions from the specified dataset */
+    void usePartitionsFrom(String listDatasetName) { partitionsDatasetName = listDatasetName }
+    /** Use a list of partitions from the specified dataset */
+    void usePartitionsFrom(Dataset listDataset) {
+        if (listDataset != null) {
+            def name = listDataset.dslNameObject
+            if (name == null)
+                throw new ExceptionModel("$sourceName: the dataset $listDataset must be registered in the repository!")
+
+            partitionsDatasetName = name
+        }
+        else
+            partitionsDatasetName = null
+    }
+
     /** Mapping the relationship of the fields of the destination table to the source table (map.destfield = 'sourcefield') */
     Map<String, String> getMap() { params.map as Map<String, String> }
     /** Mapping the relationship of the fields of the destination table to the source table (map.destfield = 'sourcefield') */
@@ -104,5 +120,21 @@ class MapTableSpec extends DatasetSpec {
         map.clear()
         if (value != null)
             map.putAll(value)
+    }
+
+    /**
+     * Return partitions from list or dataset
+     * @param queryParams parameters for getting a list of partitions from a dataset
+     * @return list of partitions
+     */
+    List readListPartitions(Map queryParams = null) {
+        def res = listPartitions
+        if (res.isEmpty() && partitionsDatasetName != null) {
+            def qp = [:]
+            if (queryParams != null)
+                qp.put('queryParams', queryParams)
+            res = partitionsDataset.rows(qp).collect { row -> row.values()[0] }
+        }
+        return res
     }
 }

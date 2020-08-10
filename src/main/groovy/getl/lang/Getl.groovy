@@ -3432,14 +3432,20 @@ Examples:
         csv(null, false, cl)
     }
 
-    /** CSV file with exists dataset */
-    CSVDataset csvWithDataset(String name, Dataset sourceDataset, Boolean registration,
+    /**
+     * Create and register CSV file on the specified dataset
+     * @param name repository name
+     * @param sourceDataset source dataset
+     * @param cl initialization code
+     * @return created dataset
+     */
+    CSVDataset csvWithDataset(String name, Dataset sourceDataset,
                               @DelegatesTo(CSVDataset)
                               @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl = null) {
         if (sourceDataset == null)
             throw new ExceptionDSL("Dataset cannot be null!")
 
-        def parent = registerDataset(null, RepositoryDatasets.CSVDATASET, name, registration,
+        def parent = registerDataset(null, RepositoryDatasets.CSVDATASET, name, true,
                 defaultFileConnection(RepositoryDatasets.CSVDATASET), CSVConnection, cl) as CSVDataset
 
         if (sourceDataset.field.isEmpty()) {
@@ -3452,24 +3458,21 @@ Examples:
         }
         parent.field = sourceDataset.field
         parent.resetFieldsTypeName()
-        sourceDataset.prepareCsvTempFile(parent)
         runClosure(parent, cl)
 
         return parent
     }
 
-    /** CSV file with exists dataset */
-    CSVDataset csvWithDataset(String name, Dataset sourceDataset,
-                              @DelegatesTo(CSVDataset)
-                              @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl = null) {
-        csvWithDataset(name, sourceDataset, true, cl)
-    }
-
-    /** CSV file with exists dataset */
+    /**
+     * Create CSV file on the specified dataset
+     * @param sourceDataset source dataset
+     * @param cl initialization code
+     * @return created dataset
+     */
     CSVDataset csvWithDataset(Dataset sourceDataset,
                               @DelegatesTo(CSVDataset)
                               @ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure cl = null) {
-        csvWithDataset(null, sourceDataset, true, cl)
+        csvWithDataset(null, sourceDataset, cl)
     }
 
     /** Excel connection */
@@ -3884,7 +3887,13 @@ Examples:
         useFileConnection(RepositoryDatasets.CSVTEMPDATASET, connection) as TFS
     }
 
-    /** Temporary CSV file */
+    /**
+     * Temporary CSV file
+     * @param name repository name
+     * @param registration register in the repository
+     * @param cl initialization code
+     * @return dataset
+     */
     TFSDataset csvTemp(String name, Boolean registration,
                        @DelegatesTo(TFSDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
@@ -3904,13 +3913,23 @@ Examples:
         csvTemp(name, false, cl)
     }
 
-    /** Temporary CSV file */
+    /**
+     * Create temporary CSV file
+     * @param cl initialization code
+     * @return created dataset
+     */
     TFSDataset csvTemp(@DelegatesTo(TFSDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl) {
         csvTemp(null, false, cl)
     }
 
-    /** Temporary CSV file */
+    /**
+     * Create and register temporary CSV file on the specified dataset
+     * @param name repository name
+     * @param sourceDataset source dataset
+     * @param cl initialization code
+     * @return created dataset
+     */
     TFSDataset csvTempWithDataset(String name, Dataset sourceDataset,
                                   @DelegatesTo(TFSDataset)
                                   @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
@@ -3938,7 +3957,12 @@ Examples:
         return parent
     }
 
-    /** Temporary CSV file */
+    /**
+     * Create temporary CSV file on the specified dataset
+     * @param sourceDataset source dataset
+     * @param cl initialization code
+     * @return created dataset
+     */
     TFSDataset csvTempWithDataset(Dataset sourceDataset,
                                   @DelegatesTo(TFSDataset)
                                   @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {

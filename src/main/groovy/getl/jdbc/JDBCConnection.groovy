@@ -301,6 +301,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * Name of file history sql commands
 	 */
     void setSqlHistoryFile(String value) {
+//		FileUtils.ValidFilePath(value)
         params.sqlHistoryFile = value
         fileNameSqlHistory = null
     }

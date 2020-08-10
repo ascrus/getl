@@ -1959,4 +1959,15 @@ WHERE
 			}
 		}
 	}
+
+	/** Clear the current directory from directories and files */
+	void cleanDir() {
+		def l = list()
+		l.each {file ->
+			if (file.type == directoryType)
+				removeDir(file.filename as String, true)
+			else if (file.type == fileType)
+				removeFile(file.filename as String)
+		}
+	}
 }

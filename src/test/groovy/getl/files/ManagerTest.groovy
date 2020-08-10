@@ -2,6 +2,7 @@ package getl.files
 
 import getl.tfs.TFS
 import getl.utils.DateUtils
+import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.StringUtils
@@ -68,16 +69,18 @@ abstract class ManagerTest extends getl.test.GetlTest {
             buildList()
             download()
             remove()
-            manager.disconnect()
         }
         catch (Exception e) {
             Logs.Exception(e)
             throw e
         }
         finally {
-            manager.changeLocalDirectoryToRoot()
-            manager.removeLocalDirs(initLocalDir)
-            manager.removeLocalDirs(downloadLocalDir)
+            if (manager.connected) {
+                manager.changeLocalDirectoryToRoot()
+                manager.removeLocalDirs(initLocalDir)
+                manager.removeLocalDirs(downloadLocalDir)
+                manager.disconnect()
+            }
         }
     }
 
@@ -96,6 +99,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
         manager.changeDirectoryToRoot()
 
         manager.localDirectory = "${TFS.systemPath}/test_manager_temp"
+        if (FileUtils.ExistsFile(manager.localDirectory, true)) FileUtils.DeleteDir(manager.localDirectory)
         manager.localDirFile.deleteOnExit()
 
         manager.createLocalDir(initLocalDir)
@@ -291,6 +295,22 @@ abstract class ManagerTest extends getl.test.GetlTest {
                     assertEquals(lastErrors, '[{\'$"123"$\'}]\n', lastConsole)
                 }
             }
+        }
+    }
+
+    @Test
+    void testClean() {
+        manager.connect()
+        init()
+        try {
+            create()
+            upload()
+            manager.changeDirectoryToRoot()
+            manager.cleanDir()
+            assertTrue(manager.list().isEmpty())
+        }
+        finally {
+            if (manager.connected) manager.disconnect()
         }
     }
 }

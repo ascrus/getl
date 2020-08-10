@@ -24,6 +24,7 @@
 package getl.lang.sub
 
 import getl.csv.CSVDataset
+import getl.data.Connection
 import getl.data.Dataset
 import getl.db2.DB2Table
 import getl.excel.ExcelDataset
@@ -47,6 +48,7 @@ import getl.proc.sub.ExecutorListElement
 import getl.salesforce.SalesForceDataset
 import getl.salesforce.SalesForceQueryDataset
 import getl.tfs.TDSTable
+import getl.tfs.TFS
 import getl.tfs.TFSDataset
 import getl.utils.GenerationUtils
 import getl.utils.MapUtils
@@ -137,20 +139,33 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
         def obj = repobj as Dataset
         if (obj.connection == null)
             throw new ExceptionDSL("No connection specified for dataset \"${obj.dslNameObject}\"!")
-        if (obj.connection.dslNameObject == null)
-            throw new ExceptionDSL("Connection for dataset \"${obj.dslNameObject}\" not found in repository!")
 
         def fields = GenerationUtils.Fields2Map(obj.field)
+        def res = [dataset: obj.class.name] + obj.params + fields
 
-        return [dataset: obj.class.name, connection: obj.connection.dslNameObject] + obj.params + fields
+        if (obj.connection.dslNameObject == null) {
+            if (!(obj instanceof TFSDataset))
+                throw new ExceptionDSL("Connection for dataset \"${obj.dslNameObject}\" must be registered in the repository!")
+        }
+        else
+            res.connection = obj.connection.dslNameObject
+
+        return res
     }
 
     @Override
     GetlRepository importConfig(Map config) {
         def connectionName = config.connection as String
-        def con = dslCreator.connection(connectionName)
+        Connection con
+        if (connectionName != null) con = dslCreator.connection(connectionName)
         def obj = Dataset.CreateDataset(MapUtils.Copy(config, ['connection', 'fields']))
-        obj.setConnection(con)
+        if (con == null) {
+            if (!(obj instanceof TFSDataset))
+                throw new ExceptionDSL('No dataset connection specified in configuration!')
+            else
+                con = TFS.storage
+        }
+        if (con != null) obj.setConnection(con)
         obj.field = GenerationUtils.Map2Fields(config)
         return obj
     }
