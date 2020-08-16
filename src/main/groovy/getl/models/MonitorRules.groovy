@@ -432,7 +432,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
         sb << """
 <html>
-<title>Checking the status of rules for monitor "$dslNameObject"</title>
+<title>Checking the status of rules for monitor "$repositoryModelName"</title>
 <body>
 <h1>${lastCheckStatusTable.countRow('NOT is_correct')} errors detected, ${lastCheckStatusTable.countRow('is_notification AND is_correct')} errors has been cleared</h1>
 <table border="1" cellpadding="10">
@@ -533,7 +533,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         smtpServer.with {
             Logs.Finest("Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients: $toAddress")
             def text = htmlNotification(rows)
-            sendMail(toAddress, "Monitor \"${this.dslNameObject}\" detected " +
+            sendMail(toAddress, "Monitor \"${this.repositoryModelName}\" detected " +
                     "${lastCheckStatusTable.countRow('NOT is_correct')} active errors and " +
                     "${lastCheckStatusTable.countRow('is_notification AND is_correct')} closed errors", text, true)
         }

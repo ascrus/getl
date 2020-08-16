@@ -164,6 +164,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (value != null) attributes.putAll(value)
 	}
 
+	/** Description of dataset */
+	String getDescription() { params.description as String }
+	/** Description of dataset */
+	void setDescription(String value) { params.description = value }
+
 	/** Name in config from section "datasets" */
 	String config
 	/** Name in config from section "datasets" */

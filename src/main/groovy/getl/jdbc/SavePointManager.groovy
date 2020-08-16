@@ -158,6 +158,11 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		if (value != null) attributes.putAll(value)
 	}
 
+	/** Description of manager */
+	String getDescription() { params.description as String }
+	/** Description of manager */
+	void setDescription(String value) { params.description = value }
+
 	/** Preparing map fields */
 	protected final Map map = [:] as Map<String, Object>
 	
@@ -275,6 +280,13 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		prepareTable()
 		
 		return table.fullNameDataset()
+	}
+
+	/** Object name */
+	String getObjectName() {
+		prepareTable()
+
+		return table.objectName
 	}
 	
 	/**

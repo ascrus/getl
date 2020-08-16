@@ -54,9 +54,9 @@ class QueryDataset extends JDBCDataset {
 	String getQuery () { params.query as String }
 	/** SQL query text */
 	void setQuery (String value) { params.query = value }
-	
+
 	@Override
-	String getObjectName() { 'query' }
+	String getObjectName() { (description != null)?description:'sql query' }
 
 	/**
 	 * Load script from file

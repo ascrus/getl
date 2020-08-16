@@ -28,6 +28,9 @@ import getl.exception.ExceptionDSL
 import getl.files.FileManager
 import getl.files.Manager
 import getl.files.ResourceManager
+import getl.jdbc.QueryDataset
+import getl.jdbc.SQLScripter
+import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.models.sub.RepositorySetOfTables
 import getl.models.sub.RepositoryMapTables
@@ -335,6 +338,68 @@ class RepositoryStorageManager {
     }
 
     /**
+     * Get a list of files from the storage of the specified repository
+     * @param repositoryName required repository
+     * @param env used environment
+     * @return list of files
+     */
+    TableDataset repositoryFiles(String repositoryName, String env = null, String group = null) {
+        def repository = repository(repositoryName)
+        repositoryFiles(repository, env, group)
+    }
+
+    /**
+     * Get a list of files from the storage of the specified repository
+     * @param repository required repository
+     * @param env used environment
+     * @return list of files
+     */
+    TableDataset repositoryFiles(RepositoryObjects repository, String env = null, String group = null) {
+        env = envFromRep(repository, env)
+        def repFilePath = repositoryPath(repository, env)
+        def isEnvConfig = repository.needEnvConfig()
+
+        Manager fm
+        if (isResourceStoragePath) {
+            fm = new ResourceManager()
+            fm.resourcePath = storagePath.substring('resource:'.length())
+            if (!fm.existsDirectory(repFilePath)) return null
+        }
+        else {
+            if (!FileUtils.ExistsFile(repFilePath)) return null
+            fm = new FileManager()
+        }
+
+        fm.rootPath = repFilePath
+        String groupPath
+        if (group != null) {
+            groupPath = group.replace('.', '/')
+            if (fm.existsDirectory(groupPath))
+                fm.rootPath += ('/' + groupPath)
+            else
+                groupPath = null
+        }
+
+        def res = fm.buildListFiles {
+            maskFile = (isEnvConfig)?('getl_*.' + env + '.conf'):'getl_*.conf'
+            recursive = true
+        }
+
+        if (groupPath != null) {
+            res.currentJDBCConnection.transaction {
+                new SQLScripter().with {
+                    useConnection res.currentJDBCConnection
+                    vars.table = res.fullTableName
+                    vars.group = groupPath
+                    exec '''UPDATE {table} SET FILEPATH = CASE WHEN FILEPATH = '.' THEN '{group}' ELSE '{group}/' || FILEPATH END'''
+                }
+            }
+        }
+
+        return res
+    }
+
+    /**
      * Load objects to repository from storage
      * @param repositoryName name of the repository to be uploaded
      * @param mask object name mask
@@ -347,12 +412,13 @@ class RepositoryStorageManager {
         def res = 0
         def repository = repository(repositoryName)
         def maskPath = (mask != null)?new Path(mask: mask):null
+        def maskParse = (mask != null)?ParseObjectName.Parse(mask):null
 
         env = envFromRep(repository, env)
         def repFilePath = repositoryPath(repository, env)
         def isEnvConfig = repository.needEnvConfig()
 
-        Manager fm
+        /*Manager fm
         if (isResourceStoragePath) {
             fm = new ResourceManager()
             fm.resourcePath = storagePath.substring('resource:'.length())
@@ -367,7 +433,9 @@ class RepositoryStorageManager {
         def dirs = fm.buildListFiles {
             maskFile = (isEnvConfig)?('getl_*.' + env + '.conf'):'getl_*.conf'
             recursive = true
-        }
+        }*/
+        def dirs = repositoryFiles(repository, env, maskParse?.groupName)
+        if (dirs == null) return 0
 
         def existsObject = repository.objects.keySet().toList()
 
@@ -391,7 +459,7 @@ class RepositoryStorageManager {
                             ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename)
                 }
                 else {
-                    fileName = FileUtils.ConvertToDefaultOSPath(fm.rootPath + '/' +
+                    fileName = FileUtils.ConvertToDefaultOSPath(repFilePath + '/' +
                             ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename)
                 }
                 def file = new File(fileName)

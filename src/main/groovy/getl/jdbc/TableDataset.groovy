@@ -125,11 +125,6 @@ class TableDataset extends JDBCDataset {
 	/** Read limit row */
 	void setLimit(Long value) { params.limit = value }
 
-	/** Description of table */
-	String getDescription() { params.description }
-	/** Description of table */
-	void setDescription(String value) { params.description = value }
-
 	/** Check table name */
 	void validTableName() {
 		if (tableName == null)

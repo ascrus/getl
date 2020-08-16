@@ -85,7 +85,7 @@ class Connection implements Cloneable, GetlRepository {
 	protected void registerParameters () {
 		methodParams.register('Super',
 				['driver', 'config', 'autoSchema', 'dataset', 'connection', 'numberConnectionAttempts',
-				 'timeoutConnectionAttempts', 'attributes'])
+				 'timeoutConnectionAttempts', 'attributes', 'description'])
 		methodParams.register('retrieveObjects', [])
 		methodParams.register('executeCommand', ['command', 'queryParams', 'isUpdate'])
 	}
@@ -270,9 +270,14 @@ class Connection implements Cloneable, GetlRepository {
 	void setLogWriteToConsole (boolean value) { params.logWriteToConsole = value }
 	
 	/** Dataset class for auto create by connection */
-	String getDataset () { params.dataset }
+	String getDataset () { params.dataset as String }
 	/** Dataset class for auto create by connection */
 	void setDataset (String value) { params.dataset = value }
+
+	/** Description of connection */
+	String getDescription() { params.description as String }
+	/** Description of connection */
+	void setDescription(String value) { params.description = value }
 
 	/**	 Current transaction count */
 	private int tranCount = 0

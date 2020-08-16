@@ -55,7 +55,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
 				 'sqlHistoryFile', 'saveOriginalDate', 'limitDirs', 'threadLevel', 'recursive',
-				 'ignoreExistInStory', 'createStory', 'takePathInStory', 'attributes', 'story'])
+				 'ignoreExistInStory', 'createStory', 'takePathInStory', 'attributes', 'story', 'description'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel',
 				 'ignoreExistInStory', 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory'])
@@ -262,6 +262,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	void useConfig(String configName) {
 		setConfig(configName)
 	}
+
+	/** Object name */
+	String getObjectName() { (rootPath != null)?"file:$rootPath":'file'	}
 	
 	/** Write errors to log */
 	public boolean writeErrorsToLog = true
@@ -637,6 +640,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 	Boolean getCreateStory() { BoolUtils.IsValue(params.createStory) }
 	/** Create a history table if it does not exist */
 	void setCreateStory(Boolean value) { params.createStory = value }
+
+	/** Description of manager */
+	String getDescription() { params.description as String }
+	/** Description of manager */
+	void setDescription(String value) { params.description = value }
 
 	/** Count of found files */
 	private final SynchronizeObject countFileListSync = new SynchronizeObject()
@@ -1923,9 +1931,7 @@ WHERE
 	}
 
 	@Override
-	String toString() {
-		return (rootPath != null)?"file:$rootPath":'file'
-	}
+	String toString() { objectName }
 
 	@Override
 	Object clone() {

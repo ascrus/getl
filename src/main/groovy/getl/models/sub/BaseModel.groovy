@@ -44,6 +44,9 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
     @Override
     void setDslNameObject(String value) { dslNameObject = value }
 
+    /** Repository model name */
+    String getRepositoryModelName() { dslNameObject?:'noname' }
+
     private Getl dslCreator
 
     Getl getDslCreator() { dslCreator }
@@ -54,6 +57,11 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
         dslNameObject = null
         dslCreator = null
     }
+
+    /** Description of model */
+    String getDescription() { params.description as String }
+    /** Description of model */
+    void setDescription(String value) { params.description = value }
 
     @Override
     protected void initSpec() {

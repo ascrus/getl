@@ -437,7 +437,32 @@ class JDBCConnection extends Connection implements UserLogins {
 	}
 	
 	@Override
-	String getObjectName() { toString() }
+	String getObjectName() {
+		def str
+		if (connectURL != null) {
+			def m = connectURL =~ /jdbc:.+:\/\/(.+)/
+			if (m.count == 1) {
+				def p = (driver as JDBCDriver).connectionParamBegin
+				def h = (m[0] as List)[1] as String
+				def i = h.indexOf(p)
+				str = (i != -1)?h.substring(0, i):h
+			}
+			else {
+				str = connectURL
+			}
+		}
+		else if (connectHost != null) {
+			str = "host: $connectHost"
+			if (connectDatabase != null) str += ", db: $connectDatabase"
+		}
+		else if (connectDatabase != null) {
+			str = "database: $connectDatabase"
+		}
+		else{
+			str = "unknown"
+		}
+		return str
+	}
 	
 	/**
 	 * Save sql to history file
@@ -520,34 +545,6 @@ class JDBCConnection extends Connection implements UserLogins {
 			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile, StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(fileNameSqlHistory)
 		}
-	}
-
-	@Override
-	String toString() {
-		def str
-		if (connectURL != null) {
-            def m = connectURL =~ /jdbc:.+:\/\/(.+)/
-            if (m.count == 1) {
-                def p = (driver as JDBCDriver).connectionParamBegin
-                def h = (m[0] as List)[1] as String
-                def i = h.indexOf(p)
-                str = (i != -1)?h.substring(0, i):h
-            }
-            else {
-                str = connectURL
-            }
-		}
-		else if (connectHost != null) {
-			str = "host: $connectHost"
-			if (connectDatabase != null) str += ", db: $connectDatabase"
-		}
-		else if (connectDatabase != null) {
-			str = "database: $connectDatabase"
-		}
-		else{
-			str = "unknown"
-		}
-		return str
 	}
 
 	/**

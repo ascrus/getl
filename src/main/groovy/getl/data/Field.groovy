@@ -278,13 +278,9 @@ class Field implements Serializable, Cloneable {
 	void setDecimalSeparator (String value) { this.decimalSeparator = value }
 	
 	private String description
-	/**
-	 * Field description (comments)
-	 */
-	String getDescription() { return this.description }
-	/**
-	 * Field description (comments)
-	 */
+	/** Field description (comments) */
+	String getDescription() { this.description }
+	/** Field description (comments) */
 	void setDescription(String value) { this.description = value }
 	
 	private final Map extended = [:] as Map<String, Object>

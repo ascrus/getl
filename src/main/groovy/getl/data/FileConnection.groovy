@@ -116,10 +116,7 @@ class FileConnection extends Connection {
 
 	/** Exists path for connection */
 	Boolean getExists() { (path != null)?new File(path).exists():null }
-	/** Exists path for connection */
-	@Override
-	String getObjectName () { path }
-	
+
 	/** Delete path of connection */
 	boolean deletePath () {
 		if (path == null) return false
@@ -146,4 +143,7 @@ class FileConnection extends Connection {
 
 		return retrieveObjects(parent.params) as List<File>
 	}
+
+	@Override
+	String getObjectName() { (path != null)?"file:$path":'[NONE]' }
 }

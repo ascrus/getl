@@ -17,6 +17,8 @@ import getl.test.GetlDslTest
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
+import getl.utils.MapUtils
+import getl.utils.MapUtilsTest
 import groovy.time.TimeCategory
 import groovy.transform.InheritConstructors
 import org.junit.Test
@@ -433,6 +435,12 @@ class RepositoryTest extends GetlDslTest {
             assertTrue(models.listMapTables().isEmpty())
             assertTrue(models.listMonitorRules().isEmpty())
             assertTrue(models.listReferenceVerticaTables().isEmpty())
+
+            repositoryStorageManager {
+                assertEquals(7, repositoryFiles(RepositoryDatasets.class.name).countRow())
+                assertEquals(2, repositoryFiles(RepositoryDatasets.class.name, null, 'rules').countRow())
+                assertEquals(1, repositoryFiles(RepositoryDatasets.class.name, null, 'ver').countRow())
+            }
 
             repositoryStorageManager {
                 loadRepositories()

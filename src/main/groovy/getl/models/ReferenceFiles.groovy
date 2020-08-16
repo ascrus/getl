@@ -121,7 +121,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         source.connect()
         dest.connect()
 
-        Logs.Fine("Start deploying files for \"$dslNameObject\" model")
+        Logs.Fine("Start deploying files for \"$repositoryModelName\" model")
 
         try {
             usedFiles.each { modelFile ->
@@ -141,13 +141,13 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                         if (res == -1) {
                             def err = new ExceptionModel("Failed to execute command \"$cmdText\"!")
                             def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
-                            Logs.Dump(err, dest.getClass().name, dest.dslNameObject, data)
+                            Logs.Dump(err, dest.getClass().name, dest.repositoryModelName, data)
                             throw err
                         }
                         if (res > 0) {
                             def err = new ExceptionModel("Error executing command \"$cmdText\"!")
                             def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
-                            Logs.Dump(err, dest.getClass().name, dest.dslNameObject, data)
+                            Logs.Dump(err, dest.getClass().name, dest.repositoryModelName, data)
                             throw err
                         }
                         Logs.Info("File \"$fileName\" processing completed successfully")
@@ -164,6 +164,6 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
             source.disconnect()
             dest.disconnect()
         }
-        Logs.Info("Deployment files of model \"$dslNameObject\" completed successfully")
+        Logs.Info("Deployment files of model \"$repositoryModelName\" completed successfully")
     }
 }

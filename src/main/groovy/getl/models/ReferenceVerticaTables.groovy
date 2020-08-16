@@ -108,12 +108,12 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             if (rows()[0].count == 0) {
                 referenceConnection.executeCommand('CREATE SCHEMA {schema} DEFAULT INCLUDE SCHEMA PRIVILEGES',
                         [queryParams: [schema: referenceSchemaName]])
-                Logs.Info("To store the reference data of model \"${dslNameObject}\" created scheme \"$referenceSchemaName\"")
+                Logs.Info("To store the reference data of model \"$repositoryModelName\" created scheme \"$referenceSchemaName\"")
             }
         }
 
         usedTables.each { modelTable -> modelTable.createReferenceTable(recreate) }
-        Logs.Info("Reference model \"${dslNameObject}\" successfully ${(recreate)?'recreated':'created'}")
+        Logs.Info("Reference model \"$repositoryModelName\" successfully ${(recreate)?'recreated':'created'}")
     }
 
     /**
@@ -133,7 +133,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 if (modelTable.copyFromVertica(externalConnection, onlyForEmpty)) res++
             }
 
-            Logs.Info("$res tables copied successfully to the reference model \"$dslNameObject\"")
+            Logs.Info("$res tables copied successfully to the reference model \"$repositoryModelName\"")
         }
         finally {
             externalConnection.detachExternalVertica(referenceConnection)
@@ -156,7 +156,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             if (modelTable.copyFromSourceTable(onlyForEmpty)) res++
         }
 
-        Logs.Info("$res tables copied successfully to the reference model \"$dslNameObject\"")
+        Logs.Info("$res tables copied successfully to the reference model \"$repositoryModelName\"")
 
         return res
     }
@@ -168,14 +168,14 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     int fill() {
         checkModel()
 
-        Logs.Fine("Start deploying tables for \"$dslNameObject\" model")
+        Logs.Fine("Start deploying tables for \"$repositoryModelName\" model")
 
         def res = 0
         usedTables.each { modelTable ->
             if (modelTable.fillFromReferenceTable()) res++
         }
 
-        Logs.Info("$res source tables successfully filled with data from model \"$dslNameObject\"")
+        Logs.Info("$res source tables successfully filled with data from model \"$repositoryModelName\"")
 
         return res
     }
@@ -187,7 +187,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     int clear() {
         checkModel()
 
-        Logs.Fine("Start clearing tables for \"$dslNameObject\" model")
+        Logs.Fine("Start clearing tables for \"$repositoryModelName\" model")
 
         int res = 0
         usedTables.each { modelTable ->
@@ -195,7 +195,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             res++
         }
 
-        Logs.Info("$res tables for model \"$dslNameObject\" successfully cleared")
+        Logs.Info("$res tables for model \"$repositoryModelName\" successfully cleared")
 
         return res
     }

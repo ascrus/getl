@@ -75,13 +75,22 @@ class FileManager extends Manager {
 
 	@Override
 	boolean isConnected() { connected }
+
+	@Override
+	void setRootPath(String value) {
+		super.setRootPath(value)
+		if (value != null && connected)
+			disconnect()
+	}
 	
 	@Override
 	void connect () {
 		if (connected)
 			throw new ExceptionGETL('Manager already connected!')
 
-		if (rootPath == null) throw new ExceptionGETL("Required value for \"rootPath\" property")
+		if (rootPath == null)
+			throw new ExceptionGETL("Required value for \"rootPath\" property")
+
 		File rp = new File(rootPath)
 		params.rootPath = rp.canonicalPath
 		if (!rp.exists() && createRootPath) rp.mkdirs() 
