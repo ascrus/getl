@@ -41,7 +41,7 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class MapTables extends DatasetsModel<MapTableSpec> {
-    /** Repository connection name for source dataasets */
+    /** Repository connection name for source datasets */
     String getSourceConnectionName() { modelConnectionName }
     /** Use specified connection for source datasets */
     void useSourceConnection(String connectionName) { useModelConnection(connectionName) }
@@ -53,7 +53,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     /** Used mapping datasets */
     List<MapTableSpec> getUsedMapping() { usedObjects as List<MapTableSpec> }
 
-    /** Repository cnnection name for destination dataasets */
+    /** Repository connection name for destination datasets */
     String getDestinationConnectionName() { params.destinationConnectionName as String }
     /** Use specified connection for destination datasets */
     void useDestinationConnection(String connectionName) {
@@ -144,4 +144,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
                 node.with(cl)
         }
     }
+
+    @Override
+    String toString() { "Mapping ${usedObjects.size()} tables from \"$sourceConnectionName\" to \"$destinationConnectionName\" connections" }
 }

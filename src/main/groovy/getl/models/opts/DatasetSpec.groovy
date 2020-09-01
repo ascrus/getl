@@ -83,9 +83,9 @@ class DatasetSpec extends BaseSpec {
         if (allowAttrs == null)
             throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')
 
-        def ukeys = MapUtils.Unknown(attrs, allowAttrs)
-        if (!ukeys.isEmpty())
-            throw new ExceptionDSL("Unknown attributes were detected in \"$datasetName\": $ukeys, allow attributes: $allowAttrs")
+        def unknownKeys = MapUtils.Unknown(attrs, allowAttrs)
+        if (!unknownKeys.isEmpty())
+            throw new ExceptionDSL("Unknown attributes were detected in \"$datasetName\": $unknownKeys, allow attributes: $allowAttrs")
     }
 
     @Override

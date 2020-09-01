@@ -112,7 +112,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
      * @param onlyForEmpty copy data for empty table only (default true)
      * @return reference data was copied
      */
-    @SuppressWarnings("DuplicatedCode")
+    @SuppressWarnings(["DuplicatedCode", 'SpellCheckingInspection'])
     boolean copyFromSourceTable(boolean onlyForEmpty = true) {
         if (!allowCopy) {
             Logs.Info("Reference table \"$datasetName\" is not used in copying and is skipped")

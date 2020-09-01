@@ -44,15 +44,12 @@ class RepositoryReferenceFiles extends RepositoryObjects<ReferenceFiles>  {
     }
 
     @Override
-    Map exportConfig(GetlRepository repobj) {
-        return (repobj as ReferenceFiles).params
+    Map exportConfig(GetlRepository repObject) {
+        return (repObject as ReferenceFiles).params
     }
 
     @Override
     GetlRepository importConfig(Map config) {
         return new ReferenceFiles(dslCreator, false, config)
     }
-
-    @Override
-    boolean needEnvConfig() { true }
 }

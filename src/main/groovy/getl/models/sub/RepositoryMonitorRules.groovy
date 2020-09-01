@@ -44,8 +44,8 @@ class RepositoryMonitorRules extends RepositoryObjects<MonitorRules>  {
     }
 
     @Override
-    Map exportConfig(GetlRepository repobj) {
-        return (repobj as MonitorRules).params
+    Map exportConfig(GetlRepository repObject) {
+        return (repObject as MonitorRules).params
     }
 
     @Override

@@ -38,21 +38,21 @@ class FilesModel<T extends FileSpec> extends BaseModel {
     /** Source file manager name for model */
     String getSourceManagerName() { params.sourceManagerName as String }
     /** Specify the source file manager for the model */
-    void useSourceManager(String filemanagerName) {
-        if (filemanagerName == null)
+    void useSourceManager(String managerName) {
+        if (managerName == null)
             throw new ExceptionModel('File manager name required!')
 
-        dslCreator.filemanager(filemanagerName)
-        params.sourceManagerName = filemanagerName
+        dslCreator.filemanager(managerName)
+        params.sourceManagerName = managerName
     }
     /** Specify the source file manager for the model */
-    void useSourceManager(Manager filemanager) {
-        if (filemanager == null)
+    void useSourceManager(Manager manager) {
+        if (manager == null)
             throw new ExceptionModel('File manager required!')
-        if (filemanager.dslNameObject == null)
+        if (manager.dslNameObject == null)
             throw new ExceptionModel('File manager not registered in Getl repository!')
 
-        params.sourceManagerName = filemanager.dslNameObject
+        params.sourceManagerName = manager.dslNameObject
     }
     /** Source file manager for model */
     Manager getSourceManager() { dslCreator.filemanager(sourceManagerName) }

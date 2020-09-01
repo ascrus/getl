@@ -43,8 +43,8 @@ class RepositoryMapTables extends RepositoryObjects<MapTables> {
     }
 
     @Override
-    Map exportConfig(GetlRepository repobj) {
-        return (repobj as MapTables).params
+    Map exportConfig(GetlRepository repObject) {
+        return (repObject as MapTables).params
     }
 
     @Override

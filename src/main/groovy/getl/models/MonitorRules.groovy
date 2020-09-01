@@ -183,12 +183,12 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
     /** Create status table */
     private void createStatusTable() {
-        def stattab = statusTable
-        if (stattab.exists)
+        def tab = statusTable
+        if (tab.exists)
             throw new ExceptionModel('Status table already exists!')
 
-        StatusTableSetFields(stattab)
-        stattab.create()
+        StatusTableSetFields(tab)
+        tab.create()
     }
 
     /** Set fields for the rule status table */
@@ -208,6 +208,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     }
 
     /** Get current date query */
+    @SuppressWarnings('SpellCheckingInspection')
     private QueryDataset queryCurrentDate = new QueryDataset(query: 'SELECT {now} AS curdate {from}')
 
     /** Current date time on server */
@@ -275,11 +276,11 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         else
             StatusTableSetFields(statusTable)
 
-        def stattab = statusTable
+        def statTab = statusTable
         _currentDateTime = null
 
         // Copy status table to temp
-        new Flow().copy(source: stattab, dest: lastCheckStatusTable, clear: true) { s, d ->
+        new Flow().copy(source: statTab, dest: lastCheckStatusTable, clear: true) { s, d ->
             d.operation = 'NONE'
             d.is_notification = false
         }
@@ -544,4 +545,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
             }
         }
     }
+
+    @Override
+    String toString() { "Monitoring ${usedObjects.size()} rules in \"$statusTableName\" table" }
 }

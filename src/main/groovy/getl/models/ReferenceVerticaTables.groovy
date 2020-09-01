@@ -199,4 +199,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
 
         return res
     }
+
+    @Override
+    String toString() { "Referencing ${usedObjects.size()} tables from \"$referenceConnectionName\" connection in \"$referenceSchemaName\" schemata" }
 }

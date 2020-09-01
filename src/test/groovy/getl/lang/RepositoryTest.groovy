@@ -1,7 +1,6 @@
 package getl.lang
 
 import getl.data.Dataset
-import getl.data.Field
 import getl.files.FileManager
 import getl.h2.H2Connection
 import getl.h2.H2Table
@@ -17,8 +16,6 @@ import getl.test.GetlDslTest
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
-import getl.utils.MapUtils
-import getl.utils.MapUtilsTest
 import groovy.time.TimeCategory
 import groovy.transform.InheritConstructors
 import org.junit.Test
@@ -424,7 +421,7 @@ class RepositoryTest extends GetlDslTest {
 
             repositoryStorageManager {
                 saveRepositories()
-                clearReporitories()
+                clearRepositories()
             }
             assertTrue(listConnections().isEmpty())
             assertTrue(listDatasets().isEmpty())
@@ -587,7 +584,7 @@ class RepositoryTest extends GetlDslTest {
             }
 
             repositoryStorageManager {
-                clearReporitories()
+                clearRepositories()
                 autoLoadFromStorage = true
                 shouldFail {
                     embeddedConnection('unknown')
@@ -684,7 +681,7 @@ class RepositoryTest extends GetlDslTest {
             }
 
             repositoryStorageManager {
-                clearReporitories()
+                clearRepositories()
                 loadRepositories('h2:*')
             }
 
@@ -700,7 +697,7 @@ class RepositoryTest extends GetlDslTest {
             assertNotNull(embeddedConnection('h2:con'))
             shouldFail { verticaConnection('ver:con') }
 
-            repositoryStorageManager.clearReporitories()
+            repositoryStorageManager.clearRepositories()
             registerConnectionsFromStorage('ver:*')
             registerDatasetsFromStorage('ver:*')
             registerSequencesFromStorage('ver:*')
@@ -816,7 +813,7 @@ class RepositoryTest extends GetlDslTest {
                 assertNotNull(embeddedConnection('h2:con'))
                 assertNotNull(jdbcTable('h2:table1'))
                 loadRepositories()
-                clearReporitories()
+                clearRepositories()
 
                 assertEquals(0, listJdbcConnections().size())
 

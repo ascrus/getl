@@ -49,21 +49,21 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     /** Destination file manager */
     Manager getDestinationManager() { dslCreator.filemanager(destinationManagerName) }
     /** Specify destination file manager for the model */
-    void useDestinationManager(String filemanagerName) {
-        if (filemanagerName == null)
+    void useDestinationManager(String managerName) {
+        if (managerName == null)
             throw new ExceptionModel('File manager name required!')
 
-        dslCreator.filemanager(filemanagerName)
-        params.destinationManagerName = filemanagerName
+        dslCreator.filemanager(managerName)
+        params.destinationManagerName = managerName
     }
     /** Specify destination file manager for the model */
-    void useDestinationManager(Manager filemanager) {
-        if (filemanager == null)
+    void useDestinationManager(Manager manager) {
+        if (manager == null)
             throw new ExceptionModel('File manager required!')
-        if (filemanager.dslNameObject == null)
+        if (manager.dslNameObject == null)
             throw new ExceptionModel('File manager not registered in Getl repository!')
 
-        params.destinationManagerName = filemanager.dslNameObject
+        params.destinationManagerName = manager.dslNameObject
     }
 
     /** File unpack command */
@@ -141,13 +141,13 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                         if (res == -1) {
                             def err = new ExceptionModel("Failed to execute command \"$cmdText\"!")
                             def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
-                            Logs.Dump(err, dest.getClass().name, dest.repositoryModelName, data)
+                            Logs.Dump(err, dest.getClass().name, dest.toString(), data)
                             throw err
                         }
                         if (res > 0) {
                             def err = new ExceptionModel("Error executing command \"$cmdText\"!")
                             def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
-                            Logs.Dump(err, dest.getClass().name, dest.repositoryModelName, data)
+                            Logs.Dump(err, dest.getClass().name, dest.toString(), data)
                             throw err
                         }
                         Logs.Info("File \"$fileName\" processing completed successfully")
@@ -166,4 +166,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         }
         Logs.Info("Deployment files of model \"$repositoryModelName\" completed successfully")
     }
+
+    @Override
+    String toString() { "Referencing ${usedObjects.size()} files from \"$sourceManagerName\" to \"$destinationManagerName\" file managers" }
 }

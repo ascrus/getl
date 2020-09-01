@@ -44,15 +44,12 @@ class RepositoryReferenceVerticaTables extends RepositoryObjects<ReferenceVertic
     }
 
     @Override
-    Map exportConfig(GetlRepository repobj) {
-        return (repobj as ReferenceVerticaTables).params
+    Map exportConfig(GetlRepository repObject) {
+        return (repObject as ReferenceVerticaTables).params
     }
 
     @Override
     GetlRepository importConfig(Map config) {
         return new ReferenceVerticaTables(dslCreator, false, config)
     }
-
-    @Override
-    boolean needEnvConfig() { true }
 }

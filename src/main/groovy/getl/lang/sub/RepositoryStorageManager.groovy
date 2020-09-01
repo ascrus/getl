@@ -172,7 +172,7 @@ class RepositoryStorageManager {
      * Clear objects in all Getl repositories
      * @param mask object name mask
      */
-    void clearReporitories(String mask = null) {
+    void clearRepositories(String mask = null) {
         listRepositories.each { name ->
             repository(name).unregister(mask)
         }
@@ -201,8 +201,8 @@ class RepositoryStorageManager {
             throw new ExceptionDSL('The repository storage path is not specified in "storagePath"!')
 
         def rootPath = (isResourceStoragePath)?storagePath.substring(9):storagePath
-        def subdir = (env != null && envDirs.containsKey(env))?('/' + envDirs.get(env)):''
-        def dirPath = subdir + '/' + repositoryClass.name
+        def subDir = (env != null && envDirs.containsKey(env))?('/' + envDirs.get(env)):''
+        def dirPath = subDir + '/' + repositoryClass.name
         def repPath = rootPath + dirPath
         return (isResourceStoragePath)?repPath:FileUtils.ConvertToDefaultOSPath(repPath)
     }
@@ -213,8 +213,8 @@ class RepositoryStorageManager {
             throw new ExceptionDSL('The repository storage path is not specified in "storagePath"!')
 
         def rootPath = (isResourceStoragePath)?'':storagePath
-        def subdir = (env != null && envDirs.containsKey(env))?('/' + envDirs.get(env)):''
-        def dirPath = subdir + '/' + repositoryClass.name
+        def subDir = (env != null && envDirs.containsKey(env))?('/' + envDirs.get(env)):''
+        def dirPath = subDir + '/' + repositoryClass.name
         def repPath = rootPath + dirPath
         return (isResourceStoragePath)?repPath:FileUtils.ConvertToDefaultOSPath(repPath)
     }
@@ -242,9 +242,9 @@ class RepositoryStorageManager {
         def repFilePath = repositoryStoragePath(repository, env)
         FileUtils.ValidPath(repFilePath)
         repository.processObjects(mask) { name ->
-            def objname = ParseObjectName.Parse(name)
-            if (objname.groupName == null && objname.objectName[0] == '#') return
-            saveObjectToStorage(repository, objname, env)
+            def objName = ParseObjectName.Parse(name)
+            if (objName.groupName == null && objName.objectName[0] == '#') return
+            saveObjectToStorage(repository, objName, env)
             res++
         }
         return res
@@ -264,29 +264,29 @@ class RepositoryStorageManager {
     /**
      * Internal method for save repository object to storage
      * @param repository used repository
-     * @param objname parsed object name
+     * @param objName parsed object name
      * @param env used environment
      */
     @Synchronized
-    protected void saveObjectToStorage(RepositoryObjects repository, ParseObjectName objname, String env) {
+    protected void saveObjectToStorage(RepositoryObjects repository, ParseObjectName objName, String env) {
         if (isResourceStoragePath)
             throw new ExceptionDSL('Cannot be saved to the resource directory!')
 
-        def obj = repository.find(objname.name)
+        def obj = repository.find(objName.name)
         if (obj == null)
-            throw new ExceptionDSL("Object \"${objname.name}\" not found in repository \"${repository.class.name}\"!")
+            throw new ExceptionDSL("Object \"${objName.name}\" not found in repository \"${repository.class.name}\"!")
 
-        def objparams = repository.exportConfig(obj)
+        def objParams = repository.exportConfig(obj)
         if (obj instanceof UserLogins)
-            encryptObject(objname.name, objparams)
+            encryptObject(objName.name, objParams)
 
-        def fileName = objectFilePathInStorage(repository, objname, env)
+        def fileName = objectFilePathInStorage(repository, objName, env)
         FileUtils.ValidFilePath(fileName)
         def file = new File(fileName)
-        ConfigSlurper.SaveConfigFile(objparams, new File(fileName), 'utf-8')
+        ConfigSlurper.SaveConfigFile(objParams, new File(fileName), 'utf-8')
 
         if (!file.exists())
-            throw new ExceptionDSL("Error saving object \"${objname.name}\" from repository " +
+            throw new ExceptionDSL("Error saving object \"${objName.name}\" from repository " +
                                     "\"${repository.class.name}\" to file \"$file\"!")
     }
 
@@ -298,8 +298,8 @@ class RepositoryStorageManager {
      */
     void saveObject(String repositoryName, String name, String env = null) {
         def repository = repository(repositoryName)
-        def objname = ParseObjectName.Parse(name)
-        saveObjectToStorage(repository, objname, env)
+        def objName = ParseObjectName.Parse(name)
+        saveObjectToStorage(repository, objName, env)
     }
 
     /**
@@ -418,22 +418,6 @@ class RepositoryStorageManager {
         def repFilePath = repositoryPath(repository, env)
         def isEnvConfig = repository.needEnvConfig()
 
-        /*Manager fm
-        if (isResourceStoragePath) {
-            fm = new ResourceManager()
-            fm.resourcePath = storagePath.substring('resource:'.length())
-            if (!fm.existsDirectory(repFilePath)) return 0
-        }
-        else {
-            if (!FileUtils.ExistsFile(repFilePath)) return 0
-            fm = new FileManager()
-        }
-        fm.rootPath = repFilePath
-
-        def dirs = fm.buildListFiles {
-            maskFile = (isEnvConfig)?('getl_*.' + env + '.conf'):'getl_*.conf'
-            recursive = true
-        }*/
         def dirs = repositoryFiles(repository, env, maskParse?.groupName)
         if (dirs == null) return 0
 
@@ -464,8 +448,8 @@ class RepositoryStorageManager {
                 }
                 def file = new File(fileName)
                 try {
-                    def objparams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
-                    def obj = repository.importConfig(objparams)
+                    def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
+                    def obj = repository.importConfig(objParams)
                     if (obj instanceof UserLogins)
                         decryptLoginObject(name, obj)
                     repository.registerObject(dslCreator, obj, name, true)
@@ -497,6 +481,39 @@ class RepositoryStorageManager {
 
     /**
      * Load object to repository from storage
+     * @param repository used repository
+     * @param name object name
+     * @param env used environment
+     * @param validExist valid existing file (default true)
+     */
+    @Synchronized
+    GetlRepository readObject(RepositoryObjects repository, String name, String env = null, Boolean validExist = true) {
+        def objName = ParseObjectName.Parse(name)
+        def fileName = objectFilePathInStorage(repository, objName, env)
+        def file = (isResourceStoragePath)?FileUtils.FileFromResources(fileName):new File(fileName)
+        if (file == null || !file.exists()) {
+            if (!validExist) return null
+            throw new ExceptionDSL("It is not possible to load object \"$name\" to " +
+                    "repository \"${repository.class.name}\": file \"$file\" was not found!")
+        }
+
+        GetlRepository obj = null
+        try {
+            def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
+            obj = repository.importConfig(objParams)
+
+            if (obj instanceof UserLogins)
+                decryptLoginObject(objName.name, obj)
+        }
+        finally {
+            if (isResourceStoragePath) file.delete()
+        }
+
+        return obj
+    }
+
+    /**
+     * Load object to repository from storage
      * @param repositoryName repository name
      * @param name object name
      * @param env used environment
@@ -505,30 +522,13 @@ class RepositoryStorageManager {
     @Synchronized
     GetlRepository loadObject(String repositoryName, String name, String env = null, Boolean overloading = false) {
         def repository = repository(repositoryName)
-        def objname = ParseObjectName.Parse(name)
-        def fileName = objectFilePathInStorage(repository, objname, env)
-        def file = (isResourceStoragePath)?FileUtils.FileFromResources(fileName):new File(fileName)
-        if (file == null || !file.exists())
-            throw new ExceptionDSL("It is not possible to load object \"$name\" to " +
-                    "repository \"${repository.class.name}\": file \"$file\" was not found!")
+        def objName = ParseObjectName.Parse(name)
+        def obj = readObject(repository, name, env)
 
-        GetlRepository obj = null
-        try {
-            def objparams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
-            obj = repository.importConfig(objparams)
+        if (overloading && repository.find(objName.name) != null)
+            repository.unregister(objName.name)
 
-            if (overloading && repository.find(objname.name) != null)
-                repository.unregister(objname.name)
-
-            if (obj instanceof UserLogins)
-                decryptLoginObject(objname.name, obj)
-
-            repository.registerObject(dslCreator, obj, name, true)
-        }
-        finally {
-            if (isResourceStoragePath) file.delete()
-        }
-
+        repository.registerObject(dslCreator, obj, name, true)
         return obj
     }
 
@@ -571,7 +571,7 @@ class RepositoryStorageManager {
     }
 
     /**
-     * The file extenstion in the storage for the objects
+     * The file extension in the storage for the objects
      * @param repository repository
      * @param env used environment
      * @return file extension
@@ -590,20 +590,20 @@ class RepositoryStorageManager {
     /**
      * The file name in the storage for the object
      * @param repository repository
-     * @param objname parsed object name
+     * @param objName parsed object name
      * @param env used environment
      * @return file path
      */
-    protected String objectFilePathInStorage(RepositoryObjects repository, ParseObjectName objname, String env) {
+    protected String objectFilePathInStorage(RepositoryObjects repository, ParseObjectName objName, String env) {
         env = envFromRep(repository, env)
         def fileName = repositoryStoragePath(repository, env) + '/'
-        if (objname.groupName != null)
-            fileName += objname.toPath() + '/'
+        if (objName.groupName != null)
+            fileName += objName.toPath() + '/'
 
         if (repository.needEnvConfig())
-            fileName += 'getl_' + objname.objectName + '.' + env + '.conf'
+            fileName += 'getl_' + objName.objectName + '.' + env + '.conf'
         else
-            fileName += 'getl_' + objname.objectName + '.conf'
+            fileName += 'getl_' + objName.objectName + '.conf'
 
         return (isResourceStoragePath)?fileName:FileUtils.ConvertToDefaultOSPath(fileName)
     }
@@ -611,7 +611,7 @@ class RepositoryStorageManager {
     /**
      * The file name in the storage for the object
      * @param repositoryName repository name
-     * @param objname object name
+     * @param name object name
      * @param env used environment
      * @return file path
      */
@@ -622,7 +622,7 @@ class RepositoryStorageManager {
     /**
      * The file name in the storage for the object
      * @param repositoryName repository name
-     * @param objname object name
+     * @param name object name
      * @param env used environment
      * @return file path
      */

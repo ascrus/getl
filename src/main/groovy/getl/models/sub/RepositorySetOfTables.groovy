@@ -43,8 +43,8 @@ class RepositorySetOfTables extends RepositoryObjects<SetOfTables> {
     }
 
     @Override
-    Map exportConfig(GetlRepository repobj) {
-        return (repobj as SetOfTables).params
+    Map exportConfig(GetlRepository repObject) {
+        return (repObject as SetOfTables).params
     }
 
     @Override

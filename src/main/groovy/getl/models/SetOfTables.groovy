@@ -93,4 +93,7 @@ class SetOfTables extends DatasetsModel<TableSpec> {
                     @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl = null) {
         super.useDataset(table, cl)
     }
+
+    @Override
+    String toString() { "Grouping ${usedObjects.size()} tables from \"$sourceConnectionName\" connection" }
 }

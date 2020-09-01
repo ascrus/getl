@@ -79,9 +79,9 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
         if (importParams == null)
             throw new ExceptionGETL('Required "importParams" value!')
 
-        def objparams = importParams.usedObjects as List<Map>
+        def objParams = importParams.usedObjects as List<Map>
         def objects = [] as List<T>
-        objparams?.each { obj ->
+        objParams?.each { obj ->
             objects << newSpec(obj)
         }
         params.putAll(importParams)
