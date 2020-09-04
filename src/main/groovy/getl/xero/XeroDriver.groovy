@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.xero
 
 import com.xero.api.JsonConfig
@@ -65,7 +41,7 @@ class XeroDriver extends Driver {
     List<Driver.Operation> operations() { return [Driver.Operation.RETRIEVEFIELDS] }
 
     @Override
-    boolean isConnected() { client != null }
+    Boolean isConnected() { client != null }
 
     protected void saveToHistory(String content) {
         def con = connection as XeroConnection
@@ -110,9 +86,9 @@ class XeroDriver extends Driver {
         client = null
     }
 
-    public static final String xsdPath = 'XeroSchemas/v2.00'
+    static public final String xsdPath = 'XeroSchemas/v2.00'
 
-    public static final List<Map> objects = [
+    static public final List<Map> objects = [
             [objectName: 'Account', listName: 'Accounts', pk: ['AccountID']],
 
             [objectName: 'BankTransaction', listName: 'BankTransactions', pk: ['BankTransactionID']],
@@ -434,16 +410,16 @@ class XeroDriver extends Driver {
     void clearDataset(Dataset dataset, Map params) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    long executeCommand(String command, Map params) { throw new ExceptionGETL('Not support this features!') }
+    Long executeCommand(String command, Map params) { throw new ExceptionGETL('Not support this features!') }
 
     @Override
-    long getSequence(String sequenceName) { throw new ExceptionGETL('Not support this features!') }
+    Long getSequence(String sequenceName) { throw new ExceptionGETL('Not support this features!') }
 
-    private static String ConvertFieldName(Field.Type type, String name, boolean isChild = false) {
+    static private String ConvertFieldName(Field.Type type, String name, Boolean isChild = false) {
         def list = name.split('[.]')
         def start = (isChild)?1:0
         def res = [] as List<String>
-        for (int i = start; i < list.length; i++) {
+        for (Integer i = start; i < list.length; i++) {
             if (type != Field.Type.BOOLEAN || i < list.length - 1)
                 res << 'get' + ((list[i] != 'Class')?list[i]:'Clazz') + '()'
             else
@@ -454,7 +430,7 @@ class XeroDriver extends Driver {
 
     @SuppressWarnings(["GroovyAssignabilityCheck", "GroovyAssignabilityCheck"])
     @Override
-    long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+    Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
         def ds = dataset as XeroDataset
         def objectName = ds.xeroObjectName
         saveToHistory("read $objectName with params: $params")
@@ -557,7 +533,7 @@ class XeroDriver extends Driver {
 
         def sb = new StringBuilder()
         sb << """
-{ com.xero.api.XeroClient client, Date modifiedAfter, String where, String order, Long limit, boolean includeArchived, Closure filter, Closure code ->
+{ com.xero.api.XeroClient client, Date modifiedAfter, String where, String order, Long limit, Boolean includeArchived, Closure filter, Closure code ->
     def rows = client.get$listName($clientParams)
     Long res = 0
     rows.each { com.xero.model.${mainClass} master ->

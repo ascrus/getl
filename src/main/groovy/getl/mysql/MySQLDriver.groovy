@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.mysql
 
 import getl.data.Field
@@ -93,11 +69,11 @@ class MySQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	boolean blobReadAsObject () { return false }
+	Boolean blobReadAsObject () { return false }
 
 	@Override
 	String blobMethodWrite (String methodName) {
-		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
 	}
@@ -110,11 +86,11 @@ class MySQLDriver extends JDBCDriver {
 	}
 
 	@Override
-	boolean textReadAsObject () { return false }
+	Boolean textReadAsObject () { return false }
 
 	@Override
 	String textMethodWrite (String methodName) {
-		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, String value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.CLOB) 
 	}

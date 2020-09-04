@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 import groovy.transform.Synchronized
@@ -31,15 +7,15 @@ import groovy.transform.Synchronized
  * @author Alexsey Konstantinov
  */
 class SynchronizeObject {
-	private long count = 0
+	private Long count = 0
 
 	/** Current counter value */
 	@Synchronized
-	long getCount () { count }
+	Long getCount () { count }
 
 	/** Set new counter value */
 	@Synchronized
-	setCount (long value) { count = value }
+	setCount (Long value) { count = value }
 
 	/** Clear counter value */
 	@Synchronized
@@ -51,24 +27,26 @@ class SynchronizeObject {
 
 	/** Increase counter value */
 	@Synchronized
-	long nextCount () {
+	Long nextCount () {
 		count++
 		
-		count
+		return count
 	}
 
 	/** Decrease counter value */
 	@Synchronized
-	long prevCount () {
+	Long prevCount () {
 		count--
 		
-		count
+		return count
 	}
 
 	/** Add number to counter value */
 	@Synchronized
-	void addCount (long value) {
+	Long addCount (Long value) {
 		count += value
+
+		return count
 	}
 
 	/** Text value */
@@ -83,17 +61,17 @@ class SynchronizeObject {
 	setText (String value) { text = value }
 
 	/** Array list */
-	private final List list = [] as ArrayList
+	private final List list = []
 
 	/** Array list node by index */
 	@Synchronized
-	def getList(int index) {
+	def getList(Integer index) {
 		list[index]
 	}
 
 	/** Add node to array list by index */
 	@Synchronized
-	void addToList (int index, def value) {
+	void addToList (Integer index, def value) {
 		list.add(index, value)
 	}
 
@@ -111,7 +89,7 @@ class SynchronizeObject {
 
 	/** Append list to array list by index */
 	@Synchronized
-	static Boolean addAllToList (int index, List list) {
+	static Boolean addAllToList (Integer index, List list) {
 		return list.addAll(index, list)
 	}
 

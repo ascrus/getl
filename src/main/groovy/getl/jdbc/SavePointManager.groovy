@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.jdbc
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Field
 import getl.data.sub.WithConnection
@@ -56,11 +33,13 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Save point manager parameters */
-	final Map<String, Object> params = [:] as Map<String, Object>
+	private final Map<String, Object> params = [:] as Map<String, Object>
 
 	/** Save point manager parameters */
+	@JsonIgnore
 	Map getParams() { params }
 	/** Save point manager parameters */
+	@JsonIgnore
 	void setParams(Map value) {
 		params.clear()
 		initParams()
@@ -68,15 +47,19 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** System parameters */
-	final Map<String, Object> sysParams = [:] as Map<String, Object>
+	private final Map<String, Object> sysParams = [:] as Map<String, Object>
 
 	/** System parameters */
+	@JsonIgnore
 	Map<String, Object> getSysParams() { sysParams }
 
+	@JsonIgnore
 	String getDslNameObject() { sysParams.dslNameObject as String }
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
+	@JsonIgnore
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
+	@JsonIgnore
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Connection */
@@ -99,6 +82,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Current JDBC connection */
+	@JsonIgnore
 	JDBCConnection getCurrentJDBCConnection() { connection }
 
 	/** Database name for table */
@@ -136,9 +120,9 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Append history value as new row */
-	public final String insertSave = 'INSERT'
+	static public final String insertSave = 'INSERT'
 	/** Update history value with exist row */
-	public final String mergeSave = 'MERGE'
+	static public final String mergeSave = 'MERGE'
 	
 	/** Save value method (INSERT OR MERGE) */
 	String getSaveMethod () { (params.saveMethod as String)?.toUpperCase()?:"MERGE" }
@@ -151,9 +135,9 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Extended attributes */
-	Map getAttributes() { params.attributes as Map }
+	Map<String, Object> getAttributes() { params.attributes as Map<String, Object> }
 	/** Extended attributes */
-	void setAttributes(Map value) {
+	void setAttributes(Map<String, Object> value) {
 		attributes.clear()
 		if (value != null) attributes.putAll(value)
 	}
@@ -164,7 +148,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	void setDescription(String value) { params.description = value }
 
 	/** Preparing map fields */
-	protected final Map map = [:] as Map<String, Object>
+	protected final Map<String, Object> map = [:] as Map<String, Object>
 	
 	/** Save point table fields */
 	protected final List<Field> table_field = [
@@ -236,7 +220,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * @return creation result
 	 */
 	@Synchronized('operationLock')
-	boolean create(boolean ifNotExists = false) {
+	Boolean create(Boolean ifNotExists = false) {
 		prepareTable()
 		
 		if (ifNotExists && table.exists) return false
@@ -255,7 +239,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * @return delete result
 	 */
 	@Synchronized('operationLock')
-	boolean drop(boolean ifExists = false) {
+	Boolean drop(Boolean ifExists = false) {
 		prepareTable()
 		
 		if (ifExists && !table.exists) return false
@@ -269,13 +253,15 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * @return search results
 	 */
 	@Synchronized('operationLock')
-	boolean isExists() {
+	@JsonIgnore
+	Boolean isExists() {
 		prepareTable()
 		
 		table.exists
 	}
 	
 	/** Full history table name */
+	@JsonIgnore
 	String getFullTableName() {
 		prepareTable()
 		
@@ -283,6 +269,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Object name */
+	@JsonIgnore
 	String getObjectName() {
 		prepareTable()
 
@@ -361,7 +348,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * @param format timestamp to text format
 	 * @return text result
 	 */
-	static String value2String(Map value, boolean quote, String format) {
+	static String value2String(Map value, Boolean quote, String format) {
 		if (value == null) return null
 		
 		def type = (value.type as String)?.toUpperCase()
@@ -404,7 +391,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 			saveValueSynch(source, newValue, format)
 	}
 
-	static private operationLock = new Object()
+	static private Object operationLock = new Object()
 
 	/**
 	 * Set new save point value to source

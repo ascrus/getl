@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.driver
 
 import getl.data.opts.FileWriteOpts
@@ -193,7 +169,7 @@ class FileDriver extends Driver {
 	 * @param isSplit
 	 * @return
 	 */
-	String fileMaskDataset(FileDataset dataset, boolean isSplit) {
+	String fileMaskDataset(FileDataset dataset, Boolean isSplit) {
 		String fn = fileNameWithoutExtension(dataset)
 
 		if (isSplit)
@@ -232,8 +208,8 @@ class FileDriver extends Driver {
 	}
 
 	@Override
-	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		return 0
+	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		return 0L
 	}
 
 	@Override
@@ -284,8 +260,8 @@ class FileDriver extends Driver {
 		def wp = getDatasetParams(dataset, params, portion)
 		
 		def fn = wp.fn as String
-		boolean isGzFile = BoolUtils.IsValue(wp.isGzFile)
-		boolean isAppend = BoolUtils.IsValue(wp.isAppend)
+		def isGzFile = BoolUtils.IsValue(wp.isGzFile)
+		def isAppend = BoolUtils.IsValue(wp.isAppend)
 		def codePage = wp.codePage as String
 
 		if (isAppend && isGzFile)
@@ -321,7 +297,7 @@ class FileDriver extends Driver {
 			fixTempFile(dataset, opt)
 		}
 
-		boolean isGzFile = BoolUtils.IsValue(wp.isGzFile)
+		def isGzFile = BoolUtils.IsValue(wp.isGzFile)
 		def codePage = wp.codePage as String
 		def isAppend = BoolUtils.IsValue(wp.isAppend)
 		def removeEmptyFile = BoolUtils.IsValue(wp.deleteOnEmpty)
@@ -487,12 +463,12 @@ class FileDriver extends Driver {
 	}
 	
 	@Override
-	long executeCommand (String command, Map params) {
+	Long executeCommand (String command, Map params) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 	
 	@Override
-	long getSequence(String sequenceName) {
+	Long getSequence(String sequenceName) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 	
@@ -543,7 +519,7 @@ class FileDriver extends Driver {
 	}
 
 	@Override
-	boolean isConnected() {
+	Boolean isConnected() {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
@@ -552,7 +528,7 @@ class FileDriver extends Driver {
 	 * @param dataset dataset object
 	 * @return header
 	 */
-	protected boolean fileHeader(FileDataset dataset) { return false }
+	protected Boolean fileHeader(FileDataset dataset) { return false }
 
 	/**
 	 * Save header to file

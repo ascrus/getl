@@ -1,28 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.models
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
@@ -78,6 +56,15 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     /** Monitoring status storage table name */
     String getStatusTableName() { params.statusTableName as String }
     /** Monitoring status storage table name */
+    void setStatusTableName(String value) { useStatusTable(value) }
+
+    /** Object monitoring status storage table */
+    @JsonIgnore
+    TableDataset getStatusTable() {
+        dslCreator.jdbcTable(statusTableName)
+    }
+
+    /** Use monitoring status storage table */
     void useStatusTable(String value) {
         if (value == null) {
             params.statusTableName = null
@@ -101,10 +88,6 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         }
 
         params.statusTableName = value?.dslNameObject
-    }
-    /** Object monitoring status storage table */
-    TableDataset getStatusTable() {
-        dslCreator.jdbcTable(statusTableName)
     }
 
     /** Number of concurrency rule processing threads */
@@ -215,6 +198,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     private Date _currentDateTime
     /** Current date time on server */
     @Synchronized
+    @JsonIgnore
     Date getCurrentDateTime() {
         if (_currentDateTime == null) {
             queryCurrentDate.useConnection(statusTable.currentJDBCConnection)
@@ -237,7 +221,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     void setCurrentDateTime(Date value) { this._currentDateTime = value }
 
     @Override
-    void checkModel(boolean checkObjects = true) {
+    void checkModel(Boolean checkObjects = true) {
         if (statusTableName == null)
             throw new ExceptionModel('A table of monitoring status storage is required!')
 
@@ -259,16 +243,17 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     }
 
     /** Last checked rule status */
-    TDSTable histtab
+    private TDSTable histtab
     /** Last checked rule status */
     @Synchronized
+    @JsonIgnore
     TDSTable getLastCheckStatusTable() { histtab }
 
     /**
      * Checking the status of rules
      * @return returns true if it is not required to notify by a change in the state of the monitor
      */
-    boolean check() {
+    Boolean check() {
         checkModel(true)
 
         if (!statusTable.exists)

@@ -1,28 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.jdbc
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVConnection
 import getl.csv.CSVDataset
 import getl.data.Connection
@@ -67,6 +45,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	}
 
 	/** Current JDBC connection driver */
+	@JsonIgnore
 	JDBCDriver getCurrentJDBCDriver() { driver as JDBCDriver }
 	
 	/**
@@ -121,6 +100,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Use exists JDBC connection 
 	 */
+	@JsonIgnore
 	java.sql.Connection getJavaConnection() { params.javaConnection as java.sql.Connection }
 	/**
 	 * Use exists JDBC connection
@@ -162,6 +142,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Connection balancer
 	 */
+	@JsonIgnore
 	Balancer getBalancer() { params.balancer as Balancer }
 	/**
 	 * Connection balancer
@@ -169,6 +150,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	void setBalancer(Balancer value) { params.balancer = value }
 	
 	/** JDBC driver name */
+	@JsonIgnore
 	String getDriverName() { params.driverName as String }
 	/** JDBC driver name */
 	void setDriverName(String value) { params.driverName = value }
@@ -176,6 +158,7 @@ class JDBCConnection extends Connection implements UserLogins {
     /**
      * JDBC driver jar file path
      */
+	@JsonIgnore
     String getDriverPath() { params.driverPath as String }
 	/**
 	 * JDBC driver jar file path
@@ -195,11 +178,11 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Auto commit transaction
 	 */
-	boolean getAutoCommit() { BoolUtils.IsValue(params.autoCommit, false) }
+	Boolean getAutoCommit() { BoolUtils.IsValue(params.autoCommit, false) }
 	/**
 	 * Auto commit transaction
 	 */
-	void setAutoCommit(boolean value) {
+	void setAutoCommit(Boolean value) {
 		params.autoCommit = value
 		if (connected) currentJDBCDriver.setAutoCommit(value)
 	}
@@ -356,11 +339,13 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Return using groovy SQL connection
 	 */
+	@JsonIgnore
 	Sql getSqlConnection() { sysParams.sqlConnect as Sql }
 	
 	/**
 	 * Return session ID (if supported RDBMS driver)
 	 */
+	@JsonIgnore
 	String getSessionID() { sysParams.sessionID as String }
 
 	/**
@@ -437,6 +422,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	}
 	
 	@Override
+	@JsonIgnore
 	String getObjectName() {
 		def str
 		if (connectURL != null) {
@@ -474,6 +460,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Return used balancer server attributes
 	 */
+	@JsonIgnore
 	Map getBalancerServer() { sysParams.balancerServer as Map }
 
 	/**
@@ -816,15 +803,15 @@ ${tab}${tab}}
 	 * @param command sql operator
 	 * @param params parameters (Map queryParams and Boolean isUpdate)
 	 */
-	long executeCommand(String command, Map execParams = [:]) {
+	Long executeCommand(String command, Map execParams = [:]) {
 		executeCommand((execParams?:[:]) + [command: command])
 	}
 
-	static public final int transactionIsolationNone = java.sql.Connection.TRANSACTION_NONE
-	static public final int transactionIsolationReadCommitted = java.sql.Connection.TRANSACTION_READ_COMMITTED
-	static public final int transactionIsolationReadUncommitted = java.sql.Connection.TRANSACTION_READ_UNCOMMITTED
-	static public final int transactionIsolationRepeatableRead = java.sql.Connection.TRANSACTION_REPEATABLE_READ
-	static public final int transactionIsolationSerializable = java.sql.Connection.TRANSACTION_SERIALIZABLE
+	static public final Integer transactionIsolationNone = java.sql.Connection.TRANSACTION_NONE
+	static public final Integer transactionIsolationReadCommitted = java.sql.Connection.TRANSACTION_READ_COMMITTED
+	static public final Integer transactionIsolationReadUncommitted = java.sql.Connection.TRANSACTION_READ_UNCOMMITTED
+	static public final Integer transactionIsolationRepeatableRead = java.sql.Connection.TRANSACTION_REPEATABLE_READ
+	static public final Integer transactionIsolationSerializable = java.sql.Connection.TRANSACTION_SERIALIZABLE
 
 	/** Current transactional isolation level */
 	Integer getTransactionIsolation() {

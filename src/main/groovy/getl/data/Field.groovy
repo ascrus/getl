@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.data
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.Synchronized
@@ -97,11 +74,13 @@ class Field implements Serializable, Cloneable {
 	/**
 	 * Database field type
 	 */
+	@JsonIgnore
 	public Object dbType
 	
 	/**
 	 * Database field name
 	 */
+	@JsonIgnore
 	public String typeName
 	
 	private Boolean isNull = true
@@ -283,15 +262,15 @@ class Field implements Serializable, Cloneable {
 	/** Field description (comments) */
 	void setDescription(String value) { this.description = value }
 	
-	private final Map extended = [:] as Map<String, Object>
+	private final Map<String, Object> extended = [:] as Map<String, Object>
 	/**
 	 * Extended attributes
 	 */
-	Map getExtended() { return this.extended }
+	Map<String, Object> getExtended() { return this.extended }
 	/**
 	 * Extended attributes
 	 */
-	void setExtended (Map value) {
+	void setExtended (Map<String, Object> value) {
 		this.extended.clear()
 		if (value != null) this.extended.putAll(value)
 	}
@@ -299,6 +278,7 @@ class Field implements Serializable, Cloneable {
 	/**
 	 * Get value method
 	 */
+	@JsonIgnore
 	public String getMethod
 
 	/**

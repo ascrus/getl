@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 import getl.data.*
@@ -31,7 +7,6 @@ import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 
-
 /**
  * Generation code library functions class 
  * @author Alexsey Konstantinov
@@ -39,19 +14,19 @@ import org.codehaus.groovy.control.CompilerConfiguration
  */
 @SuppressWarnings("UnnecessaryQualifiedReference")
 class GenerationUtils {
-	public static final Long EMPTY_BIGINT = null
-	public static final def EMPTY_BLOB = null
-	public static final def EMPTY_CLOB = null
-	public static final Boolean EMPTY_BOOLEAN = null
-	public static final Date EMPTY_DATE = null
-	public static final java.sql.Timestamp EMPTY_DATETIME = null
-	public static final Double EMPTY_DOUBLE = null
-	public static final Integer EMPTY_INTEGER = null
-	public static final BigDecimal EMPTY_NUMERIC = null
-	public static final def EMPTY_OBJECT = null
-	public static final String EMPTY_STRING = null
-	public static final def EMPTY_TEXT = null
-	public static final java.sql.Time EMPTY_TIME = null
+	static public final Long EMPTY_BIGINT = null
+	static public final def EMPTY_BLOB = null
+	static public final def EMPTY_CLOB = null
+	static public final Boolean EMPTY_BOOLEAN = null
+	static public final Date EMPTY_DATE = null
+	static public final java.sql.Timestamp EMPTY_DATETIME = null
+	static public final Double EMPTY_DOUBLE = null
+	static public final Integer EMPTY_INTEGER = null
+	static public final BigDecimal EMPTY_NUMERIC = null
+	static public final def EMPTY_OBJECT = null
+	static public final String EMPTY_STRING = null
+	static public final def EMPTY_TEXT = null
+	static public final java.sql.Time EMPTY_TIME = null
 	
 	/**
 	 * Convert string alias as a modifier to access the value of field
@@ -506,22 +481,22 @@ class GenerationUtils {
 		return r
 	}
 	
-	public static final Random random = new Random()
+	static public final Random random = new Random()
 
 	@groovy.transform.CompileStatic
-	static int GenerateInt () {
+	static Integer GenerateInt () {
         return random.nextInt()
 	}
 	
 	@groovy.transform.CompileStatic
-	static int GenerateInt (int minValue, int maxValue) {
+	static Integer GenerateInt (Integer minValue, Integer maxValue) {
 		def res = minValue - 1
 		while (res < minValue) res = random.nextInt(maxValue + 1)
         return res
 	}
 	
 	@groovy.transform.CompileStatic
-	static String GenerateString (int length) {
+	static String GenerateString (Integer length) {
 		String result = ""
 		while (result.length() < length) result += ((result.length() > 0)?" ":"") + StringUtils.RandomStr().replace('-', ' ')
 		
@@ -532,7 +507,7 @@ class GenerationUtils {
 	}
 	
 	@groovy.transform.CompileStatic
-	static long GenerateLong () {
+	static Long GenerateLong () {
         return random.nextLong()
 	}
 	
@@ -542,19 +517,19 @@ class GenerationUtils {
 	}
 	
 	@groovy.transform.CompileStatic
-	static BigDecimal GenerateNumeric (int precision) {
+	static BigDecimal GenerateNumeric (Integer precision) {
         return NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextInt(), precision)
 	}
 	
 	@groovy.transform.CompileStatic
-	static BigDecimal GenerateNumeric (int length, int precision) {
+	static BigDecimal GenerateNumeric (Integer length, Integer precision) {
 		BigDecimal res
 		def intSize = length - precision
 		if (intSize == 0) {
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()), precision)
 		}
 		else { //if (intSize < 15) {
-			int lSize = ((Double)Math.pow(10, intSize)).intValue() - 1
+			def lSize = ((Double)Math.pow(10, intSize)).intValue() - 1
 			res = NumericUtils.Round(BigDecimal.valueOf(random.nextDouble()) + random.nextInt(lSize), precision)
 		}
 		/*else {
@@ -570,7 +545,7 @@ class GenerationUtils {
 	}
 	
 	@groovy.transform.CompileStatic
-	static boolean GenerateBoolean () {
+	static Boolean GenerateBoolean () {
         return random.nextBoolean()
 	}
 	
@@ -580,12 +555,12 @@ class GenerationUtils {
 	}
 	
 	@groovy.transform.CompileStatic
-	static Date GenerateDate(int days) {
+	static Date GenerateDate(Integer days) {
         return DateUtils.AddDate("dd", -GenerateInt(0, days), DateUtils.CurrentDate())
 	}
 
 	@groovy.transform.CompileStatic
-	static Date GenerateDate(Date date, int days) {
+	static Date GenerateDate(Date date, Integer days) {
 		return DateUtils.AddDate("dd", GenerateInt(0, days), date)
 	}
 	
@@ -595,12 +570,12 @@ class GenerationUtils {
 	}
 	
 	@groovy.transform.CompileStatic
-	static Date GenerateDateTime(int seconds) {
+	static Date GenerateDateTime(Integer seconds) {
         return DateUtils.AddDate("ss", -GenerateInt(0, seconds), DateUtils.Now())
 	}
 
 	@groovy.transform.CompileStatic
-	static Date GenerateDateTime(Date date, int seconds) {
+	static Date GenerateDateTime(Date date, Integer seconds) {
 		return DateUtils.AddDate("ss", GenerateInt(0, seconds), date)
 	}
 	
@@ -928,7 +903,7 @@ class GenerationUtils {
 	}
 	
 	@groovy.transform.CompileStatic
-	static String GenerateCommand(String command, int numTab, boolean condition) {
+	static String GenerateCommand(String command, Integer numTab, Boolean condition) {
 		if (!condition) return ""
         return StringUtils.Replicate("\t", numTab) + command
 	}
@@ -1109,8 +1084,8 @@ sb << """
 	 * @param disableExtended
 	 * @return
 	 */
-	static List<Field> DisableAttributeField (List<Field> fields, boolean disableNotNull, boolean disableKey, boolean disableAutoincrement,
-														boolean disableExtended, boolean excludeReadOnly) {
+	static List<Field> DisableAttributeField (List<Field> fields, Boolean disableNotNull, Boolean disableKey, Boolean disableAutoincrement,
+											  Boolean disableExtended, Boolean excludeReadOnly) {
 		List<Field> res = []
 		fields.each { Field f -> 
 			def nf = f.copy()
@@ -1406,7 +1381,7 @@ sb << """
 	 * @return
 	 */
 	@groovy.transform.CompileStatic
-	static Map RowMapValues (List<String> fields, Map row, boolean toLower) {
+	static Map RowMapValues (List<String> fields, Map row, Boolean toLower) {
 		Map res = [:]
 		if (toLower) {
 			fields.each { String n ->
@@ -1440,7 +1415,7 @@ sb << """
 	 * @param fields
 	 * @return
 	 */
-	static Map GenerateRowCopy(JDBCDriver driver, List<Field> fields, boolean sourceIsMap = false) {
+	static Map GenerateRowCopy(JDBCDriver driver, List<Field> fields, Boolean sourceIsMap = false) {
 		if (!driver.isConnected()) driver.connect()
 
 		StringBuilder sb = new StringBuilder()
@@ -1514,7 +1489,7 @@ sb << """
         return result
 	}
 
-	static String GenerateSetParam(JDBCDriver driver, int paramNum, Field field, int fieldType, String value) {
+	static String GenerateSetParam(JDBCDriver driver, Integer paramNum, Field field, Integer fieldType, String value) {
 		String res
 		Map types = driver.javaTypes()
 		switch (fieldType) {

@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.jdbc
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import groovy.transform.InheritConstructors
 import getl.data.*
@@ -41,6 +18,7 @@ class JDBCDataset extends Dataset {
 	}
 
 	/** Current JDBC connection */
+	@JsonIgnore
 	JDBCConnection getCurrentJDBCConnection() { connection as JDBCConnection }
 
 	/**
@@ -67,6 +45,7 @@ class JDBCDataset extends Dataset {
 	static public Type queryType = Type.QUERY
 	
 	/** Type of dataset	*/
+	@JsonIgnore
 	Type getType() { directives('create').type as Type }
 	/** Type of dataset */
 	void setType(Type value) { directives('create').type = value }
@@ -83,6 +62,7 @@ class JDBCDataset extends Dataset {
 	/**
 	 * Event on retrieve list of field 	
 	 */
+	@JsonIgnore
 	Closure getOnUpdateFields () { params.onUpdateFields as Closure }
 	/**
 	 * Event on retrieve list of field
@@ -94,9 +74,11 @@ class JDBCDataset extends Dataset {
 	void updateFields (Closure value) { setOnUpdateFields(value) }
 	
 	@Override
+	@JsonIgnore
 	String getObjectName() { nameDataset() }
 	
 	@Override
+	@JsonIgnore
 	String getObjectFullName() { fullNameDataset() }
 
 	/**
@@ -233,12 +215,14 @@ class JDBCDataset extends Dataset {
 
 	/** Dataset is temporary table */
 	@SuppressWarnings("UnnecessaryQualifiedReference")
+	@JsonIgnore
 	Boolean getIsTemporaryTable() {
 		(type in [JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
 	}
 
 	/** Dataset is external table */
 	@SuppressWarnings("UnnecessaryQualifiedReference")
+	@JsonIgnore
 	Boolean getIsExternalTable() {
 		(type as JDBCDataset.Type == JDBCDataset.Type.EXTERNAL_TABLE)
 	}

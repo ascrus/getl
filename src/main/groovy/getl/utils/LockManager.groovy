@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 import getl.exception.ExceptionGETL
@@ -45,7 +21,7 @@ class LockManager {
      * @param useCollector use lock collector
      * @param lockLife lock life in seconds
      */
-    LockManager(boolean useCollector = false, int lockLife = 100) {
+    LockManager(Boolean useCollector = false, Integer lockLife = 100) {
         this.useCollector = useCollector
         this.lockLife = lockLife
         if (useCollector) {
@@ -60,19 +36,19 @@ class LockManager {
     }
 
     /** use lock collector */
-    boolean useCollector = false
+    private Boolean useCollector = false
     /** use lock collector */
     @Synchronized
-    boolean getUseCollector() { useCollector }
+    Boolean getUseCollector() { useCollector }
 
     /** lock life in ms */
-    int lockLife = 100
+    private Integer lockLife = 100
     /** lock life in ms */
     @Synchronized
-    int getLockLife() { lockLife }
+    Integer getLockLife() { lockLife }
     /** lock life in ms */
     @Synchronized
-    void setLockLife(int value) {
+    void setLockLife(Integer value) {
         lockLife = value
     }
 
@@ -81,7 +57,7 @@ class LockManager {
 
     /** lock list is empty */
     @Synchronized
-    boolean isEmpty() { locks.isEmpty() }
+    Boolean isEmpty() { locks.isEmpty() }
 
     /** Collector schedule */
     protected Executor shedule
@@ -91,7 +67,7 @@ class LockManager {
      * @param seconds lock time in seconds
      */
     @Synchronized('locks')
-    void garbage(int ms = 100) {
+    void garbage(Integer ms = 100) {
         def lastDate = DateUtils.AddDate('SSS', -ms, new Date())
         def deletedElem = [] as List<String>
         locks.each { name, obj ->

@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.driver
 
 import getl.csv.CSVDataset
@@ -64,7 +40,7 @@ abstract class Driver {
 	abstract List<Driver.Support> supported ()
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	boolean isSupport(Driver.Support feature) {
+	Boolean isSupport(Driver.Support feature) {
 		(supported().indexOf(feature) != -1)
 	}
 
@@ -77,13 +53,13 @@ abstract class Driver {
 	abstract List<Driver.Operation> operations ()
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	boolean isOperation(Driver.Operation operation) {
+	Boolean isOperation(Driver.Operation operation) {
 		(operations().indexOf(operation) != -1)
 	}
 
     void prepareField (Field field) { }
 
-    abstract boolean isConnected()
+    abstract Boolean isConnected()
 
     abstract void connect ()
 
@@ -111,7 +87,7 @@ abstract class Driver {
 		}
 	}
 
-    abstract long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code)
+    abstract Long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code)
 
     abstract void openWrite(Dataset dataset, Map params, Closure prepareCode)
 
@@ -127,9 +103,9 @@ abstract class Driver {
 
     abstract void clearDataset (Dataset dataset, Map params)
 
-    abstract long executeCommand (String command, Map params)
+    abstract Long executeCommand (String command, Map params)
 
-    abstract long getSequence(String sequenceName)
+    abstract Long getSequence(String sequenceName)
 	
 	/**
 	 * Full file schema name

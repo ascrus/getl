@@ -1,28 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.models
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
 import getl.files.Manager
 import getl.models.opts.BaseSpec
@@ -46,8 +24,13 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
 
     /** Destination file manager name */
     String getDestinationManagerName() { params.destinationManagerName as String }
+    /** Destination file manager name */
+    void setDestinationManagerName(String value) { useDestinationManager(value) }
+
     /** Destination file manager */
+    @JsonIgnore
     Manager getDestinationManager() { dslCreator.filemanager(destinationManagerName) }
+
     /** Specify destination file manager for the model */
     void useDestinationManager(String managerName) {
         if (managerName == null)
@@ -86,7 +69,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
 
     /** Valid manager connection */
     @Override
-    void checkModel(boolean checkObjects = true) {
+    void checkModel(Boolean checkObjects = true) {
         if (destinationManagerName == null)
             throw new ExceptionModel("The destination manager name is not specified!")
 

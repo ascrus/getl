@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.files
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.files.opts.ManagerBuildListSpec
@@ -145,11 +122,12 @@ abstract class Manager implements Cloneable, GetlRepository {
 	static TypeFile getAllType() { TypeFile.ALL }
 	
 	/** Parameters */
-	final Map<String, Object> params = [:] as Map<String, Object>
+	private final Map<String, Object> params = [:] as Map<String, Object>
 	/** Parameters */
-	Map getParams() { params }
+	@JsonIgnore
+	Map<String, Object> getParams() { params }
 	/** Parameters */
-	void setParams(Map value) {
+	void setParams(Map<String, Object> value) {
 		params.clear()
 		initParams()
 		if (value != null)
@@ -157,13 +135,16 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** System parameters */
-	final Map<String, Object> sysParams = [:] as Map<String, Object>
+	private final Map<String, Object> sysParams = [:] as Map<String, Object>
 	/** System parameters */
+	@JsonIgnore
 	Map<String, Object> getSysParams() { sysParams }
 
+	@JsonIgnore
 	String getDslNameObject() { sysParams.dslNameObject }
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
+	@JsonIgnore
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
@@ -178,6 +159,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Local directory */
 	private String _localDirectory
 	/** Local directory */
+	@JsonIgnore
 	String getLocalDirectory() { _localDirectory }
 	/** Local directory */
 	void setLocalDirectory(String value) {
@@ -200,9 +182,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/** Write to log when send noop message */
-	boolean getSayNoop() { BoolUtils.IsValue(params.sayNoop, false) }
+	Boolean getSayNoop() { BoolUtils.IsValue(params.sayNoop, false) }
 	/** Write to log when send noop message */
-	void setSayNoop(boolean value) { params.sayNoop = value }
+	void setSayNoop(Boolean value) { params.sayNoop = value }
 	
 	/** Log script file on running commands */
 	String getScriptHistoryFile() { params.scriptHistoryFile as String }
@@ -220,14 +202,14 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
     /** Save original date and time from downloading and uploading file */
-	boolean getSaveOriginalDate() { BoolUtils.IsValue(params.saveOriginalDate, false)}
+	Boolean getSaveOriginalDate() { BoolUtils.IsValue(params.saveOriginalDate, false)}
 	/** Save original date and time from downloading and uploading file */
-	void setSaveOriginalDate(boolean value) { params.saveOriginalDate = value }
+	void setSaveOriginalDate(Boolean value) { params.saveOriginalDate = value }
 
 	/** Extended attributes */
-	Map getAttributes() { params.attributes as Map }
+	Map<String, Object> getAttributes() { params.attributes as Map<String, Object> }
 	/** Extended attributes */
-	void setAttributes(Map value) {
+	void setAttributes(Map<String, Object> value) {
 		attributes.clear()
 		if (value != null) attributes.putAll(value)
 	}
@@ -241,6 +223,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * Name section parameters value in config file
 	 * Store parameters to config file from section "files"
 	 */
+	@JsonIgnore
 	String getConfig() { config }
 	/**
 	 * Name section parameters value in config file
@@ -264,13 +247,15 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** Object name */
+	@JsonIgnore
 	String getObjectName() { (rootPath != null)?"file:$rootPath":'file'	}
 	
 	/** Write errors to log */
-	public boolean writeErrorsToLog = true
+	@JsonIgnore
+	public Boolean writeErrorsToLog = true
 	
 	/** File system is windows */
-	protected boolean isWindowsFileSystem = false
+	protected Boolean isWindowsFileSystem = false
 	
 	private final Closure doInitConfig = {
 		if (config == null) return
@@ -285,8 +270,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 
 	/** Current local directory file descriptor*/
-	protected File localDirFile
+	private File localDirFile
 	/** Current local directory file descriptor*/
+	@JsonIgnore
 	File getLocalDirectoryFile() { localDirFile }
 
 	/** Validate parameters */
@@ -306,7 +292,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/** File name is case-sensitive */
-	abstract boolean isCaseSensitiveName()
+	abstract Boolean isCaseSensitiveName()
 	
 	/** Init validator methods */
 	protected void initMethods() { }
@@ -318,7 +304,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 	abstract void disconnect()
 
 	/** Connection established successfully */
-	abstract boolean isConnected()
+	@JsonIgnore
+	abstract Boolean isConnected()
 	
 	/**
 	 * Return list files of current directory from server<br>
@@ -338,7 +325,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 			throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager")
 
 		FileManagerList l = listDir(maskFiles)
-		for (int i = 0; i < l.size(); i++) {
+		for (Integer i = 0; i < l.size(); i++) {
             processCode.call(l.item(i))
 		}
 	}
@@ -371,6 +358,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/** Absolute current path */
+	@JsonIgnore
 	abstract String getCurrentPath()
 	
 	/** Set new absolute current path */
@@ -576,13 +564,15 @@ abstract class Manager implements Cloneable, GetlRepository {
 	abstract void rename(String fileName, String path)
 
 	/** Build file list */
-	TableDataset fileList
+	private TableDataset fileList
 	/** Build file list */
+	@JsonIgnore
 	TableDataset getFileList() { fileList }
 
 	/** Table name of build file list */
-	String fileListName
+	private String fileListName
 	/** Table name of build file list */
+	@JsonIgnore
 	String getFileListName() { fileListName }
 	/** Table name of build file list */
 	void setFileListName(String value) {
@@ -590,8 +580,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 
 	/** Connection from table file list (if null, use TDS connection) */
-	JDBCConnection fileListConnection
+	private JDBCConnection fileListConnection
 	/** Connection from table file list (if null, use TDS connection) */
+	@JsonIgnore
 	JDBCConnection getFileListConnection() { fileListConnection}
 	/** Connection from table file list (if null, use TDS connection) */
 	void setFileListConnection(JDBCConnection value) { fileListConnection = value }
@@ -649,14 +640,16 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Count of found files */
 	private final SynchronizeObject countFileListSync = new SynchronizeObject()
 	/** Count of found files */
-	long getCountFileList() { countFileListSync.count }
+	@JsonIgnore
+	Long getCountFileList() { countFileListSync.count }
 
 	/** Size of found files */
 	private final SynchronizeObject sizeFileListSync = new SynchronizeObject()
 	/** Size of found files */
-	long getSizeFileList() { sizeFileListSync.count }
+	@JsonIgnore
+	Long getSizeFileList() { sizeFileListSync.count }
 
-	static private operationLock = new Object()
+	static private Object operationLock = new Object()
 
 	@CompileStatic
 	@Synchronized('operationLock')
@@ -676,19 +669,19 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (threadLevel == null) threadCount = null
 
 		String curPath = man.currentDir()
-		long countFiles = 0
-		long sizeFiles = 0
-		long countDirs = 0
+		def countFiles = 0L
+		def sizeFiles = 0L
+		def countDirs = 0L
 
 		try {
 			FileManagerList listFiles = man.listDir((!recursive)?maskFile:null)
 			List<String> threadDirs = null
 			if (threadCount != null) threadDirs = new LinkedList<String>()
-			for (int i = 0; i < listFiles.size(); i++) {
+			for (Integer i = 0; i < listFiles.size(); i++) {
 				Map file = listFiles.item(i)
 
 				if (file.type == TypeFile.FILE) {
-					boolean addFile = true
+					def addFile = true
 					Map m
 					if (path != null) {
 						String fn = "${((recursive && curPath != '.')?curPath + '/' : '')}${file.filename}"
@@ -770,7 +763,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 					}
 					try {
 						Manager newMan = cloneManager(localDirectory: localDirectory)
-						int countConnect = 3
+						def countConnect = 3
 						while (countConnect != 0) {
 							try {
 								newMan.connect()
@@ -837,7 +830,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		buildList(lparams, p)  
 	}
 
-	private static final _synchCreate = new Object()
+	static private final Object _synchCreate = new Object()
 
 	/**
 	 * Create story table if not exists
@@ -846,7 +839,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param prepareField field processing code
 	 */
 	@Synchronized('_synchCreate')
-	boolean createStoryTable(TableDataset storyTable, Path path = null,
+	Boolean createStoryTable(TableDataset storyTable, Path path = null,
 							 @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure prepareField = null) {
 		storyTable.field.clear()
 		AddFieldsToDS(storyTable)
@@ -899,13 +892,13 @@ abstract class Manager implements Cloneable, GetlRepository {
 		def maskPath = (maskFile != null)?new Path(mask: maskFile):null
 		Path path = lparams.path as Path
 		if (path != null && !path.isCompile) path.compile()
-		boolean requiredAnalyze = (path != null && !(path.vars.isEmpty()))
-		boolean recursive = BoolUtils.IsValue(lparams.recursive, this.recursive)
-		boolean takePathInStory =  BoolUtils.IsValue(lparams.takePathInStory, this.takePathInStory)
-		boolean ignoreExistInStory = BoolUtils.IsValue(lparams.ignoreExistInStory, this.ignoreExistInStory)
-		boolean createStory = BoolUtils.IsValue(lparams.createStory, this.createStory)
-		boolean onlyFromStory = BoolUtils.IsValue(lparams.onlyFromStory)
-		boolean ignoreStory = BoolUtils.IsValue(lparams.ignoreStory)
+		def requiredAnalyze = (path != null && !(path.vars.isEmpty()))
+		def recursive = BoolUtils.IsValue(lparams.recursive, this.recursive)
+		def takePathInStory =  BoolUtils.IsValue(lparams.takePathInStory, this.takePathInStory)
+		def ignoreExistInStory = BoolUtils.IsValue(lparams.ignoreExistInStory, this.ignoreExistInStory)
+		def createStory = BoolUtils.IsValue(lparams.createStory, this.createStory)
+		def onlyFromStory = BoolUtils.IsValue(lparams.onlyFromStory)
+		def ignoreStory = BoolUtils.IsValue(lparams.ignoreStory)
 		
 		Integer limit = (lparams.limitDirs as Integer)?:this.limitDirs
 		if (limit != null && limit <= 0)
@@ -953,7 +946,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		def fileListIndexes = [:]
 		fileListIndexes.put(fileList.tableName + '_1', [columns: ['FILEPATH']])
 		if (extendIndexes != null) {
-			for (int i = 0; i < extendIndexes.size(); i++) {
+			for (Integer i = 0; i < extendIndexes.size(); i++) {
 				fileListIndexes.put(fileList.tableName + '_' + (i + 2).toString(), [columns: extendIndexes[i]])
 			}
 		}
@@ -1028,7 +1021,7 @@ INSERT INTO ${doubleFiles.fullNameDataset()} (LOCALFILENAME${(takePathInStory)?'
 		);
 """
 			newFiles.connection.startTran()
-			long countDouble
+			Long countDouble
 			try {
 				countDouble = newFiles.connection.executeCommand(command: sqlDetectDouble, isUpdate: true)
 			}
@@ -1048,7 +1041,7 @@ DELETE FROM ${newFiles.fullNameDataset()}
 WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 """
 				newFiles.connection.startTran()
-				long countDelete
+				Long countDelete
 				try {
 					countDelete = newFiles.connection.executeCommand(command: sqlDeleteDouble, isUpdate: true)
 				}
@@ -1188,12 +1181,12 @@ FROM ${newFiles.fullNameDataset()} files
 		validRootPath()
 		if (fileList == null || fileList.field.isEmpty())
 			throw new ExceptionGETL("Before download build fileList dataset!")
-		
-		boolean deleteLoadedFile = BoolUtils.IsValue(params.deleteLoadedFile)
+
+		def deleteLoadedFile = BoolUtils.IsValue(params.deleteLoadedFile)
 		TableDataset ds = params.story as TableDataset
-		boolean useStory = (ds != null)
-		boolean ignoreError = BoolUtils.IsValue(params.ignoreError)
-		boolean folders = BoolUtils.IsValue(params.folders, true)
+		def useStory = (ds != null)
+		def ignoreError = BoolUtils.IsValue(params.ignoreError)
+		def folders = BoolUtils.IsValue(params.folders, true)
 		String sqlWhere = params.filter as String
 		List<String> sqlOrderBy = params.order as List<String>
 
@@ -1449,7 +1442,7 @@ WHERE
 	 * @param dir
 	 * @param throwError
 	 */
-	void createLocalDir(String dir, boolean throwError) {
+	void createLocalDir(String dir, Boolean throwError) {
 		def fn = "${currentLocalDir()}/${dir}"
 		if (!new File(fn).mkdirs() && throwError) throw new ExceptionGETL("Cannot create local directory \"${fn}\"")
 	}
@@ -1467,7 +1460,7 @@ WHERE
 	 * @param dir
 	 * @param throwError
 	 */
-	void removeLocalDir(String dir, boolean throwError) {
+	void removeLocalDir(String dir, Boolean throwError) {
 		def fn = "${currentLocalDir()}/${dir}"
 		if (!new File(fn).delete() && throwError) throw new ExceptionGETL("Can not remove local directory \"${fn}\"")
 	}
@@ -1485,7 +1478,7 @@ WHERE
 	 * @param dirName
 	 * @param throwError
 	 */
-	Boolean removeLocalDirs(String dirName, boolean throwError) {
+	Boolean removeLocalDirs(String dirName, Boolean throwError) {
         def fullDirName = new File("${currentLocalDir()}/$dirName").canonicalPath
 		def deleteRoot = (fullDirName != new File(localDirectory).canonicalPath)
         return FileUtils.DeleteFolder(fullDirName, deleteRoot, throwError)
@@ -1559,7 +1552,7 @@ WHERE
 	 * @param dir
 	 * @return
 	 */
-	boolean existsLocalDirectory(String dir) {
+	Boolean existsLocalDirectory(String dir) {
 		new File(processLocalDirPath(dir)).exists()
 	}
 	
@@ -1568,7 +1561,7 @@ WHERE
 	 * @param dirName directory path
 	 * @return result of checking
 	 */
-	boolean existsDirectory(String dirName) {
+	Boolean existsDirectory(String dirName) {
 		validConnect()
 
 		if (dirName in ['.', '..', '/']) return true
@@ -1592,7 +1585,7 @@ WHERE
 	 * @param fileName file path
 	 * @return result of checking
 	 */
-	boolean existsFile(String fileName) {
+	Boolean existsFile(String fileName) {
 		validConnect()
 
 		def res = false
@@ -1608,7 +1601,7 @@ WHERE
 		return res
 	}
 
-	boolean deleteEmptyFolder(String dirName, boolean recursive) {
+	Boolean deleteEmptyFolder(String dirName, Boolean recursive) {
 		deleteEmptyFolder(dirName, recursive, null)
 	}
 	
@@ -1618,7 +1611,7 @@ WHERE
 	 * @param recursive - required recursive deleting
 	 * @return - true if directiry exist files
 	 */
-	boolean deleteEmptyFolder(String dirName, Boolean recursive,
+	Boolean deleteEmptyFolder(String dirName, Boolean recursive,
 							  @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
 		deleteEmptyFolderRecurse(0, dirName, recursive, onDelete)
 	}
@@ -1631,7 +1624,7 @@ WHERE
 	 * @param onDelete
 	 * @return
 	 */
-	protected boolean deleteEmptyFolderRecurse(Integer level, String dirName, Boolean recursive,
+	protected Boolean deleteEmptyFolderRecurse(Integer level, String dirName, Boolean recursive,
 											   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
 		changeDirectory(dirName)
 		def existsFiles = false
@@ -1684,7 +1677,7 @@ WHERE
 	 * @param onDelete
 	 * @return
 	 */
-	boolean deleteEmptyFolders(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
+	Boolean deleteEmptyFolders(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
 		deleteEmptyFolders(false, onDelete)
 	}
 	
@@ -1692,7 +1685,7 @@ WHERE
 	 * Remove empty foldes from building list files
 	 * @param onDelete
 	 */
-	boolean deleteEmptyFolders(Boolean ignoreErrors,
+	Boolean deleteEmptyFolders(Boolean ignoreErrors,
 							   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
 		if (fileList == null) throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders')
 		
@@ -1726,7 +1719,7 @@ WHERE
 	Map<String, Object> buildTreeDirs() {
 		def res = [:] as Map<String, Object>
 		def objects = listDir()
-		for (int i = 0; i < objects.size(); i++) {
+		for (Integer i = 0; i < objects.size(); i++) {
 			def obj = objects.item(i)
 			if (obj.type == TypeFile.DIRECTORY) {
 				changeDirectory(obj.filename as String)
@@ -1749,9 +1742,9 @@ WHERE
 	 * @param onDelete
 	 * @return
 	 */
-	boolean deleteEmptyDirs(Map<String, Map> dirs, Boolean ignoreErrors,
+	Boolean deleteEmptyDirs(Map<String, Map> dirs, Boolean ignoreErrors,
 							@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
-		boolean res = true
+		def res = true
 		dirs.each { String name, Map subDirs ->
 			changeDirectory(name)
 			if (!subDirs.isEmpty()) {
@@ -1786,7 +1779,7 @@ WHERE
 	 * Delete empty directories for current directory
 	 * @param recursive
 	 */
-	void deleteEmptyFolder(boolean recursive) {
+	void deleteEmptyFolder(Boolean recursive) {
 		list() { Map file ->
 			if (file.type == TypeFile.DIRECTORY)
 				deleteEmptyFolderRecurse(1, file.filename as String, recursive, null)
@@ -1806,7 +1799,8 @@ WHERE
 	/**
 	 * Allow run command on server
 	 */
-	boolean isAllowCommand() { false }
+	@JsonIgnore
+	Boolean isAllowCommand() { false }
 	
 	/**
 	 * Run command on server
@@ -1849,10 +1843,12 @@ WHERE
 	 */
 	protected Integer doCommand(String command, StringBuilder out, StringBuilder err) { null }
 	
-	/**
-	 * Real script history file name
-	 */
-	String fileNameScriptHistory
+	/** Real script history file name */
+	private String fileNameScriptHistory
+
+	/** Real script history file name */
+	@JsonIgnore
+	String getFileNameScriptHistory() { fileNameScriptHistory }
 	
 	/**
 	 * Validation script history file
@@ -1894,7 +1890,7 @@ WHERE
      * @param f
      * @param time
      */
-    protected boolean setLocalLastModified(File f, long time) {
+    protected Boolean setLocalLastModified(File f, Long time) {
         if (!saveOriginalDate) return false
         return f.setLastModified(time)
     }
@@ -1904,14 +1900,14 @@ WHERE
      * @param fileName file name
      * @return last-modified time, measured in milliseconds since the epoch (00:00:00 GMT, January 1, 1970)
      */
-    abstract long getLastModified(String fileName)
+    abstract Long getLastModified(String fileName)
 
     /**
      * Set last modified date and time for file
      * @param fileName file name
      * @param time last-modified time, measured in milliseconds since the epoch (00:00:00 GMT, January 1, 1970)
      */
-    abstract void setLastModified(String fileName, long time)
+    abstract void setLastModified(String fileName, Long time)
 
 	/** Verify that the connection is established */
 	protected void validConnect() {
@@ -1944,12 +1940,12 @@ WHERE
 	}
 
 	/** Windows OS */
-	static public final def winOS = 'win'
+	static public final String winOS = 'win'
 	/** Unix compatibility OS */
-	static public final def unixOS = 'unix'
+	static public final String unixOS = 'unix'
 
 	/** host OS (null - unknown, win - Windows, unix - unix compatibility */
-	String getHostOS() { return null }
+	abstract String getHostOS()
 
 	/**
 	 * Removing directories in the current directory using the specified mask

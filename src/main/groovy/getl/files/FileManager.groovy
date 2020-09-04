@@ -1,28 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.files
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.files.sub.FileManagerList
 import getl.files.sub.Filter
@@ -42,8 +20,6 @@ class FileManager extends Manager {
 
 	/** Connect status */
 	private Boolean connected = false
-	/** Connect status */
-	boolean getConnected () { connected }
 
 	/** Current directory file handler */
 	private File currentDirectory
@@ -60,21 +36,23 @@ class FileManager extends Manager {
 	void setCodePage (String value) { params.codePage = value }
 	
 	/** Create root path if not exists */
-	boolean getCreateRootPath () { BoolUtils.IsValue(params.createRootPath, false) }
+	Boolean getCreateRootPath () { BoolUtils.IsValue(params.createRootPath, false) }
 	/** Create root path if not exists */
-	void setCreateRootPath (boolean value) { params.createRootPath = value }
+	void setCreateRootPath (Boolean value) { params.createRootPath = value }
 	
 	@Override
-	boolean isCaseSensitiveName () { false }
+	@JsonIgnore
+	Boolean isCaseSensitiveName () { false }
 
 	/** Check exist root path */
-	boolean existsRootDirectory() {
+	Boolean existsRootDirectory() {
 		if (rootPath == null) return false
 		new File(rootPath).exists()
 	}
 
 	@Override
-	boolean isConnected() { connected }
+	@JsonIgnore
+	Boolean isConnected() { connected }
 
 	@Override
 	void setRootPath(String value) {
@@ -128,7 +106,7 @@ class FileManager extends Manager {
 
 		@CompileStatic
 		@Override
-		Map item (int index) {
+		Map item (Integer index) {
 			File f = listFiles[index]
 
 			Map<String, Object> m =  new HashMap<String, Object>()
@@ -173,6 +151,7 @@ class FileManager extends Manager {
 	}
 	
 	@Override
+	@JsonIgnore
 	String getCurrentPath () {
 		validConnect()
 
@@ -270,7 +249,7 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	boolean existsDirectory(String dirName) {
+	Boolean existsDirectory(String dirName) {
 		validConnect()
 
 		File f = new File("${currentDirectory.canonicalPath}/${dirName}")
@@ -278,7 +257,7 @@ class FileManager extends Manager {
 	}
 
 	@Override
-	boolean existsFile(String fileName) {
+	Boolean existsFile(String fileName) {
 		validConnect()
 
 		File f = new File("${currentDirectory.canonicalPath}/${fileName}")
@@ -286,6 +265,7 @@ class FileManager extends Manager {
 	}
 
 	@Override
+	@JsonIgnore
 	String getHostOS() {
 		String res = null
 		if (Config.isWindows())
@@ -297,7 +277,8 @@ class FileManager extends Manager {
 	}
 	
 	@Override
-	boolean isAllowCommand() { true }
+	@JsonIgnore
+	Boolean isAllowCommand() { true }
 
 	@SuppressWarnings("DuplicatedCode")
 	@Override
@@ -339,7 +320,7 @@ class FileManager extends Manager {
 	}
 
 	@Override
-	long getLastModified(String fileName) {
+	Long getLastModified(String fileName) {
 		validConnect()
 		def cd = currentDir()
 		String filePath = "$rootPath/$cd/$fileName"
@@ -348,7 +329,7 @@ class FileManager extends Manager {
 	}
 
 	@Override
-	void setLastModified(String fileName, long time) {
+	void setLastModified(String fileName, Long time) {
 		validConnect()
 
 		if (saveOriginalDate) new File(fileName).setLastModified(time)

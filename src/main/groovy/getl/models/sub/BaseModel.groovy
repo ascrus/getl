@@ -1,28 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.models.sub
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
@@ -40,16 +18,17 @@ import java.lang.reflect.ParameterizedType
 class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository {
     private String dslNameObject
     @Override
+    @JsonIgnore
     String getDslNameObject() { dslNameObject }
     @Override
     void setDslNameObject(String value) { dslNameObject = value }
 
-    /** Repository model name */
-    String getRepositoryModelName() { dslNameObject?:'noname' }
-
     private Getl dslCreator
 
+    @Override
+    @JsonIgnore
     Getl getDslCreator() { dslCreator }
+    @Override
     void setDslCreator(Getl value) { dslCreator = value }
 
     @Override
@@ -57,6 +36,10 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
         dslNameObject = null
         dslCreator = null
     }
+
+    /** Repository model name */
+    @JsonIgnore
+    String getRepositoryModelName() { dslNameObject?:'noname' }
 
     /** Description of model */
     String getDescription() { params.description as String }
@@ -114,7 +97,7 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
      * Check model parameters
      * @param validObjects check parameters of model objects
      */
-    void checkModel(boolean checkObjects = true) {
+    void checkModel(Boolean checkObjects = true) {
         if (checkObjects)
             usedObjects.each { obj -> checkObject(obj) }
     }

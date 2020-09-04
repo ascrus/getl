@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.vertica
 
 import groovy.transform.CompileStatic
@@ -123,7 +99,7 @@ class VerticaDriver extends JDBCDriver {
 	@CompileStatic
 	static String EscapeString(String value) {
 		def sb = new StringBuilder()
-		for (int i = 0; i < value.length(); i++) {
+		for (Integer i = 0; i < value.length(); i++) {
 			def ch = value.chars[i]
 			def bt = value.bytes[i]
 			if (ch < '\u0020'.chars[0] || ch > '\u007E'.chars[0])
@@ -166,7 +142,7 @@ class VerticaDriver extends JDBCDriver {
 			else {
 				parserText = "\nWITH PARSER $parserFunc()"
 			}
-			boolean useCsvOptions = BoolUtils.IsValue((params.parser as Map).useCsvOptions, true)
+			def useCsvOptions = BoolUtils.IsValue((params.parser as Map).useCsvOptions, true)
 			if (useCsvOptions) {
 				if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter)}"
 				if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
@@ -205,14 +181,14 @@ class VerticaDriver extends JDBCDriver {
 		def map = params.map as List<Map>
 		def expressions = (params.expression as Map<String, String>)?:[:]
 		String loadMethod = ListUtils.NotNullValue([params.loadMethod, 'AUTO'])
-		boolean enforceLength = (parserText == null && BoolUtils.IsValue(params.enforceLength, true))
-		boolean autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
+		def enforceLength = (parserText == null && BoolUtils.IsValue(params.enforceLength, true))
+		def autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
 		String compressed = ListUtils.NotNullValue([params.compressed, (isGzFile?'GZIP':null)])
 		String exceptionPath = params.exceptionPath
 		String rejectedPath = params.rejectedPath
 		def rejectMax = params.rejectMax as Long
-		boolean abortOnError = BoolUtils.IsValue(params.abortOnError, true)
-		String location = params.location
+		def abortOnError = BoolUtils.IsValue(params.abortOnError, true)
+		String location = params.location as String
 		String onNode = (location != null)?(' ON ' + location):''
 
 		String streamName = params.streamName
@@ -317,9 +293,9 @@ class VerticaDriver extends JDBCDriver {
 //		dest.sysParams.sql = sql
 		//println sql
 
-		dest.writeRows = 0
-		dest.updateRows = 0
-		long count = executeCommand(sql, [isUpdate: true])
+		dest.writeRows = 0L
+		dest.updateRows = 0L
+		def count = executeCommand(sql, [isUpdate: true])
 		source.readRows = count
 		dest.writeRows = count
 		dest.updateRows = count
@@ -397,11 +373,11 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	@Override
-	boolean blobReadAsObject () { return false }
+	Boolean blobReadAsObject () { return false }
 
 	@Override
 	String blobMethodWrite (String methodName) {
-		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BINARY) 
 	}
@@ -414,7 +390,7 @@ class VerticaDriver extends JDBCDriver {
 	}
 
 	@Override
-	boolean textReadAsObject() { return false }
+	Boolean textReadAsObject() { return false }
 
 	static String writeHints(Map params) {
 		def hints = [] as List<String>

@@ -24,6 +24,7 @@ dependencies {
 	}
 	compile 'org.codehaus.groovy:groovy-dateutil:3.0.5'
 	compile 'org.codehaus.groovy:groovy-yaml:3.0.5'
+	compile 'com.fasterxml.jackson.core:jackson-annotations:2.11.2'
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'
 	addJars 'com.h2database:h2:1.4.200'

@@ -1,28 +1,4 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.models.opts
-
 
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
@@ -87,7 +63,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
      * Create a reference table in the database schema for the model
      * @param recreate re-create the table if already exists (default false)
      */
-    void createReferenceTable(boolean recreate = false) {
+    void createReferenceTable(Boolean recreate = false) {
         def refTable = referenceTable as VerticaTable
         def sourceTable = workTable
 
@@ -113,7 +89,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
      * @return reference data was copied
      */
     @SuppressWarnings(["DuplicatedCode", 'SpellCheckingInspection'])
-    boolean copyFromSourceTable(boolean onlyForEmpty = true) {
+    Boolean copyFromSourceTable(Boolean onlyForEmpty = true) {
         if (!allowCopy) {
             Logs.Info("Reference table \"$datasetName\" is not used in copying and is skipped")
             return false
@@ -174,7 +150,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
      * @return reference data was copied
      */
     @SuppressWarnings("DuplicatedCode")
-    boolean copyFromVertica(VerticaConnection externalConnection, boolean onlyForEmpty = true) {
+    Boolean copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true) {
         if (!allowCopy) {
             Logs.Info("Reference table \"$datasetName\" is not used in copying and is skipped")
             return false
@@ -266,7 +242,7 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
      * Fill table with data from reference table
      */
     @SuppressWarnings("GroovyVariableNotAssigned")
-    boolean fillFromReferenceTable() {
+    Boolean fillFromReferenceTable() {
         def sourceTable = referenceTable as VerticaTable
         def destTable = workTable as VerticaTable
 

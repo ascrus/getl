@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.proc.sub
 
 import getl.data.Field
@@ -191,7 +167,7 @@ abstract class FileListProcessing implements GetlRepository {
     protected TableDataset currentStory
 
     /** Number of processed files */
-    long getCountFiles () { counter.count }
+    Long getCountFiles () { counter.count }
 
     /**
      * Process file variables
@@ -226,8 +202,8 @@ abstract class FileListProcessing implements GetlRepository {
      * @param vars list of variables
      * @return execution result code
      */
-    static int Command(Manager man, String command, int attempts, int time,
-                       boolean throwOnError, String formatDate, Map vars) {
+    static Integer Command(Manager man, String command, Integer attempts, Integer time,
+                       Boolean throwOnError, String formatDate, Map vars) {
         Integer res
         StringBuilder console = new StringBuilder()
         StringBuilder err = new StringBuilder()
@@ -283,7 +259,7 @@ abstract class FileListProcessing implements GetlRepository {
      * @param time number of seconds between attempts to retry a command operation
      */
     static void ChangeDir(List<Manager> mans, String path,
-                            boolean isCreateDir, int attempts, Integer time) {
+                          Boolean isCreateDir, Integer attempts, Integer time) {
         Operation(mans, attempts, time) { man ->
             man.changeDirectoryToRoot()
             synchronized (createDirectoryLock) {
@@ -306,7 +282,7 @@ abstract class FileListProcessing implements GetlRepository {
      * @param path directory name
      * @param isCreateDir create directory if not exist (default false)
      */
-    static void ChangeLocalDir (Manager man, String path, boolean isCreateDir) {
+    static void ChangeLocalDir (Manager man, String path, Boolean isCreateDir) {
         man.changeLocalDirectoryToRoot()
         synchronized (createLocalDirectoryLock) {
             if (!man.existsLocalDirectory(path)) {
@@ -332,7 +308,7 @@ abstract class FileListProcessing implements GetlRepository {
      * @param attempts number of attempts
      * @param time time in seconds between attempts
      */
-    static void ConnectTo(List<Manager> mans, int attempts, int time) {
+    static void ConnectTo(List<Manager> mans, Integer attempts, Integer time) {
         def code = { Manager man ->
             if (man.connected) return
 
@@ -377,7 +353,7 @@ abstract class FileListProcessing implements GetlRepository {
      * Disconnect managers
      * @param mans list of managers
      */
-    static boolean DisconnectFrom(List<Manager> mans) {
+    static Boolean DisconnectFrom(List<Manager> mans) {
         def err = new SynchronizeObject()
 
         def code = { Manager man ->
@@ -418,7 +394,7 @@ abstract class FileListProcessing implements GetlRepository {
      * @param time time in seconds between attempts
      * @param cl operation code on specified manager
      */
-    static void Operation(List<Manager> mans, int attempts, int time,
+    static void Operation(List<Manager> mans, Integer attempts, Integer time,
                           @ClosureParams(value = SimpleType, options = ['getl.files.Manager']) Closure cl) {
         def code = { Manager man ->
             def retry = 1
@@ -826,7 +802,7 @@ abstract class FileListProcessing implements GetlRepository {
     }
 
     /** Use cache when processing files */
-    protected boolean getIsCachedMode() { return false }
+    protected Boolean getIsCachedMode() { return false }
 
     /**
      * Save cached data

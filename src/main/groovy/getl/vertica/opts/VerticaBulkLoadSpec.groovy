@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.vertica.opts
 
 import getl.exception.ExceptionGETL
@@ -48,42 +24,42 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     /**
      * Auto detect how load rows
      */
-    final static AUTO = 'AUTO'
+    static public final String AUTO = 'AUTO'
 
     /**
      * Load rows to ROS
      */
-    final static DIRECT = 'DIRECT'
+    static public final String DIRECT = 'DIRECT'
 
     /**
      * Load rows to WOS
      */
-    final static TRICKLE = 'TRICKLE'
+    static public final String TRICKLE = 'TRICKLE'
 
     /**
      * Uncompressed file
      */
-    final static UNCOMPRESSED = 'UNCOMPRESSED'
+    static public final String UNCOMPRESSED = 'UNCOMPRESSED'
 
     /**
      * BZIP compress file
      */
-    final static BZIP = 'BZIP'
+    static public final String BZIP = 'BZIP'
 
     /**
      * GZIP compress file
      */
-    final static GZIP = 'GZIP'
+    static public final String GZIP = 'GZIP'
 
     /**
      * LZO compress file
      */
-    final static LZO = 'LZO'
+    static public final String LZO = 'LZO'
 
     /**
      * ZSTD compress file
      */
-    final static ZSTD = 'ZSTD'
+    static public final String ZSTD = 'ZSTD'
 
     /**
      * Specified parser for loading data from file

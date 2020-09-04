@@ -1,28 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.files
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.files.sub.FileManagerList
 import getl.files.sub.ResourceCatalogElem
@@ -54,6 +32,8 @@ class ResourceManager extends Manager {
     /** Resource file storage paths */
     List<String> getResourceDirectories() { params.resourceDirectories as List<String> }
     /** Resource file storage paths */
+    void setResourceDirectories(List<String> value) { useResourceDirectories(value) }
+    /** Resource file storage paths */
     void useResourceDirectories(List<String> value) {
         resourceDirectories.clear()
         if (value != null)
@@ -63,6 +43,7 @@ class ResourceManager extends Manager {
     /** Use class loader to access resources */
     private ClassLoader classLoader
     /** Use class loader to access resources */
+    @JsonIgnore
     ClassLoader getClassLoader() { classLoader }
     /** Use class loader to access resources */
     void useClassLoader(ClassLoader value) { classLoader = value }
@@ -80,7 +61,13 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    boolean isCaseSensitiveName() { return true }
+    Boolean isCaseSensitiveName() { return true }
+
+    @Override
+    @JsonIgnore
+    String getHostOS() {
+        return unixOS
+    }
 
     @Override
     void setRootPath(String value) {
@@ -239,7 +226,8 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    boolean isConnected() { connected }
+    @JsonIgnore
+    Boolean isConnected() { connected }
 
     class ResourceFileList extends FileManagerList {
         List<ResourceCatalogElem> listFiles
@@ -252,7 +240,7 @@ class ResourceManager extends Manager {
 
         @CompileStatic
         @Override
-        Map item (int index) {
+        Map item (Integer index) {
             def f = listFiles[index]
 
             Map<String, Object> m =  new HashMap<String, Object>()
@@ -303,6 +291,7 @@ class ResourceManager extends Manager {
     private ResourceCatalogElem curDir
 
     @Override
+    @JsonIgnore
     String getCurrentPath() {
         return currentDirectory.filepath
     }
@@ -338,7 +327,7 @@ class ResourceManager extends Manager {
         def size = dirs.length - ((isMask)?1:0)
 
         def cd = (cp[0] == '/')?rootNode:currentDirectory
-        for (int i = 0; i < size; i++) {
+        for (Integer i = 0; i < size; i++) {
             def dir = dirs[i]
 
             if (dir == '' || dir == '.')
@@ -427,7 +416,7 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    long getLastModified(String fileName) {
+    Long getLastModified(String fileName) {
         if (fileName == null)
             throw new ExceptionGETL('A file name is required!')
 
@@ -443,7 +432,7 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    void setLastModified(String fileName, long time) {
+    void setLastModified(String fileName, Long time) {
         throw new ExceptionGETL('Not supported!')
     }
 }

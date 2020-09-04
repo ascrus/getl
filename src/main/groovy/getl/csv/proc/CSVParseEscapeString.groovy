@@ -5,7 +5,6 @@ import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import org.supercsv.cellprocessor.CellProcessorAdaptor
 import org.supercsv.cellprocessor.ift.StringCellProcessor
-import org.supercsv.exception.SuperCsvCellProcessorException
 import org.supercsv.util.CsvContext
 
 @InheritConstructors
@@ -13,7 +12,6 @@ class CSVParseEscapeString extends CellProcessorAdaptor implements StringCellPro
     @CompileStatic
     @Override
     <T> T execute(final Object value, final CsvContext context) {
-        final def result = StringUtils.UnescapeJava(value as String)
-        return next.execute(result, context)
+        return next.execute(StringUtils.UnescapeJava(value as String), context)
     }
 }

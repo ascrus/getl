@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 import getl.exception.ExceptionGETL
@@ -43,22 +19,22 @@ class Logs {
 	/**
 	 * Logger object
 	 */
-	public static final Logger logger = Logger.getLogger("global")
+	static public final Logger logger = Logger.getLogger("global")
 	
 	/**
 	 * Formatter object
 	 */
-	public static final LogFormatter formatter = new LogFormatter()
+	static public final LogFormatter formatter = new LogFormatter()
 
 	/**
 	 * Display configuration messages
 	 */
-	public static Boolean printConfigMessage
+	static public Boolean printConfigMessage
 	
 	/**
 	 * File handler object
 	 */
-	public static FileHandler file
+	static public FileHandler file
 	
 	/**
 	 * Log file name
@@ -74,22 +50,22 @@ class Logs {
 	 *     <li>{shortdatetime} - the current date and time in the format "yyyy-MM-dd_HH"</li>
 	 * </ul>
 	 */
-	public static String logFileName
+	static public String logFileName
 	
 	/** Log file handler */
-	private static String fileNameHandler
+	static private String fileNameHandler
 
 	/** Log file handler */
 	static String getFileNameHandler () { fileNameHandler }
 	
 	/** Config messages to be written after initialization log */
-	protected static List<String> InitMessages = []
+	protected static final List<String> InitMessages = [] as List<String>
 	
 	/** Eventer on call write to log, has parameters String level, Date time, String message */
-	private static final List<Closure> eventers = []
+	static private final List<Closure> eventers = [] as List<Closure>
 
 	/** Print stack trace for error */
-	public static boolean printStackTraceError = true
+	static public Boolean printStackTraceError = true
 	
 	/**
 	 * Register eventer, closure has parameters String level, Date time, String message
@@ -105,12 +81,12 @@ class Logs {
 	 * @param eventer event code
 	 * @return sucess unregistered
 	 */
-	static boolean unregisterEventer (Closure eventer) {
+	static Boolean unregisterEventer (Closure eventer) {
 		if (eventer == null) throw new ExceptionGETL("Eventer must be not null")
 		eventers.remove(eventer)
 	}
 
-	static private operationLock = new Object()
+	static private Object operationLock = new Object()
 	
 	/**
 	 * Call eventers
@@ -166,7 +142,7 @@ class Logs {
 		if (printConfigMessage == null) printConfigMessage = ((Config.content.log as Map)?.printConfig != null)?(Config.content.log as Map).printConfig:false
 		InitFile(logFileName?:((Config.content.log as Map)?.file as String))
 		InitMessages.each { Config(it) }
-		InitMessages = []
+		InitMessages.clear()
 	}
 	
 	/**
@@ -512,22 +488,22 @@ class Logs {
 	}
 	
 	/** Standart console output */
-	private static PrintStream standartConsole = System.out
+	static private PrintStream standartConsole = System.out
 	
 	/** Standart console error */
-	private static PrintStream errConsole = System.err 
+	static private PrintStream errConsole = System.err
 	
 	/** Output console file name */
-	private static String outFileName
+	static private String outFileName
 	
 	/** Error console file name */
-	private static String errFileName
+	static private String errFileName
 	
 	/** Output console stream */
-	private static PrintStream outStream
+	static private PrintStream outStream
 	
 	/** Error console stream */
-	private static PrintStream errStream
+	static private PrintStream errStream
 	
 	/**
 	 * Redirect output console to file or standart

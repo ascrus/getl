@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.salesforce
 
 import com.sforce.async.AsyncApiException
@@ -76,7 +52,7 @@ class SalesForceDriver extends Driver {
     private ConnectorConfig config
     private PartnerConnection partnerConnection
     private BulkConnection bulkConnection
-    private boolean connected = false
+    private Boolean connected = false
 
     @Override
 	List<Support> supported() { return [Support.EACHROW, Support.CONNECT, Support.CLOB, Support.AUTOLOADSCHEMA] }
@@ -85,11 +61,11 @@ class SalesForceDriver extends Driver {
 	List<Operation> operations() { return [Operation.RETRIEVEFIELDS] }
 
 	@Override
-	boolean isConnected() {
+    Boolean isConnected() {
 		return connected
 	}
 
-    boolean getIsBulkConnected() {
+    Boolean getIsBulkConnected() {
         return bulkConnection != null
     }
 
@@ -151,7 +127,7 @@ class SalesForceDriver extends Driver {
 
 		DescribeSObjectResult describeSObjectResults = partnerConnection.describeSObject((dataset as SalesForceDataset).params.sfObjectName as String)
 
-		describeSObjectResults.fields.eachWithIndex { sfField field, int idx ->
+		describeSObjectResults.fields.eachWithIndex { sfField field, Integer idx ->
 			Field f = new Field()
 
 			f.name = field.name
@@ -235,7 +211,7 @@ class SalesForceDriver extends Driver {
 	}
 
 	@Override
-	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+    Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		String sfObjectName = dataset.params.sfObjectName
 		Integer limit = ListUtils.NotNullValue([params.limit, dataset.params.limit, 0]) as Integer
         String where = (params.where) ?: ''
@@ -266,7 +242,7 @@ class SalesForceDriver extends Driver {
             if (limit > 0) soqlQuery += "\nLIMIT ${limit.toString()}"
         }
 
-		long countRec = 0
+		def countRec = 0L
 
         if (readAsBulk) {
             List<TFSDataset> tfsDatasetList = bulkUnload(dataset, params)
@@ -361,7 +337,7 @@ class SalesForceDriver extends Driver {
 
             // Trick to get the real number of batches because of async API
             if (chunkSize > 0) {
-                int batchCounter = 0
+                def batchCounter = 0
                 while (bulkConnection.getBatchInfo(job.id, mainBatch.id).state != BatchStateEnum.NotProcessed) {
                     batchCounter++
                 }
@@ -377,7 +353,7 @@ class SalesForceDriver extends Driver {
             tfsArea.path += "/${job.id}"
 
             if (batchInfos.length > 1) {
-                for (int bn = 0; bn < batchInfos.length; bn++) {
+                for (Integer bn = 0; bn < batchInfos.length; bn++) {
                     BatchInfo info = batchInfos[bn]
                     if (info.id == mainBatch.id) continue
 
@@ -405,7 +381,7 @@ class SalesForceDriver extends Driver {
     private void processBatch(JobInfo job, BatchInfo info, String pathToFile) {
         String[] queryResults = null
 
-        for (int i = 0; i < 10000; i++) {
+        for (Integer i = 0; i < 10000; i++) {
             info = bulkConnection.getBatchInfo(job.id, info.id)
 
             if (info.state == BatchStateEnum.Completed) {
@@ -425,7 +401,7 @@ class SalesForceDriver extends Driver {
             InputStream inputStream = bulkConnection.getQueryResultStream(job.id, info.id, resultId)
             try {
                 new File(pathToFile).withOutputStream { outputStream ->
-                    inputStream.eachByte(1024 * 8) { byte[] data, int len ->
+                    inputStream.eachByte(1024 * 8) { byte[] data, Integer len ->
                         outputStream.write(data, 0, len)
                     }
                 }
@@ -435,7 +411,7 @@ class SalesForceDriver extends Driver {
         }
     }
 
-    private static JobInfo createJob(BulkConnection connection, String sfObjectName) {
+    static private JobInfo createJob(BulkConnection connection, String sfObjectName) {
         JobInfo job = new JobInfo()
 
         job.object = sfObjectName
@@ -449,14 +425,14 @@ class SalesForceDriver extends Driver {
         return job
     }
 
-	private static void closeJob(BulkConnection connection, String jobId) {
+	static private void closeJob(BulkConnection connection, String jobId) {
 		JobInfo job = new JobInfo()
 		job.id = jobId
 		job.state = JobStateEnum.Closed
 		connection.updateJob(job)
 	}
 
-	private static Object parseTypes(Object value, final Field field) {
+	static private Object parseTypes(Object value, Field field) {
 		switch (field.type) {
 			case 'STRING':
 				value = ConvertUtils.Object2String(value)
@@ -524,8 +500,8 @@ class SalesForceDriver extends Driver {
 	void clearDataset(Dataset dataset, Map params) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	long executeCommand(String command, Map params) { throw new ExceptionGETL('Not support this features!') }
+    Long executeCommand(String command, Map params) { throw new ExceptionGETL('Not support this features!') }
 
 	@Override
-	long getSequence(String sequenceName) { throw new ExceptionGETL('Not support this features!') }
+    Long getSequence(String sequenceName) { throw new ExceptionGETL('Not support this features!') }
 }

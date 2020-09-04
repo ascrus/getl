@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.jdbc
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.sub.WithConnection
 import getl.driver.Driver
@@ -50,7 +27,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Save point manager parameters */
-	final Map<String, Object> params = [:] as Map<String, Object>
+	private final Map<String, Object> params = [:] as Map<String, Object>
 
 	/**
 	 * Initialization parameters
@@ -60,8 +37,10 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Save point manager parameters */
+	@JsonIgnore
 	Map getParams() { params }
 	/** Save point manager parameters */
+	@JsonIgnore
 	void setParams(Map value) {
 		params.clear()
 		initParams()
@@ -69,23 +48,27 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Extended attributes */
-	Map getAttributes() { params.attributes as Map }
+	Map<String, Object> getAttributes() { params.attributes as Map<String, Object> }
 	/** Extended attributes */
-	void setAttributes(Map value) {
+	void setAttributes(Map<String, Object> value) {
 		attributes.clear()
 		if (value != null) attributes.putAll(value)
 	}
 
 	/** System parameters */
-	final Map<String, Object> sysParams = [:] as Map<String, Object>
+	private final Map<String, Object> sysParams = [:] as Map<String, Object>
 
 	/** System parameters */
+	@JsonIgnore
 	Map<String, Object> getSysParams() { sysParams }
 
+	@JsonIgnore
 	String getDslNameObject() { sysParams.dslNameObject as String }
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
+	@JsonIgnore
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
+	@JsonIgnore
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Connection */
@@ -108,6 +91,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Current JDBC connection */
+	@JsonIgnore
 	JDBCConnection getCurrentJDBCConnection() { connection }
 
 	/** Sequence name */
@@ -137,9 +121,9 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	void setDescription(String value) { params.description = value }
 
 	/** last received sequence value */
-	private long current = 0
+	private Long current = 0
 	/** Offset relative to the last received value */
-	private long offs = 0
+	private Long offs = 0
 	
 	/** Clone sequenced and its connection */
 	@Synchronized
@@ -173,23 +157,27 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Sequence full name */
+	@JsonIgnore
 	String getFullName() {
 		return (schema != null)?"${schema}.$name":name
 	}
 
 	/** Get next sequence value */
+	@JsonIgnore
 	Long getNextValue() {
 		return nextValueFast
 	}
 
 	/** Get next sequence value with synchronized */
 	@Synchronized
+	@JsonIgnore
 	Long getNextValueSynch() {
 		return nextValueFast
 	}
 
 	/** Get next sequence value without synchronized */
-	long getNextValueFast() {
+	@JsonIgnore
+	Long getNextValueFast() {
 		if ((current == 0) || (offs >= cache)) {
 			connection.tryConnect()
 			current = connection.driver.getSequence(fullName)
@@ -217,7 +205,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	 * @param ifNotExists create if not exists
 	 * @param cl process create options
 	 */
-	void createSequence(boolean ifNotExists = false,
+	void createSequence(Boolean ifNotExists = false,
 						@DelegatesTo(SequenceCreateSpec)
 						@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.SequenceCreateSpec']) Closure cl = null) {
 		def parent = new SequenceCreateSpec(this)
@@ -238,7 +226,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	 * Drop sequence from database
 	 * @param ifExists drop if exists
 	 */
-	void dropSequence(boolean ifExists = false) {
+	void dropSequence(Boolean ifExists = false) {
 		connection.currentJDBCDriver.dropSequence(fullName, ifExists)
 	}
 }

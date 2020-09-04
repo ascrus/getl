@@ -1,33 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.tfs
 
-import groovy.transform.InheritConstructors
 import getl.csv.*
-import getl.data.*
-import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.utils.FileUtils
 
@@ -55,7 +28,7 @@ class TFS extends CSVConnection {
 		if (this.getClass().name == 'getl.tfs.TFS') methodParams.validation("Super", params?:[:])
 	}
 
-	private static String _systemPath
+	static private String _systemPath
 
 	/** Used temporary directory */
 	static String getSystemPath() {
@@ -68,7 +41,7 @@ class TFS extends CSVConnection {
     }
 	
 	/** Global temporary file connection object */
-	public static final TFS storage = new TFS([:])
+	static public final TFS storage = new TFS([:])
 
 	/** Validation parameters */
 	protected void validParams() {
@@ -84,9 +57,9 @@ class TFS extends CSVConnection {
 	}
 	
 	/** Delete temporary directories and files after exit is program */
-	boolean getDeleteOnExit () { params.deleteOnExit }
+	Boolean getDeleteOnExit () { params.deleteOnExit }
 	/** Delete temporary directories and files after exit is program */
-	void setDeleteOnExit (boolean value) { params.deleteOnExit = value }
+	void setDeleteOnExit (Boolean value) { params.deleteOnExit = value }
 	
 	@Override
 	void setPath (String value) {
@@ -106,7 +79,7 @@ class TFS extends CSVConnection {
 	 * @param validExists - object required is exists 
 	 * @return
 	 */
-	static TFSDataset dataset(String name, boolean validExists = false) {
+	static TFSDataset dataset(String name, Boolean validExists = false) {
 		dataset(storage, name, validExists)
 	}
 	
@@ -125,7 +98,7 @@ class TFS extends CSVConnection {
 	 * @param validExists - object required is exists 
 	 * @return
 	 */
-	static TFSDataset dataset(TFS connection, String name, boolean validExists = false) {
+	static TFSDataset dataset(TFS connection, String name, Boolean validExists = false) {
 		TFSDataset ds = new TFSDataset(connection: connection, fileName: name)
 		if (validExists && !ds.existsFile()) throw new ExceptionGETL("Temporary file \"${name}\" not exists")
 		

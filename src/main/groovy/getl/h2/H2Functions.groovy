@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.h2
 
 import getl.csv.*
@@ -50,14 +26,14 @@ class H2Functions {
 	/**
 	 * List of function
 	 */
-	public static def FUNCTIONS = [ "GETL_FormatDate": "getl.utils.DateUtils.FormatDate",
-									"GETL_CopyToCSV": "getl.h2.H2Functions.CopyToCSV",
-									"GETL_CopyToJDBC": "getl.h2.H2Functions.CopyToJDBC",
-									"GETL_CopyFromJDBC": "getl.h2.H2Functions.CopyFromJDBC",
-									"GETL_RunGroovyScript": "getl.h2.H2Functions.RunGroovyScript",
-									"GETL_ExistsFile": "getl.utils.FileUtils.ExistsFile",
-									"GETL_DeleteDir": "getl.utils.FileUtils.DeleteDir",
-									"GETL_DeleteFile": "getl.utils.FileUtils.DeleteFile" ]
+	static public Map<String, String> FUNCTIONS = ['GETL_FormatDate': 'getl.utils.DateUtils.FormatDate',
+											'GETL_CopyToCSV': 'getl.h2.H2Functions.CopyToCSV',
+											'GETL_CopyToJDBC': 'getl.h2.H2Functions.CopyToJDBC',
+											'GETL_CopyFromJDBC': 'getl.h2.H2Functions.CopyFromJDBC',
+											'GETL_RunGroovyScript': 'getl.h2.H2Functions.RunGroovyScript',
+											'GETL_ExistsFile': 'getl.utils.FileUtils.ExistsFile',
+											'GETL_DeleteDir': 'getl.utils.FileUtils.DeleteDir',
+											'GETL_DeleteFile': 'getl.utils.FileUtils.DeleteFile']
 	
 	/**
 	 * Register function
@@ -117,7 +93,7 @@ class H2Functions {
 	 * @return
 	 */
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	static long CopyToCSV(java.sql.Connection sqlConn, String query, String fileName, String fieldDelimiter, Boolean escaped) {
+	static Long CopyToCSV(java.sql.Connection sqlConn, String query, String fileName, String fieldDelimiter, Boolean escaped) {
 		H2Connection con = new H2Connection(javaConnection: sqlConn)
 		QueryDataset ds = new QueryDataset(connection: con, query: query)
 		con.connected = true
@@ -127,8 +103,8 @@ class H2Functions {
 		
 		CSVConnection path = new CSVConnection(path: pathFile, createPath: true)
 		CSVDataset file = new CSVDataset(connection: path, fileName: fileName, fieldDelimiter: fieldDelimiter, escaped: escaped)
-		
-		long count
+
+		Long count
 		try { 
 			count = new Flow().copy(source: ds, dest: file, inheritFields: true)
 		}
@@ -154,7 +130,7 @@ class H2Functions {
 	 * @return
 	 */
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	static long CopyToJDBC(java.sql.Connection sqlConn, String query, String driverClass, String connectURL,
+	static Long CopyToJDBC(java.sql.Connection sqlConn, String query, String driverClass, String connectURL,
 									String login, String password, String dbName, String schemaName, String tableName, Long batchSize) {
 		H2Connection conSource = new H2Connection(javaConnection: sqlConn)
 		QueryDataset ds = new QueryDataset(connection: conSource, query: query)
@@ -163,7 +139,7 @@ class H2Functions {
 		JDBCConnection conDest = JDBCConnection.CreateConnection(connection: driverClass, connectURL: connectURL, login: login, password: password) as JDBCConnection
 		conDest.connected = true
 		def table = new TableDataset(connection: conDest, dbName: dbName, schemaName: schemaName, tableName: tableName)
-		long count = 0
+		def count = 0L
 		try {
 			count = new Flow().copy(source: ds, dest: table, dest_batchSize: batchSize)
 		}
@@ -191,7 +167,7 @@ class H2Functions {
 	 * @return
 	 */
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	static long CopyFromJDBC(java.sql.Connection sqlConn, String query, String driverClass, String connectURL,
+	static Long CopyFromJDBC(java.sql.Connection sqlConn, String query, String driverClass, String connectURL,
 										String login, String password, String schemaName, String tableName, Long batchSize) {
 		JDBCConnection conSource = JDBCConnection.CreateConnection(connection: driverClass, connectURL: connectURL, login: login, password: password) as JDBCConnection
 		conSource.connected = true
@@ -202,7 +178,7 @@ class H2Functions {
 		QueryDataset ds = new QueryDataset(connection: conSource, query: query)
 		
 		def table = new TableDataset(connection: conDest, schemaName: schemaName, tableName: tableName)
-		long count = 0
+		def count = 0L
 		try {
 			count = new Flow().copy(source: ds, dest: table, dest_batchSize: batchSize)
 		}

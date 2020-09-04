@@ -1,26 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.lang.sub
 
 import getl.csv.CSVConnection
@@ -58,31 +35,31 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class RepositoryConnections extends RepositoryObjects<Connection> {
-    public static final String CSVCONNECTION = CSVConnection.name
-    public static final String CSVTEMPCONNECTION = TFS.name
-    public static final String DB2CONNECTION = DB2Connection.name
-    public static final String EXCELCONNECTION = ExcelConnection.name
-    public static final String FIREBIRDCONNECTION = FirebirdConnection.name
-    public static final String H2CONNECTION = H2Connection.name
-    public static final String HIVECONNECTION = HiveConnection.name
-    public static final String IMPALACONNECTION = ImpalaConnection.name
-    public static final String JDBCCONNECTION = JDBCConnection.name
-    public static final String JSONCONNECTION = JSONConnection.name
-    public static final String MSSQLCONNECTION = MSSQLConnection.name
-    public static final String MYSQLCONNECTION = MySQLConnection.name
-    public static final String NETEZZACONNECTION = NetezzaConnection.name
-    public static final String NETSUITECONNECTION = NetsuiteConnection.name
-    public static final String ORACLECONNECTION = OracleConnection.name
-    public static final String POSTGRESQLCONNECTION = PostgreSQLConnection.name
-    public static final String SALESFORCECONNECTION = SalesForceConnection.name
-    public static final String EMBEDDEDCONNECTION = TDS.name
-    public static final String VERTICACONNECTION = VerticaConnection.name
-    public static final String XEROCONNECTION = XeroConnection.name
-    public static final String XMLCONNECTION = XMLConnection.name
-    public static final String YAMLCONNECTION = YAMLConnection.name
+    static public final String CSVCONNECTION = CSVConnection.name
+    static public final String CSVTEMPCONNECTION = TFS.name
+    static public final String DB2CONNECTION = DB2Connection.name
+    static public final String EXCELCONNECTION = ExcelConnection.name
+    static public final String FIREBIRDCONNECTION = FirebirdConnection.name
+    static public final String H2CONNECTION = H2Connection.name
+    static public final String HIVECONNECTION = HiveConnection.name
+    static public final String IMPALACONNECTION = ImpalaConnection.name
+    static public final String JDBCCONNECTION = JDBCConnection.name
+    static public final String JSONCONNECTION = JSONConnection.name
+    static public final String MSSQLCONNECTION = MSSQLConnection.name
+    static public final String MYSQLCONNECTION = MySQLConnection.name
+    static public final String NETEZZACONNECTION = NetezzaConnection.name
+    static public final String NETSUITECONNECTION = NetsuiteConnection.name
+    static public final String ORACLECONNECTION = OracleConnection.name
+    static public final String POSTGRESQLCONNECTION = PostgreSQLConnection.name
+    static public final String SALESFORCECONNECTION = SalesForceConnection.name
+    static public final String EMBEDDEDCONNECTION = TDS.name
+    static public final String VERTICACONNECTION = VerticaConnection.name
+    static public final String XEROCONNECTION = XeroConnection.name
+    static public final String XMLCONNECTION = XMLConnection.name
+    static public final String YAMLCONNECTION = YAMLConnection.name
 
     /** List of allowed connection classes */
-    public static final List<String> LISTCONNECTIONS = [
+    static public final List<String> LISTCONNECTIONS = [
         CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
         H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION,
         NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
@@ -90,19 +67,19 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     ]
 
     /** List of allowed jdbc connection classes */
-    public static final List<String> LISTJDBCCONNECTIONS = [
+    static public final List<String> LISTJDBCCONNECTIONS = [
         DB2CONNECTION, EMBEDDEDCONNECTION, FIREBIRDCONNECTION, H2CONNECTION, HIVECONNECTION, IMPALACONNECTION,
         JDBCCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION,
         POSTGRESQLCONNECTION, VERTICACONNECTION
     ]
 
     /** List of allowed other connection classes */
-    public static final List<String> LISTFILECONNECTIONS = [
+    static public final List<String> LISTFILECONNECTIONS = [
         CSVCONNECTION, CSVTEMPCONNECTION, EXCELCONNECTION, JSONCONNECTION, XMLCONNECTION, YAMLCONNECTION
     ]
 
     /** List of allowed jdbc connection classes */
-    public static final List<String> LISTOTHERCONNECTIONS = [
+    static public final List<String> LISTOTHERCONNECTIONS = [
         SALESFORCECONNECTION, XEROCONNECTION
     ]
 
@@ -135,7 +112,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     }
 
     @Override
-    boolean needEnvConfig() { true }
+    Boolean needEnvConfig() { true }
 
     @Override
     protected void initRegisteredObject(Connection obj) {

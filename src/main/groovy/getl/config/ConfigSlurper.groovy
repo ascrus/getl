@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.config
 
 import getl.exception.ExceptionGETL
@@ -233,7 +209,7 @@ class ConfigSlurper extends ConfigManager {
 	 * @param data
 	 * @param vars
 	 */
-	private static Map CheckDataMap(groovy.util.ConfigSlurper cfg, Map data, Map vars) {
+	static private Map CheckDataMap(groovy.util.ConfigSlurper cfg, Map data, Map vars) {
 		def res = [:]
 		data.each { key, value ->
 			if (value instanceof Map) {
@@ -267,9 +243,9 @@ class ConfigSlurper extends ConfigManager {
 	 * @param data
 	 * @param vars
 	 */
-	private static List CheckDataList(groovy.util.ConfigSlurper cfg, List data, Map vars) {
+	static private List CheckDataList(groovy.util.ConfigSlurper cfg, List data, Map vars) {
 		def res = []
-		int i = 0
+		def i = 0
 		data.each { Object value ->
 			if (value instanceof Map) {
 				res << CheckDataMap(cfg, value, vars)
@@ -368,9 +344,9 @@ class ConfigSlurper extends ConfigManager {
 	 * @param isListMap data is in the list
 	 * @return count saved items
 	 */
-	static int SaveMap(Map data, StringBuilder writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
+	static Integer SaveMap(Map data, StringBuilder writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
-		int i = 0
+		def i = 0
 		def res = 0
 		def lines = [] as List<String>
 		data.each { key, value ->
@@ -435,9 +411,9 @@ class ConfigSlurper extends ConfigManager {
 	 * @param tab indent when writing to text
 	 * @return count saved items
 	 */
-	static int SaveList(List data, StringBuilder writer, Boolean convertVars = false, Integer tab = 0) {
+	static Integer SaveList(List data, StringBuilder writer, Boolean convertVars = false, Integer tab = 0) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
-		int i = 0
+		def i = 0
 		def res = 0
 		def lines = [] as List<String>
 		data.each { value ->
@@ -497,7 +473,7 @@ class ConfigSlurper extends ConfigManager {
 	 * @param isListMap object is in the list
 	 * @return object saved
 	 */
-	static boolean SaveObject(def key, def value, StringBuilder writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
+	static Boolean SaveObject(def key, def value, StringBuilder writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
 		if (value instanceof Closure) return false
 
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''

@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 import getl.exception.ExceptionGETL
@@ -41,13 +17,13 @@ import java.util.regex.Pattern
  */
 @CompileStatic
 class StringUtils {
-	public static final MACROS = [
+	static public final MACROS = [
 		'date': DateUtils.NowDate(),		//yyyy-MM-dd
 		'time': DateUtils.NowTime(),		//HH-mm-ss
 		'datetime': DateUtils.NowDateTime()	//yyyy-MM-dd HH:mm:ss
 	]
 	
-	public static final MACROS_FILE = [
+	static public final MACROS_FILE = [
 		'date': DateUtils.FormatDate("yyyy-MM-dd", DateUtils.Now()), 				//yyyy-MM-dd
 		'monthdate': DateUtils.FormatDate("yyyy-MM", DateUtils.Now()), 				//yyyy-MM
 		'yeardate': DateUtils.FormatDate("yyyy", DateUtils.Now()), 					//yyyy
@@ -118,13 +94,13 @@ class StringUtils {
 	 * @param len
 	 * @return
 	 */
-	static String AddLedZeroStr (def s, int len) {
+	static String AddLedZeroStr (def s, Integer len) {
 		if (s == null) return null
 		return s.toString().padLeft(len, '0')
 	}
 	
 	/** Replicate character */
-	static String Replicate(String c, int len) {
+	static String Replicate(String c, Integer len) {
 		if (len == 0) return ""
 		return c * len
 	}
@@ -135,7 +111,7 @@ class StringUtils {
 	 * @param len
 	 * @return
 	 */
-	static String LeftStr(String s, int len) {
+	static String LeftStr(String s, Integer len) {
 		if (s == null) return null
 		return (s.length() <= len)?s:s.substring(0, len)
 	}
@@ -146,7 +122,7 @@ class StringUtils {
 	 * @param len required length
 	 * @return string of given length
 	 */
-	static String CutStr(String s, int len) {
+	static String CutStr(String s, Integer len) {
 		if (s == null) return null
 		def l = s.length()
 		if (l <= len) return s
@@ -159,7 +135,7 @@ class StringUtils {
 	 * @param len required length
 	 * @return string of given length
 	 */
-	static String CutStrByWord(String s, int len) {
+	static String CutStrByWord(String s, Integer len) {
 		if (s == null) return null
 		if (s.length() <= len) return s
 
@@ -176,7 +152,7 @@ class StringUtils {
 	 * @param len
 	 * @return
 	 */
-	static String RightStr(String s, int len) {
+	static String RightStr(String s, Integer len) {
 		if (s == null) return null
 		return (s.length() <= len)?s:s.substring(s.length() - len)
 	}
@@ -201,21 +177,21 @@ class StringUtils {
 	 */
 	static String ProcessAssertionError(AssertionError e) {
 		if (e == null) return null
-		int i = e.message.indexOf("\n")
+		def i = e.message.indexOf("\n")
 		def res = (i == -1)?e.message:e.message.substring(0, i)
 		if (res.matches("(?i)assert .*")) res = res.substring(7)
 		return res
 	}
 
 	/** Escape sequence coding mapping */
-	public static final Map ESCAPEKEYS = ['\\': '\\\\', '"': '\\"', '\'': '\\\'', '\n': '\\n', '\r': '\\r']
+	static public final Map ESCAPEKEYS = ['\\': '\\\\', '"': '\\"', '\'': '\\\'', '\n': '\\n', '\r': '\\r']
 	/** Escape sequence coding pattern */
-	public static final Pattern ESCAPEPATTERN = SearchManyPattern(ESCAPEKEYS)
+	static public final Pattern ESCAPEPATTERN = SearchManyPattern(ESCAPEKEYS)
 
 	/** Escape sequence decoding mapping */
-	public static final Map UNESCAPEKEYS = ['\\\\': '\\', '\\"': '"', '\\\'': '\'', '\\n': '\n', '\\r':'\r']
+	static public final Map UNESCAPEKEYS = ['\\\\': '\\', '\\"': '"', '\\\'': '\'', '\\n': '\n', '\\r':'\r']
 	/** Escape sequence decoding pattern */
-	public static final Pattern UNESCAPEPATTERN = SearchManyPattern(UNESCAPEKEYS)
+	static public final Pattern UNESCAPEPATTERN = SearchManyPattern(UNESCAPEKEYS)
 
 	/**
 	 * Generate a search pattern
@@ -274,7 +250,7 @@ class StringUtils {
 	static void ReplaceAll(StringBuilder sb, Pattern pattern, String replace){
 		def matcher = pattern.matcher(sb)
 
-		int startIndex = 0
+		def startIndex = 0
 		while( matcher.find(startIndex) ){
 			sb.replace(matcher.start(), matcher.end(), replace)
 			startIndex = matcher.start() + replace.length()
@@ -293,7 +269,7 @@ class StringUtils {
 		if (pattern == null) pattern = SearchManyPattern(replaceValues)
 		def matcher = pattern.matcher(value)
 		def sb = new StringBuilder()
-		int pos = 0
+		def pos = 0
 		while (matcher.find()) {
 			sb.append(value, pos, matcher.start())
 			pos = matcher.end()
@@ -316,7 +292,7 @@ class StringUtils {
 		if (pattern == null) pattern = SearchManyPattern(replaceValues)
 		def matcher = pattern.matcher(value)
 		def sb = new StringBuilder()
-		int pos = 0
+		def pos = 0
 		while (matcher.find()) {
 			sb.append(value, pos, matcher.start())
 			pos = matcher.end()
@@ -447,7 +423,7 @@ class StringUtils {
 	 * @param capitalize
 	 * @return
 	 */
-	static String ToCamelCase(String text, boolean capitalized = false) {
+	static String ToCamelCase(String text, Boolean capitalized = false) {
 		text = text.replaceAll( "(_)([A-Za-z0-9])", { List<String> it -> it[2].toUpperCase() } )
 		return (capitalized)? text.capitalize() : text
     }
@@ -457,7 +433,7 @@ class StringUtils {
      * @param length
      * @return
      */
-	static String GeneratePassword(int length) {
+	static String GeneratePassword(Integer length) {
     	return (('A'..'Z') + ('a'..'z') + ('0'..'9')).with { Collections.shuffle(it);it }.take(length).join('')
 	}
 
@@ -472,7 +448,7 @@ class StringUtils {
 	}
 
 	/** Extract from the string the parent path relative to the specified part of the string */
-	static String ExtractParentFromChild(String path, String findPath, boolean ignoreCase = false) {
+	static String ExtractParentFromChild(String path, String findPath, Boolean ignoreCase = false) {
 		findPath = String2RegExp(findPath)
 		def ic = (ignoreCase)?'(?i)':''
 		def pattern = ~(ic + '(' + findPath + ')')
@@ -614,7 +590,7 @@ class StringUtils {
 
 		def l = value.split('[.]').toList()
 		def size = l.size()
-		for (int i = 0; i < size; i++) {
+		for (Integer i = 0; i < size; i++) {
 			def s = l[i].trim()
 			if (s.length() == 0)
 				throw new ExceptionGETL("Invalid identificator object name \"$value\"!")

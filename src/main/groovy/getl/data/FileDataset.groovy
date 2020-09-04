@@ -1,35 +1,10 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.data
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileWriteOpts
-import groovy.transform.InheritConstructors
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
 import getl.utils.*
-
 
 /**
  * File dataset class
@@ -43,11 +18,15 @@ class FileDataset extends Dataset {
 	}
 
 	/** The file is temporary */
-	protected boolean isTemporaryFile = false
+	private Boolean isTemporaryFile = false
 	/** The file is temporary */
-	boolean getIsTemporaryFile() { isTemporaryFile }
+	@JsonIgnore
+	Boolean getIsTemporaryFile() { isTemporaryFile }
+	/** The file is temporary */
+	protected void setIsTemporaryFile(Boolean value) { isTemporaryFile = value }
 
 	/** Current file connection */
+	@JsonIgnore
 	FileConnection getFileConnection() { connection as FileConnection }
 	
 	/**
@@ -71,61 +50,63 @@ class FileDataset extends Dataset {
 	/**
 	 * Append if file exists
 	 */
-	boolean getAppend () { BoolUtils.IsValue([params.append, (connection as FileConnection).append], false) }
+	Boolean getAppend () { BoolUtils.IsValue([params.append, (connection as FileConnection).append], false) }
 	/**
 	 * Append if file exists
 	 */
-	void setAppend (boolean value) { params.append = value }
+	void setAppend (Boolean value) { params.append = value }
 	
 	/**
 	 * Auto create path for connection
 	 */
-	boolean getCreatePath () { BoolUtils.IsValue([params.createPath, (connection as FileConnection).createPath], false) }
+	Boolean getCreatePath () { BoolUtils.IsValue([params.createPath, (connection as FileConnection).createPath], false) }
 	/**
 	 * Auto create path for connection
 	 */
-	void setCreatePath (boolean value) { params.createPath = value }
+	void setCreatePath (Boolean value) { params.createPath = value }
 	
 	/**
 	 * Delete file if empty after write
 	 */
-	boolean getDeleteOnEmpty () { BoolUtils.IsValue([params.deleteOnEmpty, (connection as FileConnection).deleteOnEmpty], false) }
+	Boolean getDeleteOnEmpty () { BoolUtils.IsValue([params.deleteOnEmpty, (connection as FileConnection).deleteOnEmpty], false) }
 	/**
 	 * Delete file if empty after write
 	 */
-	void setDeleteOnEmpty (boolean value) { params.deleteOnEmpty = value }
+	void setDeleteOnEmpty (Boolean value) { params.deleteOnEmpty = value }
 	
 	/**
 	 * File is pack of GZIP
 	 */
-	boolean getIsGzFile() { BoolUtils.IsValue([params.isGzFile, (connection as FileConnection).isGzFile], false) }
+	Boolean getIsGzFile() { BoolUtils.IsValue([params.isGzFile, (connection as FileConnection).isGzFile], false) }
 	/**
 	 * File is pack of GZIP
 	 */
-	void setIsGzFile (boolean value) { params.isGzFile = value }
+	void setIsGzFile (Boolean value) { params.isGzFile = value }
 	
 	/**
-	 * Extenstion for file
+	 * Extension for file
 	 */
-	String getExtension () { ListUtils.NotNullValue([params.extension, (connection as FileConnection).extension]) }
+	String getExtension () { ListUtils.NotNullValue([params.extension as String, (connection as FileConnection).extension]) }
 	/**
-	 * Extenstion for file
+	 * Extension for file
 	 */
 	void setExtension (String value) { params.extension = value }
 	
 	/**
 	 * Size of read/write buffer size
 	 */
-	Integer getBufferSize () { ListUtils.NotNullValue([params.bufferSize, (connection as FileConnection).bufferSize, 1*1024*1024]) as Integer }
+	Integer getBufferSize () { ListUtils.NotNullValue([params.bufferSize as Integer, (connection as FileConnection).bufferSize, 1*1024*1024]) as Integer }
 	/**
 	 * Size of read/write buffer size
 	 */
 	void setBufferSize(Integer value)  { params.bufferSize = value }
 	
 	@Override
+	@JsonIgnore
 	String getObjectName() { (fileName != null)?(fileName + ((extension != null)?".${extension}":'')):'file' }
 	
 	@Override
+	@JsonIgnore
 	String getObjectFullName() { fullFileName() }
 	
 	/**
@@ -139,7 +120,7 @@ class FileDataset extends Dataset {
 		return drv?.fullFileNameDataset(this)
 	}
 
-	/** File name with extenstion */
+	/** File name with extension */
 	String fileNameWithExt() {
 		objectName
 	}
@@ -156,7 +137,7 @@ class FileDataset extends Dataset {
 	/**
 	 * Return file mask 
 	 */
-	String fileMaskDataset(Dataset dataset, boolean isSplit) {
+	String fileMaskDataset(Dataset dataset, Boolean isSplit) {
 		FileDriver drv = connection.driver as FileDriver
 		
 		return drv.fileMaskDataset(this, isSplit)
@@ -174,11 +155,13 @@ class FileDataset extends Dataset {
 	/**
 	 * Valid existing file
 	 */
-	boolean existsFile() { new File(fullFileName()).exists() }
-
-	final List<FileWriteOpts> writedFiles = [] as List<FileWriteOpts>
+	Boolean existsFile() { new File(fullFileName()).exists() }
 
 	/** List of writed files */
+	private final List<FileWriteOpts> writedFiles = [] as List<FileWriteOpts>
+
+	/** List of writed files */
+	@JsonIgnore
 	List<FileWriteOpts> getWritedFiles() { writedFiles }
 	
 	@Override

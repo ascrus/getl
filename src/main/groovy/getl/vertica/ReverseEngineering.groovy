@@ -1,26 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.vertica
 
 import getl.data.Field
@@ -48,7 +25,7 @@ import java.util.regex.Matcher
  */
 @InheritConstructors
 class ReverseEngineering extends Job {
-	final static version = 1.1
+	static public final BigDecimal version = 1.1
 
 	VerticaConnection cVertica = new VerticaConnection(config: "vertica")
 	def tVersion = new QueryDataset(connection: cVertica, query: 'SELECT Version() AS version')
@@ -240,7 +217,7 @@ Example:
 	 * @param quote
 	 * @return
 	 */
-	static String stat(String pattern, def value, boolean quote = false) {
+	static String stat(String pattern, def value, Boolean quote = false) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -250,7 +227,7 @@ Example:
 	/**
 	 * Build reverse statement with feed line
 	 */
-	static String statln(String pattern, def value, boolean quote = false) {
+	static String statln(String pattern, def value, Boolean quote = false) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -264,7 +241,7 @@ Example:
 	 * @param quote
 	 * @return
 	 */
-	static String par(String param, def value, boolean quote = false) {
+	static String par(String param, def value, Boolean quote = false) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''
@@ -278,7 +255,7 @@ Example:
 	 * @param quote
 	 * @return
 	 */
-	static String parln(String param, def value, boolean quote = false) {
+	static String parln(String param, def value, Boolean quote = false) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
 		if (quote) value = '\'' + value.toString() + '\''

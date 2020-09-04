@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.vertica
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset
 import getl.data.Connection
 import getl.data.Field
@@ -60,6 +37,7 @@ class VerticaTable extends TableDataset {
     }
 
     /** Current Vertica connection */
+    @JsonIgnore
     VerticaConnection getCurrentVerticaConnection() { connection as VerticaConnection }
 
     @Override
@@ -138,7 +116,7 @@ class VerticaTable extends TableDataset {
      * @param finishPartition partition finish parameter
      * @return parameter processing result
      */
-    protected Map<String, Object> processPartitionParams(def startPartition, def finishPartition, boolean truncateToDate) {
+    protected Map<String, Object> processPartitionParams(def startPartition, def finishPartition, Boolean truncateToDate) {
         def res = [:] as Map<String, Object>
 
         if (startPartition instanceof String || startPartition instanceof GString)
@@ -172,7 +150,7 @@ class VerticaTable extends TableDataset {
      * @param finishPartition partition finish parameter
      * @param needFinishParam The finish parameter must be filled
      */
-    private void validPartitionParams(def startPartition, def finishPartition, boolean needFinishParam) {
+    private void validPartitionParams(def startPartition, def finishPartition, Boolean needFinishParam) {
         if (startPartition == null)
             throw new ExceptionGETL('Required value for parameter "startPartition"!')
         if (needFinishParam && finishPartition == null)
@@ -188,7 +166,7 @@ class VerticaTable extends TableDataset {
      * @return function result
      */
     String dropPartitions(def startPartition, def finishPartition,
-                       boolean isSplit = false, boolean truncateToDate = true) {
+                          Boolean isSplit = false, Boolean truncateToDate = true) {
         validTableName()
         validPartitionParams(startPartition, finishPartition, true)
         def part = processPartitionParams(startPartition, finishPartition, truncateToDate)
@@ -215,7 +193,7 @@ class VerticaTable extends TableDataset {
      * @return function result
      */
     String copyPartitionsToTable(def startPartition, def finishPartition, VerticaTable destinationTable,
-                                 boolean isSplit = false, boolean truncateToDate = true) {
+                                 Boolean isSplit = false, Boolean truncateToDate = true) {
         validTableName()
         validPartitionParams(startPartition, finishPartition, true)
         def part = processPartitionParams(startPartition, finishPartition, truncateToDate)
@@ -249,7 +227,7 @@ class VerticaTable extends TableDataset {
      * @return function result
      */
     String movePartitionsToTable(def startPartition, def finishPartition, VerticaTable destinationTable,
-                                 boolean isSplit = false, boolean truncateToDate = true) {
+                                 Boolean isSplit = false, Boolean truncateToDate = true) {
         validTableName()
         validPartitionParams(startPartition, finishPartition, true)
         def part = processPartitionParams(startPartition, finishPartition, truncateToDate)
@@ -283,7 +261,7 @@ class VerticaTable extends TableDataset {
      * @return function result
      */
     String swapPartitionsBetweenTables(def startPartition, def finishPartition, VerticaTable destinationTable,
-                                       boolean isSplit = false, boolean truncateToDate = true) {
+                                       Boolean isSplit = false, Boolean truncateToDate = true) {
         validTableName()
         validPartitionParams(startPartition, finishPartition, true)
         def part = processPartitionParams(startPartition, finishPartition, truncateToDate)

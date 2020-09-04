@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 import getl.exception.ExceptionGETL
@@ -46,37 +22,37 @@ class DateUtils {
 	/**
 	 * Zero date
 	 */
-	public static final Date zeroDate = ParseDate('0000-00-00')
+	static public final Date zeroDate = ParseDate('0000-00-00')
 
 	/**
 	 * Default date mask
 	 */
-	public static String defaultDateMask = "yyyy-MM-dd"
+	static public String defaultDateMask = "yyyy-MM-dd"
 	/**
 	 * Default time mask
 	 */
-	public static String defaultTimeMask = "HH:mm:ss.SSS"
+	static public String defaultTimeMask = "HH:mm:ss.SSS"
 	/**
 	 * Default datetime mask
 	 */
-	public static String defaultDateTimeMask = "yyyy-MM-dd HH:mm:ss.SSS"
+	static public String defaultDateTimeMask = "yyyy-MM-dd HH:mm:ss.SSS"
 
-	public final static String origTimeZone = TimeZone.default.toZoneId().id
+	static public final String origTimeZone = TimeZone.default.toZoneId().id
 
 	/**
 	 * Init time zone offset at milliseconds
 	 */
-	public final static int origTimeZoneOffs = TimeZone.default.rawOffset
+	static public final Integer origTimeZoneOffs = TimeZone.default.rawOffset
 
 	/**
 	 * Default time zone offset at milliseconds
 	 */
-	public static int defaultTimeZoneOffs = TimeZone.default.rawOffset
+	static public Integer defaultTimeZoneOffs = TimeZone.default.rawOffset
 
 	/**
 	 * Offset between machine and need time zone
 	 */
-	public static int offsTimeZone = 0
+	static public Integer offsTimeZone = 0
 
 	/**
 	 * Init class
@@ -128,7 +104,7 @@ class DateUtils {
 	 * @param value
 	 * @return
 	 */
-	static Date ParseDate(String format, def value, boolean ignoreError = true) {
+	static Date ParseDate(String format, def value, Boolean ignoreError = true) {
 		Date result = null
 		if (value == null) return result
 		try {
@@ -153,7 +129,7 @@ class DateUtils {
 	 * @param ignoreError
 	 * @return
 	 */
-	static Date ParseDate(SimpleDateFormat sdf, def value, boolean ignoreError = true) {
+	static Date ParseDate(SimpleDateFormat sdf, def value, Boolean ignoreError = true) {
 		Date result = null
 		if (value == null) return result
 		try {
@@ -182,7 +158,7 @@ class DateUtils {
 	 * @param ignoreError
 	 * @return
 	 */
-	static java.sql.Date ParseSQLDate(String format, def value, boolean ignoreError = true) {
+	static java.sql.Date ParseSQLDate(String format, def value, Boolean ignoreError = true) {
 		java.sql.Date result = null
 		if (value == null) return result
 		try {
@@ -205,7 +181,7 @@ class DateUtils {
 	 * @param ignoreError
 	 * @return
 	 */
-	static Time ParseSQLTime(String format, def value, boolean ignoreError = true) {
+	static Time ParseSQLTime(String format, def value, Boolean ignoreError = true) {
 		Time result = null
 		if (value == null) return result
 		try {
@@ -228,7 +204,7 @@ class DateUtils {
 	 * @param ignoreError
 	 * @return
 	 */
-	static Timestamp ParseSQLTimestamp(String format, def value, boolean ignoreError = true) {
+	static Timestamp ParseSQLTimestamp(String format, def value, Boolean ignoreError = true) {
 		Timestamp result = null
 		if (value == null) return result
 		try {
@@ -310,7 +286,7 @@ class DateUtils {
 	 * @param date - date value
 	 * @return
 	 */
-	static Date TruncTime(int part, Date date) {
+	static Date TruncTime(Integer part, Date date) {
 		if (date == null) return null
 
 		Calendar c = Calendar.getInstance()
@@ -433,7 +409,7 @@ class DateUtils {
 	 * @param date
 	 * @return
 	 */
-	static Date AddDate(String dateType, int nb, Date date) {
+	static Date AddDate(String dateType, Integer nb, Date date) {
 		if (date == null) return null
 
 		Calendar c1 = Calendar.getInstance()
@@ -468,12 +444,12 @@ class DateUtils {
 	 * @param ignoreDST
 	 * @return
 	 */
-	static long DiffDate(Date date1, Date date2, String dateType, boolean ignoreDST = false) {
+	static Long DiffDate(Date date1, Date date2, String dateType, Boolean ignoreDST = false) {
 		// ignore DST
-		int addDSTSavings = 0
+		def addDSTSavings = 0
 		if (ignoreDST) {
-			boolean d1In = TimeZone.getDefault().inDaylightTime(date1)
-			boolean d2In = TimeZone.getDefault().inDaylightTime(date2)
+			def d1In = TimeZone.getDefault().inDaylightTime(date1)
+			def d2In = TimeZone.getDefault().inDaylightTime(date2)
 			if (d1In != d2In) {
 				if (d1In) {
 					addDSTSavings = TimeZone.getDefault().getDSTSavings()
@@ -496,7 +472,7 @@ class DateUtils {
 			def diff = (c1.get(Calendar.DAY_OF_MONTH) < c2.get(Calendar.DAY_OF_MONTH))?1:0
 			return (c1.get(Calendar.YEAR) - c2.get(Calendar.YEAR)) * 12 + (c1.get(Calendar.MONTH) - c2.get(Calendar.MONTH)) - diff
 		} else {
-			long diffTime = date1.getTime() - date2.getTime() + addDSTSavings
+			def diffTime = date1.getTime() - date2.getTime() + addDSTSavings
 
 			if (dateType.equalsIgnoreCase("HH")) {
 				return (Long)diffTime.intdiv(1000 * 60 * 60)
@@ -521,11 +497,11 @@ class DateUtils {
 	 * @param date the date value.
 	 * @return the specified part value.
 	 */
-	static int PartOfDate(String partName, Date date) {
+	static Integer PartOfDate(String partName, Date date) {
 		if (/*partName == null || */date == null) return 0
 		partName = partName.toUpperCase()
 
-		int ret = 0
+		def ret = 0
 		String[] fieldsName = ["YEAR", "MONTH", "HOUR", "MINUTE", "SECOND", "DAY_OF_WEEK", "DAY_OF_MONTH", "DAY_OF_YEAR",
 				"WEEK_OF_MONTH", "DAY_OF_WEEK_IN_MONTH", "WEEK_OF_YEAR", "TIMEZONE" ]
 		List<String> filedsList = Arrays.asList(fieldsName)

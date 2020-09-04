@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.csv
 
 import getl.csv.proc.CSVConvertToNullProcessor
@@ -30,12 +6,10 @@ import getl.csv.proc.CSVEscapeTokenizer
 import getl.csv.proc.CSVFmtBlob
 import getl.csv.proc.CSVFmtClob
 import getl.csv.proc.CSVFmtDate
-import getl.csv.proc.CSVFmtEscapeString
 import getl.csv.proc.CSVParseBlob
 import getl.csv.proc.CSVParseEscapeString
 import getl.data.opts.FileWriteOpts
 import groovy.transform.CompileStatic
-import groovy.transform.InheritConstructors
 import org.codehaus.groovy.runtime.StringBufferWriter
 
 import java.text.DecimalFormat
@@ -91,7 +65,7 @@ class CSVDriver extends FileDriver {
 		def quote
 		def fieldDelimiter
 		def rowDelimiter
-		boolean isHeader
+		Boolean isHeader
 		def qMode
 		def isSplit
 		String nullAsValue
@@ -127,8 +101,8 @@ class CSVDriver extends FileDriver {
 		QuoteMode qMode
 		switch ((dataset as CSVDataset).quoteMode) {
 			case CSVDataset.QuoteMode.COLUMN:
-				boolean[] b = new boolean[dataset.field.size()]
-                for (int i = 0; i < dataset.field.size(); i++) {
+				def b = new boolean[dataset.field.size()]
+                for (Integer i = 0; i < dataset.field.size(); i++) {
                     if (dataset.field[i].type in [Field.Type.STRING, Field.Type.TEXT] || dataset.field[i].extended?."quote") b[i] = true
                 }
 				qMode = new ColumnQuoteMode(b)
@@ -366,7 +340,7 @@ class CSVDriver extends FileDriver {
 			}
 			else {
 				name = name.toLowerCase()
-				int i = dataset.indexOfField(name)
+				def i = dataset.indexOfField(name)
 				String fi = fields.find { (it.toLowerCase() == name.toLowerCase()) } 
 				if (i == -1 || (!fields.isEmpty() && fi == null)) {
 					cp << new Optional()
@@ -402,7 +376,7 @@ class CSVDriver extends FileDriver {
 
 	@CompileStatic
 	@Override
-	long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	Long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (code == null)
 			throw new ExceptionGETL('Required process code')
 		
@@ -410,16 +384,16 @@ class CSVDriver extends FileDriver {
 		if (cds.fileName == null)
 			throw new ExceptionGETL('Dataset required fileName')
 		
-		boolean escaped = BoolUtils.IsValue(params.escaped, cds.escaped)
-		boolean readAsText = BoolUtils.IsValue(params.readAsText)
-		boolean ignoreHeader = BoolUtils.IsValue(params.ignoreHeader, true)
-		Long skipRows = (params.skipRows as Long)?:0L
-		Long limit = (params.long as Long)?:0L
+		def escaped = BoolUtils.IsValue(params.escaped, cds.escaped)
+		def readAsText = BoolUtils.IsValue(params.readAsText)
+		def ignoreHeader = BoolUtils.IsValue(params.ignoreHeader, true)
+		def skipRows = (params.skipRows as Long)?:0L
+		def limit = (params.limit as Long)?:0L
 
-		Closure filter = (Closure)params."filter"
+		def filter = params.filter as Closure
 
 		def p = readParamDataset(cds, params)
-		long countRec = 0
+		def countRec = 0L
 		Boolean isSplit = BoolUtils.IsValue(p.isSplit)
 
 		def fileMask = fileMaskDataset(cds, isSplit)
@@ -447,7 +421,7 @@ class CSVDriver extends FileDriver {
 		}
 
 		Closure processError = (params.processError != null)?params.processError as Closure:null
-		boolean isValid = BoolUtils.IsValue([params.isValid, cds.constraintsCheck], false)
+		def isValid = BoolUtils.IsValue([params.isValid, cds.constraintsCheck], false)
 		CsvPreference pref = new CsvPreference.Builder((char)p.quoteStr, (int)p.fieldDelimiter, (String)p.rowDelimiter).useQuoteMode((QuoteMode)p.qMode).build()
 		CsvMapReader reader
 		if (escaped) {
@@ -484,18 +458,18 @@ class CSVDriver extends FileDriver {
 			
 			CellProcessor[] cp = fields2cellProcessor([dataset: dataset, fields: listFields, header: header, isOptional: readAsText, isWrite: false, isValid: isValid, isEscape: escaped, nullAsValue: p.nullAsValue])
 			
-			long count = (params.limit != null)?(long)params.limit:0
-			long cur = 0
+			def count = (params.limit != null)?params.limit as Long:0L
+			def cur = 0L
 			while (true) {
 				Map row
-				boolean isError = false
+				def isError = false
 				try {
 					cur++
 					if (limit > 0 && cur > limit) break
 					row = reader.read(header, cp)
 				}
 				catch (Exception e) {
-					boolean isContinue = (processError != null)?processError(e, cur + 1):false
+					def isContinue = (processError != null)?processError(e, cur + 1):false
 					if (!isContinue) throw e
 					isError = true
 				}
@@ -535,40 +509,40 @@ class CSVDriver extends FileDriver {
 		}
 		finally {
 			reader.close()
-			dataset.params.countReadPortions = portion + 1
+			dataset.sysParams.countReadPortions = portion + 1
 		}
 		
 		return countRec
 	}
 	
 	class WriterParams {
-		ICsvMapWriter writer
-		CSVDefaultFileEncoder encoder
-		CsvPreference pref
-		String[] header
-		String headerStr
-		CellProcessor[] cp
-		Map params
-		boolean isHeader = false
-		String quote
-		String nullAsValue
-		boolean escaped
-		List<Integer> escapedColumns
-		Long splitSize
-		boolean formatOutput = true
-		long batchSize = 500L
-		List<Map> rows = new LinkedList<Map>()
-		long current = 0
-		long batch = 0
-		long fieldDelimiterSize = 0
-		long rowDelimiterSize = 0
-		int countFields = 0
-		Closure onSaveBatch
-		Closure onSplitFile
-		Writer bufWriter
-		Integer portion
-		long countCharacters = 0
-		FileWriteOpts opt
+		public ICsvMapWriter writer
+		public CSVDefaultFileEncoder encoder
+		public CsvPreference pref
+		public String[] header
+		public String headerStr
+		public CellProcessor[] cp
+		public Map params
+		public Boolean isHeader = false
+		public String quote
+		public String nullAsValue
+		public Boolean escaped
+		public List<Integer> escapedColumns
+		public Long splitSize
+		public Boolean formatOutput = true
+		public Long batchSize = 500L
+		public List<Map> rows = new LinkedList<Map>()
+		public Long current = 0L
+		public Long batch = 0L
+		public Long fieldDelimiterSize = 0L
+		public Long rowDelimiterSize = 0L
+		public Integer countFields = 0
+		public Closure onSaveBatch
+		public Closure onSplitFile
+		public Writer bufWriter
+		public Integer portion
+		public Long countCharacters = 0L
+		public FileWriteOpts opt
 
 		void free() {
 			writer = null
@@ -589,13 +563,13 @@ class CSVDriver extends FileDriver {
 		if (csv_ds.fileName == null) throw new ExceptionGETL('Dataset required fileName')
 		
 		WriterParams wp = new WriterParams()
-		dataset.driver_params = wp
+		dataset._driver_params = wp
 		wp.formatOutput = csv_ds.formatOutput
 
 		ReadParams p = readParamDataset(csv_ds, params)
-		boolean isAppend = BoolUtils.IsValue(p.params.isAppend)
-		boolean isValid = BoolUtils.IsValue([params.isValid, csv_ds.constraintsCheck], false)
-		boolean escaped = BoolUtils.IsValue(params.escaped, csv_ds.escaped)
+		Boolean isAppend = BoolUtils.IsValue(p.params.isAppend)
+		Boolean isValid = BoolUtils.IsValue([params.isValid, csv_ds.constraintsCheck], false)
+		Boolean escaped = BoolUtils.IsValue(params.escaped, csv_ds.escaped)
 		String formatDate = ListUtils.NotNullValue([params.formatDate, csv_ds.formatDate])
 		String formatTime = ListUtils.NotNullValue([params.formatTime, csv_ds.formatTime])
 		String formatDateTime = ListUtils.NotNullValue([params.formatDateTime, csv_ds.formatDateTime])
@@ -641,9 +615,6 @@ class CSVDriver extends FileDriver {
 
         csv_ds.params.writeCharacters = null
 		
-//		File csvfile = new File(p.path)
-//		boolean isExistsFile = csvfile.exists()
-		
 		wp.bufWriter = getFileWriter(csv_ds, wp.params, wp.portion)
 		wp.opt = (dataset as FileDataset).writedFiles[(wp.portion?:1) - 1]
 		
@@ -672,13 +643,13 @@ class CSVDriver extends FileDriver {
 	}
 
 	@Override
-	protected boolean fileHeader(FileDataset dataset) {
-		return (dataset.driver_params as WriterParams).isHeader
+	protected Boolean fileHeader(FileDataset dataset) {
+		return (dataset._driver_params as WriterParams).isHeader
 	}
 
 	@Override
 	protected void saveHeaderToFile(FileDataset dataset, File file) {
-		def wp = (dataset.driver_params as WriterParams)
+		def wp = (dataset._driver_params as WriterParams)
 		file.write(wp.headerStr, dataset.codePage, false)
 	}
 	
@@ -701,7 +672,7 @@ class CSVDriver extends FileDriver {
 					wp.opt.countRows = wp.opt.countRows + 1
 					
 					if ((wp.splitSize != null && wp.encoder.writeSize >= wp.splitSize) || (wp.splitSize == null && wp.onSplitFile != null)) {
-						boolean splitFile = true
+						def splitFile = true
 						if (wp.onSplitFile != null) {
 							splitFile = wp.onSplitFile.call(row)
 						}
@@ -728,7 +699,7 @@ class CSVDriver extends FileDriver {
 					wp.opt.countRows = wp.opt.countRows + 1
 
 					if ((wp.splitSize != null && wp.encoder.writeSize >= wp.splitSize) || (wp.splitSize == null && wp.onSplitFile != null)) {
-						boolean splitFile = true
+						def splitFile = true
 						if (wp.onSplitFile != null) {
 							splitFile = wp.onSplitFile.call(row)
 						}
@@ -756,7 +727,7 @@ class CSVDriver extends FileDriver {
 	@CompileStatic
 	@Override
 	void write(Dataset dataset, Map row) {
-		WriterParams wp = (dataset.driver_params as WriterParams)
+		WriterParams wp = (dataset._driver_params as WriterParams)
 		wp.rows << row
 		wp.current++
 		
@@ -765,13 +736,13 @@ class CSVDriver extends FileDriver {
 
 	@Override
 	void doneWrite (Dataset dataset) {
-		def wp = (dataset.driver_params as WriterParams)
+		def wp = (dataset._driver_params as WriterParams)
 		if (!wp.rows.isEmpty()) writeRows(dataset, wp)
 	}
 
 	@Override
 	void closeWrite(Dataset dataset) {
-		def wp = (dataset.driver_params as WriterParams)
+		def wp = (dataset._driver_params as WriterParams)
 		
 		try {
 			wp.writer.close()
@@ -779,8 +750,8 @@ class CSVDriver extends FileDriver {
 		finally {
 			wp.countCharacters += wp.encoder.writeSize
 			
-			dataset.params.countWriteCharacters = wp.countCharacters
-			dataset.params.countWritePortions = wp.portion
+			dataset.sysParams.countWriteCharacters = wp.countCharacters
+			dataset.sysParams.countWritePortions = wp.portion
 
 			wp.free()
 		}
@@ -789,11 +760,11 @@ class CSVDriver extends FileDriver {
 			super.closeWrite(dataset)
 		}
 		finally {
-			dataset.driver_params = null
+			dataset._driver_params = null
 		}
 	}
 
-	protected static long readLinesCount(CSVDataset dataset) {
+	protected static Long readLinesCount(CSVDataset dataset) {
 		if (!dataset.existsFile())
 			throw new ExceptionGETL("File \"${dataset.fullFileName()}\" not found")
 
@@ -808,8 +779,8 @@ class CSVDriver extends FileDriver {
 		else {
 			reader = new File(dataset.fullFileName()).newReader(dataset.codePage)
 		}
-		
-		long count = 0
+
+		def count = 0L
 		
 		try {
 			def str = reader.readLine(true)
@@ -826,7 +797,7 @@ class CSVDriver extends FileDriver {
 	}
 
 	@SuppressWarnings("DuplicatedCode")
-	static long prepareCSVForBulk(CSVDataset target, CSVDataset source, Map<String, String> encodeTable, Closure code) {
+	static Long prepareCSVForBulk(CSVDataset target, CSVDataset source, Map<String, String> encodeTable, Closure code) {
 		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
 		if (!(source.rowDelimiter in ['\n', '\r\n'])) throw new ExceptionGETL('Allow convert CSV files only standart row delimiter')
 
@@ -844,7 +815,7 @@ class CSVDriver extends FileDriver {
 		String sourceFieldDelimiter = source.fieldDelimiter
 		String sourceFieldDelimiterLast = sourceFieldDelimiter + '\u0000'
 		String targetFieldDelimiter = target.fieldDelimiter
-		boolean source_escaped = source.escaped
+		def source_escaped = source.escaped
 		String sourceQuoteStr = source.quoteStr
 		String targetQuoteStr = target.quoteStr
 		
@@ -875,7 +846,7 @@ class CSVDriver extends FileDriver {
 			}
 		}
 		
-		long count = 0
+		def count = 0L
 		
 		BufferedReader reader
 		if (source.isGzFile) {
@@ -899,7 +870,7 @@ class CSVDriver extends FileDriver {
 			try {
 				StringBuilder bufStr = new StringBuilder()
 				String readStr = reader.readLine(true)
-				boolean isQuoteFirst = false
+				def isQuoteFirst = false
 				List<String> values = []
 				
 				// Read lines
@@ -913,8 +884,8 @@ class CSVDriver extends FileDriver {
 					
 					// Split columns by field delimiter
 					List<String> cols = readStr.split(splitFieldDelimiter).toList()
-					int colsSize = cols.size() - 1
-					for (int colI = 0; colI < colsSize; colI++) {
+					def colsSize = cols.size() - 1
+					for (Integer colI = 0; colI < colsSize; colI++) {
 						String value = cols[colI]
 						
 						// Prev column not quoted
@@ -990,14 +961,14 @@ class CSVDriver extends FileDriver {
 	
 	protected static void convertCSVValues (List<String> values, Map<String, String> convertMap, Closure code) {
 		convertMap.each { String oldStr, String newStr ->
-			for (int i = 0; i < values.size(); i++) { values[i] = values[i].replace(oldStr, newStr) }
+			for (Integer i = 0; i < values.size(); i++) { values[i] = values[i].replace(oldStr, newStr) }
 		}
 
 		if (code != null) code.call(values)
 	}
 
 	@SuppressWarnings("DuplicatedCode")
-	static long decodeBulkCSV (CSVDataset target, CSVDataset source) {
+	static Long decodeBulkCSV (CSVDataset target, CSVDataset source) {
 		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
 		
 		if (source.field.isEmpty() && source.autoSchema) source.loadDatasetMetadata()
@@ -1031,7 +1002,7 @@ class CSVDriver extends FileDriver {
 			reader = new BufferedReader(new InputStreamReader(new FileInputStream(source.fullFileName()), source.codePage), 64*1024)
 		}
 		
-		long count = 0
+		def count = 0L
 
 		try {
 			BufferedWriter writer

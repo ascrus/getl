@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.data
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileDatasetRetrieveObjectsSpec
 import getl.exception.ExceptionGETL
 import getl.driver.FileDriver
@@ -63,7 +40,7 @@ class FileConnection extends Connection {
 	}
 	
 	/** Connection path */
-	String getPath () { params.path }
+	String getPath () { params.path as String }
 	/** Connection path */
 	void setPath (String value) {
 		if (value != null) {
@@ -75,39 +52,39 @@ class FileConnection extends Connection {
 	}
 	
 	/** Code page for connection files */
-	String getCodePage () { params.codePage }
+	String getCodePage () { params.codePage as String }
 	/** Code page for connection files */
 	void setCodePage (String value) { params.codePage = value }
 
 	/** Auto create path if not exists */
-	Boolean getCreatePath () { params.createPath }
+	Boolean getCreatePath () { params.createPath as Boolean }
 	/** Auto create path if not exists */
-	void setCreatePath(boolean value) { params.createPath = value }
+	void setCreatePath(Boolean value) { params.createPath = value }
 	
 	/** Delete file if empty after write */
-	Boolean getDeleteOnEmpty () { params.deleteOnEmpty }
+	Boolean getDeleteOnEmpty () { params.deleteOnEmpty as Boolean }
 	/** Delete file if empty after write */
-	void setDeleteOnEmpty (boolean value) { params.deleteOnEmpty = value }
+	void setDeleteOnEmpty (Boolean value) { params.deleteOnEmpty = value }
 	
 	/** Append to exists connection files */
-	Boolean getAppend () { params.append }
+	Boolean getAppend () { params.append as Boolean }
 	/** Append to exists connection files */
-	void setAppend (boolean value) { params.append = value }
+	void setAppend (Boolean value) { params.append = value }
 	
 	/** Pack GZIP connection files */
-	Boolean getIsGzFile() { params.isGzFile }
+	Boolean getIsGzFile() { params.isGzFile as Boolean }
 	/** Pack GZIP connection files */
-	void setIsGzFile (boolean value) { params.isGzFile = value }
+	void setIsGzFile (Boolean value) { params.isGzFile = value }
 	
 	/** Extenstion for connection files */
-	String getExtension () { params.extension }
+	String getExtension () { params.extension as String }
 	/** Extenstion for connection files */
 	void setExtension (String value) { params.extension = value }
 
 	/** File separator in path */
-	String getFileSeparator () { params."fileSeparator"?:File.separator }
+	String getFileSeparator () { (params.fileSeparator as String)?:File.separator }
 	/** File separator in path */
-	void setFileSeparator (String value ) { params."fileSeparator" = value }
+	void setFileSeparator (String value ) { params.fileSeparator = value }
 	
 	/** Size of read/write buffer size */
 	Integer getBufferSize () { (params.bufferSize as Integer)?:1*1024*1024 }
@@ -115,10 +92,11 @@ class FileConnection extends Connection {
 	void setBufferSize(Integer value)  { params.bufferSize = value }
 
 	/** Exists path for connection */
+	@JsonIgnore
 	Boolean getExists() { (path != null)?new File(path).exists():null }
 
 	/** Delete path of connection */
-	boolean deletePath () {
+	Boolean deletePath () {
 		if (path == null) return false
 		def p = new File(path)
 		if (!p.exists()) return false
@@ -145,5 +123,6 @@ class FileConnection extends Connection {
 	}
 
 	@Override
+	@JsonIgnore
 	String getObjectName() { (path != null)?"file:$path":'[NONE]' }
 }

@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.lang
 
 import getl.config.*
@@ -318,7 +294,7 @@ Examples:
 
     /** Checking process permission */
     @Synchronized
-    boolean allowProcess(String processName, Boolean throwError = false) {
+    Boolean allowProcess(String processName, Boolean throwError = false) {
         def res = true
         if (_langOpts.processControlDataset != null) {
             if (processName == null) processName = (_params.mainClass)?:this.getClass().name
@@ -356,7 +332,7 @@ Examples:
     }
 
     /** Checking process permission */
-    boolean allowProcess(Boolean throwError = false) {
+    Boolean allowProcess(Boolean throwError = false) {
         allowProcess(null, throwError)
     }
 
@@ -387,10 +363,10 @@ Examples:
     }
 
     /** Instance of GETL DSL */
-    private static Getl _getl
+    static private Getl _getl
 
     /** The object is a static instance */
-    private boolean _getlInstance = false
+    private Boolean _getlInstance = false
 
     /** Set current Getl instance */
     protected _setGetlInstance() {
@@ -416,7 +392,7 @@ Examples:
     }
 
     /** check that Getl instance is created */
-    static boolean GetlInstanceCreated() { _getl != null }
+    static Boolean GetlInstanceCreated() { _getl != null }
 
     /* Owner object for instance DSL */
     private Object _ownerObject
@@ -457,7 +433,7 @@ Examples:
     }
 
     /** Clean Getl instance */
-    static void CleanGetl(boolean softClean = false) {
+    static void CleanGetl(Boolean softClean = false) {
         if (softClean && _getl != null) {
             _getl = _getl.getClass().newInstance()
             _getl._getlInstance = true
@@ -598,7 +574,7 @@ Examples:
     }
 
     /** Repository object name */
-    String repObjectName(String name, boolean checkName = false) {
+    String repObjectName(String name, Boolean checkName = false) {
         _repositoryFilter.objectName(name, checkName)
     }
 
@@ -807,7 +783,7 @@ Examples:
      * @param ignoreExists don't load existing ones (default true)
      * @return number of registered connections
      */
-    int registerConnectionsFromStorage(String mask, String env, Boolean ignoreExists = true) {
+    Integer registerConnectionsFromStorage(String mask, String env, Boolean ignoreExists = true) {
         return repositoryStorageManager().loadRepository(RepositoryConnections, mask, env, ignoreExists)
     }
 
@@ -817,7 +793,7 @@ Examples:
      * @param ignoreExists don't load existing ones (default true)
      * @return number of registered connections
      */
-    int registerConnectionsFromStorage(String mask = null, Boolean ignoreExists = true) {
+    Integer registerConnectionsFromStorage(String mask = null, Boolean ignoreExists = true) {
         return repositoryStorageManager().loadRepository(RepositoryConnections, mask, null, ignoreExists)
     }
 
@@ -826,7 +802,7 @@ Examples:
      * @param ignoreExists don't load existing ones
      * @return number of registered connections
      */
-    int registerConnectionsFromStorage(Boolean ignoreExists) {
+    Integer registerConnectionsFromStorage(Boolean ignoreExists) {
         return repositoryStorageManager().loadRepository(RepositoryConnections, null, null, ignoreExists)
     }
 
@@ -1039,7 +1015,7 @@ Examples:
     }
 
     /** Default JDBC connection for datasets */
-    private def _defaultJDBCConnection = new ConcurrentHashMap<String, JDBCConnection>()
+    private ConcurrentHashMap<String, JDBCConnection> _defaultJDBCConnection = new ConcurrentHashMap<String, JDBCConnection>()
 
     /** Default JDBC connection for datasets */
     JDBCConnection defaultJdbcConnection(String datasetClassName = null) {
@@ -1103,7 +1079,7 @@ Examples:
         }
     }
 
-    private def _defaultFileConnection = new ConcurrentHashMap<String, FileConnection>()
+    private ConcurrentHashMap<String, FileConnection> _defaultFileConnection = new ConcurrentHashMap<String, FileConnection>()
 
     /** Default file connection for datasets */
     FileConnection defaultFileConnection(String datasetClassName = null) {
@@ -1166,7 +1142,7 @@ Examples:
         }
     }
 
-    private def _defaultOtherConnection = new ConcurrentHashMap<String, Connection>()
+    private ConcurrentHashMap<String, Connection> _defaultOtherConnection = new ConcurrentHashMap<String, Connection>()
 
     /** Default other type connection for datasets */
     Connection defaultOtherConnection(String datasetClassName = null) {
@@ -1263,7 +1239,7 @@ Examples:
      * @param ignoreExists don't load existing ones (default true)
      * @return number of registered datasets
      */
-    int registerDatasetsFromStorage(String mask, String env, Boolean ignoreExists = true) {
+    Integer registerDatasetsFromStorage(String mask, String env, Boolean ignoreExists = true) {
         return repositoryStorageManager().loadRepository(RepositoryDatasets, mask, env, ignoreExists)
     }
 
@@ -1273,7 +1249,7 @@ Examples:
      * @param ignoreExists don't load existing ones (default true)
      * @return number of registered datasets
      */
-    int registerDatasetsFromStorage(String mask = null, Boolean ignoreExists = true) {
+    Integer registerDatasetsFromStorage(String mask = null, Boolean ignoreExists = true) {
         return repositoryStorageManager().loadRepository(RepositoryDatasets, mask, null, ignoreExists)
     }
 
@@ -1282,7 +1258,7 @@ Examples:
      * @param ignoreExists don't load existing ones
      * @return number of registered datasets
      */
-    int registerDatasetsFromStorage(Boolean ignoreExists) {
+    Integer registerDatasetsFromStorage(Boolean ignoreExists) {
         return repositoryStorageManager().loadRepository(RepositoryDatasets, null, null, ignoreExists)
     }
 
@@ -1383,7 +1359,7 @@ Examples:
      * @param ignoreExists don't load existing ones (default true)
      * @return number of registered history point managers
      */
-    int registerHistorypointsFromStorage(String mask, String env, Boolean ignoreExists = true) {
+    Integer registerHistorypointsFromStorage(String mask, String env, Boolean ignoreExists = true) {
         return repositoryStorageManager().loadRepository(RepositoryHistorypoints, mask, env, ignoreExists)
     }
 
@@ -1393,7 +1369,7 @@ Examples:
      * @param ignoreExists don't load existing ones (default true)
      * @return number of registered history point managers
      */
-    int registerHistorypointsFromStorage(String mask = null, Boolean ignoreExists = true) {
+    Integer registerHistorypointsFromStorage(String mask = null, Boolean ignoreExists = true) {
         return repositoryStorageManager().loadRepository(RepositoryHistorypoints, mask, null, ignoreExists)
     }
 
@@ -1402,7 +1378,7 @@ Examples:
      * @param ignoreExists don't load existing ones
      * @return number of registered history point managers
      */
-    int registerHistorypointsFromStorage(Boolean ignoreExists) {
+    Integer registerHistorypointsFromStorage(Boolean ignoreExists) {
         return repositoryStorageManager().loadRepository(RepositoryHistorypoints, null, null, ignoreExists)
     }
 
@@ -1503,7 +1479,7 @@ Examples:
      * @param ignoreExists don't load existing ones (default true)
      * @return number of registered sequences
      */
-    int registerSequencesFromStorage(String mask, String env, Boolean ignoreExists = true) {
+    Integer registerSequencesFromStorage(String mask, String env, Boolean ignoreExists = true) {
         return repositoryStorageManager().loadRepository(RepositorySequences, mask, env, ignoreExists)
     }
 
@@ -1513,7 +1489,7 @@ Examples:
      * @param ignoreExists don't load existing ones (default true)
      * @return number of registered sequences
      */
-    int registerSequencesFromStorage(String mask = null, Boolean ignoreExists = true) {
+    Integer registerSequencesFromStorage(String mask = null, Boolean ignoreExists = true) {
         return repositoryStorageManager().loadRepository(RepositorySequences, mask, null, ignoreExists)
     }
 
@@ -1522,7 +1498,7 @@ Examples:
      * @param ignoreExists don't load existing ones
      * @return number of registered sequences
      */
-    int registerSequencesFromStorage(Boolean ignoreExists) {
+    Integer registerSequencesFromStorage(Boolean ignoreExists) {
         return repositoryStorageManager().loadRepository(RepositorySequences, null, null, ignoreExists)
     }
 
@@ -1667,7 +1643,7 @@ Examples:
      * @param ignoreExists don't load existing ones (default true)
      * @return number of registered file managers
      */
-    int registerFilemanagersFromStorage(String mask, String env, Boolean ignoreExists = true) {
+    Integer registerFilemanagersFromStorage(String mask, String env, Boolean ignoreExists = true) {
         return repositoryStorageManager().loadRepository(RepositoryFilemanagers, mask, env, ignoreExists)
     }
 
@@ -1677,7 +1653,7 @@ Examples:
      * @param ignoreExists don't load existing ones (default true)
      * @return number of registered file managers
      */
-    int registerFilemanagersFromStorage(String mask = null, Boolean ignoreExists = true) {
+    Integer registerFilemanagersFromStorage(String mask = null, Boolean ignoreExists = true) {
         return repositoryStorageManager().loadRepository(RepositoryFilemanagers, mask, null, ignoreExists)
     }
 
@@ -1686,7 +1662,7 @@ Examples:
      * @param ignoreExists don't load existing ones
      * @return number of registered file managers
      */
-    int registerFilemanagersFromStorage(Boolean ignoreExists) {
+    Integer registerFilemanagersFromStorage(Boolean ignoreExists) {
         return repositoryStorageManager().loadRepository(RepositoryFilemanagers, null, null, ignoreExists)
     }
 
@@ -2220,7 +2196,7 @@ Examples:
     static String getSystemTempPath() { TFS.systemPath }
 
     @SuppressWarnings("GrMethodMayBeStatic")
-    boolean isCurrentProcessInThread() { Thread.currentThread() instanceof ExecutorThread }
+    Boolean isCurrentProcessInThread() { Thread.currentThread() instanceof ExecutorThread }
 
     /** Getl options instance */
     private LangSpec _langOpts
@@ -2407,7 +2383,7 @@ Examples:
      * @return cloned dataset
      */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Dataset cloneDataset(Dataset dataset, boolean cloneConnection) {
+    Dataset cloneDataset(Dataset dataset, Boolean cloneConnection) {
         if (dataset == null)
             throw new ExceptionDSL('Need object value!')
         return (cloneConnection)?dataset.cloneDatasetConnection():dataset.cloneDataset()
@@ -2441,7 +2417,7 @@ Examples:
      * @return cloned dataset
      */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Dataset cloneDataset(String newName, Dataset dataset, boolean cloneConnection,
+    Dataset cloneDataset(String newName, Dataset dataset, Boolean cloneConnection,
                          @DelegatesTo(Dataset)
                          @ClosureParams(value = SimpleType, options = ['getl.data.Dataset']) Closure cl = null) {
         def parent = cloneDataset(dataset, cloneConnection)

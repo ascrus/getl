@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.config
 
 import getl.exception.ExceptionGETL
@@ -38,7 +14,7 @@ import groovy.json.JsonSlurper
 @SuppressWarnings("DuplicatedCode")
 class ConfigFiles extends ConfigManager {
     @Override
-    boolean getEvalVars() { true }
+    Boolean getEvalVars() { true }
 
     @SuppressWarnings("DuplicatedCode")
     @Override
@@ -69,31 +45,25 @@ class ConfigFiles extends ConfigManager {
         }
     }
 
-	/**
-	 * Path for configuration files
-	 */
+	/** Path for configuration files */
 	String getPath () { params.path as String }
-
+    /** Path for configuration files */
     void setPath (String value) {
         if (value.trim() == '') throw new ExceptionGETL('The path can not have empty value')
         params.path = value?.trim()
     }
 
-	/**
-	 * Configuration file name
-	 */
+	/** Configuration file name */
 	String getFileName () { params.fileName as String}
-
+    /** Configuration file name */
     void setFileName (String value) {
         if (value.trim() == '') throw new ExceptionGETL('The file name can not have empty value')
         params.fileName = value?.trim()
     }
 
-	/**
-	 * List of configuration files
-	 */
+	/** List of configuration files */
 	List<String> getFiles () { params.files as List<String> }
-
+    /** List of configuration files */
     void setFiles (List<String> value) {
         value.each {
             if (it == null || it.trim() == '') {
@@ -110,30 +80,26 @@ class ConfigFiles extends ConfigManager {
         this.files.addAll(value*.trim() as List<String>)
 	}
 	
-	/**
-	 * Configuration files code page
-	 */
+	/** Configuration files code page */
 	String getCodePage () { (params.codePage as String)?:'UTF-8' }
-
+    /** Configuration files code page */
     void setCodePage (String value) {
         if (value.trim() == '') throw new ExceptionGETL('Code page value can not have empty value')
         params.codePage = value
     }
 
     /**
-     * Evaluate file path for specified configuration file
-     * @param value
-     * @return
+     * Evaluate file path to specified config file
+     * @param filePath path to file
+     * @param fileName  file name
+     * @return full file path
      */
-    static String fullConfigName (String pathFile, String value) {
-        ((pathFile != null)?FileUtils.ConvertToUnixPath(pathFile) + '/':'') + value
+    static String fullConfigName (String filePath, String fileName) {
+        ((filePath != null)?FileUtils.ConvertToUnixPath(filePath) + '/':'') + fileName
     }
 
-    /**
-     * Return file path for current configuration file
-     * @return
-     */
-    String getFullName () { fullConfigName(path, fileName) }
+    /** Full file path to the current config file */
+    String getFullName () { fullConfigName(path, this.fileName) }
 
 	@Override
     void loadConfig(Map<String, Object> readParams = [:]) {
@@ -173,8 +139,9 @@ class ConfigFiles extends ConfigManager {
 	
 	/**
 	 * Load configuration from file	
-	 * @param file
-	 * @param codePage
+	 * @param file file for loading
+	 * @param codePage encoding page
+     * @return config content
 	 */
 	static Map<String, Object> LoadConfigFile (File file, String codePage) {
 		if (!file.exists()) throw new ExceptionGETL("Config file \"$file\" not found")
@@ -220,9 +187,9 @@ class ConfigFiles extends ConfigManager {
 
     /**
      * Save config to file
-     * @param data
-     * @param file
-     * @param codePage
+     * @param data content
+     * @param file config file
+     * @param codePage encoding page
      */
 	static void SaveConfigFile (Map<String, Object> data, File file, String codePage) {
         JsonBuilder b = new JsonBuilder()

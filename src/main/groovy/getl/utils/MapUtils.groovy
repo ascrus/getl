@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 import getl.data.Field
@@ -119,7 +95,7 @@ class MapUtils {
 		if (map == null) return null
 		
 		Map result = [:]
-		int lengthLevel = level.length()
+		def lengthLevel = level.length()
 		map.each { k, v ->
 			def s = k.toString()
 			if (level.length() < s.length() && level == s.toLowerCase().substring(0, lengthLevel)) {
@@ -186,7 +162,7 @@ class MapUtils {
 	 * @param ignoreComments
 	 * @return
 	 */
-	static List<String> Unknown(Map<String, Object> map, List<String> definedKey, boolean ignoreComments = false) {
+	static List<String> Unknown(Map<String, Object> map, List<String> definedKey, Boolean ignoreComments = false) {
 		if (map == null) map = [:] as Map<String, Object>
 		
 		List<String> res = []
@@ -211,7 +187,7 @@ class MapUtils {
 	 * @param definedKey list of allowed keys
 	 * @param ignoreComments ignore keys whose name begins with an underscore
 	 */
-	static void CheckKeys(Map<String, Object> map, List<String> definedKey, boolean ignoreComments = false) {
+	static void CheckKeys(Map<String, Object> map, List<String> definedKey, Boolean ignoreComments = false) {
 		def u = Unknown(map, definedKey, ignoreComments)
 		if (u.size() != 0)
 			throw new ExceptionGETL("Unknown map keys detected: $u!")
@@ -254,7 +230,7 @@ class MapUtils {
 	 * @param section
 	 * @return
 	 */
-	static boolean ContainsSection (Map content, String section) {
+	static Boolean ContainsSection (Map content, String section) {
 		return (FindSection(content, section) != null)
 	}
 	
@@ -270,7 +246,7 @@ class MapUtils {
 		
 		String[] sections = name.split("[.]")
 		Map <String, Object> cur = content
-		for (int i = 0; i < sections.length - 1; i++) {
+		for (Integer i = 0; i < sections.length - 1; i++) {
 			String s = sections[i]
 			if (cur.get(s) == null) {
 				def m = [:] as Map <String, Object>
@@ -290,7 +266,7 @@ class MapUtils {
 	 * @param added
      * @param mergeList
 	 */
-	static void MergeMap(Map<String, Object> source, Map<String, Object> added, boolean existUpdate = true, boolean mergeList = false) {
+	static void MergeMap(Map<String, Object> source, Map<String, Object> added, Boolean existUpdate = true, Boolean mergeList = false) {
 		if (source == null || added == null) return
 		added.each { String key, value ->
 			MergeMapChildren(source, value, key, existUpdate, mergeList)
@@ -304,7 +280,7 @@ class MapUtils {
      * @param key
      * @param mergeList
      */
-	private static void MergeMapChildren (Map source, def added, String key, boolean existUpdate, boolean mergeList) {
+	static private void MergeMapChildren (Map source, def added, String key, Boolean existUpdate, Boolean mergeList) {
 		if (!(added instanceof Map)) {
 			if (mergeList && added instanceof List) {
                 List origList = source.get(key) as List
@@ -355,7 +331,7 @@ class MapUtils {
 		}
 		Map<String, Object> res = [:]
 		if (args != null) {
-			for (int i = 0; i < la.size(); i++) {
+			for (Integer i = 0; i < la.size(); i++) {
 				def str = la[i]
 				if (str.trim().length() == 0) continue
 				def le = str.indexOf('=')
@@ -486,7 +462,7 @@ class MapUtils {
 		FindKeysProcess(map, keys, 0, closure)
 	}
 
-	private static void FindKeysProcess(Map<String, Object> map, String[] keys, int cur, Closure closure) {
+	static private void FindKeysProcess(Map<String, Object> map, String[] keys, Integer cur, Closure closure) {
 		def key = keys[cur]
 		def len = keys.length - 1
 		if (key != '*') {
@@ -517,7 +493,7 @@ class MapUtils {
 		}
 	}
 
-	private static void FindKeysProcess(List list, String[] keys, int cur, Closure closure) {
+	static private void FindKeysProcess(List list, String[] keys, Integer cur, Closure closure) {
 		def key = keys[cur]
 		if (key != '*') throw new ExceptionGETL('Invalid format mask for list item!')
 		list.each { item ->
@@ -561,7 +537,7 @@ class MapUtils {
      */
 	@CompileDynamic
 	@SuppressWarnings("GrUnresolvedAccess")
-	private static Map<String, Object> Xml2MapAttrs(def node) {
+	static private Map<String, Object> Xml2MapAttrs(def node) {
 		def res = [:] as Map<String, Object>
 
 		if (node.attributes().size() > 0)
@@ -585,7 +561,7 @@ class MapUtils {
      * @return
      */
 	@CompileDynamic
-	private static Map<String, Object> XmlChildren2Map(def childrens) {
+	static private Map<String, Object> XmlChildren2Map(def childrens) {
 		def res = [:] as Map<String, Object>
 
 		childrens.each { def node ->
@@ -808,7 +784,7 @@ class MapUtils {
 
 	@SuppressWarnings("GrUnresolvedAccess")
 	@CompileDynamic
-    private static Map<String, Object> XsdTypeProcess(Map<String, Object> map, String typeName) {
+    static private Map<String, Object> XsdTypeProcess(Map<String, Object> map, String typeName) {
         if (typeName == null)
             throw new ExceptionGETL('Required \"typeName\" parameter!')
 
@@ -934,7 +910,7 @@ class MapUtils {
 				v = ConfigObject2Map(v)
 			else if (v instanceof List) {
 				def list = v as List
-				for (int i = 0; i < list.size(); i++) {
+				for (Integer i = 0; i < list.size(); i++) {
 					def l = list.get(i)
 					if (l instanceof ConfigObject) {
 						list.set(i, ConfigObject2Map(l))

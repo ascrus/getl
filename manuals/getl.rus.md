@@ -342,7 +342,7 @@ thread {
     
     // Код выполнения в потоке
     run { num ->
-        println "Вызван элемент $num}
+        println "Вызван элемент $num}"
     }
 }
 
@@ -1532,7 +1532,7 @@ import groovy.transform.BaseScript
 import getl.lang.Getl
 import groovy.transform.Field
 import getl.models.SetOfTables
-impoty static getl.utils.StringUtils.WithGroupSeparator
+import static getl.utils.StringUtils.WithGroupSeparator
 
 @BaseScript Getl main
 
@@ -1557,7 +1557,7 @@ tables.usedTables.each { node ->
     assert method in ['TRUNCATE', 'DELETE'], "Неизвестный метод очистки \"$method\""
     
     // Очистка таблицы нужным способом
-    if (method == 'TRUNCATE) {
+    if (method == 'TRUNCATE') {
         table.truncate()
         logInfo "Таблица \"$table\" успешно очищена"
     }
@@ -1681,7 +1681,7 @@ import groovy.transform.BaseScript
 import getl.lang.Getl
 import groovy.transform.Field
 import getl.models.MapTables
-impoty static getl.utils.StringUtils.WithGroupSeparator
+import static getl.utils.StringUtils.WithGroupSeparator
 
 @BaseScript Getl main
 
@@ -1712,7 +1712,7 @@ thread {
     run { MapTableSpec node -> // Описание маппинга таблиц
         def source = node.source as OracleTable
         def dest = node.destination as VerticaTable
-        def maps = node.map
+        def node_maps = node.map
         
         // Установить параметры чтения Oracle таблицы
         source.readOpts { 
@@ -1733,7 +1733,7 @@ thread {
                 source.readOpts { usePartition = part }
                 
             // Копирование записей из таблицы Oracle в Vertica с заданным маппингом полей
-            etl.copyRows(source, dest) { maps = maps }
+            etl.copyRows(source, dest) { it.maps = node_maps }
             
             logInfo "Из таблицы \"$source\" прочитано ${WithGroupSeparator(source.readRows)} записей, в таблицу \"$dest\" записано ${WithGroupSeparator(dest.updateRows)} записей"
         }

@@ -1,29 +1,5 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.lang.opts
 
-import getl.exception.ExceptionModel
 import getl.lang.Getl
 import getl.lang.sub.RepositoryObjects
 import getl.models.SetOfTables
@@ -97,7 +73,7 @@ class ModelSpec extends BaseSpec {
      * @param env environment
      * @return number of registered models
      */
-    int registerReferenceVerticaTablesFromStorage(String mask = null, String env = null) {
+    Integer registerReferenceVerticaTablesFromStorage(String mask = null, String env = null) {
         return getl.repositoryStorageManager().loadRepository(RepositoryReferenceVerticaTables, mask, env)
     }
 
@@ -160,7 +136,7 @@ class ModelSpec extends BaseSpec {
      * @param env environment
      * @return number of registered models
      */
-    int registerReferenceFilesFromStorage(String mask = null, String env = null) {
+    Integer registerReferenceFilesFromStorage(String mask = null, String env = null) {
         return getl.repositoryStorageManager().loadRepository(RepositoryReferenceFiles, mask, env)
     }
 
@@ -222,7 +198,7 @@ class ModelSpec extends BaseSpec {
      * @param mask model name mask
      * @return number of registered models
      */
-    int registerMonitorRulesFromStorage(String mask = null) {
+    Integer registerMonitorRulesFromStorage(String mask = null) {
         return getl.repositoryStorageManager().loadRepository(RepositoryMonitorRules, mask, null)
     }
 
@@ -282,7 +258,7 @@ class ModelSpec extends BaseSpec {
      * @param mask model name mask
      * @return number of registered models
      */
-    int registerMapTablesFromStorage(String mask = null) {
+    Integer registerMapTablesFromStorage(String mask = null) {
         return getl.repositoryStorageManager().loadRepository(RepositoryMapTables, mask, null)
     }
 
@@ -342,7 +318,7 @@ class ModelSpec extends BaseSpec {
      * @param mask model name mask
      * @return number of registered models
      */
-    int registerSetOfTablesFromStorage(String mask = null) {
+    Integer registerSetOfTablesFromStorage(String mask = null) {
         return getl.repositoryStorageManager().loadRepository(RepositorySetOfTables, mask, null)
     }
 

@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.csv
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset.QuoteMode
 import getl.data.FileConnection
 import getl.exception.ExceptionGETL
@@ -58,6 +35,7 @@ class CSVConnection extends FileConnection {
 	static QuoteMode getQuoteColumn() { QuoteMode.COLUMN }
 
 	/** Current CSV connection driver */
+	@JsonIgnore
 	CSVDriver getCurrentCSVDriver() { driver as CSVDriver }
 	
 	/** Quote delimiter string */
@@ -85,22 +63,22 @@ class CSVConnection extends FileConnection {
 	}
 	
 	/** File has header of fields name */
-	boolean getHeader () { BoolUtils.IsValue(params.header, true) }
+	Boolean getHeader () { BoolUtils.IsValue(params.header, true) }
 	/** File has header of fields name */
-    void setHeader (boolean value) {
+    void setHeader (Boolean value) {
 		params.header = value
 		resetPresetMode()
 	}
 	
 	/** Ignore header field name */
-	boolean getIgnoreHeader () { BoolUtils.IsValue(params.ignoreHeader, true) }
+	Boolean getIgnoreHeader () { BoolUtils.IsValue(params.ignoreHeader, true) }
 	/** Ignore header field name */
-    void setIgnoreHeader (boolean value) { params.ignoreHeader = value }
+    void setIgnoreHeader (Boolean value) { params.ignoreHeader = value }
 	
 	/** Required convert string to escape value */
-	boolean getEscaped () { BoolUtils.IsValue(params.escaped, false) }
+	Boolean getEscaped () { BoolUtils.IsValue(params.escaped, false) }
 	/** Required convert string to escape value */
-    void setEscaped (boolean value) {
+    void setEscaped (Boolean value) {
 		params.escaped = value
 		resetPresetMode()
 	}
@@ -111,14 +89,14 @@ class CSVConnection extends FileConnection {
     void setNullAsValue (String value) { params.nullAsValue = value }
 	
 	/** Required format values for output to file */
-	boolean getFormatOutput () { BoolUtils.IsValue(params.formatOutput, true) }
+	Boolean getFormatOutput () { BoolUtils.IsValue(params.formatOutput, true) }
 	/** Required format values for output to file */
-    void setFormatOutput (boolean value) { params.formatOutput = value }
+    void setFormatOutput (Boolean value) { params.formatOutput = value }
 
 	/** Check constraints during reading and writing */
-	boolean getConstraintsCheck() { BoolUtils.IsValue(params.constraintsCheck, false) }
+	Boolean getConstraintsCheck() { BoolUtils.IsValue(params.constraintsCheck, false) }
 	/** Check constraints during reading and writing */
-	void setConstraintsCheck(boolean value) { params.constraintsCheck = value }
+	void setConstraintsCheck(Boolean value) { params.constraintsCheck = value }
 	
 	/** Mode of quote value */
 	QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, QuoteMode.NORMAL])  as QuoteMode }
@@ -172,7 +150,7 @@ class CSVConnection extends FileConnection {
 	}
 
 	/** Preset csv modes */
-	public static final Map<String, Object> PresetModes = MapUtils.Closure2Map {
+	static public final Map<String, Object> PresetModes = MapUtils.Closure2Map {
 		custom { }
 		traditional {
 			fieldDelimiter = ','

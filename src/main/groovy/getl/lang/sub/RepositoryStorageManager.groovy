@@ -1,26 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.lang.sub
 
 import getl.config.ConfigSlurper
@@ -59,7 +36,7 @@ class RepositoryStorageManager {
     protected Getl dslCreator
 
     /** List of repository managers instance */
-    private def _listRepositories = new ConcurrentHashMap<String, RepositoryObjects>()
+    private ConcurrentHashMap<String, RepositoryObjects> _listRepositories = new ConcurrentHashMap<String, RepositoryObjects>()
 
     /** Storage path for repository files */
     private String storagePath
@@ -232,7 +209,7 @@ class RepositoryStorageManager {
      * @return count of saved objects
      */
     @Synchronized
-    int saveRepository(String repositoryName, String mask = null, String env = null) {
+    Integer saveRepository(String repositoryName, String mask = null, String env = null) {
         if (isResourceStoragePath)
             throw new ExceptionDSL('Cannot be saved to the resource directory!')
 
@@ -257,7 +234,7 @@ class RepositoryStorageManager {
      * @param env used environment
      * @return count of saved objects
      */
-    int saveRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null) {
+    Integer saveRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null) {
         saveRepository(repositoryClass.name, mask, env)
     }
 
@@ -325,11 +302,11 @@ class RepositoryStorageManager {
         }
     }
 
-    static private def objectNamePath = new Path(mask: 'getl_{name}.conf')
-    static private def objectNamePathEnv = new Path(mask: 'getl_{name}.{env}.conf')
+    static private Path objectNamePath = new Path(mask: 'getl_{name}.conf')
+    static private Path objectNamePathEnv = new Path(mask: 'getl_{name}.{env}.conf')
 
     /** Return object name from file name */
-    static Map<String, String> ObjectNameFromFileName(String fileName, boolean useEnv) {
+    static Map<String, String> ObjectNameFromFileName(String fileName, Boolean useEnv) {
         def res = ((useEnv)?objectNamePathEnv.analizeFile(fileName):objectNamePath.analizeFile(fileName)) as Map<String, String>
         if (res.isEmpty())
             throw new ExceptionDSL("Invalid repository configuration file name \"$fileName\"!")
@@ -408,7 +385,7 @@ class RepositoryStorageManager {
      * @return count of saved objects
      */
     @Synchronized
-    int loadRepository(String repositoryName, String mask = null, String env = null, Boolean ignoreExists = true) {
+    Integer loadRepository(String repositoryName, String mask = null, String env = null, Boolean ignoreExists = true) {
         def res = 0
         def repository = repository(repositoryName)
         def maskPath = (mask != null)?new Path(mask: mask):null
@@ -475,7 +452,7 @@ class RepositoryStorageManager {
      * @param ignoreExists don't load existing ones (default true)
      * @return count of saved objects
      */
-    int loadRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null, Boolean ignoreExists = true) {
+    Integer loadRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null, Boolean ignoreExists = true) {
         loadRepository(repositoryClass.name, mask, env)
     }
 

@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.proc
 
 import getl.csv.CSVDataset
@@ -105,7 +81,7 @@ class Flow {
 	}
 	
 	/** Flow parameters */
-	final Map<String, Object> params = [:]
+	private final Map<String, Object> params = [:] as Map<String, Object>
 
 	/** Flow parameters */
 	Map getParams() { params }
@@ -137,7 +113,7 @@ class Flow {
 			if (v != null) {
 				String[] l = v.split(";")
 				m.name = l[0].toLowerCase()
-				for (int i = 1; i < l.length; i++) {
+				for (Integer i = 1; i < l.length; i++) {
 					def p = l[i].indexOf("=")
 					if (p == -1) {
 						m.put(l[i].toLowerCase(), null)
@@ -168,7 +144,7 @@ class Flow {
 	public String scriptMap
 
 	/** Cache code repository */
-	private static final def cacheCode = new ConcurrentHashMap<String, Map<String, Object>>()
+	static private final ConcurrentHashMap<String, Map<String, Object>> cacheCode = new ConcurrentHashMap<String, Map<String, Object>>()
 
 	protected static String GenerateMap(Dataset source, Dataset dest, Map fieldMap, Boolean autoConvert, List<String> excludeFields, List<String> notConverted, String cacheName, Map result) {
 		def countMethod = (dest.field.size() / 100).intValue() + 1
@@ -184,8 +160,8 @@ class Flow {
 		List<String> destFields = []
 		List<String> sourceFields = []
 		
-		int c = 0
-		int cf = 0
+		def c = 0
+		def cf = 0
 		dest.field.each { Field d ->
 			c++
 			
@@ -322,7 +298,7 @@ class Flow {
 	 * Copy rows from dataset to other dataset
 	 */
 	@SuppressWarnings("DuplicatedCode")
-	long copy (Map params,
+	Long copy (Map params,
 			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
 					   Closure map_code = null) {
 		methodParams.validation("copy", params)
@@ -351,7 +327,7 @@ class Flow {
 		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
 		if (dest.connection == null) throw new ExceptionGETL("Required specify a connection for the destination!")
 		String destDescription
-		boolean isDestTemp = false
+		def isDestTemp = false
 		if (dest == null && params.tempDest != null) {
 			dest = (Dataset)TFS.dataset(params.tempDest as String)
 			destDescription = "temp.${params.tempDest}"
@@ -363,15 +339,15 @@ class Flow {
 		if (dest instanceof TFSDataset && dest.field.isEmpty() && !isDestTemp) isDestTemp = true
 		def isDestVirtual = (dest instanceof VirtualDataset || dest instanceof MultipleDataset)
 
-		boolean inheritFields = BoolUtils.IsValue(params.inheritFields)
+		def inheritFields = BoolUtils.IsValue(params.inheritFields)
 		if ((dest instanceof  TFSDataset || dest instanceof AggregatorDataset) && dest.field.isEmpty())
 			inheritFields = true
-		boolean createDest = BoolUtils.IsValue([params.createDest, destSysParams.createDest], false)
-		boolean writeSynch = BoolUtils.IsValue(params.writeSynch, false)
+		def createDest = BoolUtils.IsValue([params.createDest, destSysParams.createDest], false)
+		def writeSynch = BoolUtils.IsValue(params.writeSynch, false)
 
-		boolean autoMap = BoolUtils.IsValue(params.autoMap, true)
-		boolean autoConvert = BoolUtils.IsValue(params.autoConvert, true)
-		boolean autoTranParams = BoolUtils.IsValue(params.autoTran, true)
+		def autoMap = BoolUtils.IsValue(params.autoMap, true)
+		def autoConvert = BoolUtils.IsValue(params.autoConvert, true)
+		def autoTranParams = BoolUtils.IsValue(params.autoTran, true)
 		def autoTran = autoTranParams &&
 				dest.connection.isSupportTran &&
 				!dest.connection.isTran() &&
@@ -408,7 +384,7 @@ class Flow {
 		}
 		def isChilds = (!childs.isEmpty())
 
-		boolean isBulkLoad = BoolUtils.IsValue(params.bulkLoad, false)
+		def isBulkLoad = BoolUtils.IsValue(params.bulkLoad, false)
 		Boolean bulkEscaped = params.bulkEscaped
 		Boolean bulkAsGZIP = params.bulkAsGZIP
 		if (isBulkLoad) {
@@ -432,8 +408,8 @@ class Flow {
 
 		Closure prepareSource = sourceParams.prepare as Closure
 
-		boolean clear = BoolUtils.IsValue(params.clear, false)
-		boolean isSaveErrors = BoolUtils.IsValue(params.saveErrors, false)
+		def clear = BoolUtils.IsValue(params.clear, false)
+		def isSaveErrors = BoolUtils.IsValue(params.saveErrors, false)
 		
 		List<String> excludeFields = (params.excludeFields != null)?(params.excludeFields as List<String>)*.toLowerCase():[]
 		List<String> notConverted = (params.notConverted != null)?(params.notConverted as List<String>)*.toLowerCase():[]
@@ -441,8 +417,8 @@ class Flow {
 //		Closure writeCode = params.onWrite as Closure
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
-		
-		boolean debug = BoolUtils.IsValue(params.debug, false)
+
+		def debug = BoolUtils.IsValue(params.debug, false)
 
 		if (isSaveErrors) errorsDataset = TFS.dataset()
 
@@ -580,7 +556,7 @@ class Flow {
 		try {
 			try {
 				source.eachRow(sourceParams) { inRow ->
-					boolean isError = false
+					def isError = false
 					def outRow = [:]
 
 					if (auto_map_code != null) auto_map_code.call(inRow, outRow)
@@ -721,7 +697,7 @@ class Flow {
 	 * @param params - parameters
 	 */
 	@SuppressWarnings("DuplicatedCode")
-	long writeTo(Map params,
+	Long writeTo(Map params,
 				 @ClosureParams(value = SimpleType, options = ['groovy.lang.Closure'])
 						 Closure code = null) {
 		methodParams.validation("writeTo", params)
@@ -745,20 +721,20 @@ class Flow {
 		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
 		if (destDescription == null) destDescription = dest.objectName
 		
-		boolean autoTran = (params.autoTran != null)?params.autoTran:true
+		def autoTran = BoolUtils.IsValue(params.autoTran, true)
 		autoTran = autoTran &&
 				dest.connection.isSupportTran &&
 				!dest.connection.isTran() &&
 				!BoolUtils.IsValue(dest.connection.params.autoCommit, false)
 		
-		boolean isBulkLoad = (params.bulkLoad != null)?params.bulkLoad:false
+		def isBulkLoad = BoolUtils.IsValue(params.bulkLoad)
 		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destinataion dataset not support bulk load")
-		boolean bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:false
-		boolean bulkEscaped = (params.bulkEscaped != null)?params.bulkEscaped:false
+		def bulkAsGZIP = BoolUtils.IsValue(params.bulkAsGZIP)
+		def bulkEscaped = BoolUtils.IsValue(params.bulkEscaped)
 		
-		boolean clear = (params.clear != null)?params.clear:false
+		def clear = BoolUtils.IsValue(params.clear)
 		
-		boolean writeSynch = BoolUtils.IsValue(params."writeSynch", false)
+		def writeSynch = BoolUtils.IsValue(params."writeSynch", false)
 
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
@@ -882,12 +858,12 @@ class Flow {
 		Map<String, Dataset> dest = params.dest as Map<String, Dataset>
 		if (dest == null || dest.isEmpty()) throw new ExceptionGETL("Required parameter \"dest\"")
 		
-		boolean autoTran = (params.autoTran != null)?params.autoTran:true
-		boolean writeSynch = BoolUtils.IsValue(params."writeSynch", false)
+		def autoTran = BoolUtils.IsValue(params.autoTran, true)
+		def writeSynch = BoolUtils.IsValue(params."writeSynch", false)
 
-		boolean isBulkLoad = (params.bulkLoad != null)?params.bulkLoad:false
-		boolean bulkAsGZIP = (params.bulkAsGZIP != null)?params.bulkAsGZIP:false
-		boolean bulkEscaped = (params.bulkEscaped != null)?params.bulkEscaped:false
+		def isBulkLoad = BoolUtils.IsValue(params.bulkLoad)
+		def bulkAsGZIP = BoolUtils.IsValue(params.bulkAsGZIP)
+		def bulkEscaped = (params.bulkEscaped)
 
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
@@ -988,7 +964,7 @@ class Flow {
 			if (!writeSynch) d.write(row) else d.writeSynch(row)
 		}
 		
-		def closeDests = { boolean isError ->
+		def closeDests = { Boolean isError ->
 			writer.each { String n, Dataset d ->
 				if (d.status == Dataset.Status.WRITE) {
 					if (!isError)
@@ -1105,7 +1081,7 @@ class Flow {
 	 * Read and proccessed data from dataset
 	 */
 	@SuppressWarnings("DuplicatedCode")
-	long process(Map params,
+	Long process(Map params,
 				 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 						 Closure code = null) {
 		methodParams.validation("process", params)
@@ -1136,7 +1112,7 @@ class Flow {
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
 		
-		boolean isSaveErrors = (params.saveErrors != null)?params.saveErrors:false
+		def isSaveErrors = BoolUtils.IsValue(params.saveErrors)
 		if (isSaveErrors) errorsDataset = TFS.dataset()
 
 		def onInitSource = {

@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.csv
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.opts.CSVReadSpec
 import getl.csv.opts.CSVWriteSpec
 import getl.lang.opts.BaseSpec
@@ -88,11 +65,11 @@ class CSVDataset extends FileDataset {
 	/**
 	 * File has header of fields name
 	 */
-	boolean getHeader () { BoolUtils.IsValue([params.header, currentCsvConnection?.header], true) }
+	Boolean getHeader () { BoolUtils.IsValue([params.header, currentCsvConnection?.header], true) }
 	/**
 	 * File has header of fields name
 	 */
-	void setHeader (boolean value) {
+	void setHeader (Boolean value) {
 		params.header = value
 		resetPresetMode()
 	}
@@ -100,18 +77,18 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Required format values for output to file 
 	 */
-	boolean getFormatOutput () { BoolUtils.IsValue([params.formatOutput, currentCsvConnection?.formatOutput], true) }
+	Boolean getFormatOutput () { BoolUtils.IsValue([params.formatOutput, currentCsvConnection?.formatOutput], true) }
 	/**
 	 * Required format values for output to file
 	 */
-	void setFormatOutput (boolean value) { params.formatOutput = value }
+	void setFormatOutput (Boolean value) { params.formatOutput = value }
 
 	/** Check constraints during reading and writing */
-	boolean getConstraintsCheck() {
+	Boolean getConstraintsCheck() {
 		BoolUtils.IsValue([params.constraintsCheck, currentCsvConnection?.constraintsCheck], false)
 	}
 	/** Check constraints during reading and writing */
-	void setConstraintsCheck(boolean value) { params.constraintsCheck = value }
+	void setConstraintsCheck(Boolean value) { params.constraintsCheck = value }
 	
 	/**
 	 * Convert NULL to value
@@ -125,11 +102,11 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Required convert string to escape value 	
 	 */
-	boolean getEscaped () { BoolUtils.IsValue([params.escaped, currentCsvConnection?.escaped], false) }
+	Boolean getEscaped () { BoolUtils.IsValue([params.escaped, currentCsvConnection?.escaped], false) }
 	/**
 	 * Required convert string to escape value
 	 */
-	void setEscaped (boolean value) {
+	void setEscaped (Boolean value) {
 		params.escaped = value
 		resetPresetMode()
 	}
@@ -208,17 +185,20 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Length of the recorded file
 	 */
-	Long getCountWriteCharacters() { params.countWriteCharacters as Long }
+	@JsonIgnore
+	Long getCountWriteCharacters() { sysParams.countWriteCharacters as Long }
 	
 	/**
 	 * the number of recorded files
 	 */
-	Integer getCountWritePortions() { params.countWritePortions as Integer }
+	@JsonIgnore
+	Integer getCountWritePortions() { sysParams.countWritePortions as Integer }
 	
 	/**
 	 * The number of read files
 	 */
-	Integer getCountReadPortions() { params.countReadPortions as Integer }
+	@JsonIgnore
+	Integer getCountReadPortions() { sysParams.countReadPortions as Integer }
 	
 	@Override
 	void setConnection(Connection value) {
@@ -243,6 +223,7 @@ class CSVDataset extends FileDataset {
 	}
 
 	/** Current CSV connection */
+	@JsonIgnore
 	CSVConnection getCurrentCsvConnection() { connection as CSVConnection}
 
 	@Override
@@ -255,43 +236,43 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
 	 */
-	long prepareCSVForBulk (CSVDataset source, Map encodeTable, Closure code) {
+	Long prepareCSVForBulk (CSVDataset source, Map encodeTable, Closure code) {
 		currentCsvConnection.currentCSVDriver.prepareCSVForBulk(this, source, encodeTable, code)
 	}
 	
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
 	 */
-	long prepareCSVForBulk (CSVDataset source, Map encodeTable) {
+	Long prepareCSVForBulk (CSVDataset source, Map encodeTable) {
 		prepareCSVForBulk(source, encodeTable, null)
 	}
 	
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
 	 */
-	long prepareCSVForBulk(CSVDataset source) {
+	Long prepareCSVForBulk(CSVDataset source) {
 		prepareCSVForBulk(source, null, null)
 	}
 	
 	/**
 	 * Convert from source CSV file with encoding code page and escaped
 	 */
-	long prepareCSVForBulk (CSVDataset source, Closure code) {
+	Long prepareCSVForBulk (CSVDataset source, Closure code) {
 		prepareCSVForBulk(source, null, code)
 	}
 	
 	/**
 	 * Decoding prepare for bulk load file
 	 */
-	long decodeBulkCSV (CSVDataset source) {
+	Long decodeBulkCSV (CSVDataset source) {
 		currentCsvConnection.currentCSVDriver.decodeBulkCSV(this, source)
 	}
 	
 	/**
 	 * Count rows of file
 	 */
-	long readRowCount(Map params) {
-		long res = 0
+	Long readRowCount(Map params) {
+		def res = 0L
 		eachRow((params?:[:]) + [readAsText: true]) {
 			res++
 		}
@@ -299,8 +280,8 @@ class CSVDataset extends FileDataset {
 		return res
 	}
 
-	long countRow(Map params) {
-		long res = 0
+	Long countRow(Map params) {
+		def res = 0L
 		eachRow(params) {
 			res++
 		}
@@ -311,7 +292,7 @@ class CSVDataset extends FileDataset {
 	/**
 	 * File lines count 
 	 */
-	long readLinesCount() {
+	Long readLinesCount() {
 		return currentCsvConnection.currentCSVDriver.readLinesCount(this)
 	}
 

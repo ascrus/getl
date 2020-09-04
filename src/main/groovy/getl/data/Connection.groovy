@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.data
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
@@ -39,8 +16,6 @@ import groovy.transform.stc.SimpleType
  *
  */
 class Connection implements Cloneable, GetlRepository {
-	protected ParamMethodValidator methodParams = new ParamMethodValidator()
-	
 	/**
 	 * Not supported
 	 */
@@ -71,6 +46,9 @@ class Connection implements Cloneable, GetlRepository {
 				MapUtils.CleanMap(parameters, ['driver', 'config']) as Map<String, Object> )
 		doInitConnection()
 	}
+
+	/** Parameters validator */
+	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 
 	/**
 	 * Initialization parameters
@@ -130,31 +108,33 @@ class Connection implements Cloneable, GetlRepository {
 	/**
 	 * Extended attributes
 	 */
-	Map getAttributes() { params.attributes as Map }
+	Map<String, Object> getAttributes() { params.attributes as Map<String, Object> }
 	/**
 	 * Extended attributes
 	 */
-	void setAttributes(Map value) {
+	void setAttributes(Map<String, Object> value) {
 		attributes.clear()
 		if (value != null) attributes.putAll(value)
 	}
 
 	/** Connection driver manager class*/
-	Driver driver
+	private Driver driver
 
 	/** Connection driver manager class*/
+	@JsonIgnore
 	Driver getDriver() { driver }
 	
 	/**
 	 * Configuration name
 	 * Store parameters to config file from section "connections"
 	 */
-	String config
+	private String config
 
 	/**
 	 * Configuration name
 	 * Store parameters to config file from section "connections"
 	 */
+	@JsonIgnore
 	String getConfig () { config }
 
 	/**
@@ -179,8 +159,9 @@ class Connection implements Cloneable, GetlRepository {
 	}
 
 	/** Run on connection */
-	Closure onConnecting
+	private Closure onConnecting
 	/** Run on connection */
+	@JsonIgnore
 	Closure getOnConnecting() { onConnecting }
 	/** Run on connection */
 	void setOnConnecting(Closure value) { onConnecting = value }
@@ -220,33 +201,38 @@ class Connection implements Cloneable, GetlRepository {
 	/**
 	 * Connection parameters
 	 */
-	final Map params = [:]
+	private final Map<String, Object> params = [:] as Map<String, Object>
 
 	/** Connection parameters */
-	Map getParams() { params }
+	@JsonIgnore
+	Map<String, Object> getParams() { params }
 	/** Connection parameters */
-	void setParams(Map value) {
+	void setParams(Map<String, Object> value) {
 		params.clear()
 		initParams()
 		if (value != null) params.putAll(value)
 	}
 	
 	/** System parameters */
-	final Map sysParams = [:]
+	private final Map<String, Object> sysParams = [:] as Map<String, Object>
 
 	/** System parameters */
-	Map<String, Object> getSysParams() { sysParams as Map<String, Object> }
+	@JsonIgnore
+	Map<String, Object> getSysParams() { sysParams }
 
+	@JsonIgnore
 	String getDslNameObject() { sysParams.dslNameObject as String }
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
+	@JsonIgnore
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Auto load schema with meta file for connection datasets */
-	boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema, false) }
+	@JsonIgnore
+	Boolean getAutoSchema () { BoolUtils.IsValue(params.autoSchema, false) }
 	/** Auto load schema with meta file for connection datasets */
-	void setAutoSchema (boolean value) { params.autoSchema = value }
+	void setAutoSchema (Boolean value) { params.autoSchema = value }
 
 	/** The number of connection attempts on error (default 1) */
 	Integer getNumberConnectionAttempts() { (params.numberConnectionAttempts as Integer)?:1 }
@@ -265,11 +251,12 @@ class Connection implements Cloneable, GetlRepository {
 	}
 	
 	/** Print write rows to console */
-	boolean getLogWriteToConsole () { BoolUtils.IsValue(params.logWriteToConsole, false) }
+	Boolean getLogWriteToConsole () { BoolUtils.IsValue(params.logWriteToConsole, false) }
 	/** Print write rows to console */
-	void setLogWriteToConsole (boolean value) { params.logWriteToConsole = value }
+	void setLogWriteToConsole (Boolean value) { params.logWriteToConsole = value }
 	
 	/** Dataset class for auto create by connection */
+	@JsonIgnore
 	String getDataset () { params.dataset as String }
 	/** Dataset class for auto create by connection */
 	void setDataset (String value) { params.dataset = value }
@@ -280,9 +267,10 @@ class Connection implements Cloneable, GetlRepository {
 	void setDescription(String value) { params.description = value }
 
 	/**	 Current transaction count */
-	private int tranCount = 0
+	private Integer tranCount = 0
 	/**	 Current transaction count */
-	int getTranCount() { tranCount }
+	@JsonIgnore
+	Integer getTranCount() { tranCount }
 	
 	/** Init parameters connections (use for children) */
 	protected void doInitConnection () { }
@@ -328,6 +316,7 @@ class Connection implements Cloneable, GetlRepository {
 	}
 	
 	/** Is connected to source */
+	@JsonIgnore
 	Boolean getConnected () { driver.isConnected() }
 	
 	/** Set connected to source */
@@ -414,13 +403,15 @@ class Connection implements Cloneable, GetlRepository {
 	}
 	
 	/** Connection has current transaction */
-	boolean isTran () { (tranCount > 0) }
+	@JsonIgnore
+	Boolean isTran () { (tranCount > 0) }
 
 	/** Connection supports transactions */
+	@JsonIgnore
 	Boolean getIsSupportTran() { driver.isSupport(Driver.Support.TRANSACTIONAL) }
 	
 	/** Start transaction */
-	void startTran (boolean onlyIfSupported = false) {
+	void startTran (Boolean onlyIfSupported = false) {
 		if (!isSupportTran) {
 			if (onlyIfSupported)
 				return
@@ -440,7 +431,7 @@ class Connection implements Cloneable, GetlRepository {
 	}
 	
 	/**  Commit transaction */
-	void commitTran (boolean onlyIfSupported = false) {
+	void commitTran (Boolean onlyIfSupported = false) {
 		if (!isSupportTran) {
 			if (onlyIfSupported)
 				return
@@ -459,7 +450,7 @@ class Connection implements Cloneable, GetlRepository {
 	/**
 	 * Rollback transaction
 	 */
-	void rollbackTran (boolean onlyIfSupported = false) {
+	void rollbackTran (Boolean onlyIfSupported = false) {
 		if (!isSupportTran) {
 			if (onlyIfSupported)
 				return
@@ -482,7 +473,7 @@ class Connection implements Cloneable, GetlRepository {
 	 * @param params	- Parameters
 	 * @return long		- Rows count 
 	 */
-	long executeCommand(Map params) {
+	Long executeCommand(Map params) {
 		if (!driver.isOperation(Driver.Operation.EXECUTE))
 			throw new ExceptionGETL("Driver not supported execute command")
 		
@@ -501,6 +492,7 @@ class Connection implements Cloneable, GetlRepository {
 	 * Connect name
 	 * @return
 	 */
+	@JsonIgnore
 	String getObjectName() { (driver != null)?driver.getClass().name:null }
 
 	@Override

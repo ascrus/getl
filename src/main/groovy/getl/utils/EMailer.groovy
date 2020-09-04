@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.utils.sub.EMailerAuth
@@ -47,6 +24,7 @@ class EMailer implements GetlRepository {
 	final Map params = [:]
 
 	/** Emailer parameters */
+	@JsonIgnore
 	Map getParams() { params }
 	/** Emailer parameters */
 	void setParams(Map value) {
@@ -55,8 +33,9 @@ class EMailer implements GetlRepository {
 		if (value != null) params.putAll(value)
 	}
 
-	String config
+	private String config
 	/** Name in config from section "emailers" */
+	@JsonIgnore
 	String getConfig () { config }
 	/** Name in config from section "emailers" */
 	void setConfig (String value) {
@@ -167,6 +146,7 @@ class EMailer implements GetlRepository {
 	void setIsHtml(Boolean value) { params.isHtml = value }
 
 	/** Attachment for mail */
+	@JsonIgnore
 	Object getAttachment() { params.attachment }
 	/** Attachment for mail */
 	void setAttachment(Object value) { params.attachment = value }
@@ -191,7 +171,7 @@ class EMailer implements GetlRepository {
 	}
 
     /** Send mail message with specified parameters*/
-	void sendMail(String toAddress, String subject, String message, boolean isHtml = false, Object attachment = null) {
+	void sendMail(String toAddress, String subject, String message, Boolean isHtml = false, Object attachment = null) {
 		if (!active) return
 
 		if (this.toAddress != null) {
@@ -277,12 +257,14 @@ class EMailer implements GetlRepository {
 
 	private String _dslNameObject
 	@Override
+	@JsonIgnore
 	String getDslNameObject() { _dslNameObject }
 	@Override
 	void setDslNameObject(String value) { _dslNameObject = value }
 
 	private Getl _dslCreator
 	@Override
+	@JsonIgnore
 	Getl getDslCreator() { _dslCreator }
 	@Override
 	void setDslCreator(Getl value) { _dslCreator = value }

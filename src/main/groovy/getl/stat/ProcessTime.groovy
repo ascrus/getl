@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.stat
 
 import java.util.logging.Level
@@ -35,28 +11,70 @@ import getl.utils.*
  */
 @SuppressWarnings("UnnecessaryQualifiedReference")
 class ProcessTime {
-	public static java.util.logging.Level LogLevelDefault = Level.FINER
+	ProcessTime () {
+		init()
+	}
 
+	ProcessTime(Map params) {
+		if (params.name != null) {
+			this.name = params.name
+		}
+		else
+		if (params.className != null) {
+			this.name = params.className
+		}
+
+		if (params.logLevel != null) {
+			logLevel = Logs.StrToLevel(params.logLevel as String)
+		}
+
+		if (params.objectName != null) {
+			objectName = params.objectName
+		}
+
+		if (params.debug != null) {
+			debug = params.debug
+		}
+
+		if (params.abbrName != null) {
+			abbrName = params.abbrName
+		}
+
+		init()
+	}
+
+	static public java.util.logging.Level LogLevelDefault = Level.FINER
     static void SetLogLevelDefault (String level) { LogLevelDefault = Logs.StrToLevel(level) }
-	public static boolean debugDefault = false
-	
+
+	static public Boolean debugDefault = false
+
+	/** Process name */
 	public String name = 'process'
+	/** Level profile logging */
 	public Level logLevel
+	/** Metric */
 	public String objectName = 'row'
+	/** Abbreviate */
 	public String abbrName = '<STAT>'
-	public boolean debug = debugDefault
-	
+	/** Debugging */
+	public Boolean debug = debugDefault
+
+	/** Start time */
 	public Date start
+	/** Finish time */
 	public Date finish
+	/** Duration */
 	public TimeDuration time
+	/** Processed rows */
 	public Long countRow
-	public long rowInSec
+	/** Process rows in second */
+	public Long rowInSec
+	/** Average rows processed */
 	public BigDecimal avgSpeed
+	/** Average rows processed */
 	public String avgSpeedStr
 
-    /**
-     * Init function
-     */
+    /** Init function */
 	private void init () {
 		start = DateUtils.Now()
 		
@@ -73,82 +91,12 @@ class ProcessTime {
 		}
 	}
 
-    /**
-     * Constructor
-     */
-	ProcessTime () {
-		init()
-	}
-
-    /**
-     * Constructor
-     * @param params
-     */
-	ProcessTime(Map params) {
-		if (params.name != null) {
-			this.name = params.name
-		}
-		else
-		if (params.className != null) {
-			this.name = params.className
-		}
-		
-		if (params.logLevel != null) {
-			logLevel = Logs.StrToLevel(params.logLevel as String)
-		}
-		
-		if (params.objectName != null) {
-			objectName = params.objectName 
-		}
-		
-		if (params.debug != null) {
-			debug = params.debug
-		}
-
-		if (params.abbrName != null) {
-			abbrName = params.abbrName
-		}
-		
-		init()
-	}
-
-    /**
-     * Start process time
-     */
-	Date getStart() { start }
-
-    /**
-     * Finish process time
-     */
-	Date getFinish() { finish }
-
-    /**
-     * Duration time process
-     */
-	TimeDuration getTime() { time }
-
-    /**
-     * Total rows processed
-     */
-
-	long GetCountRow() { countRow }
-
-    /**
-     * Count rows processed by second
-     */
-	long getRowInSec() { rowInSec }
-
-    /**
-     * Finish process
-     */
+    /** Finish process */
 	void finish() {
-		this.finish((Long)null)
+		this.finish(null as Long)
 	}
 
-    /**
-     * Finish process
-     * @param procRow
-     */
+    /** Finish process */
 	void finish(Long procRow) {
 		this.finish = DateUtils.Now()
 		this.time = TimeCategory.minus(finish, start)
@@ -166,9 +114,7 @@ class ProcessTime {
 		}
 	}
 
-    /**
-     * Return last status process
-     */
+    /** Return last status process */
 	String lastStat () {
 		def res
 		if (objectName?.toLowerCase() != 'byte')

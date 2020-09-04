@@ -1,28 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
 package getl.models
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
@@ -43,12 +21,17 @@ import groovy.transform.stc.SimpleType
 class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     /** Vertica connection name in the repository */
     String getReferenceConnectionName() { modelConnectionName }
+    /** Vertica connection name in the repository */
+    void setReferenceConnectionName(String value) { useReferenceConnection(value) }
+
+    /** Used Vertica connection */
+    @JsonIgnore
+    VerticaConnection getReferenceConnection() { modelConnection as VerticaConnection }
+
     /** Use specified Vertica connection */
     void useReferenceConnection(String verticaConnectionName) { useModelConnection(verticaConnectionName) }
     /** Use specified Vertica connection */
     void useReferenceConnection(VerticaConnection verticaConnection) { useModelConnection(verticaConnection) }
-    /** Used Vertica connection */
-    VerticaConnection getReferenceConnection() { modelConnection as VerticaConnection }
 
     /** List of used tables */
     List<ReferenceVerticaTableSpec> getUsedTables() { usedDatasets as List<ReferenceVerticaTableSpec> }
@@ -99,7 +82,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * Create reference tables
      * @param recreate recreate table if exists
      */
-    void createReferenceTables(boolean recreate = false) {
+    void createReferenceTables(Boolean recreate = false) {
         checkModel()
         new QueryDataset().with {
             useConnection referenceConnection
@@ -122,7 +105,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * @param onlyForEmpty copy data for empty tables only (default true)
      * @return count of tables copied
      */
-    int copyFromVertica(VerticaConnection externalConnection, boolean onlyForEmpty = true) {
+    Integer copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true) {
         checkModel()
 
         def res = 0
@@ -148,7 +131,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * @param onlyForEmpty copy data for empty tables only (default true)
      * @param return count of tables copied
      */
-    int copyFromSourceTables(boolean onlyForEmpty = true) {
+    Integer copyFromSourceTables(Boolean onlyForEmpty = true) {
         checkModel()
 
         def res = 0
@@ -165,7 +148,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * Fill tables with data from reference tables
      * @return count of tables filled
      */
-    int fill() {
+    Integer fill() {
         checkModel()
 
         Logs.Fine("Start deploying tables for \"$repositoryModelName\" model")
@@ -184,12 +167,12 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * Clear source tables
      * @return count of tables cleared
      */
-    int clear() {
+    Integer clear() {
         checkModel()
 
         Logs.Fine("Start clearing tables for \"$repositoryModelName\" model")
 
-        int res = 0
+        def res = 0
         usedTables.each { modelTable ->
             modelTable.workTable.truncate(truncate: true)
             res++

@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
-Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 import getl.exception.ExceptionGETL
@@ -215,7 +191,7 @@ class ListUtils {
 
         String firstElement = list[0]
         String lastElement = list[0]
-        for (int i = 1; i < list.size(); i++) {
+        for (Integer i = 1; i < list.size(); i++) {
             String elem = list[i]
 
             if (lastElement.next() == elem) {
@@ -273,7 +249,7 @@ class ListUtils {
 	 * @param limit split no more n-elements
 	 * @return list of lists of separated items
 	 */
-	static List<List> SplitList(List list, int divisor, Integer limit = null) {
+	static List<List> SplitList(List list, Integer divisor, Integer limit = null) {
 		if (divisor <= 0)
 			throw new ExceptionGETL('The divisor must be greater than zero!')
 		if (limit != null && limit <= 0)
@@ -284,7 +260,7 @@ class ListUtils {
 
 		def cur = 0
 		def size = 0
-		for (long i = 0; i < list.size(); i++) {
+		for (Long i = 0; i < list.size(); i++) {
 			if (limit != null && i == limit) break
 
 			if (size == cur) {

@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.excel
 
 import getl.data.*
@@ -92,12 +68,10 @@ class ExcelDriver extends Driver {
 
     @Override
     @CompileStatic
-    long eachRow(Dataset source, Map params, Closure prepareCode, Closure code) {
+    Long eachRow(Dataset source, Map params, Closure prepareCode, Closure code) {
         ExcelDataset dataset = source as ExcelDataset
         String fileName = dataset.currentExcelConnection.fileName
         String fullPath = dataset.fullFileName()
-        /*boolean warnings = BoolUtils.IsValue([params.showWarnings, dataset.showWarnings,
-                                              dataset.currentExcelConnection.showWarnings, false])*/
 
         if (!fileName)
             throw new ExceptionGETL("Required \"fileName\" parameter with connection")
@@ -116,7 +90,7 @@ class ExcelDriver extends Driver {
         Number offsetRows = (offset?.rows as Number)?:0
         Number offsetCells = (offset?.cells as Number)?:0
 
-        long countRec = 0
+        def countRec = 0L
 
         if (prepareCode != null) prepareCode([])
 
@@ -146,7 +120,7 @@ class ExcelDriver extends Driver {
             Iterator rows = sheet.rowIterator()
 
             if (offsetRows != 0) 1..offsetRows.each { rows.next() }
-            int additionalRows = limit + offsetRows + (header ? (1 as int) : (0 as int))
+            def additionalRows = (limit + offsetRows.toInteger() + (header ? (1 as int) : (0 as int)))
 
             def excelFields = [] as List<String>
             def requiedParseField = dataset.field.isEmpty()
@@ -204,7 +178,7 @@ class ExcelDriver extends Driver {
                     if (types.size() != excelFields.size())
                         throw new ExceptionGETL("The number of fields in the header and in the next data line does not match")
 
-                    for (int i = 0; i < excelFields.size(); i++) {
+                    for (Integer i = 0; i < excelFields.size(); i++) {
                         dataset.field << new Field(name: excelFields[i], type: types[i])
                     }
                     requiedParseField = false
@@ -220,7 +194,7 @@ class ExcelDriver extends Driver {
                 def updater = [:] as LinkedHashMap<String, Object>
                 cells.each { Cell cell ->
                     colNum++
-                    int columnIndex = cell.columnIndex - offsetCells
+                    def columnIndex = cell.columnIndex - offsetCells.toInteger()
                     if (columnIndex >= dataset.field.size()) return
                     updater.put("${dataset.field.get(columnIndex).name}".toString(), getCellValue(cell, dataset, columnIndex))
                 }
@@ -241,7 +215,7 @@ class ExcelDriver extends Driver {
         return countRec
     }
 
-    private static def getCellValue(Cell cell, Dataset dataset, int columnIndex) {
+    static private Object getCellValue(Cell cell, Dataset dataset, Integer columnIndex) {
 		def res
         try{
             Field.Type fieldType = dataset.field.get(columnIndex).type
@@ -352,12 +326,12 @@ class ExcelDriver extends Driver {
     }
 
     @Override
-    long executeCommand (String command, Map params) {
+    Long executeCommand (String command, Map params) {
         throw new ExceptionGETL('Not support this features!')
     }
 
     @Override
-    long getSequence(String sequenceName) {
+    Long getSequence(String sequenceName) {
         throw new ExceptionGETL('Not support this features!')
     }
 
@@ -401,7 +375,7 @@ class ExcelDriver extends Driver {
     }
 
     @Override
-    boolean isConnected() {
+    Boolean isConnected() {
         throw new ExceptionGETL('Not support this features!')
     }
 }

@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.jdbc
 
 import getl.data.Connection
@@ -108,9 +84,9 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	void setPointConnection(JDBCConnection value) { pointConnection = value }
 	
 	/**  Count proccessed rows */
-	long rowCount = 0
+	private Long rowCount = 0L
 	/**  Count proccessed rows */
-	long getRowCount() { rowCount }
+	Long getRowCount() { rowCount }
 
 	/** Script to execute */
 	private String script
@@ -165,7 +141,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * Compile script to commands
 	 * @param script 
 	 */
-	private boolean prepareSql(String script) {
+	private Boolean prepareSql(String script) {
 		if (script == null) 
 			throw new ExceptionGETL("SQLScripter: need script in prepareSql method")
 			
@@ -256,7 +232,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		} else {
 			sql = StringUtils.RemoveSQLCommentsWithoutHints(sql).trim()
 			if (sql.matches("(?is)[/][*][:].*[*][/].*")) {
-				int ic = sql.indexOf("*/")
+				def ic = sql.indexOf("*/")
 				scriptLabel = sql.substring(2, ic).trim().substring(1).trim().toLowerCase()
 				sql = sql.substring(ic + 2).trim()
 			}
@@ -293,7 +269,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		return str
 	}
 	
-	private void doLoadPoint (List<String> st, int i) {
+	private void doLoadPoint (List<String> st, Integer i) {
 		def m = sql =~ "(?is)load_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+to(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
 		if (m.size() == 0) throw new ExceptionGETL("Uncorrect syntax for operator LOAD_POINT: \"$sql\"")
 		//noinspection GroovyAssignabilityCheck
@@ -328,7 +304,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	}
 	
 	@groovy.transform.Synchronized
-	private void doSavePoint (List<String> st, int i) {
+	private void doSavePoint (List<String> st, Integer i) {
 		def m = sql =~ "(?is)save_point(\\s|\\t)+([a-z0-9_.]+)(\\s|\\t)+from(\\s|\\t)+([a-z0-9_]+)(\\s|\\t)+with(\\s|\\t)+(insert|merge)(\\s|\\t)*"
         if (m.size() == 0) throw new ExceptionGETL("Uncorrect syntax for operator SAVE_POINT: \"$sql\"")
 		//noinspection GroovyAssignabilityCheck
@@ -365,8 +341,8 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param st
 	 * @param i
 	 */
-	private void doUpdate(List<String> st, int i) {
-		long rc = connection.executeCommand(command: sql)
+	private void doUpdate(List<String> st, Integer i) {
+		def rc = connection.executeCommand(command: sql)
 		if (rc > 0) rowCount += rc
 		if (scriptLabel != null) {
 			vars.put(scriptLabel, rc)
@@ -378,7 +354,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param st
 	 * @param i
 	 */
-	private void doSelect(List<String> st, int i) {
+	private void doSelect(List<String> st, Integer i) {
 		//println "Select query: ${sql}"
 		QueryDataset ds = new QueryDataset(connection: connection, query: sql) 
 		def rows = ds.rows()
@@ -394,7 +370,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param st
 	 * @param i
 	 */
-	private void doSetVar(List<String> st, int i)  {
+	private void doSetVar(List<String> st, Integer i)  {
 		QueryDataset query = new QueryDataset(connection: connection, query: sql)
 		query.eachRow(limit: 1) { row ->
 			query.field.each { Field f ->
@@ -413,11 +389,11 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param st
 	 * @param i
 	 */
-	private int doFor(List<String> st, int i) {
-		int fe = -1
-		int fc = 1
+	private Integer doFor(List<String> st, Integer i) {
+		def fe = -1
+		def fc = 1
 		def b = new StringBuffer()
-		for (int fs = i + 1; fs < st.size(); fs++) {
+		for (Integer fs = i + 1; fs < st.size(); fs++) {
 			String c = st[fs] 
 			if (c.matches("(?is)for(\\s|\\n|\\t)+select(\\s|\\n|\\t).*")) {
 				fc++
@@ -438,7 +414,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		
 		SQLScripter ns = new SQLScripter(connection: connection, script: b.toString(), logEcho: logEcho,
 				vars: vars, extVars: extVars)
-		boolean isExit = false
+		def isExit = false
 		rows.each { row ->
 			if (isExit) return
 			
@@ -471,11 +447,11 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param st
 	 * @param i
 	 */
-	private int doIf(List<String> st, int i) {
-		int fe = -1
-		int fc = 1
+	private Integer doIf(List<String> st, Integer i) {
+		def fe = -1
+		def fc = 1
 		def b = new StringBuffer()
-		for (int fs = i + 1; fs < st.size(); fs++) {
+		for (Integer fs = i + 1; fs < st.size(); fs++) {
 			if (st[fs].matches("(?is)if(\\s|\\n|\\t)+.*")) {
 				fc++
 			} else if (st[fs].matches("(?is)end(\\s|\\n|\\t)+if")) {
@@ -510,11 +486,11 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		return fe
 	}
 	
-	private int doBlock(List<String> st, int i) {
-		int fe = -1
-		int fc = 1
+	private Integer doBlock(List<String> st, Integer i) {
+		def fe = -1
+		def fc = 1
 		def b = new StringBuffer()
-		for (int fs = i + 1; fs < st.size(); fs++) {
+		for (Integer fs = i + 1; fs < st.size(); fs++) {
 			if (st[fs].matches('(?is)begin(\\s|\\t)+block(\\s|\\t)*')) {
 				fc++
 			}
@@ -547,15 +523,14 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		return fe
 	}
 	
-	private boolean requiredExit
-
-	boolean isRequiredExit() { requiredExit }
+	private Boolean requiredExit
+	Boolean isRequiredExit() { requiredExit }
 
 	/**
 	 * Run SQL script
 	 * @param useParsing enable script command parsing
 	 */
-	void runSql(boolean useParsing = true) {
+	void runSql(Boolean useParsing = true) {
 		if (connection == null)
 			throw new ExceptionGETL('Not defined jdbc connection for work!')
 
@@ -568,7 +543,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		requiredExit = false
 		def st = BatchSQL2List(script, ";")
 		rowCount = 0
-		for (int i = 0; i < st.size(); i++) {
+		for (Integer i = 0; i < st.size(); i++) {
 			if (requiredExit) return
 			if (!prepareSql(st[i])) continue
 			
@@ -628,7 +603,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param fileName file path (use the prefix "resource:/" to load from the resource file)
 	 * @param codePage text encoding (default utf-8)
 	 */
-	void runFile (boolean useParsing, String fileName, String codePage = 'utf-8') {
+	void runFile (Boolean useParsing, String fileName, String codePage = 'utf-8') {
 		loadFile(fileName, codePage)
 		runSql(useParsing)
 	}
@@ -647,7 +622,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param useParsing enable script command parsing
 	 * @param sql script to execute
 	 */
-	void exec(boolean useParsing, String sql) {
+	void exec(Boolean useParsing, String sql) {
 		script = sql
 		runSql(useParsing)
 	}
@@ -662,7 +637,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		if (sql == null) throw new ExceptionGETL("\"sql\" parameter required!")
 
 		List<String> res = sql.split('\n')
-		for (int i = 0; i < res.size(); i++) {
+		for (Integer i = 0; i < res.size(); i++) {
 			String s = res[i].trim()
 			def l = s.length()
 			if (l == 0) continue
@@ -674,7 +649,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 				def f = s.lastIndexOf('--')
 				if (f >= 0) {
 					def q = 0
-					for (int y = 0; y < f; y++) {
+					for (Integer y = 0; y < f; y++) {
 						if (s[y] == '\'') {
 							if (q == 0)
 								q++
@@ -689,7 +664,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		}
 		String prepare = res.join('\n')
 		res = prepare.split(delim)
-		for (int i = 0; i < res.size(); i++) { res[i] = res[i].trim() }
+		for (Integer i = 0; i < res.size(); i++) { res[i] = res[i].trim() }
 
 		return res
 	}

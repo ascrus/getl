@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.proc
 
 import getl.lang.Getl
@@ -46,7 +22,7 @@ import getl.utils.*
  */
 class Executor implements GetlRepository {
 	/** Count thread process */
-	Integer countProc
+	private Integer countProc
 	/** Count thread process */
 	@Synchronized
 	Integer getCountProc() { countProc }
@@ -55,7 +31,7 @@ class Executor implements GetlRepository {
 	void setCountProc(Integer value) { countProc = value }
 	
 	/** Limit elements for executed (null or 0-unlimited) */
-	Integer limit
+	private Integer limit
 	/** Limit elements for executed (null or 0-unlimited) */
 	@Synchronized
 	Integer getLimit() { limit }
@@ -64,7 +40,7 @@ class Executor implements GetlRepository {
 	void setLimit(Integer value) { limit = value }
 	
 	/** Time waiting for check finish process (default 500ms) */
-	Long waitTime = 500
+	private Long waitTime = 500
 	/** Time waiting for check finish process (default 500ms) */
 	@Synchronized
 	Long getWaitTime() { waitTime }
@@ -73,7 +49,7 @@ class Executor implements GetlRepository {
 	void setWaitTime(Long value) { waitTime = value }
 
 	/** Abort on error in any process (default false) */
-	Boolean abortOnError = false
+	private Boolean abortOnError = false
 	/** Abort on error in any process (default false) */
 	@Synchronized
 	Boolean getAbortOnError() { abortOnError }
@@ -82,7 +58,7 @@ class Executor implements GetlRepository {
 	void setAbortOnError(Boolean value) { abortOnError = value }
 	
 	/** Write thread errors to log (default true) */
-	Boolean logErrors = true
+	private Boolean logErrors = true
 	/** Write thread errors to log (default true) */
 	@Synchronized
 	Boolean getLogErrors() { logErrors }
@@ -91,7 +67,7 @@ class Executor implements GetlRepository {
 	void setLogErrors(Boolean value) { logErrors = value }
 
 	/** Write thread errors to dump file (default false ) */
-	Boolean dumpErrors = false
+	private Boolean dumpErrors = false
 	/** Write thread errors to dump file (default false ) */
 	@Synchronized
 	Boolean getDumpErrors() { dumpErrors }
@@ -99,7 +75,7 @@ class Executor implements GetlRepository {
 	void setDumpErrors(Boolean value) { dumpErrors = value }
 	
 	/** Return element if error (default false) */
-	Boolean debugElementOnError = false
+	private Boolean debugElementOnError = false
 	/** Return element if error (default false) */
 	@Synchronized
 	Boolean getDebugElementOnError() { debugElementOnError }
@@ -108,11 +84,11 @@ class Executor implements GetlRepository {
 	void setDebugElementOnError(Boolean value) { debugElementOnError = value }
 
 	/** Run has errors */
-	private boolean hasError = false
+	private Boolean hasError = false
 	private final Object lockHashError = new Object()
 	
 	/** Threads has errors */
-	boolean getIsError () {
+	Boolean getIsError () {
 		Boolean res
 		synchronized (lockHashError) {
 			res = hasError
@@ -121,7 +97,7 @@ class Executor implements GetlRepository {
 	}
 	
 	/** How exceptions in process stopping execute */
-	final Map<Object, Throwable> exceptions = ([:] as Map<Object, Throwable>)
+	private final Map<Object, Throwable> exceptions = ([:] as Map<Object, Throwable>)
 	/** How exceptions in process stopping execute */
 	@Synchronized('exceptions')
 	Map<Object, Throwable> getExceptions() { exceptions }
@@ -135,7 +111,7 @@ class Executor implements GetlRepository {
 	}
 	
 	/** List of processing elements */
-	final List list = Collections.synchronizedList(new ArrayList())
+	private final List list = Collections.synchronizedList(new ArrayList())
 
 	/** List of processing elements */
 	List getList() { this.list }
@@ -156,14 +132,14 @@ class Executor implements GetlRepository {
 	}
 
 	/** List closure code for thread run */
-	final List<Closure> listCode = [] as List<Closure>
+	private final List<Closure> listCode = [] as List<Closure>
 	/** Adding thread code for run */
 	void addThread(Closure cl) { listCode << cl }
 	/** Clear current list of registered thread code */
 	void clearListThread() { listCode.clear() }
-	
+
 	/** Main code (is executed while running threads) */
-	Closure mainCode
+	private Closure mainCode
 	/** Main code (is executed while running threads) */
 	Closure getMainCode() { this.mainCode }
 	/** Main code (is executed while running threads) */
@@ -172,23 +148,23 @@ class Executor implements GetlRepository {
 	void mainCode(Closure value) { setMainCode(value) }
 
 	/** List of all threads */
-	final List<Map> threadList = new LinkedList<Map>()
+	private final List<Map> threadList = new LinkedList<Map>()
 	/** List of all threads */
 	@Synchronized('threadList')
 	List<Map> getThreadList() { threadList }
 
 	/** List of active threads */
-	final List<Map> threadActive = new LinkedList<Map>()
+	private final List<Map> threadActive = new LinkedList<Map>()
 	/** List of active threads */
 	@Synchronized('threadActive')
 	List<Map> getThreadActive() { threadActive }
 
 	/** Interrupt flag */
-	private boolean isInterrupt = false
+	private Boolean isInterrupt = false
 	private final Object lockIsInterrupt = new Object()
 
 	/** Interrupt flag */
-	boolean getIsInterrupt() {
+	Boolean getIsInterrupt() {
 		Boolean res
 		synchronized (lockIsInterrupt) {
 			res = isInterrupt
@@ -197,7 +173,7 @@ class Executor implements GetlRepository {
 	}
 
 	/** Interrupt flag */
-	void setIsInterrupt(boolean value) {
+	void setIsInterrupt(Boolean value) {
 		synchronized (lockIsInterrupt) {
 			isInterrupt = true
 		}
@@ -216,12 +192,12 @@ class Executor implements GetlRepository {
 	 * @param count
 	 * @param code
 	 */
-	void runMany(int countList, Closure code) {
+	void runMany(Integer countList, Closure code) {
 		def l = (1..countList)
 		run(l, countList, code)
 	}
 
-	void runMany(int countList, int countThread, Closure code) {
+	void runMany(Integer countList, Integer countThread, Closure code) {
 		def l = (1..countList)
 		run(l, countThread, code)
 	}
@@ -263,9 +239,9 @@ class Executor implements GetlRepository {
 	}
 
 	/** Component runs threads */
-	boolean isRunThreads = false
+	private Boolean isRunThreads = false
 	/** Component runs threads */
-	boolean getIsRunThreads() { isRunThreads }
+	Boolean getIsRunThreads() { isRunThreads }
 
 	/** Run thread code with list elements */
 	void run(Integer countThread, Closure code) {
@@ -390,7 +366,7 @@ class Executor implements GetlRepository {
 		try {
 			def size = elements.size()
 			if (limit?:0 > 0 && limit < size) size = limit
-			for (int i = 0; i < size; i++) {
+			for (Integer i = 0; i < size; i++) {
 				def r = [:] as Map<String, Object>
 				r.num = i
 				r.element = elements[i]
@@ -562,7 +538,7 @@ class Executor implements GetlRepository {
 		def threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
 		isRunThreads = true
 		try {
-			for (int i = 0; i < listElements.size(); i++) {
+			for (Integer i = 0; i < listElements.size(); i++) {
 				def r = [:] as Map<String, Object>
 				r.num = i
 				r.element = listElements[i]
@@ -774,10 +750,10 @@ class Executor implements GetlRepository {
 	}
 
 	private ExecutorService threadBackground
-	private boolean runBackgroundService = false
+	private Boolean runBackgroundService = false
 	
 	@Synchronized
-	boolean isRunBackground () { runBackgroundService }
+	Boolean isRunBackground () { runBackgroundService }
 	
 	/** Start background process */
 	void startBackground(Closure code) {
@@ -833,7 +809,7 @@ class Executor implements GetlRepository {
 	}
 
 	/** Run code with ignore runtime errors */
-	static boolean RunIgnoreErrors (Closure code) {
+	static Boolean RunIgnoreErrors (Closure code) {
 		try {
 			code.call()
 		} 
@@ -845,7 +821,7 @@ class Executor implements GetlRepository {
 		return true
 	}
 
-	static private operationLock = new Object()
+	static private Object operationLock = new Object()
 
 	@Synchronized('operationLock')
 	@SuppressWarnings("GrMethodMayBeStatic")
@@ -854,12 +830,12 @@ class Executor implements GetlRepository {
 	}
 
 	/** Synchronized counter for work between threads */
-	final def counter = new SynchronizeObject()
+	private final def counter = new SynchronizeObject()
 	/** Synchronized counter for work between threads */
 	SynchronizeObject getCounter() { counter }
 
 	/** The number of successfully processed list items in threads */
-	protected final def counterProcessed = new SynchronizeObject()
+	protected final SynchronizeObject counterProcessed = new SynchronizeObject()
 	/** The number of successfully processed list items in threads */
 	Long getCountProcessed() { counterProcessed.count }
 

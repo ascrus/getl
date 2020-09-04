@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 import getl.exception.ExceptionGETL
@@ -39,7 +15,7 @@ class Lexer {
 	/**
 	 * Type of use parse command
 	 */
-	private static enum CommandType {NONE, WORD, QUOTE, BRACKET, OBJECT_NAME, OPERATOR, COMMENT}
+	static private enum CommandType {NONE, WORD, QUOTE, BRACKET, OBJECT_NAME, OPERATOR, COMMENT}
 
 	/**
 	 * Input text stream
@@ -86,12 +62,12 @@ class Lexer {
 	/**
 	 * Current column number in line
 	 */
-	private int curNum
+	private Integer curNum
 
 	/**
 	 * Current line
 	 */
-	private int curLine
+	private Integer curLine
 
 	/**
 	 * Parse input stream
@@ -107,7 +83,7 @@ class Lexer {
 		curNum = 0
 		curLine = 1
 
-		int c = input.read()
+		def c = input.read()
 		while (c != -1) {
 			curNum++
 			switch (c) {
@@ -131,7 +107,7 @@ class Lexer {
 				// special rules for (*) operator
 				case 42:
 					input.mark(1)
-					int nextChar = input.read()
+					def nextChar = input.read()
 
 					if (command.type in [CommandType.QUOTE, CommandType.COMMENT] && nextChar != 47) {
 						input.reset()
@@ -175,7 +151,7 @@ class Lexer {
 				// (/) comment character
 				case 47:
 					input.mark(1)
-					int nextChar = input.read()
+					def nextChar = input.read()
 
 					if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) {
 						input.reset()
@@ -225,7 +201,7 @@ class Lexer {
         if (sb.length() > 0) gap(c)
 	}
 
-	private void addChar(int c) {
+	private void addChar(Integer c) {
 		sb << (char)(c as int)
 	}
 
@@ -234,7 +210,7 @@ class Lexer {
 	 * @param c
 	 * @return
 	 */
-	private boolean gap (int c) {
+	private Boolean gap (Integer c) {
 		if (command.type in [CommandType.WORD]) {
 			if (sb.length() > 0) tokens << [type: TokenType.SINGLE_WORD, value: sb.toString()]
 			command = commands.pop() as CommandParam
@@ -258,7 +234,7 @@ class Lexer {
      * @param c
      * @param type
      */
-    private void operator(int c) {
+    private void operator(Integer c) {
         if (command.type != CommandType.OPERATOR) {
             commands.push(command)
             command = new CommandParam()
@@ -268,7 +244,7 @@ class Lexer {
         }
 
         input.mark(2)
-        int n = input.read()
+        def n = input.read()
         if (Character.getType(n) == Character.MATH_SYMBOL || n in [37, 38, 42]) {
             curNum++
             addChar(n)
@@ -292,7 +268,7 @@ class Lexer {
 	 * @param c
 	 * @param type
 	 */
-	private void quote(int c) {
+	private void quote(Integer c) {
 		if (command.type == CommandType.WORD) {
 			if (sb.length() > 0 && sb.substring(sb.length() - 1) == ".") {
 				command.type = CommandType.OBJECT_NAME
@@ -322,7 +298,7 @@ class Lexer {
 		}
 
 		input.mark(1)
-		int n = input.read()
+		def n = input.read()
 		if (c == n) {
 			curNum++
 			addChar(n)
@@ -345,9 +321,9 @@ class Lexer {
 	/**
 	 * Start comments block
 	 */
-	private void comment_start(int c) {
+	private void comment_start(Integer c) {
 		input.mark(1)
-		int n1 = input.read()
+		def n1 = input.read()
 
 		if (command.type == CommandType.QUOTE || n1 != 42) {
 			input.reset()
@@ -365,7 +341,7 @@ class Lexer {
 	/**
 	 * Finish comments block
 	 */
-	private void comment_finish(int c) {
+	private void comment_finish(Integer c) {
 		if (sb.length() >= 0) tokens << [type: TokenType.COMMENT, comment_start: "/*", comment_finish: "*/", value: sb.toString()]
 		command = commands.pop() as CommandParam
 		sb = new StringBuilder()
@@ -376,7 +352,7 @@ class Lexer {
 	 * @param c
 	 * @param type
 	 */
-	private void level_start (int c1, int c2) {
+	private void level_start (Integer c1, Integer c2) {
 		if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) {
 			addChar(c1)
 			return
@@ -402,7 +378,7 @@ class Lexer {
 		tokens = []
 	}
 
-	private void level_finish (int c1, int c2) {
+	private void level_finish (Integer c1, Integer c2) {
 		if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) {
 			addChar(c2)
 			return
@@ -430,7 +406,7 @@ class Lexer {
 		command = commands.pop() as CommandParam
 	}
 
-	private void comma(int c) {
+	private void comma(Integer c) {
 		if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) {
 			addChar(c)
 			return
@@ -441,7 +417,7 @@ class Lexer {
 		tokens[tokens.size() - 1]."delimiter" = m
 	}
 
-	private void semicolon(int c) {
+	private void semicolon(Integer c) {
 		if (command.type in [CommandType.QUOTE, CommandType.COMMENT]) {
 			addChar(c)
 			return
@@ -483,9 +459,9 @@ class Lexer {
 	 * @param start
 	 * @return
 	 */
-	static String keyWords(List<Map> tokens, int start, Integer max) {
+	static String keyWords(List<Map> tokens, Integer start, Integer max) {
 		StringBuilder sb = new StringBuilder()
-		int i = 0
+		def i = 0
 		while (start < tokens.size() && tokens[start]."type" == TokenType.SINGLE_WORD && (max == null || i < max)) {
 			i++
 			sb << tokens[start]."value"
@@ -501,7 +477,7 @@ class Lexer {
 	 * @param position
 	 * @return
 	 */
-	static List<Map> list (List<Map> tokens, int position) {
+	static List<Map> list (List<Map> tokens, Integer position) {
 		(List<Map>)((tokens[position]."type" == TokenType.LIST)?tokens[position]."list":null)
 	}
 
@@ -511,7 +487,7 @@ class Lexer {
 	 * @param position
 	 * @return
 	 */
-	static Map function (List<Map> tokens, int position) {
+	static Map function (List<Map> tokens, Integer position) {
 		Map token = tokens[position]
 		if (token."type" != TokenType.FUNCTION) return null
 
@@ -524,7 +500,7 @@ class Lexer {
 	 * @param res
 	 * @return - next token after object name
 	 */
-	static List object (List<Map> tokens, int start) {
+	static List object (List<Map> tokens, Integer start) {
 		if (!((tokens[start]."type" as TokenType) in [TokenType.SINGLE_WORD, TokenType.OBJECT_NAME])) {
 			return null
 		}
@@ -537,7 +513,7 @@ class Lexer {
 	 * @param position
 	 * @return
 	 */
-	static TokenType type (List<Map> tokens, int position) {
+	static TokenType type (List<Map> tokens, Integer position) {
 		(TokenType)((position < tokens.size())?tokens[position]."type":null)
 	}
 
@@ -547,8 +523,8 @@ class Lexer {
 	 * @param start
 	 * @return
 	 */
-	static int findByType (List<Map> tokens, TokenType type, int start) {
-		for (int i = start; i < tokens.size(); i++) {
+	static Integer findByType (List<Map> tokens, TokenType type, Integer start) {
+		for (Integer i = start; i < tokens.size(); i++) {
 			if (tokens[i]."type" == type) return i
 		}
 		return -1
@@ -562,7 +538,7 @@ class Lexer {
 	 * @param finish
 	 * @return
 	 */
-	static List<List<Map>> toList (List<Map> tokens, int start, int finish) {
+	static List<List<Map>> toList (List<Map> tokens, Integer start, Integer finish) {
 		List<List<Map>> res = new ArrayList<List<Map>>()
 		List<Map> cur = new ArrayList<Map>()
 		while (start <= finish && tokens[start]."type"  != TokenType.SEMICOLON) {
@@ -589,7 +565,7 @@ class Lexer {
 	 * @param delimiter
 	 * @return
 	 */
-	static List<List<Map>> toList (List<Map> tokens, int start, int finish, String delimiter) {
+	static List<List<Map>> toList (List<Map> tokens, Integer start, Integer finish, String delimiter) {
 		delimiter = delimiter.toUpperCase()
 		List<List<Map>> res = new ArrayList<List<Map>>()
 		List<Map> cur = new ArrayList<Map>()
@@ -617,9 +593,9 @@ class Lexer {
 	 * @param keyWord
 	 * @return
 	 */
-	static int findKeyWord(List<Map> tokens, int start, String keyWord) {
+	static Integer findKeyWord(List<Map> tokens, Integer start, String keyWord) {
 		keyWord = keyWord.toUpperCase()
-		for (int i = start; i < tokens.size(); i++) {
+		for (Integer i = start; i < tokens.size(); i++) {
 			def token = tokens[i]
 			if (token."type" == TokenType.SINGLE_WORD && ((String)token."value").toUpperCase() == keyWord) return i
 		}

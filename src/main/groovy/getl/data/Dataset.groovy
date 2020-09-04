@@ -1,34 +1,12 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.data
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.ConfigSlurper
 import getl.data.opts.DatasetLookupSpec
 import getl.data.sub.WithConnection
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
+import getl.lang.sub.GetlValidate
 import getl.proc.sub.ExecutorThread
 import groovy.json.JsonSlurper
 import getl.exception.ExceptionGETL
@@ -46,8 +24,6 @@ import groovy.transform.stc.SimpleType
  *
  */
 class Dataset implements Cloneable, GetlRepository, WithConnection {
-	static enum FormatSchemaFile {JSON, SLURPER}
-
 	Dataset () {
 		initParams()
 
@@ -60,6 +36,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		methodParams.register('openWrite', ['prepare', 'autoSchema'])
 		methodParams.register('lookup', ['key', 'strategy'])
 	}
+
+	@JsonIgnore
+	String getDslNameObject() { sysParams.dslNameObject as String }
+	void setDslNameObject(String value) { sysParams.dslNameObject = value }
+
+	@JsonIgnore
+	Getl getDslCreator() { sysParams.dslCreator as Getl }
+	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Initialization dataset parameters */
 	protected void initParams() {
@@ -95,6 +79,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	static enum Status {AVAIBLE, READ, WRITE}
 
+	/** Format schema files */
+	static enum FormatSchemaFile {JSON, SLURPER}
 
 	/**
 	 * <p>Create new dataset with name of class dataset</p>
@@ -144,8 +130,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	
 
 	/** Connection */
-	Connection connection
+	private Connection connection
 	/** Connection */
+	@JsonIgnore
 	Connection getConnection() { return this.connection }
 	/** Connection */
 	void setConnection(Connection value) {
@@ -156,10 +143,19 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		this.connection = value
 	}
 
+	/** The name of the connection in the repository */
+	String getConnectionName() { connection.dslNameObject }
+	/** The name of the connection in the repository */
+	void setConnectionName(String value) {
+		GetlValidate.IsRegister(this)
+		def con = dslCreator.connection(value)
+		setConnection(con)
+	}
+
 	/** Extended attributes */
-	Map getAttributes() { params.attributes as Map }
+	Map<String, Object> getAttributes() { params.attributes as Map<String, Object> }
 	/** Extended attributes */
-	void setAttributes(Map value) {
+	void setAttributes(Map<String, Object> value) {
 		attributes.clear()
 		if (value != null) attributes.putAll(value)
 	}
@@ -170,8 +166,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	void setDescription(String value) { params.description = value }
 
 	/** Name in config from section "datasets" */
-	String config
+	private String config
 	/** Name in config from section "datasets" */
+	@JsonIgnore
 	String getConfig () { return this.config }
 	/** Name in config from section "datasets" */
 	void setConfig (String value) {
@@ -192,19 +189,23 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Dataset parameters */
-	final Map params = [:]
+	private final Map<String, Object> params = [:] as Map<String, Object>
 
 	/** Dataset parameters */
-	Map getParams() { params }
+	@JsonIgnore
+	Map<String, Object> getParams() { params as Map<String, Object>}
 	/** Dataset parameters */
-	void setParams(Map value) {
+	void setParams(Map<String, Object> value) {
 		params.clear()
 		initParams()
 		if (value != null) params.putAll(value)
 	}
 
-	private workSetField = false
-	final List<Field> field = []
+	/** Now fields are being changed */
+	private Boolean workSetField = false
+
+	/** Fields of dataset */
+	private final List<Field> field = [] as List<Field>
 	/** Fields of dataset */
 	List<Field> getField() {
 		if (!workSetField && !manualSchema && this.field.isEmpty() && schemaFileName != null)
@@ -254,20 +255,22 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Auto load schema with meta file
 	 */
-	boolean getAutoSchema () { BoolUtils.IsValue([params.autoSchema, connection.autoSchema]) }
+	@JsonIgnore
+	Boolean getAutoSchema () { BoolUtils.IsValue([params.autoSchema, connection.autoSchema]) }
 	/**
 	 * Auto load schema with meta file
 	 */
-	void setAutoSchema (boolean value) { params.autoSchema = value }
+	void setAutoSchema (Boolean value) { params.autoSchema = value }
 	
 	/**
 	 * Use manual schema for dataset
 	 */
-	boolean getManualSchema () { BoolUtils.IsValue(params.manualSchema) }
+	@JsonIgnore
+	Boolean getManualSchema () { BoolUtils.IsValue(params.manualSchema) }
 	/**
 	 * Use manual schema for dataset
 	 */
-	void setManualSchema (boolean value) {
+	void setManualSchema (Boolean value) {
 		if (value)
 			params.manualSchema = true
 		else
@@ -275,6 +278,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 	
 	/** Schema file name */
+	@JsonIgnore
 	String getSchemaFileName () { params.schemaFileName }
 	/** Schema file name */
 	void setSchemaFileName (String value) { params.schemaFileName = value }
@@ -282,23 +286,19 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Print write rows to console
 	 */
-	boolean getLogWriteToConsole () { return BoolUtils.IsValue([params.logWriteToConsole, connection.logWriteToConsole], false) }
+	@JsonIgnore
+	Boolean getLogWriteToConsole () { return BoolUtils.IsValue([params.logWriteToConsole, connection.logWriteToConsole], false) }
 	/**
 	 * Print write rows to console
 	 */
-	void setLogWriteToConsole (boolean value) { params.logWriteToConsole = value }
+	void setLogWriteToConsole (Boolean value) { params.logWriteToConsole = value }
 
 	/** System parameters */
-	final Map<String, Object> sysParams = [:]
+	private final Map<String, Object> sysParams = [:] as Map<String, Object>
 
 	/** System parameters */
-	Map<String, Object> getSysParams() { sysParams }
-
-	String getDslNameObject() { sysParams.dslNameObject as String }
-	void setDslNameObject(String value) { sysParams.dslNameObject = value }
-
-	Getl getDslCreator() { sysParams.dslCreator as Getl }
-	void setDslCreator(Getl value) { sysParams.dslCreator = value }
+	@JsonIgnore
+	Map<String, Object> getSysParams() { sysParams as Map<String, Object> }
 
 	/** Dataset directives create, drop, read, write and bulkLoad */
 	Map<String, Object> directives(String group) {
@@ -459,7 +459,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Find field by name from list array
 	 */
-	static int findField(List<Field> fieldList, String fieldName) {
+	static Integer findField(List<Field> fieldList, String fieldName) {
 		fieldName = fieldName.toLowerCase()
 		return fieldList.findIndexOf { Field f -> (f.name.toLowerCase() == fieldName) }
 	}
@@ -535,7 +535,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Find field by name
 	 */
-	int indexOfField (String name) {
+	Integer indexOfField (String name) {
 		if (name == null) return -1
 		name = name.toLowerCase()
 		return getField().findIndexOf { f -> (f.name?.toLowerCase() == name) }
@@ -565,10 +565,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		return this.field[i]
 	}
 	
-	/**
-	 * Current status of dataset
-	 */
-	public Status status = Status.AVAIBLE
+	/** Current status of dataset */
+	private Status status = Status.AVAIBLE
+	/** Current status of dataset */
+	@JsonIgnore
+	Status getStatus() { status }
 
 	/**
 	 * Initialization list of fields
@@ -579,10 +580,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		}
 	}
 	
-	/**
-	 * Error parse read rows 
-	 */
-	public TFSDataset errorsDataset
+	/** Error parse read rows */
+	private TFSDataset errorsDataset
+
+	/** Error parse read rows */
+	@JsonIgnore
+	TFSDataset getErrorsDataset() {errorsDataset }
 	
 	/**
 	 * Create new dataset container
@@ -735,8 +738,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Dataset name */
+	@JsonIgnore
 	String getObjectName() { "noname" }
 	/** Full dataset name */
+	@JsonIgnore
 	String getObjectFullName() { objectName }
 	
 	/**
@@ -808,6 +813,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Return key fields as field list
 	 */
+	@JsonIgnore
 	List<Field> getFieldListKeys () {
 		def res = [] as List<Field>
 		field.each { Field field ->
@@ -822,6 +828,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Return partition fields as field list
 	 */
+	@JsonIgnore
 	List<Field> getFieldListPartitions () {
 		def res = [] as List<Field>
 		getField().each { Field field ->
@@ -836,6 +843,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Return list of name fields
 	 */
+	@JsonIgnore
 	List<String> getFieldNames () {
 		def res = []
 		getField().each { Field field -> res << field.name }
@@ -876,25 +884,37 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		}
 	}
 	
-	/**
-	 * Dataset has error for last read operation
-	 */
-	public boolean isReadError = false
+	/** Dataset has error for last read operation */
+	private Boolean isReadError = false
+	/** Dataset has error for last read operation */
+	@JsonIgnore
+	Boolean getIsReadError() { isReadError }
+	/** Dataset has error for last read operation */
+	void setIsReadError(Boolean value) { isReadError = value }
 	
-	/**
-	 * Count reading rows from dataset
-	 */
-	public long readRows = 0
+	/** Count reading rows from dataset */
+	private Long readRows = 0
+	/** Count reading rows from dataset */
+	@JsonIgnore
+	Long getReadRows() { readRows }
+	/** Count reading rows from dataset */
+	void setReadRows(Long value) { readRows = value }
 	
-	/**
-	 * Count writing rows to dataset
-	 */
-	public long writeRows = 0
+	/** Count writing rows to dataset */
+	private Long writeRows = 0
+	/** Count writing rows to dataset */
+	@JsonIgnore
+	Long getWriteRows() { writeRows }
+	/** Count writing rows to dataset */
+	void setWriteRows(Long value) { writeRows = value }
 	
-	/**
-	 * Count updated rows in dataset
-	 */
-	public long updateRows = 0
+	/** Count updated rows in dataset */
+	private Long updateRows = 0
+	/** Count updated rows in dataset */
+	@JsonIgnore
+	Long getUpdateRows() {updateRows }
+	/** Count updated rows in dataset */
+	void setUpdateRows(Long value) {updateRows = value }
 	
 	/**
 	 * Process each row dataset with user code
@@ -928,13 +948,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		procParams = readDir + procParams
 		
 		// Save parse and assert errors to file
-		boolean saveErrors = (procParams.saveErrors != null)?procParams.saveErrors:false
-		
-//		def setErrorValue = generateSetErrorValue(code)
-		
-		def doProcessError = { Exception e, long recNo ->
+		def saveErrors = BoolUtils.IsValue(procParams.saveErrors)
+
+		def doProcessError = { Exception e, Long recNo ->
 			isReadError = true
-			Map errorRow = [:]
+			def errorRow = [:]
 			errorRow.row = recNo
 			errorRow.error = e.message
 			try {
@@ -979,12 +997,16 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Additional parameters for driver operations	
 	 */
-	public def driver_params
+	@JsonIgnore
+	public def _driver_params
 	
-	/**
-	 * Dataset has error for last write operation
-	 */
-	public boolean isWriteError = false
+	/** Dataset has error for last write operation */
+	private Boolean isWriteError = false
+	/** Dataset has error for last write operation */
+	@JsonIgnore
+	Boolean getIsWriteError() { isWriteError }
+	/** Dataset has error for last write operation */
+	protected void setIsWriteError(Boolean value) { isWriteError = value }
 	
 	/**
 	 * Open dataset from writing rows
@@ -1108,7 +1130,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		finally {
 			status = Dataset.Status.AVAIBLE
 			connection.driver.cleanWrite(this)
-			driver_params = null
+			_driver_params = null
 		}
 	}
 
@@ -1355,7 +1377,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Format for reading and writing schema files */
-	public static FormatSchemaFile formatSchemaFile
+	static public FormatSchemaFile formatSchemaFile
 	
 	/**
 	 * Save fields structure to metadata file
@@ -1363,7 +1385,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param overwrite save if file exist
 	 */
 	@Synchronized
-	void saveDatasetMetadata(List<String> fieldList = null, boolean overwrite = true) {
+	void saveDatasetMetadata(List<String> fieldList = null, Boolean overwrite = true) {
 		if (isResourceFileNameSchema())
 			throw new ExceptionGETL('It is not possible to save the schema to a resource file!')
 
@@ -1487,14 +1509,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
         if (eqFields == null) return false
         if (getField().size() != eqFields.size()) return false
 		def l = getField()
-        for (int i = 0; i < field.size(); i++) {
+        for (Integer i = 0; i < field.size(); i++) {
             if (!l[i].equalsAll(eqFields[i])) return false
         }
 
         return true
     }
 
-	TFSDataset csvTempFile
+	private TFSDataset csvTempFile
 	/** Create new csv temporary file for this dataset */
 	void createCsvTempFile() {
 		this.csvTempFile = TFS.dataset()
@@ -1519,13 +1541,15 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Csv temporary file for use in download and upload data from this dataset */
+	@JsonIgnore
 	TFSDataset getCsvTempFile() {
 		if (this.csvTempFile == null) createCsvTempFile()
 		return csvTempFile
 	}
 
 	/** This dataset use csv temporary file */
-	boolean isUseCsvTempFile() { this.csvTempFile != null }
+	@JsonIgnore
+	Boolean isUseCsvTempFile() { this.csvTempFile != null }
 
 	/**
 	 * Configure the file to work and upload to the table

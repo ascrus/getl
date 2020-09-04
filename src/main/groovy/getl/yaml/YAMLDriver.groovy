@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.yaml
 
 import getl.data.Dataset
@@ -30,10 +6,8 @@ import getl.data.FileDataset
 import getl.driver.Driver
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
-import getl.json.JSONDataset
 import getl.utils.GenerationUtils
 import getl.utils.StringUtils
-import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import groovy.yaml.YamlSlurper
 
@@ -75,11 +49,11 @@ class YAMLDriver extends FileDriver {
      * @param code row process code
      */
     @CompileStatic
-    protected void readRows (YAMLDataset dataset, List<String> listFields, String rootNode, long limit, def data, Closure code) {
+    protected void readRows (YAMLDataset dataset, List<String> listFields, String rootNode, Long limit, def data, Closure code) {
         StringBuilder sb = new StringBuilder()
-        sb << "{ getl.yaml.YAMLDataset dataset, Closure code, Object data, long limit ->\n"
+        sb << "{ getl.yaml.YAMLDataset dataset, Closure code, Object data, Long limit ->\n"
 
-        sb << "long cur = 0\n"
+        sb << "Long cur = 0\n"
         sb << 'data' + ((rootNode != ".")?(".${StringUtils.ProcessObjectName(rootNode, true, true)}"):'') + ".each { struct ->\n"
         sb << """
 if (limit > 0) {
@@ -91,7 +65,7 @@ if (limit > 0) {
 }
 """
         sb << '	Map row = [:]\n'
-        int c = 0
+        def c = 0
         dataset.field.each { Field d ->
             c++
             if (listFields.isEmpty() || listFields.find { it.toLowerCase() == d.name.toLowerCase() }) {
@@ -112,7 +86,7 @@ if (limit > 0) {
         def script = sb.toString()
         def hash = script.hashCode()
         Closure cl
-        Map<String, Object> driverParams = (dataset.driver_params as Map)
+        def driverParams = (dataset._driver_params as Map<String, Object>)
         if (((driverParams.hash_code_read as Integer)?:0) != hash) {
             cl = GenerationUtils.EvalGroovyClosure(script)
             driverParams.code_read = cl
@@ -184,10 +158,10 @@ if (limit > 0) {
 
     @Override
     @CompileStatic
-    long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+    Long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
         Closure<Boolean> filter = params."filter" as Closure<Boolean>
 
-        long countRec = 0
+        def countRec = 0L
         doRead(dataset as YAMLDataset, params, prepareCode) { Map row ->
             if (filter != null && !(filter.call(row))) return
 

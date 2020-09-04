@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.files
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.files.sub.FileManagerList
 import getl.lang.sub.UserLogins
@@ -40,9 +17,9 @@ import it.sauronsoftware.ftp4j.*
 @InheritConstructors
 class FTPManager extends Manager implements UserLogins {
 	/** FTP driver */
-	final FTPClient client = new FTPClient()
+	private final FTPClient client = new FTPClient()
 	/** FTP driver */
-	FTPClient getClient() { client }
+//	private FTPClient getClient() { client }
 
 	@Override
 	void initParams() {
@@ -99,17 +76,17 @@ class FTPManager extends Manager implements UserLogins {
 	}
 	
 	/** Passive mode */
-	boolean getPassive() { (params.passive != null)?params.passive:true }
+	Boolean getPassive() { (params.passive != null)?params.passive:true }
 	/** Passive mode */
-	void setPassive(boolean value) {
+	void setPassive(Boolean value) {
 		if (client.connected) client.setPassive(value) 
 		params.passive = value 
 	}
 	
 	/** Hard disconnect */
-	boolean getIsHardDisconnect() { (params.isHardDisconnect != null)?params.isHardDisconnect:false }
+	Boolean getIsHardDisconnect() { (params.isHardDisconnect != null)?params.isHardDisconnect:false }
 	/** Hard disconnect */
-	void setIsHardDisconnect(boolean value) { params.isHardDisconnect = value }
+	void setIsHardDisconnect(Boolean value) { params.isHardDisconnect = value }
 	
 	/** Auto noop timeout in seconds */
 	Integer getAutoNoopTimeout() { params.autoNoopTimeout as Integer }
@@ -128,7 +105,7 @@ class FTPManager extends Manager implements UserLogins {
 	}
 	
 	/** Connection timeout */
-	Integer getConnectionmTimeout() { params.connectionTimeout as Integer }
+	Integer getConnectionTimeout() { params.connectionTimeout as Integer }
 	/** Connection timeout */
 	void setConnectionTimeout(Integer value) {
 		if (client.connected) client.connector.connectionTimeout = value
@@ -149,18 +126,26 @@ class FTPManager extends Manager implements UserLogins {
 	void setTimeZone(Integer value) { params.timeZone = value }
 	
 	@Override
-	boolean isCaseSensitiveName() { true }
+	@JsonIgnore
+	Boolean isCaseSensitiveName() { true }
 
-    final private supportCommands = []
+	@Override
+	@JsonIgnore
+	String getHostOS() {
+		return unixOS
+	}
+
+    private final supportCommands = [] as List<String>
     /**
      * Valid support command for FTP server
      * @param cmd
      * @return
      */
-    boolean supportCommand(String cmd) { (cmd.toUpperCase() in supportCommands) }
+    Boolean supportCommand(String cmd) { (cmd.toUpperCase() in supportCommands) }
 
 	@Override
-	boolean isConnected() { BoolUtils.IsValue(client?.connected) }
+	@JsonIgnore
+	Boolean isConnected() { BoolUtils.IsValue(client?.connected) }
 	
 	@Override
 	void connect() {
@@ -170,7 +155,7 @@ class FTPManager extends Manager implements UserLogins {
 		if (server == null || port == null) throw new ExceptionGETL('Required server host and port for connect')
 		if (login == null) throw new ExceptionGETL('Required login for connect')
 		
-		if (connectionmTimeout != null) client.connector.connectionTimeout = connectionmTimeout
+		if (connectionTimeout != null) client.connector.connectionTimeout = connectionTimeout
 		if (closeTimeout != null) client.connector.closeTimeout = closeTimeout
 		if (readTimeout != null) client.connector.readTimeout = readTimeout
 		try {
@@ -242,7 +227,7 @@ class FTPManager extends Manager implements UserLogins {
 		
 		@CompileStatic
 		@Override
-		Map item(int index) {
+		Map item(Integer index) {
 			FTPFile f = listFiles[index]
 
 			Map<String, Object> m = new HashMap<String, Object>()
@@ -296,6 +281,7 @@ class FTPManager extends Manager implements UserLogins {
 	}
 	
 	@Override
+	@JsonIgnore
 	String getCurrentPath() {
 		validConnect()
 
@@ -346,7 +332,8 @@ class FTPManager extends Manager implements UserLogins {
 			throw e
 		}
 	}
-	
+
+	@SuppressWarnings('SpellCheckingInspection')
 	@Override
 	void upload(String path, String fileName) {
 		validConnect()
@@ -480,7 +467,7 @@ class FTPManager extends Manager implements UserLogins {
 	}
 
     @Override
-    long getLastModified(String fileName) {
+    Long getLastModified(String fileName) {
 		validConnect()
 
         def fl = client.list(fileName)
@@ -489,14 +476,15 @@ class FTPManager extends Manager implements UserLogins {
     }
 
     @Override
-    void setLastModified(String fileName, long time) {
+    void setLastModified(String fileName, Long time) {
 		validConnect()
 
         if (!saveOriginalDate) return
 
         if (supportCommand('MFMT')) {
             def d = new Date(time)
-            def df = DateUtils.FormatDate('yyyyMMddHHmmss', d)
+			//noinspection SpellCheckingInspection
+			def df = DateUtils.FormatDate('yyyyMMddHHmmss', d)
             client.sendCustomCommand("MFMT $df $fileName")
         }
     }

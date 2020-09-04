@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.files
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.files.sub.FileManagerList
 import getl.lang.sub.UserLogins
@@ -89,15 +66,24 @@ class HDFSManager extends Manager implements UserLogins {
     /** Home directory by user */
     private String homeDirectory
     /** Home directory by user */
+    @JsonIgnore
     String getHomeDirectory() { this.homeDirectory }
 
     @Override
-    boolean isCaseSensitiveName() {
+    @JsonIgnore
+    Boolean isCaseSensitiveName() {
         return true
     }
 
     @Override
-    boolean isConnected() { client != null }
+    @JsonIgnore
+    String getHostOS() {
+        return unixOS
+    }
+
+    @Override
+    @JsonIgnore
+    Boolean isConnected() { client != null }
 
     @Override
     void connect() {
@@ -147,6 +133,7 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
+    @JsonIgnore
     String getCurrentPath() {
         return _currentPath
     }
@@ -196,7 +183,7 @@ class HDFSManager extends Manager implements UserLogins {
 
         @CompileStatic
         @Override
-        Map item(int index) {
+        Map item(Integer index) {
             FileStatus f = listFiles[index]
 
             Map<String, Object> m = new HashMap<String, Object>()
@@ -249,7 +236,7 @@ class HDFSManager extends Manager implements UserLogins {
 
         String[] l = _currentPath.split('/')
         def n = []
-        for (int i = 0; i < l.length - 1; i++) {
+        for (Integer i = 0; i < l.length - 1; i++) {
             n << l[i]
         }
         def c = n.join('/')
@@ -352,7 +339,7 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    boolean existsDirectory(String dirName) {
+    Boolean existsDirectory(String dirName) {
         validConnect()
 
         def path = fullPath(dirName, null)
@@ -364,7 +351,7 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    boolean existsFile(String fileName) {
+    Boolean existsFile(String fileName) {
         validConnect()
 
         def path = fullPath(null, fileName)
@@ -376,7 +363,7 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    long getLastModified(String fileName) {
+    Long getLastModified(String fileName) {
         validConnect()
 
         def s = client.getFileStatus(fullPath(_currentPath, fileName))
@@ -384,7 +371,7 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    void setLastModified(String fileName, long time) {
+    void setLastModified(String fileName, Long time) {
         validConnect()
 
         if (saveOriginalDate)

@@ -1,30 +1,5 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.proc
 
-import getl.exception.ExceptionGETL
 import getl.utils.*
 
 /**
@@ -36,7 +11,7 @@ abstract class Job {
 	/**
 	 * Job arguments
 	 */
-	public static final Map jobArgs = [:] as Map<String, Object>
+	static public final Map jobArgs = [:] as Map<String, Object>
 	
 	/**
 	 * Job arguments (backward compatible) 
@@ -44,7 +19,7 @@ abstract class Job {
 	 */
 	static Map<String, Object> getArgs() { return jobArgs }
 	
-	private static void processConfigArgs (def args) {
+	static private void processConfigArgs (def args) {
 		Map<String, Object> m = MapUtils.ProcessArguments(args)
 		if (m.errout != null) Logs.RedirectErrOut(m.errout as String)
 		if (m.stdout != null) {
@@ -108,7 +83,7 @@ abstract class Job {
 	protected void prepareRun () { }
 
 	/** Finish job if detected error */
-	public static ExitOnError = true
+	static public Boolean ExitOnError = true
 	
 	/**
 	 * Run job process

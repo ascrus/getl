@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.jdbc
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.*
 import getl.data.*
 import getl.driver.Driver
@@ -58,6 +35,7 @@ class TableDataset extends JDBCDataset {
 	}
 
 	@Override
+	@JsonIgnore
 	Type getType() { super.getType()?:tableType }
 
 	/** Schema name */
@@ -132,7 +110,8 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Valid exist table */
-	boolean isExists() {
+	@JsonIgnore
+	Boolean isExists() {
 		validConnection()
 
 		if (!currentJDBCConnection.currentJDBCDriver.isTable(this))
@@ -145,7 +124,7 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Insert/Update/Delete/Merge records from other dataset */
-	long unionDataset(Map procParams = [:]) {
+	Long unionDataset(Map procParams = [:]) {
 		validConnection()
 		validTableName()
 
@@ -171,7 +150,7 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Return count rows from table */
-	long countRow(String where = null, Map procParams = null) {
+	Long countRow(String where = null, Map procParams = null) {
 		validConnection()
 		validTableName()
 
@@ -182,7 +161,7 @@ class TableDataset extends JDBCDataset {
 	 * Delete rows
 	 * @param where rows filter
 	 */
-	long deleteRows(String where) {
+	Long deleteRows(String where) {
 		deleteRows(where: where)
 	}
 
@@ -190,7 +169,7 @@ class TableDataset extends JDBCDataset {
 	 * Delete rows
 	 * @param procParams parameters
 	 */
-	long deleteRows(Map procParams = [:]) {
+	Long deleteRows(Map procParams = [:]) {
 		validConnection()
 		validTableName()
 
@@ -202,6 +181,7 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Full table name in database */
+	@JsonIgnore
 	String getFullTableName() { fullNameDataset() }
 
 	/** Create new options object for create table */
@@ -497,9 +477,9 @@ class TableDataset extends JDBCDataset {
 		CSVDataset cFile = source.cloneDataset(cCon) as CSVDataset
 		cFile.extension = null
 
-		long countRow = 0
-		Long sizeFiles = 0
-        boolean abortOnError = parent.abortOnError
+		def countRow = 0L
+		def sizeFiles = 0L
+        def abortOnError = parent.abortOnError
 		Closure beforeLoad = parent.onBeforeBulkLoadFile
 		Closure afterLoad = parent.onAfterBulkLoadFile
         Closure beforeLoadPackage = parent.onBeforeBulkLoadPackageFiles
@@ -549,7 +529,7 @@ class TableDataset extends JDBCDataset {
 
                     if (beforeLoad != null) beforeLoad.call(fileName)
 
-					long tcount = 0
+					def tcount = 0L
 					try {
 						bulkLoadFile(MapUtils.Copy(bulkParams, ignoredParams) + [source: cFile])
 
@@ -593,7 +573,7 @@ class TableDataset extends JDBCDataset {
 
                 if (beforeLoadPackage != null) beforeLoadPackage.call(listFiles)
 
-				long tcount = 0
+				def tcount = 0L
 				try {
 					bulkLoadFile(MapUtils.Copy(bulkParams, ignoredParams) + [source: cFile, files: listFiles])
 

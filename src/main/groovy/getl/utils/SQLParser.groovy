@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 import getl.exception.ExceptionParser
@@ -44,14 +20,14 @@ class SQLParser {
 	 */
 	Lexer lexer
 	
-	private static final int minSizeInsertStatement = 5
-	private static final String insertKeyWord = "INSERT INTO"
+	static private final Integer minSizeInsertStatement = 5
+	static private final String insertKeyWord = 'INSERT INTO'
 	
-	private static final int minSizeUpdateStatement = 8
-	private static final String updateKeyWord = "UPDATE"
+	static private final Integer minSizeUpdateStatement = 8
+	static private final String updateKeyWord = 'UPDATE'
 	
-	private static final int minSizeDeleteStatement = 6
-	private static final String deleteKeyWord = "DELETE FROM"
+	static private final Integer minSizeDeleteStatement = 6
+	static private final String deleteKeyWord = 'DELETE FROM'
 
 	StatementType statementType(List tokens) {
 		if (lexer == null) throw new ExceptionParser("Required lexer for parsing", tokens)
@@ -100,7 +76,7 @@ class SQLParser {
 		if (fields.size() != values.size()) throw new ExceptionParser("Number of values does not correspond to the number of specified fields", tokens)
 		def fv = [:]
 		res.put("values", fv)
-		for (int i = 0; i < fields.size(); i++) {
+		for (Integer i = 0; i < fields.size(); i++) {
 			fv.put(fields[i]."value", values[i])
 		}
 		

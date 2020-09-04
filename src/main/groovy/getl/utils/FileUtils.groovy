@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 //@GrabConfig(systemClassLoader=true)
@@ -121,9 +97,9 @@ class FileUtils {
 	 */
 	static String FileExtension (String fullPath) {
 		fullPath = ConvertToDefaultOSPath(fullPath)
-		int sepPos = fullPath.lastIndexOf(File.separator)
+		def sepPos = fullPath.lastIndexOf(File.separator)
 		String nameAndExt = fullPath.substring(sepPos + 1, fullPath.length())
-		int dotPos = nameAndExt.lastIndexOf('.')
+		def dotPos = nameAndExt.lastIndexOf('.')
 
 		return (dotPos != -1)?nameAndExt.substring(dotPos + 1):''
 	}
@@ -134,7 +110,7 @@ class FileUtils {
 	 * @return extension
 	 */
 	static String ExtensionWithoutFilename(String fileName) {
-		int dotPos = fileName.lastIndexOf('.')
+		def dotPos = fileName.lastIndexOf('.')
 		return (dotPos != -1)?fileName.substring(dotPos + 1):''
 	}
 
@@ -144,7 +120,7 @@ class FileUtils {
 	 * @return file name
 	 */
 	static String FilenameWithoutExtension(String fileName) {
-		int dotPos = fileName.lastIndexOf('.')
+		def dotPos = fileName.lastIndexOf('.')
 		return (dotPos != -1)?fileName.substring(0, dotPos):''
 	}
 	
@@ -156,9 +132,9 @@ class FileUtils {
 	static String ExcludeFileExtension(String fullPath) {
 		fullPath = ConvertToDefaultOSPath(fullPath)
 		
-		int sepPos = fullPath.lastIndexOf(File.separator)
+		def sepPos = fullPath.lastIndexOf(File.separator)
 		String nameAndExt = fullPath.substring(sepPos + 1, fullPath.length())
-		int dotPos = nameAndExt.lastIndexOf(".")
+		def dotPos = nameAndExt.lastIndexOf(".")
 		(dotPos!=-1)?fullPath.substring(0, sepPos + dotPos + 1):fullPath
 	}
 	
@@ -184,7 +160,7 @@ class FileUtils {
 	 * @param path destination directory
 	 * @param createPath create a directory if it is not
 	 */
-	static void MoveTo(File file, String path, boolean createPath = false) {
+	static void MoveTo(File file, String path, Boolean createPath = false) {
 		if (!file.exists()) throw new ExceptionGETL("File \"$file\" not found!")
 
 		if (createPath) ValidPath(path)
@@ -199,7 +175,7 @@ class FileUtils {
 	 * @param path destination directory
 	 * @param createPath create a directory if it is not
 	 */
-	static void MoveTo(String fileName, String path, boolean createPath = false) {
+	static void MoveTo(String fileName, String path, Boolean createPath = false) {
 		MoveTo(new File(fileName), path, createPath)
 	}
 
@@ -209,7 +185,7 @@ class FileUtils {
 	 * @param path destination directory
 	 * @param createPath create a directory if it is not
 	 */
-	static void CopyToDir(File file, String path, boolean createPath = false) {
+	static void CopyToDir(File file, String path, Boolean createPath = false) {
 		if (!file.exists()) throw new ExceptionGETL("File \"$file\" not found!")
 		
 		if (createPath) ValidPath(path)
@@ -225,7 +201,7 @@ class FileUtils {
 	 * @param path destination directory
 	 * @param createPath create a directory if it is not
 	 */
-	static void CopyToDir(String fileName, String path, boolean createPath = false) {
+	static void CopyToDir(String fileName, String path, Boolean createPath = false) {
 		CopyToDir(new File(fileName), path, createPath)
 	}
 
@@ -235,7 +211,7 @@ class FileUtils {
 	 * @param dest destination file
 	 * @param createPath create a directory if it is not
 	 */
-	static void CopyToFile(File source, File dest, boolean createPath = false) {
+	static void CopyToFile(File source, File dest, Boolean createPath = false) {
 		if (!source.exists()) throw new ExceptionGETL("File \"$source\" not found")
 		
 		if (createPath) ValidPath(dest.parent)
@@ -250,7 +226,7 @@ class FileUtils {
 	 * @param destName the path to the destination file
 	 * @param createPath create a directory if it is not
 	 */
-	static void CopyToFile(String sourceName, String destName, boolean createPath = false) {
+	static void CopyToFile(String sourceName, String destName, Boolean createPath = false) {
 		CopyToFile(new File(sourceName), new File(destName), createPath)
 	}
 	
@@ -260,7 +236,7 @@ class FileUtils {
 	 * @param deleteRoot
 	 * @param onDelete
 	 */
-	static void DeleteEmptyFolder(String rootFolder, boolean deleteRoot,
+	static void DeleteEmptyFolder(String rootFolder, Boolean deleteRoot,
 								  @ClosureParams(value = SimpleType, options = ['java.io.File'])
 										  Closure onDelete) {
 		if (rootFolder == null) return
@@ -304,7 +280,7 @@ class FileUtils {
 	 * @param rootFolder
 	 * @param deleteRoot
 	 */
-	static void DeleteEmptyFolder(String rootFolder, boolean deleteRoot) {
+	static void DeleteEmptyFolder(String rootFolder, Boolean deleteRoot) {
 		DeleteEmptyFolder(rootFolder, deleteRoot, null)
 	}
 	
@@ -323,7 +299,7 @@ class FileUtils {
 	 * @param fileName
 	 * @return
 	 */
-	static boolean DeleteFile(String fileName) {
+	static Boolean DeleteFile(String fileName) {
 		new File(fileName).delete()
 	}
 
@@ -333,7 +309,7 @@ class FileUtils {
 	 * @param deleteRoot
 	 * @param onDelete
 	 */
-	static Boolean DeleteFolder(String rootFolder, boolean deleteRoot = true, boolean throwError = true,
+	static Boolean DeleteFolder(String rootFolder, Boolean deleteRoot = true, Boolean throwError = true,
 								@ClosureParams(value = SimpleType, options = ['java.io.File']) Closure onDelete = null) {
 		if (rootFolder == null) return null
 		File root = new File(rootFolder)
@@ -400,7 +376,7 @@ class FileUtils {
 	 * @param path
 	 * @return
 	 */
-	static boolean DeleteDir(String path) {
+	static Boolean DeleteDir(String path) {
 		new File(path).deleteDir()
 	}
 	
@@ -409,7 +385,7 @@ class FileUtils {
 	 * @param fileName
 	 * @return
 	 */
-	static boolean ExistsFile(String fileName, boolean findDirectory = false) {
+	static Boolean ExistsFile(String fileName, Boolean findDirectory = false) {
 		def file = new File(fileName)
 		def res = file.exists()
 		if (res && findDirectory && !file.isDirectory()) return false
@@ -686,8 +662,8 @@ class FileUtils {
 	 * @param convertBuffer
 	 * @return
 	 */
-	static long ConvertText (Reader reader, Writer writer, List rules,
-							 @ClosureParams(value = SimpleType, options = ['long', 'java.lang.Object']) Closure convertLine,
+	static Long ConvertText (Reader reader, Writer writer, List rules,
+							 @ClosureParams(value = SimpleType, options = ['Long', 'java.lang.Object']) Closure convertLine,
 							 def convertBuffer) {
 		Closure convertCode
 		if (rules != null && !rules.isEmpty()) {
@@ -722,7 +698,7 @@ class FileUtils {
 		}
 		
 		String line = reader.readLine()
-		long res = 0
+		def res = 0L
 		while (line != null) {
 			if (convertCode != null) line = convertCode.call(line)
 			if (convertLine != null) line = convertLine(line, convertBuffer)
@@ -750,10 +726,10 @@ class FileUtils {
 	 * @param convertLine - Closure convertLine(String line, def convertBuffer) { return line }
 	 * @return
 	 */
-	static long ConvertTextFile (String sourceFileName, String sourceCodePage, boolean isSourceGz,
-										String destFileName, String destCodePage, boolean isDestGz, List rules,
+	static Long ConvertTextFile (String sourceFileName, String sourceCodePage, Boolean isSourceGz,
+										String destFileName, String destCodePage, Boolean isDestGz, List rules,
 										Closure convertLine, def convertBuffer) {
-		long res = 0
+		def res = 0L
 		
 		Reader reader
 		if (isSourceGz) {
@@ -796,7 +772,7 @@ class FileUtils {
 	 * @return
 	 */
 	@SuppressWarnings("DuplicatedCode")
-	static int Run(String command, String dir, String codePage, StringBuilder out, StringBuilder err) {
+	static Integer Run(String command, String dir, String codePage, StringBuilder out, StringBuilder err) {
 		Process p
 		try {
 			String[] env = []
@@ -1024,7 +1000,7 @@ class FileUtils {
 		return StringUtils.ExtractParentFromChild(path, findPath, Config.isWindows())
 	}
 
-	static public final List<String> ListResourcePath = []
+	static public final List<String> ListResourcePath = [] as List<String>
 
 	/**
      * Get file from classpath or resources folder
@@ -1211,7 +1187,7 @@ class FileUtils {
 	 * Clean file locks objects
 	 * @param seconds file lock time in seconds
 	 */
-	static void GarbageLockFiles(int ms = 100) {
+	static void GarbageLockFiles(Integer ms = 100) {
 		fileLockManager.garbage(ms)
 	}
 

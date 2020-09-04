@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.proc
 
 import getl.data.Field
@@ -82,9 +58,9 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
     }
 
     /** Handle exceptions and move invalid files to errors directory */
-    boolean getHandleExceptions() { BoolUtils.IsValue(params.handleExceptions)}
+    Boolean getHandleExceptions() { BoolUtils.IsValue(params.handleExceptions)}
     /** Handle exceptions and move invalid files to errors directory */
-    void setHandleExceptions(boolean value) { params.handleExceptions = value }
+    void setHandleExceptions(Boolean value) { params.handleExceptions = value }
 
     /** Storage for processed files */
     Manager getStorageProcessedFiles() { params.storageProcessedFiles as Manager }
@@ -145,12 +121,12 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
     }
 
     /** Counter error files */
-    final def counterErrors = new SynchronizeObject()
+    final SynchronizeObject counterErrors = new SynchronizeObject()
     /** Count of error files */
     Long getCountErrors() { counterErrors.count }
 
     /** Counter skipped files */
-    final def counterSkips = new SynchronizeObject()
+    final SynchronizeObject counterSkips = new SynchronizeObject()
     /** Count of skipped files */
     Long getCountSkips() { counterSkips.count }
 
@@ -270,7 +246,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
     class ListPoolElement {
         Manager man
         TDSTable delTable
-        boolean isFree = true
+        Boolean isFree = true
         String curPath = ''
 
         void free() {
@@ -363,7 +339,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
 
         ListPoolElement res
         synchronized (list) {
-            for (int i = 0; i < list.size(); i++) {
+            for (Integer i = 0; i < list.size(); i++) {
                 if (list[i].isFree) {
                     res = list[i]
                     res.isFree = false
@@ -698,7 +674,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
 
     /** Use cache when processing files */
     @Override
-    protected boolean getIsCachedMode() { (onSaveCachedData != null) }
+    protected Boolean getIsCachedMode() { (onSaveCachedData != null) }
 
     /** Save cached data */
     protected void saveCachedDataGroup(Map groupFields) {

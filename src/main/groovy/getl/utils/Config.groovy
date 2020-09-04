@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
 import getl.config.ConfigFiles
@@ -43,32 +19,32 @@ class Config {
     /**
      * Current OS
      */
-    public static final String OS = System.getProperty("os.name").toLowerCase()
+    static public final String OS = System.getProperty("os.name").toLowerCase()
 
     /**
      * Current OS is Windows
      */
-    static boolean isWindows() { (OS.indexOf("win") >= 0) }
+    static Boolean isWindows() { (OS.indexOf("win") >= 0) }
 
     /**
      * Current OS is Mac
      */
-    static boolean isMac() { (OS.indexOf("mac") >= 0) }
+    static Boolean isMac() { (OS.indexOf("mac") >= 0) }
 
     /**
      * Current OS is Unix
      */
-    static boolean isUnix() { (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0 ) }
+    static Boolean isUnix() { (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0 ) }
 
     /**
      * Current OS is Solaris
      */
-    static boolean isSolaris() { (OS.indexOf("sunos") >= 0) }
+    static Boolean isSolaris() { (OS.indexOf("sunos") >= 0) }
 
     /**
 	 * Used Java version
 	 */
-	public static final def JavaVersion = new BigDecimal(System.getProperty("java.vm.specification.version"))
+	static public final BigDecimal JavaVersion = new BigDecimal(System.getProperty("java.vm.specification.version"))
 	
 	/**
 	 *  Parameters
@@ -78,12 +54,12 @@ class Config {
     /**
      * Evaluate variables where load configuration
      */
-    public static boolean evalVars = true
+    static public Boolean evalVars = true
 
     /**
      * Class used for configuration management
      */
-    private static ConfigManager configClassManager = new ConfigFiles()
+    static private ConfigManager configClassManager = new ConfigFiles()
 
 	static ConfigManager getConfigClassManager() { configClassManager }
 
@@ -103,7 +79,7 @@ class Config {
 	/**
 	 * Content config file	
 	 */
-	public static final Map<String, Object> content = [vars: new HashMap<String, Object>()]
+	static public final Map<String, Object> content = [vars: new HashMap<String, Object>()]
 	
 	/**
 	 * Variables
@@ -127,7 +103,7 @@ class Config {
 	/**
 	 * List of initialization object code on load config
 	 */
-	static final List<Closure> init = []
+	static final List<Closure> init = [] as List<Closure>
 
 	/**
 	 * Re-initialization class
@@ -241,7 +217,7 @@ class Config {
 	 * @return
 	 */
 	@Synchronized
-	static boolean ContainsSection (String section) {
+	static Boolean ContainsSection (String section) {
 		MapUtils.ContainsSection(content, section)
 	}
 
@@ -264,7 +240,7 @@ class Config {
         configClassManager.saveConfig(content, saveParams)
 	}
 
-	static boolean IsEmpty() {
+	static Boolean IsEmpty() {
         return (content.size() == 1 && vars.isEmpty())
     }
 }

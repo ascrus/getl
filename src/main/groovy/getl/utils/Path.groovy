@@ -1,29 +1,6 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
-
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.utils
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
@@ -66,12 +43,12 @@ class Path implements Cloneable, GetlRepository {
 	/**
 	 * Change from process path Windows file separator to Unix separator
 	 */
-	public boolean changeSeparator = (File.separatorChar != '/'.charAt(0))
+	public Boolean changeSeparator = (File.separatorChar != '/'.charAt(0))
 
 	/**
 	 * Ignoring converting error and set null value
 	 */
-	public boolean ignoreConvertError = false
+	public Boolean ignoreConvertError = false
 
 	/** Mask path
 	 * <br>(use {var} for definition variables) */
@@ -102,7 +79,7 @@ class Path implements Cloneable, GetlRepository {
 	List<Map> getLikeElements () { likeElements }
 
 	/** Count level for mask */
-	int getCountLevel () { elements.size() }
+	Integer getCountLevel () { elements.size() }
 
 	/** Root path with mask */
 	private String rootPath
@@ -110,9 +87,9 @@ class Path implements Cloneable, GetlRepository {
 	String getRootPath () { this.rootPath }
 
 	/** Count elements in root path */
-	private int numLocalPath
+	private Integer numLocalPath
 	/** Count elements in root path */
-	int getNumLocalPath () { this.numLocalPath }
+	Integer getNumLocalPath () { this.numLocalPath }
 
 	/** Expression file path with mask */
 	private String maskPath
@@ -199,13 +176,15 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** System parameters */
-	Map<String, Object> sysParams = [:] as Map<String, Object>
+	private final Map<String, Object> sysParams = [:] as Map<String, Object>
 	/** System parameters */
 	Map<String, Object> getSysParams() { sysParams }
 
+	@JsonIgnore
 	String getDslNameObject() { sysParams.dslNameObject as String }
 	void setDslNameObject(String value) { sysParams.dslNameObject = value }
 
+	@JsonIgnore
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
@@ -250,7 +229,7 @@ class Path implements Cloneable, GetlRepository {
 		methodParams.validation("compile", params)
 		maskStr = (params.mask as String)?:mask
 		if (maskStr == null) throw new ExceptionGETL("Required parameter \"mask\"")
-		boolean sysVar = BoolUtils.IsValue(params.sysVar)
+		def sysVar = BoolUtils.IsValue(params.sysVar)
 		Map patterns = (params.patterns as Map)?:[:]
 		def varAttr = ([:] as Map<String, Map<String, Object>>)
 		varAttr.putAll(maskVariables)
@@ -274,15 +253,15 @@ class Path implements Cloneable, GetlRepository {
 		StringBuilder rb = new StringBuilder()
 
 		def listFoundVars = [] as List<String>
-		for (int i = 0; i < d.length; i++) {
+		for (Integer i = 0; i < d.length; i++) {
 			Map p = [:]
 			p.vars = []
 			StringBuilder b = new StringBuilder()
 
-			int f = 0
-			int s = d[i].indexOf('{')
+			def f = 0
+			def s = d[i].indexOf('{')
 			while (s >= 0) {
-				int e = d[i].indexOf('}', s)
+				def e = d[i].indexOf('}', s)
 				if (e >= 0) {
 					b.append(d[i].substring(f, s))
 
@@ -364,9 +343,9 @@ class Path implements Cloneable, GetlRepository {
 		}
 		rootPath = (rb.length() == 0)?".":rb.toString().substring(1)
 
-		for (int i = 0; i < elements.size(); i++) {
+		for (Integer i = 0; i < elements.size(); i++) {
 			List<String> v = elements[i].vars as List<String>
-			for (int x = 0; x < v.size(); x++) {
+			for (Integer x = 0; x < v.size(); x++) {
 				compVars.put(v[x] as String, [:])
 			}
 		}
@@ -437,7 +416,7 @@ class Path implements Cloneable, GetlRepository {
 	void generateMaskPattern () {
 		StringBuilder b = new StringBuilder()
 		b.append("(?i)")
-		for (int i = 0; i < elements.size(); i++) {
+		for (Integer i = 0; i < elements.size(); i++) {
 			b.append(elements[i].mask)
 			if (i < elements.size() - 1) b.append("/")
 		}
@@ -450,7 +429,7 @@ class Path implements Cloneable, GetlRepository {
 			StringBuilder mp = new StringBuilder()
 			StringBuilder lp = new StringBuilder()
 			mp.append("(?i)")
-			for (int i = 0; i < elements.size() - 1; i++) {
+			for (Integer i = 0; i < elements.size() - 1; i++) {
 				mp.append((elements[i].mask as String) + "/")
 				lp.append((elements[i].like as String).replace('.', '\\.') + "/")
 			}
@@ -461,11 +440,11 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** Generation mask path pattern on elements */
-	Pattern generateMaskPattern (int countElements) {
+	Pattern generateMaskPattern (Integer countElements) {
 		if (countElements > elements.size()) throw new ExceptionGETL("Can not generate pattern on ${countElements} level for ${elements.size()} elements")
 		StringBuilder b = new StringBuilder()
 		b.append("(?i)")
-		for (int i = 0; i < countElements; i++) {
+		for (Integer i = 0; i < countElements; i++) {
 			b.append(elements[i].mask)
 			if (i < countElements - 1) b.append("/")
 		}
@@ -482,10 +461,10 @@ class Path implements Cloneable, GetlRepository {
 
 		if (f == null) return l
 
-		for (int i = 0; i < f.length; i++) {
+		for (Integer i = 0; i < f.length; i++) {
 			if (f[i].isDirectory()) {
 				List<Map> n = getFiles(path + "/" + f[i].getName())
-				for (int x = 0; x < n.size(); x++) {
+				for (Integer x = 0; x < n.size(); x++) {
 					def m = [:]
 					m.fileName = n[x].fileName
 					l << m
@@ -522,7 +501,7 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** Analize object name */
-	Map analize(String objName, boolean isHierarchy = false) {
+	Map analize(String objName, Boolean isHierarchy = false) {
 		if (!isCompile) compile()
 
 		def fn = objName
@@ -548,7 +527,7 @@ class Path implements Cloneable, GetlRepository {
 		Matcher mat
 		mat = fn =~ pattern
 		if (mat.groupCount() >= 1 && ((List)mat[0]).size() > 1) {
-			int i = 0
+			def i = 0
             def isError = false
 			vars.each { key, value ->
                 if (isError) {
@@ -670,7 +649,7 @@ class Path implements Cloneable, GetlRepository {
 
 	/** Generation file name with variables */
 	@CompileStatic
-	String generateFileName(Map varValues, boolean formatValue) {
+	String generateFileName(Map varValues, Boolean formatValue) {
 		if (!isCompile) compile()
 
 		def v = [:] as Map<String, Object>
@@ -744,13 +723,13 @@ like file: $likeFile
 variables: $vars
 elements:
 """)
-		for (int i = 0; i < elements.size(); i++) {
+		for (Integer i = 0; i < elements.size(); i++) {
 			def pe = elements[i]
 			b.append("[${i+1}]:\t")
 			b.append(pe.mask)
             List vr = pe.vars as List
 			if (vr.size() > 0) b.append(" [")
-			for (int v = 0; v < vr.size(); v++) {
+			for (Integer v = 0; v < vr.size(); v++) {
 				b.append(vr.get(v))
 				if (v < vr.size() - 1)
 					b.append(", ")

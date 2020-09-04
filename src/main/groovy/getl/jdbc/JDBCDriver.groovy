@@ -1,27 +1,3 @@
-/*
- GETL - based package in Groovy, which automates the work of loading and transforming data. His name is an acronym for "Groovy ETL".
-
- GETL is a set of libraries of pre-built classes and objects that can be used to solve problems unpacking,
- transform and load data into programs written in Groovy, or Java, as well as from any software that supports
- the work with Java classes.
- 
- Copyright (C) EasyData Company LTD
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Lesser General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License and
- GNU Lesser General Public License along with this program.
- If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package getl.jdbc
 
 import getl.jdbc.opts.SequenceCreateSpec
@@ -93,7 +69,7 @@ class JDBCDriver extends Driver {
 	 * Script for write array of bytes to serial blob object
 	 */
 	String blobMethodWrite (String methodName) {
-		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, byte[] value) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, byte[] value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.BLOB) 
 	}
@@ -106,13 +82,13 @@ class JDBCDriver extends Driver {
 	/**
 	 * Blob field return value as Blob interface
 	 */
-	boolean blobReadAsObject() { return true }
+	Boolean blobReadAsObject() { return true }
 	
 	/**
 	 * Class name for generate write data to clob field
 	 */
 	String textMethodWrite (String methodName) {
-		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, int paramNum, String value) {
+		return """void $methodName (java.sql.Connection con, java.sql.PreparedStatement stat, Integer paramNum, String value) {
 	if (value == null) { 
 		stat.setNull(paramNum, java.sql.Types.CLOB) 
 	}
@@ -125,15 +101,15 @@ class JDBCDriver extends Driver {
 	/**
 	 * Clob field return value as Clob interface
 	 */
-	boolean textReadAsObject() { return true }
+	Boolean textReadAsObject() { return true }
 
 	/**
 	 * UUID field return value as UUID interface
 	 */
-	boolean uuidReadAsObject() { return false }
+	Boolean uuidReadAsObject() { return false }
 
 	/** Convert time zone to UTC 0 for writing fields by timestamp_with_timezone type */
-	boolean timestampWithTimezoneConvertOnWrite() { return false }
+	Boolean timestampWithTimezoneConvertOnWrite() { return false }
 
 	/**
 	 * Java field type association
@@ -320,7 +296,7 @@ class JDBCDriver extends Driver {
 	 * @param precision
 	 * @return
 	 */
-	String type2sqlType (Field field, boolean useNativeDBType) {
+	String type2sqlType (Field field, Boolean useNativeDBType) {
 		if (field == null) throw new ExceptionGETL('Required field object')
 		
 		def type = field.type.toString()
@@ -360,7 +336,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@Override
-	boolean isConnected() {
+	Boolean isConnected() {
 		(sqlConnect != null)
 	}
 	
@@ -417,7 +393,7 @@ class JDBCDriver extends Driver {
 	}
 	
 	@Synchronized
-	static Sql NewSql (Class driverClass, String url, String login, String password, String drvName, int loginTimeout) {
+	static Sql NewSql (Class driverClass, String url, String login, String password, String drvName, Integer loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
         Sql sql
 		try {
@@ -442,7 +418,7 @@ class JDBCDriver extends Driver {
 	/**
 	 * Default transaction isolation on connect
 	 */
-    protected int defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_COMMITTED
+    protected Integer defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_COMMITTED
 
 	private Class jdbcClass
 	/**
@@ -450,9 +426,9 @@ class JDBCDriver extends Driver {
 	 */
 	Class getJdbcClass() { this.jdbcClass }
 
-	private boolean useLoadedDriver = false
-
-	boolean getUseLoadedDriver() { useLoadedDriver }
+	private Boolean useLoadedDriver = false
+	/** JDBC driver loaded */
+	Boolean getUseLoadedDriver() { useLoadedDriver }
 	
 	@Override
 	void connect() {
@@ -548,7 +524,7 @@ class JDBCDriver extends Driver {
      * Set autocommit value
      * @param value
      */
-	protected void setAutoCommit(boolean value) {
+	protected void setAutoCommit(Boolean value) {
 		sqlConnect.getConnection().autoCommit = value
 	}
 
@@ -833,15 +809,15 @@ ${extend}'''
 	
 	protected String sqlAutoIncrement = null
 	
-	protected boolean commitDDL = false
-	protected boolean transactionalDDL = false
-	protected boolean transactionalTruncate = false
+	protected Boolean commitDDL = false
+	protected Boolean transactionalDDL = false
+	protected Boolean transactionalTruncate = false
 	
 	protected String caseObjectName = "NONE" // LOWER OR UPPER
 	protected String defaultDBName = null
 	protected String defaultSchemaName = null
 	protected String tempSchemaName = null
-	protected boolean supportLocalTemporaryRetrieveFields = true
+	protected Boolean supportLocalTemporaryRetrieveFields = true
 	Boolean isSupportLocalTemporaryRetrieveFields() { supportLocalTemporaryRetrieveFields }
 
 	protected String globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
@@ -893,8 +869,8 @@ ${extend}'''
 			if (!isTable(dataset)) throw new ExceptionGETL("Option \"ifNotExists\" is not supported for dataset type \"${dataset.getClass().name}\"")
 			if ((dataset as TableDataset).exists) return
 		}
-		String ifNotExists = (validExists && isSupport(Driver.Support.CREATEIFNOTEXIST))?'IF NOT EXISTS':''
-		boolean useNativeDBType = BoolUtils.IsValue(params."useNativeDBType", true)
+		def ifNotExists = (validExists && isSupport(Driver.Support.CREATEIFNOTEXIST))?'IF NOT EXISTS':''
+		def useNativeDBType = BoolUtils.IsValue(params."useNativeDBType", true)
 		
 		def p = MapUtils.CleanMap(params, ["ifNotExists", "indexes", "hashPrimaryKey", "useNativeDBType"])
 		def extend = createDatasetExtend(dataset as JDBCDataset, p)
@@ -997,7 +973,7 @@ ${extend}'''
 	 * @param useNativeDBType - use native type for typeName field property
 	 * @return
 	 */
-	String generateColumnDefinition(Field f, boolean useNativeDBType) {
+	String generateColumnDefinition(Field f, Boolean useNativeDBType) {
 		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((isSupport(Driver.Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
 				((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
 				((isSupport(Driver.Support.DEFAULT_VALUE) && f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
@@ -1010,7 +986,7 @@ ${extend}'''
 	 * @param useNativeDBType - use native type for typeName field property
 	 * @return
 	 */
-	protected String createDatasetAddColumn(Field f, boolean useNativeDBType) {
+	protected String createDatasetAddColumn(Field f, Boolean useNativeDBType) {
 		return generateColumnDefinition(f, useNativeDBType)
 	}
 	
@@ -1197,7 +1173,7 @@ ${extend}'''
 	}
 
 	/** Check that the dataset is a table */
-	static boolean isTable(Dataset dataset) {
+	static Boolean isTable(Dataset dataset) {
 		return (dataset instanceof TableDataset)
 	}
 
@@ -1318,10 +1294,10 @@ ${extend}'''
 	 * @return
 	 */
 	@SuppressWarnings("GrUnresolvedAccess")
-	protected List<Field> meta2Fields (def meta, boolean isTable) {
+	protected List<Field> meta2Fields (def meta, Boolean isTable) {
 		def result = [] as List<Field>
         //noinspection GroovyAssignabilityCheck
-        for (int i = 0; i < meta.getColumnCount(); i++) {
+        for (Integer i = 0; i < meta.getColumnCount(); i++) {
 			def c = i + 1
             //noinspection GroovyAssignabilityCheck
             Field f = new Field(name: prepareObjectName(meta.getColumnLabel(c)) as String, dbType: meta.getColumnType(c), typeName: meta.getColumnTypeName(c),
@@ -1336,7 +1312,7 @@ ${extend}'''
 	
 	@groovy.transform.CompileStatic
 	@Override
-	long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (params == null) params = [:]
 
 		Integer fetchSize = (params.fetchSize as Integer)
@@ -1408,8 +1384,8 @@ ${extend}'''
 			}
 			copyToMap = (rowCopy.code as Closure)
 		}
-		int offs = (params.offs != null)?((params.offs as Integer) + 1):0
-		int max = (params.limit != null)?(params.limit as Integer):0
+		def offs = (params.offs != null)?((params.offs as Integer) + 1):0
+		def max = (params.limit != null)?(params.limit as Integer):0
 		Map<String, Object> sp = (Map)(params.sqlParams as Map)
 		Map<String, Object> sqlParams
 		if (sp != null) {
@@ -1420,9 +1396,9 @@ ${extend}'''
 			}
 		}
 		
-		long countRec = 0
-		
-		int origFetchSize
+		def countRec = 0L
+
+		Integer origFetchSize
 		if (fetchSize != null) {
 			sqlConnect.withStatement { Statement stmt ->
 				origFetchSize = (int)(stmt.fetchSize)
@@ -1539,8 +1515,8 @@ $sql
 	}
 
 	@Override
-	long executeCommand(String command, Map params = [:]) {
-		Long result = 0
+	Long executeCommand(String command, Map params = [:]) {
+		def result = 0L
 		
 		if (command == null || command.trim().length() == 0)
 			return result
@@ -1573,7 +1549,7 @@ $sql
 		con.sysParams.warnings = new LinkedList<Map>()
 		List<Map> iw = ignoreWarning
 		while (warn != null) {
-			boolean ignore = false
+			def ignore = false
 			iw.each { Map p ->
 				if (!ignore && p.errorCode == warn.errorCode && p.sqlState == warn.SQLState) {
 					ignore = true
@@ -1603,18 +1579,18 @@ $sql
 	 * Write operation parameters object
 	 */
 	class WriterParams {
-		String operation
-		long batchSize = 0
-		Closure onSaveBatch
-		String query
-		PreparedStatement stat
-		Closure setStatement
-		long rowProc = 0
-		long batchCount = 0
-		boolean error = false
-		File saveOut
-		String statement
-		java.sql.Connection con
+		public String operation
+		public Long batchSize = 0L
+		public Closure onSaveBatch
+		public String query
+		public PreparedStatement stat
+		public Closure setStatement
+		public Long rowProc = 0L
+		public Long batchCount = 0L
+		public Boolean error = false
+		public File saveOut
+		public String statement
+		public java.sql.Connection con
 
 		void free() {
 			onSaveBatch = null
@@ -1702,7 +1678,7 @@ $sql
 	 * @return
 	 */
 	protected List<Field> prepareFieldFromWrite(JDBCDataset dataset, Closure prepareCode) {
-		boolean loadedField = (!dataset.field.isEmpty())
+		def loadedField = (!dataset.field.isEmpty())
 		List<Field> tableFields
 		if (!loadedField && !dataset.manualSchema) {
 			tableFields = fields(dataset)
@@ -1751,15 +1727,15 @@ $sql
 		Map map = (params.map != null)?MapUtils.MapToLower(params.map as Map<String, Object>):[:]
 		
 		// Allow aliases in map
-		boolean allowMapAlias = BoolUtils.IsValue(params.allowMapAlias, false)
+		def allowMapAlias = BoolUtils.IsValue(params.allowMapAlias, false)
 		
 		// Mapping column to field
 		List<Map> mapping = []
 		
 		// Auto mapping with field name 
-		boolean autoMap = (params.autoMap != null)?params.autoMap:true
+		def autoMap = BoolUtils.IsValue(params.autoMap, true)
 		
-		boolean isMap = false
+		def isMap = false
 
 		// Columns for CSV		
 		source.field.each { Field cf ->
@@ -1853,7 +1829,7 @@ $sql
 	@Override
 	void openWrite (Dataset dataset, Map params, Closure prepareCode) {
 		def wp = new WriterParams()
-		dataset.driver_params = wp
+		dataset._driver_params = wp
 		
 		validTableName(dataset as JDBCDataset)
 
@@ -2063,11 +2039,11 @@ $sql
 	}
 	
 	protected void validRejects (Dataset dataset, int[] er) {
-		WriterParams wp = dataset.driver_params
+		WriterParams wp = dataset._driver_params
 		
 		if (er.length == 0) return
 		List<Long> el = []
-		for (int i = 0; i < er.length; i++) {
+		for (Integer i = 0; i < er.length; i++) {
 			if (er[i] == -3) el << (wp.batchCount - 1) * wp.batchSize + i + 1
 		}
 		Logs.Warning("${dataset.params.tableName} rejects rows: ${el}")
@@ -2075,12 +2051,12 @@ $sql
 	
 	@groovy.transform.CompileStatic
 	protected void saveBatch(Dataset dataset, WriterParams wp) {
-		long countComplete = 0
+		def countComplete = 0L
 		wp.batchCount++
 		if (wp.batchSize > 1) {
 			try {
-				int[] resUpdate = wp.stat.executeBatch()
-				resUpdate.each { int res ->
+				def resUpdate = wp.stat.executeBatch().toList()
+				resUpdate.each { res ->
 					if (res > 0) countComplete++
 				}
 			}
@@ -2114,7 +2090,7 @@ $sql
 	@groovy.transform.CompileStatic
 	@Override
 	void write(Dataset dataset, Map row) {
-		def wp = (dataset.driver_params as WriterParams)
+		def wp = (dataset._driver_params as WriterParams)
 		
 		if (wp.saveOut != null) {
 			wp.saveOut.append("${wp.rowProc}:	${row.toString()}\n")
@@ -2151,7 +2127,7 @@ $sql
 	
 	@Override
 	void doneWrite (Dataset dataset) {
-		WriterParams wp = dataset.driver_params
+		WriterParams wp = dataset._driver_params
 		
 		if (wp.rowProc > 0) {
 			saveBatch(dataset, wp)
@@ -2160,13 +2136,13 @@ $sql
 
 	@Override
 	void closeWrite(Dataset dataset) {
-		WriterParams wp = dataset.driver_params
+		WriterParams wp = dataset._driver_params
 		try {
 			wp.stat.close()
 		}
 		finally {
 			wp.free()
-			dataset.driver_params = null
+			dataset._driver_params = null
 		}
 	}
 
@@ -2174,7 +2150,7 @@ $sql
 	protected String sqlSequenceNext(String sequenceName) { "SELECT NextVal('${sequenceName}') AS id;" }
 	
 	@Override
-	long getSequence(String sequenceName) {
+	Long getSequence(String sequenceName) {
 		def sql = sqlSequenceNext(sequenceName)
 		saveToHistory(sql)
 		def r = sqlConnect.firstRow(sql)
@@ -2202,7 +2178,7 @@ $sql
     /**
      * Add PK fields to update statement from merge operator
      */
-    protected boolean addPKFieldsToUpdateStatementFromMerge = false
+    protected Boolean addPKFieldsToUpdateStatementFromMerge = false
 
 	/**
 	 * Generate merge statement
@@ -2256,7 +2232,7 @@ $sql
 	 * @param procParams
 	 * @return
 	 */
-	long unionDataset (JDBCDataset target, Map procParams) {
+	Long unionDataset (JDBCDataset target, Map procParams) {
 		def source = procParams.source as JDBCDataset
 		if (source == null) throw new ExceptionGETL("Required \"source\" parameter")
 		if (!source instanceof JDBCDataset) throw new ExceptionGETL("Source dataset must be \"JDBCDataset\"")
@@ -2267,7 +2243,7 @@ $sql
 		
 		if (target.connection != source.connection) throw new ExceptionGETL("Required one identical the connection by datasets")
 		
-		boolean autoMap = (procParams.autoMap != null)?procParams.autoMap:true
+		def autoMap = BoolUtils.IsValue(procParams.autoMap, true)
 		def map = (procParams.map as Map)?:[:]
 		def keyField = (procParams.keyField as List<String>)?:([] as List<String>)
 		def autoKeyField = keyField.isEmpty()
@@ -2329,7 +2305,7 @@ $sql
 	@SuppressWarnings("GrMethodMayBeStatic")
 	protected String deleteRowsPattern() { 'DELETE {afterDelete} FROM {table} {afterTable} {where} {afterWhere}'}
 
-	long deleteRows(TableDataset dataset, Map procParams) {
+	Long deleteRows(TableDataset dataset, Map procParams) {
 		def where = (procParams.where as String)?:(dataset.writeDirective.where as String)
 		if (where != null)
 			where = ('WHERE ' + StringUtils.EvalMacroString(where, (dataset.queryParams + ((procParams.queryParams as Map)?:[:]))))
@@ -2386,7 +2362,7 @@ $sql
 	 * @param ifNotExists create if not exists
 	 */
 	@Synchronized
-	protected void createSequence(String name, boolean ifNotExists, SequenceCreateSpec opts) {
+	protected void createSequence(String name, Boolean ifNotExists, SequenceCreateSpec opts) {
 		def s1 = (ifNotExists)?'IF NOT EXISTS ':''
 		def attrs = createSequenceAttrs(opts).join(' ')
 		executeCommand("CREATE SEQUENCE ${s1}${name} $attrs")
@@ -2398,13 +2374,13 @@ $sql
 	 * @param ifExists drop if exists
 	 */
 	@Synchronized
-	protected void dropSequence(String name, boolean ifExists) {
+	protected void dropSequence(String name, Boolean ifExists) {
 		def s1 = (ifExists)?'IF EXISTS ':''
 		executeCommand("DROP SEQUENCE ${s1}${name}")
 	}
 
 	/** Count row */
-	long countRow(TableDataset table, String where = null, Map procParams = null) {
+	Long countRow(TableDataset table, String where = null, Map procParams = null) {
 		def sql = "SELECT Count(*) AS count_rows FROM ${fullNameDataset(table)}".toString()
 		where = where?:(table.readDirective.where)
 		if (where != null && where != '')

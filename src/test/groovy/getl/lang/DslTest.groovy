@@ -527,6 +527,7 @@ ORDER BY t1.id"""
             def csv = csvWithDataset('#csv', h2Table('getl.testdsl.h2:table1')) {
                 useConnection con
                 fileName = 'file.split'
+                header = false
 
                 writeOpts {
                     def count = 0
