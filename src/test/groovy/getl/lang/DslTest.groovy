@@ -39,7 +39,7 @@ class DslTest extends GetlDslTest {
     @Override
     Boolean onceRunInitClass() { true }
     @Override
-    protected boolean cleanGetlBeforeTest() { false }
+    protected Boolean cleanGetlBeforeTest() { false }
 
     /** Temporary path */
     final def tempPath = TFS.systemPath

@@ -22,8 +22,6 @@ import getl.exception.ExceptionGETL
  */
 @AutoClone
 class Path implements Cloneable, GetlRepository {
-	protected ParamMethodValidator methodParams = new ParamMethodValidator()
-
 	Path () {
 		registerMethod()
 	}
@@ -35,6 +33,8 @@ class Path implements Cloneable, GetlRepository {
 		}
 		compile(MapUtils.CleanMap(params, ['vars']))
 	}
+
+	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 
 	private void registerMethod () {
 		methodParams.register("compile", ["mask", "sysVar", "patterns", "vars"])
@@ -52,7 +52,7 @@ class Path implements Cloneable, GetlRepository {
 
 	/** Mask path
 	 * <br>(use {var} for definition variables) */
-	String mask
+	private String mask
 	/** Mask path
 	 * <br>(use {var} for definition variables) */
 	String getMask() { mask }
@@ -144,7 +144,7 @@ class Path implements Cloneable, GetlRepository {
 	 * <li>Closure calc		- value calculation code
 	 * </ul>
 	 */
-	final def maskVariables = ([:] as Map<String, Map<String, Object>>)
+	private final def maskVariables = ([:] as Map<String, Map<String, Object>>)
 	/**
 	 * Variable parameters for compiling a mask \
 	 * <b>Field for var:</b>
@@ -209,9 +209,12 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** Mask path pattern */
-	Pattern maskPathPattern
+	private Pattern maskPathPattern
+	/** Mask path pattern */
+	Pattern getMaskPathPattern() { maskPathPattern }
 	/** Path already compiled */
-	Boolean isCompile = false
+	private Boolean isCompile = false
+	/** Path already compiled */
 	Boolean getIsCompile() { isCompile }
 
 	/**

@@ -18,22 +18,22 @@ class FileCopierBuild extends FileListProcessingBuild {
     FileCopier getOwnerCopier() { owner as FileCopier }
 
     /** Destination mask path */
-    Path destinationPath
+    public Path destinationPath
 
     /** Rename mask path */
-    Path renamePath
+    public Path renamePath
 
     /** Segmented columns */
-    List<String> segmentdBy
+    public List<String> segmentdBy
 
     /** Count segmented columns */
-    Integer countSegmented = 0
+    public Integer countSegmented = 0
 
     /** Required segmented */
-    Boolean isSegmented
+    public Boolean isSegmented
 
     /** Copy with the same path as the source */
-    Boolean isInheritDestPath
+    public Boolean isInheritDestPath
 
     @Override
     void init() {

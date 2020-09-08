@@ -20,10 +20,6 @@ import getl.utils.*
  *
  */
 class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
-	private final String dateFormat
-	private final String localeStr
-	private final Locale locale
-
     CSVFmtDate(String dateFormat, String localeStr) {
 		super()
 		checkPreconditions(dateFormat, localeStr)
@@ -39,6 +35,10 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 		this.localeStr = localeStr
 		locale = StringUtils.NewLocale(localeStr)
 	}
+
+	private final String dateFormat
+	private final String localeStr
+	private final Locale locale
 	
 	static private void checkPreconditions(String dateFormat, String localeStr) {
 		if( dateFormat == null ) {

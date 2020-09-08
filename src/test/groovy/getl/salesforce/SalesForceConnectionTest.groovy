@@ -7,18 +7,15 @@ import getl.tfs.TFS
 import getl.tfs.TFSDataset
 import getl.utils.Config
 import getl.utils.FileUtils
-import getl.utils.Logs
 import org.junit.BeforeClass
 import org.junit.Test
-
-import static getl.data.Field.Type.*
 
 class SalesForceConnectionTest extends getl.test.GetlTest {
 	static final def configName = 'tests/salesforce/config.json'
 	static SalesForceConnection connection
 
     @Override
-    boolean allowTests() { connection != null }
+    Boolean allowTests() { connection != null }
 
     @BeforeClass
     static void InitTest() {

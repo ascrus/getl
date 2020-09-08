@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.utils.sub.EMailerAuth
-
 import javax.mail.*
 import javax.mail.internet.*
 
@@ -21,13 +20,13 @@ class EMailer implements GetlRepository {
 	protected void initParams() { }
 
 	/** Emailer parameters */
-	final Map params = [:]
+	private final Map<String, Object> params = [:] as Map<String, Object>
 
 	/** Emailer parameters */
 	@JsonIgnore
-	Map getParams() { params }
+	Map<String, Object> getParams() { params }
 	/** Emailer parameters */
-	void setParams(Map value) {
+	void setParams(Map<String, Object> value) {
 		params.clear()
 		initParams()
 		if (value != null) params.putAll(value)

@@ -27,7 +27,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
     @Before
     void setUp() {
         Config.configClassManager = new ConfigSlurper()
-        (Config.configClassManager as ConfigSlurper).path = configPath
+        (Config.configClassManager as ConfigSlurper).path = configPath.path
 
         if (configFile.exists()) return
 

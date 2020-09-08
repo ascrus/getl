@@ -52,13 +52,14 @@ class JSONDataset extends StructureFileDataset {
 		currentJSONConnection.currentJSONDriver.readAttrs(this, params)
 	}
 
-	/**
-	 * Read file options
-	 */
+	/** Read file options */
+	JSONReadSpec getReadOpts() { new JSONReadSpec(this, true, readDirective) }
+
+	/** Read file options */
 	JSONReadSpec readOpts(@DelegatesTo(JSONReadSpec)
 						  @ClosureParams(value = SimpleType, options = ['getl.json.opts.JSONReadSpec'])
 								  Closure cl = null) {
-		def parent = new JSONReadSpec(this, true, readDirective)
+		def parent = readOpts
 		parent.runClosure(cl)
 
 		return parent

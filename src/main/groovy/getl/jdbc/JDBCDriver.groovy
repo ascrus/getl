@@ -415,17 +415,15 @@ class JDBCDriver extends Driver {
         return sql
 	}
 
-	/**
-	 * Default transaction isolation on connect
-	 */
+	/** Default transaction isolation on connect */
     protected Integer defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_COMMITTED
 
+	/** JDBC class */
 	private Class jdbcClass
-	/**
-	 * JDBC class
-	 */
+	/** JDBC class */
 	Class getJdbcClass() { this.jdbcClass }
 
+	/** JDBC driver loaded */
 	private Boolean useLoadedDriver = false
 	/** JDBC driver loaded */
 	Boolean getUseLoadedDriver() { useLoadedDriver }
@@ -461,22 +459,14 @@ class JDBCDriver extends Driver {
 			Map server
 			def notConnected = true
 			while (notConnected) {
-				if (con.balancer != null) {
-					server = con.balancer.wantConnect()
-					if (server == null) {
-						throw new ExceptionGETL("Error connect from all balancer servers ")
-					}
-				}
 				if (server != null) {
 					if (server."host" != null) con.connectHost = server."host"
 					if (server."database" != null) con.connectDatabase = server."database"
 				}
 
 				url = buildConnectURL()
-				if (url == null) {
-					if (server != null) con.balancer.didDisconnect(server)
+				if (url == null)
 					throw new ExceptionGETL("Required \"connectURL\" for connect to server")
-				}
 				url = url + conParams
 
 				try {
@@ -486,7 +476,6 @@ class JDBCDriver extends Driver {
 				catch (Exception e) {
 					if (server != null) {
 						Logs.Warning("Cannot connect to $url")
-						con.balancer.errorDisconnect(server)
 					}
 					else {
 						Logs.Exception(e, getClass().name, "driver: $drvName, url: $url, login: $login")
@@ -562,13 +551,6 @@ class JDBCDriver extends Driver {
 		sqlConnect = null
 		jdbcClass = null
 		useLoadedDriver = false
-		
-		JDBCConnection con = jdbcConnection
-		if (con.balancer != null && con.sysParams."balancerServer" != null) {
-			def bs = con.sysParams."balancerServer" as Map
-			con.sysParams."balancerServer" = null
-			con.balancer.didDisconnect(bs)
-		}
 	}
 
 	@Override
@@ -994,17 +976,25 @@ ${extend}'''
 		return ""
 	}
 	
-	/**
-	 * Prefix for tables name
-	 */
-	public String tablePrefix = '"'
-	public String tableEndPrefix
+	/** Start prefix for tables name */
+	protected String tablePrefix = '"'
+	/** Start prefix for tables name */
+	String getTablePrefix() { tablePrefix }
 
-	/**
-	 * Prefix for fields name
-	 */
-	public String fieldPrefix = '"'
-	public String fieldEndPrefix
+	/** Finish prefix for tables name */
+	protected String tableEndPrefix
+	/** Finish prefix for tables name */
+	String getTableEndPrefix() { tableEndPrefix }
+
+	/** Start prefix for fields name */
+	protected String fieldPrefix = '"'
+	/** Start prefix for fields name */
+	String getFieldPrefix() { fieldPrefix }
+
+	/** Finish prefix for fields name */
+	protected String fieldEndPrefix
+	/** Finish prefix for fields name */
+	String getFieldEndPrefix() { fieldEndPrefix }
 
 	String prepareObjectNameWithPrefix(String name, String prefix, String prefixEnd = null, Dataset dataset = null) {
 		if (name == null) return null

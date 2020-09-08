@@ -121,12 +121,12 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
     }
 
     /** Counter error files */
-    final SynchronizeObject counterErrors = new SynchronizeObject()
+    private final SynchronizeObject counterErrors = new SynchronizeObject()
     /** Count of error files */
     Long getCountErrors() { counterErrors.count }
 
     /** Counter skipped files */
-    final SynchronizeObject counterSkips = new SynchronizeObject()
+    private final SynchronizeObject counterSkips = new SynchronizeObject()
     /** Count of skipped files */
     Long getCountSkips() { counterSkips.count }
 

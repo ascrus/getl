@@ -25,7 +25,7 @@ class TestRepository extends GetlDslTest {
     }
 
     @Override
-    boolean allowTests() { FileUtils.ExistsFile(repConfigFileName) }
+    Boolean allowTests() { FileUtils.ExistsFile(repConfigFileName) }
 
     @Override
     Class<Getl> useInitClass() { TestInit }

@@ -30,18 +30,18 @@ abstract class FileListProcessing implements GetlRepository {
     }
 
     /** Manager parameters */
-    final Map<String, Object> params = [:] as Map<String, Object>
+    private final Map<String, Object> params = [:] as Map<String, Object>
 
     /** Manager parameters */
-    Map getParams() { params }
+    Map<String, Object> getParams() { params }
     /** Manager parameters */
-    void setParams(Map value) {
+    void setParams(Map<String, Object> value) {
         params.clear()
         if (value != null) params.putAll(value)
     }
 
     /** Extended system parameters */
-    final Map<String, Object> sysParams = [:] as Map<String, Object>
+    private final Map<String, Object> sysParams = [:] as Map<String, Object>
 
     /** System parameters */
     Map<String, Object> getSysParams() { sysParams }

@@ -13,9 +13,9 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class ProcessWorkload extends Job {
-	VerticaConnection cVertica = new VerticaConnection(config: "vertica")
-	QueryDataset qTables = new QueryDataset(connection: cVertica)
-	QueryDataset qWorkload = new QueryDataset(connection: cVertica, query: "SELECT ANALYZE_WORKLOAD('')")
+	private VerticaConnection cVertica = new VerticaConnection(config: "vertica")
+	private QueryDataset qTables = new QueryDataset(connection: cVertica)
+	private QueryDataset qWorkload = new QueryDataset(connection: cVertica, query: "SELECT ANALYZE_WORKLOAD('')")
 	
 	static main(args) {
 		new ProcessWorkload().run(args)

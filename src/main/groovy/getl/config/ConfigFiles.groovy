@@ -144,7 +144,9 @@ class ConfigFiles extends ConfigManager {
      * @return config content
 	 */
 	static Map<String, Object> LoadConfigFile (File file, String codePage) {
-		if (!file.exists()) throw new ExceptionGETL("Config file \"$file\" not found")
+		if (!file.exists())
+            throw new ExceptionGETL("Config file \"$file\" not found")
+        
 		Logs.Config("Load config file \"${file.canonicalPath}\"")
         def data = null
 

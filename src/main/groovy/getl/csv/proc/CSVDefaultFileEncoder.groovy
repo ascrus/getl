@@ -18,18 +18,6 @@ import getl.csv.CSVDriver.WriterParams
  *
  */
 class CSVDefaultFileEncoder extends DefaultCsvEncoder {
-	private Boolean header
-	private String quote
-	private String nullValue
-	private Boolean escaped
-	private List<Integer> escapedColumns
-
-	private Long fieldDelimiterSize
-	private Long rowDelimiterSize
-	private Integer countFields
-
-	public Long writeSize = 0L
-	
 	CSVDefaultFileEncoder (CSVDataset dataset, WriterParams wp) {
 		super()
 
@@ -43,6 +31,18 @@ class CSVDefaultFileEncoder extends DefaultCsvEncoder {
 		this.rowDelimiterSize = wp.rowDelimiterSize
 		this.countFields = wp.countFields
 	}
+
+	private Boolean header
+	private String quote
+	private String nullValue
+	private Boolean escaped
+	private List<Integer> escapedColumns
+
+	private Long fieldDelimiterSize
+	private Long rowDelimiterSize
+	private Integer countFields
+
+	public Long writeSize = 0L
 
 	@CompileStatic
 	@Override

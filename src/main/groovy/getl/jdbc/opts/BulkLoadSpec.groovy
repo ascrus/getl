@@ -1,8 +1,12 @@
 package getl.jdbc.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
+import getl.lang.sub.GetlRepository
+import getl.lang.sub.GetlValidate
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.utils.Path
@@ -28,6 +32,7 @@ class BulkLoadSpec extends BaseSpec {
      * <br>closure parameter: source file as CSVDataset
      * <br>return: List of loaded table fields
      */
+    @JsonIgnore
     Closure getOnPrepareDestinationFields() { params.prepare as Closure }
     /**
      * Return a list of field names to load into the table
@@ -48,6 +53,7 @@ class BulkLoadSpec extends BaseSpec {
      * Run code before loading file (for loadAsPackage off)
      * <br>closure parameter: file path to load
      */
+    @JsonIgnore
     Closure getOnBeforeBulkLoadFile() { params.beforeBulkLoadFile as Closure }
     /**
      * Run code before loading file (for loadAsPackage off)
@@ -66,6 +72,7 @@ class BulkLoadSpec extends BaseSpec {
      * Run code after loading file (for loadAsPackage off)
      * <br>closure parameter: file path to load
      */
+    @JsonIgnore
     Closure getOnAfterBulkLoadFile() { params.afterBulkLoadFile as Closure }
     /**
      * Run code after loading file (for loadAsPackage off)
@@ -84,6 +91,7 @@ class BulkLoadSpec extends BaseSpec {
      * Run code before loading files (for loadAsPackage on)
      * <br>closure parameter: list of file paths to load
      */
+    @JsonIgnore
     Closure getOnBeforeBulkLoadPackageFiles() { params.beforeBulkLoadPackageFiles as Closure }
     /**
      * Run code before loading files (for loadAsPackage on)
@@ -102,6 +110,7 @@ class BulkLoadSpec extends BaseSpec {
      * Run code after loading files (for loadAsPackage on)
      * <br>closure parameter: list of file paths to load
      */
+    @JsonIgnore
     Closure getOnAfterBulkLoadPackageFiles() { params.afterBulkLoadPackageFiles as Closure }
     /**
      * Run code after loading files (for loadAsPackage on)
@@ -183,9 +192,9 @@ class BulkLoadSpec extends BaseSpec {
     }
 
     /** Names of sort fields for the order of loaded files */
-    List getOrderProcess() { params.orderProcess as List }
+    List<String> getOrderProcess() { params.orderProcess as List<String> }
     /** Names of sort fields for the order of loaded files */
-    void setOrderProcess(List value) {
+    void setOrderProcess(List<String> value) {
         orderProcess.clear()
         if (value != null)
             orderProcess.addAll(value)
@@ -207,7 +216,25 @@ class BulkLoadSpec extends BaseSpec {
     }
 
     /** Source file prototype for bulk load */
+    @JsonIgnore
     CSVDataset getSourceDataset() { params.sourceDataset as CSVDataset }
     /** Source file prototype for bulk load */
     void setSourceDataset(CSVDataset value) { params.sourceDataset = value }
+
+    /** The name of source file prototype in repository for bulk load */
+    String getSourceDatasetName() { sourceDataset.dslNameObject }
+    /** The name of source file prototype in repository for bulk load */
+    void setSourceDatasetName(String value) {
+        def own = ownerObject as GetlRepository
+        GetlValidate.IsRegister(own)
+        if (value != null) {
+            def csv = own.dslCreator.dataset(value)
+            if (!(csv instanceof CSVDataset))
+                throw new ExceptionDSL("Dataset \"$value\" is not a CWS!")
+
+            setSourceDataset(csv as CSVDataset)
+        }
+        else
+            setSourceDataset(null)
+    }
 }

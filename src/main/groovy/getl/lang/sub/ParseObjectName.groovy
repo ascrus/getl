@@ -19,7 +19,7 @@ class ParseObjectName {
     }
 
     /** Name object in repository */
-    String _name
+    private String _name
     /** Name object in repository */
     String getName() { _name }
     /** Name object in repository */
@@ -59,7 +59,7 @@ class ParseObjectName {
     }
 
     /** Group name */
-    String _groupName
+    private String _groupName
     /** Group name */
     String getGroupName() { _groupName }
     /** Group name */
@@ -84,7 +84,7 @@ class ParseObjectName {
     }
 
     /** Object name */
-    String _objectName
+    private String _objectName
     /** Object name */
     String getObjectName() { _objectName }
     /** Object name */

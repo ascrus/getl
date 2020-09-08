@@ -3,7 +3,6 @@ package getl.netsuite
 import getl.jdbc.QueryDataset
 import getl.utils.Config
 import getl.utils.FileUtils
-import getl.utils.Logs
 import org.junit.BeforeClass
 import org.junit.Test
 
@@ -13,7 +12,7 @@ class NetsuiteDriverTest extends getl.test.GetlTest {
 	static NetsuiteConnection netsuiteConnectionHost
 
 	@Override
-	boolean allowTests() { netsuiteConnectionUrl != null && netsuiteConnectionHost != null }
+	Boolean allowTests() { netsuiteConnectionUrl != null && netsuiteConnectionHost != null }
 
 	@BeforeClass
 	static void InitTest() {

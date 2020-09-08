@@ -10,6 +10,7 @@ import getl.jdbc.opts.SequenceCreateSpec
 import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
+import getl.lang.sub.GetlValidate
 import getl.utils.CloneUtils
 import getl.utils.MapUtils
 import groovy.transform.Synchronized
@@ -26,22 +27,20 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 		initParams()
 	}
 
-	/** Save point manager parameters */
-	private final Map<String, Object> params = [:] as Map<String, Object>
-
-	/**
-	 * Initialization parameters
-	 */
+	/** Initialization parameters */
 	protected void initParams() {
 		params.attributes = [:] as Map<String, Object>
 	}
 
 	/** Save point manager parameters */
-	@JsonIgnore
-	Map getParams() { params }
+	private final Map<String, Object> params = [:] as Map<String, Object>
+
 	/** Save point manager parameters */
 	@JsonIgnore
-	void setParams(Map value) {
+	Map<String, Object> getParams() { params }
+	/** Save point manager parameters */
+	@JsonIgnore
+	void setParams(Map<String, Object> value) {
 		params.clear()
 		initParams()
 		if (value != null) params.putAll(value)
@@ -72,22 +71,37 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Connection */
-	JDBCConnection connection
+	private JDBCConnection connection
 	/** Connection */
+	@JsonIgnore
 	Connection getConnection() { connection }
 	/** Connection */
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof JDBCConnection))
 			throw new ExceptionGETL('Only work with JDBC connections is supported!')
 
+		useConnection(value as JDBCConnection)
+	}
+	/** Use specified connection */
+	JDBCConnection useConnection(JDBCConnection value) {
 		if (value != null && !value.driver.isSupport(Driver.Support.SEQUENCE))
 			throw new ExceptionGETL("At connection \"$connection\" the driver does not support sequence!")
 
-		connection = value
+		this.connection = value
+		return value
 	}
-	/** Use specified connection */
-	void useConnection(JDBCConnection value) {
-		setConnection(value)
+
+	/** The name of the connection in the repository */
+	String getConnectionName() { connection.dslNameObject }
+	/** The name of the connection in the repository */
+	void setConnectionName(String value) {
+		GetlValidate.IsRegister(this)
+		if (value != null) {
+			def con = dslCreator.jdbcConnection(value)
+			useConnection(con)
+		}
+		else
+			useConnection(null)
 	}
 
 	/** Current JDBC connection */

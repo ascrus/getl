@@ -51,9 +51,9 @@ class XMLDataset extends StructureFileDataset {
 	XMLConnection getCurrentXMLConnection() { connection as XMLConnection }
 
 	/** Use default the attribute access method (default) */
-	static final Integer DEFAULT_ATTRIBUTE_ACCESS = 0
+	static public final Integer DEFAULT_ATTRIBUTE_ACCESS = 0
 	/** Use default the node access method */
-	static final Integer DEFAULT_NODE_ACCESS = 1
+	static public final Integer DEFAULT_NODE_ACCESS = 1
 
 	/** How read field if not specified the alias property
 	 * <br>default: DEFAULT_ATTRIBUTE_ACCESS
@@ -79,13 +79,14 @@ class XMLDataset extends StructureFileDataset {
 		currentXMLConnection.currentXMLDriver.readAttrs(this, params)
 	}
 
-	/**
-	 * Read file options
-	 */
+	/** Read file options */
+	XMLReadSpec getReadOpts() { new XMLReadSpec(this, true, readDirective) }
+
+	/** Read file options */
 	XMLReadSpec readOpts(@DelegatesTo(XMLReadSpec)
 						 @ClosureParams(value = SimpleType, options = ['getl.xml.opts.XMLReadSpec'])
 								 Closure cl = null) {
-		def parent = new XMLReadSpec(this, true, readDirective)
+		def parent = readOpts
 		parent.runClosure(cl)
 
 		return parent

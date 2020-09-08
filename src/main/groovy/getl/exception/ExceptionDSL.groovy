@@ -45,12 +45,12 @@ class ExceptionDSL extends Throwable {
     static public final Integer STOP_APP = 2
 
     /** Type code */
-    Integer typeCode
+    private Integer typeCode
     /** Type code */
     Integer getTypeCode() { typeCode }
 
     /** Exit code */
-    Integer exitCode
+    private Integer exitCode
     /** Exit code */
     Integer getExitCode() { exitCode }
 }

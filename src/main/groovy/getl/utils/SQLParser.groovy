@@ -10,15 +10,11 @@ import groovy.transform.CompileStatic
  */
 @CompileStatic
 class SQLParser {
-	/**
-	 * List of type statements
-	 */
+	/** List of type statements */
 	static enum StatementType {INSERT, UPDATE, DELETE}
 	
-	/**
-	 * Lexer for parsing
-	 */
-	Lexer lexer
+	/** Lexer for parsing */
+	public Lexer lexer
 	
 	static private final Integer minSizeInsertStatement = 5
 	static private final String insertKeyWord = 'INSERT INTO'

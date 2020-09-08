@@ -61,26 +61,19 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
      */
     static public final String ZSTD = 'ZSTD'
 
-    /**
-     * Specified parser for loading data from file
-     */
-    Map<String, Object> getParser() { params.parser as Map<String, Object> }
-    /**
-     * Specified parser for loading data from file
-     */
-    void setParser(Map<String, Object> value) {
-        parser.clear()
-        if (value != null) parser.putAll(value)
+    /** Specified parser for loading data from file */
+    VerticaBulkLoadParserSpec getParser() {
+        new VerticaBulkLoadParserSpec(ownerObject, true, params.parser as Map<String, Object>)
     }
-    /**
-     * Specified parser for loading data from file
-     */
-    void parser(@DelegatesTo(VerticaBulkLoadParserSpec)
+
+    /** Specified parser for loading data from file */
+    VerticaBulkLoadParserSpec parser(@DelegatesTo(VerticaBulkLoadParserSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaBulkLoadParserSpec'])
                         Closure cl) {
-        def parent = new VerticaBulkLoadParserSpec(ownerObject, true, parser)
+        def parent = parser
         parent.runClosure(cl)
-        parser = parent.params
+
+        return parent
     }
 
     /**

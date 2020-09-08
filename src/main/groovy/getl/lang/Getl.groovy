@@ -2366,13 +2366,27 @@ Examples:
     /**
      * Clone dataset object
      * @param dataset original dataset to clone
+     * @return cloned dataset
+     */
+    @SuppressWarnings("GrMethodMayBeStatic")
+    Dataset cloneDataset(Dataset dataset) {
+        if (dataset == null)
+            throw new ExceptionDSL('Need object value!')
+
+        return dataset.cloneDataset()
+    }
+
+    /**
+     * Clone dataset object
+     * @param dataset original dataset to clone
      * @param con used connection for new dataset
      * @return cloned dataset
      */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Dataset cloneDataset(Dataset dataset, Connection con = null) {
+    Dataset cloneDataset(Dataset dataset, Connection con) {
         if (dataset == null)
             throw new ExceptionDSL('Need object value!')
+
         return dataset.cloneDataset(con)
     }
 
@@ -2386,6 +2400,7 @@ Examples:
     Dataset cloneDataset(Dataset dataset, Boolean cloneConnection) {
         if (dataset == null)
             throw new ExceptionDSL('Need object value!')
+
         return (cloneConnection)?dataset.cloneDatasetConnection():dataset.cloneDataset()
     }
 
@@ -2401,7 +2416,7 @@ Examples:
     Dataset cloneDataset(String newName, Dataset dataset, Connection con = null,
                          @DelegatesTo(Dataset)
                          @ClosureParams(value = SimpleType, options = ['getl.data.Dataset']) Closure cl = null) {
-        def parent = cloneDataset(dataset, con)
+        def parent = cloneDataset(dataset, con as Connection)
         registerDatasetObject(parent, newName)
         runClosure(parent, cl)
 
@@ -3961,7 +3976,7 @@ Examples:
             parent.connection = defaultJdbcConnection(RepositoryDatasets.QUERYDATASET)
 
         parent.logEcho = _langOpts.sqlEchoLogLevel.toString()
-        parent.extVars = configContent
+        parent.extVars = configVars
         def pt = startProcess("Execution SQL script${(parent.connection != null) ? ' on [' + parent.connection + ']' : ''}")
         runClosure(parent, cl)
         finishProcess(pt, parent.rowCount)

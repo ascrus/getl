@@ -1,5 +1,6 @@
 package getl.csv.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.opts.BaseSpec
 import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
@@ -27,6 +28,7 @@ class CSVWriteSpec extends BaseSpec {
      * Run after save batch records
      * <br>Closure parameters: Long numberOfBatch
      */
+    @JsonIgnore
     Closure getOnSaveBatch() { params.onSaveBatch as Closure }
     /**
      * Run after save batch records
@@ -50,6 +52,7 @@ class CSVWriteSpec extends BaseSpec {
      * Checking row for need to write current and next rows to the new file
      * <br>Closure parameters: Map row
      */
+    @JsonIgnore
     Closure<Boolean> getOnSplitFile() { params.onSplitFile as Closure<Boolean> }
     /**
      * Checking row for need to write current and next rows to the new file

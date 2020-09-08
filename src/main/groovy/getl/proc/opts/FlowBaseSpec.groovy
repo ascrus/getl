@@ -14,17 +14,17 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class FlowBaseSpec extends BaseSpec {
     /** Last count row */
-    Long countRow = 0
+    private Long countRow = 0
     /** Last count row */
     Long getCountRow() { countRow }
 
     /** Dataset of error rows*/
-    TFSDataset errorsDataset
+    private TFSDataset errorsDataset
     /** Dataset of error rows*/
     TFSDataset getErrorsDataset() { errorsDataset }
 
     /** Process row generate code */
-    String processRowScript
+    private String processRowScript
     /** Process row generate code */
     String getProcessRowScript() { processRowScript }
 
@@ -40,7 +40,9 @@ class FlowBaseSpec extends BaseSpec {
      */
     void setOnProcess(Closure value) { params.process = value }
 
-    Boolean isProcessed = false
+    /** The process worked */
+    private Boolean isProcessed = false
+    /** The process worked */
     Boolean getIsProcessed() { isProcessed }
 
     /**

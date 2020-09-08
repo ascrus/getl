@@ -20,7 +20,7 @@ class CopyTest extends GetlDslTest {
     @Override
     Class<Getl> useGetlClass() { TestRunner }
     @Override
-    protected boolean cleanGetlBeforeTest() { false }
+    protected Boolean cleanGetlBeforeTest() { false }
 
     static final def debug = false
     static final def workPath = "${(debug)?"${System.getenv().GETL_TEST}/getl.test":FileUtils.SystemTempDir()}/copier"

@@ -1,9 +1,7 @@
 package getl.jdbc
 
 import getl.lang.Getl
-import getl.tfs.TFS
 import getl.utils.DateUtils
-import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
@@ -12,7 +10,7 @@ class JDBCTest extends getl.test.GetlTest {
     @Test
     void testFields() {
         Getl.Dsl(this) {
-            def t = embeddedTable {
+            embeddedTable {
                 tableName = 'test_fields'
                 field('id1') { type = integerFieldType; isKey = true; ordKey = 1 }
                 field('id2') { type = datetimeFieldType; isKey = true; ordKey = 2 }
@@ -146,7 +144,7 @@ class JDBCTest extends getl.test.GetlTest {
             }
 
             embeddedTable('history_threads', true) {
-                useConnection historypoint('history_threads').connection
+                connection = historypoint('history_threads').connection
                 tableName = 'test_checkpoint_threads'
                 retrieveFields()
                 assertEquals(4, field.size())

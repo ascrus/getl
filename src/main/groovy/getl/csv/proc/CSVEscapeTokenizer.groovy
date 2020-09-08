@@ -17,8 +17,6 @@ import getl.csv.CSVDriver.WriterParams
  *
  */
 class CSVEscapeTokenizer extends Tokenizer {
-	Boolean header
-
 	CSVEscapeTokenizer (Reader reader, CsvPreference preferences, Boolean useHeader) {
 		super(reader, preferences)
 		this.header = useHeader
@@ -31,8 +29,9 @@ class CSVEscapeTokenizer extends Tokenizer {
 	static private final Pattern pattern1 = StringUtils.SearchPattern('\\\\')
 	static private final String replace1 = '\u0081'
 
-	Pattern pattern2
-	String replace2
+	private Boolean header
+	private Pattern pattern2
+	private String replace2
 
 	static private final Pattern pattern3 = StringUtils.SearchPattern('\u0081')
 	static private final String replace3 = '\\\\'

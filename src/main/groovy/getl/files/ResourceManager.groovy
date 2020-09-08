@@ -84,6 +84,7 @@ class ResourceManager extends Manager {
 
     /** Current directory */
     private ResourceCatalogElem currentDirectory
+    /** Current directory */
     private setCurrentDirectory(ResourceCatalogElem value) {
         currentDirectory = value
         _currentPath = currentDirectory.filepath
@@ -380,7 +381,7 @@ class ResourceManager extends Manager {
 
         def destDir = destFile.parentFile
         def delDirs = [] as List<File>
-        while (destDir.canonicalPath != localDirFile.canonicalPath) {
+        while (destDir.canonicalPath != localDirectoryFile.canonicalPath) {
             delDirs << destDir
             destDir = destDir.parentFile
         }

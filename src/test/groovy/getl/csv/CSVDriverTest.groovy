@@ -651,10 +651,10 @@ class CSVDriverTest extends getl.test.GetlTest {
                 writeln '2,"name",678.90'
             }
 
-            csv.readOpts().skipRows = null
+            csv.readOpts.skipRows = null
             this.shouldFail { csv.rows() }
 
-            csv.readOpts().skipRows = 2
+            csv.readOpts.skipRows = 2
             def rows = csv.rows()
             assertEquals(2, rows.size())
             assertEquals(1, rows[0].id)

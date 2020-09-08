@@ -6,8 +6,8 @@ package getl.proc.sub
  */
 class ExecutorSplitListElement {
     /** List item */
-    Object item
+    public Object item
 
     /** Thread properties */
-    Map node
+    public Map node
 }

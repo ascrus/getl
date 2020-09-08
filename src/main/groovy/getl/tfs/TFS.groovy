@@ -1,5 +1,6 @@
 package getl.tfs
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.*
 import getl.exception.ExceptionGETL
 import getl.utils.FileUtils
@@ -115,7 +116,7 @@ class TFS extends CSVConnection {
 	}
 
 	@Override
-	void setParams(Map value) {
+	void setParams(Map<String, Object> value) {
 		super.setParams(value)
 		validParams()
 	}

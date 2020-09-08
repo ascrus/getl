@@ -40,11 +40,12 @@ class MSSQLTable extends TableDataset {
         new MSSQLReadSpec(this, useExternalParams, opts)
     }
 
-    /**
-     * Read table options
-     */
+    /** Read table options */
+    MSSQLReadSpec getReadOpts() { new MSSQLReadSpec(this, true, readDirective) }
+
+    /** Read table options */
     MSSQLReadSpec readOpts(@DelegatesTo(MSSQLReadSpec)
-                           @ClosureParams(value = SimpleType, options = ['getl.mssql.opts.MSSQLReadSpec>'])
+                           @ClosureParams(value = SimpleType, options = ['getl.mssql.opts.MSSQLReadSpec'])
                                    Closure cl = null) {
         genReadDirective(cl) as MSSQLReadSpec
     }

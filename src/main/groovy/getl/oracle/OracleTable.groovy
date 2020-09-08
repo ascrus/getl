@@ -40,9 +40,10 @@ class OracleTable extends TableDataset {
         new OracleReadSpec(this, useExternalParams, opts)
     }
 
-    /**
-     * Read table options
-     */
+    /** Read table options */
+    OracleReadSpec getReadOpts() { new OracleReadSpec(this, true, readDirective) }
+
+    /** Read table options */
     OracleReadSpec readOpts(@DelegatesTo(OracleReadSpec)
                             @ClosureParams(value = SimpleType, options = ['getl.oracle.opts.OracleReadSpec'])
                                     Closure cl = null) {

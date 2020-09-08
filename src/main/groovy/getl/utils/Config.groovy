@@ -103,7 +103,7 @@ class Config {
 	/**
 	 * List of initialization object code on load config
 	 */
-	static final List<Closure> init = [] as List<Closure>
+	static public final List<Closure> init = [] as List<Closure>
 
 	/**
 	 * Re-initialization class

@@ -16,9 +16,9 @@ class ImpalaWriteSpec extends WriteSpec {
     /** Replace data in table then insert */
     void setOverwrite(Boolean value) { params.overwrite = value }
 
-    static final String snappyCompressionCodec = 'snappy'
-    static final String gzipCompressionCodec = 'gzip'
-    static final String noneCompressionCodec = 'none'
+    static public final String snappyCompressionCodec = 'snappy'
+    static public final String gzipCompressionCodec = 'gzip'
+    static public final String noneCompressionCodec = 'none'
 
     /** Compression codec */
     String getCompression() { params.compression as String }

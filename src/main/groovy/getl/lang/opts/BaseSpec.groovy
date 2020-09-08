@@ -1,5 +1,6 @@
 package getl.lang.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
@@ -39,6 +40,7 @@ class BaseSpec {
     /** Options owner */
     protected Object _owner
     /** Options owner */
+    @JsonIgnore
     Object getOwnerObject() { _owner }
 
     /** Init options after create object */
@@ -61,6 +63,7 @@ class BaseSpec {
 
     private Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
     /** Object parameters */
+    @JsonIgnore
     Map<String, Object> getParams() { _params }
 
     /**

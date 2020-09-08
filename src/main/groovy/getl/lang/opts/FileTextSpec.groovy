@@ -43,7 +43,9 @@ class FileTextSpec extends BaseSpec {
     String getTextBuffer() { buffer.toString() }
 
     /** Count saved bytes */
-    Long countBytes = 0
+    private Long countBytes = 0
+    /** Count saved bytes */
+    Long getCountBytes() { countBytes }
 
     /** Write text buffer to file */
     void save() {

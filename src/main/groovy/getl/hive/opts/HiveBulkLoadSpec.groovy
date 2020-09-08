@@ -1,5 +1,6 @@
 package getl.hive.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.jdbc.opts.BulkLoadSpec
 import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
@@ -25,6 +26,7 @@ class HiveBulkLoadSpec extends BulkLoadSpec {
     void setOverwrite(Boolean value) { params.overwrite = value }
 
     /** Process row during conversion before loading them into a table */
+    @JsonIgnore
     Closure getOnProcessRow() { params.processRow as Closure }
     /** Process row during conversion before loading them into a table */
     void setOnProcessRow(Closure value) { params.processRow = value }

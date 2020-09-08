@@ -42,7 +42,10 @@ class H2Table extends TableDataset {
         return new H2CreateSpec(this, useExternalParams, opts)
     }
 
-    /** Options for creating Vertica table */
+    /** Options for creating H2 table */
+    H2CreateSpec getCreateOpts() { new H2CreateSpec(this, true, createDirective) }
+
+    /** Options for creating H2 table */
     H2CreateSpec createOpts(@DelegatesTo(H2CreateSpec)
                             @ClosureParams(value = SimpleType, options = ['getl.h2.opts.H2CreateSpec'])
                                     Closure cl = null) {
@@ -54,7 +57,10 @@ class H2Table extends TableDataset {
         return new H2BulkLoadSpec(this, useExternalParams, opts)
     }
 
-    /** Options for loading csv files to Vertica table */
+    /** Options for loading csv files to H2 table */
+    H2BulkLoadSpec getBulkLoadOpts() { new H2BulkLoadSpec(this, true, bulkLoadDirective) }
+
+    /** Options for loading csv files to H2 table */
     H2BulkLoadSpec bulkLoadOpts(@DelegatesTo(H2BulkLoadSpec)
                                 @ClosureParams(value = SimpleType, options = ['getl.h2.opts.H2BulkLoadSpec'])
                                         Closure cl = null) {

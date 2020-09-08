@@ -12,21 +12,21 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class FileListProcessingBuild extends ManagerListProcessing {
     /** Current path */
-    String curPath = ''
+    public String curPath = ''
 
     /** Owner file copier object */
-    FileListProcessing owner
+    public FileListProcessing owner
 
     /** Source name */
-    String sourceName
+    public String sourceName
 
     /** Source mask path */
-    Path sourcePath
+    public Path sourcePath
 
     /** Filtering directories */
-    Closure<Boolean> onFilterDirs
+    public Closure<Boolean> onFilterDirs
     /** Filtering files */
-    Closure<Boolean> onFilterFiles
+    public Closure<Boolean> onFilterFiles
 
     @Override
     void init () {

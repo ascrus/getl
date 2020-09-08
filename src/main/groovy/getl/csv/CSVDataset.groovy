@@ -296,21 +296,23 @@ class CSVDataset extends FileDataset {
 		return currentCsvConnection.currentCSVDriver.readLinesCount(this)
 	}
 
-	/**
-	 * Read file options
-	 */
+	/** Read file options */
+	CSVReadSpec getReadOpts() { new CSVReadSpec(this, true, readDirective) }
+
+	/** Read file options */
 	CSVReadSpec readOpts(@DelegatesTo(CSVReadSpec) Closure cl = null) {
-		def parent = new CSVReadSpec(this, true, readDirective)
+		def parent = readOpts
 		parent.runClosure(cl)
 
 		return parent
 	}
 
-	/**
-	 * Write file options
-	 */
+	/** Write file options */
+	CSVWriteSpec getWriteOpts() { new CSVWriteSpec(this, true, writeDirective) }
+
+	/** Write file options */
 	CSVWriteSpec writeOpts(@DelegatesTo(CSVWriteSpec) Closure cl = null) {
-		def parent = new CSVWriteSpec(this, true, writeDirective)
+		def parent = writeOpts
 		parent.runClosure(cl)
 
 		return parent

@@ -1,5 +1,6 @@
 package getl.jdbc
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Field
 import getl.data.sub.WithConnection
@@ -7,6 +8,7 @@ import getl.exception.ExceptionGETL
 import getl.exception.ExceptionSQLScripter
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
+import getl.lang.sub.GetlValidate
 import getl.utils.*
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -41,7 +43,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	}
 
 	/** Local variables */
-	final Map<String, Object> vars = [:] as Map<String, Object>
+	private final Map<String, Object> vars = [:] as Map<String, Object>
 	/** Local variables */
 	Map<String, Object> getVars() { vars }
 	/** Local variables */
@@ -60,20 +62,35 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 */
 	private TypeCommand typeSql = TypeCommand.UNKNOWN
 
-	/***  JDBC connection */
+	/***  Source JDBC connection */
 	private JDBCConnection connection
-	/***  JDBC connection */
+	/***  Source connection */
+	@JsonIgnore
 	Connection getConnection() { connection }
-	/***  JDBC connection */
+	/***  Source connection */
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof JDBCConnection))
 			throw new ExceptionGETL('The SQLScripter only supports jdbc connections!')
-		connection = value as JDBCConnection
+
+		useConnection(value as JDBCConnection)
 	}
-	/** Use specified JDBC connection */
+	/** Use specified source JDBC connection */
 	JDBCConnection useConnection(JDBCConnection value) {
-		setConnection(value)
+		this.connection = value as JDBCConnection
 		return value
+	}
+
+	/** The name of the connection in the repository */
+	String getConnectionName() { connection.dslNameObject }
+	/** The name of the connection in the repository */
+	void setConnectionName(String value) {
+		GetlValidate.IsRegister(this)
+		if (value != null) {
+			def con = dslCreator.jdbcConnection(value)
+			useConnection(con)
+		}
+		else
+			useConnection(null)
 	}
 	
 	/* Connection for point manager */

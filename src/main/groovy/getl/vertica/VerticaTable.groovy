@@ -46,6 +46,11 @@ class VerticaTable extends TableDataset {
     }
 
     /** Options for creating Vertica table */
+    VerticaCreateSpec getCreateOpts() {
+        new VerticaCreateSpec(this, true, createDirective)
+    }
+
+    /** Options for creating Vertica table */
     VerticaCreateSpec createOpts(@DelegatesTo(VerticaCreateSpec)
                                  @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaCreateSpec'])
                                          Closure cl = null) {
@@ -56,6 +61,9 @@ class VerticaTable extends TableDataset {
     protected ReadSpec newReadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
         new VerticaReadSpec(this, useExternalParams, opts)
     }
+
+    /** Options for reading from Vertica table */
+    VerticaReadSpec getReadOpts() { new VerticaReadSpec(this, true, readDirective) }
 
     /** Options for reading from Vertica table */
     VerticaReadSpec readOpts(@DelegatesTo(VerticaReadSpec)
@@ -70,6 +78,9 @@ class VerticaTable extends TableDataset {
     }
 
     /** Options for writing to Vertica table */
+    VerticaWriteSpec getWriteOpts() { new VerticaWriteSpec(this, true, writeDirective) }
+
+    /** Options for writing to Vertica table */
     VerticaWriteSpec writeOpts(@DelegatesTo(VerticaWriteSpec)
                                @ClosureParams(value = SimpleType, options = ['getl.vertica.opts.VerticaWriteSpec'])
                                        Closure cl = null) {
@@ -79,6 +90,11 @@ class VerticaTable extends TableDataset {
     @Override
     protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
         new VerticaBulkLoadSpec(this, useExternalParams, opts)
+    }
+
+    /** Options for loading csv files to Vertica table */
+    VerticaBulkLoadSpec getBulkLoadOpts() {
+        new VerticaBulkLoadSpec(this, true, bulkLoadDirective)
     }
 
     /** Options for loading csv files to Vertica table */

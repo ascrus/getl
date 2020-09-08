@@ -97,14 +97,10 @@ class JDBCConnection extends Connection implements UserLogins {
 		sysParams.sessionID = null
 	}
 	
-	/**
-	 * Use exists JDBC connection 
-	 */
+	/** Use exists JDBC connection */
 	@JsonIgnore
 	java.sql.Connection getJavaConnection() { params.javaConnection as java.sql.Connection }
-	/**
-	 * Use exists JDBC connection
-	 */
+	/** Use exists JDBC connection */
 	void setJavaConnection(java.sql.Connection value) { params.javaConnection = value }
 	
 	/**
@@ -139,30 +135,14 @@ class JDBCConnection extends Connection implements UserLogins {
 	 */
 	void setConnectDatabase(String value) { params.connectDatabase = value }
 	
-	/**
-	 * Connection balancer
-	 */
-	@JsonIgnore
-	Balancer getBalancer() { params.balancer as Balancer }
-	/**
-	 * Connection balancer
-	 */
-	void setBalancer(Balancer value) { params.balancer = value }
-	
 	/** JDBC driver name */
-	@JsonIgnore
 	String getDriverName() { params.driverName as String }
 	/** JDBC driver name */
 	void setDriverName(String value) { params.driverName = value }
 
-    /**
-     * JDBC driver jar file path
-     */
-	@JsonIgnore
+    /** JDBC driver jar file path */
     String getDriverPath() { params.driverPath as String }
-	/**
-	 * JDBC driver jar file path
-	 */
+	/** JDBC driver jar file path */
     void setDriverPath(String value) { params.driverPath = value }
 	
 	@Override
@@ -230,14 +210,14 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Session properties
 	 */
-	Map getSessionProperty() {
-		if (params.sessionProperty == null) params.sessionProperty = [:]
-		return params.sessionProperty as Map
+	Map<String, Object> getSessionProperty() {
+		if (params.sessionProperty == null) params.sessionProperty = [:] as Map<String, Object>
+		return params.sessionProperty as Map<String, Object>
 	}
 	/**
 	 * Session properties
 	 */
-	void setSessionProperty(Map value) {
+	void setSessionProperty(Map<String, Object> value) {
 		sessionProperty.clear()
 		addSessionProperty(value)
 	}
@@ -350,7 +330,7 @@ class JDBCConnection extends Connection implements UserLogins {
 
 	/**
 	 * Return datasets list by parameters
-	 * @param params retrive params by specified connection driver (dbName, schemaName, tableName, tableMask, type)
+	 * @param params read params by specified connection driver (dbName, schemaName, tableName, tableMask, type)
 	 * @param filter user filter code
 	 */
 	List<TableDataset> retrieveDatasets(@DelegatesTo(RetrieveDatasetsSpec)
@@ -371,7 +351,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	
 	/**
 	 * Return datasets list by parameters
-	 * @param params retrive params by specified connection driver (dbName, schemaName, tableName, tableMask, type)
+	 * @param params read params by specified connection driver (dbName, schemaName, tableName, tableMask, type)
 	 * @param filter user filter code
 	 */
 	List<TableDataset> retrieveDatasets(Map params,
@@ -458,12 +438,6 @@ class JDBCConnection extends Connection implements UserLogins {
 	}
 	
 	/**
-	 * Return used balancer server attributes
-	 */
-	@JsonIgnore
-	Map getBalancerServer() { sysParams.balancerServer as Map }
-
-	/**
 	 * Build connection params for connect url 
 	 */
 	String buildConnectParams() {
@@ -505,28 +479,25 @@ class JDBCConnection extends Connection implements UserLogins {
 		return res
 	}
 	
-	/**
-	 * Current host name
-	 */
+	/** Current host name */
+	@JsonIgnore
 	String getConnectHostName() {
 		ConnectHost2HostName(connectHost)
 	}
 	
-	/**
-	 * Current port number
-	 */
+	/** Current port number */
+	@JsonIgnore
 	Integer getConnectPortNumber() {
 		ConnectHost2PortNumber(connectHost)
 	}
 	
-	/**
-	 * Real script history file name
-	 */
-	protected String fileNameSqlHistory
+	/** Current script history file name */
+	private String fileNameSqlHistory
+	/** Current script history file name */
+	@JsonIgnore
+	String getFileNameSqlHistory() { fileNameSqlHistory }
 	
-	/**
-	 * Validation script history file
-	 */
+	/** Validation script history file */
 	protected validSqlHistoryFile() {
 		if (fileNameSqlHistory == null) {
 			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile, StringUtils.MACROS_FILE)
@@ -555,13 +526,13 @@ class JDBCConnection extends Connection implements UserLogins {
 
 			if (tbl.tableName == null)
 				throw new ExceptionDSL('The table does not have a name!')
-			def repname = ((groupName != null)?(groupName + ':'):'') + tbl.tableName
+			def repName = ((groupName != null)?(groupName + ':'):'') + tbl.tableName
 
 			if (tbl.field.isEmpty()) tbl.retrieveFields()
 			if (tbl.field.isEmpty())
 				throw new ExceptionDSL("Fields are not defined for table $tbl!")
 
-				getl.registerDatasetObject(tbl, repname, true)
+				getl.registerDatasetObject(tbl, repName, true)
 		}
 	}
 

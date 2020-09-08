@@ -1,5 +1,6 @@
 package getl.jdbc.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
@@ -18,6 +19,7 @@ class WriteSpec extends BaseSpec {
     }
 
     /** Preparing code */
+    @JsonIgnore
     Closure getOnPrepare() { params.prepare as Closure }
     /** Preparing code */
     void setOnPrepare(Closure value) { params.prepare = value }

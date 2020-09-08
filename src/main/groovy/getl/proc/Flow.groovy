@@ -84,26 +84,21 @@ class Flow {
 	private final Map<String, Object> params = [:] as Map<String, Object>
 
 	/** Flow parameters */
-	Map getParams() { params }
+	Map<String, Object> getParams() { params }
 	/** Flow parameters */
-	void setParams(Map value) {
+	void setParams(Map<String, Object> value) {
 		params.clear()
 		initParams()
 		if (value != null) params.putAll(value)
 	}
 
-	/** Dataset of error rows*/
-	TFSDataset errorsDataset
-
-	/**
-	 * Array of rows with errors
-	 */
+	/** Dataset of error rows */
+	private TFSDataset errorsDataset
+	/** Dataset of error rows */
 	TFSDataset getErrorsDataset() { errorsDataset }
 
-	Long countRow = 0
-	/**
-	 * Last number of rows processed
-	 */
+	private Long countRow = 0
+	/** Last number of rows processed */
 	Long getCountRow() { countRow }
 
 	protected static Map<String, Map> ConvertFieldMap(Map<String, String> map) {
@@ -141,7 +136,9 @@ class Flow {
 	}
 	
 	/** Transformation fields script */
-	public String scriptMap
+	private String scriptMap
+	/** Transformation fields script */
+	String getScriptMap() { scriptMap }
 
 	/** Cache code repository */
 	static private final ConcurrentHashMap<String, Map<String, Object>> cacheCode = new ConcurrentHashMap<String, Map<String, Object>>()

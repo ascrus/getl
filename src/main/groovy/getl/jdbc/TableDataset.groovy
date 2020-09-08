@@ -49,6 +49,7 @@ class TableDataset extends JDBCDataset {
 	void setTableName(String value) { params.tableName = value }
 
 	/** Create table options */
+	@JsonIgnore
 	Map<String, Object> getCreateDirective() { directives('create') }
 	/** Create table options */
 	void setCreateDirective(Map<String, Object> value) {
@@ -57,6 +58,7 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Drop table options */
+	@JsonIgnore
 	Map<String, Object> getDropDirective() { directives('drop') }
 	/** Drop table options */
 	void setDropDirective(Map<String, Object> value) {
@@ -65,6 +67,7 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Read table options */
+	@JsonIgnore
 	Map<String, Object> getReadDirective() { directives('read') }
 	/** Read table options */
 	void setReadDirective(Map<String, Object> value) {
@@ -73,6 +76,7 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Write table options */
+	@JsonIgnore
 	Map<String, Object> getWriteDirective() { directives('write') }
 	/** Write table options */
 	void setWriteDirective(Map<String, Object> value) {
@@ -81,6 +85,7 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Bulk load CSV file options */
+	@JsonIgnore
 	Map<String, Object> getBulkLoadDirective() { directives('bulkLoad') }
 	/** Bulk load CSV file options */
 	void setBulkLoadDirective(Map<String, Object> value) {
@@ -198,6 +203,9 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Options for creating table */
+	CreateSpec getCreateOpts() { new CreateSpec(this, true, createDirective) }
+
+	/** Options for creating table */
 	CreateSpec createOpts(@DelegatesTo(CreateSpec)
 						  @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.CreateSpec'])
 								  Closure cl = null) {
@@ -216,6 +224,9 @@ class TableDataset extends JDBCDataset {
 
 		return parent
 	}
+
+	/** Options for deleting table */
+	DropSpec getDropOpts() { new DropSpec(this, true, dropDirective) }
 
 	/** Options for deleting table */
 	DropSpec dropOpts(@DelegatesTo(DropSpec)
@@ -238,6 +249,9 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Options for reading from table */
+	ReadSpec getReadOpts() { new ReadSpec(this, true, readDirective) }
+
+	/** Options for reading from table */
 	ReadSpec readOpts(@DelegatesTo(ReadSpec)
 					  @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.ReadSpec'])
 							  Closure cl = null) {
@@ -258,6 +272,9 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Options for writing to table */
+	WriteSpec getWriteOpts() { new WriteSpec(this, true, writeDirective) }
+
+	/** Options for writing to table */
 	WriteSpec writeOpts(@DelegatesTo(WriteSpec)
 						@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.WriteSpec'])
 								Closure cl = null) {
@@ -276,6 +293,9 @@ class TableDataset extends JDBCDataset {
 
 		return parent
 	}
+
+	/** Options for loading csv files to table */
+	BulkLoadSpec getBulkLoadOpts() { new BulkLoadSpec(this, true, bulkLoadDirective) }
 
 	/** Options for loading csv files to table */
 	BulkLoadSpec bulkLoadOpts(@DelegatesTo(BulkLoadSpec)

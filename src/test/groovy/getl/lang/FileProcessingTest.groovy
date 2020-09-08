@@ -22,7 +22,7 @@ class FileProcessingTest extends GetlDslTest {
     @Override
     Class<Getl> useGetlClass() { TestRunner }
     @Override
-    protected boolean cleanGetlBeforeTest() { false }
+    protected Boolean cleanGetlBeforeTest() { false }
 
     static final def debug = false
 

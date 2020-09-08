@@ -835,7 +835,7 @@ class Executor implements GetlRepository {
 	SynchronizeObject getCounter() { counter }
 
 	/** The number of successfully processed list items in threads */
-	protected final SynchronizeObject counterProcessed = new SynchronizeObject()
+	private final SynchronizeObject counterProcessed = new SynchronizeObject()
 	/** The number of successfully processed list items in threads */
 	Long getCountProcessed() { counterProcessed.count }
 

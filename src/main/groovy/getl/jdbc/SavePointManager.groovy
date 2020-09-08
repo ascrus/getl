@@ -6,6 +6,7 @@ import getl.data.Field
 import getl.data.sub.WithConnection
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
+import getl.lang.sub.GetlValidate
 import getl.proc.Flow
 import getl.utils.*
 import getl.driver.Driver
@@ -28,7 +29,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * Initialization parameters
 	 */
 	protected void initParams() {
-		params.fields = [:] as Map<String, Object>
+		params.fields = [:] as Map<String, String>
 		params.attributes = [:] as Map<String, Object>
 	}
 
@@ -37,10 +38,10 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 
 	/** Save point manager parameters */
 	@JsonIgnore
-	Map getParams() { params }
+	Map<String, Object> getParams() { params }
 	/** Save point manager parameters */
 	@JsonIgnore
-	void setParams(Map value) {
+	void setParams(Map<String, Object> value) {
 		params.clear()
 		initParams()
 		if (value != null) params.putAll(value)
@@ -62,23 +63,36 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	@JsonIgnore
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
-	/** Connection */
+	/** Source JDBC connection */
 	private JDBCConnection connection
-	/** Connection */
-	Connection getConnection () { connection }
-	/** Connection */
+	/** Source connection */
+	@JsonIgnore
+	Connection getConnection() { connection }
+	/** Source connection */
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof JDBCConnection))
 			throw new ExceptionGETL('Only work with JDBC connections is supported!')
 
-		connection = value
+		useConnection(value as JDBCConnection)
 		map.clear()
 	}
-
-	/** Use specified connection */
+	/** Use specified source JDBC connection */
 	JDBCConnection useConnection(JDBCConnection value) {
-		setConnection(value)
+		this.connection = value
 		return value
+	}
+
+	/** The name of the connection in the repository */
+	String getConnectionName() { connection.dslNameObject }
+	/** The name of the connection in the repository */
+	void setConnectionName(String value) {
+		GetlValidate.IsRegister(this)
+		if (value != null) {
+			def con = dslCreator.jdbcConnection(value)
+			useConnection(con)
+		}
+		else
+			useConnection(null)
 	}
 
 	/** Current JDBC connection */
@@ -111,11 +125,11 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 	
 	/** Map fields (dest: source) */
-	Map getFields () { params.fields as Map }
+	Map<String, String> getFields () { params.fields as Map<String, String> }
 	/** Map fields (dest: source) */
-	void setFields (Map value) {
-		(params.fields as Map).clear()
-		(params.fields as Map).putAll(value)
+	void setFields (Map<String, String> value) {
+		fields.clear()
+		fields.putAll(value)
 		map.clear()
 	}
 
@@ -148,10 +162,10 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	void setDescription(String value) { params.description = value }
 
 	/** Preparing map fields */
-	protected final Map<String, Object> map = [:] as Map<String, Object>
+	private final Map<String, Object> map = [:] as Map<String, Object>
 	
 	/** Save point table fields */
-	protected final List<Field> table_field = [
+	private final List<Field> table_field = [
 										new Field(name: "source", alias: "source", type: "STRING", length: 128, isNull: false),
 										new Field(name: "type", alias: "type", type: "STRING", length: 1, isNull: false),
 										new Field(name: "time", alias: "time", type: "DATETIME", isNull: false),
@@ -159,7 +173,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 									]
 
 	/** History table object */
-	protected final TableDataset table = new TableDataset(manualSchema: true)
+	private final TableDataset table = new TableDataset(manualSchema: true)
 
 	/** Clone current dataset on specified connection */
 	@Synchronized

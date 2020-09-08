@@ -44,16 +44,14 @@ class VerticaConnection extends JDBCConnection {
 		driverName = 'com.vertica.jdbc.Driver'
 	}
 
-	/**
-	 * Current session parameters
-	 */
+	/** Current session parameters */
 	@JsonIgnore
 	Map<String, Object> getCurrentSession() {
 		def query = new QueryDataset(connection: this, query: 'SELECT * FROM current_session')
 		return query.rows()[0]
 	}
 
-	final def attachedVertica = [:] as Map<String, String>
+	private final Map<String, String> attachedVertica = [:] as Map<String, String>
 
 	/** Detect database name from connection */
 	static protected String DatabaseFromConnection(VerticaConnection con) {

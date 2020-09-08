@@ -22,6 +22,7 @@ class ConfigFilesTest extends getl.test.GetlTest {
 
         def configPath = new TFS()
         def configFile = new File("${configPath.path}/test_config.conf")
+        configFile.deleteOnExit()
 
         def builder = new JsonBuilder()
         def conf = builder.root {
@@ -68,7 +69,7 @@ class ConfigFilesTest extends getl.test.GetlTest {
 
         Config.ClearConfig()
         Config.SetValue('vars.test_var', 'variable value')
-        Config.LoadConfig(path: configPath, fileName: 'test_config.conf')
+        Config.LoadConfig(path: configPath.path, fileName: 'test_config.conf')
         assertEquals(Config.content.var, 'variable value')
     }
 }

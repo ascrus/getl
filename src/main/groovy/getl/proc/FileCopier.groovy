@@ -174,7 +174,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     List<String> getUsedInternalVars() { ['_segmented_', '_outpath_'] }
 
     /** Process destination path */
-    Path tmpDestPath
+    private Path tmpDestPath
     /** Process destination path */
     Path getProcessDestinationPath() { tmpDestPath }
 

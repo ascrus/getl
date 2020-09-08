@@ -1,5 +1,6 @@
 package getl.jdbc.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 
@@ -17,6 +18,7 @@ class ReadSpec extends BaseSpec {
     }
 
     /** Preparing code */
+    @JsonIgnore
     Closure getOnPrepare() { params.prepare as Closure }
     /** Preparing code */
     void setOnPrepare(Closure value) { params.prepare = value }

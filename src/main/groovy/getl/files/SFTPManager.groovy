@@ -26,17 +26,17 @@ class SFTPManager extends Manager implements UserLogins {
 
 	/** SSH driver */
 	private final JSch client = new JSch()
-	/** SSH driver */
+	/* SSH driver */
 	//private JSch getClient() { client }
 	
 	/** SSH session */
 	private Session clientSession
-	/** SSH session */
+	/* SSH session */
 	//private Session getClientSession() { clientSession }
 	
 	/** STP channel */
 	private ChannelSftp channelFtp
-	/** STP channel */
+	/* STP channel */
 	//private ChannelSftp getChannelFtp() { channelFtp }
 	
 	@Override

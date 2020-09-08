@@ -148,8 +148,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/** The name of the connection in the repository */
 	void setConnectionName(String value) {
 		GetlValidate.IsRegister(this)
-		def con = dslCreator.connection(value)
-		setConnection(con)
+		if (value != null) {
+			def con = dslCreator.connection(value)
+			setConnection(con)
+		}
+		else
+			setConnection(null)
 	}
 
 	/** Extended attributes */

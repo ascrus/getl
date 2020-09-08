@@ -8,9 +8,7 @@ import getl.utils.*
  *
  */
 abstract class Job {
-	/**
-	 * Job arguments
-	 */
+	/** Job arguments */
 	static public final Map jobArgs = [:] as Map<String, Object>
 	
 	/**
@@ -117,7 +115,10 @@ abstract class Job {
 	}
 
 	/** Exit application code */
-	public Integer exitCode
+	private Integer exitCode
+	/** Exit application code */
+	Integer getExitCode() { exitCode }
+	protected void setExitCode(Integer value) { exitCode = value }
 	
 	/**
 	 * Place your code before stop job here

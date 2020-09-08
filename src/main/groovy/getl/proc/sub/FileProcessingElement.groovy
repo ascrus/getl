@@ -64,15 +64,15 @@ class FileProcessingElement {
         return errorElement.man
     }
 
-    Map<String, Object> threadAttr
+    private Map<String, Object> threadAttr
     /** Thread attributes */
     Map<String, Object> getThreadAttr() { threadAttr }
 
-    Map<String, Object> attr
+    private Map<String, Object> attr
     /** File attribute */
     Map<String, Object> getAttr() { attr }
 
-    File file
+    private File file
     /** File descriptor */
     File getFile() { file }
 

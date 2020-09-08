@@ -891,7 +891,7 @@ class FileUtils {
 		zipFile.extractAll(path.canonicalPath)
 	}
 
-	static final Map<String, String> ReplaceFileMaskRules = {
+	static private final Map<String, String> ReplaceFileMaskRules = {
 		return [
 				'\\': '\\\\',
 				'.': '[.]',
@@ -905,7 +905,7 @@ class FileUtils {
 		]
 	}.call()
 
-	static final Pattern ReplaceFileMaskPattern = {
+	static private final Pattern ReplaceFileMaskPattern = {
 		def keys = ReplaceFileMaskRules.keySet().toList().collect { '\\' + it }
 		return Pattern.compile('(?-s)' + keys.join('|'))
 	}.call()
@@ -1181,7 +1181,7 @@ class FileUtils {
 		return "$res $byteName"
 	}
 
-	static protected def fileLockManager = new LockManager(false)
+	static private LockManager fileLockManager = new LockManager(false)
 
 	/**
 	 * Clean file locks objects

@@ -16,7 +16,7 @@ class ConfigStoresTest extends getl.test.GetlTest {
         Config.configClassManager = manager
 
         def configPath = new TFS()
-        def configFile = new File("${configPath}/test_config.store")
+        def configFile = new File("${configPath.path}/test_config.store")
         configFile.deleteOnExit()
         def configSection = 'test_config'
         def configKey = 'test key'

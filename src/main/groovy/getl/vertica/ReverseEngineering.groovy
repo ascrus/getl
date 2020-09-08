@@ -27,59 +27,59 @@ import java.util.regex.Matcher
 class ReverseEngineering extends Job {
 	static public final BigDecimal version = 1.1
 
-	VerticaConnection cVertica = new VerticaConnection(config: "vertica")
-	def tVersion = new QueryDataset(connection: cVertica, query: 'SELECT Version() AS version')
-	def tCurUser = new QueryDataset(connection: cVertica, query: 'SELECT CURRENT_USER')
-	def tPools = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_pools')
-	def tRoles = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_roles')
-	def tUsers = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_users')
-	def tSchemas = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_schemas')
-	def tSequences = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_sequences')
-	def tTables = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_tables')
-	def tViews = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_views')
-	def tSQLFunctions = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_sql_functions')
-	def tGrants = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_grants')
+	private VerticaConnection cVertica = new VerticaConnection(config: "vertica")
+	private def tVersion = new QueryDataset(connection: cVertica, query: 'SELECT Version() AS version')
+	private def tCurUser = new QueryDataset(connection: cVertica, query: 'SELECT CURRENT_USER')
+	private def tPools = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_pools')
+	private def tRoles = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_roles')
+	private def tUsers = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_users')
+	private def tSchemas = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_schemas')
+	private def tSequences = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_sequences')
+	private def tTables = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_tables')
+	private def tViews = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_views')
+	private def tSQLFunctions = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_sql_functions')
+	private def tGrants = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_grants')
 
-	def cCache = new TDS()
-	def hFiles = new TableDataset(connection: cCache, tableName: 'files', field: [new Field(name: 'filename', length: 1024, isKey: true)])
-	def hPools = new TableDataset(connection: cCache, tableName: 'pools')
-	def hRoles = new TableDataset(connection: cCache, tableName: 'roles')
-	def hUsers = new TableDataset(connection: cCache, tableName: 'users')
-	def hSchemas = new TableDataset(connection: cCache, tableName: 'schemas')
-	def hSequences = new TableDataset(connection: cCache, tableName: 'sequences')
-	def hTables = new TableDataset(connection: cCache, tableName: 'tables')
-	def hViews = new TableDataset(connection: cCache, tableName: 'views')
-	def hSQLFunctions = new TableDataset(connection: cCache, tableName: 'sql_functions')
-	def hGrants = new TableDataset(connection: cCache, tableName: 'grants')
+	private def cCache = new TDS()
+	private def hFiles = new TableDataset(connection: cCache, tableName: 'files', field: [new Field(name: 'filename', length: 1024, isKey: true)])
+	private def hPools = new TableDataset(connection: cCache, tableName: 'pools')
+	private def hRoles = new TableDataset(connection: cCache, tableName: 'roles')
+	private def hUsers = new TableDataset(connection: cCache, tableName: 'users')
+	private def hSchemas = new TableDataset(connection: cCache, tableName: 'schemas')
+	private def hSequences = new TableDataset(connection: cCache, tableName: 'sequences')
+	private def hTables = new TableDataset(connection: cCache, tableName: 'tables')
+	private def hViews = new TableDataset(connection: cCache, tableName: 'views')
+	private def hSQLFunctions = new TableDataset(connection: cCache, tableName: 'sql_functions')
+	private def hGrants = new TableDataset(connection: cCache, tableName: 'grants')
 
-	def statFilesFind = 'SELECT FILENAME FROM FILES WHERE FILENAME = ?'
-	def statFilesInsert = 'INSERT INTO FILES (FILENAME) VALUES (?)'
+	private def statFilesFind = 'SELECT FILENAME FROM FILES WHERE FILENAME = ?'
+	private def statFilesInsert = 'INSERT INTO FILES (FILENAME) VALUES (?)'
 
-	BigDecimal verticaVersion
-	String scriptPath
-	String curUser
-	Map sectionCreate
-	Map sectionFileName
-	Map sectionDrop
-	String fileNamePools
-	String fileNameRoles
-	String fileNameUsers
-	String fileNameSchemas
-	String fileNameSequences
-	String fileNameTables
-	String fileNameViews
-	String fileNameSQLFunctions
-	String fileNameGrants
-	def poolEmpty
-	def userEmpty
-	def sequenceCurrent
-	def tableConstraints
-	def projectionTables
-	def projectionKsafe
-	def projectionAnalyzeSuper
-	def columnComment
+	private BigDecimal verticaVersion
+	private String scriptPath
+	private String curUser
+	private Map sectionCreate
+	private Map sectionFileName
+	private Map sectionDrop
+	private String fileNamePools
+	private String fileNameRoles
+	private String fileNameUsers
+	private String fileNameSchemas
+	private String fileNameSequences
+	private String fileNameTables
+	private String fileNameViews
+	private String fileNameSQLFunctions
+	private String fileNameGrants
+	private def poolEmpty
+	private def userEmpty
+	private def sequenceCurrent
+	private def tableConstraints
+	private def projectionTables
+	private def projectionKsafe
+	private def projectionAnalyzeSuper
+	private def columnComment
 
-	final def sqlObjects = [
+	private final def sqlObjects = [
 		pools: [table: 'v_catalog.resource_pools', name: 'NAME',
 				where: '''(NOT is_internal OR name ILIKE 'general')'''],
 
@@ -119,7 +119,7 @@ class ReverseEngineering extends Job {
 	AND (object_type != 'SCHEMA' OR Lower(object_name) NOT IN ('v_catalog', 'v_internal', 'v_monitor', 'public', 'v_txtindex', 'v_temp_schema'))'''],
 	]
 
-	final def sqlPrepare = """
+	private final def sqlPrepare = """
 -- Get pools
 CREATE LOCAL TEMPORARY TABLE getl_pools ON COMMIT PRESERVE ROWS AS
 SELECT 
@@ -443,22 +443,22 @@ Example:
 	/**
 	 * Current type object for write
 	 */
-	def currentObject
+	private def currentObject
 
 	/**
 	 * Current file mask for write
 	 */
-	def currentFileMask = ''
+	private def currentFileMask = ''
 
 	/**
 	 * Current parameters for write
 	 */
-	Map<String, String> currentVars = [:]
+	private Map<String, String> currentVars = [:]
 
 	/**
 	 * File has write data
 	 */
-	def isWriteln = false
+	private def isWriteln = false
 
 	void setWrite(String object, String filemask, Map vars = [:]) {
 		assert object != null

@@ -18,7 +18,7 @@ import it.sauronsoftware.ftp4j.*
 class FTPManager extends Manager implements UserLogins {
 	/** FTP driver */
 	private final FTPClient client = new FTPClient()
-	/** FTP driver */
+	/* FTP driver */
 //	private FTPClient getClient() { client }
 
 	@Override

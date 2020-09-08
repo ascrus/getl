@@ -11,9 +11,9 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class DatasetLookupSpec extends BaseSpec {
     /** Hashmap lookup result */
-    final String HASH_STRATEGY = 'HASH'
+    static public final String HASH_STRATEGY = 'HASH'
     /** Treemap lookup result */
-    final String ORDER_STRATEGY = 'ORDER'
+    static public final String ORDER_STRATEGY = 'ORDER'
 
     /** Lookup key field name */
     String getKey() { params.key }

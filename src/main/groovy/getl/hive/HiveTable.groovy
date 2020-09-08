@@ -45,6 +45,10 @@ class HiveTable extends TableDataset {
         new HiveCreateSpec(this, useExternalParams, opts)
     }
 
+    /** Options for creating Hive table */
+    HiveCreateSpec getCreateOpts() { new HiveCreateSpec(this, true, createDirective) }
+
+    /** Options for creating Hive table */
     HiveCreateSpec createOpts(@DelegatesTo(HiveCreateSpec)
                               @ClosureParams(value = SimpleType, options = ['getl.hive.opts.HiveCreateSpec'])
                                       Closure cl = null) {
@@ -57,6 +61,9 @@ class HiveTable extends TableDataset {
     }
 
     /** Options for writing to Hive table */
+    HiveWriteSpec getWriteOpts() { new HiveWriteSpec(this, true, writeDirective) }
+
+    /** Options for writing to Hive table */
     HiveWriteSpec writeOpts(@DelegatesTo(HiveWriteSpec)
                                @ClosureParams(value = SimpleType, options = ['getl.hive.opts.HiveWriteSpec'])
                                        Closure cl = null) {
@@ -67,6 +74,9 @@ class HiveTable extends TableDataset {
     protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
         new HiveBulkLoadSpec(this, useExternalParams, opts)
     }
+
+    /** Options for loading csv files to Hive table */
+    HiveBulkLoadSpec getBulkLoadOpts() { new HiveBulkLoadSpec(this, true, bulkLoadDirective) }
 
     /** Options for loading csv files to Hive table */
     HiveBulkLoadSpec bulkLoadOpts(@DelegatesTo(HiveBulkLoadSpec)

@@ -85,7 +85,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     @Override
-    boolean allowTests() {
+    Boolean allowTests() {
         return (con != null)
     }
 

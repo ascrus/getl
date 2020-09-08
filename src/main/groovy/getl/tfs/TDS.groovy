@@ -1,5 +1,6 @@
 package getl.tfs
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
@@ -84,7 +85,10 @@ class TDS extends H2Connection {
 	}
 
     /** Temp path of database file */
-    String tempPath = TFS.systemPath
+    private String tempPath = TFS.systemPath
+	/** Temp path of database file */
+	@JsonIgnore
+	String getTempPath() { tempPath }
 	
 	/** Internal name in config section */
 	protected String internalConfigName() { "getl_tds" }

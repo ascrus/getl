@@ -1,5 +1,6 @@
 package getl.xml.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -34,6 +35,7 @@ class XMLReadSpec extends BaseSpec {
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
+    @JsonIgnore
     Closure<Boolean> getOnFilter() { params.filter as Closure<Boolean> }
     /**
      * Filtering readable records
@@ -52,6 +54,7 @@ class XMLReadSpec extends BaseSpec {
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
+    @JsonIgnore
     Closure<Boolean> getOnReadAttributes() { params.initAttr as Closure<Boolean> }
     /**
      * Filtering readable records

@@ -26,10 +26,14 @@ class ProfileSpec extends BaseSpec {
     }
 
     /** Getl profile block */
-    Boolean isProfile = false
+    private Boolean isProfile = false
+    /** Getl profile block */
+    Boolean getIsProfile() { isProfile }
 
     /** Profile statistics object */
-    ProcessTime statistics
+    private ProcessTime statistics
+    /** Profile statistics object */
+    ProcessTime getStatistics() { statistics }
 
     /** Start profiling process */
     void startProfile() {

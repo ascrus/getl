@@ -13,8 +13,8 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class PurgeTables extends Job {
-	VerticaConnection cVertica = new VerticaConnection(config: "vertica")
-	QueryDataset qTables = new QueryDataset(connection: cVertica)
+	private VerticaConnection cVertica = new VerticaConnection(config: "vertica")
+	private QueryDataset qTables = new QueryDataset(connection: cVertica)
 
 	static main(args) {
 		new PurgeTables().run(args)

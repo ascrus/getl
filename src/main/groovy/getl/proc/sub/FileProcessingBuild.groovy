@@ -16,7 +16,7 @@ class FileProcessingBuild extends FileListProcessingBuild {
     FileProcessing getOwnerProcessing() { owner as FileProcessing }
 
     /** Segmented columns */
-    List<String> threadGroupColumns
+    public List<String> threadGroupColumns
 
     @Override
     void init() {

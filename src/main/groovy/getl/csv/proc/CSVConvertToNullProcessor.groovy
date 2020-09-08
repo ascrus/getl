@@ -15,8 +15,6 @@ class CSVConvertToNullProcessor extends CellProcessorAdaptor
 						implements BoolCellProcessor, DateCellProcessor, DoubleCellProcessor, 
 									LongCellProcessor, StringCellProcessor {
 	
-	private String nullValue
-
     CSVConvertToNullProcessor() {
 		super()
 	}
@@ -25,6 +23,8 @@ class CSVConvertToNullProcessor extends CellProcessorAdaptor
 		super(next)
 		this.nullValue = nullValue
 	}
+
+	private String nullValue
 
 	@CompileStatic
 	@Override

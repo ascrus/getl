@@ -1,17 +1,17 @@
 package getl.xero
 
-import getl.utils.Config
 import getl.utils.FileUtils
-import getl.utils.Logs
 import org.junit.BeforeClass
+import org.junit.Ignore
 import org.junit.Test
 
+@Ignore
 class XeroDriverTest extends getl.test.GetlTest {
     static final def resourceName = 'tests/xero/demo.jar'
     static XeroConnection connection
 
     @Override
-    boolean allowTests() { connection != null }
+    Boolean allowTests() { connection != null }
 
     @BeforeClass
     static void InitTest() {

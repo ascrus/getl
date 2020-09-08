@@ -42,7 +42,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
     }
 
     @Override
-    boolean allowTests() { manager != null }
+    Boolean allowTests() { manager != null }
 
     final def initLocalDir = 'init'
     final def downloadLocalDir = 'download'
@@ -100,7 +100,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
 
         manager.localDirectory = "${TFS.systemPath}/test_manager_temp"
         if (FileUtils.ExistsFile(manager.localDirectory, true)) FileUtils.DeleteDir(manager.localDirectory)
-        manager.localDirFile.deleteOnExit()
+        manager.localDirectoryFile.deleteOnExit()
 
         manager.createLocalDir(initLocalDir)
         assertTrue(manager.existsLocalDirectory(initLocalDir))
@@ -109,7 +109,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
         assertTrue(manager.existsLocalDirectory(downloadLocalDir))
 
         manager.changeLocalDirectory(initLocalDir)
-        assertEquals(initLocalDir, manager.localDirFile.name)
+        assertEquals(initLocalDir, manager.localDirectoryFile.name)
 
         def rf = new File("${manager.currentLocalDir()}/$rootFileInitName")
         rf.text = 'root file'

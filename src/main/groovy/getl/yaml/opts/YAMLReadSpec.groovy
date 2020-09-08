@@ -1,5 +1,6 @@
 package getl.yaml.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -34,6 +35,7 @@ class YAMLReadSpec extends BaseSpec {
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
+    @JsonIgnore
     Closure<Boolean> getOnFilter() { params.filter as Closure<Boolean> }
     /**
      * Filtering readable records

@@ -46,6 +46,10 @@ class ImpalaTable extends TableDataset {
         new ImpalaCreateSpec(this, useExternalParams, opts)
     }
 
+    /** Options for creating Impala table */
+    ImpalaCreateSpec getCreateOpts() { new ImpalaCreateSpec(this, true, createDirective) }
+
+    /** Options for creating Impala table */
     ImpalaCreateSpec createOpts(@DelegatesTo(ImpalaCreateSpec)
                               @ClosureParams(value = SimpleType, options = ['getl.impala.opts.ImpalaCreateSpec'])
                                       Closure cl = null) {
@@ -58,6 +62,9 @@ class ImpalaTable extends TableDataset {
     }
 
     /** Options for writing to Hive table */
+    ImpalaWriteSpec getWriteOpts() { new ImpalaWriteSpec(this, true, writeDirective) }
+
+    /** Options for writing to Hive table */
     ImpalaWriteSpec writeOpts(@DelegatesTo(ImpalaWriteSpec)
                             @ClosureParams(value = SimpleType, options = ['getl.impala.opts.ImpalaWriteSpec'])
                                     Closure cl = null) {
@@ -68,6 +75,9 @@ class ImpalaTable extends TableDataset {
     protected BulkLoadSpec newBulkLoadTableParams(Boolean useExternalParams, Map<String, Object> opts) {
         new ImpalaBulkLoadSpec(this, useExternalParams, opts)
     }
+
+    /** Options for loading csv files to Hive table */
+    ImpalaBulkLoadSpec getBulkLoadOpts() { new ImpalaBulkLoadSpec(this, true, bulkLoadDirective) }
 
     /** Options for loading csv files to Hive table */
     ImpalaBulkLoadSpec bulkLoadOpts(@DelegatesTo(ImpalaBulkLoadSpec)

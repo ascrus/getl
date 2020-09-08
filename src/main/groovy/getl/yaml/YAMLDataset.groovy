@@ -37,13 +37,14 @@ class YAMLDataset extends StructureFileDataset {
     @JsonIgnore
     YAMLConnection getCurrentYAMLConnection() { connection as YAMLConnection }
 
-    /**
-     * Read file options
-     */
+    /** Read file options */
+    YAMLReadSpec getReadOpts() { new YAMLReadSpec(this, true, readDirective) }
+
+    /** Read file options */
     YAMLReadSpec readOpts(@DelegatesTo(YAMLReadSpec)
                           @ClosureParams(value = SimpleType, options = ['getl.yaml.opts.YAMLReadSpec'])
                                   Closure cl = null) {
-        def parent = new YAMLReadSpec(this, true, readDirective)
+        def parent = readOpts
         parent.runClosure(cl)
 
         return parent

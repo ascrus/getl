@@ -24,7 +24,6 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
     void setDslNameObject(String value) { dslNameObject = value }
 
     private Getl dslCreator
-
     @Override
     @JsonIgnore
     Getl getDslCreator() { dslCreator }

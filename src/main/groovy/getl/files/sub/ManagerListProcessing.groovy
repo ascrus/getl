@@ -9,7 +9,7 @@ import groovy.transform.Synchronized
  */
 abstract class ManagerListProcessing {
 	/** Parameters */
-	final Map<String, Object> params = Collections.synchronizedMap(new HashMap<String, Object>())
+	private final Map<String, Object> params = Collections.synchronizedMap(new HashMap<String, Object>())
 	/** Parameters */
 	Map<String, Object> getParams() { params }
 	/** Parameters */

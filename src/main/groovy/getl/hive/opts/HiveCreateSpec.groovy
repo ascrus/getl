@@ -1,5 +1,6 @@
 package getl.hive.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.jdbc.opts.CreateSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -20,42 +21,31 @@ class HiveCreateSpec extends CreateSpec {
         if (params.skewed == null) params.skewed = [:] as Map<String, Object>
     }
 
-    /** Clustered specifications */
-    Map<String, Object> getClustered() { params.clustered as Map<String, Object> }
-    /** Clustered specifications */
-    void setClustered(Map<String, Object> value) {
-        clustered.clear()
-        if (value != null) clustered.putAll(value)
+    /** Clustered options */
+    HiveClusteredSpec getClustered() {
+        new HiveClusteredSpec(ownerObject,true, params.clustered as Map<String, Object>)
     }
 
-    /**
-     * Generate new clustered options
-     */
+    /** Clustered options */
     HiveClusteredSpec clustered(@DelegatesTo(HiveClusteredSpec)
                                 @ClosureParams(value = SimpleType, options = ['getl.hive.opts.HiveClusteredSpec'])
                                         Closure cl = null) {
-        def parent = new HiveClusteredSpec(ownerObject,true, clustered)
+        def parent = clustered
         parent.runClosure(cl)
 
         return parent
     }
 
-    /**
-     * Skewed specifications
-     */
-    Map<String, Object> getSkewed() { params.skewed as Map<String, Object> }
-    void setSkewed(Map<String, Object> value) {
-        skewed.clear()
-        if (value != null) skewed.putAll(value)
+    /** Skewed options */
+    HiveSkewedSpec getSkewed() {
+        new HiveSkewedSpec(ownerObject, true, params.skewed as Map<String, Object>)
     }
 
-    /**
-     * Generate new skewed options
-     */
+    /** Skewed options */
     HiveSkewedSpec skewed(@DelegatesTo(HiveSkewedSpec)
                           @ClosureParams(value = SimpleType, options = ['getl.hive.opts.HiveClusteredSpec'])
                                   Closure cl = null) {
-        def parent = new HiveSkewedSpec(ownerObject, true, skewed)
+        def parent = skewed
         parent.runClosure(cl)
 
         return parent

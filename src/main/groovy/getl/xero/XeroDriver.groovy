@@ -246,7 +246,7 @@ class XeroDriver extends Driver {
             [objectName: 'User', listName: 'Users', pk: ['UserID']]
     ]
 
-    def static objectScripts = [
+    private def static objectScripts = [
             ContactBalance: '''
         if (limit > 0 && res > limit) return
         def row = [:] as Map<String, Object>

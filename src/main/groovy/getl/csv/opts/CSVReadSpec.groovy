@@ -1,5 +1,6 @@
 package getl.csv.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -31,6 +32,7 @@ class CSVReadSpec extends BaseSpec {
      * Processing write parsing error and return the need to read the following rows of file
      * <br>Closure parameters: Map row, Long numberRow
      */
+    @JsonIgnore
     Closure<Boolean> getOnProcessError() { params.processError as Closure<Boolean> }
     /**
      * Processing write parsing error and return the need to read the following rows of file
@@ -41,7 +43,7 @@ class CSVReadSpec extends BaseSpec {
      * Processing write parsing error and return the need to read the following rows of file
      * <br>Closure parameters: Map row, Long numberRow
      */
-    void processError(@ClosureParams(value = SimpleType, options = ['java.lang.Exception', 'long'])
+    void processError(@ClosureParams(value = SimpleType, options = ['java.lang.Exception', 'Long'])
                               Closure<Boolean> value) {
         setOnProcessError(value)
     }
@@ -50,6 +52,7 @@ class CSVReadSpec extends BaseSpec {
      * Filter reading file records
      * <br>Closure parameters: Map row
      */
+    @JsonIgnore
     Closure<Boolean> getOnFilter() { params.filter as Closure<Boolean> }
     /**
      * Filter reading file records
