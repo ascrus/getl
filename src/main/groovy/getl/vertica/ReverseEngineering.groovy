@@ -27,18 +27,41 @@ import java.util.regex.Matcher
 class ReverseEngineering extends Job {
 	static public final BigDecimal version = 1.1
 
-	private VerticaConnection cVertica = new VerticaConnection(config: "vertica")
-	private def tVersion = new QueryDataset(connection: cVertica, query: 'SELECT Version() AS version')
-	private def tCurUser = new QueryDataset(connection: cVertica, query: 'SELECT CURRENT_USER')
-	private def tPools = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_pools')
-	private def tRoles = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_roles')
-	private def tUsers = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_users')
-	private def tSchemas = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_schemas')
-	private def tSequences = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_sequences')
-	private def tTables = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_tables')
-	private def tViews = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_views')
-	private def tSQLFunctions = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_sql_functions')
-	private def tGrants = new TableDataset(connection: cVertica, schemaName: 'v_temp_schema', tableName: 'getl_grants')
+	private VerticaConnection cVertica
+	/** Vertica connection */
+	VerticaConnection getConnectionVertica() { cVertica }
+	/** Vertica connection */
+	void setConnectionVertica(VerticaConnection value) {
+		cVertica = value
+		tVersion.connection = cVertica
+		tCurUser.connection = cVertica
+		tPools.connection = cVertica
+		tRoles.connection = cVertica
+		tUsers.connection = cVertica
+		tSchemas.connection = cVertica
+		tSequences.connection = cVertica
+		tTables.connection = cVertica
+		tViews.connection = cVertica
+		tSQLFunctions.connection = cVertica
+		tGrants.connection = cVertica
+	}
+
+	/** Script files path */
+	public String scriptPath
+	/** Clead directory before start process */
+	public Boolean isClearDir = false
+
+	private def tVersion = new QueryDataset(query: 'SELECT Version() AS version')
+	private def tCurUser = new QueryDataset(query: 'SELECT CURRENT_USER')
+	private def tPools = new TableDataset(schemaName: 'v_temp_schema', tableName: 'getl_pools')
+	private def tRoles = new TableDataset(schemaName: 'v_temp_schema', tableName: 'getl_roles')
+	private def tUsers = new TableDataset(schemaName: 'v_temp_schema', tableName: 'getl_users')
+	private def tSchemas = new TableDataset(schemaName: 'v_temp_schema', tableName: 'getl_schemas')
+	private def tSequences = new TableDataset(schemaName: 'v_temp_schema', tableName: 'getl_sequences')
+	private def tTables = new TableDataset(schemaName: 'v_temp_schema', tableName: 'getl_tables')
+	private def tViews = new TableDataset(schemaName: 'v_temp_schema', tableName: 'getl_views')
+	private def tSQLFunctions = new TableDataset(schemaName: 'v_temp_schema', tableName: 'getl_sql_functions')
+	private def tGrants = new TableDataset(schemaName: 'v_temp_schema', tableName: 'getl_grants')
 
 	private def cCache = new TDS()
 	private def hFiles = new TableDataset(connection: cCache, tableName: 'files', field: [new Field(name: 'filename', length: 1024, isKey: true)])
@@ -56,7 +79,6 @@ class ReverseEngineering extends Job {
 	private def statFilesInsert = 'INSERT INTO FILES (FILENAME) VALUES (?)'
 
 	private BigDecimal verticaVersion
-	private String scriptPath
 	private String curUser
 	private Map sectionCreate
 	private Map sectionFileName
@@ -90,7 +112,7 @@ class ReverseEngineering extends Job {
 
 		schemas: [name: 'SCHEMA_NAME',
 				  table: 'v_catalog.schemata s INNER JOIN v_internal.vs_schemata vs ON vs.oid = s.schema_id',
-				  where: '''NOT is_system_schema AND Lower(schema_name) NOT IN ('txtindex', 'v_idol', 'v_txtindex', 'v_temp_schema')'''],
+				  where: '''NOT is_system_schema AND Lower(schema_name) NOT IN ('txtindex', 'v_idol', 'v_txtindex', 'v_temp_schema', 'v_func')'''],
 
 		sequences: [table: 'v_catalog.sequences', schema: 'SEQUENCE_SCHEMA', name: 'SEQUENCE_NAME',
 					where: '''Lower(sequence_schema) NOT IN ('v_temp_schema') AND identity_table_name IS NULL'''],
@@ -685,30 +707,18 @@ Example:
 		cCache.connected = false
 	}
 
-	/**
-	 * Process job
-	 */
-	@Override
+	/** Process job */
 	void process() {
-		Logs.Info("### Reverse engineering Vertica tool, version $version, EasyData company (www.easydata.ru)")
+		// Set Vertica connection
+		connectionVertica = new VerticaConnection(config: "vertica")
 
-		// Vertica version
-		readVerticaVersion()
-		if (verticaVersion < 8.1) {
-			Logs.Severe("Vertica version $verticaVersion not supported, required version 8.1 or greater!")
-			return
-		}
+		// Set path from script files
+		scriptPath = (jobArgs.script_path?:Config.content.script_path) as String
+		if (scriptPath == null)
+			throw new ExceptionGETL('Required value for "script_path" parameter!')
 
-		// Current user
-		readCurUser()
-
-		try {
-			initReverse()
-		}
-		catch (Exception e) {
-			doneReverse()
-			throw e
-		}
+		// Set clearing flag
+		isClearDir = BoolUtils.IsValue(jobArgs.clear)
 
 		if (jobArgs.list != null) {
 			def l = (jobArgs.list as String).toLowerCase()
@@ -754,9 +764,36 @@ Example:
 			}
 		}
 
-		scriptPath = (jobArgs.script_path?:Config.content.script_path) as String
+		reverse()
+	}
+
+	/** Reverse */
+	void reverse() {
+		Logs.Info("### Reverse engineering Vertica tool, version $version, EasyData company (www.easydata.ru)")
+
+		if (cVertica == null)
+			Logs.Severe('Required value for "cVertica" field!')
+
+		// Vertica version
+		readVerticaVersion()
+		if (verticaVersion < 8.1) {
+			Logs.Severe("Vertica version $verticaVersion not supported, required version 8.1 or greater!")
+			return
+		}
+
+		// Current user
+		readCurUser()
+
+		try {
+			initReverse()
+		}
+		catch (Exception e) {
+			doneReverse()
+			throw e
+		}
+
 		if (scriptPath == null) {
-			Logs.Severe('Required value for "script_path" parameter')
+			Logs.Severe('Required value for "scriptPath" field!')
 			doneReverse()
 			return
 		}
@@ -765,10 +802,11 @@ Example:
 		Logs.Info("Write script to \"$scriptPath\" directory")
 		FileUtils.ValidPath(scriptPath)
 
-		if (BoolUtils.IsValue(jobArgs.clear)) {
+		if (isClearDir) {
 			Logs.Info("Clearing the destination directory \"$scriptPath\"")
 			if (!FileUtils.DeleteFolder(scriptPath, false)) {
 				Logs.Severe("Can not clearing destination directory \"$scriptPath\"")
+				doneReverse()
 				return
 			}
 		}

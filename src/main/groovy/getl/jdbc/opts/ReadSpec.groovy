@@ -59,4 +59,10 @@ class ReadSpec extends BaseSpec {
         order.clear()
         if (order != null) order.addAll(value)
     }
+
+    /** Read table as update locking */
+    @JsonIgnore
+    Boolean getForUpdate() { params.forUpdate }
+    /** Read table as update locking */
+    void setForUpdate(Boolean value) { params.forUpdate = value }
 }

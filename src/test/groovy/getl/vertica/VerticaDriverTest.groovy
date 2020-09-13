@@ -1,6 +1,5 @@
 package getl.vertica
 
-import getl.data.*
 import getl.jdbc.*
 import getl.lang.Getl
 import getl.proc.Flow
@@ -335,6 +334,28 @@ LIMIT 1'''
                 finally {
                     useLogin 'developer'
                 }
+            }
+        }
+    }
+
+    @Test
+    @Ignore
+    void testReverse() {
+        Getl.Dsl {
+            configuration {
+                load 'resource:/vertica/reverse.conf'
+            }
+
+            def path = "${TFS.systemPath}/reverse"
+            new File(path).deleteOnExit()
+            try {
+                this.con.useLogin 'dbadmin'
+                con.sqlHistoryFile = "$path/commands.sql"
+                new ReverseEngineering(connectionVertica: this.con as VerticaConnection, scriptPath: path).reverse()
+            }
+            finally {
+                this.con.useLogin 'developer'
+                FileUtils.DeleteFolder(path)
             }
         }
     }

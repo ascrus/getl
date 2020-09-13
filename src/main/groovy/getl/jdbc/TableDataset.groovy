@@ -94,19 +94,22 @@ class TableDataset extends JDBCDataset {
 	}
 
 	/** Read table as update locking */
-	Boolean getForUpdate() { params.forUpdate }
+	@JsonIgnore
+	Boolean getForUpdate() { readDirective.forUpdate as Boolean }
 	/** Read table as update locking */
-	void setForUpdate(Boolean value) { params.forUpdate = value }
+	void setForUpdate(Boolean value) { readDirective.forUpdate = value }
 
 	/** Read offset row */
-	Long getOffs() { params.offs as Long }
+	@JsonIgnore
+	Long getOffs() { readDirective.offs as Long }
 	/** Read offset row */
-	void setOffs(Long value) { params.offs = value }
+	void setOffs(Long value) { readDirective.offs = value }
 
 	/** Read limit row */
-	Long getLimit() { params.limit as Long }
+	@JsonIgnore
+	Long getLimit() { readDirective.limit as Long }
 	/** Read limit row */
-	void setLimit(Long value) { params.limit = value }
+	void setLimit(Long value) { readDirective.limit = value }
 
 	/** Check table name */
 	void validTableName() {
@@ -539,25 +542,25 @@ class TableDataset extends JDBCDataset {
 					cCon.path = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'')
 					cFile.fileName = file.filename
 
-					def tsize = file.filesize as Long
+					def tSize = file.filesize as Long
 
                     def fileName = cFile.fullFileName()
 
 					ProcessTime ptf
 					if (getl != null)
-						ptf = getl.startProcess("${fullTableName}: load file \"$fileName\" (${FileUtils.SizeBytes(tsize)})", 'file')
+						ptf = getl.startProcess("${fullTableName}: load file \"$fileName\" (${FileUtils.SizeBytes(tSize)})", 'file')
 
                     if (beforeLoad != null) beforeLoad.call(fileName)
 
-					def tcount = 0L
+					def tCount = 0L
 					try {
 						bulkLoadFile(MapUtils.Copy(bulkParams, ignoredParams) + [source: cFile])
 
-						tcount = updateRows
+						tCount = updateRows
 					}
 					catch (Exception e) {
 						if (abortOnError) throw e
-						Logs.Severe("${fullTableName}: cannot load file \"$fileName\" (${FileUtils.SizeBytes(tsize)}), error: ${e.message}")
+						Logs.Severe("${fullTableName}: cannot load file \"$fileName\" (${FileUtils.SizeBytes(tSize)}), error: ${e.message}")
 					}
 
                     if (afterLoad != null) afterLoad.call(fileName)
@@ -568,14 +571,14 @@ class TableDataset extends JDBCDataset {
 						}
 						else if (removeFile) {
 							if (!FileUtils.DeleteFile(fileName))
-								throw new ExceptionGETL("Cannot delete file \"$fileName\" (${FileUtils.SizeBytes(tsize)})!")
+								throw new ExceptionGETL("Cannot delete file \"$fileName\" (${FileUtils.SizeBytes(tSize)})!")
 						}
 					}
 
-					countRow += tcount
-					sizeFiles += tsize
+					countRow += tCount
+					sizeFiles += tSize
 					if (getl != null) {
-						getl.finishProcess(ptf, tcount)
+						getl.finishProcess(ptf, tCount)
 					}
 				}
 
@@ -585,22 +588,22 @@ class TableDataset extends JDBCDataset {
 			}
 			else {
 				def listFiles = []
-				Long tsize = 0
+				Long tSize = 0
 				procFiles.eachRow(order: orderProcess) { file ->
-					tsize += file.filesize as Long
+					tSize += file.filesize as Long
 					listFiles << path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
 				}
 
                 if (beforeLoadPackage != null) beforeLoadPackage.call(listFiles)
 
-				def tcount = 0L
+				def tCount = 0L
 				try {
 					bulkLoadFile(MapUtils.Copy(bulkParams, ignoredParams) + [source: cFile, files: listFiles])
 
-					tcount = updateRows
+					tCount = updateRows
 				}
 				catch (Exception e) {
-                    Logs.Severe("${fullTableName}: cannot load ${listFiles.size()} files (${FileUtils.SizeBytes(tsize)}), error: ${e.message}")
+                    Logs.Severe("${fullTableName}: cannot load ${listFiles.size()} files (${FileUtils.SizeBytes(tSize)}), error: ${e.message}")
                     procFiles.eachRow(order: orderProcess) { file ->
                         def fileName = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
                         Logs.Severe("${fullTableName}: cannot load ${fileName} (${FileUtils.SizeBytes(file.filesize as Long)})")
@@ -618,8 +621,8 @@ class TableDataset extends JDBCDataset {
                     }
                 }
 
-				countRow = tcount
-				sizeFiles = tsize
+				countRow = tCount
+				sizeFiles = tSize
 				listFiles = null // clear garbage
 			}
 

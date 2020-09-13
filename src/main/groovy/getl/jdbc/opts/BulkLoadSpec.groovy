@@ -222,7 +222,7 @@ class BulkLoadSpec extends BaseSpec {
     void setSourceDataset(CSVDataset value) { params.sourceDataset = value }
 
     /** The name of source file prototype in repository for bulk load */
-    String getSourceDatasetName() { sourceDataset.dslNameObject }
+    String getSourceDatasetName() { sourceDataset?.dslNameObject }
     /** The name of source file prototype in repository for bulk load */
     void setSourceDatasetName(String value) {
         def own = ownerObject as GetlRepository
