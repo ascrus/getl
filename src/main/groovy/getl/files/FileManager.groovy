@@ -6,6 +6,7 @@ import getl.files.sub.FileManagerList
 import getl.files.sub.Filter
 import getl.utils.*
 import groovy.transform.CompileStatic
+import groovy.transform.Synchronized
 
 /**
  * File manager 
@@ -47,7 +48,7 @@ class FileManager extends Manager {
 	/** Check exist root path */
 	Boolean existsRootDirectory() {
 		if (rootPath == null) return false
-		new File(rootPath).exists()
+		new File(currentRootPath).exists()
 	}
 
 	@Override
@@ -60,26 +61,27 @@ class FileManager extends Manager {
 		if (value != null && connected)
 			disconnect()
 	}
-	
+
 	@Override
-	void connect () {
+	@Synchronized
+	protected void doConnect () {
 		if (connected)
 			throw new ExceptionGETL('Manager already connected!')
 
 		if (rootPath == null)
 			throw new ExceptionGETL("Required value for \"rootPath\" property")
 
-		File rp = new File(rootPath)
-		params.rootPath = rp.canonicalPath
-		if (!rp.exists() && createRootPath) rp.mkdirs() 
+		File rp = new File(currentRootPath)
+		if (!rp.exists() && createRootPath) rp.mkdirs()
 
 		currentDirectory = rp
 		connected = true
-		if (rootPath != null) currentPath = rootPath
+		if (rootPath != null) currentPath = currentRootPath
 	}
 	
 	@Override
-	void disconnect () {
+	@Synchronized
+	protected void doDisconnect () {
 		if (!connected)
 			throw new ExceptionGETL('Manager already disconnected!')
 
@@ -88,7 +90,6 @@ class FileManager extends Manager {
 		connected = false
 	}
 
-	/** Set connect status if need for operations */
 	@Override
 	protected void validConnect () {
 		if (!connected)
@@ -166,7 +167,9 @@ class FileManager extends Manager {
 		validConnect()
 		
 		File f = new File(path)
-		if (!f.exists()) throw new ExceptionGETL("Directory \"${path}\" not found")
+		if (!f.exists())
+			throw new ExceptionGETL("Directory \"${path}\" not found")
+
 		currentDirectory = f
 		_currentPath = currentDirectory.path.replace("\\", "/")
 	}
@@ -242,8 +245,8 @@ class FileManager extends Manager {
 		def sourceFile = fileFromLocalDir("${currentDirectory.canonicalPath}/${fileName}")
 
 		def destPath = FileUtils.ConvertToUnixPath(path)
-		def destFile = new File((destPath.indexOf('/') != -1)?"${rootPath}/${destPath}":
-				"${currentDirectory.canonicalPath}/${destPath}")
+		def destFile = new File((destPath.indexOf('/') != -1)?"$currentRootPath/$destPath":
+				"${currentDirectory.canonicalPath}/$destPath")
 
 		if (!sourceFile.renameTo(destFile)) throw new ExceptionGETL("Can not rename file \"$fileName\" to \"$path\"")
 	}
@@ -323,7 +326,7 @@ class FileManager extends Manager {
 	Long getLastModified(String fileName) {
 		validConnect()
 		def cd = currentDir()
-		String filePath = "$rootPath/$cd/$fileName"
+		String filePath = "$currentRootPath/$cd/$fileName"
 		def file = new File(filePath)
 		return file.lastModified()
 	}

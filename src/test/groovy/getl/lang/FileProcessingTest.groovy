@@ -249,6 +249,8 @@ class FileProcessingTest extends GetlDslTest {
                 processFile { proc ->
                     logFine "Process file \"${proc.attr.filepath}/${proc.attr.filename}\" ..."
 
+                    proc.savedFilePath = DateUtils.FormatDate('yyyyMMdd', proc.attr.date as Date)
+
                     if (proc.attr.num == 1) {
                         proc.result = proc.skipResult
                         proc.removeFile = delSkip

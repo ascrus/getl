@@ -408,7 +408,7 @@ class CSVDriverTest extends getl.test.GetlTest {
     void testAvaibleSplit() {
         Getl.Dsl(this) {
             def csv = csv {
-                useConnection csvConnection { path = csvTempConnection().path }
+                useConnection csvConnection { path = csvTempConnection().currentPath() }
                 fileName = 'test.split'
                 field('id') { type = integerFieldType}
                 field('name')

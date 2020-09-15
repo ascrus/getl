@@ -24,23 +24,24 @@ class FileProcessingElement {
     FileProcessingElement(FileProcessing.ListPoolElement sourceElement,
                           FileProcessing.ListPoolElement processedElement,
                           FileProcessing.ListPoolElement errorElement,
-                          Map<String, Object> attr, File file,
-                          Map threadAttr) {
+                          Map<String, Object> attr, File file, Map threadAttr) {
         this.sourceElement = sourceElement
         this.processedElement = processedElement
         this.errorElement = errorElement
-        this.attr = attr
+        this.attr.putAll(attr)
         this.file = file
-        this.threadAttr = threadAttr
+        this.threadAttr.putAll(threadAttr)
+
+        savedFilePath = attr.filepath
     }
 
     void free() {
         sourceElement = null
         processedElement = null
         errorElement = null
-        attr = null
+        attr.clear()
         file = null
-        threadAttr = null
+        threadAttr.clear()
     }
 
     protected FileProcessing.ListPoolElement sourceElement, processedElement, errorElement
@@ -64,11 +65,11 @@ class FileProcessingElement {
         return errorElement.man
     }
 
-    private Map<String, Object> threadAttr
+    private final Map<String, Object> threadAttr = [:] as Map<String, Object>
     /** Thread attributes */
     Map<String, Object> getThreadAttr() { threadAttr }
 
-    private Map<String, Object> attr
+    private final Map<String, Object> attr = [:] as Map<String, Object>
     /** File attribute */
     Map<String, Object> getAttr() { attr }
 
@@ -88,23 +89,24 @@ class FileProcessingElement {
     /** Error text */
     public String errorText
 
+    /** Path to save the processed file */
+    public String savedFilePath
+
     /**
      * Upload file to specified directory in error storage
      * @param uploadFile file to upload
-     * @param groupdirectory grouping directory in error root directory
      */
     void uploadFileToStorageError(File uploadFile) {
         if (errorElement == null)
             throw new ExceptionFileListProcessing('There is no specified error storage manager to write the file!')
 
-        errorElement.uploadFile(uploadFile, attr.filepath as String)
+        errorElement.uploadFile(uploadFile, savedFilePath)
     }
 
     /**
      * Upload text to specified file with directory in error manager
      * @param errorText text to write to a file
      * @param fileName file name to upload
-     * @param groupdirectory grouping directory in error root directory
      */
     void uploadTextToStorageError(String errorText, String fileName = null) {
         if (errorElement == null)
@@ -113,8 +115,8 @@ class FileProcessingElement {
         if (errorText == null)
             throw new ExceptionFileListProcessing('Error text must be specified!')
 
-        errorElement.uploadText(errorText, attr.filepath as String,
-                ListUtils.NotNullValue([fileName, this.errorFileName, (attr.filename as String) + '.other.txt']) as String)
+        errorElement.uploadText(errorText, savedFilePath,
+                ListUtils.NotNullValue([fileName, this.errorFileName, "${attr.filename}.other.txt"]) as String)
     }
 
     /**
@@ -134,7 +136,7 @@ class FileProcessingElement {
             throw new ExceptionFileListProcessing('Error text must be specified!')
 
         this.errorText = errorText
-        this.errorFileName = fileName?:((attr.filename as String) + '.error.txt')
+        this.errorFileName = fileName?:("${attr.filename}.error.txt")
         this.result = errorResult
         throw new ExceptionFileProcessing(errorText)
     }
@@ -149,7 +151,7 @@ class FileProcessingElement {
             throw new ExceptionFileListProcessing('Error text must be specified!')
 
         this.errorText = errorText
-        this.errorFileName = fileName?:((attr.filename as String) + '.error.txt')
+        this.errorFileName = fileName?:("${attr.filename}.error.txt")
         this.result = errorResult
         throw new ExceptionFileListProcessing(errorText)
     }

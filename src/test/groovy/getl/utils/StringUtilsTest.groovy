@@ -41,6 +41,11 @@ class StringUtilsTest extends getl.test.GetlTest {
         assertEquals('begin text 123 2017-02-01 01:02:03 end', StringUtils.EvalMacroString('begin {var1} {var2} {var3} end', [var1: 'text', var2: 123, var3: DateUtils.ParseDateTime('2017-02-01 01:02:03.000')]))
         shouldFail { StringUtils.EvalMacroString('{var1}', [:]) }
         assertEquals('{var1}', StringUtils.EvalMacroString('{var1}', [:], false))
+        assertEquals('test str', StringUtils.EvalMacroString('test str', [var1: 'text'], true))
+        assertEquals('', StringUtils.EvalMacroString('', [:], true))
+        assertNull(StringUtils.EvalMacroString(null, [:]))
+        assertEquals('C:\\dir1\\file1.txt', StringUtils.EvalMacroString('{drive}{div}{dir}{div}{file}.{ext}',
+                [div: '\\', drive:'C:', dir: 'dir1', file: 'file1', ext: 'txt']))
     }
 
     @Test

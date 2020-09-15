@@ -13,7 +13,7 @@ class MonitorRulesTest extends TestRepository {
     void testSave() {
         Dsl {
             repositoryStorageManager {
-                storagePath = configContent.testPath + '/repository'
+                storagePath = FileUtils.TransformFilePath('{GETL_TEST}/repository')
                 FileUtils.ValidFilePath(storagePath)
                 autoLoadFromStorage = false
             }

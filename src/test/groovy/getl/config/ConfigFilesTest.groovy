@@ -21,7 +21,7 @@ class ConfigFilesTest extends getl.test.GetlTest {
         Config.configClassManager = new ConfigFiles()
 
         def configPath = new TFS()
-        def configFile = new File("${configPath.path}/test_config.conf")
+        def configFile = new File("${configPath.currentPath()}/test_config.conf")
         configFile.deleteOnExit()
 
         def builder = new JsonBuilder()
@@ -64,12 +64,12 @@ class ConfigFilesTest extends getl.test.GetlTest {
         assertEquals('test', h2.password)
         assertEquals('-1', h2.connectProperty.db_close_delay)
 
-        assertEquals('.', csv.path)
+        assertEquals(new File('.').canonicalPath, csv.currentPath())
         assertEquals('\r\n', csv.rowDelimiter)
 
         Config.ClearConfig()
         Config.SetValue('vars.test_var', 'variable value')
-        Config.LoadConfig(path: configPath.path, fileName: 'test_config.conf')
+        Config.LoadConfig(path: configPath.currentPath(), fileName: 'test_config.conf')
         assertEquals(Config.content.var, 'variable value')
     }
 }

@@ -111,11 +111,11 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
         setOnStartingThread(value)
     }
 
-    /** Run finalization code when stoping a thread */
+    /** Run finalization code when stopping a thread */
     Closure getOnFinishingThread() { params.finishingThread as Closure }
-    /** Run finalization code when stoping a thread */
+    /** Run finalization code when stopping a thread */
     void setOnFinishingThread(Closure value) { params.finishingThread = value }
-    /** Run finalization code when stoping a thread */
+    /** Run finalization code when stopping a thread */
     void finishingThread(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
         setOnFinishingThread(value)
     }
@@ -314,21 +314,17 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
 
         /**
          * Upload file to specified directory in current manager
-         * @param localFileName local file name to upload
+         * @param localFile local file to upload
          * @param uploadPath destination directory
          */
-        void uploadLocalFile(String localFileName, String uploadPath) {
+        void uploadLocalFile(File localFile, String uploadPath) {
             if (curPath != uploadPath) {
                 ChangeDir([man], uploadPath, true, numberAttempts, timeAttempts)
-                ChangeLocalDir(man, uploadPath, true)
                 curPath = uploadPath
             }
 
-            if (!new File(man.localDirectoryFile.canonicalPath + File.separator + localFileName).exists())
-                throw new ExceptionFileListProcessing("Local file \"$localFileName\" not found!")
-
             Operation([man], numberAttempts, timeAttempts) { man ->
-                man.upload(localFileName)
+                man.upload(localFile.parent, localFile.name)
             }
         }
     }
@@ -404,9 +400,9 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
         groups.with {
             useConnection tmpProcessFiles.connection.cloneConnection() as JDBCConnection
             def cols = ((!threadGroupColumns.isEmpty())?threadGroupColumns:['FILEPATH'])
-            def sqlcols = GenerationUtils.SqlListObjectName(tmpProcessFiles, cols)
-            query = "SELECT DISTINCT \"_HASH_\", ${sqlcols.join(', ')} FROM ${tmpProcessFiles.fullTableName} " +
-                    "ORDER BY ${sqlcols.join(', ')}"
+            def sqlCols = GenerationUtils.SqlListObjectName(tmpProcessFiles, cols)
+            query = "SELECT DISTINCT \"_HASH_\", ${sqlCols.join(', ')} FROM ${tmpProcessFiles.fullTableName} " +
+                    "ORDER BY ${sqlCols.join(', ')}"
         }
 
         // Set order from table of files
@@ -422,19 +418,19 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
         try {
             // Groups processing
             groups.eachRow { group ->
-                def groupfields = MapUtils.Copy(group, ['_hash_'])
-                def strgroup = groupfields.toString()
-                def pt = profile("Processing thread group $strgroup", 'byte')
+                def groupFields = MapUtils.Copy(group, ['_hash_'])
+                def strGroup = groupFields.toString()
+                def pt = profile("Processing thread group $strGroup", 'byte')
 
                 // Init group
                 if (isCachedMode && onInitCachedData)
-                    onInitCachedData.call(groupfields)
+                    onInitCachedData.call(groupFields)
 
                 // Get files by group
                 tmpProcessFiles.readOpts { where = "\"_HASH_\" = ${group.get('_hash_')}" }
                 def files = tmpProcessFiles.rows()
                 def filesSize = (files.sum { it.filesize }) as Long
-                Logs.Fine("Thread group $strgroup processing ${StringUtils.WithGroupSeparator(files.size())} files ${FileUtils.SizeBytes(filesSize)} ...")
+                Logs.Fine("Thread group $strGroup processing ${StringUtils.WithGroupSeparator(files.size())} files ${FileUtils.SizeBytes(filesSize)} ...")
 
                 sourceList.each { element ->
                     if (element.man.story != null) {
@@ -462,7 +458,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                             def delFile = removeFiles
                             def delTable = sourceElement.delTable
 
-                            def file = threadItem.item as Map
+                            def file = threadItem.item as Map<String, Object>
 
                             try {
                                 def filepath = file.get('filepath') as String
@@ -477,12 +473,12 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                                     man.download(filename)
                                 }
 
-                                def filedesc = new File(sourceElement.man.currentLocalDir() + '/' + filename)
-                                if (!filedesc.exists())
-                                    throw new ExceptionFileListProcessing("The downloaded file \"$filedesc\" was not found!")
+                                def fileDesc = new File(sourceElement.man.currentLocalDir() + '/' + filename)
+                                if (!fileDesc.exists())
+                                    throw new ExceptionFileListProcessing("The downloaded file \"$fileDesc\" was not found!")
 
                                 def element = new FileProcessingElement(sourceElement, processedElement,
-                                        errorElement, file, filedesc, threadItem.node)
+                                        errorElement, file, fileDesc, threadItem.node)
                                 try {
                                     try {
                                         onProcessFile.call(element)
@@ -492,7 +488,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                                         Logs.Severe("Detected assertion fail for file \"${file.filepath}/${file.filename}\" processing: $msg")
 
                                         element.result = FileProcessingElement.errorResult
-                                        element.errorFileName = (file.filename as String) + '.assert.txt'
+                                        element.errorFileName = "${file.filename}.assert.txt"
                                         element.errorText = """File: ${file.filepath}/${file.filename}
         Date: ${DateUtils.FormatDateTime(new Date())}
         Exception: ${a.getClass().name}
@@ -534,7 +530,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
 
                                         if (handleExceptions) {
                                             element.result = FileProcessingElement.errorResult
-                                            element.errorFileName = (file.filename as String) + '.exception.txt'
+                                            element.errorFileName = "${file.filename}.exception.txt"
                                             element.errorText = """File: ${file.filepath}/${file.filename}
         Date: ${DateUtils.FormatDateTime(new Date())}
         Exception: ${e.getClass().name}
@@ -561,13 +557,13 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                                         }
 
                                         if (processedElement != null)
-                                            processedElement.uploadLocalFile(file.filename as String, file.filepath as String)
+                                            processedElement.uploadLocalFile(fileDesc, element.savedFilePath)
 
                                         this.counter.nextCount()
                                         counter.addCount(file.filesize as Long)
                                     } else if (procResult == FileProcessingElement.errorResult) {
                                         if (errorElement != null) {
-                                            errorElement.uploadLocalFile(file.filename as String, file.filepath as String)
+                                            errorElement.uploadLocalFile(fileDesc, element.savedFilePath)
 
                                             if (element.errorText != null)
                                                 element.uploadTextToStorageError()
@@ -654,7 +650,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
 
                 // Finalize group
                 if (isCachedMode)
-                    saveCachedDataGroup(groupfields)
+                    saveCachedDataGroup(groupFields)
                 else if (cacheTable != null)
                     saveCacheStory()
             }

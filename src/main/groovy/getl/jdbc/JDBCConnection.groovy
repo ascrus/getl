@@ -44,6 +44,12 @@ class JDBCConnection extends Connection implements UserLogins {
 		params.storedLogins = [:] as Map<String, String>
 	}
 
+	@Override
+	protected void afterClone() {
+		super.afterClone()
+		fileNameSqlHistory = null
+	}
+
 	/** Current JDBC connection driver */
 	@JsonIgnore
 	JDBCDriver getCurrentJDBCDriver() { driver as JDBCDriver }
@@ -65,6 +71,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	protected void onLoadConfig(Map configSection) {
 		super.onLoadConfig(configSection)
 		if (this.getClass().name == 'getl.jdbc.JDBCConnection') methodParams.validation("Super", params)
+		fileNameSqlHistory = null
 	}
 
 	@Override
@@ -500,7 +507,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** Validation script history file */
 	protected validSqlHistoryFile() {
 		if (fileNameSqlHistory == null) {
-			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile, StringUtils.MACROS_FILE)
+			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile, System.getenv() + StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(fileNameSqlHistory)
 		}
 	}

@@ -7,6 +7,7 @@ import getl.lang.sub.UserLogins
 import getl.utils.FileUtils
 import getl.utils.StringUtils
 import groovy.transform.CompileStatic
+import groovy.transform.Synchronized
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem
 import getl.utils.Logs
@@ -86,7 +87,8 @@ class HDFSManager extends Manager implements UserLogins {
     Boolean isConnected() { client != null }
 
     @Override
-    void connect() {
+    @Synchronized
+    protected void doConnect() {
         if (connected)
             throw new ExceptionGETL('Manager already connected!')
 
@@ -109,7 +111,7 @@ class HDFSManager extends Manager implements UserLogins {
                         throw e
                     }
                     homeDirectory = client.homeDirectory
-                    if (rootPath != null) currentPath = rootPath
+                    if (rootPath != null) currentPath = currentRootPath
 
                     return null
                 }
@@ -118,7 +120,8 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    void disconnect() {
+    @Synchronized
+    protected void doDisconnect() {
         if (!connected)
             throw new ExceptionGETL('Manager already disconnected!')
 
@@ -164,7 +167,7 @@ class HDFSManager extends Manager implements UserLogins {
     private fullName(String dir, String file) {
         if (dir != null && dir[0] == '/' && StringUtils.LeftStr(dir, 6) != '/user/') dir = dir.substring(1)
         if (dir == null) dir = currentPath
-        if (!((dir + '/').matches(rootPath + '/.*'))) dir = rootPath + '/' + dir
+        if (!((dir + '/').matches(rootPath + '/.*'))) dir = currentRootPath + '/' + dir
         return ((dir != null)?dir:'') + ((file != null)?"/$file":'')
     }
 
@@ -229,9 +232,9 @@ class HDFSManager extends Manager implements UserLogins {
     void changeDirectoryUp() {
         validConnect()
 
-        if (_currentPath == rootPath) {
-            if (writeErrorsToLog) Logs.Severe("Can not change directory to up with root directory \"$rootPath\"")
-            throw new ExceptionGETL("Can not change directory to up with root directory \"$rootPath\"")
+        if (_currentPath == currentRootPath) {
+            if (writeErrorsToLog) Logs.Severe("Can not change directory to up with root directory \"$currentRootPath\"")
+            throw new ExceptionGETL("Can not change directory to up with root directory \"$currentRootPath\"")
         }
 
         String[] l = _currentPath.split('/')
@@ -384,10 +387,10 @@ class HDFSManager extends Manager implements UserLogins {
         String res
         if (rootPath == null || rootPath.length() == 0)
             res = "hdfs://$server"
-        else if (rootPath[0] == '/')
-            res = "hdfs://$server$rootPath"
+        else if (currentRootPath[0] == '/')
+            res = "hdfs://$server$currentRootPath"
         else
-            res = "hdfs://$server/$rootPath"
+            res = "hdfs://$server/$currentRootPath"
 
         return res
     }

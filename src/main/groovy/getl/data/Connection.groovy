@@ -507,8 +507,13 @@ class Connection implements Cloneable, GetlRepository {
 		String className = this.class.name
 		Map p = CloneUtils.CloneMap(this.params, false)
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
-		CreateConnectionInternal([connection: className] + p)
+		def res = CreateConnectionInternal([connection: className] + p)
+		res.afterClone()
+		return res
 	}
+
+	/** Finalization cloned object */
+	protected void afterClone() { }
 
 	/**
 	 * Perform operations within a transaction connection

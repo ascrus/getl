@@ -4,11 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileDatasetRetrieveObjectsSpec
 import getl.exception.ExceptionGETL
 import getl.driver.FileDriver
-import getl.lang.opts.BaseSpec
 import getl.utils.*
-import groovy.json.JsonBuilder
-import groovy.json.JsonSlurper
-import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -38,6 +34,18 @@ class FileConnection extends Connection {
 		// Init path
 		if (path != null) setPath(path)
 	}
+
+	@Override
+	protected void afterClone() {
+		super.afterClone()
+		currentPath = null
+	}
+
+	@Override
+	protected void onLoadConfig (Map configSection) {
+		super.onLoadConfig(configSection)
+		currentPath = null
+	}
 	
 	/** Connection path */
 	String getPath () { params.path as String }
@@ -49,6 +57,7 @@ class FileConnection extends Connection {
 				value = value.substring(0, value.length() - 1)
 		}
 		params.path = value
+		currentPath = null
 	}
 	
 	/** Code page for connection files */
@@ -93,14 +102,27 @@ class FileConnection extends Connection {
 
 	/** Exists path for connection */
 	@JsonIgnore
-	Boolean getExists() { (path != null)?new File(path).exists():null }
+	Boolean getExists() { (path != null)?new File(currentPath()).exists():null }
+
+	/** Current path */
+	private String currentPath
+
+	/** Current root path */
+	String currentPath() {
+		if (path == null) return null
+
+		if (currentPath == null)
+			currentPath = new File(FileUtils.TransformFilePath(path, true)).canonicalPath
+
+		return currentPath
+	}
 
 	/** Delete path of connection */
 	Boolean deletePath () {
 		if (path == null) return false
-		def p = new File(path)
+		def p = new File(currentPath())
 		if (!p.exists()) return false
-		
+
 		retrieveObjects().each { f ->
 			(f as File).delete()
 		}
@@ -110,7 +132,7 @@ class FileConnection extends Connection {
 
 	/** Valid connection path */
 	void validPath () {
-		if (createPath && path != null) FileUtils.ValidPath(path)
+		if (createPath && path != null) FileUtils.ValidPath(currentPath())
 	}
 
 	/** Return the list of files by the specified conditions */
@@ -124,5 +146,5 @@ class FileConnection extends Connection {
 
 	@Override
 	@JsonIgnore
-	String getObjectName() { (path != null)?"file:$path":'[NONE]' }
+	String getObjectName() { (path != null)?"file:${currentPath()}":'[NONE]' }
 }

@@ -38,7 +38,7 @@ class FileDriver extends Driver {
 
 	@Override
 	List<Object> retrieveObjects (Map params, Closure<Boolean> filter) {
-		def path = (connection as FileConnection).path
+		def path = (connection as FileConnection).currentPath()
 		if (path == null) throw new ExceptionGETL('Path not setting!')
 		
 		if (params.directory != null) path += (connection as FileConnection).fileSeparator + params.directory
@@ -102,10 +102,10 @@ class FileDriver extends Driver {
 		def con = dataset.fileConnection
 		if (dataset.extension != null) fn += ".${dataset.extension}"
 		if (con.path != null) {
-			if (FileUtils.IsResourceFileName(con.path))
-				fn = FileUtils.ConvertToUnixPath(con.path) + '/' + fn
+			if (FileUtils.IsResourceFileName(con.currentPath()))
+				fn = FileUtils.ConvertToUnixPath(con.currentPath()) + '/' + fn
 			else
-				fn = FileUtils.ConvertToDefaultOSPath(con.path) + con.fileSeparator + fn
+				fn = FileUtils.ConvertToDefaultOSPath(con.currentPath()) + con.fileSeparator + fn
 		}
 
 		return FileUtils.ResourceFileName(fn)
@@ -139,10 +139,10 @@ class FileDriver extends Driver {
 		def con = dataset.fileConnection
 
 		if (con.path != null) {
-			if (FileUtils.IsResourceFileName(con.path))
-				fn = FileUtils.ConvertToUnixPath(con.path) + '/' + fn
+			if (FileUtils.IsResourceFileName(con.currentPath()))
+				fn = FileUtils.ConvertToUnixPath(con.currentPath()) + '/' + fn
 			else
-				fn = FileUtils.ConvertToDefaultOSPath(con.path) + con.fileSeparator + fn
+				fn = FileUtils.ConvertToDefaultOSPath(con.currentPath()) + con.fileSeparator + fn
 		}
 
 		if (portion != null) fn = "${fn}.${StringUtils.AddLedZeroStr(portion.toString(), 4)}"

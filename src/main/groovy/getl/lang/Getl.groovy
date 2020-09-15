@@ -1769,8 +1769,9 @@ Examples:
     protected Integer runGroovyInstance(Script script, Map vars = [:]) {
         def res = 0
         _repositoryFilter.pushOptions(true)
+        def isGetlScript = (script instanceof Getl)
         try {
-            if (script instanceof Getl) {
+            if (isGetlScript) {
                 def scriptGetl = script as Getl
                 scriptGetl.importGetlParams(_params)
                 scriptGetl._setGetlInstance()
@@ -1786,6 +1787,9 @@ Examples:
 
             def pt = startProcess("Execution groovy script ${script.getClass().name}", 'class')
             try {
+                if (isGetlScript)
+                    (script as Getl).prepare()
+
                 script.run()
             }
             catch (ExceptionDSL e) {
@@ -1813,7 +1817,7 @@ Examples:
             pt.finish()
         }
         finally {
-            if (script instanceof Getl)
+            if (isGetlScript)
                 releaseTemporaryObjects(script as Getl)
 
             this._setGetlInstance()
@@ -1822,6 +1826,9 @@ Examples:
 
         return res
     }
+
+    /** Prepare a script before running */
+    protected void prepare() { }
 
     /** Release temporary objects by name mask "#*" */
     void releaseTemporaryObjects(Getl creator) {
@@ -3940,6 +3947,7 @@ Examples:
                 defaultFileConnection(RepositoryDatasets.CSVTEMPDATASET), TFS, cl) as TFSDataset
         if (parent.connection == null)
             parent.connection = TFS.storage
+        parent.autoSchema = false
         parent.field = sourceDataset.field
         parent.resetFieldsTypeName()
         sourceDataset.prepareCsvTempFile(parent)
@@ -4113,7 +4121,7 @@ Examples:
                    @DelegatesTo(FTPManager)
                    @ClosureParams(value = SimpleType, options = ['getl.files.FTPManager']) Closure cl = null) {
         def parent = registerFileManager(RepositoryFilemanagers.FTPMANAGER, name, registration) as FTPManager
-        if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
+        if (parent.localDirectory == null) parent.localDirectory = TFS.storage.currentPath()
         if (cl != null) {
             def pt = startProcess("Do commands on [$parent]", 'command')
             try {
@@ -4147,7 +4155,7 @@ Examples:
                      @DelegatesTo(SFTPManager)
                      @ClosureParams(value = SimpleType, options = ['getl.files.SFTPManager']) Closure cl = null) {
         def parent = registerFileManager(RepositoryFilemanagers.SFTPMANAGER, name, registration) as SFTPManager
-        if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
+        if (parent.localDirectory == null) parent.localDirectory = TFS.storage.currentPath()
         if (cl != null) {
             def pt = startProcess("Do commands on [$parent]", 'command')
             try {
@@ -4181,7 +4189,7 @@ Examples:
                      @DelegatesTo(HDFSManager)
                      @ClosureParams(value = SimpleType, options = ['getl.files.HDFSManager']) Closure cl = null) {
         def parent = registerFileManager(RepositoryFilemanagers.HDFSMANAGER, name, registration) as HDFSManager
-        if (parent.localDirectory == null) parent.localDirectory = TFS.storage.path
+        if (parent.localDirectory == null) parent.localDirectory = TFS.storage.currentPath()
         if (cl != null) {
             def pt = startProcess("Do commands on [$parent]", 'command')
             try {

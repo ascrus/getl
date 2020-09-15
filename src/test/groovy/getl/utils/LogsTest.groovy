@@ -6,7 +6,7 @@ import org.junit.Test
 class LogsTest extends getl.test.GetlTest {
     @Test
     void testInit() {
-        Logs.logFileName = "${TFS.storage.path}/getl.{date}.log"
+        Logs.logFileName = "${TFS.storage.currentPath()}/getl.{date}.log"
         Logs.Fine('Init log')
         Logs.Init()
         Logs.Info('Test log')

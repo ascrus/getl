@@ -1494,8 +1494,13 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		ds.setField(this.field)
 		ds.manualSchema = this.manualSchema
 
+		ds.afterClone()
+
 		return ds
 	}
+
+	/** Finalization cloned object */
+	protected void afterClone() { }
 
 	/**
 	 * Clone current dataset and hear connection

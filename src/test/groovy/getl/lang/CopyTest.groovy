@@ -23,10 +23,10 @@ class CopyTest extends GetlDslTest {
     protected Boolean cleanGetlBeforeTest() { false }
 
     static final def debug = false
-    static final def workPath = "${(debug)?"${System.getenv().GETL_TEST}/getl.test":FileUtils.SystemTempDir()}/copier"
+    static final def workPath = ((debug)?FileUtils.TransformFilePath('{GETL_TEST}/getl.test'):FileUtils.SystemTempDir()) + '/copier'
 
-    static final def sourcePathDir = "${workPath}/source"
-    static final def destPathDir = "${workPath}/dest"
+    static final def sourcePathDir = "$workPath/source"
+    static final def destPathDir = "$workPath/dest"
 
     static final def countFilePortions = 1024 // 10 chars *  1024 bytes = 10 kb
 

@@ -246,7 +246,7 @@ class HiveDriver extends JDBCDriver {
             files.addAll(bulkParams.files as List)
         }
         else if (bulkParams.fileMask != null) {
-            def fm = new FileManager(rootPath: (source.connection as CSVConnection).path)
+            def fm = new FileManager(rootPath: (source.connection as CSVConnection).currentPath())
             fm.connect()
             try {
                 fm.list(bulkParams.fileMask as String).each { Map f -> files.add((f.filepath as String) + '/' + (f.filename as String))}
@@ -326,7 +326,7 @@ class HiveDriver extends JDBCDriver {
 
         // Copy temp csv file to HDFS
         def fileMan = new HDFSManager(rootPath: hdfsDir, server: hdfsHost, port: hdfsPort, login: hdfsLogin,
-                            localDirectory: (tempFile.connection as CSVConnection).path)
+                            localDirectory: (tempFile.connection as CSVConnection).currentPath())
         fileMan.connect()
         try {
             fileMan.upload(tempFileName)

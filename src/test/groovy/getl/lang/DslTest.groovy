@@ -519,7 +519,7 @@ ORDER BY t1.id"""
 
             def con = csvConnection('#csv', true) {
                 fieldDelimiter = '~'
-                path = csvTempConnection().path
+                path = csvTempConnection().currentPath()
                 extension = 'csv'
                 autoSchema = true
             }
@@ -540,7 +540,7 @@ ORDER BY t1.id"""
 
             TableDataset list
             files {
-                rootPath = (csv.connection as CSVConnection).path
+                rootPath = (csv.connection as CSVConnection).currentPath()
                 list = buildListFiles('file.split.{num}.*')
             }
             assertEquals(5, list.countRow())
@@ -562,7 +562,7 @@ ORDER BY t1.id"""
             }
 
             files {
-                rootPath = (csv.connection as CSVConnection).path
+                rootPath = (csv.connection as CSVConnection).currentPath()
                 list = buildListFiles('file.split.{num}.*')
             }
             assertEquals(0, list.countRow())
@@ -594,7 +594,7 @@ ORDER BY t1.id"""
 
             TableDataset list
             files {
-                rootPath = (csv.connection as CSVConnection).path
+                rootPath = (csv.connection as CSVConnection).currentPath()
                 list = buildListFiles('file.temp.split.{num}.*')
             }
             assertEquals(4, list.countRow())
@@ -615,7 +615,7 @@ ORDER BY t1.id"""
             }
 
             files {
-                rootPath = (csv.connection as CSVConnection).path
+                rootPath = (csv.connection as CSVConnection).currentPath()
                 list = buildListFiles('file.temp.split.{num}.*')
             }
             assertEquals(0, list.countRow())

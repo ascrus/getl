@@ -156,7 +156,7 @@ class Logs {
 		}
 		if (name != null) {
 			name = name.replace("\\", "\\\\")
-			def f = StringUtils.EvalMacroString(name, StringUtils.MACROS_FILE)
+			def f = StringUtils.EvalMacroString(name, System.getenv() + StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(f)
 
 			file = new FileHandler(f, true)

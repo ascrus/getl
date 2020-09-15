@@ -366,12 +366,12 @@ class TableDataset extends JDBCDataset {
 				throw new ExceptionGETL('File remove is not supported for remote load!')
 		}
 
-		String path = sourceConnection.path
+		String path = sourceConnection.currentPath()
 		if (!remoteLoad) {
 			if (path == null)
 				throw new ExceptionGETL("It is required to specify connection path for CSV dataset to load into the table!")
 			if (!FileUtils.ExistsFile(path, true))
-				throw new ExceptionGETL("Directory \"${sourceConnection.path}\" not found!")
+				throw new ExceptionGETL("Directory \"path\" not found!")
 		}
 
 		List<Field> csvFields
@@ -380,7 +380,7 @@ class TableDataset extends JDBCDataset {
 		if (schemaFile != null && !parent.inheritFields) {
 			if (!FileUtils.ExistsFile(schemaFile)) {
 				if (FileUtils.RelativePathFromFile(schemaFile) == '.' && sourceConnection.path != null) {
-					def schemaFileWithPath = "${sourceConnection.path}/$schemaFile"
+					def schemaFileWithPath = "${sourceConnection.currentPath()}/$schemaFile"
 					if (!FileUtils.ExistsFile(schemaFileWithPath))
 						throw new ExceptionGETL("Schema file \"$schemaFileName\" not found!")
 					schemaFile = schemaFileWithPath

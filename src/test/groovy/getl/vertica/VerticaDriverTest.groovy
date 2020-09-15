@@ -112,8 +112,8 @@ LIMIT 1'''
             def csv = csvTempWithDataset(vertable) {
                 useConnection csvTempConnection {
                     path = TFS.systemPath + '/bulkload'
-                    FileUtils.ValidPath(path)
-                    new File(path).deleteOnExit()
+                    FileUtils.ValidPath(currentPath())
+                    new File(currentPath()).deleteOnExit()
                 }
                 fileName = 'vertica.bulkload'
                 extension = 'csv'
@@ -187,7 +187,7 @@ LIMIT 1'''
             logInfo 'Bulk load files with remote load from path mask:'
             sftp {
                 useConfig 'vertica'
-                localDirectory = FileUtils.ConvertToUnixPath(csv.currentCsvConnection.path) + '/bulkload'
+                localDirectory = FileUtils.ConvertToUnixPath(csv.currentCsvConnection.currentPath()) + '/bulkload'
                 connect()
                 if (!existsDirectory('getl-bulkload'))
                     createDir('getl-bulkload')

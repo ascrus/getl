@@ -223,7 +223,7 @@ class RepositoryTest extends GetlDslTest {
     @Test
     void testRepositoryStorageManagerWithEnv() {
         def reppath = FileUtils.ConvertToDefaultOSPath((this.isdebug)?
-                'c:/tmp/getl.dsl/repository1':"${TFS.systemPath}/repository1")
+                FileUtils.TransformFilePath('{GETL_TEST}/repository1'):"${TFS.systemPath}/repository1")
         if (!isdebug) FileUtils.ValidPath(reppath, true)
 
         Getl.Dsl {
@@ -243,7 +243,7 @@ class RepositoryTest extends GetlDslTest {
     @Test
     void testRepositoryStorageManagerWithoutEnv() {
         def reppath = FileUtils.ConvertToDefaultOSPath((this.isdebug)?
-                'c:/tmp/getl.dsl/repository2':"${TFS.systemPath}/repository2")
+                FileUtils.TransformFilePath('{GETL_TEST}/repository2'):"${TFS.systemPath}/repository2")
         if (!isdebug) FileUtils.ValidPath(reppath, true)
 
         Getl.Dsl {
@@ -461,7 +461,7 @@ class RepositoryTest extends GetlDslTest {
                 assertEquals(8192, connectProperty.PAGE_SIZE)
             }
             csvTempConnection('csv.group:con') {
-                assertEquals(repositoryStorageManager().storagePath, path)
+                assertEquals(repositoryStorageManager().storagePath, currentPath())
                 assertEquals('\t', fieldDelimiter)
                 assertEquals(quoteAlways, quoteMode)
             }

@@ -172,15 +172,23 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		// Compile vars
 		p = Pattern.compile('(?i)([{][a-z0-9._-]+[}])')
 		m = p.matcher(script)
-		def b = new StringBuffer()
-		String vn
+		def b = new StringBuilder()
+
+		def pos = 0
 		while (m.find()) {
-			vn = m.group()
-			vn = vn.substring(1, vn.length() - 1).trim().toLowerCase()
+			b.append(script, pos, m.start())
+			pos = m.end()
+
+			def groupName = m.group(1) as String
+			def vn = groupName.substring(1, groupName.length() - 1).trim().toLowerCase()
 			
 			def varName = varNames.find { String s -> vn == s.toLowerCase() }
 			
-			if (varName == null) continue
+			if (varName == null) {
+				b.append(groupName)
+				continue
+			}
+
 			def val = locVars.get(varName)
 			String valStr
 			if (val == null) {
@@ -206,9 +214,12 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 				else
 					valStr = val
 			}
-			m.appendReplacement(b, valStr)
+
+			b.append(valStr)
 		}
-		m.appendTail(b)
+		if (pos < script.length())
+			b.append(script, pos, script.length())
+
 		sql = b.toString().trim()
 		scriptLabel = null
 

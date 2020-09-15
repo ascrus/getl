@@ -7,6 +7,7 @@ import getl.lang.sub.UserLogins
 import getl.utils.*
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 import it.sauronsoftware.ftp4j.*
 
 /**
@@ -148,7 +149,8 @@ class FTPManager extends Manager implements UserLogins {
 	Boolean isConnected() { BoolUtils.IsValue(client?.connected) }
 	
 	@Override
-	void connect() {
+	@Synchronized
+	protected void doConnect() {
 		if (connected)
 			throw new ExceptionGETL('Manager already connected!')
 
@@ -181,11 +183,12 @@ class FTPManager extends Manager implements UserLogins {
             supportCommands << cmd.trim().toUpperCase()
         }
 
-		if (rootPath != null) currentPath = rootPath
+		if (rootPath != null) currentPath = currentRootPath
 	}
 	
 	@Override
-	void disconnect() {
+	@Synchronized
+	protected void doDisconnect() {
 		if (!connected)
 			throw new ExceptionGETL('Manager already disconnected!')
 
@@ -297,7 +300,7 @@ class FTPManager extends Manager implements UserLogins {
 			_currentPath = client.currentDirectory()
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not change directory to \"$path\"")
+			Logs.Severe("Invalid directory \"$path\"!")
 			throw e
 		}
 	}
@@ -497,10 +500,10 @@ class FTPManager extends Manager implements UserLogins {
 		def loginStr = (login != null)?"$login@":''
 		if (rootPath == null || rootPath.length() == 0)
 			res = "ftp://$loginStr$server"
-		else if (rootPath[0] == '/')
-			res = "ftp://$loginStr$server$rootPath"
+		else if (currentRootPath[0] == '/')
+			res = "ftp://$loginStr$server$currentRootPath"
 		else
-			res = "ftp://$loginStr$server/$rootPath"
+			res = "ftp://$loginStr$server/$currentRootPath"
 
 		return res
 	}

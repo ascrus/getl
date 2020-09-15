@@ -163,6 +163,8 @@ class SFTPManager extends Manager implements UserLogins {
 
 		Session res = client.getSession(login, server, port)
 		try {
+			res.setConfig('PreferredAuthentications', 'publickey,password,keyboard-interactive');
+
 			if (password != null && identityFile == null) {
 				res.setPassword(password)
 				h += ", used password \"${StringUtils.Replicate('*', password.length())}\""
@@ -217,7 +219,7 @@ class SFTPManager extends Manager implements UserLogins {
 
 	@Override
 	@Synchronized
-	void connect() {
+	protected void doConnect() {
 		if (connected)
 			throw new ExceptionGETL('Manager already connected!')
 
@@ -231,7 +233,7 @@ class SFTPManager extends Manager implements UserLogins {
 			channelFtp = clientSession.openChannel("sftp") as ChannelSftp
 			writeScriptHistoryFile("OPEN CHANNEL: sftp")
 			channelFtp.connect()
-			if (rootPath != null) currentPath = rootPath
+			if (rootPath != null) currentPath = currentRootPath
 			if (channelFtp.serverVersion > 5)
 				channelFtp.filenameEncoding = codePage.toUpperCase()
 		}
@@ -243,7 +245,8 @@ class SFTPManager extends Manager implements UserLogins {
 	}
 
 	@Override
-	void disconnect() {
+	@Synchronized
+	protected void doDisconnect() {
 		if (!connected)
 			throw new ExceptionGETL('Manager already disconnected!')
 
@@ -337,7 +340,13 @@ class SFTPManager extends Manager implements UserLogins {
 		validConnect()
 
 		writeScriptHistoryFile("COMMAND: cd \"$path\"")
-		channelFtp.cd(path)
+		try {
+			channelFtp.cd(path)
+		}
+		catch (Exception e) {
+			Logs.Severe("Invalid directory \"$path\"!")
+			throw e
+		}
 		_currentPath = channelFtp.pwd()
 	}
 
@@ -623,10 +632,10 @@ exit \$LastExitCode
 		def loginStr = (login != null)?"$login@":''
 		if (rootPath == null || rootPath.length() == 0)
 			res = "sftp $loginStr$server"
-		else if (rootPath[0] == '/')
-			res = "sftp $loginStr$server$rootPath"
+		else if (currentRootPath[0] == '/')
+			res = "sftp $loginStr$server$currentRootPath"
 		else
-			res = "sftp $loginStr$server/$rootPath"
+			res = "sftp $loginStr$server/$currentRootPath"
 
 		return res
 	}

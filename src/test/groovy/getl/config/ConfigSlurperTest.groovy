@@ -19,7 +19,7 @@ import org.junit.Test
 @InheritConstructors
 class ConfigSlurperTest extends getl.test.GetlTest {
     def configPath = new TFS()
-    def configFile = new File("${configPath.path}/test_config.getl")
+    def configFile = new File("${configPath.currentPath()}/test_config.getl")
 
     def h2 = new H2Connection(config: 'h2')
     def csv = new CSVConnection(config: 'csv')
@@ -27,7 +27,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
     @Before
     void setUp() {
         Config.configClassManager = new ConfigSlurper()
-        (Config.configClassManager as ConfigSlurper).path = configPath.path
+        (Config.configClassManager as ConfigSlurper).path = configPath.currentPath()
 
         if (configFile.exists()) return
 
@@ -90,7 +90,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         assertEquals('test', h2.password)
         assertEquals(-1, h2.connectProperty.db_close_delay)
 
-        assertEquals('.', csv.path)
+        assertEquals(new File('.').canonicalPath, csv.currentPath())
         assertEquals('\r\n', csv.rowDelimiter)
 
         assertEquals('variable value', Config.content.var1)
@@ -107,13 +107,13 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         Config.content.var3[1].d = '${vars.config_var}'
         Config.vars.remove('config_var')
         Config.SaveConfig(fileName: 'test_config.groovy')
-        def groovyFile = new File("${configPath.path}/test_config.groovy")
+        def groovyFile = new File("${configPath.currentPath()}/test_config.groovy")
 //        groovyFile.deleteOnExit()
 //        println groovyFile.text
 
         Config.ClearConfig()
         Config.SetValue('vars.config_var', 'variable value')
-        Config.LoadConfig(fileName: configPath.path + '/' + 'test_config.groovy')
+        Config.LoadConfig(fileName: configPath.currentPath() + '/' + 'test_config.groovy')
 //        println '----------------'
 //        println MapUtils.ToJson(Config.content)
         assertEquals(Config.content.var1.toString(), 'local variable value')

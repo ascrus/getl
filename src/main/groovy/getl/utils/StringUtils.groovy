@@ -74,7 +74,36 @@ class StringUtils {
 
 		errorWhenUndefined = BoolUtils.IsValue(errorWhenUndefined, true)
 
-		vars.each { k, v ->
+		def matcher = Pattern.compile('(?i)([{][a-z0-9._-]+[}])').matcher(value)
+
+		def sb = new StringBuilder()
+		def pos = 0
+		while (matcher.find()) {
+			sb.append(value, pos, matcher.start())
+			pos = matcher.end()
+
+			def groupName = matcher.group(1) as String
+			def vn = groupName.substring(1, groupName.length() - 1).trim()
+
+			def varValue = vars.get(vn)
+			if (varValue == null || (varValue instanceof Map) || (varValue instanceof Collection)) {
+				if (errorWhenUndefined)
+					throw new ExceptionGETL("Unknown variable in \"$vn\", known vars: $vars")
+
+				sb.append(groupName)
+
+				continue
+			}
+
+			if (varValue instanceof Date)
+				varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', varValue as Date)
+
+			sb.append(varValue)
+		}
+		if (pos < value.length())
+			sb.append(value, pos, value.length())
+
+		/*vars.each { k, v ->
 			if (v instanceof Date)
 				v = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', v as Date)
 
@@ -82,10 +111,10 @@ class StringUtils {
 				value = value.replace('{' + k + '}', v.toString())
 		}
 		
-		if (errorWhenUndefined && value.matches("(?i).*([{][a-z0-9-_]+[}]).*"))
-			throw new ExceptionGETL("Unknown variable in \"$value\", known vars: $vars")
+		if (errorWhenUndefined && value.matches('(?i).*([{][a-z0-9-_]+[}]).*'))
+			throw new ExceptionGETL("Unknown variable in \"$value\", known vars: $vars")*/
 
-		return value
+		return sb.toString()
 	}
 	
 	/**
@@ -298,7 +327,8 @@ class StringUtils {
 			pos = matcher.end()
 			sb.append(replaceValues.get(matcher.group(1)))
 		}
-		sb.append(value, pos, value.length())
+		if (pos < value.length())
+			sb.append(value, pos, value.length())
 
 		return sb
 	}

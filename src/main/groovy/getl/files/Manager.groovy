@@ -39,19 +39,24 @@ abstract class Manager implements Cloneable, GetlRepository {
 		methodParams.register('downloadFiles',
 				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
 
+		//noinspection SpellCheckingInspection
 		def tempDirFile = new File(TFS.systemPath + '/files.localdir')
 		tempDirFile.deleteOnExit()
-		setLocalDirectory(tempDirFile.canonicalPath + '/' + this.class.simpleName + '_' + FileUtils.UniqueFileName())
+		localDirectorySet(tempDirFile.canonicalPath + '/' + this.class.simpleName + '_' + FileUtils.UniqueFileName())
 		new File(localDirectory).deleteOnExit()
 
 		initParams()
 		initMethods()
 	}
 
+	/** Local directory is temporary and need drop when disconnect */
+	private isTempLocalDirectory = true
+
 	/** Initialization dataset parameters */
 	protected void initParams() {
 		params.rootPath = '/'
 		params.attributes = [:] as Map<String, Object>
+		currentRootPathSet()
 	}
 
 	static Manager CreateManager(Map params) {
@@ -104,7 +109,15 @@ abstract class Manager implements Cloneable, GetlRepository {
 		String className = this.class.name
 		Map p = CloneUtils.CloneMap(this.params, false)
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
-		return CreateManagerInternal([manager: className] + p)
+		def res = CreateManagerInternal([manager: className] + p)
+		res.afterClone()
+		return res
+	}
+
+	/** Finalization cloned manager */
+	protected void afterClone() {
+		fileNameScriptHistory = null
+		currentRootPathSet()
 	}
 
 	/**
@@ -154,6 +167,21 @@ abstract class Manager implements Cloneable, GetlRepository {
 	void setRootPath(String value) {
 		validRootPath(value)
 		params.rootPath = FileUtils.ConvertToUnixPath(value)
+		currentRootPathSet()
+	}
+
+	/** Current root path */
+	private String currentRootPath
+	/** Current root path */
+	@JsonIgnore
+	String getCurrentRootPath() { currentRootPath }
+
+	/** Set current root path */
+	private currentRootPathSet() {
+		if (rootPath != null)
+			currentRootPath = FileUtils.TransformFilePath(rootPath, true)
+		else
+			currentRootPath = null
 	}
 
 	/** Local directory */
@@ -163,7 +191,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 	String getLocalDirectory() { _localDirectory }
 	/** Local directory */
 	void setLocalDirectory(String value) {
-		FileUtils.ValidPath(value)
+		localDirectorySet(value)
+		isTempLocalDirectory = false
+	}
+
+	private localDirectorySet(String value) {
 		_localDirectory = value
 		localDirFile = new File(value)
 	}
@@ -248,7 +280,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	/** Object name */
 	@JsonIgnore
-	String getObjectName() { (rootPath != null)?"file:$rootPath":'file'	}
+	String getObjectName() { (rootPath != null)?"file:$currentRootPath":'file'	}
 	
 	/** Write errors to log */
 	@JsonIgnore
@@ -286,9 +318,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 */
 	protected void onLoadConfig(Map configSection) {
 		MapUtils.MergeMap(params, configSection)
-		if (configSection.containsKey("localDirectory")) {
+		if (configSection.containsKey("localDirectory"))
 			setLocalDirectory(configSection.localDirectory as String)
-		}
+		fileNameScriptHistory = null
+		currentRootPathSet()
 	}
 	
 	/** File name is case-sensitive */
@@ -296,12 +329,26 @@ abstract class Manager implements Cloneable, GetlRepository {
 	
 	/** Init validator methods */
 	protected void initMethods() { }
+
+	/** Connect to server */
+	void connect() {
+		FileUtils.ValidPath(localDirectoryFile)
+		currentRootPathSet()
+		doConnect()
+	}
 	
 	/** Connect to server */
-	abstract void connect()
+	abstract protected void doConnect()
+
+	/** Disconnect from server */
+	void disconnect() {
+		doDisconnect()
+		if (isTempLocalDirectory)
+			FileUtils.DeleteFolder(localDirectory, true)
+	}
 	
 	/** Disconnect from server */
-	abstract void disconnect()
+	abstract protected void doDisconnect()
 
 	/** Connection established successfully */
 	@JsonIgnore
@@ -416,7 +463,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Change current directory to root */
 	void changeDirectoryToRoot() {
 		validRootPath()
-		currentPath = rootPath
+		currentPath = currentRootPath
 	}
 	
 	/**
@@ -460,10 +507,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	
 	/**
 	 * Upload file to specified path by server
-	 * @param path server path for uploaded
-	 * @param fileName uploaded file name by local directory
+	 * @param localFilePath local file path
+	 * @param localFileName local file name
 	 */
-	abstract void upload(String path, String fileName)
+	abstract void upload(String localFilePath, String localFileName)
 	
 	/**
 	 * Upload file to current directory by server
@@ -527,7 +574,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param value
 	 */
 	protected void validRootPath(String value = null) {
-		if (value == null) value = rootPath
+		if (value == null) value = currentRootPath
 		if (value == null || value.length() == 0)
 			throw new ExceptionGETL('No root path specified!')
 	}
@@ -542,7 +589,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		cur = cur.replace("\\", "/")
 
-		def root = rootPath
+		def root = currentRootPath
 		root = root.replace("\\", "/")
 		
 		if (cur == root) return "."
@@ -664,7 +711,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	@CompileStatic
-	protected void processList(Manager man, TableDataset dest, Path path, String maskFile, Path maskPath, Boolean recursive, Integer filelevel,
+	protected void processList(Manager man, TableDataset dest, Path path, String maskFile, Path maskPath, Boolean recursive, Integer fileLevel,
 								Boolean requiredAnalyze, Integer limit, Integer threadLevel, Integer threadCount, ManagerListProcessing code) {
 		if (threadLevel == null) threadCount = null
 
@@ -700,7 +747,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 						file.filepath = curPath
 						file.filetype = file.type.toString()
 						file.localfilename = file.filename
-						file.filelevel = filelevel
+						file.filelevel = fileLevel
 						//noinspection GroovyVariableNotAssigned
 						m?.each { var, value ->
 							file.put(((String) var).toLowerCase(), value)
@@ -729,7 +776,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 								nf.putAll(file)
 								nf.filetype = file.type.toString()
 								nf.localfilename = nf.filename
-								nf.filelevel = filelevel
+								nf.filelevel = fileLevel
 								m.each { var, value ->
 									nf.put(((String) var).toLowerCase(), value)
 								}
@@ -741,9 +788,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 					}
 
 					if (b) {
-						if (threadCount == null || filelevel != threadLevel) {
+						if (threadCount == null || fileLevel != threadLevel) {
 							man.changeDirectory((String) (file.filename))
-							processList(man, dest, path, maskFile, maskPath, recursive, filelevel + 1, requiredAnalyze,
+							processList(man, dest, path, maskFile, maskPath, recursive, fileLevel + 1, requiredAnalyze,
 										limit, threadLevel, threadCount, code)
 							man.changeDirectory('..')
 						} else {
@@ -781,7 +828,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 							TableDataset newDest = (dest.cloneDataset(null)) as TableDataset
 							newDest.openWrite(batchSize: 100)
 							try {
-								processList(newMan, newDest, path, maskFile, maskPath, recursive, filelevel + 1,
+								processList(newMan, newDest, path, maskFile, maskPath, recursive, fileLevel + 1,
 											requiredAnalyze, limit, threadLevel, threadCount, newCode)
 							}
 							finally {
@@ -800,7 +847,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 			}
 		}
 		finally {
-			if (filelevel == 1 && curPath != man.currentDir()) {
+			if (fileLevel == 1 && curPath != man.currentDir()) {
 				man.changeDirectoryToRoot()
 				if (curPath != '.') {
 					man.changeDirectory(curPath)
@@ -824,10 +871,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param params - parameters
 	 * @param code - processing code for file attributes as boolean code (Map file)
 	 */
-	void buildList(Map lparams,
+	void buildList(Map lParams,
 					@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> filter) {
 		ManagerListProcessClosure p = new ManagerListProcessClosure(code: filter)
-		buildList(lparams, p)  
+		buildList(lParams, p)
 	}
 
 	static private final Object _synchCreate = new Object()
@@ -847,6 +894,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 			path.compile()
 		path?.vars?.each { key, attr ->
 			def varName = key.toUpperCase()
+			//noinspection SpellCheckingInspection
 			if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
 				throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
 
@@ -882,47 +930,47 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param params - parameters
 	 * @param code - processing code for file attributes as boolean code (Map file)
 	 */
-	void buildList(Map lparams, ManagerListProcessing code) {
-		lparams = lparams?:[:]
-		methodParams.validation('buildList', lparams)
+	void buildList(Map lParams, ManagerListProcessing code) {
+		lParams = lParams?:[:]
+		methodParams.validation('buildList', lParams)
 
 		validConnect()
 
-		String maskFile = lparams.maskFile?:null
+		String maskFile = lParams.maskFile?:null
 		def maskPath = (maskFile != null)?new Path(mask: maskFile):null
-		Path path = lparams.path as Path
+		Path path = lParams.path as Path
 		if (path != null && !path.isCompile) path.compile()
 		def requiredAnalyze = (path != null && !(path.vars.isEmpty()))
-		def recursive = BoolUtils.IsValue(lparams.recursive, this.recursive)
-		def takePathInStory =  BoolUtils.IsValue(lparams.takePathInStory, this.takePathInStory)
-		def ignoreExistInStory = BoolUtils.IsValue(lparams.ignoreExistInStory, this.ignoreExistInStory)
-		def createStory = BoolUtils.IsValue(lparams.createStory, this.createStory)
-		def onlyFromStory = BoolUtils.IsValue(lparams.onlyFromStory)
-		def ignoreStory = BoolUtils.IsValue(lparams.ignoreStory)
+		def recursive = BoolUtils.IsValue(lParams.recursive, this.recursive)
+		def takePathInStory =  BoolUtils.IsValue(lParams.takePathInStory, this.takePathInStory)
+		def ignoreExistInStory = BoolUtils.IsValue(lParams.ignoreExistInStory, this.ignoreExistInStory)
+		def createStory = BoolUtils.IsValue(lParams.createStory, this.createStory)
+		def onlyFromStory = BoolUtils.IsValue(lParams.onlyFromStory)
+		def ignoreStory = BoolUtils.IsValue(lParams.ignoreStory)
 		
-		Integer limit = (lparams.limitDirs as Integer)?:this.limitDirs
+		Integer limit = (lParams.limitDirs as Integer)?:this.limitDirs
 		if (limit != null && limit <= 0)
 			throw new ExceptionGETL("limitDirs value must be great zero!")
 		
-		Integer threadLevel = (lparams.threadLevel as Integer)?:this.threadLevel
+		Integer threadLevel = (lParams.threadLevel as Integer)?:this.threadLevel
 		if (threadLevel != null && threadLevel <= 0)
 			throw new ExceptionGETL("threadLevel value must be great zero!")
 
-		Integer threadCount = (lparams.buildListThread as Integer)?:this.buildListThread
+		Integer threadCount = (lParams.buildListThread as Integer)?:this.buildListThread
 		if (threadCount != null && threadCount <= 0)
 			throw new ExceptionGETL("buildListThread value been must great zero!")
 		
 		if (path != null && maskFile != null)
 			throw new ExceptionGETL("Don't compatibility parameters path vs maskFile!")
 
-		def extendFields = lparams.extendFields as List<Field>
-		def extendIndexes = (lparams.extendIndexes as List<List<String>>)
+		def extendFields = lParams.extendFields as List<Field>
+		def extendIndexes = (lParams.extendIndexes as List<List<String>>)
 
 		countFileListSync.clear()
 		sizeFileListSync.clear()
 
 		// History table		
-		TableDataset storyTable = (!ignoreStory)?((lparams.story as TableDataset)?:story):null
+		TableDataset storyTable = (!ignoreStory)?((lParams.story as TableDataset)?:story):null
 		if (createStory && storyTable != null) createStoryTable(storyTable, path)
 
 		// Init file list
@@ -934,6 +982,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (extendFields != null) fileList.addFields(extendFields)
 		path?.vars?.each { key, attr ->
 			def varName = key.toUpperCase()
+			//noinspection SpellCheckingInspection
 			if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
 				throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
 
@@ -956,11 +1005,13 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		def newFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
 		newFiles.field = [new Field(name: 'ID', type: 'INTEGER', isNull: false, isAutoincrement: true)] + fileList.field
+		//noinspection SpellCheckingInspection
 		newFiles.removeField('FILEINSTORY')
 		newFiles.clearKeys()
 		
 		newFiles.drop(ifExists: true)
 		Map<String, Object> indexes = [:]
+		//noinspection SpellCheckingInspection
 		indexes.put("idx_${newFiles.tableName}_filename".toString(), [columns: ['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID']])
         indexes.put("idx_${newFiles.tableName}_id".toString(), [columns: ['ID']])
 
@@ -968,6 +1019,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 						indexes: indexes)
 		
 		def doubleFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
+		//noinspection SpellCheckingInspection
 		doubleFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 		doubleFiles.fieldByName('ID').with { 
 			isAutoincrement = false
@@ -1065,6 +1117,7 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				
 				def validFiles = new TableDataset(connection: storyTable.connection,
 															tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: JDBCDataset.Type.LOCAL_TEMPORARY)
+				//noinspection SpellCheckingInspection
 				validFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 				validFiles.fieldByName('ID').isAutoincrement = false
 				validFiles.clearKeys()
@@ -1237,20 +1290,20 @@ WHERE
 			files.eachRow(where: sqlWhere, order: sqlOrderBy) { Map file ->
 				def filepath = file.filepath
 				if (curDir != filepath) {
-					setCurrentPath("${rootPath}/${filepath}")
+					setCurrentPath("${currentRootPath}/${filepath}")
 					curDir = currentDir()
 				}
 				
-				def lpath = (folders)?"${ld}/${file.filepath}":ld
-				FileUtils.ValidPath(lpath)
+				def lPath = (folders)?"${ld}/${file.filepath}":ld
+				FileUtils.ValidPath(lPath)
 				
 				def tempName = "_" + FileUtils.UniqueFileName()  + ".tmp"
 				try {
-					download(file.filename as String, lpath, tempName)
+					download(file.filename as String, lPath, tempName)
 				}
 				catch (Exception e) {
 					Logs.Severe("Can not download file ${file.filepath}/${file.filename}")
-					new File("${lpath}/${tempName}").delete()
+					new File("${lPath}/${tempName}").delete()
 					if (!ignoreError) {
 						throw e
 					}
@@ -1258,16 +1311,16 @@ WHERE
 					return
 				}
 					
-				def temp = new File("${lpath}/${tempName}")
+				def temp = new File("${lPath}/${tempName}")
 				def localFileName = (file.localfilename != null)?file.localfilename:file.filename
-				def dest = new File("${lpath}/${localFileName}")
+				def dest = new File("${lPath}/${localFileName}")
 	
 				try {			
 					dest.delete()
 					temp.renameTo(dest)
 				}
 				catch (Exception e) {
-					new File("${lpath}/${tempName}").delete()
+					new File("${lPath}/${tempName}").delete()
 					throw e
 				}
 				
@@ -1609,7 +1662,7 @@ WHERE
 	 * Delete empty directories in specified directory
 	 * @param dirName - directory name
 	 * @param recursive - required recursive deleting
-	 * @return - true if directiry exist files
+	 * @return - true if directory exist files
 	 */
 	Boolean deleteEmptyFolder(String dirName, Boolean recursive,
 							  @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
@@ -1617,7 +1670,7 @@ WHERE
 	}
 	
 	/**
-	 * Delete empry directories as recursive
+	 * Delete empty directories as recursive
 	 * @param level
 	 * @param dirName
 	 * @param recursive
@@ -1658,14 +1711,14 @@ WHERE
 	}
 	
 	/**
-	 * Remove empty foldes from building list files
+	 * Remove empty folders from building list files
 	 */
 	void deleteEmptyFolders() {
 		deleteEmptyFolders(false, null)
 	}
 	
 	/**
-	 * Remove empty foldes from building list files
+	 * Remove empty folders from building list files
 	 * @param ignoreErrors
 	 */
 	void deleteEmptyFolders(Boolean ignoreErrors) {
@@ -1673,7 +1726,7 @@ WHERE
 	}
 	
 	/**
-	 * Remove empty foldes from building list files
+	 * Remove empty folders from building list files
 	 * @param onDelete
 	 * @return
 	 */
@@ -1682,7 +1735,7 @@ WHERE
 	}
 	
 	/**
-	 * Remove empty foldes from building list files
+	 * Remove empty folders from building list files
 	 * @param onDelete
 	 */
 	Boolean deleteEmptyFolders(Boolean ignoreErrors,
@@ -1690,8 +1743,8 @@ WHERE
 		if (fileList == null) throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders')
 		
 		def dirs = [:] as Map<String, Map>
-		QueryDataset pathes = new QueryDataset(connection: fileList.connection, query: "SELECT DISTINCT FILEPATH FROM ${fileList.fullNameDataset()} ORDER BY FILEPATH")
-		pathes.eachRow() { row ->
+		QueryDataset paths = new QueryDataset(connection: fileList.connection, query: "SELECT DISTINCT FILEPATH FROM ${fileList.fullNameDataset()} ORDER BY FILEPATH")
+		paths.eachRow() { row ->
 			if (row."filepath" == '.') return
 			String[] d = (row."filepath" as String).split('/')
 			Map c = dirs
@@ -1736,7 +1789,7 @@ WHERE
 	}
 	
 	/**
-	 * Remove empty foldes from map dirs structure
+	 * Remove empty folders from map dirs structure
 	 * @param dirs
 	 * @param ignoreErrors
 	 * @param onDelete
@@ -1856,7 +1909,7 @@ WHERE
 	@Synchronized('operationLock')
 	protected void validScriptHistoryFile() {
 		if (fileNameScriptHistory == null) {
-			fileNameScriptHistory = StringUtils.EvalMacroString(scriptHistoryFile, StringUtils.MACROS_FILE)
+			fileNameScriptHistory = StringUtils.EvalMacroString(scriptHistoryFile, System.getenv() + StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(fileNameScriptHistory)
 		}
 	}
@@ -1912,7 +1965,7 @@ WHERE
 	/** Verify that the connection is established */
 	protected void validConnect() {
 		if (!connected)
-			throw new ExceptionGETL("Requires a connection to the source!")
+			throw new ExceptionGETL("Requires a connection to the source \"${toString()}\"!")
 	}
 
 	/**
@@ -1921,7 +1974,7 @@ WHERE
 	 */
 	protected Map<String, String> toStringParams() {
 		def res = [:] as Map<String, String>
-		if (rootPath != null) res.root = rootPath
+		if (rootPath != null) res.root = currentRootPath
 
 		return res
 	}

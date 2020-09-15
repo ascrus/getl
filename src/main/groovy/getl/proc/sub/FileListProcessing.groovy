@@ -739,7 +739,9 @@ abstract class FileListProcessing implements GetlRepository {
         }
         finally {
             Operation([source], numberAttempts, timeAttempts) { man ->
-                man.changeDirectoryToRoot()
+                if (man.connected)
+                    man.changeDirectoryToRoot()
+
                 man.changeLocalDirectoryToRoot()
                 man.removeLocalDirs('.')
             }

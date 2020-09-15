@@ -1199,4 +1199,14 @@ class FileUtils {
 	static void LockFile(File file, Closure cl) {
 		fileLockManager.lockObject(file.path, cl)
 	}
+
+	/**
+	 * Transform path based on OS environment variables
+	 * @param path Original file path
+	 * @param errorWhenUndefined throw error if no variables found from the path
+	 * @return Transformed path
+	 */
+	static String TransformFilePath(String path, Boolean errorWhenUndefined = true) {
+		return StringUtils.EvalMacroString(path, System.getenv(), errorWhenUndefined)
+	}
 }

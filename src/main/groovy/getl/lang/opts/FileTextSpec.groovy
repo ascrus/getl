@@ -59,7 +59,7 @@ class FileTextSpec extends BaseSpec {
             file.deleteOnExit()
         }
         else {
-            file = File.createTempFile('text.', '.getltemp', new File(TFS.storage.path))
+            file = File.createTempFile('text.', '.getltemp', new File(TFS.storage.currentPath()))
             file.deleteOnExit()
             fileName = file.canonicalPath
         }

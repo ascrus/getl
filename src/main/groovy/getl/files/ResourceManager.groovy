@@ -8,6 +8,7 @@ import getl.utils.FileUtils
 import getl.utils.Path
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 import net.lingala.zip4j.ZipFile
 
 /**
@@ -203,11 +204,12 @@ class ResourceManager extends Manager {
             throw new ExceptionGETL("There is no directory \"$resourcePath\" in the resources!")
 
         rootNode = (res.protocol == 'file')?ListDirFiles(res.file):ListDirJar(res.file)
-        setCurrentDirectory(directoryFromPath(rootPath))
+        setCurrentDirectory(directoryFromPath(currentRootPath))
     }
 
     @Override
-    void connect() {
+    @Synchronized
+    protected void doConnect() {
         if (connected)
             throw new ExceptionGETL('Manager already connected!')
 
@@ -218,7 +220,8 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    void disconnect() {
+    @Synchronized
+    protected void doDisconnect() {
         if (!connected)
             throw new ExceptionGETL('Manager already disconnected!')
 
