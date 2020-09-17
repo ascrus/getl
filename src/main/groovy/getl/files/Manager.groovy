@@ -733,7 +733,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 					if (path != null) {
 						String fn = "${((recursive && curPath != '.')?curPath + '/' : '')}${file.filename}"
 						if (requiredAnalyze) {
-							m = path.analizeFile(fn)
+							m = path.analizeFile(fn, file)
 							addFile = (m != null)
 						}
 						else {
@@ -768,7 +768,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 					if (requiredAnalyze) {
 						b = false
 						def fn = "${(curPath != '.' && curPath != "") ? curPath + '/' : ''}${file.filename}"
-						def m = path.analizeDir(fn)
+						def m = path.analizeDir(fn, file)
 						if (m != null) {
 							if (code != null) {
 								Map nf = [:]

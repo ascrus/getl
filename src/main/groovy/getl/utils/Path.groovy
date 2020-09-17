@@ -2,10 +2,8 @@ package getl.utils
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.Getl
-import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
 import groovy.transform.AutoClone
-import groovy.transform.InheritConstructors
 import groovy.transform.CompileStatic
 import getl.utils.opts.PathVarsSpec
 import groovy.transform.stc.ClosureParams
@@ -17,7 +15,7 @@ import getl.data.Field
 import getl.exception.ExceptionGETL
 
 /**
- * Analize and processing path value class
+ * Analyze and processing path value class
  * @author Alexsey Konstantinov
  */
 @AutoClone
@@ -489,13 +487,13 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** Analize file with mask and return value of variables */
-	Map analizeFile(String fileName) {
-		analize(fileName, false)
+	Map analizeFile(String fileName, Map<String, Object> extendVars = null) {
+		analize(fileName, false, extendVars)
 	}
 
 	/** Analize dir with mask and return value of variables */
-	Map analizeDir(String dirName) {
-		analize(dirName, true)
+	Map analizeDir(String dirName, Map<String, Object> extendVars = null) {
+		analize(dirName, true, extendVars)
 	}
 
 	/** Checking the value by compiled mask */
@@ -504,11 +502,16 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** Analize object name */
-	Map analize(String objName, Boolean isHierarchy = false) {
+	Map analize(String objName, Boolean isHierarchy = false, Map<String, Object> extendVars = null) {
 		if (!isCompile) compile()
 
 		def fn = objName
 		if (fn == null) return null
+
+		if (extendVars == null)
+			extendVars = [:] as Map<String, Object>
+		else
+			extendVars = MapUtils.CopyOnly(extendVars, ['filename', 'filedate', 'filesize']) as Map<String, Object>
 
 		if (changeSeparator) fn = fn.replace('\\', '/')
 
@@ -623,8 +626,8 @@ class Path implements Cloneable, GetlRepository {
             if (isError) return null
 
 			vars.each { key,value ->
-				def r = res.clone() as Map
 				if (value.calc != null) {
+					def r = res + extendVars
 					def varres = (value.calc as Closure).call(r)
 					res.put(key, varres)
 				}

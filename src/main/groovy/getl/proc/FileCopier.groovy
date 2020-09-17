@@ -51,7 +51,8 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         if (destinationPath != null && !destinationPath.isCompile) destinationPath.compile()
     }
     /** Use path mask for destination directory */
-    void useDestinationPath(@DelegatesTo(Path) Closure cl) {
+    void useDestinationPath(@DelegatesTo(Path)
+                            @ClosureParams(value = SimpleType, options = ['getl.utils.Path']) Closure cl) {
         if (sourcePath == null)
             throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
 
@@ -85,7 +86,8 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         if (renamePath != null && !renamePath.isCompile) renamePath.compile()
     }
     /** Use path mask for rename file name */
-    void useRenamePath(@DelegatesTo(Path) Closure cl) {
+    void useRenamePath(@DelegatesTo(Path)
+                       @ClosureParams(value = SimpleType, options = ['getl.utils.Path']) Closure cl) {
         if (sourcePath == null)
             throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
 

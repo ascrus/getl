@@ -124,7 +124,8 @@ abstract class FileListProcessing implements GetlRepository {
         if (sourcePath != null && !sourcePath.isCompile) sourcePath.compile()
     }
     /** Use path mask for source file */
-    void useSourcePath(@DelegatesTo(Path) Closure cl) {
+    void useSourcePath(@DelegatesTo(Path)
+                       @ClosureParams(value = SimpleType, options = ['getl.utils.Path']) Closure cl) {
         def parent = new Path()
         parent.with(cl)
         setSourcePath(parent)
