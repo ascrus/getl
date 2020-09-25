@@ -197,6 +197,23 @@ class FileUtils {
 
 	/**
 	 * Copy file to specified directory
+	 * @param file file to copy
+	 * @param path destination directory
+	 * @param destFileName destination file name
+	 * @param createPath create a directory if it is not
+	 */
+	static void CopyToDir(File file, String path, String destFileName, Boolean createPath = false) {
+		if (!file.exists()) throw new ExceptionGETL("File \"$file\" not found!")
+
+		if (createPath) ValidPath(path)
+		def dest = new File(path + File.separator + (destFileName?:file.name))
+		if (dest.exists()) dest.delete()
+
+		Files.copy(file.toPath(), dest.toPath(), StandardCopyOption.COPY_ATTRIBUTES)
+	}
+
+	/**
+	 * Copy file to specified directory
 	 * @param fileName path to the file to be moved
 	 * @param path destination directory
 	 * @param createPath create a directory if it is not

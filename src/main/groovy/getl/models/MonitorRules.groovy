@@ -371,8 +371,10 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                     groupRow.state_time = stateTime
                     groupRow.is_correct = isCorrect
                     groupRow.is_notification = isNotification
-                    if (isCorrect)
+                    if (isCorrect) {
+//                        groupRow.first_error_time = null
                         groupRow.last_error_time = null
+                    }
                     else if (groupRow.last_error_time == null || isNotification) {
                         if (groupRow.first_error_time == null || groupRows[0].is_correct as Boolean)
                             groupRow.first_error_time = curDate
@@ -519,13 +521,16 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         smtpServer.with {
             Logs.Finest("Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients: $toAddress")
             def text = htmlNotification(rows)
-            sendMail(toAddress, "Monitor \"${this.repositoryModelName}\" detected " +
+            sendMail(null, "Monitor \"${this.repositoryModelName}\" detected " +
                     "${lastCheckStatusTable.countRow('NOT is_correct')} active errors and " +
                     "${lastCheckStatusTable.countRow('is_notification AND is_correct')} closed errors", text, true)
         }
 
-        new Flow().writeTo(dest: statusTable, destParams: [operation: 'UPDATE', updateField: ['send_time']]) { updater ->
+        new Flow().writeTo(dest: statusTable, destParams: [operation: 'UPDATE', updateField: ['first_error_time','send_time']]) { updater ->
             rows.each { row ->
+                if (row.is_correct)
+                    row.first_error_time = null
+
                 updater.call(row + [send_time: currentDateTime])
             }
         }

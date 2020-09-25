@@ -11,6 +11,7 @@ import getl.csv.proc.CSVParseEscapeString
 import getl.data.opts.FileWriteOpts
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.runtime.StringBufferWriter
+import org.supercsv.exception.SuperCsvCellProcessorException
 
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -468,8 +469,20 @@ class CSVDriver extends FileDriver {
 					if (limit > 0 && cur > limit) break
 					row = reader.read(header, cp)
 				}
+				catch (SuperCsvCellProcessorException e) {
+					if (processError == null)
+						throw e
+
+					def c = e.csvContext
+					def ex = new ExceptionGETL("Column ${c.columnNumber} [${header[c.columnNumber - 1]}]: ${e.message}")
+
+					if (!processError(ex, cur))
+						throw e
+
+					isError = true
+				}
 				catch (Exception e) {
-					def isContinue = (processError != null)?processError(e, cur + 1):false
+					def isContinue = (processError != null)?processError(e, cur):false
 					if (!isContinue) throw e
 					isError = true
 				}

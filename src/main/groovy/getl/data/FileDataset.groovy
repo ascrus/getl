@@ -108,6 +108,12 @@ class FileDataset extends Dataset {
 	@Override
 	@JsonIgnore
 	String getObjectFullName() { fullFileName() }
+
+	@Override
+	void setField(List<Field> value) {
+		super.setField(value)
+		resetFieldsTypeName()
+	}
 	
 	/**
 	 * Full file name with path

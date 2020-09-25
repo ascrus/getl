@@ -271,8 +271,9 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
          * Upload file to specified directory in current manager
          * @param uploadFile file to upload
          * @param uploadPath destination directory
+         * @param destFileName destination file name
          */
-        void uploadFile(File uploadFile, String uploadPath) {
+        void uploadFile(File uploadFile, String uploadPath, String destFileName = null) {
             if (!uploadFile.exists())
                 throw new ExceptionFileListProcessing("File \"$uploadFile\" not found!")
 
@@ -282,12 +283,14 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                 curPath = uploadPath
             }
 
+            if (destFileName == null) destFileName = uploadFile.name
+
             if (uploadFile.parentFile.canonicalPath != man.localDirectoryFile.canonicalPath) {
-                FileUtils.CopyToDir(uploadFile, man.localDirectoryFile.canonicalPath)
+                FileUtils.CopyToDir(uploadFile, man.localDirectoryFile.canonicalPath, destFileName)
             }
 
             Operation([man], numberAttempts, timeAttempts) { man ->
-                man.upload(uploadFile.name)
+                man.upload(destFileName)
             }
         }
 

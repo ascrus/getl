@@ -95,12 +95,13 @@ class FileProcessingElement {
     /**
      * Upload file to specified directory in error storage
      * @param uploadFile file to upload
+     * @param destFileName destination file name
      */
-    void uploadFileToStorageError(File uploadFile) {
+    void uploadFileToStorageError(File uploadFile, String destFileName = null) {
         if (errorElement == null)
             throw new ExceptionFileListProcessing('There is no specified error storage manager to write the file!')
 
-        errorElement.uploadFile(uploadFile, savedFilePath)
+        errorElement.uploadFile(uploadFile, savedFilePath, destFileName)
     }
 
     /**

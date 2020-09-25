@@ -194,7 +194,7 @@ class MonitorRulesTest extends TestRepository {
                 assertTrue(check())
 //                checkStatusTable()
                 if (emailer != null) sendToSmtp emailer
-                assertEquals(3, statusTable.countRow('is_correct'))
+                assertEquals(3, statusTable.countRow('is_correct AND first_error_time IS NULL'))
                 assertEquals(0, lastCheckStatusTable.countRow('is_notification'))
             }
         }

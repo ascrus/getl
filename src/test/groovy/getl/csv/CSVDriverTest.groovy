@@ -237,9 +237,9 @@ class CSVDriverTest extends getl.test.GetlTest {
         }
         def correct_rows = bad_csv.rows (processError: regError, isValid: true)
         assertEquals(1, correct_rows.size())
-        assertTrue((errors.get('3') as String).indexOf('duplicate value') != -1)
-        assertTrue((errors.get('4') as String).indexOf('null value encountered') != -1)
-        assertTrue((errors.get('5') as String).indexOf('invalid date') != -1)
+        assertTrue((errors.get('2') as String).indexOf('duplicate value') != -1)
+        assertTrue((errors.get('3') as String).indexOf('null value encountered') != -1)
+        assertTrue((errors.get('4') as String).indexOf('invalid date') != -1)
 
         con.autoSchema = true
         csv.drop(portions: csv.countWritePortions)
@@ -673,6 +673,34 @@ class CSVDriverTest extends getl.test.GetlTest {
             csv.field.clear()
             csv.retrieveFields()
             assertEquals(3, csv.field.size())
+        }
+    }
+
+    @Test
+    void testSaveErrors() {
+        Getl.Dsl(this) {
+            def csv = csvTemp {
+                header = true
+                fieldDelimiter = ','
+                field('id') { type = integerFieldType; isNull = false }
+                field('name') { isNull = false }
+                field('value') { type = numericFieldType }
+                constraintsCheck = true
+                readOpts { saveErrors = true }
+            }
+            textFile(csv.fullFileName()) {
+                temporaryFile = true
+                writeln 'id,name,value'
+                writeln '1,test 1,123.45'
+                writeln ',test 1,123.45'
+                writeln '1,test 1,bad'
+            }
+            def rows = csv.rows()
+            assertEquals(1, rows.size())
+            assertEquals([id:1, name: 'test 1', value: 123.45], rows[0])
+            def erows = csv.errorsDataset.rows()
+            assertEquals(2, erows.size())
+//            erows.each {println it }
         }
     }
 }

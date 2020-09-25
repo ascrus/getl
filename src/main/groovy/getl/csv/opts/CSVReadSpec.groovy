@@ -82,4 +82,9 @@ class CSVReadSpec extends BaseSpec {
     Long getLimit() { params.limit as Long }
     /** Read no more than the specified number of rows */
     void setLimit(Long value) { params.limit = value }
+
+    /** Save errors to error dataset */
+    Boolean getSaveErrors() { params.saveErrors as Boolean }
+    /** Save errors to error dataset */
+    void setSaveErrors(Boolean value) { params.saveErrors = value }
 }

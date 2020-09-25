@@ -209,8 +209,8 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			else {
 				if (val instanceof Date)
 					valStr = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', val)
-				else if (val instanceof String || val instanceof GString)
-					valStr = val.toString().replace('$', '\\$')
+				/*else if (val instanceof String || val instanceof GString)
+					valStr = val.toString().replace('$', '\\$')*/
 				else
 					valStr = val
 			}

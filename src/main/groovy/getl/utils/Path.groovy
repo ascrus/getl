@@ -188,7 +188,7 @@ class Path implements Cloneable, GetlRepository {
 
 	/** Define variable options */
 	Map variable(String name,
-				 @DelegatesTo(PathVarsSpec) @ClosureParams(value = SimpleType, options = ['getl.utils.opts.PathVarSpec'])
+				 @DelegatesTo(PathVarsSpec) @ClosureParams(value = SimpleType, options = ['getl.utils.opts.PathsVarSpec'])
 					Closure cl = null) {
 		if (name == null || name == '') throw new ExceptionGETL('Name required for variable!')
 

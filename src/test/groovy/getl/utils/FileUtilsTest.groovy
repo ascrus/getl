@@ -60,11 +60,15 @@ class FileUtilsTest extends getl.test.GetlTest {
         def f = new File(source)
         f.deleteOnExit()
         f.text = 'test'
+
         shouldFail { FileUtils.CopyToDir(source, destPath) }
         FileUtils.CopyToDir(source, destPath, true)
+        assertTrue(new File("$destPath/$fileName").exists())
 
-        assertTrue(FileUtils.DeleteFile("$destPath/$fileName"))
-        assertTrue(FileUtils.DeleteDir(destPath))
+        FileUtils.CopyToDir(f, destPath, "${fileName}.other")
+        assertTrue(new File("$destPath/${fileName}.other").exists())
+
+        assertTrue(FileUtils.DeleteFolder(destPath, true))
     }
 
     @Test

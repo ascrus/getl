@@ -605,7 +605,7 @@ END FOR;
         scripter.runSql()
 
         scripter.loadFile('resource:/sql/test_scripter.sql')
-        scripter.allVars.from = (con.currentJDBCDriver.sysDualTable != null)?"FROM ${con.currentJDBCDriver.sysDualTable}":''
+        scripter.vars.from = (con.currentJDBCDriver.sysDualTable != null)?"FROM ${con.currentJDBCDriver.sysDualTable}":''
         scripter.vars.func = currentTimestampFuncName
         scripter.runSql()
     }
