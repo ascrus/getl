@@ -589,7 +589,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 	/** Error parse read rows */
 	@JsonIgnore
-	TFSDataset getErrorsDataset() {errorsDataset }
+	TFSDataset getErrorsDataset() { errorsDataset }
 	
 	/**
 	 * Create new dataset container
@@ -873,6 +873,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Generate temporary dataset with errors
 	 */
 	protected void openErrorsDataset () {
+		if (errorsDataset != null) errorsDataset.drop(validExist: false)
 		errorsDataset = TFS.dataset()
 		errorsDataset.field << new Field(name: "row", type: "INTEGER")
 		errorsDataset.field << new Field(name: "error")
