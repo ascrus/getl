@@ -1,5 +1,6 @@
 package getl.utils
 
+import groovy.time.TimeCategory
 import org.junit.Test
 
 import java.text.SimpleDateFormat
@@ -192,5 +193,14 @@ class DateUtilsTest extends getl.test.GetlTest {
     @Test
     void testFirstDateOfMonth() {
         assertEquals(DateUtils.ParseDate('2019-02-01'), DateUtils.FirstDateOfMonth(DateUtils.ParseDate('2019-02-15')))
+    }
+
+    @Test
+    void testToDuration() {
+        use(TimeCategory) {
+            def dur = 1.days + 2.hours + 3.minutes + 4.seconds + 5.milliseconds
+            assertEquals(dur, DateUtils.ToDuration('1,2,3,4,5'))
+            assertEquals(dur, DateUtils.ToDuration([1,2,3,4,5]))
+        }
     }
 }

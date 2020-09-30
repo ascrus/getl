@@ -9,7 +9,7 @@ import getl.models.sub.FilesModel
 class FileSpec extends BaseSpec {
     FileSpec(FilesModel model, String fileName) {
         super(model)
-        params.filePath = fileName
+        setFilePath(fileName)
     }
 
     FileSpec(FilesModel model, Map importParams) {
@@ -21,6 +21,8 @@ class FileSpec extends BaseSpec {
 
     /** Path to file */
     String getFilePath() { params.filePath as String }
+    /** Path to file */
+    void setFilePath(String value) { params.filePath = value }
 
     @Override
     String toString() {

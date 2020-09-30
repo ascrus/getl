@@ -92,11 +92,11 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** The name of the connection in the repository */
-	String getConnectionName() { connection.dslNameObject }
+	String getConnectionName() { connection?.dslNameObject }
 	/** The name of the connection in the repository */
 	void setConnectionName(String value) {
-		GetlValidate.IsRegister(this)
 		if (value != null) {
+			GetlValidate.IsRegister(this)
 			def con = dslCreator.jdbcConnection(value)
 			useConnection(con)
 		}

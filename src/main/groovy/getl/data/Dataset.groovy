@@ -144,11 +144,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** The name of the connection in the repository */
-	String getConnectionName() { connection.dslNameObject }
+	String getConnectionName() { connection?.dslNameObject }
 	/** The name of the connection in the repository */
 	void setConnectionName(String value) {
-		GetlValidate.IsRegister(this)
 		if (value != null) {
+			GetlValidate.IsRegister(this)
 			def con = dslCreator.connection(value)
 			setConnection(con)
 		}
@@ -221,18 +221,31 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	void setField(List<Field> value) {
 		workSetField = true
 		try {
-			assignFields(value)
+			saveFields(value)
 		}
 		finally {
 			workSetField = false
 		}
 		manualSchema = true
 	}
+
+	/**
+	 * Assign fields from a list of map elements
+	 * @param list field description list
+	 */
+	void assignField(List<Map> list) {
+		def res = [] as List<Field>
+		list.each {m ->
+			res << Field.ParseMap(m)
+		}
+		setField(res)
+	}
 	
 	/**
-	 * Assigned fields from source list
+	 * Set fields from source list
+	 * @param value field description list
 	 */
-	protected void assignFields (List<Field> value) {
+	protected void saveFields(List<Field> value) {
 		this.field.clear()
 		value.each { Field f ->
 			Field n = f.copy()
@@ -243,6 +256,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	
 	/**
 	 * Add list of fields
+	 * @param fields field description list
 	 */
 	void addFields (List<Field> fields) {
 		def l = getField()
@@ -507,7 +521,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		}
 		
 		prepareFields(r)
-		assignFields(r)
+		saveFields(r)
 	}
 	
 	/**
@@ -802,6 +816,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/***
 	 * Return key fields as string list
 	 */
+	@JsonIgnore
 	List<String> getFieldKeys (List<String> excludeFields = null) {
 		def fk = fieldListKeys
 		excludeFields = (excludeFields != null)?excludeFields*.toLowerCase():[]
@@ -1372,6 +1387,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Determine that the schema file is stored in resources */
+	@JsonIgnore
 	Boolean isResourceFileNameSchema() {
 		return connection.driver.isResourceFileNameSchema(this)
 	}

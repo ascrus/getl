@@ -52,208 +52,134 @@ class Field implements Serializable, Cloneable {
 	static public final Field.Type objectFieldType = Field.Type.OBJECT
 
 	private String name = null
-	/**
-	 * Field name
-	 */
+	/** Field name */
 	String getName() { return this.name }
-	/**
-	 * Field name
-	 */
+	/** Field name */
 	void setName(String value) { this.name = value }
 	
 	private Type type = Type.STRING
-	/**
-	 * Data type
-	 */
+	/** Data type */
 	Type getType() { return this.type }
-	/**
-	 * Data type
-	 */
+	/** Data type */
 	void setType(Type value) { this.type = value }
 	
-	/**
-	 * Database field type
-	 */
+	/** Database type number */
 	@JsonIgnore
 	public Object dbType
 	
-	/**
-	 * Database field name
-	 */
+	/** Database type name */
 	@JsonIgnore
 	public String typeName
 	
 	private Boolean isNull = true
-	/**
-	 * Value can not be null
-	 */
+	/** Value can not be null */
 	Boolean getIsNull() { return this.isNull }
-	/**
-	 * Value can not be null
-	 */
+	/** Value can not be null */
 	void setIsNull(Boolean value) { this.isNull = value }
 	
 	private Integer length
-	/**
-	 * Length of value
-	 */
+	/** Length of value */
 	Integer getLength() { return this.length }
-	/**
-	 * Length of value
-	 */
+	/** Length of value */
 	void setLength(Integer value) { this.length = value }
 	
 	private Integer precision
-	/**
-	 * Precision number of numeric value
-	 */
+	/** Precision number of numeric value */
 	Integer getPrecision() { return this.precision }
-	/**
-	 * Precision number of numeric value
-	 */
+	/** Precision number of numeric value */
 	void setPrecision(Integer value) { this.precision = value }
 	
 	private Boolean isKey = false
-	/**
-	 * Field is primary key
-	 */
+	/** Field is primary key */
 	Boolean getIsKey() { return this.isKey }
-	/**
-	 * Field is primary key
-	 */
+	/** Field is primary key */
 	void setIsKey(Boolean value) {
 		this.isKey = value
 		if (this.isKey) this.isNull = false else this.ordKey = null
 	}
 	
 	private Integer ordKey
-	/**
-	 * Number order from primary key
-	 */
+	/** Number order from primary key */
 	Integer getOrdKey() { return this.ordKey }
-	/**
-	 * Number order from primary key
-	 */
+	/** Number order from primary key */
 	void setOrdKey(Integer value) { ordKey = value }
 
 	private Boolean isPartition = false
-	/**
-	 * Use field in partition key
-	 */
+	/** Use field in partition key */
 	Boolean getIsPartition() { return this.isPartition}
-	/**
-	 * Use field in partition key
-	 */
+	/** Use field in partition key */
 	void setIsPartition(Boolean value) { this.isPartition = value }
 
 	private Integer ordPartition
-	/**
-	 * Number order if field use in partition key
-	 */
+	/** Number order if field use in partition key */
 	Integer getOrdPartition() { return this.ordPartition }
-	/**
-	 * Number order if field use in partition key
-	 */
+	/** Number order if field use in partition key */
 	void setOrdPartition(Integer value) { this.ordPartition = value }
 	
 	private Boolean isAutoincrement = false
-	/**
-	 * Field is auto increment
-	 */
+	/** Field is auto increment */
 	Boolean getIsAutoincrement() { return this.isAutoincrement }
-	/**
-	 * Field is auto increment
-	 */
+	/** Field is auto increment */
 	void setIsAutoincrement(Boolean value) { this.isAutoincrement = value }
 	
 	private Boolean isReadOnly = false
-	/**
-	 * Field can not write
-	 */
+	/** Field can not write */
 	Boolean getIsReadOnly() { return this.isReadOnly }
-	/**
-	 * Field can not write
-	 */
+	/** Field can not write */
 	void setIsReadOnly(Boolean value) { this.isReadOnly = value }
 	
 	private String defaultValue = null
-	/**
-	 * Default value from field (used only creating dataset)
-	 */
+	/** Default value from field (used only creating dataset) */
+	@JsonIgnore
 	String getDefaultValue() { return this.defaultValue }
-	/**
-	 * Default value from field (used only creating dataset)
-	 */
+	/** Default value from field (used only creating dataset) */
 	void setDefaultValue(String value) { this.defaultValue = value }
 	
 	private String compute
-	/**
-	 * Compute columns
-	 */
+	/** Compute columns */
+	@JsonIgnore
 	String getCompute() { return this.compute }
-	/**
-	 * Compute columns
-	 */
+	/** Compute columns */
 	void setCompute(String value) { this.compute = value }
 	
 	private def minValue = null
-	/**
-	 * Minimum value (for validation and generation)
-	 */
-	def getMinValue() { return this.minValue }
-	/**
-	 * Minimum value (for validation and generation)
-	 */
-	void setMinValue(def value) { this.minValue = value }
+	/** Minimum value (for validation and generation) */
+	@JsonIgnore
+	Object getMinValue() { return this.minValue }
+	/** Minimum value (for validation and generation) */
+	void setMinValue(Object value) { this.minValue = value }
 	
 	private def maxValue = null
-	/**
-	 * Minimum value (for validation and generation)
-	 */
+	/** Maximum value (for validation and generation) */
+	@JsonIgnore
 	def getMaxValue() { return this.maxValue }
-	/**
-	 * Minimum value (for validation and generation)
-	 */
+	/** Maximum value (for validation and generation) */
 	void setMaxValue(def value) { this.maxValue = value }
 	
 	private String format
-	/**
-	 * Format pattern on numeric and datetime fields
-	 */
+	/** Format pattern on numeric and datetime fields */
 	String getFormat () { return this.format }
-	/**
-	 * Format pattern on numeric and datetime fields
-	 */
+	/** Format pattern on numeric and datetime fields */
 	void setFormat(String value) { this.format = value }
 	
 	private String alias
-	/**
-	 * Name of the field in the data source (if different from Field name)
-	 */
+	/** Name of the field in the data source (if different from Field name) */
 	String getAlias() { return this.alias }
-	/**
-	 * Name of the field in the data source (if different from Field name)
-	 */
+	/** Name of the field in the data source (if different from Field name) */
 	void setAlias(String value) { this.alias = value }
 	
 	private Boolean trim = false
-	/**
-	 * Trim space (used for reading datasource)
-	 */
+	/** Trim space (used for reading datasource) */
+	@JsonIgnore
 	Boolean getTrim() { return this.trim }
-	/**
-	 * Trim space (used for reading datasource)
-	 */
+	/** Trim space (used for reading datasource) */
 	void setTrim(Boolean value) { this.trim = value }
 	
 	private String decimalSeparator
-	/**
-	 * Decimal separator
-	 */
+	/** Decimal separator */
+	@JsonIgnore
 	String getDecimalSeparator() { return this.decimalSeparator }
-	/**
-	 * Decimal separator
-	 */
+	/** Decimal separator */
 	void setDecimalSeparator (String value) { this.decimalSeparator = value }
 	
 	private String description
@@ -263,48 +189,35 @@ class Field implements Serializable, Cloneable {
 	void setDescription(String value) { this.description = value }
 	
 	private final Map<String, Object> extended = [:] as Map<String, Object>
-	/**
-	 * Extended attributes
-	 */
+	/** Extended attributes */
+	@JsonIgnore
 	Map<String, Object> getExtended() { return this.extended }
-	/**
-	 * Extended attributes
-	 */
+	/** Extended attributes */
 	void setExtended (Map<String, Object> value) {
 		this.extended.clear()
 		if (value != null) this.extended.putAll(value)
 	}
 	
-	/**
-	 * Get value method
-	 */
+	/** Get value method */
 	@JsonIgnore
 	public String getMethod
 
-	/**
-	 * Allow length for field
-	 */
+	/** Allow length for field */
 	static Boolean AllowLength(Field f) {
 		return (f.type in [Field.Type.STRING, Field.Type.NUMERIC, Field.Type.BLOB, Field.Type.TEXT, Field.Type.ROWID])
 	}
 	
-	/**
-	 * Allow precision for field
-	 */
+	/** Allow precision for field */
 	static Boolean AllowPrecision(Field f) {
 		return (f.type in [Field.Type.NUMERIC])
 	}
 	
-	/**
-	 * Allow create field in table
-	 */
+	/** Allow create field in table */
 	static Boolean AllowCreatable(Field f) {
 		return !(f.type in [Field.Type.ROWID])
 	}
 	
-	/**
-	 * Build map from field
-	 */
+	/** Build map from field */
 	Map toMap() {
 		def n = [:]
 		n.name = name
@@ -334,34 +247,39 @@ class Field implements Serializable, Cloneable {
 	
 	/**
 	 * Parse map to field
-	 * @param strField
+	 * @param mf
 	 * @return
 	 */
-	static Field ParseMap(Map strField) {
-		if (strField == null) throw new ExceptionGETL("Can not parse null Map to fields")
-		String name = strField.name
-		if (strField.name == null) throw new ExceptionGETL("Required field name: ${strField}")
-		Field.Type type = (strField.type as Field.Type)?:Field.Type.STRING
-		String typeName = strField.typeName
-		Boolean isNull = BoolUtils.IsValue(strField.isNull,true)
-		def length = strField.length as Integer
-		def precision = strField.precision as Integer
-		def isKey = BoolUtils.IsValue(strField.isKey, false)
-		def ordKey = strField.ordKey as Integer
-		def isPartition = BoolUtils.IsValue(strField.isPartition, false)
-		def ordPartition = strField.ordPartition as Integer
-		def isAutoincrement = BoolUtils.IsValue(strField.isAutoincrement, false)
-		def isReadOnly = BoolUtils.IsValue(strField.isReadOnly, false)
-		def defaultValue = strField.defaultValue as String
-		def compute = strField.compute as String
-		def minValue = strField.minValue
-		def maxValue = strField.maxValue
-		def format = strField.format as String
-		def alias = strField.alias as String
-		def trim = BoolUtils.IsValue(strField.trim,false)
-		def decimalSeparator = strField.decimalSeparator as String
-		def description = strField.description as String
-		def extended = strField.extended as Map<String, Object>
+	static Field ParseMap(Map mf) {
+		if (mf == null)
+			throw new ExceptionGETL("Can not parse null Map to fields")
+
+		def name = mf.name as String
+		if (name == null || (name as String).length() == 0)
+			throw new ExceptionGETL("Required field name: ${mf}")
+
+		def typeStr = StringUtils.NullIsEmpty(mf.type as String)
+		def type = (typeStr != null)?Field.Type.valueOf(typeStr):Field.Type.STRING
+		def typeName = StringUtils.NullIsEmpty(mf.typeName as String)
+		def isNull = BoolUtils.IsValue(mf.isNull,true)
+		def length = NumericUtils.Obj2Integer(mf.length)
+		def precision = NumericUtils.Obj2Integer(mf.precision)
+		def isKey = BoolUtils.IsValue(mf.isKey, false)
+		def ordKey = NumericUtils.Obj2Integer(mf.ordKey)
+		def isPartition = BoolUtils.IsValue(mf.isPartition, false)
+		def ordPartition = NumericUtils.Obj2Integer(mf.ordPartition)
+		def isAutoincrement = BoolUtils.IsValue(mf.isAutoincrement, false)
+		def isReadOnly = BoolUtils.IsValue(mf.isReadOnly, false)
+		def defaultValue = StringUtils.NullIsEmpty(mf.defaultValue as String)
+		def compute = StringUtils.NullIsEmpty(mf.compute as String)
+		def minValue = (mf.minValue instanceof String && (mf.minValue as String).length() == 0)?null:mf.minValue
+		def maxValue = (mf.maxValue instanceof String && (mf.maxValue as String).length() == 0)?null:mf.maxValue
+		def format = StringUtils.NullIsEmpty(mf.format as String)
+		def alias = StringUtils.NullIsEmpty(mf.alias as String)
+		def trim = BoolUtils.IsValue(mf.trim,false)
+		def decimalSeparator = StringUtils.NullIsEmpty(mf.decimalSeparator as String)
+		def description = StringUtils.NullIsEmpty(mf.description as String)
+		def extended = mf.extended as Map<String, Object>
 		
 		return new Field(
 					name: name, type: type, typeName: typeName, isNull: isNull, length: length, precision: precision,

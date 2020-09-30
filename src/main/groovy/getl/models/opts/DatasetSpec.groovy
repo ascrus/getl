@@ -1,5 +1,6 @@
 package getl.models.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
 import getl.data.FileDataset
 import getl.exception.ExceptionDSL
@@ -41,6 +42,7 @@ class DatasetSpec extends BaseSpec {
     protected void setDatasetName(String value) { params.datasetName = value }
 
     /** Model dataset */
+    @JsonIgnore
     Dataset getModelDataset() { ownerModel.dslCreator.dataset(datasetName) }
 
     /** Mapping attributes */

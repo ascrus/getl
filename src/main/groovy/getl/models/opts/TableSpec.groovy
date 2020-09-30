@@ -1,5 +1,6 @@
 package getl.models.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.jdbc.TableDataset
 import getl.models.SetOfTables
 import groovy.transform.InheritConstructors
@@ -13,8 +14,11 @@ class TableSpec extends DatasetSpec {
     /** Owner list tables model */
     protected SetOfTables getOwnerSetOfTables() { ownerModel as SetOfTables }
 
-    /** Repository table name */
+    /** Table name */
     String getSourceTableName() { datasetName }
-    /** Repository table */
+    /** Table name */
+    void setSourceTableName(String value) { datasetName = value }
+    /** Table */
+    @JsonIgnore
     TableDataset getSourceTable() { ownerModel.dslCreator.jdbcTable(datasetName) }
 }

@@ -1,5 +1,6 @@
 package getl.models.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.models.ReferenceVerticaTables
@@ -21,13 +22,18 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
 
     /** Work table name */
     String getWorkTableName() { datasetName }
+    /** Work table name */
+    void setWorkTableName(String value) { datasetName = value }
     /** Work table  */
+    @JsonIgnore
     VerticaTable getWorkTable() { modelDataset as VerticaTable }
 
     /** Reference table name */
+    @JsonIgnore
     String getReferenceTableName() { "m_${workTable.schemaName}_${workTable.tableName}" }
 
     /** Reference table */
+    @JsonIgnore
     VerticaTable getReferenceTable() {
         def destTable = new VerticaTable()
         destTable.with {

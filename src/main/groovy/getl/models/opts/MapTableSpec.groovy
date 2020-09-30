@@ -1,11 +1,10 @@
 package getl.models.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
-import getl.data.Field
 import getl.exception.ExceptionModel
 import getl.models.MapTables
 import groovy.transform.InheritConstructors
-
 import java.util.concurrent.ConcurrentHashMap
 
 @InheritConstructors
@@ -20,15 +19,18 @@ class MapTableSpec extends DatasetSpec {
     /** Owner processing model */
     protected MapTables getOwnerMapModel() { ownerModel as MapTables }
 
-    /** Repository source dataset name */
+    /** Source dataset name */
     String getSourceName() { datasetName }
+    /** Source dataset name */
+    void setSourceName(String value) { datasetName = value }
     /** Source dataset */
+    @JsonIgnore
     Dataset getSource() { ownerModel.dslCreator.dataset(datasetName) }
 
-    /** Repository destination dataset name */
+    /** Destination dataset name */
     String getDestinationName() { params.destinationName as String }
-    /** Repository destination dataset name */
-    protected void setDestinationName(String value) { params.destinationName = value }
+    /** Destination dataset name */
+    void setDestinationName(String value) { linkTo(value) }
     /** Set destination table name */
     void linkTo(String destinationName) {
         if (destinationName == null)
@@ -56,6 +58,7 @@ class MapTableSpec extends DatasetSpec {
         params.destinationName = name
     }
     /** Destination dataset */
+    @JsonIgnore
     Dataset getDestination() { ownerModel.dslCreator.dataset(destinationName) }
 
     /** List of key values for partitions being processed */
@@ -70,8 +73,9 @@ class MapTableSpec extends DatasetSpec {
     /** Get a list of partitions from the specified dataset */
     String getPartitionsDatasetName() { params.partitionsDatasetName as String }
     /** Get a list of partitions from the specified dataset */
-    protected void setPartitionsDatasetName(String value) { params.partitionsDatasetName = value }
+    void setPartitionsDatasetName(String value) { params.partitionsDatasetName = value }
     /** Get a list of partitions from the specified dataset */
+    @JsonIgnore
     Dataset getPartitionsDataset() {
         return (partitionsDatasetName != null)?ownerModel.dslCreator.dataset(partitionsDatasetName):null
     }

@@ -20,7 +20,7 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
     }
 
     /** Owner model */
-    BaseModel getOwnerModel() { ownerObject as BaseModel }
+    protected BaseModel getOwnerModel() { ownerObject as BaseModel }
 
     /** Model object variables */
     Map<String, Object> getObjectVars() { params.objectVars as Map<String, Object> }

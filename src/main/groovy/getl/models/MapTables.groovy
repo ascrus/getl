@@ -32,9 +32,24 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     /** Use specified connection for source datasets */
     void useSourceConnection(Connection connection) { useModelConnection(connection) }
 
-
     /** Used mapping datasets */
     List<MapTableSpec> getUsedMapping() { usedObjects as List<MapTableSpec> }
+    /** Used mapping datasets */
+    void setUsedMapping(List<MapTableSpec> value) { usedObjects = value }
+    /** Assign mapping datasets from list of map */
+    void assignUsedMapping(List<Map> list) {
+        usedMapping.clear()
+        list?.each {val ->
+            mapTable(val.sourceName as String) {
+                destinationName = val.destinationName as String
+                if (val.attrs != null) attrs.putAll(val.attrs as Map)
+                if (val.objectVars != null) objectVars.putAll(val.objectVars as Map)
+                if (val.map != null) map = val.map as Map<String, String>
+                if (val.listPartitions != null) listPartitions = val.listPartitions as List
+                if (val.partitionsDatasetName != null) partitionsDatasetName = val.partitionsDatasetName as String
+            }
+        }
+    }
 
     /** Repository connection name for destination datasets */
     String getDestinationConnectionName() { params.destinationConnectionName as String }

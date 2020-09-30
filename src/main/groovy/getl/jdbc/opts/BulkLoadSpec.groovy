@@ -178,13 +178,15 @@ class BulkLoadSpec extends BaseSpec {
     Object getFiles() { params.files }
     /** list of names or search masks for uploaded CSV files */
     void setFiles(Object value) {
-        if (!(value instanceof String || value instanceof GString || value instanceof List || value instanceof Path))
-            throw new ExceptionGETL("Option “files” does not support value class type “${value.getClass().name}”!")
+        if (value != null) {
+            if (!(value instanceof String || value instanceof GString || value instanceof List || value instanceof Path))
+                throw new ExceptionGETL("Option “files” does not support value class type “${value.getClass().name}”!")
 
-        if (value instanceof List) {
-            value.each {
-                if (!(it instanceof String || it instanceof GString))
-                    throw new ExceptionGETL("Option “files” does not support value class type “${value.getClass().name}” for list!")
+            if (value instanceof List) {
+                value.each {
+                    if (!(it instanceof String || it instanceof GString))
+                        throw new ExceptionGETL("Option “files” does not support value class type “${value.getClass().name}” for list!")
+                }
             }
         }
 

@@ -1,5 +1,6 @@
 package getl.models.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.models.MonitorRules
@@ -20,13 +21,15 @@ class MonitorRuleSpec extends BaseSpec { /*TODO: added ignore property */
     }
 
     /** Owner monitor */
-    MonitorRules getOwnerMonitorModel() { ownerModel as MonitorRules }
+    protected MonitorRules getOwnerMonitorModel() { ownerModel as MonitorRules }
 
-    /** Repository query name*/
+    /** Query name */
     String getQueryName() { params.queryName as String }
-    /** Repository query name*/
-    protected void setQueryName(String value) { params.queryName = value }
+    /** Query name */
+    void setQueryName(String value) { params.queryName = value }
 
+    /** Query */
+    @JsonIgnore
     QueryDataset getQuery() {
         return ownerModel.dslCreator.query(queryName)
     }

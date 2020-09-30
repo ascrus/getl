@@ -1,5 +1,6 @@
 package getl.utils
 
+import getl.exception.ExceptionGETL
 import groovy.transform.CompileStatic
 
 import java.security.MessageDigest
@@ -129,13 +130,141 @@ class NumericUtils {
 		return true
 	}
 
+	/**
+	 * Convert other value to integer value
+	 * @param value original value
+	 * @return
+	 */
+	static Integer Obj2Integer(Object value) {
+		if (value == null) return null
+		Integer res = null
+		switch (value.getClass()) {
+			case String:
+				if ((value as String).length() > 0)
+					res = Integer.valueOf(value as String)
+				break
+			case Integer:
+				res = value as Integer
+				break
+			case Long:
+				res = (value as Long).intValue()
+				break
+			case BigDecimal:
+				res = (value as BigDecimal).intValue()
+				break
+			case BigInteger:
+				res = (value as BigInteger).toInteger()
+				break
+			default:
+				throw new ExceptionGETL("Conversion from value with type ${value.class.name} to Integer object is not available!")
+		}
+
+		return res
+	}
+
+	/**
+	 * Convert other value to long value
+	 * @param value original value
+	 * @return
+	 */
+	static Integer Obj2Long(Object value) {
+		if (value == null) return null
+		Long res = null
+		switch (value.getClass()) {
+			case String:
+				if ((value as String).length() > 0)
+					res = Long.valueOf(value as String)
+				break
+			case Integer:
+				res = (value as Integer).toLong()
+				break
+			case Long:
+				res = value as Long
+				break
+			case BigDecimal:
+				res = (value as BigDecimal).longValue()
+				break
+			case BigInteger:
+				res = (value as BigInteger).toLong()
+				break
+			default:
+				throw new ExceptionGETL("Conversion from value with type ${value.class.name} to Long object is not available!")
+		}
+
+		return res
+	}
+
+	/**
+	 * Convert other value to big decimal value
+	 * @param value original value
+	 * @return
+	 */
+	static BigDecimal Obj2BigDecimal(Object value) {
+		if (value == null) return null
+		BigDecimal res = null
+		switch (value.getClass()) {
+			case String:
+				if ((value as String).length() > 0)
+					res = new BigDecimal(value as String)
+				break
+			case BigDecimal:
+				res = value as BigDecimal
+				break
+			case BigInteger:
+				res = (value as BigInteger).toBigDecimal()
+				break
+			case Integer:
+				res = new BigDecimal(value as Integer)
+				break
+			case Long:
+				res = new BigDecimal(value as Long)
+				break
+			default:
+				throw new ExceptionGETL("Conversion from value with type ${value.class.name} to BigDecimal object is not available!")
+		}
+
+		return res
+	}
+
+	/**
+	 * Convert other value to big integer value
+	 * @param value original value
+	 * @return
+	 */
+	static BigInteger Obj2BigInteger(Object value) {
+		if (value == null) return null
+		BigInteger res = null
+		switch (value.getClass()) {
+			case String:
+				if ((value as String).length() > 0)
+					res = new BigInteger(value as String)
+				break
+			case BigInteger:
+				res = value as BigInteger
+				break
+			case BigDecimal:
+				res = (value as BigDecimal).toBigInteger()
+				break
+			case Integer:
+				res = BigInteger.valueOf((value as Integer).longValue())
+				break
+			case Long:
+				res = BigInteger.valueOf(value as Long)
+				break
+			default:
+				throw new ExceptionGETL("Conversion from value with type ${value.class.name} to BigDecimal object is not available!")
+		}
+
+		return res
+	}
+
     /**
      * Convert string to integer
-     * @param value
-     * @param defaultValue
+     * @param value text value
+     * @param defaultValue default value
      * @return
      */
-    static Integer String2Integer(String value, Integer defaultValue) {
+    static Integer String2Integer(String value, Integer defaultValue = null) {
         Integer res
         try {
             res = Integer.parseInt(value)
@@ -146,15 +275,47 @@ class NumericUtils {
     }
 
 	/**
-	 * Convert string to numeric
-	 * @param value
-	 * @param defaultValue
+	 * Convert string to long
+	 * @param value text value
+	 * @param defaultValue default value
 	 * @return
 	 */
-	static BigDecimal String2Numeric(String value, BigDecimal defaultValue) {
+	static Long String2Long(String value, Long defaultValue = null) {
+		Long res
+		try {
+			res = Long.parseLong(value)
+		} catch (NumberFormatException ignored) {
+			res = defaultValue
+		}
+		return res
+	}
+
+	/**
+	 * Convert string to numeric
+	 * @param value text value
+	 * @param defaultValue default value
+	 * @return
+	 */
+	static BigDecimal String2Numeric(String value, BigDecimal defaultValue = null) {
 		BigDecimal res
 		try {
 			res = new BigDecimal(value)
+		} catch (NumberFormatException ignored) {
+			res = defaultValue
+		}
+		return res
+	}
+
+	/**
+	 * Convert string to big integer
+	 * @param value text value
+	 * @param defaultValue default value
+	 * @return
+	 */
+	static BigDecimal String2BigInteger(String value, BigInteger defaultValue = null) {
+		BigInteger res
+		try {
+			res = new BigInteger(value)
 		} catch (NumberFormatException ignored) {
 			res = defaultValue
 		}

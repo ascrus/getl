@@ -703,4 +703,13 @@ class StringUtils {
 		cipher.init(Cipher.DECRYPT_MODE, aesKey)
 		return new String(cipher.doFinal(HexToRaw(text)))
 	}
+
+	/**
+	 * Return null if the string is empty
+	 * @param value text value
+	 * @return null or text value
+	 */
+	static String NullIsEmpty(String value) {
+		return (value != null && value.length() == 0)?null:value
+	}
 }

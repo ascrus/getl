@@ -70,7 +70,7 @@ class WriteSpec extends BaseSpec {
     Long getBatchSize() { params.batchSize as Long }
     /** Batch size packet */
     void setBatchSize(Long value) {
-        if (value <= 0) throw new ExceptionGETL('Batch size must have value greater zero!')
+        if (value != null && value <= 0) throw new ExceptionGETL('Batch size must have value greater zero!')
         params.batchSize = value
     }
 

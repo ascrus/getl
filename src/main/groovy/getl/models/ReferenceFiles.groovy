@@ -19,8 +19,24 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
-    /** List of used files */
+    /** List of reference files */
     List<ReferenceFileSpec> getUsedFiles() { usedObjects as List<ReferenceFileSpec> }
+    /** List of reference files */
+    void setUsedFiles(List<ReferenceFileSpec> value) {
+        usedFiles.clear()
+        if (value != null)
+            usedFiles.addAll(value)
+    }
+    /** Assign files from list of map */
+    void assignUsedFiles(List<Map> list) {
+        usedFiles.clear()
+        list?.each { val ->
+            referenceFromFile(val.filePath as String) {
+                if (val.objectVars != null) objectVars = val.objectVars as Map
+                if (val.destinationPath != null) destinationPath = val.destinationPath
+            }
+        }
+    }
 
     /** Destination file manager name */
     String getDestinationManagerName() { params.destinationManagerName as String }

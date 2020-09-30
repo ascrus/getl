@@ -1,6 +1,7 @@
 package getl.utils
 
 import getl.exception.ExceptionGETL
+import groovy.time.Duration
 import groovy.transform.CompileStatic
 
 import java.math.RoundingMode
@@ -698,5 +699,29 @@ class DateUtils {
 		cal.set(Calendar.DAY_OF_MONTH, 1)
 
 		return cal.time
+	}
+
+	/**
+	 * Convert object to duration
+	 * @param obj comma separated text or list with days, hours, minutes, seconds and milliseconds
+	 * @return duration object
+	 */
+	static Duration ToDuration(Object obj) {
+		if (obj == null) return null
+		Duration res
+		if (obj instanceof List) {
+			def list = obj as List<Integer>
+			res = new Duration(list[0], list[1], list[2], list[3], list[4])
+		}
+		else if (obj instanceof String || obj instanceof GString) {
+			def list = obj.toString().split(',')
+			for (int i = 0; i < list.length; i++) { if (list[i] == '') list[i] = '0' }
+			res = new Duration(list[0].toInteger(), list[1].toInteger(), list[2].toInteger(), list[3].toInteger(), list[4].toInteger())
+		}
+		else {
+			throw new ExceptionGETL("Unsupported class ${obj.class.name} for converting to duration object!")
+		}
+
+		return res
 	}
 }

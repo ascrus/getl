@@ -10,6 +10,7 @@ import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.NumericUtils
+import getl.utils.NumericUtilsTest
 import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import org.junit.BeforeClass

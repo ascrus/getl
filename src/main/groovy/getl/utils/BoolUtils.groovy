@@ -31,17 +31,17 @@ class BoolUtils {
                     else //noinspection DuplicatedCode
 					{
                         def s = v.toString().toLowerCase()
-                        if (s in ['true', '1', 'on']) {
-                            result = true
-                        }
-                        else {
-                            if (s in ['false', '0', 'off']) {
-                                result = false
-                            }
-                            else {
-                                throw new ExceptionGETL("Invalid boolean value \"$s\"")
-                            }
-                        }
+						if (s.length() != 0) {
+							if (s in ['true', '1', 'on']) {
+								result = true
+							} else {
+								if (s in ['false', '0', 'off']) {
+									result = false
+								} else {
+									throw new ExceptionGETL("Invalid boolean value \"$s\"")
+								}
+							}
+						}
                     }
 				} 
 			}
@@ -49,6 +49,7 @@ class BoolUtils {
 		}
 
         def v = value.toString().toLowerCase()
+		if (v.length() ==0) return defaultValue
 		if (v in ['true', '1', 'on']) {
             result = true
         }

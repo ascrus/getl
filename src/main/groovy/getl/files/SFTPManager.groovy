@@ -163,7 +163,7 @@ class SFTPManager extends Manager implements UserLogins {
 
 		Session res = client.getSession(login, server, port)
 		try {
-			res.setConfig('PreferredAuthentications', 'publickey,password,keyboard-interactive');
+			res.setConfig('PreferredAuthentications', 'publickey,password,keyboard-interactive')
 
 			if (password != null && identityFile == null) {
 				res.setPassword(password)

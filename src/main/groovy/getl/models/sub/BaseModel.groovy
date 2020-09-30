@@ -72,6 +72,12 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
 
     /** Model objects */
     protected List<T> getUsedObjects() { params.usedObjects as List<T> }
+    /** Model objects */
+    protected void setUsedObjects(List<T> value) {
+        usedObjects.clear()
+        if (value != null)
+            usedObjects.addAll(value)
+    }
 
     /** Model variables */
     Map<String, Object> getModelVars() { params.modelVars as Map<String, Object> }

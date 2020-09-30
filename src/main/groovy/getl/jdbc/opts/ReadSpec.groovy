@@ -57,7 +57,7 @@ class ReadSpec extends BaseSpec {
     /** Row order */
     void setOrder(List<String> value) {
         order.clear()
-        if (order != null) order.addAll(value)
+        if (value != null) order.addAll(value)
     }
 
     /** Read table as update locking */

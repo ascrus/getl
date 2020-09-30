@@ -16,6 +16,7 @@ import getl.utils.DateUtils
 import getl.utils.EMailer
 import getl.utils.Logs
 import getl.utils.StringUtils
+import groovy.time.Duration
 import groovy.time.TimeCategory
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
@@ -52,6 +53,25 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
     /** List of used rules */
     List<MonitorRuleSpec> getUsedRules() { usedObjects as List<MonitorRuleSpec> }
+    /** List of used rules */
+    void setUsedRules(List<MonitorRuleSpec> value) {
+        usedObjects.clear()
+        if (value != null)
+            usedObjects.addAll(value)
+    }
+    /** Assign rules from list of map */
+    void assignUsedRules(List<Map> list) {
+        usedRules.clear()
+        list?.each { val ->
+            rule(val.queryName as String) {
+                if (val.objectVars != null) objectVars.putAll(val.objectVars as Map)
+                if (val.description != null) description = val.description as String
+                if (val.checkFrequency != null) checkFrequency = DateUtils.ToDuration(val.checkFrequency)
+                if (val.lagTime != null) lagTime = DateUtils.ToDuration(val.lagTime)
+                if (val.notificationTime != null) notificationTime = DateUtils.ToDuration(val.notificationTime)
+            }
+        }
+    }
 
     /** Monitoring status storage table name */
     String getStatusTableName() { params.statusTableName as String }

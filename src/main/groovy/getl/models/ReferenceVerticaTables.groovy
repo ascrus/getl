@@ -6,6 +6,7 @@ import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.models.opts.ReferenceVerticaTableSpec
 import getl.models.sub.DatasetsModel
+import getl.utils.BoolUtils
 import getl.utils.Logs
 import getl.vertica.VerticaConnection
 import getl.vertica.VerticaTable
@@ -35,6 +36,26 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
 
     /** List of used tables */
     List<ReferenceVerticaTableSpec> getUsedTables() { usedDatasets as List<ReferenceVerticaTableSpec> }
+    /** List of used tables */
+    void setUsedTables(List<ReferenceVerticaTableSpec> value) {
+        usedTables.clear()
+        if (value != null)
+            usedTables.addAll(value)
+    }
+    /** Assign tables from list of map */
+    void assignUsedTables(List<Map> list) {
+        usedTables.clear()
+        list?.each { val ->
+            referenceFromTable(val.workTableName as String) {
+                if (val.attrs != null) attrs.putAll(val.attrs as Map)
+                if (val.objectVars != null) objectVars.putAll(val.objectVars as Map)
+                if (val.allowCopy != null) allowCopy = BoolUtils.IsValue(val.allowCopy)
+                if (val.limitCopy != null) limitCopy = val.limitCopy as Long
+                if (val.sampleCopy != null) sampleCopy = val.sampleCopy as Integer
+                if (val.whereCopy != null) whereCopy = val.whereCopy as String
+            }
+        }
+    }
 
     /** Reference storage schema */
     String getReferenceSchemaName() { params.referenceSchemaName as String }
