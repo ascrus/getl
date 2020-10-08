@@ -5,7 +5,6 @@ import getl.lang.opts.BaseSpec
 import getl.proc.Job
 import getl.utils.*
 import groovy.time.Duration
-import groovy.time.TimeCategory
 
 /**
  * Slurper configuration manager class
@@ -303,7 +302,7 @@ class ConfigSlurper extends ConfigManager {
 	 * @param codePage text encoding
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 */
-	static void SaveConfigFile (Map data, File file, String codePage = 'UTF-8', Boolean convertVars = false) {
+	static void SaveConfigFile (Map data, File file, String codePage = 'UTF-8', Boolean convertVars = false, Boolean trimMap = false) {
 		Writer writer
 		try {
 			if (file.exists()) file.delete()
@@ -321,7 +320,7 @@ class ConfigSlurper extends ConfigManager {
 
 		try {
 			StringBuilder sb = new StringBuilder()
-			if (SaveMap(data, sb, convertVars) > 0)
+			if (SaveMap(data, sb, convertVars, trimMap) > 0)
 				writer.append(sb)
 		}
 		catch (Exception e) {
@@ -344,18 +343,18 @@ class ConfigSlurper extends ConfigManager {
 	 * @param isListMap data is in the list
 	 * @return count saved items
 	 */
-	static Integer SaveMap(Map data, StringBuilder writer, Boolean convertVars = false, Integer tab = 0, Boolean isListMap = false) {
+	static Integer SaveMap(Map data, StringBuilder writer, Boolean convertVars = false, Boolean trimMap = false, Integer tab = 0, Boolean isListMap = false) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
-		def i = 0
 		def res = 0
 		def lines = [] as List<String>
 		data.each { key, value ->
-			i++
+			if (value == null) return
+
 			if (value instanceof Map) {
 				def map = value as Map
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveMap(map, sb, convertVars, tab + 1) > 0) {
+					if (SaveMap(map, sb, convertVars, trimMap, tab + 1) > 0) {
 						def eqStr = (isListMap)?':':''
 						lines.add("${tabStr}${key}${eqStr} {\n" + sb.toString() + "${tabStr}}")
 						res++
@@ -366,7 +365,7 @@ class ConfigSlurper extends ConfigManager {
 				def list = value as List
 				if (!list.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveList(list, sb, convertVars, tab + 1) > 0) {
+					if (SaveList(list, sb, convertVars, trimMap, tab + 1) > 0) {
 						def eqStr = (isListMap) ? ':' : ' ='
 						lines.add("${tabStr}${key}${eqStr} [\n" + sb.toString() + "${tabStr}]")
 						res++
@@ -377,7 +376,7 @@ class ConfigSlurper extends ConfigManager {
 				def map = (value as BaseSpec).params
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveMap(map, sb, convertVars, tab + 1) > 0) {
+					if (SaveMap(map, sb, convertVars, trimMap, tab + 1) > 0) {
 						def eqStr = (isListMap)?':':''
 						lines.add("${tabStr}${key}${eqStr} {\n" + sb.toString() + "${tabStr}}")
 						res++
@@ -411,7 +410,7 @@ class ConfigSlurper extends ConfigManager {
 	 * @param tab indent when writing to text
 	 * @return count saved items
 	 */
-	static Integer SaveList(List data, StringBuilder writer, Boolean convertVars = false, Integer tab = 0) {
+	static Integer SaveList(List data, StringBuilder writer, Boolean convertVars = false, Boolean trimMap = false, Integer tab = 0) {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def i = 0
 		def res = 0
@@ -422,7 +421,7 @@ class ConfigSlurper extends ConfigManager {
 				def map = value as Map
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveMap(map, sb, convertVars, tab + 1, true) > 0) {
+					if (SaveMap(map, sb, convertVars, trimMap, tab + 1, true) > 0) {
 						lines.add("${tabStr}[\n" + sb.toString() + "${tabStr}]")
 						res++
 					}
@@ -432,7 +431,7 @@ class ConfigSlurper extends ConfigManager {
 				def list = value as List
 				if (!list.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveList(list, sb, convertVars, tab + 1) > 0) {
+					if (SaveList(list, sb, convertVars, trimMap, tab + 1) > 0) {
 						lines.add("${tabStr}[\n" + sb.toString() + "${tabStr}]")
 						res++
 					}
@@ -442,7 +441,7 @@ class ConfigSlurper extends ConfigManager {
 				def map = (value as BaseSpec).params
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveMap(map, sb, convertVars, tab + 1, true) > 0) {
+					if (SaveMap(map, sb, convertVars, trimMap, tab + 1, true) > 0) {
 						lines.add("${tabStr}[\n" + sb.toString() + "${tabStr}]")
 						res++
 					}

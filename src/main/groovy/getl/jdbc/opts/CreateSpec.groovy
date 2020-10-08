@@ -50,6 +50,7 @@ class CreateSpec extends BaseSpec {
     void setUseNativeDBType(Boolean value) { params.useNativeDBType = value }
 
     /** JDBC dataset type */
+    @JsonIgnore
     JDBCDataset.Type getType() { params.type as JDBCDataset.Type }
     /** JDBC dataset type */
     void setType(JDBCDataset.Type value) { params.type = value }

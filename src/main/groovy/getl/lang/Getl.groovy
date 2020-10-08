@@ -2508,7 +2508,7 @@ Examples:
     ViewDataset view(String name, Boolean registration = false,
                      @DelegatesTo(ViewDataset)
                      @ClosureParams(value = SimpleType, options = ['getl.jdbc.ViewDataset']) Closure cl) {
-        view(name, false, null, cl)
+        view(name, registration, null, cl)
     }
 
     /** JDBC view dataset */

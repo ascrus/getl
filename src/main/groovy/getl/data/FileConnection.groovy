@@ -52,8 +52,11 @@ class FileConnection extends Connection {
 	/** Connection path */
 	void setPath (String value) {
 		if (value != null) {
-			value = FileUtils.ConvertToDefaultOSPath(value)
-			if (value[value.length() - 1] == File.separator)
+			value = value.trim()
+			if (value.length() == 0)
+				throw new ExceptionGETL('Path can not be empty!')
+			def unixName = FileUtils.ConvertToUnixPath(value)
+			if (unixName.split('/').size() > 1 && unixName[unixName.length() - 1] == '/')
 				value = value.substring(0, value.length() - 1)
 		}
 		params.path = value

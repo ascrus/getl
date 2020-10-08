@@ -196,6 +196,7 @@ class FileDataset extends Dataset {
 	}
 
 	/** Read file options */
+	@JsonIgnore
 	Map<String, Object> getReadDirective() { directives('read') }
 	/** Read file options */
 	void setReadDirective(Map<String, Object> value) {
@@ -204,6 +205,7 @@ class FileDataset extends Dataset {
 	}
 
 	/** Write file options */
+	@JsonIgnore
 	Map<String, Object> getWriteDirective() { directives('write') }
 	/** Write file options */
 	void setWriteDirective(Map<String, Object> value) {

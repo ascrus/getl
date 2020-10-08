@@ -260,7 +260,7 @@ class RepositoryStorageManager {
         def fileName = objectFilePathInStorage(repository, objName, env)
         FileUtils.ValidFilePath(fileName)
         def file = new File(fileName)
-        ConfigSlurper.SaveConfigFile(objParams, new File(fileName), 'utf-8')
+        ConfigSlurper.SaveConfigFile(objParams, new File(fileName), 'utf-8', false, true)
 
         if (!file.exists())
             throw new ExceptionDSL("Error saving object \"${objName.name}\" from repository " +

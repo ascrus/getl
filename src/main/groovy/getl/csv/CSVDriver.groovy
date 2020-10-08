@@ -459,13 +459,14 @@ class CSVDriver extends FileDriver {
 			
 			CellProcessor[] cp = fields2cellProcessor([dataset: dataset, fields: listFields, header: header, isOptional: readAsText, isWrite: false, isValid: isValid, isEscape: escaped, nullAsValue: p.nullAsValue])
 			
-			def count = (params.limit != null)?params.limit as Long:0L
 			def cur = 0L
+			def line = 0L
 			while (true) {
 				Map row
 				def isError = false
 				try {
 					cur++
+					line++
 					if (limit > 0 && cur > limit) break
 					row = reader.read(header, cp)
 				}
@@ -474,15 +475,15 @@ class CSVDriver extends FileDriver {
 						throw e
 
 					def c = e.csvContext
-					def ex = new ExceptionGETL("Column ${c.columnNumber} [${header[c.columnNumber - 1]}]: ${e.message}")
+					def ex = new ExceptionGETL("Line $line column ${c.columnNumber} [${header[c.columnNumber - 1]}]: ${e.message}")
 
-					if (!processError(ex, cur))
+					if (!processError(ex, line))
 						throw e
 
 					isError = true
 				}
 				catch (Exception e) {
-					def isContinue = (processError != null)?processError(e, cur):false
+					def isContinue = (processError != null)?processError(e, line):false
 					if (!isContinue) throw e
 					isError = true
 				}
@@ -515,7 +516,7 @@ class CSVDriver extends FileDriver {
 					} 
 
 					code.call(row)
-					if (cur == count) break
+					if (cur == limit) break
 				}
 			}
 			countRec = cur
