@@ -22,7 +22,9 @@ class HiveDriverTest extends JDBCDriverProto {
     protected boolean getUseDate() { false }
 
     @Override
-    String getTableClass() { 'getl.hive.HiveTable' }
+    String getUseTableClass() { 'getl.hive.HiveTable' }
+    @Override
+    String getUseTableName() { 'getl_test_hive' }
 
     @Override
     protected void createTable() {

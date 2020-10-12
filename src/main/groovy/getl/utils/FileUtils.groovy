@@ -38,7 +38,7 @@ class FileUtils {
 	 */
 	static Boolean ValidFilePath(String fileName, Boolean deleteOnExit = false) {
 		fileName = ConvertToDefaultOSPath(fileName)
-		return ValidFilePath(new File(fileName), deleteOnExit)
+		return ValidFilePath(new File(TransformFilePath(fileName)), deleteOnExit)
 	}
 	
 	/**
@@ -69,7 +69,7 @@ class FileUtils {
 	 */
 	static Boolean ValidPath(String path, Boolean deleteOnExit = false) {
 		path = ConvertToDefaultOSPath(path)
-		return ValidPath(new File(path), deleteOnExit)
+		return ValidPath(new File(TransformFilePath(path)), deleteOnExit)
 	}
 
 
@@ -144,8 +144,8 @@ class FileUtils {
 	 * @param newName
 	 */
 	static void RenameTo(String fileName, String newName) {
-        fileName = ConvertToDefaultOSPath(fileName)
-        newName = ConvertToDefaultOSPath(newName)
+        fileName = TransformFilePath(ConvertToDefaultOSPath(fileName))
+        newName = TransformFilePath(ConvertToDefaultOSPath(newName))
 		File f = new File(fileName)
 		if (!f.exists()) throw new ExceptionGETL("File \"$fileName\" not found!")
 
@@ -163,6 +163,8 @@ class FileUtils {
 	static void MoveTo(File file, String path, Boolean createPath = false) {
 		if (!file.exists()) throw new ExceptionGETL("File \"$file\" not found!")
 
+		path = TransformFilePath(path)
+
 		if (createPath) ValidPath(path)
 		def dest = new File("${path}/${file.name}")
 
@@ -176,7 +178,7 @@ class FileUtils {
 	 * @param createPath create a directory if it is not
 	 */
 	static void MoveTo(String fileName, String path, Boolean createPath = false) {
-		MoveTo(new File(fileName), path, createPath)
+		MoveTo(new File(TransformFilePath(fileName)), path, createPath)
 	}
 
 	/**
@@ -187,6 +189,8 @@ class FileUtils {
 	 */
 	static void CopyToDir(File file, String path, Boolean createPath = false) {
 		if (!file.exists()) throw new ExceptionGETL("File \"$file\" not found!")
+
+		path = TransformFilePath(path)
 		
 		if (createPath) ValidPath(path)
 		def dest = new File(path + File.separator + file.name)
@@ -205,6 +209,8 @@ class FileUtils {
 	static void CopyToDir(File file, String path, String destFileName, Boolean createPath = false) {
 		if (!file.exists()) throw new ExceptionGETL("File \"$file\" not found!")
 
+		path = TransformFilePath(path)
+
 		if (createPath) ValidPath(path)
 		def dest = new File(path + File.separator + (destFileName?:file.name))
 		if (dest.exists()) dest.delete()
@@ -219,7 +225,7 @@ class FileUtils {
 	 * @param createPath create a directory if it is not
 	 */
 	static void CopyToDir(String fileName, String path, Boolean createPath = false) {
-		CopyToDir(new File(fileName), path, createPath)
+		CopyToDir(new File(TransformFilePath(fileName)), path, createPath)
 	}
 
 	/**
@@ -244,7 +250,7 @@ class FileUtils {
 	 * @param createPath create a directory if it is not
 	 */
 	static void CopyToFile(String sourceName, String destName, Boolean createPath = false) {
-		CopyToFile(new File(sourceName), new File(destName), createPath)
+		CopyToFile(new File(TransformFilePath(sourceName)), new File(TransformFilePath(destName)), createPath)
 	}
 	
 	/**
@@ -257,6 +263,8 @@ class FileUtils {
 								  @ClosureParams(value = SimpleType, options = ['java.io.File'])
 										  Closure onDelete) {
 		if (rootFolder == null) return
+		rootFolder = TransformFilePath(rootFolder)
+
 		File root = new File(rootFolder)
 		if (!root.exists()) return
 		File[] folders = root.listFiles()
@@ -317,7 +325,7 @@ class FileUtils {
 	 * @return
 	 */
 	static Boolean DeleteFile(String fileName) {
-		new File(fileName).delete()
+		new File(TransformFilePath(fileName)).delete()
 	}
 
 	/**
@@ -329,6 +337,8 @@ class FileUtils {
 	static Boolean DeleteFolder(String rootFolder, Boolean deleteRoot = true, Boolean throwError = true,
 								@ClosureParams(value = SimpleType, options = ['java.io.File']) Closure onDelete = null) {
 		if (rootFolder == null) return null
+		rootFolder = TransformFilePath(rootFolder)
+
 		File root = new File(rootFolder)
 		if (!root.exists()) {
             if (throwError) throw new ExceptionGETL("Directory \"$rootFolder\" not found")
@@ -394,7 +404,7 @@ class FileUtils {
 	 * @return
 	 */
 	static Boolean DeleteDir(String path) {
-		new File(path).deleteDir()
+		new File(TransformFilePath(path)).deleteDir()
 	}
 	
 	/**
@@ -403,7 +413,7 @@ class FileUtils {
 	 * @return
 	 */
 	static Boolean ExistsFile(String fileName, Boolean findDirectory = false) {
-		def file = new File(fileName)
+		def file = new File(TransformFilePath(fileName))
 		def res = file.exists()
 		if (res && findDirectory && !file.isDirectory()) return false
 		return res
@@ -541,18 +551,7 @@ class FileUtils {
 	static String PathFromFile(String filePath, Boolean isUnix = null) {
 		if (filePath == null) return null
 
-		/*file = ConvertToDefaultOSPath(file)
-		String res
-		if (MaskFile(file) != null) {
-			res = new File(RelativePathFromFile(file)).canonicalPath
-		}
-		else {
-			res = new File(file).parent
-		}
-		
-		res*/
-
-		def res = new File(filePath).parent
+		def res = new File(TransformFilePath(filePath)).parent
 		if (res == null || res in ['.', '..']) return null
 		if (isUnix != null) {
 			if (isUnix)
@@ -602,18 +601,7 @@ class FileUtils {
 	static String FileName(String filePath, Boolean isUnix = null) {
 		if (filePath == null) return null
 		
-		/*String res
-		if (MaskFile(filePath) != null) {
-			def i = ConvertToUnixPath(filePath).lastIndexOf('/')
-			if (i < 0) res = filePath  else res = filePath.substring(i + 1)
-		}
-		else {
-			res = new File(filePath).name
-		}
-		
-		return (!(res in ['.', '..']))?res:null*/
-
-		def res = new File(filePath).name
+		def res = new File(TransformFilePath(filePath)).name
 		if (res in ['.', '..']) return null
 		if (isUnix != null) {
 			if (isUnix)
@@ -793,7 +781,7 @@ class FileUtils {
 		Process p
 		try {
 			String[] env = []
-			p = Runtime.getRuntime().exec(command, env, new File(dir))
+			p = Runtime.getRuntime().exec(command, env, new File(TransformFilePath(dir)))
 		}
 		catch (IOException e) {
 			err.append(e.message)
@@ -850,6 +838,9 @@ class FileUtils {
 	static void CompressToZip(String zipName, String path, Map params,
 							  @ClosureParams(value = SimpleType, options = ['java.io.File', 'java.lang.String'])
 									  Closure validFile) {
+		zipName = TransformFilePath(zipName)
+		path = TransformFilePath(path)
+
 		zipName = new File(zipName).canonicalPath
 		def password = params.password as String
 		ZipFile zipFile = (password != null)?new ZipFile(zipName, password.toCharArray()):new ZipFile(zipName)
@@ -894,7 +885,7 @@ class FileUtils {
 	 * @param password zip file password
 	 */
 	static void UnzipFile(String fileName, String targerDirectory, String password = null, String charsetFileName = null) {
-		def file = new File(ResourceFileName(fileName))
+		def file = new File(ResourceFileName(TransformFilePath(fileName)))
 		if (!file.exists())
 			throw new ExceptionGETL("Zip file \"$fileName\" not found!")
 
@@ -1012,7 +1003,7 @@ class FileUtils {
 
 	/** Find parent directory by nearest specified elements in path */
 	static String FindParentPath(String path, String findPath) {
-		path = new File(path).absolutePath
+		path = new File(TransformFilePath(path)).absolutePath
 		findPath = ConvertToDefaultOSPath(findPath)
 		return StringUtils.ExtractParentFromChild(path, findPath, Config.isWindows())
 	}

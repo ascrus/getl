@@ -685,16 +685,16 @@ abstract class Manager implements Cloneable, GetlRepository {
 	void setDescription(String value) { params.description = value }
 
 	/** Count of found files */
-	private final SynchronizeObject countFileListSync = new SynchronizeObject()
+	private Long countFileList
 	/** Count of found files */
 	@JsonIgnore
-	Long getCountFileList() { countFileListSync.count }
+	Long getCountFileList() { countFileList }
 
 	/** Size of found files */
-	private final SynchronizeObject sizeFileListSync = new SynchronizeObject()
+	private Long sizeFileList
 	/** Size of found files */
 	@JsonIgnore
-	Long getSizeFileList() { sizeFileListSync.count }
+	Long getSizeFileList() { sizeFileList }
 
 	static private Object operationLock = new Object()
 
@@ -716,8 +716,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (threadLevel == null) threadCount = null
 
 		String curPath = man.currentDir()
-		def countFiles = 0L
-		def sizeFiles = 0L
 		def countDirs = 0L
 
 		try {
@@ -755,8 +753,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 						if (code == null || code.prepare(file)) {
 							dest.write(file)
-							countFiles++
-							sizeFiles += (file.filesize as Long)
 						}
 					}
 					file.clear()
@@ -854,9 +850,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 				}
 			}
 		}
-		
-		countFileListSync.addCount(countFiles)
-		sizeFileListSync.addCount(sizeFiles)
 	}
 	
 	/**
@@ -966,8 +959,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 		def extendFields = lParams.extendFields as List<Field>
 		def extendIndexes = (lParams.extendIndexes as List<List<String>>)
 
-		countFileListSync.clear()
-		sizeFileListSync.clear()
+		countFileList = 0L
+		sizeFileList = 0L
 
 		// History table		
 		TableDataset storyTable = (!ignoreStory)?((lParams.story as TableDataset)?:story):null
@@ -1154,7 +1147,15 @@ FROM ${newFiles.fullNameDataset()} files
 				sqlCopyFiles += "${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID"
 			}
 			QueryDataset processFiles = new QueryDataset(connection: fileList.connection, query: sqlCopyFiles)
-			countFileListSync.setCount(new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 500L))
+
+			def countFiles = 0L
+			def sizeFiles = 0L
+			new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 500L) { i, o ->
+				countFiles++
+				sizeFiles += (o.filesize as Long)
+			}
+			countFileList = countFiles
+			sizeFileList = sizeFiles
 		}
 		finally {
 			if (noopService != null) noopService.stopBackground()

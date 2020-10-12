@@ -29,7 +29,7 @@ class VerticaDriverTest extends JDBCDriverProto {
         def c = new VerticaConnection(config: 'vertica')
         c.with {
             storedLogins = Config.content.logins
-            useLogin 'developer'
+            useLogin 'getl_test'
         }
 
         return c
@@ -83,7 +83,7 @@ LIMIT 1'''
     void bulkLoadFiles() {
         Getl.Dsl(this) { main ->
             useQueryConnection this.con
-            def current_node = configContent.bulkload_node //sqlQueryRow('SELECT node_name FROM CURRENT_SESSION').node_name
+            def current_node = /*configContent.bulkload_node //*/sqlQueryRow('SELECT node_name FROM CURRENT_SESSION').node_name
 
             def vertable = verticaTable('vertica:testbulkload', true) {
                 connection = this.con
@@ -185,15 +185,15 @@ LIMIT 1'''
             assertEquals(3, vertable.countRow())
 
             logInfo 'Bulk load files with remote load from path mask:'
-            sftp {
+            def man = sftp {
                 useConfig 'vertica'
                 localDirectory = FileUtils.ConvertToUnixPath(csv.currentCsvConnection.currentPath()) + '/bulkload'
                 connect()
-                if (!existsDirectory('getl-bulkload'))
+                /*if (!existsDirectory('getl-bulkload'))
                     createDir('getl-bulkload')
                 changeDirectory('getl-bulkload')
                 if (!existsDirectory('errors'))
-                    createDir('errors')
+                    createDir('errors')*/
                 upload('vertica.bulkload.0001.csv')
                 upload('vertica.bulkload.0002.csv')
                 upload('vertica.bulkload.0003.csv')
@@ -205,9 +205,9 @@ LIMIT 1'''
                 bulkLoadCsv(csv) {
                     remoteLoad = true
                     location = current_node
-                    files = '/tmp/getl-bulkload/*.csv'
-                    exceptionPath = '/tmp/getl-bulkload/errors'
-                    rejectedPath = '/tmp/getl-bulkload/errors'
+                    files = "${man.rootPath}/*.csv"
+                    exceptionPath = man.rootPath
+                    rejectedPath = man.rootPath
                 }
             }
             assertEquals(3, vertable.updateRows)

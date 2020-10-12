@@ -183,12 +183,15 @@ abstract class ManagerTest extends getl.test.GetlTest {
             recursive = true
         }
         assertEquals(13, listTable.countRow())
+        assertEquals(13, manager.countFileList)
+        assertEquals(135, manager.sizeFileList)
 
         listTable = manager.buildListFiles {
             maskFile = 'subdir*.txt'
             recursive = true
         }
         assertEquals(9, listTable.countRow())
+        assertEquals(9, manager.countFileList)
 
         listTable = manager.buildListFiles {
             useMaskPath {
@@ -199,6 +202,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
             recursive = true
         }
         assertEquals(9, listTable.countRow())
+        assertEquals(9, manager.countFileList)
     }
 
     private void buildTreeDirs() {

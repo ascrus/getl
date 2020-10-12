@@ -60,8 +60,9 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         return _con
     }
 
-    String getTableClass() { 'getl.jdbc.TableDataset' }
-    final TableDataset table = TableDataset.CreateDataset(dataset: tableClass, tableName: 'getl_test_data')
+    String getUseTableClass() { 'getl.jdbc.TableDataset' }
+    String getUseTableName() { 'getl_test_data' }
+    final TableDataset table = TableDataset.CreateDataset(dataset: useTableClass, tableName: useTableName)
     List<Field> getFields () {
         def res =
             [
@@ -107,10 +108,10 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         table.drop(ifExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
 			def indexes = [
-					getl_test_data_idx_1:
+					"${table.tableName}_idx_1":
 							[columns: ['id2', 'name']]]
 			if (con != null && useDate)
-				indexes << [getl_test_data_idx_2: [columns: ['id1', 'date'], unique: true]]
+				indexes << ["${table.tableName}_idx_2": [columns: ['id1', 'date'], unique: true]]
             table.create(ifNotExists: true, indexes: indexes)
         }
         else {
@@ -148,7 +149,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
             println "Skip test local temporary table: ${con.driver.getClass().name} not support this futures"
             return
         }
-        def tempTable = new TableDataset(connection: con, schemaName: '_getl_test',
+        def tempTable = new TableDataset(connection: con, /*schemaName: '_getl_test',*/
                 tableName: '_getl_local_temp_test', type: JDBCDataset.Type.LOCAL_TEMPORARY)
         tempTable.field = fields
         if (con.driver.isSupport(Driver.Support.INDEX)) {
@@ -270,9 +271,9 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     }
 
     protected void retrieveObject() {
-        def d = con.retrieveDatasets { tableMask = ['getl_test_data'] }
+        def d = con.retrieveDatasets { tableMask = [table.tableName] }
         assertEquals(1, d.size())
-        def l = con.retrieveObjects(tableMask: 'getl_test_dat*')
+        def l = con.retrieveObjects(tableMask: StringUtils.LeftStr(table.tableName, table.tableName.size() - 1) + '*')
         assertEquals(1, l.size())
     }
 
@@ -552,7 +553,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
             field('name') { type = stringFieldType; length = 50 }
             field('dt') { type = datetimeFieldType }
             field('num') { type = numericFieldType; length = 12; precision = 2 }
-            field('bin') { type = blobFieldType; length = 50 }
+            if (con.driver.isSupport(Driver.Support.BLOB))
+                field('bin') { type = blobFieldType; length = 50 }
             create(ifNotExists: true)
         }
         truncateTable(bulkTable)
