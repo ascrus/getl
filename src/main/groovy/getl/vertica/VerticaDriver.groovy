@@ -184,8 +184,8 @@ class VerticaDriver extends JDBCDriver {
 		def enforceLength = (parserText == null && BoolUtils.IsValue(params.enforceLength, true))
 		def autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
 		String compressed = ListUtils.NotNullValue([params.compressed, (isGzFile?'GZIP':null)])
-		String exceptionPath = FileUtils.TransformFilePath(params.exceptionPath)
-		String rejectedPath = FileUtils.TransformFilePath(params.rejectedPath)
+		String exceptionPath = FileUtils.TransformFilePath(params.exceptionPath as String)
+		String rejectedPath = FileUtils.TransformFilePath(params.rejectedPath as String)
 		def rejectMax = params.rejectMax as Long
 		def abortOnError = BoolUtils.IsValue(params.abortOnError, true)
 		String location = params.location as String

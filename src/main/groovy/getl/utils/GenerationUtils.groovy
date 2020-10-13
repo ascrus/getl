@@ -1365,9 +1365,9 @@ sb << """
 	 */
 	@groovy.transform.CompileStatic
 	static List RowListValues (List<String> fields, Map row) {
-		def res = new ArrayList()
+		def res = []
 		fields.each { String n ->
-			res << row.get(n.toLowerCase())
+			res.add(row.get(n.toLowerCase()))
 		}
 
         return res
