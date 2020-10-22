@@ -1271,8 +1271,15 @@ ${extend}'''
 			query = sqlTableBuildSelect(dataset, params)
 		} 
 		else {
-			assert dataset.params.query != null, "Required value in \"query\" from dataset"
-			query = dataset.params.query as String
+			if (!(dataset instanceof QueryDataset))
+				throw new ExceptionGETL("Not supported JDBC dataset class \"${dataset.class.name}\"!")
+			def qry = dataset as QueryDataset
+			query = qry.query
+			if (query == null && qry.scriptFilePath != null) {
+				query = qry.readFile(qry.scriptFilePath, qry.scriptFileCodePage)
+			}
+			if (query == null)
+				throw new ExceptionGETL("For dataset \"$dataset\" you need to specify the query text!")
 		}
 
 		return StringUtils.EvalMacroString(query, dataset.queryParams + ((params.queryParams as Map)?:[:]), false)

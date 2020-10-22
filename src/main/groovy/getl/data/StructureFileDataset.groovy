@@ -1,5 +1,6 @@
 package getl.data
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.utils.*
 import getl.exception.ExceptionGETL
 import groovy.transform.stc.ClosureParams
@@ -88,6 +89,7 @@ class StructureFileDataset extends FileDataset {
 	}
 	
 	/** Attribute value */
+	@JsonIgnore
 	Map<String, Object> getAttributeValue () { params.attributeValue as Map<String, Object> }
 	/** Attribute value */
 	void setAttributeValue (Map<String, Object> value) {

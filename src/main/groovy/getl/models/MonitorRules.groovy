@@ -125,7 +125,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         def dsn = query.dslNameObject
         if (query.connection == null)
             throw new ExceptionModel("The connection for the query \"$dsn\" is not specified!")
-        if (query.query == null)
+        if (query.query == null && query.scriptFilePath == null)
             throw new ExceptionModel("Query \"$dsn\" does not have a sql text!")
 
     }

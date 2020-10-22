@@ -33,29 +33,49 @@ class QueryDataset extends JDBCDataset {
 	/** SQL query text */
 	void setQuery (String value) { params.query = value }
 
+	/** The path to script file */
+	String getScriptFilePath() { params.scriptFilePath as String }
+	/** The path to script file */
+	void setScriptFilePath(String value) { params.scriptFilePath = value }
+
+	/** Script file text encoding */
+	String getScriptFileCodePage() { params.scriptFileCodePage as String }
+	/** Script file text encoding */
+	void setScriptFileCodePage(String value) { params.scriptFileCodePage = value }
+
 	@Override
 	@JsonIgnore
 	String getObjectName() { (description != null)?description:'sql query' }
 
 	/**
 	 * Load script from file
-	 * @param fileName file name sql batch file
+	 * @param filePath file name sql batch file
 	 * @param codePage file use specified encoding page (default utf-8)
 	 */
-	void loadFile (String fileName, String codePage = 'utf-8') {
-		setQuery(new File(FileUtils.ResourceFileName(fileName)).getText(codePage))
+	void loadFile(String filePath, String codePage = null) {
+		setQuery(readFile(filePath, codePage))
+	}
+
+	/**
+	 * Read script from file
+	 * @param filePath file name sql batch file
+	 * @param codePage file use specified encoding page (default utf-8)
+	 * @return script text
+	 */
+	String readFile(String filePath, String codePage = null) {
+		def file = new File(FileUtils.ResourceFileName(filePath))
+		if (!file.exists())
+			throw new ExceptionGETL("Script file \"$filePath\" not found!")
+		return file.getText(codePage?:scriptFileCodePage?:'utf-8')
 	}
 
 	/**
 	 * Load script from file in class path or resource directory
-	 * @param fileName file name in resource catalog
+	 * @param filePath file name in resource catalog
 	 * @param otherPath the string value or list of string values as search paths if file is not found in the resource directory
 	 * @param codePage file use specified encoding page (default utf-8)
 	 */
-	void loadResource(String fileName, def otherPath = null, String codePage = 'utf-8') {
-		def file = FileUtils.FileFromResources(fileName, otherPath)
-		if (file == null)
-			throw new ExceptionGETL("Resource file \"$fileName\" not found!")
-		setQuery(file.getText(codePage?:'utf-8'))
+	void loadResource(String filePath, def otherPath = null, String codePage = null) {
+		setQuery(readFile('resource:/' + filePath, codePage))
 	}
 }

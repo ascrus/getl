@@ -127,10 +127,12 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
 
         ownerReferenceVerticaTableModel.referenceConnection.with {
             transaction {
-                def p = [_model_sourcetable_: sourceTable.fullTableName, _model_desttable_:destTable.fullTableName, where: '', sample: '']
-                if (whereCopy != null) p.where = 'WHERE ' + whereCopy
-                if (sampleCopy != null) p.sample = 'SAMPLE ' + sampleCopy
-                executeCommand('INSERT /*+direct*/ INTO {_model_desttable_} SELECT * FROM {_model_sourcetable_} {where} {sample}', [queryParams: p])
+                def p = [_model_sourcetable_: sourceTable.fullTableName, _model_desttable_:destTable.fullTableName, _model_where: '', _model_sample: '']
+                if (whereCopy != null) p._model_where = 'WHERE ' + StringUtils.EvalMacroString(whereCopy, ownerReferenceVerticaTableModel.modelVars + objectVars, false)
+                if (sampleCopy != null) p._model_sample = 'SAMPLE ' + sampleCopy
+                executeCommand(
+                        'INSERT /*+direct*/ INTO {_model_desttable_} SELECT * FROM {_model_sourcetable_} {_model_where} {_model_sample}',
+                        [queryParams: p])
             }
         }
 
@@ -268,16 +270,24 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
             tableAttrs.with {
                 useConnection ownerReferenceVerticaTableModel.referenceConnection
                 query = '''
-SELECT NullIf(partition_expression, '') AS partition_expression
-FROM tables
+SELECT NullIf(partition_expression, '') AS partition_expression, IsNull(c.count_inc_cols, 0) AS count_inc_cols
+FROM v_catalog.tables t
+   LEFT JOIN (
+      SELECT table_id, Count(*) AS count_inc_cols
+      FROM v_catalog.columns c
+      WHERE c.is_identity OR c.column_default ILIKE 'nextval(%)\'
+      GROUP BY table_id
+   ) c ON c.table_id = t.table_id
 WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
 '''
-                queryParams.schema = sourceTable.schemaName
-                queryParams.table = sourceTable.tableName
+                queryParams.schema = destTable.schemaName
+                queryParams.table = destTable.tableName
             }
-            def partExpression = (tableAttrs.rows()[0].partition_expression as String)
+            def row = tableAttrs.rows()[0]
+            def partExpression = (row.partition_expression as String)
+            def countIncrementCols = row.count_inc_cols as Integer
             def startPart, finishPart
-            if (partExpression == null) {
+            if (partExpression == null || countIncrementCols > 0) {
                 ownerReferenceVerticaTableModel.referenceConnection.with {
                     transaction {
                         executeCommand '''INSERT /*+direct*/ INTO {dest} SELECT * FROM {source}''',
@@ -288,8 +298,9 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
                 def partDays = new QueryDataset()
                 partDays.with {
                     useConnection ownerReferenceVerticaTableModel.referenceConnection
-                    query = 'SELECT Min({part_expr}) AS part_min, Max({part_expr}) AS part_max FROM {table}'
+                    query = 'SELECT Min({part_expr}) AS part_min, Max({part_expr}) AS part_max FROM {table} AS "{alias}"'
                     queryParams.table = sourceTable.fullTableName
+                    queryParams.alias = destTable.tableName
                     queryParams.part_expr = partExpression
                 }
                 def partRow = partDays.rows()[0]

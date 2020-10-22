@@ -500,6 +500,13 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(1, r3.size())
         Integer id3 = r3[0].id1
         assertEquals(2, id3)
+
+        def q4 = new QueryDataset(connection: con)
+        q4.scriptFilePath = 'resource:/sql/test_query.sql'
+        def r4 = q4.rows(queryParams: [table: table.objectFullName, field: fieldName, param1: 2])
+        assertEquals(1, r4.size())
+        Integer id4 = r4[0].id1
+        assertEquals(2, id4)
     }
 
     protected void validCountZero() {

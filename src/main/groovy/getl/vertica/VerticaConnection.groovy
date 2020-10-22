@@ -317,7 +317,7 @@ ORDER BY threshold DESC, table_name;
 			query = '''
 SELECT Lower(table_schema || '.' || table_name) AS name 
 FROM tables 
-WHERE NOT is_temp_table 
+WHERE is_temp_table 
 ORDER BY name
 '''
 			return rows().collect { row -> row.name }
