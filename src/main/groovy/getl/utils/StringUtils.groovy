@@ -664,7 +664,7 @@ class StringUtils {
 	static String Encrypt(String text, String password) {
 		if (text == null) return null
 		if (password == null || password.length() < 16)
-			throw new ExceptionGETL('Invalid passsword value!')
+			throw new ExceptionGETL('Password must be at least 16 characters!')
 
 		def l = password.length()
 		if ((l % 8) != 0) {

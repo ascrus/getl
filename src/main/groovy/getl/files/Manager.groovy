@@ -165,7 +165,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 	String getRootPath() { params.rootPath as String }
 	/** Root path */
 	void setRootPath(String value) {
-		validRootPath(value)
 		params.rootPath = FileUtils.ConvertToUnixPath(value)
 		currentRootPathSet()
 	}
@@ -332,6 +331,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	/** Connect to server */
 	void connect() {
+		validRootPath()
 		FileUtils.ValidPath(localDirectoryFile)
 		currentRootPathSet()
 		doConnect()
@@ -367,7 +367,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 	@Synchronized
 	void list(String maskFiles,
 			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure processCode) {
-		validRootPath()
 		if (processCode == null)
 			throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager")
 
@@ -417,7 +416,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 */
 	@CompileStatic
 	void changeDirectory(String dir) {
-		validRootPath()
 		if (dir == null || dir == '')
 			throw new ExceptionGETL("Null dir not allowed for cd operation")
 		if (dir == '.') return
@@ -462,7 +460,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 	
 	/** Change current directory to root */
 	void changeDirectoryToRoot() {
-		validRootPath()
 		currentPath = currentRootPath
 	}
 	
@@ -573,17 +570,14 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * Valid rootPath value
 	 * @param value
 	 */
-	protected void validRootPath(String value = null) {
-		if (value == null) value = currentRootPath
-		if (value == null || value.length() == 0)
+	protected void validRootPath() {
+		if (currentRootPath == null || currentRootPath.length() == 0)
 			throw new ExceptionGETL('No root path specified!')
 	}
 	
 	/** Return current directory with relative path */
 	@CompileStatic
 	String currentDir() {
-		validRootPath()
-
 		def cur = _currentPath
 		if (cur == null) throw new ExceptionGETL("Current path not set")
 
@@ -1232,7 +1226,6 @@ FROM ${newFiles.fullNameDataset()} files
 	void downloadFiles(Map params,
 					   @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure onDownloadFile) {
 		methodParams.validation('downloadFiles', params)
-		validRootPath()
 		if (fileList == null || fileList.field.isEmpty())
 			throw new ExceptionGETL("Before download build fileList dataset!")
 

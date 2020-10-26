@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileDatasetRetrieveObjectsSpec
 import getl.exception.ExceptionGETL
 import getl.driver.FileDriver
+import getl.files.FileManager
 import getl.utils.*
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -21,7 +22,6 @@ class FileConnection extends Connection {
 	FileConnection (Map params) {
 		super((params != null)?(params + (!params.containsKey('driver')?[driver: FileDriver]:[:])):null)
 		if (!(driver instanceof FileDriver))
-//		if (!BoolUtils.ClassInstanceOf(params.driver as Class, FileDriver))
 			throw new ExceptionGETL("Requider FileDriver instance class for connection!")
 		
 		methodParams.register("Super", ["path", "codePage", "createPath", "isGzFile", "extension", "append",
@@ -31,6 +31,8 @@ class FileConnection extends Connection {
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()
+		// File manager
+		files = new FileManager()
 		// Init path
 		if (path != null) setPath(path)
 	}
@@ -59,6 +61,7 @@ class FileConnection extends Connection {
 			if (unixName.split('/').size() > 1 && unixName[unixName.length() - 1] == '/')
 				value = value.substring(0, value.length() - 1)
 		}
+		files.rootPath = value
 		params.path = value
 		currentPath = null
 	}
@@ -150,4 +153,10 @@ class FileConnection extends Connection {
 	@Override
 	@JsonIgnore
 	String getObjectName() { (path != null)?"file:${currentPath()}":'[NONE]' }
+
+	/** File manager for the connection path */
+	private FileManager files
+	/** File manager for the connection path */
+	@JsonIgnore
+	FileManager getFiles() { files }
 }

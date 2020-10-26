@@ -233,7 +233,7 @@ class SFTPManager extends Manager implements UserLogins {
 			channelFtp = clientSession.openChannel("sftp") as ChannelSftp
 			writeScriptHistoryFile("OPEN CHANNEL: sftp")
 			channelFtp.connect()
-			if (rootPath != null) currentPath = currentRootPath
+			currentPath = currentRootPath
 			if (channelFtp.serverVersion > 5)
 				channelFtp.filenameEncoding = codePage.toUpperCase()
 		}

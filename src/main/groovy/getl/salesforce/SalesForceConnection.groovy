@@ -35,7 +35,7 @@ class SalesForceConnection extends Connection implements UserLogins {
 	@Override
 	protected void registerParameters() {
 		super.registerParameters()
-		methodParams.register('Super', ['login', 'password', 'connectURL', 'batchSize'])
+		methodParams.register('Super', ['login', 'password', 'connectURL', 'batchSize', 'storedLogins'])
 	}
 
 	@Override

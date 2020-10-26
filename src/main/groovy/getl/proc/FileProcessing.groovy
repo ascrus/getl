@@ -529,7 +529,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                                     }
                                     catch (Exception e) {
                                         def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
-                                        Logs.Severe("Exception in file \"${file.filepath}/${file.filename}\": $msg")
+                                        Logs.Severe("Exception ${e.class.name} in file \"${file.filepath}/${file.filename}\": $msg")
 
                                         if (handleExceptions) {
                                             element.result = FileProcessingElement.errorResult

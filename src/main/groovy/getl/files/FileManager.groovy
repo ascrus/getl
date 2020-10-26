@@ -56,27 +56,17 @@ class FileManager extends Manager {
 	Boolean isConnected() { connected }
 
 	@Override
-	void setRootPath(String value) {
-		super.setRootPath(value)
-		if (value != null && connected)
-			disconnect()
-	}
-
-	@Override
 	@Synchronized
 	protected void doConnect () {
 		if (connected)
 			throw new ExceptionGETL('Manager already connected!')
-
-		if (rootPath == null)
-			throw new ExceptionGETL("Required value for \"rootPath\" property")
 
 		File rp = new File(currentRootPath)
 		if (!rp.exists() && createRootPath) rp.mkdirs()
 
 		currentDirectory = rp
 		connected = true
-		if (rootPath != null) currentPath = currentRootPath
+		currentPath = currentRootPath
 	}
 	
 	@Override
@@ -94,6 +84,15 @@ class FileManager extends Manager {
 	protected void validConnect () {
 		if (!connected)
 			connect()
+	}
+
+	@Override
+	void setRootPath(String value) {
+		super.setRootPath(value)
+		if (connected) {
+			disconnect()
+			connect()
+		}
 	}
 
 	class FilesList extends FileManagerList {

@@ -8,6 +8,7 @@ import groovy.transform.InheritConstructors
 
 /**
  * Repository objects with connections manager
+ * @author Alexsey Konstantinov
  * @param <T> class of objects
  */
 @InheritConstructors

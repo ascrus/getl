@@ -111,7 +111,7 @@ class HDFSManager extends Manager implements UserLogins {
                         throw e
                     }
                     homeDirectory = client.homeDirectory
-                    if (rootPath != null) currentPath = currentRootPath
+                    currentPath = currentRootPath
 
                     return null
                 }

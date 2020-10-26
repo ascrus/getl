@@ -183,7 +183,7 @@ class FTPManager extends Manager implements UserLogins {
             supportCommands << cmd.trim().toUpperCase()
         }
 
-		if (rootPath != null) currentPath = currentRootPath
+		currentPath = currentRootPath
 	}
 	
 	@Override

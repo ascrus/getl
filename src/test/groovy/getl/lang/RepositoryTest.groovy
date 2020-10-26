@@ -1,6 +1,7 @@
 package getl.lang
 
 import getl.data.Dataset
+import getl.data.Field
 import getl.files.FileManager
 import getl.h2.H2Connection
 import getl.h2.H2Table
@@ -10,6 +11,7 @@ import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
 import getl.lang.sub.RepositoryHistorypoints
+import getl.lang.sub.RepositorySave
 import getl.lang.sub.RepositorySequences
 import getl.test.Config
 import getl.test.GetlDslTest
@@ -880,5 +882,61 @@ class RepositoryTest extends GetlDslTest {
             assert files('#child').rootPath == '/tmp/child'
             println 'main: ' + files('#main').rootPath
             println 'child: ' + files('#child').rootPath        }
+    }
+
+    @Test
+    void testRepositorySave() {
+        Getl.Dsl {
+            TFS.storage.files.with {
+                createDir 'repository.test'
+                repositoryStorageManager {
+                    storagePath = rootPath + '/repository.test'
+                    storagePassword = '1234567890123456'
+                }
+            }
+
+            callScript RepositorySaveTest
+            try {
+                repositoryStorageManager {
+                    clearRepositories()
+                    loadRepositories()
+                }
+                def con = embeddedConnection('test:con') {
+                    assertEquals('repositorysave_test', connectDatabase)
+                    assertEquals('dba', login)
+                    assertEquals('12345', password)
+                }
+                embeddedTable('test:table1') {
+                    assertEquals(con, connection)
+                    assertEquals('PUBLIC', schemaName)
+                    assertEquals('TABLE1', tableName)
+                    field('id') {
+                        assertEquals(Field.Type.INTEGER, type)
+                        assertTrue(isKey)
+                    }
+                    field('name') {
+                        assertEquals(50, length)
+                        assertFalse(isNull)
+                    }
+                }
+
+                files('test:file') {
+                    assertEquals('/test', rootPath)
+                }
+                historypoint('test:hp') {
+                    assertEquals(con, connection)
+                    assertEquals('public', schemaName)
+                    assertEquals('s_hp', tableName)
+                    assertEquals(mergeSave, saveMethod)
+                }
+                sequence('test:seq') {
+                    assertEquals(con, connection)
+                    assertEquals('public.s_sequence', name)
+                }
+            }
+            finally {
+                TFS.storage.files.removeDir('repository.test', true)
+            }
+        }
     }
 }
