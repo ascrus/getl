@@ -526,9 +526,10 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
     /**
      * Send notifications to email
-     * @param smtpServer
+     * @param smtpServer mail server for sending email
+     * @param title email header template (variables are allowed: name, active and close)
      */
-    void sendToSmtp(EMailer smtpServer) {
+    void sendToSmtp(EMailer smtpServer, String title = null) {
         def rows = lastCheckStatusTable.rows(where: 'NOT is_correct OR (is_correct AND is_notification)',
                 queryParams: [dt: currentDateTime],
                 order: ['is_correct DESC', '(first_error_time = ParseDateTime(\'{dt}\', \'yyyy-MM-dd HH:mm:ss\')) DESC',
@@ -538,12 +539,16 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
             return
         }
 
+        if (title == null)
+            title = "Monitor \"{name}\" detected {active} active errors and {close} closed errors"
+        def activeErrors = lastCheckStatusTable.countRow('NOT is_correct')
+        def closeErrors =  lastCheckStatusTable.countRow('is_notification AND is_correct')
+        def titleStr = StringUtils.EvalMacroString(title, [name: repositoryModelName, active: activeErrors, close: closeErrors])
+
         smtpServer.with {
             Logs.Finest("Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients: $toAddress")
             def text = htmlNotification(rows)
-            sendMail(null, "Monitor \"${this.repositoryModelName}\" detected " +
-                    "${lastCheckStatusTable.countRow('NOT is_correct')} active errors and " +
-                    "${lastCheckStatusTable.countRow('is_notification AND is_correct')} closed errors", text, true)
+            sendMail(null, titleStr, text, true)
         }
 
         new Flow().writeTo(dest: statusTable, destParams: [operation: 'UPDATE', updateField: ['first_error_time','send_time']]) { updater ->

@@ -9,6 +9,8 @@ import org.junit.Test
 import static getl.test.TestRunner.Dsl
 
 class MonitorRulesTest extends TestRepository {
+    final def mailTitle = 'Test Getl monitor "{name}": {active} active errors, {close} closed errors'
+
     @Test
     void testSave() {
         Dsl {
@@ -133,7 +135,7 @@ class MonitorRulesTest extends TestRepository {
                 assertFalse(check())
                 assertTrue(statusTable.exists)
 //                checkStatusTable()
-                if (emailer != null) sendToSmtp emailer
+                if (emailer != null) sendToSmtp emailer, mailTitle
                 assertEquals(1, statusTable.countRow('NOT is_correct'))
                 assertEquals(1, lastCheckStatusTable.countRow('operation = \'INSERT\' AND is_notification'))
 
@@ -155,7 +157,7 @@ class MonitorRulesTest extends TestRepository {
                 }
                 assertFalse(check())
 //                checkStatusTable()
-                if (emailer != null) sendToSmtp emailer
+                if (emailer != null) sendToSmtp emailer, mailTitle
                 assertEquals(3, statusTable.countRow('NOT is_correct'))
                 assertEquals(3, lastCheckStatusTable.countRow('operation = \'UPDATE\' AND is_notification'))
 
@@ -167,7 +169,7 @@ class MonitorRulesTest extends TestRepository {
                 }
                 assertFalse(check())
 //                checkStatusTable()
-                if (emailer != null) sendToSmtp emailer
+                if (emailer != null) sendToSmtp emailer, mailTitle
                 assertEquals(3, statusTable.countRow('NOT is_correct'))
                 assertEquals(1, lastCheckStatusTable.countRow('operation = \'UPDATE\' AND is_notification'))
 
@@ -187,13 +189,13 @@ class MonitorRulesTest extends TestRepository {
                 }
                 assertFalse(check())
 //                checkStatusTable()
-                if (emailer != null) sendToSmtp emailer
+                if (emailer != null) sendToSmtp emailer, mailTitle
                 assertEquals(3, statusTable.countRow('is_correct'))
                 assertEquals(3, lastCheckStatusTable.countRow('is_notification'))
 
                 assertTrue(check())
 //                checkStatusTable()
-                if (emailer != null) sendToSmtp emailer
+                if (emailer != null) sendToSmtp emailer, mailTitle
                 assertEquals(3, statusTable.countRow('is_correct AND first_error_time IS NULL'))
                 assertEquals(0, lastCheckStatusTable.countRow('is_notification'))
             }
