@@ -1,15 +1,13 @@
 package getl.lang.sub
 
 import getl.jdbc.JDBCConnection
+import getl.jdbc.opts.RetrieveDatasetsSpec
 import getl.lang.Getl
 import getl.models.sub.RepositoryMapTables
 import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
 import getl.models.sub.RepositorySetOfTables
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertTrue
 
 /**
  * Manager of saving objects to the repository
@@ -64,7 +62,7 @@ class RepositorySave extends Getl {
     static void saveConnections(String env = 'dev', String mask = null) {
         Dsl {
             def count = repositoryStorageManager.saveRepository(RepositoryConnections, mask, env)
-            assertEquals(listConnections(mask).size(), count)
+            assert listConnections(mask).size() == count, 'Connection saving error!'
             logInfo "For environment \"$env\" $count connections saved"
         }
     }
@@ -82,7 +80,7 @@ class RepositorySave extends Getl {
                 }
             }
             def count = repositoryStorageManager.saveRepository(RepositoryDatasets, mask)
-            assertEquals(listDatasets(mask).size(), count)
+            assert listDatasets(mask).size() == count, 'Dataset saving error!'
             logInfo "$count datasets saved"
         }
     }
@@ -92,32 +90,84 @@ class RepositorySave extends Getl {
         saveDatasets(null, retrieveFields)
     }
 
-    /** Retrieve and add tables for the specified connection schemata to repository */
-    static void addTables(JDBCConnection con, String schema, String group, List<String> tables = null) {
-        assertNotNull(con)
-        assertNotNull(schema)
-        assertNotNull(group)
+    /**
+     * Retrieve and add tables for the specified connection schemata to repository
+     * @param con database connection
+     * @param schema table storage schema name
+     * @param group group name for repository objects
+     * @param mask list of table names or search masks
+     * @param typeObjects list of type added objects (default using tables)
+     */
+    static void addObjects(JDBCConnection con, String schema, String group, List<String> mask = null, List<String> typeObjects = null) {
+        assert con != null, 'It is required to specify the connection in "con"!'
+        assert schema != null, 'It is required to specify the schema name in "schema"!'
+        assert group != null, 'It is required to specify the group name in "group"!'
 
         Dsl {
             con.with {
                 def list = retrieveDatasets {
                     schemaName = schema
-                    tableMask = tables
+                    tableMask = mask
+                    if (typeObjects != null)
+                        filterByObjectType = typeObjects
                 }
-                assertTrue(list.size() > 0)
+                assert list.size() > 0, "No objects found in schema \"$schema\"!"
                 addTablesToRepository(list, group)
-                assertEquals(list.size(), repositoryStorageManager.saveRepository(RepositoryDatasets))
 
-                logInfo "Added ${list.size()} tables for schemata \"$schema\" to \"$group\" group in repository"
+                logInfo "Added ${list.size()} objects for schemata \"$schema\" to \"$group\" group in repository"
             }
         }
+    }
+
+    /**
+     * Retrieve and add tables for the specified connection schemata to repository
+     * @param con database connection
+     * @param schema table storage schema name
+     * @param group group name for repository objects
+     * @param mask list of table names or search masks
+     */
+    static void addTables(JDBCConnection con, String schema, String group, List<String> mask = null) {
+        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.tableType])
+    }
+
+    /**
+     * Retrieve and add views for the specified connection schemata to repository
+     * @param con database connection
+     * @param schema view storage schema name
+     * @param group group name for repository objects
+     * @param mask list of views names or search masks
+     */
+    static void addViews(JDBCConnection con, String schema, String group, List<String> mask = null) {
+        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.viewType])
+    }
+
+    /**
+     * Retrieve and add global temporary tables for the specified connection schemata to repository
+     * @param con database connection
+     * @param schema tables storage schema name
+     * @param group group name for repository objects
+     * @param mask list of tables names or search masks
+     */
+    static void addGlobalTables(JDBCConnection con, String schema, String group, List<String> mask = null) {
+        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.globalTableType])
+    }
+
+    /**
+     * Retrieve and add system tables for the specified connection schemata to repository
+     * @param con database connection
+     * @param schema table storage schema name
+     * @param group group name for repository objects
+     * @param mask list of table names or search masks
+     */
+    static void addSystemTables(JDBCConnection con, String schema, String group, List<String> mask = null) {
+        addObjects(con, schema, group, mask, [RetrieveDatasetsSpec.systemTableType])
     }
 
     /** Save file managers */
     static void saveFiles(String env = 'dev', String mask = null) {
         Dsl {
             def count = repositoryStorageManager.saveRepository(RepositoryFilemanagers, mask, env)
-            assertEquals(listFilemanagers(mask).size(), count)
+            assert listFilemanagers(mask).size() == count, 'File manager saving error!'
             logInfo "For environment \"$env\" $count file managers saved"
         }
     }
@@ -126,7 +176,7 @@ class RepositorySave extends Getl {
     static void saveHistorypoints(String mask = null) {
         Dsl {
             def count = repositoryStorageManager.saveRepository(RepositoryHistorypoints, mask)
-            assertEquals(listHistorypoints(mask).size(), count)
+            assert listHistorypoints(mask).size() == count, 'History point saving error!'
             logInfo "$count history point managers saved"
         }
     }
@@ -135,7 +185,7 @@ class RepositorySave extends Getl {
     static void saveSequences(String mask = null) {
         Dsl {
             def count = repositoryStorageManager.saveRepository(RepositorySequences, mask)
-            assertEquals(listSequences(mask).size(), count)
+            assert listSequences(mask).size() == count, 'Sequence saving error!'
             logInfo "$count sequences saved"
         }
     }
@@ -144,7 +194,7 @@ class RepositorySave extends Getl {
     static void saveReferenceFiles(String mask = null) {
         Dsl {
             def count = repositoryStorageManager.saveRepository(RepositoryReferenceFiles, mask)
-            assertEquals(models.listReferenceFiles(mask).size(), count)
+            assert models.listReferenceFiles(mask).size() == count, 'Model of reference file saving error!'
             logInfo "$count model of reference files saved"
         }
     }
@@ -153,7 +203,7 @@ class RepositorySave extends Getl {
     static void saveReferenceVerticaTables(String mask = null) {
         Dsl {
             def count = repositoryStorageManager.saveRepository(RepositoryReferenceVerticaTables, mask)
-            assertEquals(models.listReferenceVerticaTables(mask).size(), count)
+            assert models.listReferenceVerticaTables(mask).size() == count, 'Model of reference Vertica table saving error!'
             logInfo "$count models of reference Vertica tables saved"
         }
     }
@@ -162,7 +212,7 @@ class RepositorySave extends Getl {
     static void saveMonitorRules(String mask = null) {
         Dsl {
             def count = repositoryStorageManager.saveRepository(RepositoryMonitorRules, mask)
-            assertEquals(models.listMonitorRules(mask).size(), count)
+            assert models.listMonitorRules(mask).size() == count, 'Model of monitor rules saving error!'
             logInfo "$count model of monitoring rules saved"
         }
     }
@@ -171,7 +221,7 @@ class RepositorySave extends Getl {
     static void saveSetOfTables(String mask = null) {
         Dsl {
             def count = repositoryStorageManager.saveRepository(RepositorySetOfTables, mask)
-            assertEquals(models.listSetOfTables(mask).size(), count)
+            assert models.listSetOfTables(mask).size() == count, 'Model of set tables saving error!'
             logInfo "$count models of tablesets saved"
         }
     }
@@ -180,7 +230,7 @@ class RepositorySave extends Getl {
     static void saveMapTables(String mask = null) {
         Dsl {
             def count = repositoryStorageManager.saveRepository(RepositoryMapTables, mask)
-            assertEquals(models.listMapTables(mask).size(), count)
+            assert models.listMapTables(mask).size() == count, 'Model of map tables saving error!'
             logInfo "$count models of map tables saved"
         }
     }

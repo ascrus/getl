@@ -486,13 +486,13 @@ class Path implements Cloneable, GetlRepository {
 		getFiles(rootPath)
 	}
 
-	/** Analize file with mask and return value of variables */
-	Map analizeFile(String fileName, Map<String, Object> extendVars = null) {
+	/** Analyze file with mask and return value of variables */
+	Map analyzeFile(String fileName, Map<String, Object> extendVars = null) {
 		analize(fileName, false, extendVars)
 	}
 
-	/** Analize dir with mask and return value of variables */
-	Map analizeDir(String dirName, Map<String, Object> extendVars = null) {
+	/** Analyze dir with mask and return value of variables */
+	Map analyzeDir(String dirName, Map<String, Object> extendVars = null) {
 		analize(dirName, true, extendVars)
 	}
 
@@ -641,7 +641,7 @@ class Path implements Cloneable, GetlRepository {
 	List<Map> filterFiles(List<Map> files) {
 		List<Map> res = []
 		files.each { file ->
-			def m = analizeFile(file.filename as String)
+			def m = analyzeFile(file.filename as String)
 			if (m != null) res << file
 		}
 
@@ -750,5 +750,44 @@ elements:
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
 		sysParams.dslCreator = null
+	}
+
+	/**
+	 * Convert a list of masks to a list of paths
+	 * @param masks list of masks
+	 * @param vars variable masks
+	 * @return list of paths
+	 */
+	@CompileStatic
+	static List<Path> Masks2Paths(List<String> masks, Map<String, Map> vars = null) {
+		if (masks == null) return null
+		def res = [] as List<Path>
+		masks.each {mask ->
+			if (mask == null)
+				throw new ExceptionGETL('It is not allowed to specify null as a list value!')
+			res.add(new Path(mask: mask, vars: vars))
+		}
+		return res
+	}
+
+	/**
+	 * Matching specified value with list of paths
+	 * @param paths list of paths
+	 * @param value compare value
+	 * @return true if matches are found
+	 */
+	@CompileStatic
+	static Boolean MatchList(String value, List<Path> paths) {
+		if (paths == null)
+			throw new ExceptionGETL('Required paths parameter!')
+		if (value == null) return null
+		for (int i = 0; i < paths.size(); i++) {
+			def p = paths[i]
+			if (p == null)
+				throw new ExceptionGETL('It is not allowed to specify null as a list value!')
+			if (p.match(value))
+				return true
+		}
+		return false
 	}
 }

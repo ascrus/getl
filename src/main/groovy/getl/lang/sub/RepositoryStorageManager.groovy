@@ -5,7 +5,6 @@ import getl.exception.ExceptionDSL
 import getl.files.FileManager
 import getl.files.Manager
 import getl.files.ResourceManager
-import getl.jdbc.QueryDataset
 import getl.jdbc.SQLScripter
 import getl.jdbc.TableDataset
 import getl.lang.Getl
@@ -307,7 +306,7 @@ class RepositoryStorageManager {
 
     /** Return object name from file name */
     static Map<String, String> ObjectNameFromFileName(String fileName, Boolean useEnv) {
-        def res = ((useEnv)?objectNamePathEnv.analizeFile(fileName):objectNamePath.analizeFile(fileName)) as Map<String, String>
+        def res = ((useEnv)?objectNamePathEnv.analyzeFile(fileName):objectNamePath.analyzeFile(fileName)) as Map<String, String>
         if (res.isEmpty())
             throw new ExceptionDSL("Invalid repository configuration file name \"$fileName\"!")
 
@@ -471,7 +470,7 @@ class RepositoryStorageManager {
         if (file == null || !file.exists()) {
             if (!validExist) return null
             throw new ExceptionDSL("It is not possible to load object \"$name\" to " +
-                    "repository \"${repository.class.name}\": file \"$file\" was not found!")
+                    "repository \"${repository.class.name}\": file ${(isResourceStoragePath)?' in resource':'"' + file + '"'} was not found!")
         }
 
         GetlRepository obj = null

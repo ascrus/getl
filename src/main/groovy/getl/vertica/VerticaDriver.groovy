@@ -1,8 +1,6 @@
 package getl.vertica
 
 import groovy.transform.CompileStatic
-import groovy.transform.InheritConstructors
-
 import getl.csv.CSVDataset
 import getl.data.*
 import getl.driver.Driver
@@ -160,7 +158,7 @@ class VerticaDriver extends JDBCDriver {
 					"header=${source.header}"
 			]
 
-			parserText = "\nWITH PARSER fcsvparser(${opts.join(', ')})"
+			parserText = "\nWITH PARSER public.fcsvparser(${opts.join(', ')})"
 			if (source.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue)}"
 		}
 
@@ -461,6 +459,16 @@ class VerticaDriver extends JDBCDriver {
 		if (direct != null) ad << direct
 		if (label != null) ad << "label(${label})"
 		if (!ad.isEmpty()) res.afterDelete = "/*+${ad.join(', ')}*/"
+		return res
+	}
+
+	@Override
+	List<Field> fields(Dataset dataset) {
+		TableDataset ds = dataset as TableDataset
+		def res = super.fields(ds)
+		if (ds.type == JDBCDataset.viewType) {
+			res.each {it.isNull = true }
+		}
 		return res
 	}
 }

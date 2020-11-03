@@ -4,13 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVConnection
 import getl.csv.CSVDataset
 import getl.data.Connection
-import getl.data.Dataset
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import getl.jdbc.opts.GenerateDslTablesSpec
 import getl.jdbc.opts.RetrieveDatasetsSpec
 import getl.lang.Getl
-import getl.lang.opts.BaseSpec
 import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.UserLogins
@@ -18,7 +16,6 @@ import getl.proc.Flow
 import getl.tfs.TDS
 import getl.utils.*
 import groovy.sql.Sql
-import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -560,7 +557,7 @@ class JDBCConnection extends Connection implements UserLogins {
 		}
 		else {
 			def classPath = new Path(mask: '{package}.{classtype}Connection')
-			def classNames = classPath.analizeFile(connectionClassName)
+			def classNames = classPath.analyzeFile(connectionClassName)
 			classType = (classNames?.classtype as String)?.toLowerCase()
 		}
 		if (classType == null)
@@ -792,6 +789,7 @@ ${tab}${tab}}
 	static public final Integer transactionIsolationSerializable = java.sql.Connection.TRANSACTION_SERIALIZABLE
 
 	/** Current transactional isolation level */
+	@JsonIgnore
 	Integer getTransactionIsolation() {
 		checkEstablisheConnection()
 		return currentJDBCDriver.transactionIsolation

@@ -13,11 +13,8 @@ class ViewDataset extends TableDataset {
 	ViewDataset() {
 		super()
 		sysParams.isView = true
+		type = viewType
 	}
-
-	@Override
-	@JsonIgnore
-	Type getType() { super.getType()?:viewType }
 
 	/** Use specified connection */
 	JDBCConnection useConnection(JDBCConnection value) {

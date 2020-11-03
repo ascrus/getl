@@ -930,7 +930,7 @@ class FileUtils {
 	 */
 	static URLClassLoader ClassLoaderFromPath(String path, ClassLoader classLoader = null) {
 		if (classLoader == null) classLoader = ClassLoader.systemClassLoader
-		File pathFile = new File(path)
+		File pathFile = new File(TransformFilePath(path))
 		List<URL> urls = []
 		if (pathFile.isFile()) {
 			urls << pathFile.toURI().toURL()

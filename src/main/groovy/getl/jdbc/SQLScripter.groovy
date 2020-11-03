@@ -123,8 +123,14 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param fileName file name sql batch file
 	 * @param codePage file use specified encoding page (default utf-8)
 	 */
-	void loadFile (String fileName, String codePage = 'utf-8') {
-		setScript(new File(FileUtils.ResourceFileName(fileName)).getText(codePage))
+	void loadFile(String fileName, String codePage = 'utf-8') {
+		def fn = FileUtils.ResourceFileName(fileName)
+		if (fn == null)
+			throw new ExceptionGETL("Script file \"$fileName\" not found!")
+		def file = new File(fn)
+		if (!file.exists())
+			throw new ExceptionGETL("Script file \"$fileName\" not found!")
+		setScript(file.getText(codePage?:'utf-8'))
 	}
 
 	/**
@@ -136,7 +142,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	void loadResource(String fileName, def otherPath = null, String codePage = 'utf-8') {
 		def file = FileUtils.FileFromResources(fileName, otherPath)
 		if (file == null)
-			throw new ExceptionGETL("Resource file \"$fileName\" not found!")
+			throw new ExceptionGETL("Script file \"$fileName\" not found in resource!")
 		setScript(file.getText(codePage?:'utf-8'))
 	}
 
@@ -561,6 +567,9 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	void runSql(Boolean useParsing = true) {
 		if (connection == null)
 			throw new ExceptionGETL('Not defined jdbc connection for work!')
+
+		if (script == null)
+			throw new ExceptionGETL('No script was specified to execute!')
 
 		if (!useParsing) {
 			sql = StringUtils.EvalMacroString(script, allVars)

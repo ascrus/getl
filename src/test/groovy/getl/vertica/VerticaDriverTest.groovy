@@ -359,4 +359,28 @@ LIMIT 1'''
             }
         }
     }
+
+    @Test
+    void testViewFields() {
+        Getl.Dsl {
+            con.with {
+                def tab = verticaTable {
+                    tableName = 'test_view'
+                    field('id') { type = integerFieldType; isKey = true }
+                    field('name') { length = 50; isNull = false }
+                    field('value') { type = numericFieldType; length = 12; precision = 2 }
+                    create(ifNotExists: true)
+                }
+                executeCommand 'CREATE OR REPLACE VIEW v_test_view AS SELECT * FROM test_view'
+                def view = view {
+                    tableName = 'v_test_view'
+                    retrieveFields()
+                    assertEquals(3, field.size())
+                    field.each {assertTrue(it.isNull) }
+                }
+                view.drop()
+                tab.drop()
+            }
+        }
+    }
 }

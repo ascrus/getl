@@ -80,7 +80,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     /** List of allowed jdbc dataset classes */
     static public List<String> LISTJDBCTABLES = [
         DB2TABLE, EMBEDDEDTABLE, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, TABLEDATASET, MSSQLTABLE, MYSQLTABLE,
-        NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, VERTICATABLE
+        NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE, VERTICATABLE, VIEWDATASET
     ]
 
     /** List of allowed file dataset classes */

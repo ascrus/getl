@@ -5,6 +5,7 @@ import getl.jdbc.JDBCConnection
 import getl.jdbc.JDBCDriver
 import getl.jdbc.JDBCDriverProto
 import getl.jdbc.QueryDataset
+import getl.lang.Getl
 import getl.proc.Flow
 import getl.tfs.TDS
 import getl.utils.Config
@@ -80,6 +81,30 @@ class H2DriverTest extends JDBCDriverProto {
 
         ds.eachRow { r ->
             println r
+        }
+    }
+
+    @Test
+    void testViewFields() {
+        Getl.Dsl {
+            con.with {
+                def tab = h2Table {
+                    tableName = 'test_view'
+                    field('id') { type = integerFieldType; isKey = true }
+                    field('name') { length = 50; isNull = false }
+                    field('value') { type = numericFieldType; length = 12; precision = 2 }
+                    create(ifNotExists: true)
+                }
+                executeCommand 'CREATE OR REPLACE VIEW v_test_view AS SELECT * FROM test_view'
+                def view = view {
+                    tableName = 'v_test_view'
+                    retrieveFields()
+                    assertEquals(3, field.size())
+                    field.each {assertTrue(it.isNull) }
+                }
+                view.drop()
+                tab.drop()
+            }
         }
     }
 }

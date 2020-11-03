@@ -22,7 +22,7 @@ class EtlSpec extends BaseSpec {
      * Copy rows from source to destination dataset
      * <br>Closure gets two parameters: source and destination datasets
      */
-    void copyRows(Dataset source, Dataset destination,
+    FlowCopySpec copyRows(Dataset source, Dataset destination,
                   @DelegatesTo(FlowCopySpec)
                   @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowCopySpec']) Closure cl = null) {
         if (source == null)
@@ -37,10 +37,12 @@ class EtlSpec extends BaseSpec {
         runClosure(parent, cl)
         if (!parent.isProcessed) parent.copyRow(null)
         getGetl().finishProcess(pt, parent.countRow)
+
+        return parent
     }
 
     /** Write rows to destination dataset */
-    void rowsTo(Dataset destination,
+    FlowWriteSpec rowsTo(Dataset destination,
                 @DelegatesTo(FlowWriteSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteSpec']) Closure cl) {
         if (destination == null)
@@ -53,10 +55,12 @@ class EtlSpec extends BaseSpec {
         parent.destination = destination
         runClosure(parent, cl)
         getGetl().finishProcess(pt, parent.countRow)
+
+        return parent
     }
 
     /** Write rows to destination dataset */
-    void rowsTo(@DelegatesTo(FlowWriteSpec)
+    FlowWriteSpec rowsTo(@DelegatesTo(FlowWriteSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteSpec']) Closure cl) {
         if (cl == null)
             throw new ExceptionDSL('Required closure code!')
@@ -64,11 +68,11 @@ class EtlSpec extends BaseSpec {
         if (destination == null || !(destination instanceof Dataset))
             throw new ExceptionDSL('Can not detect destination dataset!')
 
-        rowsTo(destination, cl)
+        return rowsTo(destination, cl)
     }
 
     /** Write rows to many destination datasets */
-    void rowsToMany(Map destinations,
+    FlowWriteManySpec rowsToMany(Map destinations,
                     @DelegatesTo(FlowWriteManySpec)
                     @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteManySpec']) Closure cl) {
         if (destinations == null || destinations.isEmpty())
@@ -83,10 +87,12 @@ class EtlSpec extends BaseSpec {
         parent.destinations = destinations
         runClosure(parent, cl)
         getGetl().finishProcess(pt)
+
+        return parent
     }
 
     /** Process rows from source dataset */
-    void rowsProcess(Dataset source,
+    FlowProcessSpec rowsProcess(Dataset source,
                      @DelegatesTo(FlowProcessSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
         if (source == null)
@@ -98,16 +104,19 @@ class EtlSpec extends BaseSpec {
         parent.source = source
         runClosure(parent, cl)
         getGetl().finishProcess(pt, parent.countRow)
+
+        return parent
     }
 
     /** Process rows from source dataset */
-    void rowsProcess(@DelegatesTo(FlowProcessSpec)
+    FlowProcessSpec rowsProcess(@DelegatesTo(FlowProcessSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
         if (cl == null)
             throw new ExceptionDSL('Required closure code!')
         def source = DetectClosureDelegate(cl)
         if (source == null || !(source instanceof Dataset))
             throw new ExceptionDSL('Can not detect source dataset!')
-        rowsProcess(source, cl)
+
+        return rowsProcess(source, cl)
     }
 }
