@@ -61,7 +61,7 @@ class JDBCConnection extends Connection implements UserLogins {
 				'login', 'password', 'connectURL', 'sqlHistoryFile', 'autoCommit', 'connectProperty', 'dbName',
 				'javaConnection', 'maskDate', 'maskDateTime', 'sessionProperty', 'maskTime', 'schemaName',
 				'driverName', 'driverPath', 'connectHost', 'connectDatabase', 'balancer', 'fetchSize', 'loginTimeout',
-				'queryTimeout', 'sqlHistoryOutput', 'storedLogins'])
+				'queryTimeout', 'sqlHistoryOutput', 'storedLogins', 'outputServerWarningToLog'])
 	}
 	
 	@Override
@@ -300,7 +300,11 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Fetch size records for read query
 	 */
-	void setFetchSize(Integer value) { params.fetchSize = value }
+	void setFetchSize(Integer value) {
+		if (value != null && value < 0)
+			throw new ExceptionGETL('The fetch size must be equal or greater than zero!')
+		params.fetchSize = value
+	}
 	
 	/**
 	 * Set login timeout for connection driver (in seconds) 
@@ -309,7 +313,11 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Set login timeout for connection driver (in seconds)
 	 */
-	void setLoginTimeout(Integer value) { params.loginTimeout = value }
+	void setLoginTimeout(Integer value) {
+		if (value != null && value <= 0)
+			throw new ExceptionGETL('The login timeout must be greater than zero!')
+		params.loginTimeout = value
+	}
 	
 	/**
 	 * Set statement timeout for connection driver (in seconds)
@@ -318,7 +326,11 @@ class JDBCConnection extends Connection implements UserLogins {
 	/**
 	 * Set statement timeout for connection driver (in seconds)
 	 */
-	void setQueryTimeout(Integer value) { params.queryTimeout = value }
+	void setQueryTimeout(Integer value) {
+		if (value != null && value <= 0)
+			throw new ExceptionGETL('The query timeout must be greater than zero!')
+		params.queryTimeout = value
+	}
 	
 	/**
 	 * Return using groovy SQL connection

@@ -63,7 +63,7 @@ class Connection implements Cloneable, GetlRepository {
 	protected void registerParameters () {
 		methodParams.register('Super',
 				['driver', 'config', 'autoSchema', 'dataset', 'connection', 'numberConnectionAttempts',
-				 'timeoutConnectionAttempts', 'attributes', 'description'])
+				 'timeoutConnectionAttempts', 'attributes', 'description', 'logWriteToConsole'])
 		methodParams.register('retrieveObjects', [])
 		methodParams.register('executeCommand', ['command', 'queryParams', 'isUpdate'])
 	}
@@ -238,7 +238,8 @@ class Connection implements Cloneable, GetlRepository {
 	Integer getNumberConnectionAttempts() { (params.numberConnectionAttempts as Integer)?:1 }
 	/** The number of connection attempts on error (default 1) */
 	void setNumberConnectionAttempts(Integer value) {
-		if (value == null || value < 1) throw new ExceptionGETL('The number of connection attempts must be greater than zero!')
+		if (value != null && value < 1)
+			throw new ExceptionGETL('The number of connection attempts must be greater than zero!')
 		params.numberConnectionAttempts = value
 	}
 
@@ -246,7 +247,8 @@ class Connection implements Cloneable, GetlRepository {
 	Integer getTimeoutConnectionAttempts() { (params.timeoutConnectionAttempts as Integer)?:1 }
 	/** The timeout seconds of connection attempts on error (default 1) */
 	void setTimeoutConnectionAttempts(Integer value) {
-		if (value == null || value <= 0) throw new ExceptionGETL('The timeout of connection attempts must be greater than zero!')
+		if (value != null && value <= 0)
+			throw new ExceptionGETL('The timeout of connection attempts must be greater than zero!')
 		params.timeoutConnectionAttempts = value
 	}
 	

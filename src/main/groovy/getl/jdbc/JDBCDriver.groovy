@@ -1824,7 +1824,7 @@ $sql
 	}
 	
 	@Override
-	void openWrite (Dataset dataset, Map params, Closure prepareCode) {
+	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		def wp = new WriterParams()
 		dataset._driver_params = wp
 		
@@ -2392,5 +2392,100 @@ $sql
 		}
 
 		return res
+	}
+
+	/**
+	 * Return hints for write operations
+	 * @param table source table
+	 * @param operator operator type (INSERT, UPDATE, DELETE or MERGE)
+	 * @return hint string
+	 */
+	protected String getHintsForWriteOperator(TableDataset table, String operator) { null }
+
+	/**
+	 * Syntax for copying from table to table
+	 * @return sql script template
+	 */
+	protected String syntaxCopyTableTo(Boolean useWhere) {
+		return '''INSERT {_getl_hints}INTO {_getl_dest} (
+{_getl_cols}
+)
+SELECT
+{_getl_expr}
+FROM {_getl_source}
+''' + ((useWhere)?'WHERE {_getl_where}':'')
+	}
+
+	/**
+	 * Copying table rows to another table
+	 * @param source source table
+	 * @param dest destination table
+	 * @param map column mapping when copying
+	 * @return number of copied rows
+	 */
+	Long copyTableTo(TableDataset source, TableDataset dest, Map<String, String> map) {
+		if (source == null)
+			throw new ExceptionGETL('It is required to specify the target table in parameter "source"!')
+		source.with {
+			if (type == tableType && !exists)
+				throw new ExceptionGETL("Table $it does not exist or does not have access rights to it!")
+			if (field.isEmpty()) {
+				retrieveFields()
+				if (field.isEmpty())
+					throw new ExceptionGETL("Unable to get the list of fields for table $it!")
+			}
+		}
+
+		if (dest == null)
+			throw new ExceptionGETL('It is required to specify the target table in parameter "dest"!')
+		dest.with {
+			if (type == tableType && !exists)
+				throw new ExceptionGETL("Table $it does not exist or does not have access rights to it!")
+			if (field.isEmpty()) {
+				retrieveFields()
+				if (field.isEmpty())
+					throw new ExceptionGETL("Unable to get the list of fields for table $it!")
+			}
+		}
+
+		if (map == null) map = [:] as Map<String, String>
+		map.each {fieldName, expr ->
+			if (dest.fieldByName(fieldName) == null)
+				throw new ExceptionGETL("Field \"$fieldName\" not found in table $dest!")
+		}
+
+		def transf = [:] as Map<String, String>
+		dest.field.each { destField ->
+			def destName = destField.name.toLowerCase()
+			String val
+
+			if (map.containsKey(destName)) {
+				def mapVal = map.get(destName)
+				if (mapVal != null)
+					val = mapVal
+			}
+			else {
+				if (source.fieldByName(destName) != null)
+					val = prepareObjectNameForSQL(destName, source)
+			}
+
+			if (val != null)
+				transf.put(destName, val)
+		}
+
+		def colsList = [] as List<String>
+		def exprList = [] as List<String>
+		transf.each {fieldName, expr ->
+			colsList << '  ' + prepareObjectNameForSQL(fieldName, dest)
+			exprList << '  ' + expr
+		}
+
+		def hints = getHintsForWriteOperator(dest, 'INSERT')?:''
+		if (hints.length() != 0) hints += ' '
+		def where = source.readOpts.where
+
+		return executeCommand(syntaxCopyTableTo(where != null), [queryParams: source.queryParams +
+				[_getl_hints: hints, _getl_dest: dest.fullTableName, _getl_source: source.fullTableName, _getl_cols: colsList.join(',\n'),
+				 _getl_expr: exprList.join(',\n'), _getl_where: where]])
 	}
 }

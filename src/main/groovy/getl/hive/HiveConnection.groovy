@@ -59,16 +59,18 @@ class HiveConnection extends JDBCConnection {
     String getVendor() { params.vendor as String }
     /** Vendor driver name */
     void setVendor(String value) {
-        switch (value?.toLowerCase()) {
-            case 'apache':
-                break
-            case 'hortonworks':
-                break
-            case 'cloudera':
-                break
-            default:
-                throw new ExceptionGETL("Unknown Hive vendor \"$value\"")
+        if (value != null) {
+            switch (value?.toLowerCase()) {
+                case 'apache':
+                    break
+                case 'hortonworks':
+                    break
+                case 'cloudera':
+                    break
+                default:
+                    throw new ExceptionGETL("Unknown Hive vendor \"$value\"")
 
+            }
         }
         params.vendor = value
     }

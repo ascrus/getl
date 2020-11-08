@@ -10,6 +10,7 @@ import getl.utils.MapUtils
 import getl.utils.MapUtilsTest
 import groovy.json.JsonBuilder
 import groovy.transform.InheritConstructors
+import org.apache.kerby.config.Conf
 import org.junit.Before
 import org.junit.Test
 
@@ -101,15 +102,20 @@ class ConfigSlurperTest extends getl.test.GetlTest {
 
         assertTrue(['a', 1, 'variable value', 'local variable value', null].equals(Config.content.map.list))
 
-
         Config.content.var1 = '${configvars.local_var}'
         Config.content.var3[0].d = '${configvars.local_var}'
+        Config.content.var3[0].put(1, 111)
         Config.content.var3[1].d = '${vars.config_var}'
+        Config.content.var3[1].put('_1', 222)
         Config.vars.remove('config_var')
+        (Config.content.map as Map)."a1" = 1
+        (Config.content.map as Map)."_a1" = 2
+        (Config.content.map as Map)."1" = 3
+        (Config.content.map as Map)."_1" = 4
         Config.SaveConfig(fileName: 'test_config.groovy')
         def groovyFile = new File("${configPath.currentPath()}/test_config.groovy")
 //        groovyFile.deleteOnExit()
-//        println groovyFile.text
+        println groovyFile.text
 
         Config.ClearConfig()
         Config.SetValue('vars.config_var', 'variable value')
@@ -118,8 +124,12 @@ class ConfigSlurperTest extends getl.test.GetlTest {
 //        println MapUtils.ToJson(Config.content)
         assertEquals(Config.content.var1.toString(), 'local variable value')
         assertEquals('2019-02-01 01:02:03', Config.content.var2)
-        assertTrue([a:1,b:2,c:3,d:'local variable value'].equals(Config.content.var3[0]))
-        assertTrue([a:4,b:5,c:6,d:'variable value'].equals(Config.content.var3[1]))
+        assertTrue([a:1,b:2,c:3,d:'local variable value', 1: 111].equals(Config.content.var3[0]))
+        assertTrue([a:4,b:5,c:6,d:'variable value', '_1': 222].equals(Config.content.var3[1]))
+        assertEquals(1, (Config.content.map as Map)."a1")
+        assertEquals(2, (Config.content.map as Map)."_a1")
+        assertEquals(3, (Config.content.map as Map)."1")
+        assertEquals(4, (Config.content.map as Map)."_1")
     }
 
     @Test

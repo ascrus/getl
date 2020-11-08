@@ -122,8 +122,8 @@ class CSVDriver extends FileDriver {
 	List<Field> fields(Dataset dataset) {
 		def p = readParamDataset(dataset, [:]) 
 		
-		def csvfile = new File(p.path)
-		if (!csvfile.exists()) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" not found or invalid path \"${dataset.connection.params.path}\"")
+		def csvFile = new File(p.path)
+		if (!csvFile.exists()) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" not found or invalid path \"${dataset.connection.params.path}\"")
 		Reader fileReader = getFileReader(dataset as FileDataset, [:])
 
 		CsvPreference pref = new CsvPreference.Builder(p.quoteStr as char, (p.fieldDelimiter) as int, p.rowDelimiter as String).useQuoteMode(p.qMode as QuoteMode).build()
@@ -164,24 +164,23 @@ class CSVDriver extends FileDriver {
 													   String locale, String decimalSeparator, String formatDate,
 													   String formatTime, String formatDateTime, Boolean isValid) {
 		CellProcessor cp
-		
+
 		if (field.type == null || (field.type in [Field.Type.STRING, Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
-			if (BoolUtils.IsValue(field.trim)) cp = new Trim()
+			if (field.length != null && isValid)
+				cp = new StrMinMax(0L, field.length.toLong())
+			if (BoolUtils.IsValue(field.trim))
+				cp = (cp != null)?new Trim(cp):new Trim()
 
 			if (isEscape && field.type == Field.Type.STRING) {
 				if (!isWrite)
-					/*cp = (cp != null)?new CSVFmtEscapeString(cp):new CSVFmtEscapeString()
-				else*/
 					cp = (cp != null)?new CSVParseEscapeString(cp):new CSVParseEscapeString()
 			}
 		} else if (field.type == Field.Type.INTEGER) {
-			if (!isWrite) {
+			if (!isWrite)
 				cp = new ParseInt()
-			}
 		} else if (field.type == Field.Type.BIGINT) {
-				if (!isWrite) {
+				if (!isWrite)
 					cp = new ParseLong()
-				}
 		} else if (field.type == Field.Type.NUMERIC) {
 			def ds = ListUtils.NotNullValue([field.decimalSeparator, decimalSeparator]) as String
 			def fieldLocale = (field.extended.locale as String)?:locale
@@ -223,9 +222,8 @@ class CSVDriver extends FileDriver {
 				}
 			}
 		} else if (field.type == Field.Type.DOUBLE) {
-			if (!isWrite) {
+			if (!isWrite)
 				cp = new ParseDouble()
-			}
 		} else if (field.type == Field.Type.BOOLEAN) {
 			String[] v = (field.format == null)?['1', '0']:field.format.toLowerCase().split('[|]')
 			if (v[0] == null) v[0] = '1'
@@ -260,30 +258,23 @@ class CSVDriver extends FileDriver {
 				}
 			}
 			else {
-				if (fieldLocale == null) {
+				if (fieldLocale == null)
 					//noinspection UnnecessaryQualifiedReference
 					cp = new org.supercsv.cellprocessor.FmtDate(df)
-				}
-				else {
+				else
 					cp = new CSVFmtDate(df, fieldLocale)
-				}
 			}
 		} else if (field.type == Field.Type.BLOB) {
-			if (!isWrite) {
+			if (!isWrite)
 				cp = new CSVParseBlob()
-			}
-			else {
+			else
 				cp = new CSVFmtBlob()
-			} 
 		} else if (field.type == Field.Type.TEXT) {
-			if (isWrite) {
+			if (isWrite)
 				cp = new CSVFmtClob()
-			}
 
 			if (isEscape) {
 				if (!isWrite)
-					/*cp = (cp != null)?new CSVFmtEscapeString(cp):new CSVFmtEscapeString()
-				else*/
 					cp = (cp != null)?new CSVParseEscapeString(cp):new CSVParseEscapeString()
 			}
 		} else {
@@ -298,7 +289,7 @@ class CSVDriver extends FileDriver {
 		else
 			cp = (cp != null)?new Optional(cp):new Optional()
 
-		if (nullAsValue != null && BoolUtils.IsValue(field.isNull, true)) {
+		if (nullAsValue != null /*&& BoolUtils.IsValue(field.isNull, true)*/) {
 			if (isWrite)
 				cp = new ConvertNullTo(nullAsValue, cp)
 			else
@@ -434,11 +425,11 @@ class CSVDriver extends FileDriver {
 
 		try {
 			String[] header
-			List<Field> filefields = []
+			List<Field> fileFields = []
 			if (p.isHeader) {
 				header = reader.getHeader(true)
 				if (!ignoreHeader) {
-					filefields = header2fields(header)
+					fileFields = header2fields(header)
 				}
 				else {
 					header = fields2header(dataset.field, null)
@@ -454,7 +445,7 @@ class CSVDriver extends FileDriver {
 
 			ArrayList<String> listFields = new ArrayList<String>()
 			if (prepareCode != null) {
-				listFields = (ArrayList<String>)prepareCode.call(filefields)
+				listFields = (ArrayList<String>)prepareCode.call(fileFields)
 			}
 			
 			CellProcessor[] cp = fields2cellProcessor([dataset: dataset, fields: listFields, header: header, isOptional: readAsText, isWrite: false, isValid: isValid, isEscape: escaped, nullAsValue: p.nullAsValue])
@@ -780,10 +771,10 @@ class CSVDriver extends FileDriver {
 
 	protected static Long readLinesCount(CSVDataset dataset) {
 		if (!dataset.existsFile())
-			throw new ExceptionGETL("File \"${dataset.fullFileName()}\" not found")
+			throw new ExceptionGETL("File \"${dataset.fullFileName()}\" not found!")
 
 		if (!(dataset.rowDelimiter in ['\n', '\r\n']))
-			throw new ExceptionGETL('Allow CSV file only standart row delimiter')
+			throw new ExceptionGETL('Allow CSV file only standard row delimiter!')
 		
 		BufferedReader reader
 		if (dataset.isGzFile) {
@@ -812,8 +803,10 @@ class CSVDriver extends FileDriver {
 
 	@SuppressWarnings("DuplicatedCode")
 	static Long prepareCSVForBulk(CSVDataset target, CSVDataset source, Map<String, String> encodeTable, Closure code) {
-		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
-		if (!(source.rowDelimiter in ['\n', '\r\n'])) throw new ExceptionGETL('Allow convert CSV files only standart row delimiter')
+		if (!source.existsFile())
+			throw new ExceptionGETL("File \"${source.fullFileName()}\" not found!")
+		if (!(source.rowDelimiter in ['\n', '\r\n']))
+			throw new ExceptionGETL('Allow convert CSV files only standard row delimiter!')
 
 		if (source.field.isEmpty() && source.autoSchema) source.loadDatasetMetadata()
 		//if (source.field.isEmpty()) throw new ExceptionGETL('Required fields from source dataset')

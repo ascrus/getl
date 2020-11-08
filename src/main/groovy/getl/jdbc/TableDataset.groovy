@@ -694,4 +694,14 @@ class TableDataset extends JDBCDataset {
 
 		return name
 	}
+
+	/**
+	 * Copying table rows to another table
+	 * @param dest destination table
+	 * @param map column mapping when copying (dest col: expression)
+	 * @return number of copied rows
+	 */
+	Long copyTo(TableDataset dest, Map<String, String> map = [:]) {
+		return currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map)
+	}
 }

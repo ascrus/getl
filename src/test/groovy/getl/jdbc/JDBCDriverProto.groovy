@@ -630,6 +630,7 @@ END FOR;
         retrieveObject()
         if (insertData() > 0) {
             copyToCsv()
+            copyToTable()
             updateData()
             queryData()
             mergeData()
@@ -705,9 +706,33 @@ END FOR;
         }
 	}
 
-    protected copyToCsv() {
+    protected void copyToCsv() {
         def csv = TFS.dataset()
         new Flow().copy(source: table, dest: csv, inheritFields: true)
         assertEquals(table.readRows, csv.writeRows)
+    }
+
+    protected void copyToTable() {
+        if (!con.driver.isOperation(Driver.Operation.INSERT)) return
+
+        def table1 = table.cloneDataset() as TableDataset
+        table1.readOpts {where = 'id1 > 0' }
+        def table2 = table.cloneDataset() as TableDataset
+        table2.with {
+            type = localTemporaryTableType
+            schemaName = null
+            tableName = tableName + '_clone'
+            createOpts {indexes.clear() }
+            create()
+        }
+
+        try {
+            def countRows = table1.countRow()
+            assertEquals(countRows, table1.copyTo(table2, [value: 'value + 1.00']))
+            assertEquals(countRows, table2.countRow())
+        }
+        finally {
+            table2.drop()
+        }
     }
 }

@@ -17,8 +17,10 @@ class XMLConnection extends FileConnection {
 	
 	XMLConnection (Map params) {
 		super(new HashMap([driver: XMLDriver]) + params?:[:])
+
+		methodParams.register('Super', ['defaultAccessMethod'])
 		
-		if (this.getClass().name == 'getl.xml.XMLConnection') methodParams.validation("Super", params?:[:])
+		if (this.getClass().name == 'getl.xml.XMLConnection') methodParams.validation('Super', params?:[:])
 	}
 
 	/** Current XML connection driver */
@@ -38,7 +40,7 @@ class XMLConnection extends FileConnection {
 	 * <br>default: DEFAULT_ATTRIBUTE_ACCESS
 	 */
 	void setDefaultAccessMethod(Integer value) {
-		if (!(value in [DEFAULT_NODE_ACCESS, DEFAULT_ATTRIBUTE_ACCESS]))
+		if (value != null && !(value in [DEFAULT_NODE_ACCESS, DEFAULT_ATTRIBUTE_ACCESS]))
 			throw new ExceptionGETL('Invalid default access method property!')
 		params.defaultAccessMethod = value
 	}

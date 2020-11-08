@@ -683,9 +683,9 @@ class CSVDriverTest extends getl.test.GetlTest {
             def csv = csvTemp {
                 header = true
                 fieldDelimiter = ','
-                field('id') { type = integerFieldType; isNull = false }
-                field('name') { isNull = false }
-                field('value') { type = numericFieldType }
+                field('id') { type = integerFieldType; isNull = false; isKey = true }
+                field('name') { isNull = false; length = 10 }
+                field('value') { type = numericFieldType; length = 6; precision = 2 }
                 constraintsCheck = true
                 readOpts { saveErrors = true }
             }
@@ -693,14 +693,18 @@ class CSVDriverTest extends getl.test.GetlTest {
                 temporaryFile = true
                 writeln 'id,name,value'
                 writeln '1,test 1,123.45'
+                writeln '2,test 2,321.54'
+                writeln '1,test 1,123.45'
                 writeln ',test 1,123.45'
                 writeln '1,test 1,bad'
+                writeln '3,12345678901,100.00'
             }
             def rows = csv.rows()
-            assertEquals(1, rows.size())
+            assertEquals(2, rows.size())
             assertEquals([id:1, name: 'test 1', value: 123.45], rows[0])
+            assertEquals([id:2, name: 'test 2', value: 321.54], rows[1])
             def erows = csv.errorsDataset.rows()
-            assertEquals(2, erows.size())
+            assertEquals(4, erows.size())
 //            erows.each {println it }
         }
     }

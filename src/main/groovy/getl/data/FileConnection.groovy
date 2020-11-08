@@ -22,10 +22,10 @@ class FileConnection extends Connection {
 	FileConnection (Map params) {
 		super((params != null)?(params + (!params.containsKey('driver')?[driver: FileDriver]:[:])):null)
 		if (!(driver instanceof FileDriver))
-			throw new ExceptionGETL("Requider FileDriver instance class for connection!")
-		
-		methodParams.register("Super", ["path", "codePage", "createPath", "isGzFile", "extension", "append",
-										"deleteOnEmpty", "fileSeparator", "bufferSize"])
+			throw new ExceptionGETL("Required FileDriver instance class for connection!")
+
+		methodParams.register('Super', ['path', 'codePage', 'createPath', 'isGzFile', 'extension', 'append',
+										'deleteOnEmpty', 'fileSeparator', 'bufferSize'])
 	}
 
 	@Override

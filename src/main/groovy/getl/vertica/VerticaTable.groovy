@@ -8,6 +8,7 @@ import getl.exception.ExceptionGETL
 import getl.jdbc.*
 import getl.jdbc.opts.*
 import getl.oracle.OracleTable
+import getl.utils.BoolUtils
 import getl.utils.DateUtils
 import getl.utils.Logs
 import getl.vertica.opts.*
@@ -138,7 +139,7 @@ class VerticaTable extends TableDataset {
         if (startPartition instanceof String || startPartition instanceof GString)
             res.start = '\'' + startPartition + '\''
         else if (startPartition instanceof Date) {
-            if (truncateToDate)
+            if (BoolUtils.IsValue(truncateToDate, true))
                 res.start = '\'' + DateUtils.FormatDate('yyyy-MM-dd', startPartition as Date) + '\'::date'
             else
                 res.start = '\'' + DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', startPartition as Date) + '\'::timestamp'
@@ -168,9 +169,9 @@ class VerticaTable extends TableDataset {
      */
     private void validPartitionParams(def startPartition, def finishPartition, Boolean needFinishParam) {
         if (startPartition == null)
-            throw new ExceptionGETL('Required value for parameter "startPartition"!')
+            throw new ExceptionGETL('Requires value for parameter "startPartition"!')
         if (needFinishParam && finishPartition == null)
-            throw new ExceptionGETL('Required value for parameter "finishPartition"!')
+            throw new ExceptionGETL('Requires value for parameter "finishPartition"!')
     }
 
     /**
@@ -184,6 +185,10 @@ class VerticaTable extends TableDataset {
     String dropPartitions(def startPartition, def finishPartition,
                           Boolean isSplit = false, Boolean truncateToDate = true) {
         validTableName()
+
+        if (isSplit == null)
+            throw new ExceptionGETL('Requires a value for parameter "isSplit"!')
+
         validPartitionParams(startPartition, finishPartition, true)
         def part = processPartitionParams(startPartition, finishPartition, truncateToDate)
 
@@ -215,10 +220,13 @@ class VerticaTable extends TableDataset {
         def part = processPartitionParams(startPartition, finishPartition, truncateToDate)
 
         if (destinationTable == null)
-            throw new ExceptionGETL('Required to set the destination table!')
+            throw new ExceptionGETL('Requires to set the destination table!')
 
         if (destinationTable.tableName == null)
-            throw new ExceptionGETL('Required to specify the destination table name!')
+            throw new ExceptionGETL('Requires to specify the destination table name!')
+
+        if (isSplit == null)
+            throw new ExceptionGETL('Requires a value for parameter "isSplit"!')
 
         def qry = new QueryDataset()
         qry.with {
@@ -249,10 +257,13 @@ class VerticaTable extends TableDataset {
         def part = processPartitionParams(startPartition, finishPartition, truncateToDate)
 
         if (destinationTable == null)
-            throw new ExceptionGETL('Required to set the destination table!')
+            throw new ExceptionGETL('Requires to set the destination table!')
 
         if (destinationTable.tableName == null)
-            throw new ExceptionGETL('Required to specify the destination table name!')
+            throw new ExceptionGETL('Requires to specify the destination table name!')
+
+        if (isSplit == null)
+            throw new ExceptionGETL('Requires a value for parameter "isSplit"!')
 
         def qry = new QueryDataset()
         qry.with {
@@ -283,10 +294,13 @@ class VerticaTable extends TableDataset {
         def part = processPartitionParams(startPartition, finishPartition, truncateToDate)
 
         if (destinationTable == null)
-            throw new ExceptionGETL('Required to set the destination table!')
+            throw new ExceptionGETL('Requires to set the destination table!')
 
         if (destinationTable.tableName == null)
-            throw new ExceptionGETL('Required to specify the destination table name!')
+            throw new ExceptionGETL('Requires to specify the destination table name!')
+
+        if (isSplit == null)
+            throw new ExceptionGETL('Requires a value for parameter "isSplit"!')
 
         def qry = new QueryDataset()
         qry.with {
@@ -353,10 +367,10 @@ class VerticaTable extends TableDataset {
         validTableName()
 
         if (sourceTable == null)
-            throw new ExceptionGETL('Required to set the source table!')
+            throw new ExceptionGETL('Requires to set the source table!')
 
         if (sourceTable.tableName == null)
-            throw new ExceptionGETL('Required to specify the source table name!')
+            throw new ExceptionGETL('Requires to specify the source table name!')
 
         def p = [:] as Map<String, Object>
         p.table = fullTableName

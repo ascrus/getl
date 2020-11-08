@@ -335,6 +335,15 @@ class ConfigSlurper extends ConfigManager {
 	}
 
 	/**
+	 * Preparing variable name
+	 * @param name variable name
+	 * @return
+	 */
+	static String PrepareVariableName(String name) {
+		return (name.matches('(?i)[_]*[a-z]+.*'))?name:('this."${\'' + StringUtils.EscapeJava(name) + '\'}"')
+	}
+
+	/**
 	 * Write map data
 	 * @param data stored map data
 	 * @param writer writer object
@@ -349,6 +358,7 @@ class ConfigSlurper extends ConfigManager {
 		def lines = [] as List<String>
 		data.each { key, value ->
 			if (value == null) return
+			def varName = (isListMap)?key:PrepareVariableName(key)
 
 			if (value instanceof Map) {
 				def map = value as Map
@@ -356,7 +366,7 @@ class ConfigSlurper extends ConfigManager {
 					def sb = new StringBuilder()
 					if (SaveMap(map, sb, convertVars, trimMap, tab + 1) > 0) {
 						def eqStr = (isListMap)?':':''
-						lines.add("${tabStr}${key}${eqStr} {\n" + sb.toString() + "${tabStr}}")
+						lines.add("${tabStr}${varName}${eqStr} {\n" + sb.toString() + "${tabStr}}")
 						res++
 					}
 				}
@@ -366,8 +376,8 @@ class ConfigSlurper extends ConfigManager {
 				if (!list.isEmpty()) {
 					def sb = new StringBuilder()
 					if (SaveList(list, sb, convertVars, trimMap, tab + 1) > 0) {
-						def eqStr = (isListMap) ? ':' : ' ='
-						lines.add("${tabStr}${key}${eqStr} [\n" + sb.toString() + "${tabStr}]")
+						def eqStr = (isListMap)?':':' ='
+						lines.add("${tabStr}${varName}${eqStr} [\n" + sb.toString() + "${tabStr}]")
 						res++
 					}
 				}
@@ -378,7 +388,7 @@ class ConfigSlurper extends ConfigManager {
 					def sb = new StringBuilder()
 					if (SaveMap(map, sb, convertVars, trimMap, tab + 1) > 0) {
 						def eqStr = (isListMap)?':':''
-						lines.add("${tabStr}${key}${eqStr} {\n" + sb.toString() + "${tabStr}}")
+						lines.add("${tabStr}${varName}${eqStr} {\n" + sb.toString() + "${tabStr}}")
 						res++
 					}
 				}
@@ -477,7 +487,7 @@ class ConfigSlurper extends ConfigManager {
 
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def eqStr = (isListMap)?':':' ='
-		def keyStr = (key != null)?"$key$eqStr ":''
+		def keyStr = (key != null)?"${(isListMap)?key:PrepareVariableName(key)}$eqStr ":''
 		if (value instanceof Date) {
 			def str = "new java.sql.Timestamp(Date.parse('yyyy-MM-dd HH:mm:ss.SSS', '${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', value as Date)}').time)"
 			writer.append("${tabStr}${keyStr}$str")

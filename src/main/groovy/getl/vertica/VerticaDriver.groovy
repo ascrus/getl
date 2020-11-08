@@ -397,6 +397,10 @@ class VerticaDriver extends JDBCDriver {
 		return (!hints.isEmpty())?('/*+' + hints.join(', ') + '*/'):''
 	}
 
+	protected String getHintsForWriteOperator(TableDataset table, String operator) {
+		return writeHints(table.writeOpts.params)
+	}
+
 	@Override
 	protected String syntaxInsertStatement(JDBCDataset dataset, Map params) {
 		return "INSERT ${writeHints(params)} INTO {table} ({columns}) VALUES({values})"
