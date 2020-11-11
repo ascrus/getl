@@ -12,6 +12,8 @@ class RepositorySaveTest extends RepositorySave {
         login = 'dba'
         password = '12345'
         connected = true
+        storedLogins.admin = 'admin'
+        storedLogins.user = 'user'
         return it
     }
 

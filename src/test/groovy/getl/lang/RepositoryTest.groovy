@@ -888,15 +888,23 @@ class RepositoryTest extends GetlDslTest {
     void testRepositorySave() {
         Getl.Dsl {
             TFS.storage.files.with {
-                createDir 'repository.test'
                 repositoryStorageManager {
                     storagePath = rootPath + '/repository.test'
                     storagePassword = '1234567890123456'
                 }
+                createDir 'repository.test'
             }
 
-            callScript RepositorySaveTest
             try {
+                callScript RepositorySaveTest
+                embeddedConnection('test:con') {
+                    assertEquals('repositorysave_test', connectDatabase)
+                    assertEquals('dba', login)
+                    assertEquals('12345', password)
+                    assertEquals('admin', storedLogins.admin)
+                    assertEquals('user', storedLogins.user)
+                }
+
                 repositoryStorageManager {
                     clearRepositories()
                     loadRepositories()
@@ -905,6 +913,8 @@ class RepositoryTest extends GetlDslTest {
                     assertEquals('repositorysave_test', connectDatabase)
                     assertEquals('dba', login)
                     assertEquals('12345', password)
+                    assertEquals('admin', storedLogins.admin)
+                    assertEquals('user', storedLogins.user)
                 }
                 embeddedTable('test:table1') {
                     assertEquals(con, connection)

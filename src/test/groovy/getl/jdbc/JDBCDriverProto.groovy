@@ -719,7 +719,8 @@ END FOR;
         table1.readOpts {where = 'id1 > 0' }
         def table2 = table.cloneDataset() as TableDataset
         table2.with {
-            type = localTemporaryTableType
+            if (con.driver.isSupport(Driver.Support.LOCAL_TEMPORARY))
+                type = localTemporaryTableType
             schemaName = null
             tableName = tableName + '_clone'
             createOpts {indexes.clear() }

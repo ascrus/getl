@@ -245,4 +245,15 @@ class MapUtilsTest extends getl.test.GetlTest {
 }'''
         assertEquals(res, MapUtils.ToJson(MapUtils.CompareMap(a, b)))
     }
+
+    @Test
+    void testClone() {
+        def mo = [a: 1, b: 2, c: [d:3, e: 4], f: [1,2,3]]
+        def mc = MapUtils.Clone(mo)
+        mc.b = 20
+        mc.c.e = 40
+        mc.f << 4
+        assertEquals([a: 1, b: 2, c: [d:3, e: 4], f: [1,2,3]], mo)
+        assertEquals([a: 1, b: 20, c: [d:3, e: 40], f: [1,2,3,4]], mc)
+    }
 }

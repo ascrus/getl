@@ -15,6 +15,7 @@ import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
 import getl.utils.FileUtils
 import getl.utils.Logs
+import getl.utils.MapUtils
 import getl.utils.Path
 import getl.utils.StringUtils
 import groovy.transform.Synchronized
@@ -252,7 +253,7 @@ class RepositoryStorageManager {
         if (obj == null)
             throw new ExceptionDSL("Object \"${objName.name}\" not found in repository \"${repository.class.name}\"!")
 
-        def objParams = repository.exportConfig(obj)
+        def objParams = MapUtils.Clone(repository.exportConfig(obj))
         if (obj instanceof UserLogins)
             encryptObject(objName.name, objParams)
 

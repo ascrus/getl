@@ -32,6 +32,8 @@ class HiveDriver extends JDBCDriver {
 
         syntaxPartitionKeyInColumns = false
 
+        defaultSchemaName = 'default'
+
         methodParams.register('createDataset',
                 ['clustered', 'skewed', 'rowFormat', 'storedAs', 'location', 'tblproperties',
                  'fieldsTerminated', 'nullDefined', 'select'])

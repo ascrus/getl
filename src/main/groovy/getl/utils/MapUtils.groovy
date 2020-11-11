@@ -1011,4 +1011,24 @@ class MapUtils {
 
 		return res
 	}
+
+	/**
+	 * Clone map to other map
+	 * @param map source map
+	 * @return cloned map
+	 */
+	static Map Clone(Map map) {
+		if (map == null) return null
+		def res = map.getClass().newInstance() as Map
+		map.each { k, v ->
+			if (v instanceof Map)
+				res.put(k, Clone(v))
+			else if (v instanceof Collection)
+				res.put(k, v.clone())
+			else
+				res.put(k, v)
+		}
+
+		return res
+	}
 }

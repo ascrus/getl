@@ -296,12 +296,14 @@ class JDBCDriver extends Driver {
 	 * @param precision
 	 * @return
 	 */
-	String type2sqlType (Field field, Boolean useNativeDBType) {
-		if (field == null) throw new ExceptionGETL('Required field object')
+	String type2sqlType(Field field, Boolean useNativeDBType) {
+		if (field == null)
+			throw new ExceptionGETL('Required field object')
 		
 		def type = field.type.toString()
 		def rule = sqlType."$type"
-		if (rule == null) throw new ExceptionGETL("Can not generate type ${field.type}")
+		if (rule == null)
+			throw new ExceptionGETL("Can not generate type ${field.type}")
 
 		String name
 		if (field.typeName != null && useNativeDBType)
@@ -317,8 +319,10 @@ class JDBCDriver extends Driver {
 		def length = field.length?:defaultLength
 		def precision = (length == null)?null:(field.precision?:defaultPrecision)
 		
-		if (useLength == sqlTypeUse.ALWAYS && length == null) throw new ExceptionGETL("Required length by field ${name} for $type type")
-		if (usePrecision == sqlTypeUse.ALWAYS && precision == null) throw new ExceptionGETL("Required precision by field ${name} for $type type")
+		if (useLength == sqlTypeUse.ALWAYS && length == null)
+			throw new ExceptionGETL("Required length by field ${name} for $type type")
+		if (usePrecision == sqlTypeUse.ALWAYS && precision == null)
+			throw new ExceptionGETL("Required precision by field ${name} for $type type")
 		
 		StringBuilder res = new StringBuilder()
 		res << name

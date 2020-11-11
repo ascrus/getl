@@ -163,11 +163,13 @@ class ImpalaTable extends TableDataset {
                 return
 
             def fn = dest.currentImpalaConnection.currentImpalaDriver.prepareFieldNameForSQL(ef.name)
-            if (ef.typeName == df.typeName) {
+            def et = source.currentImpalaConnection.currentImpalaDriver.type2sqlType(ef, true)
+            def dt = dest.currentImpalaConnection.currentImpalaDriver.type2sqlType(df, true)
+            if (et == dt) {
                 res << fn
             }
             else {
-                res << "CAST($fn AS ${df.typeName})".toString()
+                res << "CAST($fn AS ${dt})".toString()
             }
         }
 

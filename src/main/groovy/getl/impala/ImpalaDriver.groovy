@@ -33,6 +33,8 @@ class ImpalaDriver extends JDBCDriver {
 
         defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_UNCOMMITTED
 
+        defaultSchemaName = 'default'
+
         methodParams.register('createDataset',
                 ['sortBy', 'rowFormat', 'storedAs', 'location', 'tblproperties', 'serdeproperties',
                  'fieldsTerminated', 'escapedBy', 'linesTerminatedBy', 'select'])
@@ -210,6 +212,17 @@ class ImpalaDriver extends JDBCDriver {
         def compression = (params.compression as String)?.toLowerCase()
         if (compression == null) compression = 'none'
         dataset.currentJDBCConnection.executeCommand("set COMPRESSION_CODEC=$compression;")
+    }
+
+    @Override
+    List<Field> fields(Dataset dataset) {
+        def res = super.fields(dataset)
+        res?.each {f ->
+            if (f.typeName?.toUpperCase() == 'VARCHAR')
+                f.typeName = 'STRING'
+        }
+
+        return res
     }
 
     /* TODO: Where bulk load? */

@@ -46,7 +46,7 @@ class ImpalaDriverTest extends JDBCDriverProto {
             useImpalaConnection this.con
 
             impalaTable {
-                tableName = 'getl_test_impala'
+                tableName = 'getl_test_impala_dsl'
                 field('id') { type = bigintFieldType }
                 field('name')
                 field('dt') { type = datetimeFieldType}
@@ -75,16 +75,19 @@ class ImpalaDriverTest extends JDBCDriverProto {
 
                 drop()
                 create()
+                assertEquals(0, countRow())
 
-                etl.rowsTo {
+                def countWrite = etl.rowsTo {
                     writeRow() { add ->
                         (1..3).each { num ->
                             add id: num, name: "name $num", dt: DateUtils.Now(), flag: true,
                                     double: Float.valueOf('123.45'), number: new BigDecimal('123.45'),
-                                    day: DateUtils.FormatDate('yyyyMMdd', DateUtils.Now()).toInteger()
+                                    part_day: DateUtils.FormatDate('yyyyMMdd', DateUtils.Now()).toInteger()
                         }
                     }
-                }
+                }.countRow
+                assertEquals(3, countWrite)
+                assertEquals(3, countRow())
 
                 def i = 0
                 eachRow { row ->
