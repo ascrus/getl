@@ -1,16 +1,12 @@
 package getl.yaml
 
 import getl.lang.Getl
-import getl.test.GetlDslTest
-import getl.test.GetlTest
-import getl.utils.FileUtils
-import getl.utils.MapUtils
+import getl.test.TestDsl
 import groovy.transform.InheritConstructors
-import groovy.yaml.YamlSlurper
 import org.junit.Test
 
 @InheritConstructors
-class YamlTest extends GetlDslTest {
+class YamlTest extends TestDsl {
     @Test
     void testData() {
         Getl.Dsl {

@@ -15,5 +15,5 @@ class ReferenceFileSpec extends FileSpec {
     /** Destination file storage path */
     String getDestinationPath() { params.destinationPath as String }
     /** Destination file storage path */
-    void setDestinationPath(String value) { params.destinationPath = value }
+    void setDestinationPath(String value) { saveParamValue('destinationPath', value) }
 }

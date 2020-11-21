@@ -16,12 +16,12 @@ class DatasetLookupSpec extends BaseSpec {
     static public final String ORDER_STRATEGY = 'ORDER'
 
     /** Lookup key field name */
-    String getKey() { params.key }
+    String getKey() { params.key as String }
     /** Lookup key field name */
-    void setKey(String value) { params.key = value }
+    void setKey(String value) { saveParamValue('key', value) }
 
     /** Result lookup strategy */
-    String getStrategy() { params.strategy }
+    String getStrategy() { params.strategy as String }
     /** Result lookup strategy */
-    void setStrategy(String value) { params.strategy = value }
+    void setStrategy(String value) { saveParamValue('strategy', value) }
 }

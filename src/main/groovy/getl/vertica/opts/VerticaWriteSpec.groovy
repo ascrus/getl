@@ -33,7 +33,7 @@ class VerticaWriteSpec extends WriteSpec {
     /**
      * Label vertica hint
      */
-    void setLabel(String value) { params.label = value }
+    void setLabel(String value) { saveParamValue('label', value) }
 
     /**
      * Direct vertica hint (AUTO, DIRECT, TRICKLE)
@@ -49,6 +49,6 @@ class VerticaWriteSpec extends WriteSpec {
                 throw new ExceptionGETL("Invalid direct option \"$value\", allowed: AUTO, DIRECT AND TRICKLE!")
         }
 
-        params.direct = value
+        saveParamValue('direct', value)
     }
 }

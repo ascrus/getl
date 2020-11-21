@@ -22,7 +22,7 @@ class FlowCopyChildSpec extends BaseSpec {
     /** Dataset for writing */
     Dataset getDataset() { params.dataset as Dataset }
     /** Dataset for writing */
-    void setDataset(Dataset value) { params.dataset = value }
+    void setDataset(Dataset value) { saveParamValue('dataset', value) }
 
     /** Write options for the dataset */
     Map<String, Object> getDatasetParams() { params.datasetParams as Map<String, Object> }
@@ -35,7 +35,7 @@ class FlowCopyChildSpec extends BaseSpec {
     /** The code for write to child dataset (parameters passed to the writer and the original source row) */
     Closure getOnProcess() { params.process as Closure }
     /** The code for write to child dataset (parameters passed to the writer and the original source row) */
-    void setOnProcess(Closure value) { params.process = value }
+    void setOnProcess(Closure value) { saveParamValue('process', value) }
     /** The code for write to child dataset (parameters passed to the writer and the original source row) */
     void writeRow(@ClosureParams(value = SimpleType, options = ['groovy.lang.Closure', 'java.util.HashMap'])
                           Closure value) {
@@ -45,7 +45,7 @@ class FlowCopyChildSpec extends BaseSpec {
     /** Initialization code before processing */
     Closure getOnInitWrite() { params.onInit as Closure }
     /** Initialization code before processing */
-    void setOnInitWrite(Closure value) { params.onInit = value }
+    void setOnInitWrite(Closure value) { saveParamValue('onInit', value) }
     /** Initialization code before processing */
     void initWrite(Closure value) { setOnInitWrite(value) }
 }

@@ -1144,22 +1144,24 @@ ${extend}'''
 		def e = (validExists && isSupport(Driver.Support.DROPIFEXIST))?'IF EXISTS':''
 		def q = StringUtils.EvalMacroString(dropSyntax, [object: t, ifexists: e, name: n])
 
-		if (commitDDL && transactionalDDL && !(jdbcConnection.autoCommit))
-			startTran()
+		def con = jdbcConnection
+
+		if (commitDDL && transactionalDDL && !(con.autoCommit))
+			con.startTran()
 
 		try {
 			executeCommand(q, [:])
 		}
 		catch (Exception err) {
 			if (commitDDL && !(jdbcConnection.autoCommit)) {
-				if (transactionalDDL) rollbackTran()
+				if (transactionalDDL) con.rollbackTran()
 			}
 			throw err
 		}
 
 		if (commitDDL && !(jdbcConnection.autoCommit)) {
 			if (transactionalDDL) {
-				commitTran()
+				con.commitTran()
 			} else {
 				executeCommand('COMMIT')
 			}
@@ -2389,8 +2391,10 @@ $sql
 
 		saveToHistory(sql)
 
+		def con = table.currentJDBCConnection
+
 		Long res = 0
-		table.currentJDBCConnection.sqlConnection.query(sql) { rs ->
+		con.sqlConnection.query(sql) { rs ->
 			rs.next()
 			res = rs.getLong(1)
 		}

@@ -25,7 +25,7 @@ class VerticaBulkLoadParserSpec extends BaseSpec {
      * Vertica parser function name
      * <br>See <a href="https://www.vertica.com/docs/9.2.x/HTML/Content/Authoring/AdministratorsGuide/BulkLoadCOPY/SpecifyCopyParser.htm">Vertica documentation</a>
      */
-    void setFunction(String value) { params.function = value }
+    void setFunction(String value) { saveParamValue('function', value) }
 
     /**
      * Options
@@ -48,5 +48,5 @@ class VerticaBulkLoadParserSpec extends BaseSpec {
     /**
      * Use CSV file options as COPY options
      */
-    void setUseCsvOptions(Boolean value) { params.useCsvOptions = value }
+    void setUseCsvOptions(Boolean value) { saveParamValue('useCsvOptions', value) }
 }

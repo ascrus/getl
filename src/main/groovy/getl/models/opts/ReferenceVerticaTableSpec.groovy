@@ -48,22 +48,22 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
     /** The condition for copying rows to a reference tables from an external source  */
     String getWhereCopy() { params.whereCopy as String }
     /** The condition for copying rows to a reference tables from an external source */
-    void setWhereCopy(String value) { params.whereCopy = value }
+    void setWhereCopy(String value) { saveParamValue('whereCopy', value) }
 
     /** Percentage of sampling rows when copying from an external source */
     Integer getSampleCopy() { params.sampleCopy as Integer }
     /** Percentage of sampling rows when copying from an external source */
-    void setSampleCopy(Integer value) { params.sampleCopy = value }
+    void setSampleCopy(Integer value) { saveParamValue('sampleCopy', value) }
 
     /** Limit the number of rows when copying from an external source */
     Long getLimitCopy() { params.limitCopy as Long }
     /** Limit the number of rows when copying from an external source */
-    void setLimitCopy(Long value) { params.limitCopy = value }
+    void setLimitCopy(Long value) { saveParamValue('limitCopy', value) }
 
     /** The table is used when copying from an external source (default false) */
     Boolean getAllowCopy() { BoolUtils.IsValue(params.allowCopy, whereCopy != null) }
     /** The table is used when copying from an external source (default false) */
-    void setAllowCopy(Boolean value) { params.allowCopy = value}
+    void setAllowCopy(Boolean value) { saveParamValue('allowCopy', value) }
 
     /**
      * Create a reference table in the database schema for the model

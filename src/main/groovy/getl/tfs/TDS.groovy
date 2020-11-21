@@ -31,6 +31,12 @@ class TDS extends H2Connection {
 		if (connectProperty."UNDO_LOG" == null) {
 			connectProperty."UNDO_LOG" = 0
 		}
+
+		synchronized (TDS.lock) {
+			if (sqlHistoryFile == null && TDS.storage?.sqlHistoryFile != null)
+				sqlHistoryFile = TDS.storage.sqlHistoryFile
+		}
+
 		config = "getl_tds"
 	}
 	
@@ -41,7 +47,7 @@ class TDS extends H2Connection {
 		
 		if (connectURL == null && params."inMemory" == null) params.inMemory = true
 
-		synchronized (lock) {
+		synchronized (TDS.lock) {
 			if (connectURL == null && connectDatabase == null) {
 				if (inMemory) {
 					connectDatabase = "getl"
@@ -56,6 +62,9 @@ class TDS extends H2Connection {
 				new File(connectDatabase + '.mv.db').deleteOnExit()
 				new File(connectDatabase + '.trace.db').deleteOnExit()
 			}
+
+			if (sqlHistoryFile == null && TDS.storage?.sqlHistoryFile != null)
+				sqlHistoryFile = TDS.storage.sqlHistoryFile
 		}
 
 		if (login == null && password == null) {

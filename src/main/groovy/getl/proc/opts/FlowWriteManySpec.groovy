@@ -38,7 +38,7 @@ class FlowWriteManySpec extends FlowBaseSpec {
     /**
      * Temporary destination name
      */
-    void setTempDestName(String value) { params.tempDest = value }
+    void setTempDestName(String value) { saveParamValue('tempDest', value) }
 
     /**
      * List of field from destination dataset
@@ -47,7 +47,7 @@ class FlowWriteManySpec extends FlowBaseSpec {
     /**
      * List of field from destination dataset
      */
-    void setTempFields(List<Field> value) { params.tempFields = value }
+    void setTempFields(List<Field> value) { saveParamValue('tempFields', value) }
 
     /**
      * Parameters for list of destination write process
@@ -68,7 +68,7 @@ class FlowWriteManySpec extends FlowBaseSpec {
     /**
      * Write with synchronize main thread
      */
-    def setWriteSynch(Boolean value) { params.writeSynch = value }
+    def setWriteSynch(Boolean value) { saveParamValue('writeSynch', value) }
 
     /**
      * Auto starting and finishing transaction for write process
@@ -77,7 +77,7 @@ class FlowWriteManySpec extends FlowBaseSpec {
     /**
      * Auto starting and finishing transaction for write process
      */
-    void setAutoTran(Boolean value) { params.autoTran = value }
+    void setAutoTran(Boolean value) { saveParamValue('autoTran', value) }
 
     /**
      * Clearing destination dataset before write
@@ -86,7 +86,7 @@ class FlowWriteManySpec extends FlowBaseSpec {
     /**
      * Clearing destination dataset before write
      */
-    def setClear(Boolean value) { params.clear = value }
+    def setClear(Boolean value) { saveParamValue('clear', value) }
 
     /**
      * Load to destination as bulk load (only is supported)
@@ -95,7 +95,7 @@ class FlowWriteManySpec extends FlowBaseSpec {
     /**
      * Load to destination as bulk load (only is supported)
      */
-    void setBulkLoad(Boolean value) { params.bulkLoad = value }
+    void setBulkLoad(Boolean value) { saveParamValue('bulkLoad', value) }
 
     /**
      * Convert bulk file to escaped format
@@ -104,7 +104,7 @@ class FlowWriteManySpec extends FlowBaseSpec {
     /**
      * Convert bulk file to escaped format
      */
-    def setBulkEscaped(Boolean value) { params.bulkEscaped = value }
+    void setBulkEscaped(Boolean value) { saveParamValue('bulkEscaped', value) }
 
     /**
      * Compress bulk file from GZIP algorithm
@@ -113,7 +113,7 @@ class FlowWriteManySpec extends FlowBaseSpec {
     /**
      * Compress bulk file from GZIP algorithm
      */
-    def setBulkAsGZIP(Boolean value) { params.bulkAsGZIP = value }
+    void setBulkAsGZIP(Boolean value) { saveParamValue('bulkAsGZIP', value) }
 
     /**
      * Closure code process row

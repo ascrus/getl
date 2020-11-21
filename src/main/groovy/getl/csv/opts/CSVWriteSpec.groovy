@@ -17,12 +17,12 @@ class CSVWriteSpec extends BaseSpec {
     /** Check constraints while writing a file */
     Boolean getIsValid() { params.isValid as Boolean }
     /** Check constraints while writing a file */
-    void setIsValid(Boolean value) { params.isValid = value }
+    void setIsValid(Boolean value) { saveParamValue('isValid', value) }
 
     /** Batch size packet */
     Long getBatchSize() { params.batchSize as Long }
     /** Batch size packet */
-    void setBatchSize(Long value) { params.batchSize = value }
+    void setBatchSize(Long value) { saveParamValue('batchSize', value) }
 
     /**
      * Run after save batch records
@@ -34,7 +34,7 @@ class CSVWriteSpec extends BaseSpec {
      * Run after save batch records
      * <br>Closure parameters: Long numberOfBatch
      */
-    void setOnSaveBatch(Closure value) { params.onSaveBatch = value }
+    void setOnSaveBatch(Closure value) { saveParamValue('onSaveBatch', value) }
     /**
      * Run after save batch records
      * <br>Closure parameters: Long numberOfBatch
@@ -46,7 +46,7 @@ class CSVWriteSpec extends BaseSpec {
     /** Maximum size of the portion of the recorded file (use 0 or null for no size limit) */
     Long getSplitSize() { params.splitSize as Long }
     /** Maximum size of the portion of the recorded file (use 0 or null for no size limit) */
-    void setSplitSize(Long value) { params.splitSize = value }
+    void setSplitSize(Long value) { saveParamValue('splitSize', value) }
 
     /**
      * Checking row for need to write current and next rows to the new file
@@ -59,7 +59,7 @@ class CSVWriteSpec extends BaseSpec {
      * <br>Closure parameters: Map row
      */
     void setOnSplitFile(Closure<Boolean> value) {
-        params.onSplitFile = value
+        saveParamValue('onSplitFile', value)
     }
     /**
      * Checking row for need to write current and next rows to the new file
@@ -73,5 +73,5 @@ class CSVWriteSpec extends BaseSpec {
     /** Parts of files are available immediately after writing */
     Boolean getAvaibleAfterWrite() { params.avaibleAfterWrite as Boolean }
     /** Parts of files are available immediately after writing */
-    void setAvaibleAfterWrite(Boolean value) { params.avaibleAfterWrite = value }
+    void setAvaibleAfterWrite(Boolean value) { saveParamValue('avaibleAfterWrite', value) }
 }

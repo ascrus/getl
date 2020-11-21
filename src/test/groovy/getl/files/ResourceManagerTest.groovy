@@ -3,19 +3,19 @@ package getl.files
 import getl.files.sub.ResourceCatalogElem
 import getl.lang.Getl
 import getl.lang.sub.RepositoryConnections
-import getl.test.GetlDslTest
+import getl.test.TestDsl
 import getl.utils.FileUtils
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
 @InheritConstructors
-class ResourceManagerTest extends GetlDslTest {
+class ResourceManagerTest extends TestDsl {
     private void testListDir(ResourceCatalogElem rootNode) {
         def catalog = rootNode.files
         assertEquals(9, catalog.size())
         def repCon = catalog.find { it.filename == 'getl.lang.sub.RepositoryConnections' && it.type == Manager.directoryType }
         assertNotNull(repCon)
-        assertEquals(3, repCon.files.size())
+        assertEquals(4, repCon.files.size())
         assertEquals(rootNode, repCon.parent)
         assertEquals('/getl.lang.sub.RepositoryConnections', repCon.filepath)
         def h2Group = repCon.files.find { it.filename == 'h2' && it.type == Manager.directoryType }
@@ -100,13 +100,13 @@ class ResourceManagerTest extends GetlDslTest {
                 connect()
 
                 def list = buildListFiles('*.conf') { recursive = true }
-                assertEquals(20, list.countRow())
+                assertEquals(23, list.countRow())
                 assertTrue(existsDirectory('/' + RepositoryConnections.name))
                 assertTrue(existsDirectory(RepositoryConnections.name))
 
                 rootPath = '/' + RepositoryConnections.name
                 list = buildListFiles('*.conf') { recursive = true }
-                assertEquals(6, list.countRow())
+                assertEquals(8, list.countRow())
                 assertTrue(existsDirectory('/' + RepositoryConnections.name))
                 assertTrue(existsDirectory('../' + RepositoryConnections.name))
             }

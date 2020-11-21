@@ -53,7 +53,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
             throw new ExceptionModel('File manager name required!')
 
         dslCreator.filemanager(managerName)
-        params.destinationManagerName = managerName
+        saveParamValue('destinationManagerName', managerName)
     }
     /** Specify destination file manager for the model */
     void useDestinationManager(Manager manager) {
@@ -62,13 +62,13 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         if (manager.dslNameObject == null)
             throw new ExceptionModel('File manager not registered in Getl repository!')
 
-        params.destinationManagerName = manager.dslNameObject
+        saveParamValue('destinationManagerName', manager.dslNameObject)
     }
 
     /** File unpack command */
     String getUnpackCommand() { params.unpackCommand as String }
     /** File unpack command */
-    void setUnpackCommand(String value) { params.unpackCommand = value }
+    void setUnpackCommand(String value) { saveParamValue('unpackCommand', value) }
 
     /**
      * Specify a file that contains reference data

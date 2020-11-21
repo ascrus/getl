@@ -30,7 +30,7 @@ class RepositoryFilter extends BaseSpec {
         if (value.name[0] == '#')
             throw new ExceptionDSL('The group name cannot begin with the character "#"!')
 
-        params.filteringGroup = value.name
+        saveParamValue('filteringGroup', value.name)
     }
 
     /** Reset filter to search for objects */

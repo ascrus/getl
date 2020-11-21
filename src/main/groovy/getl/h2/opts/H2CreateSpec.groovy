@@ -17,7 +17,7 @@ class H2CreateSpec extends CreateSpec {
     /**
      * Create transactional table
      */
-    void setTransactional(Boolean value) { params.transactional = value }
+    void setTransactional(Boolean value) { saveParamValue('transactional', value) }
 
     /**
      * Create not persistent table
@@ -26,5 +26,5 @@ class H2CreateSpec extends CreateSpec {
     /**
      * Create not persistent table
      */
-    void setNot_persistent(Boolean value) { params.not_persistent = value }
+    void setNot_persistent(Boolean value) { saveParamValue('not_persistent', value) }
 }

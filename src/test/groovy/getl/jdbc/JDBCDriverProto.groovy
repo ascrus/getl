@@ -715,12 +715,17 @@ END FOR;
     protected void copyToTable() {
         if (!con.driver.isOperation(Driver.Operation.INSERT)) return
 
+        def fp = con.currentJDBCDriver.fieldPrefix 
         def table1 = table.cloneDataset() as TableDataset
-        table1.readOpts {where = 'id1 > 0' }
+        table1.readOpts {where = "${fp}ID1${fp} > 0" }
         def table2 = table.cloneDataset() as TableDataset
         table2.with {
-            if (con.driver.isSupport(Driver.Support.LOCAL_TEMPORARY))
-                type = localTemporaryTableType
+            if (con.driver.isSupport(Driver.Support.LOCAL_TEMPORARY)) {
+                createOpts {
+                    type = localTemporaryTableType
+                    onCommit = true
+                }
+            }
             schemaName = null
             tableName = tableName + '_clone'
             createOpts {indexes.clear() }
@@ -729,11 +734,18 @@ END FOR;
 
         try {
             def countRows = table1.countRow()
-            assertEquals(countRows, table1.copyTo(table2, [value: 'value + 1.00']))
+            assertEquals(countRows, table1.copyTo(table2, [value: "${fp}${table.field('value').name}${fp} + 1.00"]))
             assertEquals(countRows, table2.countRow())
         }
         finally {
-            table2.drop()
+            if (table2.type != TableDataset.localTemporaryTableType) {
+                table2.connection.connected = false
+                table2.connection.connected = true
+                table2.drop()
+            }
+            else {
+                table2.drop()
+            }
         }
     }
 }

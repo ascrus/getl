@@ -20,20 +20,28 @@ class BaseSpec {
     /** Create options instance */
     BaseSpec(Object owner) {
         _owner = owner
+        _params = new ConcurrentHashMap<String, Object>()
+        _savedOptions = new Stack<Map<String, Object>>()
         initSpec()
     }
 
     /** Create options instance */
     BaseSpec(Object owner, Boolean useExternalParams, Map<String, Object> importParams) {
         _owner = owner
+        _savedOptions = new Stack<Map<String, Object>>()
         if (importParams != null) {
             if (useExternalParams) {
                 _params = importParams
                 initSpec()
             } else {
+                _params = new ConcurrentHashMap<String, Object>()
                 initSpec()
                 importFromMap(importParams)
             }
+        }
+        else {
+            _params = new ConcurrentHashMap<String, Object>()
+            initSpec()
         }
     }
 
@@ -61,10 +69,22 @@ class BaseSpec {
         parent.with(cl)
     }
 
-    private Map<String, Object> _params = new ConcurrentHashMap<String, Object>()
+    private Map<String, Object> _params
     /** Object parameters */
     @JsonIgnore
     Map<String, Object> getParams() { _params }
+
+    /**
+     * Save value parameter
+     * @param key parameter name
+     * @param value parameter value
+     */
+    protected void saveParamValue(String key, Object value) {
+        if (value != null)
+            _params.put(key, value)
+        else
+            _params.remove(key)
+    }
 
     /**
      * Detected ignore key map from import
@@ -88,7 +108,7 @@ class BaseSpec {
     }
 
     /** Options stack */
-    private final Stack<Map<String, Object>> _savedOptions = new Stack<Map<String, Object>>()
+    private Stack<Map<String, Object>> _savedOptions
 
     /**
      * Save current options to stack

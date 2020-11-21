@@ -33,13 +33,14 @@ class DatasetSpec extends BaseSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        params.attrs = new ConcurrentHashMap<String, Object>()
+        if (params.attrs == null)
+            params.attrs = new ConcurrentHashMap<String, Object>()
     }
 
     /** Model dataset name */
     protected String getDatasetName() { params.datasetName as String }
     /** Model dataset name */
-    protected void setDatasetName(String value) { params.datasetName = value }
+    protected void setDatasetName(String value) { saveParamValue('datasetName', value) }
 
     /** Model dataset */
     @JsonIgnore

@@ -162,7 +162,14 @@ class TableDataset extends JDBCDataset {
 		validConnection()
 		validTableName()
 
-		return currentJDBCConnection.currentJDBCDriver.countRow(this, where, procParams)
+		Long res = 0
+		if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit)
+			currentJDBCConnection.transaction {
+				res = currentJDBCConnection.currentJDBCDriver.countRow(this, where, procParams)
+			}
+		else
+			res = currentJDBCConnection.currentJDBCDriver.countRow(this, where, procParams)
+		return res
 	}
 
 	/**
@@ -702,6 +709,14 @@ class TableDataset extends JDBCDataset {
 	 * @return number of copied rows
 	 */
 	Long copyTo(TableDataset dest, Map<String, String> map = [:]) {
-		return currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map)
+		Long res = 0
+		if (currentJDBCConnection.isSupportTran && !currentJDBCConnection.autoCommit)
+			currentJDBCConnection.transaction {
+				res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map)
+			}
+		else
+			res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map)
+
+		return res
 	}
 }

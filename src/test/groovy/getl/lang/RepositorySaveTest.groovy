@@ -38,10 +38,17 @@ class RepositorySaveTest extends RepositorySave {
         addTables(embeddedConnection('test:con'), 'public', 'test')
     }
 
-    @SaveToRepository(type = 'Files', env = 'dev')
-    void filemanagers() {
-        files('test:file', true) {
-            rootPath = '/test'
+    @SaveToRepository(type = 'Files')
+    void filemanagers1() {
+        files('test:file1', true) {
+            rootPath = '/test1'
+        }
+    }
+
+    @SaveToRepository(type = 'Files', env = 'Dev, Prod')
+    void filemanagers2() {
+        files('test:file2', true) {
+            rootPath = '/test2'
         }
     }
 

@@ -87,7 +87,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     /** Use monitoring status storage table */
     void useStatusTable(String value) {
         if (value == null) {
-            params.statusTableName = null
+            saveParamValue('statusTableName', null)
             return
         }
 
@@ -107,13 +107,13 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                 throw new ExceptionModel("Table $value is not registered in the repository!")
         }
 
-        params.statusTableName = value?.dslNameObject
+        saveParamValue('statusTableName', value?.dslNameObject)
     }
 
     /** Number of concurrency rule processing threads */
     Integer getCountThreads() { (params.countThreads as Integer)?:1 }
     /** Number of concurrency rule processing threads */
-    void setCountThreads(Integer value) { params.countThreads = value }
+    void setCountThreads(Integer value) { saveParamValue('countThreads', value) }
 
     /** Check the query is correct */
     @SuppressWarnings("GrMethodMayBeStatic")

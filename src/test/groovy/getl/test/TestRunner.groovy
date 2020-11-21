@@ -6,7 +6,5 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class TestRunner extends Getl {
     @Override
-    protected Class useInitClass() {
-        TestInit
-    }
+    protected Class useInitClass() { TestInit }
 }

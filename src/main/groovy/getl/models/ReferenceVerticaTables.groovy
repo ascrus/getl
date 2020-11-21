@@ -2,6 +2,7 @@ package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.models.opts.ReferenceVerticaTableSpec
@@ -60,7 +61,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     /** Reference storage schema */
     String getReferenceSchemaName() { params.referenceSchemaName as String }
     /** Reference storage schema */
-    void setReferenceSchemaName(String value) { params.referenceSchemaName = value }
+    void setReferenceSchemaName(String value) { saveParamValue('referenceSchemaName', value) }
 
     /**
      * The source table for which reference data is needed
@@ -102,17 +103,30 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     /**
      * Create reference tables
      * @param recreate recreate table if exists
+     * @param grantRolesToSchema give access grants to the reference schema for user roles
      */
-    void createReferenceTables(Boolean recreate = false) {
+    void createReferenceTables(Boolean recreate = false, Boolean grantRolesToSchema = false) {
         checkModel()
         new QueryDataset().with {
             useConnection referenceConnection
             query = """SELECT Count(*) AS count FROM schemata WHERE schema_name ILIKE '{schema}'"""
             queryParams.schema = referenceSchemaName
             if (rows()[0].count == 0) {
-                referenceConnection.executeCommand('CREATE SCHEMA {schema} DEFAULT INCLUDE SCHEMA PRIVILEGES',
+                currentJDBCConnection.executeCommand('CREATE SCHEMA {schema} DEFAULT INCLUDE SCHEMA PRIVILEGES',
                         [queryParams: [schema: referenceSchemaName]])
                 Logs.Info("To store the reference data of model \"$repositoryModelName\" created scheme \"$referenceSchemaName\"")
+                if (grantRolesToSchema) {
+                    query = '''SELECT Replace(default_roles, '*', '') AS roles FROM users WHERE user_name = CURRENT_USER'''
+                    def rows = rows()
+                    if (rows.size() != 1)
+                        throw new ExceptionDSL("Granting error for the reference scheme for model \"$repositoryModelName\": user \"${currentJDBCConnection.login}\" not found in Vertica!")
+                    def roles = rows[0].roles as String
+                    if (roles != null && roles != '') {
+                        currentJDBCConnection.executeCommand('GRANT ALL PRIVILEGES EXTEND ON SCHEMA {schema} TO {roles}',
+                                [queryParams: [schema: referenceSchemaName, roles: roles]])
+                        Logs.Info("For reference schema \"$referenceSchemaName\" of model \"$repositoryModelName\", full access is given for roles: $roles")
+                    }
+                }
             }
         }
 

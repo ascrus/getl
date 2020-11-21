@@ -47,7 +47,7 @@ class PathVarsSpec extends BaseSpec {
     /** Variable value type */
     Field.Type getType() { params.type as Field.Type }
     /** Variable value type */
-    void setType(Field.Type value) { params.type = value }
+    void setType(Field.Type value) { saveParamValue('type', value) }
 
     /**
      * Format of parsing variable value
@@ -64,27 +64,27 @@ class PathVarsSpec extends BaseSpec {
      * <li>use date and time mask for date-time type
      * </ul>
      */
-    void setFormat(String value) { params.format = value }
+    void setFormat(String value) { saveParamValue('format', value) }
 
     /** The length of variable value */
     Integer getLength() { params.len as Integer }
     /** The length of variable value */
-    void setLength(Integer value) { params.len = value }
+    void setLength(Integer value) { saveParamValue('len', value) }
 
     /** The minimum length of variable value */
     Integer getMinimumLength() { params.lenMin as Integer }
     /** The minimum length of variable value */
-    void setMinimumLength(Integer value) { params.lenMin = value }
+    void setMinimumLength(Integer value) { saveParamValue('lenMin', value) }
 
     /** The maximum length of variable value */
     Integer getMaximumLength() { params.lenMax as Integer }
     /** The maximum length of variable value */
-    void setMaximumLength(Integer value) { params.lenMax = value }
+    void setMaximumLength(Integer value) { saveParamValue('lenMax', value) }
 
     /** Value calculation code */
     Closure getOnCalc() { params.calc as Closure }
     /** Value calculation code */
-    void setOnCalc(Closure value) { params.calc = value }
+    void setOnCalc(Closure value) { saveParamValue('calc', value) }
     /** Value calculation code */
     void calc(@ClosureParams(value = SimpleType, options = ['java.util.Map<String, Object>'])
                       Closure value) {

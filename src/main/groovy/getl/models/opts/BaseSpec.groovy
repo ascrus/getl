@@ -16,7 +16,8 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        params.objectVars = new ConcurrentHashMap<String, Object>()
+        if (params.objectVars == null)
+            params.objectVars = new ConcurrentHashMap<String, Object>()
     }
 
     /** Owner model */

@@ -30,7 +30,7 @@ class VerticaCreateSpec extends CreateSpec {
     /**
      * Expression for node segmentation
      */
-    void setSegmentedBy(String value) { params.segmentedBy = value }
+    void setSegmentedBy(String value) { saveParamValue('segmentedBy', value) }
 
     /**
      * The nodes is unsegmented
@@ -39,7 +39,7 @@ class VerticaCreateSpec extends CreateSpec {
     /**
      * The nodes is unsegmented
      */
-    void setUnsegmented(Boolean value) { params.unsegmented = value }
+    void setUnsegmented(Boolean value) { saveParamValue('unsegmented', value) }
 
     /**
      * Expression of table partitioning
@@ -48,5 +48,5 @@ class VerticaCreateSpec extends CreateSpec {
     /**
      * Expression for node segmentation
      */
-    void setPartitionBy(String value) { params.partitionBy = value }
+    void setPartitionBy(String value) { saveParamValue('partitionBy', value) }
 }

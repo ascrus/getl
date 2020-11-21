@@ -51,12 +51,12 @@ import java.util.logging.Level
 class Getl extends Script {
     Getl() {
         super()
-        initInstance()
+        initGetlParams()
     }
 
     Getl(Binding binding) {
         super(binding)
-        initInstance()
+        initGetlParams()
     }
 
     static void main(String[] args) {
@@ -209,7 +209,8 @@ Examples:
 
                     try {
                         def initClass = Class.forName(initClassName)
-                        Script.isAssignableFrom(initClass)
+                        if (!Script.isAssignableFrom(initClass))
+                            throw new ExceptionDSL("Class \"$initClassName\" is not inherited from class \"Script\"!")
                         initClasses << (initClass as Class<Script>)
                     }
                     catch (Throwable e) {
@@ -217,17 +218,7 @@ Examples:
                     }
                 }
 
-                if (!initClasses.isEmpty()) {
-                    eng.setGetlSystemParameter('isInitMode', true)
-                    try {
-                        initClasses.each { initClass ->
-                            eng.runGroovyClass(initClass, true)
-                        }
-                    }
-                    finally {
-                        eng.setGetlSystemParameter('isInitMode', false)
-                    }
-                }
+                eng.initGetlProperties(initClasses)
 
                 try {
                     eng.runGroovyInstance(eng, Config.vars)
@@ -245,6 +236,173 @@ Examples:
         }
         job.isMain = isApp
         job.run(args)
+    }
+
+    /**
+     * Initialize getl instance properties before starting it
+     * @param listInitClass list of initialization classes that should be executed before starting
+     */
+    void prepareGetlProperties(List<Class<Script>> initClasses) {
+        def instance = this
+
+        options {
+            if (autoInitFromConfig) {
+                loadProjectProperties(instance.configuration.manager.environment)
+                Logs.Finest('Processing project configuration ...')
+
+                def procs = [:] as Map<String, Closure>
+                procs.logging = { Map<String, Object> en ->
+                    if (en.logFileName != null) {
+                        logging.logFileName = StringUtils.EvalMacroString(en.logFileName as String,
+                                [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
+                        Logs.Finest("  logging the process \"${instance.getClass().name}\" to file \"${Logs.logFileName}\"")
+                    }
+
+                    if (unitTestMode) {
+                        if (en.jdbcLogPath != null) {
+                            jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
+                                    [env: instance.configuration.environment, process: instance.getClass().name], false)
+                            Logs.Finest("  logging jdbc connections to path \"$jdbcConnectionLoggingPath\"")
+                        }
+
+                        if (en.filesLogPath != null) {
+                            fileManagerLoggingPath = StringUtils.EvalMacroString(en.filesLogPath as String,
+                                    [env: instance.configuration.environment, process: instance.getClass().name], false)
+                            Logs.Finest("  logging file managers to path \"$fileManagerLoggingPath\"")
+                        }
+
+                        if (en.tempDBLogFileName != null) {
+                            tempDBSQLHistoryFile = StringUtils.EvalMacroString(en.tempDBLogFileName as String,
+                                    [env: instance.configuration.environment, process: instance.getClass().name], false)
+                            Logs.Finest("  logging of ebmedded database SQL commands to a file \"$tempDBSQLHistoryFile\"")
+                        }
+                    }
+                }
+                procs.repository = { Map<String, Object> en ->
+                    instance.repositoryStorageManager {
+                        if (en.encryptKey != null) {
+                            storagePassword = en.encryptKey as String
+                            Logs.Finest('  repository encryption mode: enabled')
+                        }
+                        if (en.path != null) {
+                            storagePath = en.path as String
+                            autoLoadFromStorage = true
+                            Logs.Finest("  path to repository objects: $storagePath")
+                        }
+                    }
+                }
+                procs.engine = { Map<String, Object> en ->
+                    def ic = en.initClass as String
+                    if (ic != null) {
+                        try {
+                            def initClass = Class.forName(ic)
+                            if (!Script.isAssignableFrom(initClass))
+                                throw new ExceptionDSL("Class \"$ic\" is not inherited from class \"Script\"!")
+                            initClasses << (initClass as Class<Script>)
+                            Logs.Finest("  initialization class \"$ic\" is used")
+                        }
+                        catch (Throwable e) {
+                            throw new ExceptionDSL("Class \"$ic\" not found, error: ${e.message}!")
+                        }
+                    }
+
+                    if (en.connectionThreadModel != null) {
+                        useThreadModelConnection = BoolUtils.IsValue(en.connectionThreadModel, true)
+                        if (useThreadModelConnection)
+                            Logs.Finest("  support for working with connections in threads")
+                    }
+
+                    if (en.controlDataset != null) {
+                        processControlDataset = instance.dataset(en.controlDataset as String)
+                        Logs.Finest("  process start control uses dataset \"$processControlDataset\"")
+                        if (en.controlStart != null) {
+                            checkProcessOnStart = BoolUtils.IsValue(en.controlStart, true)
+                            if (checkProcessOnStart)
+                                Logs.Finest("  process startup is checked in the process checklist")
+                        }
+                        if (en.controlThreads != null) {
+                            checkProcessForThreads = BoolUtils.IsValue(en.controlThreads)
+                            if (checkProcessForThreads)
+                                Logs.Finest("  running processes in threads is checked in the process checklist")
+                        }
+                    }
+
+                    if (en.csvTempForTables != null) {
+                        autoCSVTempForJDBDTables = BoolUtils.IsValue(en.csvTempForTables)
+                        if (autoCSVTempForJDBDTables)
+                            Logs.Finest("  enabled auto creation of temporary files for JDBC datasets")
+                    }
+                }
+                procs.profile = { Map<String, Object> en ->
+                    if (en.enabled != null) {
+                        processTimeTracing = BoolUtils.IsValue(en.enabled, true)
+                        if (processTimeTracing)
+                            Logs.Finest("  enabled output of profiling results to the log")
+
+                        if (en.level != null) {
+                            processTimeLevelLog = en.level as Level
+                            if (processTimeLevelLog)
+                                Logs.Finest("  output profiling messages with level $processTimeLevelLog")
+                        }
+
+                        if (en.debug != null) {
+                            processTimeDebug = BoolUtils.IsValue(en.debug)
+                            if (processTimeDebug)
+                                Logs.Finest("  profiling the start of process commands")
+                        }
+                    }
+
+                    if (en.sqlEchoLevel != null) {
+                        sqlEchoLogLevel = en.sqlEchoLevel as Level
+                        if (sqlEchoLogLevel)
+                            Logs.Finest("  SQL command echo is logged with level $sqlEchoLogLevel")
+                    }
+                }
+                procs.project = { Map<String, Object> en ->
+                    def notFounds = [] as List<String>
+                    (en.needEnvironments as List<String>)?.each {env ->
+                        if (System.getenv(env) == null)
+                            notFounds << env
+                    }
+                    if (!notFounds.isEmpty())
+                        throw new ExceptionDSL("The following OS environment variables required to run were not found: ${notFounds.join(', ')}")
+
+                    if (en.configFileName != null) {
+                        def configFileName = en.configFileName as String
+                        def m = ConfigSlurper.LoadConfigFile(new File(FileUtils.ResourceFileName(configFileName)))
+                        projectConfigParams.putAll(m)
+                    }
+                }
+                MapUtils.ProcessSections(getlConfigProperties, procs)
+            }
+        }
+    }
+
+    void initGetlProperties(List<Class<Script>> listInitClass = null) {
+        def initClasses = [] as List<Class<Script>>
+        if (listInitClass != null)
+            initClasses.addAll(listInitClass)
+
+        prepareGetlProperties(initClasses)
+
+        if (!initClasses.isEmpty()) {
+            setGetlSystemParameter('isInitMode', true)
+            try {
+                initClasses.each { initClass ->
+                    runGroovyClass(initClass, true)
+                }
+            }
+            finally {
+                setGetlSystemParameter('isInitMode', false)
+            }
+        }
+
+        if (options.projectConfigParams.project != null) {
+            Logs.Fine("### Start project \"${options.projectConfigParams.project}\", " +
+                    "version ${options.projectConfigParams.version?:'1.0'}, " +
+                    "created ${options.projectConfigParams.year?:DateUtils.PartOfDate('YEAR', new Date()).toString()} " +
+                    "by \"${options.projectConfigParams.company?:'My company'}\"")
+        }
     }
 
     /** Quit DSL Application */
@@ -337,7 +495,7 @@ Examples:
     }
 
     /** Init Getl instance */
-    protected void initInstance() {
+    protected void initGetlParams() {
         Version.SayInfo()
 
         _params.executedClasses = new SynchronizeObject()
@@ -700,7 +858,7 @@ Examples:
     }
 
     /**
-     * Return list of reposotory jdbc connection objects for specified list of name
+     * Return list of repository jdbc connection objects for specified list of name
      * @param names list of name jdbc connections
      * @return list of connection objects
      */
@@ -842,7 +1000,7 @@ Examples:
     }
 
     /**
-     * Return list of reposotory dataset objects for specified list of name
+     * Return list of repository dataset objects for specified list of name
      * @param names list of name datasets
      * @return list of dataset objects
      */
@@ -1538,7 +1696,7 @@ Examples:
     }
 
     /**
-     * Return list of reposotory file managers objects for specified list of name
+     * Return list of repository file managers objects for specified list of name
      * @param names list of name file managers
      * @return list of file manager objects
      */
@@ -1776,11 +1934,11 @@ Examples:
                 scriptGetl.importGetlParams(_params)
                 scriptGetl._setGetlInstance()
 
-                InitGetlClass(scriptGetl)
+                DoInitMethod(scriptGetl)
                 if (vars != null && !vars.isEmpty()) {
                     FillFieldFromVars(scriptGetl, vars)
                 }
-                CheckGetlClass(scriptGetl)
+                DoCheckMethod(scriptGetl)
             } else if (vars != null && !vars.isEmpty()) {
                 script.binding = new Binding(vars)
             }
@@ -1802,7 +1960,7 @@ Examples:
             }
             catch (Exception e) {
                 try {
-                    ErrorGetlClass(script, e)
+                    DoErrorMethod(script, e)
                 }
                 catch (Exception err) {
                     Logs.Exception(err, 'method error', script.getClass().name)
@@ -1812,7 +1970,7 @@ Examples:
                 }
             }
             finally {
-                DoneGetlClass(script)
+                DoDoneMethod(script)
             }
             pt.finish()
         }
@@ -1996,7 +2154,7 @@ Examples:
     /**
      *  Call script init method before execute script
      */
-    static protected void InitGetlClass(Script script) {
+    static protected void DoInitMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'init' }
         if (m != null)
             script.invokeMethod('init', null)
@@ -2005,7 +2163,7 @@ Examples:
     /**
      *  Call script check method after setting field values
      */
-    static protected void CheckGetlClass(Script script) {
+    static protected void DoCheckMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'check' }
         if (m != null)
             script.invokeMethod('check', null)
@@ -2014,7 +2172,7 @@ Examples:
     /**
      *  Call script done method before execute script
      */
-    static protected void DoneGetlClass(Script script) {
+    static protected void DoDoneMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'done' }
         if (m != null)
             script.invokeMethod('done', null)
@@ -2023,7 +2181,7 @@ Examples:
     /**
      *  Call script error method before execute script
      */
-    static protected void ErrorGetlClass(Script script, Exception e) {
+    static protected void DoErrorMethod(Script script, Exception e) {
         def m = script.getClass().methods.find { it.name == 'error' }
         if (m != null)
             script.invokeMethod('error', e)
@@ -2268,7 +2426,7 @@ Examples:
         def logFileName = _logOpts.getLogFileName()
         runClosure(_logOpts, cl)
         if (logFileName != _logOpts.getLogFileName()) {
-            Logs.Info("### Getl start logging to log file ${_logOpts.getLogFileName()}")
+            Logs.Fine("# Start logging to log file ${_logOpts.getLogFileName()}")
         }
 
         return _logOpts
@@ -3214,8 +3372,6 @@ Examples:
                            @DelegatesTo(TDS)
                            @ClosureParams(value = SimpleType, options = ['getl.tfs.TDS']) Closure cl = null) {
         def parent = registerConnection(RepositoryConnections.EMBEDDEDCONNECTION, name, registration) as TDS
-        if (parent.sqlHistoryFile == null)
-            parent.sqlHistoryFile = _langOpts.tempDBSQLHistoryFile
         runClosure(parent, cl)
 
         return parent
@@ -3253,8 +3409,6 @@ Examples:
                 defaultJdbcConnection(RepositoryDatasets.EMBEDDEDTABLE), TDS, cl) as TDSTable
         if ((name == null || registration) && parent.connection == null)
             parent.connection = TDS.storage
-        if (parent.connection != null && (parent.connection as TDS).sqlHistoryFile == null)
-            (parent.connection as TDS).sqlHistoryFile = _langOpts.tempDBSQLHistoryFile
         runClosure(parent, cl)
 
         return parent
@@ -3286,8 +3440,6 @@ Examples:
 
         TDSTable parent = new TDSTable(connection: defaultJdbcConnection(RepositoryDatasets.EMBEDDEDTABLE) ?: TDS.storage)
         parent.field = sourceDataset.field
-        if ((parent.connection as TDS)?.sqlHistoryFile == null)
-            (parent.connection as TDS).sqlHistoryFile = _langOpts.tempDBSQLHistoryFile
 
         registerDatasetObject(parent, name, true)
         runClosure(parent, cl)
@@ -4310,7 +4462,7 @@ Examples:
         return parent
     }
 
-    /** Incremenal history point manager */
+    /** Incremental history point manager */
     SavePointManager historypoint(String name = null, Boolean registration = false, JDBCConnection connection = null,
                                   @DelegatesTo(SavePointManager)
                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl = null) {
@@ -4320,14 +4472,14 @@ Examples:
         return parent
     }
 
-    /** Incremenal history point manager */
+    /** Incremental history point manager */
     SavePointManager historypoint(String name, Boolean registration = false,
                                   @DelegatesTo(SavePointManager)
                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl) {
         historypoint(name, registration, null, cl)
     }
 
-    /** Incremenal history point manager */
+    /** Incremental history point manager */
     SavePointManager historypoint(@DelegatesTo(SavePointManager)
                                   @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl) {
         historypoint(null, false, null, cl)
@@ -4481,7 +4633,7 @@ Examples:
             cl.call()
     }
 
-    /** Сonvert code variables to a map */
+    /** Сonverting code variables to a map */
     @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> toVars(Closure cl) {
         def env = (Config.configClassManager instanceof ConfigSlurper)?((Config.configClassManager as ConfigSlurper).environment):'prod'

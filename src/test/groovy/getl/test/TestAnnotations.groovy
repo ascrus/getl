@@ -3,7 +3,7 @@ package getl.test
 import getl.lang.Getl
 import org.junit.Test
 
-class TestAnnotations extends GetlDslTest {
+class TestAnnotations extends TestDsl {
     @Test
     @Config(env='dev')
     void testConfigDev() {

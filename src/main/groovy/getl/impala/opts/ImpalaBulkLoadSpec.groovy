@@ -23,13 +23,13 @@ class ImpalaBulkLoadSpec extends BulkLoadSpec {
     /** Replace data in table then load file */
     Boolean getOverwrite() { BoolUtils.IsValue(params.overwrite) }
     /** Replace data in table then load file */
-    void setOverwrite(Boolean value) { params.overwrite = value }
+    void setOverwrite(Boolean value) { saveParamValue('overwrite', value) }
 
     /** Process row during conversion before loading them into a table */
     @JsonIgnore
     Closure getOnProcessRow() { params.processRow as Closure }
     /** Process row during conversion before loading them into a table */
-    void setOnProcessRow(Closure value) { params.processRow = value }
+    void setOnProcessRow(Closure value) { saveParamValue('processRow', value) }
     /** Process row during conversion before loading them into a table */
     void processRow(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
         setOnProcessRow(value)
@@ -46,5 +46,5 @@ class ImpalaBulkLoadSpec extends BulkLoadSpec {
     /** Compression codec */
     String getCompression() { params.compression as String }
     /** Compression codec */
-    void setCompression(String value) { params.compression = value }
+    void setCompression(String value) { saveParamValue('compression', value) }
 }

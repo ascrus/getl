@@ -1031,4 +1031,20 @@ class MapUtils {
 
 		return res
 	}
+
+	/**
+	 * Process map sections
+	 * @param map map data
+	 * @param processes processing code by keys of map sections
+	 */
+	static void ProcessSections(Map<String, Object> map, Map<String, Closure> processes) {
+		processes.each { key, proc ->
+			def data = FindSection(map, key)
+			if (data != null) {
+				if (!(data instanceof Map))
+					throw new ExceptionGETL("Map type expected for section \"$key\", but type ${data.getClass().name} found!")
+				proc.call(data)
+			}
+		}
+	}
 }

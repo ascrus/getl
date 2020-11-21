@@ -14,7 +14,7 @@ import getl.lang.sub.RepositoryHistorypoints
 import getl.lang.sub.RepositorySave
 import getl.lang.sub.RepositorySequences
 import getl.test.Config
-import getl.test.GetlDslTest
+import getl.test.TestDsl
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
@@ -23,7 +23,7 @@ import groovy.transform.InheritConstructors
 import org.junit.Test
 
 @InheritConstructors
-class RepositoryTest extends GetlDslTest {
+class RepositoryTest extends TestDsl {
     final def isdebug = false
     final def repConfigFileName = 'tests/repository/vars.conf'
 
@@ -658,8 +658,8 @@ class RepositoryTest extends GetlDslTest {
                 storagePath = 'resource:/repository'
                 loadRepositories()
             }
-            assertEquals(3, listConnections().size())
-            assertEquals(6, listDatasets().size())
+            assertEquals(4, listConnections().size())
+            assertEquals(7, listDatasets().size())
             assertEquals(1, listSequences().size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(2, listFilemanagers().size())
@@ -930,8 +930,11 @@ class RepositoryTest extends GetlDslTest {
                     }
                 }
 
-                files('test:file') {
-                    assertEquals('/test', rootPath)
+                files('test:file1') {
+                    assertEquals('/test1', rootPath)
+                }
+                files('test:file2') {
+                    assertEquals('/test2', rootPath)
                 }
                 historypoint('test:hp') {
                     assertEquals(con, connection)

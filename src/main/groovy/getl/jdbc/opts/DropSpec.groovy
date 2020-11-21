@@ -13,9 +13,9 @@ class DropSpec extends BaseSpec {
     /**
      * Drop table if exists
      */
-    Boolean getIfExists() { params.ifExists }
+    Boolean getIfExists() { params.ifExists as Boolean }
     /**
      * Drop table if exists
      */
-    void setIfExists(Boolean value) { params.ifExists  = value }
+    void setIfExists(Boolean value) { saveParamValue('ifExists', value) }
 }

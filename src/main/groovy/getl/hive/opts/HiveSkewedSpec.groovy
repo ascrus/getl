@@ -48,5 +48,5 @@ class HiveSkewedSpec extends BaseSpec {
     /**
      * Stored data as directories
      */
-    void setStoredAsDirectories(Boolean value) { params.storedAsDirectories = value }
+    void setStoredAsDirectories(Boolean value) { saveParamValue('storedAsDirectories', value) }
 }

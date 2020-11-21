@@ -16,17 +16,17 @@ class CSVReadSpec extends BaseSpec {
     /** Check constraints while reading a file */
     Boolean getIsValid() { params.isValid as Boolean }
     /** Check constraints while reading a file */
-    void setIsValid(Boolean value) { params.isValid = value }
+    void setIsValid(Boolean value) { saveParamValue('isValid', value) }
 
     /** Read chunked files */
     Boolean getIsSplit() { params.isSplit as Boolean }
     /** Read chunked files */
-    void setIsSplit(Boolean value) { params.isSplit = value }
+    void setIsSplit(Boolean value) { saveParamValue('isSplit', value) }
 
     /** Read all columns as text type */
     Boolean getReadAsText() { params.readAsText as Boolean }
     /** Read all columns as text type */
-    void setReadAsText(Boolean value) { params.readAsText = value }
+    void setReadAsText(Boolean value) { saveParamValue('readAsText', value) }
 
     /**
      * Processing write parsing error and return the need to read the following rows of file
@@ -38,7 +38,7 @@ class CSVReadSpec extends BaseSpec {
      * Processing write parsing error and return the need to read the following rows of file
      * <br>Closure parameters: Map row, Long numberRow
      */
-    void setOnProcessError(Closure<Boolean> value) { params.processError = value }
+    void setOnProcessError(Closure<Boolean> value) { saveParamValue('processError', value) }
     /**
      * Processing write parsing error and return the need to read the following rows of file
      * <br>Closure parameters: Map row, Long numberRow
@@ -58,7 +58,7 @@ class CSVReadSpec extends BaseSpec {
      * Filter reading file records
      * <br>Closure parameters: Map row
      */
-    void setOnFilter(Closure<Boolean> value) { params.filter = value }
+    void setOnFilter(Closure<Boolean> value) { saveParamValue('filter', value) }
     /**
      * Filter reading file records
      * <br>Closure parameters: Map row
@@ -71,20 +71,20 @@ class CSVReadSpec extends BaseSpec {
     /** Ignore field header when reading a file (true by default) */
     Boolean getIgnoreHeader() { params.ignoreHeader as Boolean }
     /** Ignore field header when reading a file (true by default) */
-    void setIgnoreHeader(Boolean value) { params.ignoreHeader = value }
+    void setIgnoreHeader(Boolean value) { saveParamValue('ignoreHeader', value) }
 
     /** Skip n-lines after the header */
     Long getSkipRows() { params.skipRows as Long }
     /** Skip n-lines after the header */
-    void setSkipRows(Long value) { params.skipRows = value }
+    void setSkipRows(Long value) { saveParamValue('skipRows', value) }
 
     /** Read no more than the specified number of rows */
     Long getLimit() { params.limit as Long }
     /** Read no more than the specified number of rows */
-    void setLimit(Long value) { params.limit = value }
+    void setLimit(Long value) { saveParamValue('limit', value) }
 
     /** Save errors to error dataset */
     Boolean getSaveErrors() { params.saveErrors as Boolean }
     /** Save errors to error dataset */
-    void setSaveErrors(Boolean value) { params.saveErrors = value }
+    void setSaveErrors(Boolean value) { saveParamValue('saveErrors', value) }
 }

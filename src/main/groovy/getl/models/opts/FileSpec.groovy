@@ -22,7 +22,7 @@ class FileSpec extends BaseSpec {
     /** Path to file */
     String getFilePath() { params.filePath as String }
     /** Path to file */
-    void setFilePath(String value) { params.filePath = value }
+    void setFilePath(String value) { saveParamValue('filePath', value) }
 
     @Override
     String toString() {

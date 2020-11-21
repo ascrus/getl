@@ -1,11 +1,7 @@
 package getl.csv.proc
 
 import groovy.transform.CompileStatic
-import groovy.transform.InheritConstructors
-
 import java.text.SimpleDateFormat
-import java.util.Date
-
 import org.supercsv.cellprocessor.CellProcessorAdaptor
 import org.supercsv.cellprocessor.ift.DateCellProcessor
 import org.supercsv.cellprocessor.ift.StringCellProcessor

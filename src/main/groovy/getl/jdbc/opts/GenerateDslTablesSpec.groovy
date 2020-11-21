@@ -25,42 +25,42 @@ class GenerateDslTablesSpec extends BaseSpec {
     /** The package name of the generated script space */
     String getPackageName() { (params.packageName as String)?.toLowerCase( )}
     /** The package name of the generated script space */
-    void setPackageName(String value) { params.packageName = value }
+    void setPackageName(String value) { saveParamValue('packageName', value) }
 
     /** The name of the group to the registration tables in the repository */
     String getGroupName() { (params.groupName as String)?.toLowerCase() }
     /** The name of the group to the registration tables in the repository */
-    void setGroupName(String value) { params.groupName = value }
+    void setGroupName(String value) { saveParamValue('groupName', value) }
 
     /** The name of the connection used for the tables */
     String getConnectionName() { (params.connectionName as String)?.toLowerCase() }
     /** The name of the connection used for the tables */
-    void setConnectionName(String value) { params.connectionName = value }
+    void setConnectionName(String value) { saveParamValue('connectionName', value) }
 
     /** Overwrite existing script */
     Boolean getOverwriteScript() { BoolUtils.IsValue(params.overwriteScript) }
     /** Overwrite existing script */
-    void setOverwriteScript(Boolean value) { params.overwriteScript = value }
+    void setOverwriteScript(Boolean value) { saveParamValue('overwriteScript', value) }
 
     /** Path and file name to store table scripts (use capitalized file name and extension ".groovy") */
     String getScriptPath() { params.scriptPath as String}
     /** Path and file name to store table scripts (use capitalized file name and extension ".groovy") */
-    void setScriptPath(String value) { params.scriptPath = value }
+    void setScriptPath(String value) { saveParamValue('scriptPath', value) }
 
     /** Select tables from the specified database name */
     String getDbName() { params.dbName as String }
     /** Select tables from the specified database */
-    void setDbName(String value) { params.dbName = value }
+    void setDbName(String value) { saveParamValue('dbName', value) }
 
     /** Select tables from the specified schema name */
     String getSchemaName() { params.schemaName as String }
     /** Select tables from the specified database */
-    void setSchemaName(String value) { params.schemaName = value }
+    void setSchemaName(String value) { saveParamValue('schemaName', value) }
 
     /** Select tables from the specified table pattern by JDBC syntax */
     String getTableName() { params.tableName as String }
     /** Select tables from the specified database */
-    void setTableName(String value) { params.tableName = value }
+    void setTableName(String value) { saveParamValue('tableName', value) }
 
     /** Select tables from the specified table mask (String or List) */
     Object getTableMask() { params.tableMask }
@@ -69,7 +69,7 @@ class GenerateDslTablesSpec extends BaseSpec {
         if (!(value instanceof String) && !(value instanceof List))
             throw new ExceptionGETL('For "tableMask" it is allowed to have a string type or a list of strings')
 
-        params.tableMask = value
+        saveParamValue('tableMask', value)
     }
 
     /** Filter by object type */
@@ -91,22 +91,22 @@ class GenerateDslTablesSpec extends BaseSpec {
     /** Create tables in the database after registration */
     Boolean getCreateTables() { BoolUtils.IsValue(params.createTables) }
     /** Create tables in the database after registration */
-    void setCreateTables(Boolean value) { params.createTables = value }
+    void setCreateTables(Boolean value) { saveParamValue('createTables', value) }
 
     /** Delete existing tables in the database before creating */
     Boolean getDropTables() { BoolUtils.IsValue(params.dropTables) }
     /** Delete existing tables in the database before creating */
-    void setDropTables(Boolean value) { params.dropTables = value }
+    void setDropTables(Boolean value) { saveParamValue('dropTables', value) }
 
     /** Save field definition in resource files */
     Boolean getDefineFields() { BoolUtils.IsValue(params.saveFields, true) }
     /** Save field definition in resource files */
-    void setDefineFields(Boolean value) { params.saveFields = value }
+    void setDefineFields(Boolean value) { saveParamValue('saveFields', value) }
 
     /** Save database type names for fields in schema files */
     Boolean getSaveTypeNameForFields() { BoolUtils.IsValue(params.saveTypeNameForFields) }
     /** Save database type names for fields in schema files */
-    void setSaveTypeNameForFields(Boolean value) { params.saveTypeNameForFields = value }
+    void setSaveTypeNameForFields(Boolean value) { saveParamValue('saveTypeNameForFields', value) }
 
     /** List of tables for which to save data in resource files */
     List getListTableSavedData() { params.listTableSavedData as List<String> }
@@ -119,13 +119,13 @@ class GenerateDslTablesSpec extends BaseSpec {
     /** Path to resource files for storing table data */
     String getResourcePath() { params.resourcePath as String }
     /** Path to resource files for storing table data */
-    void setResourcePath(String value) { params.resourcePath = value }
+    void setResourcePath(String value) { saveParamValue('resourcePath', value) }
 
     String getResourceRoot() { params.resourceRoot as String }
-    void setResourceRoot(String value) { params.resourceRoot = value }
+    void setResourceRoot(String value) { saveParamValue('resourceRoot', value) }
 
     Closure getOnFilter() { params.filter as Closure<Boolean> }
-    void setOnFilter(Closure<Boolean> value) { params.filter = value }
+    void setOnFilter(Closure<Boolean> value) { saveParamValue('filter', value) }
     void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> cl) {
         setOnFilter(cl)
     }

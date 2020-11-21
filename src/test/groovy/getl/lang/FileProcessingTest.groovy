@@ -1,7 +1,7 @@
 package getl.lang
 
 import getl.h2.H2Connection
-import getl.test.GetlDslTest
+import getl.test.TestDsl
 import getl.test.TestInit
 import getl.test.TestRunner
 import getl.utils.DateUtils
@@ -9,14 +9,13 @@ import getl.utils.FileUtils
 import getl.utils.GenerationUtils
 import getl.utils.StringUtils
 import static getl.test.TestRunner.Dsl
-
 import groovy.json.JsonGenerator
 import groovy.json.StreamingJsonBuilder
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 
-class FileProcessingTest extends GetlDslTest {
+class FileProcessingTest extends TestDsl {
     @Override
     Class<Getl> useInitClass() { TestInit }
     @Override

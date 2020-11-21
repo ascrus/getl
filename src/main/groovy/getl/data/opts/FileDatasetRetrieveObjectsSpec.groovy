@@ -16,17 +16,17 @@ class FileDatasetRetrieveObjectsSpec extends BaseSpec {
     /** File location path relative to the connection path */
     String getDirectory() { params.directory as String }
     /** File location path relative to the connection path */
-    void setDirectory(String value) { params.directory = value }
+    void setDirectory(String value) { saveParamValue('directory', value) }
 
     /** Regular file search mask */
     String getMask() { params.mask as String?:'.*' }
     /** Regular file search mask */
-    void setMask(String value) { params.mask = value }
+    void setMask(String value) { saveParamValue('mask', value) }
 
     /** Mask search type */
     FileDriver.RetrieveObjectType getType() { params.type as FileDriver.RetrieveObjectType?:FileDriver.RetrieveObjectType.FILE}
     /** Mask search type */
-    void setType(FileDriver.RetrieveObjectType value) { params.type = value }
+    void setType(FileDriver.RetrieveObjectType value) { saveParamValue('type', value) }
 
     /** File type search by mask */
     static public final FileDriver.RetrieveObjectType fileType = FileDriver.RetrieveObjectType.FILE
@@ -36,7 +36,7 @@ class FileDatasetRetrieveObjectsSpec extends BaseSpec {
     /** Way to sort the results */
     FileDriver.RetrieveObjectSort getSort() { params.sort as FileDriver.RetrieveObjectSort }
     /** Way to sort the results */
-    void setSort(FileDriver.RetrieveObjectSort value) { params.sort = value }
+    void setSort(FileDriver.RetrieveObjectSort value) { saveParamValue('sort', value) }
 
     /** No sorting required */
     static public final FileDriver.RetrieveObjectSort noneSort = FileDriver.RetrieveObjectSort.NONE
@@ -48,14 +48,14 @@ class FileDatasetRetrieveObjectsSpec extends BaseSpec {
     static public final FileDriver.RetrieveObjectSort sizeSort = FileDriver.RetrieveObjectSort.SIZE
 
     /** Recursive directory processing */
-    Boolean getRecursive() { params.recursive }
+    Boolean getRecursive() { params.recursive as Boolean }
     /** Recursive directory processing */
-    void setRecursive(Boolean value) { params.recursive = value }
+    void setRecursive(Boolean value) { saveParamValue('recursive', value) }
 
     /** Custom file filtering */
     Closure<Boolean> getOnFilter() { params.filter as Closure }
     /** Custom file filtering */
-    void setOnFilter(Closure<Boolean> value) { params.filter = value }
+    void setOnFilter(Closure<Boolean> value) { saveParamValue('filter', value) }
     /** Custom file filtering */
     void filter(@ClosureParams(value = SimpleType, options = ['java.io.File'])
                         Closure<Boolean> value) {

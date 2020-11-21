@@ -60,6 +60,9 @@ class GetlDslTest extends GetlTest {
     /** Clean Getl on every test */
     protected Boolean cleanGetlBeforeTest() { true }
 
+    /** Autoloading the project configuration file getl-properties.conf */
+    protected Boolean autoLoadProperties() { true }
+
     @Before
     void beforeDslTest() {
         if (cleanGetlBeforeTest()) {
@@ -70,18 +73,20 @@ class GetlDslTest extends GetlTest {
         if (!Getl.GetlInstanceCreated()) {
             def eng = useGetlClass().newInstance()
             Getl.GetlSetInstance(eng)
+            eng.options.autoInitFromConfig = autoLoadProperties()
         }
 
         Getl.Dsl(this) {
-            if (configuration().environment != configEnvironment)
-                configuration().environment = configEnvironment
+            if (configuration.environment != configEnvironment)
+                configuration.environment = configEnvironment
         }
 
-        def initClass = useInitClass()
-        if (initClass != null && (!this.onceRunInitClass() || !initWasRun)) {
-            Getl.Dsl(this) {
-                callScript initClass
-            }
+        if ((!this.onceRunInitClass() || !initWasRun)) {
+            def initClasses = [] as List<Class<Script>>
+            def initClass = useInitClass()
+            if (initClass != null)
+                initClasses.add(initClass)
+            Getl.GetlInstance().initGetlProperties(initClasses)
             initWasRun = true
         }
     }

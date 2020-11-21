@@ -21,14 +21,14 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     /** Repository connection name */
     protected String getModelConnectionName() { params.modelConnectionName as String }
     /** Repository connection name */
-    protected void setModelConnectionName(String value) { params.modelConnectionName = value }
+    protected void setModelConnectionName(String value) { saveParamValue('modelConnectionName', value) }
     /** Set the name of the connection */
     protected void useModelConnection(String connectionName) {
         if (connectionName == null)
             throw new ExceptionModel('Connection name required!')
         dslCreator.connection(connectionName)
 
-        params.modelConnectionName = connectionName
+        saveParamValue('modelConnectionName', connectionName)
     }
     /** Used connection */
     protected Connection getModelConnection() { dslCreator.connection(modelConnectionName) }
@@ -41,7 +41,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         if (connection.dslNameObject == null)
             throw new ExceptionModel('Connection not registered in repository!')
 
-        params.modelConnectionName = connection.dslNameObject
+        saveParamValue('modelConnectionName', connection.dslNameObject)
     }
 
     /** Used datasets */

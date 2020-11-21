@@ -17,18 +17,22 @@ class TestRepository extends GetlDslTest {
                 load repConfigFileName
             }
 
+            /*
             repositoryStorageManager {
                 storagePath = 'resource:/repository'
                 autoLoadFromStorage = true
             }
+            */
         }
     }
 
     @Override
     Boolean allowTests() { FileUtils.ExistsFile(repConfigFileName) }
 
+    /*
     @Override
     Class<Getl> useInitClass() { TestInit }
     @Override
     Class<Getl> useGetlClass() { TestRunner }
+    */
 }

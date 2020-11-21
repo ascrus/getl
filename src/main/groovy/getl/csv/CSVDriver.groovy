@@ -164,16 +164,16 @@ class CSVDriver extends FileDriver {
 													   String locale, String decimalSeparator, String formatDate,
 													   String formatTime, String formatDateTime, Boolean isValid) {
 		CellProcessor cp
-
 		if (field.type == null || (field.type in [Field.Type.STRING, Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
 			if (field.length != null && isValid)
 				cp = new StrMinMax(0L, field.length.toLong())
+
 			if (BoolUtils.IsValue(field.trim))
-				cp = (cp != null)?new Trim(cp):new Trim()
+				cp = (cp != null)?new Trim(cp as StringCellProcessor):new Trim(new Optional())
 
 			if (isEscape && field.type == Field.Type.STRING) {
 				if (!isWrite)
-					cp = (cp != null)?new CSVParseEscapeString(cp):new CSVParseEscapeString()
+					cp = (cp != null)?new CSVParseEscapeString(cp as StringCellProcessor):new CSVParseEscapeString()
 			}
 		} else if (field.type == Field.Type.INTEGER) {
 			if (!isWrite)
@@ -270,13 +270,18 @@ class CSVDriver extends FileDriver {
 			else
 				cp = new CSVFmtBlob()
 		} else if (field.type == Field.Type.TEXT) {
-			if (isWrite)
-				cp = new CSVFmtClob()
+			if (field.length != null && isValid)
+				cp = new StrMinMax(0L, field.length.toLong())
 
-			if (isEscape) {
+			if (BoolUtils.IsValue(field.trim))
+				cp = (cp != null)?new Trim(cp as StringCellProcessor):new Trim(new Optional())
+
+			if (isEscape)
 				if (!isWrite)
-					cp = (cp != null)?new CSVParseEscapeString(cp):new CSVParseEscapeString()
-			}
+					cp = (cp != null)?new CSVParseEscapeString(cp as StringCellProcessor):new CSVParseEscapeString()
+
+			if (isWrite)
+				cp = (cp != null)?new CSVFmtClob(cp as StringCellProcessor):new CSVFmtClob()
 		} else {
 			throw new ExceptionGETL("Type ${field.type} not supported")
 		}

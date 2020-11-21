@@ -19,23 +19,23 @@ class FileTextSpec extends BaseSpec {
     /** Text file name */
     String getFileName() { params.fileName as String }
     /** Text file name */
-    void setFileName(String value) { params.fileName = value }
+    void setFileName(String value) { saveParamValue('fileName', value) }
 
     /** Code page text file (default UTF-8) */
     String getCodePage() { (params.codePage as String)?:'UTF-8' }
-    void setCodePage(String value) { params.codePage = value }
+    void setCodePage(String value) { saveParamValue('codePage', value) }
 
     /** Delete file after stop program */
     Boolean getTemporaryFile() { BoolUtils.IsValue(params.temporaryFile) }
     /** Delete file after stop program */
     void setTemporaryFile(Boolean value) {
-        params.temporaryFile = value
+        saveParamValue('temporaryFile', value)
     }
 
     /** Append text to exist file */
     Boolean getAppend() { BoolUtils.IsValue(params.append) }
     /** Append text to exist file */
-    void setAppend(Boolean value) { params.append = value }
+    void setAppend(Boolean value) { saveParamValue('append', value) }
 
     /** Text buffer */
     private final StringBuilder buffer = new StringBuilder()

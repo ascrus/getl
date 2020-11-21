@@ -27,7 +27,7 @@ class FilesModel<T extends FileSpec> extends BaseModel {
             throw new ExceptionModel('File manager name required!')
 
         dslCreator.filemanager(managerName)
-        params.sourceManagerName = managerName
+        saveParamValue('sourceManagerName', managerName)
     }
     /** Specify the source file manager for the model */
     void useSourceManager(Manager manager) {
@@ -36,7 +36,7 @@ class FilesModel<T extends FileSpec> extends BaseModel {
         if (manager.dslNameObject == null)
             throw new ExceptionModel('File manager not registered in Getl repository!')
 
-        params.sourceManagerName = manager.dslNameObject
+        saveParamValue('sourceManagerName', manager.dslNameObject)
     }
 
 

@@ -38,7 +38,7 @@ class FlowBaseSpec extends BaseSpec {
     /**
      * Closure code process row
      */
-    void setOnProcess(Closure value) { params.process = value }
+    void setOnProcess(Closure value) { saveParamValue('process', value) }
 
     /** The process worked */
     private Boolean isProcessed = false

@@ -89,7 +89,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
             if (!(value in ['AUTO', 'DIRECT', 'TRICKLE']))
                 throw new ExceptionGETL("Invalid load option \"$value\", allowed: AUTO, DIRECT AND TRICKLE!")
         }
-        params.loadMethod = value
+        saveParamValue('loadMethod', value)
     }
 
     /**
@@ -103,7 +103,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
      * <br>Specifying the optional ENFORCELENGTH parameter rejects rows.
      * <br>Default: true value
      */
-    void setEnforceLength(Boolean value) { params.enforceLength = value }
+    void setEnforceLength(Boolean value) { saveParamValue('enforceLength', value) }
 
     /** Stop loading rows on any error (default true) */
     //Boolean getAbortOnError() { BoolUtils.IsValue(params.abortOnError, true) }
@@ -139,7 +139,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
             if (!(value in ['UNCOMPRESSED', 'BZIP', 'GZIP', 'LZO', 'ZSTD']))
                 throw new ExceptionGETL("Invalid compression type \"$value\", allowed: UNCOMPRESSED, BZIP, GZIP, LZO, ZSTD!")
         }
-        params.compressed = value
+        saveParamValue('compressed', value)
     }
 
     /**
@@ -149,7 +149,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     /**
      * Specifies the file name or absolute path of the file in which to write exceptions.
      */
-    void setExceptionPath(String value) { params.exceptionPath = value }
+    void setExceptionPath(String value) { saveParamValue('exceptionPath', value) }
 
     /**
      * Specifies the file name or absolute path to write each row that failed to load. If this parameter is specified, records that failed due to parsing errors are always written.
@@ -158,7 +158,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     /**
      * Specifies the file name or absolute path to write each row that failed to load. If this parameter is specified, records that failed due to parsing errors are always written.
      */
-    void setRejectedPath(String value) { params.rejectedPath = value }
+    void setRejectedPath(String value) { saveParamValue('rejectedPath', value) }
 
     /**
      * Specifies a maximum number of logical records that can be rejected before a load fails.
@@ -167,7 +167,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     /**
      * Specifies a maximum number of logical records that can be rejected before a load fails.
      */
-    void setRejectMax(Long value) { params.rejectMax = value }
+    void setRejectMax(Long value) { saveParamValue('rejectMax', value) }
 
     /**
      * Specifies where files are located. if not specified, local files are loaded.
@@ -185,7 +185,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
      * <li>location = 'ANY NODE
      * </ul>
      */
-    void setLocation(String value) { params.location = value }
+    void setLocation(String value) { saveParamValue('location', value) }
 
     /**
      * Supplies a COPY load stream identifier. Using a stream name helps to quickly identify a particular load. The STREAM NAME value that you supply in the load statement appears in the STREAM_NAME column of the LOAD_STREAMS and LOAD_SOURCES system tables.
@@ -194,7 +194,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     /**
      * Supplies a COPY load stream identifier. Using a stream name helps to quickly identify a particular load. The STREAM NAME value that you supply in the load statement appears in the STREAM_NAME column of the LOAD_STREAMS and LOAD_SOURCES system tables.
      */
-    void setStreamName(String value) { params.streamName = value }
+    void setStreamName(String value) { saveParamValue('streamName', value) }
 
     /**
      * Specifies the format for parsing date type columns in file.
@@ -203,7 +203,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     /**
      * Specifies the format for parsing date type columns in file.
      */
-    void setMaskDate(String value) { params.maskDate = value }
+    void setMaskDate(String value) { saveParamValue('maskDate', value) }
 
     /**
      * Specifies the format for parsing time type columns in file.
@@ -212,7 +212,7 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     /**
      * Specifies the format for parsing time type columns in file.
      */
-    void setMaskTime(String value) { params.maskTime = value }
+    void setMaskTime(String value) { saveParamValue('maskTime', value) }
 
     /**
      * Specifies the format for parsing datetime type columns in file.
@@ -221,5 +221,5 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     /**
      * Specifies the format for parsing datetime type columns in file.
      */
-    void setMaskDateTime(String value) { params.maskDateTime = value }
+    void setMaskDateTime(String value) { saveParamValue('maskDateTime', value) }
 }

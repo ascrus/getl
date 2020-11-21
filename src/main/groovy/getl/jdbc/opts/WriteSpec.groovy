@@ -22,19 +22,19 @@ class WriteSpec extends BaseSpec {
     @JsonIgnore
     Closure getOnPrepare() { params.prepare as Closure }
     /** Preparing code */
-    void setOnPrepare(Closure value) { params.prepare = value }
+    void setOnPrepare(Closure value) { saveParamValue('prepare', value) }
     /** Preparing code */
     void prepare(Closure value) { setOnPrepare(value) }
 
     /** Use schemata file for reading dataset structure */
     Boolean getAutoSchema() { params.autoSchema as Boolean }
     /** Use schemata file for reading dataset structure */
-    void setAutoSchema(Boolean value) { params.autoSchema = value }
+    void setAutoSchema(Boolean value) { saveParamValue('autoSchema', value) }
 
     /** Update and delete filter */
     String getWhere() { params.where as String}
     /** Update and delete filter */
-    void setWhere(String value) { params.where = value }
+    void setWhere(String value) { saveParamValue('where', value) }
 
     /** Use insert when writing rows */
     static public String insertOperation = 'INSERT'
@@ -63,7 +63,7 @@ class WriteSpec extends BaseSpec {
         if (!(value in ['INSERT', 'UPDATE', 'DELETE', 'MERGE']))
             throw new ExceptionGETL("Unknown operation \"$operation\", the operation must have one of the following values: INSERT, UPDATE, DELETE AND MERGE!")
 
-        params.operation = value
+        saveParamValue('operation', value)
     }
 
     /** Batch size packet */
@@ -71,7 +71,7 @@ class WriteSpec extends BaseSpec {
     /** Batch size packet */
     void setBatchSize(Long value) {
         if (value != null && value <= 0) throw new ExceptionGETL('Batch size must have value greater zero!')
-        params.batchSize = value
+        saveParamValue('batchSize', value)
     }
 
     /**
@@ -91,5 +91,5 @@ class WriteSpec extends BaseSpec {
     /** CSV log file name */
     String getLogCSVFile() { params.logRows as String }
     /** CSV log file name */
-    void setLogCSVFile(String value) { params.logRows = value }
+    void setLogCSVFile(String value) { saveParamValue('logRows', value) }
 }

@@ -2,7 +2,7 @@ package getl.lang
 
 
 import getl.files.Manager
-import getl.test.GetlDslTest
+import getl.test.TestDsl
 import getl.test.TestInit
 import getl.test.TestRunner
 import getl.utils.FileUtils
@@ -14,7 +14,7 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 
-class CopyTest extends GetlDslTest {
+class CopyTest extends TestDsl {
     @Override
     Class<Getl> useInitClass() { TestInit }
     @Override

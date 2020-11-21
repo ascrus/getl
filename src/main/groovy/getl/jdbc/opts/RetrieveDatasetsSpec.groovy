@@ -21,17 +21,17 @@ class RetrieveDatasetsSpec extends BaseSpec {
     /** Use specified database */
     String getDbName() { params.dbName as String }
     /** Use specified database */
-    void setDbName(String value) { params.dbName = value }
+    void setDbName(String value) { saveParamValue('dbName', value) }
 
     /** Use specified schema */
     String getSchemaName() { params.schemaName as String }
     /** Use specified schema */
-    void setSchemaName(String value) { params.schemaName = value }
+    void setSchemaName(String value) { saveParamValue('schemaName', value) }
 
     /** Use specified table sql pattern */
     String getTablePattern() { params.tableName as String }
     /** Use specified table sql pattern mask  */
-    void setTablePattern(String value) { params.tableName = value }
+    void setTablePattern(String value) { saveParamValue('tableName', value) }
 
     /** Use specified table mask */
     List<String> getTableMask() { params.tableMask as List<String> }
@@ -65,7 +65,7 @@ class RetrieveDatasetsSpec extends BaseSpec {
     /** Filter objects with custom code */
     Closure<Boolean> getOnFilter() { params.filter as Closure<Boolean> }
     /** Filter objects with custom code */
-    void setOnFilter(Closure<Boolean> value) { params.filter = value }
+    void setOnFilter(Closure<Boolean> value) { saveParamValue('filter', value) }
     /** Filter objects with custom code */
     void filter(@DelegatesTo(RetrieveDatasetsSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.RetrieveDatasetsSpec'])

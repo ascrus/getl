@@ -35,7 +35,7 @@ class IndexSpec extends BaseSpec {
     /**
      * Create unique index
      */
-    void setUnique(Boolean value) { params.unique = value }
+    void setUnique(Boolean value) { saveParamValue('unique', value) }
 
     /**
      * Create hash index
@@ -44,7 +44,7 @@ class IndexSpec extends BaseSpec {
     /**
      * Create hash index
      */
-    void setHash(Boolean value) { params.hash = value }
+    void setHash(Boolean value) { saveParamValue('hash', value) }
 
     /**
      * Create index if not exists
@@ -53,5 +53,5 @@ class IndexSpec extends BaseSpec {
     /**
      * Create index if not exists
      */
-    void setIfNotExists(Boolean value) { params.ifNotExists = value }
+    void setIfNotExists(Boolean value) { saveParamValue('ifNotExists', value) }
 }

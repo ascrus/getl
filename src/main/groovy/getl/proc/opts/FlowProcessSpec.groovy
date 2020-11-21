@@ -29,7 +29,7 @@ class FlowProcessSpec extends FlowBaseSpec {
     /**
      * Source dataset
      */
-    void setSource(Dataset value) { params.source = value }
+    void setSource(Dataset value) { saveParamValue('source', value) }
 
     /**
      * Temporary source name
@@ -38,7 +38,7 @@ class FlowProcessSpec extends FlowBaseSpec {
     /**
      * Temporary source name
      */
-    def setTempSourceName(String value) { params.tempSource = value }
+    def setTempSourceName(String value) { saveParamValue('tempSource', value) }
 
     /**
      * Parameters for source read process
@@ -59,7 +59,7 @@ class FlowProcessSpec extends FlowBaseSpec {
     /**
      * Save assert errors to temporary dataset "errorsDataset"
      */
-    def setSaveErrors(Boolean value) { params.saveErrors = value }
+    void setSaveErrors(Boolean value) { saveParamValue('saveErrors', value) }
 
     /**
      * Code executed before process read rows
@@ -68,7 +68,7 @@ class FlowProcessSpec extends FlowBaseSpec {
     /**
      * Code executed before process read rows
      */
-    void setOnInitRead(Closure value) { params.onInit = value }
+    void setOnInitRead(Closure value) { saveParamValue('onInit', value) }
     /**
      * Code executed before process read rows
      */

@@ -26,7 +26,7 @@ class MonitorRuleSpec extends BaseSpec { /*TODO: added ignore property */
     /** Query name */
     String getQueryName() { params.queryName as String }
     /** Query name */
-    void setQueryName(String value) { params.queryName = value }
+    void setQueryName(String value) { saveParamValue('queryName', value) }
 
     /** Query */
     @JsonIgnore
@@ -41,7 +41,7 @@ class MonitorRuleSpec extends BaseSpec { /*TODO: added ignore property */
         if (value != null && value.toMilliseconds() <= 0)
             throw new ExceptionModel('The value must be greater than zero!')
 
-        params.checkFrequency = value
+        saveParamValue('checkFrequency', value)
     }
 
     /** Error notification retry time */
@@ -51,7 +51,7 @@ class MonitorRuleSpec extends BaseSpec { /*TODO: added ignore property */
         if (value != null && value.toMilliseconds() <= 0)
             throw new ExceptionModel('The value must be greater than zero!')
 
-        params.notificationTime = value
+        saveParamValue('notificationTime', value)
     }
 
     /** Allowable time lag */
@@ -61,13 +61,13 @@ class MonitorRuleSpec extends BaseSpec { /*TODO: added ignore property */
         if (value != null && value.toMilliseconds() <= 0)
             throw new ExceptionModel('The value must be greater than zero!')
 
-        params.lagTime = value
+        saveParamValue('lagTime', value)
     }
 
     /** Rule description */
     String getDescription() { params.description as String }
     /** Rule description */
-    void setDescription(String value) { params.description = value }
+    void setDescription(String value) { saveParamValue('description', value) }
 
     @Override
     String toString() {

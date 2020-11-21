@@ -11,7 +11,7 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class MSSQLReadSpec extends ReadSpec {
     /** With hint (using in "from" section) */
-    String getWithHint() { params.with as String }
+    String getWithHint() { params."with" as String }
     /** With hint (using in "from" section) */
-    void setWithHint(String value) { params.with = value }
+    void setWithHint(String value) { saveParamValue('with', value) }
 }

@@ -43,7 +43,7 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
     /** Description of model */
     String getDescription() { params.description as String }
     /** Description of model */
-    void setDescription(String value) { params.description = value }
+    void setDescription(String value) { saveParamValue('description', value) }
 
     @Override
     protected void initSpec() {

@@ -39,7 +39,7 @@ class BulkLoadSpec extends BaseSpec {
      * <br>closure parameter: source file as CSVDataset
      * <br>return: List of loaded table fields
      */
-    void setOnPrepareDestinationFields(Closure value) { params.prepare = value }
+    void setOnPrepareDestinationFields(Closure value) { saveParamValue('prepare', value) }
     /**
      * Return a list of field names to load into the table
      * <br>closure parameter: source file as CSVDataset
@@ -59,7 +59,7 @@ class BulkLoadSpec extends BaseSpec {
      * Run code before loading file (for loadAsPackage off)
      * <br>closure parameter: file path to load
      */
-    void setOnBeforeBulkLoadFile(Closure value) { params.beforeBulkLoadFile = value }
+    void setOnBeforeBulkLoadFile(Closure value) { saveParamValue('beforeBulkLoadFile', value) }
     /**
      * Run code before loading file (for loadAsPackage off)
      * <br>closure parameter: file path to load
@@ -78,7 +78,7 @@ class BulkLoadSpec extends BaseSpec {
      * Run code after loading file (for loadAsPackage off)
      * <br>closure parameter: file path to load
      */
-    void setOnAfterBulkLoadFile(Closure value) { params.afterBulkLoadFile = value }
+    void setOnAfterBulkLoadFile(Closure value) { saveParamValue('afterBulkLoadFile', value) }
     /**
      * Run code after loading file (for loadAsPackage off)
      * <br>closure parameter: file path to load
@@ -97,7 +97,7 @@ class BulkLoadSpec extends BaseSpec {
      * Run code before loading files (for loadAsPackage on)
      * <br>closure parameter: list of file paths to load
      */
-    void setOnBeforeBulkLoadPackageFiles(Closure value) { params.beforeBulkLoadPackageFiles = value }
+    void setOnBeforeBulkLoadPackageFiles(Closure value) { saveParamValue('beforeBulkLoadPackageFiles', value) }
     /**
      * Run code before loading files (for loadAsPackage on)
      * <br>closure parameter: list of file paths to load
@@ -116,7 +116,7 @@ class BulkLoadSpec extends BaseSpec {
      * Run code after loading files (for loadAsPackage on)
      * <br>closure parameter: list of file paths to load
      */
-    void setOnAfterBulkLoadPackageFiles(Closure value) { params.afterBulkLoadPackageFiles = value }
+    void setOnAfterBulkLoadPackageFiles(Closure value) { saveParamValue('afterBulkLoadPackageFiles', value) }
     /**
      * Run code after loading files (for loadAsPackage on)
      * <br>closure parameter: list of file paths to load
@@ -128,42 +128,42 @@ class BulkLoadSpec extends BaseSpec {
     /** Auto commit after bulk load files */
     Boolean getLoadAsPackage() { BoolUtils.IsValue(params.loadAsPackage) }
     /** Auto commit after bulk load files */
-    void setLoadAsPackage(Boolean value) { params.loadAsPackage = value }
+    void setLoadAsPackage(Boolean value) { saveParamValue('loadAsPackage', value) }
 
     /** Remote files bulk load */
     Boolean getRemoteLoad() { BoolUtils.IsValue(params.remoteLoad) }
     /** Remote files bulk load */
-    void setRemoteLoad(Boolean value) { params.remoteLoad = value }
+    void setRemoteLoad(Boolean value) { saveParamValue('remoteLoad', value) }
 
     /** Automatic linking by the file and table field names */
     Boolean getAutoMap() { params.autoMap as Boolean }
     /** Automatic linking by the file and table field names */
-    void setAutoMap(Boolean value) { params.autoMap = value }
+    void setAutoMap(Boolean value) { saveParamValue('autoMap', value) }
 
     /** Using the field binding map */
     Boolean getAllowMapAlias() { params.allowMapAlias as Boolean }
     /** Using the field binding map */
-    void setAllowMapAlias(Boolean value) { params.allowMapAlias = value }
+    void setAllowMapAlias(Boolean value) { saveParamValue('allowMapAlias', value) }
 
     /** Auto commit after bulk load files */
     Boolean getAutoCommit() { params.autoCommit as Boolean }
     /** Auto commit after bulk load files */
-    void setAutoCommit(Boolean value) { params.autoCommit = value }
+    void setAutoCommit(Boolean value) { saveParamValue('autoCommit', value) }
 
     /** Stop loading files on any error */
     Boolean getAbortOnError() { BoolUtils.IsValue(params.abortOnError, true) }
     /** Stop loading files on any error */
-    void setAbortOnError(Boolean value) { params.abortOnError = value }
+    void setAbortOnError(Boolean value) { saveParamValue('abortOnError', value) }
 
     /** Use the table field description to read the CSV file */
     Boolean getInheritFields() { params.inheritFields as Boolean }
     /** Use the table field description to read the CSV file */
-    void setInheritFields(Boolean value) { params.inheritFields = value }
+    void setInheritFields(Boolean value) { saveParamValue('inheritFields', value) }
 
     /** Use the schema description file when reading CSV files */
     String getSchemaFileName() { params.schemaFileName as String }
     /** Use the schema description file when reading CSV files */
-    void setSchemaFileName(String value) { params.schemaFileName = value }
+    void setSchemaFileName(String value) { saveParamValue('schemaFileName', value) }
 
     /**
      * The list of file names to bulk load to the table
@@ -190,7 +190,7 @@ class BulkLoadSpec extends BaseSpec {
             }
         }
 
-        params.files = value
+        saveParamValue('files', value)
     }
 
     /** Names of sort fields for the order of loaded files */
@@ -205,7 +205,7 @@ class BulkLoadSpec extends BaseSpec {
     /** Delete file after successful upload */
     Boolean getRemoveFile() { BoolUtils.IsValue(params.removeFile) }
     /** Delete file after successful upload */
-    void setRemoveFile(Boolean value) { params.removeFile = value }
+    void setRemoveFile(Boolean value) { saveParamValue('removeFile', value) }
 
     /** Move file after successful upload to the specified path */
     String getMoveFileTo() { params.moveFileTo as String }
@@ -214,14 +214,14 @@ class BulkLoadSpec extends BaseSpec {
         if (value != null)
             FileUtils.ValidPath(value)
 
-        params.moveFileTo = value
+        saveParamValue('moveFileTo', value)
     }
 
     /** Source file prototype for bulk load */
     @JsonIgnore
     CSVDataset getSourceDataset() { params.sourceDataset as CSVDataset }
     /** Source file prototype for bulk load */
-    void setSourceDataset(CSVDataset value) { params.sourceDataset = value }
+    void setSourceDataset(CSVDataset value) { saveParamValue('sourceDataset', value) }
 
     /** The name of source file prototype in repository for bulk load */
     String getSourceDatasetName() { sourceDataset?.dslNameObject }

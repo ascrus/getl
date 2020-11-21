@@ -1,5 +1,6 @@
 package getl.lang.sub
 
+import getl.exception.ExceptionDSL
 import getl.jdbc.JDBCConnection
 import getl.jdbc.opts.RetrieveDatasetsSpec
 import getl.lang.Getl
@@ -8,6 +9,7 @@ import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
 import getl.models.sub.RepositorySetOfTables
+import getl.utils.FileUtils
 
 /**
  * Manager of saving objects to the repository
@@ -26,26 +28,55 @@ class RepositorySave extends Getl {
     protected void doneRepository() { }
 
     @Override
+    Boolean allowProcess(String processName, Boolean throwError = false) {
+        return true
+    }
+
+    @Override
     Object run() {
         super.run()
+
+        def pathToSave = (options.getlConfigProperties.repository as Map)?.repositorySavePath as String
+        if (pathToSave != null)
+            repositoryStorageManager.storagePath = pathToSave
+
+        options {
+            jdbcConnectionLoggingPath = null
+            fileManagerLoggingPath = null
+            tempDBSQLHistoryFile = null
+        }
+
         initRepository()
+        if (repositoryStorageManager.storagePath == null)
+            throw new ExceptionDSL('It is required to set the path for the repository files to "repositoryStorageManager.storagePath"!')
+        if (FileUtils.IsResourceFileName(repositoryStorageManager.storagePath))
+            throw new ExceptionDSL('The repository path cannot be resource path!')
+
         try {
             getClass().methods.each { method ->
                 def an = method.getAnnotation(SaveToRepository)
                 if (an != null) {
                     repositoryStorageManager { autoLoadFromStorage = true }
                     repositoryStorageManager.clearRepositories()
-                    def env = an.env() ?: 'all'
+                    def env = an.env()?:'all'
+                    def envs = env?.split(',')
+                    if (envs == null || envs.size() == 0)
+                        throw new ExceptionDSL("Method \"${method.name}\" in annotation \"SaveToRepository\" does not have parameter \"env\"!")
+                    envs = envs.collect {e -> e.trim().toLowerCase()}
+
                     def retrieve = getl.utils.BoolUtils.IsValue(an.retrieve())
                     def type = an.type()
                     assert type in ['Connections', 'Datasets', 'Files', 'Historypoints', 'Sequences',
                                     'ReferenceFiles', 'ReferenceVerticaTables', 'MonitorRules', 'SetOfTables', 'MapTables'],
                             "Unknown type \"$type\""
-                    logInfo "Process method \"${method.name}\" with type \"$type\" from \"$env\" environment"
+                    if (type in ['Connections', 'Files'])
+                        logInfo "Process method \"${method.name}\" with type \"$type\" from environments: ${envs.join(', ')}"
+                    else
+                        logInfo "Process method \"${method.name}\" with type \"$type\""
                     thisObject."${method.name}"()
                     def saveMethod = 'save' + type
                     if (type in ['Connections', 'Files'])
-                        thisObject."$saveMethod"(env)
+                        envs.each { e-> thisObject."$saveMethod"(e) }
                     else if (type == 'Datasets')
                         thisObject."$saveMethod"(retrieve)
                     else

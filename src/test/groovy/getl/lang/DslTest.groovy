@@ -4,13 +4,9 @@ import getl.csv.CSVConnection
 import getl.files.FileManager
 import getl.h2.*
 import getl.jdbc.TableDataset
-import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
-import getl.lang.sub.RepositoryFilemanagers
-import getl.lang.sub.RepositoryHistorypoints
-import getl.lang.sub.RepositorySequences
 import getl.proc.Job
-import getl.test.GetlDslTest
+import getl.test.TestDsl
 import getl.test.TestInit
 import getl.test.TestRunner
 import getl.tfs.*
@@ -31,7 +27,7 @@ import java.util.logging.Level
 
 @FixMethodOrder(org.junit.runners.MethodSorters.NAME_ASCENDING)
 @InheritConstructors
-class DslTest extends GetlDslTest {
+class DslTest extends TestDsl {
     @Override
     Class<Getl> useInitClass() { TestInit }
     @Override

@@ -503,8 +503,8 @@ class DateUtils {
 		partName = partName.toUpperCase()
 
 		def ret = 0
-		String[] fieldsName = ["YEAR", "MONTH", "HOUR", "MINUTE", "SECOND", "DAY_OF_WEEK", "DAY_OF_MONTH", "DAY_OF_YEAR",
-				"WEEK_OF_MONTH", "DAY_OF_WEEK_IN_MONTH", "WEEK_OF_YEAR", "TIMEZONE" ]
+		String[] fieldsName = ['YEAR', 'MONTH', 'HOUR', 'MINUTE', 'SECOND', 'DAY_OF_WEEK', 'DAY_OF_MONTH', 'DAY_OF_YEAR',
+							   'WEEK_OF_MONTH', 'DAY_OF_WEEK_IN_MONTH', 'WEEK_OF_YEAR', 'TIMEZONE']
 		List<String> filedsList = Arrays.asList(fieldsName)
 		Calendar c = Calendar.getInstance()
 		c.setTime(date)

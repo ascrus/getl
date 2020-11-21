@@ -12,8 +12,10 @@ class MapTableSpec extends DatasetSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        params.listPartitions = Collections.synchronizedList(new ArrayList())
-        params.map = new ConcurrentHashMap<String, String>()
+        if (params.listPartitions == null)
+            params.listPartitions = Collections.synchronizedList(new ArrayList())
+        if (params.map == null)
+            params.map = new ConcurrentHashMap<String, String>()
     }
 
     /** Owner processing model */
@@ -41,7 +43,7 @@ class MapTableSpec extends DatasetSpec {
         if (name == datasetName)
             throw new ExceptionModel("$sourceName: you cannot use the same dataset for source and destination!")
 
-        params.destinationName = name
+        saveParamValue('destinationName', name)
     }
     /** Set destination table name */
     void linkTo(Dataset destinationDataset) {
@@ -55,7 +57,7 @@ class MapTableSpec extends DatasetSpec {
         if (name == datasetName)
             throw new ExceptionModel("$sourceName: you cannot use the same dataset for source and destination!")
 
-        params.destinationName = name
+        saveParamValue('destinationName', name)
     }
     /** Destination dataset */
     @JsonIgnore
@@ -73,7 +75,7 @@ class MapTableSpec extends DatasetSpec {
     /** Get a list of partitions from the specified dataset */
     String getPartitionsDatasetName() { params.partitionsDatasetName as String }
     /** Get a list of partitions from the specified dataset */
-    void setPartitionsDatasetName(String value) { params.partitionsDatasetName = value }
+    void setPartitionsDatasetName(String value) { saveParamValue('partitionsDatasetName', value) }
     /** Get a list of partitions from the specified dataset */
     @JsonIgnore
     Dataset getPartitionsDataset() {

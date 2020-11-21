@@ -20,7 +20,7 @@ class FirebirdDriverTest extends JDBCDriverProto {
         if (!FileUtils.ExistsFile(configName)) return null
         Config.LoadConfig(fileName: configName)
         def con = new FirebirdConnection(config: 'firebird')
-        con.autoCommit = true
+//        con.autoCommit = true
         con.connectProperty.encoding='utf8'
         return con
     }

@@ -1,7 +1,6 @@
 package getl.csv.proc
 
 import groovy.transform.CompileStatic
-import groovy.transform.InheritConstructors
 import org.supercsv.cellprocessor.CellProcessorAdaptor
 import org.supercsv.cellprocessor.ift.StringCellProcessor
 import org.supercsv.exception.SuperCsvCellProcessorException
@@ -9,8 +8,15 @@ import org.supercsv.util.CsvContext
 import getl.utils.*
 import java.sql.Clob
 
-@InheritConstructors
 class CSVFmtClob extends CellProcessorAdaptor implements StringCellProcessor {
+	CSVFmtClob() {
+		super()
+	}
+
+	CSVFmtClob(StringCellProcessor next) {
+		super(next)
+	}
+
 	@CompileStatic
 	@Override
     <T> T execute(final Object value, final CsvContext context) {

@@ -54,47 +54,47 @@ class HiveCreateSpec extends CreateSpec {
     /**
      * Name of type row format
      */
-    String getRowFormat() { params.rowFormat }
+    String getRowFormat() { params.rowFormat as String }
     /**
      * Name of type row format
      */
-    void setRowFormat(String value) { params.rowFormat = value }
+    void setRowFormat(String value) { saveParamValue('rowFormat', value) }
 
     /**
      * Field delimiter
      */
-    String getFieldsTerminated() { params.fieldsTerminated }
+    String getFieldsTerminated() { params.fieldsTerminated as String }
     /**
      * Field delimiter
      */
-    void setFieldsTerminated(String value) { params.fieldsTerminated = value }
+    void setFieldsTerminated(String value) { saveParamValue('fieldsTerminated', value) }
 
     /**
      * Null value
      */
-    String getNullDefined() { params.nullDefined }
+    String getNullDefined() { params.nullDefined as String }
     /**
      * Null value
      */
-    void setNullDefined(String value) { params.nullDefined = value }
+    void setNullDefined(String value) { saveParamValue('nullDefined', value) }
 
     /**
      * Store name
      */
-    String getStoredAs() { params.storedAs }
+    String getStoredAs() { params.storedAs as String }
     /**
      * Store name
      */
-    void setStoredAs(String value) { params.storedAs = value }
+    void setStoredAs(String value) { saveParamValue('storedAs', value) }
 
     /**
      * Name of location
      */
-    String getLocation() { params.location }
+    String getLocation() { params.location as String }
     /**
      * Name of location
      */
-    void setLocation(String value) { params.location = value }
+    void setLocation(String value) { saveParamValue('location', value) }
 
     /**
      * Extend table properties
@@ -111,9 +111,9 @@ class HiveCreateSpec extends CreateSpec {
     /**
      * Query of select data
      */
-    String getSelect() { params.select }
+    String getSelect() { params.select as String }
     /**
      * Query of select data
      */
-    void setSelect(String value) { params.select = value }
+    void setSelect(String value) { saveParamValue('select', value) }
 }

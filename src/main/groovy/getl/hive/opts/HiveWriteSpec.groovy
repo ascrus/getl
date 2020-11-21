@@ -14,5 +14,5 @@ class HiveWriteSpec extends WriteSpec {
     /** Replace data in table then insert */
     Boolean getOverwrite() { BoolUtils.IsValue(params.overwrite) }
     /** Replace data in table then insert */
-    void setOverwrite(Boolean value) { params.overwrite = value }
+    void setOverwrite(Boolean value) { saveParamValue('overwrite', value) }
 }

@@ -41,7 +41,7 @@ class JSONReadSpec extends BaseSpec {
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    void setOnFilter(Closure<Boolean> value) { params.filter = value }
+    void setOnFilter(Closure<Boolean> value) { saveParamValue('filter', value) }
     /**
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
@@ -60,7 +60,7 @@ class JSONReadSpec extends BaseSpec {
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)
      */
-    void setOnReadAttributes(Closure<Boolean> value) { params.initAttr = value }
+    void setOnReadAttributes(Closure<Boolean> value) { saveParamValue('initAttr', value) }
     /**
      * Filtering readable records
      * <br>A readable record is passed as parameter (Map object)

@@ -14,7 +14,7 @@ class VerticaReadSpec extends ReadSpec {
     /** Label vertica hint */
     String getLabel() { params.label as String }
     /** Label vertica hint */
-    void setLabel(String value) { params.label = value }
+    void setLabel(String value) { saveParamValue('label', value) }
 
     /** The percentage of sampling returned table rows */
     Integer getTablesample() { params.tablesample as Integer }
@@ -24,6 +24,6 @@ class VerticaReadSpec extends ReadSpec {
             throw new ExceptionGETL('Parameter "tablesample" must be greater than zero!')
         if (value != null && value > 100)
             throw new ExceptionGETL('Parameter "tablesample" should be no more than 100!')
-        params.tablesample = value
+        saveParamValue('tablesample', value)
     }
 }

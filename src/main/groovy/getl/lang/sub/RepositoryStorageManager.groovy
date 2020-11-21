@@ -560,6 +560,8 @@ class RepositoryStorageManager {
         else if (env == null) {
             env = dslCreator.configuration().environment?.toLowerCase()?:'prod'
         }
+        else
+            env = env.trim().toLowerCase()
 
         return env
     }

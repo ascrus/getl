@@ -358,7 +358,7 @@ class ConfigSlurper extends ConfigManager {
 		def lines = [] as List<String>
 		data.each { key, value ->
 			if (value == null) return
-			def varName = (isListMap)?key:PrepareVariableName(key)
+			def varName = (isListMap)?key:PrepareVariableName(key as String)
 
 			if (value instanceof Map) {
 				def map = value as Map

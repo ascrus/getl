@@ -138,7 +138,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
         def obj = Dataset.CreateDataset(MapUtils.Copy(config, ['connection', 'fields']))
         if (con == null) {
             if (!(obj instanceof TFSDataset))
-                throw new ExceptionDSL('No dataset connection specified in configuration!')
+                throw new ExceptionGETL('No dataset connection specified in configuration!')
             else
                 con = TFS.storage
         }

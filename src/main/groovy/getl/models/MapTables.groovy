@@ -66,7 +66,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
             throw new ExceptionModel('Connection name required!')
         dslCreator.connection(connectionName)
 
-        params.destinationConnectionName = connectionName
+        saveParamValue('destinationConnectionName', connectionName)
     }
     /** Use specified connection for destination datasets */
     void useDestinationConnection(Connection connection) {
@@ -75,7 +75,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
         if (connection.dslNameObject == null)
             throw new ExceptionModel('Connection not registered in Getl repository!')
 
-        params.destinationConnectionName = connection.dslNameObject
+        saveParamValue('destinationConnectionName', connection.dslNameObject)
     }
 
     /**
