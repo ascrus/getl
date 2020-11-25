@@ -1,6 +1,7 @@
 package getl.json
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.Dataset
 import getl.data.FileConnection
 import groovy.transform.InheritConstructors
 
@@ -23,4 +24,7 @@ class JSONConnection extends FileConnection {
 	/** Current JSON connection driver */
 	@JsonIgnore
 	JSONDriver getCurrentJSONDriver() { driver as JSONDriver }
+
+	@Override
+	protected Class<Dataset> getDatasetClass() { JSONDataset }
 }

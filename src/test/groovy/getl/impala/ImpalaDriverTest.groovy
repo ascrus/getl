@@ -21,8 +21,6 @@ class ImpalaDriverTest extends JDBCDriverProto {
     }
 
     @Override
-    String getUseTableClass() { 'getl.impala.ImpalaTable' }
-    @Override
     String getUseTableName() { 'getl_test_impala' }
 
     @Override

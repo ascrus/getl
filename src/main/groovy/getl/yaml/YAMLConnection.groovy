@@ -1,6 +1,7 @@
 package getl.yaml
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.Dataset
 import getl.data.FileConnection
 
 /**
@@ -22,4 +23,7 @@ class YAMLConnection extends FileConnection {
     /** Current JSON connection driver */
     @JsonIgnore
     YAMLDriver getCurrentYAMLDriver() { driver as YAMLDriver }
+
+    @Override
+    protected Class<Dataset> getDatasetClass() { YAMLDataset }
 }

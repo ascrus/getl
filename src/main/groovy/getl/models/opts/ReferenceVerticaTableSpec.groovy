@@ -1,9 +1,12 @@
 package getl.models.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.Dataset
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
+import getl.jdbc.TableDataset
 import getl.models.ReferenceVerticaTables
+import getl.proc.Flow
 import getl.utils.BoolUtils
 import getl.utils.Logs
 import getl.utils.StringUtils
@@ -45,25 +48,54 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
         return destTable
     }
 
-    /** The condition for copying rows to a reference tables from an external source  */
+    /** The condition for copying rows to reference tables from source  */
     String getWhereCopy() { params.whereCopy as String }
-    /** The condition for copying rows to a reference tables from an external source */
+    /** The condition for copying rows to reference tables from source  */
     void setWhereCopy(String value) { saveParamValue('whereCopy', value) }
 
-    /** Percentage of sampling rows when copying from an external source */
+    /** Percentage of sampling rows when copying from source */
     Integer getSampleCopy() { params.sampleCopy as Integer }
-    /** Percentage of sampling rows when copying from an external source */
+    /** Percentage of sampling rows when copying from source */
     void setSampleCopy(Integer value) { saveParamValue('sampleCopy', value) }
 
-    /** Limit the number of rows when copying from an external source */
+    /** Limit the number of rows when copying from source */
     Long getLimitCopy() { params.limitCopy as Long }
-    /** Limit the number of rows when copying from an external source */
+    /** Limit the number of rows when copying from source */
     void setLimitCopy(Long value) { saveParamValue('limitCopy', value) }
 
-    /** The table is used when copying from an external source (default false) */
-    Boolean getAllowCopy() { BoolUtils.IsValue(params.allowCopy, whereCopy != null) }
-    /** The table is used when copying from an external source (default false) */
+    /** The table is used when copying from source (default false) */
+    Boolean getAllowCopy() { params.allowCopy as Boolean }
+    /** The table is used when copying from source (default false) */
     void setAllowCopy(Boolean value) { saveParamValue('allowCopy', value) }
+
+    /** The table is used when copying from source */
+    Boolean isAllowCopy() { BoolUtils.IsValue(allowCopy, whereCopy != null) }
+
+    /** Always fill the table (default false) */
+    Boolean getAlwaysFill() { params.alwaysFill as Boolean }
+    /** Always fill the table (default false) */
+    void setAlwaysFill(Boolean value) { saveParamValue('alwaysFill', value) }
+
+    /** Reference data source name */
+    String getSourceDatasetName() { params.sourceDatasetName as String }
+    /** Reference data source name */
+    void setSourceDatasetName(String value) {
+        if (value != null) ownerModel.dslCreator.dataset(value)
+        params.sourceDatasetName = value
+    }
+
+    /** Reference data source */
+    Dataset getSourceDataset() { (sourceDatasetName != null)?ownerModel.dslCreator.dataset(sourceDatasetName):null }
+    /** Reference data source */
+    void setSourceDataset(Dataset value) {
+        if (value == null) {
+            params.sourceDatasetName = null
+            return
+        }
+        if (value.dslNameObject == null)
+            throw new ExceptionModel("The dataset \"$value\" must be registered in the repository!")
+        params.sourceDatasetName = value.dslNameObject
+    }
 
     /**
      * Create a reference table in the database schema for the model
@@ -75,7 +107,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
 
         def exists = refTable.exists
         if (!recreate && exists) {
-            Logs.Warning("Table $refTable exists and is skipped!")
+            Logs.Warning("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: reference table exists and is skipped!")
             return
         }
 
@@ -84,40 +116,30 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
 
         ownerReferenceVerticaTableModel.referenceConnection.executeCommand("CREATE TABLE ${refTable.fullTableName} LIKE ${sourceTable.fullTableName} INCLUDING PROJECTIONS")
         if (exists)
-            Logs.Info("Reference table \"$datasetName\" successfully recreated")
+            Logs.Info("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: reference table \"$refTable\" successfully recreated")
         else
-            Logs.Info("Reference table \"$datasetName\" successfully created")
+            Logs.Info("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: reference table \"$refTable\" successfully created")
     }
 
     /**
      * Filling reference data from source table
-     * @param onlyForEmpty copy data for empty table only (default true)
+     * @param onlyForEmpty copy data for empty tables only (default true)
      * @return reference data was copied
      */
-    @SuppressWarnings(["DuplicatedCode", 'SpellCheckingInspection'])
-    Boolean copyFromSourceTable(Boolean onlyForEmpty = true) {
-        if (!allowCopy) {
-            Logs.Info("Reference table \"$datasetName\" is not used in copying and is skipped")
-            return false
-        }
-
-        def sourceTable = workTable
-        if (!sourceTable.exists)
-            throw new ExceptionModel("Source table $sourceTable not found!")
-
+    Boolean copyFromDataset(Boolean onlyForEmpty = true, Dataset source = null) {
         def destTable = referenceTable as VerticaTable
 
-        def sourceRows = sourceTable.countRow(whereCopy, ownerReferenceVerticaTableModel.modelVars + objectVars)
-        if (sourceRows == 0) {
+        if (!isAllowCopy()) {
+            Logs.Info("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: reference table is " +
+                    "not used in copying and is skipped")
             destTable.truncate(truncate: true)
-            def msgWhere = (whereCopy != null)?" for given conditions \"$whereCopy\"":''
-            Logs.Warning("No rows were found in table $sourceTable$msgWhere!")
             return false
         }
 
         if (destTable.countRow() > 0) {
             if (onlyForEmpty) {
-                Logs.Warning("Table $destTable is not empty and is skipped!")
+                Logs.Warning("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: reference table " +
+                        "is not empty and is skipped!")
                 return false
             }
             else {
@@ -125,28 +147,43 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
             }
         }
 
-        ownerReferenceVerticaTableModel.referenceConnection.with {
-            transaction {
-                def p = [_model_sourcetable_: sourceTable.fullTableName, _model_desttable_:destTable.fullTableName, _model_where: '', _model_sample: '']
-                if (whereCopy != null) p._model_where = 'WHERE ' + StringUtils.EvalMacroString(whereCopy, ownerReferenceVerticaTableModel.modelVars + objectVars, false)
-                if (sampleCopy != null) p._model_sample = 'SAMPLE ' + sampleCopy
-                executeCommand(
-                        'INSERT /*+direct*/ INTO {_model_desttable_} SELECT * FROM {_model_sourcetable_} {_model_where} {_model_sample}',
-                        [queryParams: p])
+        Long destRows
+
+        def sourceTable = source?:sourceDataset?:workTable
+        if (sourceTable.connection?.dslNameObject == destTable.connection?.dslNameObject) {
+            def vSource = sourceTable.cloneDataset() as VerticaTable
+            vSource.readOpts {
+                if (whereCopy != null) where = StringUtils.EvalMacroString(whereCopy, ownerReferenceVerticaTableModel.modelVars + objectVars, false)
+                if (sampleCopy != null && sampleCopy > 0) tablesample = sampleCopy
             }
+
+            def vDest = destTable
+            vDest.writeOpts {direct = 'DIRECT' }
+
+            destRows = vSource.copyTo(vDest)
+        }
+        else {
+            def vSource = sourceTable.cloneDataset()
+            if (whereCopy != null)
+                if (vSource instanceof TableDataset)
+                    (vSource as TableDataset).readOpts.where = StringUtils.EvalMacroString(whereCopy, ownerReferenceVerticaTableModel.modelVars + objectVars, false)
+                else
+                    Logs.Warning("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: the source " +
+                            "is not a JDBC table and cannot use conditions in \"whereCopy\"!")
+
+            if (sampleCopy != null)
+                if (vSource instanceof VerticaTable)
+                    (vSource as VerticaTable).readOpts.tablesample = sampleCopy
+                else
+                    Logs.Warning("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: the source " +
+                            "is not a Vertica table and cannot use sampling in \"sampleCopy\"!")
+
+            destRows = new Flow().copy(source: vSource, dest: destTable, bulkLoad: true, bulkAsGZIP: true)
         }
 
-        def destRows = destTable.countRow()
-        if ((sampleCopy?:0) > 0) {
-            if (destRows == 0)
-                throw new ExceptionModel("Failed to copy rows from $sourceTable to $destTable!")
-        }
-        else if (sourceRows != destRows)
-            throw new ExceptionModel("The number of copied source and destination rows does not match, " +
-                    "${StringUtils.WithGroupSeparator(sourceRows)} rows in the source $sourceTable, " +
-                    "${StringUtils.WithGroupSeparator(destRows)} rows in the destination $destTable!")
-
-        Logs.Info("${StringUtils.WithGroupSeparator(destRows)} rows copied to reference table \"$datasetName\"")
+        Logs.Info("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
+                "${StringUtils.WithGroupSeparator(destRows)} rows copied from \"${sourceTable}\" to " +
+                "reference table \"$destTable\"")
 
         return true
     }
@@ -155,28 +192,39 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
      * Fill the reference table with data from the table of the specified Vertica connection
      * @param externalConnection Vertica cluster from which to copy data
      * @param onlyForEmpty copy data for empty tables only (default true)
+     * @param useExportCopy copy data between clusters Vertica using operator "EXPORT TO" (default false)
      * @return reference data was copied
      */
-    @SuppressWarnings("DuplicatedCode")
-    Boolean copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true) {
-        if (!allowCopy) {
-            Logs.Info("Reference table \"$datasetName\" is not used in copying and is skipped")
-            return false
-        }
-
+    Boolean copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true, Boolean useExportCopy = false) {
         def sourceTable = workTable.cloneDataset(externalConnection) as VerticaTable
         if (!sourceTable.exists)
-            throw new ExceptionModel("Source table $sourceTable not found in Vertica cluster!")
+            throw new ExceptionModel("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
+                    "source table $sourceTable not found in Vertica cluster!")
+
+        if (!useExportCopy) {
+            return copyFromDataset(onlyForEmpty, sourceTable)
+        }
 
         def destTable = referenceTable
-        def sourceRows = sourceTable.countRow(whereCopy, ownerReferenceVerticaTableModel.modelVars + objectVars)
-        if (sourceRows == 0) {
-            destTable.truncate(truncate: true)
-            def msgWhere = (whereCopy != null)?" for given conditions \"$whereCopy\"":''
-            Logs.Warning("No rows were found in table $sourceTable$msgWhere!")
-
+        if (!isAllowCopy()) {
+            Logs.Info("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: reference table is " +
+                    "not used in copying and is skipped")
+            destTable.truncate()
             return false
         }
+
+        if (destTable.countRow() > 0) {
+            if (onlyForEmpty) {
+                Logs.Warning("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: reference table " +
+                        "is not empty and is skipped!")
+                return false
+            }
+            else {
+                destTable.truncate(truncate: true)
+            }
+        }
+
+        Long destRows
 
         def cols = [] as List<String>
         new QueryDataset().with {
@@ -194,29 +242,19 @@ ORDER BY ordinal_position'''
             eachRow { row -> cols << '"' + (row.column_name as String) + '"' }
         }
         if (cols.isEmpty())
-            throw new ExceptionModel("No columns found for table $sourceTable!")
+            throw new ExceptionModel("No columns found for table \"$sourceTable\" in model ${ownerReferenceVerticaTableModel.repositoryModelName}!")
 
-        if (destTable.countRow() > 0) {
-            if (onlyForEmpty) {
-                Logs.Warning("Table $destTable is not empty and is skipped!")
-                return false
-            }
-            else {
-                destTable.truncate(truncate: true)
-            }
-        }
+        def p = [:]
+        p.putAll(ownerReferenceVerticaTableModel.modelVars)
+        p.putAll(objectVars)
+        p._model_sourcetable_ = sourceTable.fullTableName
+        p._model_destdatabase_ = externalConnection.connectDatabase
+        p._model_desttable_ = destTable.fullTableName
+        p._model_cols_ = cols.join(', ')
+        p._model_sample_ = (sampleCopy != null) ? "TABLESAMPLE($sampleCopy)" : ''
+        p._model_limit_ = (limitCopy) ? "LIMIT $limitCopy" : ''
 
         externalConnection.with {
-            def p = [:]
-            p.putAll(ownerReferenceVerticaTableModel.modelVars)
-            p.putAll(objectVars)
-            p._model_sourcetable_ = sourceTable.fullTableName
-            p._model_destdatabase_ = externalConnection.connectDatabase
-            p._model_desttable_ = destTable.fullTableName
-            p._model_cols_ = cols.join(', ')
-            p._model_sample_ = (sampleCopy != null)?"TABLESAMPLE($sampleCopy)":''
-            p._model_limit_ = (limitCopy)?"LIMIT $limitCopy":''
-
             def script = """
 EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_} 
   ({_model_cols_}) 
@@ -224,24 +262,15 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
   SELECT 
     {_model_cols_} 
   FROM {_model_sourcetable_} {_model_sample_} 
-  ${(whereCopy != null)?"WHERE $whereCopy":''}
+  ${(whereCopy != null) ? "WHERE $whereCopy" : ''}
   {_model_limit_}
 """
-
             executeCommand(script, [queryParams: p])
         }
 
-        def destRows = destTable.countRow()
-        if ((sampleCopy?:0) > 0) {
-            if (destRows == 0)
-                throw new ExceptionModel("Failed to copy rows from $sourceTable to $destTable!")
-        }
-        else if (sourceRows != destRows)
-            throw new ExceptionModel("The number of copied source and destination rows does not match, " +
-                    "${StringUtils.WithGroupSeparator(sourceRows)} rows in the source $sourceTable, " +
-                    "${StringUtils.WithGroupSeparator(destRows)} rows in the destination $destTable!")
-
-        Logs.Info("${StringUtils.WithGroupSeparator(destRows)} rows copied to reference table \"$datasetName\"")
+        destRows = destTable.countRow()
+        Logs.Info("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
+                "${StringUtils.WithGroupSeparator(destRows)} rows copied to reference table from other Vertica server")
 
         return true
     }
@@ -249,17 +278,19 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
     /**
      * Fill table with data from reference table
      */
-    @SuppressWarnings("GroovyVariableNotAssigned")
     Boolean fillFromReferenceTable() {
         def sourceTable = referenceTable as VerticaTable
         def destTable = workTable as VerticaTable
 
         def sourceRows = sourceTable.countRow()
-        if (sourceRows == destTable.countRow()) {
+        if (!alwaysFill && sourceRows == destTable.countRow()) {
             if (sourceRows > 0)
-                Logs.Warning("Table ${destTable.fullTableName} contains the required number of ${StringUtils.WithGroupSeparator(sourceRows)} rows and is skipped")
+                Logs.Warning("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
+                        "table ${destTable.fullTableName} contains the required number " +
+                        "of ${StringUtils.WithGroupSeparator(sourceRows)} rows and is skipped")
             else
-                Logs.Warning("Table ${destTable.fullTableName} has no reference rows and has been cleared")
+                Logs.Warning("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
+                        "table ${destTable.fullTableName} has no reference rows and has been cleared")
 
             return false
         }
@@ -286,7 +317,7 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
             def row = tableAttrs.rows()[0]
             def partExpression = (row.partition_expression as String)
             def countIncrementCols = row.count_inc_cols as Integer
-            def startPart, finishPart
+            def startPart = null, finishPart = null
             if (partExpression == null || countIncrementCols > 0) {
                 ownerReferenceVerticaTableModel.referenceConnection.with {
                     transaction {
@@ -306,21 +337,33 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
                 def partRow = partDays.rows()[0]
                 startPart = partRow.part_min
                 finishPart = partRow.part_max
-                ownerReferenceVerticaTableModel.referenceConnection.executeCommand '''SELECT COPY_PARTITIONS_TO_TABLE('{source}', '{start}', '{finish}', '{dest}', true)''',
-                        [queryParams: [source: sourceTable.fullTableName, dest: destTable.fullTableName, start: startPart, finish: finishPart]]
+                ownerReferenceVerticaTableModel.referenceConnection.executeCommand(
+                        '''SELECT COPY_PARTITIONS_TO_TABLE('{source}', '{start}', '{finish}', '{dest}', true)''',
+                        [queryParams: [
+                                source: sourceTable.fullTableName, dest: destTable.fullTableName, start: startPart,
+                                finish: finishPart]
+                        ]
+                )
             }
 
             def destRows = destTable.countRow()
             if (sourceRows != destRows)
-                throw new ExceptionModel("The number of copied rows is ${StringUtils.WithGroupSeparator(destRows)} table $destTable and does not match the number of source rows ${StringUtils.WithGroupSeparator(sourceRows)} reference table \"$datasetName\"!")
+                throw new ExceptionModel("The number of copied rows is ${StringUtils.WithGroupSeparator(destRows)} " +
+                        "table ${destTable.fullTableName} and does not match the number of source " +
+                        "rows ${StringUtils.WithGroupSeparator(sourceRows)} reference table \"$datasetName\" " +
+                        "in model ${ownerReferenceVerticaTableModel.repositoryModelName}!")
 
             if (partExpression == null)
-                Logs.Info("Copied ${StringUtils.WithGroupSeparator(destRows)} rows to table $destTable from reference table \"$datasetName\"")
+                Logs.Info("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
+                        "copied ${StringUtils.WithGroupSeparator(destRows)} rows to table ${destTable.fullTableName} from reference table")
             else
-                Logs.Info("Copied ${StringUtils.WithGroupSeparator(destRows)} rows to table $destTable from reference table \"$datasetName\" (partitions \"$startPart\" to \"$finishPart\")")
+                Logs.Info("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
+                        "copied ${StringUtils.WithGroupSeparator(destRows)} rows to table ${destTable.fullTableName} from " +
+                        "reference table (partitions \"$startPart\" to \"$finishPart\")")
         }
         else {
-            Logs.Info("Reference table \"$datasetName\" has no rows, table $destTable is cleared")
+            Logs.Info("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: reference table has no rows, " +
+                    "table ${destTable.fullTableName} is cleared")
         }
 
         return true

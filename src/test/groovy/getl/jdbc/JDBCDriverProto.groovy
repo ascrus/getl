@@ -60,9 +60,8 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         return _con
     }
 
-    String getUseTableClass() { 'getl.jdbc.TableDataset' }
     String getUseTableName() { 'getl_test_data' }
-    final TableDataset table = TableDataset.CreateDataset(dataset: useTableClass, tableName: useTableName)
+    TableDataset table
     List<Field> getFields () {
         def res =
             [
@@ -90,9 +89,15 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         return (con != null)
     }
 
+    void prepareTable() { }
+
     @Before
     void initTable() {
-        table.connection = con
+        if (con != null) {
+            table = con.newDataset() as TableDataset
+            table.tableName = useTableName
+            prepareTable()
+        }
     }
 
     protected void connect() {

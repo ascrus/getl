@@ -117,6 +117,13 @@ class Connection implements Cloneable, GetlRepository {
 		if (value != null) attributes.putAll(value)
 	}
 
+	/** Create a new dataset object for the current connection */
+	Dataset newDataset() {
+		def ds = datasetClass.newInstance()
+		ds.connection = this
+		return ds
+	}
+
 	/** Connection driver manager class*/
 	private Driver driver
 
@@ -397,6 +404,9 @@ class Connection implements Cloneable, GetlRepository {
 
 	/** User logic if disconnection error */
 	 protected void doErrorDisconnect() {}
+
+	/** Dataset class used */
+	protected Class<Dataset> getDatasetClass() { Dataset }
 	
 	/** Validation  connected is true and connecting if has no */
 	void tryConnect () {

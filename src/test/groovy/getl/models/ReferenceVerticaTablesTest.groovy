@@ -26,7 +26,8 @@ class ReferenceVerticaTablesTest extends TestRepository {
 
                 referenceFromTable('ver:table1') { allowCopy = true }
 
-                createReferenceTables(true, true)
+                dropReferenceTables()
+                createReferenceTables(false, true)
                 copyFromSourceTables(true)
 
                 referenceFromTable('ver:table1') {

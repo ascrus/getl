@@ -2402,26 +2402,32 @@ $sql
 		return res
 	}
 
-	/**
-	 * Return hints for write operations
-	 * @param table source table
-	 * @param operator operator type (INSERT, UPDATE, DELETE or MERGE)
-	 * @return hint string
-	 */
-	protected String getHintsForWriteOperator(TableDataset table, String operator) { null }
+	/** Prepare copy parameters for source table */
+	protected void prepareCopyTableSource(TableDataset source, Map<String, Object> qParams ) { }
+
+	/** Prepare copy parameters for destination table */
+	protected void prepareCopyTableDestination(TableDataset dest, Map<String, Object> qParams ) { }
 
 	/**
 	 * Syntax for copying from table to table
 	 * @return sql script template
 	 */
-	protected String syntaxCopyTableTo(Boolean useWhere) {
-		return '''INSERT {_getl_hints}INTO {_getl_dest} (
-{_getl_cols}
+	protected String syntaxCopyTableTo(TableDataset source, TableDataset dest, Map<String, Object> qParams) {
+		def sql = '''INSERT {after_insert} INTO {dest} (
+{dest_cols}
 )
-SELECT
-{_getl_expr}
-FROM {_getl_source}
-''' + ((useWhere)?'WHERE {_getl_where}':'')
+SELECT {after_select}
+{source_cols}
+FROM {source} {after_from}'''
+
+		if (source.readOpts.where != null) {
+			sql += '\nWHERE {where}'
+			qParams.where = source.readOpts.where
+		}
+		source.currentJDBCConnection.currentJDBCDriver.prepareCopyTableSource(source, qParams)
+		dest.currentJDBCConnection.currentJDBCDriver.prepareCopyTableDestination(dest, qParams)
+
+		return sql
 	}
 
 	/**
@@ -2488,12 +2494,11 @@ FROM {_getl_source}
 			exprList << '  ' + expr
 		}
 
-		def hints = getHintsForWriteOperator(dest, 'INSERT')?:''
-		if (hints.length() != 0) hints += ' '
-		def where = source.readOpts.where
+		def qParams = [dest: dest.fullTableName, source: source.fullTableName,
+					   dest_cols: colsList.join(',\n'), source_cols: exprList.join(',\n'),
+					   after_insert: '', after_from:  '', after_select: '']
+		def sql = syntaxCopyTableTo(source, dest, qParams)
 
-		return executeCommand(syntaxCopyTableTo(where != null), [queryParams: source.queryParams +
-				[_getl_hints: hints, _getl_dest: dest.fullTableName, _getl_source: source.fullTableName, _getl_cols: colsList.join(',\n'),
-				 _getl_expr: exprList.join(',\n'), _getl_where: where]])
+		return executeCommand(sql, [queryParams: qParams])
 	}
 }

@@ -2,6 +2,7 @@ package getl.csv
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset.QuoteMode
+import getl.data.Dataset
 import getl.data.FileConnection
 import getl.exception.ExceptionGETL
 import getl.utils.*
@@ -143,6 +144,9 @@ class CSVConnection extends FileConnection {
 		def p = PresetModes.get(value) as Map<String, Object>
 		params.putAll(p)
 	}
+
+	@Override
+	protected Class<Dataset> getDatasetClass() { CSVDataset }
 
 	/** Reset preset mode to custom */
 	void resetPresetMode() {

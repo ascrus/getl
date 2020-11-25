@@ -2,6 +2,7 @@ package getl.salesforce
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
+import getl.data.Dataset
 import getl.exception.ExceptionGETL
 import getl.lang.sub.UserLogins
 
@@ -102,4 +103,7 @@ class SalesForceConnection extends Connection implements UserLogins {
 		login = user
 		password = pwd
 	}
+
+	@Override
+	protected Class<Dataset> getDatasetClass() { SalesForceDataset }
 }

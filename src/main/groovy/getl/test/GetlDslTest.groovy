@@ -86,7 +86,7 @@ class GetlDslTest extends GetlTest {
             def initClass = useInitClass()
             if (initClass != null)
                 initClasses.add(initClass)
-            Getl.GetlInstance().initGetlProperties(initClasses)
+            Getl.GetlInstance()._initGetlProperties(initClasses)
             initWasRun = true
         }
     }

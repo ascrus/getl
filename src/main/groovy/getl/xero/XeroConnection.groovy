@@ -2,6 +2,7 @@ package getl.xero
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
+import getl.data.Dataset
 import getl.utils.FileUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
@@ -61,6 +62,9 @@ class XeroConnection extends Connection {
     String getHistoryFile () { params.historyFile }
     /** Command history file */
     void setHistoryFile(String value) { params.historyFile = value }
+
+    @Override
+    protected Class<Dataset> getDatasetClass() { XeroDataset }
 
     /** Real script history file name */
     protected String fileNameHistory

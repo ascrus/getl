@@ -218,7 +218,7 @@ Examples:
                     }
                 }
 
-                eng.initGetlProperties(initClasses)
+                eng._initGetlProperties(initClasses)
 
                 try {
                     eng.runGroovyInstance(eng, Config.vars)
@@ -242,7 +242,7 @@ Examples:
      * Initialize getl instance properties before starting it
      * @param listInitClass list of initialization classes that should be executed before starting
      */
-    void prepareGetlProperties(List<Class<Script>> initClasses) {
+    protected void _prepareGetlProperties(List<Class<Script>> initClasses) {
         def instance = this
 
         options {
@@ -378,12 +378,12 @@ Examples:
         }
     }
 
-    void initGetlProperties(List<Class<Script>> listInitClass = null) {
+    void _initGetlProperties(List<Class<Script>> listInitClass = null) {
         def initClasses = [] as List<Class<Script>>
         if (listInitClass != null)
             initClasses.addAll(listInitClass)
 
-        prepareGetlProperties(initClasses)
+        _prepareGetlProperties(initClasses)
 
         if (!initClasses.isEmpty()) {
             setGetlSystemParameter('isInitMode', true)
@@ -853,8 +853,20 @@ Examples:
      * @param filter object filtering code
      * @return list of jdbc connection names according to specified conditions
      */
-    List<String> listJdbcConnections(String mask = null, Closure<Boolean> filter = null) {
+    List<String> listJdbcConnections(String mask,
+                                     @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.JDBCConnection'])
+                                             Closure<Boolean> filter = null) {
         listConnections(mask, (_repositoryStorageManager.repository(RepositoryConnections) as RepositoryConnections).listJdbcClasses, filter)
+    }
+
+    /**
+     * Return list of repository jdbc connections for specified mask and filter
+     * @param filter object filtering code
+     * @return list of jdbc connection names according to specified conditions
+     */
+    List<String> listJdbcConnections(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.JDBCConnection'])
+                                             Closure<Boolean> filter = null) {
+        listConnections(null, (_repositoryStorageManager.repository(RepositoryConnections) as RepositoryConnections).listJdbcClasses, filter)
     }
 
     /**
@@ -1089,7 +1101,9 @@ Examples:
      * @param filter object filtering code
      * @return list of jdbc table names according to specified conditions
      */
-    List<String> listJdbcTables(String mask = null, Closure<Boolean> filter = null) {
+    List<String> listJdbcTables(String mask = null,
+                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.TableDataset'])
+                                        Closure<Boolean> filter = null) {
         listDatasets(mask, (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).listJdbcClasses, filter)
     }
 
@@ -1098,7 +1112,8 @@ Examples:
      * @param filter object filtering code
      * @return list of jdbc table names according to specified conditions
      */
-    List<String> listJdbcTables(Closure<Boolean> filter) {
+    List<String> listJdbcTables(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.TableDataset'])
+                                        Closure<Boolean> filter) {
         listJdbcConnections(null, filter)
     }
 
@@ -1426,7 +1441,9 @@ Examples:
      * @param filter object filtering code
      * @return list of history point manager names according to specified conditions
      */
-    List<String> listHistorypoints(String mask = null, Closure<Boolean> filter = null) {
+    List<String> listHistorypoints(String mask = null,
+                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.SavePointManager'])
+                                           Closure<Boolean> filter = null) {
         _repositoryStorageManager.repository(RepositoryHistorypoints).list(mask, null, filter)
     }
 
@@ -1435,7 +1452,8 @@ Examples:
      * @param filter object filtering code
      * @return list of history point manager names according to specified conditions
      */
-    List<String> listHistorypoints(Closure<Boolean> filter) {
+    List<String> listHistorypoints(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.SavePointManager'])
+                                            Closure<Boolean> filter) {
         listHistorypoints(null, filter)
     }
 
@@ -1546,7 +1564,9 @@ Examples:
      * @param filter object filtering code
      * @return list of sequences names according to specified conditions
      */
-    List<String> listSequences(String mask = null, Closure<Boolean> filter = null) {
+    List<String> listSequences(String mask = null,
+                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.Sequence'])
+                                       Closure<Boolean> filter = null) {
         _repositoryStorageManager.repository(RepositorySequences).list(mask, null, filter)
     }
 
@@ -1555,7 +1575,8 @@ Examples:
      * @param filter object filtering code
      * @return list of sequences names according to specified conditions
      */
-    List<String> listSequences(Closure<Boolean> filter) {
+    List<String> listSequences(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.Sequence'])
+                                       Closure<Boolean> filter) {
         listSequences(null, filter)
     }
 
@@ -1934,11 +1955,11 @@ Examples:
                 scriptGetl.importGetlParams(_params)
                 scriptGetl._setGetlInstance()
 
-                DoInitMethod(scriptGetl)
+                _doInitMethod(scriptGetl)
                 if (vars != null && !vars.isEmpty()) {
                     FillFieldFromVars(scriptGetl, vars)
                 }
-                DoCheckMethod(scriptGetl)
+                _doCheckMethod(scriptGetl)
             } else if (vars != null && !vars.isEmpty()) {
                 script.binding = new Binding(vars)
             }
@@ -1960,7 +1981,7 @@ Examples:
             }
             catch (Exception e) {
                 try {
-                    DoErrorMethod(script, e)
+                    _doErrorMethod(script, e)
                 }
                 catch (Exception err) {
                     Logs.Exception(err, 'method error', script.getClass().name)
@@ -1970,7 +1991,7 @@ Examples:
                 }
             }
             finally {
-                DoDoneMethod(script)
+                _doDoneMethod(script)
             }
             pt.finish()
         }
@@ -2154,7 +2175,7 @@ Examples:
     /**
      *  Call script init method before execute script
      */
-    static protected void DoInitMethod(Script script) {
+    protected void _doInitMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'init' }
         if (m != null)
             script.invokeMethod('init', null)
@@ -2163,7 +2184,7 @@ Examples:
     /**
      *  Call script check method after setting field values
      */
-    static protected void DoCheckMethod(Script script) {
+    protected void _doCheckMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'check' }
         if (m != null)
             script.invokeMethod('check', null)
@@ -2172,7 +2193,7 @@ Examples:
     /**
      *  Call script done method before execute script
      */
-    static protected void DoDoneMethod(Script script) {
+    protected void _doDoneMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'done' }
         if (m != null)
             script.invokeMethod('done', null)
@@ -2181,7 +2202,7 @@ Examples:
     /**
      *  Call script error method before execute script
      */
-    static protected void DoErrorMethod(Script script, Exception e) {
+    protected void _doErrorMethod(Script script, Exception e) {
         def m = script.getClass().methods.find { it.name == 'error' }
         if (m != null)
             script.invokeMethod('error', e)

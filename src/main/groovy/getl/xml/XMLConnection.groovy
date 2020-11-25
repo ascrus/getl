@@ -1,6 +1,7 @@
 package getl.xml
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.Dataset
 import getl.data.FileConnection
 import getl.exception.ExceptionGETL
 import groovy.transform.InheritConstructors
@@ -44,4 +45,7 @@ class XMLConnection extends FileConnection {
 			throw new ExceptionGETL('Invalid default access method property!')
 		params.defaultAccessMethod = value
 	}
+
+	@Override
+	protected Class<Dataset> getDatasetClass() { XMLDataset }
 }

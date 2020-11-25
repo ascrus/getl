@@ -581,7 +581,7 @@ class RepositoryTest extends TestDsl {
                     assertEquals('all', objectVars.region)
                     assertEquals(10, sampleCopy)
                     assertEquals(1000000, limitCopy)
-                    assertTrue(allowCopy)
+                    assertTrue(isAllowCopy())
                 }
             }
 

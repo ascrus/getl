@@ -35,6 +35,14 @@ class VerticaDriverTest extends JDBCDriverProto {
         return c
     }
 
+    @Override
+    void prepareTable() {
+        (table as VerticaTable).with {
+            readOpts {label = 'test_getl'}
+            writeOpts {direct = 'DIRECT'}
+        }
+    }
+
     @Test
     void testLimit() {
         Getl.Dsl(this) {

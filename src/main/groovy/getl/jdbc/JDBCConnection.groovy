@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVConnection
 import getl.csv.CSVDataset
 import getl.data.Connection
+import getl.data.Dataset
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import getl.jdbc.opts.GenerateDslTablesSpec
@@ -364,6 +365,9 @@ class JDBCConnection extends Connection implements UserLogins {
 
 	/** Table class used */
 	protected Class<TableDataset> getTableClass() { TableDataset }
+
+	@Override
+	protected Class<Dataset> getDatasetClass() { tableClass }
 	
 	/**
 	 * Return datasets list by parameters

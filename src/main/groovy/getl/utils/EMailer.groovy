@@ -166,7 +166,7 @@ class EMailer implements GetlRepository {
 
 	/** Send mail message */
 	void send() {
-		sendMail(toAddress, subject, message, isHtml, attachment)
+		sendMail(null, subject, message, isHtml, attachment)
 	}
 
     /** Send mail message with specified parameters*/

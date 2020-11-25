@@ -116,7 +116,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	/** Sequence name */
 	String getSchema() {
 		def res = params.schema as String
-		if (res  == null && name.indexOf('.') == -1)
+		if (res  == null && name?.indexOf('.') == -1)
 			res = (connection as JDBCConnection).schemaName
 
 		return res

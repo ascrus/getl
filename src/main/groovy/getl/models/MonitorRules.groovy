@@ -81,7 +81,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     /** Object monitoring status storage table */
     @JsonIgnore
     TableDataset getStatusTable() {
-        dslCreator.jdbcTable(statusTableName)
+        return ((statusTableName != null)?dslCreator.jdbcTable(statusTableName):null)
     }
 
     /** Use monitoring status storage table */

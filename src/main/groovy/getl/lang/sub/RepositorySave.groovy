@@ -1,15 +1,19 @@
 package getl.lang.sub
 
+import getl.data.Connection
 import getl.exception.ExceptionDSL
 import getl.jdbc.JDBCConnection
 import getl.jdbc.opts.RetrieveDatasetsSpec
 import getl.lang.Getl
+import getl.models.ReferenceVerticaTables
 import getl.models.sub.RepositoryMapTables
 import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
 import getl.models.sub.RepositorySetOfTables
 import getl.utils.FileUtils
+import getl.utils.Path
+import getl.vertica.VerticaTable
 
 /**
  * Manager of saving objects to the repository
@@ -53,7 +57,7 @@ class RepositorySave extends Getl {
             throw new ExceptionDSL('The repository path cannot be resource path!')
 
         try {
-            getClass().methods.each { method ->
+            getClass().methods.each { method -> /* TODO: sort run method by dependences */
                 def an = method.getAnnotation(SaveToRepository)
                 if (an != null) {
                     repositoryStorageManager { autoLoadFromStorage = true }

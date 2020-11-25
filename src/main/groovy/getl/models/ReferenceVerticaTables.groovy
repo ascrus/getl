@@ -9,6 +9,7 @@ import getl.models.opts.ReferenceVerticaTableSpec
 import getl.models.sub.DatasetsModel
 import getl.utils.BoolUtils
 import getl.utils.Logs
+import getl.utils.Path
 import getl.vertica.VerticaConnection
 import getl.vertica.VerticaTable
 import groovy.transform.InheritConstructors
@@ -107,6 +108,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      */
     void createReferenceTables(Boolean recreate = false, Boolean grantRolesToSchema = false) {
         checkModel()
+        Logs.Fine("*** Create reference tables for model \"$repositoryModelName\"")
         new QueryDataset().with {
             useConnection referenceConnection
             query = """SELECT Count(*) AS count FROM schemata WHERE schema_name ILIKE '{schema}'"""
@@ -114,7 +116,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             if (rows()[0].count == 0) {
                 currentJDBCConnection.executeCommand('CREATE SCHEMA {schema} DEFAULT INCLUDE SCHEMA PRIVILEGES',
                         [queryParams: [schema: referenceSchemaName]])
-                Logs.Info("To store the reference data of model \"$repositoryModelName\" created scheme \"$referenceSchemaName\"")
+                Logs.Info("$repositoryModelName: to store the reference data created scheme \"$referenceSchemaName\"")
                 if (grantRolesToSchema) {
                     query = '''SELECT Replace(default_roles, '*', '') AS roles FROM users WHERE user_name = CURRENT_USER'''
                     def rows = rows()
@@ -124,38 +126,69 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                     if (roles != null && roles != '') {
                         currentJDBCConnection.executeCommand('GRANT ALL PRIVILEGES EXTEND ON SCHEMA {schema} TO {roles}',
                                 [queryParams: [schema: referenceSchemaName, roles: roles]])
-                        Logs.Info("For reference schema \"$referenceSchemaName\" of model \"$repositoryModelName\", full access is given for roles: $roles")
+                        Logs.Info("$repositoryModelName: reference schema \"$referenceSchemaName\" granted to roles: $roles")
                     }
                 }
             }
         }
 
         usedTables.each { modelTable -> modelTable.createReferenceTable(recreate) }
-        Logs.Info("Reference model \"$repositoryModelName\" successfully ${(recreate)?'recreated':'created'}")
+        Logs.Info("$repositoryModelName: reference model successfully ${(recreate)?'recreated':'created'}")
+    }
+
+    /** Drop reference schema and tables in Vertica database */
+    void dropReferenceTables() {
+        checkModel(false)
+        Logs.Info("*** Drop reference schema and tables for model \"${repositoryModelName}\"")
+        referenceConnection.executeCommand("DROP SCHEMA IF EXISTS \"${referenceSchemaName}\" CASCADE")
+        Logs.Info("$repositoryModelName: reference schema \"${referenceSchemaName}\" dropped")
     }
 
     /**
      * Filling reference data from other Vertica cluster
      * @param externalConnection Vertica cluster from which to copy data
      * @param onlyForEmpty copy data for empty tables only (default true)
+     * @param useExportCopy copy data between clusters Vertica using operator "EXPORT TO" (default false)
+     * @param include list of tables included for processing
+     * @param exclude list of tables excluded from processing
      * @return count of tables copied
      */
-    Integer copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true) {
+    Integer copyFromVertica(VerticaConnection externalConnection, Boolean onlyForEmpty = true, Boolean useExportCopy = false,
+                            List<String> include = null, List<String> exclude = null) {
         checkModel()
 
+        Logs.Fine("*** Copy Vertica external tables to reference model \"$repositoryModelName\"")
+
+        def includePath = Path.Masks2Paths(include)
+        def excludePath = Path.Masks2Paths(exclude)
+
         def res = 0
-        externalConnection.attachExternalVertica(referenceConnection)
-        Logs.Info("Connection to \"$referenceConnection\" of \"$externalConnection\" is established")
+        if (useExportCopy) {
+            externalConnection.attachExternalVertica(referenceConnection)
+            Logs.Info("$repositoryModelName: connection to \"$referenceConnection\" of \"$externalConnection\" is established")
+        }
         try {
-            usedTables.each { modelTable ->
-                if (modelTable.copyFromVertica(externalConnection, onlyForEmpty)) res++
+            usedTables.each { spec ->
+                def name = spec.workTable.dslNameObject
+                if (includePath != null && !Path.MatchList(name, includePath)) {
+                    Logs.Warning("${repositoryModelName}.[${name}]: the table is not listed in the include list and is skipped")
+                    return
+                }
+                if (excludePath != null && Path.MatchList(name, excludePath)) {
+                    Logs.Warning("${repositoryModelName}.[${name}]: the table is listed in the exclude list and is skipped")
+                    return
+                }
+
+                if (spec.copyFromVertica(externalConnection, onlyForEmpty, useExportCopy)) res++
             }
 
-            Logs.Info("$res tables copied successfully to the reference model \"$repositoryModelName\"")
+            Logs.Info("${repositoryModelName}: $res tables copied successfully to reference tables from other Vertica cluster")
         }
         finally {
-            externalConnection.detachExternalVertica(referenceConnection)
-            Logs.Info("Connection with \"$referenceConnection\" of \"$externalConnection\" is broken")
+            if (useExportCopy) {
+                externalConnection.detachExternalVertica(referenceConnection)
+                Logs.Info("${repositoryModelName}: connection with \"$referenceConnection\" of \"$externalConnection\" is broken")
+            }
         }
 
         return res
@@ -164,17 +197,34 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     /**
      * Filling reference data from source tables
      * @param onlyForEmpty copy data for empty tables only (default true)
+     * @param include list of tables included for processing
+     * @param exclude list of tables excluded from processing
      * @param return count of tables copied
      */
-    Integer copyFromSourceTables(Boolean onlyForEmpty = true) {
+    Integer copyFromSourceTables(Boolean onlyForEmpty = true, List<String> include = null, List<String> exclude = null) {
         checkModel()
 
+        Logs.Fine("*** Copy source tables to reference model \"$repositoryModelName\"")
+
+        def includePath = Path.Masks2Paths(include)
+        def excludePath = Path.Masks2Paths(exclude)
+
         def res = 0
-        usedTables.each { modelTable ->
-            if (modelTable.copyFromSourceTable(onlyForEmpty)) res++
+        usedTables.each { spec ->
+            def name = spec.workTable.dslNameObject
+            if (includePath != null && !Path.MatchList(name, includePath)) {
+                Logs.Warning("${repositoryModelName}.[${name}]: the table is not listed in the include list and is skipped")
+                return
+            }
+            if (excludePath != null && Path.MatchList(name, excludePath)) {
+                Logs.Warning("${repositoryModelName}.[${name}]: the table is listed in the exclude list and is skipped")
+                return
+            }
+
+            if (spec.copyFromDataset(onlyForEmpty)) res++
         }
 
-        Logs.Info("$res tables copied successfully to the reference model \"$repositoryModelName\"")
+        Logs.Info("${repositoryModelName}: $res tables copied successfully to reference tables")
 
         return res
     }
@@ -183,17 +233,30 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * Fill tables with data from reference tables
      * @return count of tables filled
      */
-    Integer fill() {
+    Integer fill(List<String> include = null, List<String> exclude = null) {
         checkModel()
 
-        Logs.Fine("Start deploying tables for \"$repositoryModelName\" model")
+        Logs.Fine("*** Start deploying tables for \"$repositoryModelName\" model")
+
+        def includePath = Path.Masks2Paths(include)
+        def excludePath = Path.Masks2Paths(exclude)
 
         def res = 0
-        usedTables.each { modelTable ->
-            if (modelTable.fillFromReferenceTable()) res++
+        usedTables.each { spec ->
+            def name = spec.workTable.dslNameObject
+            if (includePath != null && !Path.MatchList(name, includePath)) {
+                Logs.Warning("${repositoryModelName}.[${name}]: the table is not listed in the include list and is skipped")
+                return
+            }
+            if (excludePath != null && Path.MatchList(name, excludePath)) {
+                Logs.Warning("${repositoryModelName}.[${name}]: the table is listed in the exclude list and is skipped")
+                return
+            }
+
+            if (spec.fillFromReferenceTable()) res++
         }
 
-        Logs.Info("$res source tables successfully filled with data from model \"$repositoryModelName\"")
+        Logs.Info("${repositoryModelName}: $res tables successfully filled from reference tables")
 
         return res
     }
@@ -202,18 +265,32 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * Clear source tables
      * @return count of tables cleared
      */
-    Integer clear() {
+    Integer clear(List<String> include = null, List<String> exclude = null) {
         checkModel()
 
-        Logs.Fine("Start clearing tables for \"$repositoryModelName\" model")
+        Logs.Fine("*** Start clearing tables for \"$repositoryModelName\" model")
+
+        def includePath = Path.Masks2Paths(include)
+        def excludePath = Path.Masks2Paths(exclude)
 
         def res = 0
-        usedTables.each { modelTable ->
-            modelTable.workTable.truncate(truncate: true)
+        usedTables.each { spec ->
+            def name = spec.workTable.dslNameObject
+            if (includePath != null && !Path.MatchList(name, includePath)) {
+                Logs.Warning("${repositoryModelName}.[${name}]: the table is not listed in the include list and is skipped")
+                return
+            }
+            if (excludePath != null && Path.MatchList(name, excludePath)) {
+                Logs.Warning("${repositoryModelName}.[${name}]: the table is listed in the exclude list and is skipped")
+                return
+            }
+
+            spec.workTable.truncate(truncate: true)
+            Logs.Info("${repositoryModelName}.[${name}]: table cleared")
             res++
         }
 
-        Logs.Info("$res tables for model \"$repositoryModelName\" successfully cleared")
+        Logs.Info("${repositoryModelName}: $res tables successfully cleared")
 
         return res
     }

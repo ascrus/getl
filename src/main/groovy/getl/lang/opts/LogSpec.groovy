@@ -1,5 +1,6 @@
 package getl.lang.opts
 
+import getl.exception.ExceptionDSL
 import getl.utils.*
 import groovy.transform.InheritConstructors
 
@@ -75,4 +76,20 @@ class LogSpec extends BaseSpec {
 
     /** Redirect errors output to specified file */
     void redirectErrorsOut(String fileName) { Logs.RedirectErrOut(fileName) }
+
+    /**
+     * Attach the value of a variable to the filename
+     * @param varValue value of a variable
+     */
+    void attachToFileName(String varValue) {
+        if (logFileName == null)
+            throw new ExceptionDSL("The file name for the log is not set!")
+        if (varValue == null)
+            throw new ExceptionDSL("A value is required for the attached variable to the log name!")
+        def ext = FileUtils.ExtensionWithoutFilename(logFileName)
+        if ((ext?:'') != '')
+            logFileName = FileUtils.FilenameWithoutExtension(logFileName) + '.' + varValue + '.' + ext
+        else
+            logFileName = FileUtils.FilenameWithoutExtension(logFileName) + '.' + varValue
+    }
 }

@@ -397,10 +397,6 @@ class VerticaDriver extends JDBCDriver {
 		return (!hints.isEmpty())?('/*+' + hints.join(', ') + '*/'):''
 	}
 
-	protected String getHintsForWriteOperator(TableDataset table, String operator) {
-		return writeHints(table.writeOpts.params)
-	}
-
 	@Override
 	protected String syntaxInsertStatement(JDBCDataset dataset, Map params) {
 		return "INSERT ${writeHints(params)} INTO {table} ({columns}) VALUES({values})"
@@ -474,5 +470,25 @@ class VerticaDriver extends JDBCDriver {
 			res.each {it.isNull = true }
 		}
 		return res
+	}
+
+	@Override
+	protected void prepareCopyTableSource(TableDataset source, Map<String, Object> qParams ) {
+		if (source instanceof VerticaTable)
+			(source as VerticaTable).readOpts {
+				if (label != null)
+					qParams.after_select = "/*+label($label)*/"
+				if (tablesample != null)
+					qParams.after_from = "TABLESAMPLE($tablesample)"
+			}
+	}
+
+	@Override
+	protected void prepareCopyTableDestination(TableDataset dest, Map<String, Object> qParams ) {
+		if (dest instanceof VerticaTable)
+			(dest as VerticaTable).writeOpts {
+				if (direct != null)
+					qParams.after_insert = "/*+${direct}*/"
+			}
 	}
 }
