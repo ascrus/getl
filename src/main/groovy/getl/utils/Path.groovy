@@ -519,7 +519,7 @@ class Path implements Cloneable, GetlRepository {
 		String pattern
 
 		if (isHierarchy) {
-			countDirs = fn.split("/").length // ??? fn
+			countDirs = fn.split("/").length
 			pattern = generateMaskPattern(countDirs)
 		}
 		else {

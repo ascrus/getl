@@ -64,4 +64,7 @@ class H2Connection extends JDBCConnection {
 
 	@Override
 	protected Class<TableDataset> getTableClass() { H2Table }
+
+	@Override
+	String currentConnectDatabase() { FileUtils.TransformFilePath(connectDatabase, false) }
 }

@@ -44,6 +44,11 @@ class ManagerBuildListSpec extends BaseSpec {
     /** Create history table if not exists (default false) */
     void setCreateHistoryTable(Boolean value) {saveParamValue('createStory', value) }
 
+    /** Store relative file path in history table */
+    Boolean getTakePathInStory() { params.takePathInStory as Boolean }
+    /** Store relative file path in history table */
+    void setTakePathInStory(Boolean value) {saveParamValue('takePathInStory', value) }
+
     /** Include in the list only files that are in the processing history */
     Boolean getOnlyFromStory() { params.onlyFromStory as Boolean }
     /** Include in the list only files that are in the processing history */

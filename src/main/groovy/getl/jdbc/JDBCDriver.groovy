@@ -20,6 +20,7 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings('unused')
 class JDBCDriver extends Driver {
 	JDBCDriver () {
 		super()
@@ -34,7 +35,7 @@ class JDBCDriver extends Driver {
 		methodParams.register('bulkLoadFile', ['allowMapAlias'])
 		methodParams.register('unionDataset', ['source', 'operation', 'autoMap', 'map', 'keyField',
                                                'queryParams', 'condition'])
-		methodParams.register('executeCommand', [])
+		methodParams.register('executeCommand', ['historyText'])
 		methodParams.register('deleteRows', ['where', 'queryParams'])
 		methodParams.register('clearDataset', ['autoTran', 'truncate'])
 	}
@@ -360,7 +361,7 @@ class JDBCDriver extends Driver {
 	 * Build jdbc connection url 
 	 * @return
 	 */
-	protected String buildConnectURL () {
+	protected String buildConnectURL() {
 		JDBCConnection con = jdbcConnection
 		
 		def url = (con.connectURL != null)?con.connectURL:defaultConnectURL()
@@ -368,11 +369,11 @@ class JDBCDriver extends Driver {
 
 		if (url.indexOf('{host}') != -1) {
             if (con.connectHost == null) throw new ExceptionGETL('Need set property "connectHost"')
-            url = url.replace("{host}", con.connectHost)
+            url = url.replace("{host}", con.currentConnectHost())
         }
         if (url.indexOf('{database}') != -1) {
             if (con.connectDatabase == null) throw new ExceptionGETL('Need set property "connectDatabase"')
-            url = url.replace("{database}", con.connectDatabase)
+            url = url.replace("{database}", con.currentConnectDatabase())
         }
 
 		return url
@@ -1530,7 +1531,7 @@ $sql
 		if (params.queryParams != null)
 			command = StringUtils.EvalMacroString(command, params.queryParams as Map, false)
 
-		saveToHistory(command)
+		saveToHistory((params.historyText as String)?:command)
 
 		JDBCConnection con = jdbcConnection
 		def stat = sqlConnect.connection.createStatement()

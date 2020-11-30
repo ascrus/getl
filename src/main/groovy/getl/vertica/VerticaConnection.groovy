@@ -8,6 +8,8 @@ import getl.stat.ProcessTime
 import getl.utils.BoolUtils
 import getl.utils.Logs
 import getl.utils.Path
+import getl.utils.StringUtils
+
 import static getl.utils.StringUtils.WithGroupSeparator
 import getl.jdbc.JDBCConnection
 import groovy.transform.stc.ClosureParams
@@ -18,6 +20,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings('unused')
 class VerticaConnection extends JDBCConnection {
 	VerticaConnection () {
 		super(driver: VerticaDriver)
@@ -129,9 +132,11 @@ class VerticaConnection extends JDBCConnection {
 				throw new ExceptionGETL("No database is specified for the connection \"$anotherConnection\"!")
 		}
 
-		executeCommand("CONNECT TO VERTICA {database} USER {login} PASSWORD '{password}' ON '{host}',{port}",
-				[queryParams: [host: host, port: port, database: database,
-				 login: anotherConnection.login, password: anotherConnection.password]])
+		def command = "CONNECT TO VERTICA {database} USER {login} PASSWORD '{password}' ON '{host}',{port}"
+		def p = [host: host, port: port, database: database,
+					  login: anotherConnection.login, password: anotherConnection.password]
+		def h = StringUtils.EvalMacroString(command, p + [password: StringUtils.Replicate('*', anotherConnection.password.length())])
+		executeCommand(command, [queryParams: p, historyText: h])
 
 		attachedVertica.put(anotherConnection.toString().toLowerCase(), database)
 	}

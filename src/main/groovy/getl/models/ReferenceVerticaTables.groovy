@@ -114,8 +114,14 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             query = """SELECT Count(*) AS count FROM schemata WHERE schema_name ILIKE '{schema}'"""
             queryParams.schema = referenceSchemaName
             if (rows()[0].count == 0) {
-                currentJDBCConnection.executeCommand('CREATE SCHEMA {schema} DEFAULT INCLUDE SCHEMA PRIVILEGES',
-                        [queryParams: [schema: referenceSchemaName]])
+                try {
+                    currentJDBCConnection.executeCommand('CREATE SCHEMA {schema} DEFAULT INCLUDE SCHEMA PRIVILEGES',
+                            [queryParams: [schema: referenceSchemaName]])
+                }
+                catch (Exception e) {
+                    Logs.Severe("Error creating reference schema \"$referenceSchemaName\" in model \"$repositoryModelName\": ${e.message}")
+                    throw e
+                }
                 Logs.Info("$repositoryModelName: to store the reference data created scheme \"$referenceSchemaName\"")
                 if (grantRolesToSchema) {
                     query = '''SELECT Replace(default_roles, '*', '') AS roles FROM users WHERE user_name = CURRENT_USER'''
@@ -124,15 +130,30 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                         throw new ExceptionDSL("Granting error for the reference scheme for model \"$repositoryModelName\": user \"${currentJDBCConnection.login}\" not found in Vertica!")
                     def roles = rows[0].roles as String
                     if (roles != null && roles != '') {
-                        currentJDBCConnection.executeCommand('GRANT ALL PRIVILEGES EXTEND ON SCHEMA {schema} TO {roles}',
-                                [queryParams: [schema: referenceSchemaName, roles: roles]])
+                        try {
+                            currentJDBCConnection.executeCommand('GRANT ALL PRIVILEGES EXTEND ON SCHEMA {schema} TO {roles}',
+                                    [queryParams: [schema: referenceSchemaName, roles: roles]])
+                        }
+                        catch (Exception e) {
+                            Logs.Severe("Error granting reference schema \"$referenceSchemaName\" in model \"$repositoryModelName\": ${e.message}")
+                            throw e
+                        }
                         Logs.Info("$repositoryModelName: reference schema \"$referenceSchemaName\" granted to roles: $roles")
                     }
                 }
             }
         }
 
-        usedTables.each { modelTable -> modelTable.createReferenceTable(recreate) }
+        usedTables.each { spec ->
+            def name = spec.workTable.dslNameObject
+            try {
+                spec.createReferenceTable(recreate)
+            }
+            catch (Exception e) {
+                Logs.Severe("Error creating reference table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                throw e
+            }
+        }
         Logs.Info("$repositoryModelName: reference model successfully ${(recreate)?'recreated':'created'}")
     }
 
@@ -140,7 +161,13 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     void dropReferenceTables() {
         checkModel(false)
         Logs.Info("*** Drop reference schema and tables for model \"${repositoryModelName}\"")
-        referenceConnection.executeCommand("DROP SCHEMA IF EXISTS \"${referenceSchemaName}\" CASCADE")
+        try {
+            referenceConnection.executeCommand("DROP SCHEMA IF EXISTS \"${referenceSchemaName}\" CASCADE")
+        }
+        catch (Exception e) {
+            Logs.Severe("Error droping reference schema \"$referenceSchemaName\" in model \"$repositoryModelName\": ${e.message}")
+            throw e
+        }
         Logs.Info("$repositoryModelName: reference schema \"${referenceSchemaName}\" dropped")
     }
 
@@ -179,7 +206,13 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                     return
                 }
 
-                if (spec.copyFromVertica(externalConnection, onlyForEmpty, useExportCopy)) res++
+                try {
+                    if (spec.copyFromVertica(externalConnection, onlyForEmpty, useExportCopy)) res++
+                }
+                catch (Exception e) {
+                    Logs.Severe("Error copying to reference table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                    throw e
+                }
             }
 
             Logs.Info("${repositoryModelName}: $res tables copied successfully to reference tables from other Vertica cluster")
@@ -221,7 +254,13 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 return
             }
 
-            if (spec.copyFromDataset(onlyForEmpty)) res++
+            try {
+                if (spec.copyFromDataset(onlyForEmpty)) res++
+            }
+            catch (Exception e) {
+                Logs.Severe("Error copying to reference table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                throw e
+            }
         }
 
         Logs.Info("${repositoryModelName}: $res tables copied successfully to reference tables")
@@ -253,7 +292,13 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 return
             }
 
-            if (spec.fillFromReferenceTable()) res++
+            try {
+                if (spec.fillFromReferenceTable()) res++
+            }
+            catch (Exception e) {
+                Logs.Severe("Error filling reference data to table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                throw e
+            }
         }
 
         Logs.Info("${repositoryModelName}: $res tables successfully filled from reference tables")
@@ -285,7 +330,13 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                 return
             }
 
-            spec.workTable.truncate(truncate: true)
+            try {
+                spec.workTable.truncate(truncate: true)
+            }
+            catch (Exception e) {
+                Logs.Severe("Error clearing table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                throw e
+            }
             Logs.Info("${repositoryModelName}.[${name}]: table cleared")
             res++
         }

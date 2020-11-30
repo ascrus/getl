@@ -345,6 +345,12 @@ class JDBCConnection extends Connection implements UserLogins {
 	@JsonIgnore
 	String getSessionID() { sysParams.sessionID as String }
 
+	/** Current host for connection */
+	String currentConnectHost() { connectHost }
+
+	/** Current database name for connection */
+	String currentConnectDatabase() { connectDatabase }
+
 	/**
 	 * Return datasets list by parameters
 	 * @param params read params by specified connection driver (dbName, schemaName, tableName, tableMask, type)

@@ -26,8 +26,8 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings('unused')
 abstract class Manager implements Cloneable, GetlRepository {
-/* TODO: added method Operation analog FileCopier */
 	Manager() {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
@@ -165,7 +165,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	String getRootPath() { params.rootPath as String }
 	/** Root path */
 	void setRootPath(String value) {
-		params.rootPath = FileUtils.ConvertToUnixPath(value)
+		params.rootPath = value
 		currentRootPathSet()
 	}
 
@@ -178,7 +178,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Set current root path */
 	private currentRootPathSet() {
 		if (rootPath != null)
-			currentRootPath = FileUtils.TransformFilePath(rootPath, true)
+			currentRootPath = FileUtils.PrepareDirPath(FileUtils.TransformFilePath(rootPath, true), true)
 		else
 			currentRootPath = null
 	}
@@ -423,7 +423,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 			changeDirectoryUp()
 			return
 		}
-		
+
+		dir = FileUtils.PrepareDirPath(dir, true)
 		if (dir.matches('[.]/.*')) dir = dir.substring(2)
 		
 		def isRoot
@@ -535,7 +536,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 */
 	@CompileStatic
 	void createDirs(String dirPath) {
-		def dirs = FileUtils.ConvertToUnixPath(dirPath).split('/')
+		def dirs = FileUtils.PrepareDirPath(dirPath, true).split('/')
 		dirs.each { dir ->
 			if (!existsDirectory(dir))
 				createDir(dir)
@@ -548,7 +549,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param dirName removed directory name
 	 */
 	void removeDir(String dirName) {
-        removeDir(dirName, false)
+        removeDir(FileUtils.PrepareDirPath(dirName, true), false)
     }
 
     /**
@@ -1566,6 +1567,7 @@ WHERE
 			changeLocalDirectoryUp()
 		}
 
+		dir = FileUtils.PrepareDirPath(dir, !isWindowsFileSystem)
 		setCurrentLocalPath(processLocalDirPath(dir))
 	}
 	
@@ -1614,6 +1616,8 @@ WHERE
 		if (dirName in ['.', '..', '/']) return true
 		if (dirName == null || dirName == '')
 			throw new ExceptionGETL("Invalid empty directory name!")
+
+		dirName = FileUtils.PrepareDirPath(dirName, true)
 
 		def res = false
 		try {

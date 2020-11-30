@@ -1,7 +1,9 @@
 package getl.config
 
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
+import getl.lang.sub.GetlRepository
 import getl.proc.Job
 import getl.utils.*
 import groovy.time.Duration
@@ -509,6 +511,12 @@ class ConfigSlurper extends ConfigManager {
 				value = value.toString().replace('${', '${vars.')
 			}
 			writer.append("${tabStr}${keyStr}${quote}${StringUtils.EscapeJavaWithoutUTF(value.toString())}${quote}")
+		}
+		else if (value instanceof GetlRepository) {
+			def repObj = value as GetlRepository
+			if (repObj.dslNameObject == null)
+				throw new ExceptionDSL("The Getl object being saved must have a name in the repository!")
+			writer.append("${tabStr}${keyStr}'${repObj.dslNameObject}'")
 		}
 		else {
 			writer.append("${tabStr}${keyStr}${value.toString()}")

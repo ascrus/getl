@@ -1217,4 +1217,32 @@ class FileUtils {
 	static String TransformFilePath(String path, Boolean errorWhenUndefined = true) {
 		return StringUtils.EvalMacroString(path, System.getenv(), errorWhenUndefined)
 	}
+
+	/**
+	 * Remove the extra back slash from the directory path
+	 * @param dirPath directory path
+	 * @param isUnixPath path for unix or windows
+	 * @return converted directory path
+	 */
+	static String PrepareDirPath(String dirPath, Boolean isUnixPath = null) {
+		if (dirPath == null) return null
+		dirPath = dirPath.trim()
+		if (dirPath.length() == 0) return ''
+
+		if (isUnixPath == null) isUnixPath = (File.separator != "\\")
+
+		def len = dirPath.length()
+		if (isUnixPath) {
+			dirPath = ConvertToUnixPath(dirPath)
+			if (dirPath != '/' && dirPath[len - 1] == '/')
+				dirPath = StringUtils.LeftStr(dirPath, len - 1)
+		}
+		else {
+			dirPath = ConvertToWindowsPath(dirPath)
+			if (len > 3 && dirPath[len - 1] == '\\')
+				dirPath = StringUtils.LeftStr(dirPath, len - 1)
+		}
+
+		return dirPath
+	}
 }

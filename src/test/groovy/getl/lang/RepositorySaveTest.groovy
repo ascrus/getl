@@ -33,7 +33,6 @@ class RepositorySaveTest extends RepositorySave {
 
     @SaveToRepository(type = 'Datasets', retrieve = true)
     void datasets() {
-        connections()
         // added from connection
         addTables(embeddedConnection('test:con'), 'public', 'test')
     }
@@ -54,7 +53,6 @@ class RepositorySaveTest extends RepositorySave {
 
     @SaveToRepository(type = 'Historypoints')
     void historypoints() {
-        connections()
         historypoint('test:hp', true) {
             useConnection embeddedConnection('test:con')
             schemaName = 'public'
@@ -65,7 +63,6 @@ class RepositorySaveTest extends RepositorySave {
 
     @SaveToRepository(type = 'Sequences')
     void sequences() {
-        connections()
         sequence('test:seq', true) {
             useConnection embeddedConnection('test:con')
             name = 'public.s_sequence'

@@ -115,7 +115,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         Config.SaveConfig(fileName: 'test_config.groovy')
         def groovyFile = new File("${configPath.currentPath()}/test_config.groovy")
 //        groovyFile.deleteOnExit()
-        println groovyFile.text
+//        println groovyFile.text
 
         Config.ClearConfig()
         Config.SetValue('vars.config_var', 'variable value')

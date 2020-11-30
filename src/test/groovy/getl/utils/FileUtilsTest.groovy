@@ -361,4 +361,13 @@ class FileUtilsTest extends getl.test.GetlTest {
             assertTrue(FileUtils.fileLockManager.isEmpty())
         }
     }
+
+    @Test
+    void testPrepareDirPath() {
+        assertEquals('c:\\test', FileUtils.PrepareDirPath('c:\\test', false))
+        assertEquals('c:\\test', FileUtils.PrepareDirPath('c:\\test\\', false))
+
+        assertEquals('/home/test', FileUtils.PrepareDirPath('/home/test', true))
+        assertEquals('/home/test', FileUtils.PrepareDirPath('/home/test/', true))
+    }
 }

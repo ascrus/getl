@@ -481,7 +481,7 @@ abstract class FileListProcessing implements GetlRepository {
      */
     protected void buildList () {
         def pt = profile("Getting a list of files from the source ${source.toString()}", "file")
-        source.buildList([path: sourcePath, recursive: true, takePathInStory: true, onlyFromStory: onlyFromStory,
+        source.buildList([path: sourcePath, recursive: true, /*takePathInStory: true, */onlyFromStory: onlyFromStory,
                           ignoreStory: ignoreStory, extendFields: extendedFields, extendIndexes: extendedIndexes],
                 createBuildList())
         pt.finish(source.countFileList)
