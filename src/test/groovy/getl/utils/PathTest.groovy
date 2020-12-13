@@ -37,7 +37,7 @@ class PathTest extends getl.test.GetlTest {
         assertEquals([vars:[], mask:'root', like:'root'], p.elements[1])
         assertEquals([vars:['group'], mask:'(.+)', like:'%'], p.elements[2])
         assertEquals([vars:['subgroup'], mask:'(.+)', like:'%'], p.elements[3])
-        assertEquals([vars:['date', 'num'], mask:'test_(\\d\\d\\d\\d-\\d\\d-\\d\\d)_(\\d+)[.]txt', like:'%'], p.elements[4])
+        assertEquals([vars:['date', 'num'], mask:'test_(\\d\\d\\d\\d-\\d\\d-\\d\\d)_(\\d{2})[.]txt', like:'%'], p.elements[4])
         assertNotNull(p.vars.group)
         assertNotNull(p.vars.subgroup)
         assertEquals('yyyy-MM-dd', p.vars.date?.format)
@@ -50,7 +50,7 @@ class PathTest extends getl.test.GetlTest {
 
     @Test
     void testAnalyzeDir() {
-        def p = path.clone() as Path
+        def p = path.clonePath()
         def m = p.analyzeDir('/root/group test/state ok')
         assertEquals('group test', m.group)
         assertEquals('state ok', m.subgroup)
@@ -62,7 +62,7 @@ class PathTest extends getl.test.GetlTest {
 
     @Test
     void testAnalyzeFile() {
-        def p = path.clone() as Path
+        def p = path.clonePath()
         def m = p.analyzeFile('/root/group test/state ok/test_2016-10-15_41.txt')
         assertEquals('group test', m.group)
         assertEquals('state ok', m.subgroup)
@@ -85,7 +85,7 @@ class PathTest extends getl.test.GetlTest {
 
     @Test
     void testGenerateFileName() {
-        def p = path.clone() as Path
+        def p = path.clonePath()
         def v = [group: 'group test', subgroup: 'state ok', date: DateUtils.ParseDate('2016-10-15'), num: 41]
         assertEquals('/root/group test/state ok/test_2016-10-15_41.txt', p.generateFileName(v, true))
 

@@ -35,14 +35,18 @@ class FileCopierBuild extends FileListProcessingBuild {
     /** Copy with the same path as the source */
     public Boolean isInheritDestPath
 
+    /** Copy files to root path */
+    public Boolean isRootDestPath
+
     @Override
     void init() {
         super.init()
 
         destinationPath = ownerCopier.processDestinationPath
         isInheritDestPath = (destinationPath.mask == '.')
+        isRootDestPath = (destinationPath.mask == '/')
 
-        renamePath = ownerCopier.renamePath
+        renamePath = ownerCopier.renamePath?.clonePath()
 
         isSegmented = (!ownerCopier.segmented.isEmpty() && ownerCopier.destinations.size() > 1)
         if (isSegmented) {
@@ -66,8 +70,12 @@ class FileCopierBuild extends FileListProcessingBuild {
             file.put('localfilename', file.filename)
         }
 
-        if (!isInheritDestPath)
-            file.put('_outpath_', destinationPath.generateFileName(file))
+        if (!isInheritDestPath) {
+            if (isRootDestPath)
+                file.put('_outpath_', '.')
+            else
+                file.put('_outpath_', destinationPath.generateFileName(file))
+        }
         else
             file.put('_outpath_', file.filepath)
 

@@ -44,6 +44,7 @@ class ImpalaDriverTest extends JDBCDriverProto {
             useImpalaConnection this.con
 
             impalaTable {
+                schemaName = currentImpalaConnection.schemaName
                 tableName = 'getl_test_impala_dsl'
                 field('id') { type = bigintFieldType }
                 field('name')

@@ -14,6 +14,10 @@ class ExecutorThread extends Thread {
      * Clone list element
      */
     class CloneObject {
+        CloneObject(Object obj) {
+            this.origObject = obj
+        }
+
         // Original object
         Object origObject
 
@@ -81,7 +85,7 @@ class ExecutorThread extends Thread {
         }
 
         if (clone == null) {
-            clone = new CloneObject(origObject: obj)
+            clone = new CloneObject(obj)
             if (cloneCode != null) clone.cloneObject = cloneCode.call(obj) else clone.cloneObject = obj.clone()
             list.add(clone)
         }

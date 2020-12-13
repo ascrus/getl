@@ -1,5 +1,10 @@
 package getl.stat
 
+import getl.exception.ExceptionGETL
+import getl.lang.Getl
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
+
 import java.util.logging.Level
 import groovy.time.*
 import getl.utils.*
@@ -125,5 +130,31 @@ class ProcessTime {
 			res = "time ${time}" + ((countRow!= null)?", ${FileUtils.SizeBytes(countRow)}, ${FileUtils.AvgSpeed(countRow, time.toMilliseconds())}":"")
 
 		return res
+	}
+
+	/** Perform profiling */
+	void run(@DelegatesTo(ProcessTime)
+			 @ClosureParams(value = SimpleType, options = ['getl.stat.ProcessTime'])
+					 Closure<Long> cl) {
+		if (cl == null)
+			throw new ExceptionGETL("Closure code required!")
+
+		clear()
+		Long res = this.with(cl)
+		if (res == null)
+			finish(countRow)
+		else
+			finish(res)
+	}
+
+	/** Clear profiling results and set current time as new starting point */
+	void clear() {
+		start = new Date()
+		finish = null
+		countRow = null
+		time = null
+		rowInSec = null
+		avgSpeed = null
+		avgSpeedStr = null
 	}
 }

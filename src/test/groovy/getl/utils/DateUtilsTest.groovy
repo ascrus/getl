@@ -39,13 +39,10 @@ class DateUtilsTest extends getl.test.GetlTest {
     @Test
     void testParseDate() {
         assertNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss', null))
-
         assertNotNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss.SSS', textDateTime))
-
-        assertNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss.SSS', '2016-13-32 24:61:80.999', true))
+        assertNotNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss.SSS', '2016-13-32 24:61:80.999', true))
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss.'000000000'")
-
         DateUtils.setDefaultTimeZone('Europe/Moscow')
         assertNull(DateUtils.ParseDate('yyyy-MM-dd:HH:mm:ss.SSSSSSSSS', '1982-04-01 00:00:00.000000000'))
         assertNull(DateUtils.ParseDate(sdf, '1982-04-01 00:00:00.000000000'))

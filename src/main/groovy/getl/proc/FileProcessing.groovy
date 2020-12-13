@@ -5,6 +5,7 @@ import getl.exception.ExceptionDSL
 import getl.exception.ExceptionFileListProcessing
 import getl.exception.ExceptionFileProcessing
 import getl.exception.ExceptionGETL
+import getl.files.FileManager
 import getl.files.Manager
 import getl.jdbc.JDBCConnection
 import getl.jdbc.QueryDataset
@@ -71,6 +72,11 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
     Manager getStorageErrorFiles() { params.storageErrorFiles as Manager }
     /** Storage for error files */
     void setStorageErrorFiles(Manager value) { params.storageErrorFiles = value }
+
+    /** Processing source files directly without downloading to local files (default false for remote source and true for local source) */
+    Boolean getProcessingDirectly() { params.processingDirectly as Boolean }
+    /** Processing source files directly without downloading to local files (default false for remote source and true for local source) */
+    void setProcessingDirectly(Boolean value) { params.processingDirectly = value }
 
     /** File processing code */
     Closure getOnProcessFile() { params.onProcessFile as Closure }
@@ -140,9 +146,6 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
         if (onProcessFile == null)
             throw new ExceptionFileListProcessing("Required to specify the file processing code in \"processFile\"!")
 
-        /*if (countOfThreadProcessing > 1 && threadGroupColumns.isEmpty())
-            throw new ExceptionFileListProcessing('Required to specify a list of grouping attributes for multi-threaded processing in "threadGroupColumns"!')*/
-
         if (!threadGroupColumns.isEmpty()) {
             def vars = sourcePath.vars.keySet().toList()*.toLowerCase()
             threadGroupColumns.each { col ->
@@ -152,6 +155,8 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
         }
 
         if (storageProcessedFiles != null) {
+            if (processingDirectly)
+                throw new ExceptionGETL("Transferring files to archive storage is not supported when direct file processing is enabled!")
             storageProcessedFiles.localDirectory = tmpPath
             ConnectTo([storageProcessedFiles], numberAttempts, timeAttempts)
         }
@@ -212,6 +217,10 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
 
         if (isCachedMode)
             Logs.Fine("  file processing cache mode enabled")
+
+        def isLocalMan = source instanceof FileManager
+        if (processingDirectly && !isLocalMan)
+            Logs.Fine("  files will be processed in direct mode without uploading to local directory")
     }
 
     @Override
@@ -244,6 +253,10 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
 
     /** Source element */
     class ListPoolElement {
+        ListPoolElement(Manager man) {
+            this.man = man
+        }
+
         Manager man
         TDSTable delTable
         Boolean isFree = true
@@ -369,7 +382,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                 src.story = currentStory?.cloneDatasetConnection() as TableDataset
             ConnectTo([src], numberAttempts, timeAttempts)
 
-            def element = new ListPoolElement(man: src)
+            def element = new ListPoolElement(src)
             if (delFilesTable != null) {
                 def delTable = delFilesTable.cloneDatasetConnection() as TDSTable
                 element.delTable = delTable
@@ -384,7 +397,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
             (1..countOfThreadProcessing).each {
                 def src = storageProcessedFiles.cloneManager(localDirectory: source.localDirectory)
                 ConnectTo([src], numberAttempts, timeAttempts)
-                processedList << new ListPoolElement(man: src)
+                processedList << new ListPoolElement(src)
             }
         }
 
@@ -394,7 +407,7 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
             (1..countOfThreadProcessing).each {
                 def src = storageErrorFiles.cloneManager(localDirectory: source.localDirectory)
                 ConnectTo([src], numberAttempts, timeAttempts)
-                errorList << new ListPoolElement(man: src)
+                errorList << new ListPoolElement(src)
             }
         }
 
@@ -460,6 +473,8 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                             def errorElement = FreePoolElement(errorList)
                             def delFile = removeFiles
                             def delTable = sourceElement.delTable
+                            def isLocalManager = sourceElement.man instanceof FileManager
+                            def isDirectly = BoolUtils.IsValue(processingDirectly, false)
 
                             def file = threadItem.item as Map<String, Object>
 
@@ -472,13 +487,23 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                                     ChangeLocalDir(sourceElement.man, filepath, true)
                                     sourceElement.curPath = filepath
                                 }
-                                Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
-                                    man.download(filename)
+                                if (!isDirectly && !isLocalManager) {
+                                    Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
+                                        man.download(filename)
+                                    }
                                 }
 
-                                def fileDesc = new File(sourceElement.man.currentLocalDir() + '/' + filename)
-                                if (!fileDesc.exists())
-                                    throw new ExceptionFileListProcessing("The downloaded file \"$fileDesc\" was not found!")
+                                File fileDesc = null
+                                if (isLocalManager) {
+                                    fileDesc = new File(sourceElement.man.currentPath + '/' + filename)
+                                    if (!fileDesc.exists())
+                                        throw new ExceptionFileListProcessing("The downloaded file \"$fileDesc\" was not found!")
+                                }
+                                else if (!isDirectly ) {
+                                    fileDesc = new File(sourceElement.man.currentLocalDir() + '/' + filename)
+                                    if (!fileDesc.exists())
+                                        throw new ExceptionFileListProcessing("The downloaded file \"$fileDesc\" was not found!")
+                                }
 
                                 def element = new FileProcessingElement(sourceElement, processedElement,
                                         errorElement, file, fileDesc, threadItem.node)
@@ -559,14 +584,22 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                                             sourceElement.man.story.write(file + [fileloaded: new Date()])
                                         }
 
-                                        if (processedElement != null)
+                                        if (processedElement != null && fileDesc != null)
                                             processedElement.uploadLocalFile(fileDesc, element.savedFilePath)
 
                                         this.counter.nextCount()
                                         counter.addCount(file.filesize as Long)
                                     } else if (procResult == FileProcessingElement.errorResult) {
                                         if (errorElement != null) {
-                                            errorElement.uploadLocalFile(fileDesc, element.savedFilePath)
+                                            if (fileDesc != null)
+                                                errorElement.uploadLocalFile(fileDesc, element.savedFilePath)
+                                            else {
+                                                Operation([sourceElement.man], numberAttempts, timeAttempts) { man ->
+                                                    man.download(filename)
+                                                }
+                                                fileDesc = new File(sourceElement.man.currentLocalDir() + '/' + filename)
+                                                errorElement.uploadLocalFile(fileDesc, element.savedFilePath)
+                                            }
 
                                             if (element.errorText != null)
                                                 element.uploadTextToStorageError()
@@ -577,7 +610,8 @@ class FileProcessing extends FileListProcessing { /* TODO : make support for pro
                                         counterSkips.nextCount()
                                     }
 
-                                    sourceElement.man.removeLocalFile(filename)
+                                    if (fileDesc != null && !isLocalManager)
+                                        fileDesc.delete()
 
                                     if (delFile &&
                                             BoolUtils.IsValue(element.removeFile, procResult != element.skipResult) &&

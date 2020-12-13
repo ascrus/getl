@@ -62,7 +62,7 @@ class VerticaConnection extends JDBCConnection {
 		if (con.connectURL != null) //noinspection DuplicatedCode
 		{
 			def p = new Path(mask: 'jdbc:vertica://{host}/{database}')
-			def m = p.analize(con.connectURL)
+			def m = p.analyze(con.connectURL)
 
 			database = m.database as String
 			if (database == null)
@@ -104,7 +104,7 @@ class VerticaConnection extends JDBCConnection {
 		def database, host, port = 5433
 		if (anotherConnection.connectURL != null) {
 			def p = new Path(mask: 'jdbc:vertica://{host}/{database}')
-			def m = p.analize(anotherConnection.connectURL)
+			def m = p.analyze(anotherConnection.connectURL)
 			host = m.host as String
 			if (host == null)
 				throw new ExceptionGETL("Invalid connect URL, host unreachable in connection \"$anotherConnection\"!")

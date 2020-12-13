@@ -40,14 +40,17 @@ abstract class Manager implements Cloneable, GetlRepository {
 				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
 
 		//noinspection SpellCheckingInspection
-		def tempDirFile = new File(TFS.systemPath + '/files.localdir')
+		tempDirFile = new File(TFS.systemPath + '/files.localdir')
 		tempDirFile.deleteOnExit()
-		localDirectorySet(tempDirFile.canonicalPath + '/' + this.class.simpleName + '_' + FileUtils.UniqueFileName())
-		new File(localDirectory).deleteOnExit()
+
+		resetLocalDir()
 
 		initParams()
 		initMethods()
 	}
+
+	/** Temporary local directory for managers */
+	private File tempDirFile
 
 	/** Local directory is temporary and need drop when disconnect */
 	private isTempLocalDirectory = true
@@ -173,7 +176,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	private String currentRootPath
 	/** Current root path */
 	@JsonIgnore
-	String getCurrentRootPath() { currentRootPath }
+	String getCurrentRootPath() {
+		currentRootPath
+	}
 
 	/** Set current root path */
 	private currentRootPathSet() {
@@ -511,27 +516,57 @@ abstract class Manager implements Cloneable, GetlRepository {
 	abstract void upload(String localFilePath, String localFileName)
 	
 	/**
-	 * Upload file to current directory by server
-	 * @param fileName uploaded file name by local directory
+	 * Upload file for current directory to source
+	 * @param fileName uploaded file name in local directory
 	 */
 	void upload(String fileName) {
 		upload(currentLocalDir(), fileName)
 	}
+
+	/**
+	 * Upload all directories and files from the current local directory to the source
+	 */
+	long uploadDir(Boolean removeLocal = false) {
+		def res = 0L
+		def lc = localDirFile
+		lc.listFiles().each { file ->
+			def dn = file.name
+			if (file.isDirectory()) {
+				if (!existsDirectory(dn))
+					createDir(dn)
+
+				changeDirectory(dn)
+				changeLocalDirectory(dn)
+				res += uploadDir(removeLocal)
+				changeDirectoryUp()
+				changeLocalDirectoryUp()
+				removeLocalDir(dn)
+			}
+			else if (file.isFile()) {
+				upload(dn)
+				if (removeLocal)
+					removeLocalFile(dn)
+				res++
+			}
+		}
+
+		return res
+	}
 	
 	/**
-	 * Remove file in current directory by server
+	 * Remove file in current directory in source
 	 * @param fileName removed file name
 	 */
 	abstract void removeFile(String fileName)
 	
 	/**
-	 * Create directory in current directory by server
+	 * Create a new directory in the source
 	 * @param dirName created directory name
 	 */
 	abstract void createDir(String dirName)
 
 	/**
-	 * Create directories in current directory by server if not exists
+	 * Create a hierarchy of directories in the source if they don't exist
 	 * @param dirPath created directory path
 	 */
 	@CompileStatic
@@ -545,7 +580,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/**
-	 * Remove directory in current directory by server
+	 * Remove directory in current directory in source
 	 * @param dirName removed directory name
 	 */
 	void removeDir(String dirName) {
@@ -553,7 +588,7 @@ abstract class Manager implements Cloneable, GetlRepository {
     }
 
     /**
-     * Remove directory and subdirectories in current directory by server
+     * Delete directory and its objects in source
      * @param dirName removed directory name
      * @param recursive required subdirectories remove
      */
@@ -712,6 +747,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		String curPath = man.currentDir()
 		def countDirs = 0L
+
+		path = path?.clonePath()
+		maskPath = maskPath?.clonePath()
 
 		try {
 			FileManagerList listFiles = man.listDir((!recursive)?maskFile:null)
@@ -926,7 +964,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		String maskFile = lParams.maskFile?:null
 		def maskPath = (maskFile != null)?new Path(mask: maskFile):null
-		Path path = lParams.path as Path
+		Path path = (lParams.path as Path)?.clonePath()
 		if (path != null && !path.isCompile) path.compile()
 		def requiredAnalyze = (path != null && !(path.vars.isEmpty()))
 		def recursive = BoolUtils.IsValue(lParams.recursive, this.recursive)
@@ -1484,6 +1522,14 @@ WHERE
 		
 		return f.canonicalPath
 	}
+
+	void resetLocalDir() {
+		localDirectorySet(tempDirFile.canonicalPath + '/' + this.class.simpleName + '_' + FileUtils.UniqueFileName())
+		new File(localDirectory).deleteOnExit()
+		isTempLocalDirectory = true
+		if (connected)
+			FileUtils.ValidPath(localDirectoryFile)
+	}
 	
 	/**
 	 * Create new local directory
@@ -1546,7 +1592,8 @@ WHERE
 	 */
 	void removeLocalFile(String fileName) {
 		def fn = "${currentLocalDir()}/$fileName"
-		if (!new File(fn).delete()) throw new ExceptionGETL("Can not remove Local file \"$fn\"")
+		if (!new File(fn).delete())
+			throw new ExceptionGETL("Can not remove Local file \"$fn\"")
 	}
 
 	/**

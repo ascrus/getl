@@ -198,7 +198,7 @@ class FileProcessingTest extends TestDsl {
         }
     }
 
-    void proc(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing) {
+    void proc(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing, Boolean isDirectly = null) {
         generateData()
         Dsl() {
             h2Table('h2:story') {
@@ -212,12 +212,12 @@ class FileProcessingTest extends TestDsl {
             else
                 files('source').story = null
         }
-        procInternal(archiveStorage, delFiles, delSkip, useStory, cacheStory, cacheProcessing, true)
+        procInternal(archiveStorage, delFiles, delSkip, useStory, cacheStory, cacheProcessing, isDirectly, true)
         if (useStory)
-            procInternal(archiveStorage, delFiles, delSkip, useStory, cacheStory, cacheProcessing, false)
+            procInternal(archiveStorage, delFiles, delSkip, useStory, cacheStory, cacheProcessing, isDirectly, false)
     }
 
-    void procInternal(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing, boolean firstRun = true) {
+    void procInternal(boolean archiveStorage, boolean delFiles, boolean delSkip, boolean useStory, boolean cacheStory, boolean cacheProcessing, Boolean isDirectly, boolean firstRun) {
         Dsl() {
             logInfo "*** START PROCESSING FILES ${(firstRun)?'ONE':'TWO'}: archiveStorage=$archiveStorage, delFiles=$delFiles, delSkip=$delSkip, useStory=$useStory, cacheStory=$cacheStory, cacheProcessing=$cacheProcessing"
 
@@ -233,6 +233,7 @@ class FileProcessingTest extends TestDsl {
                 removeEmptyDirs = true
                 removeFiles = delFiles
                 handleExceptions = true
+                processingDirectly = isDirectly
                 if (archiveStorage) {
                     storageProcessedFiles = files('archive')
                     storageErrorFiles = files('errors')
@@ -241,7 +242,8 @@ class FileProcessingTest extends TestDsl {
                     if (!debug)
                         cacheFilePath = "${workPath}/storycache"
                     else {
-                        def t = new H2Connection(connectDatabase: "${workPath}/storycache")
+                        //noinspection GroovyResultOfObjectAllocationIgnored
+                        new H2Connection(connectDatabase: "${workPath}/storycache")
                         cacheFilePath = "${workPath}/storycache"
                     }
 
@@ -292,7 +294,7 @@ class FileProcessingTest extends TestDsl {
                 else
                     assertEquals(0, res.countSkips)
             }
-            def countErrors = 0
+//            def countErrors = 0
             if (firstRun || (!firstRun && (!delFiles || !archiveStorage)))
                 assertEquals(countErrorFiles, res.countErrors)
             else
@@ -329,6 +331,16 @@ class FileProcessingTest extends TestDsl {
     @Test
     void parseDefault() {
         proc(false, false, false, false, false, false)
+    }
+
+    @Test
+    void parseDirect() {
+        proc(false, false, false, false, false, false, true)
+    }
+
+    @Test
+    void parseNotDirect() {
+        proc(false, false, false, false, false, false, false)
     }
 
     @Test

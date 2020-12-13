@@ -65,6 +65,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
             upload()
             command()
             rename()
+            listDir()
             buildTreeDirs()
             buildList()
             download()
@@ -174,6 +175,14 @@ abstract class ManagerTest extends getl.test.GetlTest {
 
         manager.rename(rootFileInitName, rootFileName)
         assertNotNull(manager.getLastModified(rootFileName))
+    }
+
+    private void listDir() {
+        manager.changeDirectoryToRoot()
+        assertEquals(4, manager.listDir().size())
+        assertEquals(3, manager.listDir('catalog_*').size())
+        assertEquals(1, manager.listDir('*.txt').size())
+
     }
 
     private void buildList() {

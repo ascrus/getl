@@ -278,7 +278,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
     protected void retrieveObject() {
         def d = con.retrieveDatasets { tableMask = [table.tableName] }
         assertEquals(1, d.size())
-        def l = con.retrieveObjects(tableMask: StringUtils.LeftStr(table.tableName, table.tableName.size() - 1) + '*')
+        def l = con.retrieveObjects(tableMask: table.tableName)
         assertEquals(1, l.size())
     }
 
@@ -655,7 +655,7 @@ END FOR;
     }
 
     protected TableDataset createPerfomanceTable(JDBCConnection con, String name, List<Field> fields) {
-        def t = new TableDataset(connection: con, tableName: name, field: fields)
+        def t = new TableDataset(connection: con, schemaName: con.schemaName, tableName: name, field: fields)
         t.drop(ifExists: true)
         t.create()
 
@@ -720,9 +720,10 @@ END FOR;
     protected void copyToTable() {
         if (!con.driver.isOperation(Driver.Operation.INSERT)) return
 
-        def fp = con.currentJDBCDriver.fieldPrefix 
+        def fp1 = con.currentJDBCDriver.fieldPrefix
+        def fp2 = con.currentJDBCDriver.fieldEndPrefix?:fp1
         def table1 = table.cloneDataset() as TableDataset
-        table1.readOpts {where = "${fp}ID1${fp} > 0" }
+        table1.readOpts {where = "${fp1}ID1${fp2} > 0" }
         def table2 = table.cloneDataset() as TableDataset
         table2.with {
             if (con.driver.isSupport(Driver.Support.LOCAL_TEMPORARY)) {
@@ -733,13 +734,15 @@ END FOR;
             }
             schemaName = null
             tableName = tableName + '_clone'
+            drop(ifExists: true)
             createOpts {indexes.clear() }
             create()
         }
 
         try {
             def countRows = table1.countRow()
-            assertEquals(countRows, table1.copyTo(table2, [value: "${fp}${table.field('value').name}${fp} + 1.00"]))
+            def fn = table.currentJDBCConnection.currentJDBCDriver.prepareFieldNameForSQL(table.field('value').name)
+            table1.copyTo(table2, [value: "CAST(($fn - 1.00) AS decimal(12, 2))"])
             assertEquals(countRows, table2.countRow())
         }
         finally {

@@ -4,7 +4,7 @@ import getl.exception.ExceptionGETL
 import groovy.transform.CompileStatic
 
 /**
- * Analize text as lexer
+ * Analyze text as lexer
  * @author Alexsey Konstantinov
  *
  */

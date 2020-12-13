@@ -34,7 +34,7 @@ class FileListProcessingBuild extends ManagerListProcessing {
 
         owner = params.owner as FileListProcessing
 
-        sourcePath = owner.sourcePath
+        sourcePath = owner.sourcePath?.clonePath()
 
         onFilterDirs = owner.onFilterDirs
         onFilterFiles = owner.onFilterFiles

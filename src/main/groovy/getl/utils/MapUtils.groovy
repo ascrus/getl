@@ -156,7 +156,7 @@ class MapUtils {
 	}
 	
 	/**
-	 * Analize and return unknown keys in map
+	 * Analyze and return unknown keys in map
 	 * @param map
 	 * @param definedKey
 	 * @param ignoreComments

@@ -141,7 +141,7 @@ class ResourceManager extends Manager {
 
     static ResourceCatalogElem ListDirJar(String path) {
         def p = new Path(mask: 'file:{jar}!{dir}')
-        def m = p.analize(path, false)
+        def m = p.analyze(path, false)
         if (m.isEmpty())
             throw new ExceptionGETL("Invalid path to resource file \"$path\"!")
 
@@ -157,7 +157,7 @@ class ResourceManager extends Manager {
         res.files = [] as List<ResourceCatalogElem>
 
         zip.fileHeaders.each { head ->
-            def attr = dirPath.analize('/' + head.fileName, false)
+            def attr = dirPath.analyze('/' + head.fileName, false)
             if (attr == null) return
 
             def relFilePath = attr.name as String

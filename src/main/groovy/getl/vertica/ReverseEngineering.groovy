@@ -496,8 +496,9 @@ Example:
 
 	void write(String script) {
 		def v = [:] as Map<String, String>
-		currentVars.each { String var, String value ->
-			v.put(var, value.replace('*', '_').replace('?', '_').replace('/', '_').replace('\\', '_'))
+		currentVars.each { var ->
+			v.put(var.key, var.value.replace('*', '_').replace('?', '_')
+					.replace('/', '_').replace('\\', '_'))
 		}
 		def filename = StringUtils.EvalMacroString(currentFileMask, v).toLowerCase()
 		def filepath = "$scriptPath${File.separatorChar}${filename}.sql"

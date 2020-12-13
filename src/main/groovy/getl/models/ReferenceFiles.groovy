@@ -2,10 +2,13 @@ package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
+import getl.files.FileManager
 import getl.files.Manager
 import getl.models.opts.BaseSpec
 import getl.models.opts.ReferenceFileSpec
 import getl.models.sub.FilesModel
+import getl.stat.ProcessTime
+import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.StringUtils
@@ -70,6 +73,11 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     /** File unpack command */
     void setUnpackCommand(String value) { saveParamValue('unpackCommand', value) }
 
+    /** Unpack archive locally instead of uploading and unpacking on the destination */
+    Boolean getLocalUnpack() { params.localUnpack as Boolean }
+    /** Unpack archive locally instead of uploading and unpacking on the destination */
+    void setLocalUnpack(Boolean value) { saveParamValue('localUnpack', value) }
+
     /**
      * Specify a file that contains reference data
      * @param filePath file path
@@ -78,8 +86,8 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
      */
     ReferenceFileSpec referenceFromFile(String filePath,
                                         @DelegatesTo(ReferenceFileSpec)
-                                    @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceFileSpec'])
-                                        Closure cl = null) {
+                                        @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceFileSpec'])
+                                                Closure cl = null) {
         super.modelFile(filePath, cl)
     }
 
@@ -114,7 +122,8 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     void fill() {
         checkModel()
 
-        def source = sourceManager.cloneManager(localDirectory: sourceManager.localDirectory)
+        def source = sourceManager.cloneManager()
+        source.resetLocalDir()
         def dest = destinationManager.cloneManager(localDirectory: source.localDirectory)
 
         source.connect()
@@ -122,44 +131,68 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
 
         Logs.Fine("Start deploying files for \"$repositoryModelName\" model")
 
+        def isLocalUnpack = BoolUtils.IsValue(localUnpack) || !dest.allowCommand
         try {
             usedFiles.each { modelFile ->
                 def fileName = FileUtils.FileName(modelFile.filePath)
-                source.download(modelFile.filePath, fileName)
+                new ProcessTime(name: "Download reference file \"$fileName\" from \"$source\" to local directory", objectName: 'file', debug: true).run {
+                    source.download(modelFile.filePath, fileName)
+                    return 1
+                }
                 try {
                     dest.changeDirectoryToRoot()
                     if (modelFile.destinationPath != null)
                         dest.changeDirectory(modelFile.destinationPath)
-                    dest.upload(fileName)
-                    Logs.Info "Upload file \"$fileName\" to successfully completed"
+
+                    if (!isLocalUnpack || unpackCommand == null) {
+                        new ProcessTime(name: "Upload reference file \"$fileName\" from local directory to \"$dest\"", objectName: 'file', debug: true).run {
+                            dest.upload(fileName)
+                            return 1
+                        }
+                    }
 
                     if (unpackCommand != null) {
                         def cmdOut = new StringBuilder(), cmdErr = new StringBuilder()
                         def cmdText = StringUtils.EvalMacroString(unpackCommand, modelVars + modelFile.objectVars + [file: fileName])
-                        def res = dest.command(cmdText, cmdOut, cmdErr)
-                        if (res == -1) {
-                            def err = new ExceptionModel("Failed to execute command \"$cmdText\"!")
-                            def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
-                            Logs.Dump(err, dest.getClass().name, dest.toString(), data)
-                            throw err
+                        def cmdMan = (!isLocalUnpack)?dest:new FileManager(rootPath: source.localDirectory)
+                        if (isLocalUnpack) cmdMan.connect()
+                        try {
+                            new ProcessTime(name: "Unpack reference file \"$fileName\" on \"$cmdMan\"", objectName: 'file', debug: true).run {
+                                def res = cmdMan.command(cmdText, cmdOut, cmdErr)
+                                if (res == -1) {
+                                    def err = new ExceptionModel("Failed to execute command \"$cmdText\"!")
+                                    def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
+                                    Logs.Dump(err, cmdMan.getClass().name, cmdMan.toString(), data)
+                                    throw err
+                                }
+                                if (res > 0) {
+                                    def err = new ExceptionModel("Error executing command \"$cmdText\"!")
+                                    def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
+                                    Logs.Dump(err, cmdMan.getClass().name, cmdMan.toString(), data)
+                                    throw err
+                                }
+                                return 1
+                            }
+                            cmdMan.removeFile(fileName)
+                            if (isLocalUnpack) {
+                                new ProcessTime(name: "Copying unpacked files to \"$dest\"", objectName: 'file', debug: true).run {
+                                    return dest.uploadDir(true)
+                                }
+                            }
                         }
-                        if (res > 0) {
-                            def err = new ExceptionModel("Error executing command \"$cmdText\"!")
-                            def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
-                            Logs.Dump(err, dest.getClass().name, dest.toString(), data)
-                            throw err
+                        finally {
+                            if (isLocalUnpack) cmdMan.disconnect()
                         }
-                        Logs.Info("File \"$fileName\" processing completed successfully")
-                        dest.removeFile(fileName)
+                        Logs.Info("Reference file \"$fileName\" processing completed successfully")
                     }
                 }
                 finally {
-                    source.removeLocalFile(fileName)
+                    if (!isLocalUnpack)
+                        source.removeLocalFile(fileName)
                 }
             }
         }
         finally {
-            FileUtils.DeleteFolder(source.localDirectory, true)
             source.disconnect()
             dest.disconnect()
         }

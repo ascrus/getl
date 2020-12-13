@@ -41,6 +41,11 @@ class RepositorySave extends Getl {
 
     /** Class method parameters with annotation  */
     class MethodParams {
+        MethodParams(String m, List<String> e, Boolean r) {
+            this.methodName = m
+            this.envs = e
+            this.retrieve = r
+        }
         String methodName
         List<String> envs
         Boolean retrieve
@@ -103,7 +108,7 @@ class RepositorySave extends Getl {
 
                 def retrieve = getl.utils.BoolUtils.IsValue(an.retrieve())
 
-                methods.get(type).add(new MethodParams(methodName: methodName, envs: envs, retrieve: retrieve))
+                methods.get(type).add(new MethodParams(methodName, envs, retrieve))
                 logFinest "  found method \"$methodName\" of saving objects with type \"$type\""
                 countMethods++
             }

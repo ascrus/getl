@@ -628,7 +628,7 @@ class CSVDriver extends FileDriver {
 		wp.bufWriter = getFileWriter(csv_ds, wp.params, wp.portion)
 		wp.opt = (dataset as FileDataset).writedFiles[(wp.portion?:1) - 1]
 		
-		wp.encoder = new CSVDefaultFileEncoder(csv_ds, wp)
+		wp.encoder = new CSVDefaultFileEncoder(csv_ds as CSVDataset, wp)
 		
 		wp.pref = new CsvPreference.Builder(p.quoteStr as char, (p.fieldDelimiter) as int, p.rowDelimiter as String).useQuoteMode(p.qMode as QuoteMode).useEncoder(wp.encoder).build()
 		wp.writer = new CsvMapWriter(wp.bufWriter, wp.pref, false)

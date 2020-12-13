@@ -3,15 +3,11 @@ package getl.utils
 import getl.exception.ExceptionGETL
 import groovy.time.Duration
 import groovy.transform.CompileStatic
-
 import java.math.RoundingMode
 import org.apache.groovy.dateutil.extensions.DateUtilExtensions
-
 import java.sql.Time
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.LocalDateTime
 
 /**
  * Data and time library functions class
@@ -106,21 +102,7 @@ class DateUtils {
 	 * @return
 	 */
 	static Date ParseDate(String format, def value, Boolean ignoreError = true) {
-		Date result = null
-		if (value == null) return result
-		try {
-			def isTime = (format.indexOf('H') > 0)
-			if (isTime)
-				result = LocalDateTime.parse(value.toString(), format).toDate()
-			else
-				result = LocalDate.parse(value.toString(), format).toDate()
-		}
-		catch (Exception  e) {
-			if (ignoreError) return null
-			throw e
-		}
-
-		return result
+		return ParseDate(new SimpleDateFormat(format), value, ignoreError)
 	}
 
 	/**
@@ -148,7 +130,7 @@ class DateUtils {
 		return ParseDate(defaultDateMask, value, true)
 	}
 
-	static Date ParseDateTime (def value) {
+	static Date ParseDateTime(def value) {
 		return ParseDate(defaultDateTimeMask, value, true)
 	}
 

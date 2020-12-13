@@ -9,6 +9,7 @@ import getl.utils.opts.PathVarsSpec
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
+import java.text.SimpleDateFormat
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import getl.data.Field
@@ -18,7 +19,6 @@ import getl.exception.ExceptionGETL
  * Analyze and processing path value class
  * @author Alexsey Konstantinov
  */
-@AutoClone
 class Path implements Cloneable, GetlRepository {
 	Path () {
 		registerMethod()
@@ -74,6 +74,7 @@ class Path implements Cloneable, GetlRepository {
 	/** SQL like elements */
 	private List<Map> likeElements = []
 	/** SQL like elements */
+	@SuppressWarnings('unused')
 	List<Map> getLikeElements () { likeElements }
 
 	/** Count level for mask */
@@ -131,7 +132,7 @@ class Path implements Cloneable, GetlRepository {
 	Map<String, Map> getVars () { this.vars }
 
 	/**
-	 * Variable parameters for compiling a mask \
+	 * Variable parameters for compiling a mask
 	 * <b>Field for var:</b>
 	 * <ul>
 	 * <li>Field.Type type	- type var
@@ -143,8 +144,9 @@ class Path implements Cloneable, GetlRepository {
 	 * </ul>
 	 */
 	private final def maskVariables = ([:] as Map<String, Map<String, Object>>)
+
 	/**
-	 * Variable parameters for compiling a mask \
+	 * Variable parameters for compiling a mask
 	 * <b>Field for var:</b>
 	 * <ul>
 	 * <li>Field.Type type	- type var
@@ -156,8 +158,9 @@ class Path implements Cloneable, GetlRepository {
 	 * </ul>
 	 */
 	Map<String, Map<String, Object>> getMaskVariables() { maskVariables }
+
 	/**
-	 * Variable parameters for compiling a mask \
+	 * Variable parameters for compiling a mask
 	 * <b>Field for var:</b>
 	 * <ul>
 	 * <li>Field.Type type	- type var
@@ -172,6 +175,9 @@ class Path implements Cloneable, GetlRepository {
 		maskVariables.clear()
 		if (value != null) maskVariables.putAll(value)
 	}
+
+	/** Date formatter for variables */
+	private final Map<String, SimpleDateFormat> varDateFormatter = [:] as Map<String, SimpleDateFormat>
 
 	/** System parameters */
 	private final Map<String, Object> sysParams = [:] as Map<String, Object>
@@ -246,6 +252,7 @@ class Path implements Cloneable, GetlRepository {
 		likeFolder = null
 		likeFile = null
 		numLocalPath = -1
+		varDateFormatter.clear()
 
 		def compVars = ([:] as Map<String, Map<String, Object>>)
 		def rmask = FileUtils.FileMaskToMathExpression(maskStr)
@@ -254,6 +261,7 @@ class Path implements Cloneable, GetlRepository {
 		StringBuilder rb = new StringBuilder()
 
 		def listFoundVars = [] as List<String>
+		def varsFormat = [:] as Map<String, String>
 		for (Integer i = 0; i < d.length; i++) {
 			Map p = [:]
 			p.vars = []
@@ -264,36 +272,48 @@ class Path implements Cloneable, GetlRepository {
 			while (s >= 0) {
 				def e = d[i].indexOf('}', s)
 				if (e >= 0) {
+					String df = null
+
 					b.append(d[i].substring(f, s))
 
-					def vn = d[i].substring(s + 1, e).toLowerCase()
+					String vn = d[i].substring(s + 1, e).toLowerCase()
 					def pm = patterns.get(vn)
 					if (pm == null) {
 						def vt = varAttr.get(vn)
 						def type = vt?.type as Field.Type
 						if (type != null && type instanceof String) type = Field.Type."$type"
-						if (type in [Field.Type.DATE, Field.Type.DATETIME, Field.Type.TIME]) {
-							String df
+						if (type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
 							if (vt.format != null) {
 								df = vt.format
 							}
 							else {
-								if (type == Field.Type.DATE) {
-									df = "yyyy-MM-dd"
+								if (type == Field.dateFieldType) {
+									df = 'yyyy-MM-dd'
 								}
-								else if (type == Field.Type.TIME) {
-									df = "HH:mm:ss"
+								else if (type == Field.timeFieldType) {
+									df = 'HH:mm:ss'
+								}
+								else if (type == Field.datetimeFieldType) {
+									df = 'yyyy-MM-dd HH:mm:ss'
 								}
 								else {
-									df = "yyyy-MM-dd HH:mm:ss"
+									df = 'yyyy-MM-dd\'T\'HH:mm:ssZ'
 								}
 							}
 
 							def vm = df.toLowerCase()
-							vm = vm.replace("d", "\\d").replace("y", "\\d").replace("m", "\\d").replace("h", "\\d").replace("s", "\\d")
+							vm = vm.replace('\'', '')
+									.replace('d', '\\d')
+									.replace('y', '\\d')
+									.replace('m', '\\d')
+									.replace('h', '\\d')
+									.replace('s', '\\d')
+									.replace('t', '\\d')
+									.replace('z', '\\d')
+
 							b.append("($vm)")
 						}
-						else if (type in [Field.Type.BIGINT, Field.Type.INTEGER]) {
+						else if (type in [Field.bigintFieldType, Field.integerFieldType]) {
 							if (vt?.len != null) {
 								b.append("(\\d{${vt.len}})")
 							}
@@ -306,6 +326,7 @@ class Path implements Cloneable, GetlRepository {
 						}
 						else {
 							if (vt?.format != null) {
+								df = vt.format as String
 								b.append("(${vt.format})")
 							}
 							else {
@@ -322,6 +343,8 @@ class Path implements Cloneable, GetlRepository {
 
 					(p.vars as List).add(vn)
 					listFoundVars << vn
+					if (df != null)
+						varsFormat.put(vn, df)
 
 					f = e + 1
 				}
@@ -347,9 +370,17 @@ class Path implements Cloneable, GetlRepository {
 		for (Integer i = 0; i < elements.size(); i++) {
 			List<String> v = elements[i].vars as List<String>
 			for (Integer x = 0; x < v.size(); x++) {
-				compVars.put(v[x] as String, [:])
+				def varName = v[x] as String
+				def varValue = [:] as Map<String, Object>
+
+				def df = varsFormat.get(varName)
+				if (df != null)
+					varValue.put('format', df)
+
+				compVars.put(varName, varValue)
 			}
 		}
+
 		patterns.each { k, v ->
 			def p = compVars.get(k) as Map
 			if (p != null) {
@@ -387,7 +418,6 @@ class Path implements Cloneable, GetlRepository {
 		compVars.each { key, value ->
 			def vo = "(?i)(\\{${key}\\})"
 			maskFile = maskFile.replaceAll(vo, "\\\$\$1")
-
 			likeFile = likeFile.replace("{$key}", "%")
 		}
 		maskFile = maskFile.replace('\\', '\\\\')
@@ -405,6 +435,18 @@ class Path implements Cloneable, GetlRepository {
 			}
 			else if (!compVars.containsKey(name)) {
 				compVars.put(name, value)
+			}
+		}
+
+		compVars.each { name, value ->
+			if ((value.type as Field.Type) in
+					[Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
+				def df = value.format as String
+				if (df == null)
+					throw new ExceptionGETL("Format is required for variable \"$name\"!")
+				def sdf = new SimpleDateFormat(df)
+				sdf.setLenient(false)
+				varDateFormatter.put(name, sdf)
 			}
 		}
 
@@ -488,12 +530,12 @@ class Path implements Cloneable, GetlRepository {
 
 	/** Analyze file with mask and return value of variables */
 	Map analyzeFile(String fileName, Map<String, Object> extendVars = null) {
-		analize(fileName, false, extendVars)
+		analyze(fileName, false, extendVars)
 	}
 
 	/** Analyze dir with mask and return value of variables */
 	Map analyzeDir(String dirName, Map<String, Object> extendVars = null) {
-		analize(dirName, true, extendVars)
+		analyze(dirName, true, extendVars)
 	}
 
 	/** Checking the value by compiled mask */
@@ -501,8 +543,8 @@ class Path implements Cloneable, GetlRepository {
 		return value.matches(maskPathPattern)
 	}
 
-	/** Analize object name */
-	Map analize(String objName, Boolean isHierarchy = false, Map<String, Object> extendVars = null) {
+	/** Analyze object name */
+	Map analyze(String objName, Boolean isHierarchy = false, Map<String, Object> extendVars = null) {
 		if (!isCompile) compile()
 
 		def fn = objName
@@ -568,29 +610,19 @@ class Path implements Cloneable, GetlRepository {
 
 				if (value.type != null && v != null) {
 					def type = value.type
-					if (type instanceof String) type = Field.Type."$type"
+					if (type instanceof String)
+						type = Field.Type."$type"
 					switch (type) {
-						case Field.Type.DATE:
-							def format = (value.format != null)?(value.format as String):'yyyy-MM-dd'
+						case Field.dateFieldType: case Field.datetimeFieldType: case Field.timeFieldType: case Field.timestamp_with_timezoneFieldType:
 							try {
-								v = DateUtils.ParseDate(format, v, ignoreConvertError)
+								v = DateUtils.ParseDate(varDateFormatter.get(key), v, ignoreConvertError)
 							}
 							catch (Exception e) {
 								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to date: ${e.message}!")
 							}
                             isError = (v == null)
 							break
-						case Field.Type.DATETIME:
-							def format = (value.format != null)?(value.format as String):'yyyyMMddHHmmss'
-							try {
-								v = DateUtils.ParseDate(format, v, ignoreConvertError)
-							}
-							catch (Exception e) {
-								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to datetime: ${e.message}!")
-							}
-                            isError = (v == null)
-							break
-						case Field.Type.INTEGER:
+						case Field.integerFieldType:
 							try {
 								v = Integer.valueOf(v)
 							}
@@ -601,7 +633,7 @@ class Path implements Cloneable, GetlRepository {
 							}
                             isError = (v == null)
 							break
-						case Field.Type.BIGINT:
+						case Field.bigintFieldType:
 							try {
 								v = Long.valueOf(v)
 							}
@@ -612,7 +644,7 @@ class Path implements Cloneable, GetlRepository {
 							}
                             isError = (v == null)
 							break
-						case Field.Type.STRING:
+						case Field.stringFieldType:
 							break
 						default:
 							throw new ExceptionGETL("Unknown type ${value.type}!")
@@ -649,6 +681,7 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** Filter files from root path with mask */
+	@SuppressWarnings('unused')
 	List<Map> filterFiles() {
 		filterFiles(getFiles())
 	}
@@ -684,38 +717,29 @@ class Path implements Cloneable, GetlRepository {
 	/**
 	 * Format variable with type of value
 	 */
-	String formatVariable (String varName, def value) {
-		if (!vars.containsKey(varName)) throw new ExceptionGETL("Variable ${varName} not found")
-		def v = vars.get(varName)
-		def type = v."type"
-		if (type == null) {
-            type = Field.Type.STRING
+	String formatVariable(String varName, def value) {
+		if (!vars.containsKey(varName))
+			throw new ExceptionGETL("Variable ${varName} not found!")
+
+		def v = vars.get(varName) as Map<String, Object>
+		def varType = v.type
+		Field.Type type
+		if (varType == null) {
+            type = Field.stringFieldType
         }
-        else if (type instanceof String) {
-            type = Field.Type."$type"
+        else if (varType instanceof String) {
+            type = Field.Type."$varType" as Field.Type
         }
+		else
+			type = varType as Field.Type
 
-		switch (type) {
-			case Field.Type.DATE:
-				def format = (v.format as String)?:'yyyy-MM-dd'
-				value = DateUtils.FormatDate(format, value as Date)
-				break
-
-			case Field.Type.TIME:
-				def format = (v.format as String)?:'HH:mm:ss'
-				value = DateUtils.FormatDate(format, value as Date)
-				break
-
-			case Field.Type.DATETIME:
-				def format = (v.format as String)?:'yyyy-MM-dd HH:mm:ss'
-				value = DateUtils.FormatDate(format, value as Date)
-				break
-		}
+		if (type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType])
+			value = varDateFormatter.get(varName).format(value as Date)
 
 		return value
 	}
 
-	String toString () {
+	String toString() {
 		StringBuilder b = new StringBuilder()
 		b.append("""original mask: $maskStr
 root path: $rootPath
@@ -789,5 +813,15 @@ elements:
 				return true
 		}
 		return false
+	}
+
+	/** Clone path */
+	Path clonePath() {
+		return new Path(mask: this.mask, vars: MapUtils.Clone(this.maskVariables))
+	}
+
+	@Override
+	Object clone() {
+		return clonePath()
 	}
 }

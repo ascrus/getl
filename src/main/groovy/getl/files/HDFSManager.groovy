@@ -13,7 +13,9 @@ import org.apache.hadoop.fs.FileSystem
 import getl.utils.Logs
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.PathFilter
 import org.apache.hadoop.security.UserGroupInformation
+
 import java.security.PrivilegedExceptionAction
 
 /**
@@ -30,7 +32,7 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     protected void initMethods() {
         super.initMethods()
-        methodParams.register('super', ['server', 'port', 'login', 'storedLogins'])
+        methodParams.register('super', ['server', 'port', 'login', 'storedLogins', 'replication'])
     }
 
     /** Server address */
@@ -61,6 +63,15 @@ class HDFSManager extends Manager implements UserLogins {
         if (value != null) storedLogins.putAll(value)
     }
 
+    /** Replication parameter for root directory */
+    Short getReplication() { params.replication as Short }
+    /** Replication parameter for root directory */
+    void setReplication(Short value) {
+        if (value != null && value < 1)
+            throw new ExceptionGETL("The replication parameter cannot be less than 1!")
+        params.replication = value
+    }
+
     /** File system driver */
     private FileSystem client
 
@@ -86,37 +97,48 @@ class HDFSManager extends Manager implements UserLogins {
     @JsonIgnore
     Boolean isConnected() { client != null }
 
+    class ConfigAction implements PrivilegedExceptionAction<Void> {
+        ConfigAction(HDFSManager owner) {
+            this.man = owner
+        }
+
+        private final HDFSManager man
+
+        @Override
+        Void run() throws Exception {
+            Configuration conf = new Configuration()
+            conf.set("fs.defaultFS", "hdfs://${man.server}:${man.port}")
+            conf.set("hadoop.job.ugi", man.login)
+
+            try {
+                man.client = FileSystem.get(conf)
+            }
+            catch (Exception e) {
+                if (writeErrorsToLog) Logs.Severe("Can not connect to ${man.server}:${man.port}")
+                throw e
+            }
+            man.homeDirectory = client.homeDirectory
+            man.currentPath = man.currentRootPath
+            if (man.rootPath != null && man.replication != null)
+                client.setReplication(new Path(man.rootPath), man.replication)
+
+            return null
+        }
+    }
+
     @Override
     @Synchronized
     protected void doConnect() {
         if (connected)
             throw new ExceptionGETL('Manager already connected!')
 
-        if (server == null || port == null) throw new ExceptionGETL("Required server host and port for connect")
-        if (login == null) throw new ExceptionGETL("Required login for connect")
+        if (server == null || port == null)
+            throw new ExceptionGETL("Required server host and port for connect")
+        if (login == null)
+            throw new ExceptionGETL("Required login for connect")
 
         UserGroupInformation ugi = UserGroupInformation.createRemoteUser(login)
-        ugi.doAs(
-            new PrivilegedExceptionAction<Void>() {
-                Void run() {
-                    Configuration conf = new Configuration()
-                    conf.set("fs.defaultFS", "hdfs://$server:$port")
-                    conf.set("hadoop.job.ugi", login)
-
-                    try {
-                        client = FileSystem.get(conf)
-                    }
-                    catch (Exception e) {
-                        if (writeErrorsToLog) Logs.Severe("Can not connect to $server:$port")
-                        throw e
-                    }
-                    homeDirectory = client.homeDirectory
-                    currentPath = currentRootPath
-
-                    return null
-                }
-            }
-        )
+        ugi.doAs(new ConfigAction(this))
     }
 
     @Override
@@ -208,7 +230,7 @@ class HDFSManager extends Manager implements UserLogins {
                 throw new ExceptionGETL("Unnknown type object ${m.filename}")
             }
 
-            m
+            return m
         }
 
         @CompileStatic
@@ -218,12 +240,29 @@ class HDFSManager extends Manager implements UserLogins {
         }
     }
 
+    /** Filter class for list dir */
+    class FilterDir implements PathFilter {
+        FilterDir(String mask) {
+            maskPath = new getl.utils.Path(mask: mask)
+        }
+
+        private final getl.utils.Path maskPath
+
+        @Override
+        boolean accept(Path path) {
+            return maskPath.match(path.name)
+        }
+    }
+
     @Override
     FileManagerList listDir(String maskFiles) {
         validConnect()
 
         HDFSList res = new HDFSList()
-        res.listFiles = client.listStatus(fullPath(_currentPath, null))
+        if (maskFiles != null)
+            res.listFiles = client.listStatus(fullPath(_currentPath, null), new FilterDir(maskFiles))
+        else
+            res.listFiles = client.listStatus(fullPath(_currentPath, null))
 
         return res
     }

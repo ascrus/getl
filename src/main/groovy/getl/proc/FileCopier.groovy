@@ -44,7 +44,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         if (sourcePath == null)
             throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
 
-        def parent = value.clone()
+        def parent = value.clonePath()
         MapUtils.MergeMap(parent.maskVariables, CloneUtils.CloneMap(sourcePath.maskVariables), false, false)
 
         params.destinationPath = parent
@@ -71,7 +71,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         if (sourcePath == null)
             throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
 
-        def parent = value.clone()
+        def parent = value.clonePath()
         def sm = [:] as Map<String, Object>
         sm.put('filepath', null)
         sm.put('filename', null)
@@ -83,7 +83,8 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         MapUtils.MergeMap(parent.maskVariables, sm, false, false)
 
         params.renamePath = parent
-        if (renamePath != null && !renamePath.isCompile) renamePath.compile()
+        if (renamePath != null && !renamePath.isCompile)
+            renamePath.compile()
     }
     /** Use path mask for rename file name */
     void useRenamePath(@DelegatesTo(Path)
@@ -102,7 +103,8 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
 
         parent.with(cl)
         params.renamePath = parent
-        if (renamePath != null && !renamePath.isCompile) renamePath.compile()
+        if (renamePath != null && !renamePath.isCompile)
+            renamePath.compile()
     }
 
     /** Run the script on the source before starting the process */
@@ -199,14 +201,15 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
 
         tmpDestPath = destinationPath
         if (tmpDestPath.mask == '.') {
-            tmpDestPath = sourcePath.clone()
+            tmpDestPath = sourcePath.clonePath()
             tmpDestPath.mask = FileUtils.ConvertToUnixPath(FileUtils.RelativePathFromFile(tmpDestPath.mask))
         }
 
         if (!tmpDestPath.isCompile) tmpDestPath.compile()
 
         if (renamePath != null) {
-            if (!renamePath.isCompile) renamePath.compile()
+            if (!renamePath.isCompile)
+                renamePath.compile()
         }
 
         def vars = sourcePath.vars.keySet().toList()*.toLowerCase()

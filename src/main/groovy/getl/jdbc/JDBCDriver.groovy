@@ -1702,7 +1702,7 @@ $sql
 		}
 		else {
 			dataset.field.each { Field f ->
-				if (listFields.find { String lf -> (lf.toLowerCase() == f.name.toLowerCase()) } != null) fields << f
+				if (listFields.find { lf -> ((lf as String).toLowerCase() == f.name.toLowerCase()) } != null) fields << f
 			}
 		}
 		if (fields.isEmpty()) throw new ExceptionGETL("Required fields from write to dataset")

@@ -692,13 +692,15 @@ Examples:
     }
 
     /** GETL DSL options */
-    void profile(String name, String objName = null,
+    ProfileSpec profile(String name, String objName = null,
                  @DelegatesTo(ProfileSpec)
                  @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ProfileSpec']) Closure cl) {
         def parent = new ProfileSpec(this, name, objName, true)
         parent.startProfile()
         runClosure(parent, cl)
         parent.finishProfile()
+
+        return parent
     }
 
     /** list of executed script classes and call parameters */

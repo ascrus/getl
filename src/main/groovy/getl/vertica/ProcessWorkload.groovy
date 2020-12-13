@@ -61,7 +61,7 @@ ORDER BY name
 		rows_table.each { r ->
 			tables << r.name
 		}
-		Logs.Info("Found ${tables.size()} tables for analize")
+		Logs.Info("Found ${tables.size()} tables for analyze")
 	
 		def pt = new ProcessTime(name: "Get workload recommendation", debug: true)
 		def rows = qWorkload.rows()
