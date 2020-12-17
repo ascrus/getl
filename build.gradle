@@ -1,12 +1,15 @@
 import java.time.LocalDateTime
 
-apply plugin: 'idea'
-apply plugin: 'groovy'
-apply plugin: 'maven'
-apply plugin: 'signing'
+plugins {
+    id 'java'
+    id 'groovy'
+    id 'idea'
+    id 'maven'
+    id 'signing'
+}
 
 //noinspection GroovyUnusedAssignment
-version = '4.6.6' //noinspection GroovyUnusedAssignment
+version = '4.7.0-1-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -19,7 +22,7 @@ repositories {
 }
 
 dependencies {
-	compile('org.codehaus.groovy:groovy-all:3.0.6') {
+	compile('org.codehaus.groovy:groovy-all:3.0.7') {
 		exclude(group: 'org.codehaus.groovy', module: 'groovy-testng')
 	}
 	compile 'org.codehaus.groovy:groovy-dateutil:3.0.6'
@@ -46,6 +49,8 @@ dependencies {
 	implementation 'org.apache.hadoop:hadoop-auth:3.3.0'
 	implementation 'org.apache.hadoop:hadoop-hdfs-client:3.3.0'
 	implementation 'org.apache.hadoop:hadoop-common:3.3.0'
+
+	implementation group: 'org.apache.kafka', name: 'kafka-clients', version: '2.6.0'
 
 	implementation(group: 'com.force.api', name: 'force-partner-api', version: '49.3.0')
 

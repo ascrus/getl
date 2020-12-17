@@ -56,7 +56,7 @@ class JSONDriver extends FileDriver {
 			
 			String path = GenerationUtils.Field2Alias(d)
 			sb << "attrValue.'${d.name.toLowerCase()}' = "
-			sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}", false)
+			sb << GenerationUtils.GenerateConvertValue(d, s, d.format?:'yyyy-MM-dd\'T\'HH:mm:ss', "data.${path}", false)
 			
 			sb << "\n"
 		}
@@ -97,7 +97,7 @@ if (limit > 0) {
 	}
 }
 """
-		sb << '	Map row = [:]\n'
+		sb << '	Map<String, Object> row = [:]\n'
 		def c = 0
 		dataset.field.each { Field d ->
 			c++
@@ -106,9 +106,9 @@ if (limit > 0) {
 				if (s.type in [Field.Type.DATETIME, Field.Type.DATE, Field.Type.TIME, Field.Type.TIMESTAMP_WITH_TIMEZONE])
 					s.type = Field.Type.STRING
 				
-				String path = GenerationUtils.Field2Alias(d)
-				sb << "	row.'${d.name.toLowerCase()}' = "
-				sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "struct.${path}", false)
+				String path = GenerationUtils.Field2Alias(d, true)
+				sb << "  row.'${d.name.toLowerCase()}' = "
+				sb << GenerationUtils.GenerateConvertValue(d, s, d.format?:'yyyy-MM-dd\'T\'hh:mm:ss', "struct.${path}", false)
 				
 				sb << "\n"
 			}
@@ -156,7 +156,7 @@ if (limit > 0) {
 	 */
 	@CompileStatic
 	protected def readData(JSONDataset dataset, Map params) {
-		def convertToList = BoolUtils.IsValue(dataset.convertToList)
+		def convertToList = BoolUtils.IsValue(dataset.readOpts.convertToList)
 		
 		def json = new JsonSlurper()
 		def data = null
@@ -212,7 +212,7 @@ if (limit > 0) {
 
 		def data = readData(dataset, params)
 		
-		List<String> fields = []
+		def fields = [] as List<String>
 		if (prepareCode != null) {
 			prepareCode.call(fields)
 		}

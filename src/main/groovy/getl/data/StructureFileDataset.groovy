@@ -99,7 +99,7 @@ class StructureFileDataset extends FileDataset {
 	}
 	
 	/** Name of root node */
-	String getRootNode () { params.rootNode }
+	String getRootNode () { params.rootNode as String }
 	/** Name of root node */
 	void setRootNode (String value) { params.rootNode = value }
 }

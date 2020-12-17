@@ -115,13 +115,13 @@ class GenerationUtils {
 	 * Generate convert code from source field to destination field
 	 * @param dest
 	 * @param source
-	 * @param dataformat
+	 * @param formatField
 	 * @param sourceValue
 	 * @return
 	 */
-	static String GenerateConvertValue(Field dest, Field source, String dataformat, String sourceValue, Boolean cloneObject = true) {
+	static String GenerateConvertValue(Field dest, Field source, String formatField, String sourceValue, Boolean cloneObject = true) {
 		String r
-		
+
 		switch (dest.type) {
 			case Field.Type.STRING: case getl.data.Field.Type.TEXT:
 				switch (source.type) {
@@ -133,8 +133,8 @@ class GenerationUtils {
 						break
 
 					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
-						dataformat = (dataformat != null)?dataformat:GenerationUtils.DateFormat(source.type)
-						r =  "getl.utils.DateUtils.FormatDate('${StringUtils.EscapeJava(dataformat)}', (Date)$sourceValue)"
+						formatField = (formatField != null)?formatField:GenerationUtils.DateFormat(source.type)
+						r =  "getl.utils.DateUtils.FormatDate(\"${StringUtils.EscapeJava(formatField)}\", (Date)$sourceValue)"
 
 						break
 
@@ -182,8 +182,8 @@ class GenerationUtils {
 
 					case Field.Type.STRING:
 						def trueValue = 'true'
-						if (dataformat != null) {
-							def bf = dataformat.toLowerCase().split("[|]")
+						if (formatField != null) {
+							def bf = formatField.toLowerCase().split("[|]")
 							trueValue = bf[0]
 						}
 //						else {
@@ -356,7 +356,7 @@ class GenerationUtils {
 				break
 
 			case getl.data.Field.Type.DATE:
-				dataformat = dataformat?:GenerationUtils.DateFormat(dest.type)
+				formatField = formatField?:GenerationUtils.DateFormat(dest.type)
 
 				switch (source.type) {
 					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
@@ -365,7 +365,7 @@ class GenerationUtils {
 						break
 
 					case Field.Type.STRING:
-						r =  "getl.utils.DateUtils.ParseSQLDate('$dataformat', (String)$sourceValue, false)"
+						r =  "getl.utils.DateUtils.ParseSQLDate(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false)"
 
 						break
 
@@ -381,7 +381,7 @@ class GenerationUtils {
 				break
 				
 			case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
-				dataformat = dataformat?:GenerationUtils.DateFormat(dest.type)
+				formatField = formatField?:GenerationUtils.DateFormat(dest.type)
 
 				switch (source.type) {
 					case Field.Type.DATETIME: case Field.Type.DATE: case Field.Type.TIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
@@ -390,7 +390,7 @@ class GenerationUtils {
 						break
 
 					case Field.Type.STRING:
-						r =  "getl.utils.DateUtils.ParseSQLTimestamp('$dataformat', (String)$sourceValue, false)"
+						r =  "getl.utils.DateUtils.ParseSQLTimestamp(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false)"
 
 						break
 
@@ -406,7 +406,7 @@ class GenerationUtils {
 				break
 				
 			case getl.data.Field.Type.TIME:
-				dataformat = dataformat?:GenerationUtils.DateFormat(dest.type)
+				formatField = formatField?:GenerationUtils.DateFormat(dest.type)
 
 				switch (source.type) {
 					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
@@ -415,7 +415,7 @@ class GenerationUtils {
 						break
 
 					case Field.Type.STRING:
-						r =  "getl.utils.DateUtils.ParseSQLTime('$dataformat', (String)$sourceValue, false)"
+						r =  "getl.utils.DateUtils.ParseSQLTime(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false)"
 
 						break
 

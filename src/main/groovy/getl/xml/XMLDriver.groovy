@@ -53,7 +53,7 @@ class XMLDriver extends FileDriver {
 			
 			String path = GenerationUtils.Field2Alias(d, true)
 			sb << "attrValue.'${d.name.toLowerCase()}' = "
-			sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "data.${path}", false)
+			sb << GenerationUtils.GenerateConvertValue(d, s, d.format?:'yyyy-MM-dd\'T\'hh:mm:ss', "data.${path}", false)
 			
 			sb << "\n"
 		}
@@ -136,7 +136,7 @@ if (limit > 0) {
 				
 				String path = field2alias(d, dataset.defaultAccessMethod) //GenerationUtils.Field2Alias(d, false)
 				sb << "	row.'${d.name.toLowerCase()}' = "
-				sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "struct.${path}", false)
+				sb << GenerationUtils.GenerateConvertValue(d, s, d.format?:'yyyy-MM-dd\'T\'HH:mm:ss', "struct.${path}", false)
 				
 				sb << "\n"
 			}

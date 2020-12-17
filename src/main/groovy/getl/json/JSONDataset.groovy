@@ -20,19 +20,9 @@ class JSONDataset extends StructureFileDataset {
 	}
 
 	@Override
-	protected void initParams() {
-		super.initParams()
-		params.convertToList = false
-	}
-
-	/** Added root {...} for JSON text */
-	Boolean getConvertToList () { params.convertToList }
-	void setConvertToList (Boolean value) { params.convertToList = value }
-
-	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof JSONConnection))
-			throw new ExceptionGETL('Сonnection to JSONConnection class is allowed!')
+			throw new ExceptionGETL('Only class JSONConnection connections are permitted!')
 
 		super.setConnection(value)
 	}

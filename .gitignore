@@ -1,13 +1,13 @@
 ### Gradle template
+.gradle/
+gradle/
+build/
 gradlew
 gradlew.bat
-.gradle
-gradle
-build
 
-## Directory-based project format:
+## Idea
 .idea/
+out/
 
 ### Config files for test modules
 tests/
-out/

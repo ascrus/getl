@@ -75,7 +75,7 @@ if (limit > 0) {
 
                 String path = GenerationUtils.Field2Alias(d)
                 sb << "	row.'${d.name.toLowerCase()}' = "
-                sb << GenerationUtils.GenerateConvertValue(d, s, d.format, "struct.${path}", false)
+                sb << GenerationUtils.GenerateConvertValue(d, s, d.format?:'yyyy-MM-dd\'T\'HH:mm:ss', "struct.${path}", false)
 
                 sb << "\n"
             }

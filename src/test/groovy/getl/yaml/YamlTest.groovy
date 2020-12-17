@@ -21,8 +21,11 @@ class YamlTest extends TestDsl {
                 field('charValueUse') { type = objectFieldType }
                 field('dependency')
 
-                eachRow { row ->
-                    println row
+                def rows = rows()
+                assertEquals(158, rows.size())
+                rows.each {r ->
+                    assertNotNull(r.code)
+                    assertNotNull(r.name)
                 }
             }
         }

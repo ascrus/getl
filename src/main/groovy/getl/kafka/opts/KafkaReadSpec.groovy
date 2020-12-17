@@ -1,4 +1,4 @@
-package getl.json.opts
+package getl.kafka.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.opts.BaseSpec
@@ -6,19 +6,8 @@ import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
-/**
- * Options for reading JSON file
- * @author Alexsey Konstantinov
- *
- */
 @InheritConstructors
-class JSONReadSpec extends BaseSpec {
-    @Override
-    protected void initSpec() {
-        super.initSpec()
-        if (params.fields == null) params.fields = [] as List<String>
-    }
-
+class KafkaReadSpec extends BaseSpec {
     /** List of fields to read
      * <br>if not specified, then all fields are taken
      */
@@ -50,27 +39,18 @@ class JSONReadSpec extends BaseSpec {
         setOnFilter(value)
     }
 
-    /**
-     * Filtering readable records
-     * <br>A readable record is passed as parameter (Map object)
-     */
-    @JsonIgnore
-    Closure<Boolean> getOnReadAttributes() { params.initAttr as Closure<Boolean> }
-    /**
-     * Filtering readable records
-     * <br>A readable record is passed as parameter (Map object)
-     */
-    void setOnReadAttributes(Closure<Boolean> value) { saveParamValue('initAttr', value) }
-    /**
-     * Filtering readable records
-     * <br>A readable record is passed as parameter (Map object)
-     */
-    void readAttributes(@ClosureParams(value = SimpleType, options = ['getl.json.JSONDataset']) Closure<Boolean> value) {
-        setOnReadAttributes(value)
-    }
+    /** Period in seconds for which you want to receive data (null to receive all data) */
+    Long getReadDuration() { params.consumerReadDuration as Long }
+    /** Period in seconds for which you want to receive data (null to receive all data) */
+    void setReadDuration(Long value) { params.consumerReadDuration = value }
 
-    /** Wrap json text in root */
-    Boolean getConvertToList () { params.convertToList as Boolean }
-    /** Wrap json text in root */
-    void setConvertToList (Boolean value) { params.convertToList = value }
+    /** Received data key name (default null to get all keys) */
+    String getKeyName() { params.keyName as String }
+    /** Received data key name (default null to get all keys) */
+    void setKeyName(String value) { params.keyName = value }
+
+    /** Maximum number of rows to read */
+    Integer getLimit() { params.limit as Integer }
+    /** Maximum number of rows to read */
+    void setLimit(Integer value) { params.limit = value }
 }

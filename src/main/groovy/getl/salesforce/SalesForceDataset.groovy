@@ -23,12 +23,12 @@ class SalesForceDataset extends Dataset {
 	@Override
     void setConnection(Connection value) {
 		if (value != null && !(value instanceof SalesForceConnection))
-			throw new ExceptionGETL('Сonnection to SalesForceConnection class is allowed!')
+			throw new ExceptionGETL('Only class SalesForceConnection connections are permitted!')
 
 		super.setConnection(value)
 	}
 
-	/** Use specified connection */
+	/** Use specified SalesForce connection */
 	SalesForceConnection useConnection(SalesForceConnection value) {
 		setConnection(value)
 		return value
