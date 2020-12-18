@@ -6,6 +6,7 @@ import getl.data.*
 import getl.driver.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import org.apache.groovy.json.internal.LazyMap
 
 /**
  * JSON driver class
@@ -54,7 +55,7 @@ class JSONDriver extends FileDriver {
 			Field s = d.copy()
 			if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
 			
-			String path = GenerationUtils.Field2Alias(d)
+			String path = GenerationUtils.Field2Alias(d, true)
 			sb << "attrValue.'${d.name.toLowerCase()}' = "
 			sb << GenerationUtils.GenerateConvertValue(d, s, d.format?:'yyyy-MM-dd\'T\'HH:mm:ss', "data.${path}", false)
 			
@@ -81,15 +82,34 @@ class JSONDriver extends FileDriver {
 	 * @param code row process code
 	 */
 	@CompileStatic
-	protected void readRows(JSONDataset dataset, List<String> listFields, String rootNode, Long limit, def data, Closure initAttr, Closure code) {
+	protected void readRows(JSONDataset dataset, List<String> listFields, Long limit, Object data, Closure initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
 		sb << "{ getl.json.JSONDataset dataset, Closure initAttr, Closure code, Object data, Long limit ->\n"
 		generateAttrRead(dataset, initAttr, sb)
-		
-		sb << "Long cur = 0\n"
-		sb << 'data' + ((rootNode != ".")?(".${StringUtils.ProcessObjectName(rootNode, true, true)}"):'') + ".each { struct ->\n"
-		sb << """
-if (limit > 0) {
+		sb << 'proc(dataset, code, data, limit)\n'
+		sb << '}\n'
+		sb << '@groovy.transform.CompileStatic\n'
+		sb << 'void proc(getl.json.JSONDataset dataset, Closure code, Object data, Long limit) {\n'
+
+		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,
+				'Map', true, dataset.dataNode, 'struct',
+				'row', 0, 1)
+		sb << genScript.head
+
+		sb << "def cur = 0L\n"
+		def rootNode = dataset.rootNode
+		if (rootNode != '.') {
+			def sect = GenerationUtils.GenerateRootSections('(data as Map)', rootNode, 'Map')
+			sb << sect.join('\n')
+			sb << '\n'
+			sb << "def rootList = _getl_root_${sect.size() - 1}"
+		}
+		else {
+			sb << 'def rootList = data as List<Map>'
+		}
+		sb << '\n'
+		sb << 'rootList?.each { Map struct ->\n'
+		sb << """	if (limit > 0) {
 	cur++
 	if (cur > limit) {
 		directive = Closure.DONE
@@ -98,23 +118,10 @@ if (limit > 0) {
 }
 """
 		sb << '	Map<String, Object> row = [:]\n'
-		def c = 0
-		dataset.field.each { Field d ->
-			c++
-			if (listFields.isEmpty() || listFields.find { it.toLowerCase() == d.name.toLowerCase() }) {
-				Field s = d.copy()
-				if (s.type in [Field.Type.DATETIME, Field.Type.DATE, Field.Type.TIME, Field.Type.TIMESTAMP_WITH_TIMEZONE])
-					s.type = Field.Type.STRING
-				
-				String path = GenerationUtils.Field2Alias(d, true)
-				sb << "  row.'${d.name.toLowerCase()}' = "
-				sb << GenerationUtils.GenerateConvertValue(d, s, d.format?:'yyyy-MM-dd\'T\'hh:mm:ss', "struct.${path}", false)
-				
-				sb << "\n"
-			}
-		}
+		sb << genScript.body
 		sb << "	code.call(row)\n"
 		sb << "}\n}"
+//		println sb.toString()
 
 		def script = sb.toString()
 		def hash = script.hashCode()
@@ -129,7 +136,14 @@ if (limit > 0) {
 			cl = driverParams.code_read as Closure
 		}
 
-		cl.call(dataset, initAttr, code, data, limit)
+		try {
+			cl.call(dataset, initAttr, code, data, limit)
+		}
+		catch (Exception e) {
+			Logs.Severe("Json file $dataset processing error: ${e.message}")
+			Logs.Dump(e, 'json', dataset.toString(), "// Generation script:\n$script")
+			throw e
+		}
 	}
 	
 	/**
@@ -155,16 +169,16 @@ if (limit > 0) {
 	 * @param params process parameters
 	 */
 	@CompileStatic
-	protected def readData(JSONDataset dataset, Map params) {
+	protected Object readData(JSONDataset dataset, Map params) {
 		def convertToList = BoolUtils.IsValue(dataset.readOpts.convertToList)
 		
 		def json = new JsonSlurper()
-		def data = null
+		Object data = null
 		
 		def reader = getFileReader(dataset, params)
 		try {
 			if (!convertToList) {
-					data = json.parse(reader)
+					data = json.parse(reader) as Object
 			}
 			else {
 				StringBuilder sb = new StringBuilder()
@@ -176,8 +190,12 @@ if (limit > 0) {
 				def lastObjPos = sb.lastIndexOf("}")
 				if (sb.substring(lastObjPos + 1, sb.length()).trim() == ',') sb.delete(lastObjPos + 1, sb.length())
 				sb << "\n]"
-				data = json.parseText(sb.toString())
+				data = json.parseText(sb.toString()) as LazyMap
 			}
+		}
+		catch (Exception e) {
+			Logs.Severe("Error parsing json file $dataset")
+			throw e
 		}
 		finally {
 			reader.close()
@@ -199,8 +217,7 @@ if (limit > 0) {
 			throw new ExceptionGETL("Required fields description with dataset!")
 		if (dataset.rootNode == null)
 			throw new ExceptionGETL("Required \"rootNode\" parameter with dataset!")
-		String rootNode = dataset.rootNode
-		
+
 		def fn = fullFileNameDataset(dataset)
 		if (fn == null)
 			throw new ExceptionGETL("Required \"fileName\" parameter with dataset!")
@@ -218,8 +235,8 @@ if (limit > 0) {
 		}
 		else if (params.fields != null)
 			fields = params.fields as List<String>
-		
-		readRows(dataset, fields, rootNode, limit, data, params.initAttr as Closure, code)
+
+		readRows(dataset, fields, limit, data, params.initAttr as Closure, code)
 	}
 
 	@CompileStatic

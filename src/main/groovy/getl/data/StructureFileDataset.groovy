@@ -98,8 +98,13 @@ class StructureFileDataset extends FileDataset {
 		params.attributeValue = m
 	}
 	
-	/** Name of root node */
+	/** Name of root list node */
 	String getRootNode () { params.rootNode as String }
-	/** Name of root node */
+	/** Name of root list node */
 	void setRootNode (String value) { params.rootNode = value }
+
+	/** Name of data map node */
+	String getDataNode () { params.dataNode as String }
+	/** Name of data map node */
+	void setDataNode (String value) { params.dataNode = value }
 }

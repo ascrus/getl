@@ -7,7 +7,6 @@ import getl.driver.Driver
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
 import getl.utils.GenerationUtils
-import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import groovy.yaml.YamlSlurper
 
@@ -49,14 +48,33 @@ class YAMLDriver extends FileDriver {
      * @param code row process code
      */
     @CompileStatic
-    protected void readRows (YAMLDataset dataset, List<String> listFields, String rootNode, Long limit, def data, Closure code) {
+    protected void readRows (YAMLDataset dataset, List<String> listFields, Long limit, def data, Closure code) {
         StringBuilder sb = new StringBuilder()
         sb << "{ getl.yaml.YAMLDataset dataset, Closure code, Object data, Long limit ->\n"
+        sb << 'proc(dataset, code, data, limit)\n'
+        sb << '}\n'
+        sb << '@groovy.transform.CompileStatic\n'
+        sb << 'void proc(getl.yaml.YAMLDataset dataset, Closure code, Object data, Long limit) {\n'
 
-        sb << "Long cur = 0\n"
-        sb << 'data' + ((rootNode != ".")?(".${StringUtils.ProcessObjectName(rootNode, true, true)}"):'') + ".each { struct ->\n"
-        sb << """
-if (limit > 0) {
+        def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,
+                'Map', true, dataset.dataNode, 'struct',
+                'row', 0, 1)
+        sb << genScript.head
+
+        sb << "def cur = 0L\n"
+        def rootNode = dataset.rootNode
+        if (rootNode != '.') {
+            def sect = GenerationUtils.GenerateRootSections('(data as Map)', rootNode, 'Map')
+            sb << sect.join('\n')
+            sb << '\n'
+            sb << "def rootList = _getl_root_${sect.size() - 1}"
+        }
+        else {
+            sb << 'def rootList = data as List<Map>'
+        }
+        sb << '\n'
+        sb << 'rootList?.each { Map struct ->\n'
+        sb << """	if (limit > 0) {
 	cur++
 	if (cur > limit) {
 		directive = Closure.DONE
@@ -64,24 +82,11 @@ if (limit > 0) {
 	}
 }
 """
-        sb << '	Map row = [:]\n'
-        def c = 0
-        dataset.field.each { Field d ->
-            c++
-            if (listFields.isEmpty() || listFields.find { it.toLowerCase() == d.name.toLowerCase() }) {
-                Field s = d.copy()
-                if (s.type in [Field.Type.DATETIME, Field.Type.DATE, Field.Type.TIME, Field.Type.TIMESTAMP_WITH_TIMEZONE])
-                    s.type = Field.Type.STRING
-
-                String path = GenerationUtils.Field2Alias(d)
-                sb << "	row.'${d.name.toLowerCase()}' = "
-                sb << GenerationUtils.GenerateConvertValue(d, s, d.format?:'yyyy-MM-dd\'T\'HH:mm:ss', "struct.${path}", false)
-
-                sb << "\n"
-            }
-        }
+        sb << '	Map<String, Object> row = [:]\n'
+        sb << genScript.body
         sb << "	code.call(row)\n"
         sb << "}\n}"
+//		println sb.toString()
 
         def script = sb.toString()
         def hash = script.hashCode()
@@ -133,7 +138,6 @@ if (limit > 0) {
             throw new ExceptionGETL("Required fields description with dataset!")
         if (dataset.rootNode == null)
             throw new ExceptionGETL("Required \"rootNode\" parameter with dataset!")
-        String rootNode = dataset.rootNode
 
         def fn = fullFileNameDataset(dataset)
         if (fn == null)
@@ -153,7 +157,7 @@ if (limit > 0) {
         else if (params.fields != null)
             fields = params.fields as List<String>
 
-        readRows(dataset, fields, rootNode, limit, data, code)
+        readRows(dataset, fields, limit, data, code)
     }
 
     @Override

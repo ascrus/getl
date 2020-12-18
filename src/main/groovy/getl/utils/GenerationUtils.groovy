@@ -50,6 +50,198 @@ class GenerationUtils {
 		String a = (field.alias != null)?field.alias:field.name
         return ProcessAlias(a, quote, sysChars)
 	}
+
+	/**
+	 * Generate declaration of map sections
+	 * @param rootPath Data source
+	 * @param name dot-separated section path
+	 * @return list of section declarations
+	 */
+	static List<String> GenerateRootSections(String rootPath, String name, String className) {
+		if (name == null || name.length() == 0)
+			throw new ExceptionGETL("Invalid section path!")
+
+		def res = [] as List<String>
+
+		def secPath = name.split('[.]')
+		def len = secPath.length
+
+		if (len == 1) {
+			res.add("def _getl_root_0 = ${rootPath}.get(${StringUtils.ProcessObjectName(secPath[0], true, false)}) as List<$className>")
+		}
+		else {
+			res.add("def _getl_root_0 = ${rootPath}.get(${StringUtils.ProcessObjectName(secPath[0], true, false)}) as $className")
+
+			for (int i = 1; i < len - 1; i++) {
+				def sectionName = StringUtils.ProcessObjectName(secPath[i], true, false)
+				res.add("def _getl_root_${i} = _getl_root_${i - 1}?.get(${sectionName}) as $className")
+			}
+
+			res.add("def _getl_root_${len - 1} = _getl_root_${len - 2}?.get(${StringUtils.ProcessObjectName(secPath[len - 1], true, false)}) as List<$className>")
+		}
+
+		return res
+	}
+
+	/**
+	 * Generate header for parsing builder map values into row fields
+	 * @param dataset source dataset
+	 * @param onlyFields parse only specified fields (if empty or null, all fields are parsed)
+	 * @param isStringDateTime for fields of type date and time, the original values are stored in the text
+	 * @param rootPath path of the root tree node
+	 * @param structName the name of the variable from which to take the field values
+	 * @param rowName name of the map variable, where to store the field values
+	 * @param tabHead code indentation in head script
+	 * @param tabBody code indentation in body script
+	 * @param prepareField
+	 * @return scripts sections for code generation (init - parsing initialization, body - parsing fields)
+	 */
+	static Map<String, String> GenerateConvertFromBuilderMap(Dataset dataset, List<String> onlyFields, String className,
+															 Boolean isStringDateTime, String rootPath,
+															 String structName, String rowName,
+															 Integer tabHead, Integer tabBody,
+															 Closure<String> prepareField = null) {
+		def fields = [] as List<Field>
+		if (onlyFields?.isEmpty()) onlyFields = null
+		dataset.field.each { f ->
+			def fn = f.name
+			if (onlyFields != null && !(onlyFields.find { it.toLowerCase() == fn }))
+				return
+
+			fields << f
+		}
+		if (fields.isEmpty())
+			return null
+
+		// Map sections hierarchy
+		def sections = [:] as Map<String, Map>
+		// Sections id
+		def idxSections = [] as List<String>
+		// List using format date time fields
+		def listFormats = [] as List<String>
+		// List of field parsing code
+		def listGenVal = [] as List<String>
+
+		// Fields processing
+		fields.each {destField ->
+			// Source field
+			def sourceField = destField.clone() as Field
+			// Format field
+			String format = null
+
+			// Add using format
+			if (destField.type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
+				if (isStringDateTime)
+					sourceField.type = Field.stringFieldType
+
+				sourceField.format = null
+				format = destField.format
+				if (format == null) {
+					switch (destField.type) {
+						case Field.datetimeFieldType:
+							format = 'yyyy-MM-dd\'T\'HH:mm:ss'
+							break
+						case Field.timestamp_with_timezoneFieldType:
+							format = 'yyyy-MM-dd\'T\'HH:mm:ss Z'
+							break
+						case Field.dateFieldType:
+							format = 'yyyy-MM-dd'
+							break
+						case Field.timeFieldType:
+							format = 'HH:mm:ss'
+							break
+					}
+				}
+				if (listFormats.indexOf(format) == -1)
+					listFormats.add(format)
+			}
+
+			// Add using sections and setting
+			def fn = destField.alias?:destField.name
+			def isAlias = (destField.alias != null)
+			def sp = fn
+			if (!isAlias && rootPath != null)
+				sp = rootPath + '.' + sp
+			def fnPath = sp.split('[.]')
+			def sect = sections
+			def lenPath = fnPath.length
+			String curSectName = null
+			for (int i = 0; i < lenPath - 1; i++) {
+				def name = fnPath[i]
+				if (curSectName == null) curSectName = name else curSectName = curSectName + '.' + name
+				if (!sect.containsKey(name)) {
+					def newSect = [:] as Map<String, Map>
+					sect.put(name, newSect)
+					idxSections.add(curSectName)
+					sect = newSect
+				}
+				else {
+					sect = sect.get(name)
+				}
+			}
+			def path = (lenPath > 1)?"_getl_sect_${idxSections.indexOf(curSectName)}?":structName
+			def name = fnPath[lenPath - 1]
+			if (prepareField != null)
+				name = prepareField.call(dataset, destField, name, isAlias)
+			else
+				name = StringUtils.ProcessObjectName(name, true, false)
+			def varPath = path + '.' + name
+			def value = GenerateConvertValue(destField, sourceField, format, varPath, false, '_getl_df')
+			listGenVal.add("${rowName}.put(\"${StringUtils.EscapeJava(destField.name.toLowerCase())}\", ${value})")
+		}
+
+		def tabHeadSpace = ((tabHead?:0) > 0)?StringUtils.Replicate('\t', tabHead):''
+		def sbHead = new StringBuilder()
+		listFormats.each {format ->
+			def dfName = "_getl_df_${format.hashCode().toString().replace('-', '0')}"
+			sbHead.append(tabHeadSpace)
+			sbHead.append("def ${dfName} = new java.text.SimpleDateFormat(\"${StringUtils.EscapeJava(format)}\")\n")
+			sbHead.append(tabHeadSpace)
+			sbHead.append("${dfName}.setLenient(false)\n")
+		}
+
+		def tabBodySpace = ((tabBody?:0) > 0)?StringUtils.Replicate('\t', tabBody):''
+		def sbBody = new StringBuilder()
+		sections.each {name, sect ->
+			GenerateConvertFromMapSections(structName, name, name, sect, className, idxSections, tabBodySpace, sbBody)
+		}
+		listGenVal.each {val ->
+			sbBody.append(tabBodySpace)
+			sbBody.append(val)
+			sbBody.append('\n')
+		}
+
+		def res = [:] as Map<String, String>
+		res.put('head', sbHead.toString())
+		res.put('body', sbBody.toString())
+
+		return res
+	}
+
+	/**
+	 * Generate definition sections
+	 * @param root root node object name
+	 * @param name processed node name
+	 * @param sect processed section
+	 * @param idxSections list of known sections
+	 * @param tabStr
+	 * @param sb
+	 */
+	static private void GenerateConvertFromMapSections(String root, String name, String path, Map<String, Map> sect, String className,
+													   List<String> idxSections, String tabStr, StringBuilder sb) {
+		def idx = idxSections.indexOf(path)
+		if (idx == -1)
+			throw new ExceptionGETL("Section $path not found!")
+
+		def sectName = "_getl_sect_$idx"
+		def sectValue = StringUtils.ProcessObjectName(name, true, false)
+
+		sb.append(tabStr)
+		sb.append("def ${sectName} = ${root}?.get(${sectValue}) as $className\n")
+		sect.each {cName, cChild ->
+			GenerateConvertFromMapSections(sectName, cName, name + '.' + cName, cChild, className, idxSections, tabStr, sb)
+		}
+	}
 	
 	/**
 	 * Generation code create empty value as field type into variable
@@ -113,13 +305,13 @@ class GenerationUtils {
 	
 	/**
 	 * Generate convert code from source field to destination field
-	 * @param dest
-	 * @param source
-	 * @param formatField
-	 * @param sourceValue
-	 * @return
+	 * @param dest destination field
+	 * @param source source field
+	 * @param formatField parsing format
+	 * @param sourceValue path to source value
+	 * @return parsing code
 	 */
-	static String GenerateConvertValue(Field dest, Field source, String formatField, String sourceValue, Boolean cloneObject = true) {
+	static String GenerateConvertValue(Field dest, Field source, String formatField, String sourceValue, Boolean cloneObject = true, String datetimeFormatterName = null) {
 		String r
 
 		switch (dest.type) {
@@ -134,7 +326,10 @@ class GenerationUtils {
 
 					case Field.Type.DATE: case Field.Type.TIME: case Field.Type.DATETIME: case Field.Type.TIMESTAMP_WITH_TIMEZONE:
 						formatField = (formatField != null)?formatField:GenerationUtils.DateFormat(source.type)
-						r =  "getl.utils.DateUtils.FormatDate(\"${StringUtils.EscapeJava(formatField)}\", (Date)$sourceValue)"
+						if (datetimeFormatterName != null)
+							r = "getl.utils.DateUtils.FormatDate(${datetimeFormatterName}_${formatField.hashCode().toString().replace('-', '0')}, (Date)$sourceValue)"
+						else
+							r = "getl.utils.DateUtils.FormatDate(\"${StringUtils.EscapeJava(formatField)}\", (Date)$sourceValue)"
 
 						break
 
@@ -365,7 +560,10 @@ class GenerationUtils {
 						break
 
 					case Field.Type.STRING:
-						r =  "getl.utils.DateUtils.ParseSQLDate(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false)"
+						if (datetimeFormatterName != null)
+							r = "getl.utils.DateUtils.ParseSQLDate(${datetimeFormatterName}_${formatField.hashCode().toString().replace('-', '0')}, (String)$sourceValue, false)"
+						else
+							r =  "getl.utils.DateUtils.ParseSQLDate(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false)"
 
 						break
 
@@ -390,7 +588,10 @@ class GenerationUtils {
 						break
 
 					case Field.Type.STRING:
-						r =  "getl.utils.DateUtils.ParseSQLTimestamp(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false)"
+						if (datetimeFormatterName != null)
+							r = "getl.utils.DateUtils.ParseSQLTimestamp(${datetimeFormatterName}_${formatField.hashCode().toString().replace('-', '0')}, (String)$sourceValue, false)"
+						else
+							r =  "getl.utils.DateUtils.ParseSQLTimestamp(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false)"
 
 						break
 
@@ -415,7 +616,10 @@ class GenerationUtils {
 						break
 
 					case Field.Type.STRING:
-						r =  "getl.utils.DateUtils.ParseSQLTime(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false)"
+						if (datetimeFormatterName != null)
+							r = "getl.utils.DateUtils.ParseSQLTime(${datetimeFormatterName}_${formatField.hashCode().toString().replace('-', '0')}, (String)$sourceValue, false)"
+						else
+							r =  "getl.utils.DateUtils.ParseSQLTime(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false)"
 
 						break
 

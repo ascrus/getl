@@ -65,9 +65,9 @@ dependencies {
 }
 
 test {
-	minHeapSize = '300M'
-	maxHeapSize = '3G'
-	jvmArgs '-XX:+CMSClassUnloadingEnabled', '-XX:+UseParallelGC'
+	/*minHeapSize = '300M'
+	maxHeapSize = '16G'*/
+	jvmArgs '-Xmx16g' //, '-XX:+CMSClassUnloadingEnabled', '-XX:+UseParallelGC', '-XX:MaxPermSize=1g'
 }
 
 tasks.withType(GroovyCompile) {

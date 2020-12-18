@@ -48,8 +48,8 @@ class KafkaDataset extends Dataset {
         return parent
     }
 
-    /** Name of root node */
-    String getRootNode () { params.rootNode as String }
-    /** Name of root node */
-    void setRootNode (String value) { params.rootNode = value }
+    /** Name of data map node */
+    String getDataNode() { params.dataNode as String }
+    /** Name of data map node */
+    void setDataNode(String value) { params.dataNode = value }
 }

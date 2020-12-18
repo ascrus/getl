@@ -21,7 +21,7 @@ class XmlTest extends getl.test.GetlTest {
 
                 field('id') { type = integerFieldType }
                 field('name')
-                field('customer_type') { alias = '@type:customer_type'} // Customer value are stored as attribute value
+                field('customer_type') { alias = '@'} // Customer value are stored as attribute value
                 field('phones') { type = objectFieldType } // Phones are stored as array list values and will be manual parsing
 
                 def i = 0
@@ -29,6 +29,7 @@ class XmlTest extends getl.test.GetlTest {
                     i++
                     assertEquals(i, row.id)
                     assertEquals("Customer $i".toString(), row.name)
+                    assertNotNull(row.customer_type)
                     assertTrue(!(row.phones as List).isEmpty())
                 }
                 assertEquals(3, readRows)

@@ -63,39 +63,48 @@ class XMLDriver extends FileDriver {
 	}
 
 	/** Generate the default alias for field */
-	protected String field2alias(Field field, Integer defaultAccessMethod) {
-		if (field.alias != null && !(field.alias in ['@', '#']))
-			return GenerationUtils.Field2Alias(field, true)
+	protected String field2alias(Field field, String name, Boolean isAlias, Integer defaultAccessMethod) {
+		if (isAlias) {
+			if (!(name in ['@', '#']))
+				return StringUtils.ProcessObjectName(name, true, false)
 
-		if (field.alias == '@')
+			if (name == '@') {
+				name = field.name
+				defaultAccessMethod = XMLDataset.DEFAULT_ATTRIBUTE_ACCESS
+			}
+			else if (name == '#') {
+				name = field.name
+				defaultAccessMethod = XMLDataset.DEFAULT_NODE_ACCESS
+			}
+		}
+
+		if (defaultAccessMethod == null)
 			defaultAccessMethod = XMLDataset.DEFAULT_ATTRIBUTE_ACCESS
-		else if (field.alias == '#')
-			defaultAccessMethod = XMLDataset.DEFAULT_NODE_ACCESS
 
 		String res
-		def fieldName = field.name
+		def fieldName = name
 		if (defaultAccessMethod == XMLDataset.DEFAULT_ATTRIBUTE_ACCESS) {
 			res = "\"@$fieldName\""
 		}
 		else {
 			switch (field.type) {
 				case Field.Type.STRING:
-					res = "\"${fieldName}\"[0].text()"
+					res = "\"${fieldName}\"[0]?.text()"
 					break
 				case Field.Type.INTEGER:
-				 	res = "\"${fieldName}\"[0].toInteger()"
+				 	res = "\"${fieldName}\"[0]?.toInteger()"
 					break
 				case Field.Type.BIGINT:
-					res = "\"${fieldName}\"[0].toBigInteger()"
+					res = "\"${fieldName}\"[0]?.toBigInteger()"
 					break
 				case Field.Type.NUMERIC:
-					res = "\"${fieldName}\"[0].toBigDecimal()"
+					res = "\"${fieldName}\"[0]?.toBigDecimal()"
 					break
 				case Field.Type.DOUBLE:
-					res = "\"${fieldName}\"[0].toDouble()"
+					res = "\"${fieldName}\"[0]?.toDouble()"
 					break
 				case Field.Type.OBJECT:
-					res = "\"${fieldName}\"[0].value()"
+					res = "\"${fieldName}\"[0]?.value()"
 					break
 				default:
 					throw new ExceptionGETL("Not supported type \"${field.type}\" for XML dataset!")
@@ -109,15 +118,27 @@ class XMLDriver extends FileDriver {
 	 * Read attributes and rows from dataset
 	 */
 	@CompileStatic
-	protected void readRows(XMLDataset dataset, List<String> listFields, String rootNode, Long limit, def data, Closure<Boolean> initAttr, Closure code) {
+	protected void readRows(XMLDataset dataset, List<String> listFields, Long limit, Object data, Closure<Boolean> initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
-		sb << "{ getl.xml.XMLDataset dataset, Closure initAttr, Closure code, Object data, Long limit ->\n"
+		sb << "{ getl.xml.XMLDataset dataset, Closure initAttr, Closure code, groovy.util.Node data, Long limit ->\n"
 		generateAttrRead(dataset, initAttr, sb)
-		
-		sb << "Long cur = 0\n"
+
+		sb << 'proc(dataset, code, data, limit)\n'
+		sb << '}\n'
+		sb << 'void proc(getl.xml.XMLDataset dataset, Closure code, groovy.util.Node data, Long limit) {\n'
+
+		Closure<String> prepareField = { XMLDataset ds, Field field, String name, Boolean isAlias ->
+			return field2alias(field, name, isAlias, ds.defaultAccessMethod)
+		}
+
+		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields, 'groovy.util.Node',
+				true, dataset.dataNode, 'struct', 'row', 0, 1, prepareField)
+		sb << genScript.head
+
+		def rootNode = dataset.rootNode
+		sb << "def cur = 0L\n"
 		sb << 'data' + ((rootNode != ".")?(".${StringUtils.ProcessObjectName(rootNode, true, true)}"):'') + ".each { struct ->\n"
-		sb << """
-if (limit > 0) {
+		sb << """	if (limit > 0) {
 	cur++
 	if (cur > limit) {
 		directive = Closure.DONE
@@ -125,22 +146,8 @@ if (limit > 0) {
 	}
 }
 """
-		sb << "	Map row = [:]\n"
-		def c = 0
-		dataset.field.each { Field d ->
-			c++
-			if (listFields.isEmpty() || listFields.find { it.toLowerCase() == d.name.toLowerCase() }) {
-				
-				Field s = d.copy()
-				if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
-				
-				String path = field2alias(d, dataset.defaultAccessMethod) //GenerationUtils.Field2Alias(d, false)
-				sb << "	row.'${d.name.toLowerCase()}' = "
-				sb << GenerationUtils.GenerateConvertValue(d, s, d.format?:'yyyy-MM-dd\'T\'HH:mm:ss', "struct.${path}", false)
-				
-				sb << "\n"
-			}
-		}
+		sb << '	Map<String, Object> row = [:]\n'
+		sb << genScript.body
 		sb << "	code.call(row)\n"
 		sb << "}\n}"
 //		println sb.toString()
@@ -205,12 +212,10 @@ if (limit > 0) {
 	@CompileStatic
 	protected void doRead (XMLDataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (dataset.field.isEmpty())
-			throw new ExceptionGETL("Required fields description with dataset!")
+			throw new ExceptionGETL("Required fields description with xml dataset!")
 		if (dataset.rootNode == null)
-			throw new ExceptionGETL("Required \"rootNode\" parameter with dataset!")
+			throw new ExceptionGETL("Required \"rootNode\" value with xml dataset!")
 
-		String rootNode = dataset.rootNode
-		
 		String fn = fullFileNameDataset(dataset)
 		if (fn == null)
 			throw new ExceptionGETL("Required \"fileName\" parameter with dataset!")
@@ -228,7 +233,7 @@ if (limit > 0) {
 		}
 		else if (params.fields != null) fields = params.fields as List<String>
 		
-		readRows(dataset, fields, rootNode, limit, data, params.initAttr as Closure<Boolean>, code)
+		readRows(dataset, fields, limit, data, params.initAttr as Closure<Boolean>, code)
 	}
 
 	@CompileStatic

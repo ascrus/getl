@@ -1,34 +1,72 @@
 {
-  "customers": [
-    {
-      "customer_type": "wholesale",
-      "id": 1,
-      "name": "Customer 1",
-      "phones": [
-        { "phone": "+7 (001) 100-00-01" },
-        { "phone": "+7 (001) 100-00-02" },
-        { "phone": "+7 (001) 100-00-03" }
-      ]
-    },
-
-    {
-      "customer_type": "retail",
-      "id": 2,
-      "name": "Customer 2",
-      "phones": [
-        { "phone": "+7 (111) 111-00-11" },
-        { "phone": "+7 (111) 111-00-12" }
-      ]
-    },
-
-    {
-      "customer_type": "retail",
-      "id": 3,
-      "name": "Customer 3",
-      "phones": [
-        { "phone": "+7 (222) 222-00-11" },
-        { "phone": "+7 (222) 222-00-12" }
-      ]
-    }
-  ]
+  "data" : {
+    "customers": [
+      {
+        "customer_type": "wholesale",
+        "id": 1,
+        "name": "Customer 1",
+        "dt": {
+          "date": "2020-12-13",
+          "time": "01:02:03",
+          "datetime": "2020-12-13T01:02:03",
+          "ts": {
+            "timestamptz": "2020-12-13T01:02:03 +0300"
+          }
+        },
+        "phones": [
+          {
+            "phone": "+7 (001) 100-00-01"
+          },
+          {
+            "phone": "+7 (001) 100-00-02"
+          },
+          {
+            "phone": "+7 (001) 100-00-03"
+          }
+        ]
+      },
+      {
+        "customer_type": "retail",
+        "id": 2,
+        "name": "Customer 2",
+        "dt": {
+          "date": "2020-12-13",
+          "time": "01:02:03",
+          "datetime": "2020-12-13T01:02:03",
+          "ts": {
+            "timestamptz": "2020-12-13T01:02:03 +0300"
+          }
+        },
+        "phones": [
+          {
+            "phone": "+7 (111) 111-00-11"
+          },
+          {
+            "phone": "+7 (111) 111-00-12"
+          }
+        ]
+      },
+      {
+        "customer_type": "retail",
+        "id": 3,
+        "name": "Customer 3",
+        "dt": {
+          "date": "2020-12-13",
+          "time": "01:02:03",
+          "datetime": "2020-12-13T01:02:03",
+          "ts": {
+            "timestamptz": "2020-12-13T01:02:03 +0300"
+          }
+        },
+        "phones": [
+          {
+            "phone": "+7 (222) 222-00-11"
+          },
+          {
+            "phone": "+7 (222) 222-00-12"
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -4,7 +4,7 @@
     </header>
 
     <list:customers>
-        <list:customer type:customer_type="wholesale">
+        <list:customer customer_type="wholesale">
             <id>1</id>
             <name>Customer 1</name>
             <phones>
@@ -13,7 +13,7 @@
                 <phone>+7 (001) 100-00-03</phone>
             </phones>
         </list:customer>
-        <list:customer type:customer_type="retail">
+        <list:customer customer_type="retail">
             <id>2</id>
             <name>Customer 2</name>
             <phones>
@@ -21,7 +21,7 @@
                 <phone>+7 (111) 111-00-12</phone>
             </phones>
         </list:customer>
-        <list:customer type:customer_type="retail">
+        <list:customer customer_type="retail">
             <id>3</id>
             <name>Customer 3</name>
             <phones>

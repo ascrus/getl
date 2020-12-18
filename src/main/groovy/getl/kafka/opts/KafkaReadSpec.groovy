@@ -1,6 +1,7 @@
 package getl.kafka.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -49,8 +50,17 @@ class KafkaReadSpec extends BaseSpec {
     /** Received data key name (default null to get all keys) */
     void setKeyName(String value) { params.keyName = value }
 
-    /** Maximum number of rows to read */
+    /** Maximum number of rows to read (default null for all rows) */
     Integer getLimit() { params.limit as Integer }
-    /** Maximum number of rows to read */
+    /** Maximum number of rows to read (default null for all rows) */
     void setLimit(Integer value) { params.limit = value }
+
+    /** Maximum number of records received per call poll (default 10000) */
+    Integer getMaxPollRecords() { params.maxPollRecords as Integer }
+    /** Maximum number of records received per call poll (default 10000) */
+    void setMaxPollRecords(Integer value) {
+        if (value != null && value <= 0)
+            throw new ExceptionGETL('The value must be greater than zero!')
+        params.maxPollRecords = value
+    }
 }

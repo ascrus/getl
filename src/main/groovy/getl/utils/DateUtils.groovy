@@ -91,15 +91,17 @@ class DateUtils {
 		offsTimeZone = origTimeZoneOffs - defaultTimeZoneOffs
 	}
 
+	/** Restore time zone to default on machine */
 	static void RestoreOrigDefaultTimeZone() {
 		setDefaultTimeZone(origTimeZone)
 	}
 	
 	/**
 	 * Parse string to date with format
-	 * @param format
-	 * @param value
-	 * @return
+	 * @param format parsed format
+	 * @param value parsed value
+	 * @ignoreError ignore parse error (default true)
+	 * @return date
 	 */
 	static Date ParseDate(String format, def value, Boolean ignoreError = true) {
 		return ParseDate(new SimpleDateFormat(format), value, ignoreError)
@@ -107,10 +109,10 @@ class DateUtils {
 
 	/**
 	 * Parse string to date with format
-	 * @param sdf
-	 * @param value
-	 * @param ignoreError
-	 * @return
+	 * @param sdf date formatter
+	 * @param value parsed value
+	 * @param ignoreError ignore parse error (default true)
+	 * @return date
 	 */
 	static Date ParseDate(SimpleDateFormat sdf, def value, Boolean ignoreError = true) {
 		Date result = null
@@ -126,20 +128,22 @@ class DateUtils {
 		return result
 	}
 
+	/** Parse string to date with default date format */
 	static Date ParseDate(def value) {
 		return ParseDate(defaultDateMask, value, true)
 	}
 
+	/** Parse string to date with default timestamp format */
 	static Date ParseDateTime(def value) {
 		return ParseDate(defaultDateTimeMask, value, true)
 	}
 
 	/**
 	 * Parse string to sql date with format
-	 * @param format
-	 * @param value
-	 * @param ignoreError
-	 * @return
+	 * @param format parsed format
+	 * @param value parsed value
+	 * @param ignoreError ignore parse error (default true)
+	 * @return sql date
 	 */
 	static java.sql.Date ParseSQLDate(String format, def value, Boolean ignoreError = true) {
 		java.sql.Date result = null
@@ -158,11 +162,32 @@ class DateUtils {
 	}
 
 	/**
+	 * Parse string to sql date with format
+	 * @param sdf date formatter
+	 * @param value parsed value
+	 * @param ignoreError ignore parse error (default true)
+	 * @return sql date
+	 */
+	static java.sql.Date ParseSQLDate(SimpleDateFormat sdf, def value, Boolean ignoreError = true) {
+		java.sql.Date result = null
+		if (value == null) return result
+		try {
+			result = new java.sql.Date(sdf.parse(value.toString()).time)
+		}
+		catch (Exception  e) {
+			if (ignoreError) return null
+			throw e
+		}
+
+		return result
+	}
+
+	/**
 	 * Parse string to sql time with format
-	 * @param format
-	 * @param value
-	 * @param ignoreError
-	 * @return
+	 * @param format parsed format
+	 * @param value parsed value
+	 * @param ignoreError ignore parse error (default true)
+	 * @return sql time
 	 */
 	static Time ParseSQLTime(String format, def value, Boolean ignoreError = true) {
 		Time result = null
@@ -181,11 +206,32 @@ class DateUtils {
 	}
 
 	/**
+	 * Parse string to sql time with format
+	 * @param sdf date formatter
+	 * @param value parsed value
+	 * @param ignoreError ignore parse error (default true)
+	 * @return sql time
+	 */
+	static Time ParseSQLTime(SimpleDateFormat sdf, def value, Boolean ignoreError = true) {
+		Time result = null
+		if (value == null) return result
+		try {
+			result = new java.sql.Time(sdf.parse(value.toString()).time)
+		}
+		catch (Exception  e) {
+			if (ignoreError) return null
+			throw e
+		}
+
+		return result
+	}
+
+	/**
 	 * Parse string to sql timestamp with format
-	 * @param format
-	 * @param value
-	 * @param ignoreError
-	 * @return
+	 * @param format parsed format
+	 * @param value parsed value
+	 * @param ignoreError ignore parse error (default true)
+	 * @return sql timestamp
 	 */
 	static Timestamp ParseSQLTimestamp(String format, def value, Boolean ignoreError = true) {
 		Timestamp result = null
@@ -193,6 +239,27 @@ class DateUtils {
 		try {
 			def sdf = new SimpleDateFormat(format)
 			sdf.setLenient(false)
+			result = new Timestamp(sdf.parse(value.toString()).time)
+		}
+		catch (Exception  e) {
+			if (ignoreError) return null
+			throw e
+		}
+
+		return result
+	}
+
+	/**
+	 * Parse string to sql timestamp with format
+	 * @param sdf date formatter
+	 * @param value parsed value
+	 * @param ignoreError ignore parse error (default true)
+	 * @return sql timestamp
+	 */
+	static Timestamp ParseSQLTimestamp(SimpleDateFormat sdf, def value, Boolean ignoreError = true) {
+		Timestamp result = null
+		if (value == null) return result
+		try {
 			result = new Timestamp(sdf.parse(value.toString()).time)
 		}
 		catch (Exception  e) {
@@ -332,6 +399,17 @@ class DateUtils {
 	static String FormatDate(String format, Date date) {
 		if (date == null) return null
 		return DateUtilExtensions.format(date, format)
+	}
+
+	/**
+	 * Convert date to string with format
+	 * @param sdf date formatter
+	 * @param date original date
+	 * @return formatted text
+	 */
+	static String FormatDate(SimpleDateFormat sdf, Date date) {
+		if (date == null) return null
+		return sdf.format(date)
 	}
 	
 	/**
