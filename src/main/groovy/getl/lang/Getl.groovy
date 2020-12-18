@@ -15,6 +15,8 @@ import getl.hive.*
 import getl.impala.*
 import getl.jdbc.*
 import getl.json.*
+import getl.kafka.KafkaConnection
+import getl.kafka.KafkaDataset
 import getl.lang.opts.*
 import getl.lang.sub.*
 import getl.mssql.*
@@ -3967,6 +3969,63 @@ Examples:
     SalesForceQueryDataset salesforceQuery(@DelegatesTo(SalesForceQueryDataset)
                                            @ClosureParams(value = SimpleType, options = ['getl.salesforce.SalesForceQueryDataset']) Closure cl) {
         salesforceQuery(null, false, cl)
+    }
+
+    /** Kafka connection */
+    KafkaConnection kafkaConnection(String name, Boolean registration,
+                                    @DelegatesTo(KafkaConnection)
+                                    @ClosureParams(value = SimpleType, options = ['getl.kafka.KafkaConnection']) Closure cl = null) {
+        def parent = registerConnection(RepositoryConnections.KAFKACONNECTION, name, registration) as KafkaConnection
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Kafka connection */
+    KafkaConnection kafkaConnection(String name,
+                                    @DelegatesTo(KafkaConnection)
+                                    @ClosureParams(value = SimpleType, options = ['getl.kafka.KafkaConnection']) Closure cl = null) {
+        kafkaConnection(name, false, cl)
+    }
+
+    /** Kafka connection */
+    KafkaConnection kafkaConnection(@DelegatesTo(KafkaConnection)
+                                    @ClosureParams(value = SimpleType, options = ['getl.kafka.KafkaConnection']) Closure cl) {
+        kafkaConnection(null, false, cl)
+    }
+
+    /** Kafka default connection */
+    KafkaConnection kafkaConnection() {
+        defaultOtherConnection(RepositoryDatasets.KAFKACONNECTION) as KafkaConnection
+    }
+
+    /** Use default Kafka connection for new datasets */
+    KafkaConnection useSalesforceConnection(KafkaConnection connection) {
+        useOtherConnection(RepositoryDatasets.KAFKACONNECTION, connection) as KafkaConnection
+    }
+
+    /** Kafka dataset */
+    KafkaDataset kafka(String name, Boolean registration,
+                       @DelegatesTo(KafkaDataset)
+                       @ClosureParams(value = SimpleType, options = ['getl.kafka.KafkaDataset']) Closure cl = null) {
+        def parent = registerDataset(null, RepositoryDatasets.KAFKACONNECTION, name, registration,
+                defaultOtherConnection(RepositoryDatasets.KAFKACONNECTION), KafkaConnection, cl) as KafkaDataset
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Kafka dataset */
+    KafkaDataset kafka(String name,
+                       @DelegatesTo(KafkaDataset)
+                       @ClosureParams(value = SimpleType, options = ['getl.kafka.KafkaDataset']) Closure cl = null) {
+        kafka(name, false, cl)
+    }
+
+    /** Kafka dataset */
+    KafkaDataset kafka(@DelegatesTo(KafkaDataset)
+                       @ClosureParams(value = SimpleType, options = ['getl.kafka.KafkaDataset']) Closure cl) {
+        kafka(null, false, cl)
     }
 
     /** Xero connection */

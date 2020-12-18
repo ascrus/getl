@@ -11,6 +11,7 @@ import getl.hive.HiveConnection
 import getl.impala.ImpalaConnection
 import getl.jdbc.JDBCConnection
 import getl.json.JSONConnection
+import getl.kafka.KafkaConnection
 import getl.mssql.MSSQLConnection
 import getl.mysql.MySQLConnection
 import getl.netezza.NetezzaConnection
@@ -45,6 +46,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     static public final String IMPALACONNECTION = ImpalaConnection.name
     static public final String JDBCCONNECTION = JDBCConnection.name
     static public final String JSONCONNECTION = JSONConnection.name
+    static public final String KAFKACONNECTION = KafkaConnection.name
     static public final String MSSQLCONNECTION = MSSQLConnection.name
     static public final String MYSQLCONNECTION = MySQLConnection.name
     static public final String NETEZZACONNECTION = NetezzaConnection.name
@@ -61,8 +63,8 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     /** List of allowed connection classes */
     static public final List<String> LISTCONNECTIONS = [
         CSVCONNECTION, CSVTEMPCONNECTION, DB2CONNECTION, EMBEDDEDCONNECTION, EXCELCONNECTION, FIREBIRDCONNECTION,
-        H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, MSSQLCONNECTION, MYSQLCONNECTION,
-        NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
+        H2CONNECTION, HIVECONNECTION, IMPALACONNECTION, JDBCCONNECTION, JSONCONNECTION, KAFKACONNECTION, MSSQLCONNECTION,
+        MYSQLCONNECTION, NETEZZACONNECTION, NETSUITECONNECTION, ORACLECONNECTION, POSTGRESQLCONNECTION, SALESFORCECONNECTION,
         VERTICACONNECTION, XEROCONNECTION, XMLCONNECTION, YAMLCONNECTION
     ]
 
@@ -80,7 +82,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     /** List of allowed jdbc connection classes */
     static public final List<String> LISTOTHERCONNECTIONS = [
-        SALESFORCECONNECTION, XEROCONNECTION
+        SALESFORCECONNECTION, XEROCONNECTION, KAFKACONNECTION
     ]
 
     /** List of allowed connection classes */

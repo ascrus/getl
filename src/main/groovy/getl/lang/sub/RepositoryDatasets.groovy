@@ -15,6 +15,7 @@ import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.jdbc.ViewDataset
 import getl.json.JSONDataset
+import getl.kafka.KafkaDataset
 import getl.mssql.MSSQLTable
 import getl.mysql.MySQLTable
 import getl.netezza.NetezzaTable
@@ -53,6 +54,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     static public final String IMPALATABLE = ImpalaTable.name
     static public final String TABLEDATASET = TableDataset.name
     static public final String JSONDATASET = JSONDataset.name
+    static public final String KAFKADATASET = KafkaDataset.name
     static public final String MSSQLTABLE = MSSQLTable.name
     static public final String MYSQLTABLE = MySQLTable.name
     static public final String NETEZZATABLE = NetezzaTable.name
@@ -72,7 +74,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     /** List of allowed dataset classes */
     static public final List<String> LISTDATASETS = [
         CSVDATASET, CSVTEMPDATASET, DB2TABLE, EXCELDATASET, FIREBIRDTABLE, H2TABLE, HIVETABLE, IMPALATABLE, TABLEDATASET,
-        JSONDATASET, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
+        JSONDATASET, KAFKADATASET, MSSQLTABLE, MYSQLTABLE, NETEZZATABLE, NETSUITETABLE, ORACLETABLE, QUERYDATASET, POSTGRESQLTABLE,
         SALESFORCEDATASET, SALESFORCEQUERYDATASET, EMBEDDEDTABLE, VIEWDATASET, VERTICATABLE, XERODATASET,
         XMLDATASET, YAMLDATASET
     ]
@@ -90,7 +92,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
 
     /** List of allowed other dataset classes */
     static public List<String> LISTOTHER = [
-            SALESFORCEDATASET, SALESFORCEQUERYDATASET, XERODATASET
+            SALESFORCEDATASET, SALESFORCEQUERYDATASET, XERODATASET, KAFKADATASET
     ]
 
     /** List of allowed dataset classes */
