@@ -73,4 +73,9 @@ class JSONReadSpec extends BaseSpec {
     Boolean getConvertToList () { params.convertToList as Boolean }
     /** Wrap json text in root */
     void setConvertToList (Boolean value) { params.convertToList = value }
+
+    /** Read no more than the specified number of rows */
+    Integer getLimit() { params.limit as Integer }
+    /** Read no more than the specified number of rows */
+    void setLimit(Integer value) { saveParamValue('limit', value) }
 }

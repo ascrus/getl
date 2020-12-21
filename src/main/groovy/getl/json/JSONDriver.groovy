@@ -1,6 +1,9 @@
 package getl.json
 
+import groovy.json.JsonBuilder
+import groovy.json.JsonGenerator
 import groovy.json.JsonSlurper
+import groovy.json.StreamingJsonBuilder
 import groovy.transform.CompileStatic
 import getl.data.*
 import getl.driver.*
@@ -22,7 +25,7 @@ class JSONDriver extends FileDriver {
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Driver.Support> supported() {
-		[Driver.Support.EACHROW, Driver.Support.AUTOLOADSCHEMA]
+		[Driver.Support.EACHROW, Driver.Support.AUTOLOADSCHEMA, Driver.Support.WRITE]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -82,14 +85,14 @@ class JSONDriver extends FileDriver {
 	 * @param code row process code
 	 */
 	@CompileStatic
-	protected void readRows(JSONDataset dataset, List<String> listFields, Long limit, Object data, Closure initAttr, Closure code) {
+	protected void readRows(JSONDataset dataset, List<String> listFields, Integer limit, Object data, Closure initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
-		sb << "{ getl.json.JSONDataset dataset, Closure initAttr, Closure code, Object data, Long limit ->\n"
+		sb << "{ getl.json.JSONDataset dataset, Closure initAttr, Closure code, Object data, Integer limit ->\n"
 		generateAttrRead(dataset, initAttr, sb)
 		sb << 'proc(dataset, code, data, limit)\n'
 		sb << '}\n'
 		sb << '@groovy.transform.CompileStatic\n'
-		sb << 'void proc(getl.json.JSONDataset dataset, Closure code, Object data, Long limit) {\n'
+		sb << 'void proc(getl.json.JSONDataset dataset, Closure code, Object data, Integer limit) {\n'
 
 		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,
 				'Map', true, dataset.dataNode, 'struct',
@@ -124,17 +127,7 @@ class JSONDriver extends FileDriver {
 //		println sb.toString()
 
 		def script = sb.toString()
-		def hash = script.hashCode()
-		Closure cl
-		def driverParams = dataset._driver_params as Map<String, Object>
-		if (((driverParams.hash_code_read as Integer)?:0) != hash) {
-			cl = GenerationUtils.EvalGroovyClosure(script)
-			driverParams.code_read = cl
-			driverParams.hash_code_read = hash
-		}
-		else {
-			cl = driverParams.code_read as Closure
-		}
+		Closure cl = dataset._cacheReadClosure(sb.toString())
 
 		try {
 			cl.call(dataset, initAttr, code, data, limit)
@@ -225,7 +218,7 @@ class JSONDriver extends FileDriver {
 		if (!f.exists())
 			throw new ExceptionGETL("File \"${fn}\" not found!")
 		
-		Long limit = (params.limit != null)?(params.limit as Long):0
+		Integer limit = (params.limit != null)?(params.limit as Integer):0
 
 		def data = readData(dataset, params)
 		
@@ -257,18 +250,66 @@ class JSONDriver extends FileDriver {
 
 	@Override
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
-		throw new ExceptionGETL('Not support this features!')
+		def ds = dataset as JSONDataset
+		if (ds.field.isEmpty())
+			throw new ExceptionGETL("Required fields description with dataset!")
+		if (ds.rootNode == null)
+			throw new ExceptionGETL("Required \"rootNode\" parameter with dataset!")
 
+		def fn = fullFileNameDataset(ds)
+		if (fn == null)
+			throw new ExceptionGETL("Required \"fileName\" parameter with dataset!")
+		FileUtils.ValidFilePath(fn)
+
+		def writer = getFileWriter(ds, params, null)
+
+		def driverParams = ds._driver_params as Map<String, Object>
+		driverParams.put('write_rows', [] as List<Map<String, Object>>)
+		driverParams.put('write_writer', writer)
 	}
 
 	@Override
+	@CompileStatic
 	void write(Dataset dataset, Map row) {
-		throw new ExceptionGETL('Not support this features!')
-
+		((dataset._driver_params as Map<String, Object>).get('write_rows') as List<Map>).add(row)
 	}
 
 	@Override
+	@CompileStatic
+	void doneWrite (Dataset dataset) {
+		def ds = dataset as JSONDataset
+		def driverParams = (dataset._driver_params as Map<String, Object>)
+
+		def writer = driverParams.get('write_writer') as Writer
+		def writeRows = driverParams.get('write_rows') as List<Map<String, Object>>
+
+		def gen = new JsonGenerator.Options().timezone(TimeZone.default.getID())
+		if (ds.rootNode != '.') {
+			def jsonRoot = [:] as Map<String, Object>
+			MapUtils.SetValue(jsonRoot, ds.rootNode, writeRows)
+			jsonRoot.put(ds.rootNode, writeRows)
+			new StreamingJsonBuilder(writer, jsonRoot, gen.build())
+		}
+		else {
+			new StreamingJsonBuilder(writer, writeRows, gen.build())
+		}
+
+		ds.writedFiles[0].countRows = writeRows.size()
+	}
+
+	@Override
+	@CompileStatic
 	void closeWrite(Dataset dataset) {
-		throw new ExceptionGETL('Not support this features!')
+		def driverParams = (dataset._driver_params as Map<String, Object>)
+		def writer = driverParams.get('write_writer') as Writer
+		try {
+			writer.close()
+		}
+		finally {
+			driverParams.remove('write_rows')
+			driverParams.remove('write_filename')
+		}
+
+		super.closeWrite(dataset)
 	}
 }

@@ -118,14 +118,14 @@ class XMLDriver extends FileDriver {
 	 * Read attributes and rows from dataset
 	 */
 	@CompileStatic
-	protected void readRows(XMLDataset dataset, List<String> listFields, Long limit, Object data, Closure<Boolean> initAttr, Closure code) {
+	protected void readRows(XMLDataset dataset, List<String> listFields, Integer limit, Object data, Closure<Boolean> initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
-		sb << "{ getl.xml.XMLDataset dataset, Closure initAttr, Closure code, groovy.util.Node data, Long limit ->\n"
+		sb << "{ getl.xml.XMLDataset dataset, Closure initAttr, Closure code, groovy.util.Node data, Integer limit ->\n"
 		generateAttrRead(dataset, initAttr, sb)
 
 		sb << 'proc(dataset, code, data, limit)\n'
 		sb << '}\n'
-		sb << 'void proc(getl.xml.XMLDataset dataset, Closure code, groovy.util.Node data, Long limit) {\n'
+		sb << 'void proc(getl.xml.XMLDataset dataset, Closure code, groovy.util.Node data, Integer limit) {\n'
 
 		Closure<String> prepareField = { XMLDataset ds, Field field, String name, Boolean isAlias ->
 			return field2alias(field, name, isAlias, ds.defaultAccessMethod)
@@ -153,19 +153,16 @@ class XMLDriver extends FileDriver {
 //		println sb.toString()
 
 		def script = sb.toString()
-		def hash = script.hashCode()
-		Closure cl
-		def driverParams = (dataset._driver_params as Map<String, Object>)
-		if (((driverParams.hash_code_read as Integer)?:0) != hash) {
-			cl = GenerationUtils.EvalGroovyClosure(script)
-			driverParams.code_read = cl
-			driverParams.hash_code_read = hash
-		}
-		else {
-			cl = driverParams.code_read as Closure
-		}
+		Closure cl = dataset._cacheReadClosure(script)
 
-		cl.call(dataset, initAttr, code, data, limit)
+		try {
+			cl.call(dataset, initAttr, code, data, limit)
+		}
+		catch (Exception e) {
+			Logs.Severe("Xml file $dataset processing error: ${e.message}")
+			Logs.Dump(e, 'xml', dataset.toString(), "// Generation script:\n$script")
+			throw e
+		}
 	}
 	
 	/**
@@ -223,7 +220,7 @@ class XMLDriver extends FileDriver {
 		if (!f.exists())
 			throw new ExceptionGETL("File \"${fn}\" not found!")
 		
-		Long limit = (params.limit != null)?(params.limit as Long):0
+		Integer limit = (params.limit != null)?(params.limit as Integer):0
 		
 		def data = readData(dataset, params)
 		

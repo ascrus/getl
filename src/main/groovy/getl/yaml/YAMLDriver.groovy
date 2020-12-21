@@ -7,6 +7,7 @@ import getl.driver.Driver
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
 import getl.utils.GenerationUtils
+import getl.utils.Logs
 import groovy.transform.CompileStatic
 import groovy.yaml.YamlSlurper
 
@@ -48,13 +49,13 @@ class YAMLDriver extends FileDriver {
      * @param code row process code
      */
     @CompileStatic
-    protected void readRows (YAMLDataset dataset, List<String> listFields, Long limit, def data, Closure code) {
+    protected void readRows (YAMLDataset dataset, List<String> listFields, Integer limit, def data, Closure code) {
         StringBuilder sb = new StringBuilder()
-        sb << "{ getl.yaml.YAMLDataset dataset, Closure code, Object data, Long limit ->\n"
+        sb << "{ getl.yaml.YAMLDataset dataset, Closure code, Object data, Integer limit ->\n"
         sb << 'proc(dataset, code, data, limit)\n'
         sb << '}\n'
         sb << '@groovy.transform.CompileStatic\n'
-        sb << 'void proc(getl.yaml.YAMLDataset dataset, Closure code, Object data, Long limit) {\n'
+        sb << 'void proc(getl.yaml.YAMLDataset dataset, Closure code, Object data, Integer limit) {\n'
 
         def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,
                 'Map', true, dataset.dataNode, 'struct',
@@ -89,19 +90,16 @@ class YAMLDriver extends FileDriver {
 //		println sb.toString()
 
         def script = sb.toString()
-        def hash = script.hashCode()
-        Closure cl
-        def driverParams = (dataset._driver_params as Map<String, Object>)
-        if (((driverParams.hash_code_read as Integer)?:0) != hash) {
-            cl = GenerationUtils.EvalGroovyClosure(script)
-            driverParams.code_read = cl
-            driverParams.hash_code_read = hash
-        }
-        else {
-            cl = driverParams.code_read as Closure
-        }
+        Closure cl = dataset._cacheReadClosure(script)
 
-        cl.call(dataset, code, data, limit)
+        try {
+            cl.call(dataset, code, data, limit)
+        }
+        catch (Exception e) {
+            Logs.Severe("Yaml file $dataset processing error: ${e.message}")
+            Logs.Dump(e, 'yaml', dataset.toString(), "// Generation script:\n$script")
+            throw e
+        }
     }
 
     /**
@@ -146,7 +144,7 @@ class YAMLDriver extends FileDriver {
         if (!f.exists())
             throw new ExceptionGETL("File \"${fn}\" not found!")
 
-        Long limit = (params.limit != null)?(params.limit as Long):0
+        Integer limit = (params.limit != null)?(params.limit as Integer):0
 
         def data = readData(dataset, params)
 

@@ -3996,20 +3996,20 @@ Examples:
 
     /** Kafka default connection */
     KafkaConnection kafkaConnection() {
-        defaultOtherConnection(RepositoryDatasets.KAFKACONNECTION) as KafkaConnection
+        defaultOtherConnection(RepositoryDatasets.KAFKADATASET) as KafkaConnection
     }
 
     /** Use default Kafka connection for new datasets */
     KafkaConnection useSalesforceConnection(KafkaConnection connection) {
-        useOtherConnection(RepositoryDatasets.KAFKACONNECTION, connection) as KafkaConnection
+        useOtherConnection(RepositoryDatasets.KAFKADATASET, connection) as KafkaConnection
     }
 
     /** Kafka dataset */
     KafkaDataset kafka(String name, Boolean registration,
                        @DelegatesTo(KafkaDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.kafka.KafkaDataset']) Closure cl = null) {
-        def parent = registerDataset(null, RepositoryDatasets.KAFKACONNECTION, name, registration,
-                defaultOtherConnection(RepositoryDatasets.KAFKACONNECTION), KafkaConnection, cl) as KafkaDataset
+        def parent = registerDataset(null, RepositoryDatasets.KAFKADATASET, name, registration,
+                defaultOtherConnection(RepositoryDatasets.KAFKADATASET), KafkaConnection, cl) as KafkaDataset
         runClosure(parent, cl)
 
         return parent

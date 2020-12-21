@@ -12,17 +12,21 @@ import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.StringUtils
+import groovy.json.JsonGenerator
+import groovy.transform.CompileStatic
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.TopicPartition
 import java.time.Duration
 
 class KafkaDriver extends Driver {
     @Override
     List<Support> supported() {
-        return [Support.EACHROW, Support.WRITE, Support.DATE, Support.TIME, Support.TRANSACTIONAL]
+        return [Support.EACHROW, Support.WRITE, Support.DATE, Support.TIME, Support.AUTOLOADSCHEMA]
     }
 
     @Override
@@ -60,17 +64,17 @@ class KafkaDriver extends Driver {
 
     @Override
     void startTran() {
-        kafkaProducer.beginTransaction()
+        throw new ExceptionGETL('Not supported!')
     }
 
     @Override
     void commitTran() {
-        kafkaProducer.commitTransaction()
+        throw new ExceptionGETL('Not supported!')
     }
 
     @Override
     void rollbackTran() {
-        kafkaProducer.abortTransaction()
+        throw new ExceptionGETL('Not supported!')
     }
 
     @Override
@@ -221,8 +225,10 @@ class KafkaDriver extends Driver {
         return res
     }
 
-    /** Kafka producer for write rows */
-    private KafkaProducer<String, String> kafkaProducer
+    class WriterParams {
+        KafkaProducer<String, String> kafkaProducer
+        JsonGenerator jsonGen
+    }
 
     @Override
     void openWrite(Dataset dataset, Map params, Closure prepareCode) {
@@ -232,34 +238,50 @@ class KafkaDriver extends Driver {
         if (con.groupId == null)
             throw new ExceptionGETL('Group id required!')
 
+        ArrayList<String> listFields = new ArrayList<String>()
+        if (prepareCode != null)
+            prepareCode.call([]) as ArrayList
+
         def props = new Properties()
         props.putAll(con.connectProperties)
-        props.put('bootstrap.servers', con.bootstrapServers)
-        props.put("acks", "all")
-        props.put("retries", 0)
-        props.put("batch.size", 16384)
-        props.put("linger.ms", 1)
-        props.put("buffer.memory", 33554432)
-        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-        kafkaProducer = new KafkaProducer<String, String>(props)
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, con.bootstrapServers)
+        props.put(ProducerConfig.ACKS_CONFIG, 'all')
+        props.put(ProducerConfig.RETRIES_CONFIG, 0)
+        props.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384)
+        props.put(ProducerConfig.LINGER_MS_CONFIG, 1)
+        props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432)
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
 
-        throw new ExceptionGETL('Not supported!')
+        def wp = new WriterParams()
+        wp.kafkaProducer = new KafkaProducer<String, String>(props)
+        wp.jsonGen = new JsonGenerator.Options().dateFormat('yyyy-MM-dd\'T\'HH:mm:ss', Locale.default).timezone(TimeZone.default.getID()).build()
+        dataset._driver_params = wp
     }
 
     @Override
+    @CompileStatic
     void write(Dataset dataset, Map row) {
-        throw new ExceptionGETL('Not supported!')
+        def ds = dataset as KafkaDataset
+        def wp = ds._driver_params as WriterParams
+
+        def json = wp.jsonGen.toJson(row)
+        def record = new ProducerRecord<String, String>(ds.kafkaTopic, json)
+
+        wp.kafkaProducer.send(record)
     }
 
     @Override
     void doneWrite(Dataset dataset) {
-        throw new ExceptionGETL('Not supported!')
+        def wp = dataset._driver_params as WriterParams
+        wp.kafkaProducer.flush()
     }
 
     @Override
     void closeWrite(Dataset dataset) {
-        throw new ExceptionGETL('Not supported!')
+        def wp = dataset._driver_params as WriterParams
+        wp.kafkaProducer.close()
+        dataset._driver_params = null
     }
 
     @Override

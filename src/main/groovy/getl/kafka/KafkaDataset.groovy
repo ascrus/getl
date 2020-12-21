@@ -52,4 +52,15 @@ class KafkaDataset extends Dataset {
     String getDataNode() { params.dataNode as String }
     /** Name of data map node */
     void setDataNode(String value) { params.dataNode = value }
+
+    /** Dataset name */
+    @JsonIgnore
+    @Override
+    String getObjectName() {
+        def objName = (kafkaTopic != null)?"Kafka topic $kafkaTopic":'noname'
+        return (connection != null)?"Kafka servers ${currentKafkaConnection.bootstrapServers}, $objName":objName
+    }
+    /** Full dataset name */
+    @JsonIgnore
+    String getObjectFullName() { objectName }
 }

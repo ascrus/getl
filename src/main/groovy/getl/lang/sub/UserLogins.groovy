@@ -22,4 +22,10 @@ interface UserLogins {
 
     /** Use specified login */
     void useLogin(String user)
+
+    /** Connect to source */
+    void connect()
+
+    /** Disconnect from source */
+    void disconnect()
 }

@@ -38,6 +38,7 @@ class ProfileSpec extends BaseSpec {
     /** Start profiling process */
     void startProfile() {
         statistics.clear()
+        statistics.countRow = 0
     }
 
     /** Finish profiling process */

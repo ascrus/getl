@@ -68,4 +68,9 @@ class XMLReadSpec extends BaseSpec {
     void readAttributes(@ClosureParams(value = SimpleType, options = ['getl.xml.XMLDataset']) Closure<Boolean> value) {
         setOnReadAttributes(value)
     }
+
+    /** Read no more than the specified number of rows */
+    Integer getLimit() { params.limit as Integer }
+    /** Read no more than the specified number of rows */
+    void setLimit(Integer value) { saveParamValue('limit', value) }
 }

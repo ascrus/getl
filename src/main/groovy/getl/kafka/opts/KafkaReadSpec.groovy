@@ -48,12 +48,12 @@ class KafkaReadSpec extends BaseSpec {
     /** Received data key name (default null to get all keys) */
     String getKeyName() { params.keyName as String }
     /** Received data key name (default null to get all keys) */
-    void setKeyName(String value) { params.keyName = value }
+    void setKeyName(String value) { saveParamValue('keyName', value) }
 
-    /** Maximum number of rows to read (default null for all rows) */
+    /** Read no more than the specified number of rows */
     Integer getLimit() { params.limit as Integer }
-    /** Maximum number of rows to read (default null for all rows) */
-    void setLimit(Integer value) { params.limit = value }
+    /** Read no more than the specified number of rows */
+    void setLimit(Integer value) { saveParamValue('limit', value) }
 
     /** Maximum number of records received per call poll (default 10000) */
     Integer getMaxPollRecords() { params.maxPollRecords as Integer }
@@ -61,6 +61,6 @@ class KafkaReadSpec extends BaseSpec {
     void setMaxPollRecords(Integer value) {
         if (value != null && value <= 0)
             throw new ExceptionGETL('The value must be greater than zero!')
-        params.maxPollRecords = value
+        saveParamValue('maxPollRecords', value)
     }
 }

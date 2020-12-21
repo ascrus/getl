@@ -44,37 +44,48 @@ class JsonTest extends GetlTest {
                 }
                 assertEquals(3, readRows)
                 assertEquals(1, rows(limit: 1).size())
+            }
+        }
+    }
+
+    @Test
+    void testWrite() {
+        Getl.Dsl(this) {
+            options {processTimeDebug = true }
+
+            json { ds ->
+                rootNode = 'data.customers'
+
+                field('id') { type = integerFieldType }
+                field('name') { length = 50 }
+                field('date') { type = dateFieldType/*; alias = "dt.date" */}
+                field('datetime') { type = datetimeFieldType/*; alias = "dt.datetime" */}
+                field('customer_type') { length = 10 }
+                field('phones') { type = objectFieldType } // Phones are stored as array list values and will be manual parsing
 
                 fileName = "${TFS.systemPath}/test.json"
                 def file = new File(fileName)
                 file.deleteOnExit()
-                removeField('timestamptz')
-                removeField('time')
-                removeField('phones')
-                field('date') { alias = null }
-                field('datetime') { alias = null}
-                rootNode = '.'
 
-                i = 0
-                new ProcessTime(name: "Generate $countRowsInFile rows to Json file", debug: true).run {
-                    def cl = GenerationUtils.GenerateRandomRow(ds, ['id'])
-                    def genRows = [] as List<Map>
-                    (1..countRowsInFile).each {
-                        i++
-                        def row = [id: i]
-                        cl.call(row)
-                        genRows.add(row)
+                profile("Generate $countRowsInFile rows to Json file") {prof ->
+                    etl.rowsTo(ds) {wrt ->
+                        def cl = GenerationUtils.GenerateRandomRow(ds, ['id', 'phones'])
+                        writeRow { add ->
+                            def i = 0
+                            (1..countRowsInFile).each {
+                                i++
+                                def row = [id: i] as Map<String, Object>
+                                cl.call(row)
+                                row.phones = [phones: ['111-11-11', '222-22-22', '333-33-33']]
+                                add row
+                            }
+                        }
+                        prof.countRow = wrt.countRow
                     }
-                    def jb = new JsonBuilder(genRows)
-                    try (def writer = file.newWriter()) {
-                        jb.writeTo(writer)
-                    }
-                    countRow = countRowsInFile
-                    println "File length: " + file.length()
                 }
 
                 try {
-                    new ProcessTime(name: "Json file processing", debug: true).run {
+                    profile("Json file processing") {
                         i = 0
                         ds.eachRow { row ->
                             i++

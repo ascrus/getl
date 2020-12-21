@@ -14,6 +14,7 @@ import getl.csv.CSVDataset
 import getl.driver.Driver
 import getl.utils.*
 import getl.tfs.*
+import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -757,7 +758,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 	/** Dataset name */
 	@JsonIgnore
-	String getObjectName() { "noname" }
+	String getObjectName() { 'noname' }
 	/** Full dataset name */
 	@JsonIgnore
 	String getObjectFullName() { objectName }
@@ -1607,5 +1608,32 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	void dslCleanProps() {
 		sysParams.dslNameObject = null
 		sysParams.dslCreator = null
+	}
+
+	/** Hash code for the cache of the generated script read rows */
+	public Integer _cacheReadHash
+
+	/** Cache of the generated script for reading records */
+	public Closure _cacheReadCode
+
+	/**
+	 * Generate a script to read rows or return from the cache
+	 * @param script rows read script
+	 * @return read code
+	 */
+	@CompileStatic
+	Closure _cacheReadClosure(String script) {
+		Closure res
+		def hash = script.hashCode()
+		if ((_cacheReadHash?:0) != hash) {
+			res = GenerationUtils.EvalGroovyClosure(script)
+			_cacheReadCode = res
+			_cacheReadHash = hash
+		}
+		else {
+			res = _cacheReadCode as Closure
+		}
+
+		return res
 	}
 }

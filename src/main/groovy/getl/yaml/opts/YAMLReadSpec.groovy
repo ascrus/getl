@@ -49,4 +49,9 @@ class YAMLReadSpec extends BaseSpec {
     void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> value) {
         setOnFilter(value)
     }
+
+    /** Read no more than the specified number of rows */
+    Integer getLimit() { params.limit as Integer }
+    /** Read no more than the specified number of rows */
+    void setLimit(Integer value) { saveParamValue('limit', value) }
 }
