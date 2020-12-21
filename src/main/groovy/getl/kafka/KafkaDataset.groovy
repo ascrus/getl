@@ -37,6 +37,11 @@ class KafkaDataset extends Dataset {
     /** Topic name in kafka */
     void setKafkaTopic(String value) { params.topic = value }
 
+    /** Topic key name (default null to get all keys) */
+    String getKeyName() { params.keyName as String }
+    /** Topic key name (default null to get all keys) */
+    void setKeyName(String value) { params.keyName = value }
+
     /** Consumer options */
     KafkaReadSpec getReadOpts() { new KafkaReadSpec(this, true, directives('read')) }
 

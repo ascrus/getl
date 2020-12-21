@@ -45,11 +45,6 @@ class KafkaReadSpec extends BaseSpec {
     /** Period in seconds for which you want to receive data (null to receive all data) */
     void setReadDuration(Long value) { params.consumerReadDuration = value }
 
-    /** Received data key name (default null to get all keys) */
-    String getKeyName() { params.keyName as String }
-    /** Received data key name (default null to get all keys) */
-    void setKeyName(String value) { saveParamValue('keyName', value) }
-
     /** Read no more than the specified number of rows */
     Integer getLimit() { params.limit as Integer }
     /** Read no more than the specified number of rows */

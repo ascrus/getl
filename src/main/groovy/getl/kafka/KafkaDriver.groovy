@@ -105,7 +105,7 @@ class KafkaDriver extends Driver {
             fields = params.fields as List<String>
 
         def ro = ds.readOpts
-        def keyName = ro.keyName
+        def keyName = ds.keyName
         def dur = Duration.ofMillis(ro.readDuration?:(Long.MAX_VALUE))
         def limit = ro.limit
         def maxPoolRecords = ro.maxPollRecords?:10000
@@ -228,6 +228,8 @@ class KafkaDriver extends Driver {
     class WriterParams {
         KafkaProducer<String, String> kafkaProducer
         JsonGenerator jsonGen
+        String kafkaTopic
+        String keyName
     }
 
     @Override
@@ -253,10 +255,13 @@ class KafkaDriver extends Driver {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
 
+        def ds = dataset as KafkaDataset
         def wp = new WriterParams()
+        wp.kafkaTopic = ds.kafkaTopic
+        wp.keyName = ds.keyName
         wp.kafkaProducer = new KafkaProducer<String, String>(props)
         wp.jsonGen = new JsonGenerator.Options().dateFormat('yyyy-MM-dd\'T\'HH:mm:ss', Locale.default).timezone(TimeZone.default.getID()).build()
-        dataset._driver_params = wp
+        ds._driver_params = wp
     }
 
     @Override
@@ -266,7 +271,7 @@ class KafkaDriver extends Driver {
         def wp = ds._driver_params as WriterParams
 
         def json = wp.jsonGen.toJson(row)
-        def record = new ProducerRecord<String, String>(ds.kafkaTopic, json)
+        def record = (ds.keyName != null)?new ProducerRecord<String, String>(wp.kafkaTopic, wp.keyName, json): new ProducerRecord<String, String>(wp.kafkaTopic, json)
 
         wp.kafkaProducer.send(record)
     }
