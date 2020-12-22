@@ -53,7 +53,7 @@ class XMLDriver extends FileDriver {
 			
 			String path = GenerationUtils.Field2Alias(d, true)
 			sb << "attrValue.'${d.name.toLowerCase()}' = "
-			sb << GenerationUtils.GenerateConvertValue(d, s, d.format?:'yyyy-MM-dd\'T\'hh:mm:ss', "data.${path}", false)
+			sb << GenerationUtils.GenerateConvertValue(d, s, dataset.fieldFormat(d), "data.${path}", false)
 			
 			sb << "\n"
 		}

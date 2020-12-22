@@ -24,7 +24,7 @@ class BoolUtils {
         Boolean result
 		if (value instanceof List) {
 			value.each { v ->
-				if (result == null && v != null) {
+				if (v != null) {
 					if (v instanceof Boolean) {
                         result = v
                     }
@@ -43,7 +43,8 @@ class BoolUtils {
 							}
 						}
                     }
-				} 
+				}
+				directive = Closure.DONE
 			}
 			if (result == null) return defaultValue else return result
 		}

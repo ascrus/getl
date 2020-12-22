@@ -1,9 +1,9 @@
 PriceCalculationRule:
   -
     #Абакан
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA46
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA46
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -23,9 +23,9 @@ PriceCalculationRule:
         value: 0,0,1,0.3333,-0.3333,0,1,1.44445
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA46
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA46
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -40,9 +40,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Архангельск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA69
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA69
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -56,9 +56,9 @@ PriceCalculationRule:
         value: 0,2.15000*X^0.71500+26.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA69
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA69
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -73,9 +73,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Астрахань
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA25
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA25
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -89,9 +89,9 @@ PriceCalculationRule:
         value: 0,7.20000*X^0.43000+85.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA25
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA25
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -106,9 +106,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Барнаул
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA55
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA55
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -122,9 +122,9 @@ PriceCalculationRule:
         value: 0,2.00000*X^0.64000+111.50000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA55
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA55
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -139,9 +139,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Белгород
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA61
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA61
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -155,9 +155,9 @@ PriceCalculationRule:
         value: 0,0.57000*X^0.82000+58.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA61
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA61
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -172,9 +172,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Биробиджан
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA66
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA66
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -188,9 +188,9 @@ PriceCalculationRule:
         value: 0,2.45330*X^0.70500+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA66
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA66
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -205,9 +205,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Благовещенск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA65
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA65
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -221,9 +221,9 @@ PriceCalculationRule:
         value: 0,2.70000*X^0.52000+100.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA65
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA65
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -238,9 +238,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Брянск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA7
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA7
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -254,9 +254,9 @@ PriceCalculationRule:
         value: 0,3.00000*X^0.60000+31.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA7
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA7
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -271,9 +271,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Великий Новгород
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA54
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA54
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -287,9 +287,9 @@ PriceCalculationRule:
         value: 0,3.13560*X^0.64070+5.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA54
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA54
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -304,9 +304,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Владивосток
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA12
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA12
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -320,9 +320,9 @@ PriceCalculationRule:
         value: 0,1.34660*X^0.79900+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA12
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA12
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -337,9 +337,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Владикавказ
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA74
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA74
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -353,9 +353,9 @@ PriceCalculationRule:
         value: 0,1.45350*X^0.72820+5.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA74
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA74
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -370,9 +370,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Владимир
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA9
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA9
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -386,9 +386,9 @@ PriceCalculationRule:
         value: 0,7.22130*X^0.54000+0.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA9
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA9
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -403,9 +403,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Волгоград
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA32
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA32
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -419,9 +419,9 @@ PriceCalculationRule:
         value: 0,3.00000*X^0.52000+71.10070
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA32
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA32
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -436,9 +436,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Вологда
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA4
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA4
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -452,9 +452,9 @@ PriceCalculationRule:
         value: 0,0.49280*X^0.92000+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA4
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA4
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -475,9 +475,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Воронеж
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA35
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA35
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -491,9 +491,9 @@ PriceCalculationRule:
         value: 0,0.72000*X^0.84480+20.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA35
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA35
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -508,9 +508,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Горно-Алтайск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA62
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA62
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -524,9 +524,9 @@ PriceCalculationRule:
         value: 0,2.10000*X^0.64000+110.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA62
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA62
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -541,9 +541,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Грозный
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA45
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA45
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -557,9 +557,9 @@ PriceCalculationRule:
         value: 0,26.00000*X^0.26000+48.37040
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA45
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA45
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -574,9 +574,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Екатеринбург
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA47
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA47
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -596,9 +596,9 @@ PriceCalculationRule:
         value: 0,0,1
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA47
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA47
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -619,9 +619,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Иваново
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA58
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA58
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -635,9 +635,9 @@ PriceCalculationRule:
         value: 0,2.79810*X^0.60140+0.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA58
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA58
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -652,9 +652,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Ижевск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA49
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA49
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -668,9 +668,9 @@ PriceCalculationRule:
         value: 0,0.56160*X^0.79000+14.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA49
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA49
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -685,9 +685,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Иркутск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA14
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA14
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -701,9 +701,9 @@ PriceCalculationRule:
         value: 0,3.90000*X^0.59000+24.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA14
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA14
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -718,9 +718,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Йошкар-Ола
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA24
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA24
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -734,9 +734,9 @@ PriceCalculationRule:
         value: 0,2.20000*X^0.60000+101.10850
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA24
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA24
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -751,9 +751,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Казань
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA22
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA22
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -767,9 +767,9 @@ PriceCalculationRule:
         value: 0,2.33110*X^0.68850+0.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA22
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA22
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -784,9 +784,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Калининград
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA51
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA51
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -800,9 +800,9 @@ PriceCalculationRule:
         value: 0,4.00000*X^0.55000+44.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA51
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA51
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -817,9 +817,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Калуга
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA11
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA11
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -833,9 +833,9 @@ PriceCalculationRule:
         value: 0,6.23670*X^0.45000+45.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA11
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA11
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -850,9 +850,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Кемерово
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA38
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA38
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -866,9 +866,9 @@ PriceCalculationRule:
         value: 0,1.98410*X^0.59700+60.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA38
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA38
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -883,9 +883,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Киров
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA40
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA40
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -899,9 +899,9 @@ PriceCalculationRule:
         value: 0,0.40000*X^0.83000+67.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA40
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA40
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -916,9 +916,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Кострома
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA5
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA5
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -932,9 +932,9 @@ PriceCalculationRule:
         value: 0,6.00000*X^0.47000+80.30000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA5
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA5
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -949,9 +949,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Краснодар
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA15
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA15
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -965,9 +965,9 @@ PriceCalculationRule:
         value: 0,7.70000*X^0.44000+97.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA15
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA15
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -982,9 +982,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Красноярск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA27
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA27
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -998,9 +998,9 @@ PriceCalculationRule:
         value: 0,2.88650*X^0.59540+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA27
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA27
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1015,9 +1015,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Курган
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA78
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA78
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1031,9 +1031,9 @@ PriceCalculationRule:
         value: 0,0.68000*X^0.85130+25.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA78
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA78
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1048,9 +1048,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Курск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA8
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA8
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1064,9 +1064,9 @@ PriceCalculationRule:
         value: 0,0.80000*X^0.82680+62.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA8
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA8
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1081,9 +1081,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Кызыл
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA39
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA39
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1097,9 +1097,9 @@ PriceCalculationRule:
         value: 0,2.27570*X^0.69500+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA39
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA39
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1114,9 +1114,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Липецк
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA16
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA16
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1130,9 +1130,9 @@ PriceCalculationRule:
         value: 0,1.20000*X^0.76720+53.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA16
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA16
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1147,9 +1147,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Магадан
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA79
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA79
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1163,9 +1163,9 @@ PriceCalculationRule:
         value: 0,4.30000*X^0.58000+42.30400
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA79
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA79
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1180,9 +1180,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Магас
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA71
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA71
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1196,9 +1196,9 @@ PriceCalculationRule:
         value: 0,25.00000*X^0.26000+42.23450
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA71
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA71
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1213,9 +1213,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Майкоп
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA70
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA70
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1229,9 +1229,9 @@ PriceCalculationRule:
         value: 0,7.70000*X^0.44000+97.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA70
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA70
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1246,9 +1246,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Махачкала
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA44
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA44
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1262,9 +1262,9 @@ PriceCalculationRule:
         value: 0,0.59000*X^0.81500+69.50000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA44
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA44
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1279,9 +1279,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Москва
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA2
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA2
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1301,9 +1301,9 @@ PriceCalculationRule:
         value: 0,0,1,0.3333,-0.3333,0,1,1.44445
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA2
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA2
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1324,9 +1324,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Мурманск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA57
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA57
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1340,9 +1340,9 @@ PriceCalculationRule:
         value: 0,0.97540*X^0.79800+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA57
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA57
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1357,9 +1357,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Нальчик
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA73
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA73
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1373,9 +1373,9 @@ PriceCalculationRule:
         value: 0,6.00000*X^0.50000+65.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA73
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA73
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1390,9 +1390,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Нижний Новгород
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA56
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA56
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1406,9 +1406,9 @@ PriceCalculationRule:
         value: 0,6.00000*X^0.52970+22.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA56
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA56
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1423,9 +1423,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Новосибирск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA19
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA19
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1439,9 +1439,9 @@ PriceCalculationRule:
         value: 0,3.60000*X^0.45000+89.00270
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA19
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA19
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1456,9 +1456,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Омск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA18
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA18
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1472,9 +1472,9 @@ PriceCalculationRule:
         value: 0,0.50000*X^0.90000+0.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA18
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA18
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1489,9 +1489,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Орёл
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA10
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA10
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1505,9 +1505,9 @@ PriceCalculationRule:
         value: 0,0.75650*X^0.82520+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA10
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA10
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1522,9 +1522,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Оренбург
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA28
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA28
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1538,9 +1538,9 @@ PriceCalculationRule:
         value: 0,0.77000*X^0.68000+122.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA28
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA28
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1555,9 +1555,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Пенза
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA21
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA21
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1571,9 +1571,9 @@ PriceCalculationRule:
         value: 0,1.16890*X^0.74880+15.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA21
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA21
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1588,9 +1588,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Пермь
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA36
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA36
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1604,9 +1604,9 @@ PriceCalculationRule:
         value: 0,0.45000*X^0.92550+52.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA36
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA36
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1621,9 +1621,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Петрозаводск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA52
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA52
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1637,9 +1637,9 @@ PriceCalculationRule:
         value: 0,4.01060*X^0.61000+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA52
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA52
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1654,9 +1654,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Петропавловск-Камчатский
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA80
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA80
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1670,9 +1670,9 @@ PriceCalculationRule:
         value: 0,1.95000*X^0.71000+19.70000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA80
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA80
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1687,9 +1687,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Псков
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA53
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA53
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1703,9 +1703,9 @@ PriceCalculationRule:
         value: 0,2.59850*X^0.65200+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA53
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA53
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1720,9 +1720,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Ростов-на-Дону
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA43
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA43
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1736,9 +1736,9 @@ PriceCalculationRule:
         value: 0,1.51420*X^0.77000+5.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA43
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA43
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1753,9 +1753,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Рязань
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA50
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA50
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1769,9 +1769,9 @@ PriceCalculationRule:
         value: 0,1.79940*X^0.71290+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA50
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA50
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1786,9 +1786,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Салехард
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA77
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA77
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1802,9 +1802,9 @@ PriceCalculationRule:
         value: 0,0.30000*X^1.00000+50.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA77
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA77
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1819,9 +1819,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Самара
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA30
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA30
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1835,9 +1835,9 @@ PriceCalculationRule:
         value: 0,0.30000*X^0.93000+91.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA30
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA30
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1852,9 +1852,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Санкт-Петербург
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA1
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA1
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1874,9 +1874,9 @@ PriceCalculationRule:
         value: 0,0,1,0.3333,-0.3333,0,1,1.44445
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA1
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA1
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1897,9 +1897,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Саранск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA34
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA34
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1913,9 +1913,9 @@ PriceCalculationRule:
         value: 0,1.62360*X^0.72590+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA34
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA34
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1930,9 +1930,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Саратов
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA33
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA33
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1946,9 +1946,9 @@ PriceCalculationRule:
         value: 0,0.28000*X^0.93000+81.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA33
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA33
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1963,9 +1963,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Смоленск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA60
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA60
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1979,9 +1979,9 @@ PriceCalculationRule:
         value: 0,0.58000*X^0.84000+100.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA60
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA60
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -1996,9 +1996,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Ставрополь
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA37
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA37
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2012,9 +2012,9 @@ PriceCalculationRule:
         value: 0,18.00000*X^0.31000+74.55000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA37
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA37
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2029,9 +2029,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Сыктывкар
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA76
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA76
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2045,9 +2045,9 @@ PriceCalculationRule:
         value: 0,0.65530*X^0.79940+5.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA76
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA76
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2062,9 +2062,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Тамбов
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA17
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA17
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2078,9 +2078,9 @@ PriceCalculationRule:
         value: 0,7.00000*X^0.49190+45.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA17
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA17
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2095,9 +2095,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Тверь
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA59
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA59
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2111,9 +2111,9 @@ PriceCalculationRule:
         value: 0,1.39660*X^0.72340+17.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA59
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA59
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2128,9 +2128,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Томск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA20
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA20
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2144,9 +2144,9 @@ PriceCalculationRule:
         value: 0,0.80000*X^0.84480+52.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA20
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA20
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2161,9 +2161,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Тула
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA6
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA6
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2177,9 +2177,9 @@ PriceCalculationRule:
         value: 0,0.30000*X^1.00000+25.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA6
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA6
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2194,9 +2194,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Тюмень
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA41
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA41
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2210,9 +2210,9 @@ PriceCalculationRule:
         value: 0,0.22000*X^1.05000+72.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA41
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA41
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2227,9 +2227,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Улан-Удэ
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA64
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA64
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2243,9 +2243,9 @@ PriceCalculationRule:
         value: 0,0.32380*X^0.92070+15.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA64
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA64
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2260,9 +2260,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Ульяновск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA23
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA23
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2276,9 +2276,9 @@ PriceCalculationRule:
         value: 0,3.85000*X^0.61000+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA23
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA23
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2293,9 +2293,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Уфа
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA29
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA29
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2309,9 +2309,9 @@ PriceCalculationRule:
         value: 0,1.70000*X^0.60000+100.42670
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA29
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA29
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2326,9 +2326,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Хабаровск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA13
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA13
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2342,9 +2342,9 @@ PriceCalculationRule:
         value: 0,3.00000*X^0.62500+56.16000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA13
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA13
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2359,9 +2359,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Ханты-Мансийск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA42
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA42
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2375,9 +2375,9 @@ PriceCalculationRule:
         value: 0,1.30000*X^0.80000+50.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA42
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA42
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2392,9 +2392,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Чебоксары
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA26
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA26
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2408,9 +2408,9 @@ PriceCalculationRule:
         value: 0,3.10000*X^0.50000+102.42860
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA26
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA26
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2425,9 +2425,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Челябинск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA48
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA48
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2441,9 +2441,9 @@ PriceCalculationRule:
         value: 0,0.70000*X^0.84480+10.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA48
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA48
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2458,9 +2458,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Черкесск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA72
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA72
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2474,9 +2474,9 @@ PriceCalculationRule:
         value: 0,16.00000*X^0.28000+71.50000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA72
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA72
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2491,9 +2491,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Чита
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA67
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA67
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2507,9 +2507,9 @@ PriceCalculationRule:
         value: 0,0.40000*X^0.80000+101.04620
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA67
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA67
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2524,9 +2524,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Элиста
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA31
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA31
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2540,9 +2540,9 @@ PriceCalculationRule:
         value: 0,14.50000*X^0.37000+50.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA31
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA31
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2557,9 +2557,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Южно-Сахалинск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA75
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA75
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2573,9 +2573,9 @@ PriceCalculationRule:
         value: 0,1.28680*X^0.69120+17.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA75
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA75
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2590,9 +2590,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Якутск
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA68
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA68
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2606,9 +2606,9 @@ PriceCalculationRule:
         value: 0,0.35000*X^0.85000+90.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA68
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA68
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2623,9 +2623,9 @@ PriceCalculationRule:
     dependency: NoDependency
   -
     #Ярославль
-    code: PCR-ANY-YOTA-NEWBASEMON3-VOICE-MA3
-    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-VOICE-MA3
+    name: Правило расчета цены ресурса минут для офферов стартовых пакетов  линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS
@@ -2639,9 +2639,9 @@ PriceCalculationRule:
         value: 0,1.97690*X^0.65000+5.00000
     dependency: NoDependency
   -
-    code: PCR-ANY-YOTA-NEWBASEMON3-DATA-MA3
-    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyYota
-    specCode: PCRS-ANY-YOTA
+    code: PCR-ANY-COMP-NEWBASEMON3-DATA-MA3
+    name: Правило расчета цены ресурса Гб для офферов пакетов линейки AnyCOMP
+    specCode: PCRS-ANY-COMP
     charValueUse:
       -
         specCharCode: CRCH-RESOURCE-INTERVALS

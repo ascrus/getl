@@ -310,6 +310,7 @@ class CSVDriverTest extends getl.test.GetlTest {
     void testRowDelimiter() {
         def con = new CSVConnection(conParams + [header: false, rowDelimiter: '\n'])
         def ds1 = new CSVDataset(connection: con, fileName: 'test_row_delimiter_1')
+        new File(ds1.fullFileName()).deleteOnExit()
         ds1.field << new Field(name: 'Id', type: Field.integerFieldType, isKey: true)
         ds1.field << new Field(name: 'Name', length: 50, isNull: false)
         ds1.field << new Field(name: 'Result Time', type: Field.dateFieldType, isNull: false)

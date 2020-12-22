@@ -38,9 +38,9 @@ class JsonTest extends GetlTest {
                     assertEquals("Customer $i".toString(), row.name)
                     assertTrue(!(row.phones as List).isEmpty())
                     assertEquals(DateUtils.ParseDate('yyyy-MM-dd', "2020-12-13"), row.date)
-                    assertEquals(DateUtils.ParseDate('HH:mm:ss', "01:02:03"), row.time)
-                    assertEquals(DateUtils.ParseDate('yyyy-MM-dd\'T\'HH:mm:ss', "2020-12-13T01:02:03",), row.datetime)
-                    assertEquals(DateUtils.ParseDate('yyyy-MM-dd\'T\'HH:mm:ss Z', "2020-12-13T01:02:03 +0300",), row.timestamptz)
+                    assertEquals(DateUtils.ParseDate('HH:mm:ss.SSS', "01:02:03.050"), row.time)
+                    assertEquals(DateUtils.ParseDate('yyyy-MM-dd\'T\'HH:mm:ss.SSS', "2020-12-13T01:02:03.050",), row.datetime)
+                    assertEquals(DateUtils.ParseDate('yyyy-MM-dd\'T\'HH:mm:ss.SSS Z', "2020-12-13T01:02:03.050 +0300",), row.timestamptz)
                 }
                 assertEquals(3, readRows)
                 assertEquals(1, rows(limit: 1).size())
@@ -62,6 +62,8 @@ class JsonTest extends GetlTest {
                 field('datetime') { type = datetimeFieldType/*; alias = "dt.datetime" */}
                 field('customer_type') { length = 10 }
                 field('phones') { type = objectFieldType } // Phones are stored as array list values and will be manual parsing
+
+                uniFormatDateTime = DateUtils.defaultTimestampWithTzMask
 
                 fileName = "${TFS.systemPath}/test.json"
                 def file = new File(fileName)
@@ -86,7 +88,7 @@ class JsonTest extends GetlTest {
 
                 try {
                     profile("Json file processing") {
-                        i = 0
+                        def i = 0
                         ds.eachRow { row ->
                             i++
                             assertEquals(i, row.id)

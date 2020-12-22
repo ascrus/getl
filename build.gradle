@@ -1,7 +1,6 @@
 import java.time.LocalDateTime
 
 plugins {
-    id 'java'
     id 'groovy'
     id 'idea'
     id 'maven'

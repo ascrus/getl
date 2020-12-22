@@ -32,6 +32,7 @@ class KafkaTest extends GetlTest {
             useConnection con
             kafkaTopic = 'test1'
             dataNode = 'data'
+            uniFormatDateTime = 'yyyy-MM-dd\'T\'HH:mm:ss'
 
             field('ID') { type = bigintFieldType }
             field('SHIPMENT_ID') { type = bigintFieldType }
@@ -95,6 +96,7 @@ class KafkaTest extends GetlTest {
                 fileName = 'resource:/kafka/kafka.json'
                 rootNode = '.'
                 dataNode = 'data'
+                uniFormatDateTime = ds.uniFormatDateTime
                 field = ds.field
             }
 

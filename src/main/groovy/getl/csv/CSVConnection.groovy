@@ -28,101 +28,139 @@ class CSVConnection extends FileConnection {
 		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation('Super', params?:[:])
 	}
 
-	/** Quotate all fields */
-	static QuoteMode getQuoteAlways() { QuoteMode.ALWAYS }
+	/** Quote all fields */
+	static public final QuoteMode quoteAlways = QuoteMode.ALWAYS
 	/** Quote text fields that have quotation marks or line feeds */
-	static QuoteMode getQuoteNormal() { QuoteMode.NORMAL }
+	static public final QuoteMode quoteNormal = QuoteMode.NORMAL
 	/** Quote only text fields */
-	static QuoteMode getQuoteColumn() { QuoteMode.COLUMN }
+	static public final QuoteMode quoteColumn = QuoteMode.COLUMN
 
 	/** Current CSV connection driver */
 	@JsonIgnore
 	CSVDriver getCurrentCSVDriver() { driver as CSVDriver }
 	
 	/** Quote delimiter string */
-	String getQuoteStr () { ListUtils.NotNullValue([params.quoteStr, '"'])  as String }
+	String getQuoteStr() { params.quoteStr  as String }
 	/** Quote delimiter string */
-    void setQuoteStr (String value) {
+    void setQuoteStr(String value) {
 		params.quoteStr = value
 		resetPresetMode()
 	}
+	/** Quote delimiter string */
+	String quoteStr() { quoteStr?:'"' }
 	
 	/** Field delimiter */
-	String getFieldDelimiter () { ListUtils.NotNullValue([params.fieldDelimiter, ',']) as String }
+	String getFieldDelimiter() { params.fieldDelimiter as String }
 	/** Field delimiter */
-    void setFieldDelimiter (String value) {
+    void setFieldDelimiter(String value) {
 		params.fieldDelimiter = value
 		resetPresetMode()
 	}
+	/** Field delimiter */
+	String fieldDelimiter() { fieldDelimiter?:',' }
 	
 	/** Row delimiter */
-	String getRowDelimiter () { ListUtils.NotNullValue([params.rowDelimiter, '\n']) as String }
+	String getRowDelimiter() { params.rowDelimiter as String }
 	/** Row delimiter */
-    void setRowDelimiter (String value) {
+    void setRowDelimiter(String value) {
 		params.rowDelimiter = value
 		resetPresetMode()
 	}
+	/** Row delimiter */
+	String rowDelimiter() { rowDelimiter?:'\n' }
 	
 	/** File has header of fields name */
-	Boolean getHeader () { BoolUtils.IsValue(params.header, true) }
+	Boolean getHeader() { params.header as Boolean }
 	/** File has header of fields name */
-    void setHeader (Boolean value) {
+    void setHeader(Boolean value) {
 		params.header = value
 		resetPresetMode()
 	}
+	/** File has header of fields name */
+	@JsonIgnore
+	Boolean isHeader() { BoolUtils.IsValue(header, true) }
 	
 	/** Ignore header field name */
-	Boolean getIgnoreHeader () { BoolUtils.IsValue(params.ignoreHeader, true) }
+	Boolean getIgnoreHeader() { params.ignoreHeader as Boolean }
 	/** Ignore header field name */
-    void setIgnoreHeader (Boolean value) { params.ignoreHeader = value }
+    void setIgnoreHeader(Boolean value) { params.ignoreHeader = value }
+	/** Ignore header field name */
+	@JsonIgnore
+	Boolean isIgnoreHeader() { BoolUtils.IsValue(ignoreHeader, true) }
 	
 	/** Required convert string to escape value */
-	Boolean getEscaped () { BoolUtils.IsValue(params.escaped, false) }
+	Boolean getEscaped() { params.escaped as Boolean }
 	/** Required convert string to escape value */
-    void setEscaped (Boolean value) {
+    void setEscaped(Boolean value) {
 		params.escaped = value
 		resetPresetMode()
 	}
+	/** Required convert string to escape value */
+	@JsonIgnore
+	Boolean isEscaped() { BoolUtils.IsValue(escaped) }
 	
 	/** Convert NULL to value */
-	String getNullAsValue () { params.nullAsValue as String }
+	String getNullAsValue() { params.nullAsValue as String }
 	/** Convert NULL to value */
-    void setNullAsValue (String value) { params.nullAsValue = value }
-	
+    void setNullAsValue(String value) { params.nullAsValue = value }
+
 	/** Required format values for output to file */
-	Boolean getFormatOutput () { BoolUtils.IsValue(params.formatOutput, true) }
+	Boolean getFormatOutput() { params.formatOutput as Boolean }
 	/** Required format values for output to file */
-    void setFormatOutput (Boolean value) { params.formatOutput = value }
+    void setFormatOutput(Boolean value) { params.formatOutput = value }
+	/** Required format values for output to file */
+	@JsonIgnore
+	Boolean isFormatOutput() { BoolUtils.IsValue(formatOutput, true) }
 
 	/** Check constraints during reading and writing */
-	Boolean getConstraintsCheck() { BoolUtils.IsValue(params.constraintsCheck, false) }
+	Boolean getConstraintsCheck() { params.constraintsCheck as Boolean }
 	/** Check constraints during reading and writing */
 	void setConstraintsCheck(Boolean value) { params.constraintsCheck = value }
+	/** Check constraints during reading and writing */
+	@JsonIgnore
+	Boolean isConstraintsCheck() { BoolUtils.IsValue(constraintsCheck, false) }
 	
 	/** Mode of quote value */
-	QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, QuoteMode.NORMAL])  as QuoteMode }
+	QuoteMode getQuoteMode() { params.quoteMode  as QuoteMode }
 	/** Mode of quote value */
-    void setQuoteMode (QuoteMode value) { params.quoteMode = value }
-	
+    void setQuoteMode(QuoteMode value) { params.quoteMode = value }
+	/** Mode of quote value */
+	QuoteMode quoteMode() { quoteMode?:quoteNormal }
+
 	/** Decimal separator for number fields */
-	String getDecimalSeparator () { (params.decimalSeparator as String)?:'.' }
+	String getDecimalSeparator() { params.decimalSeparator as String }
 	/** Decimal separator for number fields */
-    void setDecimalSeparator (String value) { params.decimalSeparator = value }
+    void setDecimalSeparator(String value) { params.decimalSeparator = value }
+	/** Decimal separator for number fields */
+	String decimalSeparator() { decimalSeparator?:'.' }
 	
 	/** Format for date fields */
 	String getFormatDate () { params.formatDate as String }
 	/** Format for date fields */
     void setFormatDate (String value) { params.formatDate = value }
+	/** Format for date fields */
+	String formatDate() { formatDate?:DateUtils.defaultDateMask }
 	
 	/** Format for time fields */
 	String getFormatTime () { params.formatTime as String }
 	/** Format for time fields */
     void setFormatTime (String value) { params.formatTime = value }
+	/** Format for time fields */
+	String formatTime() { formatTime?:DateUtils.defaultTimeMask }
 	
 	/** Format for datetime fields */
 	String getFormatDateTime () { params.formatDateTime as String }
 	/** Format for datetime fields */
     void setFormatDateTime (String value) { params.formatDateTime = value }
+	/** Format for datetime fields */
+	String formatDateTime() { formatDateTime?:DateUtils.defaultDateTimeMask }
+
+	/** Format for timestamp with timezone fields */
+	String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
+	/** Format for timestamp with timezone fields */
+	void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
+	/** Format for timestamp with timezone fields */
+	String formatTimestampWithTz() { formatTimestampWithTz?:DateUtils.defaultTimestampWithTzMask }
 
 	/** OS locale for parsing date-time fields
 	 * <br>P.S. You can set locale for separately field in Field.extended.locale
@@ -134,7 +172,7 @@ class CSVConnection extends FileConnection {
 	void setLocale(String value) { params.locale = value }
 
 	/** File settings preset */
-	String getPresetMode() { params.presetMode?:'custom' }
+	String getPresetMode() { params.presetMode as String }
 	/** File settings preset */
 	void setPresetMode(String value) {
 		if (!PresetModes.containsKey(value))
@@ -144,6 +182,8 @@ class CSVConnection extends FileConnection {
 		def p = PresetModes.get(value) as Map<String, Object>
 		params.putAll(p)
 	}
+	/** File settings preset */
+	String presetMode() { presetMode?:'custom' }
 
 	@Override
 	protected Class<Dataset> getDatasetClass() { CSVDataset }
@@ -154,23 +194,23 @@ class CSVConnection extends FileConnection {
 	}
 
 	/** Preset csv modes */
-	static public final Map<String, Object> PresetModes = MapUtils.Closure2Map {
-		custom { }
-		traditional {
-			fieldDelimiter = ','
-			escaped = true
-			quoteStr = '"'
-			rowDelimiter = '\r\n'
-			header = true
-		}
-		rfc4180 {
-			fieldDelimiter = ','
-			escaped = false
-			quoteStr = '"'
-			rowDelimiter = '\n'
-			header = true
-		}
-	}
+	static public final Map<String, Map> PresetModes = [
+		'custom': [:],
+		'traditional': [
+			fieldDelimiter: ',',
+			escaped: true,
+			quoteStr: '"',
+			rowDelimiter: '\r\n',
+			header: true
+		],
+		'rfc4180': [
+			fieldDelimiter: ',',
+			escaped: false,
+			quoteStr: '"',
+			rowDelimiter: '\n',
+			header: true
+		]
+	] as Map<String, Map>
 
 	@Override
 	protected void onLoadConfig (Map configSection) {

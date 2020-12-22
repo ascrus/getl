@@ -17,12 +17,14 @@ class XmlTest extends getl.test.GetlTest {
 
                 attributeField('version') { alias = 'header.@version[0]' }
                 attributeField('objecttype') { alias = 'header.@object[0]' }
-                attributeField('time') { alias = 'header.sender.@time[0]' }
+                attributeField('time') { type = timestamp_with_timezoneFieldType; alias = 'header.sender.@time[0]' }
 
                 field('id') { type = integerFieldType }
                 field('name')
                 field('customer_type') { alias = '@'} // Customer value are stored as attribute value
                 field('phones') { type = objectFieldType } // Phones are stored as array list values and will be manual parsing
+
+                uniFormatDateTime = 'yyyy-MM-dd\'T\'HH:mm:ssXXX'
 
                 def i = 0
                 eachRow { row ->
@@ -35,7 +37,7 @@ class XmlTest extends getl.test.GetlTest {
                 assertEquals(3, readRows)
                 assertEquals('1.00', attributeValue.version)
                 assertEquals('Customers', attributeValue.objecttype)
-                assertEquals('2019-01-02T01:02:03+03:00', attributeValue.time)
+                assertEquals(getl.utils.DateUtils.ParseSQLTimestamp("yyyy-MM-dd'T'HH:mm:ssXXX", '2019-01-02T01:02:03+03:00'), attributeValue.time)
 
                 assertEquals(1, rows(limit: 1).size())
             }

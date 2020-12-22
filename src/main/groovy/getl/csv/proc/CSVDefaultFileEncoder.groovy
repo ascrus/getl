@@ -18,7 +18,7 @@ import getl.csv.CSVDriver.WriterParams
  *
  */
 class CSVDefaultFileEncoder extends DefaultCsvEncoder {
-	CSVDefaultFileEncoder (CSVDataset dataset, WriterParams wp) {
+	CSVDefaultFileEncoder (WriterParams wp) {
 		super()
 
 		this.header = wp.isHeader

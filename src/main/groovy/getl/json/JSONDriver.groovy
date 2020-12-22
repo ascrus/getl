@@ -60,7 +60,7 @@ class JSONDriver extends FileDriver {
 			
 			String path = GenerationUtils.Field2Alias(d, true)
 			sb << "attrValue.'${d.name.toLowerCase()}' = "
-			sb << GenerationUtils.GenerateConvertValue(d, s, d.format?:'yyyy-MM-dd\'T\'HH:mm:ss', "data.${path}", false)
+			sb << GenerationUtils.GenerateConvertValue(d, s, dataset.fieldFormat(d), "data.${path}", false)
 			
 			sb << "\n"
 		}
@@ -283,15 +283,16 @@ class JSONDriver extends FileDriver {
 		def writer = driverParams.get('write_writer') as Writer
 		def writeRows = driverParams.get('write_rows') as List<Map<String, Object>>
 
-		def gen = new JsonGenerator.Options().timezone(TimeZone.default.getID())
+		def format = ds.uniFormatDateTime?:ds.formatTimestampWithTz()
+		def gen = new JsonGenerator.Options().dateFormat(format, Locale.default).timezone(TimeZone.default.getID()).build()
 		if (ds.rootNode != '.') {
 			def jsonRoot = [:] as Map<String, Object>
 			MapUtils.SetValue(jsonRoot, ds.rootNode, writeRows)
 			jsonRoot.put(ds.rootNode, writeRows)
-			new StreamingJsonBuilder(writer, jsonRoot, gen.build())
+			new StreamingJsonBuilder(writer, jsonRoot, gen)
 		}
 		else {
-			new StreamingJsonBuilder(writer, writeRows, gen.build())
+			new StreamingJsonBuilder(writer, writeRows, gen)
 		}
 
 		ds.writedFiles[0].countRows = writeRows.size()

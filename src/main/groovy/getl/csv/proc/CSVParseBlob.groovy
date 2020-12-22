@@ -7,8 +7,11 @@ import org.supercsv.exception.SuperCsvCellProcessorException
 import org.supercsv.util.CsvContext
 import getl.utils.*
 
-@InheritConstructors
 class CSVParseBlob extends CellProcessorAdaptor {
+	CSVParseBlob() {
+		super()
+	}
+
 	@CompileStatic
 	@Override
     <T> T execute(final Object value, final CsvContext context) {

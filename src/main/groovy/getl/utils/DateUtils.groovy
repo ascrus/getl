@@ -16,51 +16,37 @@ import java.text.SimpleDateFormat
  */
 @CompileStatic
 class DateUtils {
-	/**
-	 * Zero date
-	 */
+	/** Zero date */
 	static public final Date zeroDate = ParseDate('0000-00-00')
 
-	/**
-	 * Default date mask
-	 */
-	static public String defaultDateMask = "yyyy-MM-dd"
-	/**
-	 * Default time mask
-	 */
-	static public String defaultTimeMask = "HH:mm:ss.SSS"
-	/**
-	 * Default datetime mask
-	 */
-	static public String defaultDateTimeMask = "yyyy-MM-dd HH:mm:ss.SSS"
-
+	/** Default date mask */
+	static public String defaultDateMask = 'yyyy-MM-dd'
+	/** Default time mask */
+	static public String defaultTimeMask = 'HH:mm:ss.SSS'
+	/** Default datetime mask */
+	static public String defaultDateTimeMask = 'yyyy-MM-dd HH:mm:ss.SSS'
+	/** Default timestamp with timezone mask */
+	static public String defaultTimestampWithTzMask = 'yyyy-MM-dd\'T\'HH:mm:ss.SSS Z'
+	/** Original time zone */
 	static public final String origTimeZone = TimeZone.default.toZoneId().id
 
-	/**
-	 * Init time zone offset at milliseconds
-	 */
+	/** Init time zone offset at milliseconds */
 	static public final Integer origTimeZoneOffs = TimeZone.default.rawOffset
 
-	/**
-	 * Default time zone offset at milliseconds
-	 */
+	/** Default time zone offset at milliseconds */
 	static public Integer defaultTimeZoneOffs = TimeZone.default.rawOffset
 
-	/**
-	 * Offset between machine and need time zone
-	 */
+	/** Offset between machine and need time zone */
 	static public Integer offsTimeZone = 0
 
-	/**
-	 * Init class
-	 */
+	/** Init class */
 	static void init () {
 		if (Config.content.timeZone != null) init(Config.content.timeZone as Map)
 	}
 
 	/**
 	 * Init class
-	 * @param timeZone
+	 * @param timeZone time zone properties (using "name")
 	 */
 	static void init (Map timeZone) {
 		if (timeZone == null || timeZone.isEmpty()) return
@@ -71,16 +57,14 @@ class DateUtils {
 		}
 	}
 
-	/**
-	 * Get default time zone name
-	 */
+	/** Get default time zone name */
 	static String getDefaultTimeZone() {
 		return TimeZone.default.displayName
 	}
 
 	/**
 	 * Set new default time zone
-	 * @param timeZone
+	 * @param timeZone time zone name
 	 */
 	static void setDefaultTimeZone(String timeZone) {
 		if (timeZone == null)
@@ -565,11 +549,11 @@ class DateUtils {
 		def ret = 0
 		String[] fieldsName = ['YEAR', 'MONTH', 'HOUR', 'MINUTE', 'SECOND', 'DAY_OF_WEEK', 'DAY_OF_MONTH', 'DAY_OF_YEAR',
 							   'WEEK_OF_MONTH', 'DAY_OF_WEEK_IN_MONTH', 'WEEK_OF_YEAR', 'TIMEZONE']
-		List<String> filedsList = Arrays.asList(fieldsName)
+		List<String> fieldsList = Arrays.asList(fieldsName)
 		Calendar c = Calendar.getInstance()
 		c.setTime(date)
 
-		switch (filedsList.indexOf(partName)) {
+		switch (fieldsList.indexOf(partName)) {
 		case 0:
 			ret = c.get(Calendar.YEAR)
 			break
@@ -666,17 +650,17 @@ class DateUtils {
 		Date start
 		Date finish
 		intervals?.each { Map interval ->
-            def istart = interval.start as Date
-            def ifinish = interval.finish as Date
+            def iStart = interval.start as Date
+            def iFinish = interval.finish as Date
 
-			if (istart == null) throw new ExceptionGETL("Required start date from interval")
-			if (ifinish == null) throw new ExceptionGETL("Required finish date from interval")
+			if (iStart == null) throw new ExceptionGETL("Required start date from interval")
+			if (iFinish == null) throw new ExceptionGETL("Required finish date from interval")
 
-			if (start == null || istart < start) {
-				start = istart
+			if (start == null || iStart < start) {
+				start = iStart
 			}
-			if (finish == null || ifinish > finish) {
-				finish = ifinish
+			if (finish == null || iFinish > finish) {
+				finish = iFinish
 			}
 		}
 

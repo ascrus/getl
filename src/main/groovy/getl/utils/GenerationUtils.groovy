@@ -13,6 +13,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
  *
  */
 @SuppressWarnings("UnnecessaryQualifiedReference")
+@SuppressWarnings('unused')
 class GenerationUtils {
 	static public final Long EMPTY_BIGINT = null
 	static public final def EMPTY_BLOB = null
@@ -27,7 +28,7 @@ class GenerationUtils {
 	static public final String EMPTY_STRING = null
 	static public final def EMPTY_TEXT = null
 	static public final java.sql.Time EMPTY_TIME = null
-	
+
 	/**
 	 * Convert string alias as a modifier to access the value of field
 	 * @param field source field
@@ -85,8 +86,9 @@ class GenerationUtils {
 
 	/**
 	 * Generate header for parsing builder map values into row fields
-	 * @param dataset source dataset
+	 * @param dataset source structured dataset
 	 * @param onlyFields parse only specified fields (if empty or null, all fields are parsed)
+	 * @param className class name of used nodes
 	 * @param isStringDateTime for fields of type date and time, the original values are stored in the text
 	 * @param rootPath path of the root tree node
 	 * @param structName the name of the variable from which to take the field values
@@ -96,9 +98,9 @@ class GenerationUtils {
 	 * @param prepareField
 	 * @return scripts sections for code generation (init - parsing initialization, body - parsing fields)
 	 */
-	static Map<String, String> GenerateConvertFromBuilderMap(Dataset dataset, List<String> onlyFields, String className,
-															 Boolean isStringDateTime, String rootPath,
-															 String structName, String rowName,
+	static Map<String, String> GenerateConvertFromBuilderMap(StructureFileDataset dataset, List<String> onlyFields,
+															 String className, Boolean isStringDateTime,
+															 String rootPath, String structName, String rowName,
 															 Integer tabHead, Integer tabBody,
 															 Closure<String> prepareField = null) {
 		def fields = [] as List<Field>
@@ -127,7 +129,7 @@ class GenerationUtils {
 			// Source field
 			def sourceField = destField.clone() as Field
 			// Format field
-			String format = null
+			String format = dataset.fieldFormat(destField)
 
 			// Add using format
 			if (destField.type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
@@ -135,23 +137,6 @@ class GenerationUtils {
 					sourceField.type = Field.stringFieldType
 
 				sourceField.format = null
-				format = destField.format
-				if (format == null) {
-					switch (destField.type) {
-						case Field.datetimeFieldType:
-							format = 'yyyy-MM-dd\'T\'HH:mm:ss'
-							break
-						case Field.timestamp_with_timezoneFieldType:
-							format = 'yyyy-MM-dd\'T\'HH:mm:ss Z'
-							break
-						case Field.dateFieldType:
-							format = 'yyyy-MM-dd'
-							break
-						case Field.timeFieldType:
-							format = 'HH:mm:ss'
-							break
-					}
-				}
 				if (listFormats.indexOf(format) == -1)
 					listFormats.add(format)
 			}
@@ -222,7 +207,9 @@ class GenerationUtils {
 	 * Generate definition sections
 	 * @param root root node object name
 	 * @param name processed node name
+	 * @param path parent path
 	 * @param sect processed section
+	 * @param className class name of used nodes
 	 * @param idxSections list of known sections
 	 * @param tabStr
 	 * @param sb
@@ -1450,7 +1437,7 @@ sb << """
 	
 	/**
 	 * Return list object name with SQL syntax
-	 * @param dataset source dataaset
+	 * @param dataset source dataset
 	 * @param listNames list of field name
 	 * @return list of processed field name
 	 */
