@@ -153,7 +153,7 @@ class KafkaDriver extends Driver {
             def writer = jsonFile.newWriter()
             try {
                 writer.append('[')
-                while (endOffs.any { kafkaConsumer.position(it.key) < it.value }) {
+                while (endOffs.any {kafkaConsumer.position(it.key) < it.value }) {
                     ConsumerRecords<String, String> records = kafkaConsumer.poll(dur)
 
                     if (curRows >= 10000) {
@@ -198,26 +198,28 @@ class KafkaDriver extends Driver {
                 }
             }
 
-            def jsonCon = new JSONConnection(path: jsonDirName)
-            def json = new JSONDataset()
-            json.with {
-                useConnection jsonCon
-                extension = 'json'
-                field = (!fields.isEmpty())?ds.getFields(fields):ds.field
-                rootNode = '.'
-                dataNode = ds.dataNode
-                formatDate = ds.formatDate
-                formatTime = ds.formatTime
-                formatDateTime = ds.formatDateTime
-                formatTimestampWithTz = ds.formatTimestampWithTz
-                uniFormatDateTime = ds.uniFormatDateTime
-            }
-            (1..countPortions).each {num ->
+            if (countPortions > 0) {
+                def jsonCon = new JSONConnection(path: jsonDirName)
+                def json = new JSONDataset()
                 json.with {
-                    fileName = 'kafka.' + StringUtils.AddLedZeroStr(num, 6)
-                    eachRow(code)
-                    res += readRows
-                    drop()
+                    useConnection jsonCon
+                    extension = 'json'
+                    field = (!fields.isEmpty()) ? ds.getFields(fields) : ds.field
+                    rootNode = '.'
+                    dataNode = ds.dataNode
+                    formatDate = ds.formatDate
+                    formatTime = ds.formatTime
+                    formatDateTime = ds.formatDateTime
+                    formatTimestampWithTz = ds.formatTimestampWithTz
+                    uniFormatDateTime = ds.uniFormatDateTime
+                }
+                (1..countPortions).each { num ->
+                    json.with {
+                        fileName = 'kafka.' + StringUtils.AddLedZeroStr(num, 6)
+                        eachRow(code)
+                        res += readRows
+                        drop()
+                    }
                 }
             }
 

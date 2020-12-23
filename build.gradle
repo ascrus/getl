@@ -24,8 +24,8 @@ dependencies {
 	compile('org.codehaus.groovy:groovy-all:3.0.7') {
 		exclude(group: 'org.codehaus.groovy', module: 'groovy-testng')
 	}
-	compile 'org.codehaus.groovy:groovy-dateutil:3.0.6'
-	compile 'org.codehaus.groovy:groovy-yaml:3.0.6'
+	compile 'org.codehaus.groovy:groovy-dateutil:3.0.7'
+	compile 'org.codehaus.groovy:groovy-yaml:3.0.7'
 	compile 'com.fasterxml.jackson.core:jackson-annotations:2.11.2'
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'

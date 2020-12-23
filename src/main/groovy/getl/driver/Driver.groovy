@@ -78,7 +78,7 @@ abstract class Driver {
     abstract void createDataset (Dataset dataset, Map params)
 
     void dropDataset (Dataset dataset, Map params) {
-		if (dataset.autoSchema && !isResourceFileNameSchema(dataset)) {
+		if (dataset.isAutoSchema() && !isResourceFileNameSchema(dataset)) {
 			def name = fullFileNameSchema(dataset)
 			if (name != null) {
 				def s = new File(name)

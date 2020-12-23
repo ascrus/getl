@@ -1,12 +1,10 @@
 package getl.json
 
 import getl.lang.Getl
-import getl.stat.ProcessTime
 import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.GenerationUtils
-import groovy.json.JsonBuilder
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
@@ -63,7 +61,7 @@ class JsonTest extends GetlTest {
                 field('customer_type') { length = 10 }
                 field('phones') { type = objectFieldType } // Phones are stored as array list values and will be manual parsing
 
-                uniFormatDateTime = DateUtils.defaultTimestampWithTzMask
+                uniFormatDateTime = DateUtils.defaultTimestampWithTzFullMask
 
                 fileName = "${TFS.systemPath}/test.json"
                 def file = new File(fileName)

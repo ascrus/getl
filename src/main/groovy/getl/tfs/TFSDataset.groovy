@@ -28,7 +28,7 @@ class TFSDataset extends CSVDataset {
         if ((connection as TFS).deleteOnExit) {
             new File(fullFileName()).deleteOnExit()
 
-            if (autoSchema) {
+            if (isAutoSchema()) {
                 File s = new File(fullFileSchemaName())
                 if (s.exists()) s.deleteOnExit()
             }

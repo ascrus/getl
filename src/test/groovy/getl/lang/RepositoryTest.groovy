@@ -32,7 +32,7 @@ class RepositoryTest extends TestDsl {
         def getl = Getl.GetlInstance()
         getl.CleanGetl(true)
         def rep = new RepositoryConnections(dslCreator: getl)
-        assertEquals(22, rep.listClasses.size())
+        assertEquals(23, rep.listClasses.size())
         assertEquals(0, rep.list().size())
         assertNull(rep.find('group:con'))
         assertNull(rep.find(new H2Connection()))
@@ -670,7 +670,7 @@ class RepositoryTest extends TestDsl {
             assertNotNull(embeddedConnection('h2:con'))
             assertNotNull(verticaConnection('ver:con'))
             verticaTable('ver:table1') {
-                assertFalse(autoSchema)
+                assertFalse(isAutoSchema())
                 assertEquals('public', schemaName)
                 assertEquals('getl_table1', tableName)
                 createOpts {
@@ -757,7 +757,7 @@ class RepositoryTest extends TestDsl {
             assertEquals(2, listDatasets('table_rep_*').size())
 
             embeddedTable('table_rep_1') {
-                assertFalse(autoSchema)
+                assertFalse(isAutoSchema())
                 assertEquals('REPORITORY_TABLES', schemaName)
                 assertEquals('TABLE_REP_1', tableName)
                 assertEquals(2, field.size())

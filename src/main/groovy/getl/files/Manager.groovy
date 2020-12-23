@@ -1279,9 +1279,11 @@ FROM ${newFiles.fullNameDataset()} files
 		TableDataset storyFiles = null
 		
 		if (useStory) {
-			if (ds == null) throw new ExceptionGETL("For use store db required set \"ds\" property")
+			if (ds == null)
+				throw new ExceptionGETL("For use store db required set \"ds\" property")
 			if (ds.field.isEmpty()) {
-				if (ds.manualSchema) throw new ExceptionGETL("Empty fields structure for dataset history")
+				if (ds.isManualSchema())
+					throw new ExceptionGETL("Empty fields structure for dataset history")
 				ds.retrieveFields()
 			}
 			

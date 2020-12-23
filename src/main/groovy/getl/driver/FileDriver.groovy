@@ -41,7 +41,7 @@ class FileDriver extends Driver {
 		def path = (connection as FileConnection).currentPath()
 		if (path == null) throw new ExceptionGETL('Path not setting!')
 		
-		if (params.directory != null) path += (connection as FileConnection).fileSeparator + params.directory
+		if (params.directory != null) path += (connection as FileConnection).fileSeparator() + params.directory
 		def match = (params.mask != null)?(params.mask as String):'.*'
 		RetrieveObjectType type = (params.type == null)?RetrieveObjectType.FILE:(params.type as RetrieveObjectType)
 		RetrieveObjectSort sort = (params.sort == null)?RetrieveObjectSort.NONE:(params.sort as RetrieveObjectSort)
@@ -100,12 +100,12 @@ class FileDriver extends Driver {
 		String fn = dataset.fileName
 		if (fn == null) return null
 		def con = dataset.fileConnection
-		if (dataset.extension != null) fn += ".${dataset.extension}"
+		if (dataset.extension() != null) fn += ".${dataset.extension()}"
 		if (con.path != null) {
 			if (FileUtils.IsResourceFileName(con.currentPath()))
 				fn = FileUtils.ConvertToUnixPath(con.currentPath()) + '/' + fn
 			else
-				fn = FileUtils.ConvertToDefaultOSPath(con.currentPath()) + con.fileSeparator + fn
+				fn = FileUtils.ConvertToDefaultOSPath(con.currentPath()) + con.fileSeparator() + fn
 		}
 
 		return FileUtils.ResourceFileName(fn)
@@ -120,9 +120,11 @@ class FileDriver extends Driver {
 	String fileNameWithoutExtension(FileDataset dataset) {
 		def fn = dataset.fileName
 		if (fn == null) return null
-		
-		if (dataset.isGzFile && FileUtils.FileExtension(fn)?.toLowerCase() == "gz") fn = FileUtils.ExcludeFileExtension(fn)
-		if (dataset.extension != null && FileUtils.FileExtension(fn)?.toLowerCase() == dataset.extension.toLowerCase()) fn = FileUtils.ExcludeFileExtension(fn)
+
+		def extDs = dataset.extension()
+		def extFile = FileUtils.FileExtension(fn)?.toLowerCase()
+		if (dataset.isGzFile() && extFile == "gz") fn = FileUtils.ExcludeFileExtension(fn)
+		if (extDs != null && extFile == extDs.toLowerCase()) fn = FileUtils.ExcludeFileExtension(fn)
 
 		return fn
 	}
@@ -142,12 +144,12 @@ class FileDriver extends Driver {
 			if (FileUtils.IsResourceFileName(con.currentPath()))
 				fn = FileUtils.ConvertToUnixPath(con.currentPath()) + '/' + fn
 			else
-				fn = FileUtils.ConvertToDefaultOSPath(con.currentPath()) + con.fileSeparator + fn
+				fn = FileUtils.ConvertToDefaultOSPath(con.currentPath()) + con.fileSeparator() + fn
 		}
 
 		if (portion != null) fn = "${fn}.${StringUtils.AddLedZeroStr(portion.toString(), 4)}"
-		if (dataset.extension != null) fn += ".${dataset.extension}"
-		if (dataset.isGzFile) fn += ".gz"
+		if (dataset.extension() != null) fn += ".${dataset.extension()}"
+		if (dataset.isGzFile()) fn += ".gz"
 		
 		return FileUtils.ResourceFileName(fn)
 	}
@@ -174,9 +176,9 @@ class FileDriver extends Driver {
 
 		if (isSplit)
 			fn += ".{number}"
-		if (dataset.extension != null) fn += ".${dataset.extension}"
+		if (dataset.extension() != null) fn += ".${dataset.extension()}"
 		
-		def isGzFile = dataset.isGzFile
+		def isGzFile = dataset.isGzFile()
 		if (isGzFile) fn += ".gz"
 
 		return fn
@@ -238,12 +240,12 @@ class FileDriver extends Driver {
 	protected Map getDatasetParams (FileDataset dataset, Map params, Integer portion = null) {
 		def res = [:]
 		res.fn = fullFileNameDataset(dataset, portion)
-		res.isGzFile = dataset.isGzFile
-		res.codePage = ListUtils.NotNullValue([params.codePage, dataset.codePage])
-		res.isAppend = BoolUtils.IsValue(params.append, dataset.append)
-		res.autoSchema = BoolUtils.IsValue(params.autoSchema, dataset.autoSchema)
-		res.createPath = BoolUtils.IsValue(params.createPath, dataset.createPath)
-		res.deleteOnEmpty = BoolUtils.IsValue(params.deleteOnEmpty, dataset.deleteOnEmpty)
+		res.isGzFile = dataset.isGzFile()
+		res.codePage = ListUtils.NotNullValue([params.codePage, dataset.codePage()])
+		res.isAppend = BoolUtils.IsValue(params.append, dataset.isAppend())
+		res.autoSchema = BoolUtils.IsValue(params.autoSchema, dataset.isAutoSchema())
+		res.createPath = BoolUtils.IsValue(params.createPath, dataset.isCreatePath())
+		res.deleteOnEmpty = BoolUtils.IsValue(params.deleteOnEmpty, dataset.isDeleteOnEmpty())
 		
 		return res
 	}
@@ -276,7 +278,7 @@ class FileDriver extends Driver {
 			input = new FileInputStream(fn)
 		}
 		
-		reader = new BufferedReader(new InputStreamReader(input, codePage), dataset.bufferSize)
+		reader = new BufferedReader(new InputStreamReader(input, codePage), dataset.bufferSize())
 		
 		return reader
 	}
@@ -329,7 +331,7 @@ class FileDriver extends Driver {
 			output = new FileOutputStream(file, isAppend)
 		}
 		
-		writer = new BufferedWriter(new OutputStreamWriter(output, codePage), dataset.bufferSize)
+		writer = new BufferedWriter(new OutputStreamWriter(output, codePage), dataset.bufferSize())
 		
 		processWriteFile(wp.fn as String, file)
 		
@@ -364,7 +366,7 @@ class FileDriver extends Driver {
 		if (deleteOnEmpty)
 			dataset.writedFiles.removeAll { opt -> opt.countRows == 0 }
 
-		if (deleteOnEmpty && dataset.autoSchema && dataset.writeRows == 0) {
+		if (deleteOnEmpty && dataset.isAutoSchema() && dataset.writeRows == 0) {
 			def s = new File(dataset.fullFileSchemaName())
 			if (s.exists()) s.delete()
 		}

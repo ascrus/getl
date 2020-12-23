@@ -142,39 +142,42 @@ class VerticaDriver extends JDBCDriver {
 			}
 			def useCsvOptions = BoolUtils.IsValue((params.parser as Map).useCsvOptions, true)
 			if (useCsvOptions) {
-				if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter)}"
+				if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter())}"
 				if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
-				if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr)}"
-				if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue)}"
+				if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr())}"
+				if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
 			}
 		}
-		else if (!source.escaped) {
+		else if (!source.isEscaped()) {
 			def opts = [
 					'type=\'traditional\'',
-					"delimiter = ${EscapeString(source.fieldDelimiter)}",
-					"enclosed_by = ${EscapeString(source.quoteStr)}",
+					"delimiter = ${EscapeString(source.fieldDelimiter())}",
+					"enclosed_by = ${EscapeString(source.quoteStr())}",
 					"record_terminator = ${EscapeString(rowDelimiterChar)}",
 					"escape = ${EscapeString('\u0001')}",
-					"header=${source.header}"
+					"header=${source.isHeader()}"
 			]
 
 			parserText = "\nWITH PARSER public.fcsvparser(${opts.join(', ')})"
-			if (source.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue)}"
+			if (source.nullAsValue() != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
 		}
 
 		if (parserText.length() == 0) {
-			if (source.fieldDelimiter == null || source.fieldDelimiter.length() != 1) throw new ExceptionGETL('Required one char field delimiter')
-			if (rowDelimiterChar == null || rowDelimiterChar.length() != 1) throw new ExceptionGETL('Required one char row delimiter')
-			if (source.quoteStr == null || source.quoteStr.length() != 1) throw new ExceptionGETL('Required one char quote str')
+			if (source.fieldDelimiter() == null || source.fieldDelimiter().length() != 1)
+				throw new ExceptionGETL('Required one char field delimiter')
+			if (rowDelimiterChar == null || rowDelimiterChar.length() != 1)
+				throw new ExceptionGETL('Required one char row delimiter')
+			if (source.quoteStr() == null || source.quoteStr().length() != 1)
+				throw new ExceptionGETL('Required one char quote str')
 
-			if (source.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter)}"
+			if (source.fieldDelimiter() != null) fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter())}"
 			if (rowDelimiterChar != null) rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
-			if (source.quoteStr != null) quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr)}"
-			if (source.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue)}"
+			if (source.quoteStr() != null) quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr())}"
+			if (source.nullAsValue() != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
 		}
 
-		def header = source.header
-		def isGzFile = source.isGzFile
+		def header = source.isHeader()
+		def isGzFile = source.isGzFile()
 
 		def map = params.map as List<Map>
 		def expressions = (params.expression as Map<String, String>)?:[:]
@@ -418,30 +421,26 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
-		csvFile.header = false
+		super.prepareCsvTempFile(source, csvFile)
 		csvFile.escaped = (csvFile.field.find { it.type == Field.blobFieldType && source.fieldByName(it.name) != null } != null)
-		csvFile.codePage = 'UTF-8'
-		csvFile.nullAsValue = null
-		csvFile.fieldDelimiter = ','
-		csvFile.rowDelimiter = '\n'
-		csvFile.quoteStr = '"'
 	}
 
 	@Override
 	void validCsvTempFile(Dataset source, CSVDataset csvFile) {
-		if (!(csvFile.codePage.toLowerCase() in ['utf-8', 'utf8']))
+		super.validCsvTempFile(source, csvFile)
+		if (!(csvFile.codePage().toLowerCase() in ['utf-8', 'utf8']))
 			throw new ExceptionGETL('The file must be encoded in utf-8 for batch download!')
 
-		if (csvFile.fieldDelimiter.length() > 1)
+		if (csvFile.fieldDelimiter().length() > 1)
 			throw new ExceptionGETL('The field delimiter must have only one character for bulk load!')
 
-		if (csvFile.quoteStr.length() > 1)
+		if (csvFile.quoteStr().length() > 1)
 			throw new ExceptionGETL('The quote must have only one character for bulk load!')
 
-		if (csvFile.rowDelimiter.length() > 1 && csvFile.rowDelimiter != '\r\n')
+		if (csvFile.rowDelimiter().length() > 1 && csvFile.rowDelimiter != '\r\n')
 			throw new ExceptionGETL('The row delimiter must have only one character for bulk load!')
 
-		if (!csvFile.escaped) {
+		if (!csvFile.isEscaped()) {
 			def blobFields = csvFile.field.findAll { it.type == Field.blobFieldType && source.fieldByName(it.name) != null }
 			if (blobFields != null && !blobFields.isEmpty()) {
 				def blobNames = blobFields*.name

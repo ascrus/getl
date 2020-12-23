@@ -86,7 +86,7 @@ class CSVDriverTest extends getl.test.GetlTest {
             return row
         }
 
-        if (!csv.isGzFile) {
+        if (!csv.isGzFile()) {
             new Flow().writeTo(dest: csv, dest_append: true) { updater ->
                 (1..100).each { id ->
                     updater(generate_row(id))

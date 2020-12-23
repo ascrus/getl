@@ -24,7 +24,8 @@ class CSVConnection extends FileConnection {
 
 		methodParams.register('Super', ['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped', 
 										'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime', 
-										'formatDateTime', 'ignoreHeader', 'locale', 'constraintsCheck', 'presetMode'])
+										'formatDateTime', 'uniFormatDateTime', 'ignoreHeader', 'locale',
+										'constraintsCheck', 'presetMode'])
 		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation('Super', params?:[:])
 	}
 
@@ -133,34 +134,6 @@ class CSVConnection extends FileConnection {
     void setDecimalSeparator(String value) { params.decimalSeparator = value }
 	/** Decimal separator for number fields */
 	String decimalSeparator() { decimalSeparator?:'.' }
-	
-	/** Format for date fields */
-	String getFormatDate () { params.formatDate as String }
-	/** Format for date fields */
-    void setFormatDate (String value) { params.formatDate = value }
-	/** Format for date fields */
-	String formatDate() { formatDate?:DateUtils.defaultDateMask }
-	
-	/** Format for time fields */
-	String getFormatTime () { params.formatTime as String }
-	/** Format for time fields */
-    void setFormatTime (String value) { params.formatTime = value }
-	/** Format for time fields */
-	String formatTime() { formatTime?:DateUtils.defaultTimeMask }
-	
-	/** Format for datetime fields */
-	String getFormatDateTime () { params.formatDateTime as String }
-	/** Format for datetime fields */
-    void setFormatDateTime (String value) { params.formatDateTime = value }
-	/** Format for datetime fields */
-	String formatDateTime() { formatDateTime?:DateUtils.defaultDateTimeMask }
-
-	/** Format for timestamp with timezone fields */
-	String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
-	/** Format for timestamp with timezone fields */
-	void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
-	/** Format for timestamp with timezone fields */
-	String formatTimestampWithTz() { formatTimestampWithTz?:DateUtils.defaultTimestampWithTzMask }
 
 	/** OS locale for parsing date-time fields
 	 * <br>P.S. You can set locale for separately field in Field.extended.locale
@@ -184,6 +157,9 @@ class CSVConnection extends FileConnection {
 	}
 	/** File settings preset */
 	String presetMode() { presetMode?:'custom' }
+
+	@Override
+	String formatTimestampWithTz() { formatTimestampWithTz?:DateUtils.defaultTimestampWithTzSmallMask }
 
 	@Override
 	protected Class<Dataset> getDatasetClass() { CSVDataset }

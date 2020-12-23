@@ -341,7 +341,7 @@ class HiveDriver extends JDBCDriver {
             def tempTable = new TableDataset(connection: dest.connection, tableName: "t_${tempFile.fileName}",
                     type: JDBCDataset.Type.LOCAL_TEMPORARY)
             tempTable.field = tempFile.field
-            tempTable.create(rowFormat: 'DELIMITED', fieldsTerminated: '\\001', nullDefined: tempFile.nullAsValue)
+            tempTable.create(rowFormat: 'DELIMITED', fieldsTerminated: '\\001', nullDefined: tempFile.nullAsValue())
             try {
                 tempTable.connection
                         .executeCommand(isUpdate: true, command: "LOAD DATA INPATH '${fileMan.rootPath}/${tempFileName}' INTO TABLE ${tempTable.tableName}")

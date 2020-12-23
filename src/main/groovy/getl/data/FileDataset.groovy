@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileWriteOpts
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
-import getl.utils.*
 
 /**
  * File dataset class
@@ -12,7 +11,7 @@ import getl.utils.*
  *
  */
 class FileDataset extends Dataset {
-	FileDataset () {
+	FileDataset() {
 		methodParams.register('openWrite', ['deleteOnEmpty', 'append'])
 		methodParams.register('drop', ['validExist', 'portions'])
 	}
@@ -29,81 +28,98 @@ class FileDataset extends Dataset {
 	@JsonIgnore
 	FileConnection getFileConnection() { connection as FileConnection }
 	
-	/**
-	 * File name	
-	 */
-	String getFileName () { params.fileName }
-	/**
-	 * File name
-	 */
-	void setFileName (String value) { params.fileName = value }
+	/** File name */
+	String getFileName() { params.fileName }
+	/** File name */
+	void setFileName(String value) { params.fileName = value }
 	
-	/**
-	 * Code page for file
-	 */
-	String getCodePage () { ListUtils.NotNullValue([params.codePage, (connection as FileConnection).codePage, 'utf-8']) }
-	/**
-	 * Code page for file
-	 */
-	void setCodePage (String value) { params.codePage = value }
-	
-	/**
-	 * Append if file exists
-	 */
-	Boolean getAppend () { BoolUtils.IsValue([params.append, (connection as FileConnection).append], false) }
-	/**
-	 * Append if file exists
-	 */
+	/** Code page for file */
+	String getCodePage() { params.codePage as String }
+	/** Code page for file */
+	void setCodePage(String value) { params.codePage = value }
+	/** Code page for file */
+	String codePage() { codePage?:fileConnection?.codePage() }
+
+	/** Append if file exists */
+	Boolean getAppend() { params.append as Boolean }
+	/** Append if file exists */
 	void setAppend (Boolean value) { params.append = value }
+	/** Append if file exists */
+	Boolean isAppend() { append?:fileConnection?.isAppend() }
 	
-	/**
-	 * Auto create path for connection
-	 */
-	Boolean getCreatePath () { BoolUtils.IsValue([params.createPath, (connection as FileConnection).createPath], false) }
-	/**
-	 * Auto create path for connection
-	 */
-	void setCreatePath (Boolean value) { params.createPath = value }
+	/** Auto create path for connection */
+	Boolean getCreatePath() { params.createPath as Boolean }
+	/** Auto create path for connection */
+	void setCreatePath(Boolean value) { params.createPath = value }
+	/** Auto create path for connection */
+	Boolean isCreatePath() { createPath?:fileConnection?.isCreatePath() }
 	
-	/**
-	 * Delete file if empty after write
-	 */
-	Boolean getDeleteOnEmpty () { BoolUtils.IsValue([params.deleteOnEmpty, (connection as FileConnection).deleteOnEmpty], false) }
-	/**
-	 * Delete file if empty after write
-	 */
-	void setDeleteOnEmpty (Boolean value) { params.deleteOnEmpty = value }
+	/** Delete file if empty after write */
+	Boolean getDeleteOnEmpty() { params.deleteOnEmpty as Boolean }
+	/** Delete file if empty after write */
+	void setDeleteOnEmpty(Boolean value) { params.deleteOnEmpty = value }
+	/** Delete file if empty after write */
+	Boolean isDeleteOnEmpty() { deleteOnEmpty?:fileConnection?.isDeleteOnEmpty() }
 	
-	/**
-	 * File is pack of GZIP
-	 */
-	Boolean getIsGzFile() { BoolUtils.IsValue([params.isGzFile, (connection as FileConnection).isGzFile], false) }
-	/**
-	 * File is pack of GZIP
-	 */
-	void setIsGzFile (Boolean value) { params.isGzFile = value }
+	/** File is pack of GZIP */
+	Boolean getIsGzFile() { params.isGzFile as Boolean }
+	/** File is pack of GZIP */
+	void setIsGzFile(Boolean value) { params.isGzFile = value }
+	/** File is pack of GZIP */
+	Boolean isGzFile() { isGzFile?:fileConnection?.isGzFile() }
 	
-	/**
-	 * Extension for file
-	 */
-	String getExtension () { ListUtils.NotNullValue([params.extension as String, (connection as FileConnection).extension]) }
-	/**
-	 * Extension for file
-	 */
-	void setExtension (String value) { params.extension = value }
+	/** Extension for file */
+	String getExtension() { params.extension as String }
+	/** Extension for file */
+	void setExtension(String value) { params.extension = value }
+	/** Extension for file */
+	String extension() { extension?:fileConnection?.extension }
 	
-	/**
-	 * Size of read/write buffer size
-	 */
-	Integer getBufferSize () { ListUtils.NotNullValue([params.bufferSize as Integer, (connection as FileConnection).bufferSize, 1*1024*1024]) as Integer }
-	/**
-	 * Size of read/write buffer size
-	 */
+	/** Size of read/write buffer size */
+	Integer getBufferSize() { params.bufferSize as Integer }
+	/** Size of read/write buffer size */
 	void setBufferSize(Integer value)  { params.bufferSize = value }
+	/** Size of read/write buffer size */
+	Integer bufferSize() { bufferSize?:fileConnection?.bufferSize() }
+
+	/** Format for date fields */
+	String getFormatDate() { params.formatDate as String }
+	/** Format for date fields */
+	void setFormatDate (String value) { params.formatDate = value }
+	/** Format for date fields */
+	String formatDate() { formatDate?:fileConnection?.formatDate() }
+
+	/** Format for time fields */
+	String getFormatTime () { params.formatTime as String }
+	/** Format for time fields */
+	void setFormatTime (String value) { params.formatTime = value }
+	/** Format for time fields */
+	String formatTime() { formatTime?:fileConnection?.formatTime() }
+
+	/** Format for datetime fields */
+	String getFormatDateTime () { params.formatDateTime as String }
+	/** Format for datetime fields */
+	void setFormatDateTime (String value) { params.formatDateTime = value }
+	/** Format for datetime fields */
+	String formatDateTime() { formatDateTime?:fileConnection?.formatDateTime() }
+
+	/** Format for timestamp with timezone fields */
+	String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
+	/** Format for timestamp with timezone fields */
+	void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
+	/** Format for timestamp with timezone fields */
+	String formatTimestampWithTz() { formatTimestampWithTz?:fileConnection?.formatTimestampWithTz() }
+
+	/** Use the same date and time format */
+	String getUniFormatDateTime() { params.uniFormatDateTime as String }
+	/** Use the same date and time format */
+	void setUniFormatDateTime(String value) { params.uniFormatDateTime = value }
+	/** Use the same date and time format */
+	String uniFormatDateTime() { uniFormatDateTime?:fileConnection?.uniFormatDateTime }
 	
 	@Override
 	@JsonIgnore
-	String getObjectName() { (fileName != null)?(fileName + ((extension != null)?".${extension}":'')):'file' }
+	String getObjectName() { (fileName != null)?(fileName + ((extension() != null)?".${extension()}":'')):'file' }
 	
 	@Override
 	@JsonIgnore
@@ -171,9 +187,7 @@ class FileDataset extends Dataset {
 	List<FileWriteOpts> getWritedFiles() { writedFiles }
 	
 	@Override
-	void openWrite (Map procParams) {
-		/*sysParams.deleteOnEmpty = BoolUtils.IsValue(procParams.deleteOnEmpty, deleteOnEmpty)
-		sysParams.append = procParams.append*/
+	void openWrite(Map procParams) {
 		writedFiles.clear()
 		super.openWrite(procParams)
 	}
@@ -186,12 +200,12 @@ class FileDataset extends Dataset {
 	}
 	
 	@Override
-	List<String> inheriteConnectionParams () {
+	List<String> inheriteConnectionParams() {
 		super.inheriteConnectionParams() + ['codePage', 'isGzFile', 'extension', 'append']
 	}
 	
 	@Override
-	List<String> excludeSaveParams () {
+	List<String> excludeSaveParams() {
 		super.excludeSaveParams() + ['fileName']
 	}
 

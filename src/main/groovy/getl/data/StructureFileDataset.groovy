@@ -109,39 +109,6 @@ class StructureFileDataset extends FileDataset {
 	/** Name of data map node */
 	void setDataNode (String value) { params.dataNode = value }
 
-	/** Format for date fields */
-	String getFormatDate() { params.formatDate as String }
-	/** Format for date fields */
-	void setFormatDate(String value) { params.formatDate = value }
-	/** Format for date fields */
-	String formatDate() { formatDate?:DateUtils.defaultDateMask }
-
-	/** Format for datetime fields */
-	String getFormatDateTime() { params.formatDateTime as String }
-	/** Format for datetime fields */
-	void setFormatDateTime(String value) { params.formatDateTime = value }
-	/** Format for datetime fields */
-	String formatDateTime() { formatDateTime?:DateUtils.defaultDateTimeMask }
-
-	/** Format for timestamp with timezone fields */
-	String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
-	/** Format for timestamp with timezone fields */
-	void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
-	/** Format for timestamp with timezone fields */
-	String formatTimestampWithTz() { formatTimestampWithTz?:DateUtils.defaultTimestampWithTzMask }
-
-	/** Format for time fields */
-	String getFormatTime() { params.formatTime as String }
-	/** Format for time fields */
-	void setFormatTime(String value) { params.formatTime = value }
-	/** Format for time fields */
-	String formatTime() { formatTime?:DateUtils.defaultTimeMask }
-
-	/** Use the same date and time format */
-	String getUniFormatDateTime() { params.uniFormatDateTime as String }
-	/** Use the same date and time format */
-	void setUniFormatDateTime(String value) { params.uniFormatDateTime = value }
-
 	/**
 	 * Return the format of the specified field
 	 * @param field dataset field

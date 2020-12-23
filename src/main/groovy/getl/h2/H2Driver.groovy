@@ -122,10 +122,10 @@ class H2Driver extends JDBCDriver {
 		}
 		def cols = columns.join(', ')
 		def flds = fields.join(', ')
-		def heads = (!source.header) ? "'" + headers.join(source.fieldDelimiter) + "'" : "null"
-		fparm << "charset=${source.codePage}".toString()
-		fparm << "fieldSeparator=${source.fieldDelimiter}".toString()
-		if (source.quoteStr != null) fparm << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr)}".toString()
+		def heads = (!source.isHeader()) ? "'" + headers.join(source.fieldDelimiter()) + "'" : "null"
+		fparm << "charset=${source.codePage()}".toString()
+		fparm << "fieldSeparator=${source.fieldDelimiter()}".toString()
+		if (source.quoteStr() != null) fparm << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr())}".toString()
 		def functionParms = fparm.join(" ")
 
 		sb <<
@@ -224,18 +224,16 @@ VALUES(${GenerationUtils.SqlFields(dataset, fields, "?", excludeFields).join(", 
 
 	@Override
 	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
+		super.prepareCsvTempFile(source, csvFile)
 		csvFile.escaped = false
-		csvFile.header = false
-		csvFile.fieldDelimiter = '|'
-		csvFile.rowDelimiter = '\n'
-		csvFile.quoteStr = '"'
-		csvFile.nullAsValue = null
-		csvFile.codePage = 'UTF-8'
 	}
 
 	@Override
 	void validCsvTempFile(Dataset source, CSVDataset csvFile) {
-		if (csvFile.header)
+		super.validCsvTempFile(source, csvFile)
+		if (!(csvFile.codePage().toLowerCase() in ['utf-8', 'utf8']))
+			throw new ExceptionGETL('The file must be encoded in utf-8 for batch download!')
+		if (csvFile.isHeader())
 			throw new ExceptionGETL('It is not allowed to use the header in the file for bulk load!')
 	}
 }

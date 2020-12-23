@@ -3,6 +3,8 @@ package getl.jdbc
 import getl.jdbc.opts.SequenceCreateSpec
 import groovy.sql.Sql
 import groovy.transform.Synchronized
+import org.h2.util.DateTimeUtils
+
 import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -1328,7 +1330,7 @@ ${extend}'''
 			def onlyFields = ListUtils.ToLowerCase(params.onlyFields as List<String>)
 			def excludeFields = ListUtils.ToLowerCase(params.excludeFields as List<String>)
 			
-			def lf = (!dataset.manualSchema && dataset.field.isEmpty())?fields(dataset):(dataset.fieldClone() as List<Field>)
+			def lf = (!dataset.isManualSchema() && dataset.field.isEmpty())?fields(dataset):(dataset.fieldClone() as List<Field>)
 			lf.each { prepareField(it) }
 			
 			if (!onlyFields && !excludeFields) {
@@ -1684,7 +1686,7 @@ $sql
 	protected List<Field> prepareFieldFromWrite(JDBCDataset dataset, Closure prepareCode) {
 		def loadedField = (!dataset.field.isEmpty())
 		List<Field> tableFields
-		if (!loadedField && !dataset.manualSchema) {
+		if (!loadedField && !dataset.isManualSchema()) {
 			tableFields = fields(dataset)
 		}
 		else {
@@ -2252,10 +2254,10 @@ $sql
 		def keyField = (procParams.keyField as List<String>)?:([] as List<String>)
 		def autoKeyField = keyField.isEmpty()
 		
-		if (!target.manualSchema && target.field.isEmpty()) target.retrieveFields()
+		if (!target.isManualSchema() && target.field.isEmpty()) target.retrieveFields()
 		if (target.field.isEmpty()) throw new ExceptionGETL("Required fields for dataset")
 		
-		if (!source.manualSchema && source.field.isEmpty()) source.retrieveFields()
+		if (!source.isManualSchema() && source.field.isEmpty()) source.retrieveFields()
 		if (source.field.isEmpty()) throw new ExceptionGETL("Required fields for dest dataset")
 		
 		def mapField = [:]
@@ -2501,5 +2503,17 @@ FROM {source} {after_from}'''
 		def sql = syntaxCopyTableTo(source, dest, qParams)
 
 		return executeCommand(sql, [queryParams: qParams])
+	}
+
+	@Override
+	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
+		super.prepareCsvTempFile(source, csvFile)
+		csvFile.codePage = 'UTF-8'
+		csvFile.header = false
+		csvFile.fieldDelimiter = '|'
+		csvFile.rowDelimiter = '\n'
+		csvFile.quoteStr = '"'
+		csvFile.nullAsValue = null
+		csvFile.formatTimestampWithTz = DateUtils.defaultTimestampWithTzSmallMask
 	}
 }

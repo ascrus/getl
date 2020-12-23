@@ -383,7 +383,7 @@ class TableDataset extends JDBCDataset {
 
 		List<Field> csvFields
 		def schemaFile = parent.schemaFileName
-		if (schemaFile == null && source.schemaFileName != null && source.autoSchema) schemaFile = source.schemaFileName
+		if (schemaFile == null && source.schemaFileName != null && source.isAutoSchema()) schemaFile = source.schemaFileName
 		if (schemaFile != null && !parent.inheritFields) {
 			if (!FileUtils.ExistsFile(schemaFile)) {
 				if (FileUtils.RelativePathFromFile(schemaFile) == '.' && sourceConnection.path != null) {

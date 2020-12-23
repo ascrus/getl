@@ -15,11 +15,11 @@ import groovy.transform.stc.SimpleType
  *
  */
 class FileConnection extends Connection {
-	FileConnection () {
+	FileConnection() {
 		super(driver: FileDriver)
 	}
 
-	FileConnection (Map params) {
+	FileConnection(Map params) {
 		super((params != null)?(params + (!params.containsKey('driver')?[driver: FileDriver]:[:])):null)
 		if (!(driver instanceof FileDriver))
 			throw new ExceptionGETL("Required FileDriver instance class for connection!")
@@ -29,7 +29,7 @@ class FileConnection extends Connection {
 	}
 
 	@Override
-	protected void doInitConnection () {
+	protected void doInitConnection() {
 		super.doInitConnection()
 		// File manager
 		files = new FileManager()
@@ -44,13 +44,13 @@ class FileConnection extends Connection {
 	}
 
 	@Override
-	protected void onLoadConfig (Map configSection) {
+	protected void onLoadConfig(Map configSection) {
 		super.onLoadConfig(configSection)
 		currentPath = null
 	}
 	
 	/** Connection path */
-	String getPath () { params.path as String }
+	String getPath() { params.path as String }
 	/** Connection path */
 	void setPath (String value) {
 		if (value != null) {
@@ -67,44 +67,91 @@ class FileConnection extends Connection {
 	}
 	
 	/** Code page for connection files */
-	String getCodePage () { params.codePage as String }
+	String getCodePage() { params.codePage as String }
 	/** Code page for connection files */
-	void setCodePage (String value) { params.codePage = value }
+	void setCodePage(String value) { params.codePage = value }
+	/** Code page for connection files */
+	String codePage() { codePage?:'utf-8' }
 
 	/** Auto create path if not exists */
-	Boolean getCreatePath () { params.createPath as Boolean }
+	Boolean getCreatePath() { params.createPath as Boolean }
 	/** Auto create path if not exists */
 	void setCreatePath(Boolean value) { params.createPath = value }
+	/** Auto create path if not exists */
+	Boolean isCreatePath() { BoolUtils.IsValue(createPath) }
 	
 	/** Delete file if empty after write */
-	Boolean getDeleteOnEmpty () { params.deleteOnEmpty as Boolean }
+	Boolean getDeleteOnEmpty() { params.deleteOnEmpty as Boolean }
 	/** Delete file if empty after write */
-	void setDeleteOnEmpty (Boolean value) { params.deleteOnEmpty = value }
+	void setDeleteOnEmpty(Boolean value) { params.deleteOnEmpty = value }
+	/** Delete file if empty after write */
+	Boolean isDeleteOnEmpty() { BoolUtils.IsValue(deleteOnEmpty) }
 	
 	/** Append to exists connection files */
-	Boolean getAppend () { params.append as Boolean }
+	Boolean getAppend() { params.append as Boolean }
 	/** Append to exists connection files */
-	void setAppend (Boolean value) { params.append = value }
+	void setAppend(Boolean value) { params.append = value }
+	/** Append to exists connection files */
+	Boolean isAppend() { BoolUtils.IsValue(append) }
 	
 	/** Pack GZIP connection files */
 	Boolean getIsGzFile() { params.isGzFile as Boolean }
 	/** Pack GZIP connection files */
-	void setIsGzFile (Boolean value) { params.isGzFile = value }
+	void setIsGzFile(Boolean value) { params.isGzFile = value }
+	/** Pack GZIP connection files */
+	Boolean isGzFile() { BoolUtils.IsValue(isGzFile) }
 	
-	/** Extenstion for connection files */
-	String getExtension () { params.extension as String }
-	/** Extenstion for connection files */
-	void setExtension (String value) { params.extension = value }
+	/** Extension for connection files */
+	String getExtension() { params.extension as String }
+	/** Extension for connection files */
+	void setExtension(String value) { params.extension = value }
 
 	/** File separator in path */
-	String getFileSeparator () { (params.fileSeparator as String)?:File.separator }
+	String getFileSeparator() { params.fileSeparator as String }
 	/** File separator in path */
-	void setFileSeparator (String value ) { params.fileSeparator = value }
+	void setFileSeparator(String value ) { params.fileSeparator = value }
+	/** File separator in path */
+	String fileSeparator() { fileSeparator?:File.separator}
 	
 	/** Size of read/write buffer size */
-	Integer getBufferSize () { (params.bufferSize as Integer)?:1*1024*1024 }
+	Integer getBufferSize() { params.bufferSize as Integer }
 	/** Size of read/write buffer size */
 	void setBufferSize(Integer value)  { params.bufferSize = value }
+	/** Size of read/write buffer size */
+	Integer bufferSize() { bufferSize?:(16 * 1024) }
+
+	/** Format for date fields */
+	String getFormatDate() { params.formatDate as String }
+	/** Format for date fields */
+	void setFormatDate(String value) { params.formatDate = value }
+	/** Format for date fields */
+	String formatDate() { formatDate?:DateUtils.defaultDateMask }
+
+	/** Format for time fields */
+	String getFormatTime() { params.formatTime as String }
+	/** Format for time fields */
+	void setFormatTime(String value) { params.formatTime = value }
+	/** Format for time fields */
+	String formatTime() { formatTime?:DateUtils.defaultTimeMask }
+
+	/** Format for datetime fields */
+	String getFormatDateTime () { params.formatDateTime as String }
+	/** Format for datetime fields */
+	void setFormatDateTime(String value) { params.formatDateTime = value }
+	/** Format for datetime fields */
+	String formatDateTime() { formatDateTime?:DateUtils.defaultDateTimeMask }
+
+	/** Format for timestamp with timezone fields */
+	String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
+	/** Format for timestamp with timezone fields */
+	void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
+	/** Format for timestamp with timezone fields */
+	String formatTimestampWithTz() { formatTimestampWithTz?:DateUtils.defaultTimestampWithTzFullMask }
+
+	/** Use the same date and time format */
+	String getUniFormatDateTime() { params.uniFormatDateTime as String }
+	/** Use the same date and time format */
+	void setUniFormatDateTime(String value) { params.uniFormatDateTime = value }
 
 	/** Exists path for connection */
 	@JsonIgnore
@@ -124,7 +171,7 @@ class FileConnection extends Connection {
 	}
 
 	/** Delete path of connection */
-	Boolean deletePath () {
+	Boolean deletePath() {
 		if (path == null) return false
 		def p = new File(currentPath())
 		if (!p.exists()) return false
@@ -137,7 +184,7 @@ class FileConnection extends Connection {
 	}
 
 	/** Valid connection path */
-	void validPath () {
+	void validPath() {
 		if (createPath && path != null) FileUtils.ValidPath(currentPath())
 	}
 

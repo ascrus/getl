@@ -64,7 +64,7 @@ class KafkaDataset extends Dataset {
     /** Format for timestamp with timezone fields */
     void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
     /** Format for timestamp with timezone fields */
-    String formatTimestampWithTz() { formatTimestampWithTz?:DateUtils.defaultTimestampWithTzMask }
+    String formatTimestampWithTz() { formatTimestampWithTz?:DateUtils.defaultTimestampWithTzFullMask }
 
     /** Format for time fields */
     String getFormatTime() { params.formatTime as String }

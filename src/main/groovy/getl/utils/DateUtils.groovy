@@ -26,7 +26,9 @@ class DateUtils {
 	/** Default datetime mask */
 	static public String defaultDateTimeMask = 'yyyy-MM-dd HH:mm:ss.SSS'
 	/** Default timestamp with timezone mask */
-	static public String defaultTimestampWithTzMask = 'yyyy-MM-dd\'T\'HH:mm:ss.SSS Z'
+	static public String defaultTimestampWithTzFullMask = 'yyyy-MM-dd\'T\'HH:mm:ss.SSSZ'
+	/** Default timestamp with timezone mask */
+	static public String defaultTimestampWithTzSmallMask = 'yyyy-MM-dd HH:mm:ssX'
 	/** Original time zone */
 	static public final String origTimeZone = TimeZone.default.toZoneId().id
 

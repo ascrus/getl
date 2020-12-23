@@ -213,7 +213,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	private final List<Field> field = [] as List<Field>
 	/** Fields of dataset */
 	List<Field> getField() {
-		if (!workSetField && !manualSchema && this.field.isEmpty() && schemaFileName != null)
+		if (!workSetField && !isManualSchema() && this.field.isEmpty() && schemaFileName != null)
 			loadDatasetMetadata()
 
 		return this.field
@@ -271,30 +271,25 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		getField().add(added)
 	}
 	
-	/**
-	 * Auto load schema with meta file
-	 */
+	/** Auto load schema with meta file */
 	@JsonIgnore
-	Boolean getAutoSchema () { BoolUtils.IsValue([params.autoSchema, connection.autoSchema]) }
-	/**
-	 * Auto load schema with meta file
-	 */
-	void setAutoSchema (Boolean value) { params.autoSchema = value }
+	Boolean getAutoSchema() { params.autoSchema as Boolean }
+	/** Auto load schema with meta file */
+	void setAutoSchema(Boolean value) { params.autoSchema = value }
+	/** Auto load schema with meta file */
+	boolean isAutoSchema() { BoolUtils.IsValue(autoSchema, connection.autoSchema) }
 	
-	/**
-	 * Use manual schema for dataset
-	 */
+	/** Use manual schema for dataset */
 	@JsonIgnore
-	Boolean getManualSchema () { BoolUtils.IsValue(params.manualSchema) }
-	/**
-	 * Use manual schema for dataset
-	 */
-	void setManualSchema (Boolean value) {
+	Boolean getManualSchema() { params.manualSchema as Boolean }
+	/** Use manual schema for dataset */
+	void setManualSchema(Boolean value) {
 		if (value)
 			params.manualSchema = true
 		else
 			params.remove('manualSchema')
 	}
+	Boolean isManualSchema() { BoolUtils.IsValue(manualSchema) }
 	
 	/** Schema file name */
 	@JsonIgnore
@@ -594,7 +589,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Initialization list of fields
 	 */
 	protected void doInitFields (List<Field> sourceFields) {
-		if (!sourceFields.isEmpty() && !manualSchema) { 
+		if (!sourceFields.isEmpty() && !isManualSchema()) {
 			updateFields(UpdateFieldType.MERGE_EXISTS, sourceFields)
 		}
 	}
@@ -678,7 +673,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		procParams = bulkLoadDir + procParams
 		
 		if (getField().size() == 0) {
-			if (BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
+			if (BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())) {
 				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
 					throw new ExceptionGETL("Can not auto load schema from destination dataset!")
 
@@ -700,7 +695,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			source.setField(field)
 
 		if (source.field.isEmpty()) {
-			if (BoolUtils.IsValue(procParams.source_autoSchema, source.autoSchema)) {
+			if (BoolUtils.IsValue(procParams.source_autoSchema, source.isAutoSchema())) {
 				if (!source.connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
 					throw new ExceptionGETL("Can not auto load schema from source dataset!")
 
@@ -956,7 +951,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (status != Dataset.Status.AVAIBLE)
 			throw new ExceptionGETL("Dataset is not avaible for read operation (current status is ${status})")
 		
-		if (getField().size() == 0 && BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
+		if (getField().size() == 0 && BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())) {
 			if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
 				throw new ExceptionGETL("Can not auto load schema from dataset")
 			loadDatasetMetadata()
@@ -1050,7 +1045,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def writeDir = directives('write')?:[:]
 		procParams = writeDir + procParams
 
-		def saveSchema = BoolUtils.IsValue(procParams.autoSchema, autoSchema) 
+		def saveSchema = BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())
 		if (saveSchema && !connection.driver.isSupport(Driver.Support.AUTOSAVESCHEMA))
 			throw new ExceptionGETL("Can not auto save schema from dataset")
 		
@@ -1240,7 +1235,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (key == null) throw new ExceptionGETL("Required parameter \"key\"!")
 		
 		if (getField().isEmpty()) {
-			if (BoolUtils.IsValue(procParams.autoSchema, autoSchema)) {
+			if (BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())) {
 				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
 					throw new ExceptionGETL("Can not auto load schema from destination dataset!")
 
@@ -1549,7 +1544,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		this.csvTempFile = TFS.dataset()
 
 		if (getField().isEmpty()) {
-			if (autoSchema) {
+			if (isAutoSchema()) {
 				if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
 					throw new ExceptionGETL("Can not auto load schema from destination dataset!")
 

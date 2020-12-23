@@ -34,7 +34,7 @@ class CSVDataset extends FileDataset {
 		resetPresetMode()
 	}
 	/** Quote delimiter string */
-	String quoteStr() { quoteStr?:currentCsvConnection.quoteStr() }
+	String quoteStr() { quoteStr?:currentCsvConnection?.quoteStr() }
 	
 	/** Field delimiter */
 	String getFieldDelimiter () { params.fieldDelimiter as String }
@@ -44,7 +44,7 @@ class CSVDataset extends FileDataset {
 		resetPresetMode()
 	}
 	/** Field delimiter */
-	String fieldDelimiter() { fieldDelimiter?:currentCsvConnection.fieldDelimiter() }
+	String fieldDelimiter() { fieldDelimiter?:currentCsvConnection?.fieldDelimiter() }
 	
 	/** Row delimiter */
 	String getRowDelimiter () { params.rowDelimiter as String }
@@ -54,7 +54,7 @@ class CSVDataset extends FileDataset {
 		resetPresetMode()
 	}
 	/** Row delimiter */
-	String rowDelimiter() { rowDelimiter?:currentCsvConnection.rowDelimiter() }
+	String rowDelimiter() { rowDelimiter?:currentCsvConnection?.rowDelimiter() }
 	
 	/** File has header of fields name */
 	Boolean getHeader () { params.header as Boolean }
@@ -65,7 +65,7 @@ class CSVDataset extends FileDataset {
 	}
 	/** File has header of fields name */
 	@JsonIgnore
-	Boolean isHeader() { BoolUtils.IsValue(header, currentCsvConnection.isHeader()) }
+	Boolean isHeader() { BoolUtils.IsValue(header, currentCsvConnection?.isHeader()) }
 
 	/** Ignore header field name */
 	Boolean getIgnoreHeader() { params.ignoreHeader as Boolean }
@@ -73,7 +73,7 @@ class CSVDataset extends FileDataset {
 	void setIgnoreHeader(Boolean value) { params.ignoreHeader = value }
 	/** Ignore header field name */
 	@JsonIgnore
-	Boolean isIgnoreHeader() { BoolUtils.IsValue(ignoreHeader, currentCsvConnection.isIgnoreHeader()) }
+	Boolean isIgnoreHeader() { BoolUtils.IsValue(ignoreHeader, currentCsvConnection?.isIgnoreHeader()) }
 	
 	/** Required format values for output to file */
 	Boolean getFormatOutput () { params.formatOutput }
@@ -81,7 +81,7 @@ class CSVDataset extends FileDataset {
 	void setFormatOutput (Boolean value) { params.formatOutput = value }
 	/** Required format values for output to file */
 	@JsonIgnore
-	Boolean isFormatOutput() { BoolUtils.IsValue(formatOutput, currentCsvConnection.isFormatOutput()) }
+	Boolean isFormatOutput() { BoolUtils.IsValue(formatOutput, currentCsvConnection?.isFormatOutput()) }
 
 	/** Check constraints during reading and writing */
 	Boolean getConstraintsCheck() { params.constraintsCheck as Boolean }
@@ -89,14 +89,14 @@ class CSVDataset extends FileDataset {
 	void setConstraintsCheck(Boolean value) { params.constraintsCheck = value }
 	/** Check constraints during reading and writing */
 	@JsonIgnore
-	Boolean isConstraintsCheck() { BoolUtils.IsValue(constraintsCheck, currentCsvConnection.isConstraintsCheck()) }
+	Boolean isConstraintsCheck() { BoolUtils.IsValue(constraintsCheck, currentCsvConnection?.isConstraintsCheck()) }
 	
 	/** Convert NULL to value */
 	String getNullAsValue() { params.nullAsValue as String }
 	/** Convert NULL to value */
 	void setNullAsValue(String value) { params.nullAsValue = value }
 	/** Convert NULL to value */
-	String nullAsValue() { nullAsValue?:currentCsvConnection.nullAsValue }
+	String nullAsValue() { nullAsValue?:currentCsvConnection?.nullAsValue }
 
 	/** Required convert string to escape value */
 	Boolean getEscaped() { params.escaped as Boolean }
@@ -107,49 +107,21 @@ class CSVDataset extends FileDataset {
 	}
 	/** Required convert string to escape value */
 	@JsonIgnore
-	Boolean isEscaped() { BoolUtils.IsValue(escaped, currentCsvConnection.isEscaped()) }
+	Boolean isEscaped() { BoolUtils.IsValue(escaped, currentCsvConnection?.isEscaped()) }
 
 	/** Mode of quote value */
-	QuoteMode getQuoteMode () { ListUtils.NotNullValue([params.quoteMode, currentCsvConnection?.quoteMode, QuoteMode.NORMAL]) as QuoteMode }
+	QuoteMode getQuoteMode() { ListUtils.NotNullValue([params.quoteMode, currentCsvConnection?.quoteMode, QuoteMode.NORMAL]) as QuoteMode }
 	/** Mode of quote value */
-	void setQuoteMode (QuoteMode value) { params.quoteMode = value }
+	void setQuoteMode(QuoteMode value) { params.quoteMode = value }
 	/** Mode of quote value */
-	QuoteMode quoteMode() { quoteMode?:currentCsvConnection.getQuoteMode() }
+	QuoteMode quoteMode() { quoteMode?:currentCsvConnection?.getQuoteMode() }
 	
 	/** Decimal separator for number fields */
-	String getDecimalSeparator () { ListUtils.NotNullValue([params.decimalSeparator, currentCsvConnection?.decimalSeparator, '.']) }
+	String getDecimalSeparator() { ListUtils.NotNullValue([params.decimalSeparator, currentCsvConnection?.decimalSeparator, '.']) }
 	/** Decimal separator for number fields */
-	void setDecimalSeparator (String value) { params.decimalSeparator = value }
+	void setDecimalSeparator(String value) { params.decimalSeparator = value }
 	/** Decimal separator for number fields */
-	String decimalSeparator() { decimalSeparator?:currentCsvConnection.decimalSeparator() }
-	
-	/** Format for date fields */
-	String getFormatDate () { ListUtils.NotNullValue([params.formatDate, currentCsvConnection?.formatDate]) }
-	/** Format for date fields */
-	void setFormatDate (String value) { params.formatDate = value }
-	/** Format for date fields */
-	String formatDate() { formatDate?:currentCsvConnection.formatDate() }
-	
-	/** Format for time fields */
-	String getFormatTime () { ListUtils.NotNullValue([params.formatTime, currentCsvConnection?.formatTime]) }
-	/** Format for time fields */
-	void setFormatTime (String value) { params.formatTime = value }
-	/** Format for time fields */
-	String formatTime() { formatTime?:currentCsvConnection.formatTime() }
-	
-	/** Format for datetime fields */
-	String getFormatDateTime () { ListUtils.NotNullValue([params.formatDateTime, currentCsvConnection?.formatDateTime]) }
-	/** Format for datetime fields */
-	void setFormatDateTime (String value) { params.formatDateTime = value }
-	/** Format for datetime fields */
-	String formatDateTime() { formatDateTime?:currentCsvConnection.formatDateTime() }
-
-	/** Format for timestamp with timezone fields */
-	String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
-	/** Format for timestamp with timezone fields */
-	void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
-	/** Format for timestamp with timezone fields */
-	String formatTimestampWithTz() { formatTimestampWithTz?:currentCsvConnection.formatTimestampWithTz() }
+	String decimalSeparator() { decimalSeparator?:currentCsvConnection?.decimalSeparator() }
 
 	/** OS locale for parsing date-time fields
 	 * <br>P.S. You can set locale for separately field in Field.extended.locale
@@ -162,7 +134,7 @@ class CSVDataset extends FileDataset {
 	/** OS locale for parsing date-time fields
 	 * <br>P.S. You can set locale for separately field in Field.extended.locale
 	 */
-	String locale() { locale?:currentCsvConnection.locale }
+	String locale() { locale?:currentCsvConnection?.locale }
 
 	/** File settings preset */
 	String getPresetMode() { params.presetMode as String }
@@ -176,7 +148,7 @@ class CSVDataset extends FileDataset {
 		params.putAll(p)
 	}
 	/** File settings preset */
-	String presetMode() { presetMode?:currentCsvConnection.presetMode() }
+	String presetMode() { presetMode?:currentCsvConnection?.presetMode() }
 
 	/** Reset preset mode to custom */
 	void resetPresetMode() {
