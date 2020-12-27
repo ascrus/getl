@@ -2,13 +2,12 @@ import java.time.LocalDateTime
 
 plugins {
     id 'groovy'
-    id 'idea'
     id 'maven'
     id 'signing'
 }
 
 //noinspection GroovyUnusedAssignment
-version = '4.7.0-3-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.7.0' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -183,3 +182,11 @@ getl {
 """
 	}
 }
+
+task toPackage(type: Zip) {
+	archiveFileName = project.name + '-' + project.version + '.zip'
+	from jar.archiveFile
+	from fileTree('reports')
+}
+
+jar.finalizedBy toPackage
