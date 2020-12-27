@@ -3,60 +3,90 @@
 Groovy ETL (Getl) - open source project on Groovy, developed since 2012 to automate loading and processing data from 
 different sources. 
 
-Getl is a replacement for classic ETLs for projects where you need to quickly and load a lot of data from a variety of
-file sources with complex formats and RDBMS tables. Getl does not need to develop a process for each table or file format. 
-It is enough in its simple and powerful ETL language to create templates with the necessary logic for working with data 
-and sources to the logic of the software architecture of your project and call them up, transferring which sources to 
-work with. Getl is an intelligent Etl tool and independently creates the correct mapping between the copied data, 
-leads to the necessary types and performs the task by compiling it on the fly into byte code for execution in Java.
-
-For Micro Focus Vertica, Getl has enhanced functionality that allows implement sophisticated 
-solutions for capturing, delivering and calculating data for this data warehouse.
-
 ## When do you need Getl?
-* Copy data arrays between different JDBC compatible databases and file sources;
-* Provide incremental data capture and upload changes to the data warehouse;
-* Copy, process or delete files on file sources under specified conditions;
-* In pilot projects, take data source tables, deploy compatible structures for the data warehouse and copy
-data from the source to the data warehouse tables;
-* Organize the launch and debugging of ETL processes between development, testing and production environments;
-* To simplify testing, create models of reference data and files and automate data initialization for starting tasks 
-from unit tests;
-* To control the state of tables in the data warehouse, describe the time rules from filling and automate the process
-monitoring data in tables;
-* Develop your own patterns for process automation to capture, load and process data in simple etl language for your 
-business logic used in the project according to your chosen data warehouse architecture.
+* Copying datasets between RDBMS, file and cloud sources;
+* Capturing and delivering data increment from sources to the data warehouse;
+* Copying and processing files from local and external file sources;
+* Rapid development of pilot projects for data warehouses (converting the structure of sources to warehouse tables, multi-threaded reloading of data from sources to warehouse tables)
+* Organization of development, testing and prodiuction stands for ETL projects;
+* Automation of testing etl processes;
+* Automating data health monitoring in a data warehouse;
+* Centralization of storage of descriptions of data sources and their structures in the repository;
+* Simplify the development of data processing patterns.
+
+## Supported RDBMS
+IBM DB2, FireBird, H2 Database, Hadoop Hive, Cloudera Impala, MS SQLServer, MySql, IBM Netezza, NetSuite, Oracle, PostgreSql, Micro Focus Vertica.
+
+## Supported file sources
+CSV, MS Excel, Json, XML, Yaml.
+
+## Supported cloud sources
+Kafka, SalesForce.
+
+## Supported file systems
+Local file systems Windows and Linux, FTP, SFTP, Hadoop HDFS.
+
+## Operations with RDBMS data sources
+* Creating and dropping tables and temporary tables;
+* Creating indexes;
+* Managing table partitions (only Vertica)
+* Reading records from tables and queries;
+* Adding, modifying and deleting records in tables;
+* Batch loading CSV files into tables (only H2, Vertica, Hive and Impala);
+* Execution of SQL queries.
+
+## Operations with file sources
+* Reading records from files;
+* Saving records to files (only CSV and Json);
+* Splitting files into portions when recording (only CSV);
+* Working with files compressed in Gz;
+* Deleting files.
+
+## Working with cloud sources
+* Reading records from datasets;
+* Saving records to datasets (only Kafka).
+
+## Working with file systems
+* Creating and deleting directories;
+* Uploading and uploading a file from the server to a local directory;
+* Renaming and moving files at source
+* Executing OS command at source (only local file systems and SFTP).
+
+## Getl language operators
+* ETL:
+    * Copy records from source to source or multiple sources at the same time
+    * Reading records from source with error handling;
+    * Saving records to a source or multiple sources at the same time;
+* ELT:
+    * Executing scripts in Getl stored procedure language;
+    * Copying records between tables of the same RDBMS;
+* File systems:
+    * Copying a hierarchy of directories and their files between two file systems;
+    * Clearing the hierarchy of directories and their files in the file system;
+    * Multi-threaded parsing of files from the file system;
+* Object repository:
+    * Saving and reading repository object descriptions from repository files;
+    * Processing repository objects by name group or mask;
+* Configuration and resources:
+    * Loading and saving configuration files;
+    * Working with loaded configuration content;
+* Logging and profiling:
+    * Logging messages, events and errors;
+    * Profiling the running time of commands and code blocks;
+* Workflow management:
+    * Controlling permission to start processes;
+    * Automatic cloning and freeing of repository objects in threads;
+    * Automatically freeing temporary repository objects upon termination of their processes;
+    * Process and application termination Commands.
 
 ## Links
-* Getl is published in the [Central Maven](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22net.sourceforge.getl%22)
+* Getl jar is published in the [Central Maven](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22net.sourceforge.getl%22)
 * The source code of the project is located on the GitHub project [getl](https://github.com/ascrus/getl)
-* Basic English documentation available on [Wiki](https://github.com/ascrus/getl/wiki)
-* The Russian manual is available in the project's [manual](https://github.com/ascrus/getl/tree/master/manuals/getl.rus.md) 
-* Detailed Russian-language documentation is located on [GitHub Pages](https://github.com/ascrus/getl)
+* Basic Russian documentation available on [Wiki](https://github.com/ascrus/getl/wiki)
 * On the basis of Getl, a patterns library was developed to facilitate the development of tasks for Micro Focus Vertica, 
 source code posted on the GitHub project [getl.vertica](https://github.com/ascrus/getl.vertica)  
 * Examples of working with Getl on the basis of H2 Database can be viewed on the GitHub project 
 [Getl examples](https://github.com/ascrus/getl-examples)
-
-## Principles
-![Getl architecture](https://github.com/ascrus/getl/blob/master/manuals/layers.png)
-
-Groovy is a Java compatible high-level language whose code is compiled into Java byte code. 
-It was written in Getl, which extends Groovy with its Dsl language. 
-The language is focused on the easy development of ETL and ELT processes of any complexity.
-
-![Getl architecture](https://github.com/ascrus/getl/blob/master/manuals/modules.png)
-
-You can connect multiple data sources and file systems to Getl as objects of its repository. 
-Connected objects can be grouped into specialized models and set rules for working with them. 
-Objects from the repository can be used in your tasks, they will be visible from the Dsl language. 
-To automate common tasks, Getl allows you to design and run reusable patterns.
-
-![Getl architecture](https://github.com/ascrus/getl/blob/master/manuals/using.png)
-
-Using the IDE, which supports Groovy, you can use Getl to implement a complete project to automate the capture, 
-delivery and processing of data for your DWH. It is recommended to use IntelliJ Idea or Eclipse to development and 
-debugging of project tasks.
 
 
 ## Examples
