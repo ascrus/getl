@@ -2135,9 +2135,9 @@ $sql
 	void doneWrite (Dataset dataset) {
 		WriterParams wp = dataset._driver_params
 		
-		if (wp.rowProc > 0) {
+		if (wp.rowProc > 0)
 			saveBatch(dataset, wp)
-		}
+		dataset.writeRows = dataset.updateRows
 	}
 
 	@Override
