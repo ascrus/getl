@@ -3680,7 +3680,7 @@ Examples:
 
     /** Use default Excel connection for new datasets */
     ExcelConnection useExcelConnection(ExcelConnection connection) {
-        useOtherConnection(RepositoryDatasets.EXCELDATASET, connection) as ExcelConnection
+        useFileConnection(RepositoryDatasets.EXCELDATASET, connection) as ExcelConnection
     }
 
     /** Excel file */
