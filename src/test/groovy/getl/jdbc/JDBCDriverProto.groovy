@@ -490,35 +490,40 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         def q1 = new QueryDataset(connection: con, query: "SELECT * FROM ${table.objectFullName} WHERE $fieldName = :param1")
         def r1 = q1.rows(sqlParams: [param1: 1])
         assertEquals(1, r1.size())
-        Integer id1 = r1[0].id1
+        def id1 = r1[0].id1 as Integer
         assertEquals(1, id1)
 
         def q2 = new QueryDataset(connection: con, query: "SELECT * FROM ${table.objectFullName} WHERE $fieldName = {param1}")
         def r2 = q2.rows(queryParams: [param1: 2])
         assertEquals(1, r2.size())
-        Integer id2 = r2[0].id1
+        def id2 = r2[0].id1 as Integer
         assertEquals(2, id2)
 
         def q3 = new QueryDataset(connection: con)
         q3.loadFile('resource:/sql/test_query.sql')
         def r3 = q3.rows(queryParams: [table: table.objectFullName, field: fieldName, param1: 2])
         assertEquals(1, r3.size())
-        Integer id3 = r3[0].id1
+        def id3 = r3[0].id1 as Integer
         assertEquals(2, id3)
 
         def q4 = new QueryDataset(connection: con)
         q4.scriptFilePath = 'resource:/sql/test_query.sql'
         def r4 = q4.rows(queryParams: [table: table.objectFullName, field: fieldName, param1: 2])
         assertEquals(1, r4.size())
-        Integer id4 = r4[0].id1
+        def id4 = r4[0].id1 as Integer
         assertEquals(2, id4)
+
+        def tabRows = table.select("SELECT Min($fieldName) AS min_id, Max($fieldName) AS max_id FROM {table} WHERE $fieldName > {start}", [start: 0])
+        assertEquals(1, tabRows.size())
+        assertEquals(1, (tabRows[0].min_id as Number).toInteger())
+        assertEquals(countRows, (tabRows[0].max_id as Number).toInteger())
     }
 
     protected void validCountZero() {
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()}")
         def rows = q.rows()
         assertEquals(1, rows.size())
-        Integer cr = rows[0].count_rows
+        def cr = rows[0].count_rows as Integer
         assertEquals(0, cr)
     }
 

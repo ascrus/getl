@@ -342,7 +342,7 @@ Example:
 	 * @param object
 	 * @return
 	 */
-	@SuppressWarnings("GroovyMissingReturnStatement")
+	@SuppressWarnings(["GroovyMissingReturnStatement", 'UnnecessaryQualifiedReference', 'UnnecessaryQualifiedReference'])
 	Map<String, String> ddlTable(String schema, String object) {
 		def sql = ddl(schema, object)
 		StringBuilder create = new StringBuilder()
@@ -522,6 +522,7 @@ Example:
 		write(script + '\n')
 	}
 
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	static String eval(String val) {
 		return GenerationUtils.EvalGroovyScript('"""' + val.replace('\\', '\\\\').replace('"', '\\"') + '"""', Config.vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
 	}

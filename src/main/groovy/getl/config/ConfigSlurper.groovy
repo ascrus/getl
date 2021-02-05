@@ -342,7 +342,8 @@ class ConfigSlurper extends ConfigManager {
 	 * @return
 	 */
 	static String PrepareVariableName(String name) {
-		return (name.matches('(?i)[_]*[a-z]+.*'))?name:('this."${\'' + StringUtils.EscapeJava(name) + '\'}"')
+		return ((name.matches('(?i)^([a-z]|[0-9]|[_])+$') && (name.matches('(?i)[_]*[a-z]+.*')))?name:('this."${\'' + StringUtils.EscapeJava(name) + '\'}"'))
+		//(name.matches('(?i)[_]*[a-z]+.*'))?name:('this."${\'' + StringUtils.EscapeJava(name) + '\'}"')
 	}
 
 	/**

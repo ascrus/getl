@@ -1,15 +1,15 @@
 package getl.utils
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.files.FileManager
+import getl.jdbc.TableDataset
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
-import groovy.transform.AutoClone
 import groovy.transform.CompileStatic
 import getl.utils.opts.PathVarsSpec
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
-
-import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import getl.data.Field
@@ -20,11 +20,11 @@ import getl.exception.ExceptionGETL
  * @author Alexsey Konstantinov
  */
 class Path implements Cloneable, GetlRepository {
-	Path () {
+	Path() {
 		registerMethod()
 	}
 
-	Path (Map params) {
+	Path(Map params) {
 		registerMethod()
 		if (params?.vars != null) {
 			setMaskVariables(params.vars as Map)
@@ -34,7 +34,7 @@ class Path implements Cloneable, GetlRepository {
 
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 
-	private void registerMethod () {
+	private void registerMethod() {
 		methodParams.register("compile", ["mask", "sysVar", "patterns", "vars"])
 	}
 
@@ -64,56 +64,56 @@ class Path implements Cloneable, GetlRepository {
 	/** Original string mask */
 	private String maskStr
 	/** Original string mask */
-	String getMaskStr () { maskStr }
+	String getMaskStr() { maskStr }
 
 	/** Path elements */
 	private List<Map> elements = []
 	/** Path elements */
-	List<Map> getElements () { elements }
+	List<Map> getElements() { elements }
 
 	/** SQL like elements */
 	private List<Map> likeElements = []
 	/** SQL like elements */
 	@SuppressWarnings('unused')
-	List<Map> getLikeElements () { likeElements }
+	List<Map> getLikeElements() { likeElements }
 
 	/** Count level for mask */
-	Integer getCountLevel () { elements.size() }
+	Integer getCountLevel() { elements.size() }
 
 	/** Root path with mask */
 	private String rootPath
 	/** Root path with mask */
-	String getRootPath () { this.rootPath }
+	String getRootPath() { this.rootPath }
 
 	/** Count elements in root path */
 	private Integer numLocalPath
 	/** Count elements in root path */
-	Integer getNumLocalPath () { this.numLocalPath }
+	Integer getNumLocalPath() { this.numLocalPath }
 
 	/** Expression file path with mask */
 	private String maskPath
 	/** Expression file path with mask */
-	String getMaskPath () { this.maskPath }
+	String getMaskPath() { this.maskPath }
 
 	/** Expression folder path with mask */
 	private String maskFolder
 	/** Expression folder path with mask */
-	String getMaskFolder () { this.maskFolder }
+	String getMaskFolder() { this.maskFolder }
 
 	/** Expression mask file */
 	private String maskFile
 	/** Expression mask file */
-	String getMaskFile () { this.maskFile }
+	String getMaskFile() { this.maskFile }
 
 	/** Expression folder path with mask for SQL like */
 	private String likeFolder
 	/** Expression folder path with mask for SQL like */
-	String getLikeFolder () { this.likeFolder }
+	String getLikeFolder() { this.likeFolder }
 
 	/** Expression mask file for SQL like */
 	private String likeFile
 	/** Expression mask file for SQL like */
-	String getLikeFile () { this.likeFile }
+	String getLikeFile() { this.likeFile }
 
 	private Map<String, Map> vars = (MapUtils.UnmodifiableMap(new HashMap<String, Map>()) as Map<String, Map>)
 
@@ -129,7 +129,7 @@ class Path implements Cloneable, GetlRepository {
 	 * <li>Closure calc		- value calculation code
 	 * </ul>
 	 */
-	Map<String, Map> getVars () { this.vars }
+	Map<String, Map> getVars() { this.vars }
 
 	/**
 	 * Variable parameters for compiling a mask
@@ -177,7 +177,7 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** Date formatter for variables */
-	private final Map<String, SimpleDateFormat> varDateFormatter = [:] as Map<String, SimpleDateFormat>
+	private final Map<String, DateTimeFormatter> varDateFormatter = [:] as Map<String, DateTimeFormatter>
 
 	/** System parameters */
 	private final Map<String, Object> sysParams = [:] as Map<String, Object>
@@ -255,9 +255,9 @@ class Path implements Cloneable, GetlRepository {
 		varDateFormatter.clear()
 
 		def compVars = ([:] as Map<String, Map<String, Object>>)
-		def rmask = FileUtils.FileMaskToMathExpression(maskStr)
+		def rMask = FileUtils.FileMaskToMathExpression(maskStr)
 
-		String[] d = rmask.split("/")
+		String[] d = rMask.split("/")
 		StringBuilder rb = new StringBuilder()
 
 		def listFoundVars = [] as List<String>
@@ -439,14 +439,26 @@ class Path implements Cloneable, GetlRepository {
 		}
 
 		compVars.each { name, value ->
-			if ((value.type as Field.Type) in
-					[Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
-				def df = value.format as String
-				if (df == null)
+			def type = value.type as Field.Type
+			if (type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
+				def format = value.format as String
+				if (format == null)
 					throw new ExceptionGETL("Format is required for variable \"$name\"!")
-				def sdf = new SimpleDateFormat(df)
-				sdf.setLenient(false)
-				varDateFormatter.put(name, sdf)
+
+				DateTimeFormatter df = null
+				switch (type) {
+					case Field.dateFieldType:
+						df = DateUtils.BuildDateFormatter(format)
+						break
+					case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+						df = DateUtils.BuildDateTimeFormatter(format)
+						break
+					case Field.timeFieldType:
+						df = DateUtils.BuildTimeFormatter(format)
+						break
+				}
+
+				varDateFormatter.put(name, df)
 			}
 		}
 
@@ -544,6 +556,7 @@ class Path implements Cloneable, GetlRepository {
 	}
 
 	/** Analyze object name */
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	Map analyze(String objName, Boolean isHierarchy = false, Map<String, Object> extendVars = null) {
 		if (!isCompile) compile()
 
@@ -613,14 +626,32 @@ class Path implements Cloneable, GetlRepository {
 					if (type instanceof String)
 						type = Field.Type."$type"
 					switch (type) {
-						case Field.dateFieldType: case Field.datetimeFieldType: case Field.timeFieldType: case Field.timestamp_with_timezoneFieldType:
+						case Field.dateFieldType:
 							try {
-								v = DateUtils.ParseDate(varDateFormatter.get(key), v, ignoreConvertError)
+								v = DateUtils.ParseSQLDate(varDateFormatter.get(key) as DateTimeFormatter, v, ignoreConvertError)
 							}
 							catch (Exception e) {
 								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to date: ${e.message}!")
 							}
                             isError = (v == null)
+							break
+						case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+							try {
+								v = DateUtils.ParseSQLTimestamp(varDateFormatter.get(key) as DateTimeFormatter, v, ignoreConvertError)
+							}
+							catch (Exception e) {
+								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to date: ${e.message}!")
+							}
+							isError = (v == null)
+							break
+						case Field.timeFieldType:
+							try {
+								v = DateUtils.ParseSQLTime(varDateFormatter.get(key) as DateTimeFormatter, v, ignoreConvertError)
+							}
+							catch (Exception e) {
+								throw new ExceptionGETL("Invalid [${key}]: can not parse value \"${v}\" to date: ${e.message}!")
+							}
+							isError = (v == null)
 							break
 						case Field.integerFieldType:
 							try {
@@ -660,8 +691,8 @@ class Path implements Cloneable, GetlRepository {
 			vars.each { key,value ->
 				if (value.calc != null) {
 					def r = res + extendVars
-					def varres = (value.calc as Closure).call(r)
-					res.put(key, varres)
+					def varRes = (value.calc as Closure).call(r)
+					res.put(key, varRes)
 				}
 			}
 		}
@@ -733,8 +764,17 @@ class Path implements Cloneable, GetlRepository {
 		else
 			type = varType as Field.Type
 
-		if (type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType])
-			value = varDateFormatter.get(varName).format(value as Date)
+		switch (type) {
+			case Field.dateFieldType:
+				value = varDateFormatter.get(varName).format((value as Date).toLocalDate())
+				break
+			case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+				value = varDateFormatter.get(varName).format((value as Date).toLocalDateTime())
+				break
+			case Field.timeFieldType:
+				value = varDateFormatter.get(varName).format((value as Date).toLocalTime())
+				break
+		}
 
 		return value
 	}
@@ -823,5 +863,15 @@ elements:
 	@Override
 	Object clone() {
 		return clonePath()
+	}
+
+	/**
+	 * Create a file history table in the database
+	 * @param table file history table
+	 * @return the table was created in the database
+	 */
+	@SuppressWarnings('unused')
+	Boolean createStoryTable(TableDataset table) {
+		return new FileManager().createStoryTable(table, this)
 	}
 }

@@ -12,7 +12,7 @@ import org.junit.Test
 class ResourceManagerTest extends TestDsl {
     private void testListDir(ResourceCatalogElem rootNode) {
         def catalog = rootNode.files
-        assertEquals(9, catalog.size())
+        assertEquals(7, catalog.size())
         def repCon = catalog.find { it.filename == 'getl.lang.sub.RepositoryConnections' && it.type == Manager.directoryType }
         assertNotNull(repCon)
         assertEquals(4, repCon.files.size())

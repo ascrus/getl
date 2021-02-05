@@ -212,7 +212,6 @@ class SFTPManager extends Manager implements UserLogins {
 	}
 
 	@Override
-	@JsonIgnore
 	Boolean isConnected() {
 		return (clientSession != null && clientSession.connected)
 	}
@@ -558,7 +557,7 @@ exit \$LastExitCode
 				out.append('\n')
 			}
 			
-			if (os.count > 0) {
+			if (os.size() > 0) {
 				err.append(os.toString(codePage))
 			}
 
@@ -625,6 +624,7 @@ exit \$LastExitCode
 			channelFtp.setMtime(fileName, (time / 1000L).intValue())
 	}
 
+	@SuppressWarnings('DuplicatedCode')
 	@Override
 	String toString() {
 		if (server == null) return 'sftp'

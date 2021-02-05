@@ -97,6 +97,7 @@ class ResourceManager extends Manager {
     }
 
     /** Return catalog files from specified path */
+    @SuppressWarnings('UnnecessaryQualifiedReference')
     static ResourceCatalogElem ListDirFiles(String path) {
         def filePath = new File(path)
         if (!filePath.directory)
@@ -111,6 +112,7 @@ class ResourceManager extends Manager {
         return res
     }
 
+    @SuppressWarnings(['UnnecessaryQualifiedReference', 'UnnecessaryQualifiedReference'])
     static private List<ResourceCatalogElem> ListDirFilesFromParent(String path, ResourceCatalogElem parentElem) {
         def filePath = new File(path)
         def res = [] as List<ResourceCatalogElem>
@@ -139,6 +141,7 @@ class ResourceManager extends Manager {
         return res
     }
 
+    @SuppressWarnings(['UnnecessaryQualifiedReference', 'UnnecessaryQualifiedReference', 'UnnecessaryQualifiedReference'])
     static ResourceCatalogElem ListDirJar(String path) {
         def p = new Path(mask: 'file:{jar}!{dir}')
         def m = p.analyze(path, false)
@@ -242,6 +245,7 @@ class ResourceManager extends Manager {
             listFiles.size()
         }
 
+        @SuppressWarnings('UnnecessaryQualifiedReference')
         @CompileStatic
         @Override
         Map item (Integer index) {
@@ -320,6 +324,7 @@ class ResourceManager extends Manager {
         setCurrentDirectory(directoryFromPath(path))
     }
 
+    @SuppressWarnings('UnnecessaryQualifiedReference')
     private ResourceCatalogElem directoryFromPath(String path) {
         def cp = FileUtils.ConvertToUnixPath(path)
         if (cp == null)

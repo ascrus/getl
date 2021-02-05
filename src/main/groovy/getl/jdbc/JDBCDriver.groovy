@@ -3,8 +3,6 @@ package getl.jdbc
 import getl.jdbc.opts.SequenceCreateSpec
 import groovy.sql.Sql
 import groovy.transform.Synchronized
-import org.h2.util.DateTimeUtils
-
 import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -212,6 +210,7 @@ class JDBCDriver extends Driver {
 		field.type = res
 	}
 
+	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	static Object type2dbType (Field.Type type) {
 		def result
 		
@@ -560,6 +559,7 @@ class JDBCDriver extends Driver {
 		useLoadedDriver = false
 	}
 
+	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Override
 	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
 		if (filter == null && params.filter != null) filter = params.filter as Closure<Boolean>
@@ -643,6 +643,7 @@ class JDBCDriver extends Driver {
 		return names
 	}
 
+	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Override
 	List<Field> fields(Dataset dataset) {
 		if (!(dataset instanceof TableDataset))
@@ -730,6 +731,7 @@ class JDBCDriver extends Driver {
 		return query.field
 	}
 
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@Synchronized
 	@Override
 	void startTran() {
@@ -743,6 +745,7 @@ class JDBCDriver extends Driver {
 		}
 	}
 
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@Synchronized
 	@Override
 	void commitTran() {
@@ -766,6 +769,7 @@ class JDBCDriver extends Driver {
 		}
 	}
 
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@Synchronized
 	@Override
 	void rollbackTran() {
@@ -820,6 +824,7 @@ ${extend}'''
 	/** Name of current date time function */
 	String getNowFunc() { 'NOW()' }
 
+	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Synchronized
 	@Override
 	void createDataset(Dataset dataset, Map params) {
@@ -962,6 +967,7 @@ ${extend}'''
 	 * @param useNativeDBType - use native type for typeName field property
 	 * @return
 	 */
+	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	String generateColumnDefinition(Field f, Boolean useNativeDBType) {
 		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((isSupport(Driver.Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
 				((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
@@ -1122,6 +1128,7 @@ ${extend}'''
 	/** Drop sql statement syntax */
 	protected String dropSyntax = 'DROP {object} {ifexists} {name}'
 
+	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Synchronized
 	@Override
 	void dropDataset(Dataset dataset, Map params) {
@@ -1315,7 +1322,8 @@ ${extend}'''
 		}
 		return result
 	}
-	
+
+	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@groovy.transform.CompileStatic
 	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
@@ -1460,6 +1468,7 @@ ${extend}'''
 		return countRec
 	}
 
+	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Override
 	void clearDataset(Dataset dataset, Map params) {
 		validTableName(dataset as JDBCDataset)
@@ -1831,7 +1840,8 @@ $sql
 			res += " AND (${StringUtils.EvalMacroString(params.where as String, dataset.queryParams + ((params.queryParams as Map)?:[:]), false)})"
 		return res
 	}
-	
+
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@Override
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		def wp = new WriterParams()
@@ -2054,7 +2064,8 @@ $sql
 		}
 		Logs.Warning("${dataset.params.tableName} rejects rows: ${el}")
 	}
-	
+
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@groovy.transform.CompileStatic
 	protected void saveBatch(Dataset dataset, WriterParams wp) {
 		def countComplete = 0L
@@ -2093,6 +2104,7 @@ $sql
 		if (wp.onSaveBatch) wp.onSaveBatch.call(wp.batchCount)
 	}
 
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@groovy.transform.CompileStatic
 	@Override
 	void write(Dataset dataset, Map row) {
@@ -2311,6 +2323,7 @@ $sql
 	@SuppressWarnings("GrMethodMayBeStatic")
 	protected String deleteRowsPattern() { 'DELETE {afterDelete} FROM {table} {afterTable} {where} {afterWhere}'}
 
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	Long deleteRows(TableDataset dataset, Map procParams) {
 		def where = (procParams.where as String)?:(dataset.writeDirective.where as String)
 		if (where != null)
@@ -2351,6 +2364,7 @@ $sql
 	}
 
 	/** Return options for create sequence */
+	@SuppressWarnings("GrMethodMayBeStatic")
 	protected List<String> createSequenceAttrs(SequenceCreateSpec opts) {
 		def res = [] as List<String>
 		if (opts.incrementBy != null) res << "INCREMENT BY ${opts.incrementBy}".toString()
@@ -2415,6 +2429,7 @@ $sql
 	 * Syntax for copying from table to table
 	 * @return sql script template
 	 */
+	@SuppressWarnings("GrMethodMayBeStatic")
 	protected String syntaxCopyTableTo(TableDataset source, TableDataset dest, Map<String, Object> qParams) {
 		def sql = '''INSERT {after_insert} INTO {dest} (
 {dest_cols}

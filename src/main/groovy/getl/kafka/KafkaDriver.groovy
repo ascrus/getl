@@ -82,6 +82,7 @@ class KafkaDriver extends Driver {
         throw new ExceptionGETL('Not supported!')
     }
 
+    @SuppressWarnings(['UnnecessaryQualifiedReference'])
     @Override
     Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
         def ds = dataset as KafkaDataset
@@ -247,7 +248,6 @@ class KafkaDriver extends Driver {
         if (con.groupId == null)
             throw new ExceptionGETL('Group id required!')
 
-        ArrayList<String> listFields = new ArrayList<String>()
         if (prepareCode != null)
             prepareCode.call([]) as ArrayList
 

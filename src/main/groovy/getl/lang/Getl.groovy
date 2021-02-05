@@ -128,6 +128,37 @@ Examples:
     protected Class<Script> useInitClass() { null }
 
     /**
+     * Prepare script before execution from Groovy
+     */
+    protected void groovyStarter() {
+        Config.configClassManager = new ConfigSlurper()
+
+        def cmdArgs = binding.getVariable('args') as String[]
+        def jobArgs = MapUtils.ProcessArguments(cmdArgs)
+
+        def p = new ParamMethodValidator()
+        p.register('main', ['config', 'environment', 'unittest', 'vars', 'getlprop'])
+        p.register('main.config', ['path', 'filename'])
+        p.validation('main', jobArgs)
+
+        def isTestMode = BoolUtils.IsValue(jobArgs.unittest)
+
+        GetlSetInstance(this)
+        setGetlSystemParameter('mainClass', getClass().name)
+        setUnitTestMode(isTestMode)
+
+        _initGetlProperties(null, jobArgs.getlprop as Map, true)
+
+        if (jobArgs.vars == null) jobArgs.vars = [:]
+        def vars = jobArgs.vars as Map
+        Config.Init(jobArgs)
+        Config.setVars(vars)
+
+        if (vars != null && !vars.isEmpty())
+            FillFieldFromVars(this, vars, true, true)
+    }
+
+    /**
      * Launch Getl Dsl script<br><br>
      * <i>List of argument (use format name=value):</i><br>
      * <ul>
@@ -159,7 +190,7 @@ Examples:
         def job = new Job() {
             static ParamMethodValidator allowArgs = {
                 def p = new ParamMethodValidator()
-                p.register('main', ['config', 'environment', 'initclass', 'runclass', 'unittest', 'vars'])
+                p.register('main', ['config', 'environment', 'initclass', 'runclass', 'unittest', 'vars', 'getlprop'])
                 p.register('main.config', ['path', 'filename'])
                 return p
             }.call()
@@ -220,7 +251,7 @@ Examples:
                     }
                 }
 
-                eng._initGetlProperties(initClasses)
+                eng._initGetlProperties(initClasses, jobArgs.getlprop as Map)
 
                 try {
                     eng.runGroovyInstance(eng, Config.vars)
@@ -244,12 +275,15 @@ Examples:
      * Initialize getl instance properties before starting it
      * @param listInitClass list of initialization classes that should be executed before starting
      */
-    protected void _prepareGetlProperties(List<Class<Script>> initClasses) {
+    protected void _prepareGetlProperties(List<Class<Script>> initClasses, Map extProp) {
         def instance = this
 
         options {
             if (autoInitFromConfig) {
                 loadProjectProperties(instance.configuration.manager.environment)
+                if (!extProp?.isEmpty())
+                    MapUtils.MergeMap(options.getlConfigProperties, extProp, true, false)
+
                 Logs.Finest('Processing project configuration ...')
 
                 def procs = [:] as Map<String, Closure>
@@ -260,24 +294,22 @@ Examples:
                         Logs.Finest("  logging the process \"${instance.getClass().name}\" to file \"${Logs.logFileName}\"")
                     }
 
-                    if (unitTestMode) {
-                        if (en.jdbcLogPath != null) {
-                            jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
-                                    [env: instance.configuration.environment, process: instance.getClass().name], false)
-                            Logs.Finest("  logging jdbc connections to path \"$jdbcConnectionLoggingPath\"")
-                        }
+                    if (en.jdbcLogPath != null) {
+                        jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
+                                [env: instance.configuration.environment, process: instance.getClass().name], false)
+                        Logs.Finest("  logging jdbc connections to path \"$jdbcConnectionLoggingPath\"")
+                    }
 
-                        if (en.filesLogPath != null) {
-                            fileManagerLoggingPath = StringUtils.EvalMacroString(en.filesLogPath as String,
-                                    [env: instance.configuration.environment, process: instance.getClass().name], false)
-                            Logs.Finest("  logging file managers to path \"$fileManagerLoggingPath\"")
-                        }
+                    if (en.filesLogPath != null) {
+                        fileManagerLoggingPath = StringUtils.EvalMacroString(en.filesLogPath as String,
+                                [env: instance.configuration.environment, process: instance.getClass().name], false)
+                        Logs.Finest("  logging file managers to path \"$fileManagerLoggingPath\"")
+                    }
 
-                        if (en.tempDBLogFileName != null) {
-                            tempDBSQLHistoryFile = StringUtils.EvalMacroString(en.tempDBLogFileName as String,
-                                    [env: instance.configuration.environment, process: instance.getClass().name], false)
-                            Logs.Finest("  logging of ebmedded database SQL commands to a file \"$tempDBSQLHistoryFile\"")
-                        }
+                    if (en.tempDBLogFileName != null) {
+                        tempDBSQLHistoryFile = StringUtils.EvalMacroString(en.tempDBLogFileName as String,
+                                [env: instance.configuration.environment, process: instance.getClass().name], false)
+                        Logs.Finest("  logging of ebmedded database SQL commands to a file \"$tempDBSQLHistoryFile\"")
                     }
                 }
                 procs.repository = { Map<String, Object> en ->
@@ -380,14 +412,14 @@ Examples:
         }
     }
 
-    void _initGetlProperties(List<Class<Script>> listInitClass = null) {
+    void _initGetlProperties(List<Class<Script>> listInitClass = null, Map extProp, Boolean startAsGroovy = false) {
         def initClasses = [] as List<Class<Script>>
         if (listInitClass != null)
             initClasses.addAll(listInitClass)
 
-        _prepareGetlProperties(initClasses)
+        _prepareGetlProperties(initClasses, extProp)
 
-        if (!initClasses.isEmpty()) {
+        if (!initClasses.isEmpty() && !startAsGroovy) {
             setGetlSystemParameter('isInitMode', true)
             try {
                 initClasses.each { initClass ->
@@ -440,7 +472,7 @@ Examples:
     /** Abort execution with the specified error */
     @SuppressWarnings("GrMethodMayBeStatic")
     void abortWithError(String message) {
-        throw new Exception(message)
+        throw new AbortDsl(message)
     }
 
     /** The name of the main class of the process */
@@ -515,6 +547,17 @@ Examples:
         _params.etl = _etl
         _params.models = _models
         _params.fileman = _fileman
+
+        if (MainClassName() == 'org.codehaus.groovy.tools.GroovyStarter')
+            groovyStarter()
+    }
+
+    static String MainClassName() {
+        def trace = Thread.currentThread().getStackTrace()
+        if (trace.length > 0) {
+            return trace[trace.length - 1].getClassName()
+        }
+        return "Unknown"
     }
 
     @Override
@@ -689,6 +732,7 @@ Examples:
     }
 
     /** Fix finish process */
+    @SuppressWarnings('GrMethodMayBeStatic')
     void finishProcess(ProcessTime pt, Long countRow = null) {
         if (pt != null) pt.finish(countRow)
     }
@@ -924,8 +968,8 @@ Examples:
     }
 
     /** Register connection in repository */
-    protected Connection registerConnection(String connectionClassName, String name, Boolean registration = false) {
-        (_repositoryStorageManager.repository(RepositoryConnections) as RepositoryConnections).register(this, connectionClassName, name, registration)
+    Connection registerConnection(String connectionClassName, String name, Boolean registration = false, Boolean cloneInThread = true) {
+        (_repositoryStorageManager.repository(RepositoryConnections) as RepositoryConnections).register(this, connectionClassName, name, registration, cloneInThread)
     }
 
     /**
@@ -1792,9 +1836,9 @@ Examples:
     }
 
     /** Register file manager in repository */
-    protected Manager registerFileManager(String fileManagerClassName, String name,
-                                          Boolean registration = false) {
-        (_repositoryStorageManager.repository(RepositoryFilemanagers) as RepositoryFilemanagers).register(this, fileManagerClassName, name, registration)
+    Manager registerFileManager(String fileManagerClassName, String name,
+                                          Boolean registration = false, Boolean cloneInThread = true) {
+        (_repositoryStorageManager.repository(RepositoryFilemanagers) as RepositoryFilemanagers).register(this, fileManagerClassName, name, registration, cloneInThread)
     }
 
     /**
@@ -2179,6 +2223,7 @@ Examples:
     /**
      *  Call script init method before execute script
      */
+    @SuppressWarnings('GrMethodMayBeStatic')
     protected void _doInitMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'init' }
         if (m != null)
@@ -2188,6 +2233,7 @@ Examples:
     /**
      *  Call script check method after setting field values
      */
+    @SuppressWarnings('GrMethodMayBeStatic')
     protected void _doCheckMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'check' }
         if (m != null)
@@ -2197,6 +2243,7 @@ Examples:
     /**
      *  Call script done method before execute script
      */
+    @SuppressWarnings('GrMethodMayBeStatic')
     protected void _doDoneMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'done' }
         if (m != null)
@@ -2206,6 +2253,7 @@ Examples:
     /**
      *  Call script error method before execute script
      */
+    @SuppressWarnings('GrMethodMayBeStatic')
     protected void _doErrorMethod(Script script, Exception e) {
         def m = script.getClass().methods.find { it.name == 'error' }
         if (m != null)
@@ -2218,7 +2266,7 @@ Examples:
      * @param vars vars set values for script fields declared as "@Field"
      * @param validExist check for the existence of fields in the script
      */
-    static void FillFieldFromVars(Script script, Map vars, Boolean validExist = true) {
+    static void FillFieldFromVars(Script script, Map vars, Boolean validExist = true, Boolean startGroovy = false) {
         vars.each { key, value ->
             MetaProperty prop = script.hasProperty(key as String)
             if (prop == null) {
@@ -2311,7 +2359,10 @@ Examples:
 
 
             try {
-                prop.setProperty(script, value)
+                if (!startGroovy)
+                    prop.setProperty(script, value)
+                else
+                    Config.vars.put(key as String, value)
             }
             catch (Exception e) {
                 throw new ExceptionDSL("Can not assign by class ${value.getClass().name} value \"$value\" to property \"$key\" with class \"${prop.type.name}\", error: ${e.message}")

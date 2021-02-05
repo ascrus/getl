@@ -12,6 +12,8 @@ import org.junit.AfterClass
 import org.junit.Before
 import org.junit.BeforeClass
 
+import java.sql.Time
+
 /**
  * Getl functional testing base class
  * @author Alexsey Konstantinov
@@ -43,6 +45,7 @@ class GetlTest extends GroovyAssert {
     @Before
     void beforeTest() {
         InstallConfigManager()
+        //noinspection UnnecessaryQualifiedReference
         org.junit.Assume.assumeTrue(allowTests())
     }
 
@@ -95,5 +98,27 @@ class GetlTest extends GroovyAssert {
      */
     static void assertEquals(Map expected, Map actual) {
         assertEquals(null as String, expected, actual)
+    }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param message message text
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(String message, Time expected, Time actual) {
+        if (expected == null && actual == null)
+            return
+
+        assertEquals(message, expected.toString(), actual.toString())
+    }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(Time expected, Time actual) {
+        assertEquals(null, expected, actual)
     }
 }

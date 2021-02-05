@@ -116,6 +116,14 @@ abstract class FileListProcessing implements GetlRepository {
     void filterFiles(@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
                              Closure<Boolean> value) { params.filterFiles = value }
 
+    /** Process the received list of files before processing it */
+    Closure getPrepareFileList() { params.prepareFileList as Closure }
+    /** Process the received list of files before processing it */
+    void setPrepareFileList(Closure value) { params.prepareFileList = value }
+    /** Process the received list of files before processing it */
+    void prepareFileList(@ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset'])
+                            Closure value) { params.prepareFileList = value }
+
     /** Source file path mask */
     Path getSourcePath() { params.sourcePath as Path }
     /** Source file path mask */
@@ -693,11 +701,15 @@ abstract class FileListProcessing implements GetlRepository {
         beforeProcessing()
         try {
             buildList()
-            if (source.countFileList == 0) {
+            if (prepareFileList != null)
+                prepareFileList.call(tmpProcessFiles)
+
+            def countFileList = tmpProcessFiles.countRow()
+            if (countFileList == 0) {
                 Logs.Warning("No files found for source \"${source.toString()}\"!")
             }
             else {
-                Logs.Info("${source.countFileList} files found, size ${FileUtils.SizeBytes(source.sizeFileList)} for source \"${source.toString()}\"")
+                Logs.Info("${countFileList} files found, size ${FileUtils.SizeBytes(source.sizeFileList)} for source \"${source.toString()}\"")
 
                 if (cacheTable != null) {
                     if (source.story.field.size() == 0)

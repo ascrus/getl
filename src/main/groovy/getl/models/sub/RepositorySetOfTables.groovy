@@ -11,6 +11,7 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class RepositorySetOfTables extends RepositoryObjects<SetOfTables> {
+    @SuppressWarnings('UnnecessaryQualifiedReference')
     @Override
     List<String> getListClasses() { [getl.models.SetOfTables.name] }
 

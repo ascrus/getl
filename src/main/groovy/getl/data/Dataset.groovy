@@ -24,6 +24,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings('unused')
 class Dataset implements Cloneable, GetlRepository, WithConnection {
 	Dataset () {
 		initParams()
@@ -78,7 +79,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Type status of dataset
 	 */
-	static enum Status {AVAIBLE, READ, WRITE}
+	static enum Status { AVAILABLE, READ, WRITE }
 
 	/** Format schema files */
 	static enum FormatSchemaFile {JSON, SLURPER}
@@ -277,6 +278,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/** Auto load schema with meta file */
 	void setAutoSchema(Boolean value) { params.autoSchema = value }
 	/** Auto load schema with meta file */
+	@JsonIgnore
 	boolean isAutoSchema() { BoolUtils.IsValue(autoSchema, connection.autoSchema) }
 	
 	/** Use manual schema for dataset */
@@ -289,6 +291,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		else
 			params.remove('manualSchema')
 	}
+	@JsonIgnore
 	Boolean isManualSchema() { BoolUtils.IsValue(manualSchema) }
 	
 	/** Schema file name */
@@ -341,7 +344,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 	
 	/**
-	 * Call init configuraion
+	 * Call init configuration
 	 */
 	private final Closure doInitConfig = {
 		if (config == null) return
@@ -354,7 +357,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Added extend connection options
 	 */
-	List<String> inheriteConnectionParams () {
+	List<String> inheritedConnectionParams() {
 		return [] as List<String>
 	}
 
@@ -371,7 +374,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	Map saveParams() {
 		def res = [:]
 		
-		def cp = inheriteConnectionParams()
+		def cp = inheritedConnectionParams()
 		if (!cp.isEmpty()) res.putAll(MapUtils.CopyOnly(connection.params as Map<String, Object>, cp))
 		
 		res.putAll(params)
@@ -580,7 +583,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 	
 	/** Current status of dataset */
-	private Status status = Status.AVAIBLE
+	private Status status = Status.AVAILABLE
 	/** Current status of dataset */
 	@JsonIgnore
 	Status getStatus() { status }
@@ -653,7 +656,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * <li>CSVDataset source	- source csv file
 	 * <li>Closure prepare		- prepare code on open dataset
 	 * <li>boolean autoMap		- auto mapping destination fields by source columns (default true)
-	 * <li>Map map				- mapping source columns to destinition fields
+	 * <li>Map map				- mapping source columns to destination fields
 	 * </ul>
 	 * @param params
 	 */
@@ -762,9 +765,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Return rows from dataset
 	 * <p><b>Parameters:</b><p>
 	 * <ul>
-	 * <li>long limit		    - limit records reads (default unlim)
+	 * <li>long limit		    - limit records reads (default unlimited)
 	 * <li>boolean saveErrors - processing read errors to error dataset (default false)
-	 * <li>Closure prepare		- run manual code after initializaton metadata dataset
+	 * <li>Closure prepare		- run manual code after initialization metadata dataset
 	 * </ul>
 	 * @param procParams
 	 * @param listFields
@@ -936,9 +939,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Process each row dataset with user code
 	 * <p><b>Parameters:</b><p>
 	 * <ul>
-	 * <li>long limit		    - limit records reads (default unlim)
+	 * <li>long limit		    - limit records reads (default unlimited)
 	 * <li>boolean saveErrors 	- processing read errors to error dataset (default false)
-	 * <li>Closure prepare		- run manual code after initializaton metadata dataset
+	 * <li>Closure prepare		- run manual code after initialization metadata dataset
 	 * </ul>
 	 * @param params	- dynamic parameters
 	 * @param code		- process code
@@ -948,7 +951,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		validConnection()
 		if (!connection.driver.isSupport(Driver.Support.EACHROW))
 			throw new ExceptionGETL("Driver is not support each row operation")
-		if (status != Dataset.Status.AVAIBLE)
+		if (status != Status.AVAILABLE)
 			throw new ExceptionGETL("Dataset is not avaible for read operation (current status is ${status})")
 		
 		if (getField().size() == 0 && BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())) {
@@ -975,7 +978,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 				errorsDataset.write(errorRow)
 			}
 			catch (Exception we) {
-				getl.utils.Logs.Exception(we, getClass().name, objectName + ".errorsDataset")
+				Logs.Exception(we, getClass().name, objectName + ".errorsDataset")
 				throw we
 			}
 			
@@ -1000,12 +1003,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		
 		readRows = 0
 		isReadError = false
-		status = Dataset.Status.READ
+		status = Status.READ
 		try {
 			readRows = connection.driver.eachRow(this, p, prepareFields, code)
 		}
 		finally {
-			status = Dataset.Status.AVAIBLE
+			status = Status.AVAILABLE
 			if (saveErrors) closeErrorsDataset()
 		}
 	}
@@ -1022,13 +1025,13 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	@JsonIgnore
 	Boolean getIsWriteError() { isWriteError }
 	/** Dataset has error for last write operation */
-	protected void setIsWriteError(Boolean value) { isWriteError = value }
+	void setIsWriteError(Boolean value) { isWriteError = value }
 	
 	/**
 	 * Open dataset from writing rows
 	 * <p><b>Parameters:</b><p>
 	 * <ul>
-	 * <li>Closure prepare		- run manual code after initializaton metadata dataset
+	 * <li>Closure prepare		- run manual code after initialization metadata dataset
 	 * </ul>
 	 * @param params
 	 * @return
@@ -1037,7 +1040,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		validConnection()
 		if (!connection.driver.isSupport(Driver.Support.WRITE))
 			throw new ExceptionGETL("Driver is not support write operation")
-		if (status != Dataset.Status.AVAIBLE)
+		if (status != Status.AVAILABLE)
 			throw new ExceptionGETL("Dataset is not avaible for write operation (current status is ${status})")
 
 		procParams = procParams?:[:]
@@ -1067,7 +1070,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		updateRows = 0
 		isWriteError = false
 		connection.driver.openWrite(this, p, prepareFields)
-		status = Dataset.Status.WRITE
+		status = Status.WRITE
 	}
 
 	/** Open dataset from writing rows with synchronized */
@@ -1079,7 +1082,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Write row
 	 */
 	void write (Map row) {
-		if (status != Dataset.Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
+		if (status != Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
 		try {
 			if (logWriteToConsole) println("$this: $row")
 			this.connection.driver.write(this, row)
@@ -1095,7 +1098,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Write list of row
 	 */
 	void writeList (List<Map> rows) {
-		if (status != Dataset.Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
+		if (status != Status.WRITE) throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
 		try {
 			rows.each { Map row ->
 				if (logWriteToConsole) println("$this: $row")
@@ -1112,7 +1115,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Write row with synchronized
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	void writeSynch (Map row) {
 		write(row)
 	}
@@ -1120,7 +1123,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Write list of row with synchronized
 	 */
-	@groovy.transform.Synchronized
+	@Synchronized
 	void writeListSynch (List<Map> rows) {
 		writeList(rows)
 	}
@@ -1129,7 +1132,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Finalization code after write to dataset
 	 */
 	void doneWrite () {
-		if (status != Dataset.Status.WRITE)
+		if (status != Status.WRITE)
 			throw new ExceptionGETL("Dataset has not write status (current status is ${status})")
 
 		connection.driver.doneWrite(this)
@@ -1139,12 +1142,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Close dataset
 	 */
 	void closeWrite() {
-		if (status != Dataset.Status.WRITE) return
+		if (status != Status.WRITE) return
 		try {
 			connection.driver.closeWrite(this)
 		}
 		finally {
-			status = Dataset.Status.AVAIBLE
+			status = Status.AVAILABLE
 			connection.driver.cleanWrite(this)
 			_driver_params = null
 		}
@@ -1304,7 +1307,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Load fields structure from JSON file
 	 * @param reader reader descriptor
-	 * @return list of readed fields
+	 * @return list of read fields
 	 */
 	static List<Field> LoadDatasetMetadataFromJSON(Reader reader) {
 		def b = new JsonSlurper()
@@ -1344,7 +1347,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Load fields structure from Groovy Slurper file
 	 * @param file source file
-	 * @return list of readed fields
+	 * @return list of read fields
 	 */
 	static List<Field> LoadDatasetMetadataFromSlurper(File file) {
 		def p = ConfigSlurper.LoadConfigFile(file)
@@ -1606,9 +1609,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Hash code for the cache of the generated script read rows */
+	@JsonIgnore
 	public Integer _cacheReadHash
 
 	/** Cache of the generated script for reading records */
+	@JsonIgnore
 	public Closure _cacheReadCode
 
 	/**

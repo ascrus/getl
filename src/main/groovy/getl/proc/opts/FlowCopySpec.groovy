@@ -14,6 +14,7 @@ import groovy.transform.stc.SimpleType
  *
  */
 @InheritConstructors
+@SuppressWarnings('unused')
 class FlowCopySpec extends FlowBaseSpec {
     @Override
     protected void initSpec() {
@@ -59,9 +60,17 @@ class FlowCopySpec extends FlowBaseSpec {
     /** List of field from destination dataset */
     void setTempFields(List<Field> value) { saveParamValue('tempFields', value) }
 
-    /** Map card columns with syntax: <br>[<destination field>:"<source field>:<convert format>"] */
+    /**
+     * Column mapping<br>
+     * <i>Syntax:</i><br>
+     * destination_field_name: "source_field_name;format=[datetime or boolean format];convert=[true|false]"
+     */
     Map<String, String> getMap() { params.map as Map<String, String> }
-    /** Map card columns with syntax: <br>[<destination field>:"<source field>:<convert format>"] */
+    /**
+     * Column mapping<br>
+     * <i>Syntax:</i><br>
+     * destination_field_name: "source_field_name;format=[datetime or boolean format];convert=[true|false]"
+     */
     void setMap(Map<String, String> value) {
         map.clear()
         if (value != null) map.putAll(value)
@@ -143,6 +152,64 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Compress bulk file from GZIP algorithm */
     void setBulkAsGZIP(Boolean value) { saveParamValue('bulkAsGZIP', value) }
 
+    /** Format for date fields */
+    String getFormatDate() { params.formatDate as String }
+    /** Format for date fields */
+    void setFormatDate(String value) { params.formatDate = value }
+
+    /** Format for time fields */
+    String getFormatTime() { params.formatTime as String }
+    /** Format for time fields */
+    void setFormatTime(String value) { params.formatTime = value }
+
+    /** Format for datetime fields */
+    String getFormatDateTime () { params.formatDateTime as String }
+    /** Format for datetime fields */
+    void setFormatDateTime(String value) { params.formatDateTime = value }
+
+    /** Format for timestamp with timezone fields */
+    String getFormatTimestampWithTz() { params.formatTimestampWithTz as String }
+    /** Format for timestamp with timezone fields */
+    void setFormatTimestampWithTz(String value) { params.formatTimestampWithTz = value }
+
+    /** Use the same date and time format */
+    String getUniFormatDateTime() { params.uniFormatDateTime as String }
+    /** Use the same date and time format */
+    void setUniFormatDateTime(String value) { params.uniFormatDateTime = value }
+
+    /** Format for boolean fields */
+    String getFormatBoolean() { params.formatBoolean as String }
+    /** Format for boolean fields */
+    void setFormatBoolean(String value) { params.formatBoolean = value }
+
+    /**
+     * Format for numeric fields:\br
+     * <i>Available values:</i><br>
+     * <ul>
+     *     <li>standard: standard number format (example: 12345.67)</li>
+     *     <li>comma: comma-separated number format (example: 12345,67)</li>
+     *     <li>report: format of numbers with separation of group digits by a space (example: 12 345.67)</li>
+     *     <li>report_with_comma: format of numbers with separating group digits by a space and a decimal separator using a comma (example: 12 345,67)</li>
+     * </ul>
+     */
+    String getFormatNumeric() { params.formatNumeric as String }
+    /**
+     * Format for numeric fields:\br
+     * <i>Available values:</i><br>
+     * <ul>
+     *     <li>standard: standard number format (example: 12345.67)</li>
+     *     <li>comma: comma-separated number format (example: 12345,67)</li>
+     *     <li>report: format of numbers with separation of group digits by a space (example: 12 345.67)</li>
+     *     <li>report_with_comma: format of numbers with separating group digits by a space and a decimal separator using a comma (example: 12 345,67)</li>
+     * </ul>
+     */
+    void setFormatNumeric(String value) { params.formatNumeric = value }
+
+    /** Convert empty string values as null */
+    Boolean getConvertEmptyToNull() { params.convertEmptyToNull as Boolean }
+    /** Convert empty string values as null */
+    void setConvertEmptyToNull(String value) { params.convertEmptyToNull = value }
+
     /** Name in cache for reusing code without generating */
     String getCacheName() { params.cacheName as String }
     /** Name in cache for reusing code without generating */
@@ -158,9 +225,9 @@ class FlowCopySpec extends FlowBaseSpec {
         setOnPrepare(value)
     }
 
-    /** Save transformation code to dumn (default false) */
+    /** Save transformation code to dump (default false) */
     Boolean getDebug() { params.debug as Boolean }
-    /** Save transformation code to dumn (default false) */
+    /** Save transformation code to dump (default false) */
     void setDebug(Boolean value) { saveParamValue('debug', value) }
 
     /** List of child datasets */

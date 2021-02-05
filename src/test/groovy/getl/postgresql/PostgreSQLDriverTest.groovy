@@ -32,7 +32,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 	void testLimit() {
 		def count = 1000
 		Getl.Dsl(this) {
-			usePostgresqlConnection registerConnectionObject(this.con, 'getl.test.postgresql', true)
+			usePostgresqlConnection registerConnectionObject(this.con, 'getl.test.postgresql', true) as PostgreSQLConnection
 
 			def table = postgresqlTable('getl.test.postgresql.test_limit', true) {
 				tableName = 'getl_test_limit'

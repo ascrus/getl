@@ -35,6 +35,7 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
+@SuppressWarnings("GrMethodMayBeStatic")
 class RepositoryConnections extends RepositoryObjects<Connection> {
     static public final String CSVCONNECTION = CSVConnection.name
     static public final String CSVTEMPCONNECTION = TFS.name

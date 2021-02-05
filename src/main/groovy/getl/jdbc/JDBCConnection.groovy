@@ -674,6 +674,7 @@ import groovy.transform.BaseScript
 			listTablePathExcluded.each {
 				if (repName.matches(it.maskPathPattern)) {
 					isExclude = true
+					//noinspection UnnecessaryQualifiedReference
 					directive = Closure.DONE
 				}
 			}

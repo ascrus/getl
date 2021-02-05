@@ -1,16 +1,15 @@
 package getl.excel
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.data.Connection
 import getl.data.Dataset
-import groovy.transform.InheritConstructors
+import getl.data.FileConnection
 
 /**
  * Excel Connection class
  * @author Dmitry Shaldin
  *
  */
-class ExcelConnection extends Connection {
+class ExcelConnection extends FileConnection {
     ExcelConnection () {
         super(driver: ExcelDriver)
     }
@@ -18,7 +17,7 @@ class ExcelConnection extends Connection {
     ExcelConnection (Map params) {
         super(new HashMap([driver: ExcelDriver]) + params?:[:])
 		
-		methodParams.register('Super', ['path', 'fileName', 'header'])
+		methodParams.register('Super', ['header', 'showWarnings'])
 		
 		if (this.getClass().name == 'getl.excel.ExcelConnection') methodParams.validation('Super', params?:[:])
     }
@@ -26,16 +25,6 @@ class ExcelConnection extends Connection {
     /** Current Excel connection driver */
     @JsonIgnore
     ExcelDriver getCurrentExcelDriver() { driver as ExcelDriver }
-
-    /** Connection path */
-    String getPath () { params.path as String }
-    /** Connection path */
-    void setPath (String value) { params.path = value }
-
-    /** File name */
-    String getFileName () { params.fileName as String }
-    /** File name */
-    void setFileName (String value) { params.fileName = value }
 
     /** The first entry is the field header */
     Boolean getHeader() { params.header as Boolean }

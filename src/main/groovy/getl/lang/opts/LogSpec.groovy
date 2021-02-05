@@ -12,6 +12,7 @@ import java.util.logging.*
  *
  */
 @InheritConstructors
+@SuppressWarnings("GrMethodMayBeStatic")
 class LogSpec extends BaseSpec {
     /**
      * Current logger

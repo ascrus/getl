@@ -4,12 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileWriteOpts
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
+import getl.utils.ListUtils
+import groovy.transform.CompileStatic
 
 /**
  * File dataset class
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings('unused')
 class FileDataset extends Dataset {
 	FileDataset() {
 		methodParams.register('openWrite', ['deleteOnEmpty', 'append'])
@@ -45,6 +48,7 @@ class FileDataset extends Dataset {
 	/** Append if file exists */
 	void setAppend (Boolean value) { params.append = value }
 	/** Append if file exists */
+	@JsonIgnore
 	Boolean isAppend() { append?:fileConnection?.isAppend() }
 	
 	/** Auto create path for connection */
@@ -52,6 +56,7 @@ class FileDataset extends Dataset {
 	/** Auto create path for connection */
 	void setCreatePath(Boolean value) { params.createPath = value }
 	/** Auto create path for connection */
+	@JsonIgnore
 	Boolean isCreatePath() { createPath?:fileConnection?.isCreatePath() }
 	
 	/** Delete file if empty after write */
@@ -59,6 +64,7 @@ class FileDataset extends Dataset {
 	/** Delete file if empty after write */
 	void setDeleteOnEmpty(Boolean value) { params.deleteOnEmpty = value }
 	/** Delete file if empty after write */
+	@JsonIgnore
 	Boolean isDeleteOnEmpty() { deleteOnEmpty?:fileConnection?.isDeleteOnEmpty() }
 	
 	/** File is pack of GZIP */
@@ -66,6 +72,7 @@ class FileDataset extends Dataset {
 	/** File is pack of GZIP */
 	void setIsGzFile(Boolean value) { params.isGzFile = value }
 	/** File is pack of GZIP */
+	@JsonIgnore
 	Boolean isGzFile() { isGzFile?:fileConnection?.isGzFile() }
 	
 	/** Extension for file */
@@ -116,6 +123,19 @@ class FileDataset extends Dataset {
 	void setUniFormatDateTime(String value) { params.uniFormatDateTime = value }
 	/** Use the same date and time format */
 	String uniFormatDateTime() { uniFormatDateTime?:fileConnection?.uniFormatDateTime }
+
+	/** Format for boolean fields */
+	String getFormatBoolean() { params.formatBoolean as String }
+	/** Format for boolean fields */
+	void setFormatBoolean(String value) { params.formatBoolean = value }
+	String formatBoolean() { formatBoolean?:fileConnection?.formatBoolean() }
+
+	/** Decimal separator for number fields */
+	String getDecimalSeparator() { params.decimalSeparator as String }
+	/** Decimal separator for number fields */
+	void setDecimalSeparator(String value) { params.decimalSeparator = value }
+	/** Decimal separator for number fields */
+	String decimalSeparator() { decimalSeparator?:fileConnection?.decimalSeparator() }
 	
 	@Override
 	@JsonIgnore
@@ -179,16 +199,16 @@ class FileDataset extends Dataset {
 	 */
 	Boolean existsFile() { new File(fullFileName()).exists() }
 
-	/** List of writed files */
-	private final List<FileWriteOpts> writedFiles = [] as List<FileWriteOpts>
+	/** List of written files */
+	private final List<FileWriteOpts> writtenFiles = [] as List<FileWriteOpts>
 
-	/** List of writed files */
+	/** List of written files */
 	@JsonIgnore
-	List<FileWriteOpts> getWritedFiles() { writedFiles }
+	List<FileWriteOpts> getWrittenFiles() { writtenFiles }
 	
 	@Override
 	void openWrite(Map procParams) {
-		writedFiles.clear()
+		writtenFiles.clear()
 		super.openWrite(procParams)
 	}
 	
@@ -200,8 +220,8 @@ class FileDataset extends Dataset {
 	}
 	
 	@Override
-	List<String> inheriteConnectionParams() {
-		super.inheriteConnectionParams() + ['codePage', 'isGzFile', 'extension', 'append']
+	List<String> inheritedConnectionParams() {
+		super.inheritedConnectionParams() + ['codePage', 'isGzFile', 'extension', 'append']
 	}
 	
 	@Override
@@ -231,6 +251,40 @@ class FileDataset extends Dataset {
 	Object clone() {
 		def res = super.clone() as FileDataset
 		res.isTemporaryFile = this.isTemporaryFile
+		return res
+	}
+
+	/**
+	 * Return the format of the specified field
+	 * @param field dataset field
+	 * @return format
+	 */
+	@CompileStatic
+	String fieldFormat(Field field) {
+		if (field.format != null)
+			return field.format
+		String dtFormat = null
+		if (uniFormatDateTime != null)
+			dtFormat = uniFormatDateTime
+
+		String res = null
+		switch (field.type) {
+			case Field.dateFieldType:
+				res = dtFormat?:formatDate()
+				break
+			case Field.datetimeFieldType:
+				res = dtFormat?:formatDateTime()
+				break
+			case Field.timestamp_with_timezoneFieldType:
+				res = dtFormat?:formatTimestampWithTz()
+				break
+			case Field.timeFieldType:
+				res = dtFormat?:formatTime()
+				break
+			case Field.booleanFieldType:
+				res = formatBoolean()
+		}
+
 		return res
 	}
 }

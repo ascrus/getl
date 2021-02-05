@@ -5,21 +5,20 @@ import getl.data.Field
 import getl.lang.Getl
 import getl.proc.Flow
 import getl.stat.ProcessTime
+import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.NumericUtils
-import getl.utils.NumericUtilsTest
 import getl.utils.StringUtils
 import groovy.transform.CompileStatic
 import org.junit.BeforeClass
 import org.junit.Test
 
-/**
- * Created by ascru on 10.11.2016.
- */
-class CSVDriverTest extends getl.test.GetlTest {
+import java.sql.Time
+
+class CSVDriverTest extends GetlTest {
     static def fields = [
             new Field(name: 'ID', type: 'BIGINT', isKey: true),
             new Field(name: 'Name', type: 'STRING', isNull: false, length: 50),
@@ -34,7 +33,7 @@ class CSVDriverTest extends getl.test.GetlTest {
     ]
 
     static Map<String, Object> conParams = [path: "${TFS.systemPath}/test_csv", createPath: true, extension: 'csv',
-                                            codePage: 'utf-8']
+                                            codePage: 'utf-8'] as Map<String, Object>
 
     @BeforeClass
     static void InitTest() {
@@ -64,7 +63,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         assertNotNull(resCsv.field('name'))
     }
 
-    private void validReadWrite(CSVConnection con, String name) {
+    private static void validReadWrite(CSVConnection con, String name) {
         con.autoSchema = true
         def csv = new CSVDataset(connection: con, fileName: name)
         csv.field = fields
@@ -75,7 +74,7 @@ class CSVDriverTest extends getl.test.GetlTest {
             row.id = id
             row.name = "row $id"
             row.date = DateUtils.ParseDate('2016-10-15')
-            row.time = new java.sql.Time(9, 15, 30)
+            row.time = new Time(9, 15, 30)
             row.datetime = DateUtils.ParseDateTime('2016-10-16 09:15:30.123')
             row.double = 123456789.12
             row.numeric = new BigDecimal(123456789.12)
@@ -177,7 +176,7 @@ class CSVDriverTest extends getl.test.GetlTest {
             assertEquals(id, row.id)
             assertEquals("row $id".toString(), row.name)
             assertEquals(DateUtils.ParseDate('2016-10-15'), row.date)
-            assertEquals(new java.sql.Time(9, 15, 30), row.time)
+            assertEquals(new Time(9, 15, 30), row.time)
             assertEquals(DateUtils.ParseDateTime('2016-10-16 09:15:30.123'), row.datetime)
             assertEquals((123456789.12).doubleValue(), (row.double as Double), 0.toDouble())
             assertEquals(NumericUtils.Round(new BigDecimal(123456789.12), 2), row.numeric)
@@ -188,15 +187,15 @@ class CSVDriverTest extends getl.test.GetlTest {
         assertEquals(2, new_csv.countReadPortions)
         assertEquals(100, new_csv.readRows)
 
-        def unwrite_csv = new CSVDataset(connection: con, fileName: "${name}_unwrite",
+        def unWrite_csv = new CSVDataset(connection: con, fileName: "${name}_unwrite",
                 schemaFileName: csv.fullFileSchemaName(), deleteOnEmpty: true)
-        unwrite_csv.loadDatasetMetadata()
-        unwrite_csv.openWrite(isValid: true)
+        unWrite_csv.loadDatasetMetadata()
+        unWrite_csv.openWrite(isValid: true)
         def row = generate_row(1)
         row.name = null
-        unwrite_csv.write(row)
-        shouldFail { unwrite_csv.doneWrite() }
-        unwrite_csv.closeWrite()
+        unWrite_csv.write(row)
+        shouldFail { unWrite_csv.doneWrite() }
+        unWrite_csv.closeWrite()
 
         def bad_csv = new CSVDataset(connection: con, fileName: "${name}_bad", decimalSeparator: ',')
         bad_csv.field = fields
@@ -245,7 +244,7 @@ class CSVDriverTest extends getl.test.GetlTest {
         con.autoSchema = true
         csv.drop(portions: csv.countWritePortions)
 
-        shouldFail() { unwrite_csv.drop(validExist: true) }
+        shouldFail() { unWrite_csv.drop(validExist: true) }
         bad_csv.drop()
     }
 
@@ -313,82 +312,90 @@ class CSVDriverTest extends getl.test.GetlTest {
         new File(ds1.fullFileName()).deleteOnExit()
         ds1.field << new Field(name: 'Id', type: Field.integerFieldType, isKey: true)
         ds1.field << new Field(name: 'Name', length: 50, isNull: false)
-        ds1.field << new Field(name: 'Result Time', type: Field.dateFieldType, isNull: false)
+        ds1.field << new Field(name: 'Result Time', type: Field.dateFieldType, isNull: false, format: 'dd.MM.yyyy')
+        ds1.field << new Field(name: 'Flag', isNull: false, format: 'yes|no')
+        ds1.field << new Field(name: 'Value', length: 12)
         new Flow().writeTo(dest: ds1) { updater ->
             (1..3).each { num ->
-                Map row = [id: num, name: "name $num", 'result time': DateUtils.ParseDate('2020-01-01')]
+                Map row = [id: num, name: "name $num", 'result time': DateUtils.ParseDate('2020-12-31'),
+                           flag: (num == 1)?'yes':'no', value: (num == 1)?'12 345,67':null]
                 updater(row)
             }
         }
 
         def text1 = new File(ds1.fullFileName()).text
-        assertEquals('1,name 1,2020-01-01\n2,name 2,2020-01-01\n3,name 3,2020-01-01\n', text1)
+        assertEquals('1,name 1,31.12.2020,yes,"12 345,67"\n2,name 2,31.12.2020,no,\n3,name 3,31.12.2020,no,\n', text1)
+
+        ds1.nullAsValue = '<NULL>'
 
         def ds2 = new CSVDataset(connection: con, fileName: 'test_row_delimiter_2', rowDelimiter: '\r\n')
         ds2.field = ds1.field
-        ds2.field('Result Time').name = 'result_time'
-        new Flow().copy(source: ds1, dest: ds2) { i, o ->
-            o.'result_time' = i.'result time'
-        }
+        ds2.field('Result Time') { name = 'result_time'; format = null }
+        ds2.field('Flag') { type = booleanFieldType; format = null }
+        ds2.field('Value') { type = numericFieldType; precision = 2 }
+        new Flow().copy(source: ds1, dest: ds2,
+                map: [result_time: 'result time', flag: 'flag;format=yes|no'],
+                formatDate: 'dd.MM.yyyy', formatNumeric: 'report_with_comma', convertEmptyToNull: true
+        )
 
         def text2 = new File(ds2.fullFileName()).text
-        assertEquals('1,name 1,2020-01-01\r\n2,name 2,2020-01-01\r\n3,name 3,2020-01-01\r\n', text2)
+        assertEquals('1,name 1,2020-12-31,1,12345.67\r\n2,name 2,2020-12-31,0,\r\n3,name 3,2020-12-31,0,\r\n', text2)
 
         ds1.drop()
         ds2.drop()
     }
 
-    static def perfomanceStringValue = StringUtils.Replicate('0', 23) + '"' + '\n' + "'" + StringUtils.Replicate('0', 23)
+    static def performanceStringValue = StringUtils.Replicate('0', 23) + '"' + '\n' + "'" + StringUtils.Replicate('0', 23)
 
     @Test
-    void testPerfomanceWindows() {
-        doPerfomance('Windows format with constraints',
+    void testPerformanceWindows() {
+        doPerformance('Windows format with constraints',
                 conParams + [escaped: false, codePage: 'cp1251', constraintsCheck: true, nullAsValue: '<NULL>'])
     }
 
     @Test
-    void testPerfomanceLinux() {
-        doPerfomance('Linux format with constraints',
+    void testPerformanceLinux() {
+        doPerformance('Linux format with constraints',
                 conParams + [escaped: true, codePage: 'utf-8', constraintsCheck: true, nullAsValue: '<NULL>'])
     }
 
     @CompileStatic
-    private void doPerfomance(String testName, Map testParams) {
-		def perfomanceRows = 50000
-		def perfomanceCols = 50
+    private static void doPerformance(String testName, Map testParams) {
+		def performanceRows = 50000
+		def performanceCols = 50
 
-		Logs.Finest("Test perfomance for $testName ($perfomanceRows rows, ${perfomanceCols+2} cols) ...")
+		Logs.Finest("Test perfomance for $testName ($performanceRows rows, ${performanceCols+2} cols) ...")
 
 		def c = new CSVConnection(testParams + (Map<String, Object>)([autoSchema: (Object)false]))
-		def t = new CSVDataset(connection: c, fileName: 'test_perfomance')
+		def t = new CSVDataset(connection: c, fileName: 'test_performance')
 
 		t.field << new Field(name: 'Id', type: Field.Type.INTEGER, isKey: true)
 		t.field << new Field(name: 'Name', length: 50, isNull: false)
-		(1..perfomanceCols).each { num ->
+		(1..performanceCols).each { num ->
             def f = new Field(name: "Value_$num", type: Field.Type.STRING, length: 50, isNull: false)
             if (num % 10 == 0) f.isNull = true
 			t.field << f
 		}
 
 		try {
-			def pt = new ProcessTime(name: "CSV perfomance write")
+			def pt = new ProcessTime(name: "CSV performance write")
 			new Flow().writeTo(dest: t) { Closure updater ->
-				(1..perfomanceRows).each { Integer cur ->
+				(1..performanceRows).each { Integer cur ->
 					def r = [:] as Map<String, Object>
 					r.id = cur
-					r.name = perfomanceStringValue
-					(1..perfomanceCols).each { Integer num ->
+					r.name = performanceStringValue
+					(1..performanceCols).each { Integer num ->
                         if (num % 10 == 0)
                             r.put("value_$num".toString(), null as String)
                         else
-						    r.put("value_$num".toString(), perfomanceStringValue)
+						    r.put("value_$num".toString(), performanceStringValue)
 					}
 					updater(r)
 				}
 			}
             def size = new File(t.fullFileName()).size()
             pt.name = "CSV perfomance write (${FileUtils.SizeBytes(size)})"
-			pt.finish(perfomanceRows as Long)
+			pt.finish(performanceRows as Long)
 
 
 			pt = new ProcessTime(name: "CSV perfomance read (${FileUtils.SizeBytes(size)})")
@@ -396,10 +403,10 @@ class CSVDriverTest extends getl.test.GetlTest {
 			new Flow().process(source: t) { Map<String, Object> r ->
 				cur++
 				assertEquals(cur, r.id)
-                assertEquals(perfomanceStringValue, r.name)
+                assertEquals(performanceStringValue, r.name)
 			}
 			pt.finish(cur as Long)
-			assertEquals(perfomanceRows, cur)
+			assertEquals(performanceRows, cur)
 		}
 		finally {
 			t.drop()
@@ -407,9 +414,9 @@ class CSVDriverTest extends getl.test.GetlTest {
 	}
 
     @Test
-    void testAvaibleSplit() {
+    void testAvailableSplit() {
         Getl.Dsl(this) {
-            def csv = csv {
+            CSVDataset csv = csv {
                 useConnection csvConnection { path = csvTempConnection().currentPath() }
                 fileName = 'test.split'
                 field('id') { type = integerFieldType}
@@ -431,13 +438,13 @@ class CSVDriverTest extends getl.test.GetlTest {
                 }
             }
 
-            assertEquals(3, csv.writedFiles.size())
-            csv.writedFiles.each {
+            assertEquals(3, csv.writtenFiles.size() )
+            csv.writtenFiles.each {
                 assertTrue(new File(it.fileName).exists())
             }
 
             csv.drop(portions: 3)
-            csv.writedFiles.each {
+            csv.writtenFiles.each {
                 assertFalse(new File(it.fileName).exists())
             }
         }
@@ -497,7 +504,7 @@ class CSVDriverTest extends getl.test.GetlTest {
                         }
                     }
 
-                    return new File(ds.fullFileName()).text
+                    return new File((ds as CSVDataset).fullFileName()).text
                 }
 
                 escaped = true
@@ -654,7 +661,7 @@ class CSVDriverTest extends getl.test.GetlTest {
             }
 
             csv.readOpts.skipRows = null
-            this.shouldFail { csv.rows() }
+            shouldFail { csv.rows() }
 
             csv.readOpts.skipRows = 2
             def rows = csv.rows()
@@ -704,9 +711,8 @@ class CSVDriverTest extends getl.test.GetlTest {
             assertEquals(2, rows.size())
             assertEquals([id:1, name: 'test 1', value: 123.45], rows[0])
             assertEquals([id:2, name: 'test 2', value: 321.54], rows[1])
-            def erows = csv.errorsDataset.rows()
-            assertEquals(4, erows.size())
-//            erows.each {println it }
+            def errRows = csv.errorsDataset.rows()
+            assertEquals(4, errRows.size())
         }
     }
 }

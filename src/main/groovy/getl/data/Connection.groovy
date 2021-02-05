@@ -241,6 +241,7 @@ class Connection implements Cloneable, GetlRepository {
 	/** Auto load schema with meta file for connection datasets */
 	void setAutoSchema (Boolean value) { params.autoSchema = value }
 	/** Auto load schema with meta file for connection datasets */
+	@JsonIgnore
 	boolean isAutoSchema() { BoolUtils.IsValue(autoSchema) }
 
 	/** The number of connection attempts on error (default 1) */

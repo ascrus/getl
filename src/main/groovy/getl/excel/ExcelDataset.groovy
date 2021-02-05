@@ -11,11 +11,11 @@ import groovy.transform.InheritConstructors
  * @author Dmitry Shaldin
  */
 @InheritConstructors
-class ExcelDataset extends Dataset {
+class ExcelDataset extends FileDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof ExcelConnection))
-            throw new ExceptionGETL('Сonnection to ExcelConnection class is allowed!')
+            throw new ExceptionGETL('The connection must be class ExcelConnection!')
 
         super.setConnection(value)
     }
@@ -40,10 +40,15 @@ class ExcelDataset extends Dataset {
     /** List number */
     void setListNumber(final Integer value) { params.listNumber = value }
 
-    /** Offset param */
-    Map<String, Integer> getOffset() { params.offset as Map<String, Integer> }
-    /** Offset param */
-    void setOffset(final Map<String, Integer> value) { params.offset = value }
+    /** Number of rows to offset */
+    Integer getOffsetRows() { params.offsetRows as Integer }
+    /** Number of rows to offset */
+    void setOffsetRows(Integer value) { params.offsetRows = value }
+
+    /** Number of columns to offset */
+    Integer getOffsetCells() { params.offsetCells as Integer }
+    /** Number of columns to offset */
+    void setOffsetCells(Integer value) { params.offsetCells = value }
 
     /** Limit rows to return */
     Integer getLimit() { params.limit as Integer }
@@ -58,22 +63,27 @@ class ExcelDataset extends Dataset {
     void setHeader(Boolean value) { params.header = value }
 
     /** Warnings from Dataset (e.g. show warning when list not found) */
-    Boolean getShowWarnings() {
+    @SuppressWarnings('unused')
+    Boolean getShowWarnings() { params.showWarnings as Boolean }
+    /** Warnings from Dataset (e.g. show warning when list not found) */
+    @SuppressWarnings('unused')
+    void setShowWarnings(final Boolean value) { params.showWarnings = value}
+    /** Warnings from Dataset (e.g. show warning when list not found) */
+    @SuppressWarnings('unused')
+    Boolean showWarnings() {
         BoolUtils.IsValue([params.showWarnings, currentExcelConnection?.showWarnings], false)
     }
-    /** Warnings from Dataset (e.g. show warning when list not found) */
-    void setShowWarnings(final Boolean value) { params.showWarnings = value}
 
-    @Override
+    /*@Override
     @JsonIgnore
 	String getObjectName() { objectFullName }
     
 	@Override
     @JsonIgnore
-	String getObjectFullName() { "${fullFileName()}~[$listName]" }
+	String getObjectFullName() { "${fullFileName()}~[$listName]" }*/
 
-    /** Full file name with path */
-    String fullFileName() {
+    //** Full file name with path */
+    /*String fullFileName() {
         currentExcelConnection.currentExcelDriver.fullFileNameDataset(this)
-    }
+    }*/
 }

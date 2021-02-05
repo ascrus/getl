@@ -49,6 +49,7 @@ class YAMLDriver extends FileDriver {
      * @param code row process code
      */
     @CompileStatic
+    @SuppressWarnings("GrMethodMayBeStatic")
     protected void readRows (YAMLDataset dataset, List<String> listFields, Integer limit, def data, Closure code) {
         StringBuilder sb = new StringBuilder()
         sb << "{ getl.yaml.YAMLDataset dataset, Closure code, Object data, Integer limit ->\n"

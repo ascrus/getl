@@ -2,7 +2,6 @@ package getl.driver
 
 import getl.data.opts.FileWriteOpts
 import groovy.transform.CompileStatic
-import groovy.transform.InheritConstructors
 
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
@@ -91,11 +90,13 @@ class FileDriver extends Driver {
 	List<Field> fields(Dataset dataset) {
 		return null
 	}
-/**
+
+	/**
 	 * Fill file name without GZ extension
 	 * @param dataset
 	 * @return
 	 */
+	@SuppressWarnings("GrMethodMayBeStatic")
 	String fullFileNameDatasetWithoutGZ(FileDataset dataset) {
 		String fn = dataset.fileName
 		if (fn == null) return null
@@ -295,7 +296,7 @@ class FileDriver extends Driver {
 		def wp = getDatasetParams(dataset, params, portion)
 
 		if (BoolUtils.IsValue(params.avaibleAfterWrite) && (portion?:0) > 1) {
-			def opt = dataset.writedFiles[portion - 2]
+			def opt = dataset.writtenFiles[portion - 2]
 			fixTempFile(dataset, opt)
 		}
 
@@ -315,7 +316,7 @@ class FileDriver extends Driver {
 			deleteOnEmpty = removeEmptyFile
 			encode = codePage
 		}
-		dataset.writedFiles << writeOpt
+		dataset.writtenFiles << writeOpt
 
 		if (BoolUtils.IsValue(wp.createPath))
 			createPath(fn)
@@ -352,9 +353,9 @@ class FileDriver extends Driver {
 	 */
 	@CompileStatic
 	void fixTempFiles(FileDataset dataset) {
-		def deleteOnEmpty = dataset.writedFiles[0].deleteOnEmpty
+		def deleteOnEmpty = dataset.writtenFiles[0].deleteOnEmpty
 		try {
-			dataset.writedFiles.each { opt ->
+			dataset.writtenFiles.each { opt ->
 				fixTempFile(dataset, opt)
 			}
 		}
@@ -364,7 +365,7 @@ class FileDriver extends Driver {
 		}
 
 		if (deleteOnEmpty)
-			dataset.writedFiles.removeAll { opt -> opt.countRows == 0 }
+			dataset.writtenFiles.removeAll { opt -> opt.countRows == 0 }
 
 		if (deleteOnEmpty && dataset.isAutoSchema() && dataset.writeRows == 0) {
 			def s = new File(dataset.fullFileSchemaName())
@@ -440,7 +441,7 @@ class FileDriver extends Driver {
 	@SuppressWarnings("GrMethodMayBeStatic")
 	@CompileStatic
 	void removeTempFiles(FileDataset dataset) {
-		dataset.writedFiles.each { opt ->
+		dataset.writtenFiles.each { opt ->
 			if (!opt.readyFile && opt.fileName != opt.tempFileName) {
 				if (!FileUtils.DeleteFile(opt.tempFileName))
 					Logs.Severe("Failed to remove file \"${opt.tempFileName}\"!")
@@ -449,7 +450,7 @@ class FileDriver extends Driver {
 			opt.tempFileName = null
 		}
 
-		dataset.writedFiles.clear()
+		dataset.writtenFiles.clear()
 	}
 	
 	@Override

@@ -64,6 +64,7 @@ class BaseSpec {
     }
 
     /** Run closure for specified object */
+    @SuppressWarnings('GrMethodMayBeStatic')
     void runClosure(Object parent, Closure cl) {
         if (cl == null) return
         parent.with(cl)
@@ -134,5 +135,14 @@ class BaseSpec {
 
         clearOptions()
         _params.putAll(_savedOptions.pop() as Map<String, Object>)
+    }
+
+    @Override
+    Object clone() {
+        /*TODO:Valid clone in threads*/
+        def clParams = MapUtils.Clone(params)
+        def res = this.getClass().newInstance(this.ownerObject) as BaseSpec
+        res.params.putAll(clParams)
+        return res
     }
 }

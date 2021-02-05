@@ -43,7 +43,7 @@ class FileListProcessingBuild extends ManagerListProcessing {
     }
 
     @Override
-    Boolean prepare (Map file) {
+    Boolean prepare(Map file) {
         def isNewDir = false
 
         if (file.filepath != '.' && file.filetype == 'FILE' && curPath != file.filepath) {

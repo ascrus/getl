@@ -3,7 +3,6 @@ package getl.csv
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.opts.CSVReadSpec
 import getl.csv.opts.CSVWriteSpec
-import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import getl.data.Connection
 import getl.data.FileDataset
@@ -116,13 +115,6 @@ class CSVDataset extends FileDataset {
 	/** Mode of quote value */
 	QuoteMode quoteMode() { quoteMode?:currentCsvConnection?.getQuoteMode() }
 	
-	/** Decimal separator for number fields */
-	String getDecimalSeparator() { ListUtils.NotNullValue([params.decimalSeparator, currentCsvConnection?.decimalSeparator, '.']) }
-	/** Decimal separator for number fields */
-	void setDecimalSeparator(String value) { params.decimalSeparator = value }
-	/** Decimal separator for number fields */
-	String decimalSeparator() { decimalSeparator?:currentCsvConnection?.decimalSeparator() }
-
 	/** OS locale for parsing date-time fields
 	 * <br>P.S. You can set locale for separately field in Field.extended.locale
 	 */
@@ -188,8 +180,8 @@ class CSVDataset extends FileDataset {
 	}
 	
 	@Override
-	List<String> inheriteConnectionParams () {
-		super.inheriteConnectionParams() + 
+	List<String> inheritedConnectionParams() {
+		super.inheritedConnectionParams() +
 				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 
 					'escaped', 'decimalSeparator', 'formatDate', 'formatTime', 'formatDateTime', 'ignoreHeader', 
 					'nullAsValue']

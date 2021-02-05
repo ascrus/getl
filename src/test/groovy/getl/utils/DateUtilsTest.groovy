@@ -1,9 +1,12 @@
 package getl.utils
 
 import groovy.time.TimeCategory
+import org.apache.groovy.dateutil.extensions.DateUtilExtensions
 import org.junit.Test
 
 import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
+import java.time.format.ResolverStyle
 
 /**
  * @author Alexsey Konstantinov
@@ -40,18 +43,37 @@ class DateUtilsTest extends getl.test.GetlTest {
     void testParseDate() {
         assertNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss', null))
         assertNotNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss.SSS', textDateTime))
-        assertNotNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss.SSS', '2016-13-32 24:61:80.999', true))
+        assertNull(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss.SSS', '2016-13-32 24:61:80.999', true))
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd:HH:mm:ss.'000000000'")
+        DateTimeFormatter df = DateUtils.BuildDateTimeFormatter("yyyy-MM-dd:HH:mm:ss.'000000000'")
+
         DateUtils.setDefaultTimeZone('Europe/Moscow')
         assertNull(DateUtils.ParseDate('yyyy-MM-dd:HH:mm:ss.SSSSSSSSS', '1982-04-01 00:00:00.000000000'))
         assertNull(DateUtils.ParseDate(sdf, '1982-04-01 00:00:00.000000000'))
+        assertNull(DateUtils.ParseDate(df, '1982-04-01 00:00:00.000000000'))
 
         DateUtils.setDefaultTimeZone('UTC')
         assertNotNull(DateUtils.ParseDate('yyyy-MM-dd:HH:mm:ss.SSSSSSSSS', '1982-04-01:00:00:00.000000000'))
         assertNotNull(DateUtils.ParseDate(sdf, '1982-04-01:00:00:00.000000000'))
+        assertNotNull(DateUtils.ParseDate(df, '1982-04-01:00:00:00.000000000'))
 
         DateUtils.RestoreOrigDefaultTimeZone()
+
+        sdf = new SimpleDateFormat("yyyy-MM-dd")
+        df = DateUtils.BuildDateTimeFormatter("yyyy-MM-dd")
+        assertEquals(DateUtils.ParseDate('2020-12-31'), DateUtils.ParseSQLDate(sdf, '2020-12-31', false))
+        assertEquals(DateUtils.ParseDate('2020-12-31'), DateUtils.ParseSQLDate(df, '2020-12-31', false))
+
+        sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+        df = DateUtils.BuildDateTimeFormatter("yyyy-MM-dd HH:mm:ss")
+        assertEquals(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss', '2020-02-29 01:02:03', false), DateUtils.ParseSQLTimestamp(sdf, '2020-02-29 01:02:03', false))
+        assertEquals(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss', '2020-02-29 01:02:03', false), DateUtils.ParseSQLTimestamp(df, '2020-02-29 01:02:03', false))
+
+        sdf = new SimpleDateFormat("HH:mm:ss")
+        df = DateUtils.BuildTimeFormatter("HH:mm:ss")
+        assertEquals(DateUtils.ParseSQLTime('HH:mm:ss', '01:02:03', false), DateUtils.ParseSQLTime(sdf, '01:02:03', false))
+        assertEquals(DateUtils.ParseSQLTime('HH:mm:ss', '01:02:03', false), DateUtils.ParseSQLTime(df, '01:02:03', false))
     }
 
     @Test
@@ -81,6 +103,26 @@ class DateUtilsTest extends getl.test.GetlTest {
         assertNull(DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', null))
 
         assertEquals(textDateTime, DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', exampleDateTime))
+
+        def now = new Date()
+
+        def fmt = "yyyy-MM-dd"
+        def sdf = new SimpleDateFormat(fmt)
+        def df = DateUtils.BuildDateFormatter(fmt)
+        assertEquals(DateUtils.FormatDate(fmt, now), DateUtils.FormatDate(sdf, now))
+        assertEquals(DateUtils.FormatDate(fmt, now), DateUtils.FormatDate(df, now))
+
+        fmt = "yyyy-MM-dd HH:mm:ss"
+        sdf = new SimpleDateFormat(fmt)
+        df = DateUtils.BuildDateTimeFormatter(fmt)
+        assertEquals(DateUtils.FormatDate(fmt, now), DateUtils.FormatDate(sdf, now))
+        assertEquals(DateUtils.FormatDate(fmt, now), DateUtils.FormatDate(df, now))
+
+        fmt = "HH:mm:ss"
+        sdf = new SimpleDateFormat(fmt)
+        df = DateUtils.BuildTimeFormatter(fmt)
+        assertEquals(DateUtils.FormatDate(fmt, now), DateUtils.FormatDate(sdf, now))
+        assertEquals(DateUtils.FormatDate(fmt, now), DateUtils.FormatDate(df, now))
     }
 
     @Test

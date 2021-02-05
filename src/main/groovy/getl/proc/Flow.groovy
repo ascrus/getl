@@ -24,8 +24,9 @@ class Flow {
 				['source', 'tempSource', 'dest', 'destChild', 'tempDest', 'inheritFields', 'createDest',
 				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams',
 				 'autoMap', 'autoConvert', 'autoTran', 'clear', 'saveErrors', 'excludeFields', 'mirrorCSV',
-				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', /*'onWrite', */'onDone',
-				 'process', 'debug', 'writeSynch', 'cacheName'])
+				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', 'onDone',
+				 'process', 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'formatDate', 'formatTime',
+				 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime', 'formatBoolean', 'formatNumeric'])
 		methodParams.register('copy.destChild',
 				['dataset', 'datasetParams', 'process', 'init', 'done'])
 
@@ -66,7 +67,7 @@ class Flow {
 	}
 	
 	/**
-	 * Call init configuraion
+	 * Call init configuration
 	 */
 	private final Closure doInitConfig = {
 		if (config == null) return
@@ -101,6 +102,7 @@ class Flow {
 	/** Last number of rows processed */
 	Long getCountRow() { countRow }
 
+	/** Formalize column mapping */
 	protected static Map<String, Map> ConvertFieldMap(Map<String, String> map) {
 		def result = [:] as Map<String, Map>
 		map.each { k, v ->
@@ -114,9 +116,9 @@ class Flow {
 						m.put(l[i].toLowerCase(), null)
 					}
 					else {
-						def pname = l[i].substring(0, p).toLowerCase()
-						def pvalue = l[i].substring(p + 1)
-						m.put(pname, pvalue)
+						def pName = l[i].substring(0, p).toLowerCase()
+						def pValue = l[i].substring(p + 1)
+						m.put(pName, pValue)
 					}
 				}
 			}
@@ -143,7 +145,19 @@ class Flow {
 	/** Cache code repository */
 	static private final ConcurrentHashMap<String, Map<String, Object>> cacheCode = new ConcurrentHashMap<String, Map<String, Object>>()
 
-	protected static String GenerateMap(Dataset source, Dataset dest, Map fieldMap, Boolean autoConvert, List<String> excludeFields, List<String> notConverted, String cacheName, Map result) {
+	/**
+	 * Generate code for mapping records from source to destination
+	 * @param source
+	 * @param dest
+	 * @param fieldMap
+	 * @param autoConvert
+	 * @param excludeFields
+	 * @param notConverted
+	 * @param cacheName
+	 * @param result
+	 * @return
+	 */
+	static private String GenerateMap(Dataset source, Dataset dest, Map fieldMap, Map formats, Boolean convertEmptyToNull, Boolean autoConvert, List<String> excludeFields, List<String> notConverted, String cacheName, Map result) {
 		def countMethod = (dest.field.size() / 100).intValue() + 1
 		def curMethod = 0
 
@@ -159,7 +173,7 @@ class Flow {
 		
 		def c = 0
 		def cf = 0
-		dest.field.each { Field d ->
+		dest.field.each { Field df ->
 			c++
 			
 			def fieldMethod = (c / 100).intValue() + 1
@@ -171,10 +185,10 @@ class Flow {
 			}
 
 			// Dest field name
-			def dn = d.name.toLowerCase()
+			def dn = df.name.toLowerCase()
 
 			if (dn in excludeFields) {
-				sb << "// Exclude field ${d.name}\n\n"
+				sb << "// Exclude field ${df.name}\n\n"
 				return
 			}
 
@@ -183,7 +197,7 @@ class Flow {
 			// Map field name
 			String mn = dn
 			
-			def convert = (!(d.name.toLowerCase() in notConverted)) && (autoConvert == null || autoConvert)
+			def convert = (!(df.name.toLowerCase() in notConverted)) && (autoConvert == null || autoConvert)
 			 
 			String mapFormat = null
 			// Has contains field in mapping
@@ -197,10 +211,16 @@ class Flow {
 				else {
 					// Set source map field
 					Field sf = source.fieldByName(mapName.name as String)
-					if (sf == null) throw new ExceptionGETL("Not found field \"${mapName.name}\" in source dataset")
+					if (sf == null)
+						throw new ExceptionGETL("Not found field \"${mapName.name}\" in source dataset")
+
 					mn = sf.name.toLowerCase()
-					if (mapName.convert != null) convert = ((mapName.convert as String).trim().toLowerCase() == "true")
-					if (mapName.format != null) mapFormat = mapName.format
+					if (mapName.convert != null)
+						convert = ((mapName.convert as String).trim().toLowerCase() == "true")
+					if (mapName.format != null)
+						mapFormat = mapName.format
+					else
+						mapFormat = GenerationUtils.FieldFormat(formats, df)
 				}
 			}
 			else {
@@ -208,6 +228,9 @@ class Flow {
 				if (findFieldInFieldMap(map, dn) != null) { 
 					// Nothing mapping
 					mn = null
+				}
+				else {
+					mapFormat = GenerationUtils.FieldFormat(formats, df)
 				}
 			}
 
@@ -217,10 +240,10 @@ class Flow {
 
 			// Not use
 			if (s == null) {
-				if (!d.isAutoincrement && !d.isReadOnly) {
+				if (!df.isAutoincrement && !df.isReadOnly) {
 					dn = dn.replace("'", "\\'")
-					sb << "outRow.put('${dn}', getl.utils.GenerationUtils.EMPTY_${d.type.toString().toUpperCase()})"
-					destFields << d.name
+					sb << "outRow.put('${dn}', getl.utils.GenerationUtils.EMPTY_${df.type.toString().toUpperCase()})"
+					destFields << df.name
 				}
 				else {
 					sb << "// $dn: NOT VALUE REQUIRED"
@@ -230,15 +253,16 @@ class Flow {
 				// Assign value
 				String sn = s.name.toLowerCase().replace("'", "\\'")
 				dn = dn.replace("'", "\\'")
-				if (d.type == s.type || !convert) {
+				if (df.type == s.type || !convert) {
 					sb << "outRow.put('${dn}', inRow.get('${sn}'))"
 				}
 				else {
 					sb << "outRow.put('${dn}', "
-					sb << GenerationUtils.GenerateConvertValue(d, s, mapFormat, "inRow.get('${sn}')")
+					sb << GenerationUtils.GenerateConvertValue(dest: df, source: s, format: mapFormat,
+							convertEmptyToNull: convertEmptyToNull, value: "inRow.get('${sn}')")
 					sb << ')'
 				}
-				destFields << d.name
+				destFields << df.name
 				sourceFields << s.name
 			}
 			
@@ -295,7 +319,7 @@ class Flow {
 	 * Copy rows from dataset to other dataset
 	 */
 	@SuppressWarnings("DuplicatedCode")
-	Long copy (Map params,
+	Long copy(Map params,
 			   @ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.util.HashMap'])
 					   Closure map_code = null) {
 		methodParams.validation("copy", params)
@@ -411,11 +435,21 @@ class Flow {
 		List<String> excludeFields = (params.excludeFields != null)?(params.excludeFields as List<String>)*.toLowerCase():[]
 		List<String> notConverted = (params.notConverted != null)?(params.notConverted as List<String>)*.toLowerCase():[]
 		
-//		Closure writeCode = params.onWrite as Closure
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
 
 		def debug = BoolUtils.IsValue(params.debug, false)
+
+		def formats = [:] as Map<String, String>
+		formats.formatDate = params.formatDate as String
+		formats.formatTime = params.formatTime as String
+		formats.formatDateTime = params.formatDateTime as String
+		formats.formatTimestampWithTz = params.formatTimestampWithTz as String
+		formats.uniFormatDateTime = params.uniFormatDateTime as String
+		formats.formatBoolean = params.formatBoolean as String
+		formats.formatNumeric = params.formatNumeric as String
+
+		def convertEmptyToNull = BoolUtils.IsValue(params.convertEmptyToNull)
 
 		if (isSaveErrors) errorsDataset = TFS.dataset()
 
@@ -482,7 +516,7 @@ class Flow {
 		def initDest = {
 			List<String> result = []
 			if (autoMap) {
-				scriptMap = GenerateMap(source, writer, map, autoConvert, excludeFields, notConverted, cacheName, generateResult)
+				scriptMap = GenerateMap(source, writer, map, formats, convertEmptyToNull, autoConvert, excludeFields, notConverted, cacheName, generateResult)
 				auto_map_code = generateResult.code as Closure
 				result = generateResult.destFields as List<String>
 			}
@@ -531,10 +565,6 @@ class Flow {
 			}
 			
 
-			/*if (autoMap) {
-				result = generateResult.sourceFields as List<String>
-			}*/
-			
 			return result
 		}
 		
@@ -556,7 +586,17 @@ class Flow {
 					def isError = false
 					def outRow = [:]
 
-					if (auto_map_code != null) auto_map_code.call(inRow, outRow)
+					if (auto_map_code != null) {
+						try {
+							auto_map_code.call(inRow, outRow)
+						}
+						catch (Exception e) {
+							Logs.Severe("Column auto mapping error: ${e.message}")
+							Logs.Dump(e, 'flow', cacheName?:'none', 'Column mapping:\n' + scriptMap)
+							throw e
+						}
+					}
+
 					if (map_code != null) {
 						try {
 							map_code.call(inRow, outRow)
@@ -573,8 +613,8 @@ class Flow {
 							errorsDataset.write(errorRow)
 						}
 						catch (Exception e) {
-							Logs.Severe("FLOW ERROR IN ROW [${sourceDescription}]:\n${inRow}")
-							Logs.Severe("FLOW ERROR OUT ROW [${destDescription}]:\n${outRow}")
+							Logs.Severe("Flow error in row [${sourceDescription}]:\n${inRow}")
+							Logs.Severe("Flow error out row [${destDescription}]:\n${outRow}")
 							throw e
 						}
 					} 
@@ -725,7 +765,7 @@ class Flow {
 				!BoolUtils.IsValue(dest.connection.params.autoCommit, false)
 		
 		def isBulkLoad = BoolUtils.IsValue(params.bulkLoad)
-		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destinataion dataset not support bulk load")
+		if (isBulkLoad && !dest.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destination dataset not support bulk load")
 		def bulkAsGZIP = BoolUtils.IsValue(params.bulkAsGZIP)
 		def bulkEscaped = BoolUtils.IsValue(params.bulkEscaped)
 		
@@ -961,7 +1001,7 @@ class Flow {
 			if (!writeSynch) d.write(row) else d.writeSynch(row)
 		}
 		
-		def closeDests = { Boolean isError ->
+		def closeDestinations = { Boolean isError ->
 			writer.each { String n, Dataset d ->
 				if (d.status == Dataset.Status.WRITE) {
 					if (!isError)
@@ -1008,7 +1048,7 @@ class Flow {
 			}
 			catch (Exception e) {
 				Logs.Exception(e, getClass().name + ".writeAllTo.openWrite", d.objectName)
-				closeDests(true)
+				closeDestinations(true)
 				rollbackTrans(["ALL", "COPY"])
 				throw e
 			}
@@ -1022,7 +1062,7 @@ class Flow {
 				d.isWriteError = true
 			}
 			Logs.Exception(e, getClass().name + ".writeAllTo.code", curUpdater)
-			closeDests(true)
+			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
 		}
@@ -1035,18 +1075,18 @@ class Flow {
 		catch (Exception e) {
 			def destDescription = writer.keySet().toList().join(",")
 			Logs.Exception(e, getClass().name + ".writeAllTo.doneWrite", destDescription)
-			closeDests(true)
+			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
 		}
 		
 		try {
-			closeDests(false)
+			closeDestinations(false)
 		}
 		catch (Exception e) {
 			def destDescription = writer.keySet().toList().join(",")
 			Logs.Exception(e, getClass().name + ".writeAllTo.closeWrite", destDescription)
-			closeDests(true)
+			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
 		}
@@ -1075,7 +1115,7 @@ class Flow {
 	}
 
 	/**
-	 * Read and proccessed data from dataset
+	 * Read and processed data from dataset
 	 */
 	@SuppressWarnings("DuplicatedCode")
 	Long process(Map params,

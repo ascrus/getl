@@ -128,13 +128,6 @@ class CSVConnection extends FileConnection {
 	/** Mode of quote value */
 	QuoteMode quoteMode() { quoteMode?:quoteNormal }
 
-	/** Decimal separator for number fields */
-	String getDecimalSeparator() { params.decimalSeparator as String }
-	/** Decimal separator for number fields */
-    void setDecimalSeparator(String value) { params.decimalSeparator = value }
-	/** Decimal separator for number fields */
-	String decimalSeparator() { decimalSeparator?:'.' }
-
 	/** OS locale for parsing date-time fields
 	 * <br>P.S. You can set locale for separately field in Field.extended.locale
 	 */

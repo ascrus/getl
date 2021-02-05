@@ -133,6 +133,7 @@ class VerticaTable extends TableDataset {
      * @param finishPartition partition finish parameter
      * @return parameter processing result
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     protected Map<String, Object> processPartitionParams(def startPartition, def finishPartition, Boolean truncateToDate) {
         def res = [:] as Map<String, Object>
 
@@ -167,6 +168,7 @@ class VerticaTable extends TableDataset {
      * @param finishPartition partition finish parameter
      * @param needFinishParam The finish parameter must be filled
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     private void validPartitionParams(def startPartition, def finishPartition, Boolean needFinishParam) {
         if (startPartition == null)
             throw new ExceptionGETL('Requires value for parameter "startPartition"!')

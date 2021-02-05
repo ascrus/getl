@@ -26,32 +26,32 @@ class RepositorySaveTest extends RepositorySave {
         create()
     }
 
-    @SaveToRepository(type = 'Connections', env = 'dev')
+    @SaveToRepository(type = 'Connections', env = 'dev', mask = 'test:*')
     void connections() {
         cloneConnection('test:con', con)
     }
 
-    @SaveToRepository(type = 'Datasets', retrieve = true)
+    @SaveToRepository(type = 'Datasets', retrieve = true, mask = 'test:*')
     void datasets() {
         // added from connection
         addTables(embeddedConnection('test:con'), 'public', 'test')
     }
 
-    @SaveToRepository(type = 'Files')
+    @SaveToRepository(type = 'Files', mask = 'test:*')
     void filemanagers1() {
         files('test:file1', true) {
             rootPath = '/test1'
         }
     }
 
-    @SaveToRepository(type = 'Files', env = 'Dev, Prod')
+    @SaveToRepository(type = 'Files', env = 'Dev, Prod', mask = 'test:*')
     void filemanagers2() {
         files('test:file2', true) {
             rootPath = '/test2'
         }
     }
 
-    @SaveToRepository(type = 'Historypoints')
+    @SaveToRepository(type = 'Historypoints', mask = 'test:*')
     void historypoints() {
         historypoint('test:hp', true) {
             useConnection embeddedConnection('test:con')
@@ -61,7 +61,7 @@ class RepositorySaveTest extends RepositorySave {
         }
     }
 
-    @SaveToRepository(type = 'Sequences')
+    @SaveToRepository(type = 'Sequences', mask = 'test:*')
     void sequences() {
         sequence('test:seq', true) {
             useConnection embeddedConnection('test:con')

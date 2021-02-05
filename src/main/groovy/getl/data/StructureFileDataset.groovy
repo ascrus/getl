@@ -108,34 +108,4 @@ class StructureFileDataset extends FileDataset {
 	String getDataNode () { params.dataNode as String }
 	/** Name of data map node */
 	void setDataNode (String value) { params.dataNode = value }
-
-	/**
-	 * Return the format of the specified field
-	 * @param field dataset field
-	 * @return format
-	 */
-	@CompileStatic
-	String fieldFormat(Field field) {
-		if (field.format != null)
-			return field.format
-		if (uniFormatDateTime != null)
-			return uniFormatDateTime
-
-		String res = null
-		switch (field.type) {
-			case Field.dateFieldType:
-				res = formatDate()
-				break
-			case Field.datetimeFieldType:
-				res = formatDateTime()
-				break
-			case Field.timestamp_with_timezoneFieldType:
-				res = formatTimestampWithTz()
-				break
-			case Field.timeFieldType:
-				res = formatTime()
-		}
-
-		return res
-	}
 }

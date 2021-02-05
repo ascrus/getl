@@ -558,6 +558,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	}
 	
 	private Boolean requiredExit
+	@JsonIgnore
 	Boolean isRequiredExit() { requiredExit }
 
 	/**

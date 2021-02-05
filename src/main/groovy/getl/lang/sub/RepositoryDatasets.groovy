@@ -100,12 +100,15 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     List<String> getListClasses() { LISTDATASETS }
 
     /** List of allowed jdbc dataset classes */
+    @SuppressWarnings('GrMethodMayBeStatic')
     List<String> getListJdbcClasses() { LISTJDBCTABLES }
 
     /** List of allowed file dataset classes */
+    @SuppressWarnings('GrMethodMayBeStatic')
     List<String> getListFileClasses() { LISTFILES }
 
     /** List of allowed other dataset classes */
+    @SuppressWarnings('GrMethodMayBeStatic')
     List<String> getListOtherClasses() { LISTOTHER }
 
     @Override
@@ -136,7 +139,9 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     GetlRepository importConfig(Map config) {
         def connectionName = config.connection as String
         Connection con
-        if (connectionName != null) con = dslCreator.connection(connectionName)
+        if (connectionName != null)
+            con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
+
         def obj = Dataset.CreateDataset(MapUtils.Copy(config, ['connection', 'fields']))
         if (con == null) {
             if (!(obj instanceof TFSDataset))
@@ -144,7 +149,10 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
             else
                 con = TFS.storage
         }
-        if (con != null) obj.setConnection(con)
+
+        if (con != null)
+            obj.setConnection(con)
+
         obj.field = GenerationUtils.Map2Fields(config)
         return obj
     }
@@ -156,8 +164,8 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
      * @param filter filtering objects
      * @return list of names of related objects
      */
-    protected List<ExecutorListElement> linkDatasets(List sourceList, List destList,
-                                           @ClosureParams(value = SimpleType, options = ['java.lang.String'])
+    static List<ExecutorListElement> linkDatasets(List sourceList, List destList,
+                                                  @ClosureParams(value = SimpleType, options = ['java.lang.String'])
                                                    Closure<Boolean> filter = null) {
         if (sourceList == null)
             throw new ExceptionGETL('Required to specify the value of the source group name!')

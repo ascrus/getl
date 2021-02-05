@@ -38,6 +38,7 @@ class XMLDriver extends FileDriver {
 	/**
 	 * Generate attribute read code
 	 */
+	@SuppressWarnings("GrMethodMayBeStatic")
 	protected void generateAttrRead (XMLDataset dataset, Closure<Boolean> initAttr, StringBuilder sb) {
 		List<Field> attrs = dataset.attributeField?:[]
 		if (attrs.isEmpty()) return
@@ -53,7 +54,7 @@ class XMLDriver extends FileDriver {
 			
 			String path = GenerationUtils.Field2Alias(d, true)
 			sb << "attrValue.'${d.name.toLowerCase()}' = "
-			sb << GenerationUtils.GenerateConvertValue(d, s, dataset.fieldFormat(d), "data.${path}", false)
+			sb << GenerationUtils.GenerateConvertValue(dest: d, source: s, format: dataset.fieldFormat(d), value: "data.${path}", cloneObject:  false)
 			
 			sb << "\n"
 		}
@@ -63,6 +64,7 @@ class XMLDriver extends FileDriver {
 	}
 
 	/** Generate the default alias for field */
+	@SuppressWarnings("GrMethodMayBeStatic")
 	protected String field2alias(Field field, String name, Boolean isAlias, Integer defaultAccessMethod) {
 		if (isAlias) {
 			if (!(name in ['@', '#']))

@@ -16,7 +16,7 @@ class BoolUtils {
 	 * @param defaultValue - return if value has null
 	 * @return
 	 */
-    @SuppressWarnings("DuplicatedCode")
+    @SuppressWarnings(["DuplicatedCode", 'UnnecessaryQualifiedReference'])
     static Boolean IsValue(def value, Boolean defaultValue = false) {
 		if (value == null) return defaultValue
 		if (value instanceof Boolean) return value

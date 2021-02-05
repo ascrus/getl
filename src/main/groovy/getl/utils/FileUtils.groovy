@@ -7,6 +7,7 @@ import getl.files.sub.Filter
 import getl.tfs.TFS
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import net.lingala.zip4j.model.enums.AesKeyStrength
@@ -1017,7 +1018,7 @@ class FileUtils {
 	 * @param classLoader use the specified classloader to access resources
 	 * @param destFile place the resource in the specified file
      */
-//	@Memoized
+	@Synchronized
 	static File FileFromResources(String fileName, def otherPath = null, ClassLoader classLoader = null, File destFile = null) {
 		URL resource = (classLoader == null)?GroovyClassLoader.getResource(fileName):classLoader.getResource(fileName)
 		File res

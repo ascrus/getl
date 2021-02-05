@@ -7,7 +7,7 @@
   * [Подключение Getl к проекту с помощью Gradle](#gradle)
   * [Использование в классах и скриптах Groovy](#groovy)
 * [Работа с источниками данных](#data_sources)
-  * [Работа с соединениями](#connections)    
+  * [Работа с соединениями](#connections)
   * [Работа с наборами данных](#datasets)
 * [Etl операторы работы с источниками данных](#etl_operation)
   * [Копирование записей из источника в приёмник с помощью оператора copyRows](#etl_copy)
@@ -166,17 +166,17 @@ P.S. В class path (-cp) также требуется добавить пути
 
 # <a name="data_sources"></a>Работа с источниками данных
 Для работы с источниками данных в Getl поддерживаются следующие виды объектов:
-* соединения (connection): содержат url или путь и служат для подключения к источнику данных 
+* соединения (connection): содержат url или путь и служат для подключения к источнику данных
   (например h2Connection, csvConnection, oracleConnection и т.д.);
-* наборы данных (dataset): содержат описание хранения наборов данных в источниках, имена таблиц или файлов, список полей 
+* наборы данных (dataset): содержат описание хранения наборов данных в источниках, имена таблиц или файлов, список полей
   (например h2Table, csv, oracleTable и т.д.);
 * счетчики (sequence): содержат указатель на счетчик РСУБД, генерирующий уникальные числовые значения для идентификаторов;
-* инкрементальные точки (historyPoints): содержат указатель на таблицу РСУБД, в которой сохраняется история инкрементального 
-  захвата данных из источников. 
+* инкрементальные точки (historyPoints): содержат указатель на таблицу РСУБД, в которой сохраняется история инкрементального
+  захвата данных из источников.
 
 ## <a name="connections"></a>Работа с соединениями
 Соединения бывают трех видов:
-* JDBC соединения к РСУБД: db2Connection, firebirdConnection, h2Connection, hiveConnection, impalaConnection, mssqlConnection, 
+* JDBC соединения к РСУБД: db2Connection, firebirdConnection, h2Connection, hiveConnection, impalaConnection, mssqlConnection,
   mysqlConnection, netezzaConnection, netsuiteConnection, oracleConnection, postgresqlConnection, verticaConnection;
 * Файловые форматы: csvConnection, excelConnection, jsonConnection, xmlConnection, yamlConnection;
 * Облачные системы: salesforceConnection, kafkaConnection.
@@ -190,7 +190,7 @@ P.S. В class path (-cp) также требуется добавить пути
 
 ## <a name="datasets"></a>Работа с наборами данных
 Наборы данных бывают трех видов:
-* Таблицы, запросы и представления JDBC соединений: query, view, db2Table, firebirdTable, h2Table, hiveTable, impalaTable, 
+* Таблицы, запросы и представления JDBC соединений: query, view, db2Table, firebirdTable, h2Table, hiveTable, impalaTable,
   mssqlTable, mysqlTable, netezzaTable, netsuiteTable, oracleTable, postgresqlTable, verticaTable;
 * Файловые структуры: csv, excel, json, xml, yaml;
 * Облачные системы: salesforce, salesforceQuery, kafka.
@@ -212,7 +212,7 @@ P.S. В class path (-cp) также требуется добавить пути
 
 # <a name="etl_operation"></a>Etl операторы работы с источниками данных
 Для копирования и трансформации данных между источниками используются операторы из секции etl:
-* etl.copyRows: копирование записей из одного набора данных в другой с возможностью маппинга и трансформации данных 
+* etl.copyRows: копирование записей из одного набора данных в другой с возможностью маппинга и трансформации данных
   (например выгрузка из таблицы СУБД всех записей в файл CSV для его дальнейшей пакетной загрузки в другой источник);
 * etl.rowsTo: запись информации в набор данных (например генерация в таблицу случайных данных для тестирования);
 * etl.rowsToMany: запись информации в несколько наборов данных (например парсинг json файла и запись в таблицы master-detail);
@@ -376,7 +376,7 @@ verticaTable {
 
 ## <a name="etl_read">Оператор чтения из наборов данных rowsProcess
 Для чтения и обработки записей наборов данных используется оператор _rowsProcess_. В отличие от eachRow наборов данных
-этот оператор позволяет обрабатывать ситуации, когда полученные и источника записи содержат ошибки и собирать их 
+этот оператор позволяет обрабатывать ситуации, когда полученные и источника записи содержат ошибки и собирать их
 в специальный набор данных, который можно использовать для анализа или хранения ошибочных записей.
 
 # <a name="sql">Выполнение пакетных сценариев SQL
@@ -456,12 +456,12 @@ FOR SELECT hour
     FROM public.table1
     WHERE regionid = {regionid} AND hour BETWEEN '{hour_start}'::timestamp AND '{hour_finish}'::timestamp;
 
-  UPDATE public.table1
-  SET status = 'complete'
-  WHERE regionid = {regionid} AND hour = '{hour}'::timestamp
-  
+UPDATE public.table1
+SET status = 'complete'
+WHERE regionid = {regionid} AND hour = '{hour}'::timestamp
+
   ECHO Час {hour} успешно рассчитан.
-END FOR; 
+  END FOR; 
 ```
 P.S. При обработке записей в цикле, оператор _FOR_ сначала получит в память весь массив записей и потом
 начнем по нему обработку. Не рекомендуется возвращать в его _SELECT_ большое количество записей.

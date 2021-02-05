@@ -96,9 +96,9 @@ class MapTableSpec extends DatasetSpec {
             partitionsDatasetName = null
     }
 
-    /** Mapping the relationship of the fields of the destination table to the source table (map.destinationField = 'sourceField') */
+    /** Mapping the relationship of the fields of the destination table to the source table: map.put('destinationField', 'sourceField') */
     Map<String, String> getMap() { params.map as Map<String, String> }
-    /** Mapping the relationship of the fields of the destination table to the source table (map.destinationField = 'sourceField) */
+    /** Mapping the relationship of the fields of the destination table to the source table: map.put('destinationField', 'sourceField') */
     void setMap(Map<String, String> value) {
         map.clear()
         if (value != null)

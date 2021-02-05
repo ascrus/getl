@@ -10,6 +10,8 @@ import org.junit.BeforeClass
 import org.junit.Ignore
 import org.junit.Test
 
+import java.sql.Timestamp
+
 /**
  * Created by ascru on 13.01.2017.
  */
@@ -93,7 +95,7 @@ LIMIT 1'''
             useQueryConnection this.con
             def current_node = /*configContent.bulkload_node //*/sqlQueryRow('SELECT node_name FROM CURRENT_SESSION').node_name
 
-            def vertable = verticaTable('vertica:testbulkload', true) {
+            VerticaTable verTable = verticaTable('vertica:testbulkload', true) {
                 connection = this.con
                 tableName = 'testBulkLoad'
                 field('id') { type = integerFieldType; isKey = true }
@@ -111,13 +113,13 @@ LIMIT 1'''
                 create()
             }
 
-            def dt = new java.sql.Timestamp(DateUtils.ClearTime(DateUtils.Now()).time)
+            def dt = new Timestamp(DateUtils.ClearTime(DateUtils.Now()).time)
             def rows = []
             rows << [id: 1, name: 'one', dt: dt, value: 1, description: null]
             rows << [id: 2, name: 'two', dt: dt, value: null, description: 'desc 2']
             rows << [id: 3, name: 'three', dt: null, value: 3, description: 'desc 3']
 
-            def csv = csvTempWithDataset(vertable) {
+            def csv = csvTempWithDataset(verTable) {
                 useConnection csvTempConnection {
                     path = TFS.systemPath + '/bulkload'
                     FileUtils.ValidPath(currentPath())
@@ -125,7 +127,7 @@ LIMIT 1'''
                 }
                 fileName = 'vertica.bulkload'
                 extension = 'csv'
-                field = vertable.field
+                field = verTable.field
 
                 writeOpts {
                     splitFile { true }
@@ -141,7 +143,7 @@ LIMIT 1'''
             }
 
             logInfo 'Bulk load single file without package:'
-            vertable.with {
+            verTable.with {
                 truncate(truncate: true)
                 bulkLoadCsv(csv) {
                     files = "vertica.bulkload.0001.csv"
@@ -150,13 +152,13 @@ LIMIT 1'''
                     rejectedPath = main.configContent.errorPath + '/vertica.bulkload.csv'
                 }
             }
-            assertEquals(1, vertable.updateRows)
-            assertEquals(1, vertable.countRow())
+            assertEquals(1, verTable.updateRows)
+            assertEquals(1, verTable.countRow())
 
             csv.currentCsvConnection.path = TFS.systemPath
 
             logInfo 'Bulk load files with mask without package:'
-            vertable.with {
+            verTable.with {
                 truncate(truncate: true)
                 bulkLoadCsv(csv) {
                     files = "bulkload/vertica.bulkload.{num}.csv"
@@ -169,11 +171,11 @@ LIMIT 1'''
                     afterBulkLoadFile { main.logInfo 'Loaded file ' + it }
                 }
             }
-            assertEquals(3, vertable.updateRows)
-            assertEquals(3, vertable.countRow())
+            assertEquals(3, verTable.updateRows)
+            assertEquals(3, verTable.countRow())
 
             logInfo 'Bulk load many files with package:'
-            vertable.with {
+            verTable.with {
                 truncate(truncate: true)
                 bulkLoadCsv(csv) {
                     files = ["bulkload/vertica.bulkload.0003.csv",
@@ -189,8 +191,8 @@ LIMIT 1'''
                     afterBulkLoadPackageFiles { main.logInfo 'After loaded package files ' + it }
                 }
             }
-            assertEquals(3, vertable.updateRows)
-            assertEquals(3, vertable.countRow())
+            assertEquals(3, verTable.updateRows)
+            assertEquals(3, verTable.countRow())
 
             logInfo 'Bulk load files with remote load from path mask:'
             def man = sftp {
@@ -208,7 +210,7 @@ LIMIT 1'''
                 upload('vertica.bulkload.0004.csv')
             }
 
-            vertable.with {
+            verTable.with {
                 truncate(truncate: true)
                 bulkLoadCsv(csv) {
                     remoteLoad = true
@@ -218,11 +220,11 @@ LIMIT 1'''
                     rejectedPath = man.rootPath
                 }
             }
-            assertEquals(3, vertable.updateRows)
-            assertEquals(3, vertable.countRow())
+            assertEquals(3, verTable.updateRows)
+            assertEquals(3, verTable.countRow())
 
             logInfo 'Bulk load files with path mask without package:'
-            vertable.with {
+            verTable.with {
                 truncate(truncate: true)
                 bulkLoadCsv(csv) {
                     files = main.filePath {
@@ -237,10 +239,10 @@ LIMIT 1'''
                     removeFile = true
                 }
             }
-            assertEquals(3, vertable.updateRows)
-            assertEquals(3, vertable.countRow())
+            assertEquals(3, verTable.updateRows)
+            assertEquals(3, verTable.countRow())
 
-            vertable.with {
+            verTable.with {
                 assertEquals(3, countRow())
 
                 def i = 0

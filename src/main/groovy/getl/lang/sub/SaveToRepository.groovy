@@ -8,12 +8,18 @@ import java.lang.annotation.Target
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 @interface SaveToRepository {
-    /** Use specified configuration environment */
+    /** Use specified configuration environments (use comma separator) */
     String env() default 'dev'
 
-    /** Reread object state before saving */
+    /** Reread object structure before saving */
     boolean retrieve() default false
 
     /** Type repositories */
     String type()
+
+    /** Name mask to save */
+    String mask() default ''
+
+    /** Save other types  (use comma separator) */
+    String otherTypes() default ''
 }

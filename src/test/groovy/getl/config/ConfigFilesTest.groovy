@@ -64,7 +64,7 @@ class ConfigFilesTest extends getl.test.GetlTest {
         assertEquals('test', h2.password)
         assertEquals('-1', h2.connectProperty.db_close_delay)
 
-        assertEquals(new File('.').canonicalPath, csv.currentPath())
+        assertEquals('.', csv.currentPath())
         assertEquals('\r\n', csv.rowDelimiter)
 
         Config.ClearConfig()

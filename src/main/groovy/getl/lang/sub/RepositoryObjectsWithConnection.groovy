@@ -56,7 +56,7 @@ abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithCo
      */
     T register(Getl creator, Connection connection, String className, String name, Boolean registration = false,
                Connection defaultConnection = null, Class classConnection = null, Closure cl = null) {
-        register(creator, className, name, registration,
+        register(creator, className, name, registration, true,
                 [connection: connection, defaultConnection: defaultConnection, classConnection: classConnection, code: cl]) as T
     }
 

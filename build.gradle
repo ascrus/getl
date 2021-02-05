@@ -7,7 +7,7 @@ plugins {
 }
 
 //noinspection GroovyUnusedAssignment
-version = '4.7.1-0-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.7.1' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -40,9 +40,11 @@ dependencies {
 
 	implementation 'com.typesafe:config:1.4.0'
 
-	implementation('org.apache.poi:poi-ooxml:4.1.2') {
+	compile('org.apache.poi:poi-ooxml:4.1.2') {
 		exclude group: 'stax'
 	}
+	compile('com.monitorjbl:xlsx-streamer:2.1.0')
+
 	implementation 'org.apache.poi:ooxml-schemas:1.4'
 	implementation 'org.apache.hadoop:hadoop-auth:3.3.0'
 	implementation 'org.apache.hadoop:hadoop-hdfs-client:3.3.0'
@@ -87,6 +89,16 @@ signing {
 }
 
 jar {
+	/*String version = System.getProperty("java.version")
+	if(version.startsWith("1.")) {
+		version = version.substring(2, 3)
+	} else {
+		int dot = version.indexOf(".")
+		if(dot != -1) { version = version.substring(0, dot) }
+	}
+
+	setClassifier(version)*/
+
 	from configurations.addJars.collect { it.isDirectory() ? it : zipTree(it) }
 	from { ['licenses/getl.readme.txt', 'licenses/getl.license.txt', 'licenses/getl.license_rus.txt'] }
 }

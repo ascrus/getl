@@ -661,6 +661,7 @@ class StringUtils {
 	 * @param password 128 bit key
 	 * @return encrypted text
 	 */
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	static String Encrypt(String text, String password) {
 		if (text == null) return null
 		if (password == null || password.length() < 16)
@@ -686,6 +687,7 @@ class StringUtils {
 	 * @param password 128 bit key
 	 * @return original text
 	 */
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	static String Decrypt(String text, String password) {
 		if (text == null) return null
 		if (password == null || password.length() < 16)

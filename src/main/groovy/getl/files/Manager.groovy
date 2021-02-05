@@ -329,6 +329,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	
 	/** File name is case-sensitive */
+	@JsonIgnore
 	abstract Boolean isCaseSensitiveName()
 	
 	/** Init validator methods */
@@ -911,6 +912,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param path path mask
 	 * @param prepareField field processing code
 	 */
+	@SuppressWarnings('GrMethodMayBeStatic')
 	@Synchronized('_synchCreate')
 	Boolean createStoryTable(TableDataset storyTable, Path path = null,
 							 @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure prepareField = null) {

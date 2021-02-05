@@ -25,7 +25,9 @@ class FileConnection extends Connection {
 			throw new ExceptionGETL("Required FileDriver instance class for connection!")
 
 		methodParams.register('Super', ['path', 'codePage', 'createPath', 'isGzFile', 'extension', 'append',
-										'deleteOnEmpty', 'fileSeparator', 'bufferSize'])
+										'deleteOnEmpty', 'fileSeparator', 'bufferSize', 'formatDate', 'formatTime',
+										'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime', 'formatBoolean',
+										'decimalSeparator'])
 	}
 
 	@Override
@@ -78,6 +80,7 @@ class FileConnection extends Connection {
 	/** Auto create path if not exists */
 	void setCreatePath(Boolean value) { params.createPath = value }
 	/** Auto create path if not exists */
+	@JsonIgnore
 	Boolean isCreatePath() { BoolUtils.IsValue(createPath) }
 	
 	/** Delete file if empty after write */
@@ -85,6 +88,7 @@ class FileConnection extends Connection {
 	/** Delete file if empty after write */
 	void setDeleteOnEmpty(Boolean value) { params.deleteOnEmpty = value }
 	/** Delete file if empty after write */
+	@JsonIgnore
 	Boolean isDeleteOnEmpty() { BoolUtils.IsValue(deleteOnEmpty) }
 	
 	/** Append to exists connection files */
@@ -92,6 +96,7 @@ class FileConnection extends Connection {
 	/** Append to exists connection files */
 	void setAppend(Boolean value) { params.append = value }
 	/** Append to exists connection files */
+	@JsonIgnore
 	Boolean isAppend() { BoolUtils.IsValue(append) }
 	
 	/** Pack GZIP connection files */
@@ -99,6 +104,7 @@ class FileConnection extends Connection {
 	/** Pack GZIP connection files */
 	void setIsGzFile(Boolean value) { params.isGzFile = value }
 	/** Pack GZIP connection files */
+	@JsonIgnore
 	Boolean isGzFile() { BoolUtils.IsValue(isGzFile) }
 	
 	/** Extension for connection files */
@@ -153,6 +159,19 @@ class FileConnection extends Connection {
 	/** Use the same date and time format */
 	void setUniFormatDateTime(String value) { params.uniFormatDateTime = value }
 
+	/** Format for boolean fields */
+	String getFormatBoolean() { params.formatBoolean as String }
+	/** Format for boolean fields */
+	void setFormatBoolean(String value) { params.formatBoolean = value }
+	String formatBoolean() { formatBoolean?:'true|false' }
+
+	/** Decimal separator for number fields */
+	String getDecimalSeparator() { params.decimalSeparator as String }
+	/** Decimal separator for number fields */
+	void setDecimalSeparator(String value) { params.decimalSeparator = value }
+	/** Decimal separator for number fields */
+	String decimalSeparator() { decimalSeparator?:'.' }
+
 	/** Exists path for connection */
 	@JsonIgnore
 	Boolean getExists() { (path != null)?new File(currentPath()).exists():null }
@@ -165,7 +184,7 @@ class FileConnection extends Connection {
 		if (path == null) return null
 
 		if (currentPath == null)
-			currentPath = new File(FileUtils.TransformFilePath(path, true)).canonicalPath
+			currentPath = FileUtils.TransformFilePath(path, true)
 
 		return currentPath
 	}

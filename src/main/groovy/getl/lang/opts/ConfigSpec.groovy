@@ -47,6 +47,7 @@ class ConfigSpec extends BaseSpec {
      * @param environment environment
      * @param codePage code page file
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     void load(String fileName, String environment = null, String codePage = null) {
         Config.LoadConfig([fileName: FileUtils.ResourceFileName(fileName), codePage: codePage, environment: environment])
     }
@@ -67,6 +68,7 @@ class ConfigSpec extends BaseSpec {
      * @param fileName configuration file name
      * @param codePage code page file
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     void save(String fileName, String codePage = null) {
         Config.SaveConfig(fileName: fileName, codePage: codePage)
     }
@@ -85,6 +87,7 @@ class ConfigSpec extends BaseSpec {
     /**
      * Clear configuration content
      */
+    @SuppressWarnings("GrMethodMayBeStatic")
     void clear() { Config.ClearConfig() }
 
     /**

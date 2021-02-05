@@ -426,6 +426,7 @@ class Executor implements GetlRepository {
 	 * @param countThread number of threads running simultaneously
 	 * @param code list item processing code
 	 */
+	@SuppressWarnings(['DuplicatedCode'])
 	void runSplit(List elements = list, Integer countThread = countProc,
 				  @ClosureParams(value = SimpleType, options = ['getl.proc.sub.ExecutorSplitListElement']) Closure code) {
 		if (isRunThreads)
@@ -464,6 +465,7 @@ class Executor implements GetlRepository {
 
 				threadList.each { element ->
 					if (!((!isError || !abortOnError) && !isInterrupt)) {
+						//noinspection UnnecessaryQualifiedReference
 						directive = Closure.DONE
 						return
 					}

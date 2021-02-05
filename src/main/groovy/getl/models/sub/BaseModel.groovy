@@ -82,6 +82,7 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
     /** Model variables */
     Map<String, Object> getModelVars() { params.modelVars as Map<String, Object> }
     /** Model variables */
+    @SuppressWarnings('unused')
     void setModelVars(Map<String, Object> value) {
         modelVars.clear()
         if (value != null)

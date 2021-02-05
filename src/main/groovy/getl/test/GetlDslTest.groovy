@@ -36,6 +36,7 @@ class GetlDslTest extends GetlTest {
     public TestRule watcher = new TestWatcher() {
         @Override
         protected void starting(Description description) {
+            //noinspection UnnecessaryQualifiedReference
             def a = description.getAnnotation(getl.test.Config)
             if (a != null)
                 configEnvironment = a.env()
@@ -86,7 +87,7 @@ class GetlDslTest extends GetlTest {
             def initClass = useInitClass()
             if (initClass != null)
                 initClasses.add(initClass)
-            Getl.GetlInstance()._initGetlProperties(initClasses)
+            Getl.GetlInstance()._initGetlProperties(initClasses, null)
             initWasRun = true
         }
     }

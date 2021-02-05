@@ -9,6 +9,7 @@ import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
 import getl.models.sub.RepositorySetOfTables
+import getl.utils.BoolUtils
 import getl.utils.FileUtils
 
 /**
@@ -41,14 +42,18 @@ class RepositorySave extends Getl {
 
     /** Class method parameters with annotation  */
     class MethodParams {
-        MethodParams(String m, List<String> e, Boolean r) {
-            this.methodName = m
-            this.envs = e
-            this.retrieve = r
+        MethodParams(String methodName, List<String> envs, Boolean retrieve, String mask, List<String> otherTypes) {
+            this.methodName = methodName
+            this.envs = envs
+            this.retrieve = retrieve
+            this.mask = mask
+            this.otherTypes = otherTypes
         }
         String methodName
         List<String> envs
         Boolean retrieve
+        String mask
+        List<String> otherTypes
     }
 
     /** Processed object types */
@@ -97,6 +102,18 @@ class RepositorySave extends Getl {
                 if (!(type in ObjectTypes))
                         throw new ExceptionDSL("Unknown type \"$type\" in annotation \"SaveToRepository\" of method \"$methodName\"!")
 
+                def otherType = an.otherTypes()?.trim()
+                List<String> otherTypes = null
+                if (otherType != null && otherType.length() > 0) {
+                    otherTypes = []
+                    otherType.split(',').each { e ->
+                        e = e.trim()
+                        if (!(e in ObjectTypes))
+                            throw new ExceptionDSL("Unknown other type \"$e\" in annotation \"SaveToRepository\" of method \"$methodName\"!")
+                        otherTypes << e
+                    }
+                }
+
                 def env = an.env()
                 List<String> envs = null
                 if (type in ['Connections', 'Files']) {
@@ -106,10 +123,12 @@ class RepositorySave extends Getl {
                     envs = spl.collect { e -> e.trim().toLowerCase() }
                 }
 
-                def retrieve = getl.utils.BoolUtils.IsValue(an.retrieve())
+                def retrieve = BoolUtils.IsValue(an.retrieve())
+                def mask = an.mask()
+                if (mask.length() == 0) mask = null
 
-                methods.get(type).add(new MethodParams(methodName, envs, retrieve))
-                logFinest "  found method \"$methodName\" of saving objects with type \"$type\""
+                methods.get(type).add(new MethodParams(methodName, envs, retrieve, mask, otherTypes))
+                logFinest "  found method \"$methodName\" of saving objects with type \"$type\"${(mask != null)?" for mask \"$mask\"":''}"
                 countMethods++
             }
             logInfo "Accepted for processing $countMethods methods"
@@ -124,6 +143,8 @@ class RepositorySave extends Getl {
                         def methodName = p.methodName
                         def envs = p.envs
                         def retrieve = p.retrieve
+                        def mask = p.mask
+                        def otherTypes = p.otherTypes
 
                         if (type in ['Connections', 'Files'])
                             logFinest "Call method \"$methodName\" from environments: ${envs.join(', ')} ..."
@@ -139,11 +160,21 @@ class RepositorySave extends Getl {
 
                         def saveMethod = 'save' + type
                         if (type in ['Connections', 'Files'])
-                            envs.each { e -> thisObject."$saveMethod"(e) }
+                            envs.each { e -> thisObject."$saveMethod"(e, mask) }
                         else if (type == 'Datasets')
-                            thisObject."$saveMethod"(retrieve)
+                            thisObject."$saveMethod"(retrieve, mask)
                         else
-                            thisObject."$saveMethod"()
+                            thisObject."$saveMethod"(mask)
+
+                        otherTypes?.each { otherType ->
+                            def saveOtherMethod = 'save' + otherType
+                            if (otherType in ['Connections', 'Files'])
+                                envs.each { e -> thisObject."$saveOtherMethod"(e, null) }
+                            else if (otherType == 'Datasets')
+                                thisObject."$saveOtherMethod"(retrieve, null)
+                            else
+                                thisObject."$saveOtherMethod"(null)
+                        }
                     }
                 }
                 finally {
@@ -214,7 +245,7 @@ class RepositorySave extends Getl {
     }
 
     /** Save datasets */
-    void saveDatasets(String mask = null, Boolean retrieveFields = false) {
+    void saveDatasets(Boolean retrieveFields = false, String mask = null) {
         if (retrieveFields) {
             processJdbcTables(mask) { tableName ->
                 def tbl = jdbcTable(tableName)
@@ -230,8 +261,8 @@ class RepositorySave extends Getl {
     }
 
     /** Save datasets */
-    void saveDatasets(Boolean retrieveFields) {
-        saveDatasets(null, retrieveFields)
+    void saveDatasets(String mask) {
+        saveDatasets(false, mask)
     }
 
     /**
@@ -242,6 +273,7 @@ class RepositorySave extends Getl {
      * @param mask list of table names or search masks
      * @param typeObjects list of type added objects (default using tables)
      */
+    @SuppressWarnings('GrMethodMayBeStatic')
     void addObjects(JDBCConnection con, String schema, String group, List<String> mask = null, List<String> typeObjects = null) {
         assert con != null, 'It is required to specify the connection in "con"!'
         assert schema != null, 'It is required to specify the schema name in "schema"!'

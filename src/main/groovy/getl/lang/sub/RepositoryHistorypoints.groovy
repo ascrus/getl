@@ -1,5 +1,6 @@
 package getl.lang.sub
 
+import getl.data.Connection
 import getl.exception.ExceptionDSL
 import getl.jdbc.SavePointManager
 import getl.utils.MapUtils
@@ -42,10 +43,16 @@ class RepositoryHistorypoints extends RepositoryObjectsWithConnection<SavePointM
     @Override
     GetlRepository importConfig(Map config) {
         def connectionName = config.connection as String
-        def con = dslCreator.connection(connectionName)
+        Connection con
+        if (connectionName != null)
+            con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
+
         def obj = new SavePointManager()
         MapUtils.MergeMap(obj.params as Map<String, Object>, MapUtils.CleanMap(config, ['connection']) as Map<String, Object>)
-        obj.setConnection(con)
+
+        if (con != null)
+            obj.setConnection(con)
+
         return obj
     }
 }

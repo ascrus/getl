@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Repository objects manager
  * @param <T> class of objects
  */
+@SuppressWarnings("GrMethodMayBeStatic")
 abstract class RepositoryObjects<T extends GetlRepository> implements GetlRepository {
     RepositoryObjects() {
         this.objects = new ConcurrentHashMap<String, T>()
@@ -235,9 +236,13 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param className object class
      * @param name object name
      * @param registration register a new object or return an existing one
+     * @param cloneInThread clone an object in a thread
+     * @param params
+     * @return repository object
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
-    T register(Getl creator, String className, String name = null, Boolean registration = false, Map params = null) {
+    T register(Getl creator, String className, String name = null, Boolean registration = false,
+               Boolean cloneInThread = true, Map params = null) {
         registration = BoolUtils.IsValue(registration)
 
         if (className == null && registration)
@@ -253,11 +258,12 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             return obj
         }
 
-        def isThread = (dslCreator.options.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread)
+        def isThread = (dslCreator.options.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) && cloneInThread
 
         def repName = dslCreator.repObjectName(name, registration)
         if (!registration && isThread) {
             def thread = Thread.currentThread() as ExecutorThread
+            /*TODO: error read objects with connection in thread */
             def threadobj = thread.findDslCloneObject(nameCloneCollection, repName) as T
             if (threadobj != null)
                 return threadobj

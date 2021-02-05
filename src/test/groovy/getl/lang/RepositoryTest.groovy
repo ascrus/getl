@@ -916,7 +916,7 @@ class RepositoryTest extends TestDsl {
                     assertEquals('admin', storedLogins.admin)
                     assertEquals('user', storedLogins.user)
                 }
-                embeddedTable('test:table1') {
+                def tab = embeddedTable('test:table1') {
                     assertEquals(con, connection)
                     assertEquals('PUBLIC', schemaName)
                     assertEquals('TABLE1', tableName)
@@ -945,6 +945,24 @@ class RepositoryTest extends TestDsl {
                 sequence('test:seq') {
                     assertEquals(con, connection)
                     assertEquals('public.s_sequence', name)
+                }
+
+                repositoryStorageManager.clearRepositories()
+
+                thread {exec ->
+                    runMany(10) {
+                        sql {
+                            useConnection embeddedConnection('test:con')
+                            assertSame(embeddedConnection('test:con'), connection)
+                        }
+
+                        def tab1 = embeddedTable('test:table1')
+                        def con1 = embeddedConnection('test:con')
+
+                        assertNotSame(tab, tab1)
+                        assertNotSame(con, con1)
+                        assertSame(con1, tab1.connection)
+                    }
                 }
             }
             finally {

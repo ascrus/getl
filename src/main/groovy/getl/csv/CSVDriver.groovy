@@ -54,6 +54,7 @@ class CSVDriver extends FileDriver {
 		[Driver.Operation.DROP, Driver.Operation.RETRIEVEFIELDS]
 	}
 
+	@SuppressWarnings('UnnecessaryQualifiedReference')
 	class ReadParams {
 		public Map params = [:]
 		public String path
@@ -116,6 +117,7 @@ class CSVDriver extends FileDriver {
 	
 	@Override
 	List<Field> fields(Dataset dataset) {
+		//noinspection UnnecessaryQualifiedReference
 		CSVDriver.ReadParams p = readParamDataset(dataset, [:])
 		
 		def csvFile = new File(p.path)
@@ -364,6 +366,7 @@ class CSVDriver extends FileDriver {
 		return header.toArray()
 	}
 
+	@SuppressWarnings('DuplicatedCode')
 	@CompileStatic
 	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
@@ -388,6 +391,7 @@ class CSVDriver extends FileDriver {
 
 		def filter = params.filter as Closure
 
+		//noinspection UnnecessaryQualifiedReference
 		CSVDriver.ReadParams p = readParamDataset(cds, params)
 		def countRec = 0L
 		Boolean isSplit = BoolUtils.IsValue(p.isSplit)
@@ -633,7 +637,7 @@ class CSVDriver extends FileDriver {
         csv_ds.params.writeCharacters = null
 		
 		wp.bufWriter = getFileWriter(csv_ds, wp.params, wp.portion)
-		wp.opt = (dataset as FileDataset).writedFiles[(wp.portion?:1) - 1]
+		wp.opt = (dataset as FileDataset).writtenFiles[(wp.portion?:1) - 1]
 		
 		wp.encoder = new CSVDefaultFileEncoder(wp)
 		
@@ -699,7 +703,7 @@ class CSVDriver extends FileDriver {
 							wp.portion++
 							wp.writer.close()
 							wp.bufWriter = getFileWriter(ds, wp.params, wp.portion)
-							wp.opt = ds.writedFiles[wp.portion - 1]
+							wp.opt = ds.writtenFiles[wp.portion - 1]
 							wp.countCharacters += wp.encoder.writeSize
 							wp.encoder.writeSize = 0
 							wp.writer = new CsvMapWriter(wp.bufWriter, wp.pref, false)
@@ -820,8 +824,6 @@ class CSVDriver extends FileDriver {
 			throw new ExceptionGETL("File \"${source.fullFileName()}\" not found!")
 		if (!(source.rowDelimiter in ['\n', '\r\n']))
 			throw new ExceptionGETL('Allow convert CSV files only standard row delimiter!')
-
-		def sourceCon = source.currentCsvConnection
 
 		def autoSchema = source.isAutoSchema()
 		def header = source.isHeader()

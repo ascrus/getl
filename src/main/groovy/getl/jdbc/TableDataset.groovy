@@ -319,7 +319,7 @@ class TableDataset extends JDBCDataset {
 	 * @param source File to load
 	 * @param cl Load setup code
 	 */
-	@SuppressWarnings("GroovyVariableNotAssigned")
+	@SuppressWarnings(["GroovyVariableNotAssigned", 'UnnecessaryQualifiedReference'])
 	protected BulkLoadSpec doBulkLoadCsv(CSVDataset source, Closure cl) { /* TODO: added history table */
 		readRows = 0
 		writeRows = 0
@@ -718,5 +718,23 @@ class TableDataset extends JDBCDataset {
 			res = currentJDBCConnection.currentJDBCDriver.copyTableTo(this, dest, map)
 
 		return res
+	}
+
+	/**
+	 * Query the table data<br>
+	 * <i>Query macro variable:</i><br>
+	 * <ul>
+	 *     <li>{table} - full table name</li>
+	 * </ul>
+	 * @param query sql select
+	 * @param qParams query params
+	 * @return query rows
+	 */
+	List<Map<String, Object>> select(String query, Map qParams = null) {
+		if (query == null)
+			throw new ExceptionGETL('Required query parameter!')
+
+		def ds = new QueryDataset(connection: connection, query: query, queryParams: [table: fullTableName] + (qParams?:[:]))
+		return ds.rows()
 	}
 }
