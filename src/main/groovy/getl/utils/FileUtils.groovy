@@ -1246,4 +1246,14 @@ class FileUtils {
 
 		return dirPath
 	}
+
+	/**
+	 * Return file path
+	 * @param path file path (can be empty or dot)
+	 * @param fileName file name
+	 * @return file path
+	 */
+	static String PathFile(String path, String fileName) {
+		return ((path != null && path != '.')?'/' + path:'') + '/' + fileName
+	}
 }

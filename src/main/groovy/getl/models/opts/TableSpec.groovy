@@ -3,6 +3,7 @@ package getl.models.opts
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.jdbc.TableDataset
 import getl.models.SetOfTables
+import getl.models.sub.DatasetSpec
 import groovy.transform.InheritConstructors
 
 /**

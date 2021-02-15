@@ -3,10 +3,8 @@ package getl.lang.opts
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
-import getl.lang.sub.GetlRepository
 import getl.utils.CloneUtils
 import getl.utils.MapUtils
-import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 
 import java.util.concurrent.ConcurrentHashMap
@@ -90,7 +88,7 @@ class BaseSpec {
     /**
      * Detected ignore key map from import
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
+    @SuppressWarnings(["GrMethodMayBeStatic", 'unused'])
     protected List<String> ignoreImportKeys(Map<String, Object> importParams) { [] as List<String> }
 
     /**
@@ -138,8 +136,8 @@ class BaseSpec {
     }
 
     @Override
+    @Synchronized
     Object clone() {
-        /*TODO:Valid clone in threads*/
         def clParams = MapUtils.Clone(params)
         def res = this.getClass().newInstance(this.ownerObject) as BaseSpec
         res.params.putAll(clParams)

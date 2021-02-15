@@ -449,6 +449,12 @@ class VerticaTable extends TableDataset {
                     field.precision = 12
                     Logs.Warning "Table ${oraTable.tableName} has numeric field ${field.name} without def lenght!"
                 }
+
+                return
+            }
+
+            if (field.type == Field.dateFieldType) {
+                field.type = Field.datetimeFieldType
             }
         }
 

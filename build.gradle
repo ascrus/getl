@@ -7,7 +7,7 @@ plugins {
 }
 
 //noinspection GroovyUnusedAssignment
-version = '4.7.1' //noinspection GroovyUnusedAssignment
+version = '4.7.2' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -40,10 +40,10 @@ dependencies {
 
 	implementation 'com.typesafe:config:1.4.0'
 
-	compile('org.apache.poi:poi-ooxml:4.1.2') {
+	implementation('org.apache.poi:poi-ooxml:4.1.2') {
 		exclude group: 'stax'
 	}
-	compile('com.monitorjbl:xlsx-streamer:2.1.0')
+	implementation('com.monitorjbl:xlsx-streamer:2.1.0')
 
 	implementation 'org.apache.poi:ooxml-schemas:1.4'
 	implementation 'org.apache.hadoop:hadoop-auth:3.3.0'

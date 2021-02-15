@@ -5,18 +5,18 @@ import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
-import getl.models.opts.BaseSpec
+import getl.models.sub.BaseSpec
 import getl.models.opts.MonitorRuleSpec
 import getl.models.sub.BaseModel
 import getl.proc.Executor
 import getl.proc.Flow
 import getl.tfs.TDS
 import getl.tfs.TDSTable
+import getl.utils.BoolUtils
 import getl.utils.DateUtils
 import getl.utils.EMailer
 import getl.utils.Logs
 import getl.utils.StringUtils
-import groovy.time.Duration
 import groovy.time.TimeCategory
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
@@ -71,6 +71,10 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                 if (val.notificationTime != null) notificationTime = DateUtils.ToDuration(val.notificationTime)
             }
         }
+    }
+    /** List of enabled rules */
+    List<MonitorRuleSpec> getEnabledRules() {
+        return usedRules.findAll { rule -> BoolUtils.IsValue(rule.enabled, true) }
     }
 
     /** Monitoring status storage table name */
@@ -291,7 +295,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         }
 
         // Threading rules
-        new Executor(abortOnError: true).run(usedRules, countThreads) { elem ->
+        new Executor(abortOnError: true).run(enabledRules, countThreads) { elem ->
             def rule = elem as MonitorRuleSpec
 
             // Clone temp status table

@@ -6,6 +6,7 @@ import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.models.ReferenceVerticaTables
+import getl.models.sub.DatasetSpec
 import getl.proc.Flow
 import getl.utils.BoolUtils
 import getl.utils.Logs

@@ -7,14 +7,12 @@ import getl.driver.Driver
 import getl.files.*
 import getl.jdbc.opts.*
 import getl.lang.Getl
-import getl.lang.opts.BaseSpec
 import getl.lang.sub.RepositoryDatasets
 import getl.proc.Flow
 import getl.stat.ProcessTime
 import getl.tfs.TDS
 import getl.utils.*
 import getl.exception.ExceptionGETL
-import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -367,7 +365,7 @@ class TableDataset extends JDBCDataset {
 		def remoteLoad = parent.remoteLoad
 		if (remoteLoad) {
 			loadAsPackage = true
-			if (parent.moveFileTo)
+			if (parent.saveFilePath)
 				throw new ExceptionGETL('File move is not supported for remote load!')
 			if (parent.removeFile)
 				throw new ExceptionGETL('File remove is not supported for remote load!')
@@ -498,7 +496,7 @@ class TableDataset extends JDBCDataset {
 		if (autoTran)
 			currentJDBCConnection.startTran()
 
-		def moveFileTo = (!remoteLoad)?parent.moveFileTo:null
+		def saveFilePath = (!remoteLoad)?parent.saveFilePath:null
 		def removeFile = (!remoteLoad)?parent.removeFile:false
 
 		CSVConnection cCon = source.connection.cloneConnection() as CSVConnection
@@ -548,16 +546,16 @@ class TableDataset extends JDBCDataset {
 				procFiles.eachRow(order: orderProcess) { file ->
 					cCon.path = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'')
 					cFile.fileName = file.filename
-
+					def fileName = cFile.fullFileName()
 					def tSize = file.filesize as Long
-
-                    def fileName = cFile.fullFileName()
+					def storePath = (saveFilePath != null)?(saveFilePath + ((file.filepath != '.')?('/' + file.filepath):'')):null
 
 					ProcessTime ptf
 					if (getl != null)
 						ptf = getl.startProcess("${fullTableName}: load file \"$fileName\" (${FileUtils.SizeBytes(tSize)})", 'file')
 
-                    if (beforeLoad != null) beforeLoad.call(fileName)
+					def fileAttrs = (file + [fullname: fileName]) as Map<String, Object>
+                    if (beforeLoad != null) beforeLoad.call(fileAttrs)
 
 					def tCount = 0L
 					try {
@@ -570,11 +568,14 @@ class TableDataset extends JDBCDataset {
 						Logs.Severe("${fullTableName}: cannot load file \"$fileName\" (${FileUtils.SizeBytes(tSize)}), error: ${e.message}")
 					}
 
-                    if (afterLoad != null) afterLoad.call(fileName)
+                    if (afterLoad != null) afterLoad.call(fileAttrs)
 
 					if (!autoTran) {
-						if (moveFileTo != null) {
-							FileUtils.MoveTo(fileName, moveFileTo)
+						if (storePath != null) {
+							if (removeFile)
+								FileUtils.MoveTo(fileName, storePath)
+							else
+								FileUtils.CopyToDir(fileName, storePath)
 						}
 						else if (removeFile) {
 							if (!FileUtils.DeleteFile(fileName))
@@ -596,12 +597,19 @@ class TableDataset extends JDBCDataset {
 			else {
 				def listFiles = []
 				Long tSize = 0
+				def fileAttrs = [] as List<Map<String, Object>>
 				procFiles.eachRow(order: orderProcess) { file ->
+					cFile.fileName = file.filename
+					def fileName = cFile.fullFileName()
+
 					tSize += file.filesize as Long
 					listFiles << path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
+
+					def attr = (file + [fullname: fileName]) as Map<String, Object>
+					fileAttrs << attr
 				}
 
-                if (beforeLoadPackage != null) beforeLoadPackage.call(listFiles)
+                if (beforeLoadPackage != null) beforeLoadPackage.call(fileAttrs)
 
 				def tCount = 0L
 				try {
@@ -618,7 +626,7 @@ class TableDataset extends JDBCDataset {
                     if (abortOnError) throw e
 				}
 
-                if (afterLoadPackage != null) afterLoadPackage.call(listFiles)
+                if (afterLoadPackage != null) afterLoadPackage.call(fileAttrs)
 
                 if (getl != null) {
                     def level = getl.options().processTimeLevelLog
@@ -633,12 +641,17 @@ class TableDataset extends JDBCDataset {
 				listFiles = null // clear garbage
 			}
 
-			if (moveFileTo != null || removeFile) {
+			if (saveFilePath != null || removeFile) {
 				if (autoTran || loadAsPackage) {
 					procFiles.eachRow(order: orderProcess) { file ->
 						def fileName = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
-						if (moveFileTo != null) {
-							FileUtils.MoveTo(fileName, moveFileTo)
+						if (saveFilePath != null) {
+							def storePath = (saveFilePath != null)?(saveFilePath + ((file.filepath != '.')?('/' + file.filepath):'')):null
+
+							if (removeFile)
+								FileUtils.MoveTo(fileName, storePath)
+							else
+								FileUtils.CopyToDir(fileName, storePath)
 						} else if (removeFile) {
 							if (!FileUtils.DeleteFile(fileName))
 								throw new ExceptionGETL("Cannot delete file \"${fileName}\"!")
@@ -647,8 +660,11 @@ class TableDataset extends JDBCDataset {
 				}
 
 				if (schemaFile != null) {
-					if (moveFileTo != null) {
-						FileUtils.MoveTo(schemaFile, moveFileTo)
+					if (saveFilePath != null) {
+						if (removeFile)
+							FileUtils.MoveTo(schemaFile, saveFilePath)
+						else
+							FileUtils.CopyToDir(schemaFile, saveFilePath)
 					} else if (removeFile) {
 						if (!FileUtils.DeleteFile(schemaFile))
 							throw new ExceptionGETL("Cannot delete file \"$schemaFile\"!")

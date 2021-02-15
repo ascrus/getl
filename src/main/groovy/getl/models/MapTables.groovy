@@ -5,7 +5,7 @@ import getl.data.Connection
 import getl.data.Dataset
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionModel
-import getl.models.opts.BaseSpec
+import getl.models.sub.BaseSpec
 import getl.models.opts.MapTableSpec
 import getl.models.sub.DatasetsModel
 import groovy.transform.InheritConstructors

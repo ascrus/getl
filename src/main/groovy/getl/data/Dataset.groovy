@@ -33,7 +33,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		methodParams.register('drop', [])
 		methodParams.register('truncate', [])
 		methodParams.register('bulkLoadFile', ['source', 'prepare', 'map', 'autoMap', 'autoCommit',
-											   'abortOnError', 'inheritFields', 'removeFile', 'moveFileTo'])
+											   'abortOnError', 'inheritFields', 'removeFile', 'saveFilePath'])
 		methodParams.register('eachRow', ['prepare', 'offs', 'limit', 'saveErrors', 'autoSchema'])
 		methodParams.register('openWrite', ['prepare', 'autoSchema'])
 		methodParams.register('lookup', ['key', 'strategy'])

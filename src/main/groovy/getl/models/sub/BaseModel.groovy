@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
-import getl.models.opts.BaseSpec
-import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 
 import java.lang.reflect.ParameterizedType

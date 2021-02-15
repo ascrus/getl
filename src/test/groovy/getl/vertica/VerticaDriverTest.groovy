@@ -167,8 +167,8 @@ LIMIT 1'''
                     exceptionPath = main.configContent.errorPath + '/vertica.bulkload.err'
                     rejectedPath = main.configContent.errorPath + '/vertica.bulkload.csv'
 
-                    beforeBulkLoadFile { FileUtils.CopyToDir(it, main.configContent.errorPath) }
-                    afterBulkLoadFile { main.logInfo 'Loaded file ' + it }
+                    beforeBulkLoadFile { FileUtils.CopyToDir(it.fullname, main.configContent.errorPath) }
+                    afterBulkLoadFile { main.logInfo 'Loaded file ' + it.fullname }
                 }
             }
             assertEquals(3, verTable.updateRows)

@@ -64,51 +64,51 @@ class BulkLoadSpec extends BaseSpec {
      * Run code before loading file (for loadAsPackage off)
      * <br>closure parameter: file path to load
      */
-    void beforeBulkLoadFile(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure value) {
+    void beforeBulkLoadFile(@ClosureParams(value = SimpleType, options = ['java.util.Map']) Closure value) {
         setOnBeforeBulkLoadFile(value)
     }
 
     /**
      * Run code after loading file (for loadAsPackage off)
-     * <br>closure parameter: file path to load
+     * <br>closure parameter: map file attributes
      */
     @JsonIgnore
     Closure getOnAfterBulkLoadFile() { params.afterBulkLoadFile as Closure }
     /**
      * Run code after loading file (for loadAsPackage off)
-     * <br>closure parameter: file path to load
+     * <br>closure parameter: map file attributes
      */
     void setOnAfterBulkLoadFile(Closure value) { saveParamValue('afterBulkLoadFile', value) }
     /**
      * Run code after loading file (for loadAsPackage off)
-     * <br>closure parameter: file path to load
+     * <br>closure parameter: map file attributes
      */
-    void afterBulkLoadFile(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure value) {
+    void afterBulkLoadFile(@ClosureParams(value = SimpleType, options = ['java.util.Map']) Closure value) {
         setOnAfterBulkLoadFile(value)
     }
 
     /**
      * Run code before loading files (for loadAsPackage on)
-     * <br>closure parameter: list of file paths to load
+     * <br>closure parameter: list of map file attributes
      */
     @JsonIgnore
     Closure getOnBeforeBulkLoadPackageFiles() { params.beforeBulkLoadPackageFiles as Closure }
     /**
      * Run code before loading files (for loadAsPackage on)
-     * <br>closure parameter: list of file paths to load
+     * <br>closure parameter: list of map file attributes
      */
     void setOnBeforeBulkLoadPackageFiles(Closure value) { saveParamValue('beforeBulkLoadPackageFiles', value) }
     /**
      * Run code before loading files (for loadAsPackage on)
-     * <br>closure parameter: list of file paths to load
+     * <br>closure parameter: list of map file attributes
      */
-    void beforeBulkLoadPackageFiles(@ClosureParams(value = SimpleType, options = ['java.util.ArrayList<java.lang.String>']) Closure value) {
+    void beforeBulkLoadPackageFiles(@ClosureParams(value = SimpleType, options = ['java.util.ArrayList<java.util.Map>']) Closure value) {
         setOnBeforeBulkLoadPackageFiles(value)
     }
 
     /**
      * Run code after loading files (for loadAsPackage on)
-     * <br>closure parameter: list of file paths to load
+     * <br>closure parameter: list of map file attributes
      */
     @JsonIgnore
     Closure getOnAfterBulkLoadPackageFiles() { params.afterBulkLoadPackageFiles as Closure }
@@ -119,9 +119,9 @@ class BulkLoadSpec extends BaseSpec {
     void setOnAfterBulkLoadPackageFiles(Closure value) { saveParamValue('afterBulkLoadPackageFiles', value) }
     /**
      * Run code after loading files (for loadAsPackage on)
-     * <br>closure parameter: list of file paths to load
+     * <br>closure parameter: list of map file attributes
      */
-    void afterBulkLoadPackageFiles(@ClosureParams(value = SimpleType, options =  ['java.util.ArrayList<java.lang.String>']) Closure value) {
+    void afterBulkLoadPackageFiles(@ClosureParams(value = SimpleType, options =  ['java.util.ArrayList<java.util.Map>']) Closure value) {
         setOnAfterBulkLoadPackageFiles(value)
     }
 
@@ -207,14 +207,14 @@ class BulkLoadSpec extends BaseSpec {
     /** Delete file after successful upload */
     void setRemoveFile(Boolean value) { saveParamValue('removeFile', value) }
 
-    /** Move file after successful upload to the specified path */
-    String getMoveFileTo() { params.moveFileTo as String }
-    /** Move file after successful upload to the specified path */
-    void setMoveFileTo(String value) {
+    /** Save successfully downloaded files to the specified path */
+    String getSaveFilePath() { params.saveFilePath as String }
+    /** Save successfully downloaded files to the specified path */
+    void setSaveFilePath(String value) {
         if (value != null)
             FileUtils.ValidPath(value)
 
-        saveParamValue('moveFileTo', value)
+        saveParamValue('saveFilePath', value)
     }
 
     /** Source file prototype for bulk load */

@@ -376,6 +376,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (processCode == null)
 			throw new ExceptionGETL("Required \"processCode\" closure for list method in file manager")
 
+		validConnect()
+
 		FileManagerList l = listDir(maskFiles)
 		for (Integer i = 0; i < l.size(); i++) {
             processCode.call(l.item(i))
@@ -422,6 +424,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 */
 	@CompileStatic
 	void changeDirectory(String dir) {
+		validConnect()
+
 		if (dir == null || dir == '')
 			throw new ExceptionGETL("Null dir not allowed for cd operation")
 		if (dir == '.') return
@@ -467,6 +471,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 	
 	/** Change current directory to root */
 	void changeDirectoryToRoot() {
+		validConnect()
+
 		currentPath = currentRootPath
 	}
 	
@@ -493,6 +499,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 */
 	@CompileStatic
 	void download(String filePath, String localFilePath) {
+		validConnect()
+
 		if (localFilePath == null)
 			localFilePath = FileUtils.FileName(filePath)
 
@@ -528,6 +536,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * Upload all directories and files from the current local directory to the source
 	 */
 	long uploadDir(Boolean removeLocal = false) {
+		validConnect()
+
 		def res = 0L
 		def lc = localDirFile
 		lc.listFiles().each { file ->
@@ -572,6 +582,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 */
 	@CompileStatic
 	void createDirs(String dirPath) {
+		validConnect()
+
 		def dirs = FileUtils.PrepareDirPath(dirPath, true).split('/')
 		dirs.each { dir ->
 			if (!existsDirectory(dir))
@@ -1267,6 +1279,9 @@ FROM ${newFiles.fullNameDataset()} files
 	void downloadFiles(Map params,
 					   @ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure onDownloadFile) {
 		methodParams.validation('downloadFiles', params)
+
+		validConnect()
+
 		if (fileList == null || fileList.field.isEmpty())
 			throw new ExceptionGETL("Before download build fileList dataset!")
 
@@ -1541,6 +1556,8 @@ WHERE
 	 * @param throwError
 	 */
 	void createLocalDir(String dir, Boolean throwError) {
+		validConnect()
+
 		def fn = "${currentLocalDir()}/${dir}"
 		if (!new File(fn).mkdirs() && throwError) throw new ExceptionGETL("Cannot create local directory \"${fn}\"")
 	}
@@ -1559,8 +1576,10 @@ WHERE
 	 * @param throwError
 	 */
 	void removeLocalDir(String dir, Boolean throwError) {
+		validConnect()
 		def fn = "${currentLocalDir()}/${dir}"
-		if (!new File(fn).delete() && throwError) throw new ExceptionGETL("Can not remove local directory \"${fn}\"")
+		if (!new File(fn).delete() && throwError)
+			throw new ExceptionGETL("Can not remove local directory \"${fn}\"")
 	}
 	
 	/**
@@ -1577,6 +1596,7 @@ WHERE
 	 * @param throwError
 	 */
 	Boolean removeLocalDirs(String dirName, Boolean throwError) {
+		validConnect()
         def fullDirName = new File("${currentLocalDir()}/$dirName").canonicalPath
 		def deleteRoot = (fullDirName != new File(localDirectory).canonicalPath)
         return FileUtils.DeleteFolder(fullDirName, deleteRoot, throwError)
@@ -1595,6 +1615,7 @@ WHERE
 	 * @param fileName
 	 */
 	void removeLocalFile(String fileName) {
+		validConnect()
 		def fn = "${currentLocalDir()}/$fileName"
 		if (!new File(fn).delete())
 			throw new ExceptionGETL("Can not remove Local file \"$fn\"")
@@ -1613,6 +1634,8 @@ WHERE
 	 * @param dir
 	 */
 	void changeLocalDirectory(String dir) {
+		validConnect()
+
 		if (dir == '.') return
 		if (dir == '..') {
 			changeLocalDirectoryUp()
@@ -1637,6 +1660,8 @@ WHERE
 	 * Change local directory to up
 	 */
 	void changeLocalDirectoryUp() {
+		validConnect()
+
 		setCurrentLocalPath(localDirFile.parent)
 	}
 
@@ -1644,6 +1669,8 @@ WHERE
 	 * 	Change local directory to root
 	 */
 	void changeLocalDirectoryToRoot() {
+		validConnect()
+
 		setCurrentLocalPath(localDirectory)
 	}
 	
@@ -1653,6 +1680,8 @@ WHERE
 	 * @return
 	 */
 	Boolean existsLocalDirectory(String dir) {
+		validConnect()
+
 		new File(processLocalDirPath(dir)).exists()
 	}
 	
@@ -1728,6 +1757,8 @@ WHERE
 	 */
 	protected Boolean deleteEmptyFolderRecurse(Integer level, String dirName, Boolean recursive,
 											   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
+		validConnect()
+
 		changeDirectory(dirName)
 		def existsFiles = false
 		try {
@@ -1789,7 +1820,10 @@ WHERE
 	 */
 	Boolean deleteEmptyFolders(Boolean ignoreErrors,
 							   @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
-		if (fileList == null) throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders')
+		validConnect()
+
+		if (fileList == null)
+			throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders')
 		
 		def dirs = [:] as Map<String, Map>
 		QueryDataset paths = new QueryDataset(connection: fileList.connection, query: "SELECT DISTINCT FILEPATH FROM ${fileList.fullNameDataset()} ORDER BY FILEPATH")
@@ -1819,6 +1853,8 @@ WHERE
 	 * @return tree of directories
 	 */
 	Map<String, Object> buildTreeDirs() {
+		validConnect()
+
 		def res = [:] as Map<String, Object>
 		def objects = listDir()
 		for (Integer i = 0; i < objects.size(); i++) {
@@ -1846,6 +1882,8 @@ WHERE
 	 */
 	Boolean deleteEmptyDirs(Map<String, Map> dirs, Boolean ignoreErrors,
 							@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure onDelete) {
+		validConnect()
+
 		def res = true
 		dirs.each { String name, Map subDirs ->
 			changeDirectory(name)
@@ -1882,7 +1920,9 @@ WHERE
 	 * @param recursive
 	 */
 	void deleteEmptyFolder(Boolean recursive) {
-		list() { Map file ->
+		validConnect()
+
+		list().each { file ->
 			if (file.type == TypeFile.DIRECTORY)
 				deleteEmptyFolderRecurse(1, file.filename as String, recursive, null)
 
@@ -1912,6 +1952,8 @@ WHERE
 	 * @return - 0: successfully, greater 0: error, -1: invalid command
 	 */
 	Integer command(String command, StringBuilder out, StringBuilder err) {
+		validConnect()
+
 		out.setLength(0)
 		err.setLength(0)
 		
@@ -2055,6 +2097,8 @@ WHERE
 	 * @param maskDirs directory removal mask
 	 */
 	void removeDirs(String maskDirs) {
+		validConnect()
+
 		def p = new Path(mask: maskDirs)
 		list().each { file ->
 			if (file.type == directoryType && p.match(file.filename as String)) {
@@ -2066,6 +2110,8 @@ WHERE
 
 	/** Clear the current directory from directories and files */
 	void cleanDir() {
+		validConnect()
+
 		def l = list()
 		l.each {file ->
 			if (file.type == directoryType)

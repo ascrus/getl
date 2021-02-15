@@ -17,6 +17,12 @@ class setOfTablesTest extends TestRepository {
                     assertEquals('getl_table1', sourceTable.tableName)
                     assertEquals(Field.integerFieldType, sourceTable.field('id').type)
                 }
+
+                assertEquals(['h2:table1'], findModelDatasets())
+                assertEquals(['h2:table1'], findModelDatasets(['h2:*']))
+                assertEquals(['h2:table1'], findModelDatasets(['h2:*1']))
+                assertTrue(findModelDatasets(null, ['h2:*']).isEmpty())
+                assertEquals(['h2:table1'], findModelDatasets(null, ['h2:*2']))
             }
         }
     }

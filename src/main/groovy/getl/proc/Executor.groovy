@@ -241,7 +241,10 @@ class Executor implements GetlRepository {
 	/** Component runs threads */
 	private Boolean isRunThreads = false
 	/** Component runs threads */
-	Boolean getIsRunThreads() { isRunThreads }
+	@Synchronized
+	Boolean getRunThreads() { isRunThreads }
+	@Synchronized
+	void setRunThreads(Boolean value) { isRunThreads = value }
 
 	/** Run thread code with list elements */
 	void run(Integer countThread, Closure code) {
@@ -271,7 +274,7 @@ class Executor implements GetlRepository {
 	 */
 	@SuppressWarnings(["DuplicatedCode"])
 	void run(List elements = list, Integer countThread = countProc, Closure code) {
-		if (isRunThreads)
+		if (runThreads)
 			throw new ExceptionGETL('Cannot start "run" method when threads are running!')
 
 		hasError = false
@@ -362,7 +365,7 @@ class Executor implements GetlRepository {
 		}
 
 		def threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
-		isRunThreads = true
+		runThreads = true
 		try {
 			def size = elements.size()
 			if (limit?:0 > 0 && limit < size) size = limit
@@ -416,7 +419,7 @@ class Executor implements GetlRepository {
 			threadList.clear()
 			threadActive.clear()
 
-			isRunThreads = false
+			runThreads = false
 		}
 	}
 
@@ -429,7 +432,7 @@ class Executor implements GetlRepository {
 	@SuppressWarnings(['DuplicatedCode'])
 	void runSplit(List elements = list, Integer countThread = countProc,
 				  @ClosureParams(value = SimpleType, options = ['getl.proc.sub.ExecutorSplitListElement']) Closure code) {
-		if (isRunThreads)
+		if (runThreads)
 			throw new ExceptionGETL('Cannot start "runSplit" method when threads are running!')
 
 		hasError = false
@@ -538,7 +541,7 @@ class Executor implements GetlRepository {
 
 		def listElements = ListUtils.SplitList(elements, countThread, ((limit?:0 > 0)?limit:null))
 		def threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
-		isRunThreads = true
+		runThreads = true
 		try {
 			for (Integer i = 0; i < listElements.size(); i++) {
 				def r = [:] as Map<String, Object>
@@ -590,7 +593,7 @@ class Executor implements GetlRepository {
 			threadList.clear()
 			threadActive.clear()
 
-			isRunThreads = false
+			runThreads = false
 		}
 	}
 
@@ -627,7 +630,7 @@ class Executor implements GetlRepository {
 
 	/** Run thread code with list elements */
 	void exec(List<Closure> elements = listCode, Integer countThread = countProc) {
-		if (isRunThreads)
+		if (runThreads)
 			throw new ExceptionGETL('Cannot start "exec" method when threads are running!')
 
 		hasError = false
@@ -692,7 +695,7 @@ class Executor implements GetlRepository {
 		}
 
 		def threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
-		isRunThreads = true
+		runThreads = true
 		try {
 			def num = 0
 			elements.each { n ->
@@ -747,7 +750,7 @@ class Executor implements GetlRepository {
 			threadList.clear()
 			threadActive.clear()
 
-			isRunThreads = false
+			runThreads = false
 		}
 	}
 
@@ -759,7 +762,7 @@ class Executor implements GetlRepository {
 	
 	/** Start background process */
 	void startBackground(Closure code) {
-		if (isRunThreads)
+		if (runThreads)
 			throw new ExceptionGETL('Cannot start "startBackground" when threads are running!')
 
 		def runCode = {
@@ -778,26 +781,29 @@ class Executor implements GetlRepository {
 		}
 		
 		runBackgroundService = true
-		isRunThreads = true
+		runThreads = true
 		try {
 			threadBackground = Executors.newSingleThreadExecutor()
 			threadBackground.execute(runCode)
 		}
 		catch (Throwable e) {
 			runBackgroundService = false
-			isRunThreads = false
+			runThreads = false
 			throw e
 		}
 	}
 	
 	/** Finish background process */
 	void stopBackground () {
-		if (!isRunBackground()) throw new ExceptionGETL("Not Background process running")
+		if (!isRunBackground())
+			throw new ExceptionGETL("Not Background process running")
 		try {
+			runBackgroundService = false
 			if (threadBackground != null) {
 				try {
 					threadBackground.shutdown()
-					while (!threadBackground.isShutdown()) threadBackground.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
+					while (!threadBackground.isShutdown())
+						threadBackground.awaitTermination(waitTime, TimeUnit.MILLISECONDS)
 				}
 				finally {
 					threadBackground = null
@@ -805,8 +811,7 @@ class Executor implements GetlRepository {
 			}
 		}
 		finally {
-			runBackgroundService = false
-			isRunThreads = false
+			runThreads = false
 		}
 	}
 

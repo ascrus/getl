@@ -1,6 +1,7 @@
 package getl.models.opts
 
 import getl.models.ReferenceFiles
+import getl.models.sub.FileSpec
 import groovy.transform.InheritConstructors
 
 /**

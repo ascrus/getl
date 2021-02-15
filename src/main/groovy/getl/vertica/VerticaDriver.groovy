@@ -117,7 +117,7 @@ class VerticaDriver extends JDBCDriver {
 	void bulkLoadFile(CSVDataset source, Dataset dest, Map bulkParams, Closure prepareCode) {
 		def params = bulkLoadFilePrepare(source, dest as JDBCDataset, bulkParams, prepareCode)
 
-		def rowDelimiterChar = source.rowDelimiter
+		def rowDelimiterChar = source.rowDelimiter()
 		if (rowDelimiterChar == '\r\n') rowDelimiterChar = '\n'
 
 		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = ''
@@ -142,10 +142,10 @@ class VerticaDriver extends JDBCDriver {
 			}
 			def useCsvOptions = BoolUtils.IsValue((params.parser as Map).useCsvOptions, true)
 			if (useCsvOptions) {
-				if (source.params.fieldDelimiter != null) fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter())}"
-				if (source.params.rowDelimiter != null) rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
-				if (source.params.quoteStr != null) quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr())}"
-				if (source.params.nullAsValue != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
+				fieldDelimiter = "\nDELIMITER AS ${EscapeString(source.fieldDelimiter())}"
+				rowDelimiter = "\nRECORD TERMINATOR ${EscapeString(rowDelimiterChar)}"
+				quoteStr = "\nENCLOSED BY ${EscapeString(source.quoteStr())}"
+				if (source.nullAsValue() != null) nullAsValue = "\nNULL AS ${EscapeString(source.nullAsValue())}"
 			}
 		}
 		else if (!source.isEscaped()) {

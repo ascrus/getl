@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
 import getl.exception.ExceptionModel
 import getl.models.MapTables
+import getl.models.sub.DatasetSpec
 import groovy.transform.InheritConstructors
 import java.util.concurrent.ConcurrentHashMap
 

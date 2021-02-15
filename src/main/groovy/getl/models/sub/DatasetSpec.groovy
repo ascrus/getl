@@ -1,14 +1,8 @@
-package getl.models.opts
+package getl.models.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
-import getl.data.FileDataset
 import getl.exception.ExceptionDSL
-import getl.exception.ExceptionModel
-import getl.jdbc.QueryDataset
-import getl.jdbc.TableDataset
-import getl.jdbc.ViewDataset
-import getl.models.sub.DatasetsModel
 import getl.utils.MapUtils
 
 import java.util.concurrent.ConcurrentHashMap

@@ -4,13 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.models.MonitorRules
+import getl.models.sub.BaseSpec
+import getl.utils.BoolUtils
 import groovy.time.Duration
 
 /**
  * Table tracking options
  * @author Alexsey Konstantinov
  */
-class MonitorRuleSpec extends BaseSpec { /*TODO: added ignore property */
+class MonitorRuleSpec extends BaseSpec {
     MonitorRuleSpec(MonitorRules owner, String queryName) {
         super(owner)
         setQueryName(queryName)
@@ -69,8 +71,13 @@ class MonitorRuleSpec extends BaseSpec { /*TODO: added ignore property */
     /** Rule description */
     void setDescription(String value) { saveParamValue('description', value) }
 
+    /** Allow rule */
+    Boolean getEnabled() { params.enabled as Boolean }
+    /** Allow rule */
+    void setEnabled(Boolean value) { saveParamValue('enabled', value) }
+
     @Override
     String toString() {
-        return "$queryName:$lagTime"
+        return "$queryName:$lagTime (" + ((BoolUtils.IsValue(enabled, true))?'enabled':'disabled') + ')'
     }
 }

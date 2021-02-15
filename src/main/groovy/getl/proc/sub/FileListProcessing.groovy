@@ -16,7 +16,6 @@ import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.CompileStatic
-import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -123,6 +122,20 @@ abstract class FileListProcessing implements GetlRepository {
     /** Process the received list of files before processing it */
     void prepareFileList(@ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset'])
                             Closure value) { params.prepareFileList = value }
+
+    /** Execute code when starting the file processing */
+    Closure getOnStartProcess() { params.startProcess as Closure }
+    /** Execute code when starting the file processing */
+    void setOnStartProcess(Closure value) { params.startProcess = value }
+    /** Execute code when starting the file processing */
+    void startProcess(Closure value) { params.startProcess = value }
+
+    /** Execute code when file processing ends */
+    Closure getOnFinishProcess() { params.finishProcess as Closure }
+    /** Execute code when file processing ends */
+    void setOnFinishProcess(Closure value) { params.finishProcess = value }
+    /** Execute code when file processing ends */
+    void finishProcess(Closure value) { params.finishProcess = value }
 
     /** Source file path mask */
     Path getSourcePath() { params.sourcePath as Path }
@@ -261,15 +274,15 @@ abstract class FileListProcessing implements GetlRepository {
 
     /**
      * Change current directory
-     * @param mans list of file manager
+     * @param managers list of file manager
      * @param path directory name
      * @param isCreateDir create directory if not exist (default false)
      * @param attempts number of operation attempts
      * @param time number of seconds between attempts to retry a command operation
      */
-    static void ChangeDir(List<Manager> mans, String path,
+    static void ChangeDir(List<Manager> managers, String path,
                           Boolean isCreateDir, Integer attempts, Integer time) {
-        Operation(mans, attempts, time) { man ->
+        Operation(managers, attempts, time) { man ->
             man.changeDirectoryToRoot()
             synchronized (createDirectoryLock) {
                 if (!man.existsDirectory(path)) {
@@ -313,11 +326,11 @@ abstract class FileListProcessing implements GetlRepository {
 
     /**
      * Connect managers
-     * @param mans list of managers
+     * @param managers list of managers
      * @param attempts number of attempts
      * @param time time in seconds between attempts
      */
-    static void ConnectTo(List<Manager> mans, Integer attempts, Integer time) {
+    static void ConnectTo(List<Manager> managers, Integer attempts, Integer time) {
         def code = { Manager man ->
             if (man.connected) return
 
@@ -341,16 +354,16 @@ abstract class FileListProcessing implements GetlRepository {
             }
         }
 
-        switch (mans.size()) {
+        switch (managers.size()) {
             case 0:
-                throw new ExceptionFileListProcessing('Invalid "mans" parameter!')
+                throw new ExceptionFileListProcessing('Invalid "managers" parameter!')
             case 1:
-                code.call(mans[0])
+                code.call(managers[0])
                 break
             default:
                 new Executor().with {
-                    useList mans
-                    countProc = mans.size()
+                    useList managers
+                    countProc = managers.size()
                     abortOnError = true
 
                     run(code)
@@ -360,9 +373,9 @@ abstract class FileListProcessing implements GetlRepository {
 
     /**
      * Disconnect managers
-     * @param mans list of managers
+     * @param managers list of managers
      */
-    static Boolean DisconnectFrom(List<Manager> mans) {
+    static Boolean DisconnectFrom(List<Manager> managers) {
         def err = new SynchronizeObject()
 
         def code = { Manager man ->
@@ -377,16 +390,16 @@ abstract class FileListProcessing implements GetlRepository {
             }
         }
 
-        switch (mans.size()) {
+        switch (managers.size()) {
             case 0:
-                throw new ExceptionFileListProcessing('Invalid "mans" parameter!')
+                throw new ExceptionFileListProcessing('Invalid "managers" parameter!')
             case 1:
-                code.call(mans[0])
+                code.call(managers[0])
                 break
             default:
                 new Executor().with {
-                    useList mans
-                    countProc = mans.size()
+                    useList managers
+                    countProc = managers.size()
                     abortOnError = false
 
                     run(code)
@@ -398,12 +411,12 @@ abstract class FileListProcessing implements GetlRepository {
 
     /**
      * Perform an operation on managers
-     * @param mans list of managers
+     * @param managers list of managers
      * @param attempts number of attempts
      * @param time time in seconds between attempts
      * @param cl operation code on specified manager
      */
-    static void Operation(List<Manager> mans, Integer attempts, Integer time,
+    static void Operation(List<Manager> managers, Integer attempts, Integer time,
                           @ClosureParams(value = SimpleType, options = ['getl.files.Manager']) Closure cl) {
         def code = { Manager man ->
             def retry = 1
@@ -459,16 +472,16 @@ abstract class FileListProcessing implements GetlRepository {
             }
         }
 
-        switch (mans.size()) {
+        switch (managers.size()) {
             case 0:
-                throw new ExceptionFileListProcessing('Invalid "mans" parameter!')
+                throw new ExceptionFileListProcessing('Invalid "managers" parameter!')
             case 1:
-                code.call(mans[0])
+                code.call(managers[0])
                 break
             default:
                 new Executor().with {
-                    useList(mans)
-                    countProc = mans.size()
+                    useList(managers)
+                    countProc = managers.size()
                     abortOnError = true
                     run(code)
                 }
@@ -648,6 +661,8 @@ abstract class FileListProcessing implements GetlRepository {
 
     /** Run before processing */
     protected void beforeProcessing() {
+        if (onStartProcess != null) onStartProcess.call()
+
         if (sourceBeforeScript != null)
             if (source.connected)
                 Command(source, sourceBeforeScript, numberAttempts, timeAttempts, true, null, Config.vars)
@@ -662,6 +677,8 @@ abstract class FileListProcessing implements GetlRepository {
 
     /** Run after processing */
     protected void afterProcessing() {
+        if (onFinishProcess != null) onFinishProcess.call()
+
         if (sourceAfterScript != null)
             if (source.connected)
                 Command(source, sourceAfterScript, numberAttempts, timeAttempts, true, null, Config.vars)

@@ -39,14 +39,14 @@ class ExecutorTest extends getl.test.GetlTest {
 
     @Test
     void testDoubleRun() {
-        Getl.Dsl(this) {
+        Getl.Dsl(this) {main ->
             thread {
                 useList 1, 2, 3
                 countProc = 3
                 run {
                     this.shouldFail {
                         run {
-                            logSevere "Double run!"
+                            logError "Double run!"
                         }
                     }
                 }
@@ -54,7 +54,7 @@ class ExecutorTest extends getl.test.GetlTest {
                 addThread {
                     this.shouldFail {
                         run {
-                            logSevere "Double run!"
+                            logError "Double run!"
                         }
                     }
                 }
@@ -62,11 +62,13 @@ class ExecutorTest extends getl.test.GetlTest {
 
                 startBackground {
                     this.shouldFail {
+                        logInfo 'Start run'
                         run {
-                            logSevere "Double run!"
+                            logError "Double run!"
                         }
                     }
                 }
+                pause 1000
                 stopBackground()
             }
         }

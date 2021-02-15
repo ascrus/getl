@@ -367,9 +367,11 @@ class ConfigSlurper extends ConfigManager {
 				def map = value as Map
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveMap(map, sb, convertVars, trimMap, tab + 1) > 0) {
+					if (SaveMap(map, sb, convertVars, trimMap, tab + 1, isListMap) > 0) {
 						def eqStr = (isListMap)?':':''
-						lines.add("${tabStr}${varName}${eqStr} {\n" + sb.toString() + "${tabStr}}")
+						def dvStr1 = (isListMap)?'[':'{'
+						def dvStr2 = (isListMap)?']':'}'
+						lines.add("${tabStr}${varName}${eqStr} ${dvStr1}\n" + sb.toString() + "${tabStr}${dvStr2}")
 						res++
 					}
 				}
@@ -389,9 +391,11 @@ class ConfigSlurper extends ConfigManager {
 				def map = (value as BaseSpec).params
 				if (!map.isEmpty()) {
 					def sb = new StringBuilder()
-					if (SaveMap(map, sb, convertVars, trimMap, tab + 1) > 0) {
+					if (SaveMap(map, sb, convertVars, trimMap, tab + 1, isListMap) > 0) {
 						def eqStr = (isListMap)?':':''
-						lines.add("${tabStr}${varName}${eqStr} {\n" + sb.toString() + "${tabStr}}")
+						def dvStr1 = (isListMap)?'[':'{'
+						def dvStr2 = (isListMap)?']':'}'
+						lines.add("${tabStr}${varName}${eqStr} ${dvStr1}\n" + sb.toString() + "${tabStr}${dvStr2}")
 						res++
 					}
 				}

@@ -31,7 +31,7 @@ class OracleDriver extends JDBCDriver {
 	List<Driver.Support> supported() {
 		return super.supported() +
 				[Driver.Support.GLOBAL_TEMPORARY, Driver.Support.SEQUENCE, Driver.Support.BLOB,
-				 Driver.Support.CLOB, Driver.Support.INDEX, Driver.Support.DATE, Driver.Support.TIMESTAMP_WITH_TIMEZONE]
+				 Driver.Support.CLOB, Driver.Support.INDEX, /*Driver.Support.DATE, */Driver.Support.TIMESTAMP_WITH_TIMEZONE]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -144,7 +144,7 @@ class OracleDriver extends JDBCDriver {
 		
 		if (field.typeName != null) {
 			if (field.typeName.matches("(?i)DATE")) {
-				field.type = Field.Type.DATE
+				field.type = Field.Type.DATETIME
 //				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.DATE).timestampValue().getTime())"
 				return
 			}

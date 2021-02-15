@@ -3,8 +3,6 @@ package getl.models.sub
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
 import getl.files.Manager
-import getl.models.opts.BaseSpec
-import getl.models.opts.FileSpec
 import groovy.transform.InheritConstructors
 
 /**

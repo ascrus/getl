@@ -68,4 +68,19 @@ class RepositorySaveTest extends RepositorySave {
             name = 'public.s_sequence'
         }
     }
+
+    @SaveToRepository(type = 'SetOfTables')
+    void setOfTables() {
+        models.setOfTables('test:sets', true) {
+            useSourceConnection 'test:con'
+
+            modelVars.put('test 1', 1)
+
+            table('test:table1') {
+                objectVars.test2 = 2
+                attrs.a1 = 3
+                attrs.a2 = [a:1, b:2, c:3]
+            }
+        }
+    }
 }

@@ -167,7 +167,7 @@ class FileManager extends Manager {
 		
 		File f = new File(path)
 		if (!f.exists())
-			throw new ExceptionGETL("Directory \"${path}\" not found")
+			throw new ExceptionGETL("Directory \"${path}\" not found in \"$currentPath\" path!")
 
 		currentDirectory = f
 		_currentPath = currentDirectory.path.replace("\\", "/")

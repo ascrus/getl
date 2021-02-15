@@ -2355,6 +2355,10 @@ Examples:
                         }
 
                         break
+                    case Path:
+                        if (!value instanceof Path) {
+                            value = new Path(mask: value.toString())
+                        }
                 }
 
 
@@ -4254,7 +4258,7 @@ Examples:
     }
 
     /** SQL scripter */
-    SQLScripter sql(JDBCConnection connection, /* TODO: Added extended variables with table structure */
+    SQLScripter sql(JDBCConnection connection,
                     @DelegatesTo(SQLScripter)
                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl = null) {
         def parent = new SQLScripter()
@@ -4265,11 +4269,18 @@ Examples:
             parent.connection = connection
         else if (owner instanceof JDBCConnection)
             parent.connection = owner as JDBCConnection
+        else if (owner instanceof JDBCDataset)
+            parent.connection = (owner as Dataset).connection
         else
             parent.connection = defaultJdbcConnection(RepositoryDatasets.QUERYDATASET)
 
         parent.logEcho = _langOpts.sqlEchoLogLevel.toString()
         parent.extVars = configVars
+        if (owner instanceof TableDataset) {
+            def tab = owner as TableDataset
+            if (tab.schemaName != null) parent.extVars.put('schema_name', tab.schemaName)
+            if (tab.tableName != null) parent.extVars.put('table_name', tab.tableName)
+        }
         def pt = startProcess("Execution SQL script${(parent.connection != null) ? ' on [' + parent.connection + ']' : ''}")
         runClosure(parent, cl)
         finishProcess(pt, parent.rowCount)

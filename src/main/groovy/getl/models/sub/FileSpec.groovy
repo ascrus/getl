@@ -1,7 +1,4 @@
-package getl.models.opts
-
-import getl.models.sub.FilesModel
-
+package getl.models.sub
 /**
  * Base model file specification
  * @author Alexsey Konstantinov

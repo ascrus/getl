@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
 import getl.files.FileManager
 import getl.files.Manager
-import getl.models.opts.BaseSpec
+import getl.models.sub.BaseSpec
 import getl.models.opts.ReferenceFileSpec
 import getl.models.sub.FilesModel
 import getl.stat.ProcessTime

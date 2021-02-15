@@ -201,22 +201,11 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 				valStr = "null"
 			}
 			else if (val instanceof List) {
-				/*TODO: variable list???*/
-				/*def sb = new StringBuffer()
-				sb << "\n"
-				val.each {
-					sb << "				"
-					sb << it.toString()
-					sb << "\n"
-				}
-				valStr = sb.toString()*/
 				valStr = (val as List).join(', ')
 			}
 			else {
 				if (val instanceof Date)
 					valStr = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', val)
-				/*else if (val instanceof String || val instanceof GString)
-					valStr = val.toString().replace('$', '\\$')*/
 				else
 					valStr = val
 			}

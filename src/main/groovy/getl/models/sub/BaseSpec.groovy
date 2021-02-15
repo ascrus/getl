@@ -1,6 +1,4 @@
-package getl.models.opts
-
-import getl.models.sub.BaseModel
+package getl.models.sub
 
 import java.util.concurrent.ConcurrentHashMap
 

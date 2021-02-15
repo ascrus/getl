@@ -8,8 +8,7 @@ import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.jdbc.ViewDataset
-import getl.models.opts.BaseSpec
-import getl.models.opts.DatasetSpec
+import getl.utils.Path
 import groovy.transform.InheritConstructors
 
 /**
@@ -157,5 +156,28 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
             if (fileTable.fileName == null)
                 throw new ExceptionModel("File dataset \"$dsn\" does not have a file name!")
         }
+    }
+
+    /**
+     * Return a list of model datasets
+     * @param includeMask list of masks to include datasets
+     * @param excludeMask list of masks to exclude datasets
+     * @return list of names of found model datasets
+     */
+    List<String> findModelDatasets(List<String> includeMask = null, List<String> excludeMask = null) {
+        def res = [] as List<String>
+        def includePath = Path.Masks2Paths(includeMask)
+        def excludePath = Path.Masks2Paths(excludeMask)
+        usedDatasets.each {ds ->
+            def dsName = ds.datasetName
+            if (includePath == null && excludePath == null)
+                res << dsName
+            else if (includePath != null && Path.MatchList(dsName, includePath))
+                res << dsName
+            else if (excludePath != null && !Path.MatchList(dsName, excludePath))
+                res << dsName
+       }
+
+        return res
     }
 }

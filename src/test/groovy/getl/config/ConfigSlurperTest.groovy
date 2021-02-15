@@ -11,6 +11,7 @@ import getl.utils.MapUtilsTest
 import groovy.json.JsonBuilder
 import groovy.transform.InheritConstructors
 import org.apache.kerby.config.Conf
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -114,7 +115,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         (Config.content.map as Map)."_1" = 4
         Config.SaveConfig(fileName: 'test_config.groovy')
         def groovyFile = new File("${configPath.currentPath()}/test_config.groovy")
-//        groovyFile.deleteOnExit()
+        groovyFile.deleteOnExit()
 //        println groovyFile.text
 
         Config.ClearConfig()
