@@ -1,17 +1,24 @@
 # Содержание
 * [Объекты языка](#objects)
-* [Объявление РСУБД источника](#declare)
-* [Создание и удаление таблиц](#tables)
-* [Получение списка полей таблиц](#fields)
-* [Удаление записей в таблицах БД](#deleting)
-* [Выполнение запросов к таблицам БД](#queries)
-* [Чтение данных датасетов](#reads)
-* [Запись данных в таблицу БД](#writes)
-* [Копирование записей в другой источник](#copy)
-* [Пакетная загрузка CSV файлов в таблицу](#bulkload)
-* [Копирование записей в другую таблицу источника](#copytable)
-* [Управление транзакциями соединений БД](#tran)
+* [JDBC соединения](#connections)
+  * [Описание соединения](#declare_connection)
+  * [Управление транзакциями соединений БД](#tran)
+* [Датасеты РСУБД](#jdbc_datasets)
+  * [Описание таблиц и представлений](#declare_tables)
+  * [Создание и удаление таблиц](#ddl_tables)
+  * [Описание запросов](#declare_queries)
+  * [Получение списка полей таблиц](#fields)
+  * [Удаление записей в таблицах БД](#deleting)
+  * [Выполнение запросов к таблицам БД](#queries)
+  * [Чтение данных из таблиц](#reads)
+  * [Запись данных в таблицу БД](#writes)
+  * [Копирование записей таблицы в другой источник](#copy)
+  * [Пакетная загрузка CSV файлов в таблицу](#bulkload)
+  * [Копирование записей в другую таблицу БД](#copytable)
 * [Выполнение пакетных сценариев SQL](#sql)
+  * [Выполнение текста SQL скрипта](#sql_exec)
+  * [Работа с переменными в скриптах](#sql_vars)
+  * [Выполнение SQL скрипта из файла](#sql_file)
 
 # <a name="objects"></a>Объекты языка
 В Getl поддерживается шесть типов объектов для работы с таблицами РСУБД:
@@ -29,111 +36,219 @@ H2 Database РСУБД. По умолчанию при старте прилож
 соединение Getl для работы с этой БД.  При необходимости можно зарегистрировать собственное соединение, задав для него 
 хранение данных в файле БД по указанному пути.
 
-## Соединения к РСУБД
-Используйте для работы с РСУБД подходящее соединение по его названию:
-* db2Connection, firebirdConnection, h2Connection, hiveConnection, impalaConnection, mssqlConnection, mysqlConnection, 
-  netezzaConnection, netsuiteConnection, oracleConnection, postgresqlConnection, verticaConnection
+# <a name="connections"></a>JDBC соединения
+Работа с РСУБД источниками осуществляется с помощью соединений через JDBC драйвера вендоров серверов. Для этого требуется,
+чтобы нужные файлы JDBC драйвера вендора (jar файлы и прочие файлы) были доступны в class path запускаемого приложения.
+Для запуска скриптов и юнит тестов из под Gradle рекомендуется собрать все файлы JDBC драйверов в директории проекта jdbc
+и указать его компиляцию при сборке в разделе dependencies:
+```groovy
+dependencies {
+  compile fileTree(dir: 'jdbc')
+}
+```
 
-## Датасеты таблиц РСУБД
-Используйте для работы с таблицами РСУБД подходящий датасет по его названию:
-* db2Table, firebirdTable, h2Table, hiveTable, impalaTable, mssqlTable, mysqlTable, netezzaTable, netsuiteTable, 
-  oracleTable, postgresqlTable, verticaTable
+При запуске приложения из командной строки необходимо в -cp параметр включить путь к директорию, где находятся нужные 
+файлы JDBC драйверов:
+```shell
+REM Для Windows
+java -cp путь/groovy/*;путь/jdbc/*;путь/проект.jar runClass=my.process.Задача
 
-# <a name="declare"></a>Объявление РСУБД источника
-Требуется в соединении описать параметры подключения к серверу и в датасет описать параметры датасета:
+REM Для Linux
+java -cp путь/groovy/*:путь/jdbc/*:путь/проект.jar runClass=my.process.Задача
+```
+
+Если для соединения требуется использовать драйвер JDBC другой версии, чем задано в class path, то для соединения можно
+явно задать путь к файлу драйвера в свойстве driverPath.
+
+## <a name="declare_connection"></a>Описание соединения
+Используйте для работы с РСУБД подходящее соединение:
+* db2Connection: соединение к IBM DB2 серверу
+* firebirdConnection: соединение к Firebird серверу
+* h2Connection: соединение к H2 database серверу или локальной базе
+* hiveConnection: соединение к Hadoop Hive серверу
+* impalaConnection: соединение к Cloudera Impala серверу
+* mssqlConnection: соединение к MS SQLServer серверу
+* mysqlConnection: соединение к Mysql серверу
+* netezzaConnection: соединение к IBM Netezza серверу
+* netsuiteConnection: соединение к NetSuite облаку
+* oracleConnection: соединение к Oracle серверу
+* postgresqlConnection: соединение к PostgreSql серверу
+* verticaConnection: соединение к Micro Focus Vertica серверу
+
+Для соединения с JDBC совместимым РСУБД источником требуется указать его хост в connectHost, имя базы данных 
+в connectDatabase, логин в login и пароль в password. Если сервер использует другой порт, отличный от порта по умолчанию, 
+он указывается через двоеточие в хосте. Также вместо указания хоста и имени БД возможно указать полный URL для 
+подключения к JDBC источнику в свойстве connectURL.
+
+Если объекты соединения будут находится в определенной БД и схеме, для соединения можно указать их имя в свойствах 
+dbName и schemaName. В таком случае все объявляемые таблицы, если у них явно не задано имя БД и схема, будут получать
+эти свойства, указанные в соединении.
+
+Пример описания соединений:
 ```groovy
 // Регистрируем в репозитории соединение mssql:con1 к БД MSSQL
 mssqlConnection('mssql:con1', true) {
-    connectHost = 'host1'
-    connectDatabase = 'db1'
-    login = 'user'
-    password = 'password'
-}
-
-// Регистрируем таблицу mssql:table1 из БД MSSQL
-mssqlTable('mssql:table1', true) {
-    // Соединение к MSSQL
-    useConnection mssqlConnection('mssql:con1')
-    // Имя схемы таблицы в БД
-    schemaName = 'schema1'
-    // Имя таблицы в БД
-    tableName = 'table1'
-
-    // Поля датасета, при работе в Getl приводятся к нижнему регистру
-    field('field1') { type = stringFieldType; length = 50; isNull = false }
-    field('field2') { type = integerFieldType; isKey = true }
-    field('field3') { type = dateFieldType; isNull = false }
-    field('field4') { type = datetimeFieldType }
-    field('field5') { type = numericFieldType; length = 12; precision = 2 }
+  connectHost = 'host1'
+  connectDatabase = 'master'
+  login = 'user'
+  password = 'password'
+  // По умолчанию таблицы находятся в БД db1
+  dbName = 'db1'
+  // По умолчанию таблицы находятся в схеме schema1
+  schemaName = 'schema1'
 }
 
 // Регистрируем в репозитории соединение ora:con1 к БД Oracle
 oracleConnection('ora:con1', true) {
-    connectHost = 'host1'
-    connectDatabase = 'db1'
-    login = 'user'
-    password = 'password'
-}
-
-// Регистрируем таблицу ora:table1 из БД Oracle
-oracleTable('ora:table1', true) {
-    // Соединение к Oracle
-    useConnection oracleConnection('ora:con1')
-    // Имя схемы таблицы в БД
-    schemaName = 'schema1'
-    // Имя таблицы в БД
-    tableName = 'table1'
+  connectHost = 'host1'
+  connectDatabase = 'db1'
+  login = 'user'
+  password = 'password'
 }
 
 // Регистрируем в репозитории соединение ver:con1 к БД Vertica
 verticaConnection('ver:con1', true) {
-    connectHost = 'host1'
-    connectDatabase = 'db1'
-    login = 'user'
-    password = 'password'
+  // Хост указан с портом
+  connectHost = 'host1:5433'
+  connectDatabase = 'db1'
+  login = 'user'
+  password = 'password'
+}
+
+// Регистрируем в репозитории соединение h2:con1 к БД H2
+h2Connection('h2:con1', true) {
+  // Указан путь к файлу драйвера H2 с использованием переменной ОС JDBC_PATH
+  driverPath = '{JDBC_PATH}/h2-1.4.200.jar'
+  // Указан URL для подключения к БД
+  connectURL = 'jdbc:h2:tcp://localhost/db1'
+  login = 'user'
+  password = 'password'
+}
+```
+
+## <a name="tran"></a>Управление транзакциями соединений БД
+Если не задается явное управление транзакциями, каждая операция Getl стартует в неявной транзакции, которая фиксируется
+при успешном завершении работы и откатывается при возникновении ошибок. Используйте явные операторы управления транзакциями,
+если это требуется в рамках логики работы с источником РСУБД.
+
+Свойства и функции управления транзакциями в соединениях:
+* isSupportTran: признак поддержки соединением работы с транзакциями.
+* transaction: выполняет код Closure в рамках одной транзакции. После успешного выполнении кода автоматически вызывается
+  commit, при любой ошибке, возникшей в коде автоматически вызывается rollback.
+* startTran: стартует транзакцию, разрешается вложение вызовов startTran, каждые вложенный вызов увеличивает счетчик
+  транзакций tranCount.
+* isTran: признак, что соединение в режиме транзакции.
+* tranCount: количество вложенных транзакций, вызванных с помощью startTran
+* commitTran: подтвердить транзакцию. Уменьшает счетчик вложенных транзакций tranCount на 1, если он доходит до нуля,
+  то у соединения вызывается оператор commit.
+* rollbackTran: откатить транзакцию.  Уменьшает счетчик вложенных транзакций tranCount на 1, если он доходит до нуля,
+  то у соединения вызывается оператор rollback.
+
+Пример работы транзакций:
+```groovy
+verticaConnection('ver:con1') {
+  // Выполнить код внутри единой транзакции соединения
+  transaction {
+    verticaTable('ver:table1').deleteRows()
+    etl.copyRows(mssqlTable('mssql:table1'), verticaTable('ver:table1'))
+  }
+  
+  // Старт транзакции
+  startTran()
+  try {
+    // Выполнить команды в транзакции
+    executeCommand 'DELETE FROM schema1.table1'
+    etl.copyRows(oracleTable('ora:table1'), verticaTable('ver:table1'))
+  }
+  catch (Exception e) {
+    // Откатить транзакцию
+    rollbackTran()
+    throw e
+  }
+  // Подтвердить транзакцию
+  commitTran()
+}
+```
+
+# <a name="jdbc_datasets"></a>Датасеты РСУБД
+Для работы с JDBC соединениями можно использовать таблицы, представления и запросы. К каждому из этих датасетов можно
+выполнять запросы для чтения данных. В таблицы можно производить запись данных и загрузку CSV файлов (только для 
+h2, Hive, Impala и Vertica).
+
+## <a name="declare_tables"></a>Описание таблиц и представлений
+Используйте для работы с табличными объектами РСУБД подходящий датасет:
+* db2Table: таблица БД IBM DB2
+* firebirdTable: таблица БД Firebird
+* h2Table: таблица БД H2 database
+* hiveTable: таблица БД Hadoop Hive
+* impalaTable: таблица БД Cloudera Impala
+* mssqlTable: таблица БД MS SQLServer
+* mysqlTable: таблица БД Mysql
+* netezzaTable: таблица БД IBM Netezza
+* netsuiteTable: таблица БД Netsuite
+* oracleTable: таблица БД Oracle
+* postgresqlTable: таблица БД PostgreSql
+* verticaTable: таблица БД Micro Focus Vertica
+* view: представление БД
+
+Для табличных объектов должно быть указано имя таблицы или представления в свойстве tableName. Если датасет находится 
+в схеме БД, отличной от схемы по умолчанию, требуется указать схему хранения в свойстве schemaName. Аналогично, если 
+датасет находится в БД, отличной от умолчания, требуется задать имя БД в свойстве databaseName.
+
+Пример описания табличных объектов:
+```groovy
+// Регистрируем таблицу mssql:table1 из БД MSSQL
+mssqlTable('mssql:table1', true) {
+  // Соединение к MSSQL
+  useConnection mssqlConnection('mssql:con1')
+  // Имя БД, где хранится таблица
+  dbName = 'db1'
+
+  // Имя схемы, где хранится таблица
+  schemaName = 'schema1'
+  // Имя таблицы
+  tableName = 'table1'
+
+  // Поля датасета, при работе в Getl приводятся к нижнему регистру
+  field('field1') { type = stringFieldType; length = 50; isNull = false }
+  field('field2') { type = integerFieldType; isKey = true }
+  field('field3') { type = dateFieldType; isNull = false }
+  field('field4') { type = datetimeFieldType }
+  field('field5') { type = numericFieldType; length = 12; precision = 2 }
+}
+
+// Регистрируем таблицу ora:table1 из БД Oracle
+oracleTable('ora:table1', true) {
+  useConnection oracleConnection('ora:con1')
+  schemaName = 'schema1'
+  tableName = 'table1'
 }
 
 // Регистрируем таблицу ver:table1 из БД Vertica
 verticaTable('ver:table1', true) {
-    // Соединение к Vertica
-    useConnection verticaConnection('ver:con1')
-    // Имя схемы таблицы в БД
-    schemaName = 'schema1'
-    // Имя таблицы в БД
-    tableName = 'table1'
+  useConnection verticaConnection('ver:con1')
+  schemaName = 'schema1'
+  tableName = 'table1'
 
-    // Поля датасета, при работе в Getl приводятся к нижнему регистру
-    field('field1') { type = stringFieldType; length = 50; isNull = false }
-    field('field2') { type = integerFieldType; isKey = true }
-    field('field3') { type = dateFieldType; isNull = false }
-    field('field4') { type = datetimeFieldType }
-    field('field5') { type = numericFieldType; length = 12; precision = 2 }
+  field('field1') { type = stringFieldType; length = 50; isNull = false }
+  field('field2') { type = integerFieldType; isKey = true }
+  field('field3') { type = dateFieldType; isNull = false }
+  field('field4') { type = datetimeFieldType }
+  field('field5') { type = numericFieldType; length = 12; precision = 2 }
 }
 
 // Регистрируем представление mssql:view1 из БД MSSQL
 view('mssql:view1') {
-    // Соединение к MSSQL
-    useConnection mssqlConnection('mssql:con1')
-    // Имя схемы таблицы в БД
-    schemaName = 'schema1'
-    // Имя представления в БД
-    tableName = 'view1'
-}
-
-// Регистрируем запрос ora:query1 к БД Oracle
-query('ora:query1', true) {
-    // Соединение к Oracle
-    useConnection oracleConnection('ora:con1')
-    
-    // Текст запроса
-    query = 'SELECT Count(DISTINCT field1) AS count_field1 FROM schema1.table1 WHERE field2 > {start}'
-    
-    // Параметры, используемые в запросе
-    queryParams.start = 0
+  // Соединение к MSSQL
+  useConnection mssqlConnection('mssql:con1')
+  // Имя схемы таблицы в БД
+  schemaName = 'schema1'
+  // Имя представления в БД
+  tableName = 'view1'
 }
 ```
 
-# <a name="tables"></a>Создание и удаление таблиц
+## <a name="ddl_tables"></a>Создание и удаление таблиц
 За исключение источника NetSuite, все JDBC источники поддерживают создание и удаление таблиц в БД, в опциях создания и 
 удаления таблиц можно задать дополнительные параметры, которые зависят от вендора источника:
 ```groovy
@@ -198,9 +313,43 @@ verticaTable('ver:table1') {
 }
 ```
 
-# <a name="fields"></a>Получение списка полей таблиц
+## <a name="declare_queries"></a>Описание запросов
+Для работы с запросами требуется задать SQL запрос в свойстве query. Если текст запроса хранится в файле, то в свойстве
+scriptFilePath можно задать путь к файлу скрипта, а в свойстве scriptFileCodePage задать кодировку текста файла, если она
+не совпадает с utf-8.
+
+В тексте запроса можно использовать переменные, заключенные в фигурные кавычки. Задать значения переменных можно
+в свойстве queryParams.
+
+Пример объявления запроса к БД:
+```groovy
+// Регистрируем запрос ora:query1 к БД Oracle
+query('ora:query1', true) {
+  // Соединение к Oracle
+  useConnection oracleConnection('ora:con1')
+  
+  // Текст запроса
+  query = 'SELECT Count(DISTINCT field1) AS count_field1 FROM schema1.table1 WHERE field2 > {start}'
+  
+  // Параметры, используемые в запросе
+  queryParams.start = 0
+}
+
+// Регистрируем запрос ver:query1 к БД Vertica
+query('ver:query1', true) {
+  // Соединение к Vertica
+  useConnection verticaConnection('ver:con1')
+
+  // Указать ресурсный файл проекта, в котором хранится скрипт запроса
+  scriptFilePath = 'resource:/project/queries/ver.query1.sql' 
+}
+```
+
+## <a name="fields"></a>Получение списка полей таблиц датасетов
 Для существующих таблиц, представлений или при описании SQL запросов не требуется описывать их поля, список полей
-будет автоматически получен при первом обращении к ним. При необходимости можно явно перечитать список полей у таблицы БД:
+будет автоматически получен при первом обращении к ним. 
+
+При необходимости можно явно перечитать список полей у таблицы или представления БД с помощью метода retrieveFields:
 ```groovy
 oracleTable('ora:table1') {
   // Получить список полей таблицы из БД
@@ -212,12 +361,15 @@ view('mssql:view1') {
   retrieveFields()
 }
 ```
-Если для таблицы или представления будет указан явный набор полей, то при работе с таким датасетом он будет использоваться
-при чтении и записи данных. При этом поля источника, которые не были указаны в списке полей будут игнорироваться при работе
-с источником. В случае записи в источник может возникнуть ошибка, если у него есть NOT NULL поля, которые не были заданы
-для датасета и не имеют DEFAULT значений.
 
-# <a name="deleting"></a>Удаление записей в таблицах БД
+Если для таблицы или представления будет указан явный набор полей, то при работе с таким датасетом он будет использоваться
+при чтении и записи данных, метаданные с БД считываться не будут. При этом те поля таблицы или представления, которые 
+не были указаны в списке полей датасета будут игнорироваться при работе с источником. 
+
+P.S. При указании неполного списка полей для таблицы, которые имеют NOT NULL и не имеют DEFAULT в описании таблицы, 
+при попытке записи в такую таблицу возникнет ошибка.
+
+## <a name="deleting"></a>Удаление записей в таблицах БД
 Для удаление записей в таблицах БД по условиям и полной очистка таблицы используйте методы deleteRows и truncate:
 ```groovy
 mssqlTable('mssql:table1') {
@@ -229,7 +381,7 @@ mssqlTable('mssql:table1') {
 }
 ```
 
-# <a name="queries"></a>Выполнение запросов к таблицам БД
+## <a name="queries"></a>Выполнение запросов к таблицам БД
 Для получения количества записей таблицы или представления используйте метод countRow:
 ```groovy
 assert view('mssql:view1').countRow('field1 IS NOT NULL') > 0
@@ -248,7 +400,7 @@ verticaTable('ver:table1') {
 }
 ```
 
-# <a name="reads"></a>Чтение данных датасетов
+## <a name="reads"></a>Чтение данных датасетов
 При чтении записей можно задать лимит количества считанных записей и какое количество записей следует пропустить:
 ```groovy
 view('mssql:view1') {
@@ -298,7 +450,7 @@ verticaTable('ver:table1') {
 }
 ```
 
-# <a name="writes"></a>Запись данных в таблицу БД
+## <a name="writes"></a>Запись данных в таблицу БД
 Запись в датасеты JDBC производится с помощью подготовленных пакетных операторов. Для оптимизации скорости записи можно 
 изменить размер пакета записей, который уходит на сервер в опциях записи датасета:
 ```groovy
@@ -320,7 +472,7 @@ rowsTo(oracleTable('ora:table1')) {
 }
 ```
 
-# <a name="copy"></a>Копирование записей в другой источник
+## <a name="copy"></a>Копирование записей в другой источник
 Для копирования используйте стандартный оператор etl.copyRows:
 ```groovy
 // Копирование записей из таблицы Oracle в таблицу Vertica
@@ -330,7 +482,7 @@ etl.copyRows(oracleTable('ora:table1'), verticaTable('ver:table1'))
 assert oracleTable('ora:table1').readRows == verticaTable('ver:table1').countRow() 
 ```
 
-# <a name="bulkload"></a>Пакетная загрузка CSV файлов в таблицу
+## <a name="bulkload"></a>Пакетная загрузка CSV файлов в таблицу
 Для РСУБД H2, Impala, Hive и Vertica поддерживается пакетная загрузка CSV файлов:
 ```groovy
 // Зарегистрировать временный CSV файл на основе структуры таблицы Vertica  
@@ -417,7 +569,7 @@ etl.copyRows(oracleTable('ora:table1'), impalaTable('imp:table1')) {
 }
 ```
 
-# <a name="copytable"></a>Копирование записей в другую таблицу источника
+## <a name="copytable"></a>Копирование записей в другую таблицу источника
 Для копирования записей из одной таблицы БД в другую таблицу используйте метод copyTo:
 ```groovy
 // Создать таблицу приемник в БД
@@ -458,33 +610,6 @@ verticaTable('ver:table1') {
 чтения таблицы, они будут указаны в SELECT. Если указаны хинты и опции записи таблицы приемника, они будут указаны
 в INSERT.
 
-# <a name="tran"></a>Управление транзакциями соединений БД
-Если не задается явное управление транзакциями, каждая операция Getl стартует в неявной транзакции, которая фиксируется
-при успешном завершении работы и откатывается при возникновении ошибок. Используйте явные операторы управления транзакциями,
-если это требуется в рамках логики работы с источником РСУБД:
-```groovy
-verticaConnection('ver:con1') {
-  // Выполнить код внутри единой транзакции
-  transaction {
-    verticaTable('ver:table1').deleteRows()
-    etl.copyRows(mssqlTable('mssql:table1'), verticaTable('ver:table1'))
-  }
-  
-  // Явно стартануть транзакцию
-  startTrans()
-  try {
-    // Выполнить команды в транзакции
-    executeCommand 'DELETE FROM schema1.table1'
-    etl.copyRows(oracleTable('ora:table1'), verticaTable('ver:table1'))
-  }
-  catch (Exception e) {
-    rollbackTran()
-    throw e
-  }
-  commitTran()
-}
-```
-
 # <a name="sql"></a>Выполнение пакетных сценариев SQL
 Для построения консолидированного слоя и разработки аналитических витрин Getl предлагает собственный язык хранимых процедур (ХП), реализуемый в операторе "_sql_".
 В данном операторе поддерживается:
@@ -500,6 +625,7 @@ verticaConnection('ver:con1') {
 * Команда _EXIT_ для выхода из скрипта с указанным кодом;
 * Команда _ECHO_ для вывода текста в консоль лога.
 
+## <a name="sql_exec"></a>Выполнение текста SQL скрипта
 Для выполнения ХП скриптов используется метод exec в операторе sql:
 ```groovy
 // Выполнить SQL скрипт
@@ -523,11 +649,14 @@ WHERE field2 = {param1} AND field1 = '{param2}'
   assert vars.count_row == 1, 'Не удалось обновить запись!'
 }
 ```
+
+## <a name="sql_vars"></a>Работа с переменными в скриптах
 При выполнении ХП Getl вместо {переменных} подставляет их значения. При использовании текстовых переменных внутри скриптов следует их
 обрамлять в одинарные кавычки. Для переменных с типом дата-время Getl подставляет текстовое значение в формате "yyyy-MM-dd HH:mm:ss".
 Если перед DML оператором поставить "_/*:переменная*/_", то количество обработанных записей будет занесено в эту переменную и она будет доступна
 в vars.
 
+## <a name="sql_file"></a>Выполнение SQL скрипта из файла
 Скрипты можно выносить в отдельные файлы, в том числе ресурсные и вызывать их с помощью метода runFile в
 операторе sql.
 
