@@ -15,6 +15,7 @@ class HiveDriverTest extends JDBCDriverProto {
     protected JDBCConnection newCon() {
         if (!FileUtils.ExistsFile(configName)) return null
         Config.LoadConfig(fileName: configName)
+        needCatalog = 'hive'
         return new HiveConnection(config: 'hive')
     }
 

@@ -28,13 +28,14 @@ class VerticaDriverTest extends JDBCDriverProto {
     protected JDBCConnection newCon() {
         if (!FileUtils.ExistsFile(configName)) return null
         Config.LoadConfig(fileName: configName)
-        def c = new VerticaConnection(config: 'vertica')
-        c.with {
-            storedLogins = Config.content.logins
+        def con = new VerticaConnection(config: 'vertica')
+        con.with {
+            storedLogins = Config.content.logins as Map<String, String>
             useLogin 'getl_test'
         }
+        needCatalog = con.connectDatabase
 
-        return c
+        return con
     }
 
     @Override

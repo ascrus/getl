@@ -13,6 +13,8 @@ class MySQLDriverTest extends JDBCDriverProto {
 	protected JDBCConnection newCon() {
 		if (!FileUtils.ExistsFile(configName)) return null
 		Config.LoadConfig(fileName: configName)
-		return new MySQLConnection(config: 'mysql')
+		def con = new MySQLConnection(config: 'mysql')
+		needCatalog = con.connectDatabase
+		return con
 	}
 }

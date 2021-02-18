@@ -17,6 +17,7 @@ class ImpalaDriverTest extends JDBCDriverProto {
     protected JDBCConnection newCon() {
         if (!FileUtils.ExistsFile(configName)) return null
         Config.LoadConfig(fileName: configName)
+        needCatalog = 'impala'
         return new ImpalaConnection(config: 'impala')
     }
 

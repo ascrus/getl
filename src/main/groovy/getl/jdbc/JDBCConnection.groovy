@@ -369,6 +369,68 @@ class JDBCConnection extends Connection implements UserLogins {
 		retrieveDatasets(p.params)
 	}
 
+	/**
+	 * Get a list of database
+	 * @param mask database filtering mask
+	 * @return list of received database
+	 */
+	List<String> retrieveCatalogs(String mask) {
+		tryConnect()
+		return currentJDBCDriver.retrieveCatalogs(mask)
+	}
+
+	/**
+	 * Get a list of database
+	 * @param masks list of database filtering masks
+	 * @return list of received database
+	 */
+	List<String> retrieveCatalogs(List<String> masks = null) {
+		tryConnect()
+		return currentJDBCDriver.retrieveCatalogs(masks)
+	}
+
+	/**
+	 * Get a list of database schemas
+	 * @param catalog database name (if null, then schema is returned for all databases)
+	 * @param schemaPattern scheme search pattern
+	 * @param mask schema filtering mask
+	 * @return list of received database schemas
+	 */
+	List<String> retrieveSchemas(String catalog, String schemaPattern, String mask) {
+		tryConnect()
+		return currentJDBCDriver.retrieveSchemas(catalog, schemaPattern, mask)
+	}
+
+	/**
+	 * Get a list of database schemas
+	 * @param mask schema filtering mask
+	 * @return list of received database schemas
+	 */
+	List<String> retrieveSchemas(String mask = null) {
+		retrieveSchemas(null, null, mask)
+	}
+
+	/**
+	 * Get a list of database schemas
+	 * @param catalog database name (if null, then schema is returned for all databases)
+	 * @param schemaPattern scheme search pattern
+	 * @param mask list of schema filtering masks
+	 * @return list of received database schemas
+	 */
+	List<String> retrieveSchemas(String catalog, String schemaPattern, List<String> masks) {
+		tryConnect()
+		return currentJDBCDriver.retrieveSchemas(catalog, schemaPattern, masks)
+	}
+
+	/**
+	 * Get a list of database schemas
+	 * @param mask list of schema filtering masks
+	 * @return list of received database schemas
+	 */
+	List<String> retrieveSchemas(List<String> masks) {
+		retrieveSchemas(null, null, masks)
+	}
+
 	/** Table class used */
 	protected Class<TableDataset> getTableClass() { TableDataset }
 

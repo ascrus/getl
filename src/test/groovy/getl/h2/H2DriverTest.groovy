@@ -24,6 +24,7 @@ class H2DriverTest extends JDBCDriverProto {
     @Override
     protected JDBCConnection newCon() {
 		if (FileUtils.ExistsFile(configName)) Config.LoadConfig(fileName: configName)
+        needCatalog = 'GETL'
 		return new TDS()
 	}
 

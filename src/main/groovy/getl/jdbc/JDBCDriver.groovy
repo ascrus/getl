@@ -559,32 +559,124 @@ class JDBCDriver extends Driver {
 		useLoadedDriver = false
 	}
 
+	/**
+	* Get a list of database
+	* @param masks database filtering mask
+	* @return list of received database
+	*/
+	List<String> retrieveCatalogs(String mask) {
+		List<String> listMask = null
+		if (mask != null) {
+			listMask = [mask]
+		}
+
+		retrieveCatalogs(listMask)
+	}
+
+	/**
+	 * Get a list of database
+	 * @param mask list of database filtering masks
+	 * @return list of received database
+	 */
+	List<String> retrieveCatalogs(List<String> masks) {
+		def maskList = [] as List<Path>
+		if (masks != null)
+			maskList = Path.Masks2Paths(masks)
+		def useMask = !maskList.isEmpty()
+
+		def res = [] as List<String>
+
+		ResultSet rs = sqlConnect.connection.metaData.getCatalogs()
+		try {
+			while (rs.next()) {
+				def catalogName = prepareObjectName(rs.getString('TABLE_CAT'))
+				if (catalogName != null && useMask) {
+					if (!Path.MatchList(catalogName, maskList))
+						continue
+				}
+				res << catalogName
+			}
+		}
+		finally {
+			rs.close()
+		}
+
+		return res
+	}
+
+	/**
+	 * Get a list of database schemas
+	 * @param catalog database name (if null, then schema is returned for all databases)
+	 * @param schemaPattern scheme search pattern
+	 * @param mask schema filtering mask
+	 * @return list of received database schemas
+	 */
+	List<String> retrieveSchemas(String catalog, String schemaPattern, String mask) {
+		List<String> listMask = null
+		if (mask != null) {
+			listMask = [mask]
+		}
+		return retrieveSchemas(catalog, schemaPattern, listMask)
+	}
+
+	/**
+	 * Get a list of database schemas
+	 * @param catalog database name (if null, then schema is returned for all databases)
+	 * @param schemaPattern scheme search pattern
+	 * @param mask list of schema filtering masks
+	 * @return list of received database schemas
+	 */
+	List<String> retrieveSchemas(String catalog, String schemaPattern, List<String> masks) {
+		def maskList = [] as List<Path>
+		if (masks != null)
+			maskList = Path.Masks2Paths(masks)
+		def useMask = !maskList.isEmpty()
+
+		def res = [] as List<String>
+
+		ResultSet rs = sqlConnect.connection.metaData.getSchemas(catalog, schemaPattern)
+		try {
+			while (rs.next()) {
+				def schemaName = prepareObjectName(rs.getString('TABLE_SCHEM'))
+				if (schemaName != null && useMask) {
+					if (!Path.MatchList(schemaName, maskList))
+						continue
+				}
+				res << schemaName
+			}
+		}
+		finally {
+			rs.close()
+		}
+
+		return res
+	}
+
 	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Override
 	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
-		if (filter == null && params.filter != null) filter = params.filter as Closure<Boolean>
+		if (filter == null && params.filter != null)
+			filter = params.filter as Closure<Boolean>
 
 		def isMultiDB = isSupport(Driver.Support.MULTIDATABASE)
-		String catalog = (isMultiDB)?(prepareObjectName(params."dbName" as String)?:defaultDBName):null
-		String schemaPattern = prepareObjectName(params."schemaName" as String)?:defaultSchemaName
-		String tableNamePattern = prepareObjectName(params."tableName" as String)
+		String catalog = (isMultiDB)?(prepareObjectName(params.dbName as String)?:jdbcConnection.dbName/*defaultDBName*/):null
+		String schemaPattern = prepareObjectName(params.schemaName as String)?:jdbcConnection.schemaName/*defaultSchemaName*/
+		String tableNamePattern = prepareObjectName(params.tableName as String)
 
-		def tableMaskList = [] as List<Path>
+		def maskList = [] as List<Path>
 		if (params.tableMask != null) {
 			if (params.tableMask instanceof List) {
-				(params.tableMask as List<String>).each {
-					tableMaskList << new Path(mask: it)
-				}
+				maskList = Path.Masks2Paths(params.tableMask as List<String>)
 			}
 			else {
-				tableMaskList << new Path(mask: params.tableMask)
+				maskList << new Path(mask: params.tableMask)
 			}
 		}
-		def useMask = !tableMaskList.isEmpty()
+		def useMask = !maskList.isEmpty()
 
 		String[] types
-		if (params."type" != null)
-			types = (params."type" as List<String>).toArray(new String[0])
+		if (params.type != null)
+			types = (params.type as List<String>).toArray(new String[0])
 		else
 			types = ['TABLE', 'GLOBAL TEMPORARY', 'VIEW'] as String[]
 
@@ -592,24 +684,27 @@ class JDBCDriver extends Driver {
 		ResultSet rs = sqlConnect.connection.metaData.getTables(catalog, schemaPattern, tableNamePattern, types)
 		try {
 			while (rs.next()) {
-				def tableName = prepareObjectName(rs.getString("TABLE_NAME"))
+				def tableName = prepareObjectName(rs.getString('TABLE_NAME'))
 				if (tableName != null && useMask) {
-					def addTable = false
+					if (!Path.MatchList(tableName, maskList))
+						continue
+
+					/*def addTable = false
 					tableMaskList.each {
 						if (tableName.matches(it.maskPathPattern)) {
 							addTable = true
 							directive = Closure.DONE
 						}
 					}
-					if (!addTable) continue
+					if (!addTable) continue*/
 				}
 
 				def t = [:]
-				if (isMultiDB) t."dbName" = prepareObjectName(rs.getString("TABLE_CAT"))
-				t."schemaName" = prepareObjectName(rs.getString("TABLE_SCHEM"))
-				t."tableName" = tableName
-				t."type" = rs.getString("TABLE_TYPE")
-				t."description" = rs.getString("REMARKS")
+				if (isMultiDB) t.dbName = prepareObjectName(rs.getString('TABLE_CAT'))
+				t.schemaName = prepareObjectName(rs.getString('TABLE_SCHEM'))
+				t.tableName = tableName
+				t.type = rs.getString('TABLE_TYPE')
+				t.description = rs.getString('REMARKS')
 				
 				if (filter == null || filter.call(t)) tables << t
 			}

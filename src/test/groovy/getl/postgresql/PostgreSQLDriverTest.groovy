@@ -25,6 +25,7 @@ class PostgreSQLDriverTest extends JDBCDriverProto {
 		Config.LoadConfig(fileName: configName)
 		def con = new PostgreSQLConnection(config: 'postgresql')
 		defaultSchema = 'public'
+		needCatalog = con.connectDatabase
 		return con
 	}
 

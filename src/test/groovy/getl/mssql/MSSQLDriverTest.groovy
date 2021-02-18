@@ -22,7 +22,9 @@ class MSSQLDriverTest extends JDBCDriverProto {
 	protected JDBCConnection newCon() {
 		if (!FileUtils.ExistsFile(configName)) return null
 		Config.LoadConfig(fileName: configName)
-		return new MSSQLConnection(config: 'mssql')
+		def con = new MSSQLConnection(config: 'mssql')
+		needCatalog = con.connectDatabase
+		return con
 	}
 
 	void testTZ() {

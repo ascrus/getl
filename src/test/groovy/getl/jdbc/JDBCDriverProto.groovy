@@ -761,4 +761,22 @@ END FOR;
             }
         }
     }
+
+    public String needCatalog
+
+    @Test
+    void testRetrieveCatalogs() {
+        def list = con.retrieveCatalogs()
+        println "Detect databases: $list"
+        if (needCatalog != null)
+            assertTrue(needCatalog in list)
+    }
+
+    @Test
+    void testRertieveSchemas() {
+        def list = con.retrieveSchemas()
+        println "Detect schemas: $list"
+        if (con.currentJDBCDriver.defaultSchemaName != null)
+            assertTrue(con.currentJDBCDriver.defaultSchemaName in list)
+    }
 }
