@@ -71,7 +71,7 @@ class CSVWriteSpec extends BaseSpec {
     }
 
     /** Parts of files are available immediately after writing */
-    Boolean getAvaibleAfterWrite() { params.avaibleAfterWrite as Boolean }
+    Boolean getAvailableAfterWrite() { params.availableAfterWrite as Boolean }
     /** Parts of files are available immediately after writing */
-    void setAvaibleAfterWrite(Boolean value) { saveParamValue('avaibleAfterWrite', value) }
+    void setAvailableAfterWrite(Boolean value) { saveParamValue('availableAfterWrite', value) }
 }

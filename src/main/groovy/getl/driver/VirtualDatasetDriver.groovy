@@ -40,7 +40,7 @@ abstract class VirtualDatasetDriver extends Driver {
 		throw new ExceptionGETL('Not support this features!')
 	}
 	
-	protected static Dataset getDestinition(Dataset dataset) {
+	protected static Dataset getDestination(Dataset dataset) {
 		def ds = dataset.params.dest as Dataset
 		if (ds == null)
 			throw new ExceptionGETL("Required set param \"dest\" with dataset")

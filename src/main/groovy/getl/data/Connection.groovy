@@ -185,7 +185,7 @@ class Connection implements Cloneable, GetlRepository {
 	}
 	
 	/**
-	 * Internal configuraton name from class
+	 * Internal configuration name from class
 	 * @return
 	 */
 	protected String internalConfigName() { "" }
@@ -342,6 +342,10 @@ class Connection implements Cloneable, GetlRepository {
 			disconnect()
 	}
 
+	/** Is connected to source */
+	@JsonIgnore
+	Boolean isConnected() { connected }
+
 	/** Connecting to database */
 	void connect() {
 		if (connected)
@@ -440,7 +444,7 @@ class Connection implements Cloneable, GetlRepository {
 	}
 
 	/** Check that the connection is established */
-	void checkEstablisheConnection() {
+	void checkEstablishedConnection() {
 		if (!connected)
 			throw new ExceptionGETL('Connection not established!')
 	}
@@ -454,7 +458,7 @@ class Connection implements Cloneable, GetlRepository {
 				throw new ExceptionGETL("Connection does not support transactions!")
 		}
 
-		checkEstablisheConnection()
+		checkEstablishedConnection()
 		if (!isTran())
 			throw new ExceptionGETL("Not started transaction for commit operation")
 
@@ -473,7 +477,7 @@ class Connection implements Cloneable, GetlRepository {
 				throw new ExceptionGETL("Connection does not support transactions!")
 		}
 
-		checkEstablisheConnection()
+		checkEstablishedConnection()
 
 		if (!isTran())
 			throw new ExceptionGETL("Not started transaction for rollback operation")

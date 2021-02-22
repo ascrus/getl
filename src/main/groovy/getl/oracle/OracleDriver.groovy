@@ -166,7 +166,7 @@ class OracleDriver extends JDBCDriver {
 			if (field.typeName.matches("(?i)TIMESTAMP[(]\\d+[)] WITH LOCAL TIME ZONE") ||
 					field.typeName.matches("(?i)TIMESTAMP WITH LOCAL TIME ZONE")) {
 				field.type = Field.Type.TIMESTAMP_WITH_TIMEZONE
-				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMPLTZ).timestampValue(connection, Calendar.instance).getTime())"
+				field.getMethod = "new java.sql.Timestamp(({field} as oracle.sql.TIMESTAMPTZ).timestampValue(connection, Calendar.instance).getTime())"
 				return
 			}
 			
@@ -218,6 +218,7 @@ class OracleDriver extends JDBCDriver {
 	@Override
 	String getSysDualTable() { return 'DUAL' }
 
+	@SuppressWarnings('SpellCheckingInspection')
 	@Override
 	protected String sessionID() {
 		String res = null

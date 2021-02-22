@@ -48,7 +48,7 @@ class ReverseEngineering extends Job {
 
 	/** Script files path */
 	public String scriptPath
-	/** Clead directory before start process */
+	/** Clear directory before start process */
 	public Boolean isClearDir = false
 
 	private def tVersion = new QueryDataset(query: 'SELECT Version() AS version')
@@ -101,6 +101,7 @@ class ReverseEngineering extends Job {
 	private def projectionAnalyzeSuper
 	private def columnComment
 
+	@SuppressWarnings('SpellCheckingInspection')
 	private final def sqlObjects = [
 		pools: [table: 'v_catalog.resource_pools', name: 'NAME',
 				where: '''(NOT is_internal OR name ILIKE 'general')'''],
@@ -277,6 +278,7 @@ Example:
 	 * @param quote
 	 * @return
 	 */
+	@SuppressWarnings('SpellCheckingInspection')
 	static String parln(String param, def value, Boolean quote = false) {
 		if (value == null) return ''
 		if ((value instanceof String || value instanceof GString) && value == '') return ''
@@ -482,12 +484,12 @@ Example:
 	 */
 	private def isWriteln = false
 
-	void setWrite(String object, String filemask, Map vars = [:]) {
+	void setWrite(String object, String fileMask, Map vars = [:]) {
 		assert object != null
 		currentObject = object
 
-		assert filemask != null, "Required file mask for \"$currentObject\" object"
-		currentFileMask = filemask
+		assert fileMask != null, "Required file mask for \"$currentObject\" object"
+		currentFileMask = fileMask
 
 		currentVars = vars
 
@@ -530,6 +532,7 @@ Example:
 	/**
 	 * Init reverse objects
 	 */
+	@SuppressWarnings('SpellCheckingInspection')
 	void initReverse() {
 		// Read drop parameters section
 		sectionDrop = (Map)Config.content.drop?:[:]
@@ -832,6 +835,7 @@ Example:
 	/**
 	 * Generate create resource pools script
 	 */
+	@SuppressWarnings('SpellCheckingInspection')
 	void genPools() {
 		hPools.eachRow(order: ['CASE name WHEN \'general\' THEN 0 ELSE 1 END', 'Lower(name)']) { Map r ->
 			setWrite('POOLS', fileNamePools, [pool: r.name])
@@ -887,6 +891,7 @@ Example:
 	/**
 	 * Generate create users script
 	 */
+	@SuppressWarnings('SpellCheckingInspection')
 	void genUsers() {
 		hUsers.eachRow(order: ['Lower(user_name)']) { Map r ->
 			setWrite('USERS', fileNameUsers, [user: r.user_name])
@@ -931,8 +936,8 @@ Example:
 			if (BoolUtils.IsValue(sectionDrop.schemas)) {
 			   writeln "DROP SCHEMA \"${r.schema_name}\" CASCADE;"
 			}
-			def priv = (r.defaultinheritprivileges == true)?'INCLUDE':'EXCLUDE'
-		   	writeln "CREATE SCHEMA \"${r.schema_name}\" AUTHORIZATION \"${r.schema_owner}\" DEFAULT $priv SCHEMA PRIVILEGES;\n"
+			def privileges = (r.defaultinheritprivileges == true)?'INCLUDE':'EXCLUDE'
+		   	writeln "CREATE SCHEMA \"${r.schema_name}\" AUTHORIZATION \"${r.schema_owner}\" DEFAULT $privileges SCHEMA PRIVILEGES;\n"
 		}
 		if (isWriteln) writeln ''
 		hUsers.eachRow(order: ['Lower(user_name)']) { Map r ->
@@ -1050,41 +1055,42 @@ Example:
 	/**
 	 * Generate grant objects script
 	 */
+	@SuppressWarnings('SpellCheckingInspection')
 	void genGrants() {
 		hGrants.eachRow(order: ['Lower(object_type)', 'Lower(object_schema)', 'Lower(object_name)', 'Lower(grantee)', 'Lower(function_argument_type)', 'Lower(privileges_description)']) { Map r ->
 			if (fileNameGrants != null) setWrite('GRANTS', fileNameGrants)
 
-			def priveleges = procList(r.privileges_description as String)
+			def privileges = procList(r.privileges_description as String)
 			switch (r.object_type) {
 				case 'RESOURCEPOOL':
 					if (fileNameGrants == null) setWrite('POOLS', fileNamePools, [pool: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON RESOURCE POOL \"${r.object_name}\" TO \"${r.grantee}\";"
-					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON RESOURCE POOL \"${r.object_name}\" TO \"${r.grantee}\" WITH GRANT OPTION;"
+					if (!privileges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withoutGrant, '"').join(', ')} ON RESOURCE POOL \"${r.object_name}\" TO \"${r.grantee}\";"
+					if (!privileges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withGrant, '"').join(', ')} ON RESOURCE POOL \"${r.object_name}\" TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'SCHEMA':
 					if (fileNameGrants == null) setWrite('SCHEMAS', fileNameSchemas, [schema: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON SCHEMA \"${r.object_name}\" TO \"${r.grantee}\";"
-					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON SCHEMA \"${r.object_name}\" TO \"${r.grantee}\" WITH GRANT OPTION;"
+					if (!privileges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withoutGrant, '"').join(', ')} ON SCHEMA \"${r.object_name}\" TO \"${r.grantee}\";"
+					if (!privileges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withGrant, '"').join(', ')} ON SCHEMA \"${r.object_name}\" TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'SEQUENCE':
 					if (fileNameGrants == null) setWrite('SEQUENCES', fileNameSequences, [schema: r.object_schema, sequence: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON SEQUENCE ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\";"
-					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON SEQUENCE ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\" WITH GRANT OPTION;"
+					if (!privileges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withoutGrant, '"').join(', ')} ON SEQUENCE ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\";"
+					if (!privileges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withGrant, '"').join(', ')} ON SEQUENCE ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'TABLE':
 					if (fileNameGrants == null) setWrite('TABLES', fileNameTables, [schema: r.object_schema, table: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\";"
-					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\" WITH GRANT OPTION;"
+					if (!privileges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withoutGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\";"
+					if (!privileges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'VIEW':
 					if (fileNameGrants == null) setWrite('VIEWS', fileNameViews, [schema: r.object_schema, view: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\";"
-					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\" WITH GRANT OPTION;"
+					if (!privileges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withoutGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\";"
+					if (!privileges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withGrant, '"').join(', ')} ON ${objectName(r.object_schema as String, r.object_name as String)} TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'PROCEDURE':
 					if (fileNameGrants == null) setWrite('SQL_FUNCTIONS', fileNameSQLFunctions, [schema: r.object_schema, sql_function: r.object_name])
-					if (!priveleges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withoutGrant, '"').join(', ')} ON FUNCTION ${objectName(r.object_schema as String, r.object_name as String)}($r.function_argument_type) TO \"${r.grantee}\";"
-					if (!priveleges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(priveleges.withGrant, '"').join(', ')} ON FUNCTION ${objectName(r.object_schema as String, r.object_name as String)}($r.function_argument_type) TO \"${r.grantee}\" WITH GRANT OPTION;"
+					if (!privileges.withoutGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withoutGrant, '"').join(', ')} ON FUNCTION ${objectName(r.object_schema as String, r.object_name as String)}($r.function_argument_type) TO \"${r.grantee}\";"
+					if (!privileges.withGrant.isEmpty()) writeln "\nGRANT ${ListUtils.QuoteList(privileges.withGrant, '"').join(', ')} ON FUNCTION ${objectName(r.object_schema as String, r.object_name as String)}($r.function_argument_type) TO \"${r.grantee}\" WITH GRANT OPTION;"
 					break
 				case 'ROLE':
 					def grantee = (r.grantee as String).toLowerCase()

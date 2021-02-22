@@ -1,7 +1,7 @@
 package getl.utils
 
 /**
- * Clone objects utilite library
+ * Clone objects utilities library
  * @author Alexsey Konstantinov
  */
 class CloneUtils {
@@ -88,9 +88,9 @@ class CloneUtils {
         }
         byte[] byteData = bos.toByteArray()
 
-        ByteArrayInputStream bais = new ByteArrayInputStream(byteData)
-        res = new ObjectInputStream(bais).readObject()
+        ByteArrayInputStream s = new ByteArrayInputStream(byteData)
+        res = new ObjectInputStream(s).readObject()
 
-        res
+        return res
     }
 }

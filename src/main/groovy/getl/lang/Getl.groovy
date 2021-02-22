@@ -284,7 +284,7 @@ Examples:
                 if (!extProp?.isEmpty())
                     MapUtils.MergeMap(options.getlConfigProperties, extProp, true, false)
 
-                Logs.Finest('Processing project configuration ...')
+                Logs.Finest("Processing project configuration for \"${(configuration.environment)?:'prod'}\" environment ...")
 
                 def procs = [:] as Map<String, Closure>
                 procs.logging = { Map<String, Object> en ->
@@ -323,6 +323,9 @@ Examples:
                             autoLoadFromStorage = true
                             Logs.Finest("  path to repository objects: $storagePath")
                         }
+                        if (en.autoLoadForList != null) {
+                            autoLoadForList = BoolUtils.IsValue(en.autoLoadForList)
+                        }
                     }
                 }
                 procs.engine = { Map<String, Object> en ->
@@ -359,6 +362,8 @@ Examples:
                             if (checkProcessForThreads)
                                 Logs.Finest("  running processes in threads is checked in the process checklist")
                         }
+                        if (en.controlLogin != null)
+                            processControlLogin = en.controlLogin as String
                     }
 
                     if (en.csvTempForTables != null) {
@@ -488,20 +493,34 @@ Examples:
     @Synchronized
     Boolean allowProcess(String processName, Boolean throwError = false) {
         def res = true
+
         if (_langOpts.processControlDataset != null) {
-            if (processName == null) processName = (_params.mainClass)?:this.getClass().name
+            if (processName == null)
+                processName = (_params.mainClass)?:this.getClass().name
             if (processName == null)
                 throw new ExceptionDSL('Required name for the process being checked!')
 
             if (_langOpts.processControlDataset instanceof TableDataset) {
                 def table = _langOpts.processControlDataset as TableDataset
-                def row = sqlQueryRow(table.connection as JDBCConnection, "SELECT enabled FROM ${table.fullNameDataset()} WHERE name = '$processName'")
-                if (row != null && !row.isEmpty())
-                    res = BoolUtils.IsValue(row.enabled)
+
+                def changeLogin = (_langOpts.processControlLogin != null &&
+                        (table.currentJDBCConnection)?.login != _langOpts.processControlLogin)
+                if (changeLogin)
+                    table.currentJDBCConnection.switchToNewLogin(_langOpts.processControlLogin)
+
+                try {
+                    def row = sqlQueryRow(table.connection as JDBCConnection, "SELECT enabled FROM ${table.fullNameDataset()} WHERE name = '$processName'")
+                    if (row != null && !row.isEmpty())
+                        res = BoolUtils.IsValue(row.enabled)
+                }
+                finally {
+                    if (changeLogin)
+                        table.currentJDBCConnection.switchToPreviousLogin()
+                }
             } else {
-                def csv = _langOpts.processControlDataset as CSVDataset
-                def row = null
-                csv.eachRow {
+                def ds = _langOpts.processControlDataset
+                Map row = null
+                ds.eachRow {
                     if (it.name == processName) {
                         row = it
                         //noinspection UnnecessaryQualifiedReference
@@ -817,7 +836,7 @@ Examples:
     List<String> listConnections(String mask = null, List connectionClasses = null,
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Connection'])
                                          Closure<Boolean> filter = null) {
-        _repositoryStorageManager.repository(RepositoryConnections).list(mask, connectionClasses, filter)
+        _repositoryStorageManager.repository(RepositoryConnections).list(mask, connectionClasses, true, filter)
     }
 
     /**
@@ -1034,7 +1053,7 @@ Examples:
     List<String> listDatasets(String mask = null, List datasetClasses = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.data.Dataset'])
                                       Closure<Boolean> filter = null) {
-        _repositoryStorageManager.repository(RepositoryDatasets).list(mask, datasetClasses, filter)
+        _repositoryStorageManager.repository(RepositoryDatasets).list(mask, datasetClasses, true, filter)
     }
 
     /**
@@ -1492,7 +1511,7 @@ Examples:
     List<String> listHistorypoints(String mask = null,
                                    @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.SavePointManager'])
                                            Closure<Boolean> filter = null) {
-        _repositoryStorageManager.repository(RepositoryHistorypoints).list(mask, null, filter)
+        _repositoryStorageManager.repository(RepositoryHistorypoints).list(mask, null, true, filter)
     }
 
     /**
@@ -1615,7 +1634,7 @@ Examples:
     List<String> listSequences(String mask = null,
                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.Sequence'])
                                        Closure<Boolean> filter = null) {
-        _repositoryStorageManager.repository(RepositorySequences).list(mask, null, filter)
+        _repositoryStorageManager.repository(RepositorySequences).list(mask, null, true, filter)
     }
 
     /**
@@ -1739,7 +1758,7 @@ Examples:
     List<String> listFilemanagers(String mask = null, List filemanagerClasses = null,
                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.files.Manager'])
                                           Closure<Boolean> filter = null) {
-        _repositoryStorageManager.repository(RepositoryFilemanagers).list(mask, filemanagerClasses, filter)
+        _repositoryStorageManager.repository(RepositoryFilemanagers).list(mask, filemanagerClasses, true, filter)
     }
 
     /**

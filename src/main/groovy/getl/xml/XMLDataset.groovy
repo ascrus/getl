@@ -35,7 +35,7 @@ class XMLDataset extends StructureFileDataset {
 	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof XMLConnection))
-			throw new ExceptionGETL('Сonnection to XMLConnection class is allowed!')
+			throw new ExceptionGETL('Connection to XMLConnection class is allowed!')
 
 		super.setConnection(value)
 	}

@@ -16,7 +16,7 @@ class NetezzaTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof NetezzaConnection))
-            throw new ExceptionGETL('Сonnection to NetezzaConnection class is allowed!')
+            throw new ExceptionGETL('Connection to NetezzaConnection class is allowed!')
 
         super.setConnection(value)
     }

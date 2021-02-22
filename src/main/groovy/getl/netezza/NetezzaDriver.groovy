@@ -9,6 +9,7 @@ import getl.jdbc.JDBCDriver
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings('SpellCheckingInspection')
 class NetezzaDriver extends JDBCDriver {
     NetezzaDriver() {
         super()
@@ -16,6 +17,7 @@ class NetezzaDriver extends JDBCDriver {
         connectionParamBegin = ";"
         connectionParamJoin = ";"
 
+        //noinspection SpellCheckingInspection
         dropSyntax = 'DROP {object} {name} {ifexists}'
     }
 

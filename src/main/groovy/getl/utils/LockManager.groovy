@@ -2,7 +2,6 @@ package getl.utils
 
 import getl.exception.ExceptionGETL
 import getl.proc.Executor
-import getl.utils.DateUtils
 import getl.utils.sub.LockObject
 import groovy.transform.AutoClone
 import groovy.transform.CompileStatic
@@ -25,8 +24,8 @@ class LockManager {
         this.useCollector = useCollector
         this.lockLife = lockLife
         if (useCollector) {
-            shedule = new Executor()
-            shedule.with {
+            schedule = new Executor()
+            schedule.with {
                 waitTime = 500
                 startBackground {
                     garbage(this.lockLife)
@@ -60,7 +59,7 @@ class LockManager {
     Boolean isEmpty() { locks.isEmpty() }
 
     /** Collector schedule */
-    protected Executor shedule
+    protected Executor schedule
 
     /**
      * Clean locks objects

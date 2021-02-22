@@ -20,7 +20,6 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
-@SuppressWarnings('unused')
 class JDBCDriver extends Driver {
 	JDBCDriver () {
 		super()
@@ -1221,6 +1220,7 @@ ${extend}'''
 	}
 
 	/** Drop sql statement syntax */
+	@SuppressWarnings('SpellCheckingInspection')
 	protected String dropSyntax = 'DROP {object} {ifexists} {name}'
 
 	@SuppressWarnings(['UnnecessaryQualifiedReference'])
@@ -1297,6 +1297,7 @@ ${extend}'''
 	 * <li>finish
 	 * </ul> 
 	 */
+	@SuppressWarnings('SpellCheckingInspection')
 	void sqlTableDirective(JDBCDataset dataset, Map params, Map dir) {
 		if (params.where != null) dir.where = params.where
 		if (params.orderBy != null) dir.orderBy = params.orderBy
@@ -1480,15 +1481,16 @@ ${extend}'''
 				throw new ExceptionGETL("Required fields from read dataset")
 
 			if (dataset.sysParams.lastread != null) {
-				def lastread = dataset.sysParams.lastread as Map
-				def lastfields = lastread.fields as List<Field>
-				if (lastfields == fields)
-					rowCopy = lastread.code as Map
+				def lastRead = dataset.sysParams.lastread as Map
+				def lastFields = lastRead.fields as List<Field>
+				if (lastFields == fields)
+					rowCopy = lastRead.code as Map
 			}
 
 			if (rowCopy == null) {
 				//noinspection GrReassignedInClosureLocalVar
 				rowCopy = GenerationUtils.GenerateRowCopy(this, fields)
+				//noinspection SpellCheckingInspection
 				dataset.sysParams.put('lastread', [fields: fields, code: rowCopy])
 			}
 			copyToMap = (rowCopy.code as Closure)
@@ -1936,7 +1938,7 @@ $sql
 		return res
 	}
 
-	@SuppressWarnings('UnnecessaryQualifiedReference')
+	@SuppressWarnings(['UnnecessaryQualifiedReference', 'SpellCheckingInspection'])
 	@Override
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		def wp = new WriterParams()
@@ -2117,15 +2119,16 @@ $sql
 
 		Closure setStatement
 		if (dataset.sysParams.lastwrite != null) {
-			def lastwrite = (dataset.sysParams.lastwrite as Map)
-			if ((lastwrite.operation as String) == operation && (lastwrite.fields == fields) && (lastwrite.statFields == statFields)) {
-				setStatement = (lastwrite.setStatement as Closure)
-				wp.statement = (lastwrite.statement as String)
+			def lastWrite = (dataset.sysParams.lastwrite as Map)
+			if ((lastWrite.operation as String) == operation && (lastWrite.fields == fields) && (lastWrite.statFields == statFields)) {
+				setStatement = (lastWrite.setStatement as Closure)
+				wp.statement = (lastWrite.statement as String)
 			}
 
 		}
 		if (setStatement == null) {
 			setStatement = generateSetStatement(operation, fields, statFields, wp)
+			//noinspection SpellCheckingInspection
 			dataset.sysParams.put('lastwrite', [operation: operation, fields: fields, statFields: statFields,
 												setStatement: setStatement, statement: wp.statement])
 		}
@@ -2581,7 +2584,7 @@ FROM {source} {after_from}'''
 				throw new ExceptionGETL("Field \"$fieldName\" not found in table $dest!")
 		}
 
-		def transf = [:] as Map<String, String>
+		def transFields = [:] as Map<String, String>
 		dest.field.each { destField ->
 			def destName = destField.name.toLowerCase()
 			String val
@@ -2597,12 +2600,12 @@ FROM {source} {after_from}'''
 			}
 
 			if (val != null)
-				transf.put(destName, val)
+				transFields.put(destName, val)
 		}
 
 		def colsList = [] as List<String>
 		def exprList = [] as List<String>
-		transf.each {fieldName, expr ->
+		transFields.each {fieldName, expr ->
 			colsList << '  ' + prepareObjectNameForSQL(fieldName, dest)
 			exprList << '  ' + expr
 		}

@@ -34,7 +34,7 @@ class FileUtils {
 	/**
 	 * Create path is not exists
 	 * @param fileName specified file name
-	 * @param deleteOnExit deleting file after stop program (defalt false)
+	 * @param deleteOnExit deleting file after stop program (default false)
 	 * @return true if the directory was created or false if it already existed
 	 */
 	static Boolean ValidFilePath(String fileName, Boolean deleteOnExit = false) {
@@ -45,7 +45,7 @@ class FileUtils {
 	/**
 	 * Create path is not exists
 	 * @param file specified file object
-	 * @param deleteOnExit deleting file after stop program (defalt false)
+	 * @param deleteOnExit deleting file after stop program (default false)
 	 * @return true if object is file or the directory was created or false if it already existed
 	 */
 	static Boolean ValidFilePath(File file, Boolean deleteOnExit = false) {
@@ -65,7 +65,7 @@ class FileUtils {
 	/**
 	 * Create path is not exists
 	 * @param path specified directory name
-	 * @param deleteOnExit deleting file after stop program (defalt false)
+	 * @param deleteOnExit deleting file after stop program (default false)
 	 * @return true if the directory was created or false if it already existed
 	 */
 	static Boolean ValidPath(String path, Boolean deleteOnExit = false) {
@@ -77,7 +77,7 @@ class FileUtils {
 	/**
 	 * Create path is not exists
 	 * @param path specified directory file object
-	 * @param deleteOnExit deleting file after stop program (defalt false)
+	 * @param deleteOnExit deleting file after stop program (default false)
 	 * @return true if the directory was created or false if it already existed
 	 */
 	static Boolean ValidPath(File path, Boolean deleteOnExit = false) {
@@ -567,14 +567,14 @@ class FileUtils {
 	/**
 	 * Return relative path from file path
 	 * @param pathToFile file path
-	 * @param pathSepararor separator in path
+	 * @param pathSeparator separator in path
 	 * @return directory path
 	 */
-	static String RelativePathFromFile(String pathToFile, String pathSepararor) {
+	static String RelativePathFromFile(String pathToFile, String pathSeparator) {
 		if (pathToFile == null) return null
 
 		String res
-		def i = pathToFile.lastIndexOf(pathSepararor)
+		def i = pathToFile.lastIndexOf(pathSeparator)
 		if (i < 0) res = '.' else res = pathToFile.substring(0, i)
 		
 		return res
@@ -678,7 +678,7 @@ class FileUtils {
 			sb << "@groovy.transform.CompileStatic\n"
 			sb << "String methodConvertText(String line) {\n"
 			(rules as List<Map>).each { Map rule ->
-				if (rule == null) throw new ExceptionGETL("Required rule section for convertation rules")
+				if (rule == null) throw new ExceptionGETL("Required rule section for conversion rules")
 				def type = ((rule."type" as String)?:'REPLACE')?.toUpperCase()
 				if (!(type in ["REPLACE", "REGEXPR"])) throw new ExceptionGETL("Invalid rule type \"$type\", allowed REPLACE and REGEXPR")
 				
@@ -882,15 +882,15 @@ class FileUtils {
 	/**
 	 * Unzip zip file to specified directory
 	 * @param fileName zip file name
-	 * @param targerDirectory target directory
+	 * @param targetDirectory target directory
 	 * @param password zip file password
 	 */
-	static void UnzipFile(String fileName, String targerDirectory, String password = null, String charsetFileName = null) {
+	static void UnzipFile(String fileName, String targetDirectory, String password = null, String charsetFileName = null) {
 		def file = new File(ResourceFileName(TransformFilePath(fileName)))
 		if (!file.exists())
 			throw new ExceptionGETL("Zip file \"$fileName\" not found!")
 
-		def path = new File(targerDirectory)
+		def path = new File(targetDirectory)
 		ValidPath(path)
 
 		ZipFile zipFile = (password != null) ? new ZipFile(file.canonicalPath, password.toCharArray()) : new ZipFile(file.canonicalPath)

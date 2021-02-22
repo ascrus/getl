@@ -67,6 +67,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     /** File rename mask */
     Path getRenamePath() { params.renamePath as Path }
     /** File rename mask */
+    @SuppressWarnings('SpellCheckingInspection')
     void setRenamePath(Path value) {
         if (sourcePath == null)
             throw new ExceptionFileListProcessing('You must first specify a path mask for the source!')
@@ -87,6 +88,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
             renamePath.compile()
     }
     /** Use path mask for rename file name */
+    @SuppressWarnings('SpellCheckingInspection')
     void useRenamePath(@DelegatesTo(Path)
                        @ClosureParams(value = SimpleType, options = ['getl.utils.Path']) Closure cl) {
         if (sourcePath == null)
@@ -174,6 +176,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         setOnAfterCopyFile(cl)
     }
 
+    @SuppressWarnings('SpellCheckingInspection')
     @Override
     List<String> getUsedInternalVars() { ['_segmented_', '_outpath_'] }
 
@@ -249,7 +252,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         if (!segmented.isEmpty()) {
             Logs.Fine("  files will be segmented by fields: [${segmented.join(', ')}]")
             if (destinations.size() == 1)
-                Logs.Warning("Segmentation will not be used because only one destintaion is specified!")
+                Logs.Warning("Segmentation will not be used because only one destination is specified!")
         }
     }
 
@@ -257,6 +260,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     protected FileListProcessingBuild createBuildList() { new FileCopierBuild(params: [owner: this]) }
 
     @Override
+    @SuppressWarnings('SpellCheckingInspection')
     protected List<Field> getExtendedFields() {
         def res = [] as List<Field>
         res << new Field(name: '_segmented_', type: Field.integerFieldType, isNull: false)
@@ -266,6 +270,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     }
 
     @Override
+    @SuppressWarnings('SpellCheckingInspection')
     protected List<List<String>> getExtendedIndexes() {
         def idx = ['_SEGMENTED_']
         if (!order.isEmpty())
@@ -362,6 +367,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
      * @param dst list of destination manager
      * @param tfiles table of found files
      */
+    @SuppressWarnings('SpellCheckingInspection')
     protected processSegment(Integer segment, Manager src, List<Manager> dst) {
         Logs.Finest("$segment: processing $dst")
 

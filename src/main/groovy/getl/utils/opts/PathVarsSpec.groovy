@@ -52,7 +52,7 @@ class PathVarsSpec extends BaseSpec {
     /**
      * Format of parsing variable value
      * <ul>
-     * <li>use reqular expression for string type
+     * <li>use regular expression for string type
      * <li>use date and time mask for date-time type
      * </ul>
      */
@@ -60,7 +60,7 @@ class PathVarsSpec extends BaseSpec {
     /**
      * Format of parsing variable value
      * <ul>
-     * <li>use reqular expression for string type
+     * <li>use regular expression for string type
      * <li>use date and time mask for date-time type
      * </ul>
      */

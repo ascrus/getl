@@ -42,6 +42,6 @@ class FlowCopyChild {
         process.call(updater, row)
     }
 
-    /** Bulk load paramaters */
+    /** Bulk load parameters */
     public Map bulkParams
 }

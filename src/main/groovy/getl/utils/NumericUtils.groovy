@@ -51,6 +51,7 @@ class NumericUtils {
 	 * @param args columns for hashing
 	 * @return hash code
 	 */
+	@SuppressWarnings('SpellCheckingInspection')
 	static Integer Hash(List args) {
 		StringBuilder sb = new StringBuilder()
 		args.each { def a ->
@@ -59,9 +60,6 @@ class NumericUtils {
 			else if (a instanceof Date) {
 				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", a as Date))
 			}
-			/*else if (a instanceof java.sql.Timestamp) {
-				sb.append(DateUtils.FormatDate("yyyyMMddHHmmss", a as java.sql.Timestamp))
-			}*/
 			else {
 				sb.append(a.toString())
 			}

@@ -53,8 +53,8 @@ class XMLDriver extends FileDriver {
 				s.type = Field.Type.STRING
 			
 			String path = GenerationUtils.Field2Alias(d, true)
-			sb << "attrValue.'${d.name.toLowerCase()}' = "
-			sb << GenerationUtils.GenerateConvertValue(dest: d, source: s, format: dataset.fieldFormat(d), value: "data.${path}", cloneObject:  false)
+			sb << GenerationUtils.GenerateConvertValue(dest: d, source: s, format: dataset.fieldFormat(d),
+					sourceMap: 'data', sourceValue: path, destMap: 'attrValue', cloneObject:  false, saveOnlyWithValue: false)
 			
 			sb << "\n"
 		}
@@ -134,7 +134,8 @@ class XMLDriver extends FileDriver {
 		}
 
 		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields, 'groovy.util.Node',
-				true, dataset.dataNode, 'struct', 'row', 0, 1, prepareField)
+				true, dataset.dataNode, 'struct', 'row', 0, 1,
+				false, prepareField)
 		sb << genScript.head
 
 		def rootNode = dataset.rootNode

@@ -123,7 +123,7 @@ class GenerationUtils {
 	static Map<String, String> GenerateConvertFromBuilderMap(StructureFileDataset dataset, List<String> onlyFields,
 															 String className, Boolean isStringDateTime,
 															 String rootPath, String structName, String rowName,
-															 Integer tabHead, Integer tabBody,
+															 Integer tabHead, Integer tabBody, Boolean saveOnlyWithValue,
 															 Closure<String> prepareField = null) {
 		def fields = [] as List<Field>
 		if (onlyFields?.isEmpty()) onlyFields = null
@@ -195,18 +195,17 @@ class GenerationUtils {
 				name = prepareField.call(dataset, destField, name, isAlias)
 			else
 				name = StringUtils.ProcessObjectName(name, true, false)
-			def varPath = path + '.' + name
-			def value = GenerateConvertValue(dest: destField, source: sourceField, format: format, value: varPath, cloneObject:  false, datetimeFormatterName: '_getl_df')
-			listGenVal.add("${rowName}.put(\"${StringUtils.EscapeJava(destField.name.toLowerCase())}\", ${value})")
+			def value = GenerateConvertValue(dest: destField, source: sourceField, format: format,
+					sourceMap: path, sourceValue: name, destMap: rowName, cloneObject:  false,
+					datetimeFormatterName: '_getl_df', saveOnlyWithValue: saveOnlyWithValue)
+			listGenVal.add(value)
 		}
 
 		def tabHeadSpace = ((tabHead?:0) > 0)?StringUtils.Replicate('\t', tabHead):''
 		def sbHead = new StringBuilder()
 		listFormats.each {el ->
-			//def dfName = "_getl_df_${el.type.toString().toLowerCase()}_${el.format.hashCode().toString().replace('-', '0')}"
 			def dfName = FormatterName(el.type, el.format)
 			sbHead.append(tabHeadSpace)
-			//sbHead.append("def ${dfName} = new java.text.SimpleDateFormat(\"${StringUtils.EscapeJava(format)}\")\n")
 			switch (el.type) {
 				case Field.dateFieldType:
 					sbHead.append("def $dfName = getl.utils.DateUtils.BuildDateFormatter(\"${StringUtils.EscapeJava(el.format)}\")\n")
@@ -220,7 +219,6 @@ class GenerationUtils {
 			}
 
 			sbHead.append(tabHeadSpace)
-			//sbHead.append("${dfName}.setLenient(false)\n")
 		}
 
 		def tabBodySpace = ((tabBody?:0) > 0)?StringUtils.Replicate('\t', tabBody):''
@@ -237,6 +235,11 @@ class GenerationUtils {
 		def res = [:] as Map<String, String>
 		res.put('head', sbHead.toString())
 		res.put('body', sbBody.toString())
+
+		/*println "*** Head:"
+		println res.head
+		println "*** Body:"
+		println res.body*/
 
 		return res
 	}
@@ -320,8 +323,10 @@ class GenerationUtils {
 			df = 'yyyy-MM-dd'
 		else if (type == Field.timeFieldType)
 			df = 'HH:mm:ss'
-		else if (type in [Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType])
+		else if (type == Field.datetimeFieldType)
 			df = 'yyyy-MM-dd HH:mm:ss'
+		else if (type == Field.timestamp_with_timezoneFieldType)
+			df = 'yyyy-MM-dd\'T\'HH:mm:ss ZZ'
 		else
 			throw new ExceptionGETL("Can not return date format from \"${type}\" type")
 
@@ -335,8 +340,11 @@ class GenerationUtils {
 	 * @param formatField parsing format
 	 * @param sourceValue path to source value
 	 */
-	static String GenerateConvertValue(Field dest, Field source, String formatField, String sourceValue) {
-		GenerateConvertValue(dest: dest, source: source, format: formatField, value: sourceValue)
+	static String GenerateConvertValue(Field dest, Field source, String formatField, String sourceMap, String sourceValue,
+										String destMap = 'row', Boolean saveOnlyWithValue = false) {
+		def res = GenerateConvertValue(dest: dest, source: source, format: formatField, sourceMap: sourceMap,
+				sourceValue: sourceValue, destMap: destMap, saveOnlyWithValue: saveOnlyWithValue)
+		return res
 	}
 	
 	/**
@@ -354,35 +362,64 @@ class GenerationUtils {
 		def dest = params.dest as Field
 		def source = params.source as Field
 		def formatField = params.format as String
-		def sourceValue = params.value as String
+		def sourceMap = params.sourceMap
+		def sourceValue = params.sourceValue as String
+		def destMap = params.destMap as String
 		def cloneObject = BoolUtils.IsValue(params.cloneObject, true)
 		def datetimeFormatterName = params.datetimeFormatterName as String
 		def convertEmptyToNull = BoolUtils.IsValue(params.convertEmptyToNull)
+		def saveOnlyWithValue = BoolUtils.IsValue(params.saveOnlyWithValue)
 
-		def validSource = (convertEmptyToNull)?"$sourceValue != null && ((String)$sourceValue).length() > 0":"$sourceValue != null"
+		String validSource
+		String containSource = null
+		if (saveOnlyWithValue) {
+			def i = sourceValue.lastIndexOf('"', sourceValue.length() - 2)
+			while (i > 0 && sourceValue[i - 1] == '\\')
+				i = sourceValue.lastIndexOf('"', i - 1)
+			if (i > 0) {
+				if (sourceValue.substring(i - 1, i) != '.')
+					throw new ExceptionGETL("Failed to parse field name ${source.name} with map [${sourceMap}] alias [${sourceValue}], last dot not found!")
+				containSource = "${sourceMap}.${sourceValue.substring(1, i)}containsKey(${sourceValue.substring(i)})"
+			}
+			else if (i == 0) {
+				containSource = "${sourceMap}.containsKey(${sourceValue.substring(i)})"
+			}
+			else
+				containSource = "${sourceMap}.containsKey($sourceValue)"
+		}
+		if (saveOnlyWithValue && (convertEmptyToNull && source.type == Field.stringFieldType))
+			validSource = "$containSource && ${sourceMap}.${sourceValue} != null && (${sourceMap}.${sourceValue} as String).length() > 0"
+		else if (saveOnlyWithValue)
+			validSource = "$containSource && ${sourceMap}.${sourceValue} != null"
+		else if (convertEmptyToNull && source.type == Field.stringFieldType)
+			validSource = "${sourceMap}.${sourceValue} != null && (${sourceMap}.${sourceValue} as String).length() > 0"
+		else
+			validSource = "${sourceMap}.${sourceValue} != null"
+
+		sourceValue = "${sourceMap}.${sourceValue}"
+		def destValue = dest.name.toLowerCase().replace('\'', '\\\'')
 
 		switch (dest.type) {
 			case Field.stringFieldType: case Field.textFieldType:
 				switch (source.type) {
 					case Field.stringFieldType: case Field.textFieldType:
-						r = "($validSource)?(String)$sourceValue:(null as String)"
+						r = sourceValue
 						break
 
 					case Field.integerFieldType: case Field.bigintFieldType:
 					case Field.numericFieldType: case Field.doubleFieldType: case Field.uuidFieldType:
 					case Field.objectFieldType: case Field.rowidFieldType:
-						r = "$sourceValue?.toString()"
+						r = "${sourceValue}.toString()"
 						break
 
 					case Field.dateFieldType: case Field.timeFieldType: case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
 						formatField = (formatField != null)?formatField:DateFormat(source.type)
 						if (datetimeFormatterName != null) {
 							def dfn = FormatterName(source.type, formatField)
-							//r = "getl.utils.DateUtils.FormatDate(${datetimeFormatterName}_${formatField.hashCode().toString().replace('-', '0')}, (Date)$sourceValue)"
-							r = "getl.utils.DateUtils.FormatDate($dfn, (Date)$sourceValue)"
+							r = "getl.utils.DateUtils.FormatDate($dfn, $sourceValue as Date)"
 						}
 						else
-							r = "getl.utils.DateUtils.FormatDate(\"${StringUtils.EscapeJava(formatField)}\", (Date)$sourceValue)"
+							r = "getl.utils.DateUtils.FormatDate(\"${StringUtils.EscapeJava(formatField)}\", $sourceValue as Date)"
 
 						break
 
@@ -391,12 +428,12 @@ class GenerationUtils {
 						if (dest.format != null) {
 							values = dest.format.split("[|]")
 						}
-						r = "($sourceValue != null)?(((Boolean)$sourceValue)?'${values[0]}':'${values[1]}'):(null as String)"
+						r = "($sourceValue as Boolean)?'${values[0]}':'${values[1]}'"
 
 						break
 
 					case Field.blobFieldType:
-						r = "(((byte[])$sourceValue)?.length > 0)?new String((byte[])$sourceValue):(null as String)"
+						r = "(($sourceValue as byte[]).length > 0)?new String($sourceValue as byte[]):(null as String)"
 
 						break
 
@@ -409,22 +446,22 @@ class GenerationUtils {
 			case Field.booleanFieldType:
 				switch (source.type) {
 					case Field.booleanFieldType:
-						r = "($sourceValue != null)?new Boolean((Boolean)$sourceValue):(null as Boolean)"
+						r = sourceValue
 
 						break
 
 					case Field.integerFieldType:
-						r = "($sourceValue != null)?(((Integer)$sourceValue)?:0) != 0:(null as Boolean)"
+						r = "($sourceValue as Integer) != 0"
 
 						break
 
 					case Field.bigintFieldType:
-						r = "($sourceValue != null)?(((Long)$sourceValue)?:0L) != 0:(null as Boolean)"
+						r = "($sourceValue as Long) != 0"
 
 						break
 
 					case Field.numericFieldType:
-						r = "($sourceValue != null)?(((java.math.BigDecimal)$sourceValue)?.toDouble()?:0.00) != 0:(null as Boolean)"
+						r = "($sourceValue as java.math.BigDecimal).toDouble() != 0"
 
 						break
 
@@ -434,7 +471,8 @@ class GenerationUtils {
 							def bf = formatField.toLowerCase().split("[|]")
 							trueValue = bf[0]
 						}
-						r = "($validSource)?((String)$sourceValue).toLowerCase() == '$trueValue':(null as Boolean)"
+						trueValue = StringUtils.EscapeJava(trueValue)
+						r = "($sourceValue as String).toLowerCase() == '$trueValue'"
 
 						break
 
@@ -447,20 +485,20 @@ class GenerationUtils {
 			case Field.integerFieldType:
 				switch (source.type) {
 					case Field.integerFieldType:
-						r = "($sourceValue != null)?new Integer((Integer)$sourceValue):(null as Integer)"
+						r = sourceValue
 
 						break
 
 					case Field.stringFieldType:
 						if (formatField == null)
-							r = "($validSource)?Integer.valueOf((String)$sourceValue):(null as Integer)"
+							r = "Integer.valueOf($sourceValue as String)"
 						else {
 							switch (formatField.trim().toLowerCase()) {
 								case 'standard': case 'comma':
-									r = "($validSource)?Integer.valueOf((String)$sourceValue):(null as Integer)"
+									r = "Integer.valueOf($sourceValue as String)"
 									break
 								case 'report': case 'report_with_comma':
-									r = "($validSource)?Integer.valueOf(((String)$sourceValue).replace(' ', '').replace('\u00A0', '')):(null as Integer)"
+									r = "Integer.valueOf(($sourceValue as String).replace(' ', '').replace('\u00A0', ''))"
 									break
 								default:
 									throw new ExceptionGETL("Unknown format type \"$formatField\" for numeric field \"${dest.name}\"!")
@@ -470,22 +508,22 @@ class GenerationUtils {
 						break
 
 					case Field.bigintFieldType:
-						r = "((Long)$sourceValue)?.intValue()"
+						r = "($sourceValue as Long).intValue()"
 
 						break
 
 					case Field.doubleFieldType:
-						r = "((Double)$sourceValue)?.intValue()"
+						r = "($sourceValue as Double).intValue()"
 
 						break
 
 					case Field.numericFieldType:
-						r = "((java.math.BigDecimal)$sourceValue)?.intValue()"
+						r = "($sourceValue as java.math.BigDecimal).intValue()"
 
 						break
 
 					case Field.booleanFieldType:
-						r = "($sourceValue != null)?(((Boolean)$sourceValue == true)?1:0):(null as Integer)"
+						r = "($sourceValue as Boolean)?1:0"
 
 						break
 
@@ -498,20 +536,20 @@ class GenerationUtils {
 			case Field.bigintFieldType:
 				switch (source.type) {
 					case Field.bigintFieldType:
-						r = "($sourceValue != null)?new Long((Long)$sourceValue):(null as Long)"
+						r = sourceValue
 
 						break
 
 					case Field.stringFieldType:
 						if (formatField == null)
-							r = "($validSource)?Long.valueOf((String)$sourceValue):(null as Long)"
+							r = "Long.valueOf($sourceValue as String)"
 						else {
 							switch (formatField.trim().toLowerCase()) {
 								case 'standard': case 'comma':
-									r = "($validSource)?Long.valueOf((String)$sourceValue):(null as Long)"
+									r = "Long.valueOf($sourceValue as String)"
 									break
 								case 'report': case 'report_with_comma':
-									r = "($validSource)?Long.valueOf(((String)$sourceValue).replace(' ', '').replace('\u00A0', '')):(null as Long)"
+									r = "Long.valueOf(($sourceValue as String).replace(' ', '').replace('\u00A0', ''))"
 									break
 								default:
 									throw new ExceptionGETL("Unknown format type \"$formatField\" for numeric field \"${dest.name}\"!")
@@ -521,27 +559,27 @@ class GenerationUtils {
 						break
 
 					case Field.integerFieldType:
-						r = "($sourceValue != null)?Long.valueOf((Integer)$sourceValue):(null as Long)"
+						r = "Long.valueOf($sourceValue as Integer)"
 
 						break
 
 					case Field.doubleFieldType:
-						r = "((Double)$sourceValue)?.longValue()"
+						r = "($sourceValue as Double).longValue()"
 
 						break
 
 					case Field.numericFieldType:
-						r = "((java.math.BigDecimal)$sourceValue)?.longValue()"
+						r = "($sourceValue as java.math.BigDecimal).longValue()"
 
 						break
 
 					case Field.booleanFieldType:
-						r = "($sourceValue != null)?new Long(((Boolean)$sourceValue == true)?1:0):(null as Long)"
+						r = "new Long(($sourceValue)?1:0)"
 
 						break
 
 					case Field.dateFieldType: case Field.timeFieldType: case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-						r = "((Date)$sourceValue)?.time"
+						r = "($sourceValue as Date).time"
 
 						break
 
@@ -554,26 +592,27 @@ class GenerationUtils {
 			case Field.numericFieldType:
 				switch (source.type) {
 					case Field.numericFieldType:
-						r = "($sourceValue != null)?new BigDecimal(((BigDecimal)$sourceValue).toString()):(null as BigDecimal)"
+						//r = "new BigDecimal(($sourceValue as BigDecimal).toString())" // ?
+						r = sourceValue
 
 						break
 
 					case Field.stringFieldType:
 						if (formatField == null)
-							r = "($validSource)?new BigDecimal((String)$sourceValue):(null as BigDecimal)"
+							r = "(new BigDecimal($sourceValue as String)"
 						else {
 							switch (formatField.trim().toLowerCase()) {
 								case 'standard':
-									r = "($validSource)?new BigDecimal((String)$sourceValue):(null as BigDecimal)"
+									r = "new BigDecimal($sourceValue as String)"
 									break
 								case 'comma':
-									r = "($validSource)?new BigDecimal(((String)$sourceValue).replace(',', '.')):(null as BigDecimal)"
+									r = "new BigDecimal(($sourceValue as String).replace(',', '.'))"
 									break
 								case 'report':
-									r = "($validSource)?new BigDecimal(((String)$sourceValue).replace(' ', '').replace('\u00A0', '')):(null as BigDecimal)"
+									r = "new BigDecimal(($sourceValue as String).replace(' ', '').replace('\u00A0', ''))"
 									break
 								case 'report_with_comma':
-									r = "($validSource)?new BigDecimal(((String)$sourceValue).replace(',', '.').replace(' ', '').replace('\u00A0', '')):(null as BigDecimal)"
+									r = "new BigDecimal(($sourceValue as String).replace(',', '.').replace(' ', '').replace('\u00A0', ''))"
 									break
 								default:
 									throw new ExceptionGETL("Unknown format type \"$formatField\" for numeric field \"${dest.name}\"!")
@@ -583,22 +622,22 @@ class GenerationUtils {
 						break
 
 					case Field.integerFieldType:
-						r = "($sourceValue != null)?new java.math.BigDecimal((Integer)$sourceValue):(null as BigDecimal)"
+						r = "new java.math.BigDecimal($sourceValue as Integer)"
 
 						break
 
 					case Field.bigintFieldType:
-						r = "($sourceValue != null)?new java.math.BigDecimal((Long)$sourceValue):(null as BigDecimal)"
+						r = "new java.math.BigDecimal($sourceValue as Long)"
 
 						break
 
 					case Field.doubleFieldType:
-						r = "($sourceValue != null)?new java.math.BigDecimal((Double)$sourceValue):(null as BigDecimal)"
+						r = "new java.math.BigDecimal($sourceValue as Double)"
 
 						break
 
 					case Field.booleanFieldType:
-						r = "($sourceValue != null)?new BigDecimal(((Boolean)$sourceValue)?1:0):(null as BigDecimal)"
+						r = "new BigDecimal(($sourceValue as Boolean)?1:0)"
 
 						break
 
@@ -611,26 +650,26 @@ class GenerationUtils {
 			case Field.doubleFieldType:
 				switch (source.type) {
 					case Field.doubleFieldType:
-						r = "($sourceValue != null)?new Double((Double)$sourceValue):(null as Double)"
+						r = sourceValue
 
 						break
 
 					case Field.stringFieldType:
 						if (formatField == null)
-							r = "($validSource)?Double.valueOf((String)$sourceValue):(null as Double)"
+							r = "Double.valueOf($sourceValue as String)"
 						else {
 							switch (formatField.trim().toLowerCase()) {
 								case 'standard':
-									r = "($validSource)?Double.valueOf((String)$sourceValue):(null as Double)"
+									r = "Double.valueOf($sourceValue as String)"
 									break
 								case 'comma':
-									r = "($validSource)?Double.valueOf(((String)$sourceValue).replace(',', '.')):(null as Double)"
+									r = "Double.valueOf(($sourceValue as String).replace(',', '.'))"
 									break
 								case 'report':
-									r = "($validSource)?Double.valueOf(((String)$sourceValue).replace(' ', '').replace('\u00A0', '')):(null as Double)"
+									r = "Double.valueOf(($sourceValue as String).replace(' ', '').replace('\u00A0', ''))"
 									break
 								case 'report_with_comma':
-									r = "($validSource)?Double.valueOf(((String)$sourceValue).replace(',', '.').replace(' ', '').replace('\u00A0', '')):(null as Double)"
+									r = "Double.valueOf(($sourceValue as String).replace(',', '.').replace(' ', '').replace('\u00A0', ''))"
 									break
 								default:
 									throw new ExceptionGETL("Unknown format type \"$formatField\" for numeric field \"${dest.name}\"!")
@@ -640,22 +679,22 @@ class GenerationUtils {
 						break
 
 					case Field.integerFieldType:
-						r = "($sourceValue != null)?Double.valueOf((Integer)$sourceValue):(null as Double)"
+						r = "Double.valueOf($sourceValue as Integer)"
 
 						break
 
 					case Field.bigintFieldType:
-						r = "($sourceValue != null)?Double.valueOf((Long)$sourceValue):(null as Double)"
+						r = "Double.valueOf($sourceValue as Long)"
 
 						break
 
 					case Field.numericFieldType:
-						r = "((java.math.BigDecimal)$sourceValue)?.doubleValue()"
+						r = "($sourceValue as java.math.BigDecimal).doubleValue()"
 
 						break
 
 					case Field.booleanFieldType:
-						r = "($sourceValue != null)?new Double(((Boolean)$sourceValue == true)?1:0):(null as Double)"
+						r = "new Double(($sourceValue as Boolean)?1:0)"
 
 						break
 
@@ -669,24 +708,27 @@ class GenerationUtils {
 				formatField = formatField?: DateFormat(dest.type)
 
 				switch (source.type) {
-					case Field.dateFieldType: case Field.timeFieldType: case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-						r = "($sourceValue != null)?new java.sql.Date(((Date)$sourceValue).time):(null as java.sql.Date)"
+					case Field.dateFieldType:
+						r = sourceValue
+
+						break
+					case Field.timeFieldType: case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+						r = "new java.sql.Date(($sourceValue as Date).time)"
 
 						break
 
 					case Field.stringFieldType:
 						if (datetimeFormatterName != null) {
 							def dfn = FormatterName(dest.type, formatField)
-							r = "($validSource)?getl.utils.DateUtils.ParseSQLDate($dfn, (String)$sourceValue, false):(null as java.sql.Date)"
-							//r = "($validSource)?getl.utils.DateUtils.ParseSQLDate(${datetimeFormatterName}_${formatField.hashCode().toString().replace('-', '0')}, (String)$sourceValue, false):(null as java.sql.Date)"
+							r = "getl.utils.DateUtils.ParseSQLDate($dfn, $sourceValue as String, false)"
 						}
 						else
-							r =  "($validSource)?getl.utils.DateUtils.ParseSQLDate(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false):(null as java.sql.Date)"
+							r =  "getl.utils.DateUtils.ParseSQLDate(\"${StringUtils.EscapeJava(formatField)}\", $sourceValue as String, false)"
 
 						break
 
 					case Field.bigintFieldType:
-						r =  "($sourceValue != null)?new java.sql.Date((Long)$sourceValue):(null as java.sql.Date)"
+						r =  "new java.sql.Date(($sourceValue as Long)"
 
 						break
 
@@ -700,24 +742,27 @@ class GenerationUtils {
 				formatField = formatField?: DateFormat(dest.type)
 
 				switch (source.type) {
-					case Field.dateFieldType: case Field.timeFieldType: case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-						r = "($sourceValue != null)?new java.sql.Timestamp(((Date)$sourceValue).time):(null as java.sql.Timestamp)"
+					case Field.datetimeFieldType:
+						r = sourceValue
+
+						break
+					case Field.dateFieldType: case Field.timeFieldType: case Field.timestamp_with_timezoneFieldType:
+						r = "new java.sql.Timestamp(($sourceValue as Date).time)"
 
 						break
 
 					case Field.stringFieldType:
 						if (datetimeFormatterName != null) {
 							def dfn = FormatterName(dest.type, formatField)
-							r = "($validSource)?getl.utils.DateUtils.ParseSQLTimestamp($dfn, (String)$sourceValue, false):(null as java.sql.Date)"
-							//r = "($validSource)?getl.utils.DateUtils.ParseSQLTimestamp(${datetimeFormatterName}_${formatField.hashCode().toString().replace('-', '0')}, (String)$sourceValue, false):(null as java.sql.Timestamp)"
+							r = "getl.utils.DateUtils.ParseSQLTimestamp($dfn, $sourceValue as String, false)"
 						}
 						else
-							r =  "($validSource)?getl.utils.DateUtils.ParseSQLTimestamp(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false):(null as java.sql.Timestamp)"
+							r =  "getl.utils.DateUtils.ParseSQLTimestamp(\"${StringUtils.EscapeJava(formatField)}\", $sourceValue as String, false)"
 
 						break
 
 					case Field.bigintFieldType:
-						r =  "($sourceValue != null)?new java.sql.Timestamp((Long)$sourceValue):(null as java.sql.Timestamp)"
+						r =  "new java.sql.Timestamp($sourceValue as Long)"
 
 						break
 
@@ -731,24 +776,28 @@ class GenerationUtils {
 				formatField = formatField?: DateFormat(dest.type)
 
 				switch (source.type) {
-					case Field.dateFieldType: case Field.timeFieldType: case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-						r = "($sourceValue != null)?new java.sql.Time(((Date)$sourceValue).time):(null as java.sql.Time)"
+					case Field.timeFieldType:
+						r = sourceValue
+
+						break
+
+					case Field.dateFieldType: case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
+						r = "new java.sql.Time(($sourceValue as Date).time)"
 
 						break
 
 					case Field.stringFieldType:
 						if (datetimeFormatterName != null) {
-							//r = "($validSource)?getl.utils.DateUtils.ParseSQLTime(${datetimeFormatterName}_${formatField.hashCode().toString().replace('-', '0')}, (String)$sourceValue, false):(null as java.sql.Time)"
 							def dfn = FormatterName(dest.type, formatField)
-							r = "($validSource)?getl.utils.DateUtils.ParseSQLTime($dfn, (String)$sourceValue, false):(null as java.sql.Date)"
+							r = "getl.utils.DateUtils.ParseSQLTime($dfn, $sourceValue as String, false)"
 						}
 						else
-							r =  "($validSource)?getl.utils.DateUtils.ParseSQLTime(\"${StringUtils.EscapeJava(formatField)}\", (String)$sourceValue, false):(null as java.sql.Time)"
+							r =  "getl.utils.DateUtils.ParseSQLTime(\"${StringUtils.EscapeJava(formatField)}\", $sourceValue as String, false)"
 
 						break
 
 					case Field.bigintFieldType:
-						r =  "($sourceValue != null)?new java.sql.Time((Long)$sourceValue):(null as java.sql.Time)"
+						r =  "new java.sql.Time($sourceValue as Long)"
 
 						break
 
@@ -761,12 +810,12 @@ class GenerationUtils {
 			case Field.blobFieldType:
 				switch (source.type) {
 					case Field.blobFieldType:
-						r = "($sourceValue != null)?((byte[])$sourceValue).clone():(null as byte[])"
+						r = "($sourceValue as byte[]).clone()"
 
 						break
 
 					case Field.stringFieldType:
-						r = "($validSource)?((String)$sourceValue).bytes):(null as byte[])"
+						r = "($sourceValue as String).bytes)"
 
 						break
 
@@ -779,12 +828,12 @@ class GenerationUtils {
 			case Field.uuidFieldType:
 				switch (source.type) {
 					case Field.uuidFieldType:
-						r = "($validSource)?java.util.UUID.fromString(((java.util.UUID)$sourceValue).toString()):(null as java.util.UUID)"
+						r = sourceValue
 
 						break
 
 					case Field.stringFieldType:
-						r = "($validSource)?java.util.UUID.fromString((String)$sourceValue):(null as java.util.UUID)"
+						r = "java.util.UUID.fromString($sourceValue as String)"
 
 						break
 
@@ -796,7 +845,7 @@ class GenerationUtils {
 
 			case Field.objectFieldType:
 				if (cloneObject)
-					r = "($sourceValue instanceof Cloneable)?${sourceValue}?.clone():$sourceValue"
+					r = "($sourceValue instanceof Cloneable)?${sourceValue}.clone():$sourceValue"
 				else
 					r = sourceValue
 
@@ -805,7 +854,10 @@ class GenerationUtils {
 			default:
 				throw new ExceptionGETL("Type ${dest.type} not supported (${dest.name})")
 		}
-		return r
+
+		def res = "if ($validSource) ${destMap}.put('$destValue', $r)"
+
+		return res
 	}
 	
 	static public final Random random = new Random()

@@ -532,7 +532,7 @@ class Lexer {
 
 
 	/**
-	 * Convert tokens with comma sepatate to list
+	 * Convert tokens with comma separate to list
 	 * @param tokens
 	 * @param start
 	 * @param finish

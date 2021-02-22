@@ -36,12 +36,12 @@ class KafkaTest extends GetlTest {
 
             field('ID') { type = bigintFieldType }
             field('SHIPMENT_ID') { type = bigintFieldType }
-            field('WEIGHT') { type = integerFieldType }
+            field('WEIGHT') { type = numericFieldType; length = 12; precision = 3 }
             field('LENGTH') { type = integerFieldType }
             field('WIDTH') { type = integerFieldType }
             field('HEIGHT') { type = integerFieldType }
-            field('SELF_DELIVERY') { type = booleanFieldType }
-            field('ACCOUNTING_WEIGHT') { type = integerFieldType }
+            field('SELF_DELIVERY') { type = integerFieldType }
+            field('ACCOUNTING_WEIGHT') { type = numericFieldType; length = 12; precision = 3 }
             field('STATE_ID') { type = bigintFieldType }
             field('DEPARTMENT_ID') { type = bigintFieldType }
             field('STATETRANSITMOMENT') { type = datetimeFieldType }

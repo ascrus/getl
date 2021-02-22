@@ -60,8 +60,8 @@ class JSONDriver extends FileDriver {
 			if (s.type == Field.Type.DATETIME) s.type = Field.Type.STRING
 			
 			String path = GenerationUtils.Field2Alias(d, true)
-			sb << "attrValue.'${d.name.toLowerCase()}' = "
-			sb << GenerationUtils.GenerateConvertValue(dest: d, source: s, format: dataset.fieldFormat(d), value: "data.${path}", cloneObject: false)
+			sb << GenerationUtils.GenerateConvertValue(dest: d, source: s, format: dataset.fieldFormat(d),
+					sourceMap: 'data', sourceValue: path, destMap: 'attrValue', cloneObject: false, saveOnlyWithValue: true)
 			
 			sb << "\n"
 		}
@@ -95,9 +95,8 @@ class JSONDriver extends FileDriver {
 		sb << '@groovy.transform.CompileStatic\n'
 		sb << 'void proc(getl.json.JSONDataset dataset, Closure code, Object data, Integer limit) {\n'
 
-		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,
-				'Map', true, dataset.dataNode, 'struct',
-				'row', 0, 1)
+		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,'Map', true,
+				dataset.dataNode, 'struct','row', 0, 1, true)
 		sb << genScript.head
 
 		sb << "def cur = 0L\n"

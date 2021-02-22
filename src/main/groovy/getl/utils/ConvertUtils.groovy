@@ -83,7 +83,7 @@ class ConvertUtils {
 	}
 	
 	/**
-	 * Convert string value to boolean if not equale is false value string (must be as lower case)
+	 * Convert string value to boolean if not equal is false value string (must be as lower case)
 	 * @param value
 	 * @param falseValue
 	 * @return

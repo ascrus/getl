@@ -72,7 +72,7 @@ class LogSpec extends BaseSpec {
     /** Convert string value level to type */
     Level strToLevel(String level) { Logs.StrToLevel(level) }
 
-    /** Redirect standart output to specified file */
+    /** Redirect standard output to specified file */
     void redirectStdOut(String fileName) { Logs.RedirectStdOut(fileName) }
 
     /** Redirect errors output to specified file */

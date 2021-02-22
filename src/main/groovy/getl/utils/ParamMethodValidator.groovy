@@ -3,7 +3,7 @@ package getl.utils
 import getl.exception.ExceptionGETL
 
 /**
- * Paramaters method manager class 
+ * Parameters method manager class
  * @author Alexsey Konstantinov
  *
  */
@@ -45,7 +45,7 @@ class ParamMethodValidator {
 	}
 	
 	/**
-	 * Detect allowed parameters for specofied method
+	 * Detect allowed parameters for specified method
 	 * @param methodName name method
 	 * @return list of register parameter by method
 	 */
@@ -66,9 +66,9 @@ class ParamMethodValidator {
 		
 		def unknown = MapUtils.Unknown(runParams as Map<String, Object>, list, true)
 		if (unknown.isEmpty()) return
-		def slist = unknown.join(", ")
+		def sList = unknown.join(", ")
 		
-		throw new ExceptionGETL("Unknown parameters [${slist}] for method \"${methodName}\", avaible parameters: ${list}")
+		throw new ExceptionGETL("Unknown parameters [${sList}] for method \"${methodName}\", avaible parameters: ${list}")
 	}
 	
 	/**
@@ -80,15 +80,15 @@ class ParamMethodValidator {
 	void validation(String methodName, Map runParams, List<List<String>> others) {
 		def list = params(methodName)
 		
-		def vlist = [] as List<String>
-		vlist.addAll(list)
-		others.each { vlist.addAll(it) }
+		def vList = [] as List<String>
+		vList.addAll(list)
+		others.each { vList.addAll(it) }
 		
-		def unknown = MapUtils.Unknown(runParams as Map<String, Object>, vlist, true)
+		def unknown = MapUtils.Unknown(runParams as Map<String, Object>, vList, true)
 		if (unknown.isEmpty()) return
-		def slist = unknown.join(", ")
+		def sList = unknown.join(", ")
 		
-		throw new ExceptionGETL("Unknown parameters [${slist}] for method \"${methodName}\", avaible parameters: ${vlist}")
+		throw new ExceptionGETL("Unknown parameters [${sList}] for method \"${methodName}\", avaible parameters: ${vList}")
 	}
 	
 	/**

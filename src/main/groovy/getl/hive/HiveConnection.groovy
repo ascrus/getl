@@ -21,7 +21,7 @@ class HiveConnection extends JDBCConnection {
 
     /** Current Hive connection driver */
     @JsonIgnore
-    HiveDriver getCurrentHiveDrivert() { driver as HiveDriver }
+    HiveDriver getCurrentHiveDriver() { driver as HiveDriver }
 
     @Override
     protected void registerParameters () {

@@ -16,7 +16,7 @@ class FirebirdTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof FirebirdConnection))
-            throw new ExceptionGETL('Сonnection to FirebirdConnection class is allowed!')
+            throw new ExceptionGETL('Connection to FirebirdConnection class is allowed!')
 
         super.setConnection(value)
     }

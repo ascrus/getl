@@ -44,9 +44,9 @@ class LangSpec extends BaseSpec {
     /** The level of fixation in the log of process profiling records */
     void setProcessTimeLevelLog(Level value) { saveParamValue('processTimeLevelLog', value) }
 
-    /** Use the multithreaded JDBC connection model */
+    /** Use the multithreading JDBC connection model */
     Boolean getUseThreadModelConnection() { BoolUtils.IsValue(params.useThreadModelJDBCConnection, true) }
-    /** Use the multithreaded JDBC connection model */
+    /** Use the multithreading JDBC connection model */
     void setUseThreadModelConnection(Boolean value) { saveParamValue('useThreadModelJDBCConnection', value) }
 
     /** Write SQL command from temporary database connection to history file */
@@ -92,6 +92,11 @@ class LangSpec extends BaseSpec {
 
         saveParamValue('processControlDataset', value)
     }
+
+    /** The login used to verify the startup process */
+    String getProcessControlLogin() { params.processControlLogin as String }
+    /** The login used to verify the startup process */
+    void setProcessControlLogin(String value) { saveParamValue('processControlLogin', value) }
 
     /** Check permission to work processes when they start */
     Boolean getCheckProcessOnStart() { BoolUtils.IsValue(params.checkProcessOnStart) }

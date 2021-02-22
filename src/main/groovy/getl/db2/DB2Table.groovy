@@ -16,7 +16,7 @@ class DB2Table extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof DB2Connection))
-            throw new ExceptionGETL('Сonnection to DB2Connection class is allowed!')
+            throw new ExceptionGETL('Connection to DB2Connection class is allowed!')
 
         super.setConnection(value)
     }

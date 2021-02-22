@@ -81,7 +81,7 @@ class RepositorySave extends Getl {
         if (FileUtils.IsResourceFileName(repositoryStorageManager.storagePath))
             throw new ExceptionDSL('The repository path cannot be resource path!')
 
-        repositoryStorageManager { autoLoadFromStorage = true }
+        //repositoryStorageManager { autoLoadFromStorage = true }
 
         try {
             def methods = [:] as Map<String, List<MethodParams>>
@@ -240,7 +240,6 @@ class RepositorySave extends Getl {
     /** Save connections */
     void saveConnections(String env = 'dev', String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryConnections, mask, env)
-        assert listConnections(mask).size() == count, 'Connection saving error!'
         logInfo "For environment \"$env\" $count connections saved"
     }
 
@@ -256,7 +255,6 @@ class RepositorySave extends Getl {
             }
         }
         def count = repositoryStorageManager.saveRepository(RepositoryDatasets, mask)
-        assert listDatasets(mask).size() == count, 'Dataset saving error!'
         logInfo "$count datasets saved"
     }
 
@@ -340,21 +338,18 @@ class RepositorySave extends Getl {
     /** Save file managers */
     void saveFiles(String env = 'dev', String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryFilemanagers, mask, env)
-        assert listFilemanagers(mask).size() == count, 'File manager saving error!'
         logInfo "For environment \"$env\" $count file managers saved"
     }
 
     /** Save history point managers */
     void saveHistorypoints(String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryHistorypoints, mask)
-        assert listHistorypoints(mask).size() == count, 'History point saving error!'
         logInfo "$count history point managers saved"
     }
 
     /** Save sequences */
     void saveSequences(String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositorySequences, mask)
-        assert listSequences(mask).size() == count, 'Sequence saving error!'
         logInfo "$count sequences saved"
     }
 
@@ -362,7 +357,6 @@ class RepositorySave extends Getl {
     void saveReferenceFiles(String mask = null) {
         Dsl {
             def count = repositoryStorageManager.saveRepository(RepositoryReferenceFiles, mask)
-            assert models.listReferenceFiles(mask).size() == count, 'Model of reference file saving error!'
             logInfo "$count model of reference files saved"
         }
     }
@@ -370,28 +364,24 @@ class RepositorySave extends Getl {
     /** Save model of reference Vertica tables */
     void saveReferenceVerticaTables(String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryReferenceVerticaTables, mask)
-        assert models.listReferenceVerticaTables(mask).size() == count, 'Model of reference Vertica table saving error!'
         logInfo "$count models of reference Vertica tables saved"
     }
 
     /** Save model of monitoring rules */
     void saveMonitorRules(String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryMonitorRules, mask)
-        assert models.listMonitorRules(mask).size() == count, 'Model of monitor rules saving error!'
         logInfo "$count model of monitoring rules saved"
     }
 
     /** Save models of set tables */
     void saveSetOfTables(String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositorySetOfTables, mask)
-        assert models.listSetOfTables(mask).size() == count, 'Model of set tables saving error!'
         logInfo "$count models of tablesets saved"
     }
 
     /** Save models of map tables */
     void saveMapTables(String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryMapTables, mask)
-        assert models.listMapTables(mask).size() == count, 'Model of map tables saving error!'
         logInfo "$count models of map tables saved"
     }
 }

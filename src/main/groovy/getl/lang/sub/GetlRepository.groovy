@@ -8,10 +8,10 @@ import getl.lang.Getl
  * @author Alexsey Konstantinov
  */
 interface GetlRepository {
-    /** Name in Getl Dsl reposotory */
+    /** Name in Getl Dsl repository */
     @JsonIgnore
     String getDslNameObject()
-    /** Name in Getl Dsl reposotory */
+    /** Name in Getl Dsl repository */
     void setDslNameObject(String value)
 
     /** Getl creator */

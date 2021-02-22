@@ -1,10 +1,8 @@
 package getl.transform
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import groovy.transform.InheritConstructors
 import getl.data.Connection
 import getl.data.Dataset
-import getl.utils.*
 
 /**
  * Multiple dataset writer class
@@ -14,7 +12,7 @@ import getl.utils.*
 class MultipleDataset extends Dataset {
 	MultipleDataset () {
 		super()
-		connection = new Connection([driver: MutlipleDatasetDriver])
+		connection = new Connection([driver: MultipleDatasetDriver])
 	}
 
 	@Override
@@ -25,7 +23,7 @@ class MultipleDataset extends Dataset {
 	}
 	
 	/**
-	 * Destinition datasets (alias:dataset)
+	 * Destination datasets (alias:dataset)
 	 * @return
 	 */
 	Map<String, Dataset> getDest () { params.dest as Map<String, Dataset> }

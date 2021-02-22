@@ -9,6 +9,7 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
+@SuppressWarnings('SpellCheckingInspection')
 class RepositoryFilemanagers extends RepositoryObjects<Manager> {
     static public final String FILEMANAGER = 'getl.files.FileManager'
     static public final String FTPMANAGER = 'getl.files.FTPManager'
@@ -30,8 +31,8 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
     }
 
     @Override
-    Map exportConfig(GetlRepository repobj) {
-        return [manager: repobj.class.name] + ((repobj as Manager).params)
+    Map exportConfig(GetlRepository repObj) {
+        return [manager: repObj.class.name] + ((repObj as Manager).params)
     }
 
     @Override
@@ -45,8 +46,8 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
     @Override
     protected void initRegisteredObject(Manager obj) {
         if (dslCreator.options.fileManagerLoggingPath != null) {
-            def objname = ParseObjectName.Parse(obj.dslNameObject)
-            obj.scriptHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.fileManagerLoggingPath + '/' + objname.toFileName() + "/${dslCreator.configuration.environment}.{date}.txt")
+            def objName = ParseObjectName.Parse(obj.dslNameObject)
+            obj.scriptHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.fileManagerLoggingPath + '/' + objName.toFileName() + "/${dslCreator.configuration.environment}.{date}.txt")
         }
     }
 }

@@ -16,7 +16,7 @@ class NetsuiteTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof NetsuiteConnection))
-            throw new ExceptionGETL('Сonnection to NetsuiteConnection class is allowed!')
+            throw new ExceptionGETL('Connection to NetsuiteConnection class is allowed!')
 
         super.setConnection(value)
     }

@@ -11,6 +11,7 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
+@SuppressWarnings('SpellCheckingInspection')
 class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
     static public final String SEQUENCE = Sequence.name
 
@@ -28,8 +29,8 @@ class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
     }
 
     @Override
-    Map exportConfig(GetlRepository repobj) {
-        def obj = repobj as Sequence
+    Map exportConfig(GetlRepository repObj) {
+        def obj = repObj as Sequence
         if (obj.connection == null)
             throw new ExceptionDSL("No connection specified for sequence \"${obj.dslNameObject}\"!")
         if (obj.connection.dslNameObject == null)

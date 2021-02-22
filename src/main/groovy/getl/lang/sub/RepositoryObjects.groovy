@@ -62,11 +62,12 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * Return list of repository objects for specified mask, classes and filter
      * @param mask filter mask (use Path expression syntax)
      * @param classes list of required classes to search
+     * @param loadFromStorage load objects to the repository from the repository
      * @param filter object filtering code
      * @return list of names repository objects according to specified conditions
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
-    List<String> list(String mask = null, List<String> classes = null,
+    List<String> list(String mask = null, List<String> classes = null, Boolean loadFromStorage = true,
                       @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
                             Closure<Boolean> filter = null) {
         (classes as List<String>)?.each {
@@ -74,24 +75,31 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                 throw new ExceptionDSL("\"$it\" is not a supported class for $typeObject!")
         }
 
+        dslCreator.repositoryStorageManager.with {
+            if (loadFromStorage && autoLoadForList && autoLoadFromStorage && storagePath != null)
+                loadRepository(this.getClass(), mask)
+
+            return true
+        }
+
         def res = [] as List<String>
 
-        def masknames = dslCreator.parseName(mask)
-        def maskgroup = masknames.groupName
-        def maskobject = masknames.objectName
-        def grouppath = (maskgroup != null)?new Path(mask: maskgroup):null
-        def objectpath = (maskobject != null)?new Path(mask: maskobject):null
+        def maskNames = dslCreator.parseName(mask)
+        def maskGroup = maskNames.groupName
+        def maskObject = maskNames.objectName
+        def groupPath = (maskGroup != null)?new Path(mask: maskGroup):null
+        def objectPath = (maskObject != null)?new Path(mask: maskObject):null
 
         synchronized (objects) {
             objects.each { name, obj ->
                 def names = new ParseObjectName(name)
-                if (grouppath != null) {
-                    if (grouppath.match(names.groupName))
-                        if (objectpath == null || objectpath.match(names.objectName))
+                if (groupPath != null) {
+                    if (groupPath.match(names.groupName))
+                        if (objectPath == null || objectPath.match(names.objectName))
                             if (classes == null || obj.getClass().name in classes)
                                 if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
                 } else {
-                    if (objectpath == null || (names.groupName == null && objectpath.match(names.objectName)))
+                    if (objectPath == null || (names.groupName == null && objectPath.match(names.objectName)))
                         if (classes == null || obj.getClass().name in classes)
                             if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
                 }
@@ -99,6 +107,41 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         }
 
         return res
+    }
+
+    /**
+     * Return list of repository objects for specified mask, classes and filter
+     * @param mask filter mask (use Path expression syntax)
+     * @param classes list of required classes to search
+     * @param filter object filtering code
+     * @return list of names repository objects according to specified conditions
+     */
+    List<String> list(String mask, List<String> classes,
+                      @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
+                              Closure<Boolean> filter) {
+        return list(mask, classes, true, filter)
+    }
+
+    /**
+     * Return list of repository objects for specified mask, classes and filter
+     * @param mask filter mask (use Path expression syntax)
+     * @param filter object filtering code
+     * @return list of names repository objects according to specified conditions
+     */
+    List<String> list(String mask,
+                      @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
+                              Closure<Boolean> filter) {
+        return list(mask, null, true, filter)
+    }
+
+    /**
+     * Return list of repository objects for specified mask, classes and filter
+     * @param filter object filtering code
+     * @return list of names repository objects according to specified conditions
+     */
+    List<String> list(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
+                              Closure<Boolean> filter) {
+        return list(null, null, true, filter)
     }
 
     /**
@@ -263,9 +306,9 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         def repName = dslCreator.repObjectName(name, registration)
         if (!registration && isThread) {
             def thread = Thread.currentThread() as ExecutorThread
-            def threadobj = thread.findDslCloneObject(nameCloneCollection, repName) as T
-            if (threadobj != null)
-                return threadobj
+            def threadObj = thread.findDslCloneObject(nameCloneCollection, repName) as T
+            if (threadObj != null)
+                return threadObj
         }
 
         T obj
@@ -312,7 +355,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
 
         if (isThread) {
             def thread = Thread.currentThread() as ExecutorThread
-            def threadobj = thread.registerCloneObject(nameCloneCollection, obj,
+            def threadObj = thread.registerCloneObject(nameCloneCollection, obj,
                     {
                         def par = it as T
                         def c = cloneObject(par)
@@ -322,8 +365,8 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                     }
             ) as T
 
-            processRegisterObject(creator, className, name, registration, obj, threadobj, params)
-            obj = threadobj
+            processRegisterObject(creator, className, name, registration, obj, threadObj, params)
+            obj = threadObj
         }
         else {
             processRegisterObject(creator, className, name, registration, obj, null, params)
@@ -341,7 +384,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     void unregister(String mask = null, List<String> classes = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
                                       Closure<Boolean> filter = null) {
-        def list = list(mask, classes, filter)
+        def list = list(mask, classes, false, filter)
         list.each { name ->
             objects.remove(name)?.dslCleanProps()
         }
@@ -352,7 +395,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param creator object creator
      */
     void releaseTemporary(Getl creator = null) {
-        def list = list('#*')
+        def list = list('#*', null, false)
         list.each { name ->
             def obj = objects.get(name)
             if (creator == null || obj.dslCreator == creator)
@@ -364,14 +407,15 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * Process repository objects for specified mask and class
      * @param mask filter mask (use Path expression syntax)
      * @param classes list of need classes
+     * @param loadFromStorage load objects to the repository from the repository
      * @param cl processing code
      */
-    void processObjects(String mask, List<String> classes,
+    void processObjects(String mask, List<String> classes, Boolean loadFromStorage,
                         @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         if (cl == null)
             throw new ExceptionDSL('Process required closure code!')
 
-        def list = list(mask, classes)
+        def list = list(mask, classes, loadFromStorage).sort(true) { it.toLowerCase() }
         list.each { name ->
             cl.call(name)
         }
@@ -383,9 +427,20 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param classes list of need classes
      * @param cl processing code
      */
+    void processObjects(String mask, List<String> classes,
+                        @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processObjects(mask, classes, true, cl)
+    }
+
+    /**
+     * Process repository objects for specified mask and class
+     * @param mask filter mask (use Path expression syntax)
+     * @param classes list of need classes
+     * @param cl processing code
+     */
     void processObjects(String mask,
                         @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
-        processObjects(mask, null, cl)
+        processObjects(mask, null, false, cl)
     }
 
     /**

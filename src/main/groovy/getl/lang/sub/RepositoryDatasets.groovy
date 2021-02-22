@@ -43,6 +43,7 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
+@SuppressWarnings('SpellCheckingInspection')
 class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     static public final String CSVDATASET = CSVDataset.name
     static public final String CSVTEMPDATASET = TFSDataset.name
@@ -117,8 +118,8 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     }
 
     @Override
-    Map exportConfig(GetlRepository repobj) {
-        def obj = repobj as Dataset
+    Map exportConfig(GetlRepository repObj) {
+        def obj = repObj as Dataset
         if (obj.connection == null)
             throw new ExceptionDSL("No connection specified for dataset \"${obj.dslNameObject}\"!")
 

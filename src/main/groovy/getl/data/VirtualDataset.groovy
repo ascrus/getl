@@ -11,9 +11,9 @@ import getl.utils.*
  */
 @InheritConstructors
 class VirtualDataset extends Dataset {
-	/** Destinition dataset */
+	/** Destination dataset */
     Dataset getDest () { params.dest as Dataset }
-	/** Destinition dataset */
+	/** Destination dataset */
     void setDest (Dataset value) { params.dest = value }
 	
 	@Override

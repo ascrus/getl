@@ -5,6 +5,7 @@ import getl.data.Connection
 import getl.data.Dataset
 import getl.exception.ExceptionGETL
 import getl.lang.sub.UserLogins
+import getl.utils.sub.LoginManager
 
 /**
  * SalesForce Connection class
@@ -93,17 +94,23 @@ class SalesForceConnection extends Connection implements UserLogins {
     void setBatchSize(Integer value) { params.batchSize = value }
 
 	@Override
+	protected Class<Dataset> getDatasetClass() { SalesForceDataset }
+
+	/** Logins manager */
+	private LoginManager loginManager = new LoginManager(this)
+
+	@Override
 	void useLogin(String user) {
-		if (!storedLogins.containsKey(user))
-			throw new ExceptionGETL("User \"$user\" not found in in configuration!")
-
-		def pwd = storedLogins.get(user)
-
-		if (login != user && connected) connected = false
-		login = user
-		password = pwd
+		loginManager.useLogin(user)
 	}
 
 	@Override
-	protected Class<Dataset> getDatasetClass() { SalesForceDataset }
+	void switchToNewLogin(String user) {
+		loginManager.switchToNewLogin(user)
+	}
+
+	@Override
+	void switchToPreviousLogin() {
+		loginManager.switchToPreviousLogin()
+	}
 }

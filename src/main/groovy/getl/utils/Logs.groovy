@@ -50,6 +50,7 @@ class Logs {
 	 *     <li>{shortdatetime} - the current date and time in the format "yyyy-MM-dd_HH"</li>
 	 * </ul>
 	 */
+	@SuppressWarnings('SpellCheckingInspection')
 	static public String logFileName
 	
 	/** Log file handler */
@@ -61,42 +62,42 @@ class Logs {
 	/** Config messages to be written after initialization log */
 	protected static final List<String> InitMessages = [] as List<String>
 	
-	/** Eventer on call write to log, has parameters String level, Date time, String message */
-	static private final List<Closure> eventers = [] as List<Closure>
+	/** Event on call write to log, has parameters String level, Date time, String message */
+	static private final List<Closure> events = [] as List<Closure>
 
 	/** Print stack trace for error */
 	static public Boolean printStackTraceError = true
 	
 	/**
-	 * Register eventer, closure has parameters String level, Date time, String message
-	 * @param eventer event code
+	 * Register event, closure has parameters String level, Date time, String message
+	 * @param event event code
 	 */
-	static void registerEventer (Closure eventer) {
-		if (eventer == null) throw new ExceptionGETL("Eventer must be not null")
-		eventers << eventer
+	static void registerEvent(Closure event) {
+		if (event == null) throw new ExceptionGETL("Event must be not null!")
+		events << event
 	}
 	
 	/**
-	 * Unregister eventer
-	 * @param eventer event code
-	 * @return sucess unregistered
+	 * Unregister event
+	 * @param event event code
+	 * @return success unregistered
 	 */
-	static Boolean unregisterEventer (Closure eventer) {
-		if (eventer == null) throw new ExceptionGETL("Eventer must be not null")
-		eventers.remove(eventer)
+	static Boolean unregisterEvent(Closure event) {
+		if (event == null) throw new ExceptionGETL("Event must be not null!")
+		events.remove(event)
 	}
 
 	static private Object operationLock = new Object()
 	
 	/**
-	 * Call eventers
+	 * Call events
 	 * @param level
 	 * @param time
 	 * @param message
 	 */
 	@Synchronized
-	protected static void event (Level level, String message) {
-		eventers.each { Closure eventer -> eventer(level.toString(), DateUtils.Now(), message) }
+	protected static void event(Level level, String message) {
+		events.each { Closure event -> event.call(level.toString(), DateUtils.Now(), message) }
 	}
 	
 	/**
@@ -487,10 +488,10 @@ class Logs {
 			if (logger.handlers.size() == 0) InitMessages << message else Write(Level.CONFIG, message)
 	}
 	
-	/** Standart console output */
-	static private PrintStream standartConsole = System.out
+	/** Standard console output */
+	static private PrintStream standardConsole = System.out
 	
-	/** Standart console error */
+	/** Standard console error */
 	static private PrintStream errConsole = System.err
 	
 	/** Output console file name */
@@ -506,7 +507,7 @@ class Logs {
 	static private PrintStream errStream
 	
 	/**
-	 * Redirect output console to file or standart
+	 * Redirect output console to file or standard
 	 * @param fileName path to console information output file (if null then the standard console is assigned)
 	 */
 	static void RedirectStdOut(String fileName) {
@@ -519,15 +520,15 @@ class Logs {
 			outStream = ps
 		}
 		else if (outFileName != null) {
-			println "Redirect console out to standart"
-			System.setOut(standartConsole)
+			println "Redirect console out to standard ..."
+			System.setOut(standardConsole)
 			outFileName = null
 			outStream = null
 		}
 	}
 
 	/**
-	 * Redirect errors console to file or standart
+	 * Redirect errors console to file or standard
 	 * @param fileName path to console information output file (if null then the standard console is assigned)
 	 */
 	static void RedirectErrOut(String fileName) {
@@ -540,7 +541,7 @@ class Logs {
 			errStream = ps
 		}
 		else if (errFileName != null) {
-			println "Redirect error out to standart"
+			println "Redirect error out to standard"
 			System.setErr(errConsole)
 			errFileName = null
 			errStream = null

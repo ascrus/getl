@@ -11,7 +11,6 @@ import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
 import getl.lang.sub.RepositoryHistorypoints
-import getl.lang.sub.RepositorySave
 import getl.lang.sub.RepositorySequences
 import getl.test.Config
 import getl.test.TestDsl
@@ -66,9 +65,9 @@ class RepositoryTest extends TestDsl {
         assertEquals(1, rep.list(null, [RepositoryConnections.H2CONNECTION]).size())
         assertEquals(0, rep.list(null, [RepositoryConnections.CSVCONNECTION]).size())
 
-        assertEquals(1, rep.list(null, null) { n, c -> n == 'group:con' }.size() )
-        assertEquals(1, rep.list(null, null) { n, c -> c == con }.size() )
-        assertEquals(0, rep.list(null, null) { n, c -> !(c instanceof H2Connection) }.size() )
+        assertEquals(1, rep.list() { n, c -> n == 'group:con' }.size() )
+        assertEquals(1, rep.list() { n, c -> c == con }.size() )
+        assertEquals(0, rep.list() { n, c -> !(c instanceof H2Connection) }.size() )
 
         Getl.Dsl {
             thread {
@@ -424,6 +423,7 @@ class RepositoryTest extends TestDsl {
             repositoryStorageManager {
                 saveRepositories()
                 clearRepositories()
+                autoLoadForList = false
             }
             assertTrue(listConnections().isEmpty())
             assertTrue(listDatasets().isEmpty())
@@ -442,7 +442,8 @@ class RepositoryTest extends TestDsl {
             }
 
             repositoryStorageManager {
-                loadRepositories()
+                //loadRepositories()
+                autoLoadForList = true
             }
             assertEquals(4, listConnections().size)
             assertEquals(7, listDatasets().size)
@@ -655,6 +656,8 @@ class RepositoryTest extends TestDsl {
         Getl.Dsl {
             configuration.load repConfigFileName
             repositoryStorageManager {
+                autoLoadFromStorage = false
+                autoLoadForList = false
                 storagePath = 'resource:/repository'
                 loadRepositories()
             }
@@ -812,6 +815,7 @@ class RepositoryTest extends TestDsl {
             repositoryStorageManager {
                 storagePath = 'resource:/repository'
                 autoLoadFromStorage = true
+                autoLoadForList = false
                 assertNotNull(embeddedConnection('h2:con'))
                 assertNotNull(jdbcTable('h2:table1'))
                 loadRepositories()
@@ -827,6 +831,10 @@ class RepositoryTest extends TestDsl {
                         assertNotNull(jdbcTable('h2:table1'))
                     }
                 }
+
+                autoLoadForList = true
+                clearRepositories()
+                assertEquals(3, listJdbcConnections().size())
             }
         }
     }

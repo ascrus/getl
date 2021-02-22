@@ -16,7 +16,7 @@ class PostgreSQLTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof PostgreSQLConnection))
-            throw new ExceptionGETL('Сonnection to PostgreSQLConnection class is allowed!')
+            throw new ExceptionGETL('Connection to PostgreSQLConnection class is allowed!')
 
         super.setConnection(value)
     }

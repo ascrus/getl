@@ -26,7 +26,7 @@ class FileDriver extends Driver {
 		methodParams.register('retrieveObjects', ['directory', 'mask', 'type', 'sort', 'recursive'])
 		methodParams.register('eachRow', ['append', 'codePage'])
 		methodParams.register('openWrite', ['append', 'codePage', 'createPath', 'deleteOnEmpty',
-											'avaibleAfterWrite'])
+											'availableAfterWrite'])
 	}
 
 	@Override
@@ -295,7 +295,7 @@ class FileDriver extends Driver {
 	protected Writer getFileWriter (FileDataset dataset, Map params, Integer portion = null) {
 		def wp = getDatasetParams(dataset, params, portion)
 
-		if (BoolUtils.IsValue(params.avaibleAfterWrite) && (portion?:0) > 1) {
+		if (BoolUtils.IsValue(params.availableAfterWrite) && (portion?:0) > 1) {
 			def opt = dataset.writtenFiles[portion - 2]
 			fixTempFile(dataset, opt)
 		}

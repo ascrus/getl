@@ -58,9 +58,8 @@ class YAMLDriver extends FileDriver {
         sb << '@groovy.transform.CompileStatic\n'
         sb << 'void proc(getl.yaml.YAMLDataset dataset, Closure code, Object data, Integer limit) {\n'
 
-        def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,
-                'Map', true, dataset.dataNode, 'struct',
-                'row', 0, 1)
+        def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,'Map', true,
+                dataset.dataNode, 'struct','row', 0, 1, true)
         sb << genScript.head
 
         sb << "def cur = 0L\n"

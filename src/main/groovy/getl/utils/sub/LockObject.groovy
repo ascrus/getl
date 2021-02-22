@@ -9,9 +9,9 @@ import groovy.transform.CompileStatic
  */
 @CompileStatic
 class LockObject {
-    /** last  readed time */
+    /** last reading time */
     private Date lastWorkTime
-    /** last  readed time */
+    /** last reading time */
     Date getLastWorkTime() { lastWorkTime }
 
     /** Count reader */

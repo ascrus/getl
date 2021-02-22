@@ -363,9 +363,9 @@ class VerticaTable extends TableDataset {
      * @param sourceTable source table to copy structure
      * @param ifNotExists create a table if it does not exist
      * @param inheritProjections copy projections from the source table
-     * @param inheritePrivelegesSchema the table inherits privileges that are set on its schema
+     * @param inheritedPrivilegesSchema the table inherits privileges that are set on its schema
      */
-    void createLike(VerticaTable sourceTable, Boolean ifNotExists = false, Boolean inheritProjections = false, Boolean inheritePrivelegesSchema = false) {
+    void createLike(VerticaTable sourceTable, Boolean ifNotExists = false, Boolean inheritProjections = false, Boolean inheritedPrivilegesSchema = false) {
         validTableName()
 
         if (sourceTable == null)
@@ -379,7 +379,7 @@ class VerticaTable extends TableDataset {
         p.source = sourceTable.fullTableName
         p.exists = (ifNotExists)?'IF NOT EXISTS':''
         p.proj = (inheritProjections)?'INCLUDING PROJECTIONS':'EXCLUDING PROJECTIONS'
-        p.grant = (inheritePrivelegesSchema)?'INCLUDE SCHEMA PRIVILEGES':'EXCLUDE SCHEMA PRIVILEGES'
+        p.grant = (inheritedPrivilegesSchema)?'INCLUDE SCHEMA PRIVILEGES':'EXCLUDE SCHEMA PRIVILEGES'
         currentVerticaConnection.executeCommand('CREATE TABLE {exists} {table} LIKE {source} {proj} {grant}', [queryParams: p])
     }
 

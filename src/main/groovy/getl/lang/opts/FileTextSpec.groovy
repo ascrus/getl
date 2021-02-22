@@ -48,6 +48,7 @@ class FileTextSpec extends BaseSpec {
     Long getCountBytes() { countBytes }
 
     /** Write text buffer to file */
+    @SuppressWarnings('SpellCheckingInspection')
     void save() {
         if (fileName == null && !temporaryFile) throw new ExceptionGETL("Required \"fileName\" value!")
         File file

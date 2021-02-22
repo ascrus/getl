@@ -279,6 +279,7 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
     /**
      * Fill table with data from reference table
      */
+    @SuppressWarnings('SpellCheckingInspection')
     Boolean fillFromReferenceTable() {
         def sourceTable = referenceTable as VerticaTable
         def destTable = workTable as VerticaTable

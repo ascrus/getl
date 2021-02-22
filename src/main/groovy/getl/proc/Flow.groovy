@@ -25,8 +25,9 @@ class Flow {
 				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams',
 				 'autoMap', 'autoConvert', 'autoTran', 'clear', 'saveErrors', 'excludeFields', 'mirrorCSV',
 				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', 'onDone',
-				 'process', 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'formatDate', 'formatTime',
-				 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime', 'formatBoolean', 'formatNumeric'])
+				 'process', 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'copyOnlyWithValue',
+				 'formatDate', 'formatTime', 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime',
+				 'formatBoolean', 'formatNumeric'])
 		methodParams.register('copy.destChild',
 				['dataset', 'datasetParams', 'process', 'init', 'done'])
 
@@ -150,6 +151,9 @@ class Flow {
 	 * @param source
 	 * @param dest
 	 * @param fieldMap
+	 * @param formats
+	 * @param convertEmptyToNull
+	 * @param saveOnlyWithValue
 	 * @param autoConvert
 	 * @param excludeFields
 	 * @param notConverted
@@ -157,7 +161,9 @@ class Flow {
 	 * @param result
 	 * @return
 	 */
-	static private String GenerateMap(Dataset source, Dataset dest, Map fieldMap, Map formats, Boolean convertEmptyToNull, Boolean autoConvert, List<String> excludeFields, List<String> notConverted, String cacheName, Map result) {
+	static private String GenerateMap(Dataset source, Dataset dest, Map fieldMap, Map formats, Boolean convertEmptyToNull,
+									  Boolean saveOnlyWithValue, Boolean autoConvert, List<String> excludeFields,
+									  List<String> notConverted, String cacheName, Map result) {
 		def countMethod = (dest.field.size() / 100).intValue() + 1
 		def curMethod = 0
 
@@ -253,14 +259,13 @@ class Flow {
 				// Assign value
 				String sn = s.name.toLowerCase().replace("'", "\\'")
 				dn = dn.replace("'", "\\'")
-				if (df.type == s.type || !convert) {
+				if ((df.type == s.type || !convert) && !saveOnlyWithValue) {
 					sb << "outRow.put('${dn}', inRow.get('${sn}'))"
 				}
 				else {
-					sb << "outRow.put('${dn}', "
 					sb << GenerationUtils.GenerateConvertValue(dest: df, source: s, format: mapFormat,
-							convertEmptyToNull: convertEmptyToNull, value: "inRow.get('${sn}')")
-					sb << ')'
+							convertEmptyToNull: convertEmptyToNull, saveOnlyWithValue: saveOnlyWithValue,
+							sourceMap: 'inRow', sourceValue: '"' + sn + '"', destMap: 'outRow')
 				}
 				destFields << df.name
 				sourceFields << s.name
@@ -450,6 +455,7 @@ class Flow {
 		formats.formatNumeric = params.formatNumeric as String
 
 		def convertEmptyToNull = BoolUtils.IsValue(params.convertEmptyToNull)
+		def copyOnlyWithValue = BoolUtils.IsValue(params.copyOnlyWithValue)
 
 		if (isSaveErrors) errorsDataset = TFS.dataset()
 
@@ -516,7 +522,8 @@ class Flow {
 		def initDest = {
 			List<String> result = []
 			if (autoMap) {
-				scriptMap = GenerateMap(source, writer, map, formats, convertEmptyToNull, autoConvert, excludeFields, notConverted, cacheName, generateResult)
+				scriptMap = GenerateMap(source, writer, map, formats, convertEmptyToNull, copyOnlyWithValue, autoConvert,
+										excludeFields, notConverted, cacheName, generateResult)
 				auto_map_code = generateResult.code as Closure
 				result = generateResult.destFields as List<String>
 			}

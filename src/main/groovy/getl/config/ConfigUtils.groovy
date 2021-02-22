@@ -6,7 +6,7 @@ import getl.utils.Logs
 import getl.utils.MapUtils
 
 /**
- * Migrate configuration file utilite
+ * Migrate configuration file utilities
  * @author Alexsey Konstantinov
  *
  */

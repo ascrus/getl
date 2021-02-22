@@ -25,7 +25,7 @@ class HiveTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof HiveConnection))
-            throw new ExceptionGETL('Сonnection to HiveConnection class is allowed!')
+            throw new ExceptionGETL('Connection to HiveConnection class is allowed!')
 
         super.setConnection(value)
     }

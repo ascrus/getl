@@ -11,6 +11,7 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
+@SuppressWarnings('SpellCheckingInspection')
 class RepositoryHistorypoints extends RepositoryObjectsWithConnection<SavePointManager> {
     static public final String SAVEPOINTMANAGER = SavePointManager.name
 
@@ -28,8 +29,8 @@ class RepositoryHistorypoints extends RepositoryObjectsWithConnection<SavePointM
     }
 
     @Override
-    Map exportConfig(GetlRepository repobj) {
-        def obj = repobj as SavePointManager
+    Map exportConfig(GetlRepository repObj) {
+        def obj = repObj as SavePointManager
         if (obj.connection == null)
             throw new ExceptionDSL("No connection specified for history point \"${obj.dslNameObject}\"!")
         if (obj.connection.dslNameObject == null)

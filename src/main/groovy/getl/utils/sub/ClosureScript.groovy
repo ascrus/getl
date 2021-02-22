@@ -3,7 +3,7 @@ package getl.utils.sub
 import groovy.transform.CompileStatic
 
 /**
- * Сonvert closure to script object
+ * Converter closure to script object
  * @author Alexsey Konstantonov
  *
  */

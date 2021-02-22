@@ -189,7 +189,7 @@ class Config {
     }
 	
 	/**
-	 * Run every eventer after load config files
+	 * Run every event subscriber after load config files
 	 */
 	@Synchronized
 	static void DoInitEvent () {

@@ -40,7 +40,7 @@ SQLScripter config.filename=<Config file name> connection=<Connection name> scri
   }
 }
 
-*** Avaible connection classes:
+*** Available connection classes:
 getl.h2.H2Connection
 getl.mssql.MSSQLConnection
 getl.mysql.MySQLConnection

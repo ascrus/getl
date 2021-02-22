@@ -300,13 +300,13 @@ class MapUtils {
 			return
 		}
 		def c = added as Map<String, Object>
-        def subsource = source.get(key) as Map<String, Object>
-        if (subsource == null) {
-            subsource = [:] as Map<String, Object>
-            source.put(key, subsource)
+        def subSource = source.get(key) as Map<String, Object>
+        if (subSource == null) {
+            subSource = [:] as Map<String, Object>
+            source.put(key, subSource)
         }
-		c.each { String subkey, value ->
-			MergeMapChildren(subsource, value, subkey, existUpdate, mergeList)
+		c.each { String subKey, value ->
+			MergeMapChildren(subSource, value, subKey, existUpdate, mergeList)
 		}
 	}
 
@@ -557,14 +557,14 @@ class MapUtils {
 
     /**
      * Convert XML node children to Map object
-     * @param childrens
+     * @param children
      * @return
      */
 	@CompileDynamic
-	static private Map<String, Object> XmlChildren2Map(def childrens) {
+	static private Map<String, Object> XmlChildren2Map(def children) {
 		def res = [:] as Map<String, Object>
 
-		childrens.each { def node ->
+		children.each { def node ->
 			try {
 				def name = node.name().localPart as String
 

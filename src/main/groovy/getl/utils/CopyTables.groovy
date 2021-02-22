@@ -14,7 +14,7 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
- * Copyes tables data from source to destination
+ * Copies tables data from source to destination
  * @author Aleksey Konstantinov
  */
 class CopyTables extends Job {
@@ -48,10 +48,10 @@ class CopyTables extends Job {
             return
         }
 
-        def copyes = (Config.content.tables as Map<String, String>)
+        def copies = (Config.content.tables as Map<String, String>)
         def rule = new QueryDataset(connection: source)
         def totalCount = 0
-        copyes.each { name, sql ->
+        copies.each { name, sql ->
             if (name.substring(0, 1) == '_') {
                 Logs.Warning("Skip rule \"$name\"")
                 return

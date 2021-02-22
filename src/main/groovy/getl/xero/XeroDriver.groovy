@@ -246,6 +246,7 @@ class XeroDriver extends Driver {
             [objectName: 'User', listName: 'Users', pk: ['UserID']]
     ]
 
+    @SuppressWarnings('SpellCheckingInspection')
     private def static objectScripts = [
             ContactBalance: '''
         if (limit > 0 && res > limit) return
@@ -362,8 +363,8 @@ class XeroDriver extends Driver {
         parentPK?.each { String fieldName ->
             def field = res.find { it.name == fieldName }
             if (field == null) {
-                def avaibleFields = res*.name
-                throw new ExceptionGETL("Primary key \"$fieldName\" for \"$ds.xeroObjectName\" not found, current fields: $avaibleFields!")
+                def availableFields = res*.name
+                throw new ExceptionGETL("Primary key \"$fieldName\" for \"$ds.xeroObjectName\" not found, current fields: $availableFields!")
             }
 
             pkOrd++

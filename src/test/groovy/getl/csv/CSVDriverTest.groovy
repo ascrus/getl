@@ -335,7 +335,8 @@ class CSVDriverTest extends GetlTest {
         ds2.field('Value') { type = numericFieldType; precision = 2 }
         new Flow().copy(source: ds1, dest: ds2,
                 map: [result_time: 'result time', flag: 'flag;format=yes|no'],
-                formatDate: 'dd.MM.yyyy', formatNumeric: 'report_with_comma', convertEmptyToNull: true
+                formatDate: 'dd.MM.yyyy', formatNumeric: 'report_with_comma',
+                convertEmptyToNull: true, copyOnlyWithValue: true
         )
 
         def text2 = new File(ds2.fullFileName()).text
@@ -423,7 +424,7 @@ class CSVDriverTest extends GetlTest {
                 field('name')
                 writeOpts {
                     batchSize = 0
-                    avaibleAfterWrite = true
+                    availableAfterWrite = true
                     splitFile { true }
                     deleteOnEmpty = true
                 }

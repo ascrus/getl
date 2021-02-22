@@ -22,7 +22,8 @@ class StringUtils {
 		'time': DateUtils.NowTime(),		//HH-mm-ss
 		'datetime': DateUtils.NowDateTime()	//yyyy-MM-dd HH:mm:ss
 	]
-	
+
+	@SuppressWarnings('SpellCheckingInspection')
 	static public final MACROS_FILE = [
 		'date': DateUtils.FormatDate("yyyy-MM-dd", DateUtils.Now()), 				//yyyy-MM-dd
 		'monthdate': DateUtils.FormatDate("yyyy-MM", DateUtils.Now()), 				//yyyy-MM
@@ -213,13 +214,17 @@ class StringUtils {
 	}
 
 	/** Escape sequence coding mapping */
+	@SuppressWarnings('SpellCheckingInspection')
 	static public final Map ESCAPEKEYS = ['\\': '\\\\', '"': '\\"', '\'': '\\\'', '\n': '\\n', '\r': '\\r']
 	/** Escape sequence coding pattern */
+	@SuppressWarnings('SpellCheckingInspection')
 	static public final Pattern ESCAPEPATTERN = SearchManyPattern(ESCAPEKEYS)
 
 	/** Escape sequence decoding mapping */
+	@SuppressWarnings('SpellCheckingInspection')
 	static public final Map UNESCAPEKEYS = ['\\\\': '\\', '\\"': '"', '\\\'': '\'', '\\n': '\n', '\\r':'\r']
 	/** Escape sequence decoding pattern */
+	@SuppressWarnings('SpellCheckingInspection')
 	static public final Pattern UNESCAPEPATTERN = SearchManyPattern(UNESCAPEKEYS)
 
 	/**
@@ -643,7 +648,7 @@ class StringUtils {
 					}
 				}
 
-				s = s.replace('\\', '\\\\')
+				s = s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$')
 				s = b + '"' + s + '"' + e
 			}
 
@@ -691,7 +696,7 @@ class StringUtils {
 	static String Decrypt(String text, String password) {
 		if (text == null) return null
 		if (password == null || password.length() < 16)
-			throw new ExceptionGETL('Invalid passsword value!')
+			throw new ExceptionGETL('Invalid password value!')
 
 		def l = password.length()
 		if ((l % 8) != 0) {

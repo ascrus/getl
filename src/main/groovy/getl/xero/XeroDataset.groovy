@@ -15,7 +15,7 @@ class XeroDataset extends Dataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof XeroConnection))
-            throw new ExceptionGETL('Сonnection to XeroConnection class is allowed!')
+            throw new ExceptionGETL('Connection to XeroConnection class is allowed!')
 
         super.setConnection(value)
     }

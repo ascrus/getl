@@ -22,7 +22,7 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 	
 	@Override
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
-		Dataset ds = getDestinition(dataset)
+		Dataset ds = getDestination(dataset)
 		def fieldOrderBy = getFieldOrderBy(dataset)
 		
 		ds.openWrite(params)
@@ -44,7 +44,7 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 		def code = dataset._driver_params.sorter_code as Closure
 		data.sort(true, code)
 		
-		Dataset ds = getDestinition(dataset)
+		Dataset ds = getDestination(dataset)
 		data.each { Map row ->
 			ds.write(row)
 		}
@@ -53,7 +53,7 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 
 	@Override
 	void closeWrite(Dataset dataset) {
-		Dataset ds = getDestinition(dataset)
+		Dataset ds = getDestination(dataset)
 		ds.closeWrite()
 		
 		(dataset._driver_params.sorter_data as List).clear()

@@ -208,7 +208,12 @@ class FlowCopySpec extends FlowBaseSpec {
     /** Convert empty string values as null */
     Boolean getConvertEmptyToNull() { params.convertEmptyToNull as Boolean }
     /** Convert empty string values as null */
-    void setConvertEmptyToNull(String value) { params.convertEmptyToNull = value }
+    void setConvertEmptyToNull(Boolean value) { params.convertEmptyToNull = value }
+
+    /** Copy only fields with values */
+    Boolean getCopyOnlyWithValue() { params.copyOnlyWithValue as Boolean }
+    /** Copy only fields with values */
+    void setCopyOnlyWithValue(Boolean value) { params.copyOnlyWithValue = value }
 
     /** Name in cache for reusing code without generating */
     String getCacheName() { params.cacheName as String }

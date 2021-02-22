@@ -42,11 +42,11 @@ class HiveClusteredSpec extends BaseSpec {
     }
 
     /**
-     * Into buckers
+     * Into buckets
      */
     Integer getIntoBuckets() { params.intoBuckets as Integer }
     /**
-     * Into buckers
+     * Into buckets
      */
     void setIntoBuckets(Integer value) { saveParamValue('intoBuckets', value) }
 }

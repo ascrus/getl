@@ -4,7 +4,6 @@ import getl.csv.CSVConnection
 import getl.data.Connection
 import getl.db2.DB2Connection
 import getl.excel.ExcelConnection
-import getl.exception.ExceptionDSL
 import getl.firebird.FirebirdConnection
 import getl.h2.H2Connection
 import getl.hive.HiveConnection
@@ -22,8 +21,6 @@ import getl.salesforce.SalesForceConnection
 import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.utils.FileUtils
-import getl.utils.Logs
-import getl.utils.MapUtils
 import getl.vertica.VerticaConnection
 import getl.xero.XeroConnection
 import getl.xml.XMLConnection
@@ -35,7 +32,7 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-@SuppressWarnings("GrMethodMayBeStatic")
+@SuppressWarnings(['GrMethodMayBeStatic', 'SpellCheckingInspection'])
 class RepositoryConnections extends RepositoryObjects<Connection> {
     static public final String CSVCONNECTION = CSVConnection.name
     static public final String CSVTEMPCONNECTION = TFS.name
@@ -105,8 +102,8 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     }
 
     @Override
-    Map exportConfig(GetlRepository repobj) {
-        return [connection: repobj.class.name] + ((repobj as Connection).params)
+    Map exportConfig(GetlRepository repObj) {
+        return [connection: repObj.class.name] + ((repObj as Connection).params)
     }
 
     @Override
@@ -120,8 +117,8 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     @Override
     protected void initRegisteredObject(Connection obj) {
         if (obj instanceof JDBCConnection && dslCreator.options.jdbcConnectionLoggingPath != null) {
-            def objname = ParseObjectName.Parse(obj.dslNameObject)
-            (obj as JDBCConnection).sqlHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.jdbcConnectionLoggingPath + '/' + objname.toFileName() + "/${dslCreator.configuration.environment}.{date}.sql")
+            def objName = ParseObjectName.Parse(obj.dslNameObject)
+            (obj as JDBCConnection).sqlHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.jdbcConnectionLoggingPath + '/' + objName.toFileName() + "/${dslCreator.configuration.environment}.{date}.sql")
         }
     }
 }

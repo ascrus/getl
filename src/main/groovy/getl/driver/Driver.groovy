@@ -27,7 +27,8 @@ abstract class Driver {
 	
 	protected Connection connection
 
-    static enum Support {
+	@SuppressWarnings('SpellCheckingInspection')
+	static enum Support {
 		CONNECT, TRANSACTIONAL, SQL, MULTIDATABASE,
 		LOCAL_TEMPORARY, GLOBAL_TEMPORARY, MEMORY, EXTERNAL, SEQUENCE,
 		BATCH, CREATEIFNOTEXIST, DROPIFEXIST, EACHROW, WRITE,

@@ -49,11 +49,18 @@ class RepositoryStorageManager {
     }
 
     /** Autoload objects from the repository when accessing them */
-    private Boolean autoLoadFromStorage = false
+    private Boolean autoLoadFromStorage = true
     /** Autoload objects from the repository when accessing them */
     Boolean getAutoLoadFromStorage() { autoLoadFromStorage }
     /** Autoload objects from the repository when accessing them */
     void setAutoLoadFromStorage(Boolean value) { autoLoadFromStorage = value }
+
+    /** Search the repository when retrieving object lists */
+    private Boolean autoLoadForList = true
+    /** Search the repository when retrieving object lists */
+    Boolean getAutoLoadForList() { autoLoadForList }
+    /** Search the repository when retrieving object lists */
+    void setAutoLoadForList(Boolean value) { autoLoadForList = value }
 
     /** Repository files are stored in project resources */
     private Boolean isResourceStoragePath
@@ -218,7 +225,7 @@ class RepositoryStorageManager {
         env = envFromRep(repository, env)
         def repFilePath = repositoryStoragePath(repository, env)
         FileUtils.ValidPath(repFilePath)
-        repository.processObjects(mask) { name ->
+        repository.processObjects(mask, null, false) { name ->
             def objName = ParseObjectName.Parse(name)
             if (objName.groupName == null && objName.objectName[0] == '#') return
             saveObjectToStorage(repository, objName, env)

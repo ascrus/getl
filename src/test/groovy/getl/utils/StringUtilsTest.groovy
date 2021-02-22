@@ -271,6 +271,7 @@ SET SELECT * FROM table; -- test
         assertEquals('a?.b', StringUtils.ProcessObjectName('a.b', false, true))
         assertEquals('"a"."b"', StringUtils.ProcessObjectName('a.b', true))
         assertEquals('"a"?."b"', StringUtils.ProcessObjectName('a.b', true, true))
+        assertEquals('"a"?."\\"b\\""', StringUtils.ProcessObjectName('a."b"', true, true))
         assertEquals('"a"[0]."b"[0]', StringUtils.ProcessObjectName('a[0].b[0]', true))
         assertEquals('"a"[0]?."b"[0]', StringUtils.ProcessObjectName('a[0].b[0]', true, true))
     }

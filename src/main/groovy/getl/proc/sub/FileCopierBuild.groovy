@@ -24,7 +24,7 @@ class FileCopierBuild extends FileListProcessingBuild {
     public Path renamePath
 
     /** Segmented columns */
-    public List<String> segmentdBy
+    public List<String> segmentedBy
 
     /** Count segmented columns */
     public Integer countSegmented = 0
@@ -50,12 +50,13 @@ class FileCopierBuild extends FileListProcessingBuild {
 
         isSegmented = (!ownerCopier.segmented.isEmpty() && ownerCopier.destinations.size() > 1)
         if (isSegmented) {
-            segmentdBy = (ownerCopier.segmented as List<String>)*.toLowerCase()
+            segmentedBy = (ownerCopier.segmented as List<String>)*.toLowerCase()
             countSegmented = ownerCopier.destinations.size()
         }
     }
 
     @Override
+    @SuppressWarnings('SpellCheckingInspection')
     Boolean prepare(Map file) {
         if (!super.prepare(file)) return false
 
@@ -81,7 +82,7 @@ class FileCopierBuild extends FileListProcessingBuild {
 
         if (isSegmented) {
             def l = []
-            segmentdBy.each { l << file.get(it) }
+            segmentedBy.each { l << file.get(it) }
             file.put('_segmented_', NumericUtils.SegmentByHash(countSegmented, l))
         }
         else {

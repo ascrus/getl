@@ -20,7 +20,7 @@ class OracleTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof OracleConnection))
-            throw new ExceptionGETL('Сonnection to OracleConnection class is allowed!')
+            throw new ExceptionGETL('Connection to OracleConnection class is allowed!')
 
         super.setConnection(value)
     }

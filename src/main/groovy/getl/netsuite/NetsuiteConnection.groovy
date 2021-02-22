@@ -23,6 +23,7 @@ class NetsuiteConnection extends JDBCConnection {
 	@JsonIgnore
 	NetsuiteDriver getCurrentNetsuiteDriver() { driver as NetsuiteDriver }
 
+	@SuppressWarnings('SpellCheckingInspection')
 	@Override
 	protected void registerParameters () {
 		super.registerParameters()
@@ -35,7 +36,8 @@ class NetsuiteConnection extends JDBCConnection {
 
 		if (this.getClass().name == 'getl.netsuite.NetsuiteConnection') methodParams.validation('Super', params)
 	}
-	
+
+	@SuppressWarnings('SpellCheckingInspection')
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()
@@ -47,8 +49,10 @@ class NetsuiteConnection extends JDBCConnection {
 	/** Server Data Source */
     void setServerDataSource (String value) { params.serverDataSource = value }
 
+	@SuppressWarnings('SpellCheckingInspection')
 	/** Ciphersuites */
 	String getCiphersuites () { params.ciphersuites }
+	@SuppressWarnings('SpellCheckingInspection')
 	/** Ciphersuites */
     void setCiphersuites (String value) { params.ciphersuites = value }
 

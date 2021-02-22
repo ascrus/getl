@@ -57,6 +57,7 @@ class NetsuiteDriver extends JDBCDriver {
 		return res
 	}
 
+	@SuppressWarnings('SpellCheckingInspection')
 	@Override
 	String defaultConnectURL () {
 		return 'jdbc:ns://{host};ServerDataSource={serverDataSource};' +
@@ -68,6 +69,7 @@ class NetsuiteDriver extends JDBCDriver {
 	 * Build jdbc connection url
 	 * @return
 	 */
+	@SuppressWarnings('SpellCheckingInspection')
 	@Override
     protected String buildConnectURL () {
 		def url = super.buildConnectURL()

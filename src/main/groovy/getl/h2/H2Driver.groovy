@@ -106,7 +106,7 @@ class H2Driver extends JDBCDriver {
 		List<String> columns = []
 		List<String> fields = []
 		List<String> headers = []
-		List<String> fparm = []
+		List<String> fParams = []
 		map.each { Map<String, Object> m ->
 			Field f = m.field as Field
 			if (f != null && !f.isReadOnly) {
@@ -121,19 +121,19 @@ class H2Driver extends JDBCDriver {
 			}
 		}
 		def cols = columns.join(', ')
-		def flds = fields.join(', ')
+		def csvFields = fields.join(', ')
 		def heads = (!source.isHeader()) ? "'" + headers.join(source.fieldDelimiter()) + "'" : "null"
-		fparm << "charset=${source.codePage()}".toString()
-		fparm << "fieldSeparator=${source.fieldDelimiter()}".toString()
-		if (source.quoteStr() != null) fparm << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr())}".toString()
-		def functionParms = fparm.join(" ")
+		fParams << "charset=${source.codePage()}".toString()
+		fParams << "fieldSeparator=${source.fieldDelimiter()}".toString()
+		if (source.quoteStr() != null) fParams << "fieldDelimiter=${StringUtils.EscapeJava(source.quoteStr())}".toString()
+		def functionParams = fParams.join(" ")
 
 		sb <<
 """INSERT INTO ${fullNameDataset(dest)} (
 $cols
 )
-SELECT $flds 
-FROM CSVREAD('{file_name}', ${heads}, '${functionParms}')
+SELECT $csvFields 
+FROM CSVREAD('{file_name}', ${heads}, '${functionParams}')
 """
         def sql = sb.toString()
 		//println sb.toString()

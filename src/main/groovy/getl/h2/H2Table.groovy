@@ -22,7 +22,7 @@ class H2Table extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof H2Connection))
-            throw new ExceptionGETL('Сonnection to H2Connection class is allowed!')
+            throw new ExceptionGETL('Connection to H2Connection class is allowed!')
 
         super.setConnection(value)
     }

@@ -150,7 +150,7 @@ class EMailer implements GetlRepository {
 	/** Attachment for mail */
 	void setAttachment(Object value) { params.attachment = value }
 
-	/** Call init configuraion */
+	/** Call init configuration */
 	private final Closure doInitConfig = {
 		if (config == null) return
 		Map cp = Config.FindSection("emailers.${config}")

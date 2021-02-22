@@ -16,6 +16,7 @@ import getl.lang.sub.UserLogins
 import getl.proc.Flow
 import getl.tfs.TDS
 import getl.utils.*
+import getl.utils.sub.LoginManager
 import groovy.sql.Sql
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -846,16 +847,22 @@ ${tab}${tab}}
 		if (value != null) storedLogins.putAll(value)
 	}
 
+	/** Logins manager */
+	private LoginManager loginManager = new LoginManager(this)
+
 	@Override
 	void useLogin(String user) {
-		if (!storedLogins.containsKey(user))
-			throw new ExceptionGETL("User \"$user\" not found in in configuration!")
+		loginManager.useLogin(user)
+	}
 
-		def pwd = storedLogins.get(user)
+	@Override
+	void switchToNewLogin(String user) {
+		loginManager.switchToNewLogin(user)
+	}
 
-		if (login != user && connected) connected = false
-		login = user
-		password = pwd
+	@Override
+	void switchToPreviousLogin() {
+		loginManager.switchToPreviousLogin()
 	}
 
 	/**
@@ -876,7 +883,7 @@ ${tab}${tab}}
 	/** Current transactional isolation level */
 	@JsonIgnore
 	Integer getTransactionIsolation() {
-		checkEstablisheConnection()
+		checkEstablishedConnection()
 		return currentJDBCDriver.transactionIsolation
 	}
 	/** Current transactional isolation level */

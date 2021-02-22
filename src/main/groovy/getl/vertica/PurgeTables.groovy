@@ -22,12 +22,12 @@ class PurgeTables extends Job {
 
 	@Override
 	void process () {
-		def perc = Config.content."purge_percent"?:30
+		def percent = Config.content."purge_percent"?:30
 		List excludeTables = (Config.content."exclude" as List)?:[]
 		def excludeWhere = ""
 		
 		Logs.Info("### Purge vertica tables tool")
-		Logs.Info("Using the $perc coefficient to determine the table to purge")
+		Logs.Info("Using the $percent coefficient to determine the table to purge")
 		if (!excludeTables.isEmpty()) {
 			Logs.Info("From processing excluded $excludeTables tables")
 			excludeWhere = "WHERE x.table_name NOT IN (${ListUtils.QuoteList(excludeTables, "'")*.toLowerCase().join(', ')})"
@@ -41,7 +41,7 @@ SELECT x.table_name, total_row_count, deleted_row_count, 'SELECT PURGE_TABLE('''
 			SELECT Lower(p.projection_schema) || '.' || Lower(p.anchor_table_name) AS table_name, Sum(total_row_count) AS total_row_count, Sum(deleted_row_count) AS deleted_row_count
 			FROM storage_containers c
 				INNER JOIN projections p ON p.projection_id = c.projection_id AND p.is_super_projection
-			WHERE deleted_row_count > (total_row_count*${perc / 100})
+			WHERE deleted_row_count > (total_row_count*${percent / 100})
 			GROUP BY Lower(p.projection_schema) || '.' ||  Lower(p.anchor_table_name)
 		) AS x
 		$excludeWhere

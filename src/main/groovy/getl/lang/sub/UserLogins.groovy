@@ -23,9 +23,18 @@ interface UserLogins {
     /** Use specified login */
     void useLogin(String user)
 
+    /** Switch to new login */
+    void switchToNewLogin(String user)
+
+    /** Switch to previous login */
+    void switchToPreviousLogin()
+
     /** Connect to source */
     void connect()
 
     /** Disconnect from source */
     void disconnect()
+
+    /** Established connection flag */
+    Boolean isConnected()
 }

@@ -19,6 +19,6 @@ class FileWriteOpts {
     public Boolean deleteOnEmpty
     /** Code page file */
     public String encode
-    /** File writed */
+    /** File is saved */
     public Boolean readyFile = false
 }

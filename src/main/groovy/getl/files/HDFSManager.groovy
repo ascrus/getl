@@ -6,6 +6,7 @@ import getl.files.sub.FileManagerList
 import getl.lang.sub.UserLogins
 import getl.utils.FileUtils
 import getl.utils.StringUtils
+import getl.utils.sub.LoginManager
 import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 import org.apache.hadoop.fs.FileStatus
@@ -440,17 +441,21 @@ class HDFSManager extends Manager implements UserLogins {
         client.getStatus()
     }
 
+    /** Logins manager */
+    private LoginManager loginManager = new LoginManager(this)
+
     @Override
     void useLogin(String user) {
-        if (!storedLogins.containsKey(user))
-            throw new ExceptionGETL("User \"$user\" not found in in configuration!")
+        loginManager.useLogin(user)
+    }
 
-        def pwd = storedLogins.get(user)
+    @Override
+    void switchToNewLogin(String user) {
+        loginManager.switchToNewLogin(user)
+    }
 
-        def reconnect = (login != user && connected)
-        if (reconnect) disconnect()
-        login = user
-        password = pwd
-        if (reconnect) connect()
+    @Override
+    void switchToPreviousLogin() {
+        loginManager.switchToPreviousLogin()
     }
 }

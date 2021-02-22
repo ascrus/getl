@@ -105,10 +105,10 @@ class SalesForceDriver extends Driver {
 	@Override
 	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
 		DescribeGlobalResult describeGlobalResult = partnerConnection.describeGlobal()
-		DescribeGlobalSObjectResult[] sobjectResults = describeGlobalResult.sobjects
+		DescribeGlobalSObjectResult[] sObjectResults = describeGlobalResult.sobjects
 		List<Map> objects = []
 
-		sobjectResults.each { DescribeGlobalSObjectResult row ->
+		sObjectResults.each { DescribeGlobalSObjectResult row ->
 			def t = [:]
 
 			t.'objectName' = row.name

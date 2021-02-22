@@ -100,9 +100,9 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	/* Connection for point manager */
 	void setPointConnection(JDBCConnection value) { pointConnection = value }
 	
-	/**  Count proccessed rows */
+	/**  Count processed rows */
 	private Long rowCount = 0L
-	/**  Count proccessed rows */
+	/**  Count processed rows */
 	Long getRowCount() { rowCount }
 
 	/** Script to execute */
@@ -657,10 +657,10 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	/** 
 	 * Convert batch script to SQL command list
 	 * @param sql
-	 * @param delim
+	 * @param delimiter
 	 * @return
 	 */
-	static List<String> BatchSQL2List (String sql, String delim) {
+	static List<String> BatchSQL2List (String sql, String delimiter) {
 		if (sql == null) throw new ExceptionGETL("\"sql\" parameter required!")
 
 		List<String> res = sql.split('\n')
@@ -670,9 +670,9 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			if (l == 0) continue
 
 			if (s.matches("(?is)echo(\\s|\\t).*") || s.matches("(?is)error(\\s|\\t).*")) {
-				if (s.substring(s.length() - 1) != delim) res[i] = res[i] + delim
+				if (s.substring(s.length() - 1) != delimiter) res[i] = res[i] + delimiter
 			}
-			else if (l > 1 && s[s.length() - 1] == delim) {
+			else if (l > 1 && s[s.length() - 1] == delimiter) {
 				def f = s.lastIndexOf('--')
 				if (f >= 0) {
 					def q = 0
@@ -690,7 +690,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 			}
 		}
 		String prepare = res.join('\n')
-		res = prepare.split(delim)
+		res = prepare.split(delimiter)
 		for (Integer i = 0; i < res.size(); i++) { res[i] = res[i].trim() }
 
 		return res

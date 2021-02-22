@@ -20,7 +20,7 @@ class MSSQLTable extends TableDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof MSSQLConnection))
-            throw new ExceptionGETL('Сonnection to MSSQLConnection class is allowed!')
+            throw new ExceptionGETL('Connection to MSSQLConnection class is allowed!')
 
         super.setConnection(value)
     }

@@ -227,13 +227,13 @@ class Executor implements GetlRepository {
 		setOnStartingThread(value)
 	}
 
-	/** Run finalization code when stoping a thread */
+	/** Run finalization code when stopping a thread */
 	private Closure onFinishingThread
-	/** Run finalization code when stoping a thread */
+	/** Run finalization code when stopping a thread */
 	Closure getOnFinishingThread() { onFinishingThread }
-	/** Run finalization code when stoping a thread */
+	/** Run finalization code when stopping a thread */
 	void setOnFinishingThread(Closure value) { onFinishingThread = value }
-	/** Run finalization code when stoping a thread */
+	/** Run finalization code when stopping a thread */
 	void finishingThread(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure value) {
 		setOnFinishingThread(value)
 	}
@@ -424,7 +424,7 @@ class Executor implements GetlRepository {
 	}
 
 	/**
-	 * Run code in threads over list items by dividing a list between threads into sublists
+	 * Run code in threads over list items by dividing a list between threads into sub lists
 	 * @param elements list of processed elements (the default is specified in the "list")
 	 * @param countThread number of threads running simultaneously
 	 * @param code list item processing code
@@ -598,7 +598,7 @@ class Executor implements GetlRepository {
 	}
 
 	/**
-	 * Run code in threads over list items by dividing a list between threads into sublists
+	 * Run code in threads over list items by dividing a list between threads into sub lists
 	 * @param elements list of processed elements (the default is specified in the "list")
 	 * @param countThread number of threads running simultaneously
 	 * @param code list item processing code

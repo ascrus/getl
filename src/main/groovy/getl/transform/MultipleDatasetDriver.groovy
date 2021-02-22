@@ -12,7 +12,7 @@ import groovy.transform.InheritConstructors
  *
  */
 @InheritConstructors
-class MutlipleDatasetDriver extends Driver {
+class MultipleDatasetDriver extends Driver {
 	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	List<Support> supported() {
@@ -40,7 +40,7 @@ class MutlipleDatasetDriver extends Driver {
 		throw new ExceptionGETL("Retrieve objects not supported")
 	}
 	
-	static private Map<String, Dataset> getDestinition(Dataset dataset) {
+	static private Map<String, Dataset> getDestination(Dataset dataset) {
 		def ds = dataset.params.dest as Map<String, Dataset>
 		if (ds == null) throw new ExceptionGETL("Required MultipleDataset object class")
 		if (ds.isEmpty()) throw new ExceptionGETL("Required set param \"dest\" with dataset")
@@ -54,7 +54,7 @@ class MutlipleDatasetDriver extends Driver {
 	}
 	
 	static private List<Field> destField(Dataset dataset) {
-		Map<String, Dataset> ds = getDestinition(dataset)
+		Map<String, Dataset> ds = getDestination(dataset)
 		
 		def alias = ds.keySet().toArray()
 		return ds.get(alias[0]).field
@@ -80,7 +80,7 @@ class MutlipleDatasetDriver extends Driver {
 
 	@Override
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
-		Map<String, Dataset> ds = getDestinition(dataset)
+		Map<String, Dataset> ds = getDestination(dataset)
 		List<Field> fields = destField(dataset)
 		ds.each { String alias, Dataset dest ->
 			if (dest.field.isEmpty()) dest.field = fields
@@ -91,7 +91,7 @@ class MutlipleDatasetDriver extends Driver {
 
 	@Override
 	void write(Dataset dataset, Map row) {
-		Map<String, Dataset> ds = getDestinition(dataset)
+		Map<String, Dataset> ds = getDestination(dataset)
 		def cond = (dataset.params.condition as Map<String, Closure>)?:[:]
 		
 		// Valid conditions and write only filtered rows		
@@ -113,7 +113,7 @@ class MutlipleDatasetDriver extends Driver {
 
 	@Override
 	void doneWrite(Dataset dataset) {
-		Map<String, Dataset> ds = getDestinition(dataset)
+		Map<String, Dataset> ds = getDestination(dataset)
 		ds.each { String alias, Dataset dest ->
 			dest.doneWrite()
 		}
@@ -121,7 +121,7 @@ class MutlipleDatasetDriver extends Driver {
 
 	@Override
 	void closeWrite(Dataset dataset) {
-		Map<String, Dataset> ds = getDestinition(dataset)
+		Map<String, Dataset> ds = getDestination(dataset)
 		ds.each { String alias, Dataset dest ->
 			dest.closeWrite()
 		}

@@ -79,9 +79,9 @@ class ManagerBuildListSpec extends BaseSpec {
     /** Set a limit on the number of processed directories (default none) */
     void setDirectoryLimit(Integer value) { saveParamValue('limitDirs', value) }
 
-    /** The level number in the hierarchy of directories for parallelizing file processing (default 1) */
+    /** The level number in the hierarchy of directories for paralleling file processing (default 1) */
     Integer getThreadLevelNumber() { params.threadLevel as Integer }
-    /** The level number in the hierarchy of directories for parallelizing file processing (default 1) */
+    /** The level number in the hierarchy of directories for paralleling file processing (default 1) */
     void setThreadLevelNumber(Integer value) { saveParamValue('threadLevel', value) }
 
     /** List of extended fields */
