@@ -31,7 +31,7 @@ abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithCo
             repObj.connection = params.defaultConnection as Connection
 
         if (repObj.connection == null || cloneObj == null) return
-        if (!dslCreator.options().useThreadModelConnection || (cloneObj.connection != null && cloneObj.connection != repObj.connection))
+        if (!dslCreator.options().useThreadModelCloning || (cloneObj.connection != null && cloneObj.connection != repObj.connection))
             return
 
         def thread = Thread.currentThread() as ExecutorThread
