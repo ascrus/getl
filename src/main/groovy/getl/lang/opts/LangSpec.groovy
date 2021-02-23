@@ -45,9 +45,9 @@ class LangSpec extends BaseSpec {
     void setProcessTimeLevelLog(Level value) { saveParamValue('processTimeLevelLog', value) }
 
     /** Use the multithreading JDBC connection model */
-    Boolean getUseThreadModelConnection() { BoolUtils.IsValue(params.useThreadModelJDBCConnection, true) }
+    Boolean getUseThreadModelCloning() { BoolUtils.IsValue(params.useThreadModelCloning, true) }
     /** Use the multithreading JDBC connection model */
-    void setUseThreadModelConnection(Boolean value) { saveParamValue('useThreadModelJDBCConnection', value) }
+    void setUseThreadModelCloning(Boolean value) { saveParamValue('useThreadModelCloning', value) }
 
     /** Write SQL command from temporary database connection to history file */
     String getTempDBSQLHistoryFile() { params.tempDBSQLHistoryFile as String }
@@ -58,11 +58,6 @@ class LangSpec extends BaseSpec {
         saveParamValue('tempDBSQLHistoryFile', value)
         TDS.storage.sqlHistoryFile = value
     }
-
-    /** Auto create CSV temp dataset for JDBC tables */
-    Boolean getAutoCSVTempForJDBDTables() { BoolUtils.IsValue(params.autoCSVTempForJDBDTables) }
-    /** Auto create CSV temp dataset for JDBC tables */
-    void setAutoCSVTempForJDBDTables(Boolean value) { saveParamValue('autoCSVTempForJDBDTables', value) }
 
     /** Check on connection registration */
     Boolean getValidRegisterObjects() { BoolUtils.IsValue(params.validObjectExist, true) }

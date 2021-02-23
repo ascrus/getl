@@ -323,9 +323,12 @@ Examples:
                             autoLoadFromStorage = true
                             Logs.Finest("  path to repository objects: $storagePath")
                         }
-                        if (en.autoLoadForList != null) {
+                        if (en.autoLoadFromStorage != null)
+                            autoLoadFromStorage = BoolUtils.IsValue(en.autoLoadFromStorage)
+                        else
+                            autoLoadFromStorage = (storagePath != null)
+                        if (en.autoLoadForList != null)
                             autoLoadForList = BoolUtils.IsValue(en.autoLoadForList)
-                        }
                     }
                 }
                 procs.engine = { Map<String, Object> en ->
@@ -343,10 +346,10 @@ Examples:
                         }
                     }
 
-                    if (en.connectionThreadModel != null) {
-                        useThreadModelConnection = BoolUtils.IsValue(en.connectionThreadModel, true)
-                        if (useThreadModelConnection)
-                            Logs.Finest("  support for working with connections in threads")
+                    if (en.useThreadModelCloning != null) {
+                        useThreadModelCloning = BoolUtils.IsValue(en.useThreadModelCloning, true)
+                        if (useThreadModelCloning)
+                            Logs.Finest("  the model of cloning objects in threads is used")
                     }
 
                     if (en.controlDataset != null) {
@@ -364,12 +367,6 @@ Examples:
                         }
                         if (en.controlLogin != null)
                             processControlLogin = en.controlLogin as String
-                    }
-
-                    if (en.csvTempForTables != null) {
-                        autoCSVTempForJDBDTables = BoolUtils.IsValue(en.csvTempForTables)
-                        if (autoCSVTempForJDBDTables)
-                            Logs.Finest("  enabled auto creation of temporary files for JDBC datasets")
                     }
                 }
                 procs.profile = { Map<String, Object> en ->
@@ -503,19 +500,22 @@ Examples:
             if (_langOpts.processControlDataset instanceof TableDataset) {
                 def table = _langOpts.processControlDataset as TableDataset
 
-                def changeLogin = (_langOpts.processControlLogin != null &&
-                        (table.currentJDBCConnection)?.login != _langOpts.processControlLogin)
-                if (changeLogin)
-                    table.currentJDBCConnection.switchToNewLogin(_langOpts.processControlLogin)
+                def changeLogin = (_langOpts.processControlLogin != null) &&
+                        (table.currentJDBCConnection.login == null || table.currentJDBCConnection.login != _langOpts.processControlLogin)
+                if (changeLogin) {
+                    table = table.cloneDatasetConnection() as TableDataset
+                    table.currentJDBCConnection.useLogin(_langOpts.processControlLogin)
+                }
 
                 try {
-                    def row = sqlQueryRow(table.connection as JDBCConnection, "SELECT enabled FROM ${table.fullNameDataset()} WHERE name = '$processName'")
+                    def row = sqlQueryRow(table.currentJDBCConnection,
+                            "SELECT enabled FROM ${table.fullNameDataset()} WHERE name = '$processName'")
                     if (row != null && !row.isEmpty())
                         res = BoolUtils.IsValue(row.enabled)
                 }
                 finally {
                     if (changeLogin)
-                        table.currentJDBCConnection.switchToPreviousLogin()
+                        table.currentJDBCConnection.connected = false
                 }
             } else {
                 def ds = _langOpts.processControlDataset
@@ -1271,7 +1271,7 @@ Examples:
                 res = lastJdbcDefaultConnection
         }
 
-        if (_langOpts.useThreadModelConnection && isCurrentProcessInThread()) {
+        if (_langOpts.useThreadModelCloning && isCurrentProcessInThread()) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject(_repositoryStorageManager.repository(RepositoryConnections).nameCloneCollection, res,
                     {
@@ -1333,7 +1333,7 @@ Examples:
             res = _defaultFileConnection.get(datasetClassName)
         }
 
-        if (_langOpts.useThreadModelConnection && isCurrentProcessInThread()) {
+        if (_langOpts.useThreadModelCloning && isCurrentProcessInThread()) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject(_repositoryStorageManager.repository(RepositoryConnections).nameCloneCollection, res,
                     {
@@ -1396,7 +1396,7 @@ Examples:
             res = _defaultOtherConnection.get(datasetClassName)
         }
 
-        if (_langOpts.useThreadModelConnection && isCurrentProcessInThread()) {
+        if (_langOpts.useThreadModelCloning && isCurrentProcessInThread()) {
             def thread = Thread.currentThread() as ExecutorThread
             res = thread.registerCloneObject(_repositoryStorageManager.repository(RepositoryConnections).nameCloneCollection, res,
                     {

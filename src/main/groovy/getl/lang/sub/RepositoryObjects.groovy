@@ -301,7 +301,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             return obj
         }
 
-        def isThread = (dslCreator.options.useThreadModelConnection && Thread.currentThread() instanceof ExecutorThread) && cloneInThread
+        def isThread = (dslCreator.options.useThreadModelCloning && Thread.currentThread() instanceof ExecutorThread) && cloneInThread
 
         def repName = dslCreator.repObjectName(name, registration)
         if (!registration && isThread) {
