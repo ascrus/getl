@@ -213,6 +213,10 @@ class KafkaDriver extends Driver {
                     formatDateTime = ds.formatDateTime
                     formatTimestampWithTz = ds.formatTimestampWithTz
                     uniFormatDateTime = ds.uniFormatDateTime
+                    if (ds.readOpts.onFilter != null)
+                        readOpts.onFilter = ds.readOpts.onFilter
+
+                    return true
                 }
                 (1..countPortions).each { num ->
                     json.with {
