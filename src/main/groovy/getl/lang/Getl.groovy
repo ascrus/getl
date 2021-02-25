@@ -4591,11 +4591,11 @@ Examples:
         if (file != null) {
             parent.fileName = (file instanceof File) ? ((file as File).path) : file.toString()
         }
-        def pt = startProcess("Processing text file${(parent.fileName != null) ? (' "' + parent.fileName + '"') : ''}", 'byte')
+        def pt = startProcess("Processing text file${(parent.fileName != null) ? (' "' + parent.filePath() + '"') : ''}", 'byte')
         pt.objectName = 'byte'
         runClosure(parent, cl)
         parent.save()
-        pt.name = "Processing text file${(parent.fileName != null) ? (' "' + parent.fileName + '"') : ''}"
+        pt.name = "Processing text file${(parent.fileName != null) ? (' "' + parent.filePath() + '"') : ''}"
         finishProcess(pt, parent.countBytes)
 
         return parent

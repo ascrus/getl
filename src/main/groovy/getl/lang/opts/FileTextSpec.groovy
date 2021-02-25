@@ -7,7 +7,6 @@ import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
-import org.apache.groovy.io.StringBuilderWriter
 
 /**
  * File text procession class
@@ -47,16 +46,21 @@ class FileTextSpec extends BaseSpec {
     /** Count saved bytes */
     Long getCountBytes() { countBytes }
 
+    /** File path */
+    String filePath() { FileUtils.TransformFilePath(fileName) }
+
     /** Write text buffer to file */
     @SuppressWarnings('SpellCheckingInspection')
     void save() {
-        if (fileName == null && !temporaryFile) throw new ExceptionGETL("Required \"fileName\" value!")
+        if (fileName == null && !temporaryFile)
+            throw new ExceptionGETL("Required \"fileName\" value!")
+
         File file
         if (!temporaryFile) {
-            file = new File(fileName)
+            file = new File(filePath())
         }
         else if (fileName != null) {
-            file = new File(fileName)
+            file = new File(filePath())
             file.deleteOnExit()
         }
         else {
@@ -64,6 +68,8 @@ class FileTextSpec extends BaseSpec {
             file.deleteOnExit()
             fileName = file.canonicalPath
         }
+
+        FileUtils.ValidFilePath(file)
 
         def writer = file.newWriter(codePage?:'UTF-8', append, false)
         try {

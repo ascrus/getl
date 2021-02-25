@@ -637,7 +637,7 @@ abstract class FileListProcessing implements GetlRepository {
 
     /** Inform about start in the log */
     protected void infoProcess() {
-        Logs.Info("Processing files from \"$source\"")
+        Logs.Fine("Processing files from \"$source\"")
 
         Logs.Fine("  for intermediate operations, \"$tmpPath\" directory will be used")
         if (inMemoryMode) Logs.Fine("  operating mode \"in-memory\" is used")
@@ -661,7 +661,7 @@ abstract class FileListProcessing implements GetlRepository {
 
     /** Run before processing */
     protected void beforeProcessing() {
-        if (onStartProcess != null) onStartProcess.call()
+        if (onStartProcess != null) onStartProcess.call(this)
 
         if (sourceBeforeScript != null)
             if (source.connected)
@@ -677,7 +677,7 @@ abstract class FileListProcessing implements GetlRepository {
 
     /** Run after processing */
     protected void afterProcessing() {
-        if (onFinishProcess != null) onFinishProcess.call()
+        if (onFinishProcess != null) onFinishProcess.call(this)
 
         if (sourceAfterScript != null)
             if (source.connected)
