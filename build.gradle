@@ -7,7 +7,7 @@ plugins {
 }
 
 //noinspection GroovyUnusedAssignment
-version = '4.7.4-9-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.7.4' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -65,9 +65,12 @@ dependencies {
 }
 
 test {
-	/*minHeapSize = '300M'
-	maxHeapSize = '16G'*/
 	jvmArgs '-Xmx16g' //, '-XX:+CMSClassUnloadingEnabled', '-XX:+UseParallelGC', '-XX:MaxPermSize=1g'
+
+	System.properties.each { String k, String v ->
+		if (k.matches('getl[-]vars[.].+'))
+			systemProperty k, v
+	}
 }
 
 tasks.withType(GroovyCompile) {

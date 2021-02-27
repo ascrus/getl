@@ -102,7 +102,7 @@ class ConfigSpec extends BaseSpec {
         if (vars.isEmpty())
             return
 
-        Getl.FillFieldFromVars(ownerObject as Script, vars, validExist)
+        (ownerObject as Getl)._fillFieldFromVars(ownerObject as Script, vars, validExist)
     }
 
     /** Current environment */

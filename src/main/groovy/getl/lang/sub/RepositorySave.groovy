@@ -18,8 +18,17 @@ import getl.utils.FileUtils
  */
 @SuppressWarnings('unused')
 class RepositorySave extends Getl {
-    static void Start(Class<RepositorySave> startClass, String[] args) {
-        Application(startClass, args.toList() + ['environment=dev'])
+    static void Start(Class<RepositorySave> startClass, def args) {
+        if (!(args instanceof List)) {
+            if (args instanceof String[])
+                args = args.toList()
+            else if (args instanceof String || args instanceof GString)
+                args = [args.toString()] as List<String>
+            else
+                throw new ExceptionDSL("Type ${args.getClass().name} is not supported as a method parameter!")
+        }
+
+        Application(startClass, args + ['environment=dev'])
     }
 
     /** Init object before save objects */

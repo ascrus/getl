@@ -8,8 +8,8 @@ import getl.jdbc.TableDataset
 import getl.tfs.TDS
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
+import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
-
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 
@@ -142,8 +142,14 @@ class LangSpec extends BaseSpec {
      * @param env environment
      */
     void loadProjectProperties(String env = null) {
-        def f = FileUtils.FileFromResources('/getl-properties.conf')
-        if (f == null) return
-        getlConfigProperties.putAll(ConfigSlurper.LoadConfigFile(f, 'utf-8', env))
+        def mainFile = FileUtils.FileFromResources('/getl-properties.conf')
+        if (mainFile == null) return
+        def mainConfig = ConfigSlurper.LoadConfigFile(mainFile, 'utf-8', env)
+        getlConfigProperties.putAll(mainConfig)
+
+        def childFile = FileUtils.FileFromResources('/getl-properties-ext.conf')
+        if (childFile == null) return
+        def childConfig = ConfigSlurper.LoadConfigFile(childFile, 'utf-8', env)
+        MapUtils.MergeMap(getlConfigProperties, childConfig, true, false)
     }
 }

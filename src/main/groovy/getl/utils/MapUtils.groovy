@@ -346,7 +346,7 @@ class MapUtils {
 					else {
 						name = name.substring(0, c + 1).toLowerCase() + name.substring(c + 1).trim()
 					}
-					value = str.substring(le + 1)
+					value = (le < str.length() - 1)?str.substring(le + 1):(null as String)
 				}
 				else {
 					name = la[i].trim()

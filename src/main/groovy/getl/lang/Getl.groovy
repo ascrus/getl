@@ -19,6 +19,12 @@ import getl.kafka.KafkaConnection
 import getl.kafka.KafkaDataset
 import getl.lang.opts.*
 import getl.lang.sub.*
+import getl.models.MapTables
+import getl.models.MonitorRules
+import getl.models.ReferenceFiles
+import getl.models.ReferenceVerticaTables
+import getl.models.SetOfTables
+import getl.models.sub.BaseModel
 import getl.mssql.*
 import getl.mysql.*
 import getl.netezza.*
@@ -117,8 +123,14 @@ Examples:
         if (!Getl.isAssignableFrom(scriptClass))
             throw new ExceptionDSL("Class $scriptClass is not Getl script!")
 
-        if (args instanceof String[])
-            args = args.toList()
+        if (!(args instanceof List)) {
+            if (args instanceof String[])
+                args = args.toList() as List<String>
+            else if (args instanceof String || args instanceof GString)
+                args = [args.toString()] as List<String>
+            else
+                throw new ExceptionDSL("Type ${args.getClass().name} is not supported as a method parameter!")
+        }
 
         def runclass = scriptClass.name
         Main(args + ["runclass=$runclass"])
@@ -155,7 +167,7 @@ Examples:
         Config.setVars(vars)
 
         if (vars != null && !vars.isEmpty())
-            FillFieldFromVars(this, vars, true, true)
+            _fillFieldFromVars(this, vars, true, true)
     }
 
     /**
@@ -2024,7 +2036,7 @@ Examples:
 
                 _doInitMethod(scriptGetl)
                 if (vars != null && !vars.isEmpty()) {
-                    FillFieldFromVars(scriptGetl, vars)
+                    _fillFieldFromVars(scriptGetl, vars)
                 }
                 _doCheckMethod(scriptGetl)
             } else if (vars != null && !vars.isEmpty()) {
@@ -2285,7 +2297,7 @@ Examples:
      * @param vars vars set values for script fields declared as "@Field"
      * @param validExist check for the existence of fields in the script
      */
-    static void FillFieldFromVars(Script script, Map vars, Boolean validExist = true, Boolean startGroovy = false) {
+    protected void _fillFieldFromVars(Script script, Map vars, Boolean validExist = true, Boolean startGroovy = false) {
         vars.each { key, value ->
             MetaProperty prop = script.hasProperty(key as String)
             if (prop == null) {
@@ -2295,7 +2307,7 @@ Examples:
                     return
             }
 
-            if (value != null)
+            if (value != null) {
                 switch (prop.type) {
                     case Character:
                         if (!(value instanceof Character))
@@ -2305,8 +2317,7 @@ Examples:
                     case String:
                         if (value instanceof GetlRepository) {
                             value = (value as GetlRepository).dslNameObject
-                        }
-                        else if (!(value instanceof String)) {
+                        } else if (!(value instanceof String)) {
                             value = value.toString()
                         }
 
@@ -2357,7 +2368,7 @@ Examples:
 
                         break
                     case Boolean:
-                        if (!(value instanceof Boolean )) {
+                        if (!(value instanceof Boolean)) {
                             value = (value.toString().toLowerCase() in ['true', '1', 'on'])
                         }
 
@@ -2378,8 +2389,48 @@ Examples:
                         if (!value instanceof Path) {
                             value = new Path(mask: value.toString())
                         }
-                }
 
+                        break
+
+                    default:
+                        if (script instanceof Getl) {
+                            def getl = script as Getl
+                            if (Connection.isAssignableFrom(prop.type)) {
+                                if (value instanceof String)
+                                    value = getl.connection(value as String)
+                            } else if (Dataset.isAssignableFrom(prop.type)) {
+                                if (value instanceof String)
+                                    value = getl.dataset(value as String)
+                            } else if (Manager.isAssignableFrom(prop.type)) {
+                                if (value instanceof String)
+                                    value = getl.dataset(value as String)
+                            } else if (SavePointManager.isAssignableFrom(prop.type)) {
+                                if (value instanceof String)
+                                    value = getl.historypoint(value as String)
+                            } else if (Sequence.isAssignableFrom(prop.type)) {
+                                if (value instanceof String)
+                                    value = getl.sequence(value as String)
+                            } else if (BaseModel.isAssignableFrom(prop.type)) {
+                                if (MapTables.isAssignableFrom(prop.type)) {
+                                    if (value instanceof String)
+                                        value = getl.models.mapTables(value as String)
+                                } else if (MonitorRules.isAssignableFrom(prop.type)) {
+                                    if (value instanceof String)
+                                        value = getl.models.monitorRules(value as String)
+                                } else if (ReferenceFiles.isAssignableFrom(prop.type)) {
+                                    if (value instanceof String)
+                                        value = getl.models.referenceFiles(value as String)
+                                } else if (ReferenceVerticaTables.isAssignableFrom(prop.type)) {
+                                    if (value instanceof String)
+                                        value = getl.models.referenceVerticaTables(value as String)
+                                } else if (SetOfTables.isAssignableFrom(prop.type)) {
+                                    if (value instanceof String)
+                                        value = getl.models.setOfTables(value as String)
+                                }
+                            }
+                        }
+                }
+            }
 
             try {
                 if (!startGroovy)

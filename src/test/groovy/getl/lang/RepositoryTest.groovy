@@ -873,10 +873,14 @@ class RepositoryTest extends TestDsl {
         Getl.Dsl {
             forGroup 'test'
 
+            embeddedTable('test:testtable1', true) {
+                tableName = 'table1'
+            }
+
             files('#main', true).rootPath = '/tmp/main'
             assert files('#main').rootPath == '/tmp/main'
 
-            callScript RepositoryScript
+            callScript RepositoryScript, [test_table: 'test:testtable1']
             assert files('#main').rootPath == '/tmp/main'
             println 'main: ' + files('#main').rootPath
             shouldFail { files('#child') }

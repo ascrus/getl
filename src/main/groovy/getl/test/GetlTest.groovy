@@ -13,6 +13,7 @@ import org.junit.Before
 import org.junit.BeforeClass
 
 import java.sql.Time
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Getl functional testing base class
@@ -29,11 +30,27 @@ class GetlTest extends GroovyAssert {
             Config.configClassManager = useConfigManager().newInstance() as ConfigManager
     }
 
+    /** Variables for testing from JVM environment */
+    static public final Map<String, String> TestVars = new ConcurrentHashMap<String, String>()
+
+    /** Preparing variables for testing from JVM environment */
+    static private PrepareTestVars() {
+        System.properties.each { k, v ->
+            if ((k as String).matches('getl[-]vars[.].+')) {
+                def name = (k as String).substring(10)
+                def value = v as String
+                if (value?.length() > 0)
+                    TestVars.put(name, value)
+            }
+        }
+    }
+
     @BeforeClass
     static void InitTestClass() {
         Config.ReInit()
         Logs.Init()
         FileUtils.ListResourcePath.clear()
+        PrepareTestVars()
     }
 
     @AfterClass
@@ -83,12 +100,11 @@ class GetlTest extends GroovyAssert {
     static void assertEquals(String message, Map expected, Map actual) {
         if (expected == null && actual == null)
             return
-        if ((expected == null && actual != null) || (expected != null && actual == null))
-            throw new AssertionError('Parameters do not match, one of them is null!')
+        assert !((expected == null && actual != null) || (expected != null && actual == null)),
+                'Parameters do not match, one of them is null!'
 
         def res = MapUtils.CompareMap(expected, actual)
-        if (!res.isEmpty())
-            throw new AssertionError('maps difference: ' + MapUtils.ToJson(res))
+        assert res.isEmpty(), 'maps difference: ' + MapUtils.ToJson(res)
     }
 
     /**
