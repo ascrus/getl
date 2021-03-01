@@ -382,15 +382,81 @@ LIMIT 1'''
                     field('value') { type = numericFieldType; length = 12; precision = 2 }
                     create(ifNotExists: true)
                 }
-                executeCommand 'CREATE OR REPLACE VIEW v_test_view AS SELECT * FROM test_view'
-                def view = view {
-                    tableName = 'v_test_view'
-                    retrieveFields()
-                    assertEquals(3, field.size())
-                    field.each {assertTrue(it.isNull) }
+                try {
+                    executeCommand 'CREATE OR REPLACE VIEW v_test_view AS SELECT * FROM test_view'
+                    def view = view {
+                        tableName = 'v_test_view'
+                    }
+                    try {
+                        view.with {
+                            retrieveFields()
+                            assertEquals(3, field.size())
+                            field.each { assertTrue(it.isNull) }
+                        }
+                    }
+                    finally {
+                        view.drop()
+                    }
                 }
-                view.drop()
-                tab.drop()
+                finally {
+                    tab.drop()
+                }
+            }
+        }
+    }
+
+    @Test
+    void testLookupFields() {
+        Getl.Dsl {
+            con.with {
+                def dim = verticaTable {
+                    tableName = 'test_lookup1'
+                    field('id') { type = integerFieldType; isKey = true }
+                    field('name') { length = 50; isNull = false }
+                }
+                def mart = verticaTable {
+                    tableName = 'test_lookup2'
+                    field('id') { type = integerFieldType; isKey = true }
+
+                    field('dim1_id') { type = integerFieldType; isNull = true }
+                    field('dim1_name') {
+                        length = 50
+                        defaultValue = '(SELECT name FROM public.test_lookup1 WHERE test_lookup1.id = test_lookup2.dim1_id)'
+                    }
+
+                    field('dim2_id') { type = integerFieldType; isNull = true }
+                    field('dim2_name') {
+                        length = 50
+                        defaultValue = '(SELECT name FROM public.test_lookup1 WHERE test_lookup1.id = test_lookup2.dim1_id)'
+                        extended.lookup = lookupUsingType
+                    }
+
+                    field('dim3_id') { type = integerFieldType; isNull = true }
+                    field('dim3_name') {
+                        length = 50
+                        defaultValue = '(SELECT name FROM public.test_lookup1 WHERE test_lookup1.id = test_lookup2.dim1_id)'
+                        extended.lookup = lookupDefaultUsingType
+                    }
+                }
+
+                mart.drop(ifExists: true)
+                dim.drop(ifExists: true)
+                dim.create()
+                mart.create()
+
+                try {
+                    mart.with {
+                        field.clear()
+                        retrieveFields()
+                        assertNotNull(field('dim1_name').defaultValue)
+                        assertNull(field('dim2_name').defaultValue)
+                        assertNotNull(field('dim3_name').defaultValue)
+                    }
+                }
+                finally {
+                    mart.drop(ifExists: true)
+                    dim.drop(ifExists: true)
+                }
             }
         }
     }

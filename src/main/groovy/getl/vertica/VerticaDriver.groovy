@@ -490,4 +490,21 @@ class VerticaDriver extends JDBCDriver {
 					qParams.after_insert = "/*+${direct}*/"
 			}
 	}
+
+	@Override
+	String generateDefaultDefinition(Field f) {
+		String res
+		def lookupType = (f.extended.lookup as String)?.toUpperCase()
+
+		if (lookupType == null || lookupType == VerticaTable.lookupDefaultType)
+			res = "DEFAULT (${f.defaultValue})"
+		else if (lookupType == VerticaTable.lookupUsingType)
+			res = "SET USING (${f.defaultValue})"
+		else if (lookupType == VerticaTable.lookupDefaultUsingType)
+			res = "DEFAULT USING (${f.defaultValue})"
+		else
+			throw new ExceptionGETL("Unknown lookup type $lookupType!")
+
+		return res
+	}
 }

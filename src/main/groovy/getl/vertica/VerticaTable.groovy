@@ -23,6 +23,13 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class VerticaTable extends TableDataset {
+    /** Fill field value with value from table on insert */
+    static public final lookupDefaultType = 'DEFAULT'
+    /** Fill field value with value from table when calling function REFRESH_COLUMNS */
+    static public final lookupUsingType = 'USING'
+    /** Fill field value with value from table on insert and when calling function REFRESH_COLUMNS */
+    static public final lookupDefaultUsingType = 'DEFAULT USING'
+
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof VerticaConnection))

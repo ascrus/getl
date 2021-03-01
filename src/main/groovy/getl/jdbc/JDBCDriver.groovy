@@ -771,6 +771,11 @@ class JDBCDriver extends Driver {
 					if (f.length <= 0) f.length = null
 					f.precision = rs.getInt("DECIMAL_DIGITS")
 					if (f.precision < 0) f.precision = null
+
+					def dv = rs.getString('COLUMN_DEF')
+					if (dv != null && dv.length() > 0)
+						f.defaultValue = dv
+
 					f.isNull = (rs.getInt("NULLABLE") == java.sql.ResultSetMetaData.columnNullable)
 					try {
 						f.isAutoincrement = (rs.getString("IS_AUTOINCREMENT").toUpperCase() == "YES")
@@ -807,7 +812,7 @@ class JDBCDriver extends Driver {
 				}
 			}
 		}
-		else /*if (isTable(dataset) && dataset instanceof JDBCDataset)*/ {
+		else  {
 			result = fieldsTableWithoutMetadata(ds)
 		}
 
@@ -1065,8 +1070,13 @@ ${extend}'''
 	String generateColumnDefinition(Field f, Boolean useNativeDBType) {
 		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((isSupport(Driver.Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
 				((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
-				((isSupport(Driver.Support.DEFAULT_VALUE) && f.defaultValue != null)?" DEFAULT ${f.defaultValue}":"") +
+				((isSupport(Driver.Support.DEFAULT_VALUE) && f.defaultValue != null)?" ${generateDefaultDefinition(f)}":"") +
 				((isSupport(Driver.Support.COMPUTE_FIELD) && f.compute != null)?" AS ${f.compute}":"")
+	}
+
+	@SuppressWarnings('GrMethodMayBeStatic')
+	String generateDefaultDefinition(Field f) {
+		return "DEFAULT ${f.defaultValue}"
 	}
 
 	/**
