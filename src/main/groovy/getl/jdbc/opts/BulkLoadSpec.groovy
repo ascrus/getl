@@ -45,8 +45,28 @@ class BulkLoadSpec extends BaseSpec {
      * <br>closure parameter: source file as CSVDataset
      * <br>return: List of loaded table fields
      */
-    void prepareDestinationFields(@ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset']) Closure<List<String>> value) {
-        setOnPrepareDestinationFields(value)
+    void prepareDestinationFields(@ClosureParams(value = SimpleType, options = ['getl.csv.CSVDataset'])
+                                          Closure<List<String>> cl) {
+        setOnPrepareDestinationFields(cl)
+    }
+
+    @JsonIgnore
+    /**
+     * Process the list of found files before loading into the table (for local loading)
+     * <br>closure parameter: table with a list of found files
+     */
+    Closure getOnPrepareFileList() { params.prepareFileList as Closure }
+    /**
+     * Process the list of found files before loading into the table (for local loading)
+     * <br>closure parameter: table with a list of found files
+     */
+    void setOnPrepareFileList(Closure value) { saveParamValue('prepareFileList', value) }
+    /**
+     * Process the list of found files before loading into the table (for local loading)
+     * <br>closure parameter: table with a list of found files
+     */
+    void prepareFileList(@ClosureParams(value = SimpleType, options = ['getl.jdbc.TableDataset']) Closure cl) {
+        setOnPrepareFileList(cl)
     }
 
     /**
@@ -64,8 +84,8 @@ class BulkLoadSpec extends BaseSpec {
      * Run code before loading file (for loadAsPackage off)
      * <br>closure parameter: file path to load
      */
-    void beforeBulkLoadFile(@ClosureParams(value = SimpleType, options = ['java.util.Map']) Closure value) {
-        setOnBeforeBulkLoadFile(value)
+    void beforeBulkLoadFile(@ClosureParams(value = SimpleType, options = ['java.util.Map']) Closure cl) {
+        setOnBeforeBulkLoadFile(cl)
     }
 
     /**
@@ -83,8 +103,8 @@ class BulkLoadSpec extends BaseSpec {
      * Run code after loading file (for loadAsPackage off)
      * <br>closure parameter: map file attributes
      */
-    void afterBulkLoadFile(@ClosureParams(value = SimpleType, options = ['java.util.Map']) Closure value) {
-        setOnAfterBulkLoadFile(value)
+    void afterBulkLoadFile(@ClosureParams(value = SimpleType, options = ['java.util.Map']) Closure cl) {
+        setOnAfterBulkLoadFile(cl)
     }
 
     /**
@@ -102,8 +122,9 @@ class BulkLoadSpec extends BaseSpec {
      * Run code before loading files (for loadAsPackage on)
      * <br>closure parameter: list of map file attributes
      */
-    void beforeBulkLoadPackageFiles(@ClosureParams(value = SimpleType, options = ['java.util.ArrayList<java.util.Map>']) Closure value) {
-        setOnBeforeBulkLoadPackageFiles(value)
+    void beforeBulkLoadPackageFiles(@ClosureParams(value = SimpleType, options = ['java.util.ArrayList<java.util.Map>'])
+                                            Closure cl) {
+        setOnBeforeBulkLoadPackageFiles(cl)
     }
 
     /**
@@ -121,8 +142,9 @@ class BulkLoadSpec extends BaseSpec {
      * Run code after loading files (for loadAsPackage on)
      * <br>closure parameter: list of map file attributes
      */
-    void afterBulkLoadPackageFiles(@ClosureParams(value = SimpleType, options =  ['java.util.ArrayList<java.util.Map>']) Closure value) {
-        setOnAfterBulkLoadPackageFiles(value)
+    void afterBulkLoadPackageFiles(@ClosureParams(value = SimpleType, options =  ['java.util.ArrayList<java.util.Map>'])
+                                           Closure cl) {
+        setOnAfterBulkLoadPackageFiles(cl)
     }
 
     /** Auto commit after bulk load files */

@@ -146,15 +146,12 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		setScript(file.getText(codePage?:'utf-8'))
 	}
 
-	/**
-	 * SQL generated script 
-	 */
+	/** SQL generated script */
 	private String sql
 
-	String getSql() {
-		return sql
-	}
-	
+	/** SQL generated script */
+	String getSql() { sql }
+
 	/** 
 	 * Current script label variable 
 	 */

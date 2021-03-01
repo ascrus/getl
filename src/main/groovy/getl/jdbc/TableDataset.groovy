@@ -480,6 +480,9 @@ class TableDataset extends JDBCDataset {
 			}
 		}
 
+		if (!remoteLoad && parent.onPrepareFileList != null)
+			parent.onPrepareFileList.call(procFiles)
+
 		def countFiles = (!remoteLoad)?procFiles.countRow():0
 		if (!remoteLoad && countFiles == 0) {
 			pt.name = "${fullTableName}: no found files for loading"
@@ -514,7 +517,7 @@ class TableDataset extends JDBCDataset {
         Closure afterLoadPackage = parent.onAfterBulkLoadPackageFiles
 
 		def ignoredParams = ['schemaFileName', 'files', 'removeFile', 'moveFileTo', 'loadAsPackage',
-							 'beforeBulkLoadFile', 'afterBulkLoadFile',
+							 'prepareFileList', 'beforeBulkLoadFile', 'afterBulkLoadFile',
 							 'beforeBulkLoadPackageFiles', 'afterBulkLoadPackageFiles',
 							 'orderProcess', 'remoteLoad']
 
