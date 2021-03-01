@@ -66,7 +66,7 @@ class RepositorySave extends Getl {
     }
 
     /** Processed object types */
-    static private final ObjectTypes = ['Connections', 'Files', 'Datasets', 'Sequences', 'Historypoints', 'SetOfTables', 'MapTables',
+    static private final ObjectTypes = ['Connections', 'Datasets', 'Sequences', 'Historypoints', 'Files', 'SetOfTables', 'MapTables',
                           'MonitorRules', 'ReferenceFiles', 'ReferenceVerticaTables']
 
     @Override
