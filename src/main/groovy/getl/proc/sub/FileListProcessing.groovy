@@ -718,8 +718,16 @@ abstract class FileListProcessing implements GetlRepository {
         beforeProcessing()
         try {
             buildList()
-            if (prepareFileList != null)
+            if (prepareFileList != null) {
                 prepareFileList.call(tmpProcessFiles)
+                tmpProcessFiles.queryParams.clear()
+                tmpProcessFiles.readOpts {
+                    where = null
+                    order = null
+                    limit = null
+                    offs = null
+                }
+            }
 
             def countFileList = tmpProcessFiles.countRow()
             if (countFileList == 0) {

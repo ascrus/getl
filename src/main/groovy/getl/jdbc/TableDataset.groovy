@@ -480,8 +480,16 @@ class TableDataset extends JDBCDataset {
 			}
 		}
 
-		if (!remoteLoad && parent.onPrepareFileList != null)
+		if (!remoteLoad && parent.onPrepareFileList != null) {
 			parent.onPrepareFileList.call(procFiles)
+			procFiles.queryParams.clear()
+			procFiles.readOpts {
+				where = null
+				order = null
+				limit = null
+				offs = null
+			}
+		}
 
 		def countFiles = (!remoteLoad)?procFiles.countRow():0
 		if (!remoteLoad && countFiles == 0) {
