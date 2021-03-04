@@ -1,12 +1,16 @@
 package getl.models.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
+import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 
 import java.lang.reflect.ParameterizedType
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Base class model
@@ -48,10 +52,13 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
         super.initSpec()
 
         if (params.modelVars == null)
-            params.modelVars = [:] as Map<String, Object>
+            params.modelVars = new ConcurrentHashMap<String, Object>()
+
+        if (params.modelAttrs == null)
+            params.modelAttrs = new ConcurrentHashMap<String, Object>()
 
         if (params.usedObjects == null)
-            params.usedObjects = [] as List<T>
+            params.usedObjects = new CopyOnWriteArrayList<>(new ArrayList<T>())
     }
 
     @Override
@@ -87,6 +94,21 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
             modelVars.putAll(value)
     }
 
+    /** Model attributes */
+    Map<String, Object> getModelAttrs() { params.modelAttrs as Map<String, Object> }
+    /** Model attributes */
+    void setModelAttrs(Map<String, Object> value) {
+        modelAttrs.clear()
+        if (value != null)
+            modelAttrs.putAll(value)
+    }
+    /**
+     * Get the value of the specified attribute
+     * @param name attribute name
+     * @return attribute value
+     */
+    Object modelAttribute(String name) { modelAttrs.get(name) }
+
     /** Create new instance model object */
     protected T newSpec(Object... args) {
         def modelClass = (this.getClass().genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<T>
@@ -108,4 +130,21 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
 
     /** Check object parameter */
     void checkObject(BaseSpec object) { }
+
+    /**
+     * Check attribute naming and generate an unknown error for used objects
+     * @param allowAttrs list of allowed attribute names
+     */
+    void checkAttrs(List<String> allowAttrs) {
+        if (allowAttrs == null)
+            throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')
+
+        def unknownKeys = MapUtils.Unknown(modelAttrs, allowAttrs)
+        if (!unknownKeys.isEmpty())
+            throw new ExceptionDSL("Unknown attributes were detected in model \"$dslNameObject\": $unknownKeys, allow attributes: $allowAttrs")
+
+        usedObjects.each { node ->
+            node.checkAttrs(allowAttrs)
+        }
+    }
 }

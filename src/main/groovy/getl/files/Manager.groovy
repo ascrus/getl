@@ -32,7 +32,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
 				 'sqlHistoryFile', 'saveOriginalDate', 'limitDirs', 'threadLevel', 'recursive',
-				 'ignoreExistInStory', 'createStory', 'takePathInStory', 'attributes', 'story', 'description'])
+				 'ignoreExistInStory', 'createStory', 'takePathInStory', 'attributes', 'story', 'storyName',
+				 'description'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel',
 				 'ignoreExistInStory', 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory'])
@@ -678,11 +679,35 @@ abstract class Manager implements Cloneable, GetlRepository {
 	void setFileListConnection(JDBCConnection value) { fileListConnection = value }
 
 	/** History table */
-	TableDataset getStory() { params.story as TableDataset }
+	@JsonIgnore
+	TableDataset getStory() {
+		def res = params.story as TableDataset
+		if (res == null && storyName != null)
+			res = dslCreator.jdbcTable(storyName)
+
+		return res
+	}
 	/** History table */
-	void setStory(TableDataset value) { params.story = value }
+	void setStory(TableDataset value) {
+		useStory(value)
+	}
 	/** Use table for storing history download files */
-	void useStory(TableDataset value) { setStory(value) }
+	void useStory(TableDataset value) {
+		params.story = value
+		setStoryName(value?.dslNameObject)
+	}
+
+	/** History table name */
+	String getStoryName() { params.storyName as String }
+	/** History table name */
+	void setStoryName(String value) { useStoryName(value) }
+	/** Use table name for storing history download files */
+	void useStoryName(String tableName) {
+		if (tableName != null)
+			dslCreator.jdbcTable(tableName)
+
+		params.storyName = tableName
+	}
 
 	/** Directory level for which to enable parallelization */
 	Integer getThreadLevel() { params.threadLevel as Integer }
@@ -1464,8 +1489,8 @@ WHERE
 	 * Adding system fields to dataset for history table operations
 	 */
 	static void AddFieldsToDS(Dataset dataset) {
-		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 1)
-		dataset.field << new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 2)
+		dataset.field << new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 1)
+		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 2)
 		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
 		dataset.field << new Field(name: "FILESIZE", type: "BIGINT", isNull: false)
 		dataset.field << new Field(name: "FILELOADED", type: "DATETIME", isNull: false)
@@ -1485,8 +1510,8 @@ WHERE
 	 * @param dataset
 	 */
 	static void AddFieldFileListToDS(Dataset dataset) {
-		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 1)
-		dataset.field << new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 2)
+		dataset.field << new Field(name: "FILEPATH", length: 500, isNull: false, isKey: true, ordKey: 1)
+		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false, isKey: true, ordKey: 2)
 		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
 		dataset.field << new Field(name: "FILESIZE", type: "BIGINT", isNull: false)
 		dataset.field << new Field(name: "FILETYPE", length: 20, isNull: false)
@@ -1499,6 +1524,7 @@ WHERE
 	 * @param dataset
 	 */
 	static void AddFieldListToDS(Dataset dataset) {
+		dataset.field << new Field(name: "FILEPATH", length: 500, isNull: false)
 		dataset.field << new Field(name: "FILENAME", length: 250, isNull: false)
 		dataset.field << new Field(name: "FILEDATE", type: "DATETIME", isNull: false)
 		dataset.field << new Field(name: "FILESIZE", type: "BIGINT", isNull: false)

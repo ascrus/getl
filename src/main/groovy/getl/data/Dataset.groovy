@@ -953,15 +953,15 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			throw new ExceptionGETL("Driver is not support each row operation")
 		if (status != Status.AVAILABLE)
 			throw new ExceptionGETL("Dataset is not avaible for read operation (current status is ${status})")
-		
+
+		if (procParams == null) procParams = [:]
+		methodParams.validation("eachRow", procParams, [connection.driver.methodParams.params("eachRow")])
+
 		if (getField().size() == 0 && BoolUtils.IsValue(procParams.autoSchema, isAutoSchema())) {
 			if (!connection.driver.isSupport(Driver.Support.AUTOLOADSCHEMA))
 				throw new ExceptionGETL("Can not auto load schema from dataset")
 			loadDatasetMetadata()
 		}
-		
-		if (procParams == null) procParams = [:]
-		methodParams.validation("eachRow", procParams, [connection.driver.methodParams.params("eachRow")])
 
 		def readDir = directives('read')?:[:]
 		procParams = readDir + procParams

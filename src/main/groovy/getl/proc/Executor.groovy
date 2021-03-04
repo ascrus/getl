@@ -111,7 +111,7 @@ class Executor implements GetlRepository {
 	}
 	
 	/** List of processing elements */
-	private final List list = Collections.synchronizedList(new ArrayList())
+	private final List list = new CopyOnWriteArrayList(new ArrayList())
 
 	/** List of processing elements */
 	List getList() { this.list }

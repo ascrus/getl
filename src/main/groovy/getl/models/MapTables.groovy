@@ -36,20 +36,6 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     List<MapTableSpec> getUsedMapping() { usedObjects as List<MapTableSpec> }
     /** Used mapping datasets */
     void setUsedMapping(List<MapTableSpec> value) { usedObjects = value }
-    /** Assign mapping datasets from list of map */
-    void assignUsedMapping(List<Map> list) {
-        usedMapping.clear()
-        list?.each {val ->
-            mapTable(val.sourceName as String) {
-                destinationName = val.destinationName as String
-                if (val.attrs != null) attrs.putAll(val.attrs as Map)
-                if (val.objectVars != null) objectVars.putAll(val.objectVars as Map)
-                if (val.map != null) map = val.map as Map<String, String>
-                if (val.listPartitions != null) listPartitions = val.listPartitions as List
-                if (val.partitionsDatasetName != null) partitionsDatasetName = val.partitionsDatasetName as String
-            }
-        }
-    }
 
     /** Repository connection name for destination datasets */
     String getDestinationConnectionName() { params.destinationConnectionName as String }
@@ -59,7 +45,6 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     /** Connection for destination datasets */
     @JsonIgnore
     Connection getDestinationConnection() { dslCreator.connection(destinationConnectionName) }
-
     /** Use specified connection for destination datasets */
     void useDestinationConnection(String connectionName) {
         if (connectionName == null)
@@ -76,6 +61,27 @@ class MapTables extends DatasetsModel<MapTableSpec> {
             throw new ExceptionModel('Connection not registered in Getl repository!')
 
         saveParamValue('destinationConnectionName', connection.dslNameObject)
+    }
+
+    /** Name dataset of mapping processing history */
+    String getStoryDatasetName() { params.storyDatasetName as String }
+    /** Name dataset of mapping processing history */
+    void setStoryDatasetName(String value) { useStoryDatasetName(value) }
+    /** Dataset of mapping processing history */
+    @JsonIgnore
+    Dataset getStoryDataset() { (storyDatasetName != null)?dslCreator.dataset(storyDatasetName):null }
+    /** Use specified dataset name of mapping processing history */
+    void useStoryDatasetName(String datasetName) {
+        if (datasetName != null)
+            dslCreator.dataset(datasetName)
+
+        saveParamValue('storyDatasetName', datasetName)
+    }
+    void useStoryDataset(Dataset dataset) {
+        if (dataset != null && dataset.dslNameObject == null)
+            throw new ExceptionModel('Dataset not registered in Getl repository!')
+
+        saveParamValue('storyDatasetName', dataset?.dslNameObject)
     }
 
     /**

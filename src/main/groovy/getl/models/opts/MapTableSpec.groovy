@@ -7,6 +7,7 @@ import getl.models.MapTables
 import getl.models.sub.DatasetSpec
 import groovy.transform.InheritConstructors
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 
 @InheritConstructors
 class MapTableSpec extends DatasetSpec {
@@ -14,7 +15,7 @@ class MapTableSpec extends DatasetSpec {
     protected void initSpec() {
         super.initSpec()
         if (params.listPartitions == null)
-            params.listPartitions = Collections.synchronizedList(new ArrayList())
+            params.listPartitions = new CopyOnWriteArrayList(new ArrayList())
         if (params.map == null)
             params.map = new ConcurrentHashMap<String, String>()
     }

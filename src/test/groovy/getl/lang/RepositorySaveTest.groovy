@@ -3,8 +3,6 @@ package getl.lang
 import getl.lang.sub.RepositorySave
 import getl.lang.sub.SaveToRepository
 import getl.tfs.TDS
-import getl.tfs.TDSTable
-import getl.tfs.TFS
 
 class RepositorySaveTest extends RepositorySave {
     def con = new TDS().with {
@@ -78,8 +76,8 @@ class RepositorySaveTest extends RepositorySave {
 
             table('test:table1') {
                 objectVars.test2 = 2
-                attrs.a1 = 3
-                attrs.a2 = [a:1, b:2, c:3]
+                modelAttrs.a1 = 3
+                modelAttrs.a2 = [a:1, b:2, c:3]
             }
         }
     }

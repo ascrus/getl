@@ -43,16 +43,6 @@ class SetOfTables extends DatasetsModel<TableSpec> {
         if (value != null)
             usedTables.addAll(value)
     }
-    /** Assign tables from list of map */
-    void assignUsedTables(List<Map> list) {
-        usedTables.clear()
-        list?.each {val ->
-            table(val.sourceTableName) {
-                if (val.attrs != null) attrs.putAll(val.attrs as Map)
-                if (val.objectVars != null) objectVars.putAll(val.objectVars as Map)
-            }
-        }
-    }
 
     /**
      * Use table in list

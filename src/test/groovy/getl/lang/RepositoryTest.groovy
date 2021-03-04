@@ -964,8 +964,8 @@ class RepositoryTest extends TestDsl {
                     assertEquals(1, modelVars.get('test 1'))
                     table('test:table1') {
                         assertEquals(2, objectVars.test2)
-                        assertEquals(3, attrs.a1)
-                        assertEquals([a:1, b:2, c:3], attrs.a2 as Map)
+                        assertEquals(3, modelAttrs.a1)
+                        assertEquals([a:1, b:2, c:3], modelAttrs.a2 as Map)
                     }
                 }
 

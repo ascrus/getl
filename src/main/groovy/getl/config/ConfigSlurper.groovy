@@ -517,15 +517,11 @@ class ConfigSlurper extends ConfigManager {
 			}
 			writer.append("${tabStr}${keyStr}${quote}${StringUtils.EscapeJavaWithoutUTF(value.toString())}${quote}")
 		}
-		else if (value instanceof GetlRepository) {
-			def repObj = value as GetlRepository
-			if (repObj.dslNameObject == null)
-				throw new ExceptionDSL("The Getl object being saved must have a name in the repository!")
-			writer.append("${tabStr}${keyStr}'${repObj.dslNameObject}'")
-		}
-		else {
+		else if (value instanceof Number || value instanceof Boolean) {
 			writer.append("${tabStr}${keyStr}${value.toString()}")
 		}
+		else
+			return false
 
 		return true
 	}

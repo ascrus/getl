@@ -90,8 +90,6 @@ class RepositorySave extends Getl {
         if (FileUtils.IsResourceFileName(repositoryStorageManager.storagePath))
             throw new ExceptionDSL('The repository path cannot be resource path!')
 
-        //repositoryStorageManager { autoLoadFromStorage = true }
-
         try {
             def methods = [:] as Map<String, List<MethodParams>>
             ObjectTypes.each {typeName ->
@@ -124,13 +122,9 @@ class RepositorySave extends Getl {
                 }
 
                 def env = an.env()
-                List<String> envs = null
-                if (type in ['Connections', 'Files']) {
-                    if (env == null || env.trim().length() == 0)
-                        throw new ExceptionDSL("Required to specify \"env\" parameter in annotation \"SaveToRepository\" for method \"$methodName\"")
-                    def spl = env.split(',')
-                    envs = spl.collect { e -> e.trim().toLowerCase() }
-                }
+                if (env == null || env.trim().length() == 0)
+                    throw new ExceptionDSL("Required to specify \"env\" parameter in annotation \"SaveToRepository\" for method \"$methodName\"")
+                List<String> envs = env.split(',').collect { e -> e.trim().toLowerCase() }
 
                 def retrieve = BoolUtils.IsValue(an.retrieve())
                 def mask = an.mask()
@@ -158,9 +152,9 @@ class RepositorySave extends Getl {
                         if (type in ['Connections', 'Files'])
                             logFinest "Call method \"$methodName\" from environments: ${envs.join(', ')} ..."
                         else if (type == 'Datasets')
-                            logFinest "Call method \"$methodName\" ${(retrieve) ? '(with retrieve fields) ' : ''}..."
+                            logFinest "Call method \"$methodName\" ${(retrieve)?'(with retrieve fields)':''} from environments: ${envs.join(', ')} ..."
                         else
-                            logFinest "Call method \"$methodName\" ..."
+                            logFinest "Call method \"$methodName\" from environments: ${envs.join(', ')} ..."
 
                         def clearMethod = 'clear' + type
                         thisObject."$clearMethod"()

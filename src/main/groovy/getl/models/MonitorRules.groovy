@@ -59,19 +59,6 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         if (value != null)
             usedObjects.addAll(value)
     }
-    /** Assign rules from list of map */
-    void assignUsedRules(List<Map> list) {
-        usedRules.clear()
-        list?.each { val ->
-            rule(val.queryName as String) {
-                if (val.objectVars != null) objectVars.putAll(val.objectVars as Map)
-                if (val.description != null) description = val.description as String
-                if (val.checkFrequency != null) checkFrequency = DateUtils.ToDuration(val.checkFrequency)
-                if (val.lagTime != null) lagTime = DateUtils.ToDuration(val.lagTime)
-                if (val.notificationTime != null) notificationTime = DateUtils.ToDuration(val.notificationTime)
-            }
-        }
-    }
     /** List of enabled rules */
     List<MonitorRuleSpec> getEnabledRules() {
         return usedRules.findAll { rule -> BoolUtils.IsValue(rule.enabled, true) }

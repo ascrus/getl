@@ -102,19 +102,6 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     }
 
     /**
-     * Check attribute naming and generate an unknown error for used objects
-     * @param allowAttrs list of allowed attribute names
-     */
-    void checkAttrs(List<String> allowAttrs) {
-        if (allowAttrs == null)
-            throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')
-
-        usedDatasets.each { node ->
-            node.checkAttrs(allowAttrs)
-        }
-    }
-
-    /**
      * Valid dataset parameters
      * @param ds validation dataset
      * @param connectionName the name of the connection used for the dataset

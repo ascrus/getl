@@ -2297,6 +2297,7 @@ Examples:
      * @param vars vars set values for script fields declared as "@Field"
      * @param validExist check for the existence of fields in the script
      */
+    @SuppressWarnings('GrMethodMayBeStatic')
     protected void _fillFieldFromVars(Script script, Map vars, Boolean validExist = true, Boolean startGroovy = false) {
         vars.each { key, value ->
             MetaProperty prop = script.hasProperty(key as String)
@@ -4263,7 +4264,12 @@ Examples:
         return parent
     }
 
-    /** Temporary CSV file */
+    /**
+     * Temporary CSV file
+     * @param name repository name
+     * @param cl initialization code
+     * @return dataset
+     */
     TFSDataset csvTemp(String name,
                        @DelegatesTo(TFSDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl = null) {
@@ -4271,13 +4277,21 @@ Examples:
     }
 
     /**
-     * Create temporary CSV file
+     * Temporary CSV file
      * @param cl initialization code
-     * @return created dataset
+     * @return dataset
      */
     TFSDataset csvTemp(@DelegatesTo(TFSDataset)
                        @ClosureParams(value = SimpleType, options = ['getl.tfs.TFSDataset']) Closure cl) {
         csvTemp(null, false, cl)
+    }
+
+    /**
+     * Temporary CSV file
+     * @return dataset
+     */
+    TFSDataset csvTemp() {
+        csvTemp(null, false, null)
     }
 
     /**
