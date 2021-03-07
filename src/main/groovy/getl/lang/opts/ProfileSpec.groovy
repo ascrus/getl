@@ -18,10 +18,10 @@ class ProfileSpec extends BaseSpec {
         this.isProfile = isProfile
         statistics = new ProcessTime(
                 name: name,
-                logLevel: (isProfile)?Level.INFO:((owner as Getl).options().processTimeLevelLog),
-                debug: (isProfile)?true:((owner as Getl).options().processTimeDebug),
+                logLevel: (owner as Getl).options().processTimeLevelLog,
+                debug: ((!isProfile)?(owner as Getl).options().processTimeDebug: true),
                 objectName: objectName?:'row',
-                abbrName: (isProfile)?'<PROFILE>':'<STAT>'
+                abbrName: (!isProfile)?'STAT':null
         )
     }
 

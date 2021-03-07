@@ -21,29 +21,25 @@ class ProcessTime {
 	}
 
 	ProcessTime(Map params) {
-		if (params.name != null) {
+		if (params.name != null)
 			this.name = params.name
-		}
 		else
-		if (params.className != null) {
+		if (params.className != null)
 			this.name = params.className
-		}
 
-		if (params.logLevel != null) {
+		if (params.logLevel != null)
 			logLevel = Logs.StrToLevel(params.logLevel as String)
-		}
 
-		if (params.objectName != null) {
+		if (params.objectName != null)
 			objectName = params.objectName
-		}
 
-		if (params.debug != null) {
+		if (params.debug != null)
 			debug = params.debug
-		}
 
-		if (params.abbrName != null) {
+		if (params.abbrName != null)
 			abbrName = params.abbrName
-		}
+		else if (params.containsKey('abbrName'))
+			abbrName = null
 
 		init()
 	}
@@ -60,7 +56,7 @@ class ProcessTime {
 	/** Metric */
 	public String objectName = 'row'
 	/** Abbreviate */
-	public String abbrName = '<STAT>'
+	public String abbrName = 'STAT'
 	/** Debugging */
 	public Boolean debug = debugDefault
 
@@ -91,8 +87,8 @@ class ProcessTime {
 		if (logLevel == null) logLevel = LogLevelDefault
 		
 		if (logLevel != Level.OFF && debug) {
-			def msg = "$abbrName START ${name}"
-			Logs.Write(logLevel, msg)
+			def msg = "${(abbrName != null)?"[$abbrName start] ":''}${name}"
+			Logs.Write(Level.FINEST, msg)
 		}
 	}
 
@@ -113,8 +109,8 @@ class ProcessTime {
 		}
 
 		if (logLevel != Level.OFF) {
-			def msg = "${name}: ${lastStat()}".toString()
-			if (debug) msg = "$abbrName FINISH " + msg else msg = "$abbrName " + msg
+			def a = (abbrName != null)?("[$abbrName" + ((debug)?' finish':'') + '] '):''
+			def msg = "${a}${name}: ${lastStat()}".toString()
 			Logs.Write(logLevel, msg)
 		}
 	}
