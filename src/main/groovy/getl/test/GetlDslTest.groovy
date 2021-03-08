@@ -19,8 +19,30 @@ import org.junit.runner.Description
  */
 @InheritConstructors
 class GetlDslTest extends GetlTest {
+    protected GetlDslTest() {
+        super()
+        readGetlTestProperties()
+    }
+
+    private void readGetlTestProperties() {
+        def propFile = new File('getl-test-properties.conf')
+        if (!propFile.exists()) {
+            getlTestConfigProperties = [defaultEnv: 'dev'] as Map<String, Object>
+            configEnvironment = getlTestConfigProperties.defaultEnv as String
+            return
+        }
+
+        getlTestConfigProperties = ConfigSlurper.LoadConfigFile(propFile)
+        configEnvironment = (getlTestConfigProperties.defaultEnv as String)?:'dev'
+    }
+
+    /** Default environment for running method */
+    private Map<String, Object> getlTestConfigProperties
+    /** Default environment for running method */
+    Map<String, Object> getGetlTestConfigProperties() { getlTestConfigProperties }
+
     /** Environment for running method */
-    protected String configEnvironment = 'dev'
+    protected String configEnvironment
 
     @Override
     protected Class<ConfigManager> useConfigManager() { ConfigSlurper }
@@ -41,7 +63,7 @@ class GetlDslTest extends GetlTest {
             if (a != null)
                 configEnvironment = a.env()
             else
-                configEnvironment = 'dev'
+                configEnvironment = getlTestConfigProperties.defaultEnv as String
         }
     }
 
@@ -61,7 +83,7 @@ class GetlDslTest extends GetlTest {
     /** Clean Getl on every test */
     protected Boolean cleanGetlBeforeTest() { true }
 
-    /** Autoloading the project configuration file getl-properties.conf */
+    /** Auto loading the project configuration file getl-properties.conf */
     protected Boolean autoLoadProperties() { true }
 
     @Before
