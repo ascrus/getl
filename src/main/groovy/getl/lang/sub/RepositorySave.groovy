@@ -1,5 +1,6 @@
 package getl.lang.sub
 
+import getl.config.ConfigSlurper
 import getl.exception.ExceptionDSL
 import getl.jdbc.JDBCConnection
 import getl.jdbc.opts.RetrieveDatasetsSpec
@@ -28,7 +29,38 @@ class RepositorySave extends Getl {
                 throw new ExceptionDSL("Type ${args.getClass().name} is not supported as a method parameter!")
         }
 
-        Application(startClass, args + ['environment=dev'])
+        readGetlRepositoryProperties()
+        Application(startClass, args + ['environment=' + getlDefaultConfigEnvironment])
+    }
+
+    /** Additional properties for the repository object generator */
+    static private Map<String, Object> getlRepositoryConfigProperties
+    /** Additional properties for the repository object generator */
+    static protected Map<String, Object> getGetlRepositoryConfigProperties() { getlRepositoryConfigProperties }
+
+    /** Default configuration environment */
+    static private String getlDefaultConfigEnvironment
+    /** Default configuration environment */
+    static protected String getGetlDefaultConfigEnvironment() { getlDefaultConfigEnvironment }
+
+    /** Read repository properties from file and system variables */
+    static private void readGetlRepositoryProperties() {
+        def isSysEnvExists = System.properties.containsKey('getl-repository-env')
+        if (isSysEnvExists) {
+            getlDefaultConfigEnvironment = System.properties.get('getl-repository-env')
+        }
+        else
+            getlDefaultConfigEnvironment = 'dev'
+
+        def propFile = new File('getl-repository-properties.conf')
+        if (!propFile.exists()) {
+            getlRepositoryConfigProperties = [:] as Map<String, Object>
+            return
+        }
+
+        getlRepositoryConfigProperties = ConfigSlurper.LoadConfigFile(propFile)
+        if (!isSysEnvExists && getlRepositoryConfigProperties.containsKey('defaultEnv'))
+            getlDefaultConfigEnvironment = getlRepositoryConfigProperties.defaultEnv as String
     }
 
     /** Init object before save objects */
@@ -241,7 +273,7 @@ class RepositorySave extends Getl {
     }
 
     /** Save connections */
-    void saveConnections(String env = 'dev', String mask = null) {
+    void saveConnections(String env = getlDefaultConfigEnvironment, String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryConnections, mask, env)
         logInfo "For environment \"$env\" $count connections saved"
     }
@@ -339,7 +371,7 @@ class RepositorySave extends Getl {
     }
 
     /** Save file managers */
-    void saveFiles(String env = 'dev', String mask = null) {
+    void saveFiles(String env = getlDefaultConfigEnvironment, String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryFilemanagers, mask, env)
         logInfo "For environment \"$env\" $count file managers saved"
     }

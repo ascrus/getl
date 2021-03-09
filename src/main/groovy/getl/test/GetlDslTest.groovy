@@ -24,24 +24,37 @@ class GetlDslTest extends GetlTest {
         readGetlTestProperties()
     }
 
+    /** Read unit test properties from file and system variables */
     private void readGetlTestProperties() {
+        def isSysEnvExists = System.properties.containsKey('getl-test-env')
+        if (isSysEnvExists) {
+            getlDefaultConfigEnvironment = System.properties.get('getl-test-env')
+        }
+        else
+            getlDefaultConfigEnvironment = 'dev'
+
         def propFile = new File('getl-test-properties.conf')
         if (!propFile.exists()) {
-            getlTestConfigProperties = [defaultEnv: 'dev'] as Map<String, Object>
-            configEnvironment = getlTestConfigProperties.defaultEnv as String
+            getlTestConfigProperties = [:] as Map<String, Object>
             return
         }
 
         getlTestConfigProperties = ConfigSlurper.LoadConfigFile(propFile)
-        configEnvironment = (getlTestConfigProperties.defaultEnv as String)?:'dev'
+        if (!isSysEnvExists && getlTestConfigProperties.containsKey('defaultEnv'))
+            getlDefaultConfigEnvironment = getlTestConfigProperties.defaultEnv as String
     }
 
-    /** Default environment for running method */
+    /** Additional properties for test methods */
     private Map<String, Object> getlTestConfigProperties
-    /** Default environment for running method */
-    Map<String, Object> getGetlTestConfigProperties() { getlTestConfigProperties }
+    /** Additional properties for test methods */
+    protected Map<String, Object> getGetlTestConfigProperties() { getlTestConfigProperties }
 
-    /** Environment for running method */
+    /** Default configuration environment */
+    private String getlDefaultConfigEnvironment
+    /** Default configuration environment */
+    protected String getGetlDefaultConfigEnvironment() { getlDefaultConfigEnvironment }
+
+    /** Environment for test methods */
     protected String configEnvironment
 
     @Override
@@ -63,7 +76,7 @@ class GetlDslTest extends GetlTest {
             if (a != null)
                 configEnvironment = a.env()
             else
-                configEnvironment = getlTestConfigProperties.defaultEnv as String
+                configEnvironment = getlDefaultConfigEnvironment
         }
     }
 
