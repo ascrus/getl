@@ -13,7 +13,7 @@ import groovy.transform.CompileStatic
  *
  */
 @SuppressWarnings('unused')
-class FileDataset extends Dataset {
+class FileDataset extends Dataset { /*TODO: added countRow method */
 	FileDataset() {
 		methodParams.register('openWrite', ['deleteOnEmpty', 'append'])
 		methodParams.register('drop', ['validExist', 'portions'])

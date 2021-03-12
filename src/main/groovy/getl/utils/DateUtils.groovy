@@ -284,7 +284,7 @@ class DateUtils {
 		if (res == null)
 			return null
 
-		return new java.sql.Date(res.toDate().time)
+		return java.sql.Date.valueOf(res)
 	}
 
 	/**
@@ -316,7 +316,7 @@ class DateUtils {
 		if (res == null)
 			return null
 
-		return new java.sql.Date(res.toDate().time)
+		return java.sql.Date.valueOf(res)
 	}
 
 	/**
@@ -334,7 +334,7 @@ class DateUtils {
 		if (res == null)
 			return null
 
-		return new Time(res.toDate().time)
+		return Time.valueOf(res)
 	}
 
 	/**
@@ -366,7 +366,7 @@ class DateUtils {
 		if (res == null)
 			return null
 
-		return new Time(res.toDate().time)
+		return Time.valueOf(res)
 	}
 
 	/**
@@ -384,7 +384,7 @@ class DateUtils {
 		if (res == null)
 			return null
 
-		return new Timestamp(res.toDate().time)
+		return Timestamp.valueOf(res)
 	}
 
 	/**
@@ -416,7 +416,7 @@ class DateUtils {
 		if (res == null)
 			return null
 
-		return new Timestamp(res.toDate().time)
+		return Timestamp.valueOf(res)
 	}
 
 	/** Convert type timestamp to date */
@@ -569,7 +569,8 @@ class DateUtils {
 	 */
 	static String FormatDate(DateTimeFormatter df, Date date) {
 		if (date == null) return null
-		return df.format(date.toLocalDateTime())
+		def ld = date.toLocalDateTime()
+		return df.format(ld)
 	}
 	
 	/**
@@ -783,7 +784,7 @@ class DateUtils {
 	static BigDecimal Timestamp2Value(Date value) {
 		if (value == null) return null
 
-		return Timestamp2Value(new Timestamp(value.time))
+		return (value instanceof Timestamp)?Timestamp2Value(value as Timestamp):Timestamp2Value(new Timestamp(value.time))
 	}
 	
 	/**

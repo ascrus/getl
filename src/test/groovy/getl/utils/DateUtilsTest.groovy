@@ -155,6 +155,12 @@ class DateUtilsTest extends getl.test.GetlTest {
     void testTimestamp2Value() {
         assertNull(DateUtils.Timestamp2Value(null))
 
+        def df = DateUtils.BuildDateTimeFormatter('yyyy-MM-dd HH:mm:ss.nnnnnn')
+        def dt = DateUtils.ParseSQLTimestamp(df, '2021-02-01 13:14:15.678901')
+        def val = DateUtils.Timestamp2Value(dt)
+        assertEquals('678901', StringUtils.RightStr(val.toString(), 6))
+        assertEquals(dt, DateUtils.Value2Timestamp(val))
+
         def b = (1483228739.000000000).toBigDecimal()
         DateUtils.setDefaultTimeZone('UTC')
         assertEquals(b, DateUtils.Timestamp2Value(exampleDateTime))
