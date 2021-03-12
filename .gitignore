@@ -1,9 +1,6 @@
 ### Gradle template
 .gradle/
-gradle/
 build/
-gradlew
-gradlew.bat
 
 ## Idea
 .idea/
