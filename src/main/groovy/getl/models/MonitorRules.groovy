@@ -52,30 +52,37 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     }
 
     /** List of used rules */
+    @Synchronized
     List<MonitorRuleSpec> getUsedRules() { usedObjects as List<MonitorRuleSpec> }
     /** List of used rules */
+    @Synchronized
     void setUsedRules(List<MonitorRuleSpec> value) {
         usedObjects.clear()
         if (value != null)
             usedObjects.addAll(value)
     }
     /** List of enabled rules */
+    @Synchronized
     List<MonitorRuleSpec> getEnabledRules() {
         return usedRules.findAll { rule -> BoolUtils.IsValue(rule.enabled, true) }
     }
 
     /** Monitoring status storage table name */
+    @Synchronized
     String getStatusTableName() { params.statusTableName as String }
     /** Monitoring status storage table name */
+    @Synchronized
     void setStatusTableName(String value) { useStatusTable(value) }
 
     /** Object monitoring status storage table */
     @JsonIgnore
+    @Synchronized
     TableDataset getStatusTable() {
         return ((statusTableName != null)?dslCreator.jdbcTable(statusTableName):null)
     }
 
     /** Use monitoring status storage table */
+    @Synchronized
     void useStatusTable(String value) {
         if (value == null) {
             saveParamValue('statusTableName', null)
@@ -86,6 +93,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         useStatusTable(table)
     }
     /** Use monitoring status storage table */
+    @Synchronized
     void useStatusTable(TableDataset value) {
         if (value != null) {
             if (value.connection == null)
@@ -102,12 +110,15 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     }
 
     /** Number of concurrency rule processing threads */
+    @Synchronized
     Integer getCountThreads() { (params.countThreads as Integer)?:1 }
     /** Number of concurrency rule processing threads */
+    @Synchronized
     void setCountThreads(Integer value) { saveParamValue('countThreads', value) }
 
     /** Check the query is correct */
     @SuppressWarnings("GrMethodMayBeStatic")
+    @Synchronized
     void validQuery(QueryDataset query) {
         if (query == null)
             throw new ExceptionDSL('No query specified!')
@@ -126,6 +137,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
      * @param queryName
      * @return rule specification
      */
+    @Synchronized
     MonitorRuleSpec findRule(String queryName) {
         usedRules.find { r -> r.queryName == queryName } as MonitorRuleSpec
     }
@@ -136,6 +148,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
      * @param cl defining code
      * @return rule spec
      */
+    @Synchronized
     MonitorRuleSpec rule(String queryName,
                          @DelegatesTo(MonitorRuleSpec)
                          @ClosureParams(value = SimpleType, options = ['getl.models.opts.MonitorRuleSpec'])
@@ -169,6 +182,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
      * @param cl defining code
      * @return table spec
      */
+    @Synchronized
     MonitorRuleSpec rule(@DelegatesTo(MonitorRuleSpec)
                                   @ClosureParams(value = SimpleType, options = ['getl.models.opts.MonitorRuleSpec'])
                                     Closure cl) {
@@ -176,6 +190,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     }
 
     /** Create status table */
+    @Synchronized
     private void createStatusTable() {
         def tab = statusTable
         if (tab.exists)
@@ -232,6 +247,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     void setCurrentDateTime(Date value) { this._currentDateTime = value }
 
     @Override
+    @Synchronized
     void checkModel(Boolean checkObjects = true) {
         if (statusTableName == null)
             throw new ExceptionModel('A table of monitoring status storage is required!')
@@ -240,6 +256,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     }
 
     @Override
+    @Synchronized
     void checkObject(BaseSpec obj) {
         super.checkObject(obj)
 

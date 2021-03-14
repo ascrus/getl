@@ -224,6 +224,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 						@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.SequenceCreateSpec']) Closure cl = null) {
 		def parent = new SequenceCreateSpec(this)
 		parent.runClosure(cl)
+		connection.tryConnect()
 		connection.currentJDBCDriver.createSequence(fullName, ifNotExists, parent)
 	}
 
@@ -241,6 +242,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	 * @param ifExists drop if exists
 	 */
 	void dropSequence(Boolean ifExists = false) {
+		connection.tryConnect()
 		connection.currentJDBCDriver.dropSequence(fullName, ifExists)
 	}
 }

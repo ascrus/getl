@@ -10,6 +10,7 @@ import getl.jdbc.TableDataset
 import getl.jdbc.ViewDataset
 import getl.utils.Path
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 
 /**
  * Datasets model
@@ -88,6 +89,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     }
 
     @Override
+    @Synchronized
     void checkModel(Boolean checkObjects = true) {
         if (modelConnectionName == null)
             throw new ExceptionModel("The model connection is not specified!")
@@ -96,6 +98,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     }
 
     @Override
+    @Synchronized
     void checkObject(BaseSpec obj) {
         super.checkObject(obj)
         validDataset((obj as DatasetSpec).modelDataset)
@@ -151,6 +154,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
      * @param excludeMask list of masks to exclude datasets
      * @return list of names of found model datasets
      */
+    @Synchronized
     List<String> findModelDatasets(List<String> includeMask = null, List<String> excludeMask = null) {
         def res = [] as List<String>
         def includePath = Path.Masks2Paths(includeMask)

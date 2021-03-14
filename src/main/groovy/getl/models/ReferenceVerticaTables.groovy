@@ -12,6 +12,7 @@ import getl.utils.Path
 import getl.vertica.VerticaConnection
 import getl.vertica.VerticaTable
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -22,22 +23,29 @@ import groovy.transform.stc.SimpleType
 @InheritConstructors
 class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     /** Vertica connection name in the repository */
+    @Synchronized
     String getReferenceConnectionName() { modelConnectionName }
     /** Vertica connection name in the repository */
+    @Synchronized
     void setReferenceConnectionName(String value) { useReferenceConnection(value) }
 
     /** Used Vertica connection */
     @JsonIgnore
+    @Synchronized
     VerticaConnection getReferenceConnection() { modelConnection as VerticaConnection }
 
     /** Use specified Vertica connection */
+    @Synchronized
     void useReferenceConnection(String verticaConnectionName) { useModelConnection(verticaConnectionName) }
     /** Use specified Vertica connection */
+    @Synchronized
     void useReferenceConnection(VerticaConnection verticaConnection) { useModelConnection(verticaConnection) }
 
     /** List of used tables */
+    @Synchronized
     List<ReferenceVerticaTableSpec> getUsedTables() { usedDatasets as List<ReferenceVerticaTableSpec> }
     /** List of used tables */
+    @Synchronized
     void setUsedTables(List<ReferenceVerticaTableSpec> value) {
         usedTables.clear()
         if (value != null)
@@ -45,8 +53,10 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     }
 
     /** Reference storage schema */
+    @Synchronized
     String getReferenceSchemaName() { params.referenceSchemaName as String }
     /** Reference storage schema */
+    @Synchronized
     void setReferenceSchemaName(String value) { saveParamValue('referenceSchemaName', value) }
 
     /**
@@ -55,6 +65,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * @param cl defining code
      * @return table spec
      */
+    @Synchronized
     ReferenceVerticaTableSpec referenceFromTable(String tableName,
                                                  @DelegatesTo(ReferenceVerticaTableSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec'])
@@ -67,6 +78,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
      * @param cl defining code
      * @return table spec
      */
+    @Synchronized
     ReferenceVerticaTableSpec referenceFromTable(@DelegatesTo(ReferenceVerticaTableSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec'])
                                     Closure cl) {
@@ -74,6 +86,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     }
 
     @Override
+    @Synchronized
     protected void validDataset(Dataset ds, String connectionName = null) {
         super.validDataset(ds, connectionName)
 

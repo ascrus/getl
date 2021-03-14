@@ -7,6 +7,7 @@ import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 
 import java.lang.reflect.ParameterizedType
 import java.util.concurrent.ConcurrentHashMap
@@ -85,9 +86,11 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
     }
 
     /** Model variables */
+    @Synchronized
     Map<String, Object> getModelVars() { params.modelVars as Map<String, Object> }
     /** Model variables */
     @SuppressWarnings('unused')
+    @Synchronized
     void setModelVars(Map<String, Object> value) {
         modelVars.clear()
         if (value != null)
@@ -95,8 +98,10 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
     }
 
     /** Model attributes */
+    @Synchronized
     Map<String, Object> getModelAttrs() { params.modelAttrs as Map<String, Object> }
     /** Model attributes */
+    @Synchronized
     void setModelAttrs(Map<String, Object> value) {
         modelAttrs.clear()
         if (value != null)
@@ -107,6 +112,7 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
      * @param name attribute name
      * @return attribute value
      */
+    @Synchronized
     Object modelAttribute(String name) { modelAttrs.get(name) }
 
     /** Create new instance model object */
@@ -123,18 +129,21 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
      * Check model parameters
      * @param validObjects check parameters of model objects
      */
+    @Synchronized
     void checkModel(Boolean checkObjects = true) {
         if (checkObjects)
             usedObjects.each { obj -> checkObject(obj) }
     }
 
     /** Check object parameter */
+    @Synchronized
     void checkObject(BaseSpec object) { }
 
     /**
      * Check attribute naming and generate an unknown error for used objects
      * @param allowAttrs list of allowed attribute names
      */
+    @Synchronized
     void checkAttrs(List<String> allowAttrs) {
         if (allowAttrs == null)
             throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')

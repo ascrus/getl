@@ -13,6 +13,7 @@ import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -23,8 +24,10 @@ import groovy.transform.stc.SimpleType
 @InheritConstructors
 class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     /** List of reference files */
+    @Synchronized
     List<ReferenceFileSpec> getUsedFiles() { usedObjects as List<ReferenceFileSpec> }
     /** List of reference files */
+    @Synchronized
     void setUsedFiles(List<ReferenceFileSpec> value) {
         usedFiles.clear()
         if (value != null)
@@ -32,15 +35,19 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     }
 
     /** Destination file manager name */
+    @Synchronized
     String getDestinationManagerName() { params.destinationManagerName as String }
     /** Destination file manager name */
+    @Synchronized
     void setDestinationManagerName(String value) { useDestinationManager(value) }
 
     /** Destination file manager */
     @JsonIgnore
+    @Synchronized
     Manager getDestinationManager() { dslCreator.filemanager(destinationManagerName) }
 
     /** Specify destination file manager for the model */
+    @Synchronized
     void useDestinationManager(String managerName) {
         if (managerName == null)
             throw new ExceptionModel('File manager name required!')
@@ -49,6 +56,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         saveParamValue('destinationManagerName', managerName)
     }
     /** Specify destination file manager for the model */
+    @Synchronized
     void useDestinationManager(Manager manager) {
         if (manager == null)
             throw new ExceptionModel('File manager required!')
@@ -59,13 +67,17 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     }
 
     /** File unpack command */
+    @Synchronized
     String getUnpackCommand() { params.unpackCommand as String }
     /** File unpack command */
+    @Synchronized
     void setUnpackCommand(String value) { saveParamValue('unpackCommand', value) }
 
     /** Unpack archive locally instead of uploading and unpacking on the destination */
+    @Synchronized
     Boolean getLocalUnpack() { params.localUnpack as Boolean }
     /** Unpack archive locally instead of uploading and unpacking on the destination */
+    @Synchronized
     void setLocalUnpack(Boolean value) { saveParamValue('localUnpack', value) }
 
     /**
@@ -74,6 +86,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
      * @param cl processing code
      * @return
      */
+    @Synchronized
     ReferenceFileSpec referenceFromFile(String filePath,
                                         @DelegatesTo(ReferenceFileSpec)
                                         @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceFileSpec'])
@@ -83,6 +96,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
 
     /** Valid manager connection */
     @Override
+    @Synchronized
     void checkModel(Boolean checkObjects = true) {
         if (destinationManagerName == null)
             throw new ExceptionModel("The destination manager name is not specified!")
@@ -100,6 +114,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     }
 
     @Override
+    @Synchronized
     void checkObject(BaseSpec obj) {
         super.checkObject(obj)
         def modelFile = obj as ReferenceFileSpec

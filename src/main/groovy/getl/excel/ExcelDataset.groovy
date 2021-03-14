@@ -11,7 +11,7 @@ import groovy.transform.InheritConstructors
  * @author Dmitry Shaldin
  */
 @InheritConstructors
-class ExcelDataset extends FileDataset {
+class ExcelDataset extends FileDataset { /*TODO: release filter in readOpts*/
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof ExcelConnection))

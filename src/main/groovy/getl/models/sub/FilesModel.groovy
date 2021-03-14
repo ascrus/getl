@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
 import getl.files.Manager
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 
 /**
  * Source files model
@@ -12,14 +13,18 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class FilesModel<T extends FileSpec> extends BaseModel {
     /** Source file manager name for model */
+    @Synchronized
     String getSourceManagerName() { params.sourceManagerName as String }
     /** Source file manager name for model */
+    @Synchronized
     void setSourceManagerName(String value) { useSourceManager(value) }
 
     /** Source file manager for model */
     @JsonIgnore
+    @Synchronized
     Manager getSourceManager() { dslCreator.filemanager(sourceManagerName) }
     /** Specify the source file manager for the model */
+    @Synchronized
     void useSourceManager(String managerName) {
         if (managerName == null)
             throw new ExceptionModel('File manager name required!')
@@ -28,6 +33,7 @@ class FilesModel<T extends FileSpec> extends BaseModel {
         saveParamValue('sourceManagerName', managerName)
     }
     /** Specify the source file manager for the model */
+    @Synchronized
     void useSourceManager(Manager manager) {
         if (manager == null)
             throw new ExceptionModel('File manager required!')
@@ -39,6 +45,7 @@ class FilesModel<T extends FileSpec> extends BaseModel {
 
 
     /** Used files in the model */
+    @Synchronized
     List<T> getUsedFiles() { usedObjects as List<T>  }
 
     /**
@@ -62,6 +69,7 @@ class FilesModel<T extends FileSpec> extends BaseModel {
     }
 
     @Override
+    @Synchronized
     void checkModel(Boolean checkObjects = true) {
         if (sourceManagerName == null)
             throw new ExceptionModel("The source manager name is not specified!")
@@ -81,6 +89,7 @@ class FilesModel<T extends FileSpec> extends BaseModel {
     }
 
     @Override
+    @Synchronized
     void checkObject(BaseSpec obj) {
         super.checkObject(obj)
         def modelFile = obj as FileSpec
