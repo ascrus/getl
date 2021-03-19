@@ -29,7 +29,7 @@ import java.text.DecimalFormatSymbols
 class ExcelDriver extends FileDriver {
     ExcelDriver () {
         super()
-        methodParams.register("eachRow", ["header", "offset", "limit", "showWarnings"])
+        methodParams.register('eachRow', ['header', 'offset', 'limit', 'showWarnings', 'filter'])
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -80,6 +80,8 @@ class ExcelDriver extends FileDriver {
 		
         def offsetRows = (dataset.offsetRows?:0) + ((header)?1:0)
         def offsetCells = (dataset.offsetCells?:0).shortValue()
+
+        def filter = dataset.onFilter
 
         def decimalSeparator = dataset.decimalSeparator()
         def dfs = new DecimalFormatSymbols()
@@ -157,11 +159,12 @@ class ExcelDriver extends FileDriver {
                     }
                 }
 
-                code.call(updater)
-                countRec++
-
-                if (limit != null && countRec >= limit)
-                    break
+                if (filter == null || filter.call(updater)) {
+                    code.call(updater)
+                    countRec++
+                    if (limit != null && countRec >= limit)
+                        break
+                }
             }
         }
         finally {
@@ -177,6 +180,7 @@ class ExcelDriver extends FileDriver {
         return countRec
     }
 
+    @SuppressWarnings('unused')
     @CompileStatic
     static private Object getCellValue(Cell cell, FileDataset dataset, Field field, DecimalFormat df) {
         if (cell.cellType == CellType.BLANK) return null

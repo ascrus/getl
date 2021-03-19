@@ -20,7 +20,23 @@ class EtlSpec extends BaseSpec {
 
     /**
      * Copy rows from source to destination dataset
-     * <br>Closure gets two parameters: source and destination datasets
+     * @param sourceName source name dataset
+     * @param destinationName destination name dataset
+     * @param cl processing closure code
+     * @return operation result
+     */
+    FlowCopySpec copyRows(String sourceName, String destinationName,
+                          @DelegatesTo(FlowCopySpec)
+                          @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowCopySpec']) Closure cl = null) {
+        copyRows(getl.dataset(sourceName), getl.dataset(destinationName), cl)
+    }
+
+    /**
+     * Copy rows from source to destination dataset
+     * @param source source dataset
+     * @param destination destination dataset
+     * @param cl processing closure code
+     * @return operation result
      */
     FlowCopySpec copyRows(Dataset source, Dataset destination,
                   @DelegatesTo(FlowCopySpec)
@@ -41,7 +57,24 @@ class EtlSpec extends BaseSpec {
         return parent
     }
 
-    /** Write rows to destination dataset */
+    /**
+     * Write rows to destination dataset
+     * @param destinationName destination name dataset
+     * @param cl processing closure code
+     * @return operation result
+     */
+    FlowWriteSpec rowsTo(String destinationName,
+                         @DelegatesTo(FlowWriteSpec)
+                         @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteSpec']) Closure cl) {
+        rowsTo(getl.dataset(destinationName), cl)
+    }
+
+    /**
+     * Write rows to destination dataset
+     * @param destination destination dataset
+     * @param cl processing closure code
+     * @return operation result
+     */
     FlowWriteSpec rowsTo(Dataset destination,
                 @DelegatesTo(FlowWriteSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteSpec']) Closure cl) {
@@ -59,7 +92,11 @@ class EtlSpec extends BaseSpec {
         return parent
     }
 
-    /** Write rows to destination dataset */
+    /**
+     * Write rows to destination dataset
+     * @param cl processing closure code
+     * @return operation result
+     */
     FlowWriteSpec rowsTo(@DelegatesTo(FlowWriteSpec)
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteSpec']) Closure cl) {
         if (cl == null)
@@ -71,8 +108,13 @@ class EtlSpec extends BaseSpec {
         return rowsTo(destination, cl)
     }
 
-    /** Write rows to many destination datasets */
-    FlowWriteManySpec rowsToMany(Map destinations,
+    /**
+     * Write rows to many destination datasets
+     * @param destinations list of destination datasets (name: dataset)
+     * @param cl processing closure code
+     * @return operation result
+     */
+    FlowWriteManySpec rowsToMany(Map<String, Dataset> destinations,
                     @DelegatesTo(FlowWriteManySpec)
                     @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteManySpec']) Closure cl) {
         if (destinations == null || destinations.isEmpty())
@@ -91,7 +133,25 @@ class EtlSpec extends BaseSpec {
         return parent
     }
 
-    /** Process rows from source dataset */
+    /**
+     * Process rows from source dataset
+     * @param sourceName source name dataset
+     * @param cl processing closure code
+     * @return operation result
+     */
+    @SuppressWarnings('unused')
+    FlowProcessSpec rowsProcess(String sourceName,
+                                @DelegatesTo(FlowProcessSpec)
+                                @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
+        rowsProcess(getl.dataset(sourceName), cl)
+    }
+
+    /**
+     * Process rows from source dataset
+     * @param source source dataset
+     * @param cl processing closure code
+     * @return operation result
+     */
     FlowProcessSpec rowsProcess(Dataset source,
                      @DelegatesTo(FlowProcessSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
@@ -108,7 +168,10 @@ class EtlSpec extends BaseSpec {
         return parent
     }
 
-    /** Process rows from source dataset */
+    /**
+     * Process rows from source dataset
+     * @return operation result
+     */
     FlowProcessSpec rowsProcess(@DelegatesTo(FlowProcessSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
         if (cl == null)

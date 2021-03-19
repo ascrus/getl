@@ -236,22 +236,14 @@ class CSVDataset extends FileDataset {
 	/**
 	 * Count rows of file
 	 */
-	Long readRowCount(Map params) {
-		def res = 0L
-		eachRow((params?:[:]) + [readAsText: true]) {
-			res++
-		}
-		
-		return res
+	Long readRowCount(Map readParams) {
+		countRow(readParams)
 	}
 
-	Long countRow(Map params) {
-		def res = 0L
-		eachRow(params) {
-			res++
-		}
-
-		return res
+	@Override
+	Long countRow(Map readParams, Closure<Boolean> filter) {
+		def p = readParams?:[:] + [readAsText: true]
+		super.countRow(p, filter)
 	}
 	
 	/**

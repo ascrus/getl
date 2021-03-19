@@ -5,13 +5,15 @@ import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.InheritConstructors
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Excel Dataset class
  * @author Dmitry Shaldin
  */
 @InheritConstructors
-class ExcelDataset extends FileDataset { /*TODO: release filter in readOpts*/
+class ExcelDataset extends FileDataset {
     @Override
     void setConnection(Connection value) {
         if (value != null && !(value instanceof ExcelConnection))
@@ -74,16 +76,23 @@ class ExcelDataset extends FileDataset { /*TODO: release filter in readOpts*/
         BoolUtils.IsValue([params.showWarnings, currentExcelConnection?.showWarnings], false)
     }
 
-    /*@Override
+    /**
+     * Filter reading file records
+     * <br>Closure parameters: Map row
+     */
     @JsonIgnore
-	String getObjectName() { objectFullName }
-    
-	@Override
-    @JsonIgnore
-	String getObjectFullName() { "${fullFileName()}~[$listName]" }*/
-
-    //** Full file name with path */
-    /*String fullFileName() {
-        currentExcelConnection.currentExcelDriver.fullFileNameDataset(this)
-    }*/
+    Closure<Boolean> getOnFilter() { params.filter as Closure<Boolean> }
+    /**
+     * Filter reading file records
+     * <br>Closure parameters: Map row
+     */
+    void setOnFilter(Closure<Boolean> value) { params.filter = value }
+    /**
+     * Filter reading file records
+     * <br>Closure parameters: Map row
+     */
+    void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
+                        Closure<Boolean> value) {
+        setOnFilter(value)
+    }
 }

@@ -1096,11 +1096,13 @@ ${extend}'''
 	/** Start prefix for tables name */
 	protected String tablePrefix = '"'
 	/** Start prefix for tables name */
+	@SuppressWarnings('unused')
 	String getTablePrefix() { tablePrefix }
 
 	/** Finish prefix for tables name */
 	protected String tableEndPrefix
 	/** Finish prefix for tables name */
+	@SuppressWarnings('unused')
 	String getTableEndPrefix() { tableEndPrefix }
 
 	/** Start prefix for fields name */
@@ -1158,10 +1160,12 @@ ${extend}'''
 		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix, dataset)
 	}
 
+	@SuppressWarnings('unused')
 	String prepareTableNameForSQL(String name, JDBCDataset dataset = null) {
 		return prepareObjectNameWithPrefix(name, tablePrefix, tableEndPrefix, dataset)
 	}
 
+	@SuppressWarnings('unused')
 	String prepareObjectNameWithEval(String name, JDBCDataset dataset= null) {
 		return prepareObjectName(name, dataset)?.replace("\$", "\\\$")
 	}
@@ -1731,6 +1735,7 @@ $sql
 	 * @param wp
 	 * @return
 	 */
+	@SuppressWarnings('unused')
 	protected Closure generateSetStatement (String operation, List<Field> procFields, List<String> statFields, WriterParams wp) {
 		if (statFields.isEmpty())
 			throw new ExceptionGETL('Required fields from generate prepared statement')
@@ -1958,19 +1963,29 @@ $sql
 
 		def fn = fullNameDataset(dataset)
 		def operation = (params.operation != null)?(params.operation as String).toUpperCase():"INSERT"
-		if (!(operation in ['INSERT', 'UPDATE', 'DELETE', 'MERGE'])) throw new ExceptionGETL("Unknown operation \"$operation\"")
+		if (!(operation in ['INSERT', 'UPDATE', 'DELETE', 'MERGE']))
+			throw new ExceptionGETL("Unknown operation \"$operation\"!")
+
 		switch (operation) {
 			case 'INSERT':
-				if (!(Operation.INSERT in operations())) throw new ExceptionGETL('Operation INSERT not support!')
+				if (!(Operation.INSERT in operations()))
+					throw new ExceptionGETL('Operation INSERT not support!')
+
 				break
 			case 'UPDATE':
-				if (!(Operation.UPDATE in operations())) throw new ExceptionGETL('Operation UPDATE not support!')
+				if (!(Operation.UPDATE in operations()))
+					throw new ExceptionGETL('Operation UPDATE not support!')
+
 				break
 			case 'DELETE':
-				if (!(Operation.DELETE in operations())) throw new ExceptionGETL('Operation DELETE not support!')
+				if (!(Operation.DELETE in operations()))
+					throw new ExceptionGETL('Operation DELETE not support!')
+
 				break
 			case 'MERGE':
-				if (!(Operation.MERGE in operations())) throw new ExceptionGETL('Operation MERGE not support!')
+				if (!(Operation.MERGE in operations()))
+					throw new ExceptionGETL('Operation MERGE not support!')
+
 				break
 		}
 
@@ -1981,14 +1996,19 @@ $sql
 		
 		def updateField = [] as List<String>
 		if (params.updateField != null && !(params.updateField as List).isEmpty()) {
-			updateField = params.updateField
+			updateField = params.updateField as List<String>
 		}
 		else {
 			fields.each { Field f ->
-				if (f.isAutoincrement || f.isReadOnly) return
+				if (f.isAutoincrement || f.isReadOnly)
+					return
+
 				updateField << f.name
 			}
 		}
+		if (updateField.isEmpty())
+			throw new ExceptionGETL("Required fields from $operation operation!")
+		updateField = updateField*.toLowerCase()
 
 		// Order fields
 		def statFields = [] as List<String>
@@ -2005,12 +2025,18 @@ $sql
 				def sp = [] as List<String>
 
 				fields.each { Field f ->
-					if (f.isAutoincrement || f.isReadOnly || (!syntaxPartitionKeyInColumns && f.isPartition)) return
+					if (updateField.find { it == f.name.toLowerCase() } == null)
+						return
+
+					if (!syntaxPartitionKeyInColumns && f.isPartition)
+						return
+
 					h << prepareFieldNameForSQL(f.name)
 					v << "?"
 					sv << f.name
 				}
-				if (v.isEmpty()) throw new ExceptionGETL('Required fields from insert statement')
+				if (v.isEmpty())
+					throw new ExceptionGETL('Required fields from INSERT operation!')
 
 				if (statInsert.indexOf('{partition}') != -1) {
 					dataset.fieldListPartitions.each { Field f ->
@@ -2018,7 +2044,8 @@ $sql
 						sp << f.name
 						v << '?'
 					}
-					if (p.isEmpty()) throw new ExceptionGETL('Required partition key fields from insert statement')
+					if (p.isEmpty())
+						throw new ExceptionGETL('Required partition key fields from INSERT operation!')
 				}
 
 				if (syntaxPartitionLastPosInValues) {
@@ -2043,18 +2070,13 @@ $sql
 				def p = [] as List<String>
 				def sk = [] as List<String>
 				def sv = [] as List<String>
-				/*def sp = [] as List<String>*/
 
 				fields.each { Field f ->
-//					if (!syntaxPartitionKeyInColumns && f.isPartition) return
-
 					if (f.isKey) {
 						k << "${prepareFieldNameForSQL(f.name)} = ?".toString()
 						sk << f.name
 					}
 					else {
-						if (f.isAutoincrement || f.isReadOnly) return
-
 						if (updateField.find { it.toLowerCase() == f.name.toLowerCase() } != null) {
 							v << "${prepareFieldNameForSQL(f.name)} = ?".toString()
 							sv << f.name
@@ -2062,8 +2084,10 @@ $sql
 					}
 				}
 
-				if (v.isEmpty()) throw new ExceptionGETL('Required fields from update statement')
-				if (k.isEmpty()) throw new ExceptionGETL("Required key fields for update statement")
+				if (v.isEmpty())
+					throw new ExceptionGETL('Required fields from UPDATE operation!!')
+				if (k.isEmpty())
+					throw new ExceptionGETL("Required key fields for UPDATE operation!")
 
 				def x = [[sk, statUpdate.indexOf('{keys}')],
 						 [sv, statUpdate.indexOf('{values}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
@@ -2091,7 +2115,8 @@ $sql
 					}
 				}
 				
-				if (k.isEmpty()) throw new ExceptionGETL("Required key fields for delete statement")
+				if (k.isEmpty())
+					throw new ExceptionGETL("Required key fields for DELETE operation!")
 
 				def x = [[sk, statDelete.indexOf('{keys}')]].sort(true) { i1, i2 -> i1[1] <=> i2[1] }
 
@@ -2109,7 +2134,7 @@ $sql
 				sb << openWriteMergeSql(dataset as JDBCDataset, params, fields, statFields)
 				break
 			default:
-				throw new ExceptionGETL("Not supported operation \"${operation}\"")
+				throw new ExceptionGETL("Not supported operation \"${operation}\"!")
 		}
 		def query = sb.toString()
 		//println query

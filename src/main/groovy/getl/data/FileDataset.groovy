@@ -13,7 +13,7 @@ import groovy.transform.CompileStatic
  *
  */
 @SuppressWarnings('unused')
-class FileDataset extends Dataset { /*TODO: added countRow method */
+class FileDataset extends Dataset {
 	FileDataset() {
 		methodParams.register('openWrite', ['deleteOnEmpty', 'append'])
 		methodParams.register('drop', ['validExist', 'portions'])
@@ -286,5 +286,42 @@ class FileDataset extends Dataset { /*TODO: added countRow method */
 		}
 
 		return res
+	}
+
+	/**
+	 * Count the number of rows in a dataset
+	 * @param readParams read params
+	 * @param filter filtering code
+	 * @return counted number of rows
+	 */
+	@CompileStatic
+	Long countRow(Map readParams, Closure<Boolean> filter) {
+		def res = 0L
+		eachRow(readParams) {row ->
+			if (filter == null || filter.call(row))
+				res++
+		}
+
+		return res
+	}
+
+	/**
+	 * Count the number of rows in a dataset
+	 * @param readParams read params
+	 * @return counted number of rows
+	 */
+	@CompileStatic
+	Long countRow(Map readParams = null) {
+		countRow(null, null)
+	}
+
+	/**
+	 * Count the number of rows in a dataset
+	 * @param filter filtering code
+	 * @return counted number of rows
+	 */
+	@CompileStatic
+	Long countRow(Closure<Boolean> filter) {
+		countRow(null, filter)
 	}
 }

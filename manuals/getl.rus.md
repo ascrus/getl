@@ -67,7 +67,7 @@ Getl является базовой платформой ETL инструмен
 номер актуальной версии в Maven):
 ```groovy
 dependencies {
-  compile(group: 'net.sourceforge.getl', name: 'getl', version:'4.7.3')
+  compile(group: 'net.sourceforge.getl', name: 'getl', version:'4.7.*')
 }
 ```
 * Getl выкладывается в Maven Central, поэтому указывать репозиторий не нужно.
@@ -78,7 +78,7 @@ dependencies {
 их jar файлы. Тогда в gradle можно указать их подключение для запуска и отладки проекта в IDE:
 ```groovy
 dependencies {
-  compile(group: 'net.sourceforge.getl', name: 'getl', version:'4.7.3')
+  compile(group: 'net.sourceforge.getl', name: 'getl', version:'4.7.*')
   compile fileTree(dir: 'jdbc')
 }
 ```
