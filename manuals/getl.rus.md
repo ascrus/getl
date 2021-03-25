@@ -44,16 +44,12 @@ Getl является базовой платформой ETL инструмен
 
 ## <a name="source"></a>Исходники и документация
 * Исходный код проекта располагается в GitHub проекте [getl](https://github.com/ascrus/getl).
-* На базе Getl разработана библиотека шаблонов для облегчения разработки задач под Micro Focus Vertica, исходные коды
-  которой выложены на GitHub в проекте [getl.vertica](https://github.com/ascrus/getl.vertica).
 
 ## <a name="demo"></a>Примеры работы
 * Примеры работы с классами Getl и Dsl языком можно найти в
   [unit-тестах](https://github.com/ascrus/getl/tree/master/src/test/groovy/getl/lang) Getl.
 * Примеры работы с Getl на базе H2 Database можно посмотреть на GitHub проекте
   [Getl examples](https://github.com/ascrus/getl-examples).
-* В качестве примеров разработки шаблонов можно использовать исходные коды библиотеки шаблонов
-  [getl.vertica](https://github.com/ascrus/getl.vertica).
 
 # <a name="start_getl">Начало работы с Getl
 Для того, чтобы начать писать на Getl процессы ETL, нужно на базовом уровне изучить два продукта:
