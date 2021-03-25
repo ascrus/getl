@@ -83,8 +83,6 @@ Local file systems Windows and Linux, FTP, SFTP, Hadoop HDFS.
 * Getl jar is published in the [Central Maven](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22net.sourceforge.getl%22)
 * The source code of the project is located on the GitHub project [getl](https://github.com/ascrus/getl)
 * Basic Russian documentation available on [Wiki](https://github.com/ascrus/getl/wiki)
-* On the basis of Getl, a patterns library was developed to facilitate the development of tasks for Micro Focus Vertica, 
-source code posted on the GitHub project [getl.vertica](https://github.com/ascrus/getl.vertica)  
 * Examples of working with Getl on the basis of H2 Database can be viewed on the GitHub project 
 [Getl examples](https://github.com/ascrus/getl-examples)
 
