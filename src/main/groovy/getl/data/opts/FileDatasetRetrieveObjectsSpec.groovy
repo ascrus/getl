@@ -19,7 +19,7 @@ class FileDatasetRetrieveObjectsSpec extends BaseSpec {
     void setDirectory(String value) { saveParamValue('directory', value) }
 
     /** Regular file search mask */
-    String getMask() { params.mask as String?:'.*' }
+    String getMask() { (params.mask as String)?:'.*' }
     /** Regular file search mask */
     void setMask(String value) { saveParamValue('mask', value) }
 

@@ -83,6 +83,10 @@ class MapTableSpec extends DatasetSpec {
     Dataset getPartitionsDataset() {
         return (partitionsDatasetName != null)?ownerModel.dslCreator.dataset(partitionsDatasetName):null
     }
+    /** Get a list of partitions from the specified dataset */
+    @JsonIgnore
+    void setPartitionsDataset(Dataset value) { usePartitionsFrom(value) }
+
     /** Use a list of partitions from the specified dataset */
     void usePartitionsFrom(String listDatasetName) { partitionsDatasetName = listDatasetName }
     /** Use a list of partitions from the specified dataset */

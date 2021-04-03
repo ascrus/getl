@@ -28,6 +28,10 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     @JsonIgnore
     @Synchronized
     Connection getSourceConnection() { modelConnection }
+    /** Connection for source datasets */
+    @JsonIgnore
+    @Synchronized
+    void setSourceConnection(Connection value) { useSourceConnection(value) }
 
     /** Use specified connection for source datasets */
     @Synchronized
@@ -54,6 +58,10 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     @JsonIgnore
     @Synchronized
     Connection getDestinationConnection() { dslCreator.connection(destinationConnectionName) }
+    /** Connection for destination datasets */
+    @JsonIgnore
+    @Synchronized
+    void setDestinationConnection(Connection value) { useDestinationConnection(value) }
     /** Use specified connection for destination datasets */
     @Synchronized
     void useDestinationConnection(String connectionName) {
@@ -75,30 +83,19 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     }
 
     /** Name dataset of mapping processing history */
-    @Synchronized
-    String getStoryDatasetName() { params.storyDatasetName as String }
+    String getStoryDatasetName() { super.storyDatasetName }
     /** Name dataset of mapping processing history */
-    @Synchronized
-    void setStoryDatasetName(String value) { useStoryDatasetName(value) }
+    void setStoryDatasetName(String value) { super.useStoryDatasetName(value) }
     /** Dataset of mapping processing history */
     @JsonIgnore
-    @Synchronized
-    Dataset getStoryDataset() { (storyDatasetName != null)?dslCreator.dataset(storyDatasetName):null }
+    Dataset getStoryDataset() { super.storyDataset }
+    /** Dataset of mapping processing history */
+    @JsonIgnore
+    void setStoryDataset(Dataset value) { super.setStoryDataset(value) }
     /** Use specified dataset name of mapping processing history */
-    @Synchronized
-    void useStoryDatasetName(String datasetName) {
-        if (datasetName != null)
-            dslCreator.dataset(datasetName)
-
-        saveParamValue('storyDatasetName', datasetName)
-    }
-    @Synchronized
-    void useStoryDataset(Dataset dataset) {
-        if (dataset != null && dataset.dslNameObject == null)
-            throw new ExceptionModel('Dataset not registered in Getl repository!')
-
-        saveParamValue('storyDatasetName', dataset?.dslNameObject)
-    }
+    void useStoryDatasetName(String datasetName) { super.useStoryDatasetName(datasetName) }
+    /** Use specified dataset of mapping processing history */
+    void useStoryDataset(Dataset dataset) { super.useStoryDataset(dataset) }
 
     /**
      * Use dataset for the mapping

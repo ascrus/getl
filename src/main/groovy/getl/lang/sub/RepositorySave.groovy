@@ -19,6 +19,19 @@ import getl.utils.FileUtils
  */
 @SuppressWarnings('unused')
 class RepositorySave extends Getl {
+    /** Start generator */
+    static void main(def args) {
+        Start(UseSaver, args)
+    }
+
+    /** Use the specified class to run the generator */
+    static protected Class UseSaver = RepositorySave
+
+    /**
+     * Execute generator methods and save the generated objects to the repository
+     * @param startClass generator executable class
+     * @param args command line arguments
+     */
     static void Start(Class<RepositorySave> startClass, def args) {
         if (!(args instanceof List)) {
             if (args instanceof String[])
@@ -188,27 +201,32 @@ class RepositorySave extends Getl {
                         else
                             logFinest "Call method \"$methodName\" from environments: ${envs.join(', ')} ..."
 
-                        def clearMethod = 'clear' + type
-                        thisObject."$clearMethod"()
+                        envs.each {e ->
+                            repositoryStorageManager.clearRepositories()
+                            configuration.environment = e
 
-                        thisObject."$methodName"()
+                            def saveMethod = 'save' + type
+                            thisObject."$methodName"()
+                            if (type in ['Connections', 'Files'])
+                                    thisObject."$saveMethod"(e, mask)
+                            else if (e == envs[0]) {
+                                if (type == 'Datasets')
+                                    thisObject."$saveMethod"(retrieve, mask)
+                                else
+                                    thisObject."$saveMethod"(mask)
+                            }
 
-                        def saveMethod = 'save' + type
-                        if (type in ['Connections', 'Files'])
-                            envs.each { e -> thisObject."$saveMethod"(e, mask) }
-                        else if (type == 'Datasets')
-                            thisObject."$saveMethod"(retrieve, mask)
-                        else
-                            thisObject."$saveMethod"(mask)
-
-                        otherTypes?.each { otherType ->
-                            def saveOtherMethod = 'save' + otherType
-                            if (otherType in ['Connections', 'Files'])
-                                envs.each { e -> thisObject."$saveOtherMethod"(e, null) }
-                            else if (otherType == 'Datasets')
-                                thisObject."$saveOtherMethod"(retrieve, null)
-                            else
-                                thisObject."$saveOtherMethod"(null)
+                            otherTypes?.each { otherType ->
+                                def saveOtherMethod = 'save' + otherType
+                                if (otherType in ['Connections', 'Files'])
+                                    thisObject."$saveOtherMethod"(e, null)
+                                else if (e == envs[0]) {
+                                    if (otherType == 'Datasets')
+                                        thisObject."$saveOtherMethod"(retrieve, null)
+                                    else
+                                        thisObject."$saveOtherMethod"(null)
+                                }
+                            }
                         }
                     }
                 }

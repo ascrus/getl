@@ -23,6 +23,11 @@ class FilesModel<T extends FileSpec> extends BaseModel {
     @JsonIgnore
     @Synchronized
     Manager getSourceManager() { dslCreator.filemanager(sourceManagerName) }
+    /** Source file manager for model */
+    @JsonIgnore
+    @Synchronized
+    void setSourceManager(Manager value) { useSourceManager(value) }
+
     /** Specify the source file manager for the model */
     @Synchronized
     void useSourceManager(String managerName) {

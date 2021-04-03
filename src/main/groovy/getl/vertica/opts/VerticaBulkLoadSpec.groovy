@@ -111,13 +111,13 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     //void setAbortOnError(Boolean value) { params.abortOnError = value }
 
     /**
-     * Describes the SQL expression of loading file columns into table fields.
-     * <br>Example: [table_field1: 'Upper(file_col1)']
+     * Describes the SQL expression of loading file columns into table fields
+     * <br>Example: [file_column_1: 'FILLER varchar(50)', field_in_table: 'Upper(file_column_1)']
      */
     Map<String, String> getExpression() { params.expression as Map<String, String> }
     /**
-     * Describes the expression of loading file columns into table fields.
-     * <br>Example: [file_column_1: 'FILLER varchar(50)', field_in_table: 'Upper(col1)']
+     * Describes the expression of loading file columns into table fields
+     * <br>Example: [file_column_1: 'FILLER varchar(50)', field_in_table: 'Upper(file_column_1)']
      */
     void setExpression(Map<String, String> value) {
         expression.clear()

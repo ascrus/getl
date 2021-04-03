@@ -1,6 +1,7 @@
 package getl.models.sub
 
 import getl.exception.ExceptionDSL
+import getl.utils.ListUtils
 import getl.utils.MapUtils
 
 import java.util.concurrent.ConcurrentHashMap
@@ -34,6 +35,12 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
         if (value != null)
             objectVars.putAll(value)
     }
+    /**
+     * Get the value of the specified variable
+     * @param name variable name
+     * @return variable value
+     */
+    Object variable(String name) { ListUtils.NotNullValue(objectVars.get(name), ownerModel.modelVars.get(name)) }
 
     /** Object attributes */
     Map<String, Object> getAttrs() { params.attrs as Map<String, Object> }
@@ -48,7 +55,7 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
      * @param name attribute name
      * @return attribute value
      */
-    Object attribute(String name) { attrs.get(name)?:ownerModel.modelAttrs.get(name) }
+    Object attribute(String name) { ListUtils.NotNullValue(attrs.get(name), ownerModel.modelAttrs.get(name)) }
 
     /**
      * Check attribute naming and generate an unknown error

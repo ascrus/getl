@@ -1,6 +1,7 @@
 package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.Dataset
 import getl.exception.ExceptionDSL
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
@@ -28,6 +29,10 @@ class SetOfTables extends DatasetsModel<TableSpec> {
     @JsonIgnore
     @Synchronized
     JDBCConnection getSourceConnection() { modelConnection as JDBCConnection }
+    /** Used connection */
+    @JsonIgnore
+    @Synchronized
+    void setSourceConnection(JDBCConnection value) { useSourceConnection(value) }
 
     /** Use specified repository connection name */
     @Synchronized
@@ -51,6 +56,22 @@ class SetOfTables extends DatasetsModel<TableSpec> {
         if (value != null)
             usedTables.addAll(value)
     }
+
+    /** Name of the dataset storing the history of table processing */
+    String getStoryDatasetName() { super.storyDatasetName }
+    /** Name of the dataset storing the history of table processing */
+    void setStoryDatasetName(String value) { super.useStoryDatasetName(value) }
+    /** Dataset for storing the history of table processing */
+    @JsonIgnore
+    Dataset getStoryDataset() { super.storyDataset }
+    /** Dataset for storing the history of table processing */
+    @JsonIgnore
+    void setStoryDataset(Dataset value) { super.setStoryDataset(value) }
+
+    /** Use a dataset to store the history of table processing */
+    void useStoryDatasetName(String datasetName) { super.useStoryDatasetName(datasetName) }
+    /** Use a dataset to store the history of table processing */
+    void useStoryDataset(Dataset dataset) { super.useStoryDataset(dataset) }
 
     /**
      * Use table in list

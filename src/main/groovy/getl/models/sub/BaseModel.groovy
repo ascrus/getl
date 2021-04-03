@@ -1,8 +1,10 @@
 package getl.models.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.Dataset
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
+import getl.exception.ExceptionModel
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.utils.MapUtils
@@ -114,6 +116,36 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
      */
     @Synchronized
     Object modelAttribute(String name) { modelAttrs.get(name) }
+
+    /** Name dataset of mapping processing history */
+    @Synchronized
+    protected String getStoryDatasetName() { params.storyDatasetName as String }
+    /** Name dataset of mapping processing history */
+    @Synchronized
+    protected void setStoryDatasetName(String value) { useStoryDatasetName(value) }
+    /** Dataset of mapping processing history */
+    @Synchronized
+    protected Dataset getStoryDataset() { (storyDatasetName != null)?dslCreator.dataset(storyDatasetName):null }
+    /** Dataset of mapping processing history */
+    @Synchronized
+    protected void setStoryDataset(Dataset value) { useStoryDataset(value) }
+
+    /** Use specified dataset name of mapping processing history */
+    @Synchronized
+    protected void useStoryDatasetName(String datasetName) {
+        if (datasetName != null)
+            dslCreator.dataset(datasetName)
+
+        saveParamValue('storyDatasetName', datasetName)
+    }
+    /** Use specified dataset of mapping processing history */
+    @Synchronized
+    protected void useStoryDataset(Dataset dataset) {
+        if (dataset != null && dataset.dslNameObject == null)
+            throw new ExceptionModel('Dataset not registered in Getl repository!')
+
+        saveParamValue('storyDatasetName', dataset?.dslNameObject)
+    }
 
     /** Create new instance model object */
     protected T newSpec(Object... args) {

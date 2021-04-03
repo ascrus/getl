@@ -33,6 +33,10 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     @JsonIgnore
     @Synchronized
     VerticaConnection getReferenceConnection() { modelConnection as VerticaConnection }
+    /** Used Vertica connection */
+    @JsonIgnore
+    @Synchronized
+    void setReferenceConnection(VerticaConnection value) { useReferenceConnection(value) }
 
     /** Use specified Vertica connection */
     @Synchronized

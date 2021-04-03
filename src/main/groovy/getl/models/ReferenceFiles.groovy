@@ -45,6 +45,10 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     @JsonIgnore
     @Synchronized
     Manager getDestinationManager() { dslCreator.filemanager(destinationManagerName) }
+    /** Destination file manager */
+    @JsonIgnore
+    @Synchronized
+    void setDestinationManager(Manager value) { useDestinationManager(value) }
 
     /** Specify destination file manager for the model */
     @Synchronized
