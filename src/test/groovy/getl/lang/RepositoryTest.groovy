@@ -11,6 +11,7 @@ import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
 import getl.lang.sub.RepositoryHistorypoints
+import getl.lang.sub.RepositoryObjects
 import getl.lang.sub.RepositorySequences
 import getl.test.Config
 import getl.test.TestDsl
@@ -865,6 +866,7 @@ class RepositoryTest extends TestDsl {
             shouldFail { embeddedTable('group:name:1', true) }
             assertNotNull(embeddedTable('group:name_1', true))
             assertNotNull(embeddedTable('#name', true))
+            shouldFail { embeddedTable('group1:', true) }
         }
     }
 
@@ -985,6 +987,19 @@ class RepositoryTest extends TestDsl {
                         assertNotSame(con, con1)
                         assertSame(con1, tab1.connection)
                     }
+                }
+
+                repositoryStorageManager.clearRepositories()
+
+                repositoryStorageManager.removeRepositoryFiles(RepositoryDatasets)
+                assertNull(findDataset('test:table1'))
+
+                repositoryStorageManager.removeRepositoryFiles(RepositoryFilemanagers, 'dev', 'test')
+                assertNull(findFilemanager('test:file1'))
+                assertNull(findFilemanager('test:file2'))
+
+                repositoryStorageManager.listRepositories.each { repName ->
+                    repositoryStorageManager.removeRepositoryFiles(repName, 'dev')
                 }
             }
             finally {

@@ -130,6 +130,8 @@ class ParseObjectName {
 
     /** Check object name */
     void validName() {
+        if (objectName == null)
+            throw new ExceptionDSL("No name given for object \"$name\"!")
         if (namePattern.matcher(objectName).find())
             throw new ExceptionDSL("The object name \"$objectName\" contains invalid characters!")
 

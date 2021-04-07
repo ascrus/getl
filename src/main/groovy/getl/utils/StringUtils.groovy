@@ -104,17 +104,6 @@ class StringUtils {
 		if (pos < value.length())
 			sb.append(value, pos, value.length())
 
-		/*vars.each { k, v ->
-			if (v instanceof Date)
-				v = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', v as Date)
-
-			if (v != null && !(v instanceof Map) && !(v instanceof List))
-				value = value.replace('{' + k + '}', v.toString())
-		}
-		
-		if (errorWhenUndefined && value.matches('(?i).*([{][a-z0-9-_]+[}]).*'))
-			throw new ExceptionGETL("Unknown variable in \"$value\", known vars: $vars")*/
-
 		return sb.toString()
 	}
 	

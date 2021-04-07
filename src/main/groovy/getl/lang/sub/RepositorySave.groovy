@@ -118,6 +118,9 @@ class RepositorySave extends Getl {
     Object run() {
         super.run()
 
+        if (getlDefaultConfigEnvironment == null)
+            readGetlRepositoryProperties()
+
         def pathToSave = (options.getlConfigProperties.repository as Map)?.repositorySavePath as String
         if (pathToSave != null)
             repositoryStorageManager.storagePath = pathToSave
@@ -148,8 +151,8 @@ class RepositorySave extends Getl {
                 def methodName = method.name
                 if (an == null) return
 
-                def type = an.type()
-                if (type == null)
+                def type = an.type()?.trim()
+                if (type == null || type == '')
                     throw new ExceptionDSL("Method \"$methodName\" has no object type specified in annotation \"SaveToRepository\"!")
                 if (!(type in ObjectTypes))
                         throw new ExceptionDSL("Unknown type \"$type\" in annotation \"SaveToRepository\" of method \"$methodName\"!")
@@ -166,14 +169,17 @@ class RepositorySave extends Getl {
                     }
                 }
 
-                def env = an.env()
-                if (env == null || env.trim().length() == 0)
+                def env = an.env()?.trim()
+                if (env == null)
                     throw new ExceptionDSL("Required to specify \"env\" parameter in annotation \"SaveToRepository\" for method \"$methodName\"")
+                if (env == '')
+                    env = getlDefaultConfigEnvironment
                 List<String> envs = env.split(',').collect { e -> e.trim().toLowerCase() }
 
                 def retrieve = BoolUtils.IsValue(an.retrieve())
-                def mask = an.mask()
-                if (mask.length() == 0) mask = null
+                def mask = an.mask()?.trim()
+                if (mask.length() == 0)
+                    mask = null
 
                 methods.get(type).add(new MethodParams(methodName, envs, retrieve, mask, otherTypes))
                 logFinest "  found method \"$methodName\" of saving objects with type \"$type\"${(mask != null)?" for mask \"$mask\"":''}"

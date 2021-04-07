@@ -720,7 +720,11 @@ class DateUtils {
 	 * @return the specified part value.
 	 */
 	static Integer PartOfDate(String partName, Date date) {
-		if (/*partName == null || */date == null) return 0
+		if (partName == null)
+			throw new ExceptionGETL("Required value in \"partName\" parameter!")
+		if (date == null)
+			return 0
+
 		partName = partName.toUpperCase()
 
 		def ret = 0
@@ -731,47 +735,46 @@ class DateUtils {
 		c.setTime(date)
 
 		switch (fieldsList.indexOf(partName)) {
-		case 0:
-			ret = c.get(Calendar.YEAR)
-			break
-		case 1:
-			ret = c.get(Calendar.MONTH) + 1
-			break
-		case 2:
-			ret = c.get(Calendar.HOUR_OF_DAY)
-			break
-		case 3:
-			ret = c.get(Calendar.MINUTE)
-			break
-		case 4:
-			ret = c.get(Calendar.SECOND)
-			break
-		case 5:
-			ret = c.get(Calendar.DAY_OF_WEEK)
-			break
-		case 6:
-			ret = c.get(Calendar.DAY_OF_MONTH)
-			break
-		case 7:
-			ret = c.get(Calendar.DAY_OF_YEAR)
-			break
-		case 8:
-			// the ordinal number of current week in a month (it means a 'week' may be not contain 7 days)
-			ret = c.get(Calendar.WEEK_OF_MONTH)
-			break
-		case 9:
-			// 1-7 correspond to 1, 8-14 correspond to 2,...
-			ret = c.get(Calendar.DAY_OF_WEEK_IN_MONTH)
-			break
-		case 10:
-			ret = c.get(Calendar.WEEK_OF_YEAR)
-			break
-		case 11:
-            ret = ((Long)Long.divideUnsigned(Long.valueOf(c.get(Calendar.ZONE_OFFSET)), 1000L * 60 * 60)).intValue()
-			break
-		default:
-			break
-
+			case 0:
+				ret = c.get(Calendar.YEAR)
+				break
+			case 1:
+				ret = c.get(Calendar.MONTH) + 1
+				break
+			case 2:
+				ret = c.get(Calendar.HOUR_OF_DAY)
+				break
+			case 3:
+				ret = c.get(Calendar.MINUTE)
+				break
+			case 4:
+				ret = c.get(Calendar.SECOND)
+				break
+			case 5:
+				ret = date.toDayOfWeek().value
+				break
+			case 6:
+				ret = c.get(Calendar.DAY_OF_MONTH)
+				break
+			case 7:
+				ret = c.get(Calendar.DAY_OF_YEAR)
+				break
+			case 8:
+				// the ordinal number of current week in a month (it means a 'week' may be not contain 7 days)
+				ret = c.get(Calendar.WEEK_OF_MONTH)
+				break
+			case 9:
+				// 1-7 correspond to 1, 8-14 correspond to 2,...
+				ret = c.get(Calendar.DAY_OF_WEEK_IN_MONTH)
+				break
+			case 10:
+				ret = c.get(Calendar.WEEK_OF_YEAR)
+				break
+			case 11:
+				ret = ((Long)Long.divideUnsigned(Long.valueOf(c.get(Calendar.ZONE_OFFSET)), 1000L * 60 * 60)).intValue()
+				break
+			default:
+				break
 		}
 		return ret
 	}

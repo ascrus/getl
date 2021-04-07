@@ -9,13 +9,13 @@ import java.lang.annotation.Target
 @Target(ElementType.METHOD)
 @interface SaveToRepository {
     /** Use specified configuration environments (use comma separator) */
-    String env() default 'dev'
+    String env() default ''
 
     /** Reread object structure before saving */
     boolean retrieve() default false
 
     /** Type repositories */
-    String type()
+    String type() default ''
 
     /** Name mask to save */
     String mask() default ''

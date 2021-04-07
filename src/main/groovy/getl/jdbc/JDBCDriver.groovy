@@ -2614,9 +2614,11 @@ FROM {source} {after_from}'''
 		}
 
 		if (map == null) map = [:] as Map<String, String>
+		def transRules = [:] as Map<String, String>
 		map.each {fieldName, expr ->
 			if (dest.fieldByName(fieldName) == null)
 				throw new ExceptionGETL("Field \"$fieldName\" not found in table $dest!")
+			transRules.put(fieldName.toLowerCase(), expr)
 		}
 
 		def transFields = [:] as Map<String, String>
@@ -2624,8 +2626,8 @@ FROM {source} {after_from}'''
 			def destName = destField.name.toLowerCase()
 			String val
 
-			if (map.containsKey(destName)) {
-				def mapVal = map.get(destName)
+			if (transRules.containsKey(destName)) {
+				def mapVal = transRules.get(destName)
 				if (mapVal != null)
 					val = mapVal
 			}

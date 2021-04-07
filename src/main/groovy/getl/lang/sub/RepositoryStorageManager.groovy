@@ -384,6 +384,40 @@ class RepositoryStorageManager {
     }
 
     /**
+     * Delete repository object files
+     * @param repositoryClass the repository class where you want to delete files
+     * @param env environment
+     * @param group object group name
+     */
+    void removeRepositoryFiles(Class<RepositoryObjects> repositoryClass, String env = null, String group = null) {
+        removeRepositoryFiles(repositoryClass.name, env, group)
+    }
+
+    /**
+     * Delete repository object files
+     * @param repositoryName the repository name where you want to delete files
+     * @param env environment
+     * @param group object group name
+     */
+    void removeRepositoryFiles(String repositoryName, String env = null, String group = null) {
+        def repository = repository(repositoryName)
+        def files = repositoryFiles(repository, env, group)
+        def repFilePath = repositoryPath(repository, env)
+        files?.eachRow { row ->
+            def filePath = "$repFilePath/${row.filepath}/${row.filename}"
+            if (!FileUtils.DeleteFile(filePath))
+                throw new ExceptionDSL("Unable to delete file \"$filePath\" in repository!")
+        }
+
+        if (group != null) {
+            def groupPath = repFilePath+ '/' + group.replace('.', '/')
+            FileUtils.DeleteEmptyFolder(groupPath, true)
+        }
+        else
+            FileUtils.DeleteEmptyFolder(repFilePath, false)
+    }
+
+    /**
      * Load objects to repository from storage
      * @param repositoryName name of the repository to be uploaded
      * @param mask object name mask
