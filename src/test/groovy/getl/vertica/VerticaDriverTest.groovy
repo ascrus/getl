@@ -31,7 +31,7 @@ class VerticaDriverTest extends JDBCDriverProto {
         def con = new VerticaConnection(config: 'vertica')
         con.with {
             storedLogins = Config.content.logins as Map<String, String>
-            useLogin 'getl_test'
+            login = 'getl_test'
         }
         needCatalog = con.connectDatabase
 

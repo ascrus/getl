@@ -112,11 +112,10 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         table.field = fields
         table.drop(ifExists: true)
         if (con.driver.isSupport(Driver.Support.INDEX)) {
-			def indexes = [
-					"${table.tableName}_idx_1":
-							[columns: ['id2', 'name']]]
+			def indexes = [:]
+            indexes.put("${table.tableName}_idx_1".toString(), [columns: ['id2', 'name']])
 			if (con != null && useDate)
-				indexes << ["${table.tableName}_idx_2": [columns: ['id1', 'date'], unique: true]]
+				indexes.put("${table.tableName}_idx_2".toString(), [columns: ['id1', 'date'], unique: true])
             table.create(ifNotExists: true, indexes: indexes)
         }
         else {

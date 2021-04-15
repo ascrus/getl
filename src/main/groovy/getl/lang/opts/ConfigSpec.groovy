@@ -49,7 +49,8 @@ class ConfigSpec extends BaseSpec {
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     void load(String fileName, String environment = null, String codePage = null) {
-        Config.LoadConfig([fileName: FileUtils.ResourceFileName(fileName), codePage: codePage, environment: environment])
+        Config.LoadConfig([fileName: FileUtils.ResourceFileName(fileName, ownerObject as Getl), codePage: codePage,
+                           environment: environment])
     }
 
     /**
@@ -59,7 +60,7 @@ class ConfigSpec extends BaseSpec {
      * @param secretKey encode key string
      */
     void loadEncrypt(String fileName, String environment = null, String secretKey = null) {
-        def data = ConfigStores.LoadSection(FileUtils.ResourceFileName(fileName), secretKey, environment?:manager.environment?:'all')
+        def data = ConfigStores.LoadSection(FileUtils.ResourceFileName(fileName, ownerObject as Getl), secretKey, environment?:manager.environment?:'all')
         Config.MergeConfig(data)
     }
 

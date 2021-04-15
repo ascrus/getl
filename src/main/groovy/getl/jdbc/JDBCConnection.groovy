@@ -16,7 +16,8 @@ import getl.lang.sub.UserLogins
 import getl.proc.Flow
 import getl.tfs.TDS
 import getl.utils.*
-import getl.utils.sub.LoginManager
+import getl.lang.sub.LoginManager
+import getl.lang.sub.StorageLogins
 import groovy.sql.Sql
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -40,13 +41,28 @@ class JDBCConnection extends Connection implements UserLogins {
 	void initParams() {
 		super.initParams()
 		fileNameSqlHistory = null
-		params.storedLogins = [:] as Map<String, String>
+		loginManager = new LoginManager(this)
+		params.storedLogins = new StorageLogins(loginManager)
 	}
 
 	@Override
-	protected void afterClone() {
-		super.afterClone()
+	protected List<String> ignoreCloneClasses() { [StorageLogins.name] }
+
+	@Override
+	protected void afterClone(Connection original) {
+		super.afterClone(original)
 		fileNameSqlHistory = null
+
+		def o = original as JDBCConnection
+		def passwords = o.loginManager.decryptObject()
+		loginManager.encryptObject(passwords)
+	}
+
+	@Override
+	void useDslCreator(Getl value) {
+		def passwords = loginManager.decryptObject()
+		super.useDslCreator(value)
+		loginManager.encryptObject(passwords)
 	}
 
 	/** Current JDBC connection driver */
@@ -159,7 +175,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	@Override
 	String getPassword() { params.password as String }
 	@Override
-	void setPassword(String value) { params.password = value }
+	void setPassword(String value) { params.password = loginManager.encryptPassword(value) }
 	
 	/**
 	 * Auto commit transaction
@@ -589,7 +605,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** Validation script history file */
 	protected validSqlHistoryFile() {
 		if (fileNameSqlHistory == null) {
-			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile, System.getenv() + StringUtils.MACROS_FILE)
+			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile, Config.SystemProps() + StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(fileNameSqlHistory)
 		}
 	}
@@ -604,12 +620,12 @@ class JDBCConnection extends Connection implements UserLogins {
 		if (getl == null)
 			throw new ExceptionDSL('The connection was not created from the Getl instance!')
 
-		def connectionClassName = this.class.name
+		def connectionClassName = this.getClass().name
 		if (!(connectionClassName in RepositoryConnections.LISTJDBCCONNECTIONS))
 			throw new ExceptionDSL("Connection type \"$connectionClassName\" is not supported!")
 
 		tables.each { tbl ->
-			def tableClassName = tbl.class.name
+			def tableClassName = tbl.getClass().name
 			if (!(tableClassName in RepositoryDatasets.LISTJDBCTABLES))
 				throw new ExceptionDSL("Table type \"$tableClassName\" is not supported!")
 
@@ -630,7 +646,7 @@ class JDBCConnection extends Connection implements UserLogins {
 	 */
 	void generateDslTables(@DelegatesTo(GenerateDslTablesSpec)
 			@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.GenerateDslTablesSpec']) Closure cl) {
-		def connectionClassName = this.class.name
+		def connectionClassName = this.getClass().name
 		if (!(connectionClassName in RepositoryConnections.LISTJDBCCONNECTIONS))
 			throw new ExceptionGETL("Connection type \"$connectionClassName\" is not supported!")
 
@@ -708,7 +724,7 @@ class JDBCConnection extends Connection implements UserLogins {
 		if (useResource && resourceDir != null)
 			Logs.Fine("  using resource files path \"${resourceDir?.path}\"" + ((resourceRoot != null)?" with root path \"$resourceRoot\"":''))
 
-		def getlClassName = (dslCreator != null)?dslCreator.class.name:Getl.class.name
+		def getlClassName = (dslCreator != null)?dslCreator.getClass().name:Getl.getClass().name
 
 		StringBuilder sb = new StringBuilder()
 
@@ -848,7 +864,7 @@ ${tab}${tab}}
 	}
 
 	/** Logins manager */
-	private LoginManager loginManager = new LoginManager(this)
+	protected LoginManager loginManager
 
 	@Override
 	void useLogin(String user) {

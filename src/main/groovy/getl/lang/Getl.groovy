@@ -303,25 +303,25 @@ Examples:
                     if (en.logFileName != null) {
                         logging.logFileName = StringUtils.EvalMacroString(en.logFileName as String,
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
-                        Logs.Finest("  logging the process \"${instance.getClass().name}\" to file \"${Logs.logFileName}\"")
+                        Logs.Finest("  logging the process \"${instance.getClass().name}\" to file \"${FileUtils.TransformFilePath(Logs.logFileName, false)}\"")
                     }
 
                     if (en.jdbcLogPath != null) {
                         jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
                                 [env: instance.configuration.environment, process: instance.getClass().name], false)
-                        Logs.Finest("  logging jdbc connections to path \"$jdbcConnectionLoggingPath\"")
+                        Logs.Finest("  logging jdbc connections to path \"${FileUtils.TransformFilePath(jdbcConnectionLoggingPath, false)}\"")
                     }
 
                     if (en.filesLogPath != null) {
                         fileManagerLoggingPath = StringUtils.EvalMacroString(en.filesLogPath as String,
                                 [env: instance.configuration.environment, process: instance.getClass().name], false)
-                        Logs.Finest("  logging file managers to path \"$fileManagerLoggingPath\"")
+                        Logs.Finest("  logging file managers to path \"${FileUtils.TransformFilePath(fileManagerLoggingPath, false)}\"")
                     }
 
                     if (en.tempDBLogFileName != null) {
                         tempDBSQLHistoryFile = StringUtils.EvalMacroString(en.tempDBLogFileName as String,
                                 [env: instance.configuration.environment, process: instance.getClass().name], false)
-                        Logs.Finest("  logging of ebmedded database SQL commands to a file \"$tempDBSQLHistoryFile\"")
+                        Logs.Finest("  logging of ebmedded database SQL commands to a file \"${FileUtils.TransformFilePath(tempDBSQLHistoryFile, false)}\"")
                     }
                 }
                 procs.repository = { Map<String, Object> en ->
@@ -333,7 +333,7 @@ Examples:
                         if (en.path != null) {
                             storagePath = en.path as String
                             autoLoadFromStorage = true
-                            Logs.Finest("  path to repository objects: $storagePath")
+                            Logs.Finest("  path to repository objects: ${storagePath()}")
                         }
                         if (en.autoLoadFromStorage != null)
                             autoLoadFromStorage = BoolUtils.IsValue(en.autoLoadFromStorage)
@@ -409,7 +409,7 @@ Examples:
                 procs.project = { Map<String, Object> en ->
                     def notFounds = [] as List<String>
                     (en.needEnvironments as List<String>)?.each {env ->
-                        if (System.getenv(env) == null)
+                        if (Config.SystemProps().get(env) == null)
                             notFounds << env
                     }
                     if (!notFounds.isEmpty())
@@ -417,7 +417,7 @@ Examples:
 
                     if (en.configFileName != null) {
                         def configFileName = en.configFileName as String
-                        def m = ConfigSlurper.LoadConfigFile(new File(FileUtils.ResourceFileName(configFileName)))
+                        def m = ConfigSlurper.LoadConfigFile(new File(FileUtils.ResourceFileName(configFileName, this)))
                         projectConfigParams.putAll(m)
                     }
                 }
@@ -828,7 +828,7 @@ Examples:
      */
     @SuppressWarnings("GrMethodMayBeStatic")
     String textFromFile(String fileName, String codePage = 'UTF-8') {
-        def path = FileUtils.ResourceFileName(fileName)
+        def path = FileUtils.ResourceFileName(fileName, this)
         def file = new File(path)
         if (!file.exists())
             throw new ExceptionDSL("File $fileName not found!")
@@ -1033,7 +1033,7 @@ Examples:
      * @return number of registered connections
      */
     Integer registerConnectionsFromStorage(String mask, String env, Boolean ignoreExists = true) {
-        return repositoryStorageManager().loadRepository(RepositoryConnections, mask, env, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryConnections, mask, env, ignoreExists)
     }
 
     /**
@@ -1043,7 +1043,7 @@ Examples:
      * @return number of registered connections
      */
     Integer registerConnectionsFromStorage(String mask = null, Boolean ignoreExists = true) {
-        return repositoryStorageManager().loadRepository(RepositoryConnections, mask, null, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryConnections, mask, null, ignoreExists)
     }
 
     /**
@@ -1052,7 +1052,7 @@ Examples:
      * @return number of registered connections
      */
     Integer registerConnectionsFromStorage(Boolean ignoreExists) {
-        return repositoryStorageManager().loadRepository(RepositoryConnections, null, null, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryConnections, null, null, ignoreExists)
     }
 
     /**
@@ -1492,7 +1492,7 @@ Examples:
      * @return number of registered datasets
      */
     Integer registerDatasetsFromStorage(String mask, String env, Boolean ignoreExists = true) {
-        return repositoryStorageManager().loadRepository(RepositoryDatasets, mask, env, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryDatasets, mask, env, ignoreExists)
     }
 
     /**
@@ -1502,7 +1502,7 @@ Examples:
      * @return number of registered datasets
      */
     Integer registerDatasetsFromStorage(String mask = null, Boolean ignoreExists = true) {
-        return repositoryStorageManager().loadRepository(RepositoryDatasets, mask, null, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryDatasets, mask, null, ignoreExists)
     }
 
     /**
@@ -1511,7 +1511,7 @@ Examples:
      * @return number of registered datasets
      */
     Integer registerDatasetsFromStorage(Boolean ignoreExists) {
-        return repositoryStorageManager().loadRepository(RepositoryDatasets, null, null, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryDatasets, null, null, ignoreExists)
     }
 
     /**
@@ -1615,7 +1615,7 @@ Examples:
      * @return number of registered history point managers
      */
     Integer registerHistorypointsFromStorage(String mask, String env, Boolean ignoreExists = true) {
-        return repositoryStorageManager().loadRepository(RepositoryHistorypoints, mask, env, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryHistorypoints, mask, env, ignoreExists)
     }
 
     /**
@@ -1625,7 +1625,7 @@ Examples:
      * @return number of registered history point managers
      */
     Integer registerHistorypointsFromStorage(String mask = null, Boolean ignoreExists = true) {
-        return repositoryStorageManager().loadRepository(RepositoryHistorypoints, mask, null, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryHistorypoints, mask, null, ignoreExists)
     }
 
     /**
@@ -1634,7 +1634,7 @@ Examples:
      * @return number of registered history point managers
      */
     Integer registerHistorypointsFromStorage(Boolean ignoreExists) {
-        return repositoryStorageManager().loadRepository(RepositoryHistorypoints, null, null, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryHistorypoints, null, null, ignoreExists)
     }
 
     /**
@@ -1738,7 +1738,7 @@ Examples:
      * @return number of registered sequences
      */
     Integer registerSequencesFromStorage(String mask, String env, Boolean ignoreExists = true) {
-        return repositoryStorageManager().loadRepository(RepositorySequences, mask, env, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositorySequences, mask, env, ignoreExists)
     }
 
     /**
@@ -1748,7 +1748,7 @@ Examples:
      * @return number of registered sequences
      */
     Integer registerSequencesFromStorage(String mask = null, Boolean ignoreExists = true) {
-        return repositoryStorageManager().loadRepository(RepositorySequences, mask, null, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositorySequences, mask, null, ignoreExists)
     }
 
     /**
@@ -1757,7 +1757,7 @@ Examples:
      * @return number of registered sequences
      */
     Integer registerSequencesFromStorage(Boolean ignoreExists) {
-        return repositoryStorageManager().loadRepository(RepositorySequences, null, null, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositorySequences, null, null, ignoreExists)
     }
 
     /**
@@ -1902,7 +1902,7 @@ Examples:
      * @return number of registered file managers
      */
     Integer registerFilemanagersFromStorage(String mask, String env, Boolean ignoreExists = true) {
-        return repositoryStorageManager().loadRepository(RepositoryFilemanagers, mask, env, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryFilemanagers, mask, env, ignoreExists)
     }
 
     /**
@@ -1912,7 +1912,7 @@ Examples:
      * @return number of registered file managers
      */
     Integer registerFilemanagersFromStorage(String mask = null, Boolean ignoreExists = true) {
-        return repositoryStorageManager().loadRepository(RepositoryFilemanagers, mask, null, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryFilemanagers, mask, null, ignoreExists)
     }
 
     /**
@@ -1921,7 +1921,7 @@ Examples:
      * @return number of registered file managers
      */
     Integer registerFilemanagersFromStorage(Boolean ignoreExists) {
-        return repositoryStorageManager().loadRepository(RepositoryFilemanagers, null, null, ignoreExists)
+        return repositoryStorageManager.loadRepository(RepositoryFilemanagers, null, null, ignoreExists)
     }
 
     /**
@@ -2240,7 +2240,7 @@ Examples:
      * @return exit code
      */
     Integer callScript(Getl script, Boolean runOnce = false) {
-        def className = script.class.name
+        def className = script.getClass().name
         def previouslyRun = (executedClasses.indexOfListItem(className) != -1)
         if (previouslyRun && BoolUtils.IsValue(runOnce)) return 0
 
@@ -2476,7 +2476,7 @@ Examples:
 
     /** OS variables */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Map<String, String> getSysVars() { System.getenv() }
+    Map<String, Object> getSysVars() { Config.SystemProps() }
 
     /** Execute a synchronized sequence of logging commands */
     static void logConsistently(Closure cl) { Logs.Consistently(cl) }
@@ -2636,7 +2636,7 @@ Examples:
     Connection cloneConnection(Connection con) {
         if (con == null)
             throw new ExceptionDSL('Need object value!')
-        return con.cloneConnection()
+        return con.cloneConnection(null, this)
     }
 
     /**
@@ -2650,7 +2650,7 @@ Examples:
     Connection cloneConnection(String newName, Connection con,
                                @DelegatesTo(Connection)
                                @ClosureParams(value = SimpleType, options = ['getl.data.Connection']) Closure cl = null) {
-        def parent = cloneConnection(con)
+        def parent = con.cloneConnection(null, this)
         registerConnectionObject(parent, newName)
         runClosure(parent, cl)
 
@@ -4411,7 +4411,7 @@ Examples:
     Manager cloneFilemanager(Manager man) {
         if (man == null)
             throw new ExceptionDSL('Need object value!')
-        return man.cloneManager()
+        return man.cloneManager(null, this)
     }
 
     /**

@@ -240,7 +240,25 @@ class Config {
         configClassManager.saveConfig(content, saveParams)
 	}
 
+	/**
+	 * Check configuration content is empty
+	 * @return flag
+	 */
 	static Boolean IsEmpty() {
         return (content.size() == 1 && vars.isEmpty())
     }
+
+	/**
+	 * Return system properties and environment OS variables
+	 * @return list of environment variables
+	 */
+	static Map<String, Object> SystemProps() {
+		def res = [:] as Map<String, Object>
+		res.putAll(System.getenv())
+		System.properties.each { prop ->
+			res.put(prop.key.toString(), prop.value)
+		}
+
+		return res
+	}
 }

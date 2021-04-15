@@ -103,7 +103,7 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     @Override
     Map exportConfig(GetlRepository repObj) {
-        return [connection: repObj.class.name] + ((repObj as Connection).params)
+        return [connection: repObj.getClass().name] + ((repObj as Connection).params)
     }
 
     @Override

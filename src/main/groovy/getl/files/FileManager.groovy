@@ -127,7 +127,7 @@ class FileManager extends Manager {
 
 	@CompileStatic
 	@Override
-	FileManagerList listDir(String mask) {
+	FileManagerList listDir(String mask = null) {
 		validConnect()
 		
 		Closure filter

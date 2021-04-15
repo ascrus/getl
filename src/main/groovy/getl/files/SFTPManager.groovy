@@ -2,8 +2,10 @@ package getl.files
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.files.sub.FileManagerList
+import getl.lang.Getl
 import getl.lang.sub.UserLogins
-import getl.utils.sub.LoginManager
+import getl.lang.sub.LoginManager
+import getl.lang.sub.StorageLogins
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import com.jcraft.jsch.*
@@ -22,7 +24,8 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	void initParams() {
 		super.initParams()
-		params.storedLogins = [:] as Map<String, String>
+		loginManager = new LoginManager(this)
+		params.storedLogins = new StorageLogins(loginManager)
 	}
 
 	/** SSH driver */
@@ -78,7 +81,7 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	String getPassword() { params.password as String }
 	@Override
-	void setPassword(String value) { params.password = value }
+	void setPassword(String value) { params.password = loginManager.encryptPassword(value) }
 
 	@Override
 	Map<String, String> getStoredLogins() { params.storedLogins as Map<String, String> }
@@ -148,7 +151,7 @@ class SFTPManager extends Manager implements UserLogins {
 		String h = "CREATE SESSION: host $server:$port, login $login"
 		client.identityRepository.removeAll()
 		if (identityFile != null) {
-			def f = new File(FileUtils.ResourceFileName(identityFile))
+			def f = new File(FileUtils.ResourceFileName(identityFile, dslCreator))
 			if (!f.exists())
 				throw new ExceptionGETL("RSA file \"$f\" not found!")
 
@@ -165,10 +168,10 @@ class SFTPManager extends Manager implements UserLogins {
 		Session res = client.getSession(login, server, port)
 		try {
 			res.setConfig('PreferredAuthentications', 'publickey,password,keyboard-interactive')
-
-			if (password != null && identityFile == null) {
-				res.setPassword(password)
-				h += ", used password \"${StringUtils.Replicate('*', password.length())}\""
+			def pass = loginManager.currentDecryptPassword()
+			if (pass != null && identityFile == null) {
+				res.setPassword(pass)
+				h += ", used password \"${StringUtils.Replicate('*', pass.length())}\""
 			}
 
 			if (!strictHostKeyChecking) {
@@ -225,7 +228,7 @@ class SFTPManager extends Manager implements UserLogins {
 
 		if (server == null || port == null)
 			throw new ExceptionGETL('Required server host and port for connect')
-		if (login == null || (password == null && identityFile == null))
+		if (login == null || (loginManager.currentPassword() == null && identityFile == null))
 			throw new ExceptionGETL('Required login and password for connect')
 		
 		clientSession = newSession()
@@ -310,7 +313,7 @@ class SFTPManager extends Manager implements UserLogins {
 
 	@CompileStatic
 	@Override
-	FileManagerList listDir(String maskFiles) {
+	FileManagerList listDir(String maskFiles = null) {
 		validConnect()
 
 		if (maskFiles == null) maskFiles = "*"
@@ -642,7 +645,7 @@ exit \$LastExitCode
 	}
 
 	/** Logins manager */
-	private LoginManager loginManager = new LoginManager(this)
+	private LoginManager loginManager
 
 	@Override
 	void useLogin(String user) {
@@ -657,5 +660,23 @@ exit \$LastExitCode
 	@Override
 	void switchToPreviousLogin() {
 		loginManager.switchToPreviousLogin()
+	}
+
+	@Override
+	void useDslCreator(Getl value) {
+		def passwords = loginManager.decryptObject()
+		super.useDslCreator(value)
+		loginManager.encryptObject(passwords)
+	}
+
+	@Override
+	protected List<String> ignoreCloneClasses() { [StorageLogins.name] }
+
+	@Override
+	protected void afterClone(Manager original) {
+		super.afterClone(original)
+		def o = original as SFTPManager
+		def passwords = o.loginManager.decryptObject()
+		loginManager.encryptObject(passwords)
 	}
 }

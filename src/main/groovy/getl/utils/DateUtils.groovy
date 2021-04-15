@@ -943,7 +943,7 @@ class DateUtils {
 			res = new Duration(list[0].toInteger(), list[1].toInteger(), list[2].toInteger(), list[3].toInteger(), list[4].toInteger())
 		}
 		else {
-			throw new ExceptionGETL("Unsupported class ${obj.class.name} for converting to duration object!")
+			throw new ExceptionGETL("Unsupported class ${obj.getClass().name} for converting to duration object!")
 		}
 
 		return res

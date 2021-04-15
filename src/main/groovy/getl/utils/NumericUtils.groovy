@@ -154,7 +154,7 @@ class NumericUtils {
 				res = (value as BigInteger).toInteger()
 				break
 			default:
-				throw new ExceptionGETL("Conversion from value with type ${value.class.name} to Integer object is not available!")
+				throw new ExceptionGETL("Conversion from value with type ${value.getClass().name} to Integer object is not available!")
 		}
 
 		return res
@@ -186,7 +186,7 @@ class NumericUtils {
 				res = (value as BigInteger).toLong()
 				break
 			default:
-				throw new ExceptionGETL("Conversion from value with type ${value.class.name} to Long object is not available!")
+				throw new ExceptionGETL("Conversion from value with type ${value.getClass().name} to Long object is not available!")
 		}
 
 		return res
@@ -218,7 +218,7 @@ class NumericUtils {
 				res = new BigDecimal(value as Long)
 				break
 			default:
-				throw new ExceptionGETL("Conversion from value with type ${value.class.name} to BigDecimal object is not available!")
+				throw new ExceptionGETL("Conversion from value with type ${value.getClass().name} to BigDecimal object is not available!")
 		}
 
 		return res
@@ -250,7 +250,7 @@ class NumericUtils {
 				res = BigInteger.valueOf(value as Long)
 				break
 			default:
-				throw new ExceptionGETL("Conversion from value with type ${value.class.name} to BigDecimal object is not available!")
+				throw new ExceptionGETL("Conversion from value with type ${value.getClass().name} to BigDecimal object is not available!")
 		}
 
 		return res

@@ -64,7 +64,7 @@ class ExcelDriver extends FileDriver {
     Long eachRow(Dataset source, Map params, Closure prepareCode, Closure code) {
         ExcelDataset dataset = source as ExcelDataset
         String fileName = dataset.fileName
-        String fullPath = FileUtils.ResourceFileName(dataset.fullFileName())
+        String fullPath = FileUtils.ResourceFileName(dataset.fullFileName(), dataset.dslCreator)
 
         if (!fileName)
             throw new ExceptionGETL('Required "fileName" parameter with Excel dataset!')

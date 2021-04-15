@@ -3,10 +3,12 @@ package getl.files
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.files.sub.FileManagerList
+import getl.lang.Getl
 import getl.lang.sub.UserLogins
 import getl.utils.FileUtils
 import getl.utils.StringUtils
-import getl.utils.sub.LoginManager
+import getl.lang.sub.LoginManager
+import getl.lang.sub.StorageLogins
 import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 import org.apache.hadoop.fs.FileStatus
@@ -27,7 +29,8 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     void initParams() {
         super.initParams()
-        params.storedLogins = [:] as Map<String, String>
+        loginManager = new LoginManager(this)
+        params.storedLogins = new StorageLogins(loginManager)
     }
 
     @Override
@@ -54,7 +57,7 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     String getPassword() { params.password }
     @Override
-    void setPassword(String value) { params.password = value }
+    void setPassword(String value) { params.password = loginManager.encryptPassword(value) }
 
     @Override
     Map<String, String> getStoredLogins() { params.storedLogins as Map<String, String> }
@@ -256,7 +259,7 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    FileManagerList listDir(String maskFiles) {
+    FileManagerList listDir(String maskFiles = null) {
         validConnect()
 
         HDFSList res = new HDFSList()
@@ -442,7 +445,7 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     /** Logins manager */
-    private LoginManager loginManager = new LoginManager(this)
+    private LoginManager loginManager
 
     @Override
     void useLogin(String user) {
@@ -457,5 +460,23 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     void switchToPreviousLogin() {
         loginManager.switchToPreviousLogin()
+    }
+
+    @Override
+    void useDslCreator(Getl value) {
+        def passwords = loginManager.decryptObject()
+        super.useDslCreator(value)
+        loginManager.encryptObject(passwords)
+    }
+
+    @Override
+    protected List<String> ignoreCloneClasses() { [StorageLogins.name] }
+
+    @Override
+    protected void afterClone(Manager original) {
+        super.afterClone(original)
+        def o = original as HDFSManager
+        def passwords = o.loginManager.decryptObject()
+        loginManager.encryptObject(passwords)
     }
 }

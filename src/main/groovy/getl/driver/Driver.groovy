@@ -114,7 +114,7 @@ abstract class Driver {
 	 * @return
 	 */
 	String fullFileNameSchema(Dataset dataset) {
-		FileUtils.ResourceFileName(dataset.schemaFileName)
+		FileUtils.ResourceFileName(dataset.schemaFileName, dataset.dslCreator)
 	}
 
 	/**

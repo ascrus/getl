@@ -443,7 +443,7 @@ class JDBCDriver extends Driver {
 		}
 		else {
 			def login = con.login
-			def password = con.password
+			def password = con.loginManager.currentDecryptPassword()
 			String conParams = buildConnectParams()
 			
 			def drvName = con.params.driverName as String
@@ -1398,7 +1398,7 @@ ${extend}'''
 		} 
 		else {
 			if (!(dataset instanceof QueryDataset))
-				throw new ExceptionGETL("Not supported JDBC dataset class \"${dataset.class.name}\"!")
+				throw new ExceptionGETL("Not supported JDBC dataset class \"${dataset.getClass().name}\"!")
 			def qry = dataset as QueryDataset
 			query = qry.query
 			if (query == null && qry.scriptFilePath != null) {

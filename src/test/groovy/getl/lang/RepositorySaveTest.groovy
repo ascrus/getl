@@ -9,6 +9,7 @@ class RepositorySaveTest extends RepositorySave {
         connectDatabase = 'repositorysave_test'
         login = 'dba'
         password = '12345'
+        assert password == '12345'
         connected = true
         storedLogins.admin = 'admin'
         storedLogins.user = 'user'
@@ -27,6 +28,7 @@ class RepositorySaveTest extends RepositorySave {
     @SaveToRepository(type = 'Connections', env = 'dev', mask = 'test:*')
     void connections() {
         cloneConnection('test:con', con)
+        assert embeddedConnection('test:con').password == repositoryStorageManager.encryptText('12345')
     }
 
     @SaveToRepository(type = 'Datasets', retrieve = true, mask = 'test:*')
@@ -46,6 +48,15 @@ class RepositorySaveTest extends RepositorySave {
     void filemanagers2() {
         files('test:file2', true) {
             rootPath = '/test2'
+        }
+
+        ftp('test:ftp1', true) {
+            rootPath = '/'
+            login = 'user1'
+            password = '12345'
+            assert password == repositoryStorageManager.encryptText('12345')
+            storedLogins.user2 = '12345'
+            assert storedLogins.user2 == repositoryStorageManager.encryptText('12345')
         }
     }
 

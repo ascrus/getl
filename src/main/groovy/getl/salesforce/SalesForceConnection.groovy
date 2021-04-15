@@ -3,9 +3,10 @@ package getl.salesforce
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
-import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.lang.sub.UserLogins
-import getl.utils.sub.LoginManager
+import getl.lang.sub.LoginManager
+import getl.lang.sub.StorageLogins
 
 /**
  * SalesForce Connection class
@@ -31,7 +32,8 @@ class SalesForceConnection extends Connection implements UserLogins {
 	@Override
 	void initParams() {
 		super.initParams()
-		params.storedLogins = [:] as Map<String, String>
+		loginManager = new LoginManager(this)
+		params.storedLogins = new StorageLogins(loginManager)
 	}
 
 	@Override
@@ -61,7 +63,7 @@ class SalesForceConnection extends Connection implements UserLogins {
 	String getPassword() { params.password }
 	/** SalesForce password and token */
 	@Override
-    void setPassword(String value) { params.password = value }
+    void setPassword(String value) { params.password = loginManager.encryptPassword(value) }
 
 	@Override
 	Map<String, String> getStoredLogins() { params.storedLogins as Map<String, String> }
@@ -97,7 +99,7 @@ class SalesForceConnection extends Connection implements UserLogins {
 	protected Class<Dataset> getDatasetClass() { SalesForceDataset }
 
 	/** Logins manager */
-	private LoginManager loginManager = new LoginManager(this)
+	protected LoginManager loginManager
 
 	@Override
 	void useLogin(String user) {
@@ -112,5 +114,32 @@ class SalesForceConnection extends Connection implements UserLogins {
 	@Override
 	void switchToPreviousLogin() {
 		loginManager.switchToPreviousLogin()
+	}
+
+	@Override
+	void setDslCreator(Getl value) {
+		if (dslCreator != value)
+			useDslCreator(value)
+	}
+
+	/**
+	 * Use new Getl instance
+	 * @param value Getl instance
+	 */
+	protected void useDslCreator(Getl value) {
+		def passwords = loginManager.decryptObject()
+		sysParams.dslCreator = value
+		loginManager.encryptObject(passwords)
+	}
+
+	@Override
+	protected List<String> ignoreCloneClasses() { [StorageLogins.name] }
+
+	@Override
+	protected void afterClone(Connection original) {
+		super.afterClone(original)
+		def o = original as SalesForceConnection
+		def passwords = o.loginManager.decryptObject()
+		loginManager.encryptObject(passwords)
 	}
 }

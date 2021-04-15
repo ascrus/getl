@@ -506,7 +506,7 @@ class ConfigSlurper extends ConfigManager {
 		}
 		else if (value instanceof Enum) {
 			def e = value as Enum
-			def str = e.class.name.replace('$', '.') + '.' + e.name()
+			def str = e.getClass().name.replace('$', '.') + '.' + e.name()
 			writer.append("${tabStr}${keyStr}$str")
 		}
 		else if (value instanceof String || value instanceof GString || value instanceof Enum) {

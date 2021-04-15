@@ -291,11 +291,28 @@ class FileUtilsTest extends getl.test.GetlTest {
 
     @Test
     void testParseFileName() {
-        def fileName1 = FileUtils.ResourceFileName('resource:/fileutils/file.txt')
+        def resFileName = 'resource:/fileutils/file.txt'
+        assertTrue(FileUtils.IsResourceFileName(resFileName))
+        assertFalse(FileUtils.IsRepositoryFileName(resFileName))
+
+        def repFileName = 'repository:/file.txt'
+        assertFalse(FileUtils.IsResourceFileName(repFileName, false))
+        assertTrue(FileUtils.IsResourceFileName(repFileName))
+        assertTrue(FileUtils.IsRepositoryFileName(repFileName))
+
+        def fileName1 = FileUtils.ResourceFileName(resFileName)
         assertTrue(new File(fileName1).exists())
 
         def fileName2 = FileUtils.ResourceFileName(fileName1)
         assertEquals(fileName1, fileName2)
+
+        shouldFail { FileUtils.ResourceFileName(repFileName) }
+        Getl.Dsl {getl ->
+            shouldFail { FileUtils.ResourceFileName(repFileName, getl) }
+            repositoryStorageManager.storagePath = 'resource:/fileutils'
+            def fileName3 = FileUtils.ResourceFileName(repFileName, getl)
+            assertTrue(new File(fileName3).exists())
+        }
     }
 
     @Test

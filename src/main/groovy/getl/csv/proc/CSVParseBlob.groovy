@@ -18,7 +18,7 @@ class CSVParseBlob extends CellProcessorAdaptor {
 		validateInputNotNull(value, context)
 		
 		if (!(value instanceof String)) {
-			throw new SuperCsvCellProcessorException(String.class, value, context, this)
+			throw new SuperCsvCellProcessorException(String, value, context, this)
 		}
 
 		final def result = StringUtils.HexToRaw((String)value)

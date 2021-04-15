@@ -92,7 +92,9 @@ class Connection implements Cloneable, GetlRepository {
 		def configName = params.config
 		if (configName != null) {
 			def configParams = Config.FindSection("connections.${configName}")
-			if (configParams == null) throw new ExceptionGETL("Connection \"${configName}\" not found in configuration")
+			if (configParams == null)
+				throw new ExceptionGETL("Connection \"${configName}\" not found in configuration")
+
 			MapUtils.MergeMap(configParams, params)
 			params = configParams
 		}
@@ -233,7 +235,22 @@ class Connection implements Cloneable, GetlRepository {
 
 	@JsonIgnore
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
-	void setDslCreator(Getl value) { sysParams.dslCreator = value }
+	void setDslCreator(Getl value) {
+		if (dslCreator != value) {
+			if (value != null && !value.repositoryStorageManager.isLoadMode)
+				useDslCreator(value)
+			else
+				sysParams.dslCreator = value
+		}
+	}
+
+	/**
+	 * Use new Getl instance
+	 * @param value Getl instance
+	 */
+	protected void useDslCreator(Getl value) {
+		sysParams.dslCreator = value
+	}
 
 	/** Auto load schema with meta file for connection datasets */
 	@JsonIgnore
@@ -522,17 +539,20 @@ class Connection implements Cloneable, GetlRepository {
 	 * @return
 	 */
 	@Synchronized
-	Connection cloneConnection(Map otherParams = [:]) {
-		String className = this.class.name
-		Map p = CloneUtils.CloneMap(this.params, false)
+	Connection cloneConnection(Map otherParams = [:], Getl getl = null) {
+		String className = this.getClass().name
+		Map p = CloneUtils.CloneMap(this.params, false, ignoreCloneClasses())
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		def res = CreateConnectionInternal([connection: className] + p)
-		res.afterClone()
+		res.afterClone(this)
 		return res
 	}
 
+	/** ignore specified class names when cloning */
+	protected List<String> ignoreCloneClasses() { null }
+
 	/** Finalization cloned object */
-	protected void afterClone() { }
+	protected void afterClone(Connection original) { }
 
 	/**
 	 * Perform operations within a transaction connection

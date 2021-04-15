@@ -34,7 +34,7 @@ class CSVFmtClob extends CellProcessorAdaptor implements StringCellProcessor {
 			result = (text.getSubString(1, (int)text.length()))
 		}
 		else {
-			throw new SuperCsvCellProcessorException((String).class, value, context, this)
+			throw new SuperCsvCellProcessorException(String, value, context, this)
 		}
 		
 		return next.execute(result, context)

@@ -175,7 +175,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         synchronized (objects) {
             obj = objects.get(repName)
             if (obj == null) {
-                def repClass = this.class.name
+                def repClass = this.getClass().name
                 dslCreator.with {
                     if (obj == null && options.validRegisterObjects &&
                             repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&
@@ -257,10 +257,10 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     }
 
     /** The name of the collection for storing cloned objects for threads */
-    String getNameCloneCollection() { this.class.name }
+    String getNameCloneCollection() { this.getClass().name }
 
     /** Type of repository object  */
-    String getTypeObject() {  this.class.simpleName }
+    String getTypeObject() {  this.getClass().simpleName }
 
     /**
      * Process register object
@@ -315,7 +315,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         synchronized (objects) {
             obj = objects.get(repName)
 
-            def repClass = this.class.name
+            def repClass = this.getClass().name
             dslCreator.with {
                 if (!registration && obj == null && options.validRegisterObjects &&
                         repositoryStorageManager.autoLoadFromStorage && repositoryStorageManager.storagePath != null &&

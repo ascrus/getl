@@ -78,18 +78,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 			throw new ExceptionGETL("Required class name as \"manager\" property!")
 
 		Manager manager = Class.forName(className).newInstance() as Manager
-
-		def locDir = parameters.localDirectory as String
-		def load_config = parameters.config as String
-		if (load_config != null) manager.setConfig(load_config)
-
-		MapUtils.MergeMap(manager.params as Map<String, Object>,
-				MapUtils.CleanMap(parameters, ['manager', 'config', 'localDirectory']) as Map<String, Object>)
-
-		manager.validateParams()
-
-		if (locDir != null)
-			manager.setLocalDirectory(locDir)
+		manager.importParams(parameters)
 
 		return manager
 	}
@@ -103,23 +92,45 @@ abstract class Manager implements Cloneable, GetlRepository {
 		Map fileParams = Config.content."files"?."$name"
 		CreateManager(fileParams)
 	}
+
+	/**
+	 * Import parameters
+	 * @param parameters imported parameters
+	 */
+	protected void importParams(Map<String, Object> parameters) {
+		def locDir = parameters.localDirectory as String
+		def load_config = parameters.config as String
+		if (load_config != null)
+			setConfig(load_config)
+
+		MapUtils.MergeMap(params,
+				MapUtils.CleanMap(parameters, ['manager', 'config', 'localDirectory']) as Map<String, Object>)
+
+		validateParams()
+
+		if (locDir != null)
+			setLocalDirectory(locDir)
+	}
 	
 	/**
 	 * Clone manager
 	 * @return new manager object
 	 */
 	@Synchronized
-	Manager cloneManager(Map otherParams = [:]) {
-		String className = this.class.name
-		Map p = CloneUtils.CloneMap(this.params, false)
+	Manager cloneManager(Map otherParams = [:], Getl getl = null) {
+		String className = this.getClass().name
+		Map p = CloneUtils.CloneMap(this.params, false, ignoreCloneClasses())
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		def res = CreateManagerInternal([manager: className] + p)
-		res.afterClone()
+		res.afterClone(this)
 		return res
 	}
 
+	/** ignore specified class names when cloning */
+	protected List<String> ignoreCloneClasses() { null }
+
 	/** Finalization cloned manager */
-	protected void afterClone() {
+	protected void afterClone(Manager original) {
 		fileNameScriptHistory = null
 		currentRootPathSet()
 	}
@@ -163,7 +174,20 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	@JsonIgnore
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
-	void setDslCreator(Getl value) { sysParams.dslCreator = value }
+	void setDslCreator(Getl value) {
+		if (dslCreator != value) {
+			if (value != null && !value.repositoryStorageManager.isLoadMode)
+				useDslCreator(value)
+			else
+				sysParams.dslCreator = value
+		}
+	}
+
+	/**
+	 * Use new Getl instance
+	 * @param value Getl instance
+	 */
+	protected void useDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Root path */
 	String getRootPath() { params.rootPath as String }
@@ -367,7 +391,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param maskFiles mask files
 	 * @return list of files
 	 */
-	abstract FileManagerList listDir(String maskFiles)
+	abstract FileManagerList listDir(String maskFiles = null)
 
 	/** Process list files of current directory from server */
 	@CompileStatic
@@ -768,7 +792,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	@CompileStatic
 	@Synchronized('operationLock')
-	protected FileManagerList listDirSync(String mask) {
+	protected FileManagerList listDirSync(String mask = null) {
 		listDir(mask)
 	}
 	
@@ -1569,7 +1593,7 @@ WHERE
 	}
 
 	void resetLocalDir() {
-		localDirectorySet(tempDirFile.canonicalPath + '/' + this.class.simpleName + '_' + FileUtils.UniqueFileName())
+		localDirectorySet(tempDirFile.canonicalPath + '/' + this.getClass().simpleName + '_' + FileUtils.UniqueFileName())
 		new File(localDirectory).deleteOnExit()
 		isTempLocalDirectory = true
 		if (connected)
@@ -2026,7 +2050,7 @@ WHERE
 	@Synchronized('operationLock')
 	protected void validScriptHistoryFile() {
 		if (fileNameScriptHistory == null) {
-			fileNameScriptHistory = StringUtils.EvalMacroString(scriptHistoryFile, System.getenv() + StringUtils.MACROS_FILE)
+			fileNameScriptHistory = StringUtils.EvalMacroString(scriptHistoryFile, Config.SystemProps() + StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(fileNameScriptHistory)
 		}
 	}

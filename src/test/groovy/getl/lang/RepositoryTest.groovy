@@ -272,7 +272,7 @@ class RepositoryTest extends TestDsl {
                 storedLogins = [user1: 'password1', user2: 'password2']
             }
             csvTempConnection('csv.group:con', true) {
-                path = repositoryStorageManager().storagePath
+                path = repositoryStorageManager.storagePath()
                 fieldDelimiter = '\t'
                 quoteMode = quoteAlways
             }
@@ -437,9 +437,9 @@ class RepositoryTest extends TestDsl {
             assertTrue(models.listReferenceVerticaTables().isEmpty())
 
             repositoryStorageManager {
-                assertEquals(7, repositoryFiles(RepositoryDatasets.class.name).countRow())
-                assertEquals(2, repositoryFiles(RepositoryDatasets.class.name, null, 'rules').countRow())
-                assertEquals(1, repositoryFiles(RepositoryDatasets.class.name, null, 'ver').countRow())
+                assertEquals(7, repositoryFiles(RepositoryDatasets.name).countRow())
+                assertEquals(2, repositoryFiles(RepositoryDatasets.name, null, 'rules').countRow())
+                assertEquals(1, repositoryFiles(RepositoryDatasets.name, null, 'ver').countRow())
             }
 
             repositoryStorageManager {
@@ -460,12 +460,13 @@ class RepositoryTest extends TestDsl {
                 assertEquals('localhost', connectHost)
                 assertEquals('test', connectDatabase)
                 assertEquals('user', login)
-                assertEquals('password', password)
-                assertEquals([user1: 'password1', user2: 'password2'], storedLogins)
+                assertEquals(repositoryStorageManager.encryptText('password'), password)
+                assertEquals([user1: repositoryStorageManager.encryptText('password1'),
+                              user2: repositoryStorageManager.encryptText('password2')], storedLogins)
                 assertEquals(8192, connectProperty.PAGE_SIZE)
             }
             csvTempConnection('csv.group:con') {
-                assertEquals(repositoryStorageManager().storagePath, currentPath())
+                assertEquals(repositoryStorageManager.storagePath(), currentPath())
                 assertEquals('\t', fieldDelimiter)
                 assertEquals(quoteAlways, quoteMode)
             }
@@ -527,8 +528,9 @@ class RepositoryTest extends TestDsl {
                 assertEquals(22, port)
                 assertEquals('/root', rootPath)
                 assertEquals('user', login)
-                assertEquals('password', password)
-                assertEquals([user1: 'password1', user2: 'password2'], storedLogins)
+                assertEquals(repositoryStorageManager.encryptText('password'), password)
+                assertEquals([user1: repositoryStorageManager.encryptText('password1'),
+                              user2: repositoryStorageManager.encryptText('password2')], storedLogins)
                 assertFalse(strictHostKeyChecking)
             }
 
@@ -914,9 +916,9 @@ class RepositoryTest extends TestDsl {
                 embeddedConnection('test:con') {
                     assertEquals('repositorysave_test', connectDatabase)
                     assertEquals('dba', login)
-                    assertEquals('12345', password)
-                    assertEquals('admin', storedLogins.admin)
-                    assertEquals('user', storedLogins.user)
+                    assertEquals(repositoryStorageManager.encryptText('12345'), password)
+                    assertEquals(repositoryStorageManager.encryptText('admin'), storedLogins.admin)
+                    assertEquals(repositoryStorageManager.encryptText('user'), storedLogins.user)
                 }
 
                 repositoryStorageManager {
@@ -926,9 +928,9 @@ class RepositoryTest extends TestDsl {
                 def con = embeddedConnection('test:con') {
                     assertEquals('repositorysave_test', connectDatabase)
                     assertEquals('dba', login)
-                    assertEquals('12345', password)
-                    assertEquals('admin', storedLogins.admin)
-                    assertEquals('user', storedLogins.user)
+                    assertEquals(repositoryStorageManager.encryptText('12345'), password)
+                    assertEquals(repositoryStorageManager.encryptText('admin'), storedLogins.admin)
+                    assertEquals(repositoryStorageManager.encryptText('user'), storedLogins.user)
                 }
                 def tab = embeddedTable('test:table1') {
                     assertEquals(con, connection)
@@ -949,6 +951,11 @@ class RepositoryTest extends TestDsl {
                 }
                 files('test:file2') {
                     assertEquals('/test2', rootPath)
+                }
+                ftp('test:ftp1') {
+                    assertEquals('/', rootPath)
+                    assertEquals('user1', login)
+                    assertEquals(repositoryStorageManager.encryptText('12345'), password)
                 }
                 historypoint('test:hp') {
                     assertEquals(con, connection)

@@ -4,9 +4,9 @@ package getl.utils
 
 import getl.files.*
 import getl.files.sub.Filter
+import getl.lang.Getl
 import getl.tfs.TFS
 import groovy.transform.CompileStatic
-import groovy.transform.Memoized
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -884,9 +884,11 @@ class FileUtils {
 	 * @param fileName zip file name
 	 * @param targetDirectory target directory
 	 * @param password zip file password
+	 * @param charsetFilename file name code page
+	 * @param getl Dsl instance
 	 */
-	static void UnzipFile(String fileName, String targetDirectory, String password = null, String charsetFileName = null) {
-		def file = new File(ResourceFileName(TransformFilePath(fileName)))
+	static void UnzipFile(String fileName, String targetDirectory, String password = null, String charsetFileName = null, Getl getl = null) {
+		def file = new File(ResourceFileName(TransformFilePath(fileName), getl))
 		if (!file.exists())
 			throw new ExceptionGETL("Zip file \"$fileName\" not found!")
 
@@ -1048,9 +1050,6 @@ class FileUtils {
 					}
 				}
 			}
-
-			/*if (res == null)
-				throw new ExceptionGETL("Resource file \"$fileName\" is not found!")*/
 		}
 		else {
 			if (destFile != null) {
@@ -1090,19 +1089,40 @@ class FileUtils {
 	}
 
 	/**
-	 * Process the prefix "resource:" in the file name and return the full path to the resource file
+	 * Process the prefix "resource:" or "repository:" in the file name and return the full path to the resource file
 	 * <br>P.S. If the prefix is missing, return the input file name.
 	 * @param fileName input file name
+	 * @param getl Dsl instance (for processing repository resource files)
 	 * @return
 	 */
-	static String ResourceFileName(String fileName) {
-		if (fileName == null) return null
+	static String ResourceFileName(String fileName, Getl getl = null) {
+		if (fileName == null)
+			return null
+
+		fileName = fileName.trim()
+		if (fileName.length() == 0)
+			throw new ExceptionGETL("Invalid path to file \"$fileName\"!")
+
 		String res
-		if (IsResourceFileName(fileName)) {
+		if (IsResourceFileName(fileName, false)) {
+			if (fileName.length() < 10)
+				throw new ExceptionGETL("Invalid path to resource file \"$fileName\"!")
+
 			def file = FileFromResources(fileName.substring(9))
 			if (file == null)
 				throw new ExceptionGETL("Resource file \"$fileName\" not found!")
 			res = file.canonicalPath
+		}
+		else if (IsRepositoryFileName(fileName)) {
+			if (getl == null)
+				throw new ExceptionGETL("No Getl instance specified for repository files!")
+			if (getl.repositoryStorageManager.storagePath == null)
+				throw new ExceptionGETL("Getl has no repository storage path set!")
+			if (fileName.length() < 12)
+				throw new ExceptionGETL("Invalid path to repository file \"$fileName\"!")
+
+			def fn = "${getl.repositoryStorageManager.storagePath}/${fileName.substring(11)}"
+			res = ResourceFileName(fn, getl)
 		}
 		else {
 			res = fileName
@@ -1113,12 +1133,22 @@ class FileUtils {
 
 	/**
 	 * Determine that the file is stored in resources
-	 * @param fileName file name (use "resource:" to specify the file name in application resources)
-	 * @return
+	 * @param fileName file name (use "resource:" or "repository:" to specify the file name in application resources)
+	 * @return true if the file is in resource storage
 	 */
-	static Boolean IsResourceFileName(String fileName) {
+	static Boolean IsResourceFileName(String fileName, Boolean checkRepository = true) {
 		if (fileName == null) return null
-		return (fileName.matches('resource[:].+'))
+		return (fileName.matches('resource[:].+') || (checkRepository && fileName.matches('repository[:].+')))
+	}
+
+	/**
+	 * Determine that the file is stored in Getl repository
+	 * @param fileName file name (use "repository:" to specify the file name in Getl repository)
+	 * @return true if the file is in Getl repository storage
+	 */
+	static Boolean IsRepositoryFileName(String fileName) {
+		if (fileName == null) return null
+		return (fileName.matches('repository[:].+'))
 	}
 
 	/**
@@ -1216,7 +1246,7 @@ class FileUtils {
 	 * @return Transformed path
 	 */
 	static String TransformFilePath(String path, Boolean errorWhenUndefined = true) {
-		return StringUtils.EvalMacroString(path, System.getenv(), errorWhenUndefined)
+		return StringUtils.EvalMacroString(path, Config.SystemProps(), errorWhenUndefined)
 	}
 
 	/**

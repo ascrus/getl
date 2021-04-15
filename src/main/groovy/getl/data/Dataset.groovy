@@ -1501,7 +1501,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	@Synchronized
 	Dataset cloneDataset(Connection newConnection = null, Map otherParams = [:]) {
 		if (newConnection == null) newConnection = this.connection
-		String className = this.class.name
+		String className = this.getClass().name
 		Map p = CloneUtils.CloneMap(this.params, false)
 		p.remove('manualSchema')
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)

@@ -35,7 +35,7 @@ abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithCo
             return
 
         def thread = Thread.currentThread() as ExecutorThread
-        cloneObj.connection = thread.registerCloneObject(dslCreator.repositoryStorageManager().repository(RepositoryConnections.name).nameCloneCollection,
+        cloneObj.connection = thread.registerCloneObject(dslCreator.repositoryStorageManager.repository(RepositoryConnections.name).nameCloneCollection,
                 repObj.connection,{ par ->
                     par = par as Connection
                     def c = par.cloneConnection()

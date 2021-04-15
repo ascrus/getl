@@ -40,8 +40,8 @@ class FileConnection extends Connection {
 	}
 
 	@Override
-	protected void afterClone() {
-		super.afterClone()
+	protected void afterClone(Connection original) {
+		super.afterClone(original)
 		currentPath = null
 	}
 

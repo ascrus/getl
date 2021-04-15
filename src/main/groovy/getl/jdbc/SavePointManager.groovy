@@ -179,7 +179,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	@Synchronized
 	SavePointManager cloneSavePointManager(JDBCConnection newConnection = null, Map otherParams = [:]) {
 		if (newConnection == null) newConnection = this.connection
-		String className = this.class.name
+		String className = this.getClass().name
 		Map p = CloneUtils.CloneMap(this.params, false)
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		def man = Class.forName(className).newInstance() as SavePointManager

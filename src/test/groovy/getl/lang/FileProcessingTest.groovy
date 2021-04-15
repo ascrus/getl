@@ -4,6 +4,7 @@ import getl.h2.H2Connection
 import getl.test.TestDsl
 import getl.test.TestInit
 import getl.test.TestRunner
+import getl.utils.Config
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.GenerationUtils
@@ -32,7 +33,7 @@ class FileProcessingTest extends TestDsl {
     static def countCompleteFiles = countDays * countFileInDay - countDays * 4
     static def countErrorFiles = countDays * 3
 
-    static final def workPath = "${(debug)?"${System.getenv().GETL_TEMP}/getl.test": FileUtils.SystemTempDir()}/fileprocess"
+    static final def workPath = "${(debug)?"${Config.SystemProps().GETL_TEMP}/getl.test": FileUtils.SystemTempDir()}/fileprocess"
     static final def sourcePath = "$workPath/source"
     static final def archivePath = "$workPath/archive"
     static final def errorPath = "$workPath/errors"

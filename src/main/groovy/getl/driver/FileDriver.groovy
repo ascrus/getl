@@ -109,7 +109,7 @@ class FileDriver extends Driver {
 				fn = FileUtils.ConvertToDefaultOSPath(con.currentPath()) + con.fileSeparator() + fn
 		}
 
-		return FileUtils.ResourceFileName(fn)
+		return FileUtils.ResourceFileName(fn, dataset.dslCreator)
 	}
 	
 	/**
@@ -152,7 +152,7 @@ class FileDriver extends Driver {
 		if (dataset.extension() != null) fn += ".${dataset.extension()}"
 		if (dataset.isGzFile()) fn += ".gz"
 		
-		return FileUtils.ResourceFileName(fn)
+		return FileUtils.ResourceFileName(fn, dataset.dslCreator)
 	}
 	
 	/**
@@ -162,7 +162,7 @@ class FileDriver extends Driver {
 	 */
 	@Override
 	String fullFileNameSchema(Dataset dataset) {
-		return (dataset.schemaFileName != null)?FileUtils.ResourceFileName(dataset.schemaFileName):
+		return (dataset.schemaFileName != null)?FileUtils.ResourceFileName(dataset.schemaFileName, dataset.dslCreator):
 				(fullFileNameDatasetWithoutGZ(dataset as FileDataset) + ".schema")
 	}
 	

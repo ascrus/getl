@@ -32,7 +32,7 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
 
     @Override
     Map exportConfig(GetlRepository repObj) {
-        return [manager: repObj.class.name] + ((repObj as Manager).params)
+        return [manager: repObj.getClass().name] + ((repObj as Manager).params)
     }
 
     @Override

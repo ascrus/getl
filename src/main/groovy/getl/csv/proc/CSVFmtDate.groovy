@@ -51,7 +51,7 @@ class CSVFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 		validateInputNotNull(value, context)
 		
 		if( !(value instanceof Date) ) {
-			throw new SuperCsvCellProcessorException(Date.class, value, context, this)
+			throw new SuperCsvCellProcessorException(Date, value, context, this)
 		}
 		
 		SimpleDateFormat formatter

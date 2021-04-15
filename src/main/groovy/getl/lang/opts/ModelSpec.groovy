@@ -28,7 +28,7 @@ class ModelSpec extends BaseSpec {
 
     /** Return model repository */
     protected RepositoryObjects repository(Class<RepositoryObjects> repositoryClass) {
-        getl.repositoryStorageManager().repository(repositoryClass)
+        getl.repositoryStorageManager.repository(repositoryClass)
     }
 
     /** Reference model description */
@@ -74,7 +74,7 @@ class ModelSpec extends BaseSpec {
      * @return number of registered models
      */
     Integer registerReferenceVerticaTablesFromStorage(String mask = null, String env = null) {
-        return getl.repositoryStorageManager().loadRepository(RepositoryReferenceVerticaTables, mask, env)
+        return getl.repositoryStorageManager.loadRepository(RepositoryReferenceVerticaTables, mask, env)
     }
 
     /**
@@ -137,7 +137,7 @@ class ModelSpec extends BaseSpec {
      * @return number of registered models
      */
     Integer registerReferenceFilesFromStorage(String mask = null, String env = null) {
-        return getl.repositoryStorageManager().loadRepository(RepositoryReferenceFiles, mask, env)
+        return getl.repositoryStorageManager.loadRepository(RepositoryReferenceFiles, mask, env)
     }
 
     /**
@@ -199,7 +199,7 @@ class ModelSpec extends BaseSpec {
      * @return number of registered models
      */
     Integer registerMonitorRulesFromStorage(String mask = null) {
-        return getl.repositoryStorageManager().loadRepository(RepositoryMonitorRules, mask, null)
+        return getl.repositoryStorageManager.loadRepository(RepositoryMonitorRules, mask, null)
     }
 
     /**
@@ -259,7 +259,7 @@ class ModelSpec extends BaseSpec {
      * @return number of registered models
      */
     Integer registerMapTablesFromStorage(String mask = null) {
-        return getl.repositoryStorageManager().loadRepository(RepositoryMapTables, mask, null)
+        return getl.repositoryStorageManager.loadRepository(RepositoryMapTables, mask, null)
     }
 
     /**
@@ -319,7 +319,7 @@ class ModelSpec extends BaseSpec {
      * @return number of registered models
      */
     Integer registerSetOfTablesFromStorage(String mask = null) {
-        return getl.repositoryStorageManager().loadRepository(RepositorySetOfTables, mask, null)
+        return getl.repositoryStorageManager.loadRepository(RepositorySetOfTables, mask, null)
     }
 
     /**

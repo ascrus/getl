@@ -75,7 +75,7 @@ class SalesForceDriver extends Driver {
 		try {
             this.config = new ConnectorConfig()
             this.config.setUsername(con.login)
-            this.config.setPassword(con.password)
+            this.config.setPassword(con.loginManager.currentDecryptPassword())
             this.config.setAuthEndpoint(con.connectURL)
             // This should only be false when doing debugging.
             this.config.setCompression(true)

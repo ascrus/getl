@@ -9,17 +9,22 @@ class CloneUtils {
      * Clone object
      * @param obj object for cloning
      * @param cloneChildObjects cloning children objects
+     * @param ignoreClasses ignore objects of specified class names
      * @return new object
      */
-    static Object CloneObject(Object obj, Boolean cloneChildObjects = true) {
-        if (obj == null) return null
+    static Object CloneObject(Object obj, Boolean cloneChildObjects = true, List<String> ignoreClasses = null) {
+        if (obj == null)
+            return null
+
+        if (ignoreClasses != null && obj.getClass().name in ignoreClasses)
+            return null
 
         Object res
         if (obj instanceof Map) {
-            res = CloneMap(obj as Map, cloneChildObjects)
+            res = CloneMap(obj as Map, cloneChildObjects, ignoreClasses)
         }
         else if (obj instanceof List) {
-            res = CloneList(obj as List, cloneChildObjects)
+            res = CloneList(obj as List, cloneChildObjects, ignoreClasses)
         }
         else if (cloneChildObjects && obj instanceof Cloneable) {
             res = obj.clone()
@@ -36,14 +41,19 @@ class CloneUtils {
      * Clone map
      * @param map map for cloning
      * @param cloneChildObjects cloning children objects
+     * @param ignoreClasses ignore objects of specified class names
      * @return new map
      */
-    static Map CloneMap (Map obj, Boolean cloneChildObjects = true) {
-        if (obj == null) return null
+    static Map CloneMap(Map obj, Boolean cloneChildObjects = true, List<String> ignoreClasses = null) {
+        if (obj == null)
+            return null
 
         def res = obj.getClass().newInstance() as Map
         obj.each { k, v ->
-            res.put(k, CloneObject(v, cloneChildObjects))
+            if (v == null)
+                res.put(k, v)
+            else if (ignoreClasses == null || !(v.getClass().name in ignoreClasses))
+                res.put(k, CloneObject(v, cloneChildObjects, ignoreClasses))
         }
 
         return res
@@ -53,14 +63,20 @@ class CloneUtils {
      * Clone list
      * @param list list for cloning
      * @param cloneChildObjects cloning children objects
+     * @param ignoreClasses ignore objects of specified class names
      * @return new list
      */
-    static List CloneList(List obj, Boolean cloneChildObjects = true) {
-        if (obj == null) return null
+    static List CloneList(List obj, Boolean cloneChildObjects = true, List<String> ignoreClasses = null) {
+        if (obj == null)
+            return null
 
         def res = obj.getClass().newInstance() as List
         for (Integer i = 0; i < obj.size(); i++) {
-            res << CloneObject(obj[i], cloneChildObjects)
+            def v = obj[i]
+            if (v == null)
+                res << v
+            else if (ignoreClasses == null || !(v.getClass().name in ignoreClasses))
+                res << CloneObject(v, cloneChildObjects)
         }
 
         return res

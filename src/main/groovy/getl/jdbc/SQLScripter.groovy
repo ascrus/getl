@@ -124,7 +124,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	 * @param codePage file use specified encoding page (default utf-8)
 	 */
 	void loadFile(String fileName, String codePage = 'utf-8') {
-		def fn = FileUtils.ResourceFileName(fileName)
+		def fn = FileUtils.ResourceFileName(fileName, dslCreator)
 		if (fn == null)
 			throw new ExceptionGETL("Script file \"$fileName\" not found!")
 		def file = new File(fn)

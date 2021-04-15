@@ -124,7 +124,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
             throw new ExceptionDSL("No connection specified for dataset \"${obj.dslNameObject}\"!")
 
         def fields = GenerationUtils.Fields2Map(obj.field)
-        def res = [dataset: obj.class.name] + obj.params + fields
+        def res = [dataset: obj.getClass().name] + obj.params + fields
 
         if (obj.connection.dslNameObject == null) {
             if (!(obj instanceof TFSDataset))

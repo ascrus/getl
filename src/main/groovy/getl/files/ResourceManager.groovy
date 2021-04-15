@@ -270,7 +270,7 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    FileManagerList listDir(String mask) {
+    FileManagerList listDir(String mask = null) {
         validConnect()
 
         def dir = directoryFromPath(mask)

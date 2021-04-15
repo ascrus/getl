@@ -3,9 +3,11 @@ package getl.files
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.files.sub.FileManagerList
+import getl.lang.Getl
 import getl.lang.sub.UserLogins
 import getl.utils.*
-import getl.utils.sub.LoginManager
+import getl.lang.sub.LoginManager
+import getl.lang.sub.StorageLogins
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
@@ -26,7 +28,8 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	void initParams() {
 		super.initParams()
-		params.storedLogins = [:] as Map<String, String>
+		loginManager = new LoginManager(this)
+		params.storedLogins = new StorageLogins(loginManager)
 	}
 	
 	@Override
@@ -42,7 +45,7 @@ class FTPManager extends Manager implements UserLogins {
 		super.onLoadConfig(configSection)
 		if (rootPath != null && rootPath.substring(0, 1) != '/') rootPath = '/' + rootPath
 	}
-	
+
 	@Override
 	void setRootPath(String value) {
 		if (value != null && value.length() > 1 && value.substring(0, 1) != '/') value = '/' + value
@@ -67,7 +70,7 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	String getPassword() { params.password }
 	@Override
-	void setPassword(String value) { params.password = value }
+	void setPassword(String value) { params.password = loginManager.encryptPassword(value) }
 
 	@Override
 	Map<String, String> getStoredLogins() { params.storedLogins as Map<String, String> }
@@ -169,7 +172,7 @@ class FTPManager extends Manager implements UserLogins {
 			throw e
 		}
 		try {
-			client.login(login, password)
+			client.login(login, loginManager.currentDecryptPassword())
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog) Logs.Severe("Invalid login or password for $server:$port")
@@ -266,7 +269,7 @@ class FTPManager extends Manager implements UserLogins {
 	
 	@CompileStatic
 	@Override
-	FileManagerList listDir(String mask) {
+	FileManagerList listDir(String mask = null) {
 		validConnect()
 
 		FTPFile[] listFiles 
@@ -510,7 +513,7 @@ class FTPManager extends Manager implements UserLogins {
 	}
 
 	/** Logins manager */
-	private LoginManager loginManager = new LoginManager(this)
+	private LoginManager loginManager
 
 	@Override
 	void useLogin(String user) {
@@ -525,5 +528,23 @@ class FTPManager extends Manager implements UserLogins {
 	@Override
 	void switchToPreviousLogin() {
 		loginManager.switchToPreviousLogin()
+	}
+
+	@Override
+	void useDslCreator(Getl value) {
+		def passwords = loginManager.decryptObject()
+		super.useDslCreator(value)
+		loginManager.encryptObject(passwords)
+	}
+
+	@Override
+	protected List<String> ignoreCloneClasses() { [StorageLogins.name] }
+
+	@Override
+	protected void afterClone(Manager original) {
+		super.afterClone(original)
+		def o = original as FTPManager
+		def passwords = o.loginManager.decryptObject()
+		loginManager.encryptObject(passwords)
 	}
 }
