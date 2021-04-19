@@ -207,7 +207,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param validExist checking if an object is registered in the repository (default true)
      */
     @SuppressWarnings("GroovySynchronizationOnNonFinalField")
-    T registerObject(Getl creator, T obj, String name = null, Boolean validExist = true) {
+    T registerObject(Getl creator, T obj, String name = null, Boolean validExist = true, Boolean encryptPasswords = true) {
         if (obj == null)
             throw new ExceptionDSL("Object cannot be null for $typeObject!")
 
@@ -231,7 +231,16 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             }
 
             obj.dslNameObject = repName
-            obj.dslCreator = (repName[0] == '#')?creator:dslCreator
+            def oldLoadMode = creator.repositoryStorageManager.isLoadMode
+            try {
+                if (!encryptPasswords)
+                    creator.repositoryStorageManager.isLoadMode = true
+                obj.dslCreator = (repName[0] == '#')?creator:dslCreator
+            }
+            finally {
+                if (!encryptPasswords)
+                    creator.repositoryStorageManager.isLoadMode = oldLoadMode
+            }
 
             objects.put(repName, obj)
             initRegisteredObject(obj)

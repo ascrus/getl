@@ -11,8 +11,16 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
         super(model)
     }
 
+    BaseSpec(BaseModel model, BaseSpec spec) {
+        super(model, false, spec.params)
+    }
+
     BaseSpec(BaseModel model, Map importParams) {
         super(model, false, importParams)
+    }
+
+    BaseSpec(BaseModel model, Boolean useExternalParams, Map importParams) {
+        super(model, useExternalParams, importParams)
     }
 
     @Override

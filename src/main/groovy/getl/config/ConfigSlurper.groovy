@@ -1,12 +1,13 @@
 package getl.config
 
-import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import getl.lang.opts.BaseSpec
-import getl.lang.sub.GetlRepository
 import getl.proc.Job
 import getl.utils.*
 import groovy.time.Duration
+
+import java.sql.Time
+import java.sql.Timestamp
 
 /**
  * Slurper configuration manager class
@@ -495,8 +496,20 @@ class ConfigSlurper extends ConfigManager {
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def eqStr = (isListMap)?':':' ='
 		def keyStr = (key != null)?"${(isListMap)?key:PrepareVariableName(key)}$eqStr ":''
-		if (value instanceof Date) {
-			def str = "new java.sql.Timestamp(Date.parse('yyyy-MM-dd HH:mm:ss.SSS', '${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', value as Date)}').time)"
+		if (value instanceof Timestamp) {
+			def str = "getl.utils.DateUtils.ParseSQLTimestamp(getl.utils.DateUtils.defaultDateTimeMask, '${DateUtils.FormatDate(DateUtils.defaultDateTimeMask, value as Timestamp)}', false)"
+			writer.append("${tabStr}${keyStr}$str")
+		}
+		else if (value instanceof java.sql.Date) {
+			def str = "getl.utils.DateUtils.ParseSQLDate(getl.utils.DateUtils.defaultDateMask, '${DateUtils.FormatDate(DateUtils.defaultDateMask, value as java.sql.Date)}', false)"
+			writer.append("${tabStr}${keyStr}$str")
+		}
+		else if (value instanceof Time) {
+			def str = "getl.utils.DateUtils.ParseSQLTime(getl.utils.DateUtils.defaultTimeMask, '${DateUtils.FormatDate(DateUtils.defaultTimeMask, value as Time)}', false)"
+			writer.append("${tabStr}${keyStr}$str")
+		}
+		else if (value instanceof Date) {
+			def str = "getl.utils.DateUtils.ParseDate(getl.utils.DateUtils.defaultDateTimeMask, '${DateUtils.FormatDate(DateUtils.defaultDateTimeMask, value as Date)}', false)"
 			writer.append("${tabStr}${keyStr}$str")
 		}
 		else if (value instanceof Duration) {

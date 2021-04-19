@@ -1499,13 +1499,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Clone current dataset on specified connection
 	 */
 	@Synchronized
-	Dataset cloneDataset(Connection newConnection = null, Map otherParams = [:]) {
+	Dataset cloneDataset(Connection newConnection = null, Map otherParams = [:], Getl getl = null) {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.getClass().name
 		Map p = CloneUtils.CloneMap(this.params, false)
 		p.remove('manualSchema')
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		Dataset ds = CreateDatasetInternal([dataset: className] + p)
+		ds.sysParams.dslCreator = dslCreator?:getl
 		if (newConnection != null) ds.connection = newConnection
 		ds.setField(this.field)
 		ds.manualSchema = this.manualSchema
@@ -1522,9 +1523,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Clone current dataset and hear connection
 	 */
 	@Synchronized
-	Dataset cloneDatasetConnection(Map otherParams = [:]) {
-		Connection con = this.connection.cloneConnection()
-		return cloneDataset(con, otherParams)
+	Dataset cloneDatasetConnection(Map otherParams = [:], Getl getl = null) {
+		Connection con = this.connection.cloneConnection(null, getl)
+		return cloneDataset(con, otherParams, getl)
 	}
 
     /**

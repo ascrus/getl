@@ -151,10 +151,11 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	 * @return
 	 */
 	@Synchronized
-	Sequence cloneSequence(JDBCConnection con = null, Map otherParams = [:]) {
+	Sequence cloneSequence(JDBCConnection con = null, Map otherParams = [:], Getl getl = null) {
 		Map p = CloneUtils.CloneMap(this.params, false)
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		Sequence res = getClass().newInstance() as Sequence
+		res.sysParams.dslCreator = dslCreator?:getl
 		res.connection = con
 		res.params.putAll(p)
 

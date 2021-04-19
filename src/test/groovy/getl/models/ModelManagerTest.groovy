@@ -13,10 +13,12 @@ class ModelManagerTest extends TestRepository {
             def origMod = models.referenceVerticaTables('test:model1', true) {
                 useReferenceConnection verticaConnection('ver:con')
                 referenceSchemaName = '_test_reference'
+                modelAttrs.test = 'a'
                 modelVars.test = 1
 
                 referenceFromTable('ver:table1') {
-                    objectVars.test = '2'
+                    attrs.test = 'b'
+                    objectVars.test = 2
                 }
             }
             assertEquals(['test:model1'], models.listReferenceVerticaTables('test:*'))
@@ -24,12 +26,17 @@ class ModelManagerTest extends TestRepository {
             thread {
                 runMany(3) {
                     def mod = models.referenceVerticaTables('test:model1')
-                    assertEquals(verticaConnection('ver:con'), mod.referenceConnection)
-                    assertEquals('_test_reference', mod.referenceSchemaName)
-                    assertEquals(1, mod.modelVars.test)
-                    assertEquals('2', mod.referenceFromTable('ver:table1').objectVars.test)
-
                     assertNotEquals(origMod, mod)
+                    mod.with {
+                        assertEquals(verticaConnection('ver:con'), referenceConnection)
+                        assertEquals('_test_reference', referenceSchemaName)
+                        assertEquals(1, modelVars.test)
+                        assertEquals(2, referenceFromTable('ver:table1').objectVars.test)
+                        assertEquals(2, referenceFromTable('ver:table1').variable('test'))
+                        assertEquals('a', modelAttrs.test)
+                        assertEquals('b', referenceFromTable('ver:table1').attrs.test)
+                        assertEquals('b', referenceFromTable('ver:table1').attribute('test'))
+                    }
                 }
             }
 
@@ -43,6 +50,35 @@ class ModelManagerTest extends TestRepository {
             }
 
             assertEquals(['test:model1', 'test:model2'].sort(), models.listReferenceVerticaTables('*:*').sort())
+
+            def cloneMod = models.referenceVerticaTables('test:model1').clone() as ReferenceVerticaTables
+            cloneMod.with {
+                modelAttrs.test = 'c'
+                modelVars.test = 3
+
+                referenceFromTable('ver:table1') {
+                    attrs.test = 'd'
+                    objectVars.test = 4
+                }
+
+                assertEquals(3, modelVars.test)
+                assertEquals(4, referenceFromTable('ver:table1').objectVars.test)
+                assertEquals(4, referenceFromTable('ver:table1').variable('test'))
+                assertEquals('c', modelAttrs.test)
+                assertEquals('d', referenceFromTable('ver:table1').attrs.test)
+                assertEquals('d', referenceFromTable('ver:table1').attribute('test'))
+            }
+
+            origMod.with {
+                assertEquals(verticaConnection('ver:con'), referenceConnection)
+                assertEquals('_test_reference', referenceSchemaName)
+                assertEquals(1, modelVars.test)
+                assertEquals(2, referenceFromTable('ver:table1').objectVars.test)
+                assertEquals(2, referenceFromTable('ver:table1').variable('test'))
+                assertEquals('a', modelAttrs.test)
+                assertEquals('b', referenceFromTable('ver:table1').attrs.test)
+                assertEquals('b', referenceFromTable('ver:table1').attribute('test'))
+            }
         }
     }
 }

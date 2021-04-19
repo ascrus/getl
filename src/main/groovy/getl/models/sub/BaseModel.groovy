@@ -10,7 +10,6 @@ import getl.lang.sub.GetlRepository
 import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
-
 import java.lang.reflect.ParameterizedType
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -19,8 +18,9 @@ import java.util.concurrent.CopyOnWriteArrayList
  * Base class model
  * @author Alexsey Konstantinov
  */
+@SuppressWarnings('UnnecessaryQualifiedReference')
 @InheritConstructors
-class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository {
+class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository {
     private String dslNameObject
     @Override
     @JsonIgnore
@@ -69,7 +69,7 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
         if (importParams == null)
             throw new ExceptionGETL('Required "importParams" value!')
 
-        def objParams = importParams.usedObjects as List<Map>
+        def objParams = importParams.usedObjects as List<Object>
         def objects = [] as List<T>
         objParams?.each { obj ->
             objects << newSpec(obj)
@@ -169,7 +169,7 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
 
     /** Check object parameter */
     @Synchronized
-    void checkObject(BaseSpec object) { }
+    void checkObject(getl.models.sub.BaseSpec object) { }
 
     /**
      * Check attribute naming and generate an unknown error for used objects
@@ -187,5 +187,12 @@ class BaseModel<T extends BaseSpec> extends getl.lang.opts.BaseSpec implements G
         usedObjects.each { node ->
             node.checkAttrs(allowAttrs)
         }
+    }
+
+    @Override
+    Object clone() {
+        def res = super.clone() as BaseModel
+        res.dslCreator = dslCreator
+        return res
     }
 }

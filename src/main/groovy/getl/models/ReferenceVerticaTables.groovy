@@ -272,9 +272,11 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
 
     /**
      * Fill tables with data from reference tables
+     * @param include process only specified table masks
+     * @param exclude exclude specified table masks
      * @return count of tables filled
      */
-    Integer fill(List<String> include = null, List<String> exclude = null) {
+    Integer fill(List<String> include = null, List<String> exclude = null, Boolean usePartitions = true) {
         checkModel()
 
         Logs.Fine("*** Start deploying tables for \"$repositoryModelName\" model")
@@ -295,7 +297,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             }
 
             try {
-                if (spec.fillFromReferenceTable()) res++
+                if (spec.fillFromReferenceTable(usePartitions)) res++
             }
             catch (Exception e) {
                 Logs.Severe("Error filling reference data to table \"$name\" in model \"$repositoryModelName\": ${e.message}")
@@ -306,6 +308,47 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
         Logs.Info("${repositoryModelName}: $res tables successfully filled from reference tables")
 
         return res
+    }
+
+    /**
+     * Change reference tables to the current structure of the original tables
+     * @param include process only specified table masks
+     * @param exclude
+     */
+    void changeReferenceTables(List<String> include = null, List<String> exclude = null) {
+        checkModel()
+
+        Logs.Fine("*** Change reference tables for \"$repositoryModelName\" model")
+
+        def includePath = Path.Masks2Paths(include)
+        def excludePath = Path.Masks2Paths(exclude)
+
+        def res = 0
+        usedTables.each { spec ->
+            def name = spec.workTable.dslNameObject
+            if (includePath != null && !Path.MatchList(name, includePath)) {
+                Logs.Warning("${repositoryModelName}.[${name}]: the table is not listed in the include list and is skipped")
+                return
+            }
+            if (excludePath != null && Path.MatchList(name, excludePath)) {
+                Logs.Warning("${repositoryModelName}.[${name}]: the table is listed in the exclude list and is skipped")
+                return
+            }
+
+            res ++
+            try {
+                spec.workTable.truncate()
+                spec.fillFromReferenceTable(false)
+                spec.createReferenceTable(true)
+                spec.copyFromDataset(false)
+            }
+            catch (Exception e) {
+                Logs.Severe("Error change reference table \"$name\" in model \"$repositoryModelName\": ${e.message}")
+                throw e
+            }
+        }
+
+        Logs.Info("${repositoryModelName}: $res reference tables successfully changed")
     }
 
     /**

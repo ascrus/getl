@@ -401,8 +401,7 @@ class CSVDriver extends FileDriver {
 		Integer portion = 0
 		Reader bufReader
 		if (isSplit) {
-			def fm = cds.currentCsvConnection.files.cloneManager() as FileManager
-//			fm.connect()
+			def fm = cds.currentCsvConnection.connectionFileManager.cloneManager() as FileManager
 
 			def vars = [:]
 			vars.put('number', [type: Field.Type.INTEGER, len: 4])

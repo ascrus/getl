@@ -111,7 +111,7 @@ class StringUtilsTest extends getl.test.GetlTest {
 
     @Test
     void testTransformObjectName() {
-        assertEquals('1_2_3_4_5_6_7_8', StringUtils.TransformObjectName('"1".\'2\'-3 4(5)6[7]8'))
+        assertEquals('1_2_3_4_5_6_7_8_9', StringUtils.TransformObjectName('"1".\'2\'-3 4(5)6[7]8:9'))
     }
 
     @Test

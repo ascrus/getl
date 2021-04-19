@@ -11,7 +11,6 @@ import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
 import getl.lang.sub.RepositoryHistorypoints
-import getl.lang.sub.RepositoryObjects
 import getl.lang.sub.RepositorySequences
 import getl.test.Config
 import getl.test.TestDsl
@@ -903,7 +902,7 @@ class RepositoryTest extends TestDsl {
     @Test
     void testRepositorySave() {
         Getl.Dsl {
-            TFS.storage.files.with {
+            TFS.storage.connectionFileManager.with {
                 repositoryStorageManager {
                     storagePath = rootPath + '/repository.test'
                     storagePassword = '1234567890123456'
@@ -1010,7 +1009,7 @@ class RepositoryTest extends TestDsl {
                 }
             }
             finally {
-                TFS.storage.files.removeDir('repository.test', true)
+                TFS.storage.connectionFileManager.removeDir('repository.test', true)
             }
         }
     }

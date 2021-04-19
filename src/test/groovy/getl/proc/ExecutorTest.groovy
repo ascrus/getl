@@ -158,7 +158,7 @@ class ExecutorTest extends getl.test.GetlTest {
                 useList (1..100000)
                 countProc = 5
 
-                this.shouldFail {
+                shouldFail {
                     run {
                         if (it == 30000)
                             throw new Exception("Stop")

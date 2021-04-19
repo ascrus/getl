@@ -266,6 +266,9 @@ class Executor implements GetlRepository {
 		run(null, countThread, cl)
 	}
 
+	/** Execution pool */
+	private ExecutorService threadPool
+
 	/**
 	 * Run code in threads over list items
 	 * @param elements list of processed elements (the default is specified in the "list")
@@ -364,7 +367,7 @@ class Executor implements GetlRepository {
 			}
 		}
 
-		def threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
+		threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
 		runThreads = true
 		try {
 			def size = elements.size()
@@ -378,7 +381,7 @@ class Executor implements GetlRepository {
 			}
 			threadPool.shutdown()
 
-			while (!threadPool.isTerminated()) {
+			while (!threadPool.terminated) {
 				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
 					try {
 						callSynch(mainCode)
@@ -418,6 +421,7 @@ class Executor implements GetlRepository {
 			exceptions.clear()
 			threadList.clear()
 			threadActive.clear()
+			threadPool = null
 
 			runThreads = false
 		}
@@ -540,7 +544,7 @@ class Executor implements GetlRepository {
 		}
 
 		def listElements = ListUtils.SplitList(elements, countThread, ((limit?:0 > 0)?limit:null))
-		def threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
+		threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
 		runThreads = true
 		try {
 			for (Integer i = 0; i < listElements.size(); i++) {
@@ -552,7 +556,7 @@ class Executor implements GetlRepository {
 			}
 			threadPool.shutdown()
 
-			while (!threadPool.isTerminated()) {
+			while (!threadPool.terminated) {
 				if (mainCode != null && !isInterrupt && (!abortOnError || !isError)) {
 					try {
 						callSynch(mainCode)
@@ -611,6 +615,7 @@ class Executor implements GetlRepository {
 		try {
 			synchronized (threadActive) {
 				threadActive.remove(m)
+				threadPool?.shutdownNow()
 			}
 			m.putAll([finish: new Date(), threadSubmit: null])
 			setError(element, e)
@@ -694,7 +699,7 @@ class Executor implements GetlRepository {
 			}
 		}
 
-		def threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
+		threadPool = (countThread > 1)?Executors.newFixedThreadPool(countThread, new ExecutorFactory()):Executors.newSingleThreadExecutor(new ExecutorFactory())
 		runThreads = true
 		try {
 			def num = 0
@@ -749,6 +754,7 @@ class Executor implements GetlRepository {
 			exceptions.clear()
 			threadList.clear()
 			threadActive.clear()
+			threadPool = null
 
 			runThreads = false
 		}

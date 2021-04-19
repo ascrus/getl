@@ -285,10 +285,10 @@ class Connection implements Cloneable, GetlRepository {
 	void setLogWriteToConsole (Boolean value) { params.logWriteToConsole = value }
 	
 	/** Dataset class for auto create by connection */
-	@JsonIgnore
-	String getDataset () { params.dataset as String }
+	/*@JsonIgnore
+	String getDataset () { params.dataset as String }*/
 	/** Dataset class for auto create by connection */
-	void setDataset (String value) { params.dataset = value }
+	//void setDataset (String value) { params.dataset = value }
 
 	/** Description of connection */
 	String getDescription() { params.description as String }
@@ -427,7 +427,7 @@ class Connection implements Cloneable, GetlRepository {
 	protected void doDoneDisconnect() {}
 
 	/** User logic if disconnection error */
-	 protected void doErrorDisconnect() {}
+	protected void doErrorDisconnect() {}
 
 	/** Dataset class used */
 	protected Class<Dataset> getDatasetClass() { Dataset }
@@ -544,6 +544,7 @@ class Connection implements Cloneable, GetlRepository {
 		Map p = CloneUtils.CloneMap(this.params, false, ignoreCloneClasses())
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		def res = CreateConnectionInternal([connection: className] + p)
+		res.sysParams.dslCreator = dslCreator?:getl
 		res.afterClone(this)
 		return res
 	}

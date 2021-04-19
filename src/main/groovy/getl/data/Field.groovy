@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.Synchronized
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Base field class
@@ -507,5 +509,18 @@ class Field implements Serializable, Cloneable {
 	@Override
 	Object clone() {
 		return copy()
+	}
+
+	/**
+	 * Create new field
+	 * @param name field name
+	 * @param cl initialization code
+	 * @return created field
+	 */
+	static Field New(String name,
+					 @DelegatesTo(Field) @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure cl = null) {
+		def parent = new Field(name: name)
+		if (cl != null) parent.with(cl)
+		return parent
 	}
 }

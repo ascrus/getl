@@ -542,6 +542,10 @@ class RepositoryStorageManager {
     private Boolean isLoadMode = false
     /** The object is being loaded from the repository */
     Boolean getIsLoadMode() { isLoadMode }
+    /** The object is being loaded from the repository */
+    void useLoadMode(Boolean value) {
+        isLoadMode = value
+    }
 
     /**
      * Load object to repository from storage

@@ -133,7 +133,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
         if (!isAllowCopy()) {
             Logs.Info("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: reference table is " +
                     "not used in copying and is skipped")
-            destTable.truncate(truncate: true)
+            destTable.truncate()
             return false
         }
 
@@ -144,7 +144,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
                 return false
             }
             else {
-                destTable.truncate(truncate: true)
+                destTable.truncate()
             }
         }
 
@@ -221,7 +221,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
                 return false
             }
             else {
-                destTable.truncate(truncate: true)
+                destTable.truncate()
             }
         }
 
@@ -280,7 +280,7 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
      * Fill table with data from reference table
      */
     @SuppressWarnings('SpellCheckingInspection')
-    Boolean fillFromReferenceTable() {
+    Boolean fillFromReferenceTable(Boolean usePartitions = true) {
         def sourceTable = referenceTable as VerticaTable
         def destTable = workTable as VerticaTable
 
@@ -296,8 +296,9 @@ EXPORT TO VERTICA {_model_destdatabase_}.{_model_desttable_}
 
             return false
         }
-        destTable.truncate(truncate: true)
 
+        Logs.Finest("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: filling ...")
+        destTable.truncate()
         if (sourceRows > 0) {
             def tableAttrs = new QueryDataset()
             tableAttrs.with {
@@ -320,13 +321,9 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
             def partExpression = (row.partition_expression as String)
             def countIncrementCols = row.count_inc_cols as Integer
             def startPart = null, finishPart = null
-            if (partExpression == null || countIncrementCols > 0) {
-                ownerReferenceVerticaTableModel.referenceConnection.with {
-                    transaction {
-                        executeCommand '''INSERT /*+direct*/ INTO {dest} SELECT * FROM {source}''',
-                                [queryParams: [source: sourceTable.fullTableName, dest: destTable.fullTableName]]
-                    }
-                }
+            def notPartitions = (!usePartitions || partExpression == null || countIncrementCols > 0)
+            if (notPartitions) {
+                sourceTable.copyTo(destTable)
             } else {
                 def partDays = new QueryDataset()
                 partDays.with {
@@ -355,7 +352,7 @@ WHERE table_schema ILIKE '{schema}' AND table_name ILIKE '{table}'
                         "rows ${StringUtils.WithGroupSeparator(sourceRows)} reference table \"$datasetName\" " +
                         "in model ${ownerReferenceVerticaTableModel.repositoryModelName}!")
 
-            if (partExpression == null)
+            if (notPartitions)
                 Logs.Info("${ownerReferenceVerticaTableModel.repositoryModelName}.[${datasetName}]: " +
                         "copied ${StringUtils.WithGroupSeparator(destRows)} rows to table ${destTable.fullTableName} from reference table")
             else

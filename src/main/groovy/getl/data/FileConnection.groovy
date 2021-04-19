@@ -34,7 +34,7 @@ class FileConnection extends Connection {
 	protected void doInitConnection() {
 		super.doInitConnection()
 		// File manager
-		files = new FileManager()
+		connectionFileManager = new FileManager()
 		// Init path
 		if (path != null) setPath(path)
 	}
@@ -63,7 +63,7 @@ class FileConnection extends Connection {
 			if (unixName.split('/').size() > 1 && unixName[unixName.length() - 1] == '/')
 				value = value.substring(0, value.length() - 1)
 		}
-		files.rootPath = value
+		connectionFileManager.rootPath = value
 		params.path = value
 		currentPath = null
 	}
@@ -221,8 +221,8 @@ class FileConnection extends Connection {
 	String getObjectName() { (path != null)?"file:${currentPath()}":'[NONE]' }
 
 	/** File manager for the connection path */
-	private FileManager files
+	private FileManager connectionFileManager
 	/** File manager for the connection path */
 	@JsonIgnore
-	FileManager getFiles() { files }
+	FileManager getConnectionFileManager() { connectionFileManager }
 }

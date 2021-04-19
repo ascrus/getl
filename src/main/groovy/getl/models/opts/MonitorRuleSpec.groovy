@@ -7,19 +7,17 @@ import getl.models.MonitorRules
 import getl.models.sub.BaseSpec
 import getl.utils.BoolUtils
 import groovy.time.Duration
+import groovy.transform.InheritConstructors
 
 /**
  * Table tracking options
  * @author Alexsey Konstantinov
  */
+@InheritConstructors
 class MonitorRuleSpec extends BaseSpec {
     MonitorRuleSpec(MonitorRules owner, String queryName) {
         super(owner)
         setQueryName(queryName)
-    }
-
-    MonitorRuleSpec(MonitorRules model, Map importParams) {
-        super(model, importParams)
     }
 
     /** Owner monitor */

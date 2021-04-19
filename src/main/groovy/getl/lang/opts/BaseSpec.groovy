@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Alexsey Konstantinov
  *
  */
-class BaseSpec {
+class BaseSpec implements Cloneable {
     /** Create options instance */
     BaseSpec(Object owner) {
         _owner = owner
@@ -43,11 +43,13 @@ class BaseSpec {
         }
     }
 
-    /** Options owner */
+    /** Owner */
     protected Object _owner
-    /** Options owner */
+    /** Owner */
     @JsonIgnore
     Object getOwnerObject() { _owner }
+    /** Owner */
+    void setOwnerObject(Object value) { _owner = value }
 
     /** Init options after create object */
     protected void initSpec() { }
@@ -138,9 +140,8 @@ class BaseSpec {
     @Override
     @Synchronized
     Object clone() {
-        def clParams = MapUtils.Clone(params)
-        def res = this.getClass().newInstance(this.ownerObject) as BaseSpec
-        res.params.putAll(clParams)
+        def clParams = CloneUtils.CloneMap(params)
+        def res = this.getClass().newInstance(this.ownerObject, false, clParams) as BaseSpec
         return res
     }
 }

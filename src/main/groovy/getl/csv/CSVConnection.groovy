@@ -17,6 +17,7 @@ import groovy.transform.InheritConstructors
 class CSVConnection extends FileConnection {
 	CSVConnection () {
 		super([driver: CSVDriver])
+		resetPresetMode()
 	}
 	
 	CSVConnection (Map params) {
@@ -27,6 +28,8 @@ class CSVConnection extends FileConnection {
 										'formatDateTime', 'uniFormatDateTime', 'ignoreHeader', 'locale',
 										'constraintsCheck', 'presetMode'])
 		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation('Super', params?:[:])
+		if (presetMode == null)
+			resetPresetMode()
 	}
 
 	/** Quote all fields */

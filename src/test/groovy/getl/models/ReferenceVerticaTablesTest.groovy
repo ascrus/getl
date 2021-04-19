@@ -37,6 +37,16 @@ class ReferenceVerticaTablesTest extends TestRepository {
                     assertEquals(1, fill())
                     assertEquals(3, workTable.countRow())
                 }
+
+                changeReferenceTables()
+
+                referenceFromTable('ver:table1') {
+                    assertTrue(referenceTable.exists)
+                    assertEquals(3, referenceTable.countRow())
+                    workTable.truncate()
+                    assertEquals(1, fill())
+                    assertEquals(3, workTable.countRow())
+                }
             }
         }
     }

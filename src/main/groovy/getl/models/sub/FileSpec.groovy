@@ -1,16 +1,16 @@
 package getl.models.sub
+
+import groovy.transform.InheritConstructors
+
 /**
  * Base model file specification
  * @author Alexsey Konstantinov
  */
+@InheritConstructors
 class FileSpec extends BaseSpec {
     FileSpec(FilesModel model, String fileName) {
         super(model)
         setFilePath(fileName)
-    }
-
-    FileSpec(FilesModel model, Map importParams) {
-        super(model, importParams)
     }
 
     /** Owner processing model */

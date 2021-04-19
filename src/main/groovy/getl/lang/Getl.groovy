@@ -838,6 +838,9 @@ Examples:
         return file.getText(codePage ?: 'UTF-8')
     }
 
+    /** Generate unique name for temporary repository object */
+    static String GenerateTempName() { '#' + StringUtils.RandomStr() }
+
     /**
      * Return list of repository connections for specified mask, classes and filter
      * @param mask filter mask (use Path expression syntax)
@@ -1009,8 +1012,10 @@ Examples:
      * @param name name object in repository
      * @param validExist checking if an object is registered in the repository (default true)
      */
-    Connection registerConnectionObject(Connection obj, String name = null, Boolean validExist = true) {
-        (_repositoryStorageManager.repository(RepositoryConnections) as RepositoryConnections).registerObject(this, obj, name, validExist)
+    Connection registerConnectionObject(Connection obj, String name = null, Boolean validExist = true,
+                                        Boolean encryptPasswords = true) {
+        (_repositoryStorageManager.repository(RepositoryConnections) as RepositoryConnections).registerObject(this, obj,
+                name, validExist, encryptPasswords)
     }
 
     /**
@@ -1878,8 +1883,10 @@ Examples:
      * @param name name object in repository
      * @param validExist checking if an object is registered in the repository (default true)
      */
-    Manager registerFileManagerObject(Manager obj, String name = null, Boolean validExist = true) {
-        (_repositoryStorageManager.repository(RepositoryFilemanagers) as RepositoryFilemanagers).registerObject(this, obj, name, validExist)
+    Manager registerFileManagerObject(Manager obj, String name = null, Boolean validExist = true,
+                                      Boolean encryptPasswords = true) {
+        (_repositoryStorageManager.repository(RepositoryFilemanagers) as RepositoryFilemanagers).registerObject(this,
+                obj, name, validExist, encryptPasswords)
     }
 
     /**
@@ -2689,7 +2696,7 @@ Examples:
         if (dataset == null)
             throw new ExceptionDSL('Need object value!')
 
-        return dataset.cloneDataset()
+        return dataset.cloneDataset(null, null, this)
     }
 
     /**
@@ -2703,7 +2710,7 @@ Examples:
         if (dataset == null)
             throw new ExceptionDSL('Need object value!')
 
-        return dataset.cloneDataset(con)
+        return dataset.cloneDataset(con, null, this)
     }
 
     /**
@@ -2717,7 +2724,8 @@ Examples:
         if (dataset == null)
             throw new ExceptionDSL('Need object value!')
 
-        return (cloneConnection)?dataset.cloneDatasetConnection():dataset.cloneDataset()
+        return (cloneConnection)?dataset.cloneDatasetConnection(null, this):
+                dataset.cloneDataset(null, null, this)
     }
 
     /**
@@ -4411,6 +4419,7 @@ Examples:
     Manager cloneFilemanager(Manager man) {
         if (man == null)
             throw new ExceptionDSL('Need object value!')
+
         return man.cloneManager(null, this)
     }
 
@@ -4723,7 +4732,8 @@ Examples:
     SavePointManager cloneHistorypoint(SavePointManager point, JDBCConnection con = null) {
         if (point == null)
             throw new ExceptionDSL('Need object value!')
-        return point.cloneSavePointManager(con) as SavePointManager
+
+        return point.cloneSavePointManager(con, null, this) as SavePointManager
     }
 
     /**
@@ -4778,7 +4788,8 @@ Examples:
     Sequence cloneSequence(Sequence seq, JDBCConnection con = null) {
         if (seq == null)
             throw new ExceptionDSL('Need object value!')
-        return seq.cloneSequence(con) as Sequence
+
+        return seq.cloneSequence(con, null, this) as Sequence
     }
 
     /**

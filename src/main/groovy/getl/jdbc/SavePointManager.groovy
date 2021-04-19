@@ -177,12 +177,13 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 
 	/** Clone current dataset on specified connection */
 	@Synchronized
-	SavePointManager cloneSavePointManager(JDBCConnection newConnection = null, Map otherParams = [:]) {
+	SavePointManager cloneSavePointManager(JDBCConnection newConnection = null, Map otherParams = [:], Getl getl = null) {
 		if (newConnection == null) newConnection = this.connection
 		String className = this.getClass().name
 		Map p = CloneUtils.CloneMap(this.params, false)
 		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
 		def man = Class.forName(className).newInstance() as SavePointManager
+		man.sysParams.dslCreator = dslCreator?:getl
 		if (newConnection != null) man.connection = newConnection
 		man.params.putAll(p)
 

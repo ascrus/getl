@@ -99,7 +99,7 @@ class LoginManager {
             def getl = owner as GetlRepository
             if (getl.dslCreator != null) {
                 getl.dslCreator.repositoryStorageManager.with {
-                    if (storagePassword != null)
+                    if (storagePassword != null && !isLoadMode)
                         password = encryptText(password)
 
                     return true

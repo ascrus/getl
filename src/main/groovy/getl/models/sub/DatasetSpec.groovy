@@ -2,19 +2,17 @@ package getl.models.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
+import groovy.transform.InheritConstructors
 
 /**
  * Base model dataset specification
- * @author ALexsey Konstantinov
+ * @author Alexsey Konstantinov
  */
+@InheritConstructors
 class DatasetSpec extends BaseSpec {
     DatasetSpec(DatasetsModel model, String tableName) {
         super(model)
         setDatasetName(tableName)
-    }
-
-    DatasetSpec(DatasetsModel model, Map importParams) {
-        super(model, importParams)
     }
 
     /** Owner processing model */

@@ -372,9 +372,13 @@ class StringUtils {
 	 * @param str
 	 * @return
 	 */
-	static String TransformObjectName (String str) {
+	static String TransformObjectName(String str) {
 		if (str == null) return null
-		return str.replace('.', '_').replace('-', '_').replace(' ', '_').replace('(', '_').replace(')', '_').replace('[', '_').replace(']', '_').replace('"', '').replace("'", "")
+		return str.replace('.', '_').replace('-', '_')
+				.replace(' ', '_').replace('(', '_')
+				.replace(')', '_').replace('[', '_')
+				.replace(']', '_').replace(":", "_")
+				.replace('"', '').replace("'", "")
 	}
 	
 	/**

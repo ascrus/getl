@@ -288,6 +288,16 @@ class DateUtils {
 	}
 
 	/**
+	 * Parse string to sql date with default format
+	 * @param value parsed value
+	 * @param ignoreError ignore parse error (default true)
+	 * @return sql date
+	 */
+	static java.sql.Date ParseSQLDate(Object value, Boolean ignoreError = true) {
+		ParseSQLDate(defaultDateMask, value, ignoreError)
+	}
+
+	/**
 	 * Parse string to sql date with format
 	 * @param sdf date formatter
 	 * @param value parsed value
@@ -338,6 +348,16 @@ class DateUtils {
 	}
 
 	/**
+	 * Parse string to sql time with default format
+	 * @param value parsed value
+	 * @param ignoreError ignore parse error (default true)
+	 * @return sql time
+	 */
+	static Time ParseSQLTime(Object value, Boolean ignoreError = true) {
+		ParseSQLTime(defaultTimeMask, value, ignoreError)
+	}
+
+	/**
 	 * Parse string to sql time with format
 	 * @param sdf date formatter
 	 * @param value parsed value
@@ -385,6 +405,16 @@ class DateUtils {
 			return null
 
 		return Timestamp.valueOf(res)
+	}
+
+	/**
+	 * Parse string to sql timestamp with default format
+	 * @param value parsed value
+	 * @param ignoreError ignore parse error (default true)
+	 * @return sql timestamp
+	 */
+	static Timestamp ParseSQLTimestamp(Object value, Boolean ignoreError = true) {
+		ParseSQLTimestamp(defaultDateTimeMask, value, ignoreError)
 	}
 
 	/**
