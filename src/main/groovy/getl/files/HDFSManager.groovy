@@ -39,6 +39,12 @@ class HDFSManager extends Manager implements UserLogins {
         methodParams.register('super', ['server', 'port', 'login', 'storedLogins', 'replication'])
     }
 
+    @Override
+    protected void onLoadConfig(Map configSection) {
+        super.onLoadConfig(configSection)
+        loginManager.encryptObject()
+    }
+
     /** Server address */
     String getServer() { params.server }
     /** Server address */

@@ -170,7 +170,20 @@ class LoginManager {
      * Encrypt passwords for an object
      * @param passwords object passwords
      */
-    void encryptObject(Map<String, Object> passwords) {
+    void encryptObject(Map<String, Object> passwords = null) {
+        if (passwords == null) {
+            passwords = [:] as Map<String, Object>
+            if (owner.password != null)
+                passwords.password = owner.password
+            if (!owner.storedLogins.isEmpty()) {
+                def ls = [:] as Map<String, String>
+                passwords.logins = ls
+                owner.storedLogins.each {l, p ->
+                    ls.put(l, p)
+                }
+            }
+        }
+
         if (passwords.containsKey('password'))
             owner.password = passwords.password as String
 

@@ -980,7 +980,7 @@ class RepositoryTest extends TestDsl {
                 repositoryStorageManager.clearRepositories()
 
                 thread {exec ->
-                    runMany(10) {
+                    runMany(20) {
                         sql {
                             useConnection embeddedConnection('test:con')
                             assertSame(embeddedConnection('test:con'), connection)
@@ -992,6 +992,14 @@ class RepositoryTest extends TestDsl {
                         assertNotSame(tab, tab1)
                         assertNotSame(con, con1)
                         assertSame(con1, tab1.connection)
+
+                        con1.with {
+                            assertEquals('repositorysave_test', connectDatabase)
+                            assertEquals('dba', login)
+                            assertEquals(repositoryStorageManager.encryptText('12345'), password)
+                            assertEquals(repositoryStorageManager.encryptText('admin'), storedLogins.admin)
+                            assertEquals(repositoryStorageManager.encryptText('user'), storedLogins.user)
+                        }
                     }
                 }
 

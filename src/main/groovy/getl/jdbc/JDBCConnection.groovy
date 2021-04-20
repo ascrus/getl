@@ -85,8 +85,10 @@ class JDBCConnection extends Connection implements UserLogins {
 	@Override
 	protected void onLoadConfig(Map configSection) {
 		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.jdbc.JDBCConnection') methodParams.validation("Super", params)
+		if (this.getClass().name == 'getl.jdbc.JDBCConnection')
+			methodParams.validation("Super", params)
 		fileNameSqlHistory = null
+		loginManager.encryptObject()
 	}
 
 	@Override

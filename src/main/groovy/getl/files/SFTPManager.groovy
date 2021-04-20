@@ -54,7 +54,9 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	protected void onLoadConfig(Map configSection) {
 		super.onLoadConfig(configSection)
-		if (rootPath != null && rootPath.substring(0, 1) != "/") rootPath = "/" + rootPath
+		loginManager.encryptObject()
+		if (rootPath != null && rootPath.substring(0, 1) != "/")
+			rootPath = "/" + rootPath
 	}
 	
 	@Override

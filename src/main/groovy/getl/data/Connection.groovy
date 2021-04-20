@@ -199,7 +199,8 @@ class Connection implements Cloneable, GetlRepository {
 		if (config == null) return
 		Map cp = Config.FindSection("connections.${config}")
 		if (cp.isEmpty()) {
-			if (config != internalConfigName()) throw new ExceptionGETL("Config section \"connections.${config}\" not found")
+			if (config != internalConfigName())
+				throw new ExceptionGETL("Config section \"connections.${config}\" not found")
 		}
 		else {
 			onLoadConfig(cp)

@@ -445,49 +445,48 @@ class RepositoryStorageManager {
         if (dirs == null) return 0
 
         def existsObject = repository.objects.keySet().toList()
-        def prevLoadMode = isLoadMode
-        isLoadMode = true
-        try {
-            dirs.eachRow { fileAttr ->
-                def groupName = (fileAttr.filepath != '.') ? (fileAttr.filepath as String).replace('/', '.').toLowerCase() : null
-                def objectName = ObjectNameFromFileName(fileAttr.filename as String, isEnvConfig)
-                if (isEnvConfig && objectName.env != env)
-                    throw new ExceptionDSL("Discrepancy of storage of file \"${fileAttr.filepath}/${fileAttr.filename}\" was detected for environment \"$env\"!")
-                def name = new ParseObjectName(groupName, objectName.name as String).name
-                if (maskPath == null || maskPath.match(name)) {
-                    def isExists = (name in existsObject)
-                    if (isExists) {
-                        if (ignoreExists) return
-                        throw new ExceptionDSL("Object \"$name\" from file \"${fileAttr.filepath}/${fileAttr.filename}\"" +
-                                " is already registered in repository \"${repository.getClass().name}\"!")
-                    }
+        runWithLoadMode(true) {
+            try {
+                dirs.eachRow { fileAttr ->
+                    def groupName = (fileAttr.filepath != '.') ? (fileAttr.filepath as String).replace('/', '.').toLowerCase() : null
+                    def objectName = ObjectNameFromFileName(fileAttr.filename as String, isEnvConfig)
+                    if (isEnvConfig && objectName.env != env)
+                        throw new ExceptionDSL("Discrepancy of storage of file \"${fileAttr.filepath}/${fileAttr.filename}\" was detected for environment \"$env\"!")
+                    def name = new ParseObjectName(groupName, objectName.name as String).name
+                    if (maskPath == null || maskPath.match(name)) {
+                        def isExists = (name in existsObject)
+                        if (isExists) {
+                            if (ignoreExists) return
+                            throw new ExceptionDSL("Object \"$name\" from file \"${fileAttr.filepath}/${fileAttr.filename}\"" +
+                                    " is already registered in repository \"${repository.getClass().name}\"!")
+                        }
 
-                    String fileName
-                    if (isResourceStoragePath) {
-                        fileName = FileUtils.ResourceFileName(storagePath + repFilePath + '/' +
-                                ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename, dslCreator)
-                    } else {
-                        fileName = FileUtils.ConvertToDefaultOSPath(repFilePath + '/' +
-                                ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename)
-                    }
-                    def file = new File(fileName)
-                    try {
-                        def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
-                        def obj = repository.importConfig(objParams)
-                        repository.registerObject(dslCreator, obj, name, true)
-                    }
-                    finally {
-                        if (isResourceStoragePath)
-                            file.delete()
-                    }
+                        String fileName
+                        if (isResourceStoragePath) {
+                            fileName = FileUtils.ResourceFileName(storagePath + repFilePath + '/' +
+                                    ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename, dslCreator)
+                        } else {
+                            fileName = FileUtils.ConvertToDefaultOSPath(repFilePath + '/' +
+                                    ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename)
+                        }
+                        def file = new File(fileName)
+                        try {
+                            def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
+                            def obj = repository.importConfig(objParams)
+                            repository.registerObject(dslCreator, obj, name, true)
+                        }
+                        finally {
+                            if (isResourceStoragePath)
+                                file.delete()
+                        }
 
-                    res++
+                        res++
+                    }
                 }
             }
-        }
-        finally {
-            isLoadMode = prevLoadMode
-            dirs.drop()
+            finally {
+                dirs.drop()
+            }
         }
 
         return res
@@ -541,10 +540,27 @@ class RepositoryStorageManager {
     /** The object is being loaded from the repository */
     private Boolean isLoadMode = false
     /** The object is being loaded from the repository */
+    @Synchronized
     Boolean getIsLoadMode() { isLoadMode }
     /** The object is being loaded from the repository */
+    @Synchronized
     void useLoadMode(Boolean value) {
         isLoadMode = value
+    }
+    /** Run specified code with enabled load mode */
+    @Synchronized
+    void runWithLoadMode(Boolean usingLoadMode, Closure code) {
+        def oldLoadMode = isLoadMode
+        try {
+            if (usingLoadMode)
+                useLoadMode(true)
+
+            code.call()
+        }
+        finally {
+            if (usingLoadMode)
+                useLoadMode(oldLoadMode)
+        }
     }
 
     /**
@@ -556,10 +572,8 @@ class RepositoryStorageManager {
      */
     @Synchronized("lockObject")
     GetlRepository loadObject(String repositoryName, String name, String env = null, Boolean overloading = false) {
-        def prevLoadMode = isLoadMode
-        isLoadMode = true
         GetlRepository obj = null
-        try {
+        runWithLoadMode(true) {
             def repository = repository(repositoryName)
             def objName = ParseObjectName.Parse(name)
             obj = readObject(repository, name, env)
@@ -569,9 +583,7 @@ class RepositoryStorageManager {
 
             repository.registerObject(dslCreator, obj, name, true)
         }
-        finally {
-            isLoadMode = prevLoadMode
-        }
+
         return obj
     }
 

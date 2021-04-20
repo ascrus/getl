@@ -216,7 +216,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             throw new ExceptionDSL("Unknown class $className for $typeObject!")
 
         if (name == null) {
-            obj.dslCreator = creator
+            creator.repositoryStorageManager.runWithLoadMode(!encryptPasswords) { obj.dslCreator = creator }
             return obj
         }
 
@@ -231,15 +231,8 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             }
 
             obj.dslNameObject = repName
-            def oldLoadMode = creator.repositoryStorageManager.isLoadMode
-            try {
-                if (!encryptPasswords)
-                    creator.repositoryStorageManager.isLoadMode = true
+            creator.repositoryStorageManager.runWithLoadMode(!encryptPasswords) {
                 obj.dslCreator = (repName[0] == '#')?creator:dslCreator
-            }
-            finally {
-                if (!encryptPasswords)
-                    creator.repositoryStorageManager.isLoadMode = oldLoadMode
             }
 
             objects.put(repName, obj)
@@ -368,8 +361,10 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                     {
                         def par = it as T
                         def c = cloneObject(par)
-                        c.dslNameObject = repName
-                        c.dslCreator = par.dslCreator
+                        creator.repositoryStorageManager.runWithLoadMode(true) {
+                            c.dslNameObject = repName
+                            c.dslCreator = par.dslCreator
+                        }
                         return c
                     }
             ) as T
