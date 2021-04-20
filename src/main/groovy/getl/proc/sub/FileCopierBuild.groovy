@@ -82,7 +82,7 @@ class FileCopierBuild extends FileListProcessingBuild {
 
         if (isSegmented) {
             def l = []
-            segmentedBy.each { l << file.get(it) }
+            segmentedBy.each { l.add(file.get(it)) }
             file.put('_segmented_', NumericUtils.SegmentByHash(countSegmented, l))
         }
         else {

@@ -32,7 +32,7 @@ class FileProcessingBuild extends FileListProcessingBuild {
 
         if (!threadGroupColumns.isEmpty()) {
             def  l = []
-            threadGroupColumns.each { l << file.get(it) }
+            threadGroupColumns.each { l.add(file.get(it)) }
             file.put('_hash_', NumericUtils.Hash(l))
         }
         else {
