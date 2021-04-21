@@ -36,7 +36,7 @@ class HDFSManager extends Manager implements UserLogins {
     @Override
     protected void initMethods() {
         super.initMethods()
-        methodParams.register('super', ['server', 'port', 'login', 'storedLogins', 'replication'])
+        methodParams.register('super', ['server', 'port', 'login', 'password', 'storedLogins', 'replication'])
     }
 
     @Override
