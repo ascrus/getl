@@ -159,7 +159,7 @@ Examples:
         setGetlSystemParameter('mainClass', getClass().name)
         setUnitTestMode(isTestMode)
 
-        _initGetlProperties(null, jobArgs.getlprop as Map, true)
+        _initGetlProperties(null, jobArgs.getlprop as Map<String, Object>, true)
 
         if (jobArgs.vars == null) jobArgs.vars = [:]
         def vars = jobArgs.vars as Map
@@ -263,7 +263,7 @@ Examples:
                     }
                 }
 
-                eng._initGetlProperties(initClasses, jobArgs.getlprop as Map)
+                eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>)
 
                 try {
                     eng.runGroovyInstance(eng, Config.vars)
@@ -287,14 +287,17 @@ Examples:
      * Initialize getl instance properties before starting it
      * @param listInitClass list of initialization classes that should be executed before starting
      */
-    protected void _prepareGetlProperties(List<Class<Script>> initClasses, Map extProp) {
+    protected void _prepareGetlProperties(List<Class<Script>> initClasses, Map<String, Object> extProp) {
         def instance = this
+        if (extProp == null)
+            extProp = [:] as Map<String, Object>
 
         options {
             if (autoInitFromConfig) {
-                loadProjectProperties(instance.configuration.manager.environment)
+                loadProjectProperties(instance.configuration.manager.environment, extProp.filename as String)
                 if (!extProp?.isEmpty())
-                    MapUtils.MergeMap(options.getlConfigProperties, extProp, true, false)
+                    MapUtils.MergeMap(options.getlConfigProperties,
+                            MapUtils.CleanMap(extProp, ['filepath']) as Map<String, Object>, true, false)
 
                 Logs.Finest("Processing project configuration for \"${(configuration.environment)?:'prod'}\" environment ...")
 
@@ -426,7 +429,7 @@ Examples:
         }
     }
 
-    void _initGetlProperties(List<Class<Script>> listInitClass = null, Map extProp, Boolean startAsGroovy = false) {
+    void _initGetlProperties(List<Class<Script>> listInitClass = null, Map<String, Object> extProp, Boolean startAsGroovy = false) {
         def initClasses = [] as List<Class<Script>>
         if (listInitClass != null)
             initClasses.addAll(listInitClass)
@@ -3592,13 +3595,16 @@ Examples:
                                       @ClosureParams(value = SimpleType, options = ['getl.tfs.TDSTable']) Closure cl = null) {
         if (sourceDataset == null)
             throw new ExceptionDSL("Source dataset cannot be null!")
+
         if (sourceDataset.field.isEmpty()) {
             sourceDataset.retrieveFields()
-            if (sourceDataset.field.isEmpty()) throw new ExceptionDSL("Required field from dataset $sourceDataset")
+            if (sourceDataset.field.isEmpty())
+                throw new ExceptionDSL("Required field from dataset $sourceDataset")
         }
 
         TDSTable parent = new TDSTable(connection: defaultJdbcConnection(RepositoryDatasets.EMBEDDEDTABLE) ?: TDS.storage)
         parent.field = sourceDataset.field
+        parent.resetFieldsTypeName()
 
         registerDatasetObject(parent, name, true)
         runClosure(parent, cl)
@@ -4660,7 +4666,7 @@ Examples:
      */
     FileTextSpec textFile(def file,
                     @DelegatesTo(FileTextSpec)
-                    @ClosureParams(value = SimpleType, options = ['getl.lang.opts.FileTextSpec']) Closure cl) {
+                    @ClosureParams(value = SimpleType, options = ['getl.lang.opts.FileTextSpec']) Closure cl = null) {
         def parent = new FileTextSpec(this)
         if (file != null) {
             parent.fileName = (file instanceof File) ? ((file as File).path) : file.toString()

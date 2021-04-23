@@ -141,8 +141,18 @@ class LangSpec extends BaseSpec {
      * Load project properties from resource config file getl-properties.conf
      * @param env environment
      */
-    void loadProjectProperties(String env = null) {
-        def mainFile = FileUtils.FileFromResources('/getl-properties.conf')
+    void loadProjectProperties(String env = null, String filePath = null) {
+        File mainFile
+        if (filePath != null) {
+            if (!FileUtils.ExistsFile(filePath))
+                throw new ExceptionDSL("Getl config file on path \"$filePath\" not found!")
+            mainFile = new File(filePath)
+        }
+        else if (FileUtils.ExistsFile('getl-properties.conf'))
+            mainFile = new File('getl-properties.conf')
+        else
+            mainFile = FileUtils.FileFromResources('/getl-properties.conf')
+
         if (mainFile == null) return
         def mainConfig = ConfigSlurper.LoadConfigFile(mainFile, 'utf-8', env)
         getlConfigProperties.putAll(mainConfig)
