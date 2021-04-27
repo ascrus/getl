@@ -123,6 +123,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 		if (otherParams != null)
 			MapUtils.MergeMap(p, otherParams)
 		def res = CreateManagerInternal([manager: className] + p)
+		if (fileListConnection != null)
+			res.fileListConnection = fileListConnection.cloneConnection(null, dslCreator?:getl) as JDBCConnection
 		res.sysParams.dslCreator = dslCreator?:getl
 		res.afterClone(this)
 		return res

@@ -483,6 +483,9 @@ class CSVDriver extends FileDriver {
 
 					isError = true
 				}
+				catch (IOException e) {
+					throw e
+				}
 				catch (Exception e) {
 					def isContinue = (processError != null)?processError(e, line):false
 					if (!isContinue) throw e

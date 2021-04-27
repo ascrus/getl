@@ -639,9 +639,9 @@ exit \$LastExitCode
 		if (rootPath == null || rootPath.length() == 0)
 			res = "sftp $loginStr$server"
 		else if (currentRootPath[0] == '/')
-			res = "sftp $loginStr$server$currentRootPath"
+			res = "sftp $loginStr$server:$currentRootPath"
 		else
-			res = "sftp $loginStr$server/$currentRootPath"
+			res = "sftp $loginStr$server:/$currentRootPath"
 
 		return res
 	}

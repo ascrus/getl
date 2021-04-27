@@ -88,26 +88,20 @@ class Executor implements GetlRepository {
 	private final Object lockHashError = new Object()
 	
 	/** Threads has errors */
-	Boolean getIsError () {
-		Boolean res
-		synchronized (lockHashError) {
-			res = hasError
-		}
-		return res
-	}
-	
+	@Synchronized
+	Boolean getIsError () { hasError }
+
 	/** How exceptions in process stopping execute */
 	private final Map<Object, Throwable> exceptions = ([:] as Map<Object, Throwable>)
 	/** How exceptions in process stopping execute */
-	@Synchronized('exceptions')
+	@Synchronized
 	Map<Object, Throwable> getExceptions() { exceptions }
 
 	/** Fixing error */
+	@Synchronized
 	protected void setError (Object obj, Throwable except) {
-		synchronized (lockHashError) {
-			hasError = true
-			if (obj != null) exceptions.put(obj, except)
-		}
+		hasError = true
+		if (obj != null) exceptions.put(obj, except)
 	}
 	
 	/** List of processing elements */
@@ -150,34 +144,43 @@ class Executor implements GetlRepository {
 	/** List of all threads */
 	private final List<Map> threadList = new LinkedList<Map>()
 	/** List of all threads */
-	@Synchronized('threadList')
+	@Synchronized
 	List<Map> getThreadList() { threadList }
 
 	/** List of active threads */
 	private final List<Map> threadActive = new LinkedList<Map>()
 	/** List of active threads */
-	@Synchronized('threadActive')
+	@Synchronized
 	List<Map> getThreadActive() { threadActive }
+	/** Add node to active threads list */
+	@Synchronized
+	private void addNodeToThreadActive(Map node) {
+		threadActive.add(node)
+	}
+	/** Remove node from active threads list */
+	@Synchronized
+	private void removeNodeToThreadActive(Map node) {
+		threadActive.remove(node)
+	}
+	/** Cancel active threads */
+	@Synchronized
+	private void cancelActiveThreads() {
+		threadActive.each { Map serv ->
+			(serv.threadSubmit as Future)?.cancel(true)
+		}
+	}
 
 	/** Interrupt flag */
 	private Boolean isInterrupt = false
 	private final Object lockIsInterrupt = new Object()
 
 	/** Interrupt flag */
-	Boolean getIsInterrupt() {
-		Boolean res
-		synchronized (lockIsInterrupt) {
-			res = isInterrupt
-		}
-		return res
-	}
+	@Synchronized
+	Boolean getIsInterrupt() { isInterrupt }
 
 	/** Interrupt flag */
-	void setIsInterrupt(Boolean value) {
-		synchronized (lockIsInterrupt) {
-			isInterrupt = true
-		}
-	}
+	@Synchronized
+	void setIsInterrupt(Boolean value) { lockIsInterrupt }
 
 	/**
 	 * Launches a single code
@@ -300,9 +303,7 @@ class Executor implements GetlRepository {
 			def element = node.element
 			node.put('start',  new Date())
 
-			synchronized (threadActive) {
-				threadActive.add(node)
-			}
+			addNodeToThreadActive(node)
 
 			try {
 				if ((!isError || !abortOnError) && !isInterrupt) {
@@ -356,9 +357,7 @@ class Executor implements GetlRepository {
 					}
 				}
 				finally {
-					synchronized (threadActive) {
-						threadActive.remove(node)
-					}
+					removeNodeToThreadActive(node)
 					node.remove('threadSubmit')
 					(node.element as List).clear()
 					node.remove('element')
@@ -388,11 +387,7 @@ class Executor implements GetlRepository {
 					}
 					catch (Throwable e) {
 						setError(null, e)
-						synchronized (threadActive) {
-							threadActive.each { Map serv ->
-								(serv.threadSubmit as Future)?.cancel(true)
-							}
-						}
+						cancelActiveThreads()
 						threadPool.shutdownNow()
 						throw e
 					}
@@ -460,9 +455,7 @@ class Executor implements GetlRepository {
 			node.put('start',  new Date())
 			def curElement
 
-			synchronized (threadActive) {
-				threadActive.add(node)
-			}
+			addNodeToThreadActive(node)
 
 			try {
 				if (onStartingThread)
@@ -533,9 +526,7 @@ class Executor implements GetlRepository {
 						}
 					}
 				}
-				synchronized (threadActive) {
-					threadActive.remove(node)
-				}
+				removeNodeToThreadActive(node)
 				node.remove('threadSubmit')
 				(node.element as List).clear()
 				node.remove('element')
@@ -563,11 +554,7 @@ class Executor implements GetlRepository {
 					}
 					catch (Throwable e) {
 						setError(null, e)
-						synchronized (threadActive) {
-							threadActive.each { Map serv ->
-								(serv.threadSubmit as Future)?.cancel(true)
-							}
-						}
+						cancelActiveThreads()
 						threadPool.shutdownNow()
 						throw e
 					}
@@ -611,12 +598,12 @@ class Executor implements GetlRepository {
 		runSplit(list, countThread, code)
 	}
 
+	@Synchronized
 	private void processRunError(Throwable e, Map m, Object num, Object element, List elements) {
 		try {
-			synchronized (threadActive) {
-				threadActive.remove(m)
-				threadPool?.shutdownNow()
-			}
+			threadActive.remove(m)
+			threadPool?.shutdownNow()
+
 			m.putAll([finish: new Date(), threadSubmit: null])
 			setError(element, e)
 			def errObject = (debugElementOnError)?"[${num}]: ${element}":"Element ${num}"
@@ -655,9 +642,7 @@ class Executor implements GetlRepository {
 			try {
 				if (limit?:0 == 0 || num <= limit) {
 					if ((!isError || !abortOnError) && !isInterrupt) {
-						synchronized (threadActive) {
-							threadActive.add(node)
-						}
+						addNodeToThreadActive(node)
 						try {
 							element.call()
 							counterProcessed.nextCount()
@@ -685,9 +670,7 @@ class Executor implements GetlRepository {
 								}
 							}
 						}
-						synchronized (threadActive) {
-							threadActive.remove(node)
-						}
+						removeNodeToThreadActive(node)
 						node.put('finish', new Date())
 						node.remove('threadSubmit')
 						node.remove('element')
@@ -721,11 +704,7 @@ class Executor implements GetlRepository {
 					}
 					catch (Throwable e) {
 						setError(null, e)
-						synchronized (threadActive) {
-							threadActive.each { Map serv ->
-								(serv.threadSubmit as Future)?.cancel(true)
-							}
-						}
+						cancelActiveThreads()
 						threadPool.shutdownNow()
 						throw e
 					}
@@ -834,9 +813,7 @@ class Executor implements GetlRepository {
 		return true
 	}
 
-	static private Object operationLock = new Object()
-
-	@Synchronized('operationLock')
+	@Synchronized
 	@SuppressWarnings("GrMethodMayBeStatic")
 	void callSynch(Closure cl) {
 		cl.call()
