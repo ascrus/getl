@@ -19,16 +19,20 @@ class ConfigSlurper extends ConfigManager {
 	@SuppressWarnings("DuplicatedCode")
 	@Override
 	void init(Map<String, Object> initParams) {
-		if (Job.jobArgs.environment != null) environment = Job.jobArgs.environment
+		if (Job.jobArgs.environment != null)
+			environment = Job.jobArgs.environment
 
-		if (initParams?.config == null) return
+		if (initParams?.config == null)
+			return
+
 		def config = initParams.config as Map<String, Object>
 		if (config.path != null) {
-			this.path = config.path
-			if (!(new File(this.path).exists())) throw new ExceptionGETL("Can not find config path \"${this.path}\"")
-			Logs.Config("config: set path ${this.path}")
+			this.path = config.path as String
+			if (!(new File(this.path()).exists()))
+				throw new ExceptionGETL("Can not find config path \"${this.path()}\"")
+			Logs.Config("config: set path ${this.path()}")
 		}
-		def configPath = (this.path != null)?"${this.path}${File.separator}":""
+		def configPath = (this.path != null)?"${this.path()}${File.separator}":""
 		if (config.filename != null) {
 			def fn = config.filename as String
 			if (fn.indexOf(";") == -1) {
@@ -86,16 +90,17 @@ class ConfigSlurper extends ConfigManager {
 		this.files.addAll(value*.trim() as List<String>)
 	}
 
-	/**
-	 * Configuration directory
-	 */
+	/** Directory for configuration files */
 	String getPath() { params.path as String }
+	/** Directory for configuration files */
 	void setPath(String value) {
 		if (value != null && !(new File(value).exists()))
 			throw new ExceptionGETL("Directory \"$value\" not exists!")
 
 		params.path = value
 	}
+	/** Full path to the directory for the configuration files */
+	String path() { FileUtils.TransformFilePath(path) }
 
 	/**
 	 * Use environment section
@@ -114,18 +119,18 @@ class ConfigSlurper extends ConfigManager {
 	 * @return
 	 */
 	static String fullConfigName (String pathFile, String value) {
-		((pathFile != null)?FileUtils.ConvertToUnixPath(pathFile) + '/':'') + value
+		return FileUtils.TransformFilePath(((pathFile != null)?FileUtils.ConvertToUnixPath(pathFile) + '/':'') + value)
 	}
 
 	/**
 	 * Return file path for current configuration file
 	 * @return
 	 */
-	String getFullName () { fullConfigName(path, fileName) }
+	String getFullName () { fullConfigName(path(), fileName) }
 
 	@Override
 	void loadConfig(Map<String, Object> readParams = [:]) {
-		def fp = (readParams?.path as String)?:this.path
+		def fp = FileUtils.TransformFilePath(readParams?.path as String)?:this.path()
 		def fn = (readParams?.fileName as String)?:this.fileName
 		def fl = (readParams?.files as List<String>)?:this.files
 		def env = (readParams?.environment as String)?:this.environment?:'prod'
@@ -279,7 +284,7 @@ class ConfigSlurper extends ConfigManager {
 	@SuppressWarnings("DuplicatedCode")
 	@Override
 	void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
-		def fp = (saveParams?.path as String)?:this.path
+		def fp = FileUtils.TransformFilePath(saveParams?.path as String)?:this.path()
 		def fn = (saveParams?.fileName as String)?:this.fileName
 		def cp = (saveParams?.codePage as String)?:this.codePage
 		def convVars = BoolUtils.IsValue(saveParams?.convertVars, false)

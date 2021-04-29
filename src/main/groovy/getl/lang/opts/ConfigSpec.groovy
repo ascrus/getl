@@ -19,16 +19,14 @@ class ConfigSpec extends BaseSpec {
     @SuppressWarnings("GrMethodMayBeStatic")
     ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper }
 
-    /**
-     * Configuration files path
-     */
+    /** Configuration files path */
     @SuppressWarnings("GrMethodMayBeStatic")
     String getPath() { manager.path }
-    /**
-     * Configuration files path
-     */
+    /** Configuration files path */
     @SuppressWarnings("GrMethodMayBeStatic")
     void setPath(String value) { manager.path = value }
+    /** Configuration files full path */
+    String fullPath() { manager.path() }
 
     /**
      * Code page in configuration files

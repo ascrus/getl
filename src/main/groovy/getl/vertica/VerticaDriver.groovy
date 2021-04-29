@@ -149,10 +149,19 @@ class VerticaDriver extends JDBCDriver {
 			}
 		}
 		else if (!source.isEscaped()) {
+			def fd = source.fieldDelimiter()
+			def qs = source.quoteStr()
+			if (fd == '\u0001')
+				throw new ExceptionGETL('Field separator with unicode value 1 is not supported!')
+			if (qs == '\u0001')
+				throw new ExceptionGETL('Quote separator with unicode value 1 is not supported!')
+			if (rowDelimiterChar == '\u0001')
+				throw new ExceptionGETL('Row separator with unicode value 1 is not supported!')
+
 			def opts = [
 					'type=\'traditional\'',
-					"delimiter = ${EscapeString(source.fieldDelimiter())}",
-					"enclosed_by = ${EscapeString(source.quoteStr())}",
+					"delimiter = ${EscapeString(fd)}",
+					"enclosed_by = ${EscapeString(qs)}",
 					"record_terminator = ${EscapeString(rowDelimiterChar)}",
 					"escape = ${EscapeString('\u0001')}",
 					"header=${source.isHeader()}"

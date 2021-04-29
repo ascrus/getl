@@ -145,7 +145,7 @@ Examples:
     protected void groovyStarter() {
         Config.configClassManager = new ConfigSlurper()
 
-        def cmdArgs = binding.getVariable('args') as String[]
+        def cmdArgs = (binding.hasVariable('args'))?binding.getVariable('args') as String[]:([] as String[])
         def jobArgs = MapUtils.ProcessArguments(cmdArgs)
 
         def p = new ParamMethodValidator()

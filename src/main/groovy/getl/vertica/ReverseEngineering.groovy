@@ -390,7 +390,7 @@ Example:
 				if (projectionAnalyzeSuper) {
 					def projSchema = (projMatcher[0] as List)[1] as String
 					def projName = (projMatcher[0] as List)[2] as String
-					if (projName == object && !projName.matches('.+ \\/[*][+].+[*]\\/')) {
+					if (projName == object && !projName.matches('.+ /[*][+].+[*]/')) {
 						create << "CREATE PROJECTION \"${projSchema}\".\"${projName}\" /*+createtype(A)*/"
 						create << '\n'
 					}
@@ -803,7 +803,7 @@ Example:
 			return
 		}
 
-		scriptPath = FileUtils.ConvertToDefaultOSPath(scriptPath)
+		scriptPath = FileUtils.TransformFilePath(FileUtils.ConvertToDefaultOSPath(scriptPath))
 		Logs.Info("Write script to \"$scriptPath\" directory")
 		FileUtils.ValidPath(scriptPath)
 
