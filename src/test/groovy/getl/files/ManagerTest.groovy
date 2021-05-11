@@ -212,6 +212,74 @@ abstract class ManagerTest extends getl.test.GetlTest {
         }
         assertEquals(9, listTable.countRow())
         assertEquals(9, manager.countFileList)
+
+        listTable = manager.buildListFiles {
+            useMaskPath {
+                mask = 'catalog_{catalog}/subdir_{subdir}/*.txt'
+                variable('catalog') { type = integerFieldType }
+                variable('subdir') { type = integerFieldType }
+            }
+            recursive = true
+            directoryLimit = 2
+        }
+        assertEquals(4, listTable.countRow())
+        assertEquals(4, manager.countFileList)
+        assertEquals(40, manager.sizeFileList)
+
+        shouldFail {
+            manager.buildListFiles {
+                useMaskPath {
+                    mask = 'catalog_{catalog}/subdir_{subdir}/*.txt'
+                    variable('catalog') { type = integerFieldType }
+                    variable('subdir') { type = integerFieldType }
+                }
+                recursive = true
+                countFiles = 4
+            }
+        }
+
+        listTable = manager.buildListFiles {
+            useMaskPath {
+                mask = 'catalog_{catalog}/subdir_{subdir}/*.txt'
+                variable('catalog') { type = integerFieldType }
+                variable('subdir') { type = integerFieldType }
+            }
+            recursive = true
+            countFiles = 4
+            sortOrder = ['catalog', 'subdir', 'filedate']
+        }
+        assertEquals(4, listTable.countRow())
+        assertEquals(4, manager.countFileList)
+        assertEquals(40, manager.sizeFileList)
+
+        listTable = manager.buildListFiles {
+            useMaskPath {
+                mask = 'catalog_{catalog}/subdir_{subdir}/*.txt'
+                variable('catalog') { type = integerFieldType }
+                variable('subdir') { type = integerFieldType }
+            }
+            recursive = true
+            sizeFiles = 40
+            sortOrder = ['catalog', 'subdir', 'filedate']
+        }
+        assertEquals(4, listTable.countRow())
+        assertEquals(4, manager.countFileList)
+        assertEquals(40, manager.sizeFileList)
+
+        listTable = manager.buildListFiles {
+            useMaskPath {
+                mask = 'catalog_{catalog}/subdir_{subdir}/*.txt'
+                variable('catalog') { type = integerFieldType }
+                variable('subdir') { type = integerFieldType }
+            }
+            recursive = true
+            countFiles = 4
+            sizeFiles = 40
+            sortOrder = ['catalog', 'subdir', 'filedate']
+        }
+        assertEquals(4, listTable.countRow())
+        assertEquals(4, manager.countFileList)
+        assertEquals(40, manager.sizeFileList)
     }
 
     private void buildTreeDirs() {
@@ -241,6 +309,15 @@ abstract class ManagerTest extends getl.test.GetlTest {
         manager.changeDirectoryToRoot()
         manager.changeLocalDirectoryToRoot()
         manager.changeLocalDirectory(downloadLocalDir)
+
+        manager.buildListFiles {
+            useMaskPath {
+                mask = 'catalog_{catalog}/subdir_{subdir}/*.txt'
+                variable('catalog') { type = integerFieldType }
+                variable('subdir') { type = integerFieldType }
+            }
+            recursive = true
+        }
 
         def loadFiles = 0
         manager.downloadListFiles {
@@ -302,7 +379,7 @@ abstract class ManagerTest extends getl.test.GetlTest {
                 assertEquals(lastErrors, 1, lastResult)
                 assertNotNull(lastErrors)
 
-                if (hostOS == Manager.winOS) {
+                if (hostOS == winOS) {
                     run'echo [{\'$"123"$\'}]'
                     assertEquals(lastErrors, 0, lastResult)
                     assertEquals(lastErrors, '[{\'$"123"$\'}]\n', lastConsole)

@@ -1,6 +1,7 @@
 package getl.files.opts
 
 import getl.data.Field
+import getl.exception.ExceptionGETL
 import getl.jdbc.TableDataset
 import getl.lang.opts.BaseSpec
 import getl.utils.Path
@@ -15,6 +16,13 @@ import groovy.transform.stc.SimpleType
  */
 @InheritConstructors
 class ManagerBuildListSpec extends BaseSpec {
+    @Override
+    protected void initSpec() {
+        super.initSpec()
+        if (params.fileListSortOrder == null)
+            params.fileListSortOrder = [] as List<String>
+    }
+
     /** File search mask */
     String getMaskFile() { params.maskFile as String }
     /** File search mask */
@@ -74,10 +82,41 @@ class ManagerBuildListSpec extends BaseSpec {
     /** Skip previously saved files in history (default true) */
     void setSkipSavedInHistory(Boolean value) { saveParamValue('ignoreExistInStory', value) }
 
-    /** Set a limit on the number of processed directories (default none) */
+    /** Limit on the number of processed directories (default none) */
     Integer getDirectoryLimit() { params.limitDirs as Integer }
-    /** Set a limit on the number of processed directories (default none) */
-    void setDirectoryLimit(Integer value) { saveParamValue('limitDirs', value) }
+    /** Limit on the number of processed directories (default none) */
+    void setDirectoryLimit(Integer value) {
+        if (value != null && value <= 0)
+            throw new ExceptionGETL('directoryLimit value must be greater than zero!')
+        saveParamValue('limitDirs', value)
+    }
+
+    /** Limit the number of files */
+    Integer getCountFiles() { params.limitCountFiles as Integer }
+    /** Limit the number of files */
+    void setCountFiles(Integer value) {
+        if (value != null && value <= 0)
+            throw new ExceptionGETL('countFiles value must be greater than zero!')
+        saveParamValue('limitCountFiles', value)
+    }
+
+    /** Limit the size of files */
+    Integer getSizeFiles() { params.limitSizeFiles as Integer }
+    /** Limit the size of files */
+    void setSizeFiles(Integer value) {
+        if (value != null && value <= 0)
+            throw new ExceptionGETL('sizeFiles value must be greater than zero!')
+        saveParamValue('limitSizeFiles', value)
+    }
+
+    /** Sort order of the file list */
+    List<String> getSortOrder() { params.fileListSortOrder as List<String> }
+    /** Sort order of the file list */
+    void setSortOrder(List<String> value) {
+        sortOrder.clear()
+        if (value != null)
+            sortOrder.addAll(value)
+    }
 
     /** The level number in the hierarchy of directories for paralleling file processing (default 1) */
     Integer getThreadLevelNumber() { params.threadLevel as Integer }

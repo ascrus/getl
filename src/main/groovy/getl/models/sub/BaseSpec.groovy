@@ -3,8 +3,7 @@ package getl.models.sub
 import getl.exception.ExceptionDSL
 import getl.utils.ListUtils
 import getl.utils.MapUtils
-
-import java.util.concurrent.ConcurrentHashMap
+import groovy.transform.Synchronized
 
 class BaseSpec extends getl.lang.opts.BaseSpec {
     BaseSpec(BaseModel model) {
@@ -27,17 +26,19 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
     protected void initSpec() {
         super.initSpec()
         if (params.objectVars == null)
-            params.objectVars = new ConcurrentHashMap<String, Object>()
+            params.objectVars = [:] as Map<String, Object>
         if (params.attrs == null)
-            params.attrs = new ConcurrentHashMap<String, Object>()
+            params.attrs = [:] as Map<String, Object>
     }
 
     /** Owner model */
     protected BaseModel getOwnerModel() { ownerObject as BaseModel }
 
     /** Model object variables */
+    @Synchronized
     Map<String, Object> getObjectVars() { params.objectVars as Map<String, Object> }
     /** Model object variables */
+    @Synchronized
     void setObjectVars(Map<String, Object> value) {
         objectVars.clear()
         if (value != null)
@@ -51,8 +52,10 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
     Object variable(String name) { ListUtils.NotNullValue(objectVars.get(name), ownerModel.modelVars.get(name)) }
 
     /** Object attributes */
+    @Synchronized
     Map<String, Object> getAttrs() { params.attrs as Map<String, Object> }
     /** Object attributes */
+    @Synchronized
     void setAttrs(Map<String, Object> value) {
         attrs.clear()
         if (value != null)

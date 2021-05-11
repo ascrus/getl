@@ -7,8 +7,6 @@ import getl.utils.CloneUtils
 import getl.utils.MapUtils
 import groovy.transform.Synchronized
 
-import java.util.concurrent.ConcurrentHashMap
-
 /**
  * Base options class
  * @author Alexsey Konstantinov
@@ -18,7 +16,7 @@ class BaseSpec implements Cloneable {
     /** Create options instance */
     BaseSpec(Object owner) {
         _owner = owner
-        _params = new ConcurrentHashMap<String, Object>()
+        _params = [:] as Map<String, Object>
         _savedOptions = new Stack<Map<String, Object>>()
         initSpec()
     }
@@ -32,13 +30,13 @@ class BaseSpec implements Cloneable {
                 _params = importParams
                 initSpec()
             } else {
-                _params = new ConcurrentHashMap<String, Object>()
+                _params = [:] as Map<String, Object>
                 initSpec()
                 importFromMap(importParams)
             }
         }
         else {
-            _params = new ConcurrentHashMap<String, Object>()
+            _params = [:] as Map<String, Object>
             initSpec()
         }
     }
@@ -73,6 +71,7 @@ class BaseSpec implements Cloneable {
     private Map<String, Object> _params
     /** Object parameters */
     @JsonIgnore
+    @Synchronized
     Map<String, Object> getParams() { _params }
 
     /**
@@ -80,6 +79,7 @@ class BaseSpec implements Cloneable {
      * @param key parameter name
      * @param value parameter value
      */
+    @Synchronized
     protected void saveParamValue(String key, Object value) {
         if (value != null)
             _params.put(key, value)
@@ -100,12 +100,15 @@ class BaseSpec implements Cloneable {
         if (importParams == null)
             throw new ExceptionGETL('Required "importParams" value!')
 
-        params.putAll(MapUtils.Copy(importParams, ignoreImportKeys(importParams)))
+        //params.putAll(MapUtils.Copy(importParams, ignoreImportKeys(importParams)))
+        def c = MapUtils.Copy(importParams, ignoreImportKeys(importParams)) as Map<String, Object>
+        MapUtils.MergeMap(params, c, true, true)
     }
 
     /** Clear all options */
     void clearOptions() {
         params.clear()
+        initSpec()
     }
 
     /** Options stack */
@@ -119,7 +122,8 @@ class BaseSpec implements Cloneable {
     @Synchronized
     void pushOptions(Boolean resetToDefault = false, Boolean cloneChildrenObject = false) {
         _savedOptions.push(CloneUtils.CloneMap(_params, cloneChildrenObject) as Map<String, Object>)
-        if (resetToDefault) clearOptions()
+        if (resetToDefault)
+            clearOptions()
     }
 
     /**

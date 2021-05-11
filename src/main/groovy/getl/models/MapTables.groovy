@@ -8,6 +8,7 @@ import getl.exception.ExceptionModel
 import getl.models.sub.BaseSpec
 import getl.models.opts.MapTableSpec
 import getl.models.sub.DatasetsModel
+import getl.utils.CloneUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
@@ -46,6 +47,17 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     /** Used mapping datasets */
     @Synchronized
     void setUsedMapping(List<MapTableSpec> value) { usedObjects = value }
+    @Synchronized
+    void assignUsedMapping(List<Map> value) {
+        usedMapping.clear()
+        def o = this
+        value?.each { node ->
+            def p = CloneUtils.CloneMap(node, true)
+            p.datasetName = p.sourceName
+            p.remove('sourceName')
+            usedMapping.add(new MapTableSpec(o, p))
+        }
+    }
 
     /** Repository connection name for destination datasets */
     @Synchronized

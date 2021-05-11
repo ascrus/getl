@@ -11,7 +11,6 @@ import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import java.lang.reflect.ParameterizedType
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -21,6 +20,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 @SuppressWarnings('UnnecessaryQualifiedReference')
 @InheritConstructors
 class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository {
+    BaseModel() {
+        super(null)
+    }
+
     private String dslNameObject
     @Override
     @JsonIgnore
@@ -55,10 +58,10 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         super.initSpec()
 
         if (params.modelVars == null)
-            params.modelVars = new ConcurrentHashMap<String, Object>()
+            params.modelVars = [:] as Map<String, Object>
 
         if (params.modelAttrs == null)
-            params.modelAttrs = new ConcurrentHashMap<String, Object>()
+            params.modelAttrs = [:] as Map<String, Object>
 
         if (params.usedObjects == null)
             params.usedObjects = new CopyOnWriteArrayList<>(new ArrayList<T>())

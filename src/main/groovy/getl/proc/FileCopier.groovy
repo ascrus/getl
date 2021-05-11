@@ -274,7 +274,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
     protected List<List<String>> getExtendedIndexes() {
         def idx = ['_SEGMENTED_']
         if (!order.isEmpty())
-            idx.addAll(order*.toUpperCase() as List<String>)
+            idx.addAll(order.collect { '"' + it.toUpperCase() + '"' } as List<String>)
         idx.add('_OUTPATH_')
 
         return [idx]
@@ -376,7 +376,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         files.readOpts {
             where = "_SEGMENTED_ = $segment"
             if (!this.order.isEmpty())
-                it.order = ['_SEGMENTED_'] + (this.order*.toUpperCase() as List<String>) + ['_OUTPATH_']
+                it.order = ['_SEGMENTED_'] + (this.order.collect { '"' + it.toUpperCase() + '"' } as List<String>) + ['_OUTPATH_']
             else
                 it.order = ['_SEGMENTED_', '_OUTPATH_']
         }

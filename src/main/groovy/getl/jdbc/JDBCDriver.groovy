@@ -932,7 +932,7 @@ ${extend}'''
         params = params?:[:]
 
 		def tableName = fullNameDataset(dataset)
-		def tableType = (dataset as JDBCDataset).type as JDBCDataset.Type
+		def tableType = (dataset as JDBCDataset).type
 		if (!(tableType in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType,
 							JDBCDataset.localTemporaryTableType, JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
             throw new ExceptionGETL("Can not create dataset for type \"${tableType}\"")

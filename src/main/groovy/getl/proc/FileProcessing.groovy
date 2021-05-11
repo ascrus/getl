@@ -242,7 +242,7 @@ class FileProcessing extends FileListProcessing {
 
         def idx = ['_HASH_'] as List<String>
         if (!order.isEmpty())
-            idx.addAll(order*.toUpperCase() as List<String>)
+            idx.addAll(order.collect { '"' + it.toUpperCase() + '"' } as List<String>)
         else
             idx << 'FILENAME'
 
@@ -426,7 +426,7 @@ class FileProcessing extends FileListProcessing {
             it.order = ['_HASH_']
 
             if (!this.order.isEmpty())
-                it.order.addAll(this.order)
+                it.order.addAll(order.collect { '"' + it.toUpperCase() + '"' } as List<String>)
             else
                 it.order << 'FILENAME'
         }

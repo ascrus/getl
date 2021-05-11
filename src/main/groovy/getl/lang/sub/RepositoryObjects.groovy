@@ -5,9 +5,9 @@ import getl.lang.Getl
 import getl.proc.sub.ExecutorThread
 import getl.utils.BoolUtils
 import getl.utils.Path
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Repository objects manager
@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
 @SuppressWarnings("GrMethodMayBeStatic")
 abstract class RepositoryObjects<T extends GetlRepository> implements GetlRepository {
     RepositoryObjects() {
-        this.objects = new ConcurrentHashMap<String, T>()
+        this.objects = [:] as Map<String, T> //new ConcurrentHashMap<String, T>()
     }
 
     /** Repository priority order */
@@ -47,12 +47,12 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     /** Repository objects */
     private Map<String, T> objects
     /** Repository objects */
+    @Synchronized('objects')
     Map<String, T> getObjects() { objects }
     /** Repository objects */
+    @Synchronized('objects')
     void setObjects(Map<String, T> value) {
-        synchronized (this) {
-            this.objects = value
-        }
+        this.objects = value
     }
 
     /** List of supported classes for objects */
@@ -151,14 +151,19 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      */
     String find(T obj) {
         def repName = obj.dslNameObject
-        if (repName == null) return null
+        if (repName == null)
+            return null
 
         def className = obj.getClass().name
-        if (!(className in listClasses)) return null
+        if (!(className in listClasses))
+            return null
 
-        def repObj = objects.get(dslCreator.repObjectName(repName))
-        if (repObj == null) return null
-        if (repObj.getClass().name != className) return null
+        //noinspection GroovySynchronizationOnNonFinalField
+        synchronized (objects) {
+            T repObj = objects.get(dslCreator.repObjectName(repName))
+            if (repObj == null || repObj.getClass().name != className)
+                repName = null
+        }
 
         return repName
     }
@@ -385,6 +390,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param classes list of processed classes
      * @param filter filter for detect objects to unregister
      */
+    @Synchronized('objects')
     void unregister(String mask = null, List<String> classes = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
                                       Closure<Boolean> filter = null) {
@@ -398,6 +404,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * Release temporary object
      * @param creator object creator
      */
+    @Synchronized('objects')
     void releaseTemporary(Getl creator = null) {
         def list = list('#*', null, false)
         list.each { name ->

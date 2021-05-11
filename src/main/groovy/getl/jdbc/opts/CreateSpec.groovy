@@ -17,7 +17,10 @@ class CreateSpec extends BaseSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
-        if (params.indexes == null) params.indexes = [:] as Map<String, Object>
+        if (params.indexes == null)
+            params.indexes = [:] as Map<String, Object>
+        if (params.type == null)
+            params.type = JDBCDataset.tableType
     }
 
     /** Create table if not exists */

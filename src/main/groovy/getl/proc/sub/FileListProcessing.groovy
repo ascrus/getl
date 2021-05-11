@@ -96,7 +96,8 @@ abstract class FileListProcessing implements GetlRepository {
     /** Sort when processing files */
     void setOrder(List<String> value) {
         order.clear()
-        if (value != null) order.addAll(value)
+        if (value != null)
+            order.addAll(value)
     }
 
     /** Filter processing directories */
@@ -502,7 +503,7 @@ abstract class FileListProcessing implements GetlRepository {
      */
     protected void buildList () {
         def pt = profile("Getting a list of files from the source ${source.toString()}", "file")
-        source.buildList([path: sourcePath, recursive: true, /*takePathInStory: true, */onlyFromStory: onlyFromStory,
+        source.buildList([path: sourcePath, recursive: true, onlyFromStory: onlyFromStory, fileListSortOrder: order,
                           ignoreStory: ignoreStory, extendFields: extendedFields, extendIndexes: extendedIndexes],
                 createBuildList())
         pt.finish(source.countFileList)

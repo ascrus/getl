@@ -31,12 +31,13 @@ abstract class Manager implements Cloneable, GetlRepository {
 	Manager() {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
-				 'sqlHistoryFile', 'saveOriginalDate', 'limitDirs', 'threadLevel', 'recursive',
-				 'ignoreExistInStory', 'createStory', 'takePathInStory', 'attributes', 'story', 'storyName',
-				 'description'])
+				 'sqlHistoryFile', 'saveOriginalDate', 'fileListSortOrder', 'limitDirs', 'limitCountFiles',
+				 'limitSizeFiles', 'threadLevel', 'recursive', 'ignoreExistInStory', 'createStory', 'takePathInStory',
+				 'attributes', 'story', 'storyName', 'description'])
 		methodParams.register('buildList',
-				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'limitDirs', 'threadLevel',
-				 'ignoreExistInStory', 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory'])
+				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'fileListSortOrder',
+				 'limitDirs', 'limitCountFiles', 'limitSizeFiles', 'threadLevel', 'ignoreExistInStory',
+				 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory'])
 		methodParams.register('downloadFiles',
 				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
 
@@ -60,6 +61,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	protected void initParams() {
 		params.rootPath = '/'
 		params.attributes = [:] as Map<String, Object>
+		params.fileListSortOrder = [] as List<String>
 		currentRootPathSet()
 	}
 
@@ -751,8 +753,38 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** Limit the number of processed directories */
 	void setLimitDirs(Integer value) {
 		if (value != null && value <= 0)
-			throw new ExceptionGETL('limitDirs value must be greater than zero')
+			throw new ExceptionGETL('limitDirs value must be greater than zero!')
+
 		params.limitDirs = value
+	}
+
+	/** Limit the number of files */
+	Integer getLimitCountFiles() { params.limitCountFiles as Integer }
+	/** Limit the number of files */
+	void setLimitCountFiles(Integer value) {
+		if (value != null && value <= 0)
+			throw new ExceptionGETL('limitCountFiles value must be greater than zero!')
+
+		params.limitCountFiles = value
+	}
+
+	/** Limit the size of files */
+	Integer getLimitSizeFiles() { params.limitSizeFiles as Integer }
+	/** Limit the size of files */
+	void setLimitSizeFiles(Integer value) {
+		if (value != null && value <= 0)
+			throw new ExceptionGETL('limitSizeFiles value must be greater than zero!')
+
+		params.limitSizeFiles = value
+	}
+
+	/** Sort order of the file list */
+	List<String> getFileListSortOrder() { params.fileListSortOrder as List<String> }
+	/** Sort order of the file list */
+	void setFileListSortOrder(List<String> value) {
+		fileListSortOrder.clear()
+		if (value != null)
+			fileListSortOrder.addAll(value)
 	}
 
 	/** Directory recursive processing */
@@ -1016,6 +1048,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * <li>Boolean takePathInStory - save filepath in story table
 	 * <li>Boolean ignoreExistInStory - ignore already loaded file by story (default true)
 	 * <li>Integer limitDirs - limit processing directory
+	 * <li>Integer limitCountFiles - limit count files
+	 * <li>Integer limitSizeFiles - limit size files
+	 * <li>List<String> fileListSortOrder - sort order of the file list
 	 * <li>Integer threadLevel - thread processing directory
 	 * <li>List<Field> extendFields - list of extended fields
 	 * <li>List<List<String>> extendIndexes - list of extended indexes
@@ -1041,9 +1076,24 @@ abstract class Manager implements Cloneable, GetlRepository {
 		def onlyFromStory = BoolUtils.IsValue(lParams.onlyFromStory)
 		def ignoreStory = BoolUtils.IsValue(lParams.ignoreStory)
 		
-		Integer limit = (lParams.limitDirs as Integer)?:this.limitDirs
-		if (limit != null && limit <= 0)
-			throw new ExceptionGETL("limitDirs value must be great zero!")
+		Integer limitDirs = (lParams.limitDirs as Integer)?:this.limitDirs
+		if (limitDirs != null && limitDirs <= 0)
+			throw new ExceptionGETL('"limitDirs" value must be great zero!')
+
+
+		List<String> fileListSortOrder = (lParams.fileListSortOrder != null && !(lParams.fileListSortOrder as List<String>).isEmpty())?
+				lParams.fileListSortOrder as List<String>:this.fileListSortOrder
+
+		Integer limitCountFiles = (lParams.limitCountFiles as Integer)?:this.limitCountFiles
+		if (limitCountFiles != null && limitCountFiles <= 0)
+			throw new ExceptionGETL('"limitCountFiles" value must be great zero!')
+
+		Integer limitSizeFiles = (lParams.limitSizeFiles as Integer)?:this.limitSizeFiles
+		if (limitSizeFiles != null && limitSizeFiles <= 0)
+			throw new ExceptionGETL('"limitSizeFiles" value must be great zero!')
+
+		if (fileListSortOrder.isEmpty() && (limitCountFiles != null || limitSizeFiles != null))
+			throw new ExceptionGETL('When specifying the limits of the selection of files, they need to set the sort order!')
 		
 		Integer threadLevel = (lParams.threadLevel as Integer)?:this.threadLevel
 		if (threadLevel != null && threadLevel <= 0)
@@ -1066,52 +1116,94 @@ abstract class Manager implements Cloneable, GetlRepository {
 		TableDataset storyTable = (!ignoreStory)?((lParams.story as TableDataset)?:story):null
 		if (createStory && storyTable != null) createStoryTable(storyTable, path)
 
-		// Init file list
-		fileList = new TableDataset(connection: fileListConnection?:new TDS(), 
+		// Init result file list table
+		fileList = new TableDataset(connection: (fileListConnection?:new TDS()),
 									tableName: fileListName?:"FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}")
-		if (sqlHistoryFile != null) ((JDBCConnection)fileList.connection).sqlHistoryFile = sqlHistoryFile
+		fileList.field = [Field.New('FILEID') { type = integerFieldType; isNull = false }]
+		AddFieldFileListToDS(fileList)
+		if (extendFields != null)
+			fileList.addFields(extendFields)
+		if (sqlHistoryFile != null)
+			(fileList.connection as JDBCConnection).sqlHistoryFile = sqlHistoryFile
 
-		initFileList()
-		if (extendFields != null) fileList.addFields(extendFields)
 		path?.vars?.each { key, attr ->
 			def varName = key.toUpperCase()
 			//noinspection SpellCheckingInspection
-			if (varName in ['FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME', 'FILEINSTORY'])
+			if (varName in ['FILEID', 'FILEPATH', 'FILENAME', 'FILEDATE', 'FILESIZE', 'FILETYPE', 'LOCALFILENAME',
+							'FILEINSTORY'])
 				throw new ExceptionGETL("You cannot use the reserved name \"$key\" in path mask variables!")
 
 			def ft = (attr.type as Field.Type)?:Field.Type.STRING
 			def length = (attr.lenMax as Integer)?:((ft == Field.Type.STRING)?250:30)
 			def field = new Field(name: varName.toUpperCase(), type: ft, length: length, precision: (attr.precision as Integer)?:0)
-			fileList.field << field
+			fileList.field.add(field)
 		}
-		fileList.drop(ifExists: true)
-		def fileListIndexes = [:]
-		fileListIndexes.put(fileList.tableName + '_1', [columns: ['FILEPATH']])
-		if (extendIndexes != null) {
-			for (Integer i = 0; i < extendIndexes.size(); i++) {
-				fileListIndexes.put(fileList.tableName + '_' + (i + 2).toString(), [columns: extendIndexes[i]])
+
+		fileListSortOrder.each {f ->
+			if (fileList.fieldByName(f) == null)
+				throw new ExceptionGETL("The sort contains an unknown field \"$f\"!")
+		}
+
+		fileList.with {
+			drop(ifExists: true)
+			createOpts {
+				pushOptions(true)
+
+				index('IDX_' + tableName + '_FILEPATH') {
+					columns = ['FILEPATH']
+				}
+				index('IDX_' + tableName + '_FILEID') {
+					columns = ['FILEID']
+					unique = true
+				}
+				if (extendIndexes != null) {
+					for (Integer i = 0; i < extendIndexes.size(); i++) {
+						index('IDX_' + tableName + '_EXT_' + i.toString()) {
+							columns = extendIndexes[i]
+						}
+					}
+				}
+
+				create()
+				pullOptions()
 			}
 		}
-		fileList.create((!fileListIndexes.isEmpty())?[indexes: fileListIndexes]:null)
 
 		def tableType = (threadCount == null)?JDBCDataset.localTemporaryTableType:JDBCDataset.tableType
 
-		def newFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
-		newFiles.field = [new Field(name: 'ID', type: 'INTEGER', isNull: false, isAutoincrement: true)] + fileList.field
-		//noinspection SpellCheckingInspection
-		newFiles.removeField('FILEINSTORY')
-		newFiles.clearKeys()
-		
-		newFiles.drop(ifExists: true)
-		Map<String, Object> indexes = [:]
-		//noinspection SpellCheckingInspection
-		indexes.put("idx_${newFiles.tableName}_filename".toString(), [columns: ['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID']])
-        indexes.put("idx_${newFiles.tableName}_id".toString(), [columns: ['ID']])
+		def newFiles = new TableDataset(connection: fileList.connection.cloneConnection(),
+				tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}",
+				type: tableType)
+		newFiles.with {
+			field = [Field.New('ID') { type = integerFieldType; isNull = false; isAutoincrement = true }]
+			addFields(fileList.field)
+			//noinspection SpellCheckingInspection
+			removeFields(['FILEID', 'FILEINSTORY'])
+			clearKeys()
+			field('ID') { isKey = true }
 
-		newFiles.create(onCommit: true, 
-						indexes: indexes)
+			drop(ifExists: true)
+
+			createOpts {
+				onCommit = true
+				//noinspection SpellCheckingInspection
+				index("idx_${newFiles.tableName}_filename") {
+					columns = ['LOCALFILENAME']
+					if (takePathInStory)
+						columns << 'FILEPATH'
+					columns << 'ID'
+				}
+
+				if (!fileListSortOrder.isEmpty())
+					index("idx_${newFiles.tableName}_sort") { columns = fileListSortOrder }
+			}
+
+			create()
+		}
 		
-		def doubleFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
+		def doubleFiles = new TableDataset(connection: newFiles.connection,
+				tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}",
+				type: tableType)
 		//noinspection SpellCheckingInspection
 		doubleFiles.field = newFiles.getFields(['LOCALFILENAME'] + ((takePathInStory)?['FILEPATH']:[]) + ['ID'])
 		doubleFiles.fieldByName('ID').with { 
@@ -1121,7 +1213,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 		doubleFiles.drop(ifExists: true)
 		doubleFiles.create(onCommit: true)
 		
-		def useFiles = new TableDataset(connection: fileList.connection, tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}", type: tableType)
+		def useFiles = new TableDataset(connection: newFiles.connection,
+				tableName: "FILE_MANAGER_${StringUtils.RandomStr().replace("-", "_").toUpperCase()}",
+				type: tableType)
 		useFiles.field = [newFiles.fieldByName('ID')]
 		useFiles.fieldByName('ID').with {
 			isAutoincrement = false
@@ -1139,7 +1233,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 			try {
 				newFiles.openWrite(batchSize: 100)
 				try {
-					processList(this, newFiles, path, maskFile, maskPath, recursive, 1, requiredAnalyze, limit,
+					processList(this, newFiles, path, maskFile, maskPath, recursive, 1, requiredAnalyze, limitDirs,
 								threadLevel, threadCount, code)
 				}
 				finally {
@@ -1239,20 +1333,44 @@ WHERE
 				}
 			}
 			
-			def sqlCopyFiles = """
-SELECT ${fileList.sqlFields(['FILEINSTORY']).join(', ')}, ${(storyTable == null)?'FALSE AS FILEINSTORY':'(story.ID IS NULL) AS FILEINSTORY'}
-FROM ${newFiles.fullNameDataset()} files
-"""
-			if (storyTable != null) {
-				sqlCopyFiles += "${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID"
+			QueryDataset processFiles = new QueryDataset()
+			processFiles.with {
+				useConnection newFiles.currentJDBCConnection
+				if (limitSizeFiles == null)
+					query = '''
+SELECT {fields}, {story_flag}
+FROM {table} files {join}
+{order}
+{limit}'''
+				else
+					query = '''
+SELECT {fields}, {story_flag}
+FROM (
+	SELECT {fields}, {story_flag}, {inc_sum}
+	FROM {table} files {join}
+) x
+{where}
+{order}
+{limit}'''
+				queryParams.table = newFiles.fullTableName
+				queryParams.fields = newFiles.sqlFields(['ID', 'FILEINSTORY']).join(', ')
+				queryParams.story_flag = (storyTable == null)?'FALSE AS FILEINSTORY':'(story.ID IS NULL) AS FILEINSTORY'
+				queryParams.join = (storyTable != null)?"${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID":''
+				queryParams.order = (!fileListSortOrder.isEmpty())?
+						('ORDER BY ' + fileListSortOrder.collect { '"' + it.toUpperCase() + '"' }.join(', ')):''
+				queryParams.limit = (limitCountFiles != null)?"LIMIT $limitCountFiles":''
+				queryParams.inc_sum = (limitSizeFiles != null)?
+						"Sum(FILESIZE) OVER(ORDER BY ${fileListSortOrder.collect { '"' + it.toUpperCase() + '"' }.join(', ')} " +
+								"RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS _sum":''
+				queryParams.where = (limitSizeFiles != null)?"WHERE _sum <= $limitSizeFiles":''
 			}
-			QueryDataset processFiles = new QueryDataset(connection: fileList.connection, query: sqlCopyFiles)
 
 			def countFiles = 0L
 			def sizeFiles = 0L
 			new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 500L) { i, o ->
 				countFiles++
 				sizeFiles += (o.filesize as Long)
+				o.fileid = countFiles.toInteger()
 			}
 			countFileList = countFiles
 			sizeFileList = sizeFiles
@@ -1360,6 +1478,7 @@ FROM ${newFiles.fullNameDataset()} files
 			String storyTable = "T_${StringUtils.RandomStr().replace('-', '_').toUpperCase()}"
 			storyFiles = new TableDataset(connection: ds.connection, tableName: storyTable, manualSchema: true, type: JDBCDataset.Type.LOCAL_TEMPORARY)
 			storyFiles.field = fileList.field
+			storyFiles.removeField('FILEID')
 			storyFiles.create()
 			
 			new Flow().writeTo(dest: storyFiles, dest_batchSize: 500L) { updater ->
@@ -1524,15 +1643,6 @@ WHERE
 		dataset.field << new Field(name: "FILELOADED", type: "DATETIME", isNull: false)
 	}
 	
-	/**
-	 * Init file list table structure
-	 */
-	private void initFileList() {
-		fileList.drop(ifExists: true)
-		fileList.field = []
-		AddFieldFileListToDS(fileList)
-	}
-
 	/**
 	 * Add the fields of file and local attributes to dataset
 	 * @param dataset
@@ -1880,8 +1990,9 @@ WHERE
 			throw new ExceptionGETL('Need run buildList method before run deleteEmptyFolders')
 		
 		def dirs = [:] as Map<String, Map>
-		QueryDataset paths = new QueryDataset(connection: fileList.connection, query: "SELECT DISTINCT FILEPATH FROM ${fileList.fullNameDataset()} ORDER BY FILEPATH")
-		paths.eachRow() { row ->
+		QueryDataset paths = new QueryDataset(connection: fileList.connection,
+				query: "SELECT DISTINCT FILEPATH FROM ${fileList.fullNameDataset()} ORDER BY FILEPATH")
+		paths.eachRow { row ->
 			if (row."filepath" == '.') return
 			String[] d = (row."filepath" as String).split('/')
 			Map c = dirs
