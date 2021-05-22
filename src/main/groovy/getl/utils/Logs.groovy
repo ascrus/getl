@@ -97,7 +97,8 @@ class Logs {
 	 */
 	@Synchronized
 	protected static void event(Level level, String message) {
-		events.each { Closure event -> event.call(level.toString(), DateUtils.Now(), message) }
+		if (message != null)
+			events.each { Closure event -> event.call(level.toString(), DateUtils.Now(), message) }
 	}
 	
 	/**
@@ -351,7 +352,7 @@ class Logs {
 		ToOut(Level.SEVERE, error.message)
 		StackTraceUtils.sanitize(error)
 		def t = (error.stackTrace.length > 0)?(" => " + error.stackTrace.join('\n')):""
-		def message = FormatMessage(error.message + t)
+		def message = FormatMessage((error.message?:'') + t)
 		logger.severe(message)
 		event(Level.SEVERE, error.message)
 		if (printStackTraceError) error.printStackTrace()
