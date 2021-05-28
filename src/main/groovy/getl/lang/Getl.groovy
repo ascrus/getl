@@ -4617,12 +4617,12 @@ Examples:
     Executor thread(@DelegatesTo(Executor)
                     @ClosureParams(value = SimpleType, options = ['getl.proc.Executor']) Closure cl) {
         def disposeConnections = { Map<String, List<ExecutorThread.CloneObject>> list ->
-            (list?.connections as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
+            (list?.get('getl.lang.sub.RepositoryConnections') as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
                 def con = cloneObject.cloneObject as Connection
                 if (con != null && con.driver.isSupport(Driver.Support.CONNECT)) con.connected = false
             }
 
-            (list?.filemanagers as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
+            (list?.get('getl.lang.sub.RepositoryFilemanagers') as List<ExecutorThread.CloneObject>)?.each { ExecutorThread.CloneObject cloneObject ->
                 def man = cloneObject.cloneObject as Manager
                 if (man != null && man.connected) man.disconnect()
             }
