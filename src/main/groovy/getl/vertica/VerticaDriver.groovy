@@ -164,7 +164,8 @@ class VerticaDriver extends JDBCDriver {
 					"enclosed_by = ${EscapeString(qs)}",
 					"record_terminator = ${EscapeString(rowDelimiterChar)}",
 					"escape = ${EscapeString('\u0001')}",
-					"header=${source.isHeader()}"
+					"header=${source.isHeader()}",
+					'trim=false'
 			]
 
 			parserText = "\nWITH PARSER public.fcsvparser(${opts.join(', ')})"
