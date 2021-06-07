@@ -88,6 +88,17 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         this.dataset(dataset.dslNameObject, cl)
     }
 
+    /**
+     * Add datasets to the model using the specified mask
+     * @param maskName dataset search mask
+     * @param cl parameter description code
+     */
+    protected void addDatasets(String maskName, Closure cl = null) {
+        dslCreator.processDatasets(maskName) {datasetName ->
+            dataset(datasetName, cl)
+        }
+    }
+
     @Override
     @Synchronized
     void checkModel(Boolean checkObjects = true) {

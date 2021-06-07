@@ -8,6 +8,7 @@ import getl.exception.ExceptionModel
 import getl.models.sub.BaseSpec
 import getl.models.opts.MapTableSpec
 import getl.models.sub.DatasetsModel
+import getl.proc.sub.ExecutorListElement
 import getl.utils.CloneUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
@@ -120,7 +121,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
                           @DelegatesTo(MapTableSpec)
                           @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec'])
                                   Closure cl = null) {
-        super.dataset(datasetName, cl)
+        dataset(datasetName, cl)
     }
 
     /**
@@ -145,7 +146,19 @@ class MapTables extends DatasetsModel<MapTableSpec> {
                           @DelegatesTo(MapTableSpec)
                           @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec'])
                                   Closure cl = null) {
-        super.useDataset(dataset, cl)
+        useDataset(dataset, cl)
+    }
+
+    /**
+     * Add source tables to the model using the specified mask
+     * @param maskName dataset search mask
+     * @param cl parameter description code
+     */
+    void addMapTables(String maskName,
+                      @DelegatesTo(MapTableSpec)
+                      @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec'])
+                              Closure cl = null) {
+        addDatasets(maskName, cl)
     }
 
     @Override
@@ -186,4 +199,16 @@ class MapTables extends DatasetsModel<MapTableSpec> {
 
     @Override
     String toString() { "Mapping ${usedObjects.size()} tables from \"$sourceConnectionName\" to \"$destinationConnectionName\" connections" }
+
+    /**
+     * Add linked tables to mapping
+     * @param listOfLinkTables list of linked tables
+     */
+    void addLinkTables(List<ExecutorListElement> listOfLinkTables) {
+        listOfLinkTables.each { elem ->
+            mapTable(elem.source as String) {
+                linkTo(elem.destination as String)
+            }
+        }
+    }
 }

@@ -823,6 +823,13 @@ Examples:
         _repositoryFilter.parseName(name)
     }
 
+    /** Replace the group name with the one specified for the object name */
+    String replaceGroupName(String name, String newGroupName) {
+        def objName = parseName(name)
+        objName.groupName = newGroupName
+        return objName.name
+    }
+
     /**
      * Read text from specified file
      * @param fileName file path
@@ -1179,7 +1186,7 @@ Examples:
         if (destGroup == null)
             throw new ExceptionDSL('Required to specify the value of the destination group name!')
 
-        linkDatasets(listDatasets(sourceGroup + ':'), listDatasets(destGroup + ':'), filter)
+        linkDatasets(listDatasets(sourceGroup + ':*'), listDatasets(destGroup + ':*'), filter)
     }
 
     /**

@@ -83,7 +83,7 @@ class SetOfTables extends DatasetsModel<TableSpec> {
     TableSpec table(String tableName,
                     @DelegatesTo(TableSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl = null) {
-        super.dataset(tableName, cl)
+        dataset(tableName, cl)
     }
 
     /**
@@ -111,7 +111,18 @@ class SetOfTables extends DatasetsModel<TableSpec> {
     TableSpec table(TableDataset table,
                     @DelegatesTo(TableSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl = null) {
-        super.useDataset(table, cl)
+        useDataset(table, cl)
+    }
+
+    /**
+     * Add tables to the model using the specified mask
+     * @param maskName dataset search mask
+     * @param cl parameter description code
+     */
+    void addTables(String maskName,
+                   @DelegatesTo(TableSpec)
+                   @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl = null) {
+        addDatasets(maskName, cl)
     }
 
     @Override

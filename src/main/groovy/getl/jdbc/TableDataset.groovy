@@ -120,7 +120,8 @@ class TableDataset extends JDBCDataset {
 			throw new ExceptionGETL("${fullNameDataset()} is not a table!")
 
 		validTableName()
-		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName, tableName: tableName)
+		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName, tableName: tableName,
+				retrieveInfo: false)
 
 		return (!ds.isEmpty())
 	}

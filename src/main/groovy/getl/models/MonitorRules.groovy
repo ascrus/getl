@@ -193,6 +193,20 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         rule(null, cl)
     }
 
+    /**
+     * Add queries to the model using the specified mask
+     * @param maskName dataset search mask
+     * @param cl parameter description code
+     */
+    void addRules(String maskName,
+                  @DelegatesTo(MonitorRuleSpec)
+                  @ClosureParams(value = SimpleType, options = ['getl.models.opts.MonitorRuleSpec'])
+                          Closure cl = null) {
+        dslCreator.processDatasets(maskName) {datasetName ->
+            rule(datasetName, cl)
+        }
+    }
+
     /** Create status table */
     @Synchronized
     private void createStatusTable() {

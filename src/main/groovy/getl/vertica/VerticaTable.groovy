@@ -484,15 +484,17 @@ class VerticaTable extends TableDataset {
         validTableName()
 
         new QueryDataset().with {
-            useConnection currentJDBCConnection
-            def whereExpr = ['Upper(table_name) = \'' + tableName.toUpperCase() + '\'']
-            if (schemaName != null)
-                whereExpr << 'Upper(table_schema) = \'' + schemaName.toUpperCase() + '\''
+            useConnection this.currentJDBCConnection
+            def whereExpr = ['Upper(table_name) = \'' + this.tableName.toUpperCase() + '\'']
+            if (this.schemaName != null)
+                whereExpr << 'Upper(table_schema) = \'' + this.schemaName.toUpperCase() + '\''
             queryParams.where = whereExpr.join(' AND ')
             query = 'SELECT partition_expression FROM v_catalog.tables WHERE {where}'
             def rows = rows()
-            if (!rows.isEmpty())
-                createDirective.partitionBy = rows[0].partition_expression
+            if (!rows.isEmpty()) {
+                def part = rows[0].partition_expression
+                this.createOpts.partitionBy = (part != '')?part:null
+            }
         }
     }
 }

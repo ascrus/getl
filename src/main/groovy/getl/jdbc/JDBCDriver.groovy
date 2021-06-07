@@ -2669,4 +2669,10 @@ FROM {source} {after_from}'''
 		csvFile.nullAsValue = null
 		csvFile.formatTimestampWithTz = DateUtils.defaultTimestampWithTzSmallMask
 	}
+
+	/** Create schema in database */
+	void createSchema(String schemaName, Map<String, Object> createParams) { }
+
+	/**  Drop schema from database */
+	void dropSchema(String schemaName, Map<String, Object> dropParams) { }
 }

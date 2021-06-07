@@ -74,7 +74,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                                                  @DelegatesTo(ReferenceVerticaTableSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec'])
                                      Closure cl = null) {
-        super.dataset(tableName, cl) as ReferenceVerticaTableSpec
+        dataset(tableName, cl) as ReferenceVerticaTableSpec
     }
 
     /**
@@ -87,6 +87,18 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
                              @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec'])
                                     Closure cl) {
         referenceFromTable(null, cl)
+    }
+
+    /**
+     * Add reference tables to the model using the specified mask
+     * @param maskName dataset search mask
+     * @param cl parameter description code
+     */
+    void addReferenceTables(String maskName,
+                            @DelegatesTo(ReferenceVerticaTableSpec)
+                            @ClosureParams(value = SimpleType, options = ['getl.models.opts.ReferenceVerticaTableSpec'])
+                                    Closure cl = null) {
+        addDatasets(maskName, cl)
     }
 
     @Override

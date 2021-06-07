@@ -5,6 +5,7 @@ import getl.csv.CSVConnection
 import getl.csv.CSVDataset
 import getl.data.Connection
 import getl.data.Dataset
+import getl.driver.Driver
 import getl.exception.ExceptionDSL
 import getl.exception.ExceptionGETL
 import getl.jdbc.opts.GenerateDslTablesSpec
@@ -458,15 +459,17 @@ class JDBCConnection extends Connection implements UserLogins {
 	
 	/**
 	 * Return datasets list by parameters
-	 * @param params read params by specified connection driver (dbName, schemaName, tableName, tableMask, type)
+	 * @param params read params by specified connection driver (dbName, schemaName, tableName, tableMask, type, retrieveInfo)
 	 * @param filter user filter code
 	 */
 	List<TableDataset> retrieveDatasets(Map params,
 										 @ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
 												 Closure<Boolean> filter = null) {
-		if (params == null) params = [:]
+		if (params == null)
+			params = [:]
+		def retrieveInfo = BoolUtils.IsValue(params.retrieveInfo, true)
 		def result = [] as List<TableDataset>
-		(retrieveObjects(params, filter) as List<Map>).each { row ->
+		(retrieveObjects(MapUtils.Copy(params, ['retrieveInfo']), filter) as List<Map>).each { row ->
 			TableDataset d
 			switch ((row.type as String)?.toUpperCase()) {
 				case 'VIEW':
@@ -493,8 +496,10 @@ class JDBCConnection extends Connection implements UserLogins {
 				if (row.schemaName != null) d.schemaName = row.schemaName
 				d.tableName = row.tableName
 				if (row.description != null) d.description = row.description
-				retrieveFields()
-				retrieveOpts()
+				if (retrieveInfo) {
+					retrieveFields()
+					retrieveOpts()
+				}
 
 				return true
 			}
@@ -911,5 +916,29 @@ ${tab}${tab}}
 	void setTransactionIsolation(Integer value) {
 		tryConnect()
 		currentJDBCDriver.transactionIsolation = value
+	}
+
+	/**
+	 * Create schema in database
+	 * @param schemaName name of the created schema
+	 * @param createParams the parameters of the created scheme
+	 */
+	void createSchema(String schemaName, Map<String, Object> createParams = null) {
+		if (!driver.isOperation(Driver.Operation.CREATE_SCHEMA))
+			throw new ExceptionGETL('The driver does not support creating schemas in the database!')
+
+		currentJDBCDriver.createSchema(schemaName, createParams)
+	}
+
+	/**
+	 * Drop schema in database
+	 * @param schemaName name of the deleted schema
+	 * @param dropParams the parameters of the dropped scheme
+	 */
+	void dropSchema(String schemaName, Map<String, Object> dropParams = null) {
+		if (!driver.isOperation(Driver.Operation.DROP_SCHEMA))
+			throw new ExceptionGETL('The driver does not support dropping schemas in the database!')
+
+		currentJDBCDriver.dropSchema(schemaName, dropParams)
 	}
 }

@@ -125,11 +125,11 @@ class RepositorySave extends Getl {
         if (pathToSave != null)
             repositoryStorageManager.storagePath = pathToSave
 
-        options {
+        /*options {
             jdbcConnectionLoggingPath = null
             fileManagerLoggingPath = null
             tempDBSQLHistoryFile = null
-        }
+        }*/
 
         logFinest "Repository initialization ..."
         initRepository()

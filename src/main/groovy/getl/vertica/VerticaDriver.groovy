@@ -1,6 +1,5 @@
 package getl.vertica
 
-import getl.vertica.opts.VerticaCreateSpec
 import groovy.transform.CompileStatic
 import getl.csv.CSVDataset
 import getl.data.*
@@ -59,7 +58,7 @@ class VerticaDriver extends JDBCDriver {
 	List<Driver.Operation> operations() {
         return super.operations() +
                 [Driver.Operation.TRUNCATE, Driver.Operation.DROP, Driver.Operation.EXECUTE,
-				 Driver.Operation.CREATE, Driver.Operation.BULKLOAD]
+				 Driver.Operation.CREATE, Driver.Operation.BULKLOAD, Driver.Operation.CREATE_SCHEMA]
     }
 
 	@Override
@@ -517,5 +516,35 @@ class VerticaDriver extends JDBCDriver {
 			throw new ExceptionGETL("Unknown lookup type $lookupType!")
 
 		return res
+	}
+
+	@Override
+	void createSchema(String schemaName, Map<String, Object> createParams) {
+		def p = []
+		def ifNotExists = ''
+		if (createParams != null) {
+			if (BoolUtils.IsValue(createParams.ifNotExists))
+				ifNotExists = 'IF NOT EXISTS'
+			if (createParams.containsKey('authorization'))
+				p << "AUTHORIZATION ${createParams.authorization}"
+			if (createParams.containsKey('privileges'))
+				p << "DEFAULT ${createParams.privileges} SCHEMA PRIVILEGES"
+		}
+		jdbcConnection.executeCommand('CREATE SCHEMA {if_not_exists} {schema} {options}',
+				[queryParams: [schema: schemaName, if_not_exists: ifNotExists, options: p.join(' ')]])
+	}
+
+	@Override
+	void dropSchema(String schemaName, Map<String, Object> dropParams) {
+		def p = []
+		def ifExists = ''
+		if (dropParams != null) {
+			if (BoolUtils.IsValue(dropParams.ifExists))
+				ifExists = 'IF EXISTS'
+			if (BoolUtils.IsValue(dropParams.cascade))
+				p << 'CASCADE'
+		}
+		jdbcConnection.executeCommand('DROP SCHEMA {if_exists} {schema} {options}',
+				[queryParams: [schema: schemaName, if_exists: ifExists, options: p.join(' ')]])
 	}
 }
