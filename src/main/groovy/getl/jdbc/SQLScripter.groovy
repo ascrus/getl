@@ -55,7 +55,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 	/** External variables */
 	public Map<String, Object> extVars
 	/** All variables */
-	Map<String, Object> getAllVars() { (extVars != null)?((vars + extVars) as Map<String, Object>):vars }
+	Map<String, Object> getAllVars() { (extVars != null)?((extVars + vars) as Map<String, Object>):vars }
 	
 	/** 
 	 * Current type script command 
