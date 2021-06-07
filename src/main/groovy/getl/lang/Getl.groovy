@@ -4377,7 +4377,10 @@ Examples:
         if (owner instanceof TableDataset) {
             def tab = owner as TableDataset
             if (tab.schemaName != null) parent.extVars.put('schema_name', tab.schemaName)
-            if (tab.tableName != null) parent.extVars.put('table_name', tab.tableName)
+            if (tab.tableName != null) {
+                parent.extVars.put('table_name', tab.tableName)
+                parent.extVars.put('full_table_name', tab.fullTableName)
+            }
         }
         def pt = startProcess("Execution SQL script${(parent.connection != null) ? ' on [' + parent.connection + ']' : ''}")
         runClosure(parent, cl)
