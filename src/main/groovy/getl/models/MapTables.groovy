@@ -204,11 +204,15 @@ class MapTables extends DatasetsModel<MapTableSpec> {
      * Add linked tables to mapping
      * @param listOfLinkTables list of linked tables
      */
-    void addLinkTables(List<ExecutorListElement> listOfLinkTables) {
+    void addLinkTables(List<ExecutorListElement> listOfLinkTables,
+                       @DelegatesTo(MapTableSpec)
+                       @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec'])
+                               Closure cl = null) {
         listOfLinkTables.each { elem ->
             mapTable(elem.source as String) {
                 linkTo(elem.destination as String)
             }
+            mapTable(elem.source as String, cl)
         }
     }
 }
