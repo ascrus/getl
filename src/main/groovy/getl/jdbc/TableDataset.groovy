@@ -32,10 +32,6 @@ class TableDataset extends JDBCDataset {
 		methodParams.register('deleteRows', [])
 	}
 
-	/*@Override
-	@JsonIgnore
-	Type getType() { super.getType()?:tableType }*/
-
 	/** Schema name */
 	String getSchemaName() { ListUtils.NotNullValue([params.schemaName, currentJDBCConnection?.schemaName]) }
 	/** Schema name */
@@ -764,4 +760,9 @@ class TableDataset extends JDBCDataset {
 		def ds = new QueryDataset(connection: connection, query: query, queryParams: [table: fullTableName] + (qParams?:[:]))
 		return ds.rows()
 	}
+
+	/**
+	 * Retrieve table options
+	 */
+	void retrieveOpts() { validTableName() }
 }

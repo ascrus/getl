@@ -477,4 +477,22 @@ class VerticaTable extends TableDataset {
     void setOracleFields(OracleTable oraTable, Boolean allowClob = true, Boolean allowNumericWithoutLength = true) {
         setField(ProcessOracleFields(oraTable, allowClob, allowNumericWithoutLength))
     }
+
+    @Override
+    void retrieveOpts() {
+        super.retrieveOpts()
+        validTableName()
+
+        new QueryDataset().with {
+            useConnection currentJDBCConnection
+            def whereExpr = ['Upper(table_name) = \'' + tableName.toUpperCase() + '\'']
+            if (schemaName != null)
+                whereExpr << 'Upper(table_schema) = \'' + schemaName.toUpperCase() + '\''
+            queryParams.where = whereExpr.join(' AND ')
+            query = 'SELECT partition_expression FROM v_catalog.tables WHERE {where}'
+            def rows = rows()
+            if (!rows.isEmpty())
+                createDirective.partitionBy = rows[0].partition_expression
+        }
+    }
 }

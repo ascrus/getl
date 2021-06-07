@@ -801,7 +801,10 @@ class JDBCDriver extends Driver {
 						Field pf = result.find { Field f ->
 							(f.name.toLowerCase() == n.toLowerCase())
 						}
-						if (pf == null) throw new ExceptionGETL("Primary field \"${n}\" not found in fields list on object [${fullNameDataset(ds)}]")
+
+						if (pf == null)
+							throw new ExceptionGETL("Primary field \"${n}\" not found in fields list on object [${fullNameDataset(ds)}]")
+
 						ord++
 						pf.isKey = true
 						pf.ordKey = ord

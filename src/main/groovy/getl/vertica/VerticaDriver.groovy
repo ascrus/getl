@@ -1,5 +1,6 @@
 package getl.vertica
 
+import getl.vertica.opts.VerticaCreateSpec
 import groovy.transform.CompileStatic
 import getl.csv.CSVDataset
 import getl.data.*
