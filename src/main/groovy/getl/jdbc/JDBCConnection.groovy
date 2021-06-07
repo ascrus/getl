@@ -493,7 +493,10 @@ class JDBCConnection extends Connection implements UserLogins {
 				if (row.schemaName != null) d.schemaName = row.schemaName
 				d.tableName = row.tableName
 				if (row.description != null) d.description = row.description
-				true
+				retrieveFields()
+				retrieveOpts()
+
+				return true
 			}
 			result << d
 		}
