@@ -3,11 +3,11 @@ package getl.csv
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.opts.CSVReadSpec
 import getl.csv.opts.CSVWriteSpec
-import groovy.transform.InheritConstructors
 import getl.data.Connection
 import getl.data.FileDataset
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.InheritConstructors
 
 /**
  * CSV Dataset class
@@ -63,7 +63,7 @@ class CSVDataset extends FileDataset {
 		resetPresetMode()
 	}
 	/** File has header of fields name */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isHeader() { BoolUtils.IsValue(header, currentCsvConnection?.isHeader()) }
 
 	/** Ignore header field name */
@@ -71,7 +71,7 @@ class CSVDataset extends FileDataset {
 	/** Ignore header field name */
 	void setIgnoreHeader(Boolean value) { params.ignoreHeader = value }
 	/** Ignore header field name */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isIgnoreHeader() { BoolUtils.IsValue(ignoreHeader, currentCsvConnection?.isIgnoreHeader()) }
 	
 	/** Required format values for output to file */
@@ -79,7 +79,7 @@ class CSVDataset extends FileDataset {
 	/** Required format values for output to file */
 	void setFormatOutput (Boolean value) { params.formatOutput = value }
 	/** Required format values for output to file */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isFormatOutput() { BoolUtils.IsValue(formatOutput, currentCsvConnection?.isFormatOutput()) }
 
 	/** Check constraints during reading and writing */
@@ -87,7 +87,7 @@ class CSVDataset extends FileDataset {
 	/** Check constraints during reading and writing */
 	void setConstraintsCheck(Boolean value) { params.constraintsCheck = value }
 	/** Check constraints during reading and writing */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isConstraintsCheck() { BoolUtils.IsValue(constraintsCheck, currentCsvConnection?.isConstraintsCheck()) }
 	
 	/** Convert NULL to value */
@@ -105,7 +105,7 @@ class CSVDataset extends FileDataset {
 		resetPresetMode()
 	}
 	/** Required convert string to escape value */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isEscaped() { BoolUtils.IsValue(escaped, currentCsvConnection?.isEscaped()) }
 
 	/** Mode of quote value */
@@ -132,12 +132,16 @@ class CSVDataset extends FileDataset {
 	String getPresetMode() { params.presetMode as String }
 	/** File settings preset */
 	void setPresetMode(String value) {
-		if (!CSVConnection.PresetModes.containsKey(value))
-			throw new ExceptionGETL("Preset \"$value\" not defined!")
+		if (value != null) {
+			if ((!CSVConnection.PresetModes.containsKey(value)))
+				throw new ExceptionGETL("Preset \"$value\" not defined!")
+		}
 
 		params.presetMode = value
-		def p = CSVConnection.PresetModes.get(value) as Map
-		params.putAll(p)
+		if (value != null) {
+			def p = CSVConnection.PresetModes.get(value) as Map
+			params.putAll(p)
+		}
 	}
 	/** File settings preset */
 	String presetMode() { presetMode?:currentCsvConnection?.presetMode() }

@@ -192,7 +192,6 @@ class Field implements Serializable, Cloneable {
 	
 	private final Map<String, Object> extended = [:] as Map<String, Object>
 	/** Extended attributes */
-	@JsonIgnore
 	Map<String, Object> getExtended() { return this.extended }
 	/** Extended attributes */
 	void setExtended (Map<String, Object> value) {

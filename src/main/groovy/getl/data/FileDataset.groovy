@@ -48,7 +48,7 @@ class FileDataset extends Dataset {
 	/** Append if file exists */
 	void setAppend (Boolean value) { params.append = value }
 	/** Append if file exists */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isAppend() { append?:fileConnection?.isAppend() }
 	
 	/** Auto create path for connection */
@@ -56,7 +56,7 @@ class FileDataset extends Dataset {
 	/** Auto create path for connection */
 	void setCreatePath(Boolean value) { params.createPath = value }
 	/** Auto create path for connection */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isCreatePath() { createPath?:fileConnection?.isCreatePath() }
 	
 	/** Delete file if empty after write */
@@ -64,7 +64,7 @@ class FileDataset extends Dataset {
 	/** Delete file if empty after write */
 	void setDeleteOnEmpty(Boolean value) { params.deleteOnEmpty = value }
 	/** Delete file if empty after write */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isDeleteOnEmpty() { deleteOnEmpty?:fileConnection?.isDeleteOnEmpty() }
 	
 	/** File is pack of GZIP */

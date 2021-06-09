@@ -80,7 +80,7 @@ class FileConnection extends Connection {
 	/** Auto create path if not exists */
 	void setCreatePath(Boolean value) { params.createPath = value }
 	/** Auto create path if not exists */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isCreatePath() { BoolUtils.IsValue(createPath) }
 	
 	/** Delete file if empty after write */
@@ -88,7 +88,7 @@ class FileConnection extends Connection {
 	/** Delete file if empty after write */
 	void setDeleteOnEmpty(Boolean value) { params.deleteOnEmpty = value }
 	/** Delete file if empty after write */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isDeleteOnEmpty() { BoolUtils.IsValue(deleteOnEmpty) }
 	
 	/** Append to exists connection files */
@@ -96,7 +96,7 @@ class FileConnection extends Connection {
 	/** Append to exists connection files */
 	void setAppend(Boolean value) { params.append = value }
 	/** Append to exists connection files */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isAppend() { BoolUtils.IsValue(append) }
 	
 	/** Pack GZIP connection files */

@@ -81,7 +81,7 @@ class CSVConnection extends FileConnection {
 		resetPresetMode()
 	}
 	/** File has header of fields name */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isHeader() { BoolUtils.IsValue(header, true) }
 	
 	/** Ignore header field name */
@@ -89,7 +89,7 @@ class CSVConnection extends FileConnection {
 	/** Ignore header field name */
     void setIgnoreHeader(Boolean value) { params.ignoreHeader = value }
 	/** Ignore header field name */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isIgnoreHeader() { BoolUtils.IsValue(ignoreHeader, true) }
 	
 	/** Required convert string to escape value */
@@ -100,7 +100,7 @@ class CSVConnection extends FileConnection {
 		resetPresetMode()
 	}
 	/** Required convert string to escape value */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isEscaped() { BoolUtils.IsValue(escaped) }
 	
 	/** Convert NULL to value */
@@ -113,7 +113,7 @@ class CSVConnection extends FileConnection {
 	/** Required format values for output to file */
     void setFormatOutput(Boolean value) { params.formatOutput = value }
 	/** Required format values for output to file */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isFormatOutput() { BoolUtils.IsValue(formatOutput, true) }
 
 	/** Check constraints during reading and writing */
@@ -121,7 +121,7 @@ class CSVConnection extends FileConnection {
 	/** Check constraints during reading and writing */
 	void setConstraintsCheck(Boolean value) { params.constraintsCheck = value }
 	/** Check constraints during reading and writing */
-	@JsonIgnore
+	//@JsonIgnore
 	Boolean isConstraintsCheck() { BoolUtils.IsValue(constraintsCheck, false) }
 	
 	/** Mode of quote value */
