@@ -121,7 +121,8 @@ class VerticaDriver extends JDBCDriver {
 		if (rowDelimiterChar == '\r\n') rowDelimiterChar = '\n'
 
 		String parserText = '', fieldDelimiter = '', rowDelimiter = '', quoteStr = '', nullAsValue = ''
-		if (params.parser != null && !(params.parser as Map).isEmpty()) {
+		def useExternalParser = (params.parser != null && !(params.parser as Map).isEmpty())
+		if (useExternalParser) {
 			String parserFunc = (params.parser as Map).function
 			if (parserFunc == null) throw new ExceptionGETL('Required parser function name')
 			def parserOptions = (params.parser as Map).options as Map<String, Object>
@@ -192,7 +193,7 @@ class VerticaDriver extends JDBCDriver {
 		def map = params.map as List<Map>
 		def expressions = (params.expression as Map<String, String>)?:[:]
 		String loadMethod = ListUtils.NotNullValue([params.loadMethod, 'AUTO'])
-		def enforceLength = (parserText == null && BoolUtils.IsValue(params.enforceLength, true))
+		def enforceLength = (!useExternalParser && BoolUtils.IsValue(params.enforceLength, true))
 		def autoCommit = ListUtils.NotNullValue([BoolUtils.IsValue(params.autoCommit, null), dest.connection.tranCount == 0])
 		String compressed = ListUtils.NotNullValue([params.compressed, (isGzFile?'GZIP':null)])
 		String exceptionPath = FileUtils.TransformFilePath(params.exceptionPath as String)
@@ -432,7 +433,7 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	void prepareCsvTempFile(Dataset source, CSVDataset csvFile) {
 		super.prepareCsvTempFile(source, csvFile)
-		csvFile.escaped = (csvFile.field.find { it.type == Field.blobFieldType && source.fieldByName(it.name) != null } != null)
+		csvFile.escaped = true //(csvFile.field.find { it.type == Field.blobFieldType && source.fieldByName(it.name) != null } != null)
 	}
 
 	@Override

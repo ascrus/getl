@@ -413,11 +413,14 @@ class Flow {
 		Boolean bulkEscaped = params.bulkEscaped
 		Boolean bulkAsGZIP = params.bulkAsGZIP
 		if (isBulkLoad) {
-			if (isDestTemp || isDestVirtual) throw new ExceptionGETL("Is not possible to start the process BulkLoad for a given destination dataset!")
-			if (!dest.connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destination dataset not support bulk load!")
+			if (isDestTemp || isDestVirtual)
+				throw new ExceptionGETL("Is not possible to start the process BulkLoad for a given destination dataset!")
+			if (!dest.connection.driver.isOperation(Driver.Operation.BULKLOAD))
+				throw new ExceptionGETL("Destination dataset not support bulk load!")
 
 			childs.each { String name, FlowCopyChild child ->
-				if (!(child.dataset).connection.driver.isOperation(Driver.Operation.BULKLOAD)) throw new ExceptionGETL("Destination children dataset \"$name\" not support bulk load!")
+				if (!(child.dataset).connection.driver.isOperation(Driver.Operation.BULKLOAD))
+					throw new ExceptionGETL("Destination children dataset \"$name\" not support bulk load!")
 			}
 		}
 

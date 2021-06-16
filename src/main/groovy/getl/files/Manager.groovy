@@ -1720,10 +1720,9 @@ WHERE
 	 * @param throwError
 	 */
 	void createLocalDir(String dir, Boolean throwError) {
-		validConnect()
-
 		def fn = "${currentLocalDir()}/${dir}"
-		if (!new File(fn).mkdirs() && throwError) throw new ExceptionGETL("Cannot create local directory \"${fn}\"")
+		if (!new File(fn).mkdirs() && throwError)
+			throw new ExceptionGETL("Cannot create local directory \"${fn}\"")
 	}
 
 	/**
@@ -1740,7 +1739,6 @@ WHERE
 	 * @param throwError
 	 */
 	void removeLocalDir(String dir, Boolean throwError) {
-		validConnect()
 		def fn = "${currentLocalDir()}/${dir}"
 		if (!new File(fn).delete() && throwError)
 			throw new ExceptionGETL("Can not remove local directory \"${fn}\"")
@@ -1760,7 +1758,6 @@ WHERE
 	 * @param throwError
 	 */
 	Boolean removeLocalDirs(String dirName, Boolean throwError) {
-		validConnect()
         def fullDirName = new File("${currentLocalDir()}/$dirName").canonicalPath
 		def deleteRoot = (fullDirName != new File(localDirectory).canonicalPath)
         return FileUtils.DeleteFolder(fullDirName, deleteRoot, throwError)
@@ -1779,7 +1776,6 @@ WHERE
 	 * @param fileName
 	 */
 	void removeLocalFile(String fileName) {
-		validConnect()
 		def fn = "${currentLocalDir()}/$fileName"
 		if (!new File(fn).delete())
 			throw new ExceptionGETL("Can not remove Local file \"$fn\"")
@@ -1798,11 +1794,12 @@ WHERE
 	 * @param dir
 	 */
 	void changeLocalDirectory(String dir) {
-		validConnect()
+		if (dir == '.')
+			return
 
-		if (dir == '.') return
 		if (dir == '..') {
 			changeLocalDirectoryUp()
+			return
 		}
 
 		dir = FileUtils.PrepareDirPath(dir, !isWindowsFileSystem)
@@ -1824,8 +1821,6 @@ WHERE
 	 * Change local directory to up
 	 */
 	void changeLocalDirectoryUp() {
-		validConnect()
-
 		setCurrentLocalPath(localDirFile.parent)
 	}
 
@@ -1833,8 +1828,6 @@ WHERE
 	 * 	Change local directory to root
 	 */
 	void changeLocalDirectoryToRoot() {
-		validConnect()
-
 		setCurrentLocalPath(localDirectory)
 	}
 	
@@ -1844,8 +1837,6 @@ WHERE
 	 * @return
 	 */
 	Boolean existsLocalDirectory(String dir) {
-		validConnect()
-
 		new File(processLocalDirPath(dir)).exists()
 	}
 	
