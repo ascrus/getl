@@ -66,7 +66,7 @@ class Logs {
 	static private final List<Closure> events = [] as List<Closure>
 
 	/** Print stack trace for error */
-	static public Boolean printStackTraceError = true
+	static public Boolean printStackTraceError = false
 	
 	/**
 	 * Register event, closure has parameters String level, Date time, String message
@@ -348,10 +348,10 @@ class Logs {
 	 * @param error error exception
 	 */
 	@Synchronized
-	static void Exception (Throwable error) {
+	static void Exception(Throwable error) {
 		ToOut(Level.SEVERE, error.message)
 		StackTraceUtils.sanitize(error)
-		def t = (error.stackTrace.length > 0)?(" => " + error.stackTrace.join('\n')):""
+		def t = (error.stackTrace.length > 0)?(" => " + error.stackTrace.join('\n')):''
 		def message = FormatMessage((error.message?:'') + t)
 		logger.severe(message)
 		event(Level.SEVERE, error.message)
@@ -365,7 +365,7 @@ class Logs {
 	 * @param nameObject object name
 	 */
 	@Synchronized
-	static void Exception (Throwable error, String typeObject, String nameObject) {
+	static void Exception(Throwable error, String typeObject, String nameObject) {
 		ToOut(Level.SEVERE, error.message)
 		def message = "<${typeObject} ${nameObject}> ${error.getClass().name}: ${FormatMessage(error.message)}"
 		StackTraceUtils.sanitize(error)
@@ -440,7 +440,7 @@ class Logs {
 	 * @param data additional error data
 	 */
 	@Synchronized('operationLock')
-	static void Dump (Throwable error, String typeObject, String nameObject, def data) {
+	static void Dump(Throwable error, String typeObject, String nameObject, def data) {
 		if (fileNameHandler == null) {
 			Severe("Can not save dump, required logFileName")
 			println data.toString()

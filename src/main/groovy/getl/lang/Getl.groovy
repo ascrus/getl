@@ -309,6 +309,10 @@ Examples:
                         Logs.Finest("  logging the process \"${instance.getClass().name}\" to file \"${FileUtils.TransformFilePath(Logs.logFileName, false)}\"")
                     }
 
+                    if (en.printStackTraceError != null) {
+                        logging.logPrintStackTraceError = BoolUtils.IsValue(en.printStackTraceError)
+                    }
+
                     if (en.jdbcLogPath != null) {
                         jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
                                 [env: instance.configuration.environment, process: instance.getClass().name], false)
