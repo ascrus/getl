@@ -12,6 +12,7 @@ import groovy.transform.Field
 @Field String login = null
 @Field String path = null
 @Field String files = null
+@Field Map<String, Object> ext = null
 
 void check() {
     assert connection != null, 'It is required to specify the name of the connection to the JDBC server in the "connection" parameter!'
@@ -36,13 +37,16 @@ logFine "  files: ${scripts.join(', ')}"
 logFinest "Connect to server $con ..."
 con.connect()
 
+//noinspection GroovyVariableNotAssigned
 sql {scripter ->
     useConnection con
     con.transaction {
         scripts.each { fileName ->
             if (FileUtils.FileExtension(fileName) == '') fileName += '.sql'
             logFinest "Executing SQL script file \"$fileName\" ..."
-            def fn = ((path != null) ? (path + '/') : '') + fileName
+            def fn = ((path != null)?(path + '/'):'') + fileName
+            if (ext != null)
+                extVars = ext
             runFile fn
             logInfo "SQL script file \"$fileName\" executed successfully"
         }
