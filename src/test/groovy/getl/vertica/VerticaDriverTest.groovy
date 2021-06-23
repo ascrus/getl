@@ -1,5 +1,6 @@
 package getl.vertica
 
+import getl.data.Field
 import getl.jdbc.*
 import getl.lang.Getl
 import getl.proc.Flow
@@ -455,6 +456,82 @@ LIMIT 1'''
                 finally {
                     mart.drop(ifExists: true)
                     dim.drop(ifExists: true)
+                }
+            }
+        }
+    }
+
+    @Test
+    void testImportFields() {
+        Getl.Dsl {
+            def csvFile = csv {
+                useConnection csvConnection {path = '{GETL_TEST}/files' }
+                fileName = 'file1'
+                field('id') { type = integerFieldType; isKey = true }
+                field('name') { length = 50; isNull = false }
+                field('value') { type = doubleFieldType }
+                field('num') { type = numericFieldType }
+                field('num_small') { type = numericFieldType; length = 9 }
+                field('num_medium') { type = numericFieldType; length = 15 }
+                field('num_large') { type = numericFieldType; length = 30 }
+                field('dt') { type = dateFieldType }
+                field('ts') { type = datetimeFieldType }
+            }
+
+            def oraTable = oracleTable {
+                useConnection oracleConnection {}
+                schemaName = 'test'
+                tableName = 'table1'
+                field = csvFile.field
+                field('dt') { typeName = 'date' }
+            }
+
+            verticaTable {verTable ->
+                useConnection (con as VerticaConnection)
+                schemaName = 'public'
+                tableName = 'test_import_fields'
+
+                importFields(oraTable)
+                assertEquals(csvFile.field.size(), field.size())
+                assertEquals(csvFile.fieldByName('id'), fieldByName('id'))
+                assertEquals(csvFile.fieldByName('name').isNull, fieldByName('name').isNull)
+                assertEquals(csvFile.fieldByName('name').length * 2, fieldByName('name').length)
+                assertEquals(csvFile.fieldByName('value'), fieldByName('value'))
+                assertEquals(38, fieldByName('num').length)
+                assertEquals(12, fieldByName('num').precision)
+                assertEquals(Field.integerFieldType, fieldByName('num_small').type)
+                assertEquals(Field.bigintFieldType, fieldByName('num_medium').type)
+                assertEquals(csvFile.fieldByName('num_large'), fieldByName('num_large'))
+                assertEquals(Field.datetimeFieldType, fieldByName('dt').type)
+                assertNull(fieldByName('dt').typeName)
+                assertEquals(csvFile.fieldByName('ts'), fieldByName('ts'))
+
+                importFields(csvFile)
+                assertEquals(csvFile.field.size(), field.size())
+                assertEquals(csvFile.fieldByName('id'), fieldByName('id'))
+                assertEquals(csvFile.fieldByName('name').isNull, fieldByName('name').isNull)
+                assertEquals(csvFile.fieldByName('name').length * 2, fieldByName('name').length)
+                assertEquals(csvFile.fieldByName('value'), fieldByName('value'))
+                assertEquals(38, fieldByName('num').length)
+                assertEquals(12, fieldByName('num').precision)
+                assertEquals(csvFile.fieldByName('num_small'), fieldByName('num_small'))
+                assertEquals(csvFile.fieldByName('num_medium'), fieldByName('num_medium'))
+                assertEquals(csvFile.fieldByName('num_large'), fieldByName('num_large'))
+                assertEquals(csvFile.fieldByName('dt'), fieldByName('dt'))
+                assertEquals(csvFile.fieldByName('ts'), fieldByName('ts'))
+
+                drop(ifExists: true)
+                create()
+                try {
+                    retrieveFields()
+                    verticaTable {
+                        useConnection(con as VerticaConnection)
+                        importFields(verTable)
+                        assertEquals(verTable.field, field)
+                    }
+                }
+                finally {
+                    drop(ifExists: true)
                 }
             }
         }

@@ -125,16 +125,15 @@ class RepositorySave extends Getl {
         if (pathToSave != null)
             repositoryStorageManager.storagePath = pathToSave
 
-        /*options {
-            jdbcConnectionLoggingPath = null
-            fileManagerLoggingPath = null
-            tempDBSQLHistoryFile = null
-        }*/
+        def curJdbcConnectionLoggingPath = options.jdbcConnectionLoggingPath
+        def curFileManagerLoggingPath = options.fileManagerLoggingPath
+        def curTempDBSQLHistoryFile = options.tempDBSQLHistoryFile
 
         logFinest "Repository initialization ..."
         initRepository()
         if (repositoryStorageManager.storagePath == null)
             throw new ExceptionDSL('It is required to set the path for the repository files to "repositoryStorageManager.storagePath"!')
+
         if (FileUtils.IsResourceFileName(repositoryStorageManager.storagePath))
             throw new ExceptionDSL('The repository path cannot be resource path!')
 
@@ -187,11 +186,34 @@ class RepositorySave extends Getl {
             }
             logInfo "Accepted for processing $countMethods methods"
 
-            
             methods.each {type, listMethods ->
-                if (listMethods.isEmpty()) return
+                if (listMethods.isEmpty())
+                    return
+
                 logFinest "Calling methods with type \"$type\" ..."
+
+                def setOptions = { String curType ->
+                    options {
+                        jdbcConnectionLoggingPath = curJdbcConnectionLoggingPath
+                        fileManagerLoggingPath = curFileManagerLoggingPath
+                        tempDBSQLHistoryFile = curTempDBSQLHistoryFile
+                    }
+
+                    switch (curType) {
+                        case 'Connections':
+                            options {
+                                jdbcConnectionLoggingPath = null
+                                tempDBSQLHistoryFile = null
+                            }
+                            break
+                        case 'Files':
+                            options.fileManagerLoggingPath = null
+                    }
+                }
+
+                setOptions(type)
                 initRepositoryTypeProcess(type)
+
                 try {
                     listMethods.each { p ->
                         def methodName = p.methodName
@@ -214,7 +236,7 @@ class RepositorySave extends Getl {
                             def saveMethod = 'save' + type
                             thisObject."$methodName"()
                             if (type in ['Connections', 'Files'])
-                                    thisObject."$saveMethod"(e, mask)
+                                thisObject."$saveMethod"(e, mask)
                             else if (e == envs[0]) {
                                 if (type == 'Datasets')
                                     thisObject."$saveMethod"(retrieve, mask)
@@ -223,6 +245,8 @@ class RepositorySave extends Getl {
                             }
 
                             otherTypes?.each { otherType ->
+                                setOptions(otherType)
+
                                 def saveOtherMethod = 'save' + otherType
                                 if (otherType in ['Connections', 'Files'])
                                     thisObject."$saveOtherMethod"(e, null)

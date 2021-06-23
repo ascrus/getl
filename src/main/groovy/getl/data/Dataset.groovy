@@ -28,15 +28,6 @@ import groovy.transform.stc.SimpleType
 class Dataset implements Cloneable, GetlRepository, WithConnection {
 	Dataset () {
 		initParams()
-
-		methodParams.register('create', [])
-		methodParams.register('drop', [])
-		methodParams.register('truncate', [])
-		methodParams.register('bulkLoadFile', ['source', 'prepare', 'map', 'autoMap', 'autoCommit',
-											   'abortOnError', 'inheritFields', 'removeFile', 'saveFilePath'])
-		methodParams.register('eachRow', ['prepare', 'offs', 'limit', 'saveErrors', 'autoSchema'])
-		methodParams.register('openWrite', ['prepare', 'autoSchema'])
-		methodParams.register('lookup', ['key', 'strategy'])
 	}
 
 	@JsonIgnore
@@ -49,6 +40,16 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 	/** Initialization dataset parameters */
 	protected void initParams() {
+		methodParams.register('create', [])
+		methodParams.register('drop', [])
+		methodParams.register('truncate', [])
+		methodParams.register('bulkLoadFile', ['source', 'prepare', 'map', 'autoMap', 'autoCommit',
+											   'abortOnError', 'inheritFields', 'removeFile', 'saveFilePath'])
+		methodParams.register('eachRow', ['prepare', 'offs', 'limit', 'saveErrors', 'autoSchema'])
+		methodParams.register('openWrite', ['prepare', 'autoSchema'])
+		methodParams.register('lookup', ['key', 'strategy'])
+		methodParams.register('importFields', ['resetTypeName', 'resetAttributes'])
+
 		params.attributes = [:] as Map<String, Object>
 
 		def dirs = [:] as Map<String, Object>
@@ -113,12 +114,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		def configName = params.config
 		if (configName != null && params.dataset == null) {
 			def configParams = Config.FindSection("datasets.${configName}")
-			if (configParams == null) throw new ExceptionGETL("Connection \"${configName}\" not found in configuration")
+			if (configParams == null)
+				throw new ExceptionGETL("Connection \"${configName}\" not found in configuration")
 			params = configParams + params
 		}
 		
 		def datasetClass = params.dataset as String
-		if (datasetClass == null) throw new ExceptionGETL("Required parameter \"dataset\"")
+		if (datasetClass == null)
+			throw new ExceptionGETL("Required parameter \"dataset\"")
 		
 		def dataset = Class.forName(datasetClass).newInstance() as Dataset
 		if (params.containsKey("connection")) dataset.connection = params.connection as Connection
@@ -612,7 +615,9 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (!connection.driver.isOperation(Driver.Operation.CREATE))
 			throw new ExceptionGETL("Driver not supported create dataset")
 
-		if (procParams == null) procParams = [:]
+		if (procParams == null)
+			procParams = [:]
+
 		methodParams.validation("create", procParams, [connection.driver.methodParams.params("createDataset")])
 
 		def dirs = directives('create')?:[:]
@@ -798,17 +803,23 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Reset all fields parameters to default
 	 */
-	void resetFieldToDefault() {
+	void resetFieldToDefault(Boolean clearNotNull = true, Boolean clearKey = true) {
 		getField().each { Field f ->
-			f.isNull = true
-			f.isKey = false
+			if (clearNotNull)
+				f.isNull = true
+			if (clearKey)
+				f.isKey = false
+
 			f.isAutoincrement = false
 			f.isReadOnly = false
 			f.trim = false
 			f.compute = null
 			f.alias = null
-			if (f.length != null && !Field.AllowLength(f)) f.length = null
-			if (f.precision != null && !Field.AllowPrecision(f)) f.precision = null
+
+			if (f.length != null && !Field.AllowLength(f))
+				f.length = null
+			if (f.precision != null && !Field.AllowPrecision(f))
+				f.precision = null
 		}
 	}
 	
@@ -1636,5 +1647,42 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		}
 
 		return res
+	}
+
+	/**
+	 * Import fields from another dataset<br><br>
+	 * <b>Import options:</b><br>
+	 * <ul>
+	 *     <li>
+	 *         resetTypeName: reset the name of the field type, if the fields are imported from another type of
+	 *     	   connection, then it is reset regardless of the flag
+	 *     </li>
+	 *     <li>
+	 *         resetAttributes: reset additional field attributes, if fields are imported from another type
+	 *         of connection, then they are reset regardless of the flag
+	 *     </li>
+	 *</ul>
+	 * @param dataset source
+	 * @param importParams import options
+	 */
+	void importFields(Dataset dataset, Map importParams = [:]) {
+		if (importParams == null)
+			importParams = [:]
+
+		methodParams.validation('importFields', importParams, null)
+
+		def resetTypeName = BoolUtils.IsValue(importParams.resetTypeName)
+		def resetAttributes = BoolUtils.IsValue(importParams.resetAttributes)
+
+		field.clear()
+		setField(dataset.field)
+
+		def isCompatibleDataset = getClass().isInstance(dataset)
+
+		if (resetTypeName || !isCompatibleDataset)
+			resetFieldsTypeName()
+
+		if (resetAttributes || !isCompatibleDataset)
+			resetFieldToDefault(false, false)
 	}
 }
