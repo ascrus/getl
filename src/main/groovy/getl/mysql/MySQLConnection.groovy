@@ -1,24 +1,21 @@
 package getl.mysql
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.driver.Driver
 import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
 import getl.jdbc.JDBCConnection
+import groovy.transform.InheritConstructors
 
 /**
  * MySQL connection class
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class MySQLConnection extends JDBCConnection {
-	MySQLConnection() {
-		super(driver: MySQLDriver)
-	}
-	
-	MySQLConnection(Map params) {
-		super(new HashMap([driver: MySQLDriver]) + params?:[:])
-		if (this.getClass().name == 'getl.mysql.MySQLConnection') methodParams.validation("Super", params?:[:])
-	}
+	@Override
+	protected Class<Driver> driverClass() { MySQLDriver }
 
 	/** Current MySQL connection driver */
 	@JsonIgnore
@@ -30,12 +27,6 @@ class MySQLConnection extends JDBCConnection {
 		methodParams.register('Super', ['usedOldDriver'])
 	}
 	
-	@Override
-	protected void onLoadConfig (Map configSection) {
-		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.mysql.MySQLConnection') methodParams.validation("Super", params)
-	}
-
 	/** Enable if a driver under version 6 is used. */
 	Boolean getUsedOldDriver() { params.usedOldDriver as Boolean }
 	/** Enable if a driver under version 6 is used. */

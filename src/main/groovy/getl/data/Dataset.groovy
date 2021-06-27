@@ -27,6 +27,7 @@ import groovy.transform.stc.SimpleType
 @SuppressWarnings('unused')
 class Dataset implements Cloneable, GetlRepository, WithConnection {
 	Dataset () {
+		registerParameters()
 		initParams()
 	}
 
@@ -38,8 +39,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
-	/** Initialization dataset parameters */
-	protected void initParams() {
+	/**
+	 * Register connection parameters with method validator
+	 */
+	protected void registerParameters () {
 		methodParams.register('create', [])
 		methodParams.register('drop', [])
 		methodParams.register('truncate', [])
@@ -49,7 +52,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		methodParams.register('openWrite', ['prepare', 'autoSchema'])
 		methodParams.register('lookup', ['key', 'strategy'])
 		methodParams.register('importFields', ['resetTypeName', 'resetAttributes'])
+	}
 
+	/** Initialization dataset parameters */
+	protected void initParams() {
 		params.attributes = [:] as Map<String, Object>
 
 		def dirs = [:] as Map<String, Object>
@@ -352,7 +358,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	private final Closure doInitConfig = {
 		if (config == null) return
 		Map cp = Config.FindSection("datasets.${config}")
-		if (cp.isEmpty()) throw new ExceptionGETL("Config section \"datasets.${config}\" not found")
+		if (cp.isEmpty())
+			throw new ExceptionGETL("Config section \"datasets.${config}\" not found")
 		onLoadConfig(cp)
 		Logs.Config("Load config \"datasets\".\"${config}\" for object \"${this.getClass().name}.${objectName}\"")
 	}

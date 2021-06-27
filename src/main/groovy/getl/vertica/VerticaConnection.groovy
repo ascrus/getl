@@ -1,6 +1,7 @@
 package getl.vertica
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
@@ -9,6 +10,7 @@ import getl.utils.BoolUtils
 import getl.utils.Logs
 import getl.utils.Path
 import getl.utils.StringUtils
+import groovy.transform.InheritConstructors
 
 import static getl.utils.StringUtils.WithGroupSeparator
 import getl.jdbc.JDBCConnection
@@ -20,27 +22,15 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-@SuppressWarnings('unused')
+@InheritConstructors
 class VerticaConnection extends JDBCConnection {
-	VerticaConnection () {
-		super(driver: VerticaDriver)
-	}
-	
-	VerticaConnection (Map params) {
-		super(new HashMap([driver: VerticaDriver]) + params?:[:])
-		if (this.getClass().name == 'getl.vertica.VerticaConnection') methodParams.validation("Super", params?:[:])
-	}
+	@Override
+	protected Class<Driver> driverClass() { VerticaDriver }
 
 	/** Current Vertica connection driver */
 	@JsonIgnore
 	VerticaDriver getCurrentVerticaDriver() { driver as VerticaDriver }
-	
-	@Override
-	protected void onLoadConfig (Map configSection) {
-		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.vertica.VerticaConnection') methodParams.validation("Super", params)
-	}
-	
+
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()

@@ -6,6 +6,7 @@ import getl.files.sub.FileManagerList
 import getl.files.sub.Filter
 import getl.utils.*
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 
 /**
@@ -13,9 +14,11 @@ import groovy.transform.Synchronized
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class FileManager extends Manager {
-	FileManager () {
-		super()
+	@Override
+	void initParams() {
+		super.initParams()
 		isWindowsFileSystem = (File.separator == "\\")
 	}
 
@@ -26,8 +29,8 @@ class FileManager extends Manager {
 	private File currentDirectory
 
 	@Override
-	protected void initMethods () {
-		super.initMethods()
+	protected void registerParameters() {
+		super.registerParameters()
 		methodParams.register("super", ["codePage", "createRootPath"])
 	}
 	

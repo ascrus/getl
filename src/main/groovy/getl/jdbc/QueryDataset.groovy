@@ -13,8 +13,10 @@ import getl.utils.StringUtils
  */
 @InheritConstructors
 class QueryDataset extends JDBCDataset {
-	QueryDataset() {
-		super()
+	@Override
+	protected void initParams() {
+		super.initParams()
+
 		sysParams.isQuery = true
 	}
 

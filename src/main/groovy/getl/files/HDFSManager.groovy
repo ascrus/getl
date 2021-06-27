@@ -10,6 +10,7 @@ import getl.utils.StringUtils
 import getl.lang.sub.LoginManager
 import getl.lang.sub.StorageLogins
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.fs.FileSystem
@@ -25,6 +26,7 @@ import java.security.PrivilegedExceptionAction
  * HDFS manager
  * @author Alexsey Konstantinov
  */
+@InheritConstructors
 class HDFSManager extends Manager implements UserLogins {
     @Override
     void initParams() {
@@ -34,8 +36,8 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    protected void initMethods() {
-        super.initMethods()
+    protected void registerParameters() {
+        super.registerParameters()
         methodParams.register('super', ['server', 'port', 'login', 'password', 'storedLogins', 'replication'])
     }
 

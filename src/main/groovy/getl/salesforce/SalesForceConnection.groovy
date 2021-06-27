@@ -3,27 +3,21 @@ package getl.salesforce
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
+import getl.driver.Driver
 import getl.lang.Getl
 import getl.lang.sub.UserLogins
 import getl.lang.sub.LoginManager
 import getl.lang.sub.StorageLogins
+import groovy.transform.InheritConstructors
 
 /**
  * SalesForce Connection class
  * @author Dmitry Shaldin
  */
+@InheritConstructors
 class SalesForceConnection extends Connection implements UserLogins {
-    SalesForceConnection() {
-		super(driver: SalesForceDriver)
-	}
-
-	SalesForceConnection(Map params) {
-		super(new HashMap([driver: SalesForceDriver]) + params?:[:])
-
-		if (this.getClass().name == 'getl.salesforce.SalesForceConnection') {
-			methodParams.validation("Super", params?:[:])
-		}
-	}
+	@Override
+	protected Class<Driver> driverClass() { SalesForceDriver }
 
 	/** Current SalesForce connection driver */
 	@JsonIgnore
@@ -40,15 +34,6 @@ class SalesForceConnection extends Connection implements UserLogins {
 	protected void registerParameters() {
 		super.registerParameters()
 		methodParams.register('Super', ['login', 'password', 'connectURL', 'batchSize', 'storedLogins'])
-	}
-
-	@Override
-	protected void onLoadConfig(Map configSection) {
-		super.onLoadConfig(configSection)
-
-		if (this.getClass().name == 'getl.salesforce.SalesForceConnection') {
-			methodParams.validation('Super', params)
-		}
 	}
 
 	/** SalesForce login */

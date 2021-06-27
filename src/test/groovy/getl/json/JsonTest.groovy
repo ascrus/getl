@@ -101,4 +101,49 @@ class JsonTest extends GetlTest {
             }
         }
     }
+
+    @Test
+    void testReadWebService() {
+        Getl.Dsl {
+            json {
+                useConnection jsonConnection {
+                    path = TFS.systemPath
+                    webUrl = 'http://api.openweathermap.org/data/2.5'
+                    webParams.APPID = '100f6914239ec31e8f8d5aa1dedd27ab'
+                }
+
+                fileName = 'weather.json'
+                isTemporaryFile = true
+
+                webServiceName = 'find'
+                webParams.q = '{city},{country}'
+                webParams.type = 'like'
+                webParams.units = 'metric'
+                webVars.city = 'Moscow'
+                webVars.country = 'RU'
+
+                rootNode = 'list'
+                field('id') {  type = integerFieldType }
+                field('name')
+                field('lat') { type = numericFieldType; length = 10; precision = 4; alias = 'coord.lat' }
+                field('lon') { type = numericFieldType; length = 10; precision = 4; alias = 'coord.lon' }
+                field('temp') { type = numericFieldType; length = 5; precision = 2; alias = 'main.temp' }
+                field('feels_like') { type = numericFieldType; length = 5; precision = 2; alias = 'main.feels_like' }
+                field('temp_min') { type = numericFieldType; length = 5; precision = 2; alias = 'main.temp_min' }
+                field('temp_max') { type = numericFieldType; length = 5; precision = 2; alias = 'main.temp_max' }
+                field('pressure') { type = integerFieldType; alias = 'main.pressure' }
+                field('humidity') { type = integerFieldType; alias = 'main.humidity' }
+                field('wind_speed') { type = integerFieldType; alias = 'wind.speed' }
+                field('wind_deg') { type = integerFieldType; alias = 'wind.deg' }
+
+                readFromWeb()
+                def rows = rows()
+                assertEquals(2, rows.size())
+                assertEquals('Moscow', rows[0].name)
+                assertEquals(55.7522, rows[0].lat)
+                assertEquals(37.6156, rows[0].lon)
+                println rows[0]
+            }
+        }
+    }
 }

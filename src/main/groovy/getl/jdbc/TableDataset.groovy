@@ -13,6 +13,7 @@ import getl.stat.ProcessTime
 import getl.tfs.TDS
 import getl.utils.*
 import getl.exception.ExceptionGETL
+import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -21,15 +22,22 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class TableDataset extends JDBCDataset {
-	@SuppressWarnings("UnnecessaryQualifiedReference")
-	TableDataset() {
-		super()
-		sysParams.isTable = true
-		type = tableType
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
 		methodParams.register('unionDataset', [])
 		methodParams.register('generateDsl', [])
 		methodParams.register('deleteRows', [])
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+
+		sysParams.isTable = true
+		type = tableType
 	}
 
 	/** Schema name */

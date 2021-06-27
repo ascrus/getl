@@ -3,6 +3,7 @@ package getl.xero
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
+import getl.driver.Driver
 import getl.utils.FileUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
@@ -12,18 +13,10 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class XeroConnection extends Connection {
-    XeroConnection() {
-        super(driver: XeroDriver)
-    }
-
-    XeroConnection (Map params) {
-        super(new HashMap([driver: XeroDriver]) + params?:[:])
-
-        if (this.getClass().name == 'getl.xero.XeroConnection') {
-            methodParams.validation("Super", params?:[:])
-        }
-    }
+    @Override
+    protected Class<Driver> driverClass() { XeroDriver }
 
     /** Current Xero connection driver */
     @JsonIgnore
@@ -32,16 +25,8 @@ class XeroConnection extends Connection {
     @Override
     protected void registerParameters () {
         super.registerParameters()
+
         methodParams.register('Super', ['useResourceFile', 'configInResource', 'historyFile'])
-    }
-
-    @Override
-    protected void onLoadConfig (Map configSection) {
-        super.onLoadConfig(configSection)
-
-        if (this.getClass().name == 'getl.xero.XeroConnection') {
-            methodParams.validation('Super', params)
-        }
     }
 
     /** Use resource file with configuration file and certificate file */

@@ -12,29 +12,18 @@ import getl.data.*
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class TFSDataset extends CSVDataset {
-	TFSDataset () {
-		super()
+	@Override
+	protected void initParams() {
+		super.initParams()
+
 		manualSchema = true
 		isTemporaryFile = true
 		if (fileName == null)
 			fileName = FileUtils.UniqueFileName()
 	}
 
-	@Override
-    void openWrite (Map procParams) {
-        super.openWrite(procParams)
-
-        if ((connection as TFS).deleteOnExit) {
-            new File(fullFileName()).deleteOnExit()
-
-            if (isAutoSchema()) {
-                File s = new File(fullFileSchemaName())
-                if (s.exists()) s.deleteOnExit()
-            }
-        }
-    }
-	
 	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof TFS))

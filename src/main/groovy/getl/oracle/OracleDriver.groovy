@@ -16,14 +16,22 @@ import groovy.transform.Synchronized
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class OracleDriver extends JDBCDriver {
-	OracleDriver () {
-		super()
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
+
+		methodParams.register("eachRow", ["scn", "timestamp", "hints", "usePartition"])
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+
 		caseObjectName = 'UPPER'
 		commitDDL = true
 		transactionalDDL = true
-
-		methodParams.register("eachRow", ["scn", "timestamp", "hints", "usePartition"])
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

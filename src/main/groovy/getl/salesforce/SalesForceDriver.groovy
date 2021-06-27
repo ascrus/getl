@@ -39,9 +39,11 @@ import groovy.transform.InheritConstructors
  * SalesForce Driver class
  * @author Dmitry Shaldin
  */
+@InheritConstructors
 class SalesForceDriver extends Driver {
-    SalesForceDriver () {
-        super()
+    @Override
+    protected void registerParameters() {
+        super.registerParameters()
 
 		methodParams.register('eachRow', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])
 		methodParams.register('retrieveObjects', [])

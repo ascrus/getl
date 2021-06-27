@@ -13,7 +13,6 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class AggregatorDatasetDriver extends VirtualDatasetDriver {
-	
 	static private List<String> getFieldByGroup(Dataset dataset) {
 		def res = dataset.params.fieldByGroup as List<String>
 		if (res == null) throw new ExceptionGETL("Required parameter \"fieldByGroup\" in dataset")
@@ -27,7 +26,6 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	}
 	
 	@Override
-
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		Dataset ds = getDestination(dataset)
 		def fieldByGroup = getFieldByGroup(dataset)
@@ -62,7 +60,6 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	}
 
 	@Override
-
 	void write(Dataset dataset, Map row) {
 		def data = dataset.params.aggregator_data as Map
 		def aggregateCode = dataset.params.aggregator_code as Closure
@@ -71,7 +68,6 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	}
 
 	@Override
-
 	void doneWrite(Dataset dataset) {
 		Dataset ds = getDestination(dataset)
 		def data = dataset.params.aggregator_data as Map<Object, Map>
@@ -82,7 +78,6 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 	}
 
 	@Override
-
 	void closeWrite(Dataset dataset) {
 		Dataset ds = getDestination(dataset)
 		ds.closeWrite()

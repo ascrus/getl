@@ -141,18 +141,25 @@ class FileUtils {
 	
 	/**
 	 * Rename file
-	 * @param fileName
-	 * @param newName
+	 * @param fileName original file path
+	 * @param newName new file path
+	 * @return result
 	 */
-	static void RenameTo(String fileName, String newName) {
+	static Boolean RenameTo(String fileName, String newName) {
         fileName = TransformFilePath(ConvertToDefaultOSPath(fileName))
         newName = TransformFilePath(ConvertToDefaultOSPath(newName))
 		File f = new File(fileName)
-		if (!f.exists()) throw new ExceptionGETL("File \"$fileName\" not found!")
+		if (!f.exists())
+			throw new ExceptionGETL("File \"$fileName\" not found!")
 
-        if (!(File.separator in newName)) newName = PathFromFile(fileName) + File.separator + newName
+        if (newName.indexOf(File.separator) == -1)
+			newName = PathFromFile(fileName) + File.separator + newName
 
-		f.renameTo(newName)
+		def newFile = new File(newName)
+		if (newFile.exists())
+			newFile.delete()
+
+		return f.renameTo(newFile)
 	}
 	
 	/**

@@ -1,32 +1,22 @@
 package getl.tfs
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.*
 import getl.exception.ExceptionGETL
 import getl.utils.FileUtils
+import groovy.transform.InheritConstructors
 
 /**
  * Temporary File Storage manager class
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class TFS extends CSVConnection {
-	TFS() {
-		super(driver: TFSDriver)
-
-		validParams()
-
-		methodParams.register("Super", ["deleteOnExit"])
-		if (this.getClass().name == 'getl.tfs.TFS') methodParams.validation("Super", params)
-	}
-
-	TFS(Map params) {
-		super(new HashMap([driver: TFSDriver]) + params?:[:])
-
-		validParams()
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
 
 		methodParams.register("Super", ["deleteOnExit"])
-		if (this.getClass().name == 'getl.tfs.TFS') methodParams.validation("Super", params?:[:])
 	}
 
 	static private String _systemPath
@@ -44,8 +34,9 @@ class TFS extends CSVConnection {
 	/** Global temporary file connection object */
 	static public final TFS storage = new TFS([:])
 
-	/** Validation parameters */
+	@Override
 	protected void validParams() {
+		super.validParams()
 		if (params.fieldDelimiter == null) fieldDelimiter = "|"
 		if (params.rowDelimiter == null) rowDelimiter = "\n"
 		if (params.autoSchema == null) autoSchema = true
@@ -54,9 +45,16 @@ class TFS extends CSVConnection {
 		if (params.header == null) header = false
 
 		if (params.deleteOnExit == null) params.deleteOnExit = true
-		setPath((params.path as String)?:"$systemPath/tfs-files.getl")
+		if (params.path == null) params.path = "$systemPath/tfs-files.getl"
+		//setPath((params.path as String)?:"$systemPath/tfs-files.getl")
 	}
-	
+
+	@Override
+	protected void doInitConnection () {
+		super.doInitConnection()
+		setPath(path)
+	}
+
 	/** Delete temporary directories and files after exit is program */
 	Boolean getDeleteOnExit () { params.deleteOnExit }
 	/** Delete temporary directories and files after exit is program */

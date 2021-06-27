@@ -3,21 +3,20 @@ package getl.transform
 import getl.data.Connection
 import getl.data.VirtualDataset
 import getl.exception.ExceptionGETL
+import groovy.transform.InheritConstructors
 
 /**
  * Aggregation dataset class
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class AggregatorDataset extends VirtualDataset {
-	AggregatorDataset () {
-		super()
-		connection = new Connection([driver: AggregatorDatasetDriver])
-	}
-
 	@Override
 	protected void initParams() {
 		super.initParams()
+
+		connection = new Connection([driver: AggregatorDatasetDriver])
 		params.fieldByGroup = [] as List<String>
 		params.fieldCalc = [:] as Map<String, Map>
 		params.algorithm = "HASH"

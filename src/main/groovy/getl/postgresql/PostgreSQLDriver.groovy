@@ -11,9 +11,12 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class PostgreSQLDriver extends JDBCDriver {
-    PostgreSQLDriver() {
-        super()
+	@Override
+	protected void initParams() {
+		super.initParams()
+
 		commitDDL = true
 		transactionalDDL = true
 		transactionalTruncate = true

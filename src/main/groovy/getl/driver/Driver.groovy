@@ -11,18 +11,13 @@ import getl.utils.ParamMethodValidator
  *
  */
 abstract class Driver {
+	/** Method parameters validator */
 	public ParamMethodValidator methodParams = new ParamMethodValidator()
 	
-	Driver () {
-		methodParams.register("retrieveObjects", [])
-		methodParams.register("createDataset", [])
-		methodParams.register("dropDataset", [])
-		methodParams.register("clearDataset", [])
-		methodParams.register("bulkLoadFile", [])
-		methodParams.register("rows", [])
-		methodParams.register("eachRow", [])
-		methodParams.register("openWrite", [])
-		methodParams.register("executeCommand", [])
+	Driver(Connection con) {
+		registerParameters()
+		this.connection = con
+		initParams()
 	}
 	
 	protected Connection connection
@@ -57,6 +52,26 @@ abstract class Driver {
 	Boolean isOperation(Driver.Operation operation) {
 		(operations().indexOf(operation) != -1)
 	}
+
+	/**
+	 * Register connection parameters with method validator
+	 */
+	protected void registerParameters() {
+		methodParams.register("retrieveObjects", [])
+		methodParams.register("createDataset", [])
+		methodParams.register("dropDataset", [])
+		methodParams.register("clearDataset", [])
+		methodParams.register("bulkLoadFile", [])
+		methodParams.register("rows", [])
+		methodParams.register("eachRow", [])
+		methodParams.register("openWrite", [])
+		methodParams.register("executeCommand", [])
+	}
+
+	/**
+	 * Initialization parameters
+	 */
+	protected void initParams() { }
 
     void prepareField (Field field) { }
 

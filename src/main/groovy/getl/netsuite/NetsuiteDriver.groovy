@@ -10,12 +10,19 @@ import groovy.transform.InheritConstructors
  * @author Dmitry Shalind
  *
  */
+@InheritConstructors
 class NetsuiteDriver extends JDBCDriver {
-	NetsuiteDriver() {
-		super()
-		
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
+
 		methodParams.unregister('eachRow', ['onlyFields', 'excludeFields', 'where', 'order', 'offset',
 											'queryParams', 'sqlParams', 'fetchSize', 'forUpdate', 'filter'])
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
 
 		connectionParamBegin = ';'
 		connectionParamJoin = ';'

@@ -3,23 +3,24 @@ package getl.excel
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
 import getl.data.FileConnection
+import getl.driver.Driver
+import groovy.transform.InheritConstructors
 
 /**
  * Excel Connection class
  * @author Dmitry Shaldin
  *
  */
+@InheritConstructors
 class ExcelConnection extends FileConnection {
-    ExcelConnection () {
-        super(driver: ExcelDriver)
-    }
+    @Override
+    protected Class<Driver> driverClass() { ExcelDriver }
 
-    ExcelConnection (Map params) {
-        super(new HashMap([driver: ExcelDriver]) + params?:[:])
+    @Override
+    protected void registerParameters() {
+        super.registerParameters()
 		
 		methodParams.register('Super', ['header', 'showWarnings'])
-		
-		if (this.getClass().name == 'getl.excel.ExcelConnection') methodParams.validation('Super', params?:[:])
     }
 
     /** Current Excel connection driver */

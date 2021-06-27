@@ -2,6 +2,7 @@ package getl.jdbc
 
 import getl.jdbc.opts.SequenceCreateSpec
 import groovy.sql.Sql
+import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import java.sql.DriverManager
 import java.sql.PreparedStatement
@@ -20,9 +21,11 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class JDBCDriver extends Driver {
-	JDBCDriver () {
-		super()
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
 		methodParams.register('retrieveObjects', ['dbName', 'schemaName', 'tableName', 'type', 'tableMask', 'filter'])
 		methodParams.register('createDataset', ['ifNotExists', 'onCommit', 'indexes', 'hashPrimaryKey',
                                                 'useNativeDBType', 'type'])
@@ -37,6 +40,38 @@ class JDBCDriver extends Driver {
 		methodParams.register('executeCommand', ['historyText'])
 		methodParams.register('deleteRows', ['where', 'queryParams'])
 		methodParams.register('clearDataset', ['autoTran', 'truncate'])
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+
+		addPKFieldsToUpdateStatementFromMerge = false
+
+		sqlCreateTable = '''CREATE ${type} TABLE ${ifNotExists} ${tableName} (
+${fields}
+${pk}
+)
+${extend}'''
+		sqlCreateIndex = '''CREATE ${unique} ${hash} INDEX ${ifNotExists} ${indexName} ON ${tableName} (${columns})'''
+		commitDDL = false
+		transactionalDDL = false
+		transactionalTruncate = false
+		caseObjectName = "NONE" // LOWER OR UPPER
+		supportLocalTemporaryRetrieveFields = true
+		globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
+		localTemporaryTablePrefix = 'LOCAL TEMPORARY'
+		memoryTablePrefix = 'MEMORY'
+		externalTablePrefix = 'EXTERNAL'
+		connectionParamBegin = "?"
+		connectionParamJoin = "&"
+		defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_COMMITTED
+		dropSyntax = 'DROP {object} {ifexists} {name}'
+		syntaxPartitionKey = '{column}'
+		syntaxPartitionKeyInColumns = true
+		syntaxPartitionLastPosInValues = true
+		fieldPrefix = '"'
+		tablePrefix = '"'
 	}
 
 	/** Start time connect */
@@ -353,9 +388,9 @@ class JDBCDriver extends Driver {
 		[:]
 	}
 	
-	protected String connectionParamBegin = "?"
-	protected String connectionParamJoin = "&"
-	protected String connectionParamFinish = null
+	protected String connectionParamBegin
+	protected String connectionParamJoin
+	protected String connectionParamFinish
 	
 	/**
 	 * Build jdbc connection url 
@@ -421,7 +456,7 @@ class JDBCDriver extends Driver {
 	}
 
 	/** Default transaction isolation on connect */
-    protected Integer defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_COMMITTED
+    protected Integer defaultTransactionIsolation
 
 	/** JDBC class */
 	private Class jdbcClass
@@ -894,31 +929,24 @@ class JDBCDriver extends Driver {
 		}
 	}
 	
-	protected String sqlCreateTable = '''CREATE ${type} TABLE ${ifNotExists} ${tableName} (
-${fields}
-${pk}
-)
-${extend}'''
-	
-	protected String sqlCreateIndex = '''CREATE ${unique} ${hash} INDEX ${ifNotExists} ${indexName} ON ${tableName} (${columns})'''
-	
-	protected String sqlAutoIncrement = null
-	
-	protected Boolean commitDDL = false
-	protected Boolean transactionalDDL = false
-	protected Boolean transactionalTruncate = false
-	
-	protected String caseObjectName = "NONE" // LOWER OR UPPER
-	protected String defaultDBName = null
-	protected String defaultSchemaName = null
-	protected String tempSchemaName = null
-	protected Boolean supportLocalTemporaryRetrieveFields = true
-	Boolean isSupportLocalTemporaryRetrieveFields() { supportLocalTemporaryRetrieveFields }
+	protected String sqlCreateTable
+	protected String sqlCreateIndex
+	protected String sqlAutoIncrement
+	protected Boolean commitDDL
+	protected Boolean transactionalDDL
+	protected Boolean transactionalTruncate
+	/** Case named object (NONE, LOWER, UPPER) */
+	protected String caseObjectName
+	protected String defaultDBName
+	protected String defaultSchemaName
+	protected String tempSchemaName
+	protected Boolean supportLocalTemporaryRetrieveFields
+	protected String globalTemporaryTablePrefix
+	protected String localTemporaryTablePrefix
+	protected String memoryTablePrefix
+	protected String externalTablePrefix
 
-	protected String globalTemporaryTablePrefix = 'GLOBAL TEMPORARY'
-	protected String localTemporaryTablePrefix = 'LOCAL TEMPORARY'
-	protected String memoryTablePrefix = 'MEMORY'
-	protected String externalTablePrefix = 'EXTERNAL'
+	Boolean isSupportLocalTemporaryRetrieveFields() { supportLocalTemporaryRetrieveFields }
 
 	/** Name dual system table */
 	String getSysDualTable() { return null }
@@ -1097,7 +1125,7 @@ ${extend}'''
 	}
 	
 	/** Start prefix for tables name */
-	protected String tablePrefix = '"'
+	protected String tablePrefix
 	/** Start prefix for tables name */
 	@SuppressWarnings('unused')
 	String getTablePrefix() { tablePrefix }
@@ -1109,7 +1137,7 @@ ${extend}'''
 	String getTableEndPrefix() { tableEndPrefix }
 
 	/** Start prefix for fields name */
-	protected String fieldPrefix = '"'
+	protected String fieldPrefix
 	/** Start prefix for fields name */
 	String getFieldPrefix() { fieldPrefix }
 
@@ -1237,8 +1265,7 @@ ${extend}'''
 	}
 
 	/** Drop sql statement syntax */
-	@SuppressWarnings('SpellCheckingInspection')
-	protected String dropSyntax = 'DROP {object} {ifexists} {name}'
+	protected String dropSyntax
 
 	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Synchronized
@@ -1919,15 +1946,15 @@ $sql
 	/**
 	 * Use partition key in columns definition for sql statement
 	 */
-	protected def syntaxPartitionKeyInColumns = true
+	protected Boolean syntaxPartitionKeyInColumns
 
 	/**
 	 * Partition key syntax for use in SQL statement
 	 */
-	protected def syntaxPartitionKey = '{column}'
+	protected String syntaxPartitionKey
 
 	/** When inserting, indicate the values of the partition fields are indicated last in the list of fields */
-	protected def syntaxPartitionLastPosInValues = true
+	protected Boolean syntaxPartitionLastPosInValues
 
 	/**
 	 * SQL insert statement pattern
@@ -2332,7 +2359,7 @@ $sql
     /**
      * Add PK fields to update statement from merge operator
      */
-    protected Boolean addPKFieldsToUpdateStatementFromMerge = false
+    protected Boolean addPKFieldsToUpdateStatementFromMerge
 
 	/**
 	 * Generate merge statement

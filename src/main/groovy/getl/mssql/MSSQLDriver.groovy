@@ -13,13 +13,20 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class MSSQLDriver extends JDBCDriver {
-	MSSQLDriver () {
-		super()
-		
-		methodParams.register('eachRow', ['with'])
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
 
-		defaultSchemaName = "dbo"
+		methodParams.register('eachRow', ['with'])
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+
+		defaultSchemaName = 'dbo'
 		fieldPrefix = '['
 		fieldEndPrefix = ']'
 		tablePrefix = '['

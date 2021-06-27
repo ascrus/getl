@@ -11,9 +11,11 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class MySQLDriver extends JDBCDriver {
-	MySQLDriver () {
-		super()
+	@Override
+	protected void initParams() {
+		super.initParams()
 
 		connectionParamBegin = '?'
 		connectionParamJoin = '&'

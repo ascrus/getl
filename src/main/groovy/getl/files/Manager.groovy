@@ -29,26 +29,25 @@ import groovy.transform.stc.SimpleType
 @SuppressWarnings('unused')
 abstract class Manager implements Cloneable, GetlRepository {
 	Manager() {
+		registerParameters()
+		initParams()
+		validParams()
+		resetLocalDir()
+	}
+
+	/** Register manager parameteres */
+	protected void registerParameters() {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
 				 'sqlHistoryFile', 'saveOriginalDate', 'fileListSortOrder', 'limitDirs', 'limitCountFiles',
 				 'limitSizeFiles', 'threadLevel', 'recursive', 'ignoreExistInStory', 'createStory', 'takePathInStory',
-				 'attributes', 'story', 'storyName', 'description'])
+				 'attributes', 'story', 'storyName', 'description', 'config'])
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'fileListSortOrder',
 				 'limitDirs', 'limitCountFiles', 'limitSizeFiles', 'threadLevel', 'ignoreExistInStory',
 				 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory'])
 		methodParams.register('downloadFiles',
 				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
-
-		//noinspection SpellCheckingInspection
-		tempDirFile = new File(TFS.systemPath + '/files.localdir')
-		tempDirFile.deleteOnExit()
-
-		resetLocalDir()
-
-		initParams()
-		initMethods()
 	}
 
 	/** Temporary local directory for managers */
@@ -62,6 +61,13 @@ abstract class Manager implements Cloneable, GetlRepository {
 		params.rootPath = '/'
 		params.attributes = [:] as Map<String, Object>
 		params.fileListSortOrder = [] as List<String>
+
+		writeErrorsToLog = true
+		isWindowsFileSystem = false
+
+		tempDirFile = new File(TFS.systemPath + '/files.localdir')
+		tempDirFile.deleteOnExit()
+
 		currentRootPathSet()
 	}
 
@@ -108,7 +114,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		MapUtils.MergeMap(params,
 				MapUtils.CleanMap(parameters, ['manager', 'config', 'localDirectory']) as Map<String, Object>)
 
-		validateParams()
+		validParams()
 
 		if (locDir != null)
 			setLocalDirectory(locDir)
@@ -319,17 +325,17 @@ abstract class Manager implements Cloneable, GetlRepository {
 	
 	/** Write errors to log */
 	@JsonIgnore
-	public Boolean writeErrorsToLog = true
+	public Boolean writeErrorsToLog
 	
 	/** File system is windows */
-	protected Boolean isWindowsFileSystem = false
+	protected Boolean isWindowsFileSystem
 	
 	private final Closure doInitConfig = {
 		if (config == null) return
 		Map cp = Config.FindSection("files.${config}")
 		if (cp.isEmpty()) throw new ExceptionGETL("Config section \"files.${config}\" not found")
-		methodParams.validation("super", cp)
 		onLoadConfig(cp)
+		validParams()
 		Logs.Config("Load config \"files\".\"config\" for object \"${this.getClass().name}\"")
 	}
 
@@ -342,11 +348,11 @@ abstract class Manager implements Cloneable, GetlRepository {
 	@JsonIgnore
 	File getLocalDirectoryFile() { localDirFile }
 
-	/** Validate parameters */
-	void validateParams() {
-		methodParams.validation("super", params)
+	/** Validation parameters */
+	protected void validParams() {
+		methodParams.validation('super', params)
 	}
-	
+
 	/**
 	 * Init configuration load
 	 * @param configSection
@@ -363,9 +369,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 	@JsonIgnore
 	abstract Boolean isCaseSensitiveName()
 	
-	/** Init validator methods */
-	protected void initMethods() { }
-
 	/** Connect to server */
 	void connect() {
 		validRootPath()

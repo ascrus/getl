@@ -3,15 +3,18 @@ package getl.firebird
 import getl.driver.Driver
 import getl.jdbc.JDBCDataset
 import getl.jdbc.JDBCDriver
+import groovy.transform.InheritConstructors
 
 /**
  * Firebird driver class
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class FirebirdDriver extends JDBCDriver{
-    FirebirdDriver() {
-        super()
+    @Override
+    protected void initParams() {
+        super.initParams()
 
         connectionParamBegin = '?'
         connectionParamJoin = ';'

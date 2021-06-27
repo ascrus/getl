@@ -11,6 +11,7 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class XeroDataset extends Dataset {
     @Override
     void setConnection(Connection value) {

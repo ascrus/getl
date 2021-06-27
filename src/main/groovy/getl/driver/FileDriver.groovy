@@ -2,6 +2,7 @@ package getl.driver
 
 import getl.data.opts.FileWriteOpts
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
@@ -16,13 +17,16 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class FileDriver extends Driver {
+	/** Retrieve object type  */
 	static enum RetrieveObjectType {FILE, DIR}
-
+	/** Retrieve sort method */
 	static enum RetrieveObjectSort {NONE, NAME, DATE, SIZE}
-	
-	FileDriver () {
-		super()
+
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
 		methodParams.register('retrieveObjects', ['directory', 'mask', 'type', 'sort', 'recursive'])
 		methodParams.register('eachRow', ['append', 'codePage'])
 		methodParams.register('openWrite', ['append', 'codePage', 'createPath', 'deleteOnEmpty',
@@ -324,6 +328,14 @@ class FileDriver extends Driver {
 		def writer
 		OutputStream output
 		def file = new File(fn)
+
+		if (dataset.isTemporaryFile) {
+			file.deleteOnExit()
+			if (dataset.autoSchema) {
+				File s = new File(dataset.fullFileSchemaName())
+				if (s.exists()) s.deleteOnExit()
+			}
+		}
 
 		if (isGzFile) {
 			output = new GZIPOutputStream(new FileOutputStream(file, isAppend))

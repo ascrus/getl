@@ -3,23 +3,18 @@ package getl.kafka
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
+import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import groovy.transform.InheritConstructors
 
 /**
  * Kafka connection class
  * @author Alexsey Konstantinov
  */
+@InheritConstructors
 class KafkaConnection extends Connection {
-    KafkaConnection() {
-        super(driver: KafkaDriver)
-    }
-
-    KafkaConnection(Map params) {
-        super(new HashMap([driver: KafkaDriver]) + params?:[:])
-        if (this.getClass().name == 'getl.kafka.KafkaConnection') {
-            methodParams.validation("Super", params?:[:])
-        }
-    }
+    @Override
+    protected Class<Driver> driverClass() { KafkaDriver }
 
     /** Current Kafka connection driver */
     @JsonIgnore
@@ -35,15 +30,6 @@ class KafkaConnection extends Connection {
     protected void registerParameters() {
         super.registerParameters()
         methodParams.register('Super', ['bootstrapServers', 'connectProperties', 'groupId'])
-    }
-
-    @Override
-    protected void onLoadConfig(Map configSection) {
-        super.onLoadConfig(configSection)
-
-        if (this.getClass().name == 'getl.kafka.KafkaConnection') {
-            methodParams.validation('Super', params)
-        }
     }
 
     @Override

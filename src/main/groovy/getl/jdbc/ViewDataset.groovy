@@ -8,10 +8,12 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class ViewDataset extends TableDataset {
-	@SuppressWarnings("UnnecessaryQualifiedReference")
-	ViewDataset() {
-		super()
+	@Override
+	protected void initParams() {
+		super.initParams()
+
 		sysParams.isView = true
 		type = viewType
 	}

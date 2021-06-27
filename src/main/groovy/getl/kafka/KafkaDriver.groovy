@@ -14,6 +14,7 @@ import getl.utils.MapUtils
 import getl.utils.StringUtils
 import groovy.json.JsonGenerator
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -23,6 +24,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.TopicPartition
 import java.time.Duration
 
+@InheritConstructors
 class KafkaDriver extends Driver {
     @Override
     List<Support> supported() {

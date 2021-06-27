@@ -5,10 +5,12 @@ import getl.data.Field
 import getl.data.FileDataset
 import getl.driver.Driver
 import getl.driver.FileDriver
+import getl.driver.WebServiceDriver
 import getl.exception.ExceptionGETL
 import getl.utils.GenerationUtils
 import getl.utils.Logs
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 import groovy.yaml.YamlSlurper
 
 /**
@@ -16,11 +18,8 @@ import groovy.yaml.YamlSlurper
  * @author Alexsey Konstantinov
  *
  */
-class YAMLDriver extends FileDriver {
-    YAMLDriver() {
-        super()
-    }
-
+@InheritConstructors
+class YAMLDriver extends WebServiceDriver {
     @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Support> supported() {
@@ -50,7 +49,7 @@ class YAMLDriver extends FileDriver {
      */
     @CompileStatic
     @SuppressWarnings("GrMethodMayBeStatic")
-    protected void readRows (YAMLDataset dataset, List<String> listFields, Integer limit, def data, Closure code) {
+    protected void readRows(YAMLDataset dataset, List<String> listFields, Integer limit, def data, Closure code) {
         StringBuilder sb = new StringBuilder()
         sb << "{ getl.yaml.YAMLDataset dataset, Closure code, Object data, Integer limit ->\n"
         sb << 'proc(dataset, code, data, limit)\n'

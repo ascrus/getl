@@ -2,10 +2,12 @@ package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.opts.FileDatasetRetrieveObjectsSpec
+import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.driver.FileDriver
 import getl.files.FileManager
 import getl.utils.*
+import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -14,15 +16,14 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class FileConnection extends Connection {
-	FileConnection() {
-		super(driver: FileDriver)
-	}
+	@Override
+	protected Class<Driver> driverClass() { FileDriver }
 
-	FileConnection(Map params) {
-		super((params != null)?(params + (!params.containsKey('driver')?[driver: FileDriver]:[:])):null)
-		if (!(driver instanceof FileDriver))
-			throw new ExceptionGETL("Required FileDriver instance class for connection!")
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
 
 		methodParams.register('Super', ['path', 'codePage', 'createPath', 'isGzFile', 'extension', 'append',
 										'deleteOnEmpty', 'fileSeparator', 'bufferSize', 'formatDate', 'formatTime',
@@ -31,12 +32,18 @@ class FileConnection extends Connection {
 	}
 
 	@Override
+	protected void initParams() {
+		super.initParams()
+
+		connectionFileManager = new FileManager()
+	}
+
+	@Override
 	protected void doInitConnection() {
 		super.doInitConnection()
-		// File manager
-		connectionFileManager = new FileManager()
-		// Init path
-		if (path != null) setPath(path)
+
+		if (path != null)
+			setPath(path)
 	}
 
 	@Override
@@ -63,7 +70,11 @@ class FileConnection extends Connection {
 			if (unixName.split('/').size() > 1 && unixName[unixName.length() - 1] == '/')
 				value = value.substring(0, value.length() - 1)
 		}
+
+		if (connectionFileManager.connected)
+			connectionFileManager.disconnect()
 		connectionFileManager.rootPath = value
+
 		params.path = value
 		currentPath = null
 	}

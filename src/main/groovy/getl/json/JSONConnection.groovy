@@ -3,6 +3,8 @@ package getl.json
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
 import getl.data.FileConnection
+import getl.data.WebServiceConnection
+import getl.driver.Driver
 import groovy.transform.InheritConstructors
 
 /**
@@ -10,16 +12,10 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-class JSONConnection extends FileConnection {
-	JSONConnection () {
-		super([driver: JSONDriver])
-	}
-	
-	JSONConnection (Map params) {
-		super(new HashMap([driver: JSONDriver]) + params?:[:])
-		
-		if (this.getClass().name == 'getl.json.JSONConnection') methodParams.validation("Super", params?:[:])
-	}
+@InheritConstructors
+class JSONConnection extends WebServiceConnection {
+	@Override
+	protected Class<Driver> driverClass() { JSONDriver }
 
 	/** Current JSON connection driver */
 	@JsonIgnore

@@ -1,6 +1,7 @@
 package getl.impala
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.driver.Driver
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
 import groovy.transform.InheritConstructors
@@ -11,14 +12,8 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class ImpalaConnection extends JDBCConnection {
-    ImpalaConnection() {
-        super(driver: ImpalaDriver)
-    }
-
-    ImpalaConnection(Map params) {
-        super(new HashMap([driver: ImpalaDriver]) + params?:[:])
-        if (this.getClass().name == 'getl.impala.ImpalaConnection') methodParams.validation('Super', params?:[:])
-    }
+    @Override
+    protected Class<Driver> driverClass() { ImpalaDriver }
 
     /** Current Impala connection driver */
     @JsonIgnore
@@ -34,12 +29,6 @@ class ImpalaConnection extends JDBCConnection {
     protected void doInitConnection () {
         super.doInitConnection()
         driverName = 'com.cloudera.impala.jdbc.Driver'
-    }
-
-    @Override
-    protected void onLoadConfig (Map configSection) {
-        super.onLoadConfig(configSection)
-        if (this.getClass().name == 'getl.impala.ImpalaConnection') methodParams.validation('Super', params)
     }
 
     /** HDFS host */

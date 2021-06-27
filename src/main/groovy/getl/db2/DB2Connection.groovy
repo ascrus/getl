@@ -1,33 +1,24 @@
 package getl.db2
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.driver.Driver
 import getl.jdbc.TableDataset
 import getl.jdbc.JDBCConnection
+import groovy.transform.InheritConstructors
 
 /**
  * IBM DB2 connection class
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class DB2Connection extends JDBCConnection {
-	DB2Connection() {
-		super(driver: DB2Driver)
-	}
-	
-	DB2Connection(Map params) {
-		super(new HashMap([driver: DB2Driver]) + params?:[:])
-		if (this.getClass().name == 'getl.db2.DB2Connection') methodParams.validation("Super", params?:[:])
-	}
+	@Override
+	protected Class<Driver> driverClass() { DB2Driver }
 
 	/** Current DB2 connection driver */
 	@JsonIgnore
 	DB2Driver getCurrentDB2Driver() { driver as DB2Driver }
-	
-	@Override
-	protected void onLoadConfig (Map configSection) {
-		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.db2.DB2Connection') methodParams.validation("Super", params)
-	}
 	
 	@Override
 	protected void doInitConnection () {

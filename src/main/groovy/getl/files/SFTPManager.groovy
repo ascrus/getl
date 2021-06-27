@@ -44,8 +44,8 @@ class SFTPManager extends Manager implements UserLogins {
 	//private ChannelSftp getChannelFtp() { channelFtp }
 	
 	@Override
-	protected void initMethods() {
-		super.initMethods()
+	protected void registerParameters() {
+		super.registerParameters()
 		methodParams.register('super', ['server', 'port', 'login', 'password', 'knownHostsFile',
 										'identityFile', 'codePage', 'aliveInterval', 'aliveCountMax', 'hostKey',
 										'hostOS', 'storedLogins', 'strictHostKeyChecking'])

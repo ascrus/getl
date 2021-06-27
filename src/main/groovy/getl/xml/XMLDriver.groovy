@@ -5,6 +5,7 @@ import getl.data.*
 import getl.driver.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.InheritConstructors
 import groovy.xml.XmlParser
 
 /**
@@ -12,9 +13,12 @@ import groovy.xml.XmlParser
  * @author Alexsey Konstantinov
  *
  */
-class XMLDriver extends FileDriver {
-	XMLDriver () {
-		super()
+@InheritConstructors
+class XMLDriver extends WebServiceDriver {
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
+
 		methodParams.register("eachRow", ["fields", "filter", "initAttr"])
 	}
 

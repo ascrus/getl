@@ -2,7 +2,8 @@ package getl.xml
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
-import getl.data.FileConnection
+import getl.data.WebServiceConnection
+import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import groovy.transform.InheritConstructors
 
@@ -11,17 +12,16 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
-class XMLConnection extends FileConnection {
-	XMLConnection () {
-		super(driver: XMLDriver)
-	}
-	
-	XMLConnection (Map params) {
-		super(new HashMap([driver: XMLDriver]) + params?:[:])
+@InheritConstructors
+class XMLConnection extends WebServiceConnection {
+	@Override
+	protected Class<Driver> driverClass() { XMLDriver }
+
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
 
 		methodParams.register('Super', ['defaultAccessMethod'])
-		
-		if (this.getClass().name == 'getl.xml.XMLConnection') methodParams.validation('Super', params?:[:])
 	}
 
 	/** Current XML connection driver */

@@ -10,6 +10,7 @@ import getl.files.FileManager
 import getl.utils.*
 
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 import org.codehaus.groovy.runtime.StringBufferWriter
 
 import java.text.DecimalFormat
@@ -30,9 +31,11 @@ import org.supercsv.quote.*
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class CSVDriver extends FileDriver {
-	CSVDriver () {
-		super()
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
 		methodParams.register('eachRow', ['isValid', 'quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header',
 										  'isSplit', 'readAsText', 'escaped', 'processError', 'filter',
 										  'nullAsValue', 'ignoreHeader', 'skipRows', 'limit'])

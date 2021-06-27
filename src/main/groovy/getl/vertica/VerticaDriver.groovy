@@ -7,23 +7,21 @@ import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import getl.jdbc.*
+import groovy.transform.InheritConstructors
 
 /**
  * Vertica driver class
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class VerticaDriver extends JDBCDriver {
-	VerticaDriver () {
-		super()
-
-		defaultSchemaName = 'public'
-		tempSchemaName = 'v_temp_schema'
-
-        addPKFieldsToUpdateStatementFromMerge = true
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
 
 		methodParams.register('createDataset', ['orderBy', 'segmentedBy', 'unsegmented', 'partitionBy'])
-        methodParams.register('eachRow', ['label', 'tablesample'])
+		methodParams.register('eachRow', ['label', 'tablesample'])
 		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
 				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
@@ -31,6 +29,16 @@ class VerticaDriver extends JDBCDriver {
 				 'parser', 'streamName', 'files'])
 		methodParams.register('unionDataset', ['direct'])
 		methodParams.register('deleteRows', ['direct', 'label'])
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+
+		defaultSchemaName = 'public'
+		tempSchemaName = 'v_temp_schema'
+
+        addPKFieldsToUpdateStatementFromMerge = true
 	}
 
     @Override

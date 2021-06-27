@@ -8,6 +8,7 @@ import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
 import getl.utils.*
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.poifs.filesystem.POIFSFileSystem
 import org.apache.poi.ss.usermodel.CellType
@@ -26,9 +27,11 @@ import java.text.DecimalFormatSymbols
  * @author Dmitry Shaldin and Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class ExcelDriver extends FileDriver {
-    ExcelDriver () {
-        super()
+    @Override
+    protected void registerParameters() {
+        super.registerParameters()
         methodParams.register('eachRow', ['header', 'offset', 'limit', 'showWarnings', 'filter'])
     }
 

@@ -16,45 +16,56 @@ import groovy.transform.stc.SimpleType
  *
  */
 class Connection implements Cloneable, GetlRepository {
-	/**
-	 * Not supported
-	 */
-	Connection() {
-		throw new ExceptionGETL('Basic constructor not supported')
-	}
-	
-	/**
-	 * Create new connection with class of driver and parameters
-	 * @param params Name in configuration file with "connections" section
-	 *
-	 * Use for parameters internal name:
-	 * driver - Driver class name
-	 * config - Name in configuration file with "connections" section
-	 */
-	Connection(Map parameters) {
+	/** Create new connection with class of driver and parameters */
+	Connection(Map parameters = null) {
 		registerParameters()
 
 		initParams()
+		validParams()
 
-		Class driverClass = parameters.driver as Class
-		if (driverClass == null) throw new ExceptionGETL("Required parameter \"driver\" (driver class name)")
-		this.driver = driverClass.newInstance() as Driver
-		this.driver.connection = this
+		if (parameters == null)
+			parameters = [:]
+
+		Class<Driver> connectionDriverClass = driverClass()
+		Class<Driver> driverClass = (parameters.driver as Class<Driver>)?:connectionDriverClass
+		if (driverClass == null)
+			throw new ExceptionGETL("Required parameter \"driver\" (driver class name)")
+
+		//driver = driverClass.newInstance(this) as Driver
+		def driverConstr = driverClass.getConstructor(Connection)
+		if (driverConstr == null)
+			throw new ExceptionGETL("Class ${driverClass.name} has not corrected constructor!")
+		driver = driverConstr.newInstance(this) as Driver
+		if (!connectionDriverClass.isInstance(driver))
+			throw new ExceptionGETL("Required ${connectionDriverClass.name} instance class for connection!")
+
+		//this.driver.connection = this
+
 		def load_config = parameters.config as String
-		if (load_config != null) setConfig(load_config)
+		if (load_config != null)
+			setConfig(load_config)
+
 		MapUtils.MergeMap(this.params as Map<String, Object>,
 				MapUtils.CleanMap(parameters, ['driver', 'config']) as Map<String, Object> )
+
 		doInitConnection()
 	}
+
+	/** Used driver class */
+	@SuppressWarnings('GrMethodMayBeStatic')
+	protected Class<Driver> driverClass() { Driver }
 
 	/** Parameters validator */
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
 
-	/**
-	 * Initialization parameters
-	 */
+	/** Initialization parameters */
 	protected void initParams() {
 		params.attributes = [:] as Map<String, Object>
+	}
+
+	/** Validation parameters */
+	protected void validParams() {
+		methodParams.validation('Super', params)
 	}
 	
 	/**
@@ -204,6 +215,8 @@ class Connection implements Cloneable, GetlRepository {
 		}
 		else {
 			onLoadConfig(cp)
+			validParams()
+
 			Logs.Config("Load config \"connections\".\"${config}\" for object \"${this.getClass().name}\"")
 		}
 	}

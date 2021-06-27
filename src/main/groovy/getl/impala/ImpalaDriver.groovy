@@ -12,15 +12,28 @@ import getl.utils.Logs
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
+import java.sql.Connection
+
 /**
  * Impala driver class
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
 class ImpalaDriver extends JDBCDriver {
-    @SuppressWarnings("UnnecessaryQualifiedReference")
-    ImpalaDriver() {
-        super()
+    @Override
+    protected void registerParameters() {
+        super.registerParameters()
+        methodParams.register('createDataset',
+                ['sortBy', 'rowFormat', 'storedAs', 'location', 'tblproperties', 'serdeproperties',
+                 'fieldsTerminated', 'escapedBy', 'linesTerminatedBy', 'select'])
+        methodParams.register('openWrite', ['overwrite'])
+        methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
+                                               'hdfsDir', 'processRow', 'expression'])
+    }
+
+    @Override
+    protected void initParams() {
+        super.initParams()
 
         tablePrefix = '`'
         fieldPrefix = '`'
@@ -31,16 +44,9 @@ class ImpalaDriver extends JDBCDriver {
 
         syntaxPartitionKeyInColumns = false
 
-        defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_UNCOMMITTED
+        defaultTransactionIsolation = Connection.TRANSACTION_READ_UNCOMMITTED
 
         defaultSchemaName = 'default'
-
-        methodParams.register('createDataset',
-                ['sortBy', 'rowFormat', 'storedAs', 'location', 'tblproperties', 'serdeproperties',
-                 'fieldsTerminated', 'escapedBy', 'linesTerminatedBy', 'select'])
-        methodParams.register('openWrite', ['overwrite'])
-        methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
-                                               'hdfsDir', 'processRow', 'expression'])
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")

@@ -1,23 +1,20 @@
 package getl.hive
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
+import groovy.transform.InheritConstructors
 
 /**
  * Hive connection
  * @author Aleksey Konstantinov
  */
+@InheritConstructors
 class HiveConnection extends JDBCConnection {
-    HiveConnection() {
-        super(driver: HiveDriver)
-    }
-
-    HiveConnection(Map params) {
-        super(new HashMap([driver: HiveDriver]) + params?:[:])
-        if (this.getClass().name == 'getl.hive.HiveConnection') methodParams.validation('Super', params?:[:])
-    }
+    @Override
+    protected Class<Driver> driverClass() { HiveDriver }
 
     /** Current Hive connection driver */
     @JsonIgnore
@@ -32,8 +29,8 @@ class HiveConnection extends JDBCConnection {
     @Override
     protected void onLoadConfig (Map configSection) {
         super.onLoadConfig(configSection)
-        if (this.getClass().name == 'getl.hive.HiveConnection') methodParams.validation('Super', params)
-        if (params.vendor != null) setVendor(params.vendor as String)
+        if (params.vendor != null)
+            setVendor(params.vendor as String)
     }
 
     @Override

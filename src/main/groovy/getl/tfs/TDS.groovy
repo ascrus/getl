@@ -5,6 +5,7 @@ import getl.jdbc.TableDataset
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
 import getl.h2.*
+import groovy.transform.InheritConstructors
 import org.h2.tools.DeleteDbFiles
 
 /**
@@ -12,42 +13,16 @@ import org.h2.tools.DeleteDbFiles
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class TDS extends H2Connection {
-	TDS() {
-		super()
+	@Override
+	protected void initParams() {
+		super.initParams()
 		
-		if (connectURL == null && params."inMemory" == null) params.inMemory = true
-		if (connectURL == null && connectDatabase == null) connectDatabase = "getl"
-		if (login == null && password == null) {
-			login = "easyloader"
-			password = "easydata"
-		}
-		if (connectProperty."PAGE_SIZE" == null) {
-			connectProperty."PAGE_SIZE" = 8192
-		}
-		if (connectProperty."LOG" == null) {
-			connectProperty."LOG" = 0
-		}
-		if (connectProperty."UNDO_LOG" == null) {
-			connectProperty."UNDO_LOG" = 0
-		}
+		if (connectURL == null && params."inMemory" == null)
+			params.inMemory = true
 
-		synchronized (TDS.lock) {
-			if (sqlHistoryFile == null && TDS.storage?.sqlHistoryFile != null)
-				sqlHistoryFile = TDS.storage.sqlHistoryFile
-		}
-
-		config = "getl_tds"
-	}
-	
-	TDS(Map initParams) {
-		super(initParams?:[:])
-		
-		if (this.getClass().name == 'getl.tfs.TDS') methodParams.validation("Super", initParams?:[:])
-		
-		if (connectURL == null && params."inMemory" == null) params.inMemory = true
-
-		synchronized (TDS.lock) {
+		synchronized (lock) {
 			if (connectURL == null && connectDatabase == null) {
 				if (inMemory) {
 					connectDatabase = "getl"
@@ -104,12 +79,6 @@ class TDS extends H2Connection {
 	
 	/** Default parameters */
 	static public Map<String, Object> defaultParams = [:] as Map<String, Object>
-	
-	@Override
-	protected void onLoadConfig (Map configSection) {
-		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.tfs.TDS') methodParams.validation("Super", params)
-	}
 	
 	@Override
 	protected void doBeforeConnect () {

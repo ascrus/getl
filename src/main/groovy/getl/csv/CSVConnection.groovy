@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset.QuoteMode
 import getl.data.Dataset
 import getl.data.FileConnection
+import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.utils.*
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 
 /**
@@ -14,20 +14,26 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class CSVConnection extends FileConnection {
-	CSVConnection () {
-		super([driver: CSVDriver])
-		resetPresetMode()
-	}
-	
-	CSVConnection (Map params) {
-		super(new HashMap([driver: CSVDriver]) + params?:[:])
+	@Override
+	protected Class<Driver> driverClass() { CSVDriver }
 
-		methodParams.register('Super', ['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped', 
-										'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime', 
-										'formatDateTime', 'uniFormatDateTime', 'ignoreHeader', 'locale',
-										'constraintsCheck', 'presetMode'])
-		if (this.getClass().name == 'getl.csv.CSVConnection') methodParams.validation('Super', params?:[:])
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
+
+		methodParams.register('Super',
+				['quoteStr', 'fieldDelimiter', 'rowDelimiter', 'header', 'escaped',
+					'nullAsValue', 'quoteMode', 'decimalSeparator', 'formatDate', 'formatTime',
+					'formatDateTime', 'uniFormatDateTime', 'ignoreHeader', 'locale',
+					'constraintsCheck', 'presetMode'])
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+
 		if (presetMode == null)
 			resetPresetMode()
 	}

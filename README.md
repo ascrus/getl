@@ -21,7 +21,7 @@ IBM DB2, FireBird, H2 Database, Hadoop Hive, Cloudera Impala, MS SQLServer, MySq
 CSV, MS Excel, Json, XML, Yaml.
 
 ## Supported cloud sources
-Kafka, SalesForce.
+Kafka, SalesForce, WebServices.
 
 ## Supported file systems
 Local file systems Windows and Linux, FTP, SFTP, Hadoop HDFS.

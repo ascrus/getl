@@ -31,8 +31,9 @@ class VerticaTable extends TableDataset {
     static public final lookupDefaultUsingType = 'DEFAULT USING'
 
     @Override
-    protected void initParams() {
-        super.initParams()
+    protected void registerParameters() {
+        super.registerParameters()
+
         methodParams.register('importFields', ['convertToUtf', 'allowClob', 'allowNumericWithoutLength'])
     }
 

@@ -3,6 +3,7 @@ package getl.json
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.json.opts.JSONReadSpec
+import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import getl.data.Connection
@@ -13,9 +14,12 @@ import getl.data.StructureFileDataset
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class JSONDataset extends StructureFileDataset {
-	JSONDataset () {
-		super()
+	@Override
+	protected void initParams() {
+		super.initParams()
+
 		_driver_params = [:] as Map<String, Object>
 	}
 

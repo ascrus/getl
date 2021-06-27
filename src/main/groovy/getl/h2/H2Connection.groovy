@@ -1,30 +1,31 @@
 package getl.h2
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.driver.Driver
 import getl.jdbc.JDBCDriver
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
 import getl.utils.*
+import groovy.transform.InheritConstructors
 
 /**
  * H2 connection class
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class H2Connection extends JDBCConnection {
-	H2Connection() {
-		super(driver: H2Driver)
-		if (connectProperty.LOCK_TIMEOUT == null) connectProperty.LOCK_TIMEOUT = 10000
+	@Override
+	protected Class<Driver> driverClass() { H2Driver }
+
+	@Override
+	protected void initParams() {
+		super.initParams()
+
+		if (connectProperty.LOCK_TIMEOUT == null)
+			connectProperty.LOCK_TIMEOUT = 10000
 		connectProperty.CASE_INSENSITIVE_IDENTIFIERS = true
 		connectProperty.ALIAS_COLUMN_NAME = true
-	}
-	
-	H2Connection(Map params) {
-		super(new HashMap([driver: H2Driver]) + params?:[:])
-		if (connectProperty.LOCK_TIMEOUT == null) connectProperty.LOCK_TIMEOUT = 10000
-		connectProperty.CASE_INSENSITIVE_IDENTIFIERS = true
-		connectProperty.ALIAS_COLUMN_NAME = true
-		if (this.getClass().name == 'getl.h2.H2Connection') methodParams.validation('Super', params?:[:])
 	}
 
 	/** Current H2 connection driver */
@@ -35,12 +36,6 @@ class H2Connection extends JDBCConnection {
 	protected void registerParameters () {
 		super.registerParameters()
 		methodParams.register('Super', ['inMemory', 'exclusive'])
-	}
-	
-	@Override
-	protected void onLoadConfig (Map configSection) {
-		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.h2.H2Connection') methodParams.validation('Super', params)
 	}
 	
 	@Override

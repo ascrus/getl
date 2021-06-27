@@ -14,9 +14,18 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class H2Driver extends JDBCDriver {
-	H2Driver() {
-		super()
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
+		methodParams.register("createDataset", ["transactional", "not_persistent"])
+		methodParams.register('bulkLoadFile', ['expression'])
+	}
+
+	@Override
+	protected void initParams() {
+		super.initParams()
 
 		sqlAutoIncrement = "AUTO_INCREMENT"
 		commitDDL = false
@@ -25,9 +34,6 @@ class H2Driver extends JDBCDriver {
 		defaultSchemaName = "PUBLIC"
 		connectionParamBegin = ";"
 		connectionParamJoin = ";"
-
-		methodParams.register("createDataset", ["transactional", "not_persistent"])
-		methodParams.register('bulkLoadFile', ['expression'])
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

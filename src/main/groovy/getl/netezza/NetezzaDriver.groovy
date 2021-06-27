@@ -3,6 +3,7 @@ package getl.netezza
 import getl.driver.Driver
 import getl.jdbc.JDBCDataset
 import getl.jdbc.JDBCDriver
+import groovy.transform.InheritConstructors
 
 /**
  * Netezza driver class
@@ -10,9 +11,11 @@ import getl.jdbc.JDBCDriver
  *
  */
 @SuppressWarnings('SpellCheckingInspection')
+@InheritConstructors
 class NetezzaDriver extends JDBCDriver {
-    NetezzaDriver() {
-        super()
+    @Override
+    protected void initParams() {
+        super.initParams()
 
         connectionParamBegin = ";"
         connectionParamJoin = ";"

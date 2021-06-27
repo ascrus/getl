@@ -56,8 +56,8 @@ class ResourceManager extends Manager {
     }
 
     @Override
-    protected void initMethods () {
-        super.initMethods()
+    protected void registerParameters () {
+        super.registerParameters()
         methodParams.register('super', ['resourcePath', 'classLoader', 'resourceDirectories'])
     }
 

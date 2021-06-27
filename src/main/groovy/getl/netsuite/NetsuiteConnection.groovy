@@ -1,23 +1,20 @@
 package getl.netsuite
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.driver.Driver
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
+import groovy.transform.InheritConstructors
 
 /**
  * Netsuite connection class
  * @author Dmitry Shaldin
  *
  */
+@InheritConstructors
 class NetsuiteConnection extends JDBCConnection {
-	NetsuiteConnection() {
-		super(driver: NetsuiteDriver)
-	}
-
-	NetsuiteConnection(Map params) {
-		super(new HashMap([driver: NetsuiteDriver]) + params?:[:])
-		if (this.getClass().name == 'getl.netsuite.NetsuiteConnection') methodParams.validation("Super", params?:[:])
-	}
+	@Override
+	protected Class<Driver> driverClass() { NetsuiteDriver }
 
 	/** Current Netsuite connection driver */
 	@JsonIgnore
@@ -30,13 +27,6 @@ class NetsuiteConnection extends JDBCConnection {
 		methodParams.register('Super', ['serverDataSource', 'ciphersuites', 'accountId'])
 	}
 	
-	@Override
-	protected void onLoadConfig (Map configSection) {
-		super.onLoadConfig(configSection)
-
-		if (this.getClass().name == 'getl.netsuite.NetsuiteConnection') methodParams.validation('Super', params)
-	}
-
 	@SuppressWarnings('SpellCheckingInspection')
 	@Override
 	protected void doInitConnection () {

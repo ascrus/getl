@@ -11,9 +11,12 @@ import getl.utils.*
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class JDBCDataset extends Dataset {
-	JDBCDataset() {
-		super()
+	@Override
+	protected void initParams() {
+		super.initParams()
+
 		params.queryParams = [:] as Map<String, Object>
 	}
 

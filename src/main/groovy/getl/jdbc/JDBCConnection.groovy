@@ -20,6 +20,7 @@ import getl.utils.*
 import getl.lang.sub.LoginManager
 import getl.lang.sub.StorageLogins
 import groovy.sql.Sql
+import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -28,18 +29,13 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class JDBCConnection extends Connection implements UserLogins {
-	JDBCConnection() {
-		super(driver: JDBCDriver)
-	}
-	
-	JDBCConnection(Map params) {
-		super(new HashMap([driver: JDBCDriver]) + params?:[:])
-		if (this.getClass().name == 'getl.jdbc.JDBCConnection') methodParams.validation("Super", params?:[:])
-	}
+	@Override
+	protected Class<Driver> driverClass() { JDBCDriver }
 
 	@Override
-	void initParams() {
+	protected void initParams() {
 		super.initParams()
 		fileNameSqlHistory = null
 		loginManager = new LoginManager(this)
@@ -86,8 +82,6 @@ class JDBCConnection extends Connection implements UserLogins {
 	@Override
 	protected void onLoadConfig(Map configSection) {
 		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.jdbc.JDBCConnection')
-			methodParams.validation("Super", params)
 		fileNameSqlHistory = null
 		loginManager.encryptObject()
 	}

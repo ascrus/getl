@@ -11,9 +11,11 @@ import groovy.transform.InheritConstructors
  * SalesForce Dataset class
  * @author Dmitry Shaldin
  */
+@InheritConstructors
 class SalesForceDataset extends Dataset {
-	SalesForceDataset() {
-		super()
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
 
 		methodParams.register('bulkUnload', ['limit', 'where', 'orderBy', 'chunkSize'])
 		methodParams.register('rows', ['limit', 'where', 'readAsBulk', 'orderBy', 'chunkSize'])

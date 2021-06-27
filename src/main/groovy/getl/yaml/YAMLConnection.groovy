@@ -2,23 +2,19 @@ package getl.yaml
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
-import getl.data.FileConnection
+import getl.data.WebServiceConnection
+import getl.driver.Driver
+import groovy.transform.InheritConstructors
 
 /**
  * JSON connection class
  * @author Alexsey Konstantinov
  *
  */
-class YAMLConnection extends FileConnection {
-    YAMLConnection() {
-        super([driver: YAMLDriver])
-    }
-
-    YAMLConnection(Map params) {
-        super(new HashMap([driver: YAMLDriver]) + (params?:[:]))
-
-        if (this.getClass().name == 'getl.yaml.YAMLConnection') methodParams.validation("Super", params?:[:])
-    }
+@InheritConstructors
+class YAMLConnection extends WebServiceConnection {
+    @Override
+    protected Class<Driver> driverClass() { YAMLDriver }
 
     /** Current JSON connection driver */
     @JsonIgnore

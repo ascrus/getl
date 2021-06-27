@@ -1,34 +1,25 @@
 package getl.mssql
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.driver.Driver
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
+import groovy.transform.InheritConstructors
 
 /**
  * MSSQL connection class
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class MSSQLConnection extends JDBCConnection {
-	MSSQLConnection() {
-		super(driver: MSSQLDriver)
-	}
-	
-	MSSQLConnection(Map params) {
-		super(new HashMap([driver: MSSQLDriver]) + params?:[:])
-		if (this.getClass().name == 'getl.mssql.MSSQLConnection') methodParams.validation("Super", params?:[:])
-	}
+	@Override
+	protected Class<Driver> driverClass() { MSSQLDriver }
 
 	/** Current MSSQL connection driver */
 	@JsonIgnore
 	MSSQLDriver getCurrentMSSQLDriver() { driver as MSSQLDriver }
-	
-	@Override
-	protected void onLoadConfig (Map configSection) {
-		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.mssql.MSSQLConnection') methodParams.validation("Super", params)
-	}
-	
+
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()

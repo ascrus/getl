@@ -10,14 +10,29 @@ import getl.proc.Flow
 import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 
 /**
  * Hive driver class
  * @author Alexsey Konstantinov
  */
+@InheritConstructors
 class HiveDriver extends JDBCDriver {
-    HiveDriver() {
-        super()
+    @Override
+    protected void registerParameters() {
+        super.registerParameters()
+
+        methodParams.register('createDataset',
+                ['clustered', 'skewed', 'rowFormat', 'storedAs', 'location', 'tblproperties',
+                 'fieldsTerminated', 'nullDefined', 'select'])
+        methodParams.register('openWrite', ['overwrite'])
+        methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
+                                               'hdfsDir', 'processRow', 'expression', 'files', 'fileMask'])
+    }
+
+    @Override
+    protected void initParams() {
+        super.initParams()
 
         tablePrefix = '`'
         fieldPrefix = '`'
@@ -33,13 +48,6 @@ class HiveDriver extends JDBCDriver {
         syntaxPartitionKeyInColumns = false
 
         defaultSchemaName = 'default'
-
-        methodParams.register('createDataset',
-                ['clustered', 'skewed', 'rowFormat', 'storedAs', 'location', 'tblproperties',
-                 'fieldsTerminated', 'nullDefined', 'select'])
-        methodParams.register('openWrite', ['overwrite'])
-        methodParams.register('bulkLoadFile', ['overwrite', 'hdfsHost', 'hdfsPort', 'hdfsLogin',
-                                               'hdfsDir', 'processRow', 'expression', 'files', 'fileMask'])
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")

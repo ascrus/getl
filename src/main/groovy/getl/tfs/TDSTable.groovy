@@ -11,9 +11,12 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class TDSTable extends H2Table {
-    TDSTable() {
-        super()
+    @Override
+    protected void initParams() {
+        super.initParams()
+
         tableName = "TDS_" + StringUtils.TransformObjectName(StringUtils.RandomStr()).toUpperCase()
     }
 

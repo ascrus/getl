@@ -11,10 +11,12 @@ import groovy.transform.InheritConstructors
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class DB2Driver extends JDBCDriver {
-	DB2Driver () {
-		super()
-		
+	@Override
+	protected void initParams() {
+		super.initParams()
+
 		caseObjectName = 'UPPER'
 		connectionParamBegin = ':'
 		connectionParamJoin = ';'

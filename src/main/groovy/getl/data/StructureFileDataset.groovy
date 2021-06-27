@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.utils.*
 import getl.exception.ExceptionGETL
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -12,7 +13,8 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-class StructureFileDataset extends FileDataset {
+@InheritConstructors
+class StructureFileDataset extends WebServiceDataset {
 	@Override
 	protected void initParams() {
 		super.initParams()

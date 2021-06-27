@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.xml.opts.XMLReadSpec
 import getl.data.*
+import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -12,15 +13,13 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class XMLDataset extends StructureFileDataset {
-	XMLDataset () {
-		super()
-		_driver_params = [:] as Map<String, Object>
-	}
-
 	@Override
 	protected void initParams() {
 		super.initParams()
+
+		_driver_params = [:] as Map<String, Object>
 		params.features = [:] as Map<String, Boolean>
 	}
 	

@@ -6,6 +6,7 @@ import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
 import getl.utils.ListUtils
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 
 /**
  * File dataset class
@@ -13,19 +14,30 @@ import groovy.transform.CompileStatic
  *
  */
 @SuppressWarnings('unused')
+@InheritConstructors
 class FileDataset extends Dataset {
-	FileDataset() {
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
+
 		methodParams.register('openWrite', ['deleteOnEmpty', 'append'])
 		methodParams.register('drop', ['validExist', 'portions'])
 	}
 
+	@Override
+	protected void initParams() {
+		super.initParams()
+
+		isTemporaryFile = false
+	}
+
 	/** The file is temporary */
-	private Boolean isTemporaryFile = false
+	private Boolean isTemporaryFile
 	/** The file is temporary */
 	@JsonIgnore
 	Boolean getIsTemporaryFile() { isTemporaryFile }
 	/** The file is temporary */
-	protected void setIsTemporaryFile(Boolean value) { isTemporaryFile = value }
+	void setIsTemporaryFile(Boolean value) { isTemporaryFile = value }
 
 	/** Current file connection */
 	@JsonIgnore

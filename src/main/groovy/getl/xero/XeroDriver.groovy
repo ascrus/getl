@@ -21,11 +21,13 @@ import groovy.transform.InheritConstructors
  *
  */
 //noinspection GroovyAssignabilityCheck
+@InheritConstructors
 class XeroDriver extends Driver {
     private XeroClient client
 
-    XeroDriver() {
-        super()
+    @Override
+    protected void registerParameters() {
+        super.registerParameters()
 
         methodParams.register('retrieveObjects', ['xeroObjectName', 'xeroListName'])
         methodParams.register('eachRow', ['modifiedAfter', 'where', 'orderBy', 'limit', 'includeArchived', 'filter'])

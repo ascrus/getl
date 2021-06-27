@@ -22,8 +22,6 @@ import it.sauronsoftware.ftp4j.*
 class FTPManager extends Manager implements UserLogins {
 	/** FTP driver */
 	private final FTPClient client = new FTPClient()
-	/* FTP driver */
-//	private FTPClient getClient() { client }
 
 	@Override
 	void initParams() {
@@ -33,8 +31,8 @@ class FTPManager extends Manager implements UserLogins {
 	}
 	
 	@Override
-	protected void initMethods() {
-		super.initMethods()
+	protected void registerParameters() {
+		super.registerParameters()
 		methodParams.register('super', ['server', 'port', 'login', 'password', 'passive', 'isHardDisconnect',
 										'autoNoopTimeout', 'closeTimeout', 'connectionTimeout', 'readTimeout',
                                         'timeZone', 'storedLogins'])

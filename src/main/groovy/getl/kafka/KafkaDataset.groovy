@@ -8,12 +8,16 @@ import getl.exception.ExceptionGETL
 import getl.kafka.opts.KafkaReadSpec
 import getl.utils.DateUtils
 import groovy.transform.CompileStatic
+import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
+@InheritConstructors
 class KafkaDataset extends Dataset {
-    KafkaDataset() {
-        super()
+    @Override
+    protected void initParams() {
+        super.initParams()
+
         _driver_params = [:] as Map<String, Object>
     }
 

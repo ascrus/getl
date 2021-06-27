@@ -9,6 +9,7 @@ import getl.data.*
 import getl.driver.*
 import getl.exception.ExceptionGETL
 import getl.utils.*
+import groovy.transform.InheritConstructors
 import org.apache.groovy.json.internal.LazyMap
 
 /**
@@ -16,9 +17,11 @@ import org.apache.groovy.json.internal.LazyMap
  * @author Alexsey Konstantinov
  *
  */
-class JSONDriver extends FileDriver {
-	JSONDriver () {
-		super()
+@InheritConstructors
+class JSONDriver extends WebServiceDriver {
+	@Override
+	protected void registerParameters() {
+		super.registerParameters()
 		methodParams.register("eachRow", ["fields", "filter", "initAttr"])
 	}
 

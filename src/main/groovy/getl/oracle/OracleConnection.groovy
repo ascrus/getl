@@ -1,23 +1,20 @@
 package getl.oracle
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.driver.Driver
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
+import groovy.transform.InheritConstructors
 
 /**
  * Oracle connection class
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class OracleConnection extends JDBCConnection {
-	OracleConnection() {
-		super(driver: OracleDriver)
-	}
-	
-	OracleConnection(Map params) {
-		super(new HashMap([driver: OracleDriver]) + params?:[:])
-		if (this.getClass().name == 'getl.oracle.OracleConnection') methodParams.validation('Super', params?:[:])
-	}
+	@Override
+	protected Class<Driver> driverClass() { OracleDriver }
 
 	/** Current Oracle connection driver */
 	@JsonIgnore
@@ -28,13 +25,7 @@ class OracleConnection extends JDBCConnection {
 		super.registerParameters()
 		methodParams.register('Super', ['locale'])
 	}
-	
-	@Override
-	protected void onLoadConfig (Map configSection) {
-		super.onLoadConfig(configSection)
-		if (this.getClass().name == 'getl.oracle.OracleConnection') methodParams.validation('Super', params)
-	}
-	
+
 	@Override
 	protected void doInitConnection () {
 		super.doInitConnection()
