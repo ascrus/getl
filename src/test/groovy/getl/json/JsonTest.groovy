@@ -4,6 +4,7 @@ import getl.lang.Getl
 import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.DateUtils
+import getl.utils.FileUtils
 import getl.utils.GenerationUtils
 import groovy.transform.InheritConstructors
 import org.junit.Test
@@ -105,11 +106,15 @@ class JsonTest extends GetlTest {
     @Test
     void testReadWebService() {
         Getl.Dsl {
+            if (!FileUtils.ExistsFile('tests/json/json.conf'))
+                return
+            configuration { load 'tests/json/json.conf' }
+
             json {
                 useConnection jsonConnection {
                     path = TFS.systemPath
                     webUrl = 'http://api.openweathermap.org/data/2.5'
-                    webParams.APPID = '100f6914239ec31e8f8d5aa1dedd27ab'
+                    webParams.APPID = (configContent.openweathermap as Map).appid
                 }
 
                 fileName = 'weather.json'
