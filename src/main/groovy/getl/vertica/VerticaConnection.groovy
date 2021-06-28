@@ -49,7 +49,7 @@ class VerticaConnection extends JDBCConnection {
 	/** Detect database name from connection */
 	static protected String DatabaseFromConnection(VerticaConnection con) {
 		String database
-		if (con.connectURL != null) //noinspection DuplicatedCode
+		if (con.connectURL != null)
 		{
 			def p = new Path(mask: 'jdbc:vertica://{host}/{database}')
 			def m = p.analyze(con.connectURL)

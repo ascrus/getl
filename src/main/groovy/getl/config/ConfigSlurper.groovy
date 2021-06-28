@@ -14,7 +14,6 @@ import java.sql.Timestamp
  * @author Alexsey Konstantinov
  *
  */
-@SuppressWarnings("DuplicatedCode")
 class ConfigSlurper extends ConfigManager {
 	@SuppressWarnings("DuplicatedCode")
 	@Override
@@ -281,7 +280,6 @@ class ConfigSlurper extends ConfigManager {
 		return res
 	}
 
-	@SuppressWarnings("DuplicatedCode")
 	@Override
 	void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
 		def fp = FileUtils.TransformFilePath(saveParams?.path as String)?:this.path()

@@ -366,7 +366,6 @@ class FileProcessing extends FileListProcessing {
         return res
     }
 
-    @SuppressWarnings("DuplicatedCode")
     @Override
     protected void processFiles() {
         counterErrors.clear()

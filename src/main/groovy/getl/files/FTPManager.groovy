@@ -496,7 +496,6 @@ class FTPManager extends Manager implements UserLogins {
         }
     }
 
-	@SuppressWarnings("DuplicatedCode")
 	@Override
 	String toString() {
 		if (server == null) return 'ftp'

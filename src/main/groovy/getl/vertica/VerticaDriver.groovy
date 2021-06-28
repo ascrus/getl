@@ -351,7 +351,6 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} TO {value}' }
 
-	@SuppressWarnings("DuplicatedCode")
 	@Override
 	void sqlTableDirective (JDBCDataset dataset, Map params, Map dir) {
 		super.sqlTableDirective(dataset, params, dir)

@@ -369,7 +369,6 @@ class CSVDriver extends FileDriver {
 		return header.toArray()
 	}
 
-	@SuppressWarnings('DuplicatedCode')
 	@CompileStatic
 	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
@@ -1000,7 +999,6 @@ class CSVDriver extends FileDriver {
 		if (code != null) code.call(values)
 	}
 
-	@SuppressWarnings("DuplicatedCode")
 	static Long decodeBulkCSV (CSVDataset target, CSVDataset source) {
 		if (!source.existsFile()) throw new ExceptionGETL("File \"${source.fullFileName()}\" not found")
 		

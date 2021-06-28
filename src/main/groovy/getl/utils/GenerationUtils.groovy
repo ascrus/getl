@@ -355,7 +355,6 @@ class GenerationUtils {
 	 * @param value path to source value
 	 * @return parsing code
 	 */
-	@SuppressWarnings('DuplicatedCode')
 	static String GenerateConvertValue(Map params) {
 		String r
 

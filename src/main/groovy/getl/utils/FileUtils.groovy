@@ -784,7 +784,6 @@ class FileUtils {
 	 * @param err
 	 * @return
 	 */
-	@SuppressWarnings("DuplicatedCode")
 	static Integer Run(String command, String dir, String codePage, StringBuilder out, StringBuilder err) {
 		Process p
 		try {

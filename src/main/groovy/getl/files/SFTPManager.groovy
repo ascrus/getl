@@ -630,7 +630,6 @@ exit \$LastExitCode
 			channelFtp.setMtime(fileName, (time / 1000L).intValue())
 	}
 
-	@SuppressWarnings('DuplicatedCode')
 	@Override
 	String toString() {
 		if (server == null) return 'sftp'

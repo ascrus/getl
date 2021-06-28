@@ -412,7 +412,6 @@ class Field implements Serializable, Cloneable {
         return other instanceof Field
     }
 
-	@SuppressWarnings("DuplicatedCode")
 	Boolean equalsAll(java.lang.Object other) {
 		if (other == null) return false
 		if (this.is(other)) return true
