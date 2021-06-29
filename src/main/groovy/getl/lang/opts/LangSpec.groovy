@@ -1,5 +1,6 @@
 package getl.lang.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.ConfigSlurper
 import getl.csv.CSVDataset
 import getl.data.*
@@ -44,9 +45,9 @@ class LangSpec extends BaseSpec {
     /** The level of fixation in the log of process profiling records */
     void setProcessTimeLevelLog(Level value) { saveParamValue('processTimeLevelLog', value) }
 
-    /** Use the multithreading JDBC connection model */
+    /** Use the multithreading connection model */
     Boolean getUseThreadModelCloning() { BoolUtils.IsValue(params.useThreadModelCloning, true) }
-    /** Use the multithreading JDBC connection model */
+    /** Use the multithreading connection model */
     void setUseThreadModelCloning(Boolean value) { saveParamValue('useThreadModelCloning', value) }
 
     /** Write SQL command from temporary database connection to history file */
@@ -59,10 +60,10 @@ class LangSpec extends BaseSpec {
         TDS.storage.sqlHistoryFile = value
     }
 
-    /** Check on connection registration */
-    Boolean getValidRegisterObjects() { BoolUtils.IsValue(params.validObjectExist, true) }
-    /** Check on connection registration */
-    void setValidRegisterObjects(Boolean value) { saveParamValue('validObjectExist', value) }
+    /** Check when accessing objects that they are registered in the repository */
+    Boolean getValidRegisterObjects() { BoolUtils.IsValue(params.validRegisterObjects, true) }
+    /** Check when accessing objects that they are registered in the repository */
+    void setValidRegisterObjects(Boolean value) { saveParamValue('validRegisterObjects', value) }
 
     /**  Process management dataset */
     Dataset getProcessControlDataset() { params.processControlDataset as Dataset }
@@ -127,9 +128,11 @@ class LangSpec extends BaseSpec {
     }
 
     /** Getl properties from config resource file getl-properties.conf */
+    @JsonIgnore
     Map<String, Object> getGetlConfigProperties() { params.getlConfigProperties as Map<String, Object> }
 
     /** Project configuration options */
+    @JsonIgnore
     Map<String, Object> getProjectConfigParams() { params.projectConfigParams as Map<String, Object> }
 
     /** Auto-initialization of repository parameters from configuration resource file getl-properties.conf */
@@ -144,6 +147,7 @@ class LangSpec extends BaseSpec {
     void loadProjectProperties(String env = null, String filePath = null) {
         File mainFile
         if (filePath != null) {
+            filePath = FileUtils.TransformFilePath(filePath)
             if (!FileUtils.ExistsFile(filePath))
                 throw new ExceptionDSL("Getl config file on path \"$filePath\" not found!")
             mainFile = new File(filePath)

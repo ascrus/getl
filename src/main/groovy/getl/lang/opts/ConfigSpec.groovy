@@ -1,5 +1,6 @@
 package getl.lang.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.*
 import getl.exception.ExceptionDSL
 import getl.lang.Getl
@@ -17,6 +18,7 @@ class ConfigSpec extends BaseSpec {
      * Configuration manager
      */
     @SuppressWarnings("GrMethodMayBeStatic")
+    @JsonIgnore
     ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper }
 
     /** Configuration files path */
@@ -90,7 +92,7 @@ class ConfigSpec extends BaseSpec {
     void clear() { Config.ClearConfig() }
 
     /**
-     * read fields from the specified configuration section
+     * Read fields from the specified configuration section
      * @param section path to store variables in configuration
      * @param validExist check for the existence of fields in the script
      */
@@ -109,7 +111,6 @@ class ConfigSpec extends BaseSpec {
     String getEnvironment() {
         return manager.environment
     }
-
     /** Current environment */
     @SuppressWarnings("GrMethodMayBeStatic")
     void setEnvironment(String value) {

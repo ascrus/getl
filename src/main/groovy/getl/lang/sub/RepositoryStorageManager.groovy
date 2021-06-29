@@ -1,5 +1,6 @@
 package getl.lang.sub
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.config.ConfigSlurper
 import getl.exception.ExceptionDSL
 import getl.files.FileManager
@@ -68,11 +69,13 @@ class RepositoryStorageManager {
     /** Repository files are stored in project resources */
     private Boolean isResourceStoragePath
     /** Repository files are stored in project resources */
+    @JsonIgnore
     Boolean getIsResourceStoragePath() { isResourceStoragePath }
 
     /** Subdirectories for storing files for different environments */
     private final Map<String, String> envDirs = [:] as Map<String, String>
     /** Subdirectories for storing files for different environments */
+    @JsonIgnore
     Map<String, String> getEnvDirs() { envDirs }
 
     /** Storage encryption password */
@@ -103,6 +106,7 @@ class RepositoryStorageManager {
     }
 
     /** List of registered repositories */
+    @JsonIgnore
     List<String> getListRepositories() {
         def list = [] as List<List>
         _listRepositories.each { name, rep ->

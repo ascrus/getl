@@ -1,5 +1,6 @@
 package getl.lang.opts
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionDSL
 import getl.utils.*
 import groovy.transform.InheritConstructors
@@ -17,18 +18,19 @@ class LogSpec extends BaseSpec {
     /**
      * Current logger
      */
+    @JsonIgnore
     Logger getLogLogger() { Logs.logger  }
 
     /**
      * Current formatter
      */
+    @JsonIgnore
     Logs.LogFormatter getLogFormatter() { Logs.formatter }
 
     /**
      * Print configuration message
      */
     Boolean getLogPrintConfigMessage() { Logs.printConfigMessage }
-
     /**
      * Print configuration message
      */
@@ -37,13 +39,14 @@ class LogSpec extends BaseSpec {
     /**
      * Current file name handler
      */
+    @JsonIgnore
     String getLogFileNameHandler() { Logs.fileNameHandler }
 
     /**
      * Current file handler
      */
+    @JsonIgnore
     FileHandler getLogFileHandler() { Logs.file }
-
     /**
      * Current file handler
      */
@@ -53,7 +56,6 @@ class LogSpec extends BaseSpec {
      * Current log file name
      */
     String getLogFileName() { Logs.logFileName }
-
     /**
      * Current log file name
      */
@@ -63,7 +65,6 @@ class LogSpec extends BaseSpec {
      * Print stack trace for error
      */
     Boolean getLogPrintStackTraceError() { Logs.printStackTraceError }
-
     /**
      * Print stack trace for error
      */
