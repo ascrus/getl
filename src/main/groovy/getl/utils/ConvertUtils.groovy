@@ -1,5 +1,7 @@
 package getl.utils
 
+import getl.exception.ExceptionDSL
+
 import java.sql.Time
 
 /**
@@ -131,5 +133,36 @@ class ConvertUtils {
 	static Time Long2Time(Long value) {
 		if (value == null) return null
 		new Time(value)
+	}
+
+	/**
+	 * Convert string expression to list or map structure
+	 * @param value expression
+	 * @return structure (list or map)
+	 */
+	static Object String2Structure(String value) {
+		def str = value
+		switch (str[0]) {
+			case '[':
+				break
+			case '{':
+				if (str[str.length() - 1] != '}')
+					throw new ExceptionDSL("The closing symbol \"}\" was not found in the expression \"$value\"!")
+				str = '[' + str.substring(1, str.length() - 1) + ']'
+
+				break
+			default:
+				str = '[' + str + ']'
+		}
+
+		try {
+			str = Eval.me(str.toString())
+		}
+		catch (Exception e) {
+			Logs.Severe("Error in the expression \"$value\"!")
+			throw e
+		}
+
+		return str
 	}
 }

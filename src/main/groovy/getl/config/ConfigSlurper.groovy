@@ -15,6 +15,10 @@ import java.sql.Timestamp
  *
  */
 class ConfigSlurper extends ConfigManager {
+	static {
+		System.setProperty('line.separator', '\n')
+	}
+
 	@SuppressWarnings("DuplicatedCode")
 	@Override
 	void init(Map<String, Object> initParams) {
@@ -281,11 +285,13 @@ class ConfigSlurper extends ConfigManager {
 	}
 
 	@Override
-	void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
+	void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = [:]) {
 		def fp = FileUtils.TransformFilePath(saveParams?.path as String)?:this.path()
 		def fn = (saveParams?.fileName as String)?:this.fileName
 		def cp = (saveParams?.codePage as String)?:this.codePage
-		def convVars = BoolUtils.IsValue(saveParams?.convertVars, false)
+		def convVars = BoolUtils.IsValue(saveParams?.convertVars)
+		def tm = BoolUtils.IsValue(saveParams?.trimMap)
+		def sw = BoolUtils.IsValue(saveParams?.smartWrite)
 
 		if (fn == null) throw new ExceptionGETL('Required parameter "fileName"')
 
@@ -298,7 +304,7 @@ class ConfigSlurper extends ConfigManager {
 		}
 		def ff = new File(fullConfigName(rp, fn))
 
-		SaveConfigFile(content, ff, cp, convVars)
+		SaveConfigFile(content, ff, cp, convVars, tm, sw)
 	}
 
 	/**
@@ -307,36 +313,28 @@ class ConfigSlurper extends ConfigManager {
 	 * @param file saved file descriptor
 	 * @param codePage text encoding
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
+	 * @param trimMap
+	 * @param smartWrite don't overwrite the file if it hasn't changed
 	 */
-	static void SaveConfigFile (Map data, File file, String codePage = 'UTF-8', Boolean convertVars = false, Boolean trimMap = false) {
-		Writer writer
-		try {
-			if (file.exists()) file.delete()
-			writer = file.newWriter(codePage)
-		}
-		catch (Exception e) {
-			Logs.Severe("Error create configuration file \"$file\", error: ${e.message}")
-			throw e
-		}
-
+	static void SaveConfigFile(Map data, File file, String codePage = 'utf-8', Boolean convertVars = false,
+							   Boolean trimMap = false, Boolean smartWrite = false) {
 		def vars = data.vars as Map
 		if (vars != null && !vars.isEmpty()) {
 			data = [configvars: vars] + MapUtils.Copy(data, ['vars'])
 		}
 
-		try {
-			StringBuilder sb = new StringBuilder()
-			if (SaveMap(data, sb, convertVars, trimMap) > 0)
-				writer.append(sb)
-		}
-		catch (Exception e) {
-			Logs.Severe("Error save configuration to file \"$file\", error: ${e.message}")
-			writer.close()
-			if (file.exists()) file.delete()
-			throw e
-		}
-		finally {
-			writer.close()
+		StringBuilder sb = new StringBuilder()
+		if (SaveMap(data, sb, convertVars, trimMap) > 0) {
+			int oldHash = (smartWrite && file.exists())?file.text.hashCode():0
+			try {
+				def str = sb.toString()
+				if (!smartWrite || oldHash != str.hashCode())
+					file.setText(str.toString(), codePage?:'utf-8')
+			}
+			catch (Exception e) {
+				Logs.Severe("Error save configuration to file \"$file\", error: ${e.message}")
+				throw e
+			}
 		}
 	}
 
@@ -355,6 +353,7 @@ class ConfigSlurper extends ConfigManager {
 	 * @param data stored map data
 	 * @param writer writer object
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
+	 * @param trimMap
 	 * @param tab indent when writing to text
 	 * @param isListMap data is in the list
 	 * @return count saved items
@@ -428,6 +427,7 @@ class ConfigSlurper extends ConfigManager {
 	 * @param data stored list data
 	 * @param writer writer object
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
+	 * @param trimMap
 	 * @param tab indent when writing to text
 	 * @return count saved items
 	 */

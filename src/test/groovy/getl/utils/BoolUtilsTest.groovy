@@ -1,11 +1,12 @@
 package getl.utils
 
+import getl.test.GetlTest
 import org.junit.Test
 
 /**
  * @author Alexsey Konstantinov
  */
-class BoolUtilsTest extends getl.test.GetlTest {
+class BoolUtilsTest extends GetlTest {
     @Test
     void testIsValue() {
         assertTrue(BoolUtils.IsValue(true, false))

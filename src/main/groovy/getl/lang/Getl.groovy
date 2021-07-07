@@ -2397,13 +2397,13 @@ Examples:
                         break
                     case List:
                         if (!(value instanceof List)) {
-                            value = Eval.me(value.toString())
+                            value = ConvertUtils.String2Structure(value.toString())
                         }
 
                         break
                     case Map:
                         if (!(value instanceof Map)) {
-                            value = Eval.me(value.toString())
+                            value = ConvertUtils.String2Structure(value.toString())
                         }
 
                         break

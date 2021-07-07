@@ -973,32 +973,41 @@ class FileUtils {
 	 * @return
 	 */
 	static List<String> ParseArguments(String args) {
-		def list = args.split(' ')
+		def scanner = new Scanner(args)
 		def res = [] as List<String>
-		String tmp
-		list.each { String s ->
-			if (tmp == null) {
-				if (s.length() == 0) return
-				if (s[0] != '"') {
-					res << s
-				} else if (s.length() > 1 && s[0] == '"' && s[s.length() - 1] == '"') {
-					res << s
+		while (scanner.hasNext()) {
+			String val = ''
+			def str = scanner.next()
+			def i1 = str.indexOf('"')
+			def findQuote = false
+			while (i1 != -1 || findQuote) {
+				if (i1 == str.length() - 1 && !findQuote) {
+					if (!scanner.hasNext())
+						throw new Exception("Closing double quote not found!")
+					val += str + ' '
+					str = scanner.next()
+					i1 = -1
+					findQuote = true
 				}
 				else {
-					tmp = s
+					def i2 = str.indexOf('"', i1 + 1)
+					if (i2 == -1) {
+						if (!scanner.hasNext())
+							throw new Exception("Closing double quote not found!")
+						val += str + ' '
+						str = scanner.next()
+						i1 = -1
+						findQuote = true
+					} else {
+						i1 = str.indexOf('"', i2 + 1)
+						findQuote = false
+					}
 				}
 			}
-			else {
-				tmp += ' ' + s
-				if (s.length() == 0) return
-				if (s[s.length() - 1] == '"') {
-					res << tmp
-					//noinspection GrReassignedInClosureLocalVar
-					tmp = null
-				}
-			}
+			val += str
+
+			res << val
 		}
-		if (tmp != null) throw new ExceptionGETL("Invalid arguments [$args] from command line!")
 
 		return res
 	}

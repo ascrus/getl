@@ -104,6 +104,7 @@ class FileTextSpec extends BaseSpec {
      * Write map as configuration
      * @param data stored data
      * @param convertVars convert ${variable} to ${vars.variable}
+     * @param trimMap
      */
     void write(Map data, Boolean convertVars = false, Boolean trimMap = false) {
         ConfigSlurper.SaveMap(data, buffer, convertVars, trimMap)

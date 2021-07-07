@@ -114,8 +114,12 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         (Config.content.map as Map)."1" = 3
         (Config.content.map as Map)."_1" = 4
         Config.SaveConfig(fileName: 'test_config.groovy')
+        Getl.pause(1000)
         def groovyFile = new File("${configPath.currentPath()}/test_config.groovy")
         groovyFile.deleteOnExit()
+        def fileDate = groovyFile.lastModified()
+        Config.SaveConfig(fileName: 'test_config.groovy', smartWrite: true)
+        assertEquals(fileDate, groovyFile.lastModified())
 //        println groovyFile.text
 
         Config.ClearConfig()

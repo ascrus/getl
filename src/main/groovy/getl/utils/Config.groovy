@@ -236,7 +236,7 @@ class Config {
 	 * @param writer
 	 */
 	@Synchronized
-	static void SaveConfig (Map saveParams = [:]) {
+	static void SaveConfig(Map saveParams = [:]) {
         configClassManager.saveConfig(content, saveParams)
 	}
 

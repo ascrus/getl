@@ -127,8 +127,11 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
             throw new ExceptionModel("Destination path \"$destPath\" not found!")
     }
 
-    /** Fill destination path with reference files */
-    void fill() {
+    /**
+     * Fill destination path with reference files
+     * @param cleanSource clear source before fill
+     */
+    void fill(Boolean cleanSource = false) {
         checkModel()
 
         def source = sourceManager.cloneManager()
@@ -142,6 +145,9 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
 
         def isLocalUnpack = BoolUtils.IsValue(localUnpack) || !dest.allowCommand
         try {
+            if (BoolUtils.IsValue(cleanSource))
+                dest.cleanDir()
+
             usedFiles.each { modelFile ->
                 def fileName = FileUtils.FileName(modelFile.filePath)
                 new ProcessTime(name: "Download reference file \"$fileName\" from \"$source\" to local directory", objectName: 'file', debug: true).run {
