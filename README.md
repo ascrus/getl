@@ -3,6 +3,11 @@
 Groovy ETL (Getl) - open source project on Groovy, developed since 2012 to automate loading and processing data from 
 different sources. 
 
+## Links
+* Getl jar is published in the [Central Maven](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22net.sourceforge.getl%22)
+* The source code of the project is located on the GitHub project [getl](https://github.com/ascrus/getl)
+* Russian documentation available on [Wiki](https://github.com/ascrus/getl/wiki)
+
 ## When do you need Getl?
 * Copying datasets between RDBMS, file and cloud sources;
 * Capturing and delivering data increment from sources to the data warehouse;
@@ -78,14 +83,6 @@ Local file systems Windows and Linux, FTP, SFTP, Hadoop HDFS.
     * Automatic cloning and freeing of repository objects in threads;
     * Automatically freeing temporary repository objects upon termination of their processes;
     * Process and application termination Commands.
-
-## Links
-* Getl jar is published in the [Central Maven](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22net.sourceforge.getl%22)
-* The source code of the project is located on the GitHub project [getl](https://github.com/ascrus/getl)
-* Basic Russian documentation available on [Wiki](https://github.com/ascrus/getl/wiki)
-* Examples of working with Getl on the basis of H2 Database can be viewed on the GitHub project 
-[Getl examples](https://github.com/ascrus/getl-examples)
-
 
 ## Examples
 Registration of connections to Oracle and Vertica:
