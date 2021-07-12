@@ -309,6 +309,11 @@ Examples:
                         Logs.Finest("  logging the process \"${instance.getClass().name}\" to file \"${FileUtils.TransformFilePath(Logs.logFileName, false)}\"")
                     }
 
+                    if (en.logFileLevel != null) {
+                        logging.logFileLevel = Logs.StrToLevel(en.logFileLevel as String)
+                        Logs.Finest("  logging to file is done starting from level ${logging.logFileLevel}")
+                    }
+
                     if (en.printStackTraceError != null) {
                         logging.logPrintStackTraceError = BoolUtils.IsValue(en.printStackTraceError)
                     }

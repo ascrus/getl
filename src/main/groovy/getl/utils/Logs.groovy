@@ -52,12 +52,15 @@ class Logs {
 	 */
 	@SuppressWarnings('SpellCheckingInspection')
 	static public String logFileName
+
+	/** The level of message logging to a file (default INFO) */
+	static public Level logFileLevel = Level.INFO
 	
 	/** Log file handler */
 	static private String fileNameHandler
 
 	/** Log file handler */
-	static String getFileNameHandler () { fileNameHandler }
+	static public String getFileNameHandler () { fileNameHandler }
 	
 	/** Config messages to be written after initialization log */
 	protected static final List<String> InitMessages = [] as List<String>
@@ -141,8 +144,12 @@ class Logs {
 	
 	/** Initialize log after load config */
 	static void Init () {
-		if (printConfigMessage == null) printConfigMessage = ((Config.content.log as Map)?.printConfig != null)?(Config.content.log as Map).printConfig:false
-		InitFile(logFileName?:((Config.content.log as Map)?.file as String))
+		def props = (Config.content.log as Map<String, Object>)?:([:] as Map<String, Object>)
+
+		if (printConfigMessage == null)
+			printConfigMessage = (props.printConfig != null)?props.printConfig:false
+
+		InitFile(logFileName?:props.file as String, logFileLevel?:StrToLevel(props.logFileLevel as String))
 		InitMessages.each { Config(it) }
 		InitMessages.clear()
 	}
@@ -151,7 +158,7 @@ class Logs {
 	 * Initialize log file
 	 * @param name log file name
 	 */
-	static void InitFile (String name) {
+	static void InitFile (String name, Level level) {
 		if (file != null) {
 			file.close()
 			logger.removeHandler(file)
@@ -162,7 +169,7 @@ class Logs {
 			FileUtils.ValidFilePath(f)
 
 			file = new FileHandler(f, true)
-			file.level = Level.INFO
+			file.level = level?:Level.INFO
 			file.setFormatter(formatter)
 			logger.addHandler(file)
 			fileNameHandler = f

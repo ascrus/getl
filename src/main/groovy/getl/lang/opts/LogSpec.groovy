@@ -61,6 +61,11 @@ class LogSpec extends BaseSpec {
      */
     void setLogFileName(String value) { Logs.logFileName = value; Logs.Init() }
 
+    /** The level of message logging to a file (default INFO) */
+    Level getLogFileLevel() { Logs.logFileLevel }
+    /** The level of message logging to a file (default INFO) */
+    void setLogFileLevel(Level value) { Logs.logFileLevel = value }
+
     /**
      * Print stack trace for error
      */

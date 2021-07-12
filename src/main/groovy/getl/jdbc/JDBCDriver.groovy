@@ -587,7 +587,8 @@ ${extend}'''
 
 	@Override
 	void disconnect() {
-		if (sqlConnect != null) sqlConnect.close()
+		if (sqlConnect != null)
+			sqlConnect.close()
 		sqlConnect = null
 		jdbcClass = null
 		useLoadedDriver = false

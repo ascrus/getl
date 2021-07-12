@@ -364,9 +364,12 @@ class Connection implements Cloneable, GetlRepository {
 	
 	/** Set connected to source */
 	void setConnected (Boolean c) {
-		if (!driver.isSupport(Driver.Support.CONNECT)) throw new ExceptionGETL("Driver not support connect method") 
-		if (connected && c) return
-		if (!connected && !c) return
+		if (!driver.isSupport(Driver.Support.CONNECT))
+			throw new ExceptionGETL("Driver not support connect method")
+		if (connected && c)
+			return
+		if (!connected && !c)
+			return
 		if (c)
 			connect()
 		else
@@ -400,13 +403,16 @@ class Connection implements Cloneable, GetlRepository {
 			catch (Exception e) {
 				doErrorConnect()
 				attempt++
-				if (attempt >= countAttempts) throw e
+				if (attempt >= countAttempts)
+					throw e
+
 				sleep(timeoutAttempts)
 				Logs.Warning("Error connect to $objectName, attempt number $attempt, error: ${e.message}")
 			}
 		}
 		doDoneConnect()
-		if (onConnecting != null) onConnecting.call(this)
+		if (onConnecting != null)
+			onConnecting.call(this)
 	}
 
 	/** Disconnection from database */
