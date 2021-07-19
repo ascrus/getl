@@ -205,11 +205,15 @@ class FileDataset extends Dataset {
 		
 		return drv.fileNameWithoutExtension(this)
 	}
+
+	/** Return dataset file */
+	File datasetFile() { new File(fullFileName()) }
 	
-	/**
-	 * Valid existing file
-	 */
-	Boolean existsFile() { new File(fullFileName()).exists() }
+	/** Valid existing file */
+	Boolean existsFile() { datasetFile().exists() }
+
+	/** Return the size of a dataset file in bytes */
+	Long sizeFile() { datasetFile().size() }
 
 	/** List of written files */
 	private final List<FileWriteOpts> writtenFiles = [] as List<FileWriteOpts>

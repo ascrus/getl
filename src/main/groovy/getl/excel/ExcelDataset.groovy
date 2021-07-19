@@ -95,4 +95,24 @@ class ExcelDataset extends FileDataset {
                         Closure<Boolean> value) {
         setOnFilter(value)
     }
+
+    /**
+     * Filter reading Excel rows
+     * <br>Closure parameters: org.apache.poi.ss.usermodel.Row row
+     */
+    @JsonIgnore
+    Closure<Boolean> getOnPrepareFilter() { params.prepareFilter as Closure<Boolean> }
+    /**
+     * Filter reading Excel rows
+     * <br>Closure parameters: org.apache.poi.ss.usermodel.Row row
+     */
+    void setOnPrepareFilter(Closure<Boolean> value) { params.prepareFilter = value }
+    /**
+     * Filter reading Excel rows
+     * <br>Closure parameters: Map row
+     */
+    void prepareFilter(@ClosureParams(value = SimpleType, options = ['java.util.Map<Integer, org.apache.poi.ss.usermodel.Cell>'])
+                        Closure<Boolean> value) {
+        setOnPrepareFilter(value)
+    }
 }

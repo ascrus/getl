@@ -132,14 +132,12 @@ class Field implements Serializable, Cloneable {
 	
 	private String defaultValue = null
 	/** Default value from field (used only creating dataset) */
-	@JsonIgnore
 	String getDefaultValue() { return this.defaultValue }
 	/** Default value from field (used only creating dataset) */
 	void setDefaultValue(String value) { this.defaultValue = value }
 	
 	private String compute
 	/** Compute columns */
-	@JsonIgnore
 	String getCompute() { return this.compute }
 	/** Compute columns */
 	void setCompute(String value) { this.compute = value }

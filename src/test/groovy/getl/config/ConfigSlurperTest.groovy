@@ -113,8 +113,12 @@ class ConfigSlurperTest extends getl.test.GetlTest {
         (Config.content.map as Map)."_a1" = 2
         (Config.content.map as Map)."1" = 3
         (Config.content.map as Map)."_1" = 4
+        (Config.content.map as Map)."1_1" = 5
+        (Config.content.map as Map)."\$1" = 6
+        (Config.content.map as Map)."a#" = 7
+        (Config.content.map as Map).'"1"' = 8
         Config.SaveConfig(fileName: 'test_config.groovy')
-        Getl.pause(1000)
+        Getl.pause(250)
         def groovyFile = new File("${configPath.currentPath()}/test_config.groovy")
         groovyFile.deleteOnExit()
         def fileDate = groovyFile.lastModified()
@@ -129,12 +133,16 @@ class ConfigSlurperTest extends getl.test.GetlTest {
 //        println MapUtils.ToJson(Config.content)
         assertEquals(Config.content.var1.toString(), 'local variable value')
         assertEquals('2019-02-01 01:02:03', Config.content.var2)
-        assertTrue([a:1,b:2,c:3,d:'local variable value', 1: 111].equals(Config.content.var3[0]))
+        assertTrue([a:1,b:2,c:3,d:'local variable value', '1': 111].equals(Config.content.var3[0]))
         assertTrue([a:4,b:5,c:6,d:'variable value', '_1': 222].equals(Config.content.var3[1]))
         assertEquals(1, (Config.content.map as Map)."a1")
         assertEquals(2, (Config.content.map as Map)."_a1")
         assertEquals(3, (Config.content.map as Map)."1")
         assertEquals(4, (Config.content.map as Map)."_1")
+        assertEquals(5, (Config.content.map as Map)."1_1")
+        assertEquals(6, (Config.content.map as Map)."\$1")
+        assertEquals(7, (Config.content.map as Map)."a#")
+        assertEquals(8, (Config.content.map as Map).'"1"')
     }
 
     @Test

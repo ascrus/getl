@@ -1,6 +1,7 @@
 package getl.excel
 
 import com.monitorjbl.xlsx.StreamingReader
+import com.monitorjbl.xlsx.impl.StreamingRow
 import getl.data.*
 import getl.driver.Driver
 import getl.csv.CSVDataset
@@ -84,6 +85,7 @@ class ExcelDriver extends FileDriver {
         def offsetRows = (dataset.offsetRows?:0) + ((header)?1:0)
         def offsetCells = (dataset.offsetCells?:0).shortValue()
 
+        def prepareFilter = dataset.onPrepareFilter
         def filter = dataset.onFilter
 
         def decimalSeparator = dataset.decimalSeparator()
@@ -134,6 +136,9 @@ class ExcelDriver extends FileDriver {
                 def row = rows.next()
 
                 if (row.firstCellNum == -1.shortValue())
+                    continue
+
+                if (prepareFilter != null && !prepareFilter.call((row as StreamingRow).cellMap))
                     continue
 
                 def updater = [:] as LinkedHashMap<String, Object>

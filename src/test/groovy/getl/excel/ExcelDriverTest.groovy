@@ -30,6 +30,8 @@ class ExcelDriverTest extends getl.test.GetlTest {
         excelDataset.limit = null
         excelDataset.offsetRows = 2
         excelDataset.offsetCells = 3
+        excelDataset.onFilter = null
+        excelDataset.onPrepareFilter = null
     }
 
     @Test
@@ -82,5 +84,23 @@ class ExcelDriverTest extends getl.test.GetlTest {
         excelDataset.listNumber = 0
         excelDataset.rows()
         assertEquals('test', excelDataset.listName)
+    }
+
+    @Test
+    void testFilter() {
+        excelDataset.prepareFilter {
+            it.get(3) != null
+        }
+        def rows = excelDataset.rows()
+        assertEquals(2, rows.size())
+        assertEquals(100, rows[0].a)
+        assertEquals(200, rows[1].a)
+
+        excelDataset.onPrepareFilter = null
+        excelDataset.filter {it.a != null }
+        rows = excelDataset.rows()
+        assertEquals(2, rows.size())
+        assertEquals(100, rows[0].a)
+        assertEquals(200, rows[1].a)
     }
 }

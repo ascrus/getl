@@ -343,9 +343,15 @@ class ConfigSlurper extends ConfigManager {
 	 * @param name variable name
 	 * @return
 	 */
-	static String PrepareVariableName(String name) {
-		return ((name.matches('(?i)^([a-z]|[0-9]|[_])+$') && (name.matches('(?i)[_]*[a-z]+.*')))?name:('this."${\'' + StringUtils.EscapeJava(name) + '\'}"'))
-		//(name.matches('(?i)[_]*[a-z]+.*'))?name:('this."${\'' + StringUtils.EscapeJava(name) + '\'}"')
+	static String PrepareVariableName(String name, Boolean isListMap) {
+		String res
+		if (!isListMap)
+			res = (name.matches('(?i)^([a-z]|[0-9]|[_])+$') && (name.matches('(?i)[_]*[a-z]+.*')) && !name.matches('^[0-9]+.*'))?
+					name:('this."${\'' + StringUtils.EscapeJava(name) + '\'}"')
+		else
+			res = '"' + StringUtils.EscapeJava(name) + '"'
+
+		return res
 	}
 
 	/**
@@ -364,7 +370,7 @@ class ConfigSlurper extends ConfigManager {
 		def lines = [] as List<String>
 		data.each { key, value ->
 			if (value == null) return
-			def varName = (isListMap)?key:PrepareVariableName(key as String)
+			def varName = PrepareVariableName(key.toString(), isListMap)
 
 			if (value instanceof Map) {
 				def map = value as Map
@@ -498,7 +504,7 @@ class ConfigSlurper extends ConfigManager {
 
 		def tabStr = (tab > 0)?StringUtils.Replicate('  ', tab):''
 		def eqStr = (isListMap)?':':' ='
-		def keyStr = (key != null)?"${(isListMap)?key:PrepareVariableName(key)}$eqStr ":''
+		def keyStr = (key != null)?"${PrepareVariableName(key.toString(), isListMap)}$eqStr ":''
 		if (value instanceof Timestamp) {
 			def str = "getl.utils.DateUtils.ParseSQLTimestamp(getl.utils.DateUtils.defaultDateTimeMask, '${DateUtils.FormatDate(DateUtils.defaultDateTimeMask, value as Timestamp)}', false)"
 			writer.append("${tabStr}${keyStr}$str")
