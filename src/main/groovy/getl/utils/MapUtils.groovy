@@ -701,7 +701,7 @@ class MapUtils {
                 throw new ExceptionGETL("Required type for field \"$fieldName\"")
 
             XsdType2FieldType(map, typeName, field)
-			if (field.type == Field.Type.OBJECT) {
+			if (field.type == Field.objectFieldType) {
                 if (field.extended.all?.element?.size() > 0 /*|| field.extended.sequence?.element?.size() > 1*/) {
                     def childFields = XsdMap2Fields(map, typeName)
                     childFields.each { Field childField ->
@@ -738,43 +738,43 @@ class MapUtils {
         field.typeName = res.typeName
         switch (res.typeName) {
             case 'string': case 'token': case 'XMLLiteral': case 'NMTOKEN':
-                field.type = Field.Type.STRING
+                field.type = Field.stringFieldType
                 field.length = res.length as Integer?:1024
                 break
             case 'anyURI':
-                field.type = Field.Type.STRING
+                field.type = Field.stringFieldType
                 field.length = res.length as Integer?:512
                 break
             case 'decimal':
-                field.type = Field.Type.NUMERIC
+                field.type = Field.numericFieldType
                 field.precision = res.precision as Integer?:4
                 field.length = res.length as Integer?:((field.precision  as Integer) + 18)
                 break
             case 'float': case 'double':
-                field.type = Field.Type.DOUBLE
+                field.type = Field.doubleFieldType
                 break
             case 'int': case 'byte': case 'integer': case 'negativeInteger': case 'nonNegativeInteger':
             case 'nonPositiveInteger': case 'positiveInteger': case 'short': case 'unsignedInt':
             case 'unsignedShort': case 'unsignedByte':
-                field.type = Field.Type.INTEGER
+                field.type = Field.integerFieldType
                 break
             case 'long': case 'unsignedLong':
-                field.type = Field.Type.BIGINT
+                field.type = Field.bigintFieldType
                 break
             case 'date':
-                field.type = Field.Type.DATE
+                field.type = Field.dateFieldType
                 break
             case 'time':
-                field.type = Field.Type.TIME
+                field.type = Field.timeFieldType
                 break
             case 'dateTime':
-                field.type = Field.Type.DATETIME
+                field.type = Field.datetimeFieldType
                 break
             case 'boolean':
-                field.type = Field.Type.BOOLEAN
+                field.type = Field.booleanFieldType
                 break
             case 'complex':
-                field.type = Field.Type.OBJECT
+                field.type = Field.objectFieldType
                 field.extended.putAll(res.extended as Map)
                 break
             default:

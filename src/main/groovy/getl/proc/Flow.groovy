@@ -26,7 +26,7 @@ class Flow {
 				 'notConverted', 'bulkLoad', 'bulkAsGZIP', 'bulkEscaped', 'onInit', 'onDone',
 				 'process', 'debug', 'writeSynch', 'cacheName', 'convertEmptyToNull', 'copyOnlyWithValue',
 				 'formatDate', 'formatTime', 'formatDateTime', 'formatTimestampWithTz', 'uniFormatDateTime',
-				 'formatBoolean', 'formatNumeric'])
+				 'formatBoolean', 'formatNumeric', 'copyOnlyMatching'])
 		methodParams.register('copy.destChild',
 				['dataset', 'datasetParams', 'process', 'init', 'done'])
 
@@ -127,6 +127,7 @@ class Flow {
 		return result
 	}
 
+	@SuppressWarnings('unused')
 	protected static String findFieldInFieldMap (Map<String, Map> map, String field) {
 		String result = null
 		field = field.toLowerCase()
@@ -161,7 +162,7 @@ class Flow {
 	 * @return
 	 */
 	static private String GenerateMap(Dataset source, Dataset dest, Map fieldMap, Map formats, Boolean convertEmptyToNull,
-									  Boolean saveOnlyWithValue, Boolean autoConvert, List<String> excludeFields,
+									  Boolean saveOnlyWithValue, Boolean autoConvert,
 									  List<String> notConverted, String cacheName, Map result) {
 		def countMethod = (dest.field.size() / 100).intValue() + 1
 		def curMethod = 0
@@ -179,7 +180,14 @@ class Flow {
 		def c = 0
 		def cf = 0
 		dest.field.each { Field df ->
+			// Dest field name
+			def dn = df.name.toLowerCase()
+
+			if (!map.containsKey(dn))
+				return
+
 			c++
+			cf++
 			
 			def fieldMethod = (c / 100).intValue() + 1
 			if (fieldMethod != curMethod) {
@@ -189,63 +197,41 @@ class Flow {
 				sb << "\nvoid method_${curMethod} (Map inRow, Map outRow) {\n"
 			}
 
-			// Dest field name
-			def dn = df.name.toLowerCase()
-
-			if (dn in excludeFields) {
-				sb << "// Exclude field ${df.name}\n\n"
-				return
-			}
-
-			cf++
-			
 			// Map field name
-			String mn = dn
+			String mn
 			
 			def convert = (!(df.name.toLowerCase() in notConverted)) && (autoConvert == null || autoConvert)
 			 
 			String mapFormat = null
-			// Has contains field in mapping
-			if (map.containsKey(dn)) {
-				Map mapName = map.get(dn) as Map
-				// No source map field
-				if (mapName.isEmpty()) {
-					// Nothing mapping
-					mn = null
-				}
-				else {
-					// Set source map field
-					Field sf = source.fieldByName(mapName.name as String)
-					if (sf == null)
-						throw new ExceptionGETL("Not found field \"${mapName.name}\" in source dataset")
-
-					mn = sf.name.toLowerCase()
-					if (mapName.convert != null)
-						convert = ((mapName.convert as String).trim().toLowerCase() == "true")
-					if (mapName.format != null)
-						mapFormat = mapName.format
-					else
-						mapFormat = GenerationUtils.FieldFormat(formats, df)
-				}
+			Map mapName = map.get(dn) as Map
+			// No source map field
+			if (mapName.isEmpty()) {
+				// Nothing mapping
+				mn = null
 			}
 			else {
-				// Has contains field as source field from map
-				if (findFieldInFieldMap(map, dn) != null) { 
-					// Nothing mapping
-					mn = null
-				}
-				else {
+				// Set source map field
+				Field sf = source.fieldByName(mapName.name as String)
+				if (sf == null)
+					throw new ExceptionGETL("Not found field \"${mapName.name}\" in source dataset")
+
+				mn = sf.name.toLowerCase()
+				if (mapName.convert != null)
+					convert = ((mapName.convert as String).trim().toLowerCase() == "true")
+				if (mapName.format != null)
+					mapFormat = mapName.format
+				else
 					mapFormat = GenerationUtils.FieldFormat(formats, df)
-				}
 			}
 
 			Field s
 			// Use field is mapping
-			if (mn != null) s = source.fieldByName(mn)
+			if (mn != null)
+				s = source.fieldByName(mn)
 
 			// Not use
 			if (s == null) {
-				if (!df.isAutoincrement && !df.isReadOnly) {
+				if (!df.isAutoincrement && !df.isReadOnly && df.compute == null) {
 					dn = dn.replace("'", "\\'")
 					sb << "outRow.put('${dn}', getl.utils.GenerationUtils.EMPTY_${df.type.toString().toUpperCase()})"
 					destFields << df.name
@@ -306,17 +292,28 @@ class Flow {
 		return scriptMap
 	}
 
-	protected static void assignFieldToTemp (Dataset source, Dataset dest, Map<String, String> map, List<String> excludeFields) {
-		def fieldMap = ConvertFieldMap(map)
-		dest.field = source.field
-		if (!excludeFields.isEmpty()) dest.field.removeAll { it.name.toLowerCase() in excludeFields }
-        dest.field.each { Field f -> f.isReadOnly = false }
+	protected static void assignFieldToTemp(Dataset source, Dataset dest, Map<String, String> map) {
+		dest.removeFields()
+		source.field.each { sf ->
+			def fn = sf.name.toLowerCase()
+			if (map.containsKey(fn)) {
+				def df = sf.clone() as Field
+				df.with {
+					isReadOnly = false
+					defaultValue = null
+					isAutoincrement = null
+					compute = null
+				}
+				dest.field.add(df)
+			}
+		}
+		/*def fieldMap = ConvertFieldMap(map)
 		fieldMap.each { String k, Map v ->
 			Field f = dest.fieldByName(v.name as String)
 			if (f != null) {
 				if (k != null && k != '') f.name = k else dest.removeField(f)
 			}
-		}
+		}*/
 	}
 	
 	/**
@@ -336,20 +333,26 @@ class Flow {
 		String cacheName = params.cacheName
 
 		Dataset source = params.source as Dataset
-		if (source == null) throw new ExceptionGETL("Required parameter \"source\"")
+		if (source == null)
+			throw new ExceptionGETL("Required parameter \"source\"")
 
 		String sourceDescription
 		if (source == null && params.tempSource != null) {
 			source = TFS.dataset(params.tempSource as String, true)
 			sourceDescription = "temp.${params.tempSource}"
 		}
-		if (source == null) new ExceptionGETL("Required parameter \"source\"")
-		if (source.connection == null) throw new ExceptionGETL("Required specify a connection for the source!")
-		if (sourceDescription == null) sourceDescription = source.objectName
+		if (source == null)
+			new ExceptionGETL("Required parameter \"source\"")
+		if (source.connection == null)
+			throw new ExceptionGETL("Required specify a connection for the source!")
+		if (sourceDescription == null)
+			sourceDescription = source.objectName
 		
 		Dataset dest = params.dest as Dataset
-		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
-		if (dest.connection == null) throw new ExceptionGETL("Required specify a connection for the destination!")
+		if (dest == null)
+			throw new ExceptionGETL("Required parameter \"dest\"")
+		if (dest.connection == null)
+			throw new ExceptionGETL("Required specify a connection for the destination!")
 		String destDescription
 		def isDestTemp = false
 		if (dest == null && params.tempDest != null) {
@@ -357,7 +360,8 @@ class Flow {
 			destDescription = "temp.${params.tempDest}"
 			if (params.tempFields!= null) dest.setField((List<Field>)params.tempFields) else isDestTemp = true
 		}
-		if (dest == null) throw new ExceptionGETL("Required parameter \"dest\"")
+		if (dest == null)
+			throw new ExceptionGETL("Required parameter \"dest\"")
 		if (destDescription == null) destDescription = dest.objectName
 		Map destSysParams = dest.sysParams as Map
 		if (dest instanceof TFSDataset && dest.field.isEmpty() && !isDestTemp) isDestTemp = true
@@ -370,6 +374,7 @@ class Flow {
 		def writeSynch = BoolUtils.IsValue(params.writeSynch, false)
 
 		def autoMap = BoolUtils.IsValue(params.autoMap, true)
+		def copyOnlyMatching = BoolUtils.IsValue(params.copyOnlyMatching, false)
 		def autoConvert = BoolUtils.IsValue(params.autoConvert, true)
 		def autoTranParams = BoolUtils.IsValue(params.autoTran, true)
 		def autoTran = autoTranParams &&
@@ -423,6 +428,9 @@ class Flow {
 			}
 		}
 
+		List<String> excludeFields = (params.excludeFields != null)?(params.excludeFields as List<String>)*.toLowerCase():[]
+		List<String> notConverted = (params.notConverted != null)?(params.notConverted as List<String>)*.toLowerCase():[]
+
 		Map<String, String> map = (params.map != null)?(params.map as Map<String, String>):[:]
 
 		Map<String, Object> sourceParams
@@ -437,9 +445,6 @@ class Flow {
 
 		def clear = BoolUtils.IsValue(params.clear, false)
 		def isSaveErrors = BoolUtils.IsValue(params.saveErrors, false)
-		
-		List<String> excludeFields = (params.excludeFields != null)?(params.excludeFields as List<String>)*.toLowerCase():[]
-		List<String> notConverted = (params.notConverted != null)?(params.notConverted as List<String>)*.toLowerCase():[]
 		
 		Closure initCode = params.onInit as Closure
 		Closure doneCode = params.onDone as Closure
@@ -458,7 +463,8 @@ class Flow {
 		def convertEmptyToNull = BoolUtils.IsValue(params.convertEmptyToNull)
 		def copyOnlyWithValue = BoolUtils.IsValue(params.copyOnlyWithValue)
 
-		if (isSaveErrors) errorsDataset = TFS.dataset()
+		if (isSaveErrors)
+			errorsDataset = TFS.dataset()
 
 		Dataset writer
 
@@ -471,18 +477,18 @@ class Flow {
 		}
 
 		Map<String, Object> bulkParams = [:]
+		TFSDataset bulkDS = null
 		if (isBulkLoad) {
 			bulkParams.putAll(destParams?:[:])
-			if (bulkAsGZIP) bulkParams.compressed = "GZIP"
-			if (autoTran) bulkParams.autoCommit = false
+			if (bulkAsGZIP)
+				bulkParams.compressed = "GZIP"
+			if (autoTran)
+				bulkParams.autoCommit = false
 			destParams = [:]
 
-			if (dest.field.isEmpty()) dest.retrieveFields()
-			def bulkDS = TFS.dataset()
-			bulkDS.field = dest.field
-			dest.prepareCsvTempFile(bulkDS)
-			if (bulkEscaped != null) bulkDS.escaped = bulkEscaped
-			if (bulkAsGZIP != null) bulkDS.isGzFile = bulkAsGZIP
+			if (dest.field.isEmpty())
+				dest.retrieveFields()
+			bulkDS = PrepareBulkDSParams(dest, bulkEscaped, bulkAsGZIP)
 			writer = bulkDS
 			bulkParams.source = bulkDS
 			writeSynch = false
@@ -495,16 +501,22 @@ class Flow {
 				if (child.datasetParams != null)
 					bulkChildParams.putAll(child.datasetParams)
 
-				if (bulkAsGZIP) bulkChildParams.compressed = "GZIP"
-				if (child.autoTran) bulkChildParams.autoCommit = false
+				if (bulkAsGZIP)
+					bulkChildParams.compressed = "GZIP"
+				if (child.autoTran)
+					bulkChildParams.autoCommit = false
 				child.datasetParams?.clear()
 
-				if (dataset.field.isEmpty()) dataset.retrieveFields()
+				if (dataset.field.isEmpty())
+					dataset.retrieveFields()
+
 				def childDS = TFS.dataset()
 				childDS.field = dataset.field
 				dataset.prepareCsvTempFile(childDS)
-				if (bulkEscaped != null) childDS.escaped = bulkEscaped
-				if (bulkAsGZIP != null) childDS.isGzFile = bulkAsGZIP
+				if (bulkEscaped != null)
+					childDS.escaped = bulkEscaped
+				if (bulkAsGZIP != null)
+					childDS.isGzFile = bulkAsGZIP
 
 				bulkChildParams.source = childDS
 				child.writer = childDS
@@ -519,40 +531,53 @@ class Flow {
 		
 		Closure auto_map_code
 		Map generateResult = [:]
-		
-		def initDest = {
+		Map<String, String> mapRules = null
+
+		Closure<List<String>> initDest = {
 			List<String> result = []
 			if (autoMap) {
-				scriptMap = GenerateMap(source, writer, map, formats, convertEmptyToNull, copyOnlyWithValue, autoConvert,
-										excludeFields, notConverted, cacheName, generateResult)
+				scriptMap = GenerateMap(source, writer, mapRules, formats, convertEmptyToNull, copyOnlyWithValue,
+										autoConvert, notConverted, cacheName, generateResult)
 				auto_map_code = generateResult.code as Closure
 				result = generateResult.destFields as List<String>
 			}
 
-			result
+			return result
 		}
 
 		Closure<List<String>> initSource = {
 			List<String> result = []
+
 			if (prepareSource != null)
 				result = prepareSource.call() as List<String>
+
+			mapRules = PrepareMap(source, (inheritFields)?source:dest, map, copyOnlyMatching, autoMap, excludeFields)
 			
-			if (inheritFields) {
-				assignFieldToTemp(source, writer, map, excludeFields)
-			}
+			if (inheritFields)
+				assignFieldToTemp(source, writer, mapRules)
+			else
+				if (isBulkLoad)
+					PrepareBulkDsFields(dest, bulkDS, mapRules)
 
-			if (initCode != null) initCode.call()
+			if (initCode != null)
+				initCode.call()
+
 			childs.each { String name, FlowCopyChild child ->
-				if (child.onInit != null) {
+				if (child.onInit != null)
 					child.onInit.call()
-				}
 			}
 
-            if (createDest) dest.create()
+            if (createDest)
+				dest.create()
 
-			if (clear) dest.truncate(truncate: false)
+			if (clear)
+				dest.truncate(truncate: false)
+
 			destParams.prepare = initDest
-			if (!writeSynch) writer.openWrite(destParams) else writer.openWriteSynch(destParams)
+			if (!writeSynch)
+				writer.openWrite(destParams)
+			else
+				writer.openWriteSynch(destParams)
 
 			childs.each { String name, FlowCopyChild child ->
 				def childWriter = child.writer
@@ -734,6 +759,70 @@ class Flow {
 		}
 
 		return countRow
+	}
+
+	/**
+	 * Prepare mapping between source and destination datasets
+	 * @param source source dataset
+	 * @param dest destination dataset
+	 * @param map custom mapping rules
+	 * @param copyOnlyMatching write to the destination dataset only the fields present in the source dataset
+	 * @param autoMap auto mapping by field names
+	 * @param excludeFields list of fields to exclude from the source
+	 * @return mapping result
+	 */
+	static protected Map<String, String> PrepareMap(Dataset source, Dataset dest, Map<String, String> map,
+										  Boolean copyOnlyMatching, Boolean autoMap, List<String> excludeFields) {
+		def res = [:] as Map<String, String>
+
+		if (autoMap) {
+			source.field.each { f ->
+				def fn = f.name.toLowerCase()
+				if (!(fn in excludeFields) && dest.fieldByName(fn) != null)
+					res.put(fn, fn)
+			}
+		}
+		map.each {k , v -> res.put(k.toLowerCase(), v) }
+
+		if (!copyOnlyMatching)
+			dest.field.each { f ->
+				def fn = f.name.toLowerCase()
+				if (!res.containsKey(fn) && !(fn in excludeFields))
+					res.put(fn, null)
+			}
+
+		return res
+	}
+
+	/**
+	 * Prepare bulk load dataset options
+	 * @param dest destination dataset
+	 * @param bulkEscaped use escape sequences in CSV
+	 * @param bulkAsGZIP write CSV file with GZ compression
+	 * @return temporary file dataset
+	 */
+	static protected TFSDataset PrepareBulkDSParams(Dataset dest, Boolean bulkEscaped, Boolean bulkAsGZIP) {
+		TFSDataset bulkDS = TFS.dataset()
+		dest.prepareCsvTempFile(bulkDS)
+		if (bulkEscaped != null)
+			bulkDS.escaped = bulkEscaped
+		if (bulkAsGZIP != null)
+			bulkDS.isGzFile = bulkAsGZIP
+
+		return bulkDS
+	}
+
+	/**
+	 * Prepare bulk load dataset fields
+	 * @param dataset destination dataset
+	 * @param bulkDS bulk load dataset
+	 * @param map field mapping
+	 */
+	static protected void PrepareBulkDsFields(Dataset dataset, TFSDataset bulkDS, Map<String, String> map) {
+		dataset.field.each {f ->
+			if (map.containsKey(f.name.toLowerCase()))
+				bulkDS.addField Field.New(f.name) { type = f.type; length = f.length; precision = f.precision }
+		}
 	}
 
 	/**

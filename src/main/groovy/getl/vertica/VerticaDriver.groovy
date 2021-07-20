@@ -29,6 +29,7 @@ class VerticaDriver extends JDBCDriver {
 				 'parser', 'streamName', 'files'])
 		methodParams.register('unionDataset', ['direct'])
 		methodParams.register('deleteRows', ['direct', 'label'])
+		methodParams.register('createView', ['privileges'])
 	}
 
 	@Override
@@ -37,6 +38,8 @@ class VerticaDriver extends JDBCDriver {
 
 		defaultSchemaName = 'public'
 		tempSchemaName = 'v_temp_schema'
+		sqlCreateView = sqlCreateView = '''{create} {temporary} VIEW {name} {privileges} AS
+{select}'''
 
         addPKFieldsToUpdateStatementFromMerge = true
 	}
@@ -324,6 +327,7 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	protected String sessionID() {
 		String res = null
+		//noinspection SqlNoDataSourceInspection
 		def rows = sqlConnect.rows('SELECT session_id FROM CURRENT_SESSION')
 		if (!rows.isEmpty()) res = rows[0].session_id as String
 
@@ -483,7 +487,7 @@ class VerticaDriver extends JDBCDriver {
 	List<Field> fields(Dataset dataset) {
 		TableDataset ds = dataset as TableDataset
 		def res = super.fields(ds)
-		if (ds.type == JDBCDataset.viewType) {
+		if (ds.type in [JDBCDataset.viewType, JDBCDataset.localTemporaryViewType]) {
 			res.each {it.isNull = true }
 		}
 		return res
@@ -554,5 +558,15 @@ class VerticaDriver extends JDBCDriver {
 		}
 		jdbcConnection.executeCommand('DROP SCHEMA {if_exists} {schema} {options}',
 				[queryParams: [schema: schemaName, if_exists: ifExists, options: p.join(' ')]])
+	}
+
+	@Override
+	protected Map<String, Object> createViewParams(ViewDataset dataset, Map procParams) {
+		def res = super.createViewParams(dataset, procParams)
+
+		def privileges = procParams.privileges as String
+		res.privileges = (privileges != null)?"${privileges.toUpperCase()} SCHEMA PRIVILEGES":''
+
+		return res
 	}
 }

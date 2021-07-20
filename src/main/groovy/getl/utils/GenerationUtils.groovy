@@ -58,33 +58,98 @@ class GenerationUtils {
 	/**
 	 * Generate declaration of map sections
 	 * @param rootPath Data source
-	 * @param name dot-separated section path
+	 * @param rootNode dot-separated section path
 	 * @return list of section declarations
 	 */
-	static List<String> GenerateRootSections(String rootPath, String name, String className) {
-		if (name == null || name.length() == 0)
+	static List<String> GenerateRootSections(String rootPath, String rootNode, String className) {
+		if (rootNode == null || rootNode.length() == 0)
 			throw new ExceptionGETL("Invalid section path!")
+
+		def subRootNodes = rootNode.split('[|]')
+		if (subRootNodes.length > 2)
+			throw new ExceptionGETL("Not a correct root node \"$rootNode\", no more than one level attachment is supported!")
 
 		def res = [] as List<String>
 
-		def secPath = name.split('[.]')
+		def secPath = subRootNodes[0].split('[.]')
 		def len = secPath.length
 
 		if (len == 1) {
-			res.add("def _getl_root_0 = ${rootPath}.get(${StringUtils.ProcessObjectName(secPath[0], true, false)}) as List<$className>")
+			res.add("	def _getl_root_0 = ${rootPath}.get(${StringUtils.ProcessObjectName(secPath[0], true, false)}) as List<$className>")
 		}
 		else {
-			res.add("def _getl_root_0 = ${rootPath}.get(${StringUtils.ProcessObjectName(secPath[0], true, false)}) as $className")
+			res.add("	def _getl_root_0 = ${rootPath}.get(${StringUtils.ProcessObjectName(secPath[0], true, false)}) as $className")
 
 			for (int i = 1; i < len - 1; i++) {
 				def sectionName = StringUtils.ProcessObjectName(secPath[i], true, false)
-				res.add("def _getl_root_${i} = _getl_root_${i - 1}?.get(${sectionName}) as $className")
+				res.add("	def _getl_root_${i} = _getl_root_${i - 1}?.get(${sectionName}) as $className")
 			}
 
-			res.add("def _getl_root_${len - 1} = _getl_root_${len - 2}?.get(${StringUtils.ProcessObjectName(secPath[len - 1], true, false)}) as List<$className>")
+			res.add("	def _getl_root_${len - 1} = _getl_root_${len - 2}?.get(${StringUtils.ProcessObjectName(secPath[len - 1], true, false)}) as List<$className>")
 		}
 
 		return res
+	}
+
+	/**
+	 * Generate each row code on structure object
+	 */
+	static void GenerateEachRow(String rootNode, String body, StringBuilder sb) {
+		def subRootNodes = rootNode.split('[|]')
+		if (subRootNodes.length > 2)
+			throw new ExceptionGETL("Not a correct root node \"$rootNode\", no more than one level attachment is supported!")
+		def isDetails = (subRootNodes.length != 1)
+
+		sb << "	def cur = 0L\n"
+		if (rootNode != '.') {
+			def sect = GenerateRootSections('(data as Map)', rootNode, 'Map')
+			sb << sect.join('\n')
+			sb << '\n'
+			sb << "	def rootList = _getl_root_${sect.size() - 1}"
+		}
+		else {
+			sb << '	def rootList = data as List<Map>'
+		}
+		sb << '\n'
+
+		if (!isDetails) {
+			sb << """	rootList?.each { Map struct ->
+		if (limit > 0) {
+			cur++
+			if (cur > limit) {
+				directive = Closure.DONE
+				return
+			}
+		}
+		Map<String, Object> row = [:]
+$body
+		code.call(row)
+	}
+}
+"""
+		}
+		else {
+			sb << """	rootList?.each { Map parent ->
+		(parent.get('${subRootNodes[1]}') as List<Map>)?.each { Map struct ->
+			if (limit > 0) {
+				cur++
+				if (cur > limit) {
+					directive = Closure.DONE
+					return
+				}
+			}
+			Map<String, Object> row = [:]
+$body
+			code.call(row)
+		}
+		if (limit > 0 && cur > limit) {
+			directive = Closure.DONE
+			return
+		}
+	}
+}
+"""
+		}
 	}
 
 	/**
@@ -125,6 +190,12 @@ class GenerationUtils {
 															 String rootPath, String structName, String rowName,
 															 Integer tabHead, Integer tabBody, Boolean saveOnlyWithValue,
 															 Closure<String> prepareField = null) {
+		def rootNode = dataset.rootNode
+		def subRootNodes = rootNode.split('[|]')
+		if (subRootNodes.length > 2)
+			throw new ExceptionGETL("Not a correct root node \"$rootNode\", no more than one level attachment is supported!")
+		def isDetail = (subRootNodes.length != 1)
+
 		def fields = [] as List<Field>
 		if (onlyFields?.isEmpty()) onlyFields = null
 		dataset.field.each { f ->
@@ -178,7 +249,10 @@ class GenerationUtils {
 			String curSectName = null
 			for (int i = 0; i < lenPath - 1; i++) {
 				def name = fnPath[i]
-				if (curSectName == null) curSectName = name else curSectName = curSectName + '.' + name
+				if (curSectName == null)
+					curSectName = name
+				else
+					curSectName = curSectName + '.' + name
 				if (!sect.containsKey(name)) {
 					def newSect = [:] as Map<String, Map>
 					sect.put(name, newSect)
@@ -224,7 +298,7 @@ class GenerationUtils {
 		def tabBodySpace = ((tabBody?:0) > 0)?StringUtils.Replicate('\t', tabBody):''
 		def sbBody = new StringBuilder()
 		sections.each {name, sect ->
-			GenerateConvertFromMapSections(structName, name, name, sect, className, idxSections, tabBodySpace, sbBody)
+			GenerateConvertFromMapSections(structName, name, name, sect, isDetail, className, idxSections, tabBodySpace, sbBody)
 		}
 		listGenVal.each {val ->
 			sbBody.append(tabBodySpace)
@@ -255,19 +329,24 @@ class GenerationUtils {
 	 * @param tabStr
 	 * @param sb
 	 */
-	static private void GenerateConvertFromMapSections(String root, String name, String path, Map<String, Map> sect, String className,
-													   List<String> idxSections, String tabStr, StringBuilder sb) {
+	static private void GenerateConvertFromMapSections(String root, String name, String path, Map<String, Map> sect,
+													   Boolean isDetail, String className, List<String> idxSections,
+													   String tabStr, StringBuilder sb) {
 		def idx = idxSections.indexOf(path)
 		if (idx == -1)
 			throw new ExceptionGETL("Section $path not found!")
 
 		def sectName = "_getl_sect_$idx"
-		def sectValue = StringUtils.ProcessObjectName(name, true, false)
 
 		sb.append(tabStr)
-		sb.append("def ${sectName} = ${root}?.get(${sectValue}) as $className\n")
+		if (isDetail && path == '#parent')
+			sb.append("def ${sectName} = parent\n")
+		else {
+			def sectValue = StringUtils.ProcessObjectName(name, true, false)
+			sb.append("def ${sectName} = ${root}?.get(${sectValue}) as $className\n")
+		}
 		sect.each {cName, cChild ->
-			GenerateConvertFromMapSections(sectName, cName, name + '.' + cName, cChild, className, idxSections, tabStr, sb)
+			GenerateConvertFromMapSections(sectName, cName, name + '.' + cName, cChild, isDetail, className, idxSections, tabStr, sb)
 		}
 	}
 	
@@ -307,7 +386,7 @@ class GenerationUtils {
 			case Field.timeFieldType:
 				r = "java.sql.Time ${variableName}"
 				break
-			case Field.objectFieldType: case Field.blobFieldType: case Field.textFieldType:
+			case Field.objectFieldType: case Field.blobFieldType: case Field.textFieldType: case Field.arrayFieldType:
 				r =  "def ${variableName}"
 				break
 			default:
@@ -842,7 +921,7 @@ class GenerationUtils {
 
 				break
 
-			case Field.objectFieldType:
+			case Field.objectFieldType: case Field.arrayFieldType:
 				if (cloneObject)
 					r = "($sourceValue instanceof Cloneable)?${sourceValue}.clone():$sourceValue"
 				else

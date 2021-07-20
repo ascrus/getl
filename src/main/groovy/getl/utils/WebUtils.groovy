@@ -93,6 +93,7 @@ class WebUtils {
 
                 def tn = filePath + '.getltemp'
                 def tFile = new File(tn)
+                tFile.createNewFile()
                 tFile.append(inputStream)
 
                 def oFile = new File(filePath)

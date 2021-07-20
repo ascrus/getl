@@ -40,6 +40,7 @@ class JDBCDriver extends Driver {
 		methodParams.register('executeCommand', ['historyText'])
 		methodParams.register('deleteRows', ['where', 'queryParams'])
 		methodParams.register('clearDataset', ['autoTran', 'truncate'])
+		methodParams.register('createView', ['select', 'replace'])
 	}
 
 	@Override
@@ -47,13 +48,12 @@ class JDBCDriver extends Driver {
 		super.initParams()
 
 		addPKFieldsToUpdateStatementFromMerge = false
-
-		sqlCreateTable = '''CREATE ${type} TABLE ${ifNotExists} ${tableName} (
-${fields}
-${pk}
+		sqlCreateTable = '''CREATE {type} TABLE {ifNotExists} {tableName} (
+{fields}
+{pk}
 )
-${extend}'''
-		sqlCreateIndex = '''CREATE ${unique} ${hash} INDEX ${ifNotExists} ${indexName} ON ${tableName} (${columns})'''
+{extend}'''
+		sqlCreateIndex = '''CREATE {unique} {hash} INDEX {ifNotExists} {indexName} ON {tableName} ({columns})'''
 		commitDDL = false
 		transactionalDDL = false
 		transactionalTruncate = false
@@ -66,7 +66,10 @@ ${extend}'''
 		connectionParamBegin = "?"
 		connectionParamJoin = "&"
 		defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_COMMITTED
-		dropSyntax = 'DROP {object} {ifexists} {name}'
+		sqlDrop = 'DROP {object} {ifexists} {name}'
+		sqlCreateView = '''{create} {temporary} VIEW {name} AS
+{select}'''
+		createViewTypes = ['CREATE', 'CREATE OR REPLACE']
 		syntaxPartitionKey = '{column}'
 		syntaxPartitionKeyInColumns = true
 		syntaxPartitionLastPosInValues = true
@@ -90,7 +93,7 @@ ${extend}'''
 	List<Driver.Support> supported() {
 		[Driver.Support.CONNECT, Driver.Support.SQL, Driver.Support.EACHROW, Driver.Support.WRITE, Driver.Support.BATCH,
 		 Driver.Support.COMPUTE_FIELD, Driver.Support.DEFAULT_VALUE, Driver.Support.NOT_NULL_FIELD,
-		 Driver.Support.PRIMARY_KEY, Driver.Support.TRANSACTIONAL]
+		 Driver.Support.PRIMARY_KEY, Driver.Support.TRANSACTIONAL, Driver.Support.VIEW]
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -177,69 +180,73 @@ ${extend}'''
 	@Override
 	void prepareField (Field field) {
 		if (field.dbType == null) return
-		if (field.type != null && field.type != Field.Type.STRING) return
+		if (field.type != null && field.type != Field.stringFieldType) return
 
 		Field.Type res
 		
 		Integer t = (Integer)field.dbType
 		switch (t) {
 			case java.sql.Types.INTEGER: case java.sql.Types.SMALLINT: case java.sql.Types.TINYINT:
-				res = Field.Type.INTEGER
+				res = Field.integerFieldType
 				break
 				
 			case java.sql.Types.BIGINT:
-				res = Field.Type.BIGINT
+				res = Field.bigintFieldType
 				break
 			
 			case java.sql.Types.CHAR: case java.sql.Types.NCHAR:
 			case java.sql.Types.LONGVARCHAR: case java.sql.Types.LONGNVARCHAR:
 			case java.sql.Types.VARCHAR: case java.sql.Types.NVARCHAR:
-				res = Field.Type.STRING
+				res = Field.stringFieldType
 				break
 			
 			case java.sql.Types.BOOLEAN: case java.sql.Types.BIT:
-				res = Field.Type.BOOLEAN
+				res = Field.booleanFieldType
 				break
 				
 			case java.sql.Types.DOUBLE: case java.sql.Types.FLOAT: case java.sql.Types.REAL:
-				res = Field.Type.DOUBLE
+				res = Field.doubleFieldType
 				break
 				
 			case java.sql.Types.DECIMAL: case java.sql.Types.NUMERIC:
-				res = Field.Type.NUMERIC
+				res = Field.numericFieldType
 				break
 				
 			case java.sql.Types.BLOB: case java.sql.Types.VARBINARY:
 			case java.sql.Types.LONGVARBINARY: case java.sql.Types.BINARY:
-				res = Field.Type.BLOB
+				res = Field.blobFieldType
 				break
 				
 			case java.sql.Types.CLOB: case java.sql.Types.NCLOB: 
-				res = Field.Type.TEXT
+				res = Field.textFieldType
 				break
 				
 			case java.sql.Types.DATE:
-				res = Field.Type.DATE
+				res = Field.dateFieldType
 				break
 				
 			case java.sql.Types.TIME:
-				res = Field.Type.TIME
+				res = Field.timeFieldType
 				break
 				
 			case java.sql.Types.TIMESTAMP:
-				res = Field.Type.DATETIME
+				res = Field.datetimeFieldType
 				break
 
 			case java.sql.Types.TIMESTAMP_WITH_TIMEZONE:
-				res = Field.Type.TIMESTAMP_WITH_TIMEZONE
+				res = Field.timestamp_with_timezoneFieldType
 				break
 
 			case java.sql.Types.ROWID:
-				res = Field.Type.ROWID
+				res = Field.rowidFieldType
+				break
+
+			case java.sql.Types.ARRAY:
+				res = Field.arrayFieldType
 				break
 				
 			default:
-				res = Field.Type.OBJECT
+				res = Field.objectFieldType
 		}
 		field.type = res
 	}
@@ -249,50 +256,53 @@ ${extend}'''
 		def result
 		
 		switch (type) {
-			case Field.Type.STRING:
+			case Field.stringFieldType:
 				result = java.sql.Types.VARCHAR
 				break
-			case Field.Type.INTEGER:
+			case Field.integerFieldType:
 				result = java.sql.Types.INTEGER
 				break
-			case Field.Type.BIGINT:
+			case Field.bigintFieldType:
 				result = java.sql.Types.BIGINT
 				break
-			case Field.Type.NUMERIC:
+			case Field.numericFieldType:
 				result = java.sql.Types.DECIMAL
 				break
-			case Field.Type.DOUBLE:
+			case Field.doubleFieldType:
 				result = java.sql.Types.DOUBLE
 				break
-			case Field.Type.BOOLEAN:
+			case Field.booleanFieldType:
 				result = java.sql.Types.BOOLEAN
 				break
-			case Field.Type.DATE:
+			case Field.dateFieldType:
 				result = java.sql.Types.DATE
 				break
-			case Field.Type.TIME:
+			case Field.timeFieldType:
 				result = java.sql.Types.TIME
 				break
-			case Field.Type.DATETIME:
+			case Field.datetimeFieldType:
 				result = java.sql.Types.TIMESTAMP
 				break
-			case Field.Type.TIMESTAMP_WITH_TIMEZONE:
+			case Field.timestamp_with_timezoneFieldType:
 				result = java.sql.Types.TIMESTAMP_WITH_TIMEZONE
 				break
-			case Field.Type.BLOB:
+			case Field.blobFieldType:
 				result = java.sql.Types.BLOB
 				break
-			case Field.Type.TEXT:
+			case Field.textFieldType:
 				result = java.sql.Types.CLOB
 				break
-			case Field.Type.OBJECT:
+			case Field.objectFieldType:
 				result = java.sql.Types.JAVA_OBJECT
 				break
-			case Field.Type.ROWID:
+			case Field.rowidFieldType:
 				result = java.sql.Types.ROWID
 				break
-			case Field.Type.UUID:
+			case Field.uuidFieldType:
 				result = java.sql.Types.OTHER
+				break
+			case Field.arrayFieldType:
+				result = java.sql.Types.ARRAY
 				break
 			default:
 				throw new ExceptionGETL("Not supported type ${type}")
@@ -764,10 +774,12 @@ ${extend}'''
 	protected Map<String, String> prepareForRetrieveFields(TableDataset dataset) {
 		def names = [:] as Map<String, String>
 		names.dbName = prepareObjectName(ListUtils.NotNullValue([dataset.dbName, defaultDBName]) as String)
-		if (dataset.type == TableDataset.localTemporaryTableType)
+
+		if (dataset.type in [TableDataset.localTemporaryTableType, TableDataset.localTemporaryViewType])
 			names.schemaName = tempSchemaName
 		else
 			names.schemaName = prepareObjectName(ListUtils.NotNullValue([dataset.schemaName, defaultSchemaName]) as String)
+
 		names.tableName = prepareObjectName(dataset.tableName as String)
 
 		return names
@@ -787,7 +799,8 @@ ${extend}'''
 		TableDataset ds = dataset as TableDataset
 
 		if (Driver.Operation.READ_METADATA in operations()) {
-			if (ds.type == JDBCDataset.localTemporaryTableType && !supportLocalTemporaryRetrieveFields)
+			if (ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType] &&
+					!supportLocalTemporaryRetrieveFields)
 				throw new ExceptionGETL('The driver does not support getting a list of fields in the local temporary table!')
 
 			def names = prepareForRetrieveFields(ds)
@@ -955,7 +968,6 @@ ${extend}'''
 	/** Name of current date time function */
 	String getNowFunc() { 'NOW()' }
 
-	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Synchronized
 	@Override
 	void createDataset(Dataset dataset, Map params) {
@@ -967,34 +979,40 @@ ${extend}'''
 		def tableType = (dataset as JDBCDataset).type
 		if (!(tableType in [JDBCDataset.tableType, JDBCDataset.globalTemporaryTableType,
 							JDBCDataset.localTemporaryTableType, JDBCDataset.memoryTable, JDBCDataset.externalTable])) {
-            throw new ExceptionGETL("Can not create dataset for type \"${tableType}\"")
+            throw new ExceptionGETL("Can not create table for type \"${tableType}\"!")
         }
 		def tableTypeName = ''
 		switch (tableType) {
 			case JDBCDataset.globalTemporaryTableType:
-                if (!isSupport(Driver.Support.GLOBAL_TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables!')
+                if (!isSupport(Support.GLOBAL_TEMPORARY))
+					throw new ExceptionGETL('Driver not support temporary tables!')
 				tableTypeName = globalTemporaryTablePrefix
 				break
 			case JDBCDataset.localTemporaryTableType:
-                if (!isSupport(Driver.Support.LOCAL_TEMPORARY)) throw new ExceptionGETL('Driver not support temporary tables!')
+                if (!isSupport(Support.LOCAL_TEMPORARY))
+					throw new ExceptionGETL('Driver not support temporary tables!')
 				tableTypeName = localTemporaryTablePrefix
 				break
 			case JDBCDataset.memoryTable:
-                if (!isSupport(Driver.Support.MEMORY)) throw new ExceptionGETL('Driver not support memory tables!')
+                if (!isSupport(Support.MEMORY))
+					throw new ExceptionGETL('Driver not support memory tables!')
 				tableTypeName = memoryTablePrefix
 				break
 			case JDBCDataset.externalTable:
-				if (!isSupport(Driver.Support.EXTERNAL)) throw new ExceptionGETL('Driver not support external tables!')
+				if (!isSupport(Support.EXTERNAL))
+					throw new ExceptionGETL('Driver not support external tables!')
 				tableTypeName = externalTablePrefix
 				break
 		}
 
 		def validExists = BoolUtils.IsValue(params.ifNotExists)
-		if (validExists && !isSupport(Driver.Support.CREATEIFNOTEXIST)) {
-			if (!isTable(dataset)) throw new ExceptionGETL("Option \"ifNotExists\" is not supported for dataset type \"${dataset.getClass().name}\"")
-			if ((dataset as TableDataset).exists) return
+		if (validExists && !isSupport(Support.CREATEIFNOTEXIST)) {
+			if (!isTable(dataset))
+				throw new ExceptionGETL("Option \"ifNotExists\" is not supported for dataset type \"${dataset.getClass().name}\"!")
+			if ((dataset as TableDataset).exists)
+				return
 		}
-		def ifNotExists = (validExists && isSupport(Driver.Support.CREATEIFNOTEXIST))?'IF NOT EXISTS':''
+		def ifNotExists = (validExists && isSupport(Support.CREATEIFNOTEXIST))?'IF NOT EXISTS':''
 		def useNativeDBType = BoolUtils.IsValue(params."useNativeDBType", true)
 		
 		def p = MapUtils.CleanMap(params, ["ifNotExists", "indexes", "hashPrimaryKey", "useNativeDBType"])
@@ -1004,12 +1022,18 @@ ${extend}'''
 		def defPrimary = GenerationUtils.SqlKeyFields(dataset as JDBCDataset, dataset.field, null, null)
 		dataset.field.each { Field f ->
 			try {
-				if (f.type == Field.Type.BOOLEAN && !isSupport(Driver.Support.BOOLEAN)) throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")")
-				if (f.type == Field.Type.DATE && !isSupport(Driver.Support.DATE)) throw new ExceptionGETL("Driver not support date fields (field \"${f.name}\")")
-				if (f.type == Field.Type.TIME && !isSupport(Driver.Support.TIME)) throw new ExceptionGETL("Driver not support time fields (field \"${f.name}\")")
-				if (f.type == Field.Type.UUID && !isSupport(Driver.Support.UUID)) throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")")
-                if (f.type == Field.Type.BLOB && !isSupport(Driver.Support.BLOB)) throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")")
-                if (f.type == Field.Type.TEXT && !isSupport(Driver.Support.CLOB)) throw new ExceptionGETL("Driver not support clob fields (field \"${f.name}\")")
+				if (f.type == Field.Type.BOOLEAN && !isSupport(Support.BOOLEAN))
+					throw new ExceptionGETL("Driver not support boolean fields (field \"${f.name}\")!")
+				if (f.type == Field.Type.DATE && !isSupport(Support.DATE))
+					throw new ExceptionGETL("Driver not support date fields (field \"${f.name}\")!")
+				if (f.type == Field.Type.TIME && !isSupport(Support.TIME))
+					throw new ExceptionGETL("Driver not support time fields (field \"${f.name}\")!")
+				if (f.type == Field.Type.UUID && !isSupport(Support.UUID))
+					throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")!")
+                if (f.type == Field.Type.BLOB && !isSupport(Support.BLOB))
+					throw new ExceptionGETL("Driver not support blob fields (field \"${f.name}\")!")
+                if (f.type == Field.Type.TEXT && !isSupport(Support.CLOB))
+					throw new ExceptionGETL("Driver not support clob fields (field \"${f.name}\")!")
 
 				def s = createDatasetAddColumn(f, useNativeDBType)
 				if (s == null) return
@@ -1023,46 +1047,44 @@ ${extend}'''
 		}
 		def fields = defFields.join(",\n")
 		def pk = "" 
-		if (isSupport(Driver.Support.PRIMARY_KEY) && defPrimary.size() > 0) {
+		if (isSupport(Support.PRIMARY_KEY) && defPrimary.size() > 0) {
 			pk = "	PRIMARY KEY " + ((params.hashPrimaryKey != null && params.hashPrimaryKey)?"HASH ":"") + "(" + defPrimary.join(",") + ")"
 			fields += ","
 		}
-
-		String createTableCode = '"""' + sqlCreateTable + '"""'
 
 		def con = jdbcConnection
 		
 		if (commitDDL && transactionalDDL && !(jdbcConnection.autoCommit)) con.startTran()
 		try {
-			def varsCT = [  type: tableTypeName,
-							ifNotExists: ifNotExists, 
-							tableName: tableName,
-							fields: fields, 
-							pk: pk, 
-							extend: extend]
-			def sqlCodeCT = GenerationUtils.EvalGroovyScript(createTableCode, varsCT) as String
-	//		println sqlCodeCT
+			def varsCT = [
+					type: tableTypeName,
+					ifNotExists: ifNotExists,
+					tableName: tableName,
+					fields: fields,
+					pk: pk,
+					extend: extend]
+			def sqlCodeCT = StringUtils.EvalMacroString(sqlCreateTable, varsCT)
+			//		println sqlCodeCT
 			executeCommand(sqlCodeCT, p)
 
 			if (params.indexes != null && !(params.indexes as Map).isEmpty()) {
-				if (!isSupport(Driver.Support.INDEX)) throw new ExceptionGETL("Driver not support indexes")
+				if (!isSupport(Support.INDEX)) throw new ExceptionGETL("Driver not support indexes")
 				(params.indexes as Map<String, Map>).each { name, value ->
-					String createIndexCode = '"""' + sqlCreateIndex + '"""'
-					
 					def idxCols = []
 					(value.columns as List<String>)?.each { nameCol ->
 						idxCols << ((dataset.fieldByName(nameCol) != null)?
 										prepareFieldNameForSQL(nameCol, dataset as JDBCDataset):nameCol)
 					}
 					
-					def varsCI = [  indexName: prepareTableNameForSQL(name as String),
-									unique: (value.unique != null && value.unique == true)?"UNIQUE":"",
-									hash: (value.hash != null && value.hash == true)?"HASH":"",
-									ifNotExists: (value.ifNotExists != null && value.ifNotExists == true)?"IF NOT EXISTS":"",
-									tableName: tableName,
-									columns: idxCols.join(",")
-									]
-					def sqlCodeCI = GenerationUtils.EvalGroovyScript(createIndexCode, varsCI) as String
+					def varsCI = [
+							indexName: prepareTableNameForSQL(name as String),
+							unique: (value.unique != null && value.unique == true)?"UNIQUE":"",
+							hash: (value.hash != null && value.hash == true)?"HASH":"",
+							ifNotExists: (value.ifNotExists != null && value.ifNotExists == true)?"IF NOT EXISTS":"",
+							tableName: tableName,
+							columns: idxCols.join(",")
+					]
+					def sqlCodeCI = StringUtils.EvalMacroString(sqlCreateIndex, varsCI)
 
 					if (commitDDL && !(jdbcConnection.autoCommit)) {
 						if (transactionalDDL) {
@@ -1266,7 +1288,7 @@ ${extend}'''
 	}
 
 	/** Drop sql statement syntax */
-	protected String dropSyntax
+	protected String sqlDrop
 
 	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Synchronized
@@ -1280,7 +1302,7 @@ ${extend}'''
 		def t = ((dataset as JDBCDataset).type in
                     [JDBCDataset.tableType, JDBCDataset.localTemporaryTableType, JDBCDataset.globalTemporaryTableType,
                      JDBCDataset.memoryTable, JDBCDataset.externalTable])?'TABLE':
-				((dataset as JDBCDataset).type == JDBCDataset.viewType)?'VIEW':null
+				((dataset as JDBCDataset).type in [JDBCDataset.viewType, JDBCDataset.localTemporaryViewType])?'VIEW':null
 
 		if (t == null)
 			throw new ExceptionGETL("Can not support type object \"${(dataset as JDBCDataset).type}\"")
@@ -1292,7 +1314,7 @@ ${extend}'''
 		}
 
 		def e = (validExists && isSupport(Driver.Support.DROPIFEXIST))?'IF EXISTS':''
-		def q = StringUtils.EvalMacroString(dropSyntax, [object: t, ifexists: e, name: n])
+		def q = StringUtils.EvalMacroString(sqlDrop, [object: t, ifexists: e, name: n])
 
 		def con = jdbcConnection
 
@@ -2604,7 +2626,7 @@ FROM {source} {after_from}'''
 
 		if (source.readOpts.where != null) {
 			sql += '\nWHERE {where}'
-			qParams.where = source.readOpts.where
+			qParams.where = StringUtils.EvalMacroString(source.readOpts.where, source.queryParams)
 		}
 		source.currentJDBCConnection.currentJDBCDriver.prepareCopyTableSource(source, qParams)
 		dest.currentJDBCConnection.currentJDBCDriver.prepareCopyTableDestination(dest, qParams)
@@ -2699,8 +2721,56 @@ FROM {source} {after_from}'''
 	}
 
 	/** Create schema in database */
+	@Synchronized
 	void createSchema(String schemaName, Map<String, Object> createParams) { }
 
 	/**  Drop schema from database */
+	@Synchronized
 	void dropSchema(String schemaName, Map<String, Object> dropParams) { }
+
+	/** Create view SQL syntax*/
+	protected String sqlCreateView
+	/** Create or replace view SQL syntax*/
+	protected List<String> createViewTypes
+
+	/**
+	 * Create view in database
+	 * @param dataset view object
+	 * @param params creation options
+	 */
+	@Synchronized
+	void createView(ViewDataset dataset, Map params) {
+		if (!isSupport(Support.VIEW))
+			throw new ExceptionGETL('Driver not support views!')
+
+		validTableName(dataset as JDBCDataset)
+		def qp = createViewParams(dataset, params)
+		dataset.currentJDBCConnection.executeCommand(sqlCreateView, [queryParams: qp])
+	}
+
+	/**
+	 * Prepare parameters for creating a view
+	 * @param dataset view object
+	 * @param procParams creation options
+	 * @return generate variables
+	 */
+	protected Map<String, Object> createViewParams(ViewDataset dataset, Map procParams) {
+		def res = [name: fullNameDataset(dataset)] as Map<String, Object>
+
+		def replace = BoolUtils.IsValue(procParams.replace)
+		if (replace && createViewTypes.size() == 1)
+			throw new ExceptionGETL("Option \"replace\" is not supported on the current connection!")
+
+		res.create = (replace)?createViewTypes[1]:createViewTypes[0]
+
+		def isTemporary = (dataset.type == ViewDataset.localTemporaryViewType)
+		res.temporary = (isTemporary)?'LOCAL TEMPORARY':''
+
+		def select = procParams.select as String
+		if (select == null)
+			throw new ExceptionGETL("It is required to specify sql select for view in the \"select\" parameter!")
+		res.select = StringUtils.EvalMacroString(select, dataset.queryParams)
+
+		return res
+	}
 }

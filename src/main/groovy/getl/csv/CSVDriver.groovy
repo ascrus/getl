@@ -166,7 +166,7 @@ class CSVDriver extends FileDriver {
 													   String formatTime, String formatDateTime, String formatTimestampWithTz,
 													   Boolean isValid) {
 		CellProcessor cp
-		if (field.type == null || (field.type in [Field.Type.STRING, Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
+		if (field.type == null || (field.type in [Field.stringFieldType, Field.objectFieldType, Field.rowidFieldType, Field.uuidFieldType])) {
 			if (field.length != null && isValid)
 				cp = new StrMinMax(0L, field.length.toLong())
 
@@ -378,6 +378,8 @@ class CSVDriver extends FileDriver {
 		def cds = dataset as CSVDataset
 		if (cds.fileName == null)
 			throw new ExceptionGETL('Dataset required fileName')
+
+		cds.currentCsvConnection.validPath()
 		
 		def escaped = BoolUtils.IsValue([params.escaped, cds.isEscaped()])
 		def readAsText = BoolUtils.IsValue(params.readAsText)
@@ -582,6 +584,8 @@ class CSVDriver extends FileDriver {
 		def csv_ds = dataset as CSVDataset
 		if (csv_ds.fileName == null)
 			throw new ExceptionGETL('Dataset required fileName')
+
+		csv_ds.currentCsvConnection.validPath()
 
 		WriterParams wp = new WriterParams()
 		dataset._driver_params = wp

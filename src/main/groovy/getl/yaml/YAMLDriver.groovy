@@ -4,7 +4,6 @@ import getl.data.Dataset
 import getl.data.Field
 import getl.data.FileDataset
 import getl.driver.Driver
-import getl.driver.FileDriver
 import getl.driver.WebServiceDriver
 import getl.exception.ExceptionGETL
 import getl.utils.GenerationUtils
@@ -57,36 +56,16 @@ class YAMLDriver extends WebServiceDriver {
         sb << '@groovy.transform.CompileStatic\n'
         sb << 'void proc(getl.yaml.YAMLDataset dataset, Closure code, Object data, Integer limit) {\n'
 
+        def rootNode = dataset.rootNode
+
         def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,'Map', true,
-                dataset.dataNode, 'struct','row', 0, 1, true)
+                dataset.dataNode, 'struct','row', 1,
+                2 + ((rootNode.split('[|]').length == 2?1:0)), true)
         sb << genScript.head
 
-        sb << "def cur = 0L\n"
-        def rootNode = dataset.rootNode
-        if (rootNode != '.') {
-            def sect = GenerationUtils.GenerateRootSections('(data as Map)', rootNode, 'Map')
-            sb << sect.join('\n')
-            sb << '\n'
-            sb << "def rootList = _getl_root_${sect.size() - 1}"
-        }
-        else {
-            sb << 'def rootList = data as List<Map>'
-        }
-        sb << '\n'
-        sb << 'rootList?.each { Map struct ->\n'
-        sb << """	if (limit > 0) {
-	cur++
-	if (cur > limit) {
-		directive = Closure.DONE
-		return
-	}
-}
-"""
-        sb << '	Map<String, Object> row = [:]\n'
-        sb << genScript.body
-        sb << "	code.call(row)\n"
-        sb << "}\n}"
-//		println sb.toString()
+        GenerationUtils.GenerateEachRow(rootNode, genScript.body, sb)
+        /*println sb.toString()
+        assert 1 == 0*/
 
         def script = sb.toString()
         Closure cl = dataset._cacheReadClosure(script)
@@ -160,6 +139,8 @@ class YAMLDriver extends WebServiceDriver {
     @Override
     @CompileStatic
     Long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
+        (dataset.connection as YAMLConnection).validPath()
+
         Closure<Boolean> filter = params."filter" as Closure<Boolean>
 
         def countRec = 0L

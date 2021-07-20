@@ -372,7 +372,7 @@ LIMIT 1'''
     }
 
     @Test
-    void testViewFields() {
+    void testViews() {
         Getl.Dsl {
             con.with {
                 def tab = verticaTable {
@@ -381,21 +381,38 @@ LIMIT 1'''
                     field('name') { length = 50; isNull = false }
                     field('value') { type = numericFieldType; length = 12; precision = 2 }
                     create(ifNotExists: true)
+                    etl.rowsTo {
+                        writeRow {add ->
+                            add id: 1, name: 'test', value: 123.45
+                        }
+                    }
                 }
                 try {
-                    executeCommand 'CREATE OR REPLACE VIEW v_test_view AS SELECT * FROM test_view'
-                    def view = view {
+                    new ViewDataset().with {
+                        useConnection con
                         tableName = 'v_test_view'
-                    }
-                    try {
-                        view.with {
+                        createView(select: 'SELECT * FROM test_view', privileges: 'exclude')
+                        try {
                             retrieveFields()
                             assertEquals(3, field.size())
                             field.each { assertTrue(it.isNull) }
+                            assertEquals(1, countRow())
                         }
-                    }
-                    finally {
-                        view.drop()
+                        finally {
+                            drop()
+                        }
+                        removeFields()
+                        type = localTemporaryViewType
+                        createView(select: 'SELECT * FROM test_view')
+                        try {
+                            retrieveFields()
+                            assertEquals(3, field.size())
+                            field.each { assertTrue(it.isNull) }
+                            assertEquals(1, countRow())
+                        }
+                        finally {
+                            drop()
+                        }
                     }
                 }
                 finally {

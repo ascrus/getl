@@ -215,7 +215,8 @@ class FileConnection extends Connection {
 
 	/** Valid connection path */
 	void validPath() {
-		if (createPath && path != null) FileUtils.ValidPath(currentPath())
+		if (createPath && path != null && !FileUtils.IsResourceFileName(path))
+			FileUtils.ValidPath(currentPath())
 	}
 
 	/** Return the list of files by the specified conditions */

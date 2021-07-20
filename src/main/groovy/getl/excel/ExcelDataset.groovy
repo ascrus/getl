@@ -98,20 +98,20 @@ class ExcelDataset extends FileDataset {
 
     /**
      * Filter reading Excel rows
-     * <br>Closure parameters: org.apache.poi.ss.usermodel.Row row
+     * <br>Closure parameters: com.monitorjbl.xlsx.impl.StreamingRow row
      */
     @JsonIgnore
     Closure<Boolean> getOnPrepareFilter() { params.prepareFilter as Closure<Boolean> }
     /**
      * Filter reading Excel rows
-     * <br>Closure parameters: org.apache.poi.ss.usermodel.Row row
+     * <br>Closure parameters: com.monitorjbl.xlsx.impl.StreamingRow row
      */
     void setOnPrepareFilter(Closure<Boolean> value) { params.prepareFilter = value }
     /**
      * Filter reading Excel rows
-     * <br>Closure parameters: Map row
+     * <br>Closure parameters: com.monitorjbl.xlsx.impl.StreamingRow row
      */
-    void prepareFilter(@ClosureParams(value = SimpleType, options = ['java.util.Map<Integer, org.apache.poi.ss.usermodel.Cell>'])
+    void prepareFilter(@ClosureParams(value = SimpleType, options = ['com.monitorjbl.xlsx.impl.StreamingRow'])
                         Closure<Boolean> value) {
         setOnPrepareFilter(value)
     }

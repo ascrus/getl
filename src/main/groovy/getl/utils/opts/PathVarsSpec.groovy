@@ -43,6 +43,8 @@ class PathVarsSpec extends BaseSpec {
     static public final Field.Type rowidFieldType = Field.Type.ROWID
     /** Object field type */
     static public final Field.Type objectFieldType = Field.Type.OBJECT
+    /** Array field type */
+    static public final Field.Type arrayFieldType = Field.Type.ARRAY
 
     /** Variable value type */
     Field.Type getType() { params.type as Field.Type }

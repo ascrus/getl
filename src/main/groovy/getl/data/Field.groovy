@@ -19,7 +19,7 @@ class Field implements Serializable, Cloneable {
 	 */
 	static enum Type {
 		STRING, INTEGER, BIGINT, NUMERIC, DOUBLE, BOOLEAN, DATE, TIME, DATETIME, TIMESTAMP_WITH_TIMEZONE,
-		BLOB, TEXT, OBJECT, ROWID, UUID
+		BLOB, TEXT, OBJECT, ROWID, UUID, ARRAY
 	}
 
 	/** Integer field type */
@@ -52,6 +52,8 @@ class Field implements Serializable, Cloneable {
 	static public final Field.Type rowidFieldType = Field.Type.ROWID
 	/** Object field type */
 	static public final Field.Type objectFieldType = Field.Type.OBJECT
+	/** Array field type */
+	static public final Field.Type arrayFieldType = Field.Type.ARRAY
 
 	private String name = null
 	/** Field name */

@@ -99,9 +99,10 @@ class Executor implements GetlRepository {
 
 	/** Fixing error */
 	@Synchronized
-	protected void setError (Object obj, Throwable except) {
+	protected void setError(Object obj, Throwable except) {
 		hasError = true
-		if (obj != null) exceptions.put(obj, except)
+		if (obj != null)
+			exceptions.put(obj, except)
 	}
 	
 	/** List of processing elements */

@@ -17,6 +17,7 @@ class WebServiceDriver extends FileDriver {
      */
     void readFromWeb(WebServiceDataset dataset, Map < String, Object > wp) {
         def con = dataset.currentWebServiceConnection
+        con.validPath()
 
         def url = con.webUrl
         if (url == null)

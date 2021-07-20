@@ -28,24 +28,26 @@ class JDBCDataset extends Dataset {
 	 * Type of jdbc datasets
 	 */
 	static enum Type {TABLE, VIEW, QUERY, PROCEDURE, ALIAS, SYNONYM, MEMORY, GLOBAL_TEMPORARY, LOCAL_TEMPORARY,
-						EXTERNAL_TABLE, SYSTEM_TABLE, UNKNOWN}
+						VIEW_TEMPORARY, EXTERNAL_TABLE, SYSTEM_TABLE, UNKNOWN}
 
 	/** Table type */
-	static public Type tableType = Type.TABLE
+	static public final Type tableType = Type.TABLE
 	/** View type */
-	static public Type viewType = Type.VIEW
-	/** Global temporary type */
-	static public Type globalTemporaryTableType = Type.GLOBAL_TEMPORARY
-	/** Local temporary type */
-	static public Type localTemporaryTableType = Type.LOCAL_TEMPORARY
+	static public final Type viewType = Type.VIEW
+	/** Global temporary table type */
+	static public final Type globalTemporaryTableType = Type.GLOBAL_TEMPORARY
+	/** Local temporary table type */
+	static public final Type localTemporaryTableType = Type.LOCAL_TEMPORARY
+	/** Local temporary table type */
+	static public final Type localTemporaryViewType = Type.VIEW_TEMPORARY
 	/** External table type */
-	static public Type externalTable = Type.EXTERNAL_TABLE
+	static public final Type externalTable = Type.EXTERNAL_TABLE
 	/** System table type */
-	static public Type systemTable = Type.SYSTEM_TABLE
+	static public final Type systemTable = Type.SYSTEM_TABLE
 	/** Table in memory */
-	static public Type memoryTable = Type.MEMORY
+	static public final Type memoryTable = Type.MEMORY
 	/** Query type */
-	static public Type queryType = Type.QUERY
+	static public final Type queryType = Type.QUERY
 	
 	/** Type of dataset	*/
 	@JsonIgnore

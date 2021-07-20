@@ -94,22 +94,22 @@ class XMLDriver extends WebServiceDriver {
 		}
 		else {
 			switch (field.type) {
-				case Field.Type.STRING:
+				case Field.stringFieldType:
 					res = "\"${fieldName}\"[0]?.text()"
 					break
-				case Field.Type.INTEGER:
+				case Field.integerFieldType:
 				 	res = "\"${fieldName}\"[0]?.toInteger()"
 					break
-				case Field.Type.BIGINT:
+				case Field.bigintFieldType:
 					res = "\"${fieldName}\"[0]?.toBigInteger()"
 					break
-				case Field.Type.NUMERIC:
+				case Field.numericFieldType:
 					res = "\"${fieldName}\"[0]?.toBigDecimal()"
 					break
-				case Field.Type.DOUBLE:
+				case Field.doubleFieldType:
 					res = "\"${fieldName}\"[0]?.toDouble()"
 					break
-				case Field.Type.OBJECT:
+				case Field.objectFieldType: case Field.arrayFieldType:
 					res = "\"${fieldName}\"[0]?.value()"
 					break
 				default:
@@ -243,6 +243,8 @@ class XMLDriver extends WebServiceDriver {
 	@CompileStatic
 	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		(dataset.connection as XMLConnection).validPath()
+
 		Closure<Boolean> filter = params."filter" as Closure<Boolean>
 		
 		def countRec = 0L

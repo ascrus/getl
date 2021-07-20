@@ -4650,6 +4650,11 @@ Examples:
         def parent = new Executor(abortOnError: true)
         parent.dslCreator = this
         parent.disposeThreadResource(disposeConnections)
+        if (logging.logPrintStackTraceError) {
+            parent.dumpErrors = true
+            parent.logErrors = true
+            parent.debugElementOnError = true
+        }
 
         if (_langOpts.processControlDataset != null && _langOpts.checkProcessForThreads) {
             def allowRun = {

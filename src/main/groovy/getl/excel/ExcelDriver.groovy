@@ -73,6 +73,8 @@ class ExcelDriver extends FileDriver {
         if (!fileName)
             throw new ExceptionGETL('Required "fileName" parameter with Excel dataset!')
 
+        dataset.currentExcelConnection.validPath()
+
         if (!FileUtils.ExistsFile(fullPath))
             throw new ExceptionGETL("Excel file \"${fullPath}\" doesn't exists!")
 
@@ -133,12 +135,12 @@ class ExcelDriver extends FileDriver {
 
             def fieldCount = dataset.field.size()
             while (rows.hasNext()) {
-                def row = rows.next()
+                def row = rows.next() as StreamingRow
 
                 if (row.firstCellNum == -1.shortValue())
                     continue
 
-                if (prepareFilter != null && !prepareFilter.call((row as StreamingRow).cellMap))
+                if (prepareFilter != null && !prepareFilter.call(row))
                     continue
 
                 def updater = [:] as LinkedHashMap<String, Object>
@@ -163,7 +165,19 @@ class ExcelDriver extends FileDriver {
                     }
                     catch (Exception e) {
                         Logs.Severe("Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in $dataset: ${e.message}")
-                        throw e
+                        try {
+                            def m = [:] as Map<String, Object>
+                            row.cellMap.each { column, value ->
+                                m.put("col $column".toString(), value?.stringCellValue)
+                            }
+                            Logs.Dump(e, 'excel', dataset.fullFileName(), "Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in row:\n${MapUtils.ToJson(m)}")
+                        }
+                        catch (Exception i) {
+                            Logs.Severe("Failed to get column values for error Excel line ${row.rowNum + 1}: ${i.message}")
+                        }
+                        finally {
+                            throw e
+                        }
                     }
                 }
 

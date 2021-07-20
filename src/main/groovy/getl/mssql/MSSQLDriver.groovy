@@ -34,6 +34,7 @@ class MSSQLDriver extends JDBCDriver {
 		commitDDL = true
 		transactionalDDL = true
 		transactionalTruncate = true
+		createViewTypes = ['CREATE', 'CREATE OR ALTER']
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

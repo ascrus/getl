@@ -242,7 +242,7 @@ class FileDriver extends Driver {
 	 * @return
 	 */
 	@CompileStatic
-	protected Map getDatasetParams (FileDataset dataset, Map params, Integer portion = null) {
+	protected Map getDatasetParams(FileDataset dataset, Map params, Integer portion = null) {
 		def res = [:]
 		res.fn = fullFileNameDataset(dataset, portion)
 		res.isGzFile = dataset.isGzFile()

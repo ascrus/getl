@@ -872,6 +872,15 @@ elements:
 	 */
 	@SuppressWarnings('unused')
 	Boolean createStoryTable(TableDataset table) {
-		return new FileManager().createStoryTable(table, this)
+		FileManager.createStoryTable(table, this)
+	}
+
+	/**
+	 * Prepare structure of story table
+	 * @param storyTable table for preparing
+	 */
+	@SuppressWarnings('unused')
+	void prepareStoryTable(TableDataset table) {
+		FileManager.prepareStoryTable(table, this)
 	}
 }

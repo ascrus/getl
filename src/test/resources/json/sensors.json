@@ -1,0 +1,60 @@
+{
+  "result":"OK",
+  "objects":[
+    {
+      "id":"bdba1147-b5d8-4331-bb3a-2e0fb4b423ab",
+      "name": "Object 1",
+      "sensors":[
+        {
+          "id":"1fa188cc-4198-4c20-b271-eb8cf3126e71",
+          "name":"4s: ДУТ бак",
+          "type":"LLS_Fuel",
+          "converted":"false",
+          "status": {
+            "active": true
+          }
+        },
+        {
+          "id":"c94dd4e4-7c33-4587-9516-292366a9a996",
+          "name":"3s: Уровень напряжения",
+          "type":"Voltage",
+          "converted":"false",
+          "status": {
+            "active": true
+          }
+        },
+        {
+          "id":"4c2b1720-f531-4b76-95e4-bf6b51e30000",
+          "name":"1b: Количество спутников",
+          "type":"Satellites",
+          "converted":"false"
+        }
+      ]
+    },
+    {
+      "id":"16d3bdd5-2662-41e6-874b-546c97cd63c9",
+      "name": "Object 2",
+      "status": {
+        "lat": 123.45,
+        "lon": 123.45
+      },
+      "sensors":[
+        {
+          "id":"69c94eeb-fd76-4ca8-ae1d-fa2791ad168a",
+          "name":"0b-2-1: Тревожная кнопка",
+          "type":"Alert",
+          "converted":"false",
+          "status": {
+            "active": false
+          }
+        },
+        {
+          "id":"ac264b6c-b3ce-46c2-9225-01517706ebd6",
+          "name":"0b-0-1: Запрос вызова",
+          "type":"DialRequest",
+          "converted":"false"
+        }
+      ]
+    }
+  ]
+}

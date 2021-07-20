@@ -11,6 +11,12 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class ViewDataset extends TableDataset {
 	@Override
+	protected void registerParameters() {
+		super.registerParameters()
+		methodParams.register('createView', [])
+	}
+
+	@Override
 	protected void initParams() {
 		super.initParams()
 
@@ -34,6 +40,20 @@ class ViewDataset extends TableDataset {
 		def ds = currentJDBCConnection.retrieveDatasets(dbName: dbName, schemaName: schemaName,
 					tableName: tableName, type: ["VIEW"])
 		
-		(!ds.isEmpty())
+		return (!ds.isEmpty())
+	}
+
+	/**
+	 * Create view in database
+	 * @param params creation options
+	 */
+	void createView(Map procParams) {
+		validConnection()
+
+		procParams = procParams?:[:]
+		methodParams.validation('createView', procParams,
+				[connection.driver.methodParams.params('createView')])
+
+		currentJDBCConnection.currentJDBCDriver.createView(this, procParams)
 	}
 }

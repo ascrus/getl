@@ -151,4 +151,26 @@ class JsonTest extends GetlTest {
             }
         }
     }
+
+    @Test
+    void testReadDetails() {
+        Getl.Dsl {
+            json {
+                fileName = 'resource:/json/sensors.json'
+                rootNode = 'objects|sensors'
+                field('object_id') { length = 50; alias = '#parent.id' }
+                field('object_name') { length = 100; alias = '#parent.name' }
+                field('object_lat') { type = numericFieldType; length = 12; precision = 3; alias = '#parent.status.lat' }
+                field('object_lon') { type = numericFieldType; length = 12; precision = 3; alias = '#parent.status.lon' }
+                field('id') { length = length = 50 }
+                field('name') { length = length = 100 }
+                field('type') { length = length = 25 }
+                field('converted') { type = booleanFieldType }
+                field('active') { type = booleanFieldType; alias = 'status.active' }
+                eachRow {
+                    println it
+                }
+            }
+        }
+    }
 }

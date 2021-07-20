@@ -21,7 +21,7 @@ class NetezzaDriver extends JDBCDriver {
         connectionParamJoin = ";"
 
         //noinspection SpellCheckingInspection
-        dropSyntax = 'DROP {object} {name} {ifexists}'
+        sqlDrop = 'DROP {object} {name} {ifexists}'
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")

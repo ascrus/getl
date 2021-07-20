@@ -425,6 +425,11 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	void removeField(Field field) {
 		removeField(field.name)
 	}
+
+	/**
+	 * Remove all fields
+	 */
+	void removeFields() { field.clear() }
 	
 	/**
 	* Remove field by list of name
@@ -1049,12 +1054,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Open dataset from writing rows
 	 * <p><b>Parameters:</b><p>
 	 * <ul>
-	 * <li>Closure prepare		- run manual code after initialization metadata dataset
+	 * <li>Closure prepare - run manual code after initialization metadata dataset
 	 * </ul>
 	 * @param params
 	 * @return
 	 */
-	void openWrite (Map procParams = [:]) {
+	void openWrite(Map procParams = [:]) {
 		validConnection()
 		if (!connection.driver.isSupport(Driver.Support.WRITE))
 			throw new ExceptionGETL("Driver is not support write operation")

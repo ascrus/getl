@@ -35,7 +35,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		resetLocalDir()
 	}
 
-	/** Register manager parameteres */
+	/** Register manager parameters */
 	protected void registerParameters() {
 		methodParams.register('super',
 				['rootPath', 'localDirectory', 'scriptHistoryFile', 'noopTime', 'buildListThread', 'sayNoop',
@@ -1012,10 +1012,26 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 * @param path path mask
 	 * @param prepareField field processing code
 	 */
-	@SuppressWarnings('GrMethodMayBeStatic')
 	@Synchronized('_synchCreate')
-	Boolean createStoryTable(TableDataset storyTable, Path path = null,
+	static Boolean createStoryTable(TableDataset storyTable, Path path = null,
 							 @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure prepareField = null) {
+		prepareStoryTable(storyTable, path, prepareField)
+		if (!storyTable.exists) {
+			storyTable.create()
+			return true
+		}
+
+		return false
+	}
+
+	/**
+	 * Prepare structure of story table
+	 * @param storyTable table for preparing
+	 * @param path path mask
+	 * @param prepareField field processing code
+	 */
+	static void prepareStoryTable(TableDataset storyTable, Path path = null,
+							   @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure prepareField = null) {
 		storyTable.field.clear()
 		AddFieldsToDS(storyTable)
 		if (path != null && !path.isCompile)
@@ -1032,11 +1048,6 @@ abstract class Manager implements Cloneable, GetlRepository {
 			if (prepareField != null) prepareField.call(field)
 			storyTable.field << field
 		}
-		if (!storyTable.exists) {
-			storyTable.create()
-			return true
-		}
-		return false
 	}
 	
 	/**
@@ -1117,7 +1128,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		// History table		
 		TableDataset storyTable = (!ignoreStory)?((lParams.story as TableDataset)?:story):null
-		if (createStory && storyTable != null) createStoryTable(storyTable, path)
+		if (createStory && storyTable != null)
+			createStoryTable(storyTable, path)
 
 		// Init result file list table
 		fileList = new TableDataset(connection: (fileListConnection?:new TDS()),

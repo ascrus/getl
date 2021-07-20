@@ -332,14 +332,14 @@ class XeroDriver extends Driver {
                 }
             }
 
-            if (f.type != Field.Type.OBJECT) res << f
+            if (f.type != Field.objectFieldType) res << f
         }
 
         if (parentColumn != null) {
             def parentField = fields.find { Field f -> f.name == parentColumn }
             if (parentField == null)
                 throw new ExceptionGETL("Parent column \"${parentColumn}\" from object \"$mainClass\" not found!")
-            if (parentField.type != Field.Type.OBJECT || parentField.extended.sequenceType == null)
+            if (parentField.type != Field.objectFieldType || parentField.extended.sequenceType == null)
                 throw new ExceptionGETL("Invalid parent column \"${parentColumn}\" from object \"$mainClass\"!")
 
             def childClass = objParams.childClass
@@ -357,7 +357,7 @@ class XeroDriver extends Driver {
                 }
 
                 f.name = parentColumn + '.' + f.name
-                if (f.type != Field.Type.OBJECT) res << f
+                if (f.type != Field.objectFieldType) res << f
             }
         }
 
@@ -480,7 +480,7 @@ class XeroDriver extends Driver {
             } else {
                 pb << '\t\tif (limit > 0 && res > limit) return\n'
                 pb << '\t\tdef mainRow = [:] as Map<String, Object>\n'
-                cb << "\t\tmaster.${ConvertFieldName(Field.Type.OBJECT, parentColumn)}?.${ConvertFieldName(Field.Type.OBJECT, childMethod)}?.each { com.xero.model.${childClass} child ->\n"
+                cb << "\t\tmaster.${ConvertFieldName(Field.objectFieldType, parentColumn)}?.${ConvertFieldName(Field.objectFieldType, childMethod)}?.each { com.xero.model.${childClass} child ->\n"
                 cb << '\t\t\tif (limit > 0 && res > limit) return\n'
                 cb << '\t\t\tdef row = [:] as Map<String, Object>\n'
             }
