@@ -98,14 +98,13 @@ class JSONDriver extends WebServiceDriver {
 		sb << '@groovy.transform.CompileStatic\n'
 		sb << 'void proc(getl.json.JSONDataset dataset, Closure code, Object data, Integer limit) {\n'
 
-		def rootNode = dataset.rootNode
-
 		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,'Map', true,
-				dataset.dataNode, 'struct','row', 1,
-				2 + ((rootNode.split('[|]').length == 2?1:0)), true)
+				'struct','row', 1,
+				2 + (dataset.rootNodePath().size() - 1), true)
 		sb << genScript.head
 
-		GenerationUtils.GenerateEachRow(rootNode, genScript.body, sb)
+		GenerationUtils.GenerateEachRow(dataset, 'data', 'struct', 'row', genScript.body, sb)
+		sb << '\n}'
 		/*println sb.toString()
 		assert 1 == 0*/
 
@@ -191,19 +190,21 @@ class JSONDriver extends WebServiceDriver {
 	protected void doRead(JSONDataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (dataset.field.isEmpty())
 			throw new ExceptionGETL("Required fields description with dataset!")
-		if (dataset.rootNode == null)
-			throw new ExceptionGETL("Required \"rootNode\" parameter with dataset!")
 
-		def fn = fullFileNameDataset(dataset)
-		if (fn == null)
-			throw new ExceptionGETL("Required \"fileName\" parameter with dataset!")
-		File f = new File(fn)
-		if (!f.exists())
-			throw new ExceptionGETL("File \"${fn}\" not found!")
-		
+		def data = params.data
 		Integer limit = (params.limit != null)?(params.limit as Integer):0
 
-		def data = readData(dataset, params)
+		if (data == null) {
+			def fn = fullFileNameDataset(dataset)
+			if (fn == null)
+				throw new ExceptionGETL("Required \"fileName\" parameter with dataset!")
+
+			File f = new File(fn)
+			if (!f.exists())
+				throw new ExceptionGETL("File \"${fn}\" not found!")
+
+			data = readData(dataset, params)
+		}
 		
 		def fields = [] as List<String>
 		if (prepareCode != null) {
@@ -267,7 +268,7 @@ class JSONDriver extends WebServiceDriver {
 		def writer = driverParams.get('write_writer') as Writer
 		def writeRows = driverParams.get('write_rows') as List<Map<String, Object>>
 
-		def format = ds.uniFormatDateTime?:ds.formatTimestampWithTz()
+		def format = ds.uniFormatDateTime()?:ds.formatTimestampWithTz()
 		def gen = new JsonGenerator.Options().dateFormat(format, Locale.default).timezone(TimeZone.default.getID()).build()
 		if (ds.rootNode != '.') {
 			def jsonRoot = [:] as Map<String, Object>

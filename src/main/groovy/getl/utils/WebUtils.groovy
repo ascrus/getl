@@ -49,6 +49,11 @@ class WebUtils {
             def list = [] as List<String>
             def isVars = (vars != null && !vars.isEmpty())
             params.each { k, v ->
+                if (v == null || (v == '')) {
+                    list << k
+                    return
+                }
+
                 String val
                 if (v instanceof Date)
                     val = UrlDateFormatter.format((v as Date).toLocalDateTime()) + 'Z'

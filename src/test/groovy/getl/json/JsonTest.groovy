@@ -167,8 +167,59 @@ class JsonTest extends GetlTest {
                 field('type') { length = length = 25 }
                 field('converted') { type = booleanFieldType }
                 field('active') { type = booleanFieldType; alias = 'status.active' }
-                eachRow {
+                /*eachRow {
                     println it
+                }*/
+                def rows = rows()
+                assertEquals(5, rows.size())
+                assertEquals(2, rows.unique {a, b -> a.object_id <=> b.object_id }.size())
+            }
+        }
+    }
+
+    @Test
+    void testReadSingle() {
+        Getl.Dsl {
+            def detail = json {
+                rootNode = '.'
+                field('type')
+                field('eqNumber')
+                field('fuel_begin')
+                field('fuel_end')
+                field('consumption')
+                field('fillings')
+                field('drains')
+            }
+
+            json {
+                fileName = 'resource:/json/work_info.json'
+                dataNode = 'workinfo'
+                uniFormatDateTime = 'yyyy-MM-dd\'T\'HH:mm:ss'
+                field('work_begin') { type = datetimeFieldType }
+                field('work_end') { type = datetimeFieldType }
+                field('mileage')
+                field('fuelsenses') { type = arrayFieldType }
+
+//              eachRow { println it }
+                def rows = rows()
+                assertEquals(1, rows.size())
+                assertEquals(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss','2021-06-23 06:00:03'), rows[0].work_begin)
+                assertEquals(DateUtils.ParseDate('yyyy-MM-dd HH:mm:ss','2021-06-23 15:31:30'), rows[0].work_end)
+                assertEquals('33.9059937296734', rows[0].mileage)
+                assertEquals(2, (rows[0].fuelsenses as List).size())
+                assertEquals('LLS_FUEL', ((rows[0].fuelsenses as List)[0] as Map).type)
+
+                /*eachRow { row ->
+                    println row
+                    detail.eachRow(data: row.fuelsenses) {detailRow -> println '  ' + detailRow }
+                }*/
+                def subRows = detail.rows(data: rows[0].fuelsenses)
+                assertEquals(2, subRows.size())
+                def i = 0
+                subRows.each { r ->
+                    i++
+                    assertEquals('LLS_FUEL', r.type)
+                    assertEquals(i.toString(), r.eqnumber)
                 }
             }
         }

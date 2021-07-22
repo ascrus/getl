@@ -94,11 +94,22 @@ class GenerationUtils {
 	/**
 	 * Generate each row code on structure object
 	 */
-	static void GenerateEachRow(String rootNode, String body, StringBuilder sb) {
-		def subRootNodes = rootNode.split('[|]')
-		if (subRootNodes.length > 2)
+	static void GenerateEachRow(StructureFileDataset dataset, String methodParam, String rootElement, String rowMap,
+								String body, StringBuilder sb) {
+		def rootNode = dataset.rootNode
+		if (rootNode == null) {
+			sb << """def $rootElement = $methodParam as Map
+	Map<String, Object> $rowMap = [:]
+$body
+	code.call($rowMap)
+"""
+			return
+		}
+
+		def subRootNodes = dataset.rootNodePath()
+		if (subRootNodes.size() > 2)
 			throw new ExceptionGETL("Not a correct root node \"$rootNode\", no more than one level attachment is supported!")
-		def isDetails = (subRootNodes.length != 1)
+		def isDetails = (subRootNodes.size() != 1)
 
 		sb << "	def cur = 0L\n"
 		if (rootNode != '.') {
@@ -124,9 +135,7 @@ class GenerationUtils {
 		Map<String, Object> row = [:]
 $body
 		code.call(row)
-	}
-}
-"""
+	}"""
 		}
 		else {
 			sb << """	rootList?.each { Map parent ->
@@ -146,9 +155,7 @@ $body
 			directive = Closure.DONE
 			return
 		}
-	}
-}
-"""
+	}"""
 		}
 	}
 
@@ -177,7 +184,6 @@ $body
 	 * @param onlyFields parse only specified fields (if empty or null, all fields are parsed)
 	 * @param className class name of used nodes
 	 * @param isStringDateTime for fields of type date and time, the original values are stored in the text
-	 * @param rootPath path of the root tree node
 	 * @param structName the name of the variable from which to take the field values
 	 * @param rowName name of the map variable, where to store the field values
 	 * @param tabHead code indentation in head script
@@ -187,14 +193,16 @@ $body
 	 */
 	static Map<String, String> GenerateConvertFromBuilderMap(StructureFileDataset dataset, List<String> onlyFields,
 															 String className, Boolean isStringDateTime,
-															 String rootPath, String structName, String rowName,
+															 String structName, String rowName,
 															 Integer tabHead, Integer tabBody, Boolean saveOnlyWithValue,
 															 Closure<String> prepareField = null) {
 		def rootNode = dataset.rootNode
-		def subRootNodes = rootNode.split('[|]')
-		if (subRootNodes.length > 2)
+		def subRootNodes = dataset.rootNodePath()
+		if (subRootNodes.size() > 2)
 			throw new ExceptionGETL("Not a correct root node \"$rootNode\", no more than one level attachment is supported!")
-		def isDetail = (subRootNodes.length != 1)
+		def isDetail = (subRootNodes.size() == 2)
+
+		def rootPath = dataset.dataNode
 
 		def fields = [] as List<Field>
 		if (onlyFields?.isEmpty()) onlyFields = null
@@ -241,7 +249,7 @@ $body
 			def fn = destField.alias?:destField.name
 			def isAlias = (destField.alias != null)
 			def sp = fn
-			if (!isAlias && rootPath != null)
+			if (/*!isAlias && */rootPath != null)
 				sp = rootPath + '.' + sp
 			def fnPath = sp.split('[.]')
 			def sect = sections
@@ -677,7 +685,7 @@ $body
 
 					case Field.stringFieldType:
 						if (formatField == null)
-							r = "(new BigDecimal($sourceValue as String)"
+							r = "new BigDecimal($sourceValue as String)"
 						else {
 							switch (formatField.trim().toLowerCase()) {
 								case 'standard':

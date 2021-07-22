@@ -1,0 +1,43 @@
+{
+  "result": "OK",
+  "workinfo": {
+    "work_begin": "2021-06-23T06:00:03",
+    "work_end": "2021-06-23T15:31:30",
+    "mileage": "33.9059937296734",
+    "fuel_spend_by_rate": "0",
+    "fuel_spend_by_rate_hours": "0",
+    "work_time": "34290",
+    "engine_time": "33607",
+    "off_time": "680",
+    "stand_time": "12012",
+    "repair_time": "0",
+    "reserve_time": "0",
+    "move_time": "22278",
+    "no_move_time": "12019",
+    "stand_with_working_engine": "11329",
+    "without_navigation": "7",
+    "avg_speed": "5.47901864740211",
+    "max_speed": "17.3999996185303",
+    "fuelsenses": [
+      {
+        "type": "LLS_FUEL",
+        "eqNumber": "1",
+        "fuel_begin": "336.842105263158",
+        "fuel_end": "590.217391304348",
+        "consumption": "177.282608695652",
+        "fillings": "430.657894736842",
+        "drains": "0"
+      },
+      {
+        "type": "LLS_FUEL",
+        "eqNumber": "2",
+        "fuel_begin": "336.842105263158",
+        "fuel_end": "590.217391304348",
+        "consumption": "177.282608695652",
+        "fillings": "430.657894736842",
+        "drains": "0"
+      }
+    ],
+    "drivers": []
+  }
+}

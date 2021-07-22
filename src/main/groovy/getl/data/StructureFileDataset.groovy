@@ -16,6 +16,13 @@ import groovy.transform.stc.SimpleType
 @InheritConstructors
 class StructureFileDataset extends WebServiceDataset {
 	@Override
+	protected void registerParameters() {
+		super.registerParameters()
+
+		methodParams.register('eachRow', ['data'])
+	}
+
+	@Override
 	protected void initParams() {
 		super.initParams()
 		params.attributeField = [] as List<Field>
@@ -110,4 +117,12 @@ class StructureFileDataset extends WebServiceDataset {
 	String getDataNode () { params.dataNode as String }
 	/** Name of data map node */
 	void setDataNode (String value) { params.dataNode = value }
+
+	/** Return the order of arrays of the root node */
+	List<String> rootNodePath() {
+		if (rootNode == null)
+			return [] as List<String>
+
+		return rootNode.split('[|]').toList()
+	}
 }

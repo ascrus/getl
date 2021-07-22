@@ -280,8 +280,8 @@ class FileDataset extends Dataset {
 		if (field.format != null)
 			return field.format
 		String dtFormat = null
-		if (uniFormatDateTime != null)
-			dtFormat = uniFormatDateTime
+		if (uniFormatDateTime() != null)
+			dtFormat = uniFormatDateTime()
 
 		String res = null
 		switch (field.type) {

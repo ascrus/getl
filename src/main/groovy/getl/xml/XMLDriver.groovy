@@ -138,7 +138,7 @@ class XMLDriver extends WebServiceDriver {
 		}
 
 		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields, 'groovy.util.Node',
-				true, dataset.dataNode, 'struct', 'row', 0, 1,
+				true, 'struct', 'row', 0, 1,
 				false, prepareField)
 		sb << genScript.head
 
@@ -220,17 +220,21 @@ class XMLDriver extends WebServiceDriver {
 		if (dataset.rootNode == null)
 			throw new ExceptionGETL("Required \"rootNode\" value with xml dataset!")
 
-		String fn = fullFileNameDataset(dataset)
-		if (fn == null)
-			throw new ExceptionGETL("Required \"fileName\" parameter with dataset!")
-		File f = new File(fn)
-		if (!f.exists())
-			throw new ExceptionGETL("File \"${fn}\" not found!")
-		
+		def data = params.data
 		Integer limit = (params.limit != null)?(params.limit as Integer):0
-		
-		def data = readData(dataset, params)
-		
+
+		if (data == null) {
+			def fn = fullFileNameDataset(dataset)
+			if (fn == null)
+				throw new ExceptionGETL("Required \"fileName\" parameter with dataset!")
+
+			File f = new File(fn)
+			if (!f.exists())
+				throw new ExceptionGETL("File \"${fn}\" not found!")
+
+			data = readData(dataset, params)
+		}
+
 		List<String> fields = []
 		if (prepareCode != null) {
 			prepareCode.call(fields)
