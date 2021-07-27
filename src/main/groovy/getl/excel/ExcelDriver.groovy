@@ -67,7 +67,7 @@ class ExcelDriver extends FileDriver {
     @CompileStatic
     Long eachRow(Dataset source, Map params, Closure prepareCode, Closure code) {
         ExcelDataset dataset = source as ExcelDataset
-        String fileName = dataset.fileName
+        String fileName = dataset.fileName()
         String fullPath = FileUtils.ResourceFileName(dataset.fullFileName(), dataset.dslCreator)
 
         if (!fileName)

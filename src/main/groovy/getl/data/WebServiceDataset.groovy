@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.driver.WebServiceDriver
 import getl.exception.ExceptionGETL
 import getl.utils.CloneUtils
+import getl.utils.ListUtils
 import groovy.transform.InheritConstructors
 
 @InheritConstructors
@@ -86,6 +87,13 @@ class WebServiceDataset extends FileDataset {
     }
     /** Request method (GET or POST) */
     String webRequestMethod() { webRequestMethod?:(currentWebServiceConnection?.webRequestMethod)?:'GET' }
+
+    /** Automatic data capture from a web service when reading rows */
+    Boolean getAutoCaptureFromWeb() { params.autoCaptureFromWeb as Boolean }
+    /** Automatic data capture from a web service when reading rows */
+    void setAutoCaptureFromWeb(Boolean value) { params.autoCaptureFromWeb = value }
+    /** Automatic data capture from a web service when reading rows */
+    Boolean autoCaptureFromWeb() { ListUtils.NotNullValue([autoCaptureFromWeb, currentWebServiceConnection.autoCaptureFromWeb, false]) }
 
     /**
      * Read data from web service and save to file

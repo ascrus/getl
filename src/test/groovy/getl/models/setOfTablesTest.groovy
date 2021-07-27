@@ -23,6 +23,8 @@ class setOfTablesTest extends TestRepository {
                 assertEquals(['h2:table1'], findModelDatasets(['h2:*1']))
                 assertTrue(findModelDatasets(null, ['h2:*']).isEmpty())
                 assertEquals(['h2:table1'], findModelDatasets(null, ['h2:*2']))
+
+                assertTrue(datasetInModel('h2:table1'))
             }
         }
     }

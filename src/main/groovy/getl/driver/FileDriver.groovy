@@ -102,8 +102,9 @@ class FileDriver extends Driver {
 	 */
 	@SuppressWarnings("GrMethodMayBeStatic")
 	String fullFileNameDatasetWithoutGZ(FileDataset dataset) {
-		String fn = dataset.fileName
-		if (fn == null) return null
+		String fn = dataset.fileName()
+		if (fn == null)
+			return null
 		def con = dataset.fileConnection
 		if (dataset.extension() != null) fn += ".${dataset.extension()}"
 		if (con.path != null) {
@@ -123,13 +124,16 @@ class FileDriver extends Driver {
 	 */
 	@SuppressWarnings("GrMethodMayBeStatic")
 	String fileNameWithoutExtension(FileDataset dataset) {
-		def fn = dataset.fileName
-		if (fn == null) return null
+		def fn = dataset.fileName()
+		if (fn == null)
+			return null
 
 		def extDs = dataset.extension()
 		def extFile = FileUtils.FileExtension(fn)?.toLowerCase()
-		if (dataset.isGzFile() && extFile == "gz") fn = FileUtils.ExcludeFileExtension(fn)
-		if (extDs != null && extFile == extDs.toLowerCase()) fn = FileUtils.ExcludeFileExtension(fn)
+		if (dataset.isGzFile() && extFile == "gz")
+			fn = FileUtils.ExcludeFileExtension(fn)
+		if (extDs != null && extFile == extDs.toLowerCase())
+			fn = FileUtils.ExcludeFileExtension(fn)
 
 		return fn
 	}
@@ -142,7 +146,8 @@ class FileDriver extends Driver {
 	 */
 	String fullFileNameDataset(FileDataset dataset, Integer portion = null) {
 		String fn = fileNameWithoutExtension(dataset)
-		if (fn == null) return null
+		if (fn == null)
+			return null
 		def con = dataset.fileConnection
 
 		if (con.path != null) {
@@ -152,9 +157,12 @@ class FileDriver extends Driver {
 				fn = FileUtils.ConvertToDefaultOSPath(con.currentPath()) + con.fileSeparator() + fn
 		}
 
-		if (portion != null) fn = "${fn}.${StringUtils.AddLedZeroStr(portion.toString(), 4)}"
-		if (dataset.extension() != null) fn += ".${dataset.extension()}"
-		if (dataset.isGzFile()) fn += ".gz"
+		if (portion != null)
+			fn = "${fn}.${StringUtils.AddLedZeroStr(portion.toString(), 4)}"
+		if (dataset.extension() != null)
+			fn += ".${dataset.extension()}"
+		if (dataset.isGzFile())
+			fn += ".gz"
 		
 		return FileUtils.ResourceFileName(fn, dataset.dslCreator)
 	}
@@ -216,6 +224,7 @@ class FileDriver extends Driver {
 
 	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		(dataset.connection as FileConnection).validPath()
 		return 0L
 	}
 
@@ -309,8 +318,10 @@ class FileDriver extends Driver {
 		def isAppend = BoolUtils.IsValue(wp.isAppend)
 		def removeEmptyFile = BoolUtils.IsValue(wp.deleteOnEmpty)
 
-		def fn = ((!dataset.isTemporaryFile)?"${wp.fn}.getltemp":(wp.fn as String)) as String
-		if (isAppend) fn += ".${FileUtils.UniqueFileName()}"
+		def orig_fn = ((!dataset.isTemporaryFile)?"${wp.fn}.getltemp":(wp.fn as String)) as String
+		def fn = orig_fn
+		if (isAppend)
+			fn += ".${FileUtils.UniqueFileName()}"
 		def writeOpt = new FileWriteOpts()
 		writeOpt.with {
 			fileName = wp.fn as String //(!isAppend)?(wp.fn as String):(wp.fn as String)
@@ -331,6 +342,8 @@ class FileDriver extends Driver {
 
 		if (dataset.isTemporaryFile) {
 			file.deleteOnExit()
+			if (isAppend)
+				new File(orig_fn).deleteOnExit()
 			if (dataset.autoSchema) {
 				File s = new File(dataset.fullFileSchemaName())
 				if (s.exists()) s.deleteOnExit()

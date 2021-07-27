@@ -182,4 +182,13 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
 
         return res
     }
+
+    /**
+     * Check the presence of a dataset in the model by its name
+     * @param name source dataset name
+     */
+    @Synchronized
+    Boolean datasetInModel(String name) {
+        return usedDatasets.find {it.datasetName == name } != null
+    }
 }

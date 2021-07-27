@@ -70,11 +70,11 @@ class JSONDriver extends WebServiceDriver {
 		}
 		sb << "dataset.attributeValue = attrValue\n"
 		if (initAttr != null)
-			sb << """if (!initAttr(dataset)) { 
+			sb << '''if (!initAttr(dataset)) { 
 	directive = Closure.DONE
 	return 
 }
-"""
+'''
 		sb << "\n"
 	}
 	
@@ -213,13 +213,14 @@ class JSONDriver extends WebServiceDriver {
 		else if (params.fields != null)
 			fields = params.fields as List<String>
 
-		readRows(dataset, fields, limit, data, params.initAttr as Closure, code)
+		readRows(dataset, fields, limit, data, (params.initAttr as Closure<Boolean>)?:dataset.onInitAttributes, code)
 	}
 
 	@CompileStatic
 	@Override
-	Long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		(dataset.connection as JSONConnection).validPath()
+	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+		super.eachRow(dataset, params, prepareCode, code)
+
 		Closure<Boolean> filter = params."filter" as Closure<Boolean>
 		
 		def countRec = 0L

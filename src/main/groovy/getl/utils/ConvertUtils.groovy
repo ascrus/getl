@@ -1,6 +1,7 @@
 package getl.utils
 
 import getl.exception.ExceptionDSL
+import getl.exception.ExceptionGETL
 
 import java.sql.Time
 
@@ -164,5 +165,35 @@ class ConvertUtils {
 		}
 
 		return str
+	}
+
+	/**
+	 * Convert expression {variable} to a value from a list of variables
+	 * @param value expression
+	 * @param vars value of variables
+	 * @param errorWhenUndefined generate an error for an unknown variable
+	 * @return variable value from expression
+	 */
+	static Object Var2Object(String value, Map vars, Boolean errorWhenUndefined = true) {
+		if (value == null)
+			return null
+
+		if (vars == null || vars.isEmpty())
+			throw new ExceptionGETL('It is required to specify variables in "vars"!')
+
+		def str = value.trim()
+		if (!str.matches('[{].+[}]'))
+			return value
+
+		def name = str.substring(1, value.length() - 1)
+		def varValue = vars.get(name)
+		if (varValue == null) {
+			if (errorWhenUndefined)
+				throw new ExceptionGETL("Unknown variable \"$name\"!")
+			else
+				return value
+		}
+
+		return varValue
 	}
 }

@@ -68,6 +68,9 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
      */
     Object attribute(String name) { ListUtils.NotNullValue(attrs.get(name), ownerModel.modelAttrs.get(name)) }
 
+    /** Return all attributes defined for a model element and which are additionally present in the model */
+    Map<String, Object> attributes() { ownerModel.modelAttrs + attrs }
+
     /**
      * Check attribute naming and generate an unknown error
      * @param allowAttrs list of allowed attribute names

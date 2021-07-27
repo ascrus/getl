@@ -1,6 +1,8 @@
 package getl.json
 
 import getl.lang.Getl
+import getl.lang.sub.RepositoryDatasets
+import getl.test.GetlDslTest
 import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.DateUtils
@@ -113,11 +115,13 @@ class JsonTest extends GetlTest {
             json {
                 useConnection jsonConnection {
                     path = TFS.systemPath
+                    autoCaptureFromWeb = true
                     webUrl = 'http://api.openweathermap.org/data/2.5'
                     webParams.APPID = (configContent.openweathermap as Map).appid
                 }
 
                 fileName = 'weather.json'
+                datasetFile().deleteOnExit()
                 isTemporaryFile = true
 
                 webServiceName = 'find'
@@ -141,7 +145,6 @@ class JsonTest extends GetlTest {
                 field('wind_speed') { type = integerFieldType; alias = 'wind.speed' }
                 field('wind_deg') { type = integerFieldType; alias = 'wind.deg' }
 
-                readFromWeb()
                 def rows = rows()
                 assertEquals(2, rows.size())
                 assertEquals('Moscow', rows[0].name)
@@ -191,14 +194,28 @@ class JsonTest extends GetlTest {
                 field('drains')
             }
 
-            json {
+            repositoryStorageManager.storagePath = "${TFS.systemPath}/rep"
+
+            json('test', true) {
+                useConnection jsonConnection('test', true)
                 fileName = 'resource:/json/work_info.json'
                 dataNode = 'workinfo'
                 uniFormatDateTime = 'yyyy-MM-dd\'T\'HH:mm:ss'
+                attributeField('result')
                 field('work_begin') { type = datetimeFieldType }
                 field('work_end') { type = datetimeFieldType }
                 field('mileage')
                 field('fuelsenses') { type = arrayFieldType }
+            }
+            repositoryStorageManager.saveObject(RepositoryDatasets, 'test')
+            unregisterDataset('test')
+            repositoryStorageManager.loadObject(RepositoryDatasets, 'test')
+            FileUtils.DeleteFolder(repositoryStorageManager.storagePath, true)
+
+            json('test') {
+                assertEquals(1, attributeField.size())
+                assertEquals(4, field.size())
+                initAttributes {attributeValue.result == 'OK' }
 
 //              eachRow { println it }
                 def rows = rows()

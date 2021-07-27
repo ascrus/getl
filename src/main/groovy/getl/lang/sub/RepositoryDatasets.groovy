@@ -3,6 +3,7 @@ package getl.lang.sub
 import getl.csv.CSVDataset
 import getl.data.Connection
 import getl.data.Dataset
+import getl.data.StructureFileDataset
 import getl.db2.DB2Table
 import getl.excel.ExcelDataset
 import getl.exception.ExceptionDSL
@@ -123,8 +124,9 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
         if (obj.connection == null)
             throw new ExceptionDSL("No connection specified for dataset \"${obj.dslNameObject}\"!")
 
-        def fields = GenerationUtils.Fields2Map(obj.field)
-        def res = [dataset: obj.getClass().name] + obj.params + fields
+        def res = [dataset: obj.getClass().name] + obj.params + GenerationUtils.Fields2Map(obj.field)
+        if (obj instanceof StructureFileDataset)
+            res.putAll(GenerationUtils.Fields2Map((obj as StructureFileDataset).attributeField, 'attributes'))
 
         if (obj.connection.dslNameObject == null) {
             if (!(obj instanceof TFSDataset))
@@ -143,7 +145,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
         if (connectionName != null)
             con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
 
-        def obj = Dataset.CreateDataset(MapUtils.Copy(config, ['connection', 'fields']))
+        def obj = Dataset.CreateDataset(MapUtils.Copy(config, ['connection', 'fields', 'attributes']))
         if (con == null) {
             if (!(obj instanceof TFSDataset))
                 throw new ExceptionGETL('No dataset connection specified in configuration!')
@@ -155,6 +157,9 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
             obj.setConnection(con)
 
         obj.field = GenerationUtils.Map2Fields(config)
+        if (obj instanceof StructureFileDataset)
+            obj.attributeField = GenerationUtils.Map2Fields(config, 'attributes')
+
         return obj
     }
 

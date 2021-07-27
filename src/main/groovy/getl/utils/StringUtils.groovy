@@ -3,6 +3,8 @@ package getl.utils
 import getl.exception.ExceptionGETL
 import  groovy.json.StringEscapeUtils
 import groovy.transform.CompileStatic
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
@@ -60,13 +62,26 @@ class StringUtils {
 	}
 	
 	/**
+	 * Complete string of zeros to the right length
+	 * @param s
+	 * @param len
+	 * @return
+	 */
+	static String AddLedZeroStr (def s, Integer len) {
+		if (s == null) return null
+		return s.toString().padLeft(len, '0')
+	}
+
+	/**
 	 * Set for string {variables}
 	 * @param value parsing string
 	 * @param vars variables
 	 * @param errorWhenUndefined throw an error if non-passed parameters are found in the string
+	 * @param formatValue value formatting code
 	 * @return converted string
 	 */
-	static String EvalMacroString(String value, Map vars, Boolean errorWhenUndefined = true) {
+	static String EvalMacroString(String value, Map vars, Boolean errorWhenUndefined = true,
+								  Closure<String> formatValue = null) {
 		if (value == null)
 			return null
 
@@ -96,7 +111,9 @@ class StringUtils {
 				continue
 			}
 
-			if (varValue instanceof Date)
+			if (formatValue != null)
+				varValue = formatValue.call(varValue)
+			else if (varValue instanceof Date)
 				varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', varValue as Date)
 
 			sb.append(varValue)
@@ -106,18 +123,7 @@ class StringUtils {
 
 		return sb.toString()
 	}
-	
-	/**
-	 * Complete string of zeros to the right length
-	 * @param s
-	 * @param len
-	 * @return
-	 */
-	static String AddLedZeroStr (def s, Integer len) {
-		if (s == null) return null
-		return s.toString().padLeft(len, '0')
-	}
-	
+
 	/** Replicate character */
 	static String Replicate(String c, Integer len) {
 		if (len == 0) return ""

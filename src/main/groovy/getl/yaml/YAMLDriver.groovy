@@ -139,8 +139,8 @@ class YAMLDriver extends WebServiceDriver {
 
     @Override
     @CompileStatic
-    Long eachRow (Dataset dataset, Map params, Closure prepareCode, Closure code) {
-        (dataset.connection as YAMLConnection).validPath()
+    Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+        super.eachRow(dataset, params, prepareCode, code)
 
         Closure<Boolean> filter = params."filter" as Closure<Boolean>
 

@@ -3,7 +3,6 @@ package getl.data
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.utils.*
 import getl.exception.ExceptionGETL
-import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -67,14 +66,25 @@ class StructureFileDataset extends WebServiceDataset {
 	}
 	
 	/** List of attributes field  */
-	List<Field> getAttributeField () { params.attributeField as List<Field> }
+	List<Field> getAttributeField() { params.attributeField as List<Field> }
 	/** List of attributes field */
-	void setAttributeField (List<Field> value) {
+	void setAttributeField(List<Field> value) {
 		 List<Field> l = []
 		 value.each { Field f ->
 			 l << f.copy()
 		 }
 		 params.attributeField = l
+	}
+	/**
+	 * Assign attributes from a list of map elements
+	 * @param list attributes description list
+	 */
+	void assignAttributeField(List<Map> list) {
+		def res = [] as List<Field>
+		list.each {m ->
+			res << Field.ParseMap(m)
+		}
+		setAttributeField(res)
 	}
 
 	/** Find attribute field by name */
@@ -87,7 +97,7 @@ class StructureFileDataset extends WebServiceDataset {
 	/** Dataset attribute field */
 	Field attributeField(String name,
 						 @DelegatesTo(Field)
-						 @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure cl) {
+						 @ClosureParams(value = SimpleType, options = ['getl.data.Field']) Closure cl = null) {
 		Field parent = attributeByName(name)
 		if (parent == null) {
 			parent = new Field(name: name)
@@ -124,5 +134,15 @@ class StructureFileDataset extends WebServiceDataset {
 			return [] as List<String>
 
 		return rootNode.split('[|]').toList()
+	}
+
+	/** Check and initialize dataset attributes */
+	@JsonIgnore
+	Closure<Boolean> getOnInitAttributes() { params.onInitAttributes as Closure<Boolean> }
+	/** Check and initialize dataset attributes */
+	void setOnInitAttributes(Closure<Boolean> value) { params.onInitAttributes = value }
+	/** Check and initialize dataset attributes */
+	void initAttributes(@ClosureParams(value = SimpleType, options = ['getl.data.StructureFileDataset']) Closure<Boolean> cl) {
+		setOnInitAttributes(cl)
 	}
 }

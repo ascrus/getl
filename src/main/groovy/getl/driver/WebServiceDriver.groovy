@@ -1,15 +1,21 @@
 package getl.driver
 
+import getl.data.Dataset
 import getl.data.WebServiceDataset
 import getl.exception.ExceptionGETL
 import getl.utils.DateUtils
-import getl.utils.FileUtils
 import getl.utils.WebUtils
 import groovy.transform.InheritConstructors
 
 @InheritConstructors
 class WebServiceDriver extends FileDriver {
     static private UrlDateFormatter = DateUtils.BuildDateTimeFormatter('yyyy-MM-dd\'T\'HH:mm:ss.n')
+
+    @Override
+    protected void registerParameters() {
+        super.registerParameters()
+        methodParams.register('eachRow', ['autoCaptureFromWeb'])
+    }
 
     /**
      * Read data from web service and save to file
@@ -36,5 +42,15 @@ class WebServiceDriver extends FileDriver {
         def serv = WebUtils.CreateConnection(url: url, service: serviceName, connectTimeout: connectTimeout,
                 readTimeout: readTimeout, requestMethod: requestMethod, params: urlParams, vars: urlVars)
         WebUtils.DataToFile(serv, fullFileNameDataset(dataset))
+    }
+
+    @Override
+    Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
+        super.eachRow(dataset, params, prepareCode, code)
+        def ds = dataset as WebServiceDataset
+        if (ds.autoCaptureFromWeb())
+            ds.readFromWeb()
+
+        return 0L
     }
 }

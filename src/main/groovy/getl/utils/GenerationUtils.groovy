@@ -1449,16 +1449,18 @@ sb << """
 	
 	/**
 	 * Convert list of field to Map structure
-	 * @param fields
-	 * @return
+	 * @param fields list of field
+	 * @param propName field array name
+	 * @return map structure
 	 */
-	static Map Fields2Map (List<Field> fields) {
-		if (fields == null) return null
+	static Map Fields2Map (List<Field> fields, String propName = 'fields') {
+		if (fields == null)
+			return null
 		
 		def res = [:]
-		res.fields = []
-		def l = res.fields
-		
+		def l = [] as List<Map>
+		res.put(propName, l)
+
 		fields.each { Field f ->
 			l << f.toMap()
 		}
@@ -1495,13 +1497,17 @@ sb << """
 	
 	/**
 	 * Convert map to list of field
-	 * @param value
-	 * @return
+	 * @param value object properties
+	 * @param propName field array name
+	 * @return list of field
 	 */
-	static List<Field> Map2Fields (Map value) {
+	static List<Field> Map2Fields(Map value, String propName = 'fields') {
+		if (value == null)
+			return null
+
 		List<Field> res = []
 		
-		value.fields?.each { Map f ->
+		(value.get(propName) as List<Map>)?.each { f ->
 			res << Field.ParseMap(f)
 		}
 

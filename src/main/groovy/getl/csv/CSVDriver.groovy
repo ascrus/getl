@@ -124,7 +124,8 @@ class CSVDriver extends FileDriver {
 		CSVDriver.ReadParams p = readParamDataset(dataset, [:])
 		
 		def csvFile = new File(p.path)
-		if (!csvFile.exists()) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" not found or invalid path \"${dataset.connection.params.path}\"")
+		if (!csvFile.exists())
+			throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName()}\" not found or invalid path \"${dataset.connection.params.path}\"!")
 		Reader fileReader = getFileReader(dataset as FileDataset, [:])
 
 		CsvPreference pref = new CsvPreference.Builder(p.quoteStr, (int)p.fieldDelimiter, p.rowDelimiter).useQuoteMode(p.qMode).build()
@@ -133,11 +134,13 @@ class CSVDriver extends FileDriver {
 		try {
 			if (p.isHeader)  {
 				header = reader.getHeader(true)
-				if (header == null) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" is empty")
+				if (header == null)
+					throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName()}\" is empty!")
 			}
 			else {
 				def row = reader.read()
-				if (row == null) throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName}\" is empty")
+				if (row == null)
+					throw new ExceptionGETL("File \"${(dataset as CSVDataset).fileName()}\" is empty!")
 				def c = 0
 				row.each {
 					c++
@@ -373,11 +376,11 @@ class CSVDriver extends FileDriver {
 	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (code == null)
-			throw new ExceptionGETL('Required process code')
+			throw new ExceptionGETL('Required process code!')
 		
 		def cds = dataset as CSVDataset
 		if (cds.fileName == null)
-			throw new ExceptionGETL('Dataset required fileName')
+			throw new ExceptionGETL('Dataset required fileName!')
 
 		cds.currentCsvConnection.validPath()
 		
@@ -415,7 +418,7 @@ class CSVDriver extends FileDriver {
 			def filesParams = [order: ['number']]
 			files = fm.fileList.rows(filesParams)
 			if (files.isEmpty())
-				throw new ExceptionGETL("File(s) \"${cds.fileName}\" not found or invalid path \"${((CSVConnection) cds.connection).currentPath()}\"")
+				throw new ExceptionGETL("File(s) \"${cds.fileName()}\" not found or invalid path \"${((CSVConnection) cds.connection).currentPath()}\"!")
 			bufReader = getFileReader(dataset as FileDataset, params, (Integer)files[portion].number)
 		}
 		else {
@@ -583,7 +586,7 @@ class CSVDriver extends FileDriver {
 	void openWrite (Dataset dataset, Map params, Closure prepareCode) {
 		def csv_ds = dataset as CSVDataset
 		if (csv_ds.fileName == null)
-			throw new ExceptionGETL('Dataset required fileName')
+			throw new ExceptionGETL('Dataset required fileName!')
 
 		csv_ds.currentCsvConnection.validPath()
 

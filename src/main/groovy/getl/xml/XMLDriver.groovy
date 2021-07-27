@@ -63,7 +63,13 @@ class XMLDriver extends WebServiceDriver {
 			sb << "\n"
 		}
 		sb << "dataset.attributeValue = attrValue\n"
-		if (initAttr != null) sb << "if (!initAttr.call(dataset)) return\n"
+		//if (initAttr != null) sb << "if (!initAttr.call(dataset)) return\n"
+		if (initAttr != null)
+			sb << '''if (!initAttr(dataset)) { 
+	directive = Closure.DONE
+	return 
+}
+'''
 		sb << "\n"
 	}
 
@@ -241,13 +247,13 @@ class XMLDriver extends WebServiceDriver {
 		}
 		else if (params.fields != null) fields = params.fields as List<String>
 		
-		readRows(dataset, fields, limit, data, params.initAttr as Closure<Boolean>, code)
+		readRows(dataset, fields, limit, data, (params.initAttr as Closure<Boolean>)?:dataset.onInitAttributes, code)
 	}
 
 	@CompileStatic
 	@Override
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
-		(dataset.connection as XMLConnection).validPath()
+		super.eachRow(dataset, params, prepareCode, code)
 
 		Closure<Boolean> filter = params."filter" as Closure<Boolean>
 		
