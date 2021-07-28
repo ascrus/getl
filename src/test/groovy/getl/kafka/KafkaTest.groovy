@@ -6,8 +6,10 @@ import getl.stat.ProcessTime
 import getl.test.GetlTest
 import getl.utils.Config
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
+@Ignore
 class KafkaTest extends GetlTest {
     private KafkaConnection con
     private SFTPManager man

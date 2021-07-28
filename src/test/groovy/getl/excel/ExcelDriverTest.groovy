@@ -89,7 +89,7 @@ class ExcelDriverTest extends getl.test.GetlTest {
     @Test
     void testFilter() {
         excelDataset.prepareFilter {
-            it.get(3) != null
+            it.getCell(3) != null
         }
         def rows = excelDataset.rows()
         assertEquals(2, rows.size())
