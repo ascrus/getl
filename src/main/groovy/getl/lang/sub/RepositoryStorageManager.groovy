@@ -15,7 +15,6 @@ import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
 import getl.utils.FileUtils
-import getl.utils.Logs
 import getl.utils.Path
 import getl.utils.StringUtils
 import groovy.transform.Synchronized
@@ -176,7 +175,7 @@ class RepositoryStorageManager {
      * @param mask object name mask
      * @param env used environment
      */
-    @Synchronized("lockObject")
+    //@Synchronized("lockObject")
     void saveRepositories(String mask = null, String env = null) {
         listRepositories.each { name ->
             saveRepository(name, mask, env)
@@ -224,7 +223,7 @@ class RepositoryStorageManager {
      * @param env used environment
      * @return count of saved objects
      */
-    @Synchronized("lockObject")
+    //@Synchronized("lockObject")
     Integer saveRepository(String repositoryName, String mask = null, String env = null) {
         if (isResourceStoragePath)
             throw new ExceptionDSL('Cannot be saved to the resource directory!')
@@ -311,7 +310,7 @@ class RepositoryStorageManager {
      * @param env used environment
      * @param ignoreExists don't load existing ones (default true)
      */
-    @Synchronized("lockObject")
+    //@Synchronized("lockObject")
     void loadRepositories(String mask = null, String env = null, Boolean ignoreExists = true) {
         listRepositories.each { name ->
             loadRepository(name, mask, env, ignoreExists)
@@ -515,7 +514,7 @@ class RepositoryStorageManager {
      * @param env used environment
      * @param validExist valid existing file (default true)
      */
-    @Synchronized("lockObject")
+    //@Synchronized("lockObject")
     GetlRepository readObject(RepositoryObjects repository, String name, String env = null, Boolean validExist = true) {
         def objName = ParseObjectName.Parse(name)
         def fileName = objectFilePathInStorage(repository, objName, env)
@@ -574,7 +573,7 @@ class RepositoryStorageManager {
      * @param env used environment
      * @param overloading load over existing (default false)
      */
-    @Synchronized("lockObject")
+    //@Synchronized("lockObject")
     GetlRepository loadObject(String repositoryName, String name, String env = null, Boolean overloading = false) {
         GetlRepository obj = null
         runWithLoadMode(true) {
