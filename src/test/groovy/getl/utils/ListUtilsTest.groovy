@@ -1,10 +1,11 @@
 package getl.utils
 
+import getl.test.GetlTest
 import org.junit.Test
 
-class ListUtilsTest extends getl.test.GetlTest {
+class ListUtilsTest extends GetlTest {
 
-    private void list2str(List list) {
+    private static void list2str(List list) {
         def str = ListUtils.List2StrArray(list)
         def parseList = ListUtils.StrArray2List(str, Integer)
         assertEquals(list, parseList)
@@ -37,5 +38,12 @@ class ListUtilsTest extends getl.test.GetlTest {
         assertEquals([[1], [2]], ListUtils.SplitList([1,2,3], 3, 2))
 
         shouldFail { ListUtils.SplitList([1, 2, 3], 0) }
+    }
+
+    @Test
+    void testToList() {
+        assertNull(ListUtils.ToList(null))
+        assertEquals([1,2,3], ListUtils.ToList([1,2,3]))
+        assertEquals(['1','2','3'], ListUtils.ToList('1, 2, 3'))
     }
 }

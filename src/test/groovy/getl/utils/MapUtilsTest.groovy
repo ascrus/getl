@@ -1,8 +1,9 @@
 package getl.utils
 
+import getl.test.GetlTest
 import org.junit.Test
 
-class MapUtilsTest extends getl.test.GetlTest {
+class MapUtilsTest extends GetlTest {
     @Test
     void testMergeMap() {
         def map = [a: 1, b: 0, c: [ca: 1, cb: 2], d: [1, 2, 3], e: [[ea: 1, eb: 2], [ec: 3, ed: 4]]]
@@ -255,5 +256,14 @@ class MapUtilsTest extends getl.test.GetlTest {
         mc.f << 4
         assertEquals([a: 1, b: 2, c: [d:3, e: 4], f: [1,2,3]], mo)
         assertEquals([a: 1, b: 20, c: [d:3, e: 40], f: [1,2,3,4]], mc)
+    }
+
+    @Test
+    void testFindElement() {
+        def m = [a: 1, b: 2, 'sub.c': 3, 'sub.d': 4]
+        assertEquals(m, MapUtils.FindNodes(m))
+        assertEquals([ 'sub.c': 3, 'sub.d': 4], MapUtils.FindNodes(m, 'sub.*'))
+        shouldFail { MapUtils.FindSubNodes(m) }
+        assertEquals([c: 3, d: 4], MapUtils.FindSubNodes(m, 'sub'))
     }
 }

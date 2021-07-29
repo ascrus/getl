@@ -1436,7 +1436,7 @@ class JDBCDriver extends Driver {
 				where = StringUtils.EvalMacroString(where,
 						dataset.queryParams + ((params.queryParams as Map)?:[:]), false)
 
-			def order = params.order as List<String>
+			def order = ListUtils.ToList(params.order) as List<String>
 			String orderBy = null
 			if (order != null && !order.isEmpty()) {
 				def orderFields = [] as List<String>

@@ -42,14 +42,14 @@ class RepositoryHistorypoints extends RepositoryObjectsWithConnection<SavePointM
     }
 
     @Override
-    GetlRepository importConfig(Map config) {
+    GetlRepository importConfig(Map config, GetlRepository existObject) {
         def connectionName = config.connection as String
         Connection con
         if (connectionName != null)
             con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
 
-        def obj = new SavePointManager()
-        MapUtils.MergeMap(obj.params as Map<String, Object>, MapUtils.CleanMap(config, ['connection']) as Map<String, Object>)
+        def obj = (existObject as SavePointManager)?:(new SavePointManager())
+        obj.importParams(MapUtils.CleanMap(config, ['connection']) as Map<String, Object>)
 
         if (con != null)
             obj.setConnection(con)

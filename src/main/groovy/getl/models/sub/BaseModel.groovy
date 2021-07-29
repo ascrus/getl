@@ -8,6 +8,7 @@ import getl.exception.ExceptionModel
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.utils.MapUtils
+import getl.utils.Path
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import java.lang.reflect.ParameterizedType
@@ -20,10 +21,6 @@ import java.util.concurrent.CopyOnWriteArrayList
 @SuppressWarnings('UnnecessaryQualifiedReference')
 @InheritConstructors
 class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository {
-    BaseModel() {
-        super(null)
-    }
-
     private String dslNameObject
     @Override
     @JsonIgnore
@@ -183,12 +180,18 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         if (allowAttrs == null)
             throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')
 
-        def unknownKeys = MapUtils.Unknown(modelAttrs, allowAttrs)
+        def validation = Path.Masks2Paths(allowAttrs)
+        def unknownKeys = [] as List<String>
+        modelAttrs.each { k, v ->
+            if (!Path.MatchList(k, validation))
+                unknownKeys << k
+        }
+
         if (!unknownKeys.isEmpty())
             throw new ExceptionDSL("Unknown attributes were detected in model \"$dslNameObject\": $unknownKeys, allow attributes: $allowAttrs")
 
         usedObjects.each { node ->
-            node.checkAttrs(allowAttrs)
+            node.checkAttrsInternal(validation, allowAttrs)
         }
     }
 
@@ -198,4 +201,18 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         res.dslCreator = dslCreator
         return res
     }
+
+    /**
+     * Return model attributes
+     * @param mask mask name
+     * @return attribute set
+     */
+    Map<String, Object> modelAttributes(String mask = null) { MapUtils.FindNodes(modelAttrs, mask) }
+
+    /**
+     * Return model sub attributes
+     * @param topName attribute group name for which all subordinate attributes should be returned
+     * @return attribute set
+     */
+    Map<String, Object> modelSubAttributes(String topName) { MapUtils.FindSubNodes(modelAttrs, topName) }
 }

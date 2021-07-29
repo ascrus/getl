@@ -7,6 +7,7 @@ import getl.h2.H2Connection
 import getl.h2.H2Table
 import getl.jdbc.SavePointManager
 import getl.jdbc.Sequence
+import getl.jdbc.TableDataset
 import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
@@ -14,6 +15,7 @@ import getl.lang.sub.RepositoryHistorypoints
 import getl.lang.sub.RepositorySequences
 import getl.test.Config
 import getl.test.TestDsl
+import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
@@ -807,6 +809,53 @@ class RepositoryTest extends TestDsl {
                 assertNotNull(embeddedConnection('h2:con'))
                 assertNotNull(jdbcTable('h2:table1'))
                 loadRepositories()
+            }
+        }
+    }
+
+    @Test
+    void testOverLoad() {
+        Getl.Dsl {
+            repositoryStorageManager {
+                storagePath = 'src/test/resources/repository'
+                autoLoadFromStorage = true
+
+                TDS con = embeddedConnection('h2:con') {
+                    assertEquals('getl', connectDatabase)
+                    connectDatabase = null
+                    assertNull(connectDatabase)
+                }
+
+                TableDataset tab = jdbcTable('h2:table1') {
+                    assertEquals('getl_table1', tableName)
+                    assertEquals(3, field.size())
+                    assertEquals(con, connection)
+                    assertEquals('h2:con', connectionName)
+
+                    tableName = null
+                    removeFields()
+                    assertNull(tableName)
+                    assertTrue(field.isEmpty())
+                }
+
+                shouldFail { repositoryStorageManager.loadObject(RepositoryConnections, 'h2:con', 'dev') }
+                assertNull(con.connectDatabase)
+                assertEquals(con, embeddedConnection('h2:con'))
+                assertEquals(con, repositoryStorageManager.loadObject(RepositoryConnections, 'h2:con', 'dev', true))
+                assertEquals(con, embeddedConnection('h2:con'))
+                assertEquals('getl', con.connectDatabase)
+
+                assertEquals(con, tab.connection)
+                assertEquals('h2:con', tab.connectionName)
+                shouldFail { repositoryStorageManager.loadObject(RepositoryDatasets, 'h2:table1', 'dev') }
+                assertEquals(tab, repositoryStorageManager.loadObject(RepositoryDatasets, 'h2:table1', 'dev', true))
+                assertEquals(tab, jdbcTable('h2:table1'))
+                tab.with {
+                    assertEquals('getl_table1', tableName)
+                    assertEquals(3, field.size())
+                    assertEquals(con, connection)
+                    assertEquals('h2:con', connectionName)
+                }
             }
         }
     }

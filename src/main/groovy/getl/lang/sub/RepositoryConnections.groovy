@@ -107,8 +107,8 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
     }
 
     @Override
-    GetlRepository importConfig(Map config) {
-        return Connection.CreateConnection(config)
+    GetlRepository importConfig(Map config, GetlRepository existObject) {
+        (existObject != null)?(existObject as Connection).importParams(config):Connection.CreateConnection(config)
     }
 
     @Override

@@ -25,7 +25,8 @@ class RepositoryReferenceVerticaTables extends RepositoryObjects<ReferenceVertic
     }
 
     @Override
-    GetlRepository importConfig(Map config) {
-        return new ReferenceVerticaTables(dslCreator, false, config)
+    GetlRepository importConfig(Map config, GetlRepository existObject) {
+        (existObject != null)?((existObject as ReferenceVerticaTables).importParams(config) as ReferenceVerticaTables):
+                new ReferenceVerticaTables(dslCreator, false, config)
     }
 }

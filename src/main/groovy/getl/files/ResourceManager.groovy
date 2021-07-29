@@ -444,4 +444,9 @@ class ResourceManager extends Manager {
     void setLastModified(String fileName, Long time) {
         throw new ExceptionGETL('Not supported!')
     }
+
+    @Override
+    String getObjectName() {
+        return (rootPath != null)?"resource:/$rootPath":'resource'
+    }
 }

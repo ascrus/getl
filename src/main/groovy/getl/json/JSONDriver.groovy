@@ -211,7 +211,7 @@ class JSONDriver extends WebServiceDriver {
 			prepareCode.call(fields)
 		}
 		else if (params.fields != null)
-			fields = params.fields as List<String>
+			fields = ListUtils.ToList(params.fields) as List<String>
 
 		readRows(dataset, fields, limit, data, (params.initAttr as Closure<Boolean>)?:dataset.onInitAttributes, code)
 	}

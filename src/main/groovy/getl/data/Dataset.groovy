@@ -56,6 +56,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 	/** Initialization dataset parameters */
 	protected void initParams() {
+		params.clear()
+
 		params.attributes = [:] as Map<String, Object>
 
 		def dirs = [:] as Map<String, Object>
@@ -116,7 +118,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param params
 	 * @return
 	 */
-	static private Dataset CreateDatasetInternal(Map params) {
+	static private Dataset CreateDatasetInternal(Map<String, Object> params) {
 		def configName = params.config
 		if (configName != null && params.dataset == null) {
 			def configParams = Config.FindSection("datasets.${configName}")
@@ -130,13 +132,29 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			throw new ExceptionGETL("Required parameter \"dataset\"")
 		
 		def dataset = Class.forName(datasetClass).newInstance() as Dataset
-		if (params.containsKey("connection")) dataset.connection = params.connection as Connection
-		if (params.containsKey("config")) dataset.setConfig(params.config as String)
-		if (params.containsKey("field")) dataset.setField(params.field as List<Field>)
-
-		MapUtils.MergeMap(dataset.params as Map<String, Object>, MapUtils.CleanMap(params, ["dataset", "connection", "config", "field"]) as Map<String, Object>)
+		dataset.importParams(params)
 
 		return dataset
+	}
+
+	/**
+	 * Import parameters to current dataset
+	 * @param importParams imported parameters
+	 * @return current dataset
+	 */
+	Dataset importParams(Map<String, Object> importParams) {
+		initParams()
+		if (importParams.containsKey("config"))
+			setConfig(importParams.config as String)
+		if (importParams.containsKey("connection"))
+			connection = importParams.connection as Connection
+		if (importParams.containsKey("field"))
+			setField(importParams.field as List<Field>)
+
+		MapUtils.MergeMap(params as Map<String, Object>,
+				MapUtils.CleanMap(importParams, ["dataset", "connection", "config", "field"]) as Map<String, Object>)
+
+		return this
 	}
 	
 

@@ -631,8 +631,10 @@ exit \$LastExitCode
 	}
 
 	@Override
-	String toString() {
-		if (server == null) return 'sftp'
+	String getObjectName() {
+		if (server == null)
+			return 'sftp'
+
 		String res
 		def loginStr = (login != null)?"$login@":''
 		if (rootPath == null || rootPath.length() == 0)

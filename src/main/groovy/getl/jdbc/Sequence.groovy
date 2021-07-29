@@ -29,7 +29,20 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 
 	/** Initialization parameters */
 	protected void initParams() {
+		params.clear()
+
 		params.attributes = [:] as Map<String, Object>
+	}
+
+	/**
+	 * Import parameters to current sequence
+	 * @param importParams imported parameters
+	 * @return current sequence
+	 */
+	Sequence importParams(Map<String, Object> importParams) {
+		initParams()
+		MapUtils.MergeMap(params, importParams)
+		return this
 	}
 
 	/** Save point manager parameters */

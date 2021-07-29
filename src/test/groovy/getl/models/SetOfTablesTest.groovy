@@ -5,7 +5,7 @@ import getl.test.TestRepository
 import org.junit.Test
 import static getl.test.TestRunner.Dsl
 
-class setOfTablesTest extends TestRepository {
+class SetOfTablesTest extends TestRepository {
     @Test
     void testSetOfTables() {
         Dsl {

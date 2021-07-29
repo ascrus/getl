@@ -25,7 +25,8 @@ class RepositoryReferenceFiles extends RepositoryObjects<ReferenceFiles>  {
     }
 
     @Override
-    GetlRepository importConfig(Map config) {
-        return new ReferenceFiles(dslCreator, false, config)
+    GetlRepository importConfig(Map config, GetlRepository existObject) {
+        (existObject != null)?((existObject as ReferenceFiles).importParams(config) as ReferenceFiles):
+                new ReferenceFiles(dslCreator, false, config)
     }
 }

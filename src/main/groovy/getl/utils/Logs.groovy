@@ -60,7 +60,7 @@ class Logs {
 	static private String fileNameHandler
 
 	/** Log file handler */
-	static public String getFileNameHandler () { fileNameHandler }
+	static String getFileNameHandler() { fileNameHandler }
 	
 	/** Config messages to be written after initialization log */
 	protected static final List<String> InitMessages = [] as List<String>

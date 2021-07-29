@@ -30,15 +30,25 @@ class BaseSpec implements Cloneable {
                 _params = importParams
                 initSpec()
             } else {
-                _params = [:] as Map<String, Object>
-                initSpec()
-                importFromMap(importParams)
+                this.importParams(importParams)
             }
         }
         else {
             _params = [:] as Map<String, Object>
             initSpec()
         }
+    }
+
+    /**
+     * Import parameters to current object
+     * @param importParams imported parameters
+     * @return current object
+     */
+    BaseSpec importParams(Map<String, Object> importParams) {
+        _params = [:] as Map<String, Object>
+        initSpec()
+        importFromMap(importParams)
+        return this
     }
 
     /** Owner */

@@ -453,6 +453,12 @@ class MapUtils {
 		return res
 	}
 
+	/**
+	 * Process all matching map elements by name mask
+	 * @param map map structure with data
+	 * @param expression name lookup mask
+	 * @param closure found element processing code
+	 */
 	static void FindKeys(Map<String, Object> map, String expression,
 						 @ClosureParams(value = SimpleType, options = ['java.util.HashMap', 'java.lang.String', 'java.lang.Object'])
 								 Closure closure) {
@@ -1046,5 +1052,57 @@ class MapUtils {
 				proc.call(data)
 			}
 		}
+	}
+
+	/**
+	 * Find all nodes of a map by a given name mask
+	 * @param map map structure with data
+	 * @param mask mask name
+	 * @return result map
+	 */
+	static Map<String, Object> FindNodes(Map<String, Object> map, String mask = null) {
+		if (map == null)
+			return null
+
+		def res = [:] as Map<String, Object>
+
+		if (mask == null)
+			res.putAll(map)
+		else {
+			def validation = new Path(mask: mask)
+			map.each { k, v ->
+				if (validation.match(k)) {
+					res.put(k, v)
+				}
+			}
+		}
+
+		return res
+	}
+
+	/**
+	 * Return all elements subordinate to the specified name, transforming their name
+	 * @param map map structure with data
+	 * @param topName mask of a group of elements for which all subordinate elements should be returned
+	 * @return result map
+	 */
+	static Map<String, Object> FindSubNodes(Map<String, Object> map, String topName = null) {
+		if (map == null)
+			return null
+
+		def res = [:] as Map<String, Object>
+
+		if (topName == null)
+			throw new ExceptionGETL('It is required to specify the name of the main attribute in "topName"!')
+
+		def validation = new Path(mask: topName + '.{name}')
+		map.each { k, v ->
+			def name = validation.analyze(k)
+			if (name != null && !name.isEmpty()) {
+				res.put(name.name as String, v)
+			}
+		}
+
+		return res
 	}
 }

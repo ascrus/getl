@@ -26,7 +26,8 @@ class RepositorySetOfTables extends RepositoryObjects<SetOfTables> {
     }
 
     @Override
-    GetlRepository importConfig(Map config) {
-        return new SetOfTables(dslCreator, false, config)
+    GetlRepository importConfig(Map config, GetlRepository existObject) {
+        (existObject != null)?((existObject as SetOfTables).importParams(config) as SetOfTables):
+                new SetOfTables(dslCreator, false, config)
     }
 }

@@ -139,13 +139,16 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
     }
 
     @Override
-    GetlRepository importConfig(Map config) {
+    GetlRepository importConfig(Map config, GetlRepository existObject) {
         def connectionName = config.connection as String
         Connection con
         if (connectionName != null)
             con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
 
-        def obj = Dataset.CreateDataset(MapUtils.Copy(config, ['connection', 'fields', 'attributes']))
+        def importParams = MapUtils.Copy(config, ['connection', 'fields', 'attributes']) as Map<String, Object>
+        def obj = (existObject != null)?(existObject as Dataset).importParams(importParams):
+                Dataset.CreateDataset(importParams)
+
         if (con == null) {
             if (!(obj instanceof TFSDataset))
                 throw new ExceptionGETL('No dataset connection specified in configuration!')

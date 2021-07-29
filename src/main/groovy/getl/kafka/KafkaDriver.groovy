@@ -9,6 +9,7 @@ import getl.json.JSONConnection
 import getl.json.JSONDataset
 import getl.tfs.TFS
 import getl.utils.FileUtils
+import getl.utils.ListUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.StringUtils
@@ -105,7 +106,7 @@ class KafkaDriver extends Driver {
         if (prepareCode != null) {
             prepareCode.call(fields)
         } else if (params.fields != null)
-            fields = params.fields as List<String>
+            fields = ListUtils.ToList(params.fields) as List<String>
 
         def ro = ds.readOpts
         def keyName = ds.keyName

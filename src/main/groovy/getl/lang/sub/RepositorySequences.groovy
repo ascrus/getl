@@ -42,14 +42,14 @@ class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
     }
 
     @Override
-    GetlRepository importConfig(Map config) {
+    GetlRepository importConfig(Map config, GetlRepository existObject) {
         def connectionName = config.connection as String
         Connection con
         if (connectionName != null)
             con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
 
-        def obj = new Sequence()
-        MapUtils.MergeMap(obj.params as Map<String, Object>, MapUtils.CleanMap(config, ['connection']) as Map<String, Object>)
+        def obj = (existObject as Sequence)?:(new Sequence())
+        obj.importParams(MapUtils.CleanMap(config, ['connection']) as Map<String, Object>)
 
         if (con != null)
             obj.setConnection(con)

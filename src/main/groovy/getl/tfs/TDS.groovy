@@ -38,8 +38,8 @@ class TDS extends H2Connection {
 				new File(connectDatabase + '.trace.db').deleteOnExit()
 			}
 
-			if (sqlHistoryFile == null && TDS.storage?.sqlHistoryFile != null)
-				sqlHistoryFile = TDS.storage.sqlHistoryFile
+			if (sqlHistoryFile == null && storage?.sqlHistoryFile != null)
+				sqlHistoryFile = storage.sqlHistoryFile
 		}
 
 		if (login == null && password == null) {
@@ -77,8 +77,8 @@ class TDS extends H2Connection {
 	/** Internal name in config section */
 	protected String internalConfigName() { "getl_tds" }
 	
-	/** Default parameters */
-	static public Map<String, Object> defaultParams = [:] as Map<String, Object>
+	/* Default parameters */
+	//static public Map<String, Object> defaultParams = [:] as Map<String, Object>
 	
 	@Override
 	protected void doBeforeConnect () {
@@ -111,6 +111,7 @@ class TDS extends H2Connection {
 		super.setInMemory(value)
 		if (BoolUtils.IsValue(value) == oldValue) return
 
+		//noinspection GroovySynchronizationOnNonFinalField
 		synchronized (tempPath) {
 			if (BoolUtils.IsValue(inMemory)) {
 				connectURL = null

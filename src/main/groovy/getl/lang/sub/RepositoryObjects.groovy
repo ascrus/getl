@@ -94,7 +94,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
             objects.each { name, obj ->
                 def names = new ParseObjectName(name)
                 if (groupPath != null) {
-                    if (groupPath.match(names.groupName))
+                    if (names.groupName != null && groupPath.match(names.groupName))
                         if (objectPath == null || objectPath.match(names.objectName))
                             if (classes == null || obj.getClass().name in classes)
                                 if (filter == null || BoolUtils.IsValue(filter.call(name, obj))) res << name
@@ -171,15 +171,16 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     /**
      * Find a object by name
      * @param name repository name
+     * @param findInStorage find for an object in the repository file storage
      * @return found object or null if not found
      */
-    T find(String name) {
+    T find(String name, Boolean findInStorage = true) {
         T obj
         def repName = dslCreator.repObjectName(name)
         //noinspection GroovySynchronizationOnNonFinalField
         synchronized (objects) {
             obj = objects.get(repName)
-            if (obj == null) {
+            if (obj == null && findInStorage) {
                 def repClass = this.getClass().name
                 dslCreator.with {
                     if (obj == null && options.validRegisterObjects &&
@@ -462,12 +463,12 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
     abstract Map exportConfig(GetlRepository obj)
 
     /**
-     * Import object from parameters
-     * @param name the name of the object in the repository
-     * @param params object parameters
-     * @return registered object
+     * Import parameters into a new or existing object
+     * @param config object parameters
+     * @param current an existing object if you want to import the configuration into it
+     * @return imported object
      */
-    abstract GetlRepository importConfig(Map config)
+    abstract GetlRepository importConfig(Map config, GetlRepository existObject)
 
     /** Repository objects require configuration storage separately for different environments */
     Boolean needEnvConfig() { false }

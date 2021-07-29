@@ -29,8 +29,21 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * Initialization parameters
 	 */
 	protected void initParams() {
+		params.clear()
+
 		params.fields = [:] as Map<String, String>
 		params.attributes = [:] as Map<String, Object>
+	}
+
+	/**
+	 * Import parameters to current connection
+	 * @param importParams imported parameters
+	 * @return current connection
+	 */
+	SavePointManager importParams(Map<String, Object> importParams) {
+		initParams()
+		MapUtils.MergeMap(params, importParams)
+		return this
 	}
 
 	/** Save point manager parameters */

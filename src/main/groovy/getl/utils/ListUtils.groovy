@@ -223,12 +223,16 @@ class ListUtils {
      * @return
      */
     @CompileDynamic
-	static List StrArray2List(String strList, Class elemClass) {
-        if (strList == null) return null
-        def list = strList.split(',')
+	static List StrArray2List(String strList, Class elemClass = String, String delimRegex = ',') {
+        if (strList == null)
+			return null
+
+        def list = strList.split(delimRegex)
         def result = []
         list.each { String elem ->
-            if (elem == '') return
+            if (elem == '')
+				return
+
             def i = elem.indexOf('-')
             if (i == -1)
                 result << elemClass.newInstance(elem)
@@ -271,6 +275,25 @@ class ListUtils {
 			res[cur] << list[i]
 			cur++
 			if (cur == divisor) cur = 0
+		}
+
+		return res
+	}
+
+	/** Convert object to list */
+	static List ToList(Object value, String delimRegex = ',') {
+		if (value == null)
+			return null
+
+		if (value instanceof List)
+			return value
+
+		def res = []
+		def elements = value.toString().split(delimRegex)
+		elements.each { el ->
+			el = el.trim()
+			if (el.length() > 0)
+				res << el
 		}
 
 		return res

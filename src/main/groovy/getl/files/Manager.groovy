@@ -58,6 +58,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	/** Initialization dataset parameters */
 	protected void initParams() {
+		params.clear()
+
 		params.rootPath = '/'
 		params.attributes = [:] as Map<String, Object>
 		params.fileListSortOrder = [] as List<String>
@@ -103,21 +105,27 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	/**
 	 * Import parameters
-	 * @param parameters imported parameters
+	 * @param importParams imported parameters
 	 */
-	protected void importParams(Map<String, Object> parameters) {
-		def locDir = parameters.localDirectory as String
-		def load_config = parameters.config as String
+	Manager importParams(Map<String, Object> importParams) {
+		initParams()
+
+		def locDir = importParams.localDirectory as String
+		def load_config = importParams.config as String
 		if (load_config != null)
 			setConfig(load_config)
 
 		MapUtils.MergeMap(params,
-				MapUtils.CleanMap(parameters, ['manager', 'config', 'localDirectory']) as Map<String, Object>)
+				MapUtils.CleanMap(importParams, ['manager', 'config', 'localDirectory']) as Map<String, Object>)
 
 		validParams()
 
 		if (locDir != null)
 			setLocalDirectory(locDir)
+
+		currentRootPathSet()
+
+		return this
 	}
 	
 	/**
@@ -321,7 +329,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	/** Object name */
 	@JsonIgnore
-	String getObjectName() { (rootPath != null)?"file:$currentRootPath":'file'	}
+	String getObjectName() { (rootPath != null)?"file:$currentRootPath":'file' }
 	
 	/** Write errors to log */
 	@JsonIgnore
@@ -1477,7 +1485,7 @@ FROM (
 		def ignoreError = BoolUtils.IsValue(params.ignoreError)
 		def folders = BoolUtils.IsValue(params.folders, true)
 		String sqlWhere = params.filter as String
-		List<String> sqlOrderBy = params.order as List<String>
+		List<String> sqlOrderBy = ListUtils.ToList(params.order) as List<String>
 
 		TableDataset storyFiles = null
 		

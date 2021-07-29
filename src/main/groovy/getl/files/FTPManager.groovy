@@ -497,8 +497,10 @@ class FTPManager extends Manager implements UserLogins {
     }
 
 	@Override
-	String toString() {
-		if (server == null) return 'ftp'
+	String getObjectName() {
+		if (server == null)
+			return 'ftp'
+
 		String res
 		def loginStr = (login != null)?"$login@":''
 		if (rootPath == null || rootPath.length() == 0)

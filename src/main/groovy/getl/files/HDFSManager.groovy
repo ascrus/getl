@@ -433,8 +433,10 @@ class HDFSManager extends Manager implements UserLogins {
     }
 
     @Override
-    String toString() {
-        if (server == null) return 'hdfs'
+    String getObjectName() {
+        if (server == null)
+            return 'hdfs'
+
         String res
         if (rootPath == null || rootPath.length() == 0)
             res = "hdfs://$server"

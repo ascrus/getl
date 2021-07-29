@@ -3,6 +3,7 @@ package getl.models.sub
 import getl.exception.ExceptionDSL
 import getl.utils.ListUtils
 import getl.utils.MapUtils
+import getl.utils.Path
 import groovy.transform.Synchronized
 
 class BaseSpec extends getl.lang.opts.BaseSpec {
@@ -68,8 +69,23 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
      */
     Object attribute(String name) { ListUtils.NotNullValue(attrs.get(name), ownerModel.modelAttrs.get(name)) }
 
-    /** Return all attributes defined for a model element and which are additionally present in the model */
-    Map<String, Object> attributes() { ownerModel.modelAttrs + attrs }
+    /**
+     * Return node attributes
+     * @param mask mask name
+     * @return attribute set
+     */
+    Map<String, Object> attributes(String mask = null) {
+        return ownerModel.modelAttributes(mask) + MapUtils.FindNodes(attrs, mask)
+    }
+
+    /**
+     * Return node sub attributes
+     * @param topName attribute group name for which all subordinate attributes should be returned
+     * @return attribute set
+     */
+    Map<String, Object> subAttributes(String topName) {
+        return ownerModel.modelSubAttributes(topName) + MapUtils.FindSubNodes(attrs, topName)
+    }
 
     /**
      * Check attribute naming and generate an unknown error
@@ -79,7 +95,21 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
         if (allowAttrs == null)
             throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')
 
-        def unknownKeys = MapUtils.Unknown(attrs, allowAttrs)
+        def validation = Path.Masks2Paths(allowAttrs)
+        checkAttrsInternal(validation, allowAttrs)
+    }
+
+    /**
+     * Check attribute naming and generate an unknown error
+     * @param validation list of mask validator
+     */
+    protected checkAttrsInternal(List<Path> validation, List<String> allowAttrs) {
+        def unknownKeys = [] as List<String>
+        attrs.each { k, v ->
+            if (!Path.MatchList(k, validation))
+                unknownKeys << k
+        }
+
         if (!unknownKeys.isEmpty())
             throw new ExceptionDSL("Unknown attributes were detected in model dataset " +
                     "\"$ownerModel.dslNameObject\".\"$this\": $unknownKeys, " +

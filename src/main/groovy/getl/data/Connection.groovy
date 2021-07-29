@@ -60,6 +60,8 @@ class Connection implements Cloneable, GetlRepository {
 
 	/** Initialization parameters */
 	protected void initParams() {
+		params.clear()
+
 		params.attributes = [:] as Map<String, Object>
 	}
 
@@ -110,12 +112,32 @@ class Connection implements Cloneable, GetlRepository {
 			params = configParams
 		}
 		def connectionClass = params.connection as String
-		if (connectionClass == null) throw new ExceptionGETL("Required parameter \"connection\"")
+		if (connectionClass == null)
+			throw new ExceptionGETL("Required parameter \"connection\"")
 
 		MapUtils.RemoveKeys(params, ["connection", "config"])
 		def con = (Class.forName(connectionClass).newInstance(params)) as Connection
 
 		return con
+	}
+
+	/**
+	 * Import parameters to current connection
+	 * @param importParams imported parameters
+	 * @return current connection
+	 */
+	Connection importParams(Map<String, Object> importParams) {
+		initParams()
+
+		if (importParams.containsKey("config"))
+			setConfig(importParams.config as String)
+
+		MapUtils.MergeMap(params as Map<String, Object>,
+				MapUtils.CleanMap(importParams, ["connection", "config"]) as Map<String, Object>)
+
+		validParams()
+
+		return this
 	}
 
 	/**

@@ -104,7 +104,7 @@ class ConfigFiles extends ConfigManager {
     void loadConfig(Map<String, Object> readParams = [:]) {
         def fp = (readParams?.path as String)?:this.path
         def fn = (readParams?.fileName as String)?:this.fileName
-        def fl = (readParams?.files as List<String>)?:this.files
+        def fl = (ListUtils.ToList(readParams?.files) as List<String>)?:this.files
         def cp = (readParams?.codePage as String)?:this.codePage
 
         Map<String, Object> data = null

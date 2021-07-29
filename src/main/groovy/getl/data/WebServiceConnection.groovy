@@ -16,7 +16,7 @@ class WebServiceConnection extends FileConnection {
         super.registerParameters()
 
         methodParams.register('Super', ['webUrl', 'webParams', 'webVars', 'webConnectTimeout',
-                                        'webReadTimeout', 'webRequestMethod'])
+                                        'webReadTimeout', 'webRequestMethod', 'autoCaptureFromWeb'])
     }
 
     @Override

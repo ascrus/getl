@@ -475,7 +475,7 @@ class RepositoryStorageManager {
                         def file = new File(fileName)
                         try {
                             def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
-                            def obj = repository.importConfig(objParams)
+                            def obj = repository.importConfig(objParams, null)
                             repository.registerObject(dslCreator, obj, name, true)
                         }
                         finally {
@@ -513,14 +513,17 @@ class RepositoryStorageManager {
      * @param name object name
      * @param env used environment
      * @param validExist valid existing file (default true)
+     * @param overloading reload existing object
      */
     //@Synchronized("lockObject")
-    GetlRepository readObject(RepositoryObjects repository, String name, String env = null, Boolean validExist = true) {
+    GetlRepository readObject(RepositoryObjects repository, String name, String env = null, Boolean validExist = true,
+                              Boolean overloading = false) {
         def objName = ParseObjectName.Parse(name)
         def fileName = objectFilePathInStorage(repository, objName, env)
         def file = (isResourceStoragePath)?FileUtils.FileFromResources(fileName):new File(fileName)
         if (file == null || !file.exists()) {
-            if (!validExist) return null
+            if (!validExist)
+                return null
             throw new ExceptionDSL("It is not possible to load object \"$name\" to " +
                     "repository \"${repository.getClass().name}\": file ${(isResourceStoragePath)?' in resource':'"' + file + '"'} was not found!")
         }
@@ -528,13 +531,17 @@ class RepositoryStorageManager {
         GetlRepository obj = null
         try {
             def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
-            obj = repository.importConfig(objParams)
-
-            /*if (obj instanceof UserLogins)
-                decryptLoginObject(objName.name, obj)*/
+            obj = repository.find(name, false)
+            if (obj != null && !overloading)
+                throw new ExceptionDSL("Object \"$name\" is already registered in the repository and cannot be reloaded!")
+            def isExists = (obj != null)
+            obj = repository.importConfig(objParams, obj)
+            if (!isExists)
+                repository.registerObject(dslCreator, obj, name, true)
         }
         finally {
-            if (isResourceStoragePath) file.delete()
+            if (isResourceStoragePath)
+                file.delete()
         }
 
         return obj
@@ -578,13 +585,12 @@ class RepositoryStorageManager {
         GetlRepository obj = null
         runWithLoadMode(true) {
             def repository = repository(repositoryName)
-            def objName = ParseObjectName.Parse(name)
-            obj = readObject(repository, name, env)
-
-            if (overloading && repository.find(objName.name) != null)
+            //def objName = ParseObjectName.Parse(name)
+            obj = readObject(repository, name, env, true, overloading)
+            /*if (overloading && repository.find(objName.name) != null)
                 repository.unregister(objName.name)
 
-            repository.registerObject(dslCreator, obj, name, true)
+            repository.registerObject(dslCreator, obj, name, true)*/
         }
 
         return obj

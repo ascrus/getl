@@ -7,6 +7,7 @@ import getl.driver.Driver
 import getl.driver.WebServiceDriver
 import getl.exception.ExceptionGETL
 import getl.utils.GenerationUtils
+import getl.utils.ListUtils
 import getl.utils.Logs
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
@@ -132,7 +133,7 @@ class YAMLDriver extends WebServiceDriver {
             prepareCode.call(fields)
         }
         else if (params.fields != null)
-            fields = params.fields as List<String>
+            fields = ListUtils.ToList(params.fields) as List<String>
 
         readRows(dataset, fields, limit, data, code)
     }
