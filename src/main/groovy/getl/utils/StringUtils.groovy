@@ -90,7 +90,7 @@ class StringUtils {
 
 		errorWhenUndefined = BoolUtils.IsValue(errorWhenUndefined, true)
 
-		def matcher = Pattern.compile('(?i)([{][a-z0-9._-]+[}])').matcher(value)
+		def matcher = Pattern.compile('(?i)([{][~]*[a-z0-9._-]+[~]*[}])').matcher(value)
 
 		def sb = new StringBuilder()
 		def pos = 0

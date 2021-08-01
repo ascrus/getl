@@ -79,9 +79,11 @@ class BaseSpec implements Cloneable {
     }
 
     private Map<String, Object> _params
+    private final Object synchParams = new Object()
+
     /** Object parameters */
     @JsonIgnore
-    @Synchronized
+    @Synchronized('synchParams')
     Map<String, Object> getParams() { _params }
 
     /**
@@ -89,7 +91,7 @@ class BaseSpec implements Cloneable {
      * @param key parameter name
      * @param value parameter value
      */
-    @Synchronized
+    @Synchronized('synchParams')
     protected void saveParamValue(String key, Object value) {
         if (value != null)
             _params.put(key, value)
@@ -129,7 +131,7 @@ class BaseSpec implements Cloneable {
      * @param resetToDefault reset options to default after saving (default false)
      * @param cloneChildrenObject clone childs objects when saving (default false)
      */
-    @Synchronized
+    @Synchronized('synchParams')
     void pushOptions(Boolean resetToDefault = false, Boolean cloneChildrenObject = false) {
         _savedOptions.push(CloneUtils.CloneMap(_params, cloneChildrenObject) as Map<String, Object>)
         if (resetToDefault)
@@ -140,7 +142,7 @@ class BaseSpec implements Cloneable {
      * Restore last saved options from stack
      * @param throwIfNotExist generate an error if options were not saved (default true)
      */
-    @Synchronized
+    @Synchronized('synchParams')
     void pullOptions(Boolean throwIfNotExist = true) {
         if (_savedOptions.isEmpty()) {
             if (!throwIfNotExist) return
@@ -152,7 +154,6 @@ class BaseSpec implements Cloneable {
     }
 
     @Override
-    @Synchronized
     Object clone() {
         def clParams = CloneUtils.CloneMap(params)
         def res = this.getClass().newInstance(this.ownerObject, false, clParams) as BaseSpec

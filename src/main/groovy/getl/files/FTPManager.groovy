@@ -158,12 +158,19 @@ class FTPManager extends Manager implements UserLogins {
 		if (connected)
 			throw new ExceptionGETL('Manager already connected!')
 
-		if (server == null || port == null) throw new ExceptionGETL('Required server host and port for connect')
-		if (login == null) throw new ExceptionGETL('Required login for connect')
+		if (server == null || port == null)
+			throw new ExceptionGETL('Required server host and port for connect')
+		if (login == null)
+			throw new ExceptionGETL('Required login for connect')
+
+		writeScriptHistoryFile("Connect to ftp $server:$port with login $login from session $sessionID")
 		
-		if (connectionTimeout != null) client.connector.connectionTimeout = connectionTimeout
-		if (closeTimeout != null) client.connector.closeTimeout = closeTimeout
-		if (readTimeout != null) client.connector.readTimeout = readTimeout
+		if (connectionTimeout != null)
+			client.connector.connectionTimeout = connectionTimeout
+		if (closeTimeout != null)
+			client.connector.closeTimeout = closeTimeout
+		if (readTimeout != null)
+			client.connector.readTimeout = readTimeout
 		try {
 			client.connect(server, port)
 		}

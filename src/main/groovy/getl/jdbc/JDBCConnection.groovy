@@ -11,6 +11,7 @@ import getl.exception.ExceptionGETL
 import getl.jdbc.opts.GenerateDslTablesSpec
 import getl.jdbc.opts.RetrieveDatasetsSpec
 import getl.lang.Getl
+import getl.lang.sub.ParseObjectName
 import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.UserLogins
@@ -21,6 +22,7 @@ import getl.lang.sub.LoginManager
 import getl.lang.sub.StorageLogins
 import groovy.sql.Sql
 import groovy.transform.InheritConstructors
+import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -274,19 +276,25 @@ class JDBCConnection extends Connection implements UserLogins {
 	 * Default mask for datetime values
 	 */
 	void setMaskDateTime(String value) { params.maskDateTime = value }
-	
-	/**
-	 * Name of file history sql commands
-	 */
+
+	/** Name of file history sql commands */
 	String getSqlHistoryFile() { params.sqlHistoryFile as String }
-	/**
-	 * Name of file history sql commands
-	 */
+	/** Name of file history sql commands */
     void setSqlHistoryFile(String value) {
-//		FileUtils.ValidFilePath(value)
         params.sqlHistoryFile = value
         fileNameSqlHistory = null
     }
+	String sqlHistoryFile() {
+		def res = sqlHistoryFile
+		if (res == null && dslCreator != null && dslNameObject != null) {
+			def historyPath = dslCreator.options.jdbcConnectionLoggingPath
+			if (historyPath != null) {
+				def objName = ParseObjectName.Parse(dslNameObject)
+				res = historyPath + '/' + objName.toFileName() + "/${dslCreator.configuration.environment?:'prod'}.{date}.sql"
+			}
+		}
+		return FileUtils.ConvertToDefaultOSPath(res)
+	}
 
     /**
      * Output server warning messages to log
@@ -527,11 +535,11 @@ class JDBCConnection extends Connection implements UserLogins {
 			}
 		}
 		else if (connectHost != null) {
-			str = "host: $connectHost"
-			if (connectDatabase != null) str += ", db: $connectDatabase"
+			str = "host: ${currentConnectHost()}"
+			if (connectDatabase != null) str += ", db: ${currentConnectDatabase()}"
 		}
 		else if (connectDatabase != null) {
-			str = "database: $connectDatabase"
+			str = "database: ${currentConnectDatabase()}"
 		}
 		else{
 			str = "unknown"
@@ -605,11 +613,14 @@ class JDBCConnection extends Connection implements UserLogins {
 	/** Current script history file name */
 	@JsonIgnore
 	String getFileNameSqlHistory() { fileNameSqlHistory }
+
+	private final Object operationLock = new Object()
 	
 	/** Validation script history file */
+	@Synchronized('operationLock')
 	protected validSqlHistoryFile() {
 		if (fileNameSqlHistory == null) {
-			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile, Config.SystemProps() + StringUtils.MACROS_FILE)
+			fileNameSqlHistory = StringUtils.EvalMacroString(sqlHistoryFile(), Config.SystemProps() + StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(fileNameSqlHistory)
 		}
 	}

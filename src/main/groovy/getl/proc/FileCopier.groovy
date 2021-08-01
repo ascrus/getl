@@ -287,7 +287,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         if (destinationBeforeScript != null) {
             destinations.each { man ->
                 if (man.connected)
-                    Command(man, destinationBeforeScript, numberAttempts, timeAttempts, true, null, Config.vars)
+                    Command(man, destinationBeforeScript, numberAttempts, timeAttempts, true, null, Config.ConfigVars(dslCreator))
             }
         }
     }
@@ -299,7 +299,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         if (destinationErrorScript != null) {
             destinations.each { man ->
                 if (man.connected)
-                    Command(man, destinationErrorScript, numberAttempts, timeAttempts, false, null, Config.vars)
+                    Command(man, destinationErrorScript, numberAttempts, timeAttempts, false, null, Config.ConfigVars(dslCreator))
             }
         }
     }
@@ -311,7 +311,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         if (destinationAfterScript != null) {
             destinations.each { man ->
                 if (man.connected)
-                    Command(man, destinationAfterScript, numberAttempts, timeAttempts, true, null, Config.vars)
+                    Command(man, destinationAfterScript, numberAttempts, timeAttempts, true, null, Config.ConfigVars(dslCreator))
             }
         }
     }
@@ -334,9 +334,9 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                     abortOnError = true
 
                     run { Integer segment ->
-                        def src = source.cloneManager(localDirectory: "${source.localDirectory}.${segment}")
+                        def src = source.cloneManager([localDirectory: "${source.localDirectory}.${segment}"], dslCreator)
                         FileUtils.ValidPath(src.localDirectory, true)
-                        def dst = destinations.get(segment).cloneManager(localDirectory: src.localDirectory)
+                        def dst = destinations.get(segment).cloneManager([localDirectory: src.localDirectory], dslCreator)
                         ConnectTo([src, dst], na, ta)
 
                         try {

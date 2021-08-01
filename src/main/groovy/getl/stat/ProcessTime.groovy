@@ -21,6 +21,9 @@ class ProcessTime {
 	}
 
 	ProcessTime(Map params) {
+		if (params.dslCreator != null)
+			dslCreator = params.dslCreator as Getl
+
 		if (params.name != null)
 			this.name = params.name
 		else
@@ -43,6 +46,9 @@ class ProcessTime {
 
 		init()
 	}
+
+	/** Getl creator */
+	private Getl dslCreator
 
 	static public java.util.logging.Level LogLevelDefault = Level.FINER
     static void SetLogLevelDefault (String level) { LogLevelDefault = Logs.StrToLevel(level) }
@@ -79,7 +85,9 @@ class ProcessTime {
 	private void init () {
 		start = DateUtils.Now()
 		
-		def conf = Config.FindSection("statistic")
+		def conf = (dslCreator != null)?dslCreator.configuration.manager.findSection('statistic'):
+				Config.FindSection('statistic')
+
 		if (conf != null) {
 			if (conf.level != null && logLevel == null) logLevel = Logs.StrToLevel(conf.level as String)
 			if (conf.debug != null) debug = conf.debug 

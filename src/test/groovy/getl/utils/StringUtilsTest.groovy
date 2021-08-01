@@ -44,8 +44,8 @@ class StringUtilsTest extends getl.test.GetlTest {
         assertEquals('test str', StringUtils.EvalMacroString('test str', [var1: 'text'], true))
         assertEquals('', StringUtils.EvalMacroString('', [:], true))
         assertNull(StringUtils.EvalMacroString(null, [:]))
-        assertEquals('C:\\dir1\\file1.txt', StringUtils.EvalMacroString('{drive}{div}{dir}{div}{file}.{ext}',
-                [div: '\\', drive:'C:', dir: 'dir1', file: 'file1', ext: 'txt']))
+        assertEquals('C:\\dir1\\file1.txt', StringUtils.EvalMacroString('{drive}{~div~}{dir}{~div~}{file}.{ext}',
+                ["~div~": '\\', drive:'C:', dir: 'dir1', file: 'file1', ext: 'txt']))
     }
 
     @Test

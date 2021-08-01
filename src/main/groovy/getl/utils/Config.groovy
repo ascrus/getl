@@ -2,8 +2,8 @@ package getl.utils
 
 import getl.config.ConfigFiles
 import getl.config.ConfigManager
-import getl.proc.Job
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import groovy.transform.Synchronized
 
 /**
@@ -16,57 +16,45 @@ class Config {
 		throw new ExceptionGETL("Deny create instance Config class")
 	}
 
-    /**
-     * Current OS
-     */
+    /** Current OS */
     static public final String OS = System.getProperty("os.name").toLowerCase()
 
-    /**
-     * Current OS is Windows
-     */
+    /** Current OS is Windows */
     static Boolean isWindows() { (OS.indexOf("win") >= 0) }
 
-    /**
-     * Current OS is Mac
-     */
+    /** Current OS is Mac */
     static Boolean isMac() { (OS.indexOf("mac") >= 0) }
 
-    /**
-     * Current OS is Unix
-     */
+    /** Current OS is Unix */
     static Boolean isUnix() { (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0 ) }
 
-    /**
-     * Current OS is Solaris
-     */
+    /** Current OS is Solaris */
     static Boolean isSolaris() { (OS.indexOf("sunos") >= 0) }
 
-    /**
-	 * Used Java version
-	 */
+    /** Used Java version */
 	static public final BigDecimal JavaVersion = new BigDecimal(System.getProperty("java.vm.specification.version"))
 	
-	/**
-	 *  Parameters
-	 */
+	/**  Parameters */
 	static Map<String, Object> getParams() { configClassManager.params }
 
-    /**
-     * Evaluate variables where load configuration
-     */
-    static public Boolean evalVars = true
+    /** Evaluate variables where load configuration */
+    static Boolean getEvalVars() { configClassManager.evalVars }
+	/** Evaluate variables where load configuration */
+	static void setEvalVars(Boolean value) { configClassManager.evalVars = value }
 
-    /**
-     * Class used for configuration management
-     */
+    /** Class used for configuration management */
     static private ConfigManager configClassManager = new ConfigFiles()
-
+	/** Class used for configuration management */
 	static ConfigManager getConfigClassManager() { configClassManager }
-
+	/** Class used for configuration management */
 	static void setConfigClassManager(ConfigManager value) {
+		if (configClassManager != null)
+			configClassManager.init.each {value.registerOnInit(it) }
+
         configClassManager = value
     }
 
+	/** Init configuration */
 	static void Init(Map initParams) {
 		if ((initParams.config as Map)?.manager != null) {
             configClassManager = Class.forName((initParams.config as Map).manager as String).newInstance() as ConfigManager
@@ -76,177 +64,93 @@ class Config {
         configClassManager.init(initParams)
     }
 
-	/**
-	 * Content config file	
-	 */
-	static public final Map<String, Object> content = [vars: new HashMap<String, Object>()]
+	/** Content config file */
+	static Map<String, Object> getContent() { configClassManager.content }
 	
-	/**
-	 * Variables
-	 */
-	static Map<String, Object> getVars() { content.vars as Map<String, Object>}
+	/**	Variables */
+	static Map<String, Object> getVars() { configClassManager.vars }
+	/**	Variables */
+	static void setVars(Map value) { configClassManager.vars = value }
 
-    /**
-     * Set variables
-     * @param value
-     */
-	static void setVars(Map value) {
-        if (value == null) throw new ExceptionGETL('Null "value" detected!')
-		def v = content.vars as Map<String, Object>
-		if (v == null) {
-			v = new HashMap<String, Object>()
-			content.put('vars', v)
-		}
-		v.putAll(value)
-	}
-	
-	/**
-	 * List of initialization object code on load config
-	 */
-	static public final List<Closure> init = [] as List<Closure>
+	/** List of initialization object code on load config */
+	static List<Closure> getInit() { configClassManager.init }
+	static void setInit(List<Closure> value) { configClassManager.init = value }
 
-	/**
-	 * Re-initialization class
-	 */
+	/** Re-initialization class */
 	@Synchronized
 	static void ReInit() {
-		init.clear()
-		ClearConfig()
 		configClassManager = new ConfigFiles()
 	}
 
 	/**
-	 * Registration object code closure on load of the configuration files
-	 * @param code
+	 * Registration initialization code closure on load of the configuration files
+	 * @param code initialization code
 	 */
-	@Synchronized
 	static void RegisterOnInit(Closure code) {
-		if (init.find { it == code } == null) {
-			init << code
-		}
+		configClassManager.registerOnInit(code)
 	}
 
 	/**
-	 * Unregistration object code closure on load of the configuration files
-	 * @param code
+	 * Unregister initialization code closure on load of the configuration files
+	 * @param code initialization code
 	 */
-	@Synchronized
 	static void UnregisterOnInit(Closure code) {
-		if (init.find { it == code } != null) {
-			init.remove(code)
-		}
+		configClassManager.unregisterOnInit(code)
 	}
 
-	/**
-	 * Clear all configurations
-	 */
-	@Synchronized
+	/** Clear all configurations */
 	static void ClearConfig () {
-		content.clear()
-        this.vars = new HashMap<String, Object>()
+		configClassManager.clearConfig()
 	}
 	
+	/**	 Load configuration content from file */
+	static void LoadConfig(Map readParams = [:]) { configClassManager.loadConfig(readParams) }
+
 	/**
-	 * Load configuration
+	 * Merge specified configuration to current content
+	 * @param data merged configuration
 	 */
-	@Synchronized
-	static void LoadConfig (Map readParams = [:]) {
-		if (readParams.files != null) {
-			def l = [] as List<String>
-			(readParams.files as List).each {
-				if (it instanceof String)
-					l << FileUtils.ResourceFileName(it as String)
-				else
-					l << it.toString()
-			}
-			readParams.files = l
-		}
-		if (readParams.fileName != null && readParams.fileName instanceof String) {
-			readParams.fileName = FileUtils.ResourceFileName(readParams.fileName as String)
-		}
-        configClassManager.loadConfig(readParams)
-		DoInitEvent()
-	}
+	static void MergeConfig (Map data) { configClassManager.mergeConfig(data) }
 
-	static void MergeConfig (Map data) {
-        if (data == null) throw new ExceptionGETL('Null "data" detected!')
-
-        Map<String, Object> currentVars = vars
-        if (data.vars != null) MapUtils.MergeMap(currentVars, (Map<String, Object>)(data.vars))
-        if (!(Job.jobArgs.vars as Map)?.isEmpty()) MapUtils.MergeMap(currentVars, (Map<String, Object>)(Job.jobArgs.vars))
-
-        if (evalVars && configClassManager.evalVars && !currentVars.isEmpty() && !data.isEmpty()) {
-            try {
-                data = MapUtils.EvalMacroValues(data, currentVars)
-            }
-            catch (MissingPropertyException e) {
-                Logs.Severe("${e.message}, available variables: ${currentVars.keySet().toList()}")
-                throw e
-            }
-        }
-
-        MapUtils.MergeMap(content, (Map) data)
-    }
-	
 	/**
 	 * Run every event subscriber after load config files
 	 */
-	@Synchronized
-	static void DoInitEvent () {
-		init.each { doInit ->
-			doInit()
-		}
+	static void DoInitEvent() {
+		configClassManager.initEvents()
 	}
 
 	/**
 	 * Find config section by section name
-	 * Syntax section name: section[.section[.section.[...]]] 
-	 * @param section
-	 * @return
+	 * @param section section name (syntax: section[.section[.section.[...]]])
+	 * @return found section
 	 */
-	@Synchronized
-	static Map FindSection (String section) {
-		if (section == null) return null
-		def res = MapUtils.FindSection(content, section)
-		(res != null)?res:[:]
-	}
+	static Map FindSection(String section) { configClassManager.findSection(section) }
 	
 	/**
 	 * Validation contains section
-	 * @param section
-	 * @return
+	 * @param section section name (syntax: section[.section[.section.[...]]])
+	 * @return section search result
 	 */
-	@Synchronized
-	static Boolean ContainsSection (String section) {
-		MapUtils.ContainsSection(content, section)
-	}
+	static Boolean ContainsSection(String section) { configClassManager.containsSection(section) }
 
 	/**
-	 * Set value in content	
-	 * @param name
-	 * @param value
+	 * Set the value for the specified content element
+	 * @param name element name (syntax: section[.section[.section.[...]]].name)
+	 * @param value element value
 	 */
-	@Synchronized
-	static void SetValue(String name, value) {
-		MapUtils.SetValue(content, name, value)
-	}
+	static void SetValue(String name, value) { configClassManager.setContentValue(name, value) }
 	
 	/**
-	 * Save content to JSON configuration file
+	 * Save content to configuration file
 	 * @param writer
 	 */
-	@Synchronized
-	static void SaveConfig(Map saveParams = [:]) {
-        configClassManager.saveConfig(content, saveParams)
-	}
+	static void SaveConfig(Map saveParams = [:]) { configClassManager.saveContent(saveParams) }
 
 	/**
 	 * Check configuration content is empty
-	 * @return flag
+	 * @return result checking
 	 */
-	static Boolean IsEmpty() {
-        return (content.size() == 1 && vars.isEmpty())
-    }
+	static Boolean IsEmpty() { configClassManager.isEmpty() }
 
 	/**
 	 * Return system properties and environment OS variables
@@ -260,5 +164,10 @@ class Config {
 		}
 
 		return res
+	}
+
+	/** Return config variable by Getl config manager or global content */
+	static Map<String, Object> ConfigVars(Getl dslCreator) {
+		return (dslCreator != null)?dslCreator.configVars:vars
 	}
 }

@@ -12,6 +12,7 @@ import getl.files.sub.ManagerListProcessing
 import getl.jdbc.*
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
+import getl.lang.sub.ParseObjectName
 import getl.proc.Executor
 import getl.proc.Flow
 import getl.utils.*
@@ -45,7 +46,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 		methodParams.register('buildList',
 				['path', 'maskFile', 'recursive', 'story', 'takePathInStory', 'fileListSortOrder',
 				 'limitDirs', 'limitCountFiles', 'limitSizeFiles', 'threadLevel', 'ignoreExistInStory',
-				 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory'])
+				 'createStory', 'extendFields', 'extendIndexes', 'onlyFromStory', 'ignoreStory', 'buildListThread'])
 		methodParams.register('downloadFiles',
 				['deleteLoadedFile', 'story', 'ignoreError', 'folders', 'filter', 'order'])
 	}
@@ -274,6 +275,17 @@ abstract class Manager implements Cloneable, GetlRepository {
 		params.scriptHistoryFile = value
 		fileNameScriptHistory = null 
 	}
+	String scriptHistoryFile() {
+		def res = scriptHistoryFile
+		if (res == null && dslCreator != null && dslNameObject != null) {
+			def historyPath = dslCreator.options.fileManagerLoggingPath
+			if (historyPath != null) {
+				def objName = ParseObjectName.Parse(dslNameObject)
+				res = historyPath + '/' + objName.toFileName() + "/${dslCreator.configuration.environment?:'prod'}.{date}.sql"
+			}
+		}
+		return FileUtils.ConvertToDefaultOSPath(res)
+	}
 
 	/** Log script file on file list connection */
 	String getSqlHistoryFile() { params.sqlHistoryFile as String }
@@ -339,9 +351,15 @@ abstract class Manager implements Cloneable, GetlRepository {
 	protected Boolean isWindowsFileSystem
 	
 	private final Closure doInitConfig = {
-		if (config == null) return
-		Map cp = Config.FindSection("files.${config}")
-		if (cp.isEmpty()) throw new ExceptionGETL("Config section \"files.${config}\" not found")
+		if (config == null)
+			return
+
+		Map cp = (dslCreator != null)?dslCreator.configuration.manager.findSection("files.${config}"):
+				Config.FindSection("files.${config}")
+
+		if (cp.isEmpty())
+			throw new ExceptionGETL("Config section \"files.${config}\" not found")
+
 		onLoadConfig(cp)
 		validParams()
 		Logs.Config("Load config \"files\".\"config\" for object \"${this.getClass().name}\"")
@@ -376,13 +394,27 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** File name is case-sensitive */
 	@JsonIgnore
 	abstract Boolean isCaseSensitiveName()
+
+	/** Session unique identification */
+	@JsonIgnore
+	String getSessionID() { sysParams.sessionID as String }
+	/** Session unique identification */
+	protected void setSessionID(String value) { sysParams.sessionID = value }
 	
 	/** Connect to server */
 	void connect() {
 		validRootPath()
 		FileUtils.ValidPath(localDirectoryFile)
 		currentRootPathSet()
-		doConnect()
+		try {
+			sessionID = UUID.randomUUID().toString()
+			writeScriptHistoryFile("Connect session $sessionID to directory $currentRootPath")
+			doConnect()
+		}
+		catch (Exception e) {
+			sessionID = null
+			throw e
+		}
 	}
 	
 	/** Connect to server */
@@ -390,7 +422,9 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 	/** Disconnect from server */
 	void disconnect() {
+		writeScriptHistoryFile("Disconnect from session $sessionID")
 		doDisconnect()
+		sessionID = null
 		if (isTempLocalDirectory)
 			FileUtils.DeleteFolder(localDirectory, true)
 	}
@@ -947,7 +981,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 						newCode.init()
 					}
 					try {
-						Manager newMan = cloneManager(localDirectory: localDirectory)
+						Manager newMan = cloneManager([localDirectory: localDirectory], dslCreator)
 						def countConnect = 3
 						while (countConnect != 0) {
 							try {
@@ -1133,6 +1167,8 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		countFileList = 0L
 		sizeFileList = 0L
+
+		writeScriptHistoryFile("Build list files from session $sessionID")
 
 		// History table		
 		TableDataset storyTable = (!ignoreStory)?((lParams.story as TableDataset)?:story):null
@@ -1478,6 +1514,8 @@ FROM (
 
 		if (fileList == null || fileList.field.isEmpty())
 			throw new ExceptionGETL("Before download build fileList dataset!")
+
+		writeScriptHistoryFile("Download files from session $sessionID")
 
 		def deleteLoadedFile = BoolUtils.IsValue(params.deleteLoadedFile)
 		TableDataset ds = params.story as TableDataset
@@ -2139,11 +2177,12 @@ WHERE
 		if (!allowCommand)
 			throw new ExceptionGETL("Run command is not allowed by server!")
 		
-		writeScriptHistoryFile("COMMAND: $command")
+		writeScriptHistoryFile("Execute command from session $sessionID:\n$command")
 		
 		def res = doCommand(command, out, err)
-		writeScriptHistoryFile("OUT:\n${out.toString()}")
-		if (err.length() > 0) writeScriptHistoryFile("ERROR:\n${err.toString()}")
+		writeScriptHistoryFile("Output command from session $sessionID:\n${out.toString()}")
+		if (err.length() > 0)
+			writeScriptHistoryFile("Detect error from session $sessionID:\n${err.toString()}")
 
 		return res
 	}
@@ -2179,7 +2218,7 @@ WHERE
 	@Synchronized('operationLock')
 	protected void validScriptHistoryFile() {
 		if (fileNameScriptHistory == null) {
-			fileNameScriptHistory = StringUtils.EvalMacroString(scriptHistoryFile, Config.SystemProps() + StringUtils.MACROS_FILE)
+			fileNameScriptHistory = StringUtils.EvalMacroString(scriptHistoryFile(), Config.SystemProps() + StringUtils.MACROS_FILE)
 			FileUtils.ValidFilePath(fileNameScriptHistory)
 		}
 	}
@@ -2190,11 +2229,13 @@ WHERE
 	 */
 	@Synchronized('operationLock')
 	protected void writeScriptHistoryFile(String text) {
-		if (scriptHistoryFile == null) return
+		if (scriptHistoryFile() == null)
+			return
+
 		validScriptHistoryFile()
 		def f = new File(fileNameScriptHistory).newWriter("utf-8", true)
 		try {
-			f.write("${DateUtils.NowDateTime()}\t$text\n")
+			f.write("# ${DateUtils.NowDateTime()}\t$text\n")
 		}
 		finally {
 			f.close()
@@ -2254,7 +2295,7 @@ WHERE
 
 	@Override
 	Object clone() {
-		return cloneManager()
+		return cloneManager(null, dslCreator)
 	}
 
 	void dslCleanProps() {
@@ -2290,6 +2331,8 @@ WHERE
 	/** Clear the current directory from directories and files */
 	void cleanDir() {
 		validConnect()
+
+		writeScriptHistoryFile("Clean current directory ${currentDir()} from session $sessionID")
 
 		def l = list()
 		l.each {file ->

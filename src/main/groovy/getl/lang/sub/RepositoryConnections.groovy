@@ -113,12 +113,4 @@ class RepositoryConnections extends RepositoryObjects<Connection> {
 
     @Override
     Boolean needEnvConfig() { true }
-
-    @Override
-    protected void initRegisteredObject(Connection obj) {
-        if (obj instanceof JDBCConnection && dslCreator.options.jdbcConnectionLoggingPath != null) {
-            def objName = ParseObjectName.Parse(obj.dslNameObject)
-            (obj as JDBCConnection).sqlHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.jdbcConnectionLoggingPath + '/' + objName.toFileName() + "/${dslCreator.configuration.environment}.{date}.sql")
-        }
-    }
 }

@@ -53,7 +53,9 @@ class H2Connection extends JDBCConnection {
 	Integer getExclusive() { sessionProperty.exclusive as Integer }
 	/** Exclusive connection */
 	void setExclusive(Integer value) {
-        if (connected && exclusive != value) (driver as JDBCDriver).changeSessionProperty('exclusive', value)
+        if (value != null && connected && exclusive != value)
+			(driver as JDBCDriver).changeSessionProperty('exclusive', value)
+
         sessionProperty.exclusive = value
     }
 

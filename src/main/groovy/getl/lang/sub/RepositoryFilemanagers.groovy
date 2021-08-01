@@ -42,12 +42,4 @@ class RepositoryFilemanagers extends RepositoryObjects<Manager> {
 
     @Override
     Boolean needEnvConfig() { true }
-
-    @Override
-    protected void initRegisteredObject(Manager obj) {
-        if (dslCreator.options.fileManagerLoggingPath != null) {
-            def objName = ParseObjectName.Parse(obj.dslNameObject)
-            obj.scriptHistoryFile = FileUtils.ConvertToDefaultOSPath(dslCreator.options.fileManagerLoggingPath + '/' + objName.toFileName() + "/${dslCreator.configuration.environment}.{date}.txt")
-        }
-    }
 }

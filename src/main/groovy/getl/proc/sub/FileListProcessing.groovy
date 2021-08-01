@@ -666,14 +666,14 @@ abstract class FileListProcessing implements GetlRepository {
 
         if (sourceBeforeScript != null)
             if (source.connected)
-                Command(source, sourceBeforeScript, numberAttempts, timeAttempts, true, null, Config.vars)
+                Command(source, sourceBeforeScript, numberAttempts, timeAttempts, true, null, Config.ConfigVars(dslCreator))
     }
 
     /** Run after error in processing */
     protected void errorProcessing() {
         if (sourceErrorScript != null)
             if (source.connected)
-                Command(source, sourceErrorScript, numberAttempts, timeAttempts, false, null, Config.vars)
+                Command(source, sourceErrorScript, numberAttempts, timeAttempts, false, null, Config.ConfigVars(dslCreator))
     }
 
     /** Run after processing */
@@ -682,7 +682,7 @@ abstract class FileListProcessing implements GetlRepository {
 
         if (sourceAfterScript != null)
             if (source.connected)
-                Command(source, sourceAfterScript, numberAttempts, timeAttempts, true, null, Config.vars)
+                Command(source, sourceAfterScript, numberAttempts, timeAttempts, true, null, Config.ConfigVars(dslCreator))
     }
 
     /** Save cached history table to story in source */

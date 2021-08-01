@@ -35,11 +35,13 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
     /** Owner model */
     protected BaseModel getOwnerModel() { ownerObject as BaseModel }
 
+    private final Object synchVars = new Object()
+
     /** Model object variables */
-    @Synchronized
+    @Synchronized('synchVars')
     Map<String, Object> getObjectVars() { params.objectVars as Map<String, Object> }
     /** Model object variables */
-    @Synchronized
+    @Synchronized('synchVars')
     void setObjectVars(Map<String, Object> value) {
         objectVars.clear()
         if (value != null)
@@ -50,13 +52,26 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
      * @param name variable name
      * @return variable value
      */
+    @Synchronized('synchVars')
     Object variable(String name) { ListUtils.NotNullValue(objectVars.get(name), ownerModel.modelVars.get(name)) }
 
+    /**
+     * Return node variables
+     * @param mask mask name
+     * @return variable set
+     */
+    @Synchronized('synchVars')
+    Map<String, Object> variables(String mask = null) {
+        return ownerModel.modelVariables(mask) + MapUtils.FindNodes(objectVars, mask)
+    }
+
+    private final Object synchAttrs = new Object()
+
     /** Object attributes */
-    @Synchronized
+    @Synchronized('synchAttrs')
     Map<String, Object> getAttrs() { params.attrs as Map<String, Object> }
     /** Object attributes */
-    @Synchronized
+    @Synchronized('synchAttrs')
     void setAttrs(Map<String, Object> value) {
         attrs.clear()
         if (value != null)
@@ -67,6 +82,7 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
      * @param name attribute name
      * @return attribute value
      */
+    @Synchronized('synchAttrs')
     Object attribute(String name) { ListUtils.NotNullValue(attrs.get(name), ownerModel.modelAttrs.get(name)) }
 
     /**
@@ -74,6 +90,7 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
      * @param mask mask name
      * @return attribute set
      */
+    @Synchronized('synchAttrs')
     Map<String, Object> attributes(String mask = null) {
         return ownerModel.modelAttributes(mask) + MapUtils.FindNodes(attrs, mask)
     }
@@ -83,6 +100,7 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
      * @param topName attribute group name for which all subordinate attributes should be returned
      * @return attribute set
      */
+    @Synchronized('synchAttrs')
     Map<String, Object> subAttributes(String topName) {
         return ownerModel.modelSubAttributes(topName) + MapUtils.FindSubNodes(attrs, topName)
     }
@@ -103,6 +121,7 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
      * Check attribute naming and generate an unknown error
      * @param validation list of mask validator
      */
+    @Synchronized('synchAttrs')
     protected checkAttrsInternal(List<Path> validation, List<String> allowAttrs) {
         def unknownKeys = [] as List<String>
         attrs.each { k, v ->

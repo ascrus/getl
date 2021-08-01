@@ -17,12 +17,15 @@ class SetOfTablesTest extends TestRepository {
                     assertEquals('getl_table1', sourceTable.tableName)
                     assertEquals(Field.integerFieldType, sourceTable.field('id').type)
                 }
+                cloneDataset('h2:table2', embeddedTable('h2:table1'))
+                table('h2:table2')
 
-                assertEquals(['h2:table1'], findModelDatasets())
-                assertEquals(['h2:table1'], findModelDatasets(['h2:*']))
+                assertEquals(['h2:table1', 'h2:table2'], findModelDatasets())
+                assertEquals(['h2:table1', 'h2:table2'], findModelDatasets(['h2:*']))
                 assertEquals(['h2:table1'], findModelDatasets(['h2:*1']))
                 assertTrue(findModelDatasets(null, ['h2:*']).isEmpty())
                 assertEquals(['h2:table1'], findModelDatasets(null, ['h2:*2']))
+                assertEquals(['h2:table1'], findModelDatasets(['h2:*'], ['h2:*2']))
 
                 assertTrue(datasetInModel('h2:table1'))
             }

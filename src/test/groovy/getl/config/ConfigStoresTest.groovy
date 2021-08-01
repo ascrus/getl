@@ -1,13 +1,14 @@
 package getl.config
 
 import getl.h2.H2Connection
+import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.Config
 import getl.utils.MapUtils
 import groovy.json.JsonBuilder
 import org.junit.Test
 
-class ConfigStoresTest extends getl.test.GetlTest {
+class ConfigStoresTest extends GetlTest {
     def h2 = new H2Connection(config: 'h2')
 
     @Test

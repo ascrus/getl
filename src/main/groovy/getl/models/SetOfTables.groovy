@@ -19,23 +19,18 @@ import groovy.transform.stc.SimpleType
 @InheritConstructors
 class SetOfTables extends DatasetsModel<TableSpec> {
     /** Connection name in the repository */
-    @Synchronized
     String getSourceConnectionName() { modelConnectionName }
     /** Connection name in the repository */
-    @Synchronized
     void setSourceConnectionName(String value) { useSourceConnection(value) }
 
     /** Used connection */
     @JsonIgnore
-    @Synchronized
     JDBCConnection getSourceConnection() { modelConnection as JDBCConnection }
     /** Used connection */
     @JsonIgnore
-    @Synchronized
     void setSourceConnection(JDBCConnection value) { useSourceConnection(value) }
 
     /** Use specified repository connection name */
-    @Synchronized
     void useSourceConnection(String connectionName) {
         def con = dslCreator.connection(connectionName)
         if (!(con instanceof JDBCConnection))
@@ -43,19 +38,12 @@ class SetOfTables extends DatasetsModel<TableSpec> {
         useModelConnection(connectionName)
     }
     /** Use specified connection */
-    @Synchronized
     void useSourceConnection(JDBCConnection connection) { useModelConnection(connection) }
 
     /** Used tables */
-    @Synchronized
     List<TableSpec> getUsedTables() { usedObjects as List<TableSpec> }
     /** Used tables */
-    @Synchronized
-    void setUsedTables(List<TableSpec> value) {
-        usedTables.clear()
-        if (value != null)
-            usedTables.addAll(value)
-    }
+    void setUsedTables(List<TableSpec> value) { usedObjects = value }
 
     /** Name of the dataset storing the history of table processing */
     String getStoryDatasetName() { super.storyDatasetName }
@@ -79,7 +67,6 @@ class SetOfTables extends DatasetsModel<TableSpec> {
      * @param cl defining code
      * @return table spec
      */
-    @Synchronized
     TableSpec table(String tableName,
                     @DelegatesTo(TableSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl = null) {
@@ -91,7 +78,6 @@ class SetOfTables extends DatasetsModel<TableSpec> {
      * @param cl defining code
      * @return table spec
      */
-    @Synchronized
     TableSpec table(@DelegatesTo(TableSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl) {
         def owner = DetectClosureDelegate(cl)
@@ -107,7 +93,6 @@ class SetOfTables extends DatasetsModel<TableSpec> {
      * @param cl defining code
      * @return table spec
      */
-    @Synchronized
     TableSpec table(TableDataset table,
                     @DelegatesTo(TableSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.models.opts.TableSpec']) Closure cl = null) {

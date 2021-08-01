@@ -12,29 +12,38 @@ import getl.utils.Logs
  *
  */
 class ConfigTypesafe extends ConfigManager {
+	/** Path to configuration files */
 	String getPath() {
 		return params.path as String
 	}
-
+	/** Path to configuration files */
 	void setPath(String value) {
 		params.path = value
 	}
 
 	@Override
-	void loadConfig(Map<String, Object> readParams) {
+	void setEvalVars(Boolean value) { super.setEvalVars(false) }
+
+	@Override
+	protected void loadContent(Map<String, Object> readParams = [:]) {
 		String path = (readParams.path) ?: path
 		TypeSafeConfig config = path ? ConfigFactory.load(path) : ConfigFactory.load()
-		GETLConfig.MergeConfig(config.root().unwrapped())
+		mergeConfig(config.root().unwrapped())
 	}
 
 	@Override
-	void saveConfig(Map<String, Object> content, Map<String, Object> saveParams) {
+	void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = [:]) {
 		throw new ExceptionGETL('Not support this features!')
 	}
 
 	@Override
 	void init(Map<String, Object> initParams) {
-		if (initParams?.config == null) return
+		super.init(initParams)
+		evalVars = false
+
+		if (initParams?.config == null)
+			return
+
 		Map config = initParams.config as Map<String, Object>
 		if (config.path != null) {
 			this.path = config.path

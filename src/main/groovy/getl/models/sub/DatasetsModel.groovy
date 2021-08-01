@@ -19,10 +19,13 @@ import groovy.transform.Synchronized
 @InheritConstructors
 class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     /** Repository connection name */
+    @Synchronized
     protected String getModelConnectionName() { params.modelConnectionName as String }
     /** Repository connection name */
+    @Synchronized
     protected void setModelConnectionName(String value) { saveParamValue('modelConnectionName', value) }
     /** Set the name of the connection */
+    @Synchronized
     protected void useModelConnection(String connectionName) {
         if (connectionName == null)
             throw new ExceptionModel('Connection name required!')
@@ -31,10 +34,13 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         saveParamValue('modelConnectionName', connectionName)
     }
     /** Used connection */
+    @Synchronized
     protected Connection getModelConnection() { dslCreator.connection(modelConnectionName) }
     /** Used connection */
+    @Synchronized
     protected setModelConnection(Connection value) { useModelConnection(value) }
     /** Set connection */
+    @Synchronized
     protected void useModelConnection(Connection connection) {
         if (connection == null)
             throw new ExceptionModel('Connection required!')
@@ -100,7 +106,6 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     }
 
     @Override
-    @Synchronized
     void checkModel(Boolean checkObjects = true) {
         if (modelConnectionName == null)
             throw new ExceptionModel("The model connection is not specified!")
@@ -109,7 +114,6 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     }
 
     @Override
-    @Synchronized
     void checkObject(BaseSpec obj) {
         super.checkObject(obj)
         validDataset((obj as DatasetSpec).modelDataset)
@@ -165,17 +169,26 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
      * @param excludeMask list of masks to exclude datasets
      * @return list of names of found model datasets
      */
-    @Synchronized
     List<String> findModelDatasets(List<String> includeMask = null, List<String> excludeMask = null) {
         def res = [] as List<String>
+
+        if (includeMask?.isEmpty())
+            includeMask = null
+        if (excludeMask?.isEmpty())
+            excludeMask = null
+
         def includePath = Path.Masks2Paths(includeMask)
         def excludePath = Path.Masks2Paths(excludeMask)
+
         usedDatasets.each {ds ->
             def dsName = ds.datasetName
             if (includePath == null && excludePath == null)
                 res << dsName
-            else if (includePath != null && Path.MatchList(dsName, includePath))
-                res << dsName
+            else if (includePath != null) {
+                if (Path.MatchList(dsName, includePath))
+                    if (excludePath == null || !Path.MatchList(dsName, excludePath))
+                        res << dsName
+            }
             else if (excludePath != null && !Path.MatchList(dsName, excludePath))
                 res << dsName
        }
@@ -187,7 +200,6 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
      * Check the presence of a dataset in the model by its name
      * @param name source dataset name
      */
-    @Synchronized
     Boolean datasetInModel(String name) {
         return usedDatasets.find {it.datasetName == name } != null
     }

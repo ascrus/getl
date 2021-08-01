@@ -149,6 +149,8 @@ class HDFSManager extends Manager implements UserLogins {
         if (login == null)
             throw new ExceptionGETL("Required login for connect")
 
+        writeScriptHistoryFile("Connect to hdfs $server:$port with login $login from session $sessionID")
+
         UserGroupInformation ugi = UserGroupInformation.createRemoteUser(login)
         ugi.doAs(new ConfigAction(this))
     }

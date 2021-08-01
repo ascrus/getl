@@ -416,6 +416,7 @@ class CSVDriverTest extends GetlTest {
 
     @Test
     void testAvailableSplit() {
+        Getl.CleanGetl()
         Getl.Dsl(this) {
             CSVDataset csv = csv {
                 useConnection csvConnection { path = csvTempConnection().currentPath() }
@@ -453,6 +454,7 @@ class CSVDriverTest extends GetlTest {
 
     @Test
     void testNullValue() {
+        Getl.CleanGetl()
         Getl.Dsl(this) {
             csvTemp { ds ->
                 writeOpts {
@@ -545,6 +547,7 @@ class CSVDriverTest extends GetlTest {
 
     @Test
     void testPresetMode() {
+        Getl.CleanGetl()
         Getl.Dsl(this) {
             CSVConnection.PresetModes.each { mode, modeParams ->
                 def con = csvConnection {
@@ -618,6 +621,7 @@ class CSVDriverTest extends GetlTest {
 
     @Test
     void testAppendInThreads() {
+        Getl.CleanGetl()
         Getl.Dsl(this) {
             csvTemp('test_append_threads', true) {
                 append = true
@@ -644,6 +648,7 @@ class CSVDriverTest extends GetlTest {
 
     @Test
     void testSkipRows() {
+        Getl.CleanGetl()
         Getl.Dsl(this) {
             def csv = csvTemp {
                 header = true
@@ -688,6 +693,7 @@ class CSVDriverTest extends GetlTest {
 
     @Test
     void testSaveErrors() {
+        Getl.CleanGetl()
         Getl.Dsl(this) {
             def csv = csvTemp {
                 header = true

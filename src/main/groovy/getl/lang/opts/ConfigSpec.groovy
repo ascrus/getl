@@ -14,18 +14,25 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 class ConfigSpec extends BaseSpec {
-    /**
-     * Configuration manager
-     */
-    @SuppressWarnings("GrMethodMayBeStatic")
+    @Override
+    protected void initSpec() {
+        super.initSpec()
+        if (params.configManager == null) {
+            def manager = new ConfigSlurper()
+            saveParamValue('configManager', manager)
+            Config.configClassManager = manager
+        }
+        else
+            Config.configClassManager = manager
+    }
+
+    /** Configuration manager */
     @JsonIgnore
-    ConfigSlurper getManager() { Config.configClassManager as ConfigSlurper }
+    ConfigSlurper getManager() { params.configManager as ConfigSlurper}
 
     /** Configuration files path */
-    @SuppressWarnings("GrMethodMayBeStatic")
     String getPath() { manager.path }
     /** Configuration files path */
-    @SuppressWarnings("GrMethodMayBeStatic")
     void setPath(String value) { manager.path = value }
     /** Configuration files full path */
     String fullPath() { manager.path() }
@@ -33,12 +40,10 @@ class ConfigSpec extends BaseSpec {
     /**
      * Code page in configuration files
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     String getCodePage() { manager.codePage }
     /**
      * Code page in configuration files
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     void setCodePage(String value) { manager.codePage = value }
 
     /**
@@ -47,10 +52,19 @@ class ConfigSpec extends BaseSpec {
      * @param environment environment
      * @param codePage code page file
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     void load(String fileName, String environment = null, String codePage = null) {
-        Config.LoadConfig([fileName: FileUtils.ResourceFileName(fileName, ownerObject as Getl), codePage: codePage,
+        manager.loadConfig([fileName: FileUtils.ResourceFileName(fileName, ownerObject as Getl), codePage: codePage,
                            environment: environment])
+    }
+
+    /**
+     * Load configuration file
+     * @param file configuration file
+     * @param environment environment
+     * @param codePage code page file
+     */
+    void load(File file, String environment = null, String codePage = null) {
+        manager.loadConfig([fileName: file.path, codePage: codePage, environment: environment])
     }
 
     /**
@@ -61,7 +75,18 @@ class ConfigSpec extends BaseSpec {
      */
     void loadEncrypt(String fileName, String environment = null, String secretKey = null) {
         def data = ConfigStores.LoadSection(FileUtils.ResourceFileName(fileName, ownerObject as Getl), secretKey, environment?:manager.environment?:'all')
-        Config.MergeConfig(data)
+        manager.mergeConfig(data)
+    }
+
+    /**
+     * Load configuration file
+     * @param fileName configuration file
+     * @param environment environment
+     * @param secretKey encode key string
+     */
+    void loadEncrypt(File file, String environment = null, String secretKey = null) {
+        def data = ConfigStores.LoadSection(file.path, secretKey, environment?:manager.environment?:'all')
+        manager.mergeConfig(data)
     }
 
     /**
@@ -69,9 +94,8 @@ class ConfigSpec extends BaseSpec {
      * @param fileName configuration file name
      * @param codePage code page file
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     void save(String fileName, String codePage = null) {
-        Config.SaveConfig(fileName: fileName, codePage: codePage)
+        manager.saveContent([fileName: fileName, codePage: codePage])
     }
 
     /**
@@ -88,8 +112,7 @@ class ConfigSpec extends BaseSpec {
     /**
      * Clear configuration content
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
-    void clear() { Config.ClearConfig() }
+    void clear() { manager.clearConfig() }
 
     /**
      * Read fields from the specified configuration section
@@ -97,7 +120,7 @@ class ConfigSpec extends BaseSpec {
      * @param validExist check for the existence of fields in the script
      */
     void readFields(String section, Boolean validExist = true) {
-        def vars = Config.FindSection(section)
+        def vars = manager.findSection(section)
         if (vars == null)
             throw new ExceptionDSL("Configuration section \"$section\" not found!")
         if (vars.isEmpty())
@@ -107,12 +130,10 @@ class ConfigSpec extends BaseSpec {
     }
 
     /** Current environment */
-    @SuppressWarnings("GrMethodMayBeStatic")
     String getEnvironment() {
         return manager.environment
     }
     /** Current environment */
-    @SuppressWarnings("GrMethodMayBeStatic")
     void setEnvironment(String value) {
         manager.environment = value
     }

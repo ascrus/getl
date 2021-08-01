@@ -13,12 +13,13 @@ import groovy.json.JsonSlurper
  */
 class ConfigFiles extends ConfigManager {
     @Override
-    Boolean getEvalVars() { true }
-
-    @SuppressWarnings("DuplicatedCode")
-    @Override
     void init(Map<String, Object> initParams) {
-        if (initParams?.config == null) return
+        super.init(initParams)
+        evalVars = true
+
+        if (initParams?.config == null)
+            return
+
         Map config = initParams.config as Map<String, Object>
         if (config.path != null) {
             this.path = config.path
@@ -45,25 +46,25 @@ class ConfigFiles extends ConfigManager {
     }
 
 	/** Path for configuration files */
-	String getPath () { params.path as String }
+	String getPath() { params.path as String }
     /** Path for configuration files */
-    void setPath (String value) {
+    void setPath(String value) {
         if (value.trim() == '') throw new ExceptionGETL('The path can not have empty value')
         params.path = value?.trim()
     }
 
 	/** Configuration file name */
-	String getFileName () { params.fileName as String}
+	String getFileName() { params.fileName as String}
     /** Configuration file name */
-    void setFileName (String value) {
+    void setFileName(String value) {
         if (value.trim() == '') throw new ExceptionGETL('The file name can not have empty value')
         params.fileName = value?.trim()
     }
 
 	/** List of configuration files */
-	List<String> getFiles () { params.files as List<String> }
+	List<String> getFiles() { params.files as List<String> }
     /** List of configuration files */
-    void setFiles (List<String> value) {
+    void setFiles(List<String> value) {
         value.each {
             if (it == null || it.trim() == '') {
                 throw new ExceptionGETL('The file name can not have empty value')
@@ -80,9 +81,9 @@ class ConfigFiles extends ConfigManager {
 	}
 	
 	/** Configuration files code page */
-	String getCodePage () { (params.codePage as String)?:'UTF-8' }
+	String getCodePage() { (params.codePage as String)?:'UTF-8' }
     /** Configuration files code page */
-    void setCodePage (String value) {
+    void setCodePage(String value) {
         if (value.trim() == '') throw new ExceptionGETL('Code page value can not have empty value')
         params.codePage = value
     }
@@ -101,7 +102,7 @@ class ConfigFiles extends ConfigManager {
     String getFullName () { fullConfigName(path, this.fileName) }
 
 	@Override
-    void loadConfig(Map<String, Object> readParams = [:]) {
+    protected void loadContent(Map<String, Object> readParams = [:]) {
         def fp = (readParams?.path as String)?:this.path
         def fn = (readParams?.fileName as String)?:this.fileName
         def fl = (ListUtils.ToList(readParams?.files) as List<String>)?:this.files
@@ -118,7 +119,7 @@ class ConfigFiles extends ConfigManager {
             }
             def ff = new File(fullConfigName(rp, fn))
 			data = LoadConfigFile(ff, cp)
-            Config.MergeConfig(data)
+            mergeConfig(data)
 		}
 		else if (fl != null) {
 			fl.each { String name ->
@@ -131,7 +132,7 @@ class ConfigFiles extends ConfigManager {
                 }
                 def ff = new File(fullConfigName(rp, name))
     			data = LoadConfigFile(ff, cp)
-                Config.MergeConfig(data)
+                mergeConfig(data)
 			}
 		}
 	}
@@ -166,7 +167,7 @@ class ConfigFiles extends ConfigManager {
 	}
 
     @Override
-    void saveConfig (Map<String, Object> content, Map<String, Object> saveParams = [:]) {
+    void saveConfig(Map<String, Object> content, Map<String, Object> saveParams = [:]) {
         def fp = (saveParams?.path as String)?:this.path
         def fn = (saveParams?.fileName as String)?:this.fileName
         def cp = (saveParams?.codePage as String)?:this.codePage

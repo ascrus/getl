@@ -196,12 +196,13 @@ class Executor implements GetlRepository {
 	 * @param count
 	 * @param code
 	 */
-	void runMany(Integer countList, Closure code) {
+	void runMany(Integer countList, @ClosureParams(value = SimpleType, options = ['java.lang.Integer']) Closure code) {
 		def l = (1..countList)
 		run(l, countList, code)
 	}
 
-	void runMany(Integer countList, Integer countThread, Closure code) {
+	void runMany(Integer countList, Integer countThread,
+				 @ClosureParams(value = SimpleType, options = ['java.lang.Integer']) Closure code) {
 		def l = (1..countList)
 		run(l, countThread, code)
 	}

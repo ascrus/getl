@@ -479,6 +479,7 @@ class JDBCDriver extends Driver {
 	Boolean getUseLoadedDriver() { useLoadedDriver }
 	
 	@Override
+	@Synchronized('operationLock')
 	void connect() {
 		Sql sql = null
 		JDBCConnection con = jdbcConnection
@@ -578,7 +579,13 @@ class JDBCDriver extends Driver {
      * @param value
      */
     void changeSessionProperty(String name, def value) {
-        if (changeSessionPropertyQuery == null) throw new ExceptionGETL("Current driver not allowed change session property value")
+        if (changeSessionPropertyQuery == null)
+			throw new ExceptionGETL("Current driver not allowed change session property value")
+		if (name == null)
+			throw new ExceptionGETL("Required value from \"name\" parameter!")
+		if (value == null)
+			return
+
         try {
             jdbcConnection.executeCommand(command: StringUtils.EvalMacroString(changeSessionPropertyQuery, [name: name, value: value]))
         }
@@ -592,10 +599,13 @@ class JDBCDriver extends Driver {
      * Init session properties after connected to database
      */
     protected void initSessionProperties() {
-		jdbcConnection.sessionProperty.each { name, value -> changeSessionProperty(name as String, value) }
+		jdbcConnection.sessionProperty.each { name, value ->
+			changeSessionProperty(name as String, value)
+		}
     }
 
 	@Override
+	@Synchronized('operationLock')
 	void disconnect() {
 		if (sqlConnect != null)
 			sqlConnect.close()
@@ -623,6 +633,7 @@ class JDBCDriver extends Driver {
 	 * @param mask list of database filtering masks
 	 * @return list of received database
 	 */
+	@Synchronized('operationLock')
 	List<String> retrieveCatalogs(List<String> masks) {
 		def maskList = [] as List<Path>
 		if (masks != null)
@@ -671,6 +682,7 @@ class JDBCDriver extends Driver {
 	 * @param mask list of schema filtering masks
 	 * @return list of received database schemas
 	 */
+	@Synchronized('operationLock')
 	List<String> retrieveSchemas(String catalog, String schemaPattern, List<String> masks) {
 		def maskList = [] as List<Path>
 		if (masks != null)
@@ -699,6 +711,7 @@ class JDBCDriver extends Driver {
 
 	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Override
+	@Synchronized('operationLock')
 	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
 		if (filter == null && params.filter != null)
 			filter = params.filter as Closure<Boolean>
@@ -787,6 +800,7 @@ class JDBCDriver extends Driver {
 
 	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Override
+	@Synchronized('operationLock')
 	List<Field> fields(Dataset dataset) {
 		if (!(dataset instanceof TableDataset))
 			throw new ExceptionGETL('Listing fields is supported only for TableDataset objects!')
@@ -883,7 +897,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@SuppressWarnings('UnnecessaryQualifiedReference')
-	@Synchronized
+	@Synchronized('operationLock')
 	@Override
 	void startTran() {
 		def con = jdbcConnection
@@ -921,7 +935,7 @@ class JDBCDriver extends Driver {
 	}
 
 	@SuppressWarnings('UnnecessaryQualifiedReference')
-	@Synchronized
+	@Synchronized('operationLock')
 	@Override
 	void rollbackTran() {
 		def con = jdbcConnection
@@ -1489,6 +1503,7 @@ class JDBCDriver extends Driver {
 	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@groovy.transform.CompileStatic
 	@Override
+	@Synchronized('operationLock')
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		if (params == null) params = [:]
 
@@ -1671,10 +1686,13 @@ class JDBCDriver extends Driver {
 			throw e
 		}
 	}
-	
+
+	private final Object operationLock = new Object()
+
+	@Synchronized('operationLock')
 	protected void saveToHistory(String sql) {
 		JDBCConnection con = jdbcConnection
-		if (con.sqlHistoryFile != null) {
+		if (con.sqlHistoryFile() != null) {
 			con.validSqlHistoryFile()
 			def f = new File(con.fileNameSqlHistory).newWriter("utf-8", true)
 			try {
@@ -1694,6 +1712,7 @@ $sql
 	}
 
 	@Override
+	@Synchronized('operationLock')
 	Long executeCommand(String command, Map params = [:]) {
 		def result = 0L
 		
@@ -2008,6 +2027,7 @@ $sql
 
 	@SuppressWarnings(['UnnecessaryQualifiedReference', 'SpellCheckingInspection'])
 	@Override
+	@Synchronized('operationLock')
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
 		def wp = new WriterParams()
 		dataset._driver_params = wp
@@ -2330,7 +2350,8 @@ $sql
 	}
 	
 	@Override
-	void doneWrite (Dataset dataset) {
+	@Synchronized('operationLock')
+	void doneWrite(Dataset dataset) {
 		WriterParams wp = dataset._driver_params
 		
 		if (wp.rowProc > 0)
@@ -2339,6 +2360,7 @@ $sql
 	}
 
 	@Override
+	@Synchronized('operationLock')
 	void closeWrite(Dataset dataset) {
 		WriterParams wp = dataset._driver_params
 		try {
@@ -2354,6 +2376,7 @@ $sql
 	protected String sqlSequenceNext(String sequenceName) { "SELECT NextVal('${sequenceName}') AS id;" }
 	
 	@Override
+	@Synchronized('operationLock')
 	Long getSequence(String sequenceName) {
 		def sql = sqlSequenceNext(sequenceName)
 		saveToHistory(sql)
@@ -2436,7 +2459,7 @@ $sql
 	 * @param procParams
 	 * @return
 	 */
-	Long unionDataset (JDBCDataset target, Map procParams) {
+	Long unionDataset(JDBCDataset target, Map procParams) {
 		def source = procParams.source as JDBCDataset
 		if (source == null) throw new ExceptionGETL("Required \"source\" parameter")
 		if (!source instanceof JDBCDataset) throw new ExceptionGETL("Source dataset must be \"JDBCDataset\"")
@@ -2586,6 +2609,7 @@ $sql
 	}
 
 	/** Count row */
+	@Synchronized('operationLock')
 	Long countRow(TableDataset table, String where = null, Map procParams = null) {
 		def sql = "SELECT Count(*) AS count_rows FROM ${fullNameDataset(table)}".toString()
 		where = where?:(table.readDirective.where)

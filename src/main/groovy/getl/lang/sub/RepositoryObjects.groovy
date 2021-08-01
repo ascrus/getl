@@ -44,13 +44,15 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         dslCreator = null
     }
 
+    private final Object synchObjects = new Object()
+
     /** Repository objects */
     private Map<String, T> objects
     /** Repository objects */
-    @Synchronized('objects')
+    @Synchronized('synchObjects')
     Map<String, T> getObjects() { objects }
     /** Repository objects */
-    @Synchronized('objects')
+    @Synchronized('synchObjects')
     void setObjects(Map<String, T> value) {
         this.objects = value
     }
@@ -143,6 +145,9 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
                               Closure<Boolean> filter) {
         return list(null, null, true, filter)
     }
+
+    /** Count registered object from repository */
+    Integer countObjects() { objects.size() }
 
     /**
      * Search for an object in the repository
@@ -391,7 +396,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * @param classes list of processed classes
      * @param filter filter for detect objects to unregister
      */
-    @Synchronized('objects')
+    @Synchronized('synchObjects')
     void unregister(String mask = null, List<String> classes = null,
                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'java.lang.Object'])
                                       Closure<Boolean> filter = null) {
@@ -405,7 +410,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
      * Release temporary object
      * @param creator object creator
      */
-    @Synchronized('objects')
+    @Synchronized('synchObjects')
     void releaseTemporary(Getl creator = null) {
         def list = list('#*', null, false)
         list.each { name ->

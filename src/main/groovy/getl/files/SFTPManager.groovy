@@ -150,7 +150,7 @@ class SFTPManager extends Manager implements UserLogins {
 
 	/** Create new session manager */
 	private Session newSession() {
-		String h = "CREATE SESSION: host $server:$port, login $login"
+		String h = "Open session $sessionID: host $server:$port, login $login"
 		client.identityRepository.removeAll()
 		if (identityFile != null) {
 			def f = new File(FileUtils.ResourceFileName(identityFile, dslCreator))
@@ -236,7 +236,7 @@ class SFTPManager extends Manager implements UserLogins {
 		clientSession = newSession()
 		try {
 			channelFtp = clientSession.openChannel("sftp") as ChannelSftp
-			writeScriptHistoryFile("OPEN CHANNEL: sftp")
+			writeScriptHistoryFile("Open stp channel from session $sessionID")
 			channelFtp.connect()
 			currentPath = currentRootPath
 			if (channelFtp.serverVersion > 5)
@@ -257,9 +257,10 @@ class SFTPManager extends Manager implements UserLogins {
 
 		try {
 			if (clientSession != null && clientSession.connected) {
-				writeScriptHistoryFile("CLOSE SESSION")
-				if (channelFtp != null && channelFtp.connected) channelFtp.disconnect()
-				if (clientSession.connected) clientSession.disconnect()
+				if (channelFtp != null && channelFtp.connected)
+					channelFtp.disconnect()
+				if (clientSession.connected)
+					clientSession.disconnect()
 				channelFtp = null
 				clientSession == null
 			}
@@ -319,7 +320,6 @@ class SFTPManager extends Manager implements UserLogins {
 		validConnect()
 
 		if (maskFiles == null) maskFiles = "*"
-		writeScriptHistoryFile("COMMAND: list \"$maskFiles\"")
 		Vector< ChannelSftp.LsEntry> listFiles = channelFtp.ls(maskFiles)
 		
 		SFTPList res = new SFTPList()
@@ -332,19 +332,13 @@ class SFTPManager extends Manager implements UserLogins {
 	@JsonIgnore
 	String getCurrentPath() {
 		validConnect()
-
-		writeScriptHistoryFile("COMMAND: pwd")
-		def res = channelFtp.pwd()
-		writeScriptHistoryFile("PWD: \"$res\"")
-		
-		return res
+		return channelFtp.pwd()
 	}
 
 	@Override
 	void setCurrentPath(String path) {
 		validConnect()
 
-		writeScriptHistoryFile("COMMAND: cd \"$path\"")
 		try {
 			channelFtp.cd(path)
 		}
@@ -358,7 +352,6 @@ class SFTPManager extends Manager implements UserLogins {
 	@Override
 	void changeDirectoryUp() {
 		validConnect()
-		writeScriptHistoryFile("COMMAND: cd ..")
 		channelFtp.cd("..")
 		_currentPath = currentPath
 	}
@@ -368,7 +361,6 @@ class SFTPManager extends Manager implements UserLogins {
 		validConnect()
 
 		def fn = ((localPath != null)?localPath + "/":"") + localFileName
-		writeScriptHistoryFile("COMMAND: get \"$filePath\" to \"$fn\"")
         def f = new File(fn)
 		OutputStream s = f.newOutputStream()
 		try {
@@ -390,7 +382,6 @@ class SFTPManager extends Manager implements UserLogins {
 		validConnect()
 
 		def fn = ((path != null)?path + "/":"") + fileName
-		writeScriptHistoryFile("COMMAND: put \"$fn\" to \"$fileName\"")
         def f = new File(fn)
 		InputStream s = f.newInputStream()
 		try {
@@ -410,12 +401,12 @@ class SFTPManager extends Manager implements UserLogins {
 	void removeFile(String fileName) {
 		validConnect()
 
-		writeScriptHistoryFile("COMMAND: remove \"$fileName\"")
 		try {
 			channelFtp.rm(fileName)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not remove file \"$fileName\"")
+			if (writeErrorsToLog)
+				Logs.Severe("Can not remove file \"$fileName\"")
 			throw e
 		}
 	}
@@ -424,9 +415,7 @@ class SFTPManager extends Manager implements UserLogins {
 	void createDir(String dirName) {
 		validConnect()
 
-		writeScriptHistoryFile("COMMAND: pwd")
 		def curDir = channelFtp.pwd()
-		writeScriptHistoryFile("PWD: \"$curDir\"")
 		String cdDir = null
 		try {
 			def dirs = dirName.split("[/]")
@@ -441,9 +430,7 @@ class SFTPManager extends Manager implements UserLogins {
 					isExists = false
 				}
 				if (!isExists) {
-					writeScriptHistoryFile("COMMAND: mkdir \"$dir\"")
 					channelFtp.mkdir(dir)
-					writeScriptHistoryFile("COMMAND: cd \"$dir\"")
 					channelFtp.cd(dir)
 				}
 			}
@@ -454,7 +441,6 @@ class SFTPManager extends Manager implements UserLogins {
 		}
 		finally {
 			channelFtp.cd(curDir)
-			writeScriptHistoryFile("COMMAND: cd \"$curDir\"")
 		}
 	}
 
@@ -462,7 +448,6 @@ class SFTPManager extends Manager implements UserLogins {
 	void removeDir(String dirName, Boolean recursive) {
 		validConnect()
 
-		writeScriptHistoryFile("COMMAND: rmdir \"$dirName\"")
         if (!channelFtp.stat(dirName).isDir()) throw new ExceptionGETL("$dirName is not directory")
 		try {
             if (recursive) {
@@ -506,7 +491,6 @@ class SFTPManager extends Manager implements UserLogins {
 	void rename(String fileName, String path) {
 		validConnect()
 
-		writeScriptHistoryFile("COMMAND: rename \"$fileName\" to \"$path\"")
 		try {
 			channelFtp.rename(fileName, path)
 		}
@@ -611,7 +595,6 @@ exit \$LastExitCode
 	void noop () {
 		super.noop()
 		clientSession.sendKeepAliveMsg()
-		writeScriptHistoryFile("NOOP")
 	}
 
 	@Override

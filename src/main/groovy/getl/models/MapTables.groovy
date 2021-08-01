@@ -28,55 +28,45 @@ class MapTables extends DatasetsModel<MapTableSpec> {
 
     /** Connection for source datasets */
     @JsonIgnore
-    @Synchronized
     Connection getSourceConnection() { modelConnection }
     /** Connection for source datasets */
     @JsonIgnore
-    @Synchronized
     void setSourceConnection(Connection value) { useSourceConnection(value) }
 
     /** Use specified connection for source datasets */
-    @Synchronized
     void useSourceConnection(String connectionName) { useModelConnection(connectionName) }
     /** Use specified connection for source datasets */
-    @Synchronized
     void useSourceConnection(Connection connection) { useModelConnection(connection) }
 
     /** Used mapping datasets */
-    @Synchronized
     List<MapTableSpec> getUsedMapping() { usedObjects as List<MapTableSpec> }
     /** Used mapping datasets */
-    @Synchronized
     void setUsedMapping(List<MapTableSpec> value) { usedObjects = value }
-    @Synchronized
+    /** Used mapping datasets */
     void assignUsedMapping(List<Map> value) {
-        usedMapping.clear()
-        def o = this
+        def own = this
+        def list = [] as List<MapTableSpec>
         value?.each { node ->
             def p = CloneUtils.CloneMap(node, true)
             p.datasetName = p.sourceName
             p.remove('sourceName')
-            usedMapping.add(new MapTableSpec(o, p))
+            list.add(new MapTableSpec(own, p))
         }
+        usedMapping = list
     }
 
     /** Repository connection name for destination datasets */
-    @Synchronized
     String getDestinationConnectionName() { params.destinationConnectionName as String }
     /** Repository connection name for destination datasets */
-    @Synchronized
     void setDestinationConnectionName(String value) { useDestinationConnection(value) }
 
     /** Connection for destination datasets */
     @JsonIgnore
-    @Synchronized
     Connection getDestinationConnection() { dslCreator.connection(destinationConnectionName) }
     /** Connection for destination datasets */
     @JsonIgnore
-    @Synchronized
     void setDestinationConnection(Connection value) { useDestinationConnection(value) }
     /** Use specified connection for destination datasets */
-    @Synchronized
     void useDestinationConnection(String connectionName) {
         if (connectionName == null)
             throw new ExceptionModel('Connection name required!')
@@ -85,7 +75,6 @@ class MapTables extends DatasetsModel<MapTableSpec> {
         saveParamValue('destinationConnectionName', connectionName)
     }
     /** Use specified connection for destination datasets */
-    @Synchronized
     void useDestinationConnection(Connection connection) {
         if (connection == null)
             throw new ExceptionModel('Connection required!')
@@ -116,7 +105,6 @@ class MapTables extends DatasetsModel<MapTableSpec> {
      * @param cl defining code
      * @return mapping spec
      */
-    @Synchronized
     MapTableSpec mapTable(String datasetName,
                           @DelegatesTo(MapTableSpec)
                           @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec'])
@@ -129,7 +117,6 @@ class MapTables extends DatasetsModel<MapTableSpec> {
      * @param cl defining code
      * @return mapping spec
      */
-    @Synchronized
     MapTableSpec mapTable(@DelegatesTo(MapTableSpec)
                           @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec']) Closure cl) {
         mapTable(null as String, cl)
@@ -141,7 +128,6 @@ class MapTables extends DatasetsModel<MapTableSpec> {
      * @param cl defining code
      * @return mapping spec
      */
-    @Synchronized
     MapTableSpec mapTable(Dataset dataset,
                           @DelegatesTo(MapTableSpec)
                           @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec'])
@@ -175,7 +161,6 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     }
 
     @Override
-    @Synchronized
     void checkObject(BaseSpec obj) {
         super.checkObject(obj)
         validDataset((obj as MapTableSpec).destination, destinationConnectionName)
@@ -185,7 +170,6 @@ class MapTables extends DatasetsModel<MapTableSpec> {
      * Check mapping objects
      * @param cl validation code
      */
-    @Synchronized
     void checkMapping(@DelegatesTo(MapTableSpec)
                       @ClosureParams(value = SimpleType, options = ['getl.models.opts.MapTableSpec']) Closure cl = null) {
         usedMapping.each { node ->

@@ -152,9 +152,13 @@ class EMailer implements GetlRepository {
 
 	/** Call init configuration */
 	private final Closure doInitConfig = {
-		if (config == null) return
+		if (config == null)
+			return
 		Map cp = Config.FindSection("emailers.${config}")
-		if (cp.isEmpty()) throw new ExceptionGETL("Config section \"emailers.${config}\" not found")
+
+		if (cp.isEmpty())
+			throw new ExceptionGETL("Config section \"emailers.${config}\" not found")
+
 		onLoadConfig(cp)
 		Logs.Config("Load config \"emailers\".\"${config}\" for object \"${this.getClass().name}\"")
 	}

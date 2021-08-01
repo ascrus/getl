@@ -3,6 +3,8 @@ package getl.config
 import getl.csv.CSVConnection
 import getl.h2.H2Connection
 import getl.lang.Getl
+import getl.test.GetlDslTest
+import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.Config
 import getl.utils.FileUtils
@@ -19,7 +21,7 @@ import org.junit.Test
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
-class ConfigSlurperTest extends getl.test.GetlTest {
+class ConfigSlurperTest extends GetlTest {
     def configPath = new TFS()
     def configFile = new File("${configPath.currentPath()}/test_config.getl")
 
@@ -28,10 +30,12 @@ class ConfigSlurperTest extends getl.test.GetlTest {
 
     @Before
     void setUp() {
-        Config.configClassManager = new ConfigSlurper()
-        (Config.configClassManager as ConfigSlurper).path = configPath.currentPath()
+        if (configFile.exists())
+            return
 
-        if (configFile.exists()) return
+        def man = new ConfigSlurper()
+        man.path = configPath.currentPath()
+        Config.configClassManager = man
 
         def conf = '''
             configvars {
@@ -147,6 +151,7 @@ class ConfigSlurperTest extends getl.test.GetlTest {
 
     @Test
     void testDatasetSchema() {
+        Getl.CleanGetl()
         Getl.Dsl(this) {
             configuration { load configFile.path }
 
@@ -172,9 +177,10 @@ class ConfigSlurperTest extends getl.test.GetlTest {
 
     @Test
     void testLoadDatasets() {
+        Getl.CleanGetl()
         Getl.Dsl {
             configuration {
-                configuration { load configFile.path }
+                load configFile.path
                 load 'resource:/config/source.dwh.conf'
             }
         }

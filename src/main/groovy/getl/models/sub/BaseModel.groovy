@@ -21,16 +21,23 @@ import java.util.concurrent.CopyOnWriteArrayList
 @SuppressWarnings('UnnecessaryQualifiedReference')
 @InheritConstructors
 class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository {
+    /*
+    BaseModel() {
+        super(null)
+    }
+    */
+
     private String dslNameObject
-    @Override
     @JsonIgnore
+    @Override
     String getDslNameObject() { dslNameObject }
     @Override
     void setDslNameObject(String value) { dslNameObject = value }
 
     private Getl dslCreator
-    @Override
+
     @JsonIgnore
+    @Override
     Getl getDslCreator() { dslCreator }
     @Override
     void setDslCreator(Getl value) { dslCreator = value }
@@ -78,32 +85,46 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         params.usedObjects = objects
     }
 
+    private final Object synchObjects = new Object()
+
     /** Model objects */
+    @Synchronized('synchObjects')
     protected List<T> getUsedObjects() { params.usedObjects as List<T> }
     /** Model objects */
+    @Synchronized('synchObjects')
     protected void setUsedObjects(List<T> value) {
         usedObjects.clear()
         if (value != null)
             usedObjects.addAll(value)
     }
 
+    private final Object synchVars = new Object()
+
     /** Model variables */
-    @Synchronized
+    @Synchronized('synchVars')
     Map<String, Object> getModelVars() { params.modelVars as Map<String, Object> }
     /** Model variables */
-    @SuppressWarnings('unused')
-    @Synchronized
+    @Synchronized('synchVars')
     void setModelVars(Map<String, Object> value) {
         modelVars.clear()
         if (value != null)
             modelVars.putAll(value)
     }
+    /**
+     * Return model variables
+     * @param mask mask name
+     * @return variable set
+     */
+    @Synchronized('synchVars')
+    Map<String, Object> modelVariables(String mask = null) { MapUtils.FindNodes(modelVars, mask) }
+
+    private final Object synchAttrs = new Object()
 
     /** Model attributes */
-    @Synchronized
+    @Synchronized('synchAttrs')
     Map<String, Object> getModelAttrs() { params.modelAttrs as Map<String, Object> }
     /** Model attributes */
-    @Synchronized
+    @Synchronized('synchAttrs')
     void setModelAttrs(Map<String, Object> value) {
         modelAttrs.clear()
         if (value != null)
@@ -114,24 +135,40 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
      * @param name attribute name
      * @return attribute value
      */
-    @Synchronized
+    @Synchronized('synchAttrs')
     Object modelAttribute(String name) { modelAttrs.get(name) }
+    /**
+     * Return model attributes
+     * @param mask mask name
+     * @return attribute set
+     */
+    @Synchronized('synchAttrs')
+    Map<String, Object> modelAttributes(String mask = null) { MapUtils.FindNodes(modelAttrs, mask) }
+    /**
+     * Return model sub attributes
+     * @param topName attribute group name for which all subordinate attributes should be returned
+     * @return attribute set
+     */
+    @Synchronized('synchAttrs')
+    Map<String, Object> modelSubAttributes(String topName) { MapUtils.FindSubNodes(modelAttrs, topName) }
+
+    private final Object synchStoryDataset = new Object()
 
     /** Name dataset of mapping processing history */
-    @Synchronized
+    @Synchronized('synchStoryDataset')
     protected String getStoryDatasetName() { params.storyDatasetName as String }
     /** Name dataset of mapping processing history */
-    @Synchronized
+    @Synchronized('synchStoryDataset')
     protected void setStoryDatasetName(String value) { useStoryDatasetName(value) }
     /** Dataset of mapping processing history */
-    @Synchronized
+    @Synchronized('synchStoryDataset')
     protected Dataset getStoryDataset() { (storyDatasetName != null)?dslCreator.dataset(storyDatasetName):null }
     /** Dataset of mapping processing history */
-    @Synchronized
+    @Synchronized('synchStoryDataset')
     protected void setStoryDataset(Dataset value) { useStoryDataset(value) }
 
     /** Use specified dataset name of mapping processing history */
-    @Synchronized
+    @Synchronized('synchStoryDataset')
     protected void useStoryDatasetName(String datasetName) {
         if (datasetName != null)
             dslCreator.dataset(datasetName)
@@ -139,7 +176,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         saveParamValue('storyDatasetName', datasetName)
     }
     /** Use specified dataset of mapping processing history */
-    @Synchronized
+    @Synchronized('synchStoryDataset')
     protected void useStoryDataset(Dataset dataset) {
         if (dataset != null && dataset.dslNameObject == null)
             throw new ExceptionModel('Dataset not registered in Getl repository!')
@@ -153,7 +190,7 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         def param = [this] as List<Object>
         if (args != null) param.addAll(args.toList())
         def res = modelClass.newInstance(param.toArray(String[])) as T
-        usedObjects << res
+        (params.usedObjects as List<T>).add(res)
         return res
     }
 
@@ -161,21 +198,21 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
      * Check model parameters
      * @param validObjects check parameters of model objects
      */
-    @Synchronized
+    @Synchronized('synchObjects')
     void checkModel(Boolean checkObjects = true) {
         if (checkObjects)
             usedObjects.each { obj -> checkObject(obj) }
     }
 
     /** Check object parameter */
-    @Synchronized
+    @Synchronized('synchObjects')
     void checkObject(getl.models.sub.BaseSpec object) { }
 
     /**
      * Check attribute naming and generate an unknown error for used objects
      * @param allowAttrs list of allowed attribute names
      */
-    @Synchronized
+    @Synchronized('synchAttrs')
     void checkAttrs(List<String> allowAttrs) {
         if (allowAttrs == null)
             throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')
@@ -201,18 +238,4 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         res.dslCreator = dslCreator
         return res
     }
-
-    /**
-     * Return model attributes
-     * @param mask mask name
-     * @return attribute set
-     */
-    Map<String, Object> modelAttributes(String mask = null) { MapUtils.FindNodes(modelAttrs, mask) }
-
-    /**
-     * Return model sub attributes
-     * @param topName attribute group name for which all subordinate attributes should be returned
-     * @return attribute set
-     */
-    Map<String, Object> modelSubAttributes(String topName) { MapUtils.FindSubNodes(modelAttrs, topName) }
 }

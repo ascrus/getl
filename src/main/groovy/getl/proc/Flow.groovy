@@ -70,9 +70,13 @@ class Flow {
 	 * Call init configuration
 	 */
 	private final Closure doInitConfig = {
-		if (config == null) return
+		if (config == null)
+			return
 		Map cp = Config.FindSection("flows.${config}")
-		if (cp.isEmpty()) throw new ExceptionGETL("Config section \"flows.${config}\" not found")
+
+		if (cp.isEmpty())
+			throw new ExceptionGETL("Config section \"flows.${config}\" not found")
+
 		onLoadConfig(cp)
 		Logs.Config("Load config \"flows\".\"${config}\" for flow")
 	}
@@ -244,7 +248,7 @@ class Flow {
 				// Assign value
 				String sn = s.name.toLowerCase().replace("'", "\\'")
 				dn = dn.replace("'", "\\'")
-				if ((df.type == s.type || !convert) && !saveOnlyWithValue) {
+				if ((df.type == s.type || !convert) && !saveOnlyWithValue && !convertEmptyToNull) {
 					sb << "outRow.put('${dn}', inRow.get('${sn}'))"
 				}
 				else {

@@ -5,7 +5,6 @@ import getl.utils.Config
 import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.MapUtils
-import groovy.json.JsonParserType
 import groovy.json.JsonSlurper
 import org.h2.mvstore.MVMap
 import org.h2.mvstore.MVStore
@@ -17,11 +16,13 @@ import org.h2.mvstore.MVStore
  */
 class ConfigStores extends ConfigManager {
     @Override
-    Boolean getEvalVars() { true }
-
-    @Override
     void init(Map<String, Object> initParams) {
-        if (initParams?.config == null) return
+        super.init(initParams)
+        evalVars = true
+
+        if (initParams?.config == null)
+            return
+
         Map config = initParams.config as Map<String, Object>
         if (config.filename != null) {
             def fn = config.filename as String
@@ -63,22 +64,16 @@ class ConfigStores extends ConfigManager {
         params.section = value.trim()
     }
 
-    /**
-     * Configuration secret key
-     */
-    String getSecretKey () { (params.secretKey as String) }
-
-    /**
-     * Set configuration secret key
-     * @param value
-     */
-    void setSecretKey (String value) {
+    /** Configuration secret key */
+    String getSecretKey() { (params.secretKey as String) }
+    /** Configuration secret key */
+    void setSecretKey(String value) {
         if (value == '') throw new ExceptionGETL('The secret key can not have empty value')
         params.secretKey = value
     }
 
     @Override
-    void loadConfig(Map<String, Object> readParams) {
+    protected void loadContent(Map<String, Object> readParams = [:]) {
         def fileName = (readParams?.fileName as String)?:this.fileName
         def section = (readParams?.section as String)?:this.section
         def secretKey = (readParams?.secretKey as String)?:this.secretKey
@@ -86,7 +81,7 @@ class ConfigStores extends ConfigManager {
         if (fileName == null) return
 
         Map<String, Object> data = LoadSection(fileName, secretKey, section)
-        Config.MergeConfig(data)
+        mergeConfig(data)
     }
 
     /**

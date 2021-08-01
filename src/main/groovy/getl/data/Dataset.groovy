@@ -374,8 +374,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Call init configuration
 	 */
 	private final Closure doInitConfig = {
-		if (config == null) return
-		Map cp = Config.FindSection("datasets.${config}")
+		if (config == null)
+			return
+
+		Map cp = (dslCreator != null)?dslCreator.configuration.manager.findSection("datasets.${config}"):
+				Config.FindSection("datasets.${config}")
+
 		if (cp.isEmpty())
 			throw new ExceptionGETL("Config section \"datasets.${config}\" not found")
 		onLoadConfig(cp)

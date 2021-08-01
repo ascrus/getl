@@ -446,12 +446,15 @@ class FileUtils {
 	}
 	
 	/**
-	 * 
-	 * @param path
-	 * @return
+	 * Convert path to default OS settings
+	 * @param path original path
+	 * @return converted path
 	 */
 	static String ConvertToDefaultOSPath(String path) {
-		(File.separator == "\\")?ConvertToWindowsPath(path):ConvertToUnixPath(path) 
+		if (path == null)
+			return null
+
+		return (File.separator == "\\")?ConvertToWindowsPath(path):ConvertToUnixPath(path)
 	}
 	
 	/**

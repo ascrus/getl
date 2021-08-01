@@ -2,6 +2,7 @@ package getl.config
 
 import getl.csv.CSVConnection
 import getl.h2.H2Connection
+import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.Config
 import getl.utils.FileUtils
@@ -12,7 +13,7 @@ import org.junit.Test
 /**
  * @author Alexsey Konstantinov
  */
-class ConfigFilesTest extends getl.test.GetlTest {
+class ConfigFilesTest extends GetlTest {
     def h2 = new H2Connection(config: 'h2')
     def csv = new CSVConnection(config: 'csv')
 
@@ -46,7 +47,7 @@ class ConfigFilesTest extends getl.test.GetlTest {
                 }
             }
         }
-        Config.content.putAll(conf.root)
+        Config.content.putAll(conf.root as Map)
         Config.SaveConfig(fileName: configFile)
         assertTrue(configFile.exists())
 

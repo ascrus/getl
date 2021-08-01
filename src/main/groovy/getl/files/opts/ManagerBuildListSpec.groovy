@@ -123,6 +123,11 @@ class ManagerBuildListSpec extends BaseSpec {
     /** The level number in the hierarchy of directories for paralleling file processing (default 1) */
     void setThreadLevelNumber(Integer value) { saveParamValue('threadLevel', value) }
 
+    /** The number of threads for parallel processing of the directory structure of the given level in parameter threadLevelNumber (if null, then parallelization is not used) */
+    Integer getThreadCount() { params.buildListThread as Integer }
+    /** The number of threads for parallel processing of the directory structure of the given level in parameter threadLevelNumber (if null, then parallelization is not used) */
+    void setThreadCount(Integer value) { saveParamValue('buildListThread', value) }
+
     /** List of extended fields */
     List<Field> getExtendFields() { params.extendFields as List<Field> }
     /** List of extended fields */

@@ -229,8 +229,12 @@ class Connection implements Cloneable, GetlRepository {
 	 * Load config on init or change config name
 	 */
 	private final Closure doInitConfig = {
-		if (config == null) return
-		Map cp = Config.FindSection("connections.${config}")
+		if (config == null)
+			return
+
+		Map cp = (dslCreator != null)?dslCreator.configuration.manager.findSection("connections.${config}"):
+				Config.FindSection("connections.${config}")
+
 		if (cp.isEmpty()) {
 			if (config != internalConfigName())
 				throw new ExceptionGETL("Config section \"connections.${config}\" not found")

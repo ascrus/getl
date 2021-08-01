@@ -14,6 +14,7 @@ import getl.models.sub.RepositoryMapTables
 import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
+import getl.proc.Executor
 import getl.utils.FileUtils
 import getl.utils.Path
 import getl.utils.StringUtils
@@ -116,10 +117,10 @@ class RepositoryStorageManager {
         return res
     }
 
-    private lockObject = new Object()
+    private synchRepository = new Object()
 
     /** Register repository in list */
-    @Synchronized("lockObject")
+    @Synchronized("synchRepository")
     void registerRepository(String name, RepositoryObjects repository, Integer priority = null) {
         if (_listRepositories.containsKey(name))
             throw new ExceptionDSL("Repository \"$name\" already registering!")
@@ -259,7 +260,7 @@ class RepositoryStorageManager {
      * @param objName parsed object name
      * @param env used environment
      */
-    @Synchronized("lockObject")
+    //@Synchronized("synchRepository")
     protected void saveObjectToStorage(RepositoryObjects repository, ParseObjectName objName, String env) {
         if (isResourceStoragePath)
             throw new ExceptionDSL('Cannot be saved to the resource directory!')
@@ -309,12 +310,15 @@ class RepositoryStorageManager {
      * @param mask object name mask
      * @param env used environment
      * @param ignoreExists don't load existing ones (default true)
+     * @return count loaded objects
      */
-    //@Synchronized("lockObject")
-    void loadRepositories(String mask = null, String env = null, Boolean ignoreExists = true) {
+    Integer loadRepositories(String mask = null, String env = null, Boolean ignoreExists = true) {
+        def res = 0
         listRepositories.each { name ->
-            loadRepository(name, mask, env, ignoreExists)
+            res += loadRepository(name, mask, env, ignoreExists)
         }
+
+        return res
     }
 
     static private Path objectNamePath = new Path(mask: 'getl_{name}.conf')
@@ -375,6 +379,8 @@ class RepositoryStorageManager {
         def res = fm.buildListFiles {
             maskFile = (isEnvConfig)?('getl_*.' + env + '.conf'):'getl_*.conf'
             recursive = true
+            threadLevelNumber = 1
+            threadCount = this.dslCreator.options.countThreadsLoadRepository
         }
 
         if (groupPath != null) {
@@ -433,7 +439,7 @@ class RepositoryStorageManager {
      * @param ignoreExists don't load existing ones (default true)
      * @return count of saved objects
      */
-    @Synchronized("lockObject")
+    //@Synchronized("synchRepository")
     Integer loadRepository(String repositoryName, String mask = null, String env = null, Boolean ignoreExists = true) {
         def res = 0
         def repository = repository(repositoryName)
@@ -448,9 +454,19 @@ class RepositoryStorageManager {
         if (dirs == null) return 0
 
         def existsObject = repository.objects.keySet().toList()
-        runWithLoadMode(true) {
-            try {
-                dirs.eachRow { fileAttr ->
+
+        try {
+            new Executor().with {
+                useList dirs.rows()
+                if (list.isEmpty())
+                    return
+
+                countProc = this.dslCreator.options.countThreadsLoadRepository
+                abortOnError = true
+                dumpErrors = true
+                runSplit { elem ->
+                    def fileAttr = elem.item as Map<String, Object>
+
                     def groupName = (fileAttr.filepath != '.') ? (fileAttr.filepath as String).replace('/', '.').toLowerCase() : null
                     def objectName = ObjectNameFromFileName(fileAttr.filename as String, isEnvConfig)
                     if (isEnvConfig && objectName.env != env)
@@ -467,16 +483,19 @@ class RepositoryStorageManager {
                         String fileName
                         if (isResourceStoragePath) {
                             fileName = FileUtils.ResourceFileName(storagePath + repFilePath + '/' +
-                                    ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename, dslCreator)
+                                    ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename, this.dslCreator)
                         } else {
                             fileName = FileUtils.ConvertToDefaultOSPath(repFilePath + '/' +
                                     ((fileAttr.filepath != '.') ? (fileAttr.filepath + '/') : '') + fileAttr.filename)
                         }
                         def file = new File(fileName)
                         try {
-                            def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
-                            def obj = repository.importConfig(objParams, null)
-                            repository.registerObject(dslCreator, obj, name, true)
+                            def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8', null, this.dslCreator.configVars)
+                            GetlRepository obj
+                            obj = repository.importConfig(objParams, null)
+                            runWithLoadMode(true) {
+                                repository.registerObject(this.dslCreator, obj, name, true)
+                            }
                         }
                         finally {
                             if (isResourceStoragePath)
@@ -487,9 +506,9 @@ class RepositoryStorageManager {
                     }
                 }
             }
-            finally {
-                dirs.drop()
-            }
+        }
+        finally {
+            dirs.drop()
         }
 
         return res
@@ -530,14 +549,16 @@ class RepositoryStorageManager {
 
         GetlRepository obj = null
         try {
-            def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8')
+            def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8', null, this.dslCreator.configVars)
             obj = repository.find(name, false)
             if (obj != null && !overloading)
                 throw new ExceptionDSL("Object \"$name\" is already registered in the repository and cannot be reloaded!")
             def isExists = (obj != null)
             obj = repository.importConfig(objParams, obj)
             if (!isExists)
-                repository.registerObject(dslCreator, obj, name, true)
+                repository.registerObject(this.dslCreator, obj, name, true)
+            else
+                repository.initRegisteredObject(obj)
         }
         finally {
             if (isResourceStoragePath)
@@ -585,12 +606,7 @@ class RepositoryStorageManager {
         GetlRepository obj = null
         runWithLoadMode(true) {
             def repository = repository(repositoryName)
-            //def objName = ParseObjectName.Parse(name)
             obj = readObject(repository, name, env, true, overloading)
-            /*if (overloading && repository.find(objName.name) != null)
-                repository.unregister(objName.name)
-
-            repository.registerObject(dslCreator, obj, name, true)*/
         }
 
         return obj
@@ -611,7 +627,7 @@ class RepositoryStorageManager {
      * Delete files in repository storage
      * @param repositoryName repository name
      */
-    @Synchronized("lockObject")
+    @Synchronized("synchRepository")
     Boolean removeStorage(String repositoryName, String env = null) {
         if (isResourceStoragePath)
             throw new ExceptionDSL('Cannot delete the resource directory!')
@@ -645,7 +661,7 @@ class RepositoryStorageManager {
             env = 'all'
         }
         else if (env == null) {
-            env = dslCreator.configuration().environment?.toLowerCase()?:'prod'
+            env = this.dslCreator.configuration().environment?.toLowerCase()?:'prod'
         }
         else
             env = env.trim().toLowerCase()

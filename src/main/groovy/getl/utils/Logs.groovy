@@ -16,24 +16,16 @@ class Logs {
 		throw new ExceptionGETL("Deny create instance Logs class")
 	}
 	
-	/**
-	 * Logger object
-	 */
+	/** Logger object */
 	static public final Logger logger = Logger.getLogger("global")
 	
-	/**
-	 * Formatter object
-	 */
+	/** Formatter object */
 	static public final LogFormatter formatter = new LogFormatter()
 
-	/**
-	 * Display configuration messages
-	 */
+	/** Display configuration messages */
 	static public Boolean printConfigMessage
 	
-	/**
-	 * File handler object
-	 */
+	/** File handler object */
 	static public FileHandler file
 	
 	/**
@@ -70,6 +62,9 @@ class Logs {
 
 	/** Print stack trace for error */
 	static public Boolean printStackTraceError = false
+
+	static private final Object lockLog = new Object()
+	static  private final Object lockOut = new Object()
 	
 	/**
 	 * Register event, closure has parameters String level, Date time, String message
@@ -90,15 +85,12 @@ class Logs {
 		events.remove(event)
 	}
 
-	static private Object operationLock = new Object()
-	
 	/**
 	 * Call events
 	 * @param level
 	 * @param time
 	 * @param message
 	 */
-	@Synchronized
 	protected static void event(Level level, String message) {
 		if (message != null)
 			events.each { Closure event -> event.call(level.toString(), DateUtils.Now(), message) }
@@ -255,20 +247,20 @@ class Logs {
 	 * @param level log level value
 	 * @param message text message
 	 */
-	@Synchronized
 	static void ToOut(Level level, String message) {
 		if (level == Level.OFF || message == null) return
 		def lr = new LogRecord(level,
 				FormatMessage(message.replace('\r', '').replace('\n', ' ').replace('\t', ' ')))
 		def str = formatter.format(lr)
-		System.out.print(str)
+		synchronized (lockOut) {
+			System.out.print(str)
+		}
 	}
 
 	/**
 	 * Log message with level FINE
 	 * @param message text message
 	 */
-	@Synchronized
 	static void Fine (String message) {
 		ToOut(Level.FINE, message)
 		def msg = FormatMessage(message)
@@ -280,7 +272,6 @@ class Logs {
 	 * Log message with level FINER
 	 * @param message text message
 	 */
-	@Synchronized
 	static void Finer (String message) {
 		ToOut(Level.FINER, message)
 		def msg = FormatMessage(message)
@@ -292,7 +283,6 @@ class Logs {
 	 * Log message with level FINEST
 	 * @param message text message
 	 */
-	@Synchronized
 	static void Finest (String message) {
 		ToOut(Level.FINEST, message)
 		def msg = FormatMessage(message)
@@ -304,7 +294,6 @@ class Logs {
 	 * Log message with level INFO
 	 * @param message text message
 	 */
-	@Synchronized
 	static void Info (String message) {
 		ToOut(Level.INFO, message)
 		def msg = FormatMessage(message)
@@ -316,7 +305,6 @@ class Logs {
 	 * Log message with level WARNING
 	 * @param message text message
 	 */
-	@Synchronized
 	static void Warning (String message) {
 		ToOut(Level.WARNING, message)
 		def msg = FormatMessage(message)
@@ -328,7 +316,6 @@ class Logs {
 	 * Log message with level WARNING
 	 * @param error error exception
 	 */
-	@Synchronized
 	static void Warning (Throwable error) {
 		ToOut(Level.WARNING, error.message)
 		StackTraceUtils.sanitize(error)
@@ -342,7 +329,6 @@ class Logs {
 	 * Log message with level SEVERE
 	 * @param message text message
 	 */
-	@Synchronized
 	static void Severe (String message) {
 		ToOut(Level.SEVERE, message)
 		def msg = FormatMessage(message)
@@ -354,7 +340,6 @@ class Logs {
 	 * Log message with level SEVERE with clearing error tracing
 	 * @param error error exception
 	 */
-	@Synchronized
 	static void Exception(Throwable error) {
 		ToOut(Level.SEVERE, error.message)
 		StackTraceUtils.sanitize(error)
@@ -371,7 +356,6 @@ class Logs {
 	 * @param typeObject object type name
 	 * @param nameObject object name
 	 */
-	@Synchronized
 	static void Exception(Throwable error, String typeObject, String nameObject) {
 		ToOut(Level.SEVERE, error.message)
 		def message = "<${typeObject} ${nameObject}> ${error.getClass().name}: ${FormatMessage(error.message)}"
@@ -388,7 +372,6 @@ class Logs {
 	/**
 	 * Log message with level ENTERING for specified method
 	 */
-	@Synchronized
 	static void Entering (String sourceClass, String sourceMethod, Object[] params) {
 		logger.entering(sourceClass, sourceMethod, params)
 	}
@@ -396,7 +379,6 @@ class Logs {
 	/**
 	 * Log message with level EXITING for specified method
 	 */
-	@Synchronized
 	static void Exiting (String sourceClass, String sourceMethod, Object result) {
 		logger.exiting(sourceClass, sourceMethod, result)
 	}
@@ -406,7 +388,6 @@ class Logs {
 	 * @param level log level value
 	 * @param message text message
 	 */
-	@Synchronized
 	static void Write(Level level, String message) {
 		if (level == Level.OFF) return
 		ToOut(level, message)
@@ -420,7 +401,6 @@ class Logs {
 	 * @param level log level value
 	 * @param message text message
 	 */
-	@Synchronized
 	static void Write(String level, String message) {
 		def l = StrToLevel(level)
 		if (l == Level.OFF) return
@@ -434,7 +414,7 @@ class Logs {
 	 * Return the name of the log file dump
 	 * @return path to the log file dump
 	 */
-	@Synchronized
+	@Synchronized('lockLog')
 	static String DumpFolder() {
 		FileUtils.ConvertToUnixPath("${FileUtils.PathFromFile(fileNameHandler)}/dump/${FileUtils.FileName(fileNameHandler)}")
 	}
@@ -446,7 +426,7 @@ class Logs {
 	 * @param nameObject object name
 	 * @param data additional error data
 	 */
-	@Synchronized('operationLock')
+	@Synchronized('lockLog')
 	static void Dump(Throwable error, String typeObject, String nameObject, def data) {
 		if (fileNameHandler == null) {
 			Severe("Can not save dump, required logFileName")
@@ -518,6 +498,7 @@ class Logs {
 	 * Redirect output console to file or standard
 	 * @param fileName path to console information output file (if null then the standard console is assigned)
 	 */
+	@Synchronized('lockLog')
 	static void RedirectStdOut(String fileName) {
 		if (fileName != null) {
 			println "Redirect console out to file \"$fileName\""
@@ -539,6 +520,7 @@ class Logs {
 	 * Redirect errors console to file or standard
 	 * @param fileName path to console information output file (if null then the standard console is assigned)
 	 */
+	@Synchronized('lockLog')
 	static void RedirectErrOut(String fileName) {
 		if (fileName != null) {
 			println "Redirect error out to file \"$fileName\""
@@ -556,8 +538,11 @@ class Logs {
 		}
 	}
 
-	@Synchronized('logger')
 	static void Consistently(Closure cl) {
-		if (cl != null) cl.call()
+		if (cl != null) {
+			synchronized (lockOut) {
+				cl.call()
+			}
+		}
 	}
 }

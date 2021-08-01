@@ -1,7 +1,10 @@
 package getl.files
 
+import getl.lang.Getl
+import getl.lang.sub.RepositoryDatasets
 import getl.tfs.TFS
 import getl.utils.FileUtils
+import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -32,6 +35,20 @@ class FileManagerTest extends ManagerTest {
             rename(resFileName, 'file.new.txt')
             assertTrue(FileUtils.ExistsFile(rootPath + '/' + 'file.new.txt'))
             removeFile('file.new.txt')
+        }
+    }
+
+    @Test
+    @Ignore
+    void testBuildListFiles() {
+        Getl.Dsl {
+            repositoryStorageManager {
+                storagePath = 'E:\\getl\\idea\\tfm\\repository\\files\\tfm.repository'
+                storagePassword = 'project-transfin-m-repository'
+                profile('Load') {
+                    countRow = loadRepositories()
+                }
+            }
         }
     }
 }

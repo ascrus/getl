@@ -143,8 +143,6 @@ Examples:
      * Prepare script before execution from Groovy
      */
     protected void groovyStarter() {
-        Config.configClassManager = new ConfigSlurper()
-
         def cmdArgs = (binding.hasVariable('args'))?binding.getVariable('args') as String[]:([] as String[])
         def jobArgs = MapUtils.ProcessArguments(cmdArgs)
 
@@ -196,7 +194,6 @@ Examples:
             }
         }
 
-        Config.configClassManager = new ConfigSlurper()
         CleanGetl()
 
         def job = new Job() {
@@ -226,6 +223,7 @@ Examples:
 
                 def className = jobArgs.runclass as String
                 def isTestMode = BoolUtils.IsValue(jobArgs.unittest)
+                def initConfig = Config.content
 
                 if (className == null)
                     throw new ExceptionDSL('Required argument "runclass"!')
@@ -242,6 +240,7 @@ Examples:
                 GetlSetInstance(eng)
                 eng.setGetlSystemParameter('mainClass', runClass.name)
                 eng.setUnitTestMode(isTestMode)
+                eng.configContent.putAll(initConfig)
 
                 def initClasses = [] as List<Class<Script>>
 
@@ -266,7 +265,7 @@ Examples:
                 eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>)
 
                 try {
-                    eng.runGroovyInstance(eng, Config.vars)
+                    eng.runGroovyInstance(eng, eng.configuration.manager.vars)
                 }
                 catch (ExceptionDSL e) {
                     if (e.typeCode == ExceptionDSL.STOP_APP) {
@@ -429,7 +428,9 @@ Examples:
 
                     if (en.configFileName != null) {
                         def configFileName = en.configFileName as String
-                        def m = ConfigSlurper.LoadConfigFile(new File(FileUtils.ResourceFileName(configFileName, this)))
+                        def m = ConfigSlurper.LoadConfigFile(
+                                new File(FileUtils.ResourceFileName(configFileName, this)),
+                                'utf-8', null, configVars)
                         projectConfigParams.putAll(m)
                     }
                 }
@@ -585,6 +586,7 @@ Examples:
         _fileman = new FilemanSpec(this)
 
         _params.langOpts = _langOpts
+        //_params.configOpts = _configOpts
         _params.repositoryFilter = _repositoryFilter
         _params.repositoryStorageManager = _repositoryStorageManager
         _params.etl = _etl
@@ -616,13 +618,15 @@ Examples:
 
     /** Set current Getl instance */
     protected _setGetlInstance() {
-        if (_getl == this) return
+        if (_getl == this)
+            return
 
         if (_getl != null)
             _getl._getlInstance = false
 
         _getl = this
         _getl._getlInstance = true
+        Config.configClassManager = getlMainInstance.configuration.manager
     }
 
     /** Get current Getl instance */
@@ -633,8 +637,8 @@ Examples:
         if (instance == null)
             throw new ExceptionDSL('Instance can not be null!')
 
-        instance._setGetlInstance()
         instance.setGetlSystemParameter('mainInstance', instance)
+        instance._setGetlInstance()
     }
 
     /** check that Getl instance is created */
@@ -703,9 +707,6 @@ Examples:
                   @ClosureParams(value = SimpleType, options = ['getl.lang.Getl']) Closure cl) {
         Object res = null
 
-        if (!(Config.configClassManager instanceof ConfigSlurper))
-            Config.configClassManager = new ConfigSlurper()
-
         def oldOwnerObject = _ownerObject
         try {
             if (ownerObject != null) {
@@ -760,6 +761,7 @@ Examples:
         _params.putAll(importParams)
 
         _langOpts = _params.langOpts as LangSpec
+        _configOpts.importParams(getlMainInstance.configuration.params)
         _repositoryFilter = _params.repositoryFilter as RepositoryFilter
         _repositoryStorageManager = _params.repositoryStorageManager as RepositoryStorageManager
         _etl = _params.etl as EtlSpec
@@ -769,7 +771,7 @@ Examples:
 
     /** Fix start process */
     ProcessTime startProcess(String name, String objName = null) {
-        new ProcessTime(name: name, objectName: objName,
+        new ProcessTime(dslCreator: this, name: name, objectName: objName,
                 logLevel: (_langOpts.processTimeTracing) ? _langOpts.processTimeLevelLog : Level.OFF,
                 debug: _langOpts.processTimeDebug)
     }
@@ -2005,7 +2007,7 @@ Examples:
      * @return exit code
      */
     Integer runGroovyScriptFile(String fileName, Boolean runOnce, String configSection) {
-        def sectParams = Config.FindSection(configSection)
+        def sectParams = configuration.manager.findSection(configSection)
         if (sectParams == null)
             throw new ExceptionDSL("Configuration section \"$configSection\" not found!")
 
@@ -2163,7 +2165,7 @@ Examples:
      * @return exit code
      */
     Integer runGroovyClass(Class groovyClass, Boolean runOnce, String configSection) {
-        def sectParams = Config.FindSection(configSection)
+        def sectParams = configuration.manager.findSection(configSection)
         if (sectParams == null)
             throw new ExceptionDSL("Configuration section \"$configSection\" not found!")
 
@@ -2324,7 +2326,7 @@ Examples:
      * @param validExist check for the existence of fields in the script
      */
     @SuppressWarnings('GrMethodMayBeStatic')
-    protected void _fillFieldFromVars(Script script, Map vars, Boolean validExist = true, Boolean startGroovy = false) {
+    void _fillFieldFromVars(Script script, Map vars, Boolean validExist = true, Boolean startGroovy = false) {
         vars.each { key, value ->
             MetaProperty prop = script.hasProperty(key as String)
             if (prop == null) {
@@ -2463,7 +2465,7 @@ Examples:
                 if (!startGroovy)
                     prop.setProperty(script, value)
                 else
-                    Config.vars.put(key as String, value)
+                    configuration.manager.vars.put(key as String, value)
             }
             catch (Exception e) {
                 throw new ExceptionDSL("Can not assign by class ${value.getClass().name} value \"$value\" to property \"$key\" with class \"${prop.type.name}\", error: ${e.message}")
@@ -2486,19 +2488,19 @@ Examples:
 
     /** Configuration content */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Map<String, Object> getConfigContent() { Config.content }
+    Map<String, Object> getConfigContent() { configuration.manager.content }
 
     /** Configuration variables */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Map<String, Object> getConfigVars() { Config.vars }
+    Map<String, Object> getConfigVars() { configuration.manager.vars }
 
     /** Init section configuration options */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Map<String, Object> getConfigInit() { Config.content.init as Map<String, Object> }
+    Map<String, Object> getConfigInit() { configuration.manager.content.init as Map<String, Object> }
 
     /** Global section configuration options */
     @SuppressWarnings("GrMethodMayBeStatic")
-    Map<String, Object> getConfigGlobal() { Config.content.global as Map<String, Object> }
+    Map<String, Object> getConfigGlobal() { configuration.manager.content.global as Map<String, Object> }
 
     /** OS variables */
     @SuppressWarnings("GrMethodMayBeStatic")
@@ -2568,7 +2570,7 @@ Examples:
 
     /** Current configuration manager */
     @SuppressWarnings("GrMethodMayBeStatic")
-    protected ConfigSlurper getConfigManager() { Config.configClassManager as ConfigSlurper }
+    protected ConfigSlurper getConfigManager() { configuration.manager }
 
     /** Configuration options instance */
     private final ConfigSpec _configOpts = new ConfigSpec(this)
@@ -2582,7 +2584,6 @@ Examples:
         if (cl != null && isCurrentProcessInThread())
             throw new ExceptionDSL('Changing configuration is not supported in the thread!')
 
-        if (!(Config.configClassManager instanceof ConfigSlurper)) Config.configClassManager = new ConfigSlurper()
         runClosure(_configOpts, cl)
 
         return _configOpts
@@ -4905,7 +4906,6 @@ Examples:
     /** Сonverting code variables to a map */
     @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> toVars(Closure cl) {
-        def env = (Config.configClassManager instanceof ConfigSlurper)?((Config.configClassManager as ConfigSlurper).environment):'prod'
-        return MapUtils.Closure2Map(env, cl)
+        return MapUtils.Closure2Map(configuration.environment, cl)
     }
 }

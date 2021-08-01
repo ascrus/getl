@@ -19,9 +19,15 @@ class ConfigSlurper extends ConfigManager {
 		System.setProperty('line.separator', '\n')
 	}
 
+	@Override
+	void setEvalVars(Boolean value) { super.setEvalVars(false) }
+
 	@SuppressWarnings("DuplicatedCode")
 	@Override
 	void init(Map<String, Object> initParams) {
+		super.init(initParams)
+		evalVars = false
+
 		if (Job.jobArgs.environment != null)
 			environment = Job.jobArgs.environment
 
@@ -54,29 +60,25 @@ class ConfigSlurper extends ConfigManager {
 		}
 	}
 
-	/**
-	 * Configuration files code page
-	 */
+	/** Configuration files code page */
 	String getCodePage () { (params.codePage as String)?:'UTF-8' }
+	/** Configuration files code page */
 	void setCodePage (String value) {
 		if (value.trim() == '') throw new ExceptionGETL('Code page value can not have empty value')
 		params.codePage = value
 	}
 
-	/**
-	 * Configuration file name
-	 */
+	/** Configuration file name */
 	String getFileName () { params.fileName as String}
+	/** Configuration file name */
 	void setFileName (String value) {
 		if (value.trim() == '') throw new ExceptionGETL('The file name can not have empty value')
 		params.fileName = value?.trim()
 	}
 
-	/**
-	 * List of configuration files
-	 */
+	/** List of configuration files */
 	List<String> getFiles () { params.files as List<String> }
-
+	/** List of configuration files */
 	void setFiles (List<String> value) {
 		value.each {
 			if (it == null || it.trim() == '') {
@@ -105,10 +107,9 @@ class ConfigSlurper extends ConfigManager {
 	/** Full path to the directory for the configuration files */
 	String path() { FileUtils.TransformFilePath(path) }
 
-	/**
-	 * Use environment section
-	 */
+	/** Use environment section */
 	String getEnvironment() { params.environment as String }
+	/** Use environment section */
 	void setEnvironment(String value) {
 		if (value != null && value.trim().length() == 0)
 			throw new ExceptionGETL('The environment can not have empty value')
@@ -125,19 +126,17 @@ class ConfigSlurper extends ConfigManager {
 		return FileUtils.TransformFilePath(((pathFile != null)?FileUtils.ConvertToUnixPath(pathFile) + '/':'') + value)
 	}
 
-	/**
-	 * Return file path for current configuration file
-	 * @return
-	 */
-	String getFullName () { fullConfigName(path(), fileName) }
+	/** Return file path for current configuration file */
+	String getFullName() { fullConfigName(path(), fileName) }
 
 	@Override
-	void loadConfig(Map<String, Object> readParams = [:]) {
+	protected void loadContent(Map<String, Object> readParams = [:]) {
 		def fp = FileUtils.TransformFilePath(readParams?.path as String)?:this.path()
 		def fn = (readParams?.fileName as String)?:this.fileName
 		def fl = (readParams?.files as List<String>)?:this.files
 		def env = (readParams?.environment as String)?:this.environment?:'prod'
 		def cp = (readParams?.codePage as String)?:this.codePage
+		def vars = readParams.vars as Map<String, Object>
 
 		if (fn != null) {
 			def rp = FileUtils.RelativePathFromFile(fn)
@@ -147,8 +146,8 @@ class ConfigSlurper extends ConfigManager {
 				fn = FileUtils.FileName(fn)
 			}
 			def ff = new File(fullConfigName(rp, fn))
-			def data = LoadConfigFile(ff, cp, env)
-			Config.MergeConfig(data)
+			def data = LoadConfigFile(ff, cp, env, vars)
+			mergeConfig(data)
 		}
 		else if (fl != null) {
 			fl.each { String name ->
@@ -160,8 +159,8 @@ class ConfigSlurper extends ConfigManager {
 					name = FileUtils.FileName(name)
 				}
 				def ff = new File(fullConfigName(rp, name))
-				def data = LoadConfigFile(ff, cp, env)
-				Config.MergeConfig(data)
+				def data = LoadConfigFile(ff, cp, env, vars)
+				mergeConfig(data)
 			}
 		}
 	}
@@ -171,9 +170,11 @@ class ConfigSlurper extends ConfigManager {
 	 * @param file loaded file descriptor
 	 * @param codePage encode page
 	 * @param environment load specified environment
+	 * @param configVars configuration variables
 	 * @return configuration
 	 */
-	static Map<String, Object> LoadConfigFile(File file, String codePage = 'UTF-8', String environment = null) {
+	static Map<String, Object> LoadConfigFile(File file, String codePage = 'UTF-8', String environment = null,
+											  Map<String, Object> configVars = null) {
 		if (file == null)
 			throw new ExceptionGETL("No file specified!")
 		if (!file.exists())
@@ -189,7 +190,7 @@ class ConfigSlurper extends ConfigManager {
 		}
 
 		def cfg = (environment == null)?new groovy.util.ConfigSlurper():new groovy.util.ConfigSlurper(environment)
-		Map<String, Object> args = [vars: Config.vars?:[:]] as Map
+		def args = [vars: ListUtils.NotNullValue([configVars, Config.vars, [:]])]
 
 		Map<String, Object> res
 		try {
@@ -591,26 +592,21 @@ Example:
 			assert (rules.rules as Map)?.size() > 0, "Rules not found in config file \"$ruleFileName\"!"
 		}
 
-		Config.evalVars = false
-		Config.LoadConfig(fileName: sourceName, codePage: copePage)
-		if (Config.IsEmpty()) {
+		def content = ConfigFiles.LoadConfigFile(new File(sourceName), copePage)
+		if (content.isEmpty()) {
 			println "Configuration JSON file is empty!"
 			return
 		}
 
 		if (rules != null) {
 			rules.rules.each { String source, dest ->
-				MapUtils.FindKeys(Config.content, source) { Map map, String key, item ->
+				MapUtils.FindKeys(content, source) { Map map, String key, item ->
 					map.put(dest, map.remove(key))
 				}
 			}
 		}
 
-		Config.configClassManager = new ConfigSlurper()
-		if ((Config.content.vars as Map)?.size() == 0) {
-			Config.content.remove('vars')
-		}
-		Config.SaveConfig(fileName: destName, codePage: copePage, convertVars: convertVars)
+		SaveConfigFile(content, new File(destName), copePage, convertVars)
 		println "Convert \"$sourceName\" to \"$destName\" complete."
 	}
 }

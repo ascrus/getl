@@ -1,13 +1,15 @@
 package getl.config
 
 import getl.h2.H2Connection
+import getl.test.GetlTest
 import getl.utils.Config
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 
-class ConfigTypesafeTest extends getl.test.GetlTest {
-	@BeforeClass
-	static void InitTest() {
+class ConfigTypesafeTest extends GetlTest {
+	@Before
+	void InitTest() {
 		Config.configClassManager = new ConfigTypesafe(path: "typesafe/application.conf")
         Config.LoadConfig()
 	}

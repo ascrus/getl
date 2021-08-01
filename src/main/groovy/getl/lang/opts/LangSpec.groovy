@@ -6,6 +6,7 @@ import getl.csv.CSVDataset
 import getl.data.*
 import getl.exception.ExceptionDSL
 import getl.jdbc.TableDataset
+import getl.lang.Getl
 import getl.tfs.TDS
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
@@ -28,7 +29,12 @@ class LangSpec extends BaseSpec {
             saveParamValue('getlConfigProperties', new ConcurrentHashMap<String, Object>())
         if (params.projectConfigParams == null)
             saveParamValue('projectConfigParams', new ConcurrentHashMap<String, Object>())
+        if (params.countThreadsLoadRepository == null)
+            saveParamValue('countThreadsLoadRepository', 16)
     }
+
+    /** Getl owner */
+    private Getl getDslCreator() { ownerObject as Getl }
 
     /** Fixing the execution time of processes in the log */
     Boolean getProcessTimeTracing() { BoolUtils.IsValue(params.processTimeTracing, true) }
@@ -158,12 +164,21 @@ class LangSpec extends BaseSpec {
             mainFile = FileUtils.FileFromResources('/getl-properties.conf')
 
         if (mainFile == null) return
-        def mainConfig = ConfigSlurper.LoadConfigFile(mainFile, 'utf-8', env)
+        def mainConfig = ConfigSlurper.LoadConfigFile(mainFile, 'utf-8', env, dslCreator.configVars)
         getlConfigProperties.putAll(mainConfig)
 
         def childFile = FileUtils.FileFromResources('/getl-properties-ext.conf')
         if (childFile == null) return
-        def childConfig = ConfigSlurper.LoadConfigFile(childFile, 'utf-8', env)
+        def childConfig = ConfigSlurper.LoadConfigFile(childFile, 'utf-8', env, dslCreator.configVars)
         MapUtils.MergeMap(getlConfigProperties, childConfig, true, false)
+    }
+
+    /** Number of threads for simultaneous loading of repository objects */
+    Integer getCountThreadsLoadRepository() { params.countThreadsLoadRepository as Integer }
+    /** Number of threads for simultaneous loading of repository objects */
+    @SuppressWarnings('GrMethodMayBeStatic')
+    void setCountThreadsLoadRepository(Integer value) {
+        if ((value?:0) < 1  )
+            throw new ExceptionDSL('The "countThreadsLoadRepository" parameter must be greater than zero!')
     }
 }
