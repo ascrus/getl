@@ -158,6 +158,47 @@ class ParseObjectName {
         return _groupName?.replace('.', '/')
     }
 
+    /**
+     * Return the last name of a subgroup
+     * @return last name of sub group
+     */
+    String lastSubgroup() {
+        if (groupName == null)
+            return null
+
+        def s = groupName.split('[.]')
+        return s[s.length - 1]
+    }
+
+    /**
+     * Convert sub group to object name (etc group1.group2 convert to group1:group2)
+     * @param groupName source group name
+     * @return the result of the conversion to the fully qualified name of the object
+     */
+    static String Subgroup2Object(String groupName) {
+        if (groupName == null)
+            return null
+        if (groupName.indexOf(':') > -1)
+            throw new ExceptionDSL('The group name should not contain the object name!')
+        def s = groupName.split('[.]')
+        def name = s[s.length - 1]
+        if (s.length > 1)
+            name = s.dropRight(1).join('.') + ':' + name
+        return name
+    }
+
+    /**
+     * Return the search mask for objects in the repository by the current group of the object name
+     * @param maskObjectName mask of the name of objects in the group
+     * @return object search mask in the repository
+     */
+    String searchMask(String maskObjectName = '*') {
+        def res = maskObjectName?:'*'
+        if (groupName != null)
+            res = groupName + ':' + res
+        return res
+    }
+
     @Override
     String toString() { _name?:'noname' }
 }
