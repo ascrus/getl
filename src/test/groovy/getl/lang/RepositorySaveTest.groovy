@@ -3,6 +3,7 @@ package getl.lang
 import getl.lang.sub.RepositorySave
 import getl.lang.sub.SaveToRepository
 import getl.tfs.TDS
+import getl.tfs.TFS
 
 class RepositorySaveTest extends RepositorySave {
     def con = new TDS().with {
@@ -22,23 +23,40 @@ class RepositorySaveTest extends RepositorySave {
         tableName = 'table1'
         field('id') { type = integerFieldType; isKey = true }
         field('name') { length = 50; isNull = false }
-        create()
+        attributes.a1 = 1
     }
+
+    static {
+        new File(getLogDir()).mkdirs()
+    }
+
+    static String getLogDir() { TFS.systemPath + '/repository.logs' }
 
     @SaveToRepository(type = 'Connections', env = 'dev', mask = 'test:*')
     void connections() {
+        options {
+            jdbcConnectionLoggingPath = logDir
+            fileManagerLoggingPath = logDir
+        }
         cloneConnection('test:con', con)
         assert embeddedConnection('test:con').password == repositoryStorageManager.encryptText('12345')
+        embeddedConnection('test:con').attributes.a1 = 1
     }
 
     @SaveToRepository(type = 'Datasets', retrieve = true, mask = 'test:*')
     void datasets() {
+        table.create()
         // added from connection
         addTables(embeddedConnection('test:con'), 'public', 'test')
+        embeddedTable('test:table1').attributes.a1 = 1
     }
 
     @SaveToRepository(type = 'Files', mask = 'test:*')
     void filemanagers1() {
+        options {
+            jdbcConnectionLoggingPath = logDir
+            fileManagerLoggingPath = logDir
+        }
         files('test:file1', true) {
             rootPath = '/test1'
         }
@@ -46,6 +64,10 @@ class RepositorySaveTest extends RepositorySave {
 
     @SaveToRepository(type = 'Files', env = 'Dev, Prod', mask = 'test:*')
     void filemanagers2() {
+        options {
+            jdbcConnectionLoggingPath = logDir
+            fileManagerLoggingPath = logDir
+        }
         files('test:file2', true) {
             rootPath = '/test2'
         }
@@ -54,6 +76,7 @@ class RepositorySaveTest extends RepositorySave {
             rootPath = '/'
             login = 'user1'
             password = '12345'
+            scriptHistoryFile = TFS.systemPath
             assert password == repositoryStorageManager.encryptText('12345')
             storedLogins.user2 = '12345'
             assert storedLogins.user2 == repositoryStorageManager.encryptText('12345')

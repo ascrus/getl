@@ -25,7 +25,7 @@ class VerticaDriver extends JDBCDriver {
 		methodParams.register('openWrite', ['direct', 'label'])
 		methodParams.register('bulkLoadFile',
 				['loadMethod', 'rejectMax', 'enforceLength', 'compressed', 'exceptionPath', 'rejectedPath',
-				 'expression', 'location', 'maskDate', 'maskTime', 'maskDateTime',
+				 'expression', 'location', 'formatDate', 'formatTime', 'formatDateTime',
 				 'parser', 'streamName', 'files'])
 		methodParams.register('unionDataset', ['direct'])
 		methodParams.register('deleteRows', ['direct', 'label'])
@@ -241,16 +241,16 @@ class VerticaDriver extends JDBCDriver {
 		StringBuilder sb = new StringBuilder()
 		sb << "COPY ${fullNameDataset(dest)} (\n"
 
-		JDBCConnection con = dest.connection as JDBCConnection
-		String formatDate = ListUtils.NotNullValue([params.maskDate, con.maskDate])
-		String formatTime = ListUtils.NotNullValue([params.maskTime, con.maskTime])
-		String formatDateTime = ListUtils.NotNullValue([params.maskDateTime, con.maskDateTime])
+		def table = dest as VerticaTable
+		String formatDate = ListUtils.NotNullValue([params.formatDate, table.bulkLoadOpts.formatDate])
+		String formatTime = ListUtils.NotNullValue([params.formatTime, table.bulkLoadOpts.formatTime])
+		String formatDateTime = ListUtils.NotNullValue([params.formatDateTime, table.bulkLoadOpts.formatDateTime])
 
 		List columns = []
 		List options = []
 		map.each { Map f ->
 			if (f.field != null) {
-				def fieldName = (dest as JDBCDataset).sqlObjectName((f.field as Field).name)
+				def fieldName = table.sqlObjectName((f.field as Field).name)
 				columns << fieldName
 				switch ((f.field as Field).type) {
 					case Field.Type.BLOB:
@@ -284,9 +284,9 @@ class VerticaDriver extends JDBCDriver {
 		}
 
 		expressions.each { String col, String expr ->
-			if (dest.fieldByName(col) == null) throw new ExceptionGETL("Expression field \"$col\" not found")
+			if (table.fieldByName(col) == null) throw new ExceptionGETL("Expression field \"$col\" not found")
 			if (expr != null) {
-				col = (dest as JDBCDataset).sqlObjectName(col)
+				col = table.sqlObjectName(col)
 				columns << "$col AS $expr"
 			}
 		}
@@ -313,7 +313,7 @@ class VerticaDriver extends JDBCDriver {
 		if (!autoCommit) sb << 'NO COMMIT\n'
 
 		def sql = sb.toString()
-//		dest.sysParams.sql = sql
+//		table.sysParams.sql = sql
 		//println sql
 
 		dest.writeRows = 0L

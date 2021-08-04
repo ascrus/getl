@@ -48,7 +48,8 @@ class HiveConnection extends JDBCConnection {
                 driverName = "com.cloudera.hive.jdbc${ver}.HS2Driver"
                 break
             default:
-                throw new ExceptionGETL('Need set vendor name from Hive connection')
+                if (driverName == null)
+                    throw new ExceptionGETL('Need set vendor name from Hive connection or driver name!')
         }
     }
 

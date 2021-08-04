@@ -1,11 +1,13 @@
 package getl.xml
 
 import getl.lang.Getl
+import getl.test.GetlTest
+import getl.utils.DateUtils
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
 @InheritConstructors
-class XmlTest extends getl.test.GetlTest {
+class XmlTest extends GetlTest {
     @Test
     void testRead() {
         Getl.Dsl(this) {
@@ -37,7 +39,7 @@ class XmlTest extends getl.test.GetlTest {
                 assertEquals(3, readRows)
                 assertEquals('1.00', attributeValue.version)
                 assertEquals('Customers', attributeValue.objecttype)
-                assertEquals(getl.utils.DateUtils.ParseSQLTimestamp("yyyy-MM-dd'T'HH:mm:ssXXX", '2019-01-02T01:02:03+03:00'), attributeValue.time)
+                assertEquals(DateUtils.ParseSQLTimestamp("yyyy-MM-dd'T'HH:mm:ssXXX", '2019-01-02T01:02:03+03:00'), attributeValue.time)
 
                 assertEquals(1, rows(limit: 1).size())
             }

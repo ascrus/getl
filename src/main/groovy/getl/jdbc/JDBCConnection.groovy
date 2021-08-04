@@ -76,7 +76,7 @@ class JDBCConnection extends Connection implements UserLogins {
 		super.registerParameters()
 		methodParams.register('Super', [
 				'login', 'password', 'connectURL', 'sqlHistoryFile', 'autoCommit', 'connectProperty', 'dbName',
-				'javaConnection', 'maskDate', 'maskDateTime', 'sessionProperty', 'maskTime', 'schemaName',
+				'javaConnection', 'sessionProperty', 'schemaName',
 				'driverName', 'driverPath', 'connectHost', 'connectDatabase', 'balancer', 'fetchSize', 'loginTimeout',
 				'queryTimeout', 'sqlHistoryOutput', 'storedLogins', 'outputServerWarningToLog'])
 	}
@@ -249,33 +249,6 @@ class JDBCConnection extends Connection implements UserLogins {
 	void addSessionProperty(Map value) {
 		sessionProperty.putAll(value)
 	}
-	
-	/**
-	 * Default mask for date values
-	 */
-	String getMaskDate() { params.maskDate as String }
-	/**
-	 * Default mask for date values
-	 */
-	void setMaskDate(String value) { params.maskDate = value }
-	
-	/**
-	 * Default mask for time values
-	 */
-	String getMaskTime() { params.maskTime as String }
-	/**
-	 * Default mask for time values
-	 */
-	void setMaskTime(String value) { params.maskTime = value }
-	
-	/**
-	 * Default mask for datetime values
-	 */
-	String getMaskDateTime() { params.maskDateTime as String }
-	/**
-	 * Default mask for datetime values
-	 */
-	void setMaskDateTime(String value) { params.maskDateTime = value }
 
 	/** Name of file history sql commands */
 	String getSqlHistoryFile() { params.sqlHistoryFile as String }

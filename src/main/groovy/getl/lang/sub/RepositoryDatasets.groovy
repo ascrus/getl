@@ -124,9 +124,10 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
         if (obj.connection == null)
             throw new ExceptionDSL("No connection specified for dataset \"${obj.dslNameObject}\"!")
 
-        def res = [dataset: obj.getClass().name] + obj.params + GenerationUtils.Fields2Map(obj.field)
+        def res = [dataset: obj.getClass().name] + MapUtils.Copy(obj.params, ['field', 'attributeField']) +
+                GenerationUtils.Fields2Map(obj.field, 'fields')
         if (obj instanceof StructureFileDataset)
-            res.putAll(GenerationUtils.Fields2Map((obj as StructureFileDataset).attributeField, 'attributes'))
+            res.putAll(GenerationUtils.Fields2Map((obj as StructureFileDataset).attributeField, 'attributeFields'))
 
         if (obj.connection.dslNameObject == null) {
             if (!(obj instanceof TFSDataset))
@@ -145,7 +146,7 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
         if (connectionName != null)
             con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
 
-        def importParams = MapUtils.Copy(config, ['connection', 'fields', 'attributes']) as Map<String, Object>
+        def importParams = MapUtils.Copy(config, ['connection', 'fields', 'attributeFields']) as Map<String, Object>
         def obj = (existObject != null)?(existObject as Dataset).importParams(importParams):
                 Dataset.CreateDataset(importParams)
 
@@ -159,9 +160,9 @@ class RepositoryDatasets extends RepositoryObjectsWithConnection<Dataset> {
         if (con != null)
             obj.setConnection(con)
 
-        obj.field = GenerationUtils.Map2Fields(config)
+        obj.field = GenerationUtils.Map2Fields(config, 'fields')
         if (obj instanceof StructureFileDataset)
-            obj.attributeField = GenerationUtils.Map2Fields(config, 'attributes')
+            obj.attributeField = GenerationUtils.Map2Fields(config, 'attributeFields')
 
         return obj
     }

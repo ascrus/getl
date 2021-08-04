@@ -12,7 +12,6 @@ import groovy.transform.stc.SimpleType
  * @author Alexsey Konstantinov
  *
  */
-@SuppressWarnings("UnnecessaryQualifiedReference")
 class Field implements Serializable, Cloneable {
 	/**
 	 * Data type
@@ -65,7 +64,13 @@ class Field implements Serializable, Cloneable {
 	/** Data type */
 	Type getType() { return this.type }
 	/** Data type */
-	void setType(Type value) { this.type = value }
+	void setType(Type value) {
+		this.type = value
+		if (!AllowLength(this))
+			this.length = null
+		if (!AllowPrecision(this))
+			this.precision = null
+	}
 	
 	/** Database type number */
 	@JsonIgnore
@@ -99,7 +104,10 @@ class Field implements Serializable, Cloneable {
 	/** Field is primary key */
 	void setIsKey(Boolean value) {
 		this.isKey = value
-		if (this.isKey) this.isNull = false else this.ordKey = null
+		if (this.isKey)
+			this.isNull = false
+		else
+			this.ordKey = null
 	}
 	
 	private Integer ordKey
@@ -281,8 +289,8 @@ class Field implements Serializable, Cloneable {
 		def decimalSeparator = StringUtils.NullIsEmpty(mf.decimalSeparator as String)
 		def description = StringUtils.NullIsEmpty(mf.description as String)
 		def extended = mf.extended as Map<String, Object>
-		
-		return new Field(
+
+		def res = new Field(
 					name: name, type: type, typeName: typeName, isNull: isNull, length: length, precision: precision,
 					isKey: isKey, ordKey: ordKey, isPartition: isPartition, ordPartition: ordPartition,
 					isAutoincrement: isAutoincrement, isReadOnly: isReadOnly,
@@ -290,6 +298,21 @@ class Field implements Serializable, Cloneable {
 					format: format, alias: alias, trim: trim,
 					decimalSeparator: decimalSeparator, description: description, extended: extended
 		)
+
+		if (!res.isKey) {
+			if (res.ordKey != null)
+				res.ordKey = null
+		}
+		else if (res.isNull)
+			res.isNull = false
+
+		if (!AllowLength(res) && res.length != null)
+			res.length = null
+
+		if (!AllowPrecision(res) && res.precision != null)
+			res.precision = null
+
+		return res
 	}
 	
 	/**
@@ -350,6 +373,19 @@ class Field implements Serializable, Cloneable {
 		decimalSeparator = (f.decimalSeparator != null)?f.decimalSeparator:decimalSeparator
 		description = (f.description != null)?f.description:description
 		if (f.extended != null) MapUtils.MergeMap(extended, f.extended)
+
+		if (!isKey) {
+			if (ordKey != null)
+				ordKey = null
+		}
+		else if (isNull)
+			isNull = false
+
+		if (!AllowLength(this) && length != null)
+			length = null
+
+		if (!AllowPrecision(this) && precision != null)
+			precision = null
 	}
 	
 	/**

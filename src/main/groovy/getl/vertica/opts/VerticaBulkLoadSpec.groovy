@@ -199,27 +199,27 @@ class VerticaBulkLoadSpec extends BulkLoadSpec {
     /**
      * Specifies the format for parsing date type columns in file.
      */
-    String getMaskDate() { params.maskDate as String }
+    String getFormatDate() { params.formatDate as String }
     /**
      * Specifies the format for parsing date type columns in file.
      */
-    void setMaskDate(String value) { saveParamValue('maskDate', value) }
+    void setFormatDate(String value) { saveParamValue('formatDate', value) }
 
     /**
      * Specifies the format for parsing time type columns in file.
      */
-    String getMaskTime() { params.maskTime as String }
+    String getFormatTime() { params.formatTime as String }
     /**
      * Specifies the format for parsing time type columns in file.
      */
-    void setMaskTime(String value) { saveParamValue('maskTime', value) }
+    void setFormatTime(String value) { saveParamValue('formatTime', value) }
 
     /**
      * Specifies the format for parsing datetime type columns in file.
      */
-    String getMaskDateTime() { params.maskDateTime as String }
+    String getFormatDateTime() { params.formatDateTime as String }
     /**
      * Specifies the format for parsing datetime type columns in file.
      */
-    void setMaskDateTime(String value) { saveParamValue('maskDateTime', value) }
+    void setFormatDateTime(String value) { saveParamValue('formatDateTime', value) }
 }

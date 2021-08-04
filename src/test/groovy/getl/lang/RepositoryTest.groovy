@@ -963,6 +963,8 @@ class RepositoryTest extends TestDsl {
                 callScript RepositorySaveTest
                 embeddedConnection('test:con') {
                     assertEquals('repositorysave_test', connectDatabase)
+                    assertEquals(1, attributes.a1)
+                    assertNull(sqlHistoryFile)
                     assertEquals('dba', login)
                     assertEquals(repositoryStorageManager.encryptText('12345'), password)
                     assertEquals(repositoryStorageManager.encryptText('admin'), storedLogins.admin)
@@ -975,6 +977,8 @@ class RepositoryTest extends TestDsl {
                 }
                 def con = embeddedConnection('test:con') {
                     assertEquals('repositorysave_test', connectDatabase)
+                    assertEquals(1, attributes.a1)
+                    assertNull(sqlHistoryFile)
                     assertEquals('dba', login)
                     assertEquals(repositoryStorageManager.encryptText('12345'), password)
                     assertEquals(repositoryStorageManager.encryptText('admin'), storedLogins.admin)
@@ -984,6 +988,7 @@ class RepositoryTest extends TestDsl {
                     assertEquals(con, connection)
                     assertEquals('PUBLIC', schemaName)
                     assertEquals('TABLE1', tableName)
+                    assertEquals(1, attributes.a1)
                     field('id') {
                         assertEquals(Field.Type.INTEGER, type)
                         assertTrue(isKey)
@@ -996,14 +1001,17 @@ class RepositoryTest extends TestDsl {
 
                 files('test:file1') {
                     assertEquals('/test1', rootPath)
+                    assertNull(scriptHistoryFile)
                 }
                 files('test:file2') {
                     assertEquals('/test2', rootPath)
+                    assertNull(scriptHistoryFile)
                 }
                 ftp('test:ftp1') {
                     assertEquals('/', rootPath)
                     assertEquals('user1', login)
                     assertEquals(repositoryStorageManager.encryptText('12345'), password)
+                    assertNotNull(scriptHistoryFile)
                 }
                 historypoint('test:hp') {
                     assertEquals(con, connection)
@@ -1067,6 +1075,10 @@ class RepositoryTest extends TestDsl {
             }
             finally {
                 TFS.storage.connectionFileManager.removeDir('repository.test', true)
+                files {
+                    rootPath = TFS.systemPath
+                    removeDir 'repository.logs', true
+                }
             }
         }
     }

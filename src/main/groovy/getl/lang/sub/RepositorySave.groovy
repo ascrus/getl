@@ -125,10 +125,6 @@ class RepositorySave extends Getl {
         if (pathToSave != null)
             repositoryStorageManager.storagePath = pathToSave
 
-        def curJdbcConnectionLoggingPath = options.jdbcConnectionLoggingPath
-        def curFileManagerLoggingPath = options.fileManagerLoggingPath
-        def curTempDBSQLHistoryFile = options.tempDBSQLHistoryFile
-
         logFinest "Repository initialization ..."
         initRepository()
         if (repositoryStorageManager.storagePath == null)
@@ -192,26 +188,6 @@ class RepositorySave extends Getl {
 
                 logFinest "Calling methods with type \"$type\" ..."
 
-                def setOptions = { String curType ->
-                    options {
-                        jdbcConnectionLoggingPath = curJdbcConnectionLoggingPath
-                        fileManagerLoggingPath = curFileManagerLoggingPath
-                        tempDBSQLHistoryFile = curTempDBSQLHistoryFile
-                    }
-
-                    switch (curType) {
-                        case 'Connections':
-                            options {
-                                jdbcConnectionLoggingPath = null
-                                tempDBSQLHistoryFile = null
-                            }
-                            break
-                        case 'Files':
-                            options.fileManagerLoggingPath = null
-                    }
-                }
-
-                setOptions(type)
                 initRepositoryTypeProcess(type)
 
                 try {
@@ -245,8 +221,6 @@ class RepositorySave extends Getl {
                             }
 
                             otherTypes?.each { otherType ->
-                                setOptions(otherType)
-
                                 def saveOtherMethod = 'save' + otherType
                                 if (otherType in ['Connections', 'Files'])
                                     thisObject."$saveOtherMethod"(e, null)

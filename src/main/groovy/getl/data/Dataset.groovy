@@ -837,12 +837,14 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/**
 	 * Reset all fields parameters to default
 	 */
-	void resetFieldToDefault(Boolean clearNotNull = true, Boolean clearKey = true) {
+	void resetFieldToDefault(Boolean clearNotNull = true, Boolean clearKey = true, Boolean clearDefaultValue = false) {
 		getField().each { Field f ->
 			if (clearNotNull)
 				f.isNull = true
 			if (clearKey)
 				f.isKey = false
+			if (clearDefaultValue)
+				f.defaultValue = null
 
 			f.isAutoincrement = false
 			f.isReadOnly = false
@@ -1716,6 +1718,6 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			resetFieldsTypeName()
 
 		if (resetAttributes || !isCompatibleDataset)
-			resetFieldToDefault(false, false)
+			resetFieldToDefault(false, false, true)
 	}
 }
