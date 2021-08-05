@@ -137,4 +137,13 @@ class GetlTest extends GroovyAssert {
     static void assertEquals(Time expected, Time actual) {
         assertEquals(null, expected, actual)
     }
+
+    /**
+     * Asserts that two objects are equal. If they are not, an AssertionError without a message is thrown. If expected and actual are null, they are considered equal.
+     * @param expected expected value
+     * @param actual the value to check against expected
+     */
+    static void assertEquals(GString expected, String actual) {
+        assertEquals(expected.toString(), actual)
+    }
 }

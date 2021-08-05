@@ -74,15 +74,43 @@ class MapUtils {
 	
 	/**
 	 * Remove keys from map
-	 * @param m
-	 * @param keys
+	 * @param map map
+	 * @param keys deleted keys
+	 * @return modified map
 	 */
-	static void RemoveKeys (Map m, List<String> keys) {
-		if (m == null) return
+	static Map RemoveKeys(Map map, List keys) {
+		if (map == null)
+			return
+
+		if (keys == null)
+			throw new ExceptionGETL('Requored key list!')
 		
 		keys.each {
-			m.remove(it)
+			map.remove(it)
 		}
+
+		return map
+	}
+
+	/**
+	 * Remove keys from map
+	 * @param map map
+	 * @param filter condition filter
+	 * @return modified map
+	 */
+	static Map RemoveKeys(Map map,
+						   @ClosureParams(value = SimpleType, options = ['java.lang.Object', 'java.lang.Object'])
+								   Closure<Boolean> filter) {
+		if (map == null)
+			return
+
+		def keys = [] as List
+		map.each { key, value ->
+			if (filter.call(key, value))
+				keys.add(key)
+		}
+
+		return RemoveKeys(map, keys)
 	}
 	
 	/**

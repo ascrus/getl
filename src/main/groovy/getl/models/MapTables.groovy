@@ -10,8 +10,8 @@ import getl.models.opts.MapTableSpec
 import getl.models.sub.DatasetsModel
 import getl.proc.sub.ExecutorListElement
 import getl.utils.CloneUtils
+import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 
@@ -50,6 +50,11 @@ class MapTables extends DatasetsModel<MapTableSpec> {
             def p = CloneUtils.CloneMap(node, true)
             p.datasetName = p.sourceName
             p.remove('sourceName')
+
+            MapUtils.RemoveKeys(p) { k, v ->
+                return (v == null) || (v instanceof String && v.length() == 0) || (v instanceof GString && v.length() == 0)
+            }
+
             list.add(new MapTableSpec(own, p))
         }
         usedMapping = list
@@ -175,6 +180,10 @@ class MapTables extends DatasetsModel<MapTableSpec> {
         usedMapping.each { node ->
             if (node.destinationName == null)
                 throw new ExceptionDSL("The destination is not specified for table \"${node.sourceName}\"!")
+
+            if (node.partitionsDatasetName != null && dslCreator.findDataset(node.partitionsDatasetName) == null)
+                throw new ExceptionDSL("The dataset of the list of partitions \"${node.partitionsDatasetName}\" " +
+                        "specified for table \"${node.sourceName}\" was not found!")
 
             if (cl != null)
                 node.with(cl)

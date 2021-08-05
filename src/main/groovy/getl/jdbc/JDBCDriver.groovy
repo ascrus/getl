@@ -1859,11 +1859,13 @@ $sql
 			def fn = f.name.toLowerCase().replace("'", "\\'")
 			def dbType = (f.dbType != null)?f.dbType:type2dbType(f.type)
 
-			sb << GenerationUtils.GenerateSetParam(this, statIndex + 1, f, dbType as Integer, new String("_getl_row.'$fn'"))
+			sb << GenerationUtils.GenerateSetParam(this, statIndex + 1, f, dbType as Integer, "_getl_row.get('$fn')")
 			sb << "\n"
 		}
+		//sb << "println _getl_row.'class'\n"
 		sb << "}"
 		wp.statement = sb.toString()
+		//println wp.statement
 
 		Closure code = GenerationUtils.EvalGroovyClosure(wp.statement, null, false, (useLoadedDriver)?jdbcClass.classLoader:null)
 

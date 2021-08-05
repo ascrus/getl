@@ -266,4 +266,16 @@ class MapUtilsTest extends GetlTest {
         shouldFail { MapUtils.FindSubNodes(m) }
         assertEquals([c: 3, d: 4], MapUtils.FindSubNodes(m, 'sub'))
     }
+
+    @Test
+    void testRemoveKeys() {
+        def m = [a: 1, b: 2, c: 3]
+
+        assertNull(MapUtils.RemoveKeys(null, []))
+        shouldFail { MapUtils.RemoveKeys(m, null) }
+
+        assertEquals([a: 1, b: 2, c: 3], MapUtils.RemoveKeys(m, []))
+        assertEquals([b: 2, c: 3], MapUtils.RemoveKeys(m, ['a']))
+        assertEquals([b: 2], MapUtils.RemoveKeys(m) { k, v -> k == 'c' } )
+    }
 }
