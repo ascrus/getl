@@ -126,7 +126,7 @@ class HDFSManager extends Manager implements UserLogins {
                 man.client = FileSystem.get(conf)
             }
             catch (Exception e) {
-                if (writeErrorsToLog) Logs.Severe("Can not connect to ${man.server}:${man.port}")
+                if (writeErrorsToLog) logger.severe("Can not connect to ${man.server}:${man.port}")
                 throw e
             }
             man.homeDirectory = client.homeDirectory
@@ -184,17 +184,17 @@ class HDFSManager extends Manager implements UserLogins {
         if (path == _currentPath) return
 
         if (path == null || path == '/') {
-            if (writeErrorsToLog) Logs.Severe('Invalid path: \"$path\"')
+            if (writeErrorsToLog) logger.severe('Invalid path: \"$path\"')
             throw new ExceptionGETL('Invalid null path')
         }
         path = fullName(path, null)
         def p = new Path(path)
         if (!client.exists(p)) {
-            if (writeErrorsToLog) Logs.Severe("Path \"$path\" not found")
+            if (writeErrorsToLog) logger.severe("Path \"$path\" not found")
             throw new ExceptionGETL("Path \"$path\" not found")
         }
         if (!client.exists(p) || !client.getFileStatus(p).isDirectory()) {
-            if (writeErrorsToLog) Logs.Severe("Path \"$path\" non directory")
+            if (writeErrorsToLog) logger.severe("Path \"$path\" non directory")
             throw new ExceptionGETL("Path \"$path\" non directory")
         }
         _currentPath = path
@@ -286,7 +286,7 @@ class HDFSManager extends Manager implements UserLogins {
         validConnect()
 
         if (_currentPath == currentRootPath) {
-            if (writeErrorsToLog) Logs.Severe("Can not change directory to up with root directory \"$currentRootPath\"")
+            if (writeErrorsToLog) logger.severe("Can not change directory to up with root directory \"$currentRootPath\"")
             throw new ExceptionGETL("Can not change directory to up with root directory \"$currentRootPath\"")
         }
 
@@ -301,7 +301,7 @@ class HDFSManager extends Manager implements UserLogins {
             currentPath = c
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not change directory to up: ${e.message}")
+            if (writeErrorsToLog) logger.severe("Can not change directory to up: ${e.message}")
             throw e
         }
     }
@@ -318,7 +318,7 @@ class HDFSManager extends Manager implements UserLogins {
             setLocalLastModified(f, getLastModified(filePath))
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not download file \"${fullName(_currentPath, filePath)}\" to \"$fn\"")
+            if (writeErrorsToLog) logger.severe("Can not download file \"${fullName(_currentPath, filePath)}\" to \"$fn\"")
             throw e
         }
     }
@@ -335,7 +335,7 @@ class HDFSManager extends Manager implements UserLogins {
             setLastModified(fileName, f.lastModified())
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fn\" to \"${fullName(_currentPath, fileName)}\"")
+            if (writeErrorsToLog) logger.severe("Can not upload file \"$fn\" to \"${fullName(_currentPath, fileName)}\"")
             throw e
         }
     }
@@ -348,7 +348,7 @@ class HDFSManager extends Manager implements UserLogins {
             client.delete(fullPath(_currentPath, fileName), false)
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not remove file \"${fullName(_currentPath, fileName)}\"")
+            if (writeErrorsToLog) logger.severe("Can not remove file \"${fullName(_currentPath, fileName)}\"")
             throw e
         }
     }
@@ -361,7 +361,7 @@ class HDFSManager extends Manager implements UserLogins {
             client.mkdirs(fullPath(_currentPath, dirName))
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not create dir \"${fullName(_currentPath, dirName)}\"")
+            if (writeErrorsToLog) logger.severe("Can not create dir \"${fullName(_currentPath, dirName)}\"")
             throw e
         }
     }
@@ -374,7 +374,7 @@ class HDFSManager extends Manager implements UserLogins {
             client.delete(fullPath(_currentPath, dirName), recursive)
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not remove dir \"${fullName(_currentPath, dirName)}\"")
+            if (writeErrorsToLog) logger.severe("Can not remove dir \"${fullName(_currentPath, dirName)}\"")
             throw e
         }
     }
@@ -389,7 +389,7 @@ class HDFSManager extends Manager implements UserLogins {
             client.rename(fullPath(_currentPath, fileName), new Path(path))
         }
         catch (Exception e) {
-            if (writeErrorsToLog) Logs.Severe("Can not rename file \"${fullName(_currentPath, fileName)}\" to \"$path\"")
+            if (writeErrorsToLog) logger.severe("Can not rename file \"${fullName(_currentPath, fileName)}\" to \"$path\"")
             throw e
         }
     }

@@ -3,8 +3,6 @@ package getl.proc
 import getl.data.Field
 import getl.exception.ExceptionFileListProcessing
 import getl.files.Manager
-import getl.lang.Getl
-import getl.lang.sub.GetlRepository
 import getl.proc.sub.FileCopierBuild
 import getl.jdbc.TableDataset
 import getl.proc.sub.FileListProcessing
@@ -12,7 +10,6 @@ import getl.proc.sub.FileListProcessingBuild
 import getl.utils.CloneUtils
 import getl.utils.Config
 import getl.utils.FileUtils
-import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.Path
 import groovy.transform.stc.ClosureParams
@@ -235,24 +232,24 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         super.infoProcess()
 
         destinations.each { man ->
-            Logs.Info("Files will be copied to \"$man\"")
+            logger.info("Files will be copied to \"$man\"")
         }
 
-        Logs.Fine("  destination mask path: ${tmpDestPath.maskStr}")
+        logger.fine("  destination mask path: ${tmpDestPath.maskStr}")
 
         if (renamePath != null)
-            Logs.Fine("  rename file mask path: ${renamePath.maskStr}")
+            logger.fine("  rename file mask path: ${renamePath.maskStr}")
 
         if (numberAttempts > 1)
-            Logs.Fine("  ${numberAttempts} repetitions will be used in case of file operation errors until termination")
+            logger.fine("  ${numberAttempts} repetitions will be used in case of file operation errors until termination")
 
         if (!order.isEmpty())
-            Logs.Fine("  files will be processed in the following sort order: [${order.join(', ')}]")
+            logger.fine("  files will be processed in the following sort order: [${order.join(', ')}]")
 
         if (!segmented.isEmpty()) {
-            Logs.Fine("  files will be segmented by fields: [${segmented.join(', ')}]")
+            logger.fine("  files will be segmented by fields: [${segmented.join(', ')}]")
             if (destinations.size() == 1)
-                Logs.Warning("Segmentation will not be used because only one destination is specified!")
+                logger.warning("Segmentation will not be used because only one destination is specified!")
         }
     }
 
@@ -322,13 +319,13 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
             processSegment(0, source, destinations)
         }
         else {
-            if (!DisconnectFrom([source] + destinations))
+            if (!disconnectFrom([source] + destinations))
                 throw new ExceptionFileListProcessing("Errors occurred while working with sources!")
 
             def na = numberAttempts
             def ta = timeAttempts
             try {
-                new Executor().with {
+                new Executor(dslCreator: dslCreator).with {
                     useList (0..(destinations.size() - 1))
                     countProc = list.size()
                     abortOnError = true
@@ -344,7 +341,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                         }
                         finally {
                             FileUtils.DeleteFolder(src.localDirectory, true)
-                            DisconnectFrom([src, dst])
+                            disconnectFrom([src, dst])
                         }
                     }
                 }
@@ -369,7 +366,7 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
      */
     @SuppressWarnings('SpellCheckingInspection')
     protected processSegment(Integer segment, Manager src, List<Manager> dst) {
-        Logs.Finest("$segment: processing $dst")
+        logger.finest("$segment: processing $dst")
 
         def isRemoveFile = removeFiles
         def files = tmpProcessFiles.cloneDatasetConnection() as TableDataset
@@ -410,17 +407,17 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
                 // Change in folder from file path
                 def filepath = infile.get('filepath') as String
                 if (iPath != filepath) {
-                    ChangeDir([src], filepath, false, numberAttempts, timeAttempts)
+                    changeDir([src], filepath, false, numberAttempts, timeAttempts)
 
                     iPath = filepath
                 }
 
                 if (oPath != outpath) {
-                    ChangeLocalDir(src, outpath, true)
+                    changeLocalDir(src, outpath, true)
 
-                    ChangeDir(dst, outpath, true, numberAttempts, timeAttempts)
+                    changeDir(dst, outpath, true, numberAttempts, timeAttempts)
                     dst.each { man ->
-                        ChangeLocalDir(man, outpath, false)
+                        changeLocalDir(man, outpath, false)
                     }
 
                     oPath = outpath
@@ -487,6 +484,6 @@ class FileCopier extends FileListProcessing { /* TODO: make copy support between
         }
 
         counter.addCount(files.readRows)
-        Logs.Info("[$segment]: copied ${files.readRows} files (${FileUtils.SizeBytes(fileSize)})")
+        logger.info("[$segment]: copied ${files.readRows} files (${FileUtils.SizeBytes(fileSize)})")
     }
 }

@@ -1,5 +1,6 @@
 package getl.proc
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
 import getl.proc.sub.ExecutorFactory
@@ -319,12 +320,12 @@ class Executor implements GetlRepository {
 						}
 						catch (Throwable e) {
 							if (abortOnError) {
-								Logs.Exception(e, 'thread element', element.toString())
+								logger.exception(e, 'thread element', element.toString())
 								throw e
 							}
 
 							if (logErrors)
-								Logs.Exception(e, 'thread element', element.toString())
+								logger.exception(e, 'thread element', element.toString())
 						}
 					}
 				}
@@ -485,12 +486,12 @@ class Executor implements GetlRepository {
 						}
 						catch (Throwable e) {
 							if (abortOnError) {
-								Logs.Exception(e, 'thread element', element.toString())
+								logger.exception(e, 'thread element', element.toString())
 								throw e
 							}
 
 							if (logErrors)
-								Logs.Exception(e, 'thread element', element.toString())
+								logger.exception(e, 'thread element', element.toString())
 						}
 					}
 				}
@@ -608,9 +609,10 @@ class Executor implements GetlRepository {
 			m.putAll([finish: new Date(), threadSubmit: null])
 			setError(element, e)
 			def errObject = (debugElementOnError)?"[${num}]: ${element}":"Element ${num}"
-			if (dumpErrors) Logs.Dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: elements])}")
+			if (dumpErrors)
+				logger.dump(e, getClass().name, errObject, "LIST: ${MapUtils.ToJson([list: elements])}")
 			if (logErrors) {
-				Logs.Exception(e, this.toString(), errObject)
+				logger.exception(e, this.toString(), errObject)
 			}
 		}
 		catch (Throwable ignored) { }
@@ -760,7 +762,7 @@ class Executor implements GetlRepository {
 			}
 			catch (Throwable e) {
 				if (logErrors) {
-					Logs.Exception(e, this.toString(), null)
+					logger.exception(e, this.toString(), null)
 					StackTraceUtils.sanitize(e)
 				}
 			}
@@ -800,14 +802,18 @@ class Executor implements GetlRepository {
 			runThreads = false
 		}
 	}
-
 	/** Run code with ignore runtime errors */
 	static Boolean RunIgnoreErrors (Closure code) {
+		RunIgnoreErrors(null, code)
+	}
+
+	/** Run code with ignore runtime errors */
+	static Boolean RunIgnoreErrors (Getl owner, Closure code) {
 		try {
 			code.call()
 		} 
-		catch (Throwable e) { 
-			Logs.Finest("Ignore error: ${e.message}")
+		catch (Throwable e) {
+			((owner != null)?owner.logging.manager:Logs.global).finest("Ignore error: ${e.message}")
 			return false 
 		}
 		
@@ -846,4 +852,8 @@ class Executor implements GetlRepository {
 		_dslNameObject = null
 		_dslCreator = null
 	}
+
+	/** Current logger */
+	@JsonIgnore
+	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
 }

@@ -678,7 +678,7 @@ class FileUtils {
 	 * @param convertBuffer
 	 * @return
 	 */
-	static Long ConvertText (Reader reader, Writer writer, List rules,
+	static Long ConvertText(Reader reader, Writer writer, List rules,
 							 @ClosureParams(value = SimpleType, options = ['Long', 'java.lang.Object']) Closure convertLine,
 							 def convertBuffer) {
 		Closure convertCode
@@ -710,7 +710,7 @@ class FileUtils {
 			}
 			sb << "	return line\n}"
 //			println sb.toString()
-			convertCode = GenerationUtils.EvalGroovyClosure(sb.toString())
+			convertCode = GenerationUtils.EvalGroovyClosure(value: sb.toString())
 		}
 		
 		String line = reader.readLine()

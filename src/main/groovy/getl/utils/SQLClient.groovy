@@ -2,11 +2,13 @@ package getl.utils
 
 import getl.proc.*
 import getl.jdbc.*
+import groovy.transform.InheritConstructors
 
 /**
  * SQL client application
  * @author ALexsey Konstantinov
  */
+@InheritConstructors
 class SQLClient extends Job {
 	static main(args) {
 		new SQLClient().run(args)
@@ -97,6 +99,6 @@ END FOR;"""
 		scripter.vars.putAll(Config.content."vars" as Map)
 		scripter.loadFile(args."script" as String, "utf-8")
 		scripter.runSql()
-		Logs.Info("Finish, ${scripter.rowCount} rows processed")
+		logger.info("Finish, ${scripter.rowCount} rows processed")
 	}
 }

@@ -1,5 +1,7 @@
 package getl.proc
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.lang.Getl
 import getl.utils.*
 
 /**
@@ -8,6 +10,13 @@ import getl.utils.*
  *
  */
 abstract class Job {
+	/** Getl owner */
+	protected Getl dslCreator
+
+	/** Current logger */
+	@JsonIgnore
+	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+
 	/** Job arguments */
 	static public final Map jobArgs = [:] as Map<String, Object>
 	
@@ -30,6 +39,7 @@ abstract class Job {
 
 		// Set job parameters from arguments
 		jobArgs.clear()
+		//noinspection SpellCheckingInspection
 		jobArgs.putAll(MapUtils.Copy(m, ['stdout', 'stderr', 'stdcodepage']))
 		if (jobArgs.vars == null) jobArgs.vars = [:]
 		Config.Init(m)
@@ -48,37 +58,24 @@ abstract class Job {
 	
 	/**
 	 * Run job with arguments of command line
-	 * @param args
+	 * @param args command arguments
 	 */
-	void run (def args) {
+	void run(def args = null) {
 		Config.ClearConfig()
-		processConfigArgs(args)
+		if (args != null)
+			processConfigArgs(args)
 		init()
 		Config.LoadConfig()
 		doRun()
 	}
 	
-	/**
-	 * Place your initialization code here (run after loading configuration files, but before run logic job)
-	 */
-	void init () {
-		
-	}
-	
-	/**
-	 * Run vertica without arguments of command line
-	 */
-	void run () {
-		Config.ClearConfig()
-		init()
-		Config.LoadConfig()
-		doRun()
-	}
+	/** Place your initialization code here (run after loading configuration files, but before run logic job) */
+	void init() { }
 	
 	/**
 	 * Prepare before run job process
 	 */
-	protected void prepareRun () { }
+	protected void prepareRun() { }
 
 	/** Finish job if detected error */
 	static public Boolean ExitOnError = true
@@ -89,6 +86,8 @@ abstract class Job {
 	@SuppressWarnings(["UnnecessaryQualifiedReference", "GroovyVariableNotAssigned"])
 	protected void doRun () {
 		DateUtils.init()
+		if (dslCreator == null)
+			Logs.Init()
 		getl.deploy.Version.SayInfo()
 		prepareRun()
 		def isError = false
@@ -97,14 +96,14 @@ abstract class Job {
 			process()
 		}
 		catch (Throwable e) {
-			Logs.Exception(e, getClass().name, "JOB.RUN")
+			logger.exception(e, getClass().name, "JOB.RUN")
 			isError = true
             err = e
 		}
 		finally {
 			done()
-			Logs.Info("### Job stop${(exitCode != null)?" with code $exitCode":''}")
-			Logs.Done()
+			logger.info("### Job stop${(exitCode != null)?" with code $exitCode":''}")
+			logger.done()
 			if (isError && ExitOnError) {
 				System.exit(exitCode?:1)
 			}

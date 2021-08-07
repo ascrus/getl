@@ -651,7 +651,7 @@ class JDBCConnection extends Connection implements UserLogins {
 		}
 		if (classType == null)
 			throw new ExceptionGETL("Connection type \"$connectionClassName\" is no supported!")
-        Logs.Fine("Generate GETL DSL script for $classType tables")
+		logger.fine("Generate GETL DSL script for $classType tables")
 
 		if (cl == null)
 			throw new ExceptionGETL('Option code not specified!')
@@ -669,10 +669,10 @@ class JDBCConnection extends Connection implements UserLogins {
 
 		if (scriptFile.isDirectory())
 			throw new ExceptionGETL('It is required to specify the path and file name in parameter "scriptPath"!')
-        Logs.Fine("  saving GETL DSL script to file ${scriptFile.path}")
+        logger.fine("  saving GETL DSL script to file ${scriptFile.path}")
         if (scriptFile.exists()) {
 			if (p.overwriteScript)
-				Logs.Warning("Script \"${p.scriptPath}\" already exist!")
+				logger.warning("Script \"${p.scriptPath}\" already exist!")
 			else
 				throw new ExceptionGETL("Script \"${p.scriptPath}\" already exist!")
 		}
@@ -701,16 +701,21 @@ class JDBCConnection extends Connection implements UserLogins {
 		if (connectionName == null)
 			throw new ExceptionGETL('Required value for "connectionName" parameter!')
 
-		Logs.Fine("  with connection: $connectionName")
-		if (p.groupName != null) Logs.Fine("  group in repository: ${p.groupName}")
-		if (p.defineFields) Logs.Fine("  saving list of field in resource files${(p.saveTypeNameForFields)?' with determining the type of database field':''}")
-		if (p.createTables) Logs.Fine("  generating create table operation")
-		if (p.dropTables) Logs.Fine("  generating drop table operation")
-		if (!listTableSavedData.isEmpty()) Logs.Fine("  save data from tables ${listTableSavedData.toString()} to resource files")
-		Logs.Fine("  using filter \"${p.dbName?:'*'}\".\"${p.schemaName?:'*'}\".\"${p.tableName?:'*'}\"${(!p.types.isEmpty())?(' with types: ' + p.types.toString()):''}${(!listTableExcluded.isEmpty())?(' excluded: ' + listTableExcluded.toString()):''}")
-		if (p.tableMask != null) Logs.Fine("    processing the tables by masked: $p.tableMask")
+		logger.fine("  with connection: $connectionName")
+		if (p.groupName != null)
+			logger.fine("  group in repository: ${p.groupName}")
+		if (p.defineFields)
+			logger.fine("  saving list of field in resource files${(p.saveTypeNameForFields)?' with determining the type of database field':''}")
+		if (p.createTables)
+			logger.fine("  generating create table operation")
+		if (p.dropTables)
+			logger.fine("  generating drop table operation")
+		if (!listTableSavedData.isEmpty()) logger.fine("  save data from tables ${listTableSavedData.toString()} to resource files")
+		logger.fine("  using filter \"${p.dbName?:'*'}\".\"${p.schemaName?:'*'}\".\"${p.tableName?:'*'}\"${(!p.types.isEmpty())?(' with types: ' + p.types.toString()):''}${(!listTableExcluded.isEmpty())?(' excluded: ' + listTableExcluded.toString()):''}")
+		if (p.tableMask != null)
+			logger.fine("    processing the tables by masked: $p.tableMask")
 		if (useResource && resourceDir != null)
-			Logs.Fine("  using resource files path \"${resourceDir?.path}\"" + ((resourceRoot != null)?" with root path \"$resourceRoot\"":''))
+			logger.fine("  using resource files path \"${resourceDir?.path}\"" + ((resourceRoot != null)?" with root path \"$resourceRoot\"":''))
 
 		def getlClassName = (dslCreator != null)?dslCreator.getClass().name:Getl.getClass().name
 
@@ -730,7 +735,7 @@ import groovy.transform.BaseScript
 		def tab = '\t'
 		retrieveDatasets([dbName: p.dbName, schemaName: p.schemaName?: this.schemaName, tableName: p.tableName,
 						  tableMask: p.tableMask, type: p.types], p.onFilter).each { TableDataset dataset ->
-			Logs.Fine("Generate script for table $dataset.fullTableName")
+			logger.fine("Generate script for table $dataset.fullTableName")
 			if (dataset.tableName == null)
 				throw new ExceptionGETL("Invalid table name for $dataset!")
 
@@ -746,7 +751,7 @@ import groovy.transform.BaseScript
 				}
 			}
 			if (isExclude) {
-				Logs.Info("Skip table $dataset.fullTableName")
+				logger.info("Skip table $dataset.fullTableName")
 				return
 			}
 
@@ -777,7 +782,7 @@ import groovy.transform.BaseScript
 				FileUtils.ValidPath(resourcePath + schemaResourceDir)
 				def resourceFieldFile = new File(resourcePath + schemaResourceDir + "${tableName}.schema")
 				dataset.saveDatasetMetadataToSlurper(resourceFieldFile)
-				Logs.Fine("  saved ${dataset.field.size()} fields desctiption to file \"${resourceFieldFile.path}\"")
+				logger.fine("  saved ${dataset.field.size()} fields desctiption to file \"${resourceFieldFile.path}\"")
 
 				sb << "\n\n${tab}schemaFileName = 'resource:${schemaResourceDir}${tableName}.schema'"
 //				sb << "\n${tab}loadDatasetMetadata()"
@@ -801,8 +806,8 @@ import groovy.transform.BaseScript
 							field: dataset.field, codePage: 'utf-8', fieldDelimiter: ',', escaped: false,
 							nullAsValue: '<NULL>')
 
-					new Flow().copy(source: dataset, dest: csvFile)
-					Logs.Fine("  saved ${csvFile.writeRows} rows to file \"${csvFile.fullFileName()}\"")
+					new Flow(dslCreator).copy(source: dataset, dest: csvFile)
+					logger.fine("  saved ${csvFile.writeRows} rows to file \"${csvFile.fullFileName()}\"")
 
 					sb << """\n\n${tab}${tab}def initDataFile = csv {
 ${tab}${tab}${tab}useConnection csvConnection { path = getl.utils.FileUtils.PathFromFile(getl.utils.FileUtils.ResourceFileName('resource:${dataResourceDir}${tableName}.csv')) }
@@ -819,13 +824,13 @@ ${tab}${tab}}
 				sb << "\n${tab}}"
 			}
 
-			Logs.Info("Generated script for table $dataset.fullTableName complete")
+			logger.info("Generated script for table $dataset.fullTableName complete")
 
 			sb << '\n}'
 		}
 
 		scriptFile.setText(sb.toString(),'utf-8')
-		Logs.Info("Generated GETL DSL script \"${scriptFile.path}\" complete")
+		logger.info("Generated GETL DSL script \"${scriptFile.path}\" complete")
 	}
 
 	/** Resource file name for table

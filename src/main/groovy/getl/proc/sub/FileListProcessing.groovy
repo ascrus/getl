@@ -1,5 +1,6 @@
 package getl.proc.sub
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Field
 import getl.files.Manager
 import getl.h2.H2Connection
@@ -225,7 +226,7 @@ abstract class FileListProcessing implements GetlRepository {
      * @param vars list of variables
      * @return execution result code
      */
-    static Integer Command(Manager man, String command, Integer attempts, Integer time,
+    Integer Command(Manager man, String command, Integer attempts, Integer time,
                        Boolean throwOnError, String formatDate, Map vars) {
         Integer res
         StringBuilder console = new StringBuilder()
@@ -244,7 +245,7 @@ abstract class FileListProcessing implements GetlRepository {
                 break
 
 
-            Logs.Warning("When executing command an error occurred $res in \"$name\", attemp $retry of $attempts")
+            dslCreator.logWarn("When executing command an error occurred $res in \"$name\", attemp $retry of $attempts")
             sleep(time * 1000)
             retry++
         }
@@ -265,13 +266,13 @@ abstract class FileListProcessing implements GetlRepository {
             if (throwOnError)
                 throw new ExceptionFileListProcessing(errText)
 
-            Logs.Warning(errText)
+            dslCreator.logWarn(errText)
         }
 
         return res
     }
 
-    static private final Object createDirectoryLock = new Object()
+    protected final Object createDirectoryLock = new Object()
 
     /**
      * Change current directory
@@ -281,8 +282,8 @@ abstract class FileListProcessing implements GetlRepository {
      * @param attempts number of operation attempts
      * @param time number of seconds between attempts to retry a command operation
      */
-    static void ChangeDir(List<Manager> managers, String path,
-                          Boolean isCreateDir, Integer attempts, Integer time) {
+    void changeDir(List<Manager> managers, String path,
+                   Boolean isCreateDir, Integer attempts, Integer time) {
         Operation(managers, attempts, time) { man ->
             man.changeDirectoryToRoot()
             synchronized (createDirectoryLock) {
@@ -297,7 +298,7 @@ abstract class FileListProcessing implements GetlRepository {
         }
     }
 
-    static private final Object createLocalDirectoryLock = new Object()
+    protected final Object createLocalDirectoryLock = new Object()
 
     /**
      * Change current local directory
@@ -305,7 +306,7 @@ abstract class FileListProcessing implements GetlRepository {
      * @param path directory name
      * @param isCreateDir create directory if not exist (default false)
      */
-    static void ChangeLocalDir (Manager man, String path, Boolean isCreateDir) {
+    void changeLocalDir(Manager man, String path, Boolean isCreateDir) {
         man.changeLocalDirectoryToRoot()
         synchronized (createLocalDirectoryLock) {
             if (!man.existsLocalDirectory(path)) {
@@ -320,7 +321,7 @@ abstract class FileListProcessing implements GetlRepository {
             man.changeLocalDirectory(path)
         }
         catch (Exception e) {
-            Logs.Severe("Error changing current local directory to \"$path\" for \"$man\", error text: ${e.message}!")
+            logger.severe("Error changing current local directory to \"$path\" for \"$man\", error text: ${e.message}!")
             throw e
         }
     }
@@ -331,7 +332,7 @@ abstract class FileListProcessing implements GetlRepository {
      * @param attempts number of attempts
      * @param time time in seconds between attempts
      */
-    static void ConnectTo(List<Manager> managers, Integer attempts, Integer time) {
+    void ConnectTo(List<Manager> managers, Integer attempts, Integer time) {
         def code = { Manager man ->
             if (man.connected) return
 
@@ -343,10 +344,10 @@ abstract class FileListProcessing implements GetlRepository {
                 }
                 catch (Exception e) {
                     if (retry > attempts || man.connected) {
-                        Logs.Severe("Unable to connect to \"$man\", error: ${e.message}")
+                        logger.severe("Unable to connect to \"$man\", error: ${e.message}")
                         throw e
                     }
-                    Logs.Warning("Unable to connect to \"$man\", attemp $retry of $attempts, error: ${e.message}")
+                    dslCreator.logWarn("Unable to connect to \"$man\", attemp $retry of $attempts, error: ${e.message}")
                     sleep(time * 1000)
 
                     retry++
@@ -362,7 +363,7 @@ abstract class FileListProcessing implements GetlRepository {
                 code.call(managers[0])
                 break
             default:
-                new Executor().with {
+                new Executor(dslCreator: dslCreator).with {
                     useList managers
                     countProc = managers.size()
                     abortOnError = true
@@ -376,7 +377,8 @@ abstract class FileListProcessing implements GetlRepository {
      * Disconnect managers
      * @param managers list of managers
      */
-    static Boolean DisconnectFrom(List<Manager> managers) {
+    @SuppressWarnings('GrMethodMayBeStatic')
+    Boolean disconnectFrom(List<Manager> managers) {
         def err = new SynchronizeObject()
 
         def code = { Manager man ->
@@ -385,7 +387,7 @@ abstract class FileListProcessing implements GetlRepository {
                     man.disconnect()
                 }
                 catch (Exception e) {
-                    Logs.Severe("Unable to disconnect from \"$man\", error: ${e.message}")
+                    logger.severe("Unable to disconnect from \"$man\", error: ${e.message}")
                     err.nextCount()
                 }
             }
@@ -398,7 +400,7 @@ abstract class FileListProcessing implements GetlRepository {
                 code.call(managers[0])
                 break
             default:
-                new Executor().with {
+                new Executor(dslCreator: dslCreator).with {
                     useList managers
                     countProc = managers.size()
                     abortOnError = false
@@ -417,7 +419,7 @@ abstract class FileListProcessing implements GetlRepository {
      * @param time time in seconds between attempts
      * @param cl operation code on specified manager
      */
-    static void Operation(List<Manager> managers, Integer attempts, Integer time,
+    void Operation(List<Manager> managers, Integer attempts, Integer time,
                           @ClosureParams(value = SimpleType, options = ['getl.files.Manager']) Closure cl) {
         def code = { Manager man ->
             def retry = 1
@@ -433,7 +435,7 @@ abstract class FileListProcessing implements GetlRepository {
                     if (retry > attempts)
                         throw e
 
-                    Logs.Warning("Cannot do operation for \"$man\", attemp $retry of $attempts, error: ${e.message}")
+                    dslCreator.logWarn("Cannot do operation for \"$man\", attemp $retry of $attempts, error: ${e.message}")
                     sleep(time * 1000)
                     retry++
 
@@ -463,7 +465,7 @@ abstract class FileListProcessing implements GetlRepository {
                                 if (retry > attempts)
                                     throw e
 
-                                Logs.Warning("Cannot connection to \"$man\", attemp $retry of $attempts, error: ${e.message}")
+                                dslCreator.logWarn("Cannot connection to \"$man\", attemp $retry of $attempts, error: ${e.message}")
                                 sleep(time * 1000)
                                 retry++
                             }
@@ -480,7 +482,7 @@ abstract class FileListProcessing implements GetlRepository {
                 code.call(managers[0])
                 break
             default:
-                new Executor().with {
+                new Executor(dslCreator: dslCreator).with {
                     useList(managers)
                     countProc = managers.size()
                     abortOnError = true
@@ -625,7 +627,7 @@ abstract class FileListProcessing implements GetlRepository {
                             throw new ExceptionFileListProcessing('A history caching table was specified, but no history table was specified in the source!')
 
                         source.story.currentJDBCConnection.transaction {
-                            def count = new Flow().copy(source: cacheTable, dest: source.story)
+                            def count = new Flow(dslCreator).copy(source: cacheTable, dest: source.story)
                             if (count == 0)
                                 throw new ExceptionFileListProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
                         }
@@ -638,25 +640,25 @@ abstract class FileListProcessing implements GetlRepository {
 
     /** Inform about start in the log */
     protected void infoProcess() {
-        Logs.Fine("Processing files from \"$source\"")
+        logger.fine("Processing files from \"$source\"")
 
-        Logs.Fine("  for intermediate operations, \"$tmpPath\" directory will be used")
-        if (inMemoryMode) Logs.Fine("  operating mode \"in-memory\" is used")
-        Logs.Fine("  source mask path: ${sourcePath.maskStr}")
-        Logs.Fine("  source mask pattern: ${sourcePath.maskPath}")
+        logger.fine("  for intermediate operations, \"$tmpPath\" directory will be used")
+        if (inMemoryMode) logger.fine("  operating mode \"in-memory\" is used")
+        logger.fine("  source mask path: ${sourcePath.maskStr}")
+        logger.fine("  source mask pattern: ${sourcePath.maskPath}")
 
         if (removeFiles)
-            Logs.Fine('  after processing the files will be removed on the source')
+            logger.fine('  after processing the files will be removed on the source')
 
         if (removeEmptyDirs)
-            Logs.Fine('  after processing files, empty directories will be removed on the source')
+            logger.fine('  after processing files, empty directories will be removed on the source')
 
         if (source.story != null && !ignoreStory) {
-            Logs.Fine("  table ${source.story.fullTableName} will be used to store file processing history")
+            logger.fine("  table ${source.story.fullTableName} will be used to store file processing history")
             if (cacheFilePath != null)
-                Logs.Fine("  file \"${FileUtils.TransformFilePath(cacheFilePath)}\" will be used to cache file processing history")
+                logger.fine("  file \"${FileUtils.TransformFilePath(cacheFilePath)}\" will be used to cache file processing history")
             if (onlyFromStory)
-                Logs.Fine("  only files that are present in the processing history will be processed")
+                logger.fine("  only files that are present in the processing history will be processed")
         }
     }
 
@@ -694,11 +696,11 @@ abstract class FileListProcessing implements GetlRepository {
         if (foundRows > 0) {
             source.story.connection.startTran(true)
             try {
-                def count = new Flow().copy(source: cacheTable, dest: source.story)
+                def count = new Flow(dslCreator).copy(source: cacheTable, dest: source.story)
                 if (foundRows != count)
                     throw new ExceptionFileListProcessing("Error copying file processing history cache, $foundRows rows were detected, but $count rows were copied!")
 
-                Logs.Info("$count rows of file processing history saved to table ${source.story.fullTableName}")
+                logger.info("$count rows of file processing history saved to table ${source.story.fullTableName}")
                 cacheTable.truncate(truncate: true)
             }
             catch (Exception e) {
@@ -709,12 +711,10 @@ abstract class FileListProcessing implements GetlRepository {
         }
     }
 
-    static private final Object infoLock = new Object()
-
     /** Processing files */
     void process() {
         initProcess()
-        Logs.Consistently { infoProcess() }
+        dslCreator.logConsistently { infoProcess() }
 
         beforeProcessing()
         try {
@@ -732,10 +732,10 @@ abstract class FileListProcessing implements GetlRepository {
 
             def countFileList = tmpProcessFiles.countRow()
             if (countFileList == 0) {
-                Logs.Warning("No files found for source \"${source.toString()}\"!")
+                logger.warning("No files found for source \"${source.toString()}\"!")
             }
             else {
-                Logs.Info("${countFileList} files found, size ${FileUtils.SizeBytes(source.sizeFileList)} for source \"${source.toString()}\"")
+                logger.info("${countFileList} files found, size ${FileUtils.SizeBytes(source.sizeFileList)} for source \"${source.toString()}\"")
 
                 if (cacheTable != null) {
                     if (source.story.field.size() == 0)
@@ -800,7 +800,7 @@ abstract class FileListProcessing implements GetlRepository {
 
     /** Create new profile object */
     protected ProcessTime profile(String name, String objName) {
-        return (getl != null)?getl.startProcess(name, objName):(new ProcessTime(name: name, objectName: objName))
+        return (getl != null)?getl.startProcess(name, objName):(new ProcessTime(dslCreator: getl, name: name, objectName: objName))
     }
 
     /** Processing files */
@@ -836,7 +836,7 @@ abstract class FileListProcessing implements GetlRepository {
         }
 
         if (!deleteDirs.isEmpty())
-            Logs.Info("In the source \"$source\" empty directories were removed: ${deleteDirs.sort()}")
+            logger.info("In the source \"$source\" empty directories were removed: ${deleteDirs.sort()}")
 
         Operation([source], numberAttempts, timeAttempts) { man ->
             man.changeDirectoryToRoot()
@@ -850,6 +850,7 @@ abstract class FileListProcessing implements GetlRepository {
      * Save cached data
      * @param error exception link if a file processing error occurs
      */
+    @SuppressWarnings('unused')
     protected void saveCachedData(Throwable error = null) { }
 
     @Override
@@ -866,4 +867,8 @@ abstract class FileListProcessing implements GetlRepository {
         sysParams.dslNameObject = null
         sysParams.dslCreator = null
     }
+
+    /** Current logger */
+    @JsonIgnore
+    Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
 }

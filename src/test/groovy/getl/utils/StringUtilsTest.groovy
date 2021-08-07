@@ -2,6 +2,7 @@ package getl.utils
 
 import getl.proc.Executor
 import getl.stat.ProcessTime
+import getl.test.GetlTest
 import groovy.json.StringEscapeUtils
 import groovy.transform.CompileStatic
 import org.junit.Test
@@ -9,7 +10,7 @@ import org.junit.Test
 /**
  * @author Alexsey Konstantinov
  */
-class StringUtilsTest extends getl.test.GetlTest {
+class StringUtilsTest extends GetlTest {
     @Test
     void testToSnakeCase() {
         assertEquals('test_snake_case', StringUtils.ToSnakeCase('TestSnakeCase'))

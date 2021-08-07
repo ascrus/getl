@@ -330,7 +330,8 @@ class HiveDriver extends JDBCDriver {
             csvCon.path = file.parent
             csvFile.fileName = file.name
 
-            count += new Flow().copy([source: csvFile, dest: tempFile, inheritFields: false, dest_append: (count > 0)], processRow)
+            count += new Flow(connection.dslCreator).copy([source: csvFile, dest: tempFile, inheritFields: false,
+                                                        dest_append: (count > 0)], processRow)
         }
         if (count == 0) return
 
@@ -474,7 +475,7 @@ class HiveDriver extends JDBCDriver {
             super.saveBatch(dataset, wp)
         }
         catch (AssertionError e) {
-            Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
+            connection.logger.dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
             throw e
         }
     }

@@ -122,7 +122,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         source.connect()
         dest.connect()
 
-        Logs.Fine("Start deploying files for \"$repositoryModelName\" model")
+        dslCreator.logFine("Start deploying files for \"$repositoryModelName\" model")
 
         def isLocalUnpack = BoolUtils.IsValue(localUnpack) || !dest.allowCommand
         try {
@@ -131,7 +131,9 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
 
             usedFiles.each { modelFile ->
                 def fileName = FileUtils.FileName(modelFile.filePath)
-                new ProcessTime(name: "Download reference file \"$fileName\" from \"$source\" to local directory", objectName: 'file', debug: true).run {
+                new ProcessTime(dslCreator: dslCreator,
+                        name: "Download reference file \"$fileName\" from \"$source\" to local directory",
+                        objectName: 'file', debug: true).run {
                     source.download(modelFile.filePath, fileName)
                     return 1
                 }
@@ -141,7 +143,9 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                         dest.changeDirectory(modelFile.destinationPath)
 
                     if (!isLocalUnpack || unpackCommand == null) {
-                        new ProcessTime(name: "Upload reference file \"$fileName\" from local directory to \"$dest\"", objectName: 'file', debug: true).run {
+                        new ProcessTime(dslCreator: dslCreator,
+                                name: "Upload reference file \"$fileName\" from local directory to \"$dest\"",
+                                objectName: 'file', debug: true).run {
                             dest.upload(fileName)
                             return 1
                         }
@@ -153,25 +157,28 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                         def cmdMan = (!isLocalUnpack)?dest:new FileManager(rootPath: source.localDirectory)
                         if (isLocalUnpack) cmdMan.connect()
                         try {
-                            new ProcessTime(name: "Unpack reference file \"$fileName\" on \"$cmdMan\"", objectName: 'file', debug: true).run {
+                            new ProcessTime(dslCreator: dslCreator,
+                                    name: "Unpack reference file \"$fileName\" on \"$cmdMan\"",
+                                    objectName: 'file', debug: true).run {
                                 def res = cmdMan.command(cmdText, cmdOut, cmdErr)
                                 if (res == -1) {
                                     def err = new ExceptionModel("Failed to execute command \"$cmdText\"!")
                                     def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
-                                    Logs.Dump(err, cmdMan.getClass().name, cmdMan.toString(), data)
+                                    dslCreator.logging.dump(err, cmdMan.getClass().name, cmdMan.toString(), data)
                                     throw err
                                 }
                                 if (res > 0) {
                                     def err = new ExceptionModel("Error executing command \"$cmdText\"!")
                                     def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
-                                    Logs.Dump(err, cmdMan.getClass().name, cmdMan.toString(), data)
+                                    dslCreator.logging.dump(err, cmdMan.getClass().name, cmdMan.toString(), data)
                                     throw err
                                 }
                                 return 1
                             }
                             cmdMan.removeFile(fileName)
                             if (isLocalUnpack) {
-                                new ProcessTime(name: "Copying unpacked files to \"$dest\"", objectName: 'file', debug: true).run {
+                                new ProcessTime(dslCreator: dslCreator,
+                                        name: "Copying unpacked files to \"$dest\"", objectName: 'file', debug: true).run {
                                     return dest.uploadDir(true)
                                 }
                             }
@@ -179,7 +186,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                         finally {
                             if (isLocalUnpack) cmdMan.disconnect()
                         }
-                        Logs.Info("Reference file \"$fileName\" processing completed successfully")
+                        dslCreator.logInfo("Reference file \"$fileName\" processing completed successfully")
                     }
                 }
                 finally {
@@ -192,7 +199,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
             source.disconnect()
             dest.disconnect()
         }
-        Logs.Info("Deployment files of model \"$repositoryModelName\" completed successfully")
+        dslCreator.logInfo("Deployment files of model \"$repositoryModelName\" completed successfully")
     }
 
     @Override

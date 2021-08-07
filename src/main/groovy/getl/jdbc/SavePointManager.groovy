@@ -12,6 +12,7 @@ import getl.utils.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import groovy.transform.Synchronized
+import sun.rmi.runtime.Log
 
 import java.sql.Timestamp
 
@@ -75,6 +76,10 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
 	@JsonIgnore
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
+
+	/** Current logger */
+	@JsonIgnore
+	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager: Logs.global }
 
 	/** Source JDBC connection */
 	private JDBCConnection connection
@@ -485,7 +490,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 
 		def save = { oper ->
 			def where = (oper == 'UPDATE')?"$valueField < $value":null
-			new Flow().writeTo(dest: table, dest_operation: oper, dest_where: where) { updater ->
+			new Flow(dslCreator).writeTo(dest: table, dest_operation: oper, dest_where: where) { updater ->
 				updater(row)
 			}
 			if (table.updateRows > 1)
@@ -532,7 +537,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	 * @param format text to timestamp format
 	 * @return type and value
 	 */
-	static Map ConvertValue(Field.Type type, String format, def value) {
+	Map convertValue(Field.Type type, String format, def value) {
 		def res = [:]
 		if (value == null) return res
 		
@@ -543,7 +548,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 					res."value" = DateUtils.ParseDate(format, value, false)
 				}
 				catch (Exception e) {
-					Logs.Severe("Can not parse \"$value\" with \"$format\" format")
+					logger.severe("Can not parse \"$value\" with \"$format\" format")
 					throw e
 				}
 				break
@@ -554,7 +559,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
                     res."value" = new Long(value)
 				}
 				catch (Exception e) {
-					Logs.Severe("Can not parse \"$value\" to long")
+					logger.severe("Can not parse \"$value\" to long")
 					throw e
 				}
 				break
@@ -565,7 +570,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
                     res."value" = new BigDecimal(value)
 				}
 				catch (Exception e) {
-					Logs.Severe("Can not parse \"$value\" to numeric")
+					logger.severe("Can not parse \"$value\" to numeric")
 					throw e
 				}
 				break

@@ -161,9 +161,9 @@ environments {
                 logFileName = "${this.tempPath}/getl.{date}.logs"
                 new File(logFileNameHandler).deleteOnExit()
             }
-        }
 
-        assertEquals("${tempPath}/getl.{date}.logs".toString(), Logs.logFileName)
+            assertEquals("${tempPath}/getl.{date}.logs".toString(), logging.manager.logFileName)
+        }
     }
 
     @Test

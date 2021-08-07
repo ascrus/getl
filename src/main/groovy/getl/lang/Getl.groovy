@@ -56,6 +56,7 @@ import java.util.logging.Level
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings(['GrMethodMayBeStatic', 'unused'])
 class Getl extends Script {
     Getl() {
         super()
@@ -158,6 +159,7 @@ Examples:
         setUnitTestMode(isTestMode)
 
         _initGetlProperties(null, jobArgs.getlprop as Map<String, Object>, true)
+        logInfo("### Start script ${getClass().name}")
 
         if (jobArgs.vars == null) jobArgs.vars = [:]
         def vars = jobArgs.vars as Map
@@ -205,6 +207,9 @@ Examples:
             }.call()
 
             public Boolean isMain
+            private String className
+            private Class runClass
+            private Getl eng
 
             @Override
             protected void doRun() {
@@ -212,23 +217,20 @@ Examples:
                 StackTraceElement[] stack = Thread.currentThread().getStackTrace()
                 def obj = stack[stack.length - 1]
                 if (obj.getClassName() == 'getl.lang.Getl' && this.isMain) {
-                    Logs.Finest("System exit ${exitCode?:0}")
+                    dslCreator.logFinest("System exit ${exitCode?:0}")
                     System.exit(exitCode?:0)
                 }
             }
 
             @Override
-            void process() {
+            void init() {
+                super.init()
                 allowArgs.validation('main', jobArgs)
-
-                def className = jobArgs.runclass as String
-                def isTestMode = BoolUtils.IsValue(jobArgs.unittest)
-                def initConfig = Config.content
+                className = jobArgs.runclass as String
 
                 if (className == null)
                     throw new ExceptionDSL('Required argument "runclass"!')
 
-                Class runClass
                 try {
                     runClass = Class.forName(className)
                 }
@@ -236,11 +238,22 @@ Examples:
                     throw new ExceptionDSL("Class \"$className\" not found, error: ${e.message}!")
                 }
 
-                Getl eng = runClass.newInstance() as Getl
+                if (!Getl.isAssignableFrom(runClass))
+                    throw new ExceptionDSL("Class \"${runClass.name}\" is not assignable from Getl class!")
+
+                eng = runClass.newInstance() as Getl
+                if (jobArgs.vars != null)
+                    eng.configVars.putAll(jobArgs.vars as Map)
+                dslCreator = eng
+            }
+
+            @Override
+            void process() {
+                def isTestMode = BoolUtils.IsValue(jobArgs.unittest)
+
                 GetlSetInstance(eng)
                 eng.setGetlSystemParameter('mainClass', runClass.name)
                 eng.setUnitTestMode(isTestMode)
-                eng.configContent.putAll(initConfig)
 
                 def initClasses = [] as List<Class<Script>>
 
@@ -263,18 +276,23 @@ Examples:
                 }
 
                 eng._initGetlProperties(initClasses, jobArgs.getlprop as Map<String, Object>)
+                eng.logInfo("### Start script ${eng.getClass().name}")
 
                 try {
                     eng.runGroovyInstance(eng, eng.configuration.manager.vars)
                 }
                 catch (ExceptionDSL e) {
                     if (e.typeCode == ExceptionDSL.STOP_APP) {
-                        if (e.message != null) logInfo(e.message)
+                        if (e.message != null)
+                            eng.logInfo(e.message)
                         if (e.exitCode != null) exitCode = e.exitCode
                     }
                     else {
                         throw e
                     }
+                }
+                finally {
+                    eng.logInfo("### Finish script ${eng.getClass().name}")
                 }
             }
         }
@@ -298,53 +316,52 @@ Examples:
                     MapUtils.MergeMap(options.getlConfigProperties,
                             MapUtils.CleanMap(extProp, ['filepath']) as Map<String, Object>, true, false)
 
-                Logs.Finest("Processing project configuration for \"${(configuration.environment)?:'prod'}\" environment ...")
+                logFinest("Processing project configuration for \"${(configuration.environment)?:'prod'}\" environment ...")
 
                 def procs = [:] as Map<String, Closure>
                 procs.logging = { Map<String, Object> en ->
+                    if (en.logFileLevel != null) {
+                        logging.logFileLevel = Logs.StrToLevel(en.logFileLevel as String)
+                        logFine("Logging to file is done starting from level ${logging.logFileLevel}")
+                    }
+
                     if (en.logFileName != null) {
                         logging.logFileName = StringUtils.EvalMacroString(en.logFileName as String,
                                 [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
-                        Logs.Finest("  logging the process \"${instance.getClass().name}\" to file \"${FileUtils.TransformFilePath(Logs.logFileName, false)}\"")
+                        logFine("Logging the process \"${instance.getClass().name}\" to file \"${FileUtils.TransformFilePath(logging.logFileName, false)}\"")
                     }
 
-                    if (en.logFileLevel != null) {
-                        logging.logFileLevel = Logs.StrToLevel(en.logFileLevel as String)
-                        Logs.Finest("  logging to file is done starting from level ${logging.logFileLevel}")
-                    }
-
-                    if (en.printStackTraceError != null) {
+                    if (en.printStackTraceError != null)
                         logging.logPrintStackTraceError = BoolUtils.IsValue(en.printStackTraceError)
-                    }
 
                     if (en.jdbcLogPath != null) {
                         jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
                                 [env: instance.configuration.environment, process: instance.getClass().name], false)
-                        Logs.Finest("  logging jdbc connections to path \"${FileUtils.TransformFilePath(jdbcConnectionLoggingPath, false)}\"")
+                        logFine("Logging jdbc connections to path \"${FileUtils.TransformFilePath(jdbcConnectionLoggingPath, false)}\"")
                     }
 
                     if (en.filesLogPath != null) {
                         fileManagerLoggingPath = StringUtils.EvalMacroString(en.filesLogPath as String,
                                 [env: instance.configuration.environment, process: instance.getClass().name], false)
-                        Logs.Finest("  logging file managers to path \"${FileUtils.TransformFilePath(fileManagerLoggingPath, false)}\"")
+                        logFine("Logging file managers to path \"${FileUtils.TransformFilePath(fileManagerLoggingPath, false)}\"")
                     }
 
                     if (en.tempDBLogFileName != null) {
                         tempDBSQLHistoryFile = StringUtils.EvalMacroString(en.tempDBLogFileName as String,
                                 [env: instance.configuration.environment, process: instance.getClass().name], false)
-                        Logs.Finest("  logging of ebmedded database SQL commands to a file \"${FileUtils.TransformFilePath(tempDBSQLHistoryFile, false)}\"")
+                        logFine("Logging of ebmedded database SQL commands to a file \"${FileUtils.TransformFilePath(tempDBSQLHistoryFile, false)}\"")
                     }
                 }
                 procs.repository = { Map<String, Object> en ->
                     instance.repositoryStorageManager {
                         if (en.encryptKey != null) {
                             storagePassword = en.encryptKey as String
-                            Logs.Finest('  repository encryption mode: enabled')
+                            logFine('Repository encryption mode: enabled')
                         }
                         if (en.path != null) {
                             storagePath = en.path as String
                             autoLoadFromStorage = true
-                            Logs.Finest("  path to repository objects: ${storagePath()}")
+                            logFine("Path to repository objects: ${storagePath()}")
                         }
                         if (en.autoLoadFromStorage != null)
                             autoLoadFromStorage = BoolUtils.IsValue(en.autoLoadFromStorage)
@@ -362,7 +379,7 @@ Examples:
                             if (!Script.isAssignableFrom(initClass))
                                 throw new ExceptionDSL("Class \"$ic\" is not inherited from class \"Script\"!")
                             initClasses << (initClass as Class<Script>)
-                            Logs.Finest("  initialization class \"$ic\" is used")
+                            logFine("Initialization class \"$ic\" is used")
                         }
                         catch (Throwable e) {
                             throw new ExceptionDSL("Class \"$ic\" not found, error: ${e.message}!")
@@ -372,21 +389,21 @@ Examples:
                     if (en.useThreadModelCloning != null) {
                         useThreadModelCloning = BoolUtils.IsValue(en.useThreadModelCloning, true)
                         if (useThreadModelCloning)
-                            Logs.Finest("  the model of cloning objects in threads is used")
+                            logFine("Model of cloning objects in threads is used")
                     }
 
                     if (en.controlDataset != null) {
                         processControlDataset = instance.dataset(en.controlDataset as String)
-                        Logs.Finest("  process start control uses dataset \"$processControlDataset\"")
+                        logFine("Process start control uses dataset \"$processControlDataset\"")
                         if (en.controlStart != null) {
                             checkProcessOnStart = BoolUtils.IsValue(en.controlStart, true)
                             if (checkProcessOnStart)
-                                Logs.Finest("  process startup is checked in the process checklist")
+                                logFine("Process startup is checked in the process checklist")
                         }
                         if (en.controlThreads != null) {
                             checkProcessForThreads = BoolUtils.IsValue(en.controlThreads)
                             if (checkProcessForThreads)
-                                Logs.Finest("  running processes in threads is checked in the process checklist")
+                                logFine("Running processes in threads is checked in the process checklist")
                         }
                         if (en.controlLogin != null)
                             processControlLogin = en.controlLogin as String
@@ -396,25 +413,25 @@ Examples:
                     if (en.enabled != null) {
                         processTimeTracing = BoolUtils.IsValue(en.enabled, true)
                         if (processTimeTracing)
-                            Logs.Finest("  enabled output of profiling results to the log")
+                            logFine("Enabled output of profiling results to the log")
 
                         if (en.level != null) {
                             processTimeLevelLog = en.level as Level
                             if (processTimeLevelLog)
-                                Logs.Finest("  output profiling messages with level $processTimeLevelLog")
+                                logFine("Output profiling messages with level $processTimeLevelLog")
                         }
 
                         if (en.debug != null) {
                             processTimeDebug = BoolUtils.IsValue(en.debug)
                             if (processTimeDebug)
-                                Logs.Finest("  profiling the start of process commands")
+                                logFine("Profiling the start of process commands")
                         }
                     }
 
                     if (en.sqlEchoLevel != null) {
                         sqlEchoLogLevel = en.sqlEchoLevel as Level
                         if (sqlEchoLogLevel)
-                            Logs.Finest("  SQL command echo is logged with level $sqlEchoLogLevel")
+                            logFine("SQL command echo is logged with level $sqlEchoLogLevel")
                     }
                 }
                 procs.project = { Map<String, Object> en ->
@@ -429,8 +446,8 @@ Examples:
                     if (en.configFileName != null) {
                         def configFileName = en.configFileName as String
                         def m = ConfigSlurper.LoadConfigFile(
-                                new File(FileUtils.ResourceFileName(configFileName, this)),
-                                'utf-8', null, configVars)
+                                file: new File(FileUtils.ResourceFileName(configFileName, this)),
+                                codePage: 'utf-8', configVars: configVars, owner: this)
                         projectConfigParams.putAll(m)
                     }
                 }
@@ -459,7 +476,7 @@ Examples:
         }
 
         if (options.projectConfigParams.project != null) {
-            Logs.Fine("### Start project \"${options.projectConfigParams.project}\", " +
+            logFine("### Start project \"${options.projectConfigParams.project}\", " +
                     "version ${options.projectConfigParams.version?:'1.0'}, " +
                     "created ${options.projectConfigParams.year?:DateUtils.PartOfDate('YEAR', new Date()).toString()} " +
                     "by \"${options.projectConfigParams.company?:'My company'}\"")
@@ -467,7 +484,6 @@ Examples:
     }
 
     /** Quit DSL Application */
-    @SuppressWarnings("GrMethodMayBeStatic")
     void appRunSTOP(String message = null, Integer exitCode = null) {
         if (message != null)
             throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode?:0, message)
@@ -476,13 +492,11 @@ Examples:
     }
 
     /** Quit DSL Application */
-    @SuppressWarnings("GrMethodMayBeStatic")
     void appRunSTOP(Integer exitCode) {
         throw new ExceptionDSL(ExceptionDSL.STOP_APP, exitCode?:0)
     }
 
     /** Stop code execution of the current class */
-    @SuppressWarnings("GrMethodMayBeStatic")
     void classRunSTOP(String message = null, Integer exitCode = null) {
         if (message != null)
             throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode?:0, message)
@@ -491,13 +505,11 @@ Examples:
     }
 
     /** Stop code execution of the current class */
-    @SuppressWarnings("GrMethodMayBeStatic")
     void classRunSTOP(Integer exitCode) {
         throw new ExceptionDSL(ExceptionDSL.STOP_CLASS, exitCode?:0)
     }
 
     /** Abort execution with the specified error */
-    @SuppressWarnings("GrMethodMayBeStatic")
     void abortWithError(String message) {
         throw new AbortDsl(message)
     }
@@ -558,7 +570,7 @@ Examples:
 
             if (!res) {
                 if (!throwError)
-                    Logs.Warning("A flag was found to stop the process \"$processName\"!")
+                    logWarn("A flag was found to stop the process \"$processName\"!")
                 else
                     throw new ExceptionDSL("A flag was found to stop the process \"$processName\"!")
             }
@@ -574,11 +586,10 @@ Examples:
 
     /** Init Getl instance */
     protected void initGetlParams() {
-        Version.SayInfo()
-
         _params.executedClasses = new SynchronizeObject()
 
         _langOpts = new LangSpec(this)
+        _logOpts = new LogSpec(this)
         _repositoryFilter = new RepositoryFilter(this)
         _repositoryStorageManager = new RepositoryStorageManager(this)
         _etl = new EtlSpec(this)
@@ -586,12 +597,14 @@ Examples:
         _fileman = new FilemanSpec(this)
 
         _params.langOpts = _langOpts
-        //_params.configOpts = _configOpts
+        _params.logOpts = _logOpts
         _params.repositoryFilter = _repositoryFilter
         _params.repositoryStorageManager = _repositoryStorageManager
         _params.etl = _etl
         _params.models = _models
         _params.fileman = _fileman
+
+        Version.SayInfo(true, this)
 
         if (MainClassName() == 'org.codehaus.groovy.tools.GroovyStarter')
             groovyStarter()
@@ -760,8 +773,10 @@ Examples:
     protected void importGetlParams(Map importParams) {
         _params.putAll(importParams)
 
-        _langOpts = _params.langOpts as LangSpec
+        _langOpts.importParams(getlMainInstance.configuration.params)
         _configOpts.importParams(getlMainInstance.configuration.params)
+        //_logOpts.importParams(getlMainInstance.logging.params)
+        _logOpts = _params.logOpts as LogSpec
         _repositoryFilter = _params.repositoryFilter as RepositoryFilter
         _repositoryStorageManager = _params.repositoryStorageManager as RepositoryStorageManager
         _etl = _params.etl as EtlSpec
@@ -777,7 +792,6 @@ Examples:
     }
 
     /** Fix finish process */
-    @SuppressWarnings('GrMethodMayBeStatic')
     void finishProcess(ProcessTime pt, Long countRow = null) {
         if (pt != null) pt.finish(countRow)
     }
@@ -847,7 +861,6 @@ Examples:
      * @param codePage encoding text (default UTF-8)
      * @return text from file
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     String textFromFile(String fileName, String codePage = 'UTF-8') {
         def path = FileUtils.ResourceFileName(fileName, this)
         def file = new File(path)
@@ -2071,6 +2084,8 @@ Examples:
                 script.binding = new Binding(vars)
             }
 
+            if (isInitMode)
+                logInfo("### Start script ${script.getClass().name}")
             def pt = startProcess("Execution groovy script ${script.getClass().name}", 'class')
             try {
                 if (isGetlScript)
@@ -2091,7 +2106,7 @@ Examples:
                     _doErrorMethod(script, e)
                 }
                 catch (Exception err) {
-                    Logs.Exception(err, 'method error', script.getClass().name)
+                    logging.manager.exception(err, 'method error', script.getClass().name)
                 }
                 finally {
                     throw e
@@ -2101,6 +2116,8 @@ Examples:
                 _doDoneMethod(script)
             }
             pt.finish()
+            if (isInitMode)
+                logInfo("### Finish script ${script.getClass().name}")
         }
         finally {
             if (isGetlScript)
@@ -2282,7 +2299,6 @@ Examples:
     /**
      *  Call script init method before execute script
      */
-    @SuppressWarnings('GrMethodMayBeStatic')
     protected void _doInitMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'init' }
         if (m != null)
@@ -2292,7 +2308,6 @@ Examples:
     /**
      *  Call script check method after setting field values
      */
-    @SuppressWarnings('GrMethodMayBeStatic')
     protected void _doCheckMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'check' }
         if (m != null)
@@ -2302,7 +2317,6 @@ Examples:
     /**
      *  Call script done method before execute script
      */
-    @SuppressWarnings('GrMethodMayBeStatic')
     protected void _doDoneMethod(Script script) {
         def m = script.getClass().methods.find { it.name == 'done' }
         if (m != null)
@@ -2312,7 +2326,6 @@ Examples:
     /**
      *  Call script error method before execute script
      */
-    @SuppressWarnings('GrMethodMayBeStatic')
     protected void _doErrorMethod(Script script, Exception e) {
         def m = script.getClass().methods.find { it.name == 'error' }
         if (m != null)
@@ -2325,7 +2338,6 @@ Examples:
      * @param vars vars set values for script fields declared as "@Field"
      * @param validExist check for the existence of fields in the script
      */
-    @SuppressWarnings('GrMethodMayBeStatic')
     void _fillFieldFromVars(Script script, Map vars, Boolean validExist = true, Boolean startGroovy = false) {
         vars.each { key, value ->
             MetaProperty prop = script.hasProperty(key as String)
@@ -2480,66 +2492,59 @@ Examples:
     }
 
     /** Run closure with call parent parameter */
-    @SuppressWarnings("GrMethodMayBeStatic")
     protected Object runClosure(Object parent, Closure cl) {
         if (cl == null) return null
         return parent.with(cl)
     }
 
     /** Configuration content */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> getConfigContent() { configuration.manager.content }
 
     /** Configuration variables */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> getConfigVars() { configuration.manager.vars }
 
     /** Init section configuration options */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> getConfigInit() { configuration.manager.content.init as Map<String, Object> }
 
     /** Global section configuration options */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> getConfigGlobal() { configuration.manager.content.global as Map<String, Object> }
 
     /** OS variables */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Map<String, Object> getSysVars() { Config.SystemProps() }
 
     /** Execute a synchronized sequence of logging commands */
-    static void logConsistently(Closure cl) { Logs.Consistently(cl) }
+    void logConsistently(Closure cl) { logging.manager.consistently(cl) }
 
     /** Write message for specified level to log */
-    static void logWrite(String level, String message) { Logs.Write(level, message) }
+    void logWrite(String level, String message) { logging.manager.write(level, message) }
 
     /** Write message for specified level to log */
-    static void logWrite(Level level, String message) { Logs.Write(level, message) }
+    void logWrite(Level level, String message) { logging.manager.write(level, message) }
 
     /** Write message as level the INFO to log */
-    static void logInfo(def msg) { Logs.Info(msg.toString()) }
+    void logInfo(def msg) { logging.manager.info(msg.toString()) }
 
     /** Write message as level the WARNING to log */
-    static void logWarn(def msg) { Logs.Warning(msg.toString()) }
+    void logWarn(def msg) { logging.manager.warning(msg.toString()) }
 
     /** Write message as level the SEVERE to log */
-    static void logError(def msg) { Logs.Severe(msg.toString()) }
+    void logError(def msg) { logging.manager.severe(msg.toString()) }
 
     /** Write message as level the FINE to log */
-    static void logFine(def msg) { Logs.Fine(msg.toString()) }
+    void logFine(def msg) { logging.manager.fine(msg.toString()) }
 
     /** Write message as level the FINER to log */
-    static void logFiner(def msg) { Logs.Finer(msg.toString()) }
+    void logFiner(def msg) { logging.manager.finer(msg.toString()) }
 
     /** Write message as level the FINEST to log */
-    static void logFinest(def msg) { Logs.Finest(msg.toString()) }
+    void logFinest(def msg) { logging.manager.finest(msg.toString()) }
 
     /** Write message as level the CONFIG to log */
-    static void logConfig(def msg) { Logs.Config(msg.toString()) }
+    void logConfig(def msg) { logging.manager.config(msg.toString()) }
 
     /** System temporary directory */
     static String getSystemTempPath() { TFS.systemPath }
 
-    @SuppressWarnings("GrMethodMayBeStatic")
     Boolean isCurrentProcessInThread() { Thread.currentThread() instanceof ExecutorThread }
 
     /** Getl options instance */
@@ -2551,9 +2556,6 @@ Examples:
     /** Getl options */
     LangSpec options(@DelegatesTo(LangSpec)
                      @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LangSpec']) Closure cl = null) {
-        if (cl != null && isCurrentProcessInThread())
-            throw new ExceptionDSL('Changing options is not supported in the thread!')
-
         def processDataset = _langOpts.processControlDataset
         def checkOnStart = _langOpts.checkProcessOnStart
 
@@ -2569,7 +2571,6 @@ Examples:
     }
 
     /** Current configuration manager */
-    @SuppressWarnings("GrMethodMayBeStatic")
     protected ConfigSlurper getConfigManager() { configuration.manager }
 
     /** Configuration options instance */
@@ -2581,16 +2582,13 @@ Examples:
     /** Configuration options */
     ConfigSpec configuration(@DelegatesTo(ConfigSpec)
                              @ClosureParams(value = SimpleType, options = ['getl.lang.opts.ConfigSpec']) Closure cl = null) {
-        if (cl != null && isCurrentProcessInThread())
-            throw new ExceptionDSL('Changing configuration is not supported in the thread!')
-
         runClosure(_configOpts, cl)
 
         return _configOpts
     }
 
     /** Log options instance */
-    private final LogSpec _logOpts = new LogSpec(this)
+    private LogSpec _logOpts //= new LogSpec(this)
 
     /** Log options */
     LogSpec getLogging() { _logOpts }
@@ -2598,14 +2596,10 @@ Examples:
     /** Log options */
     LogSpec logging(@DelegatesTo(LogSpec)
                     @ClosureParams(value = SimpleType, options = ['getl.lang.opts.LogSpec']) Closure cl = null) {
-        if (cl != null && isCurrentProcessInThread())
-            throw new ExceptionDSL('Changing log file options is not supported in the thread!')
-
         def logFileName = _logOpts.getLogFileName()
         runClosure(_logOpts, cl)
-        if (logFileName != _logOpts.getLogFileName()) {
-            Logs.Fine("# Start logging to log file ${_logOpts.getLogFileName()}")
-        }
+        if (logFileName != _logOpts.getLogFileName())
+            logFine("# Start logging to log file ${_logOpts.getLogFileName()}")
 
         return _logOpts
     }
@@ -2659,7 +2653,6 @@ Examples:
      * @param con original connection to clone
      * @return clone connection
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Connection cloneConnection(Connection con) {
         if (con == null)
             throw new ExceptionDSL('Need object value!')
@@ -2673,7 +2666,6 @@ Examples:
      * @param cl cloned connection processing code
      * @return clone connection
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Connection cloneConnection(String newName, Connection con,
                                @DelegatesTo(Connection)
                                @ClosureParams(value = SimpleType, options = ['getl.data.Connection']) Closure cl = null) {
@@ -2711,7 +2703,6 @@ Examples:
      * @param dataset original dataset to clone
      * @return cloned dataset
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Dataset cloneDataset(Dataset dataset) {
         if (dataset == null)
             throw new ExceptionDSL('Need object value!')
@@ -2725,7 +2716,6 @@ Examples:
      * @param con used connection for new dataset
      * @return cloned dataset
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Dataset cloneDataset(Dataset dataset, Connection con) {
         if (dataset == null)
             throw new ExceptionDSL('Need object value!')
@@ -2739,7 +2729,6 @@ Examples:
      * @param cloneConnection clone dataset connection
      * @return cloned dataset
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Dataset cloneDataset(Dataset dataset, Boolean cloneConnection) {
         if (dataset == null)
             throw new ExceptionDSL('Need object value!')
@@ -2756,7 +2745,6 @@ Examples:
      * @param cl cloned dataset processing code
      * @return cloned dataset
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Dataset cloneDataset(String newName, Dataset dataset, Connection con = null,
                          @DelegatesTo(Dataset)
                          @ClosureParams(value = SimpleType, options = ['getl.data.Dataset']) Closure cl = null) {
@@ -2775,7 +2763,6 @@ Examples:
      * @param cl cloned dataset processing code
      * @return cloned dataset
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Dataset cloneDataset(String newName, Dataset dataset, Boolean cloneConnection,
                          @DelegatesTo(Dataset)
                          @ClosureParams(value = SimpleType, options = ['getl.data.Dataset']) Closure cl = null) {
@@ -3570,7 +3557,6 @@ Examples:
     }
 
     /** Temporary database default connection */
-    @SuppressWarnings("GrMethodMayBeStatic")
     TDS embeddedConnection() {
         TDS.storage
     }
@@ -4266,7 +4252,6 @@ Examples:
     }
 
     /** Temporary CSV file current connection */
-    @SuppressWarnings("GrMethodMayBeStatic")
     TFS csvTempConnection() {
         TFS.storage
     }
@@ -4441,7 +4426,6 @@ Examples:
      * @param man original file manager to clone
      * @return cloned file manager
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Manager cloneFilemanager(Manager man) {
         if (man == null)
             throw new ExceptionDSL('Need object value!')
@@ -4456,7 +4440,6 @@ Examples:
      * @param cl cloned file manager processing code
      * @return cloned file manager
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Manager cloneFilemanager(String newName, Manager man,
                              @DelegatesTo(Manager)
                              @ClosureParams(value = SimpleType, options = ['getl.files.Manager']) Closure cl = null) {
@@ -4648,8 +4631,7 @@ Examples:
             }
         }
 
-        def parent = new Executor(abortOnError: true)
-        parent.dslCreator = this
+        def parent = new Executor(abortOnError: true, dslCreator: this)
         parent.disposeThreadResource(disposeConnections)
         if (logging.logPrintStackTraceError) {
             parent.dumpErrors = true
@@ -4723,7 +4705,6 @@ Examples:
     }
 
     /** File path parser */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Path filePath(String mask) {
         def parent = new Path(mask: mask)
         parent.dslCreator = this
@@ -4759,7 +4740,6 @@ Examples:
      * @param con used connection for new history point manager
      * @return cloned history point manager
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     SavePointManager cloneHistorypoint(SavePointManager point, JDBCConnection con = null) {
         if (point == null)
             throw new ExceptionDSL('Need object value!')
@@ -4775,7 +4755,6 @@ Examples:
      * @param cl cloned history point manager processing code
      * @return cloned history point manager
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     SavePointManager cloneHistorypoint(String newName, SavePointManager point, JDBCConnection con = null,
                                        @DelegatesTo(SavePointManager)
                                        @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl = null) {
@@ -4815,7 +4794,6 @@ Examples:
      * @param con used connection for new sequence
      * @return clone sequence
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Sequence cloneSequence(Sequence seq, JDBCConnection con = null) {
         if (seq == null)
             throw new ExceptionDSL('Need object value!')
@@ -4831,7 +4809,6 @@ Examples:
      * @param cl cloned sequence code
      * @return clone sequence
      */
-    @SuppressWarnings("GrMethodMayBeStatic")
     Sequence cloneSequence(String newName, Sequence seq, JDBCConnection con = null,
                            @DelegatesTo(Sequence)
                            @ClosureParams(value = SimpleType, options = ['getl.jdbc.Sequence']) Closure cl = null) {
@@ -4903,8 +4880,7 @@ Examples:
             cl.call()
     }
 
-    /** Сonverting code variables to a map */
-    @SuppressWarnings("GrMethodMayBeStatic")
+    /** Converting code variables to a map */
     Map<String, Object> toVars(Closure cl) {
         return MapUtils.Closure2Map(configuration.environment, cl)
     }

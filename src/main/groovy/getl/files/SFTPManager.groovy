@@ -158,11 +158,11 @@ class SFTPManager extends Manager implements UserLogins {
 				throw new ExceptionGETL("RSA file \"$f\" not found!")
 
 			if (passphrase == null) {
-				client.addIdentity(f.absolutePath)
+				client.addIdentity(f.canonicalPath)
 				h += ", identity file \"$identityFile\""
 			}
 			else {
-				client.addIdentity(f.absolutePath, passphrase.bytes)
+				client.addIdentity(f.canonicalPath, passphrase.bytes)
 				h += ", identity file \"$identityFile\" with \"${StringUtils.Replicate('*', passphrase.length())}\""
 			}
 		}
@@ -199,7 +199,7 @@ class SFTPManager extends Manager implements UserLogins {
 			}
 			catch (Exception e) {
 				if (writeErrorsToLog)
-					Logs.Severe("Can not connect to $server:$port or invalid login/password")
+					logger.severe("Can not connect to $server:$port or invalid login/password")
 
 				throw e
 			}
@@ -266,7 +266,7 @@ class SFTPManager extends Manager implements UserLogins {
 			}
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not disconnect from $server:$port")
+			if (writeErrorsToLog) logger.severe("Can not disconnect from $server:$port")
 			throw e
 		}
 		finally {
@@ -343,7 +343,7 @@ class SFTPManager extends Manager implements UserLogins {
 			channelFtp.cd(path)
 		}
 		catch (Exception e) {
-			Logs.Severe("Invalid directory \"$path\"!")
+			logger.severe("Invalid directory \"$path\"!")
 			throw e
 		}
 		_currentPath = channelFtp.pwd()
@@ -367,7 +367,7 @@ class SFTPManager extends Manager implements UserLogins {
 			channelFtp.get(filePath, s)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not download file \"$filePath\" to \"$fn\"")
+			if (writeErrorsToLog) logger.severe("Can not download file \"$filePath\" to \"$fn\"")
 			throw e
 		}
 		finally {
@@ -389,7 +389,7 @@ class SFTPManager extends Manager implements UserLogins {
             setLastModified(fileName, f.lastModified())
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fileName\" from \"$fn\"")
+			if (writeErrorsToLog) logger.severe("Can not upload file \"$fileName\" from \"$fn\"")
 			throw e
 		}
 		finally {
@@ -406,7 +406,7 @@ class SFTPManager extends Manager implements UserLogins {
 		}
 		catch (Exception e) {
 			if (writeErrorsToLog)
-				Logs.Severe("Can not remove file \"$fileName\"")
+				logger.severe("Can not remove file \"$fileName\"")
 			throw e
 		}
 	}
@@ -436,7 +436,7 @@ class SFTPManager extends Manager implements UserLogins {
 			}
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not create directory \"$cdDir\"")
+			if (writeErrorsToLog) logger.severe("Can not create directory \"$cdDir\"")
 			throw e
 		}
 		finally {
@@ -458,7 +458,7 @@ class SFTPManager extends Manager implements UserLogins {
             }
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not remove directory \"$dirName\"")
+			if (writeErrorsToLog) logger.severe("Can not remove directory \"$dirName\"")
 			throw e
 		}
 	}
@@ -495,7 +495,7 @@ class SFTPManager extends Manager implements UserLogins {
 			channelFtp.rename(fileName, path)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not rename file \"$fileName\" to \"$path\"")
+			if (writeErrorsToLog) logger.severe("Can not rename file \"$fileName\" to \"$path\"")
 			throw e
 		}
 	}

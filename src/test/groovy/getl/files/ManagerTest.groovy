@@ -1,5 +1,6 @@
 package getl.files
 
+import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
@@ -11,7 +12,7 @@ import org.junit.Test
 /**
  * @author Alexsey Konstantinov
  */
-abstract class ManagerTest extends getl.test.GetlTest {
+abstract class ManagerTest extends GetlTest {
     abstract Manager newManager()
 
     Manager _manager

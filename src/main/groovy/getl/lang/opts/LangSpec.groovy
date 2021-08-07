@@ -164,12 +164,14 @@ class LangSpec extends BaseSpec {
             mainFile = FileUtils.FileFromResources('/getl-properties.conf')
 
         if (mainFile == null) return
-        def mainConfig = ConfigSlurper.LoadConfigFile(mainFile, 'utf-8', env, dslCreator.configVars)
+        def mainConfig = ConfigSlurper.LoadConfigFile(file: mainFile, codePage: 'utf-8',
+                environment: env, configVars: dslCreator.configVars, owner: dslCreator)
         getlConfigProperties.putAll(mainConfig)
 
         def childFile = FileUtils.FileFromResources('/getl-properties-ext.conf')
         if (childFile == null) return
-        def childConfig = ConfigSlurper.LoadConfigFile(childFile, 'utf-8', env, dslCreator.configVars)
+        def childConfig = ConfigSlurper.LoadConfigFile(file: childFile, codePage: 'utf-8',
+                environment: env, configVars: dslCreator.configVars, owner: dslCreator)
         MapUtils.MergeMap(getlConfigProperties, childConfig, true, false)
     }
 

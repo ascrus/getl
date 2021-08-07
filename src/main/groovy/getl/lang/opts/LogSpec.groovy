@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionDSL
 import getl.utils.*
 import groovy.transform.InheritConstructors
-
 import java.util.logging.*
 
 /**
@@ -13,67 +12,60 @@ import java.util.logging.*
  *
  */
 @InheritConstructors
-@SuppressWarnings("GrMethodMayBeStatic")
+@SuppressWarnings(['GrMethodMayBeStatic', 'unused'])
 class LogSpec extends BaseSpec {
-    /**
-     * Current logger
-     */
+    @Override
+    protected void initSpec() {
+        super.initSpec()
+        if (params.logManager == null) {
+            def manager = new Logs(StringUtils.RandomStr())
+            saveParamValue('logManager', manager)
+        }
+    }
+
+    /** Current log manager */
     @JsonIgnore
-    Logger getLogLogger() { Logs.logger  }
+    Logs getManager() { params.logManager as Logs }
 
-    /**
-     * Current formatter
-     */
+    /** Current Java logger */
     @JsonIgnore
-    Logs.LogFormatter getLogFormatter() { Logs.formatter }
+    Logger getLogLogger() { manager.logger  }
 
-    /**
-     * Print configuration message
-     */
-    Boolean getLogPrintConfigMessage() { Logs.printConfigMessage }
-    /**
-     * Print configuration message
-     */
-    void setLogPrintConfigMessage(Boolean value) { Logs.printConfigMessage = value }
-
-    /**
-     * Current file name handler
-     */
+    /** Current formatter */
     @JsonIgnore
-    String getLogFileNameHandler() { Logs.fileNameHandler }
+    Logs.LogFormatter getLogFormatter() { manager.formatter }
 
-    /**
-     * Current file handler
-     */
+    /** Print configuration message */
+    Boolean getLogPrintConfigMessage() { manager.printConfigMessage }
+    /** Print configuration message */
+    void setLogPrintConfigMessage(Boolean value) { manager.printConfigMessage = value }
+
+    /** Current file name handler */
     @JsonIgnore
-    FileHandler getLogFileHandler() { Logs.file }
-    /**
-     * Current file handler
-     */
-    void setLogFileHandler(FileHandler value) { Logs.file = value }
+    String getLogFileNameHandler() { manager.fileNameHandler }
 
-    /**
-     * Current log file name
-     */
-    String getLogFileName() { Logs.logFileName }
-    /**
-     * Current log file name
-     */
-    void setLogFileName(String value) { Logs.logFileName = value; Logs.Init() }
+    /** Current file handler */
+    @JsonIgnore
+    FileHandler getLogFileHandler() { manager.file }
+
+    /** Log file name */
+    String getLogFileName() { manager.logFileName }
+    /** Log file name */
+    void setLogFileName(String value) { manager.logFileName = value }
 
     /** The level of message logging to a file (default INFO) */
-    Level getLogFileLevel() { Logs.logFileLevel }
+    Level getLogFileLevel() { manager.logFileLevel }
     /** The level of message logging to a file (default INFO) */
-    void setLogFileLevel(Level value) { Logs.logFileLevel = value }
+    void setLogFileLevel(Level value) { manager.logFileLevel = value }
 
     /**
      * Print stack trace for error
      */
-    Boolean getLogPrintStackTraceError() { Logs.printStackTraceError }
+    Boolean getLogPrintStackTraceError() { manager.printStackTraceError }
     /**
      * Print stack trace for error
      */
-    Boolean setLogPrintStackTraceError(Boolean value) { Logs.printStackTraceError = value }
+    Boolean setLogPrintStackTraceError(Boolean value) { manager.printStackTraceError = value }
 
     /** Convert string value level to type */
     Level strToLevel(String level) { Logs.StrToLevel(level) }
@@ -98,5 +90,16 @@ class LogSpec extends BaseSpec {
             logFileName = FileUtils.FilenameWithoutExtension(logFileName) + '.' + varValue + '.' + ext
         else
             logFileName = FileUtils.FilenameWithoutExtension(logFileName) + '.' + varValue
+    }
+
+    /**
+     * Write error trace to dump log file
+     * @param error error exception
+     * @param typeObject object type name
+     * @param nameObject object name
+     * @param data additional error data
+     */
+    void dump(Throwable error, String typeObject, String nameObject, def data) {
+        manager.dump(error, typeObject, nameObject, data)
     }
 }

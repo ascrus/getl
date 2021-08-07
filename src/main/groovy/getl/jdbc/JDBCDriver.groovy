@@ -443,7 +443,7 @@ class JDBCDriver extends Driver {
 	}
 	
 	@Synchronized
-	static Sql NewSql (Class driverClass, String url, String login, String password, String drvName, Integer loginTimeout) {
+	Sql newSql(Class driverClass, String url, String login, String password, String drvName, Integer loginTimeout) {
 		DriverManager.setLoginTimeout(loginTimeout)
         Sql sql
 		try {
@@ -458,7 +458,7 @@ class JDBCDriver extends Driver {
             sql = new Sql(javaCon)
 		}
 		catch (SQLException e) {
-			Logs.Severe("Unable connect to \"$url\" with \"$drvName\" driver")
+			connection.logger.severe("Unable connect to \"$url\" with \"$drvName\" driver")
 			throw e
 		}
 
@@ -521,15 +521,15 @@ class JDBCDriver extends Driver {
 				url = url + conParams
 
 				try {
-					sql = NewSql(jdbcClass, url, login, password, drvName, loginTimeout)
+					sql = newSql(jdbcClass, url, login, password, drvName, loginTimeout)
 					notConnected = false
 				}
 				catch (Exception e) {
 					if (server != null) {
-						Logs.Warning("Cannot connect to $url")
+						con.logger.warning("Cannot connect to $url")
 					}
 					else {
-						Logs.Exception(e, getClass().name, "driver: $drvName, url: $url, login: $login")
+						con.logger.exception(e, getClass().name, "driver: $drvName, url: $url, login: $login")
 						throw e
 					}
 				}
@@ -590,7 +590,7 @@ class JDBCDriver extends Driver {
             jdbcConnection.executeCommand(command: StringUtils.EvalMacroString(changeSessionPropertyQuery, [name: name, value: value]))
         }
         catch (Exception e) {
-            Logs.Severe("Error change session property \"$name\" to value \"$value\"")
+            connection.logger.severe("Error change session property \"$name\" to value \"$value\"")
             throw e
         }
     }
@@ -1055,7 +1055,7 @@ class JDBCDriver extends Driver {
 				defFields << s
 			}
 			catch (Exception e) {
-				Logs.Severe("Error create table \"${dataset.objectName}\" for field \"${f.name}\": ${e.message}")
+				connection.logger.severe("Error create table \"${dataset.objectName}\" for field \"${f.name}\": ${e.message}")
 				throw e
 			}
 		}
@@ -1627,12 +1627,14 @@ class JDBCDriver extends Driver {
 			}
 		}
 		catch (SQLException e) {
-			Logs.Dump(e, getClass().name + ".sql", dataset.objectName, sql)
-			if (rowCopy != null) Logs.Dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
+			connection.logger.dump(e, getClass().name + ".sql", dataset.objectName, sql)
+			if (rowCopy != null)
+				connection.logger.dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
 			throw e
 		}
 		catch (Exception e) {
-			if (rowCopy != null) Logs.Dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
+			if (rowCopy != null)
+				connection.logger.dump(e, getClass().name + ".statement", dataset.objectName, rowCopy.statement)
 			throw e
 		}
 		
@@ -1739,7 +1741,7 @@ $sql
 			}
 		}
 		catch (SQLException e) {
-			Logs.Dump(e, getClass().name + ".read", con.objectName, "statement:\n${command}")
+			con.logger.dump(e, getClass().name + ".read", con.objectName, "statement:\n${command}")
 			throw e
 		}
 		
@@ -1759,7 +1761,7 @@ $sql
 			warn = warn.nextWarning
 		}
 		if (!(con.sysParams.warnings as List).isEmpty()) {
-			if (BoolUtils.IsValue(con.outputServerWarningToLog)) Logs.Warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
+			if (BoolUtils.IsValue(con.outputServerWarningToLog)) con.logger.warning("${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
             saveToHistory("-- Server warning ${con.getClass().name} [${con.toString()}]: ${con.sysParams.warnings}")
 			con.sysParams.remove('warnings')
 		}
@@ -1808,7 +1810,7 @@ $sql
 	 * @return
 	 */
 	@SuppressWarnings('unused')
-	protected Closure generateSetStatement (String operation, List<Field> procFields, List<String> statFields, WriterParams wp) {
+	protected Closure generateSetStatement(String operation, List<Field> procFields, List<String> statFields, WriterParams wp) {
 		if (statFields.isEmpty())
 			throw new ExceptionGETL('Required fields from generate prepared statement')
 
@@ -1867,7 +1869,8 @@ $sql
 		wp.statement = sb.toString()
 		//println wp.statement
 
-		Closure code = GenerationUtils.EvalGroovyClosure(wp.statement, null, false, (useLoadedDriver)?jdbcClass.classLoader:null)
+		Closure code = GenerationUtils.EvalGroovyClosure(value: wp.statement, convertReturn: false,
+				classLoader: (useLoadedDriver)?jdbcClass.classLoader:null, owner: connection.dslCreator)
 
 		return code
 	}
@@ -2223,7 +2226,7 @@ $sql
 			stat = con.prepareStatement(query)
 		}
 		catch (SQLException e) {
-			Logs.Dump(e, getClass().name, dataset.objectFullName, query)
+			connection.logger.dump(e, getClass().name, dataset.objectFullName, query)
 			throw e
 		}
 
@@ -2262,7 +2265,7 @@ $sql
 		throw new ExceptionGETL("Driver not supported \"MERGE\" operation")
 	}
 	
-	protected void validRejects (Dataset dataset, int[] er) {
+	protected void validRejects(Dataset dataset, int[] er) {
 		WriterParams wp = dataset._driver_params
 		
 		if (er.length == 0) return
@@ -2270,7 +2273,7 @@ $sql
 		for (Integer i = 0; i < er.length; i++) {
 			if (er[i] == -3) el << (wp.batchCount - 1) * wp.batchSize + i + 1
 		}
-		Logs.Warning("${dataset.params.tableName} rejects rows: ${el}")
+		connection.logger.warning("${dataset.params.tableName} rejects rows: ${el}")
 	}
 
 	@SuppressWarnings('UnnecessaryQualifiedReference')
@@ -2287,11 +2290,11 @@ $sql
 			}
 			catch (BatchUpdateException e) {
                 validRejects(dataset, e.getUpdateCounts())
-				Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
+				connection.logger.dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
 				throw e
 			}
             catch (SQLException e) {
-                Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
+				connection.logger.dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
                 throw e
             }
 		}
@@ -2302,7 +2305,7 @@ $sql
 			}
 			catch (SQLException e) {
 				/*countError++*/
-				Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
+				connection.logger.dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
 				throw e
 			}
 		}
@@ -2330,7 +2333,7 @@ $sql
 			}
 		}
 		catch (SQLException e) {
-			Logs.Dump(e, getClass().name + ".write", dataset.objectName, "row:\n${row}\nstatement:\n${wp.statement}")
+			connection.logger.dump(e, getClass().name + ".write", dataset.objectName, "row:\n${row}\nstatement:\n${wp.statement}")
 			wp.error = true
 			throw e
 		}

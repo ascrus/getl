@@ -33,6 +33,7 @@ class DateUtils {
 	/** Default datetime mask */
 	static public String defaultDateTimeMask = 'yyyy-MM-dd HH:mm:ss.SSS'
 	/** Default timestamp with timezone mask */
+	@SuppressWarnings('SpellCheckingInspection')
 	static public String defaultTimestampWithTzFullMask = 'yyyy-MM-dd\'T\'HH:mm:ss.SSSZ'
 	/** Default timestamp with timezone mask */
 	static public String defaultTimestampWithTzSmallMask = 'yyyy-MM-dd HH:mm:ssX'
@@ -57,7 +58,7 @@ class DateUtils {
 	 * Init class
 	 * @param timeZone time zone properties (using "name")
 	 */
-	static void init (Map timeZone) {
+	static void init(Map timeZone) {
 		if (timeZone == null || timeZone.isEmpty()) return
 
 		if (timeZone.name != null) {

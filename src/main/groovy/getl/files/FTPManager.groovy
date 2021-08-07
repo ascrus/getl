@@ -175,14 +175,15 @@ class FTPManager extends Manager implements UserLogins {
 			client.connect(server, port)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not connect to $server:$port")
+			if (writeErrorsToLog) 
+				logger.severe("Can not connect to $server:$port")
 			throw e
 		}
 		try {
 			client.login(login, loginManager.currentDecryptPassword())
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Invalid login or password for $server:$port")
+			if (writeErrorsToLog) logger.severe("Invalid login or password for $server:$port")
 			throw e
 		}
         if (autoNoopTimeout != null) client.setAutoNoopTimeout(autoNoopTimeout * 1000)
@@ -219,7 +220,7 @@ class FTPManager extends Manager implements UserLogins {
 					}
 				}
 				catch (Exception e) {
-					if (writeErrorsToLog) Logs.Severe("Can not disconnect from $server:$port")
+					if (writeErrorsToLog) logger.severe("Can not disconnect from $server:$port")
 					throw e
 				}
 			}
@@ -284,7 +285,7 @@ class FTPManager extends Manager implements UserLogins {
 			listFiles = (mask != null)?client.list(mask):client.list()
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe('Can not read ftp list')
+			if (writeErrorsToLog) logger.severe('Can not read ftp list')
 			throw e
 		}
 		
@@ -311,7 +312,7 @@ class FTPManager extends Manager implements UserLogins {
 			_currentPath = client.currentDirectory()
 		}
 		catch (Exception e) {
-			Logs.Severe("Invalid directory \"$path\"!")
+			logger.severe("Invalid directory \"$path\"!")
 			throw e
 		}
 	}
@@ -325,7 +326,7 @@ class FTPManager extends Manager implements UserLogins {
 			_currentPath = currentPath
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe('Can not change directory to up')
+			if (writeErrorsToLog) logger.severe('Can not change directory to up')
 			throw e
 		}
 	}
@@ -342,7 +343,7 @@ class FTPManager extends Manager implements UserLogins {
 
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not download file \"$filePath\" to \"$fn\"")
+			if (writeErrorsToLog) logger.severe("Can not download file \"$filePath\" to \"$fn\"")
 			throw e
 		}
 	}
@@ -366,7 +367,7 @@ class FTPManager extends Manager implements UserLogins {
             }
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not upload file \"$fileName\" from \"$fn\"")
+			if (writeErrorsToLog) logger.severe("Can not upload file \"$fileName\" from \"$fn\"")
 			throw e
 		}
 	}
@@ -379,7 +380,7 @@ class FTPManager extends Manager implements UserLogins {
 			client.deleteFile(fileName)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not remove file \"$fileName\"")
+			if (writeErrorsToLog) logger.severe("Can not remove file \"$fileName\"")
 			throw e
 		}
 	}
@@ -409,7 +410,7 @@ class FTPManager extends Manager implements UserLogins {
 			}
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not create directory \"$cdDir\"")
+			if (writeErrorsToLog) logger.severe("Can not create directory \"$cdDir\"")
 			throw e
 		}
 		finally {
@@ -433,7 +434,7 @@ class FTPManager extends Manager implements UserLogins {
             }
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not remove directory \"$dirName\"")
+			if (writeErrorsToLog) logger.severe("Can not remove directory \"$dirName\"")
 			throw e
 		}
 	}
@@ -469,7 +470,7 @@ class FTPManager extends Manager implements UserLogins {
 			client.rename(fileName, path)
 		}
 		catch (Exception e) {
-			if (writeErrorsToLog) Logs.Severe("Can not rename file \"$fileName\" to \"$path\"")
+			if (writeErrorsToLog) logger.severe("Can not rename file \"$fileName\" to \"$path\"")
 			throw e
 		}
 	}

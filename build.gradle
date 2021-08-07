@@ -7,7 +7,7 @@ plugins {
 }
 
 //noinspection GroovyUnusedAssignment
-version = '4.10.2-3-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.10.2-17-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -25,12 +25,14 @@ dependencies {
 	}
 	compile 'org.codehaus.groovy:groovy-dateutil:3.0.8'
 	compile 'org.codehaus.groovy:groovy-yaml:3.0.8'
-	compile 'com.fasterxml.jackson.core:jackson-annotations:2.11.2'
+	compile 'com.fasterxml.jackson.core:jackson-annotations:2.12.4'
 
 	addJars 'net.sf.supercsv:super-csv-java8:2.4.0'
 	addJars 'com.h2database:h2:1.4.200'
-	addJars 'net.lingala.zip4j:zip4j:2.6.1'
+	addJars 'net.lingala.zip4j:zip4j:2.9.0'
+	//noinspection GradlePackageUpdate
 	addJars 'com.sun.mail:smtp:1.6.5'
+	//noinspection GradlePackageUpdate
 	addJars 'com.sun.mail:mailapi:1.6.5'
 	addJars 'com.jcraft:jsch:0.1.55'
 
@@ -38,28 +40,30 @@ dependencies {
 
 	compile fileTree(dir: 'jdbc')
 
-	implementation 'com.typesafe:config:1.4.0'
+	implementation 'com.typesafe:config:1.4.1'
 
+	//noinspection GradlePackageUpdate
 	implementation('org.apache.poi:poi-ooxml:4.1.2') {
 		exclude group: 'stax'
 	}
-	implementation('com.monitorjbl:xlsx-streamer:2.1.0')
-
 	implementation 'org.apache.poi:ooxml-schemas:1.4'
-	implementation 'org.apache.hadoop:hadoop-auth:3.3.0'
-	implementation 'org.apache.hadoop:hadoop-hdfs-client:3.3.0'
-	implementation 'org.apache.hadoop:hadoop-common:3.3.0'
+	implementation 'org.apache.hadoop:hadoop-auth:3.3.1'
+	implementation 'org.apache.hadoop:hadoop-hdfs-client:3.3.1'
+	implementation 'org.apache.hadoop:hadoop-common:3.3.1'
+
+	implementation 'com.monitorjbl:xlsx-streamer:2.2.0'
 
 	implementation group: 'org.apache.kafka', name: 'kafka-clients', version: '2.6.0'
 
 	implementation(group: 'com.force.api', name: 'force-partner-api', version: '49.3.0')
 
+	//noinspection GradlePackageUpdate
 	implementation 'com.github.xeroapi:xero-java:2.1.3'
 	implementation 'com.github.xeroapi:xeroapi-schemas:1.0.0'
 
 	configurations.compile.extendsFrom(configurations.addJars)
 
-	deployerJars "org.apache.maven.wagon:wagon-http:3.4.1"
+	deployerJars 'org.apache.maven.wagon:wagon-http:3.4.3'
 	testImplementation  group: 'junit', name: 'junit', version: '4.13'
 	testImplementation  fileTree(dir: 'tests', include: '**/*.jar')
 }
@@ -146,7 +150,7 @@ uploadArchives {
 			licenses {
 				license {
 					name 'GNU GENERAL PUBLIC LICENSE, Version 3'
-					url 'http://www.gnu.org/licenses/gpl.txt'
+					url 'https://www.gnu.org/licenses/gpl.txt'
 					distribution 'repo'
 				}
 			}

@@ -2,7 +2,6 @@ package getl.proc
 
 import getl.proc.sub.FileListProcessing
 import getl.utils.FileUtils
-import getl.utils.Logs
 import groovy.transform.InheritConstructors
 
 /**
@@ -24,7 +23,7 @@ class FileCleaner extends FileListProcessing {
     @Override
     protected void processFiles() {
         if (!removeFiles) {
-            Logs.Warning('Skip file deletion because "removeFiles" is off')
+            logger.warning('Skip file deletion because "removeFiles" is off')
             return
         }
 
@@ -45,7 +44,7 @@ class FileCleaner extends FileListProcessing {
             tmpProcessFiles.eachRow { file ->
                 if (file.filepath != curDir) {
                     curDir = file.filepath as String
-                    ChangeDir([source], curDir, false, numberAttempts, timeAttempts)
+                    changeDir([source], curDir, false, numberAttempts, timeAttempts)
                 }
                 Operation([source], numberAttempts, timeAttempts) { man ->
                     man.removeFile(file.filename as String)
@@ -78,6 +77,6 @@ class FileCleaner extends FileListProcessing {
         }
 
         counter.addCount(tmpProcessFiles.readRows)
-        Logs.Info("Removed ${tmpProcessFiles.readRows} files (${FileUtils.SizeBytes(fileSize)})")
+        logger.info("Removed ${tmpProcessFiles.readRows} files (${FileUtils.SizeBytes(fileSize)})")
     }
 }

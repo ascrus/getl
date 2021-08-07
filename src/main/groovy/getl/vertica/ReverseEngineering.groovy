@@ -526,7 +526,8 @@ Example:
 
 	@SuppressWarnings('UnnecessaryQualifiedReference')
 	static String eval(String val) {
-		return GenerationUtils.EvalGroovyScript('"""' + val.replace('\\', '\\\\').replace('"', '\\"') + '"""', Config.vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
+		return GenerationUtils.EvalGroovyScript(value: '"""' + val.replace('\\', '\\\\').replace('"', '\\"') + '"""',
+				vars: Config.vars + ((Job.jobArgs.vars?:[:]) as Map<String, Object>))
 	}
 
 	/**

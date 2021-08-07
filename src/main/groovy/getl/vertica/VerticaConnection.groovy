@@ -189,7 +189,7 @@ ORDER BY threshold DESC, table_name;
 			rows.each { row ->
 				def table = new VerticaTable(connection: this, schemaName: row.table_schema, tableName: row.table_name)
 				if (filter == null || filter(table)) {
-					Logs.Fine("Purging table $table with threshold ${row.threshold} " +
+					logger.fine("Purging table $table with threshold ${row.threshold} " +
 							"(total ${WithGroupSeparator(row.total_row_count as Long)} rows, " +
 							"marked for deletion ${WithGroupSeparator(row.deleted_row_count as Long)} rows)")
 					try {
@@ -197,7 +197,7 @@ ORDER BY threshold DESC, table_name;
 						res++
 					}
 					catch (Exception e) {
-						Logs.Severe(e.message)
+						logger.severe(e.message)
 					}
 				}
 			}
@@ -326,21 +326,21 @@ ORDER BY name
 					t = t.substring(0, t.lastIndexOf("."))
 
 				if (!(t in tempTables)) {
-					def ptw = new ProcessTime(name: row.tuning_description, debug: true)
+					def ptw = new ProcessTime(dslCreator: dslCreator, name: row.tuning_description, debug: true)
 					def queryStat = (row.tuning_command as String).replace('"', '')
 					try {
 						executeCommand(command: queryStat)
 						ptw.finish()
-						Logs.Info("Rebuild statistics for $t complete")
+						logger.info("Rebuild statistics for $t complete")
 						res++
 					}
 					catch (Exception e) {
-						Logs.Severe("Found error for $t: ${e.message}")
+						logger.severe("Found error for $t: ${e.message}")
 					}
 				}
 			}
 			else {
-				Logs.Fine("Skip recommendation ${row.tuning_description}")
+				logger.fine("Skip recommendation ${row.tuning_description}")
 			}
 		}
 

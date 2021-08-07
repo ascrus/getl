@@ -5,6 +5,8 @@ import getl.config.ConfigManager
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import groovy.transform.Synchronized
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 /**
  * Configuration manager class
@@ -48,11 +50,45 @@ class Config {
 	static ConfigManager getConfigClassManager() { configClassManager }
 	/** Class used for configuration management */
 	static void setConfigClassManager(ConfigManager value) {
+		if (configClassManager == value)
+			return
+
 		if (configClassManager != null)
 			configClassManager.init.each {value.registerOnInit(it) }
 
+		def oldManager = configClassManager
         configClassManager = value
+		CallChangeManagerEvents(oldManager, value)
     }
+
+	/** List events on change config manager */
+	static private List<Closure> listChangeManagerEvents = []
+	/** Register event on change config manager */
+	@Synchronized
+	static void RegisterChangeManagerEvent(@ClosureParams(value = SimpleType,
+			options = ['getl.config.ConfigManager', 'getl.config.ConfigManager']) Closure cl) {
+		if (cl == null)
+			throw new ExceptionGETL('The event code cannot be null!')
+		if (listChangeManagerEvents.find { it == cl } == null)
+			listChangeManagerEvents.add(cl)
+	}
+	/** Unregister event on change config manager */
+	@Synchronized
+	static void UnregisterChangeManagerEvent(@ClosureParams(value = SimpleType,
+			options = ['getl.config.ConfigManager', 'getl.config.ConfigManager']) Closure cl) {
+		listChangeManagerEvents.remove(cl)
+	}
+	/** Clear enent on change config manager */
+	@Synchronized
+	static void ClearChangeManagerEvents() {
+		listChangeManagerEvents.clear()
+	}
+	/** Call events on change config manager */
+	static private void CallChangeManagerEvents(ConfigManager oldManager, ConfigManager newManager) {
+		listChangeManagerEvents.each {code ->
+			code.call(oldManager, newManager)
+		}
+	}
 
 	/** Init configuration */
 	static void Init(Map initParams) {
@@ -79,6 +115,8 @@ class Config {
 	/** Re-initialization class */
 	@Synchronized
 	static void ReInit() {
+		configClassManager = null
+		ClearChangeManagerEvents()
 		configClassManager = new ConfigFiles()
 	}
 
@@ -156,11 +194,11 @@ class Config {
 	 * Return system properties and environment OS variables
 	 * @return list of environment variables
 	 */
-	static Map<String, Object> SystemProps() {
-		def res = [:] as Map<String, Object>
+	static Map<String, String> SystemProps() {
+		def res = [:] as Map<String, String>
 		res.putAll(System.getenv())
 		System.properties.each { prop ->
-			res.put(prop.key.toString(), prop.value)
+			res.put(prop.key.toString(), prop.value as String)
 		}
 
 		return res

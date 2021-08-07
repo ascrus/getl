@@ -156,13 +156,7 @@ class ConvertUtils {
 				str = '[' + str + ']'
 		}
 
-		try {
-			str = Eval.me(str.toString())
-		}
-		catch (Exception e) {
-			Logs.Severe("Error in the expression \"$value\"!")
-			throw e
-		}
+		str = Eval.me(str.toString())
 
 		return str
 	}

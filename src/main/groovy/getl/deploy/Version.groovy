@@ -2,6 +2,7 @@ package getl.deploy
 
 import getl.config.ConfigSlurper
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.utils.FileUtils
 import getl.utils.Logs
 import getl.utils.StringUtils
@@ -20,7 +21,7 @@ class Version {
 	// Read resource file config
 	@SuppressWarnings("GroovyAssignabilityCheck")
 	static private void readConfig() {
-		def conf = ConfigSlurper.LoadConfigFile(FileUtils.FileFromResources('/getl.conf'))
+		def conf = ConfigSlurper.LoadConfigFile(file: FileUtils.FileFromResources('/getl.conf'))
 		def getlSection = (conf.getl as Map)
 		if (getlSection == null)
 			throw new ExceptionGETL('Invalid resource file "getl.conf"!')
@@ -65,12 +66,17 @@ class Version {
 	static private Boolean sayInfo = false
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
-	static void SayInfo(def isJob = true) {
-		if (sayInfo) return
+	static void SayInfo(Boolean isJob = true, Getl getl = null) {
+		if (sayInfo)
+			return
+
 		sayInfo = true
-		Logs.Init()
 		def str = "Getl framework, version ${getl.deploy.Version.version} created by ${getl.deploy.Version.years}, All rights to the product belong to company EasyData Ltd Russia under license \"GNU General Public License 3.0\""
-		if (isJob) {
+		if (getl != null) {
+			getl.logFine('### ' + str)
+			getl.logInfo('### Job start')
+		}
+		else if (isJob) {
 			Logs.Fine('### ' + str)
 			Logs.Info('### Job start')
 		}

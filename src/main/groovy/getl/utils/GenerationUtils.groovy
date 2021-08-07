@@ -3,9 +3,11 @@ package getl.utils
 import getl.data.*
 import getl.exception.ExceptionGETL
 import getl.jdbc.*
+import getl.lang.Getl
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
+import groovy.transform.NamedVariant
 import org.codehaus.groovy.control.CompilerConfiguration
 
 import java.sql.Time
@@ -494,7 +496,7 @@ $body
 
 					case Field.integerFieldType: case Field.bigintFieldType:
 					case Field.numericFieldType: case Field.doubleFieldType: case Field.uuidFieldType:
-					case Field.objectFieldType: case Field.rowidFieldType:
+					case Field.objectFieldType: case Field.rowidFieldType: case Field.arrayFieldType:
 						r = "${sourceValue}.toString()"
 						break
 
@@ -1353,7 +1355,7 @@ $body
 
 //		println sb.toString()
 
-		return EvalGroovyClosure(sb.toString())
+		return EvalGroovyClosure(value: sb.toString(), owner: dataset.dslCreator)
 	}
 	
 	/**
@@ -1577,8 +1579,11 @@ sb << """
 	/**
 	 * Compile groovy script to closure
 	 */
-	static Closure EvalGroovyClosure(String value, Map<String, Object> vars = null, Boolean convertReturn = false, ClassLoader classLoader = null) {
-        return EvalGroovyScript(value, vars, convertReturn, classLoader) as Closure
+	@NamedVariant
+	static Closure EvalGroovyClosure(String value, Map<String, Object> vars = null, Boolean convertReturn = false,
+									 ClassLoader classLoader = null, Getl owner = null) {
+        return EvalGroovyScript(value: value, vars: vars, convertReturn: BoolUtils.IsValue(convertReturn),
+				classLoader: classLoader, owner: owner) as Closure
 	}
 
 	/**
@@ -1588,9 +1593,17 @@ sb << """
 	 * @return
 	 */
 	@CompileStatic
-	static def EvalGroovyScript(String value, Map<String, Object> vars = null, Boolean convertReturn = false, ClassLoader classLoader = null) {
-		if (value == null) return null
-		if (convertReturn) value = value.replace('\r', '\u0001')
+	@NamedVariant
+	static def EvalGroovyScript(String value, Map<String, Object> vars = null, Boolean convertReturn = false,
+								ClassLoader classLoader = null, Getl owner = null) {
+		if (value == null)
+			return null
+
+		convertReturn = BoolUtils.IsValue(convertReturn)
+		if (convertReturn)
+			value = value.replace('\r', '\u0001')
+
+		def logger = (owner != null)?owner.logging.manager:Logs.global
 		
 		Binding bind = new Binding()
 		vars?.each { String key, Object val ->
@@ -1605,10 +1618,10 @@ sb << """
 			if (convertReturn && res != null) res = (res as String).replace('\u0001', '\r')
 		}
 		catch (Exception e) {
-			Logs.Severe("Error parse [${StringUtils.CutStr(value, 1000)}]")
+			logger.severe("Error parse [${StringUtils.CutStr(value, 1000)}]")
 			StringBuilder sb = new StringBuilder("script:\n$value\nvars:")
 			vars?.each { varName, varValue -> sb.append("\n	$varName: ${StringUtils.LeftStr(varValue.toString(), 256)}") }
-			Logs.Dump(e, 'GenerationUtils', 'EvalGroovyScript', sb.toString())
+			logger.dump(e, 'GenerationUtils', 'EvalGroovyScript', sb.toString())
 			throw e
 		}
 
@@ -1936,17 +1949,19 @@ sb << """
 
 //		println statement
 
-		Closure code = EvalGroovyClosure(statement, null, false, (driver.useLoadedDriver)?driver.jdbcClass?.classLoader:null)
+		Closure code = EvalGroovyClosure(value: statement, convertReturn: false,
+				classLoader: (driver.useLoadedDriver)?driver.jdbcClass?.classLoader:null, owner: driver.connection.dslCreator)
 
         return [statement: statement, code: code]
 	}
 
 	/**
 	 * Generation field copy by fields
-	 * @param fields
+	 * @param fields list of fields
+	 * @param dataset owner dataset
 	 * @return
 	 */
-	static Closure GenerateFieldCopy(List<Field> fields) {
+	static Closure GenerateFieldCopy(List<Field> fields, Dataset dataset = null) {
 		StringBuilder sb = new StringBuilder()
 		sb << "{ Map<String, Object> inRow, Map<String, Object> outRow -> methodCopy(inRow, outRow) }"
 		sb << '\n@groovy.transform.CompileStatic\n'
@@ -1956,7 +1971,7 @@ sb << """
 			sb << "outRow.put('$fName', inRow.get('$fName'))\n"
 		}
 		sb << "}"
-		Closure result = EvalGroovyClosure(sb.toString())
+		Closure result = EvalGroovyClosure(value: sb.toString(), owner: dataset?.dslCreator)
         return result
 	}
 

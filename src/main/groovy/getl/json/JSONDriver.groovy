@@ -115,8 +115,8 @@ class JSONDriver extends WebServiceDriver {
 			cl.call(dataset, initAttr, code, data, limit)
 		}
 		catch (Exception e) {
-			Logs.Severe("Json file $dataset processing error: ${e.message}")
-			Logs.Dump(e, 'json', dataset.toString(), "// Generation script:\n$script")
+			connection.logger.severe("Json file $dataset processing error: ${e.message}")
+			connection.logger.dump(e, 'json', dataset.toString(), "// Generation script:\n$script")
 			throw e
 		}
 	}
@@ -135,7 +135,7 @@ class JSONDriver extends WebServiceDriver {
 		generateAttrRead(dataset, null, sb)
 		
 		def vars = [dataset: dataset, data: data]
-		GenerationUtils.EvalGroovyScript(sb.toString(), vars)
+		GenerationUtils.EvalGroovyScript(value: sb.toString(), vars: vars, owner: dataset.dslCreator)
 	}
 	
 	/**
@@ -169,7 +169,7 @@ class JSONDriver extends WebServiceDriver {
 			}
 		}
 		catch (Exception e) {
-			Logs.Severe("Error parsing json file $dataset")
+			connection.logger.severe("Error parsing json file $dataset")
 			throw e
 		}
 		finally {

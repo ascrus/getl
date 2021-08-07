@@ -164,16 +164,16 @@ class ExcelDriver extends FileDriver {
                         updater.put(fieldName.toLowerCase(), fieldValue)
                     }
                     catch (Exception e) {
-                        Logs.Severe("Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in $dataset: ${e.message}")
+                        connection.logger.severe("Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in $dataset: ${e.message}")
                         try {
                             def m = [:] as Map<String, Object>
                             row.cellMap.each { column, value ->
                                 m.put("col $column".toString(), value?.stringCellValue)
                             }
-                            Logs.Dump(e, 'excel', dataset.fullFileName(), "Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in row:\n${MapUtils.ToJson(m)}")
+                            connection.logger.dump(e, 'excel', dataset.fullFileName(), "Error reading field \"$fieldName\" of column $colNum of line ${row.rowNum + 1} in row:\n${MapUtils.ToJson(m)}")
                         }
                         catch (Exception i) {
-                            Logs.Severe("Failed to get column values for error Excel line ${row.rowNum + 1}: ${i.message}")
+                            connection.logger.severe("Failed to get column values for error Excel line ${row.rowNum + 1}: ${i.message}")
                         }
                         finally {
                             throw e
@@ -194,7 +194,7 @@ class ExcelDriver extends FileDriver {
                 workbook.close()
             }
             catch (Exception e) {
-                Logs.Severe("Can not close workbook $dataset, error: ${e.message}")
+                connection.logger.severe("Can not close workbook $dataset, error: ${e.message}")
                 throw e
             }
         }

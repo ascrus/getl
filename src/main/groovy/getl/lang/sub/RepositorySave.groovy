@@ -71,7 +71,7 @@ class RepositorySave extends Getl {
             return
         }
 
-        getlRepositoryConfigProperties = ConfigSlurper.LoadConfigFile(propFile)
+        getlRepositoryConfigProperties = ConfigSlurper.LoadConfigFile(file: propFile)
         if (!isSysEnvExists && getlRepositoryConfigProperties.containsKey('defaultEnv'))
             getlDefaultConfigEnvironment = getlRepositoryConfigProperties.defaultEnv as String
     }

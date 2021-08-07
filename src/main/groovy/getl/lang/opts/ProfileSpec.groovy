@@ -2,10 +2,6 @@ package getl.lang.opts
 
 import getl.lang.Getl
 import getl.stat.ProcessTime
-import getl.utils.Logs
-import groovy.transform.InheritConstructors
-
-import java.util.logging.Level
 
 /**
  * Profiler options
@@ -17,6 +13,7 @@ class ProfileSpec extends BaseSpec {
         super(owner)
         this.isProfile = isProfile
         statistics = new ProcessTime(
+                dslCreator: owner as Getl,
                 name: name,
                 logLevel: (owner as Getl).options().processTimeLevelLog,
                 debug: ((!isProfile)?(owner as Getl).options().processTimeDebug: true),

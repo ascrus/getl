@@ -172,7 +172,7 @@ class CSVDataset extends FileDataset {
 	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof CSVConnection))
-			throw new ExceptionGETL('Сonnection to CSVConnection class is allowed!')
+			throw new ExceptionGETL('Connection to CSVConnection class is allowed!')
 
 		super.setConnection(value)
 	}

@@ -1,33 +1,73 @@
 package getl.utils
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
+import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 import org.codehaus.groovy.runtime.StackTraceUtils
 
+import java.time.format.DateTimeFormatter
 import java.util.logging.*
 
 /**
- * Java logger manager class
+ * Logger manager class
  * @author Alexsey Konstantinov
  *
  */
+@CompileStatic
+@SuppressWarnings(['GrMethodMayBeStatic', 'unused'])
 class Logs {
-	Logs () {
-		throw new ExceptionGETL("Deny create instance Logs class")
+	Logs() {
+		loggerName = 'global'
+		logger = Logger.getLogger(loggerName)
+		doInit()
 	}
-	
-	/** Logger object */
-	static public final Logger logger = Logger.getLogger("global")
-	
-	/** Formatter object */
-	static public final LogFormatter formatter = new LogFormatter()
 
+	Logs(String name) {
+		loggerName = name
+		logger = Logger.getLogger(loggerName)
+		doInit()
+	}
+
+	/** Global instance log */
+	static private Logs global
+	/** Global instance log */
+	@JsonIgnore
+	static Logs getGlobal() { global }
+
+	/** Logger name */
+	private String loggerName
+	/** Logger name */
+	@JsonIgnore
+	String getLoggerName() { loggerName }
+
+	/** Logger object */
+	private Logger logger
+	/** Logger object */
+	@JsonIgnore
+	Logger getLogger() { logger }
+
+	/** Formatter object */
+	private LogFormatter formatter = new LogFormatter()
+	/** Formatter object */
+	@JsonIgnore
+	LogFormatter getFormatter() { formatter }
+
+	/** Display configuration messages (default false) */
+	private Boolean printConfigMessage = false
 	/** Display configuration messages */
-	static public Boolean printConfigMessage
-	
+	Boolean getPrintConfigMessage() { printConfigMessage }
+	/** Display configuration messages */
+	void setPrintConfigMessage(Boolean value) { printConfigMessage = value }
+
 	/** File handler object */
-	static public FileHandler file
-	
+	private FileHandler file
+	/** File handler object */
+	@JsonIgnore
+	FileHandler getFile() { file }
+
+	/** Log file name */
+	private String logFileName
 	/**
 	 * Log file name
 	 * <br>The following macro variables are allowed (values are calculated at the start of the program):
@@ -42,36 +82,81 @@ class Logs {
 	 *     <li>{shortdatetime} - the current date and time in the format "yyyy-MM-dd_HH"</li>
 	 * </ul>
 	 */
-	@SuppressWarnings('SpellCheckingInspection')
-	static public String logFileName
+	String getLogFileName() { logFileName }
+	/**
+	 * Log file name
+	 * <br>The following macro variables are allowed (values are calculated at the start of the program):
+	 * <ul>
+	 *     <li>{date} - the current date in the format "yyyy-MM-dd"</li>
+	 *     <li>{monthdate} - the current month in the format "yyyy-MM"</li>
+	 *     <li>{yeardate} - the current year in the format "yyyy"</li>
+	 *     <li>{time} - the current time in the format "HH-mm-ss"</li>
+	 *     <li>{shorttime} - the current time without seconds in the format "HH-mm"</li>
+	 *     <li>{hour} - the current hour in the format "HH"</li>
+	 *     <li>{datetime} - the current date and time in the format "yyyy-MM-dd_HH-mm-ss"</li>
+	 *     <li>{shortdatetime} - the current date and time in the format "yyyy-MM-dd_HH"</li>
+	 * </ul>
+	 */
+	void setLogFileName(String value) {
+		logFileName  = value
+		initFile(logFileName, logFileLevel)
+	}
+
+	/** The level of message logging to console (default FINEST) */
+	private Level logConsoleLevel = Level.FINEST
+	/** The level of message logging to console (default FINEST) */
+	Level getLogConsoleLevel() { logConsoleLevel }
+	/** The level of message logging to a file (default FINEST) */
+	void setLogConsoleLevel(Level value) {
+		if (value == logConsoleLevel)
+			return
+
+		logConsoleLevel = value
+		if (consoleHandler != null)
+			consoleHandler.level = logConsoleLevel?:Level.FINEST
+	}
 
 	/** The level of message logging to a file (default INFO) */
-	static public Level logFileLevel = Level.INFO
-	
-	/** Log file handler */
-	static private String fileNameHandler
+	private Level logFileLevel = Level.INFO
+	/** The level of message logging to a file (default INFO) */
+	Level getLogFileLevel() { logFileLevel }
+	/** The level of message logging to a file (default INFO) */
+	void setLogFileLevel(Level value) {
+		if (value == logFileLevel)
+			return
+
+		logFileLevel = value
+		if (file != null)
+			file.level = logFileLevel?:Level.INFO
+	}
 
 	/** Log file handler */
-	static String getFileNameHandler() { fileNameHandler }
+	private String fileNameHandler
+	/** Log file handler */
+	String getFileNameHandler() { fileNameHandler }
 	
 	/** Config messages to be written after initialization log */
-	protected static final List<String> InitMessages = [] as List<String>
+	protected final List<String> initMessages = [] as List<String>
 	
 	/** Event on call write to log, has parameters String level, Date time, String message */
-	static private final List<Closure> events = [] as List<Closure>
+	private final List<Closure> events = [] as List<Closure>
 
+	private Boolean printStackTraceError = false
 	/** Print stack trace for error */
-	static public Boolean printStackTraceError = false
+	Boolean getPrintStackTraceError() { printStackTraceError }
+	/** Print stack trace for error */
+	void setPrintStackTraceError(Boolean value) { printStackTraceError = value }
 
-	static private final Object lockLog = new Object()
-	static  private final Object lockOut = new Object()
+	private final Object lockLog = new Object()
+	private final Object lockOut = new Object()
 	
 	/**
 	 * Register event, closure has parameters String level, Date time, String message
 	 * @param event event code
 	 */
-	static void registerEvent(Closure event) {
-		if (event == null) throw new ExceptionGETL("Event must be not null!")
+	void registerEvent(Closure event) {
+		if (event == null)
+			throw new ExceptionGETL("Event must be not null!")
 		events << event
 	}
 	
@@ -80,7 +165,7 @@ class Logs {
 	 * @param event event code
 	 * @return success unregistered
 	 */
-	static Boolean unregisterEvent(Closure event) {
+	Boolean unregisterEvent(Closure event) {
 		if (event == null) throw new ExceptionGETL("Event must be not null!")
 		events.remove(event)
 	}
@@ -91,7 +176,7 @@ class Logs {
 	 * @param time
 	 * @param message
 	 */
-	protected static void event(Level level, String message) {
+	protected void event(Level level, String message) {
 		if (message != null)
 			events.each { Closure event -> event.call(level.toString(), DateUtils.Now(), message) }
 	}
@@ -101,86 +186,195 @@ class Logs {
 	 * @author Alexsey Konstantinov
 	 *
 	 */
-	static class LogFormatter extends Formatter {
+	class LogFormatter extends Formatter {
+		LogFormatter() {
+			dtFormatter = DateUtils.BuildDateTimeFormatter(datetimeFormat)
+		}
+
+		private String messageFormat = '{datetime} [{level}]: {message}'
+		private String datetimeFormat = 'yyyy-MM-dd HH:mm:ss'
+		private DateTimeFormatter dtFormatter
+
+		String getDateTimeFormat() { datetimeFormat }
+		@Synchronized
+		void setDateTimeFormat(String value) {
+			datetimeFormat = value?:'yyyy-MM-dd HH:mm:ss'
+			dtFormatter = DateUtils.BuildDateTimeFormatter(datetimeFormat)
+		}
+
+		/**
+		 * Message format<br>
+		 * <b>Supported variables:</b>
+		 * <ul>
+		 *     <li>datetime</li>
+		 *     <li>level</li>
+		 *     <li>message</li>
+		 *     <li>logger</li>
+		 *     <li>parameters</li>
+		 *     <li>sequence</li>
+		 *     <li>class</li>
+		 *     <li>method</li>
+		 *     <li>thread</li>
+		 *     <li>exception</li>
+		 *     <li>error</li>
+		 * </ul>
+		 */
+		String getMessageFormat() { messageFormat }
+		@Synchronized
+		void setMessageFormat(String value) { messageFormat = value }
+
+		private final Map<String, String> levels = [
+		        'OFF':     '    OFF',
+				'SEVERE':  ' SEVERE',
+				'WARNING': 'WARNING',
+				'INFO':    '   INFO',
+				'CONFIG':  ' CONFIG',
+				'FINE':    '   FINE',
+				'FINER':   '  FINER',
+				'FINEST':  ' FINEST',
+				'ALL':     '    ALL'
+		]
+
 		String format(LogRecord record)  {
-			StringBuilder sb = new StringBuilder()
-			Date d = DateUtils.ToOrigTimeZoneDate(new Date(record.millis))
-			sb << DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', d)
-			sb << ' ['
-			sb << record.level
-			sb << ']:	'
-			sb << record.message
-			sb << '\n'
-			
-			sb.toString()
+			def curDateTime = DateUtils.FormatDate(dtFormatter, DateUtils.ToOrigTimeZoneDate(new Date(record.millis)))
+			def vars = [
+					datetime: curDateTime,
+					level: levels.get(record.level.name)?:'UNKNOWN',
+					message: record.message,
+					logger: record.loggerName,
+					parameters: record.parameters,
+					sequence: record.sequenceNumber,
+					class: record.sourceClassName,
+					method: record.sourceMethodName,
+					thread: record.threadID
+			]
+			if (record.thrown != null) {
+				vars.exception = record.thrown.getClass().name
+				vars.error = record.thrown.message
+			}
+			else {
+				vars.exception = ''
+				vars.error = ''
+			}
+			return StringUtils.EvalMacroString(messageFormat, vars) + '\n'
+		}
+	}
+
+	class OutConsoleHandler extends StreamHandler {
+		OutConsoleHandler(OutputStream out, Formatter f) {
+			super(out, f);
+		}
+
+		@Override
+		synchronized void publish(LogRecord record) {
+			if (record.level.intValue() >= Level.SEVERE.intValue())
+				return
+
+			super.publish(record);
+			flush();
+		}
+
+		@Override
+		synchronized void close() throws SecurityException {
+			flush();
 		}
 	}
 	
 	/** Error console handler */
-	protected static ConsoleHandler consoleHandler
-	
+	protected ConsoleHandler errorHandler
+
+	/** Output console handler */
+	protected StreamHandler consoleHandler
+
 	/** Initialize on create log object */
-	protected static void DoInit() {
-		if (consoleHandler != null) return
+	protected void doInit() {
+		if (consoleHandler != null)
+			return
 		
 		logger.setUseParentHandlers(false)
-		logger.setLevel(Level.FINE)
-		
-		ConsoleHandler ch = new ConsoleHandler()
-		ch.level = Level.SEVERE
-		ch.setFormatter(formatter)
-		logger.addHandler(ch)
-		
-		consoleHandler = ch
-	} 
+		logger.setLevel(Level.ALL)
+
+		consoleHandler = new OutConsoleHandler(System.out, formatter)
+		consoleHandler.level = logConsoleLevel?:Level.FINEST
+		logger.addHandler(consoleHandler)
+
+		errorHandler = new ConsoleHandler()
+		errorHandler.level = Level.SEVERE
+		errorHandler.formatter = formatter
+		logger.addHandler(errorHandler)
+	}
+
+	/** Initialize log after load config */
+	static void Init() {
+		if (global == null)
+			global = new Logs()
+		global.init()
+	}
 	
 	/** Initialize log after load config */
-	static void Init () {
+	@Synchronized('lockLog')
+	void init() {
 		def props = (Config.content.log as Map<String, Object>)?:([:] as Map<String, Object>)
 
-		if (printConfigMessage == null)
-			printConfigMessage = (props.printConfig != null)?props.printConfig:false
+		if (props.printConfig != null)
+			printConfigMessage = BoolUtils.IsValue(props.printConfig)
 
-		InitFile(logFileName?:props.file as String, logFileLevel?:StrToLevel(props.logFileLevel as String))
-		InitMessages.each { Config(it) }
-		InitMessages.clear()
+		initFile(logFileName?:props.file as String, logFileLevel?:StrToLevel(props.logFileLevel as String))
+
+		initMessages.each { config(it) }
+		initMessages.clear()
 	}
 	
 	/**
 	 * Initialize log file
 	 * @param name log file name
 	 */
-	static void InitFile (String name, Level level) {
+	protected void initFile(String name, Level level) {
+		String newName = null
+		if (name != null) {
+			name = name.replace("\\", "\\\\")
+			newName = StringUtils.EvalMacroString(name, Config.SystemProps() + StringUtils.MACROS_FILE)
+		}
+		if (fileNameHandler == newName)
+			return
+
 		if (file != null) {
 			file.close()
 			logger.removeHandler(file)
+			fileNameHandler = null
 		}
-		if (name != null) {
-			name = name.replace("\\", "\\\\")
-			def f = StringUtils.EvalMacroString(name, Config.SystemProps() + StringUtils.MACROS_FILE)
-			FileUtils.ValidFilePath(f)
+		if (newName == null)
+			return
 
-			file = new FileHandler(f, true)
-			file.level = level?:Level.INFO
-			file.setFormatter(formatter)
-			logger.addHandler(file)
-			fileNameHandler = f
-		}
-		
-		DoInit()
-		
-		if (name != null) Config("Log file opened")
+		FileUtils.ValidFilePath(newName)
+		file = new FileHandler(newName, true)
+
+		file.level = level?:Level.INFO
+		file.setFormatter(formatter)
+		logger.addHandler(file)
+		fileNameHandler = newName
+
+		if (name != null)
+			config("# Log file \"$fileNameHandler\" opened")
 	}
 	
-	/**
-	 * Finalization when closing the log file
-	 */
-	static void Done () {
-		if (file == null) return
-		Config("Log file closed")
+	/** Finalization when closing the log file */
+	static void Done() { global.done() }
+
+	/** Finalization when closing the log file */
+	void done() {
+		if (file == null)
+			return
+
 		logger.removeHandler(file)
-		file.close()
-		file = null
+		try {
+			file.close()
+		}
+		finally {
+			file = null
+		}
+
+		config("# Log file \"$fileNameHandler\" closed")
 	}
 	
 	/**
@@ -241,16 +435,28 @@ class Logs {
 	static String FormatMessage(String message) {
 		message?.replace("\n", " ")
 	}
-	
+
 	/**
 	 * Println log message to console
 	 * @param level log level value
 	 * @param message text message
 	 */
 	static void ToOut(Level level, String message) {
-		if (level == Level.OFF || message == null) return
+		global.toOut(level, message)
+	}
+	
+	/**
+	 * Println log message to console
+	 * @param level log level value
+	 * @param message text message
+	 */
+	void toOut(Level level, String message) {
+		if (level == Level.OFF || message == null)
+			return
+
 		def lr = new LogRecord(level,
-				FormatMessage(message.replace('\r', '').replace('\n', ' ').replace('\t', ' ')))
+				FormatMessage(message.replace('\r', '').replace('\n', ' ')
+						.replace('\t', ' ')))
 		def str = formatter.format(lr)
 		synchronized (lockOut) {
 			System.out.print(str)
@@ -261,76 +467,156 @@ class Logs {
 	 * Log message with level FINE
 	 * @param message text message
 	 */
-	static void Fine (String message) {
-		ToOut(Level.FINE, message)
+	static void Fine(String message) {
+		global.fine(message)
+	}
+
+	/**
+	 * Log message with level FINE
+	 * @param message text message
+	 */
+	void fine(String message) {
+		if (message == null)
+			return
+
 		def msg = FormatMessage(message)
-		logger.fine(msg)
-		event(Level.FINE, message)
+		synchronized (lockOut) {
+			logger.fine(msg)
+			event(Level.FINE, message)
+		}
 	}
 
 	/**
 	 * Log message with level FINER
 	 * @param message text message
 	 */
-	static void Finer (String message) {
-		ToOut(Level.FINER, message)
+	static void Finer(String message) {
+		global.finer(message)
+	}
+
+	/**
+	 * Log message with level FINER
+	 * @param message text message
+	 */
+	void finer(String message) {
+		if (message == null)
+			return
+
 		def msg = FormatMessage(message)
-		logger.finer(msg)
-		event(Level.FINER, message)
+		synchronized (lockOut) {
+			logger.finer(msg)
+			event(Level.FINER, message)
+		}
 	}
 
 	/**
 	 * Log message with level FINEST
 	 * @param message text message
 	 */
-	static void Finest (String message) {
-		ToOut(Level.FINEST, message)
+	static void Finest(String message) {
+		global.finest(message)
+	}
+
+	/**
+	 * Log message with level FINEST
+	 * @param message text message
+	 */
+	void finest(String message) {
+		if (message == null)
+			return
+
 		def msg = FormatMessage(message)
-		logger.finest(msg)
-		event(Level.FINEST, message)
+		synchronized (lockOut) {
+			logger.finest(msg)
+			event(Level.FINEST, message)
+		}
 	}
 
 	/**
 	 * Log message with level INFO
 	 * @param message text message
 	 */
-	static void Info (String message) {
-		ToOut(Level.INFO, message)
+	static void Info(String message) {
+		global.info(message)
+	}
+
+	/**
+	 * Log message with level INFO
+	 * @param message text message
+	 */
+	void info(String message) {
+		if (message == null)
+			return
+
 		def msg = FormatMessage(message)
-		logger.info(msg)
-		event(Level.INFO, message)
+		synchronized (lockOut) {
+			logger.info(msg)
+			event(Level.INFO, message)
+		}
 	}
 
 	/**
 	 * Log message with level WARNING
 	 * @param message text message
 	 */
-	static void Warning (String message) {
-		ToOut(Level.WARNING, message)
+	static void Warning(String message) {
+		global.warning(message)
+	}
+
+	/**
+	 * Log message with level WARNING
+	 * @param message text message
+	 */
+	void warning(String message) {
+		if (message == null)
+			return
+
 		def msg = FormatMessage(message)
-		logger.warning(msg)
-		event(Level.WARNING, message)
+		synchronized (lockOut) {
+			logger.warning(msg)
+			event(Level.WARNING, message)
+		}
 	}
 
 	/**
 	 * Log message with level WARNING
 	 * @param error error exception
 	 */
-	static void Warning (Throwable error) {
-		ToOut(Level.WARNING, error.message)
+	static void Warning(Throwable error) {
+		global.warning(error)
+	}
+
+	/**
+	 * Log message with level WARNING
+	 * @param error error exception
+	 */
+	void warning(Throwable error) {
+		if (error == null)
+			return
+
 		StackTraceUtils.sanitize(error)
-		def t = (error.stackTrace.length > 0)?(" => " + error.stackTrace.join('\n')):""
+		def t = (error.stackTrace.length > 0) ? (" => " + error.stackTrace.join('\n')) : ""
 		def msg = error.getClass().name + ": " + FormatMessage(error.message) + t
-		logger.warning(msg)
-		event(Level.WARNING, error.message)
+		synchronized (lockOut) {
+			logger.warning(msg)
+			event(Level.WARNING, error.message)
+		}
 	}
 
 	/**
 	 * Log message with level SEVERE
 	 * @param message text message
 	 */
-	static void Severe (String message) {
-		ToOut(Level.SEVERE, message)
+	static void Severe(String message) {
+		global.severe(message)
+	}
+
+	/**
+	 * Log message with level SEVERE
+	 * @param message text message
+	 */
+	void severe(String message) {
+		//toOut(Level.SEVERE, message)
 		def msg = FormatMessage(message)
 		logger.severe(msg)
 		event(Level.SEVERE, message)
@@ -341,13 +627,22 @@ class Logs {
 	 * @param error error exception
 	 */
 	static void Exception(Throwable error) {
-		ToOut(Level.SEVERE, error.message)
+		global.exception(error)
+	}
+
+	/**
+	 * Log message with level SEVERE with clearing error tracing
+	 * @param error error exception
+	 */
+	void exception(Throwable error) {
+		//toOut(Level.SEVERE, error.message)
 		StackTraceUtils.sanitize(error)
 		def t = (error.stackTrace.length > 0)?(" => " + error.stackTrace.join('\n')):''
 		def message = FormatMessage((error.message?:'') + t)
 		logger.severe(message)
 		event(Level.SEVERE, error.message)
-		if (printStackTraceError) error.printStackTrace()
+		if (printStackTraceError)
+			error.printStackTrace()
 	}
 
 	/**
@@ -357,29 +652,53 @@ class Logs {
 	 * @param nameObject object name
 	 */
 	static void Exception(Throwable error, String typeObject, String nameObject) {
-		ToOut(Level.SEVERE, error.message)
+		global.exception(error, typeObject, nameObject)
+	}
+
+	/**
+	 * Log message with level SEVERE with clearing error tracing
+	 * @param error error exception
+	 * @param typeObject object type name
+	 * @param nameObject object name
+	 */
+	void exception(Throwable error, String typeObject, String nameObject) {
+		//toOut(Level.SEVERE, error.message)
 		def message = "<${typeObject} ${nameObject}> ${error.getClass().name}: ${FormatMessage(error.message)}"
 		StackTraceUtils.sanitize(error)
-		if (error.stackTrace.length > 0) {
+		if (error.stackTrace.length > 0)
 			message += " => " + error.stackTrace.join('\n')
-		}
 		logger.severe(message)
 		event(Level.SEVERE, error.message)
 		StackTraceUtils.sanitize(error)
-		if (printStackTraceError) error.printStackTrace()
+		if (printStackTraceError)
+			error.printStackTrace()
 	}
 
 	/**
 	 * Log message with level ENTERING for specified method
 	 */
-	static void Entering (String sourceClass, String sourceMethod, Object[] params) {
+	static void Entering(String sourceClass, String sourceMethod, Object[] params) {
+		global.entering(sourceClass, sourceMethod, params)
+	}
+
+	/**
+	 * Log message with level ENTERING for specified method
+	 */
+	void entering(String sourceClass, String sourceMethod, Object[] params) {
 		logger.entering(sourceClass, sourceMethod, params)
 	}
 
 	/**
 	 * Log message with level EXITING for specified method
 	 */
-	static void Exiting (String sourceClass, String sourceMethod, Object result) {
+	static void Exiting(String sourceClass, String sourceMethod, Object result) {
+		global.exiting(sourceClass, sourceMethod, result)
+	}
+
+	/**
+	 * Log message with level EXITING for specified method
+	 */
+	void exiting(String sourceClass, String sourceMethod, Object result) {
 		logger.exiting(sourceClass, sourceMethod, result)
 	}
 
@@ -389,11 +708,23 @@ class Logs {
 	 * @param message text message
 	 */
 	static void Write(Level level, String message) {
-		if (level == Level.OFF) return
-		ToOut(level, message)
+		global.write(level, message)
+	}
+
+	/**
+	 * Log message with specified level
+	 * @param level log level value
+	 * @param message text message
+	 */
+	void write(Level level, String message) {
+		if (level == Level.OFF || message == null)
+			return
+
 		def msg = FormatMessage(message)
-		logger.log(level, msg)
-		event(level, message)
+		synchronized (lockOut) {
+			logger.log(level, msg)
+			event(level, message)
+		}
 	}
 
 	/**
@@ -402,20 +733,31 @@ class Logs {
 	 * @param message text message
 	 */
 	static void Write(String level, String message) {
+		global.write(level, message)
+	}
+
+	/**
+	 * Log message with specified level
+	 * @param level log level value
+	 * @param message text message
+	 */
+	void write(String level, String message) {
 		def l = StrToLevel(level)
-		if (l == Level.OFF) return
-		ToOut(l, message)
-		def msg = FormatMessage(message)
-		logger.log(l, msg)
-		event(l, message)
+		write(l, message)
 	}
 
 	/**
 	 * Return the name of the log file dump
 	 * @return path to the log file dump
 	 */
+	static String DumpFolder() { global.dumpFolder() }
+
+	/**
+	 * Return the name of the log file dump
+	 * @return path to the log file dump
+	 */
 	@Synchronized('lockLog')
-	static String DumpFolder() {
+	String dumpFolder() {
 		FileUtils.ConvertToUnixPath("${FileUtils.PathFromFile(fileNameHandler)}/dump/${FileUtils.FileName(fileNameHandler)}")
 	}
 
@@ -426,19 +768,32 @@ class Logs {
 	 * @param nameObject object name
 	 * @param data additional error data
 	 */
-	@Synchronized('lockLog')
 	static void Dump(Throwable error, String typeObject, String nameObject, def data) {
+		global.dump(error, typeObject, nameObject, data)
+	}
+
+	/**
+	 * Write error trace to dump log file
+	 * @param error error exception
+	 * @param typeObject object type name
+	 * @param nameObject object name
+	 * @param data additional error data
+	 */
+	@Synchronized('lockLog')
+	void dump(Throwable error, String typeObject, String nameObject, def data) {
 		if (fileNameHandler == null) {
-			Severe("Can not save dump, required logFileName")
+			severe("Can not save dump, required logFileName!")
 			println data.toString()
 			return
 		}
 		
-		def fn = "${DumpFolder()}/dump.txt"
+		def fn = "${dumpFolder()}/dump.txt"
 		
-		Fine("Save dump information to ${fn} with error ${error?.message}")
+		finest("Saving dump information to file $fn from error ${error?.message} ...")
 		FileUtils.ValidFilePath(fn)
-		if (error != null) StackTraceUtils.sanitize(error)
+		if (error != null)
+			StackTraceUtils.sanitize(error)
+
 		File df = new File(fn)
 		def w
 		try {
@@ -449,8 +804,8 @@ class Logs {
 			if (error != null) {
 				w.println "Error: $error"
 				w.println "Stack trace:"
-				StackTraceUtils.sanitize(error)
-				if (printStackTraceError) error.printStackTrace(w)
+				if (printStackTraceError)
+					error.printStackTrace(w)
 			}
 			if (data != null) {
 				w.println "Generated script:"
@@ -459,11 +814,11 @@ class Logs {
 			w.println "\n\n\n"
 		}
 		catch (Throwable e) {
-			println "Can not write error to dump file \"${fn}\", error: ${e.message}"
-			Severe("Can not write error to dump file \"${fn}\", error: ${e.message}")
+			severe("Can not write error to dump file \"${fn}\", error: ${e.message}")
 		}
 		finally {
-			if (w != null) w.close()
+			if (w != null)
+				w.close()
 		}
 	}
 
@@ -472,47 +827,59 @@ class Logs {
 	 * @param message text message
 	 */
 	static void Config(String message) {
+		global.config(message)
+	}
+
+	/**
+	 * Log message with level CONFIG
+	 * @param message text message
+	 */
+	void config(String message) {
 		if (printConfigMessage)
-			if (logger.handlers.size() == 0) InitMessages << message else Write(Level.CONFIG, message)
+			if (logger.handlers.size() == 0)
+				initMessages << message
+			else
+				write(Level.CONFIG, message)
 	}
 	
 	/** Standard console output */
-	static private PrintStream standardConsole = System.out
+	private PrintStream standardConsole = System.out
 	
 	/** Standard console error */
-	static private PrintStream errConsole = System.err
+	private PrintStream errConsole = System.err
 	
 	/** Output console file name */
-	static private String outFileName
+	private String outFileName
 	
 	/** Error console file name */
-	static private String errFileName
+	private String errFileName
 	
 	/** Output console stream */
-	static private PrintStream outStream
+	private PrintStream outStream
 	
 	/** Error console stream */
-	static private PrintStream errStream
+	private PrintStream errStream
 	
 	/**
 	 * Redirect output console to file or standard
 	 * @param fileName path to console information output file (if null then the standard console is assigned)
 	 */
-	@Synchronized('lockLog')
 	static void RedirectStdOut(String fileName) {
-		if (fileName != null) {
-			println "Redirect console out to file \"$fileName\""
-			FileUtils.ValidFilePath(fileName)
-			PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(fileName)), true) 
-			System.setOut(ps)
-			outFileName = fileName
-			outStream = ps
-		}
-		else if (outFileName != null) {
-			println "Redirect console out to standard ..."
-			System.setOut(standardConsole)
-			outFileName = null
-			outStream = null
+		global.consistently {
+			if (fileName != null) {
+				println "Redirect console out to file \"$fileName\""
+				FileUtils.ValidFilePath(fileName)
+				PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(fileName)), true)
+				System.setOut(ps)
+				global.outFileName = fileName
+				global.outStream = ps
+			}
+			else if (global.outFileName != null) {
+				println "Redirect console out to standard ..."
+				System.setOut(global.standardConsole)
+				global.outFileName = null
+				global.outStream = null
+			}
 		}
 	}
 
@@ -520,25 +887,31 @@ class Logs {
 	 * Redirect errors console to file or standard
 	 * @param fileName path to console information output file (if null then the standard console is assigned)
 	 */
-	@Synchronized('lockLog')
 	static void RedirectErrOut(String fileName) {
-		if (fileName != null) {
-			println "Redirect error out to file \"$fileName\""
-			FileUtils.ValidFilePath(fileName)
-			PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(fileName)), true)
-			System.setErr(ps)
-			errFileName = fileName
-			errStream = ps
-		}
-		else if (errFileName != null) {
-			println "Redirect error out to standard"
-			System.setErr(errConsole)
-			errFileName = null
-			errStream = null
+		global.consistently {
+			if (fileName != null) {
+				println "Redirect error out to file \"$fileName\""
+				FileUtils.ValidFilePath(fileName)
+				PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(fileName)), true)
+				System.setErr(ps)
+				global.errFileName = fileName
+				global.errStream = ps
+			} else if (global.errFileName != null) {
+				println "Redirect error out to standard"
+				System.setErr(global.errConsole)
+				global.errFileName = null
+				global.errStream = null
+			}
 		}
 	}
 
+	/** Execute output statements to the log consistently, in the main thread */
 	static void Consistently(Closure cl) {
+		global.consistently(cl)
+	}
+
+	/** Execute output statements to the log consistently, in the main thread */
+	void consistently(Closure cl) {
 		if (cl != null) {
 			synchronized (lockOut) {
 				cl.call()

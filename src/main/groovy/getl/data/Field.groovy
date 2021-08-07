@@ -22,37 +22,37 @@ class Field implements Serializable, Cloneable {
 	}
 
 	/** Integer field type */
-	static public final Field.Type integerFieldType = Field.Type.INTEGER
+	static public final Type integerFieldType = Type.INTEGER
 	/** Bigint field type */
-	static public final Field.Type bigintFieldType = Field.Type.BIGINT
+	static public final Type bigintFieldType = Type.BIGINT
 	/** Numeric (decimal) field type */
-	static public final Field.Type numericFieldType = Field.Type.NUMERIC
+	static public final Type numericFieldType = Type.NUMERIC
 	/** Double field type */
-	static public final Field.Type doubleFieldType = Field.Type.DOUBLE
+	static public final Type doubleFieldType = Type.DOUBLE
 	/** String field type */
-	static public final Field.Type stringFieldType = Field.Type.STRING
+	static public final Type stringFieldType = Type.STRING
 	/** Text (clob) field type */
-	static public final Field.Type textFieldType = Field.Type.TEXT
+	static public final Type textFieldType = Type.TEXT
 	/** Date field type */
-	static public final Field.Type dateFieldType = Field.Type.DATE
+	static public final Type dateFieldType = Type.DATE
 	/** Time field type */
-	static public final Field.Type timeFieldType = Field.Type.TIME
+	static public final Type timeFieldType = Type.TIME
 	/** Date and time field type */
-	static public final Field.Type datetimeFieldType = Field.Type.DATETIME
+	static public final Type datetimeFieldType = Type.DATETIME
 	/** Timestamp with time zone field type */
-	static public final Field.Type timestamp_with_timezoneFieldType = Field.Type.TIMESTAMP_WITH_TIMEZONE
+	static public final Type timestamp_with_timezoneFieldType = Type.TIMESTAMP_WITH_TIMEZONE
 	/** Boolean field type */
-	static public final Field.Type booleanFieldType = Field.Type.BOOLEAN
+	static public final Type booleanFieldType = Type.BOOLEAN
 	/** Blob field type */
-	static public final Field.Type blobFieldType = Field.Type.BLOB
+	static public final Type blobFieldType = Type.BLOB
 	/** UUID field type */
-	static public final Field.Type uuidFieldType = Field.Type.UUID
+	static public final Type uuidFieldType = Type.UUID
 	/** RowID field type */
-	static public final Field.Type rowidFieldType = Field.Type.ROWID
+	static public final Type rowidFieldType = Type.ROWID
 	/** Object field type */
-	static public final Field.Type objectFieldType = Field.Type.OBJECT
+	static public final Type objectFieldType = Type.OBJECT
 	/** Array field type */
-	static public final Field.Type arrayFieldType = Field.Type.ARRAY
+	static public final Type arrayFieldType = Type.ARRAY
 
 	private String name = null
 	/** Field name */
@@ -213,17 +213,17 @@ class Field implements Serializable, Cloneable {
 
 	/** Allow length for field */
 	static Boolean AllowLength(Field f) {
-		return (f.type in [Field.Type.STRING, Field.Type.NUMERIC, Field.Type.BLOB, Field.Type.TEXT, Field.Type.ROWID])
+		return (f.type in [Type.STRING, Type.NUMERIC, Type.BLOB, Type.TEXT, Type.ROWID])
 	}
 	
 	/** Allow precision for field */
 	static Boolean AllowPrecision(Field f) {
-		return (f.type in [Field.Type.NUMERIC])
+		return (f.type in [Type.NUMERIC])
 	}
 	
 	/** Allow create field in table */
 	static Boolean AllowCreatable(Field f) {
-		return !(f.type in [Field.Type.ROWID])
+		return !(f.type in [Type.ROWID])
 	}
 	
 	/** Build map from field */
@@ -268,7 +268,7 @@ class Field implements Serializable, Cloneable {
 			throw new ExceptionGETL("Required field name: ${mf}")
 
 		def typeStr = StringUtils.NullIsEmpty(mf.type as String)
-		def type = (typeStr != null)?Field.Type.valueOf(typeStr):Field.Type.STRING
+		def type = (typeStr != null)? Type.valueOf(typeStr): Type.STRING
 		def typeName = StringUtils.NullIsEmpty(mf.typeName as String)
 		def isNull = BoolUtils.IsValue(mf.isNull,true)
 		def length = NumericUtils.Obj2Integer(mf.length)
@@ -407,33 +407,33 @@ class Field implements Serializable, Cloneable {
 	/**
 	 * Valid convert one type to another
 	 */
-	static Boolean IsConvertibleType(Field.Type source, Field.Type dest) {
+	static Boolean IsConvertibleType(Type source, Type dest) {
 		if (source == dest) return true
 		
 		Boolean res = false
 		switch (dest) {
-			case Field.Type.STRING: case Field.Type.TEXT:
+			case Type.STRING: case Type.TEXT:
 				res = true
 				break
 				
-			case Field.Type.BIGINT:
-				res = (source in [Field.Type.INTEGER, Field.Type.NUMERIC])
+			case Type.BIGINT:
+				res = (source in [Type.INTEGER, Type.NUMERIC])
 				break
 				
-			case Field.Type.DATETIME:
-				res = (source in [Field.Type.DATE, Field.Type.TIME])
+			case Type.DATETIME:
+				res = (source in [Type.DATE, Type.TIME])
 				break
 				
-			case Field.Type.DOUBLE:
-				res = (source in [Field.Type.NUMERIC, Field.Type.INTEGER, Field.Type.BIGINT])
+			case Type.DOUBLE:
+				res = (source in [Type.NUMERIC, Type.INTEGER, Type.BIGINT])
 				break
 				
-			case Field.Type.NUMERIC:
-				res = (source in [Field.Type.DOUBLE, Field.Type.INTEGER, Field.Type.BIGINT])
+			case Type.NUMERIC:
+				res = (source in [Type.DOUBLE, Type.INTEGER, Type.BIGINT])
 				break
 				
-			case Field.Type.BLOB:
-				res = (source in [Field.Type.STRING, Field.Type.TEXT])
+			case Type.BLOB:
+				res = (source in [Type.STRING, Type.TEXT])
 				break
 				
 		}
@@ -444,14 +444,15 @@ class Field implements Serializable, Cloneable {
     /**
      * Valid equal current object by object
      */
-    static Boolean canEqual(java.lang.Object other) {
+    static Boolean canEqual(Object other) {
         return other instanceof Field
     }
 
-	Boolean equalsAll(java.lang.Object other) {
+	Boolean equalsAll(Object other) {
 		if (other == null) return false
 		if (this.is(other)) return true
 		if (!(other instanceof Field)) return false
+		//noinspection UnnecessaryQualifiedReference
 		if (!other.canEqual(this)) return false
 
         def o = other as Field
@@ -486,16 +487,17 @@ class Field implements Serializable, Cloneable {
 
 	@SuppressWarnings("DuplicatedCode")
 	@Override
-	boolean equals(java.lang.Object other) {
+	boolean equals(Object other) {
 		if (other == null) return false
 		if (this.is(other)) return true
 		if (!(other instanceof Field)) return false
+		//noinspection UnnecessaryQualifiedReference
 		if (!other.canEqual(this)) return false
 
 		def o = other as Field
 
 		if (this.name?.toUpperCase() != o.name?.toUpperCase()) return false
-		if (this.type != o.type && !(this.type in [Field.Type.STRING, Field.Type.TEXT] && o.type in [Field.Type.STRING, Field.Type.TEXT])) return false
+		if (this.type != o.type && !(this.type in [Type.STRING, Type.TEXT] && o.type in [Type.STRING, Type.TEXT])) return false
 		if (this.isNull != o.isNull) return false
 		if (this.isKey != o.isKey) return false
 		if (this.isPartition != o.isPartition) return false
@@ -513,7 +515,7 @@ class Field implements Serializable, Cloneable {
 
 	String generateDsl() {
 		def l = [] as List<String>
-		l << "type = ${Field.TypeToDsl(type)}".toString()
+		l << "type = ${TypeToDsl(type)}".toString()
 		if (AllowLength(this) && length != null) l << "length = $length".toString()
 		if (AllowPrecision(this) && precision != null) l << "precision = $precision".toString()
 		if (!isNull) l << 'isNull = false'

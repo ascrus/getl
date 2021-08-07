@@ -133,31 +133,31 @@ class GenerationUtilsTest extends getl.test.GetlTest {
         }
         t.each {
             if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE, Field.Type.BLOB, Field.Type.TEXT,
-                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
+                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID, Field.Type.ARRAY])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'INTEGER'), new Field(name: 'test', type: it), null, 'row', 'var')
             }
         }
         t.each {
             if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE, Field.Type.BLOB, Field.Type.TEXT,
-                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
+                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID, Field.Type.ARRAY])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'BIGINT'), new Field(name: 'test', type: it), null, 'row', 'var')
             }
         }
         t.each {
             if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE, Field.Type.BLOB, Field.Type.TEXT,
-                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
+                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID, Field.Type.ARRAY])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'DOUBLE'), new Field(name: 'test', type: it), null, 'row', 'var')
             }
         }
         t.each {
             if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE, Field.Type.BLOB, Field.Type.TEXT,
-                         Field.Type.NUMERIC, Field.Type.DOUBLE, Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID])) {
+                         Field.Type.NUMERIC, Field.Type.DOUBLE, Field.Type.OBJECT, Field.Type.ROWID, Field.Type.UUID, Field.Type.ARRAY])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'BOOLEAN'), new Field(name: 'test', type: it), null, 'row', 'var')
             }
         }
         t.each {
             if (!(it in [Field.Type.DATE, Field.Type.TIME, Field.Type.DATETIME, Field.Type.TIMESTAMP_WITH_TIMEZONE, Field.Type.BLOB, Field.Type.TEXT,
-                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.BOOLEAN, Field.Type.UUID])) {
+                         Field.Type.OBJECT, Field.Type.ROWID, Field.Type.BOOLEAN, Field.Type.UUID, Field.Type.ARRAY])) {
                 GenerationUtils.GenerateConvertValue(new Field(name: 'test', type: 'NUMERIC'), new Field(name: 'test', type: it), null, 'row', 'var')
             }
         }
@@ -224,7 +224,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
     @Test
     void testEvalGroovyScript() {
         def s = '"test " + \'\\"\' + var + \'\\"\' + " script"'
-        assertEquals('test "groovy" script', GenerationUtils.EvalGroovyScript(s, [var: 'groovy']))
+        assertEquals('test "groovy" script', GenerationUtils.EvalGroovyScript(value: s, vars: [var: 'groovy']))
     }
 
     @Test
@@ -242,7 +242,7 @@ class GenerationUtilsTest extends getl.test.GetlTest {
 
     @Test
     void testFieldConvertToString() {
-        def t = Field.Type.values() - [Field.Type.OBJECT]
+        def t = Field.Type.values() - [Field.Type.OBJECT, Field.Type.ARRAY]
         t.each {
             def f = new Field(name: 'test', type: it)
             GenerationUtils.FieldConvertToString(f)

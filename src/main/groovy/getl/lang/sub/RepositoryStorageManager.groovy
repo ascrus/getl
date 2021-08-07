@@ -49,7 +49,16 @@ class RepositoryStorageManager {
     }
     /** Absolute storage path for repository files */
     String storagePath() {
-        return FileUtils.TransformFilePath((isResourceStoragePath)?storagePath.substring(9):storagePath)
+        if (storagePath == null)
+            return null
+
+        String res
+        if (!isResourceStoragePath)
+            res = new File(FileUtils.TransformFilePath(storagePath)).canonicalPath
+        else
+            res = FileUtils.TransformFilePath(storagePath.substring(9))
+
+        return res
     }
 
     /** Autoload objects from the repository when accessing them */
@@ -193,7 +202,7 @@ class RepositoryStorageManager {
         if (storagePath == null)
             throw new ExceptionDSL('The repository storage path is not specified in "storagePath"!')
 
-        def rootPath = storagePath() //FileUtils.TransformFilePath((isResourceStoragePath)?storagePath.substring(9):storagePath)
+        def rootPath = storagePath()
         def subDir = (env != null && envDirs.containsKey(env))?('/' + envDirs.get(env)):''
         def dirPath = subDir + '/' + repositoryClass.name
         def repPath = rootPath + dirPath
@@ -276,7 +285,8 @@ class RepositoryStorageManager {
         def fileName = objectFilePathInStorage(repository, objName, env)
         FileUtils.ValidFilePath(fileName)
         def file = new File(fileName)
-        ConfigSlurper.SaveConfigFile(objParams, new File(fileName), 'utf-8', false, true, true)
+        ConfigSlurper.SaveConfigFile(data: objParams, file: new File(fileName), codePage: 'utf-8', convertVars: false,
+                trimMap: true, smartWrite: true, owner: dslCreator)
 
         if (!file.exists())
             throw new ExceptionDSL("Error saving object \"${objName.name}\" from repository " +
@@ -456,7 +466,7 @@ class RepositoryStorageManager {
         def existsObject = repository.objects.keySet().toList()
 
         try {
-            new Executor().with {
+            new Executor(dslCreator: dslCreator).with {
                 useList dirs.rows()
                 if (list.isEmpty())
                     return
@@ -490,7 +500,8 @@ class RepositoryStorageManager {
                         }
                         def file = new File(fileName)
                         try {
-                            def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8', null, this.dslCreator.configVars)
+                            def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8',
+                                    configVars: this.dslCreator.configVars, owner: dslCreator)
                             GetlRepository obj
                             obj = repository.importConfig(objParams, null)
                             runWithLoadMode(true) {
@@ -549,7 +560,8 @@ class RepositoryStorageManager {
 
         GetlRepository obj = null
         try {
-            def objParams = ConfigSlurper.LoadConfigFile(file, 'utf-8', null, this.dslCreator.configVars)
+            def objParams = ConfigSlurper.LoadConfigFile(file: file, codePage: 'utf-8',
+                    configVars: this.dslCreator.configVars, owner: dslCreator)
             obj = repository.find(name, false)
             if (obj != null && !overloading)
                 throw new ExceptionDSL("Object \"$name\" is already registered in the repository and cannot be reloaded!")

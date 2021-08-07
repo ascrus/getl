@@ -59,7 +59,8 @@ class FileListProcessingBuild extends ManagerListProcessing {
             if (!(onFilterFiles.call(file))) return false
         }
 
-        if (isNewDir) Logs.Finest("Analysis directory \"$curPath\" ...")
+        if (isNewDir)
+            owner.logger.finest("Analysis directory \"$curPath\" ...")
 
         return true
     }

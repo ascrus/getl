@@ -87,7 +87,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		dataset.params.remove("aggregator_code")
 	}
 	
-	static private Closure generateAggrCode(List<String> fieldByGroup, Map<String, Map> fieldCalc) {
+	private Closure generateAggrCode(List<String> fieldByGroup, Map<String, Map> fieldCalc) {
 		StringBuilder sb = new StringBuilder()
 		sb << """{ Map row, Map data, Map filter ->
 	List<String> key = []
@@ -171,7 +171,7 @@ class AggregatorDatasetDriver extends VirtualDatasetDriver {
 		}
 		sb << "}"
 		
-		Closure result = GenerationUtils.EvalGroovyClosure(sb.toString())
+		Closure result = GenerationUtils.EvalGroovyClosure(value: sb.toString(), owner: connection.dslCreator)
 		
 		result
 	}

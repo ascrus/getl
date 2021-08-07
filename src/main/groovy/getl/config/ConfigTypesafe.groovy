@@ -2,15 +2,15 @@ package getl.config
 
 import com.typesafe.config.ConfigFactory
 import getl.exception.ExceptionGETL
-import getl.utils.Config as GETLConfig
 import com.typesafe.config.Config as TypeSafeConfig
-import getl.utils.Logs
+import groovy.transform.InheritConstructors
 
 /**
  * Configuration typesafe config wrapper manager
  * @author Dmitry Shaldin
  *
  */
+@InheritConstructors
 class ConfigTypesafe extends ConfigManager {
 	/** Path to configuration files */
 	String getPath() {
@@ -47,7 +47,7 @@ class ConfigTypesafe extends ConfigManager {
 		Map config = initParams.config as Map<String, Object>
 		if (config.path != null) {
 			this.path = config.path
-			Logs.Config("config: set path ${path}")
+			logger.config("config: set path ${path}")
 		}
 	}
 }

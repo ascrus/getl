@@ -133,8 +133,8 @@ class KafkaDriver extends Driver {
             kafkaConsumer = new KafkaConsumer<String, String>(props)
         }
         catch (Exception e) {
-            Logs.Severe("Can't connect to Kafka servers: ${e.message}")
-            Logs.Dump(e, 'KafkaDriver', ds.toString(), MapUtils.ToJson(props))
+            connection.logger.severe("Can't connect to Kafka servers: ${e.message}")
+            connection.logger.dump(e, 'KafkaDriver', dataset.toString(), MapUtils.ToJson(props))
             throw e
         }
 

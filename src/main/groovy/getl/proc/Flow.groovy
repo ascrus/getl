@@ -1,9 +1,11 @@
 package getl.proc
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.csv.CSVDataset
 import getl.data.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.proc.sub.FlowCopyChild
 import getl.transform.*
 import getl.utils.*
@@ -18,7 +20,33 @@ import java.util.concurrent.ConcurrentHashMap
  *
  */
 class Flow {
-	Flow () {
+	Flow() {
+		registerParameters()
+		initParams()
+	}
+
+	Flow(Getl owner) {
+		dslCreator = owner
+		registerParameters()
+		initParams()
+	}
+
+	/** Getl instance owner */
+	protected Getl dslCreator
+
+	/** Current logger */
+	@JsonIgnore
+	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+
+	/**
+	 * Initialization parameters
+	 */
+	protected void initParams() { }
+
+	/**
+	 * Register parameters
+	 */
+	protected void registerParameters() {
 		methodParams.register('copy',
 				['source', 'tempSource', 'dest', 'destChild', 'tempDest', 'inheritFields', 'createDest',
 				 'tempFields', 'map', 'source_*', 'sourceParams', 'dest_*', 'destParams',
@@ -38,14 +66,7 @@ class Flow {
 
 		methodParams.register('process', ['source', 'source_*', 'sourceParams', 'tempSource', 'saveErrors',
 										  'onInit', 'onDone', 'process'])
-
-		initParams()
 	}
-
-	/**
-	 * Initialization parameters
-	 */
-	protected void initParams() { }
 
 	/** Parameters validator */
 	protected ParamMethodValidator methodParams = new ParamMethodValidator()
@@ -78,7 +99,7 @@ class Flow {
 			throw new ExceptionGETL("Config section \"flows.${config}\" not found")
 
 		onLoadConfig(cp)
-		Logs.Config("Load config \"flows\".\"${config}\" for flow")
+		logger.config("Load config \"flows\".\"${config}\" for flow")
 	}
 	
 	protected void onLoadConfig (Map configSection) {
@@ -165,9 +186,9 @@ class Flow {
 	 * @param result
 	 * @return
 	 */
-	static private String GenerateMap(Dataset source, Dataset dest, Map fieldMap, Map formats, Boolean convertEmptyToNull,
-									  Boolean saveOnlyWithValue, Boolean autoConvert,
-									  List<String> notConverted, String cacheName, Map result) {
+	private String generateMap(Dataset source, Dataset dest, Map fieldMap, Map formats, Boolean convertEmptyToNull,
+							   Boolean saveOnlyWithValue, Boolean autoConvert,
+							   List<String> notConverted, String cacheName, Map result) {
 		def countMethod = (dest.field.size() / 100).intValue() + 1
 		def curMethod = 0
 
@@ -279,7 +300,7 @@ class Flow {
 			}
 
 			if (result.code == null) {
-				result.code = GenerationUtils.EvalGroovyClosure(scriptMap)
+				result.code = GenerationUtils.EvalGroovyClosure(value: scriptMap, owner: dslCreator)
 				if (cacheName != null) {
 					def cache = cacheCode.get(cacheName)
 					if (cache == null) {
@@ -540,7 +561,7 @@ class Flow {
 		Closure<List<String>> initDest = {
 			List<String> result = []
 			if (autoMap) {
-				scriptMap = GenerateMap(source, writer, mapRules, formats, convertEmptyToNull, copyOnlyWithValue,
+				scriptMap = generateMap(source, writer, mapRules, formats, convertEmptyToNull, copyOnlyWithValue,
 										autoConvert, notConverted, cacheName, generateResult)
 				auto_map_code = generateResult.code as Closure
 				result = generateResult.destFields as List<String>
@@ -628,8 +649,8 @@ class Flow {
 							auto_map_code.call(inRow, outRow)
 						}
 						catch (Exception e) {
-							Logs.Severe("Column auto mapping error: ${e.message}")
-							Logs.Dump(e, 'flow', cacheName?:'none', 'Column mapping:\n' + scriptMap)
+							logger.severe("Column auto mapping error: ${e.message}")
+							logger.dump(e, 'flow', cacheName?:'none', 'Column mapping:\n' + scriptMap)
 							throw e
 						}
 					}
@@ -650,8 +671,8 @@ class Flow {
 							errorsDataset.write(errorRow)
 						}
 						catch (Exception e) {
-							Logs.Severe("Flow error in row [${sourceDescription}]:\n${inRow}")
-							Logs.Severe("Flow error out row [${destDescription}]:\n${outRow}")
+							logger.severe("Flow error in row [${sourceDescription}]:\n${inRow}")
+							logger.severe("Flow error out row [${destDescription}]:\n${outRow}")
 							throw e
 						}
 					} 
@@ -692,8 +713,8 @@ class Flow {
 					dest.bulkLoadFile(bulkParams)
 				}
 				catch (Exception e) {
-					if (debug && Logs.fileNameHandler != null) {
-						def dn = "${Logs.DumpFolder()}/${dest.objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
+					if (debug && logger.fileNameHandler != null) {
+						def dn = "${logger.dumpFolder()}/${dest.objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
 						if (bulkAsGZIP) dn += ".gz"
 						FileUtils.CopyToFile((bulkParams.source as CSVDataset).fullFileName(), dn, true)
 					}
@@ -708,8 +729,8 @@ class Flow {
 						dataset.bulkLoadFile(bulkChildParams)
 					}
 					catch (Exception e) {
-						if (debug && Logs.fileNameHandler != null) {
-							def dn = "${Logs.DumpFolder()}/${(bulkChildParams.source as Dataset).objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
+						if (debug && logger.fileNameHandler != null) {
+							def dn = "${logger.dumpFolder()}/${(bulkChildParams.source as Dataset).objectName}__${DateUtils.FormatDate('yyyy_MM_dd_HH_mm_ss', DateUtils.Now())}.csv"
 							if (bulkAsGZIP) dn += ".gz"
 							FileUtils.CopyToFile((bulkChildParams.source as CSVDataset).fullFileName(), dn, true)
 						}
@@ -726,17 +747,17 @@ class Flow {
 			}
 		}
 		catch (Exception e) {
-			Logs.Exception(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}")
+			logger.exception(e, getClass().name + ".copy", "${sourceDescription}->${destDescription}")
 
 			if (autoTran && dest.connection.isTran())
-				Executor.RunIgnoreErrors {
+				Executor.RunIgnoreErrors(dslCreator) {
 					dest.connection.rollbackTran()
 				}
 			childs.each { String name, FlowCopyChild child ->
 				def dataset = child.dataset
 				def autoTranChild = BoolUtils.IsValue(child.autoTran)
 				if (autoTranChild && dataset.connection.isTran())
-					Executor.RunIgnoreErrors {
+					Executor.RunIgnoreErrors(dslCreator) {
 						dataset.connection.rollbackTran()
 					}
 			}
@@ -933,19 +954,23 @@ class Flow {
 		catch (Exception e) {
 			isError = true
 			writer.isWriteError = true
-			Logs.Exception(e, getClass().name + ".writeTo", writer.objectName)
+			logger.exception(e, getClass().name + ".writeTo", writer.objectName)
 			if (autoTran && !isBulkLoad && dest.connection.isTran())
-				Executor.RunIgnoreErrors {
+				Executor.RunIgnoreErrors(dslCreator) {
 					dest.connection.rollbackTran()
 				}
 			throw e
 		}
 		finally {
 			if (writer.status == Dataset.Status.WRITE)
-				Executor.RunIgnoreErrors {
-					if (!writeSynch) writer.closeWrite() else writer.closeWriteSynch()
+				Executor.RunIgnoreErrors(dslCreator) {
+					if (!writeSynch)
+						writer.closeWrite()
+					else
+						writer.closeWriteSynch()
 				}
-			if (isBulkLoad && isError) Executor.RunIgnoreErrors { bulkDS.drop() }
+			if (isBulkLoad && isError)
+				Executor.RunIgnoreErrors(dslCreator) { bulkDS.drop() }
 		}
 		
 		if (autoTran && !isBulkLoad) {
@@ -960,10 +985,10 @@ class Flow {
 				dest.bulkLoadFile(bulkParams)
 			}
 			catch (Exception e) {
-				Logs.Exception(e, getClass().name + ".writeTo", "${destDescription}")
+				logger.exception(e, getClass().name + ".writeTo", "${destDescription}")
 				
 				if (autoTran && dest.connection.isTran())
-					Executor.RunIgnoreErrors {
+					Executor.RunIgnoreErrors(dslCreator) {
 						dest.connection.rollbackTran()
 					}
 				
@@ -1108,11 +1133,12 @@ class Flow {
 					if (!isError)
 						if (!writeSynch) d.closeWrite()  else d.closeWriteSynch()
 					else
-						Executor.RunIgnoreErrors {
+						Executor.RunIgnoreErrors(dslCreator) {
 							if (!writeSynch) d.closeWrite()  else d.closeWriteSynch()
 						}
 				}
-				if (isError && bulkLoadDS.get(n) != null) Executor.RunIgnoreErrors { (bulkLoadDS.get(n) as Dataset).drop() }
+				if (isError && bulkLoadDS.get(n) != null)
+					Executor.RunIgnoreErrors(dslCreator) { (bulkLoadDS.get(n) as Dataset).drop() }
 			}
 		}
 		
@@ -1128,7 +1154,7 @@ class Flow {
 		def rollbackTrans = { List useMode ->
 			destAutoTran.each { Connection c, String mode ->
 				if (mode in useMode && c.isTran()) {
-					Executor.RunIgnoreErrors { c.rollbackTran() }
+					Executor.RunIgnoreErrors(dslCreator) { c.rollbackTran() }
 				}
 			}
 		}
@@ -1148,7 +1174,7 @@ class Flow {
 				if (!writeSynch) d.openWrite(destParams.get(n) as Map) else d.openWriteSynch(destParams.get(n) as Map)
 			}
 			catch (Exception e) {
-				Logs.Exception(e, getClass().name + ".writeAllTo.openWrite", d.objectName)
+				logger.exception(e, getClass().name + ".writeAllTo.openWrite", d.objectName)
 				closeDestinations(true)
 				rollbackTrans(["ALL", "COPY"])
 				throw e
@@ -1162,7 +1188,7 @@ class Flow {
 			writer.each { String n, Dataset d ->
 				d.isWriteError = true
 			}
-			Logs.Exception(e, getClass().name + ".writeAllTo.code", curUpdater)
+			logger.exception(e, getClass().name + ".writeAllTo.code", curUpdater)
 			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
@@ -1175,7 +1201,7 @@ class Flow {
 		}
 		catch (Exception e) {
 			def destDescription = writer.keySet().toList().join(",")
-			Logs.Exception(e, getClass().name + ".writeAllTo.doneWrite", destDescription)
+			logger.exception(e, getClass().name + ".writeAllTo.doneWrite", destDescription)
 			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
@@ -1186,7 +1212,7 @@ class Flow {
 		}
 		catch (Exception e) {
 			def destDescription = writer.keySet().toList().join(",")
-			Logs.Exception(e, getClass().name + ".writeAllTo.closeWrite", destDescription)
+			logger.exception(e, getClass().name + ".writeAllTo.closeWrite", destDescription)
 			closeDestinations(true)
 			rollbackTrans(["ALL", "COPY"])
 			throw e
@@ -1200,7 +1226,7 @@ class Flow {
 				ds.bulkLoadFile(bp)
 			}
 			catch (Exception e) {
-				Logs.Exception(e, getClass().name + ".writeToAll.bulkLoadFile", "${ds.objectName}")
+				logger.exception(e, getClass().name + ".writeToAll.bulkLoadFile", "${ds.objectName}")
 				rollbackTrans(["ALL", "COPY", "BULK"])
 				throw e
 			}
@@ -1209,7 +1235,7 @@ class Flow {
 		commitTrans(["ALL", "COPY", "BULK"])
 		
 		bulkLoadDS.each { String n, Dataset d ->
-			Executor.RunIgnoreErrors { d.drop() }
+			Executor.RunIgnoreErrors(dslCreator) { d.drop() }
 		}
 
 		if (doneCode != null) doneCode.call()

@@ -43,6 +43,7 @@ class BoolUtils {
 						}
                     }
 				}
+				//noinspection UnnecessaryQualifiedReference
 				directive = Closure.DONE
 			}
 			if (result == null) return defaultValue else return result

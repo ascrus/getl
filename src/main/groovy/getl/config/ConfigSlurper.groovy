@@ -1,10 +1,13 @@
 package getl.config
 
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.proc.Job
 import getl.utils.*
 import groovy.time.Duration
+import groovy.transform.InheritConstructors
+import groovy.transform.NamedVariant
 
 import java.sql.Time
 import java.sql.Timestamp
@@ -14,6 +17,7 @@ import java.sql.Timestamp
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class ConfigSlurper extends ConfigManager {
 	static {
 		System.setProperty('line.separator', '\n')
@@ -39,14 +43,14 @@ class ConfigSlurper extends ConfigManager {
 			this.path = config.path as String
 			if (!(new File(this.path()).exists()))
 				throw new ExceptionGETL("Can not find config path \"${this.path()}\"")
-			Logs.Config("config: set path ${this.path()}")
+			logger.config("config: set path ${this.path()}")
 		}
 		def configPath = (this.path != null)?"${this.path()}${File.separator}":""
 		if (config.filename != null) {
 			def fn = config.filename as String
 			if (fn.indexOf(";") == -1) {
 				this.fileName = fn
-				Logs.Config("config: use file ${this.fileName}")
+				logger.config("config: use file ${this.fileName}")
 			}
 			else {
 				def fs = fn.split(";")
@@ -55,7 +59,7 @@ class ConfigSlurper extends ConfigManager {
 				}
 				this.files = []
 				this.files.addAll(fs)
-				Logs.Config("config: use files ${this.files}")
+				logger.config("config: use files ${this.files}")
 			}
 		}
 	}
@@ -146,7 +150,8 @@ class ConfigSlurper extends ConfigManager {
 				fn = FileUtils.FileName(fn)
 			}
 			def ff = new File(fullConfigName(rp, fn))
-			def data = LoadConfigFile(ff, cp, env, vars)
+			def data = LoadConfigFile(file: ff, codePage: cp, environment: env, configVars: vars,
+					owner: dslCreator)
 			mergeConfig(data)
 		}
 		else if (fl != null) {
@@ -159,7 +164,8 @@ class ConfigSlurper extends ConfigManager {
 					name = FileUtils.FileName(name)
 				}
 				def ff = new File(fullConfigName(rp, name))
-				def data = LoadConfigFile(ff, cp, env, vars)
+				def data = LoadConfigFile(file: ff, codePage: cp, environment: env,
+						configVars: vars, owner: dslCreator)
 				mergeConfig(data)
 			}
 		}
@@ -171,21 +177,27 @@ class ConfigSlurper extends ConfigManager {
 	 * @param codePage encode page
 	 * @param environment load specified environment
 	 * @param configVars configuration variables
-	 * @return configuration
+	 * @param owner Getl instance
+	 * @return loaded configuration content
 	 */
-	static Map<String, Object> LoadConfigFile(File file, String codePage = 'UTF-8', String environment = null,
-											  Map<String, Object> configVars = null) {
+	@NamedVariant
+	static Map<String, Object> LoadConfigFile(File file, String codePage = 'utf-8', String environment = null,
+											  Map<String, Object> configVars = null, Getl owner = null) {
 		if (file == null)
 			throw new ExceptionGETL("No file specified!")
 		if (!file.exists())
 			throw new ExceptionGETL("Configuration file \"$file\" not found!")
+
+		def logger = (owner != null)?owner.logging.manager:Logs.global
+		if (codePage == null)
+			codePage = 'utf-8'
 
 		String text
 		try {
 			text = file.getText(codePage)
 		}
 		catch (Exception e) {
-			Logs.Severe("Error read configuration file \"$file\", error: ${e.message}!")
+			logger.severe("Error read configuration file \"${file.canonicalPath}\", error: ${e.message}!")
 			throw e
 		}
 
@@ -208,7 +220,7 @@ class ConfigSlurper extends ConfigManager {
 			}
 		}
 		catch (Exception e) {
-			Logs.Severe("Error parse configuration file \"$file\", error: ${e.message}!")
+			logger.severe("Error parse configuration file \"$file\", error: ${e.message}!")
 			throw e
 		}
 
@@ -305,7 +317,8 @@ class ConfigSlurper extends ConfigManager {
 		}
 		def ff = new File(fullConfigName(rp, fn))
 
-		SaveConfigFile(content, ff, cp, convVars, tm, sw)
+		SaveConfigFile(data: content, file: ff, codePage: cp, convertVars: convVars, trimMap: tm, smartWrite:  sw,
+				owner: dslCreator)
 	}
 
 	/**
@@ -316,14 +329,20 @@ class ConfigSlurper extends ConfigManager {
 	 * @param convertVars convert $ {variable} to $ {vars.variable}
 	 * @param trimMap
 	 * @param smartWrite don't overwrite the file if it hasn't changed
+	 * @param owner Getl instance
 	 */
+	@NamedVariant
 	static void SaveConfigFile(Map data, File file, String codePage = 'utf-8', Boolean convertVars = false,
-							   Boolean trimMap = false, Boolean smartWrite = false) {
+							   Boolean trimMap = false, Boolean smartWrite = false, Getl owner = null) {
 		def vars = data.vars as Map
 		if (vars != null && !vars.isEmpty()) {
 			data = [configvars: vars] + MapUtils.Copy(data, ['vars'])
 		}
 
+		if (codePage == null)
+			codePage = 'utf-8'
+
+		def logger = (owner != null)?owner.logging.manager:Logs.global
 		StringBuilder sb = new StringBuilder()
 		if (SaveMap(data, sb, convertVars, trimMap) > 0) {
 			int oldHash = (smartWrite && file.exists())?file.text.hashCode():0
@@ -333,7 +352,7 @@ class ConfigSlurper extends ConfigManager {
 					file.setText(str.toString(), codePage?:'utf-8')
 			}
 			catch (Exception e) {
-				Logs.Severe("Error save configuration to file \"$file\", error: ${e.message}")
+				logger.severe("Error save configuration to file \"$file\", error: ${e.message}")
 				throw e
 			}
 		}
@@ -577,7 +596,7 @@ Example:
 
 		String sourceName = a.source
 		String destName = a.dest
-		String copePage = a.codepage?:'UTF-8'
+		String codePage = a.codepage?:'UTF-8'
 		Boolean convertVars = BoolUtils.IsValue(a.convert_vars, false)
 		String ruleFileName = a.rules
 
@@ -588,11 +607,19 @@ Example:
 		if (ruleFileName != null) {
 			def ruleFile = new File(ruleFileName)
 			assert ruleFile.exists(), "Rule config file \"$ruleFileName\" not found!"
-			rules = LoadConfigFile(ruleFile, copePage) as Map<String, String>
+			rules = LoadConfigFile(file: ruleFile, codePage: codePage) as Map<String, String>
 			assert (rules.rules as Map)?.size() > 0, "Rules not found in config file \"$ruleFileName\"!"
 		}
 
-		def content = ConfigFiles.LoadConfigFile(new File(sourceName), copePage)
+		def content
+		def sourceFile = new File(sourceName)
+		try {
+			content = ConfigFiles.LoadConfigFile(file: sourceFile, codePage: codePage)
+		}
+		catch (Exception e) {
+			Logs.Severe("Invalid parsing file \"${sourceFile.canonicalPath}\", error: ${e.message}")
+			throw e
+		}
 		if (content.isEmpty()) {
 			println "Configuration JSON file is empty!"
 			return
@@ -606,7 +633,7 @@ Example:
 			}
 		}
 
-		SaveConfigFile(content, new File(destName), copePage, convertVars)
+		SaveConfigFile(data: content, file: new File(destName), codePage: codePage, convertVars: convertVars)
 		println "Convert \"$sourceName\" to \"$destName\" complete."
 	}
 }

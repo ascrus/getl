@@ -61,7 +61,7 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 		dataset._driver_params.remove("sorter_code")
 	}
 	
-	static private Closure generateSortCode(List<String> fieldOrderBy) {
+	private Closure generateSortCode(List<String> fieldOrderBy) {
 		StringBuilder sb = new StringBuilder()
 		sb << "{ Map row1, Map row2 ->\n	def eq\n"
 		fieldOrderBy.each { field ->
@@ -75,7 +75,7 @@ class SorterDatasetDriver extends VirtualDatasetDriver {
 		}
 		sb << "	return 0\n}"
 		
-		Closure result = GenerationUtils.EvalGroovyClosure(sb.toString())
+		Closure result = GenerationUtils.EvalGroovyClosure(value: sb.toString(), owner: connection.dslCreator)
 		
 		return result
 	}

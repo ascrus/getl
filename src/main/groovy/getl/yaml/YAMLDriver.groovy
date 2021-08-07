@@ -74,8 +74,8 @@ class YAMLDriver extends WebServiceDriver {
             cl.call(dataset, code, data, limit)
         }
         catch (Exception e) {
-            Logs.Severe("Yaml file $dataset processing error: ${e.message}")
-            Logs.Dump(e, 'yaml', dataset.toString(), "// Generation script:\n$script")
+            connection.logger.severe("Yaml file $dataset processing error: ${e.message}")
+            connection.logger.dump(e, 'yaml', dataset.toString(), "// Generation script:\n$script")
             throw e
         }
     }

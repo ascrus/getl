@@ -15,9 +15,9 @@ class FlowTest extends GetlDslTest {
                 ds.eachRow { row ->
                     i++
                     assertEquals(i, row.id)
-                    assertEquals("test $i", row.name)
+                    assertEquals("test $i".toString(), row.name)
                     assertEquals(i + 0.12, row.value)
-                    assertEquals("class $i", row."class")
+                    assertEquals("class $i".toString(), row."class")
                 }
             }
 

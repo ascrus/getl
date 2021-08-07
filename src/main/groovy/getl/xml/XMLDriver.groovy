@@ -172,8 +172,8 @@ class XMLDriver extends WebServiceDriver {
 			cl.call(dataset, initAttr, code, data, limit)
 		}
 		catch (Exception e) {
-			Logs.Severe("Xml file $dataset processing error: ${e.message}")
-			Logs.Dump(e, 'xml', dataset.toString(), "// Generation script:\n$script")
+			connection.logger.severe("Xml file $dataset processing error: ${e.message}")
+			connection.logger.dump(e, 'xml', dataset.toString(), "// Generation script:\n$script")
 			throw e
 		}
 	}
@@ -190,7 +190,7 @@ class XMLDriver extends WebServiceDriver {
 		generateAttrRead(dataset, null, sb)
 		
 		def vars = [dataset: dataset, data: data] as Map<String, Object>
-		GenerationUtils.EvalGroovyScript(sb.toString(), vars)
+		GenerationUtils.EvalGroovyScript(value: sb.toString(), vars: vars, owner: dataset.dslCreator)
 	}
 	
 	/**

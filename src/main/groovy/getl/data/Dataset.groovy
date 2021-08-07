@@ -39,6 +39,10 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	Getl getDslCreator() { sysParams.dslCreator as Getl }
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
+	/** Current logger */
+	@JsonIgnore
+	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+
 	/**
 	 * Register connection parameters with method validator
 	 */
@@ -364,7 +368,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 				setField(fl)
 			}
 			catch (Exception e) {
-				Logs.Dump(e, "DATASET", "parse fields", configSection)
+				logger.dump(e, "DATASET", "parse fields", configSection)
 				throw e
 			}
 		}
@@ -383,7 +387,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (cp.isEmpty())
 			throw new ExceptionGETL("Config section \"datasets.${config}\" not found")
 		onLoadConfig(cp)
-		Logs.Config("Load config \"datasets\".\"${config}\" for object \"${this.getClass().name}.${objectName}\"")
+		logger.config("Load config \"datasets\".\"${config}\" for object \"${this.getClass().name}.${objectName}\"")
 	}
 
 	/**
@@ -831,7 +835,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * Generation closure code from process rows
 	 */
 	private Closure generateSetErrorValue (Closure processCode) {
-		return GenerationUtils.GenerateFieldCopy(getField())
+		return GenerationUtils.GenerateFieldCopy(getField(), this)
 	}
 	
 	/**
@@ -1025,7 +1029,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 				errorsDataset.write(errorRow)
 			}
 			catch (Exception we) {
-				Logs.Exception(we, getClass().name, objectName + ".errorsDataset")
+				logger.exception(we, getClass().name, objectName + ".errorsDataset")
 				throw we
 			}
 			
@@ -1136,7 +1140,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		}
 		catch (Exception e) {
 			isWriteError = true
-			Logs.Exception(e, getClass().name, objectName)
+			logger.exception(e, getClass().name, objectName)
 			throw e
 		}
 	}
@@ -1154,7 +1158,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		}
 		catch (Exception e) {
 			isWriteError = true
-			Logs.Exception(e, getClass().name, objectName)
+			logger.exception(e, getClass().name, objectName)
 			throw e
 		}
 	}
@@ -1261,7 +1265,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 
 		def p = [:] as Map<String, Object>
 		p.putAll(GenerationUtils.Fields2Map(fl))
-		ConfigSlurper.SaveConfigFile(p, file)
+		ConfigSlurper.SaveConfigFile(data: p, file: file, owner: dslCreator)
 	}
 
 	/**
@@ -1337,16 +1341,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param reader reader descriptor
 	 */
 	void loadDatasetMetadataFromJSON(Reader reader) {
-		try {
-			setField(LoadDatasetMetadataFromJSON(reader))
-		}
-		catch (ExceptionGETL e) {
-			throw e
-		}
-		catch (Exception e) {
-			Logs.Severe("Error reading schema file for dataset \"${objectName}\", error: ${e.message}")
-			throw e
-		}
+		setField(loadFieldsFromJSON(reader))
 		manualSchema = true
 	}
 	
@@ -1355,11 +1350,15 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param reader reader descriptor
 	 * @return list of read fields
 	 */
-	static List<Field> LoadDatasetMetadataFromJSON(Reader reader) {
+	List<Field> loadFieldsFromJSON(Reader reader) {
 		def b = new JsonSlurper()
 		def l = null
 		try {
 			l = b.parse(reader)
+		}
+		catch (Exception e) {
+			logger.severe("Error reading schema file for dataset \"$objectName\", error: ${e.message}")
+			throw e
 		}
 		finally {
 			reader.close()
@@ -1378,13 +1377,13 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 */
 	void loadDatasetMetadataFromSlurper(File file) {
 		try {
-			setField(LoadDatasetMetadataFromSlurper(file))
+			setField(loadFieldsFromSlurper(file))
 		}
 		catch (ExceptionGETL e) {
 			throw e
 		}
 		catch (Exception e) {
-			Logs.Severe("Error reading schema file for dataset \"${objectName}\", error: ${e.message}")
+			logger.severe("Error reading schema file for dataset \"${objectName}\", error: ${e.message}")
 			throw e
 		}
 		manualSchema = true
@@ -1395,8 +1394,8 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	 * @param file source file
 	 * @return list of read fields
 	 */
-	static List<Field> LoadDatasetMetadataFromSlurper(File file) {
-		def p = ConfigSlurper.LoadConfigFile(file)
+	List<Field> loadFieldsFromSlurper(File file) {
+		def p = ConfigSlurper.LoadConfigFile(file: file, owner: dslCreator)
 		List<Field> fl = GenerationUtils.Map2Fields(p)
 		if (fl == null || fl.isEmpty())
 			throw new ExceptionGETL("Fields not found in file \"$file\"!")
@@ -1405,21 +1404,12 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	}
 
 	/** Load fields structure from metadata file */
-	static List<Field> LoadDatasetMetadata(String fileName) {
+	List<Field> loadFieldsFromFile(String fileName) {
 		List<Field> res
-		try {
-			if (Config.configClassManager instanceof ConfigSlurper)
-				res = LoadDatasetMetadataFromSlurper(new File(fileName))
-			else
-				res = LoadDatasetMetadataFromJSON(new File(fileName).newReader("UTF-8"))
-		}
-		catch (ExceptionGETL e) {
-			throw e
-		}
-		catch (Exception e) {
-			Logs.Severe("Error reading schema file from file \"$fileName\", error: ${e.message}")
-			throw e
-		}
+		if (Config.configClassManager instanceof ConfigSlurper)
+			res = loadFieldsFromSlurper(new File(fileName))
+		else
+			res = loadFieldsFromJSON(new File(fileName).newReader("UTF-8"))
 
 		return res
 	}
@@ -1490,7 +1480,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 			throw e
 		}
 		catch (Exception e) {
-			Logs.Severe("Error reading schema file for dataset \"${objectName}\" from file \"$fn\", error: ${e.message}")
+			logger.severe("Error reading schema file for dataset \"${objectName}\" from file \"$fn\", error: ${e.message}")
 			throw e
 		}
 	}
@@ -1673,7 +1663,7 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		Closure res
 		def hash = script.hashCode()
 		if ((_cacheReadHash?:0) != hash) {
-			res = GenerationUtils.EvalGroovyClosure(script)
+			res = GenerationUtils.EvalGroovyClosure(value: script, owner: dslCreator)
 			_cacheReadCode = res
 			_cacheReadHash = hash
 		}

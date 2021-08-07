@@ -1,9 +1,12 @@
 package getl.config
 
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.utils.*
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+import groovy.transform.InheritConstructors
+import groovy.transform.NamedVariant
 
 
 /**
@@ -11,6 +14,7 @@ import groovy.json.JsonSlurper
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class ConfigFiles extends ConfigManager {
     @Override
     void init(Map<String, Object> initParams) {
@@ -24,14 +28,14 @@ class ConfigFiles extends ConfigManager {
         if (config.path != null) {
             this.path = config.path
             if (!(new File(this.path).exists())) throw new ExceptionGETL("Can not find config path \"${this.path}\"")
-            Logs.Config("config: set path ${this.path}")
+            logger.config("config: set path ${this.path}")
         }
         def configPath = (this.path != null)?"${this.path}${File.separator}":""
         if (config.filename != null) {
             def fn = config.filename as String
             if (fn.indexOf(";") == -1) {
                 this.fileName = fn
-                Logs.Config("config: use file ${this.fileName}")
+                logger.config("config: use file ${this.fileName}")
             }
             else {
                 def fs = fn.split(";")
@@ -40,7 +44,7 @@ class ConfigFiles extends ConfigManager {
                 }
                 this.files = []
                 this.files.addAll(fs)
-                Logs.Config("config: use files ${this.files}")
+                logger.config("config: use files ${this.files}")
             }
         }
     }
@@ -118,7 +122,8 @@ class ConfigFiles extends ConfigManager {
                 fn = FileUtils.FileName(fn)
             }
             def ff = new File(fullConfigName(rp, fn))
-			data = LoadConfigFile(ff, cp)
+            logger.config("Load config file \"${ff.canonicalPath}\"")
+            data = LoadConfigFile(file: ff, codePage: cp, owner: dslCreator)
             mergeConfig(data)
 		}
 		else if (fl != null) {
@@ -131,7 +136,14 @@ class ConfigFiles extends ConfigManager {
                     name = FileUtils.FileName(name)
                 }
                 def ff = new File(fullConfigName(rp, name))
-    			data = LoadConfigFile(ff, cp)
+                logger.config("Load config file \"${ff.canonicalPath}\"")
+                try {
+                    data = LoadConfigFile(file: ff, codePage: cp, owner: dslCreator)
+                }
+                catch (Exception e) {
+                    logger.severe("Invalid parsing file \"${ff.canonicalPath}\", error: ${e.message}")
+                    throw e
+                }
                 mergeConfig(data)
 			}
 		}
@@ -143,22 +155,25 @@ class ConfigFiles extends ConfigManager {
 	 * @param codePage encoding page
      * @return config content
 	 */
-	static Map<String, Object> LoadConfigFile (File file, String codePage) {
+    @NamedVariant
+	static Map<String, Object> LoadConfigFile(File file, String codePage = 'utf-8', Getl owner = null) {
 		if (!file.exists())
             throw new ExceptionGETL("Config file \"$file\" not found")
-        
-		Logs.Config("Load config file \"${file.canonicalPath}\"")
+
         def data = null
+        if (codePage == null)
+            codePage = 'utf-8'
 
         def json = new JsonSlurper()
         def reader = file.newReader(codePage)
+        def logger = (owner != null)?owner.logging.manager:Logs.global
 		try {
             data = json.parse(reader)
 		}
-		catch (Exception e) {
-            Logs.Severe("Invalid json text in file \"$file\", error: ${e.message}")
-			throw e
-		}
+        catch (Exception e) {
+            logger.severe("Invalid parsing file \"${file.canonicalPath}\", error: ${e.message}")
+            throw e
+        }
         finally {
             reader.close()
         }
@@ -183,7 +198,7 @@ class ConfigFiles extends ConfigManager {
         }
         def ff = new File(fullConfigName(rp, fn))
 
-        SaveConfigFile(content, ff, cp)
+        SaveConfigFile(data: content, file: ff, codePage: cp, owner: dslCreator)
     }
 
     /**
@@ -192,13 +207,19 @@ class ConfigFiles extends ConfigManager {
      * @param file config file
      * @param codePage encoding page
      */
-	static void SaveConfigFile (Map<String, Object> data, File file, String codePage) {
+    @NamedVariant
+	static void SaveConfigFile(Map<String, Object> data, File file, String codePage = 'utf-8', Getl owner = null) {
+        if (codePage == null)
+            codePage = 'utf-8'
+
+        def logger = (owner != null)?owner.logging.manager:Logs.global
+
         JsonBuilder b = new JsonBuilder()
         try {
             b.call(data)
         }
         catch (Exception e) {
-            Logs.Severe("Error save configuration to file \"$file\", error: ${e.message}")
+            logger.severe("Error parse content to file \"${file.canonicalPath}\", error: ${e.message}")
             throw e
         }
 
@@ -207,9 +228,11 @@ class ConfigFiles extends ConfigManager {
             writer.println(b.toPrettyString())
         }
         catch (Exception e) {
-            Logs.Severe("Error save configuration to file \"$file\", error: ${e.message}")
+            logger.severe("Error save configuration to file \"${file.canonicalPath}\", error: ${e.message}")
+
             writer.close()
-            if (file.exists()) file.delete()
+            if (file.exists())
+                file.delete()
             throw e
         }
         finally {

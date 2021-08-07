@@ -243,7 +243,7 @@ class Connection implements Cloneable, GetlRepository {
 			onLoadConfig(cp)
 			validParams()
 
-			Logs.Config("Load config \"connections\".\"${config}\" for object \"${this.getClass().name}\"")
+			logger.config("Load config \"connections\".\"${config}\" for object \"${this.getClass().name}\"")
 		}
 	}
 	
@@ -283,6 +283,10 @@ class Connection implements Cloneable, GetlRepository {
 				sysParams.dslCreator = value
 		}
 	}
+
+	/** Current logger */
+	@JsonIgnore
+	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
 
 	/**
 	 * Use new Getl instance
@@ -433,7 +437,7 @@ class Connection implements Cloneable, GetlRepository {
 					throw e
 
 				sleep(timeoutAttempts)
-				Logs.Warning("Error connect to $objectName, attempt number $attempt, error: ${e.message}")
+				logger.warning("Error connect to $objectName, attempt number $attempt, error: ${e.message}")
 			}
 		}
 		doDoneConnect()

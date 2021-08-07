@@ -204,7 +204,7 @@ class H2Functions {
 		con.connected = true
 		
 		try {
-			GenerationUtils.EvalGroovyScript(script, [connection: con]).toString()
+			GenerationUtils.EvalGroovyScript(value: script, vars: [connection: con]).toString()
 		}
 		catch (Exception e) {
 			throw e

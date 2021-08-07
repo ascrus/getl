@@ -38,6 +38,10 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		_dslCreator = null
 	}
 
+	/** Current logger*/
+	@JsonIgnore
+	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+
 	static enum TypeCommand {
 		UNKNOWN, UPDATE, SELECT, SET, ECHO, FOR, IF, ERROR, EXIT, LOAD_POINT, SAVE_POINT, BLOCK
 	}
@@ -280,7 +284,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 		def pat = Pattern.compile(find)
 		def mat = pat.matcher(str)
 		if (!mat.find()) {
-			Logs.Dump(null, getClass().name, 'sql', sql)
+			logger.dump(null, getClass().name, 'sql', sql)
 			throw new ExceptionGETL("Operator \"$oper\" not found in script!")
 		}
 		str = mat.replaceFirst('')
@@ -582,7 +586,7 @@ class SQLScripter implements WithConnection, Cloneable, GetlRepository {
 					doSetVar(st, i)
 					break
 				case TypeCommand.ECHO:
-					Logs.Write(logEcho, sql.trim())
+					logger.write(logEcho, sql.trim())
 					break
 				case TypeCommand.FOR:
 					i = doFor(st, i)

@@ -2,14 +2,14 @@ package getl.config
 
 import getl.proc.Job
 import getl.utils.Config
-import getl.utils.Logs
-import getl.utils.MapUtils
+import groovy.transform.InheritConstructors
 
 /**
  * Migrate configuration file utilities
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class ConfigUtils extends Job {
     static void main(def args) {
         new ConfigUtils().run(args)
@@ -48,7 +48,7 @@ class ConfigUtils extends Job {
             return
         }
 
-        Logs.Info("config: load ${Config.content.size()} parameters for source")
+        logger.info("config: load ${Config.content.size()} parameters for source")
 
         def destMan = Class.forName((jobArgs.dest as Map).manager as String).newInstance() as ConfigManager
         Config.params.clear()
@@ -60,7 +60,7 @@ class ConfigUtils extends Job {
         Config.ClearConfig()
         Config.LoadConfig()
 
-        Logs.Info("config: save ${Config.content.size()} parameters to destination")
+        logger.info("config: save ${Config.content.size()} parameters to destination")
 //        println MapUtils.ToJson(Config.content)
     }
 }

@@ -160,7 +160,7 @@ class EMailer implements GetlRepository {
 			throw new ExceptionGETL("Config section \"emailers.${config}\" not found")
 
 		onLoadConfig(cp)
-		Logs.Config("Load config \"emailers\".\"${config}\" for object \"${this.getClass().name}\"")
+		logger.config("Load config \"emailers\".\"${config}\" for object \"${this.getClass().name}\"")
 	}
 
 	/** Init configuration */
@@ -180,6 +180,7 @@ class EMailer implements GetlRepository {
 		if (this.toAddress != null) {
 			if (toAddress == null) toAddress = this.toAddress else toAddress = this.toAddress + "," + toAddress
 		}
+		//noinspection SpellCheckingInspection
 		Properties mprops = new Properties()
 		mprops.put('mail.transport.protocol', 'smtp')
 		mprops.put('mail.smtp.host', host)
@@ -253,7 +254,7 @@ class EMailer implements GetlRepository {
 			Transport.send(msg)
 		}
 		catch (javax.mail.MessagingException e) {
-			Logs.Severe("emailer: failed send message for param $mprops")
+			logger.severe("emailer: failed send message for param $mprops")
 			throw e
 		}
 	}
@@ -276,4 +277,8 @@ class EMailer implements GetlRepository {
 		_dslNameObject = null
 		_dslCreator = null
 	}
+
+	/** Current logger */
+	@JsonIgnore
+	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
 }

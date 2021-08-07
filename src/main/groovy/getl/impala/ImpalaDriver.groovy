@@ -204,7 +204,7 @@ class ImpalaDriver extends JDBCDriver {
             super.saveBatch(dataset, wp)
         }
         catch (AssertionError e) {
-            Logs.Dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
+            connection.logger.dump(e, getClass().name, dataset.toString(), "operation:${wp.operation}, batch size: ${wp.batchSize}, query:\n${wp.query}\n\nstatement: ${wp.statement}")
             throw e
         }
     }

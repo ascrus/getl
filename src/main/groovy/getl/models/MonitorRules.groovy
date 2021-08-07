@@ -15,7 +15,6 @@ import getl.tfs.TDSTable
 import getl.utils.BoolUtils
 import getl.utils.DateUtils
 import getl.utils.EMailer
-import getl.utils.Logs
 import getl.utils.StringUtils
 import groovy.time.TimeCategory
 import groovy.transform.InheritConstructors
@@ -289,13 +288,13 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         _currentDateTime = null
 
         // Copy status table to temp
-        new Flow().copy(source: statTab, dest: lastCheckStatusTable, clear: true) { s, d ->
+        new Flow(dslCreator).copy(source: statTab, dest: lastCheckStatusTable, clear: true) { s, d ->
             d.operation = 'NONE'
             d.is_notification = false
         }
 
         // Threading rules
-        new Executor(abortOnError: true).run(enabledRules, countThreads) { elem ->
+        new Executor(abortOnError: true, dslCreator: dslCreator).run(enabledRules, countThreads) { elem ->
             def rule = elem as MonitorRuleSpec
 
             // Clone temp status table
@@ -310,21 +309,21 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
 
             // Return if verification time is not exceeded
             if (hMinStat != null && TimeCategory.minus(curDate, hMinStat) < rule.checkFrequency) {
-                Logs.Info("Rule \"${rule.queryName}\" is skipped by check time")
+                dslCreator.logInfo("Rule \"${rule.queryName}\" is skipped by check time")
                 return
             }
 
             if (hMinStat != null)
-                Logs.Finest("Check rule \"${rule.queryName}\" (last check was ${DateUtils.FormatDate('yyyy-MM-dd HH:mm', hMinStat)}) ...")
+                dslCreator.logFinest("Check rule \"${rule.queryName}\" (last check was ${DateUtils.FormatDate('yyyy-MM-dd HH:mm', hMinStat)}) ...")
             else
-                Logs.Finest("Check rule \"${rule.queryName}\" ...")
+                dslCreator.logFinest("Check rule \"${rule.queryName}\" ...")
 
             // Retrieving rows from a rule query
             def ruleQuery = rule.query.cloneDatasetConnection() as QueryDataset
             ruleQuery.queryParams.putAll(rule.objectVars + modelVars)
             def statRows = ruleQuery.rows()
             if (statRows.isEmpty()) {
-                Logs.Warning("Rule \"${rule.queryName}\" has no rows and is skipped")
+                dslCreator.logWarn("Rule \"${rule.queryName}\" has no rows and is skipped")
                 return
             }
 
@@ -341,7 +340,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                     field('code') { length = 512; isNull = false }
                     create()
                 }
-                new Flow().writeTo(dest: validTable) { add ->
+                new Flow(dslCreator).writeTo(dest: validTable) { add ->
                     statRows.each { row -> add([code: (row.code as String)]) }
                 }
                 new QueryDataset(connection: validTable.connection).with {
@@ -357,7 +356,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                 validTable.drop()
             }
 
-            new Flow().writeTo(dest: hTab, dest_operation: 'MERGE') { writeState ->
+            new Flow(dslCreator).writeTo(dest: hTab, dest_operation: 'MERGE') { writeState ->
                 // Row group processing
                 statRows.each { statRow ->
                     // Skip empty value code
@@ -408,18 +407,18 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                     writeState.call(groupRow)
 
                     if (!isCorrect)
-                        Logs.Warning("For rule \"${rule.queryName}\" of group \"$groupCode\" " +
+                        dslCreator.logWarn("For rule \"${rule.queryName}\" of group \"$groupCode\" " +
                                 "a lag of $curLag was revealed  from the last " +
                                 "time ${DateUtils.FormatDate('yyyy-MM-dd HH:mm', stateTime)}!")
                     else
-                        Logs.Info("For rule \"${rule.queryName}\" of group \"$groupCode\" , a lag in work was " +
+                        dslCreator.logInfo("For rule \"${rule.queryName}\" of group \"$groupCode\" , a lag in work was " +
                                 "found within the normal range and is $curLag from the last " +
                                 "time ${DateUtils.FormatDate('yyyy-MM-dd HH:mm', stateTime)}")
                 }
             }
         }
 
-        new Flow().with {
+        new Flow(dslCreator).with {
             statusTable.currentJDBCConnection.transaction {
                 writeTo(dest: statusTable, dest_operation: 'INSERT') { addStatus ->
                     histtab.eachRow(where: 'operation = \'INSERT\'') { row ->
@@ -539,7 +538,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
                 order: ['is_correct DESC', '(first_error_time = ParseDateTime(\'{dt}\', \'yyyy-MM-dd HH:mm:ss\')) DESC',
                         'open_incident', 'rule_name', 'code'])
         if (rows.isEmpty()) {
-            Logs.Warning('No active events for email notification found!')
+            dslCreator.logWarn('No active events for email notification found!')
             return
         }
 
@@ -550,12 +549,12 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         def titleStr = StringUtils.EvalMacroString(title, [name: repositoryModelName, active: activeErrors, close: closeErrors])
 
         smtpServer.with {
-            Logs.Finest("Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients: $toAddress")
+            dslCreator.logFinest("Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients: $toAddress")
             def text = htmlNotification(rows)
             sendMail(null, titleStr, text, true)
         }
 
-        new Flow().writeTo(dest: statusTable, destParams: [operation: 'UPDATE', updateField: ['first_error_time','send_time']]) { updater ->
+        new Flow(dslCreator).writeTo(dest: statusTable, destParams: [operation: 'UPDATE', updateField: ['first_error_time','send_time']]) { updater ->
             rows.each { row ->
                 if (row.is_correct)
                     row.first_error_time = null

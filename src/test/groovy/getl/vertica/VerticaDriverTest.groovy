@@ -122,7 +122,7 @@ LIMIT 1'''
 
             def csv = csvTempWithDataset(verTable) {
                 useConnection csvTempConnection {
-                    path = TFS.systemPath + '/bulkload'
+                    path = systemPath + '/bulkload'
                     FileUtils.ValidPath(currentPath())
                     new File(currentPath()).deleteOnExit()
                 }

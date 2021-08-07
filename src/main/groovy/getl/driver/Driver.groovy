@@ -19,8 +19,11 @@ abstract class Driver {
 		this.connection = con
 		initParams()
 	}
-	
-	protected Connection connection
+
+	/** Current connection */
+	private Connection connection
+	/** Current connection */
+	Connection getConnection() { connection }
 
 	@SuppressWarnings('SpellCheckingInspection')
 	static enum Support {
@@ -41,6 +44,7 @@ abstract class Driver {
 		(supported().indexOf(feature) != -1)
 	}
 
+	@SuppressWarnings('SpellCheckingInspection')
     static enum Operation {
 		CREATE, DROP, BULKLOAD, EXECUTE, RETRIEVEFIELDS, INSERT, UPDATE, DELETE, MERGE,
 		READ_METADATA, TRUNCATE, CREATE_SCHEMA, DROP_SCHEMA

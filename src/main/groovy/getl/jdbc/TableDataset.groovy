@@ -400,7 +400,7 @@ class TableDataset extends JDBCDataset {
 				}
 			}
 
-			csvFields = CSVDataset.LoadDatasetMetadata(schemaFile)
+			csvFields = source.loadFieldsFromFile(schemaFile)
 			if (csvFields.isEmpty())
 				throw new ExceptionGETL("Fields description not found for schema file \"${parent.schemaFileName}\"!")
 		}
@@ -435,7 +435,7 @@ class TableDataset extends JDBCDataset {
 				procFiles = TDS.dataset()
 				Manager.AddFieldFileListToDS(procFiles)
 				procFiles.create()
-				new Flow().writeTo(dest: procFiles) { add ->
+				new Flow(dslCreator).writeTo(dest: procFiles) { add ->
 					String filePath = FileUtils.RelativePathFromFile(fn)
 					String fileName = FileUtils.FileName(fn)
 					def file = new File(path + File.separator + ((filePath != '.')?"${filePath}${File.separator}":'') + fileName)
@@ -470,7 +470,7 @@ class TableDataset extends JDBCDataset {
 			procFiles = TDS.dataset()
 			Manager.AddFieldFileListToDS(procFiles)
 			procFiles.create()
-			new Flow().writeTo(dest: procFiles) { add ->
+			new Flow(dslCreator).writeTo(dest: procFiles) { add ->
 				(files as List<String>).each { elem ->
 					String filePath = FileUtils.RelativePathFromFile(elem)
 					String fileName = FileUtils.FileName(elem)
@@ -548,8 +548,9 @@ class TableDataset extends JDBCDataset {
 					countRow = updateRows
 				}
 				catch (Exception e) {
-					Logs.Severe("${fullTableName}: cannot load files from \"$files\", error: ${e.message}")
-					if (abortOnError) throw e
+					logger.severe("${fullTableName}: cannot load files from \"$files\", error: ${e.message}")
+					if (abortOnError)
+						throw e
 				}
 
 				if (afterLoadPackage != null) afterLoad.call(files)
@@ -581,7 +582,7 @@ class TableDataset extends JDBCDataset {
 					}
 					catch (Exception e) {
 						if (abortOnError) throw e
-						Logs.Severe("${fullTableName}: cannot load file \"$fileName\" (${FileUtils.SizeBytes(tSize)}), error: ${e.message}")
+						logger.severe("${fullTableName}: cannot load file \"$fileName\" (${FileUtils.SizeBytes(tSize)}), error: ${e.message}")
 					}
 
                     if (afterLoad != null) afterLoad.call(fileAttrs)
@@ -634,12 +635,13 @@ class TableDataset extends JDBCDataset {
 					tCount = updateRows
 				}
 				catch (Exception e) {
-                    Logs.Severe("${fullTableName}: cannot load ${listFiles.size()} files (${FileUtils.SizeBytes(tSize)}), error: ${e.message}")
+					logger.severe("${fullTableName}: cannot load ${listFiles.size()} files (${FileUtils.SizeBytes(tSize)}), error: ${e.message}")
                     procFiles.eachRow(order: orderProcess) { file ->
                         def fileName = path + ((file.filepath != '.')?"${File.separator}${file.filepath}":'') + File.separator + file.filename
-                        Logs.Severe("${fullTableName}: cannot load ${fileName} (${FileUtils.SizeBytes(file.filesize as Long)})")
+						logger.severe("${fullTableName}: cannot load ${fileName} (${FileUtils.SizeBytes(file.filesize as Long)})")
                     }
-                    if (abortOnError) throw e
+                    if (abortOnError)
+						throw e
 				}
 
                 if (afterLoadPackage != null) afterLoadPackage.call(fileAttrs)

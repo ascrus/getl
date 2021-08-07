@@ -210,6 +210,10 @@ abstract class Manager implements Cloneable, GetlRepository {
 	 */
 	protected void useDslCreator(Getl value) { sysParams.dslCreator = value }
 
+	/** Current logger */
+	@JsonIgnore
+	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
+
 	/** Root path */
 	String getRootPath() { params.rootPath as String }
 	/** Root path */
@@ -362,7 +366,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 
 		onLoadConfig(cp)
 		validParams()
-		Logs.Config("Load config \"files\".\"config\" for object \"${this.getClass().name}\"")
+		logger.config("Load config \"files\".\"config\" for object \"${this.getClass().name}\"")
 	}
 
 	/** Method parameters */
@@ -527,7 +531,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 				currentPath = dir
 			}
 			catch (Exception e) {
-				Logs.Severe("Can not change directory to \"$dir\"")
+				logger.severe("Can not change directory to \"$dir\"")
 				throw e
 			}
 		}
@@ -536,7 +540,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 				currentPath = "$_currentPath/$dir"
 			}
 			catch (Exception e) {
-				Logs.Severe("Can not change directory to \"$_currentPath/$dir\"")
+				logger.severe("Can not change directory to \"$_currentPath/$dir\"")
 				throw e
 			}
 		}
@@ -974,7 +978,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 			listFiles.clear()
 
 			if (threadCount != null && !threadDirs.isEmpty()) {
-				new Executor().run(threadDirs, threadCount) { String dirName ->
+				new Executor(dslCreator: dslCreator).run(threadDirs, threadCount) { String dirName ->
 					ManagerListProcessing newCode = null
 					if (code != null) {
 						newCode = code.newProcessing()
@@ -1333,7 +1337,7 @@ INSERT INTO ${doubleFiles.fullNameDataset()} (LOCALFILENAME${(takePathInStory)?'
 				newFiles.connection.commitTran()
 			
 			if (countDouble > 0) {
-				Logs.Fine("warning, found $countDouble double files name for build list files in filemanager!")
+				logger.fine("warning, found $countDouble double files name for build list files in filemanager!")
 				def sqlDeleteDouble = """
 DELETE FROM ${newFiles.fullNameDataset()}
 WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
@@ -1372,7 +1376,7 @@ WHERE ID IN (SELECT ID FROM ${doubleFiles.fullNameDataset()});
 				validFiles.drop(ifExists: true)
 				validFiles.create(onCommit: true)
 				try {
-					new Flow().copy(source: newFiles, dest: validFiles, dest_batchSize: 500L)
+					new Flow(dslCreator).copy(source: newFiles, dest: validFiles, dest_batchSize: 500L)
 					
 					def sqlFoundNew = """
 SELECT ID
@@ -1385,7 +1389,7 @@ WHERE
 	)
 """
 					QueryDataset getNewFiles = new QueryDataset(connection: storyTable.connection, query: sqlFoundNew)
-					new Flow().copy(source: getNewFiles, dest: useFiles, dest_batchSize: 500L)
+					new Flow(dslCreator).copy(source: getNewFiles, dest: useFiles, dest_batchSize: 500L)
 				}
 				finally {
 					validFiles.drop(ifExists: true)
@@ -1414,7 +1418,7 @@ FROM (
 				queryParams.table = newFiles.fullTableName
 				queryParams.fields = newFiles.sqlFields(['ID', 'FILEINSTORY']).join(', ')
 				queryParams.story_flag = (storyTable == null)?'FALSE AS FILEINSTORY':'(story.ID IS NULL) AS FILEINSTORY'
-				queryParams.join = (storyTable != null)?"${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID":''
+				queryParams.join = (storyTable != null)?"${(ignoreExistInStory)?'INNER':'LEFT'} JOIN ${useFiles.fullNameDataset()} story ON story.ID = files.ID":'' /* TODO: story.ID not found!!! */
 				queryParams.order = (!fileListSortOrder.isEmpty())?
 						('ORDER BY ' + fileListSortOrder.collect { '"' + it.toUpperCase() + '"' }.join(', ')):''
 				queryParams.limit = (limitCountFiles != null)?"LIMIT $limitCountFiles":''
@@ -1426,7 +1430,7 @@ FROM (
 
 			def countFiles = 0L
 			def sizeFiles = 0L
-			new Flow().copy(source: processFiles, dest: fileList, dest_batchSize: 500L) { i, o ->
+			new Flow(dslCreator).copy(source: processFiles, dest: fileList, dest_batchSize: 500L) { i, o ->
 				countFiles++
 				sizeFiles += (o.filesize as Long)
 				o.fileid = countFiles.toInteger()
@@ -1542,7 +1546,7 @@ FROM (
 			storyFiles.removeField('FILEID')
 			storyFiles.create()
 			
-			new Flow().writeTo(dest: storyFiles, dest_batchSize: 500L) { updater ->
+			new Flow(dslCreator).writeTo(dest: storyFiles, dest_batchSize: 500L) { updater ->
 				fileList.eachRow { Map file ->
 					def row = [:]
 					row.putAll(file)
@@ -1587,12 +1591,12 @@ WHERE
 					download(file.filename as String, lPath, tempName)
 				}
 				catch (Exception e) {
-					Logs.Severe("Can not download file ${file.filepath}/${file.filename}")
+					logger.severe("Can not download file ${file.filepath}/${file.filename}")
 					new File("${lPath}/${tempName}").delete()
 					if (!ignoreError) {
 						throw e
 					}
-					Logs.Warning(e)
+					logger.warning(e)
 					return
 				}
 					
@@ -1625,7 +1629,7 @@ WHERE
 					}
 					catch (Exception e) {
 						if (!ignoreError) throw e
-						Logs.Warning(e)
+						logger.warning(e)
 					}
 				}
 			}
@@ -2246,7 +2250,7 @@ WHERE
 	 * Send noop command to server
 	 */
 	void noop() {
-		if (sayNoop) Logs.Fine("files.manager: NOOP")
+		if (sayNoop) logger.fine("files.manager: NOOP")
 	}
 
     /**
@@ -2322,7 +2326,7 @@ WHERE
 		def p = new Path(mask: maskDirs)
 		list().each { file ->
 			if (file.type == directoryType && p.match(file.filename as String)) {
-				Logs.Fine("Remove directory \"${file.filename}\"")
+				logger.fine("Remove directory \"${file.filename}\"")
 				removeDir(file.filename as String, true)
 			}
 		}

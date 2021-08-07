@@ -546,15 +546,15 @@ ${cb.toString()}
 
     return res
 }"""
-        def closure = GenerationUtils.EvalGroovyClosure(sb.toString())
+        def closure = GenerationUtils.EvalGroovyClosure(value: sb.toString(), owner: dataset.dslCreator)
 
         Long res
         try {
             res = closure.call(client, modifiedAfter, where, order, limit, includeArchived, filter, code) as Long
         }
         catch (Exception e) {
-            Logs.Severe("Error read Xero object \"$ds.objectName\"")
-            Logs.Dump(e, 'Xero', ds.objectName, sb.toString())
+            dataset.logger.severe("Error read Xero object \"${dataset.objectName}\"")
+            dataset.logger.dump(e, 'Xero', dataset.objectName, sb.toString())
             throw e
         }
 

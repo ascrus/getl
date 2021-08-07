@@ -18,7 +18,7 @@ class ConfigSpec extends BaseSpec {
     protected void initSpec() {
         super.initSpec()
         if (params.configManager == null) {
-            def manager = new ConfigSlurper()
+            def manager = new ConfigSlurper(ownerObject as Getl)
             saveParamValue('configManager', manager)
             Config.configClassManager = manager
         }

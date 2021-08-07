@@ -39,7 +39,7 @@ class GetlDslTest extends GetlTest {
             return
         }
 
-        getlTestConfigProperties = ConfigSlurper.LoadConfigFile(propFile)
+        getlTestConfigProperties = ConfigSlurper.LoadConfigFile(file: propFile)
         if (!isSysEnvExists && getlTestConfigProperties.containsKey('defaultEnv'))
             getlDefaultConfigEnvironment = getlTestConfigProperties.defaultEnv as String
     }

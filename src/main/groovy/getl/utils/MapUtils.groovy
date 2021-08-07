@@ -80,7 +80,7 @@ class MapUtils {
 	 */
 	static Map RemoveKeys(Map map, List keys) {
 		if (map == null)
-			return
+			return null
 
 		if (keys == null)
 			throw new ExceptionGETL('Requored key list!')
@@ -102,7 +102,7 @@ class MapUtils {
 						   @ClosureParams(value = SimpleType, options = ['java.lang.Object', 'java.lang.Object'])
 								   Closure<Boolean> filter) {
 		if (map == null)
-			return
+			return null
 
 		def keys = [] as List
 		map.each { key, value ->
@@ -432,7 +432,10 @@ class MapUtils {
 			if (v instanceof String || v instanceof GString) {
 				def val = v.toString().replace("\\", "\\\\").replace('"""', '\\"\\"\\"').replace('${', '\u0001{').replace('$', '\\$').replace('\u0001{', '${')
 
-				if (val.trim() != '"') res.put(k, GenerationUtils.EvalGroovyScript('"""' + val + '"""', vars, true)) else res.put(k, val)
+				if (val.trim() != '"')
+					res.put(k, GenerationUtils.EvalGroovyScript(value: '"""' + val + '"""', vars: vars, convertReturn:  true))
+				else
+					res.put(k, val)
 			}
 			else if (v instanceof Map) {
 				res.put(k, EvalMacroValues(v as Map, vars))

@@ -1,11 +1,10 @@
 package getl.config
 
 import getl.exception.ExceptionGETL
-import getl.utils.Config
 import getl.utils.FileUtils
-import getl.utils.Logs
 import getl.utils.MapUtils
 import groovy.json.JsonSlurper
+import groovy.transform.InheritConstructors
 import org.h2.mvstore.MVMap
 import org.h2.mvstore.MVStore
 
@@ -14,6 +13,7 @@ import org.h2.mvstore.MVStore
  * @author Alexsey Konstantinov
  *
  */
+@InheritConstructors
 class ConfigStores extends ConfigManager {
     @Override
     void init(Map<String, Object> initParams) {
@@ -27,12 +27,12 @@ class ConfigStores extends ConfigManager {
         if (config.filename != null) {
             def fn = config.filename as String
             this.fileName = fn
-            Logs.Config("config: use file ${this.fileName}")
+            logger.config("config: use file ${this.fileName}")
         }
 
         if (config.section != null) {
             this.section = config.section
-            Logs.Config("config: use section \"${this.fileName}\"")
+            logger.config("config: use section \"${this.fileName}\"")
         }
     }
 

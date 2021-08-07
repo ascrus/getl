@@ -9,6 +9,7 @@ import getl.proc.Flow
 import getl.proc.Job
 import getl.stat.ProcessTime
 import getl.tfs.TDS
+import groovy.transform.InheritConstructors
 
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -17,6 +18,7 @@ import java.util.logging.Logger
  * Copies tables data from source to destination
  * @author Aleksey Konstantinov
  */
+@InheritConstructors
 class CopyTables extends Job {
     static main(args) {
         new CopyTables().run(args)

@@ -8,8 +8,8 @@ import org.junit.Test
 class LogsTest extends GetlTest {
     @Test
     void testInit() {
-        Logs.logFileName = "${TFS.storage.currentPath()}/getl.{date}.log"
-        new File(Logs.logFileName).deleteOnExit()
+        Logs.global.logFileName = "${TFS.storage.currentPath()}/getl.{date}.log"
+        new File(Logs.global.logFileName).deleteOnExit()
         Logs.Fine('Init log')
         Logs.Init()
         Logs.Info('Test log')
@@ -18,8 +18,8 @@ class LogsTest extends GetlTest {
 
     @Test
     void testThreads() {
-        Logs.logFileName = "${TFS.storage.currentPath()}/getl.{date}.log"
-        new File(Logs.logFileName).deleteOnExit()
+        Logs.global.logFileName = "${TFS.storage.currentPath()}/getl.{date}.log"
+        new File(Logs.global.logFileName).deleteOnExit()
         Getl.Dsl {
             thread {
                 runMany(100) { num ->

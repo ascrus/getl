@@ -389,12 +389,12 @@ class SalesForceDriver extends Driver {
             if (info.state == BatchStateEnum.Completed) {
                 QueryResultList list = bulkConnection.getQueryResultList(job.id, info.id)
                 queryResults = list.result
-                Logs.Info("Batch ID: ${info.id}, Batch Status: ${info.state}")
+                connection.logger.info("Batch ID: ${info.id}, Batch Status: ${info.state}")
                 break
             } else if (info.state == BatchStateEnum.Failed) {
                 throw new ExceptionGETL(info.toString())
             } else {
-                Logs.Info("Batch ID: ${info.id}, Batch Status: ${info.state}")
+                connection.logger.info("Batch ID: ${info.id}, Batch Status: ${info.state}")
                 Thread.sleep(10000) // 10 sec
             }
         }

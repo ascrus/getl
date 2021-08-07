@@ -1,6 +1,7 @@
 package getl.proc.opts
 
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.lang.opts.BaseSpec
 import getl.proc.Flow
 import getl.tfs.TFSDataset
@@ -53,7 +54,7 @@ class FlowBaseSpec extends BaseSpec {
         if (needProcessCode && onProcess == null)
             throw new ExceptionGETL('Required "process" code!')
 
-        Flow flow = new Flow()
+        Flow flow = new Flow(ownerObject as Getl)
         isProcessed = true
         runProcess(flow)
         countRow = flow.countRow

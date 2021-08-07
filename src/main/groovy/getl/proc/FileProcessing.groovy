@@ -19,7 +19,6 @@ import getl.utils.BoolUtils
 import getl.utils.DateUtils
 import getl.utils.FileUtils
 import getl.utils.GenerationUtils
-import getl.utils.Logs
 import getl.utils.MapUtils
 import getl.utils.StringUtils
 import getl.utils.SynchronizeObject
@@ -185,11 +184,11 @@ class FileProcessing extends FileListProcessing {
             }
 
             if (storageProcessedFiles != null) {
-                DisconnectFrom([storageProcessedFiles])
+                disconnectFrom([storageProcessedFiles])
             }
 
             if (storageErrorFiles != null) {
-                DisconnectFrom([storageErrorFiles])
+                disconnectFrom([storageErrorFiles])
             }
         }
         finally {
@@ -201,26 +200,26 @@ class FileProcessing extends FileListProcessing {
     protected void infoProcess() {
         super.infoProcess()
         if (storageProcessedFiles != null)
-            Logs.Fine("  files after successful processing are saved in $storageProcessedFiles")
+            logger.fine("  files after successful processing are saved in $storageProcessedFiles")
 
         if (storageErrorFiles != null)
-            Logs.Fine("  files with found processing errors are saved in $storageErrorFiles")
+            logger.fine("  files with found processing errors are saved in $storageErrorFiles")
 
         if (countOfThreadProcessing > 1)
-            Logs.Fine("  \"$countOfThreadProcessing\" files will be processed simultaneously")
+            logger.fine("  \"$countOfThreadProcessing\" files will be processed simultaneously")
 
         if (!threadGroupColumns.isEmpty())
-            Logs.Fine("  for multi-threaded processing, files are grouped in columns: $threadGroupColumns")
+            logger.fine("  for multi-threaded processing, files are grouped in columns: $threadGroupColumns")
 
         if (!order.isEmpty())
-            Logs.Fine("  files will be processed in the following sort order: $order")
+            logger.fine("  files will be processed in the following sort order: $order")
 
         if (isCachedMode)
-            Logs.Fine("  file processing cache mode enabled")
+            logger.fine("  file processing cache mode enabled")
 
         def isLocalMan = source instanceof FileManager
         if (processingDirectly && !isLocalMan)
-            Logs.Fine("  files will be processed in direct mode without uploading to local directory")
+            logger.fine("  files will be processed in direct mode without uploading to local directory")
     }
 
     @Override
@@ -270,7 +269,7 @@ class FileProcessing extends FileListProcessing {
             }
 
             if (man != null) {
-                DisconnectFrom([man])
+                disconnectFrom([man])
                 if (man.story != null) {
                     man.story.connection.connected = false
                     man.story.connection = null
@@ -291,8 +290,8 @@ class FileProcessing extends FileListProcessing {
                 throw new ExceptionFileListProcessing("File \"$uploadFile\" not found!")
 
             if (curPath != uploadPath) {
-                ChangeDir([man], uploadPath, true, numberAttempts, timeAttempts)
-                ChangeLocalDir(man, uploadPath, true)
+                changeDir([man], uploadPath, true, numberAttempts, timeAttempts)
+                changeLocalDir(man, uploadPath, true)
                 curPath = uploadPath
             }
 
@@ -318,8 +317,8 @@ class FileProcessing extends FileListProcessing {
                 throw new ExceptionFileListProcessing("There must be no path in the file name!")
 
             if (curPath != uploadPath) {
-                ChangeDir([man], uploadPath, true, numberAttempts, timeAttempts)
-                ChangeLocalDir(man, uploadPath, true)
+                changeDir([man], uploadPath, true, numberAttempts, timeAttempts)
+                changeLocalDir(man, uploadPath, true)
                 curPath = uploadPath
             }
             def f = new File(man.localDirectoryFile.canonicalPath + File.separator + fileName)
@@ -335,7 +334,7 @@ class FileProcessing extends FileListProcessing {
          */
         void uploadLocalFile(File localFile, String uploadPath) {
             if (curPath != uploadPath) {
-                ChangeDir([man], uploadPath, true, numberAttempts, timeAttempts)
+                changeDir([man], uploadPath, true, numberAttempts, timeAttempts)
                 curPath = uploadPath
             }
 
@@ -371,7 +370,7 @@ class FileProcessing extends FileListProcessing {
         counterErrors.clear()
         counterSkips.clear()
 
-        DisconnectFrom([source])
+        disconnectFrom([source])
 
         // Create pool of source manager
         def sourceList = [] as List<ListPoolElement>
@@ -445,7 +444,7 @@ class FileProcessing extends FileListProcessing {
                 tmpProcessFiles.readOpts { where = "\"_HASH_\" = ${group.get('_hash_')}" }
                 def files = tmpProcessFiles.rows()
                 def filesSize = (files.sum { it.filesize }) as Long
-                Logs.Fine("Thread group $strGroup processing ${StringUtils.WithGroupSeparator(files.size())} files ${FileUtils.SizeBytes(filesSize)} ...")
+                logger.fine("Thread group $strGroup processing ${StringUtils.WithGroupSeparator(files.size())} files ${FileUtils.SizeBytes(filesSize)} ...")
 
                 sourceList.each { element ->
                     if (element.man.story != null) {
@@ -460,7 +459,8 @@ class FileProcessing extends FileListProcessing {
 
                 try {
                     // Thread processing files by group
-                    def exec = new Executor(abortOnError: true, countProc: countOfThreadProcessing, dumpErrors: false, logErrors: false)
+                    def exec = new Executor(abortOnError: true, countProc: countOfThreadProcessing, dumpErrors: false,
+                            logErrors: false, dslCreator: dslCreator)
                     exec.with {
                         useList files
                         onStartingThread = this.onStartingThread
@@ -482,8 +482,8 @@ class FileProcessing extends FileListProcessing {
                                 def filename = file.get('filename') as String
 
                                 if (sourceElement.curPath != filepath) {
-                                    ChangeDir([sourceElement.man], filepath, false, numberAttempts, timeAttempts)
-                                    ChangeLocalDir(sourceElement.man, filepath, true)
+                                    changeDir([sourceElement.man], filepath, false, numberAttempts, timeAttempts)
+                                    changeLocalDir(sourceElement.man, filepath, true)
                                     sourceElement.curPath = filepath
                                 }
                                 if (!isDirectly && !isLocalManager) {
@@ -512,7 +512,7 @@ class FileProcessing extends FileListProcessing {
                                     }
                                     catch (AssertionError a) {
                                         def msg = StringUtils.LeftStr(a.message?.trim(), 4096)
-                                        Logs.Severe("Detected assertion fail for file \"${file.filepath}/${file.filename}\" processing: $msg")
+                                        logger.severe("Detected assertion fail for file \"${file.filepath}/${file.filename}\" processing: $msg")
 
                                         element.result = FileProcessingElement.errorResult
                                         element.errorFileName = "${file.filename}.assert.txt"
@@ -528,32 +528,32 @@ class FileProcessing extends FileListProcessing {
                                     }
                                     catch (ExceptionFileProcessing ignored) {
                                         def msg = StringUtils.LeftStr(element.errorText, 4096)
-                                        Logs.Severe("Error processing file \"${file.filepath}/${file.filename}\": $msg")
+                                        logger.severe("Error processing file \"${file.filepath}/${file.filename}\": $msg")
                                     }
                                     catch (ExceptionFileListProcessing e) {
                                         def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
-                                        Logs.Severe("Critical FileListProcessing error on processing file \"${file.filepath}/${file.filename}\": $msg")
+                                        logger.severe("Critical FileListProcessing error on processing file \"${file.filepath}/${file.filename}\": $msg")
                                         setError(onProcessFile, e)
-                                        Logs.Exception(e, 'FileListProcessing', "${file.filepath}/${file.filename}")
+                                        logger.exception(e, 'FileListProcessing', "${file.filepath}/${file.filename}")
                                         throw e
                                     }
                                     catch (ExceptionDSL e) {
                                         def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
-                                        Logs.Severe("Critical Dsl error on processing file \"${file.filepath}/${file.filename}\": $msg")
+                                        logger.severe("Critical Dsl error on processing file \"${file.filepath}/${file.filename}\": $msg")
                                         setError(onProcessFile, e)
-                                        Logs.Exception(e, 'Dsl', "${file.filepath}/${file.filename}")
+                                        logger.exception(e, 'Dsl', "${file.filepath}/${file.filename}")
                                         throw e
                                     }
                                     catch (ExceptionGETL e) {
                                         def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
-                                        Logs.Severe("Critical Getl error processing file \"${file.filepath}/${file.filename}\": $msg")
+                                        logger.severe("Critical Getl error processing file \"${file.filepath}/${file.filename}\": $msg")
                                         setError(onProcessFile, e)
-                                        Logs.Exception(e, 'Getl', "${file.filepath}/${file.filename}")
+                                        logger.exception(e, 'Getl', "${file.filepath}/${file.filename}")
                                         throw e
                                     }
                                     catch (Exception e) {
                                         def msg = StringUtils.LeftStr(e.message?.trim(), 4096)
-                                        Logs.Severe("Exception ${e.getClass().name} in file \"${file.filepath}/${file.filename}\": $msg")
+                                        logger.severe("Exception ${e.getClass().name} in file \"${file.filepath}/${file.filename}\": $msg")
 
                                         if (handleExceptions) {
                                             element.result = FileProcessingElement.errorResult
@@ -569,7 +569,7 @@ class FileProcessing extends FileListProcessing {
                                             }
                                         } else {
                                             setError(onProcessFile, e)
-                                            Logs.Exception(e, 'Exception', "${file.filepath}/${file.filename}")
+                                            logger.exception(e, 'Exception', "${file.filepath}/${file.filename}")
                                             throw e
                                         }
                                     }
@@ -701,7 +701,7 @@ class FileProcessing extends FileListProcessing {
             errorList.each { element -> element.free() }
             errorList.clear()
         }
-        Logs.Info("Successfully processed $countFiles files, detected errors in $countErrors files, skipped $countSkips files")
+        logger.info("Successfully processed $countFiles files, detected errors in $countErrors files, skipped $countSkips files")
     }
 
     /** Use cache when processing files */
@@ -735,7 +735,7 @@ class FileProcessing extends FileListProcessing {
                 delFilesTable.eachRow(order: ['filepath', 'filename']) { file ->
                     def filepath = file.filepath as String
                     if (filepath != curPath) {
-                        ChangeDir([source], filepath, false, numberAttempts, timeAttempts)
+                        changeDir([source], filepath, false, numberAttempts, timeAttempts)
                         curPath = filepath
                     }
                     Operation([source], numberAttempts, timeAttempts) { man ->
@@ -745,7 +745,7 @@ class FileProcessing extends FileListProcessing {
                 delFilesTable.truncate(truncate: true)
             }
             finally {
-                DisconnectFrom([source])
+                disconnectFrom([source])
             }
         }
     }

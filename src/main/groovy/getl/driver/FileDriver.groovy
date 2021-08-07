@@ -418,7 +418,7 @@ class FileDriver extends Driver {
 
 				if (BoolUtils.IsValue(opt.deleteOnEmpty) && opt.countRows == 0) {
 					if (!t.delete())
-						Logs.Severe("Failed to remove file \"${opt.tempFileName}\"!")
+						connection.logger.severe("Failed to remove file \"${opt.tempFileName}\"!")
 				} else if (!t.renameTo(f)) {
 					throw new ExceptionGETL("Failed rename temp file \"${opt.tempFileName}\" to \"${opt.fileName}\"!")
 				}
@@ -445,14 +445,14 @@ class FileDriver extends Driver {
 						}
 
 						if (!t.delete())
-							Logs.Severe("Failed to remove file \"${opt.tempFileName}\"!")
+							connection.logger.severe("Failed to remove file \"${opt.tempFileName}\"!")
 					}
 				}
 			}
 		}
 		else if (BoolUtils.IsValue(opt.deleteOnEmpty) && opt.countRows == 0) {
 			if (!f.delete())
-				Logs.Severe("Failed to remove file \"${opt.fileName}\"!")
+				connection.logger.severe("Failed to remove file \"${opt.fileName}\"!")
 		}
 
 		opt.tempFileName = null
@@ -469,7 +469,7 @@ class FileDriver extends Driver {
 		dataset.writtenFiles.each { opt ->
 			if (!opt.readyFile && opt.fileName != opt.tempFileName) {
 				if (!FileUtils.DeleteFile(opt.tempFileName))
-					Logs.Severe("Failed to remove file \"${opt.tempFileName}\"!")
+					connection.logger.severe("Failed to remove file \"${opt.tempFileName}\"!")
 			}
 			opt.fileName = null
 			opt.tempFileName = null

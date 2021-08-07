@@ -1,5 +1,6 @@
 package getl.stat
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
 import getl.lang.Getl
 import groovy.transform.stc.ClosureParams
@@ -16,7 +17,7 @@ import getl.utils.*
  */
 @SuppressWarnings("UnnecessaryQualifiedReference")
 class ProcessTime {
-	ProcessTime () {
+	ProcessTime() {
 		init()
 	}
 
@@ -52,8 +53,11 @@ class ProcessTime {
 
 	static public java.util.logging.Level LogLevelDefault = Level.FINER
     static void SetLogLevelDefault (String level) { LogLevelDefault = Logs.StrToLevel(level) }
-
 	static public Boolean debugDefault = false
+
+	/** Current logger */
+	@JsonIgnore
+	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
 
 	/** Process name */
 	public String name = 'process'
@@ -89,14 +93,16 @@ class ProcessTime {
 				Config.FindSection('statistic')
 
 		if (conf != null) {
-			if (conf.level != null && logLevel == null) logLevel = Logs.StrToLevel(conf.level as String)
+			if (conf.level != null && logLevel == null)
+				logLevel = Logs.StrToLevel(conf.level as String)
 			if (conf.debug != null) debug = conf.debug 
 		}
-		if (logLevel == null) logLevel = LogLevelDefault
+		if (logLevel == null)
+			logLevel = LogLevelDefault
 		
 		if (logLevel != Level.OFF && debug) {
 			def msg = "${(abbrName != null)?"[$abbrName start] ":''}${name}"
-			Logs.Write(Level.FINEST, msg)
+			logger.write(Level.FINEST, msg)
 		}
 	}
 
@@ -119,7 +125,7 @@ class ProcessTime {
 		if (logLevel != Level.OFF) {
 			def a = (abbrName != null)?("[$abbrName" + ((debug)?' finish':'') + '] '):''
 			def msg = "${a}${name}: ${lastStat()}".toString()
-			Logs.Write(logLevel, msg)
+			logger.write(logLevel, msg)
 		}
 	}
 

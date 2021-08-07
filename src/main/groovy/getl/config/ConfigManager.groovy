@@ -1,6 +1,8 @@
 package getl.config
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionGETL
+import getl.lang.Getl
 import getl.proc.Job
 import getl.utils.FileUtils
 import getl.utils.Logs
@@ -13,11 +15,21 @@ import groovy.transform.Synchronized
  *
  */
 abstract class ConfigManager {
-    ConfigManager() { }
-
-    ConfigManager(Map<String, Object> params) {
-        this.params.putAll(params)
+    ConfigManager(Getl owner = null) {
+        dslCreator = owner
     }
+
+    ConfigManager(Map<String, Object> importParams, Getl owner = null) {
+        dslCreator = owner
+        params.putAll(importParams)
+    }
+
+    /** Getl instance */
+    protected Getl dslCreator
+
+    /** Current logger */
+    @JsonIgnore
+    Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager:Logs.global }
 
     /** Evaluate variables where load configuration */
     private Boolean evalVars
@@ -230,7 +242,7 @@ abstract class ConfigManager {
                 data = MapUtils.EvalMacroValues(data, currentVars)
             }
             catch (MissingPropertyException e) {
-                Logs.Severe("${e.message}, available variables: ${currentVars.keySet().toList()}")
+                logger.severe("${e.message}, available variables: ${currentVars.keySet().toList()}")
                 throw e
             }
         }

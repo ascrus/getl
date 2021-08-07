@@ -241,10 +241,10 @@ class VerticaDriver extends JDBCDriver {
 		StringBuilder sb = new StringBuilder()
 		sb << "COPY ${fullNameDataset(dest)} (\n"
 
-		def table = dest as VerticaTable
-		String formatDate = ListUtils.NotNullValue([params.formatDate, table.bulkLoadOpts.formatDate])
-		String formatTime = ListUtils.NotNullValue([params.formatTime, table.bulkLoadOpts.formatTime])
-		String formatDateTime = ListUtils.NotNullValue([params.formatDateTime, table.bulkLoadOpts.formatDateTime])
+		def table = dest as TableDataset
+		String formatDate = ListUtils.NotNullValue([params.formatDate, table.bulkLoadDirective.formatDate])
+		String formatTime = ListUtils.NotNullValue([params.formatTime, table.bulkLoadDirective.formatTime])
+		String formatDateTime = ListUtils.NotNullValue([params.formatDateTime, table.bulkLoadDirective.formatDateTime])
 
 		List columns = []
 		List options = []

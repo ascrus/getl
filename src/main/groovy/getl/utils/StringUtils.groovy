@@ -26,7 +26,7 @@ class StringUtils {
 	]
 
 	@SuppressWarnings('SpellCheckingInspection')
-	static public final MACROS_FILE = [
+	static public final Map<String, String> MACROS_FILE = [
 		'date': DateUtils.FormatDate("yyyy-MM-dd", DateUtils.Now()), 				//yyyy-MM-dd
 		'monthdate': DateUtils.FormatDate("yyyy-MM", DateUtils.Now()), 				//yyyy-MM
 		'yeardate': DateUtils.FormatDate("yyyy", DateUtils.Now()), 					//yyyy
@@ -191,7 +191,7 @@ class StringUtils {
 	static String ProcessParams(String value, Map params) {
         if (params.isEmpty()) return value
 		
-		def res = GenerationUtils.EvalGroovyScript('"""' + value.replace('"', '\\"') + '"""', params)
+		def res = GenerationUtils.EvalGroovyScript(value: '"""' + value.replace('"', '\\"') + '"""', vars: params)
 		return res
 	}
 	

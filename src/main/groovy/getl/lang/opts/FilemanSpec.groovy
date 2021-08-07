@@ -46,7 +46,7 @@ class FilemanSpec extends BaseSpec {
             parent.process()
         }
         finally {
-            parent.DisconnectFrom([source] + destinations)
+            parent.disconnectFrom([source] + destinations)
         }
         getGetl().finishProcess(pt, parent.countFiles)
 
@@ -90,7 +90,7 @@ class FilemanSpec extends BaseSpec {
             parent.process()
         }
         finally {
-            parent.DisconnectFrom([source])
+            parent.disconnectFrom([source])
         }
         getGetl().finishProcess(pt, parent.countFiles)
 
@@ -122,7 +122,7 @@ class FilemanSpec extends BaseSpec {
             parent.process()
         }
         finally {
-            parent.DisconnectFrom([source])
+            parent.disconnectFrom([source])
         }
         getGetl().finishProcess(pt, parent.countFiles)
 
