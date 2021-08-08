@@ -45,22 +45,6 @@ class SetOfTables extends DatasetsModel<TableSpec> {
     /** Used tables */
     void setUsedTables(List<TableSpec> value) { usedObjects = value }
 
-    /** Name of the dataset storing the history of table processing */
-    String getStoryDatasetName() { super.storyDatasetName }
-    /** Name of the dataset storing the history of table processing */
-    void setStoryDatasetName(String value) { super.useStoryDatasetName(value) }
-    /** Dataset for storing the history of table processing */
-    @JsonIgnore
-    Dataset getStoryDataset() { super.storyDataset }
-    /** Dataset for storing the history of table processing */
-    @JsonIgnore
-    void setStoryDataset(Dataset value) { super.setStoryDataset(value) }
-
-    /** Use a dataset to store the history of table processing */
-    void useStoryDatasetName(String datasetName) { super.useStoryDatasetName(datasetName) }
-    /** Use a dataset to store the history of table processing */
-    void useStoryDataset(Dataset dataset) { super.useStoryDataset(dataset) }
-
     /**
      * Use table in list
      * @param tableName repository table name

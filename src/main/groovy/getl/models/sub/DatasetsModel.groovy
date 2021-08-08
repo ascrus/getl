@@ -1,5 +1,6 @@
 package getl.models.sub
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Connection
 import getl.data.Dataset
 import getl.data.FileDataset
@@ -52,6 +53,21 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
 
     /** Used datasets */
     protected List<T> getUsedDatasets() { usedObjects }
+
+    /** Name dataset of processing history */
+    String getStoryDatasetName() { super.storyDatasetName }
+    /** Name dataset of processing history */
+    void setStoryDatasetName(String value) { super.useStoryDatasetName(value) }
+    /** Dataset of processing history */
+    @JsonIgnore
+    Dataset getStoryDataset() { super.storyDataset }
+    /** Dataset of processing history */
+    @JsonIgnore
+    void setStoryDataset(Dataset value) { super.setStoryDataset(value) }
+    /** Use specified dataset name of processing history */
+    void useStoryDatasetName(String datasetName) { super.useStoryDatasetName(datasetName) }
+    /** Use specified dataset of processing history */
+    void useStoryDataset(Dataset dataset) { super.useStoryDataset(dataset) }
 
     /**
      * Use dataset in model
@@ -170,30 +186,7 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
      * @return list of names of found model datasets
      */
     List<String> findModelDatasets(List<String> includeMask = null, List<String> excludeMask = null) {
-        def res = [] as List<String>
-
-        if (includeMask?.isEmpty())
-            includeMask = null
-        if (excludeMask?.isEmpty())
-            excludeMask = null
-
-        def includePath = Path.Masks2Paths(includeMask)
-        def excludePath = Path.Masks2Paths(excludeMask)
-
-        usedDatasets.each {ds ->
-            def dsName = ds.datasetName
-            if (includePath == null && excludePath == null)
-                res << dsName
-            else if (includePath != null) {
-                if (Path.MatchList(dsName, includePath))
-                    if (excludePath == null || !Path.MatchList(dsName, excludePath))
-                        res << dsName
-            }
-            else if (excludePath != null && !Path.MatchList(dsName, excludePath))
-                res << dsName
-       }
-
-        return res
+        return findModelObjects(includeMask, excludeMask)
     }
 
     /**

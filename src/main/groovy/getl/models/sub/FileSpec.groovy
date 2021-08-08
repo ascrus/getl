@@ -16,6 +16,9 @@ class FileSpec extends BaseSpec {
     /** Owner processing model */
     protected FilesModel getOwnerFilesModel() { ownerModel as FilesModel }
 
+    @Override
+    protected String objectNameInModel() { filePath }
+
     /** Path to file */
     String getFilePath() { params.filePath as String }
     /** Path to file */

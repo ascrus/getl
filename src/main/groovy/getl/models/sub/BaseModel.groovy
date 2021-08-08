@@ -18,15 +18,9 @@ import java.util.concurrent.CopyOnWriteArrayList
  * Base class model
  * @author Alexsey Konstantinov
  */
-@SuppressWarnings('UnnecessaryQualifiedReference')
+@SuppressWarnings(['UnnecessaryQualifiedReference', 'unused'])
 @InheritConstructors
 class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseSpec implements GetlRepository {
-    /*
-    BaseModel() {
-        super(null)
-    }
-    */
-
     private String dslNameObject
     @JsonIgnore
     @Override
@@ -97,6 +91,9 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         if (value != null)
             usedObjects.addAll(value)
     }
+    /** Model objects */
+    @Synchronized('synchObjects')
+    List<BaseSpec> listModelObjects() { params.usedObjects as List<BaseSpec> }
 
     private final Object synchVars = new Object()
 
@@ -166,6 +163,8 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     /** Dataset of mapping processing history */
     @Synchronized('synchStoryDataset')
     protected void setStoryDataset(Dataset value) { useStoryDataset(value) }
+    /** Dataset of mapping processing history */
+    String modelStoryDatasetName() { storyDatasetName }
 
     /** Use specified dataset name of mapping processing history */
     @Synchronized('synchStoryDataset')
@@ -237,5 +236,43 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         def res = super.clone() as BaseModel
         res.dslCreator = dslCreator
         return res
+    }
+
+    /**
+     * Return a list of model objects
+     * @param includeMask list of masks to include objects
+     * @param excludeMask list of masks to exclude objects
+     * @return list of names of found model objects
+     */
+    List<String> findModelObjects(List<String> includeMask = null, List<String> excludeMask = null) {
+        def res = [] as List<String>
+
+        if (includeMask?.isEmpty())
+            includeMask = null
+        if (excludeMask?.isEmpty())
+            excludeMask = null
+
+        def includePath = Path.Masks2Paths(includeMask)
+        def excludePath = Path.Masks2Paths(excludeMask)
+
+        usedObjects.each { obj ->
+            def objName = obj.objectNameInModel()
+            if (includePath == null && excludePath == null)
+                res << objName
+            else if (includePath != null) {
+                if (Path.MatchList(objName, includePath))
+                    if (excludePath == null || !Path.MatchList(objName, excludePath))
+                        res << objName
+            }
+            else if (excludePath != null && !Path.MatchList(objName, excludePath))
+                res << objName
+        }
+
+        return res
+    }
+
+    /** Return model object by name */
+    T objectByName(String name) {
+        return usedObjects.find { obj -> obj.objectNameInModel() == name }
     }
 }

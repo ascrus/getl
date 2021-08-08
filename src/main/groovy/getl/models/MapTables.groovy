@@ -89,21 +89,6 @@ class MapTables extends DatasetsModel<MapTableSpec> {
         saveParamValue('destinationConnectionName', connection.dslNameObject)
     }
 
-    /** Name dataset of mapping processing history */
-    String getStoryDatasetName() { super.storyDatasetName }
-    /** Name dataset of mapping processing history */
-    void setStoryDatasetName(String value) { super.useStoryDatasetName(value) }
-    /** Dataset of mapping processing history */
-    @JsonIgnore
-    Dataset getStoryDataset() { super.storyDataset }
-    /** Dataset of mapping processing history */
-    @JsonIgnore
-    void setStoryDataset(Dataset value) { super.setStoryDataset(value) }
-    /** Use specified dataset name of mapping processing history */
-    void useStoryDatasetName(String datasetName) { super.useStoryDatasetName(datasetName) }
-    /** Use specified dataset of mapping processing history */
-    void useStoryDataset(Dataset dataset) { super.useStoryDataset(dataset) }
-
     /**
      * Use dataset for the mapping
      * @param datasetName repository dataset name

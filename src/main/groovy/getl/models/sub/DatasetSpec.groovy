@@ -28,5 +28,8 @@ class DatasetSpec extends BaseSpec {
     Dataset getModelDataset() { ownerModel.dslCreator.dataset(datasetName) }
 
     @Override
+    protected String objectNameInModel() { datasetName }
+
+    @Override
     String toString() { datasetName }
 }

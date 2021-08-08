@@ -23,6 +23,9 @@ class MonitorRuleSpec extends BaseSpec {
     /** Owner monitor */
     protected MonitorRules getOwnerMonitorModel() { ownerModel as MonitorRules }
 
+    @Override
+    protected String objectNameInModel() { queryName }
+
     /** Query name */
     String getQueryName() { params.queryName as String }
     /** Query name */

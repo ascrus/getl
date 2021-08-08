@@ -6,7 +6,7 @@ import getl.utils.MapUtils
 import getl.utils.Path
 import groovy.transform.Synchronized
 
-class BaseSpec extends getl.lang.opts.BaseSpec {
+abstract class BaseSpec extends getl.lang.opts.BaseSpec {
     BaseSpec(BaseModel model) {
         super(model)
     }
@@ -34,6 +34,9 @@ class BaseSpec extends getl.lang.opts.BaseSpec {
 
     /** Owner model */
     protected BaseModel getOwnerModel() { ownerObject as BaseModel }
+
+    /** Object dsl name */
+    abstract protected String objectNameInModel()
 
     private final Object synchVars = new Object()
 
