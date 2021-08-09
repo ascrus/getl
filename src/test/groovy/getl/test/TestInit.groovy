@@ -8,7 +8,7 @@ class TestInit extends TestRunner {
     @Override
     Object run() {
         Dsl {
-            Config.content.global = [inittest: true]
+            configContent.global = [inittest: true]
         }
     }
 }

@@ -1,13 +1,16 @@
 package getl.jdbc
 
 import getl.jdbc.opts.SequenceCreateSpec
+import groovy.sql.GroovyResultSet
 import groovy.sql.Sql
+import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.BatchUpdateException
+import java.sql.ResultSetMetaData
 import java.sql.SQLException
 import java.sql.Statement
 import getl.csv.CSVDataset
@@ -16,11 +19,16 @@ import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import getl.utils.*
 
+import java.sql.Types
+
+import static getl.driver.Driver.Operation.*
+
 /**
  * JDBC driver class
  * @author Alexsey Konstantinov
  *
  */
+@SuppressWarnings(['GrMethodMayBeStatic', 'unused'])
 @InheritConstructors
 class JDBCDriver extends Driver {
 	@Override
@@ -88,19 +96,17 @@ class JDBCDriver extends Driver {
 	/** Parent JDBC connection manager */
 	protected JDBCConnection getJdbcConnection() { connection as JDBCConnection }
 
-	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	List<Driver.Support> supported() {
-		[Driver.Support.CONNECT, Driver.Support.SQL, Driver.Support.EACHROW, Driver.Support.WRITE, Driver.Support.BATCH,
-		 Driver.Support.COMPUTE_FIELD, Driver.Support.DEFAULT_VALUE, Driver.Support.NOT_NULL_FIELD,
-		 Driver.Support.PRIMARY_KEY, Driver.Support.TRANSACTIONAL, Driver.Support.VIEW]
+	List<Support> supported() {
+		[Support.CONNECT, Support.SQL, Support.EACHROW, Support.WRITE, Support.BATCH,
+		 Support.COMPUTE_FIELD, Support.DEFAULT_VALUE, Support.NOT_NULL_FIELD,
+		 Support.PRIMARY_KEY, Support.TRANSACTIONAL, Support.VIEW]
 	}
 
-	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
-	List<Driver.Operation> operations() {
-		[Driver.Operation.RETRIEVEFIELDS, Driver.Operation.READ_METADATA, Driver.Operation.INSERT,
-		 Driver.Operation.UPDATE, Driver.Operation.DELETE]
+	List<Operation> operations() {
+		[RETRIEVEFIELDS, READ_METADATA, INSERT,
+		 UPDATE, DELETE]
 	}
 	
 	/**
@@ -152,21 +158,20 @@ class JDBCDriver extends Driver {
 	/**
 	 * Java field type association
 	 */
-	@SuppressWarnings("UnnecessaryQualifiedReference")
 	static Map javaTypes() {
 		[
-			BIGINT: [java.sql.Types.BIGINT],
-			INTEGER: [java.sql.Types.INTEGER, java.sql.Types.SMALLINT, java.sql.Types.TINYINT],
-			STRING: [java.sql.Types.CHAR, java.sql.Types.NCHAR, java.sql.Types.LONGVARCHAR, java.sql.Types.LONGNVARCHAR, java.sql.Types.VARCHAR, java.sql.Types.NVARCHAR],
-			BOOLEAN: [java.sql.Types.BOOLEAN, java.sql.Types.BIT],
-			DOUBLE: [java.sql.Types.DOUBLE, java.sql.Types.FLOAT, java.sql.Types.REAL],
-			NUMERIC: [java.sql.Types.DECIMAL, java.sql.Types.NUMERIC],
-			BLOB: [java.sql.Types.BLOB, java.sql.Types.LONGVARBINARY, java.sql.Types.VARBINARY, java.sql.Types.BINARY],
-			TEXT: [java.sql.Types.CLOB, java.sql.Types.NCLOB, java.sql.Types.LONGNVARCHAR, java.sql.Types.LONGVARCHAR],
-			DATE: [java.sql.Types.DATE],
-			TIME: [java.sql.Types.TIME/*, java.sql.Types.TIME_WITH_TIMEZONE*/],
-			TIMESTAMP: [java.sql.Types.TIMESTAMP],
-			TIMESTAMP_WITH_TIMEZONE: [java.sql.Types.TIMESTAMP_WITH_TIMEZONE]
+			BIGINT: [Types.BIGINT],
+			INTEGER: [Types.INTEGER, Types.SMALLINT, Types.TINYINT],
+			STRING: [Types.CHAR, Types.NCHAR, Types.LONGVARCHAR, Types.LONGNVARCHAR, Types.VARCHAR, Types.NVARCHAR],
+			BOOLEAN: [Types.BOOLEAN, Types.BIT],
+			DOUBLE: [Types.DOUBLE, Types.FLOAT, Types.REAL],
+			NUMERIC: [Types.DECIMAL, Types.NUMERIC],
+			BLOB: [Types.BLOB, Types.LONGVARBINARY, Types.VARBINARY, Types.BINARY],
+			TEXT: [Types.CLOB, Types.NCLOB, Types.LONGNVARCHAR, Types.LONGVARCHAR],
+			DATE: [Types.DATE],
+			TIME: [Types.TIME/*, java.sql.Types.TIME_WITH_TIMEZONE*/],
+			TIMESTAMP: [Types.TIMESTAMP],
+			TIMESTAMP_WITH_TIMEZONE: [Types.TIMESTAMP_WITH_TIMEZONE]
 		]
 	}
 	
@@ -176,7 +181,6 @@ class JDBCDriver extends Driver {
 	 */
 	String defaultConnectURL () { null }
 
-	@SuppressWarnings("UnnecessaryQualifiedReference")
 	@Override
 	void prepareField (Field field) {
 		if (field.dbType == null) return
@@ -186,62 +190,62 @@ class JDBCDriver extends Driver {
 		
 		Integer t = (Integer)field.dbType
 		switch (t) {
-			case java.sql.Types.INTEGER: case java.sql.Types.SMALLINT: case java.sql.Types.TINYINT:
+			case Types.INTEGER: case Types.SMALLINT: case Types.TINYINT:
 				res = Field.integerFieldType
 				break
 				
-			case java.sql.Types.BIGINT:
+			case Types.BIGINT:
 				res = Field.bigintFieldType
 				break
 			
-			case java.sql.Types.CHAR: case java.sql.Types.NCHAR:
-			case java.sql.Types.LONGVARCHAR: case java.sql.Types.LONGNVARCHAR:
-			case java.sql.Types.VARCHAR: case java.sql.Types.NVARCHAR:
+			case Types.CHAR: case Types.NCHAR:
+			case Types.LONGVARCHAR: case Types.LONGNVARCHAR:
+			case Types.VARCHAR: case Types.NVARCHAR:
 				res = Field.stringFieldType
 				break
 			
-			case java.sql.Types.BOOLEAN: case java.sql.Types.BIT:
+			case Types.BOOLEAN: case Types.BIT:
 				res = Field.booleanFieldType
 				break
 				
-			case java.sql.Types.DOUBLE: case java.sql.Types.FLOAT: case java.sql.Types.REAL:
+			case Types.DOUBLE: case Types.FLOAT: case Types.REAL:
 				res = Field.doubleFieldType
 				break
 				
-			case java.sql.Types.DECIMAL: case java.sql.Types.NUMERIC:
+			case Types.DECIMAL: case Types.NUMERIC:
 				res = Field.numericFieldType
 				break
 				
-			case java.sql.Types.BLOB: case java.sql.Types.VARBINARY:
-			case java.sql.Types.LONGVARBINARY: case java.sql.Types.BINARY:
+			case Types.BLOB: case Types.VARBINARY:
+			case Types.LONGVARBINARY: case Types.BINARY:
 				res = Field.blobFieldType
 				break
 				
-			case java.sql.Types.CLOB: case java.sql.Types.NCLOB: 
+			case Types.CLOB: case Types.NCLOB:
 				res = Field.textFieldType
 				break
 				
-			case java.sql.Types.DATE:
+			case Types.DATE:
 				res = Field.dateFieldType
 				break
 				
-			case java.sql.Types.TIME:
+			case Types.TIME:
 				res = Field.timeFieldType
 				break
 				
-			case java.sql.Types.TIMESTAMP:
+			case Types.TIMESTAMP:
 				res = Field.datetimeFieldType
 				break
 
-			case java.sql.Types.TIMESTAMP_WITH_TIMEZONE:
+			case Types.TIMESTAMP_WITH_TIMEZONE:
 				res = Field.timestamp_with_timezoneFieldType
 				break
 
-			case java.sql.Types.ROWID:
+			case Types.ROWID:
 				res = Field.rowidFieldType
 				break
 
-			case java.sql.Types.ARRAY:
+			case Types.ARRAY:
 				res = Field.arrayFieldType
 				break
 				
@@ -251,58 +255,57 @@ class JDBCDriver extends Driver {
 		field.type = res
 	}
 
-	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	static Object type2dbType (Field.Type type) {
 		def result
 		
 		switch (type) {
 			case Field.stringFieldType:
-				result = java.sql.Types.VARCHAR
+				result = Types.VARCHAR
 				break
 			case Field.integerFieldType:
-				result = java.sql.Types.INTEGER
+				result = Types.INTEGER
 				break
 			case Field.bigintFieldType:
-				result = java.sql.Types.BIGINT
+				result = Types.BIGINT
 				break
 			case Field.numericFieldType:
-				result = java.sql.Types.DECIMAL
+				result = Types.DECIMAL
 				break
 			case Field.doubleFieldType:
-				result = java.sql.Types.DOUBLE
+				result = Types.DOUBLE
 				break
 			case Field.booleanFieldType:
-				result = java.sql.Types.BOOLEAN
+				result = Types.BOOLEAN
 				break
 			case Field.dateFieldType:
-				result = java.sql.Types.DATE
+				result = Types.DATE
 				break
 			case Field.timeFieldType:
-				result = java.sql.Types.TIME
+				result = Types.TIME
 				break
 			case Field.datetimeFieldType:
-				result = java.sql.Types.TIMESTAMP
+				result = Types.TIMESTAMP
 				break
 			case Field.timestamp_with_timezoneFieldType:
-				result = java.sql.Types.TIMESTAMP_WITH_TIMEZONE
+				result = Types.TIMESTAMP_WITH_TIMEZONE
 				break
 			case Field.blobFieldType:
-				result = java.sql.Types.BLOB
+				result = Types.BLOB
 				break
 			case Field.textFieldType:
-				result = java.sql.Types.CLOB
+				result = Types.CLOB
 				break
 			case Field.objectFieldType:
-				result = java.sql.Types.JAVA_OBJECT
+				result = Types.JAVA_OBJECT
 				break
 			case Field.rowidFieldType:
-				result = java.sql.Types.ROWID
+				result = Types.ROWID
 				break
 			case Field.uuidFieldType:
-				result = java.sql.Types.OTHER
+				result = Types.OTHER
 				break
 			case Field.arrayFieldType:
-				result = java.sql.Types.ARRAY
+				result = Types.ARRAY
 				break
 			default:
 				throw new ExceptionGETL("Not supported type ${type}")
@@ -709,14 +712,13 @@ class JDBCDriver extends Driver {
 		return res
 	}
 
-	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Override
 	@Synchronized('operationLock')
 	List<Object> retrieveObjects(Map params, Closure<Boolean> filter) {
 		if (filter == null && params.filter != null)
 			filter = params.filter as Closure<Boolean>
 
-		def isMultiDB = isSupport(Driver.Support.MULTIDATABASE)
+		def isMultiDB = isSupport(Support.MULTIDATABASE)
 		String catalog = (isMultiDB)?(prepareObjectName(params.dbName as String)?:jdbcConnection.dbName/*defaultDBName*/):null
 		String schemaPattern = prepareObjectName(params.schemaName as String)?:jdbcConnection.schemaName/*defaultSchemaName*/
 		String tableNamePattern = prepareObjectName(params.tableName as String)
@@ -798,21 +800,14 @@ class JDBCDriver extends Driver {
 		return names
 	}
 
-	@SuppressWarnings(['UnnecessaryQualifiedReference'])
-	@Override
-	@Synchronized('operationLock')
-	List<Field> fields(Dataset dataset) {
-		if (!(dataset instanceof TableDataset))
-			throw new ExceptionGETL('Listing fields is supported only for TableDataset objects!')
-
+	/** Read fields from table or view */
+	protected List<Field> tableFields(Dataset dataset) {
 		validTableName(dataset as TableDataset)
-		
-		if (dataset.params.onUpdateFields != null) (dataset.params.onUpdateFields as Closure).call(dataset)
 
-		List<Field> result = []
-		TableDataset ds = dataset as TableDataset
+		def res = [] as List<Field>
+		def ds = dataset as TableDataset
 
-		if (Driver.Operation.READ_METADATA in operations()) {
+		if (READ_METADATA in operations()) {
 			if (ds.type in [JDBCDataset.localTemporaryTableType, JDBCDataset.localTemporaryViewType] &&
 					!supportLocalTemporaryRetrieveFields)
 				throw new ExceptionGETL('The driver does not support getting a list of fields in the local temporary table!')
@@ -824,7 +819,6 @@ class JDBCDriver extends Driver {
 
 			try {
 				while (rs.next()) {
-					// println "> ${rs.getString("COLUMN_NAME")}: ${rs.getInt("DATA_TYPE")}:${rs.getString("TYPE_NAME")}"
 					Field f = new Field()
 
 					f.name = prepareObjectName(rs.getString("COLUMN_NAME"))
@@ -839,7 +833,7 @@ class JDBCDriver extends Driver {
 					if (dv != null && dv.length() > 0)
 						f.defaultValue = dv
 
-					f.isNull = (rs.getInt("NULLABLE") == java.sql.ResultSetMetaData.columnNullable)
+					f.isNull = (rs.getInt("NULLABLE") == ResultSetMetaData.columnNullable)
 					try {
 						f.isAutoincrement = (rs.getString("IS_AUTOINCREMENT").toUpperCase() == "YES")
 					}
@@ -848,7 +842,7 @@ class JDBCDriver extends Driver {
 					f.description = rs.getString("REMARKS")
 					if (f.description == '') f.description = null
 
-					result << f
+					res << f
 				}
 			}
 			finally {
@@ -861,7 +855,7 @@ class JDBCDriver extends Driver {
 				try {
 					while (rs.next()) {
 						def n = prepareObjectName(rs.getString("COLUMN_NAME"))
-						Field pf = result.find { Field f ->
+						Field pf = res.find { Field f ->
 							(f.name.toLowerCase() == n.toLowerCase())
 						}
 
@@ -879,10 +873,44 @@ class JDBCDriver extends Driver {
 			}
 		}
 		else  {
-			result = fieldsTableWithoutMetadata(ds)
+			res = fieldsTableWithoutMetadata(ds)
 		}
 
-		return result
+		return res
+	}
+
+	/** Read fields from query */
+	protected List<Field> queryFields(Dataset dataset) {
+		def ds = dataset as QueryDataset
+		def sql = sqlForDataset(ds, [:])
+		if (sql == null)
+			throw new ExceptionGETL('Invalid sql query for dataset!')
+
+		saveToHistory("-- READ METADATA FROM QUERY:\n$sql")
+
+		def stat = sqlConnect.connection.prepareStatement(sql)
+		List<Field> res = null
+		try {
+			def meta = stat.metaData
+			res = meta2Fields(meta, false)
+		}
+		finally {
+			stat.close()
+		}
+
+		return res
+	}
+
+	@Override
+	@Synchronized('operationLock')
+	List<Field> fields(Dataset dataset) {
+		if (!(dataset instanceof TableDataset) && !(dataset instanceof QueryDataset))
+			throw new ExceptionGETL('Listing fields is supported only for TableDataset or QueryDataset objects!')
+
+		if (dataset.params.onUpdateFields != null)
+			(dataset.params.onUpdateFields as Closure).call(dataset)
+
+		return (dataset instanceof TableDataset)?tableFields(dataset):queryFields(dataset)
 	}
 
 	/**
@@ -896,12 +924,11 @@ class JDBCDriver extends Driver {
 		return query.field
 	}
 
-	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@Synchronized('operationLock')
 	@Override
 	void startTran() {
 		def con = jdbcConnection
-		if (!isSupport(Driver.Support.TRANSACTIONAL)) return
+		if (!isSupport(Support.TRANSACTIONAL)) return
 		if (con.tranCount == 0) {
 			saveToHistory("START TRAN")
 		}
@@ -910,13 +937,12 @@ class JDBCDriver extends Driver {
 		}
 	}
 
-	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@Synchronized
 	@Override
 	void commitTran() {
 		def con = jdbcConnection
 
-        if (!isSupport(Driver.Support.TRANSACTIONAL))
+        if (!isSupport(Support.TRANSACTIONAL))
 			return
 
 		if (con.autoCommit)
@@ -934,12 +960,11 @@ class JDBCDriver extends Driver {
 		}
 	}
 
-	@SuppressWarnings('UnnecessaryQualifiedReference')
 	@Synchronized('operationLock')
 	@Override
 	void rollbackTran() {
 		def con = jdbcConnection
-        if (!isSupport(Driver.Support.TRANSACTIONAL))
+        if (!isSupport(Support.TRANSACTIONAL))
 			return
 
 		if (con.autoCommit)
@@ -1134,15 +1159,13 @@ class JDBCDriver extends Driver {
 	 * @param useNativeDBType - use native type for typeName field property
 	 * @return
 	 */
-	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	String generateColumnDefinition(Field f, Boolean useNativeDBType) {
-		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((isSupport(Driver.Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
+		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((isSupport(Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
 				((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
-				((isSupport(Driver.Support.DEFAULT_VALUE) && f.defaultValue != null)?" ${generateDefaultDefinition(f)}":"") +
-				((isSupport(Driver.Support.COMPUTE_FIELD) && f.compute != null)?" AS ${f.compute}":"")
+				((isSupport(Support.DEFAULT_VALUE) && f.defaultValue != null)?" ${generateDefaultDefinition(f)}":"") +
+				((isSupport(Support.COMPUTE_FIELD) && f.compute != null)?" AS ${f.compute}":"")
 	}
 
-	@SuppressWarnings('GrMethodMayBeStatic')
 	String generateDefaultDefinition(Field f) {
 		return "DEFAULT ${f.defaultValue}"
 	}
@@ -1164,13 +1187,11 @@ class JDBCDriver extends Driver {
 	/** Start prefix for tables name */
 	protected String tablePrefix
 	/** Start prefix for tables name */
-	@SuppressWarnings('unused')
 	String getTablePrefix() { tablePrefix }
 
 	/** Finish prefix for tables name */
 	protected String tableEndPrefix
 	/** Finish prefix for tables name */
-	@SuppressWarnings('unused')
 	String getTableEndPrefix() { tableEndPrefix }
 
 	/** Start prefix for fields name */
@@ -1228,12 +1249,10 @@ class JDBCDriver extends Driver {
 		return prepareObjectNameWithPrefix(name, fieldPrefix, fieldEndPrefix, dataset)
 	}
 
-	@SuppressWarnings('unused')
 	String prepareTableNameForSQL(String name, JDBCDataset dataset = null) {
 		return prepareObjectNameWithPrefix(name, tablePrefix, tableEndPrefix, dataset)
 	}
 
-	@SuppressWarnings('unused')
 	String prepareObjectNameWithEval(String name, JDBCDataset dataset= null) {
 		return prepareObjectName(name, dataset)?.replace("\$", "\\\$")
 	}
@@ -1304,7 +1323,6 @@ class JDBCDriver extends Driver {
 	/** Drop sql statement syntax */
 	protected String sqlDrop
 
-	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Synchronized
 	@Override
 	void dropDataset(Dataset dataset, Map params) {
@@ -1322,12 +1340,12 @@ class JDBCDriver extends Driver {
 			throw new ExceptionGETL("Can not support type object \"${(dataset as JDBCDataset).type}\"")
 
 		def validExists = BoolUtils.IsValue(params.ifExists)
-		if (validExists && !isSupport(Driver.Support.DROPIFEXIST)) {
+		if (validExists && !isSupport(Support.DROPIFEXIST)) {
 			if (!isTable(dataset)) throw new ExceptionGETL("Option \"ifExists\" is not supported for dataset type \"${dataset.getClass().name}\"")
 			if (!(dataset as TableDataset).exists) return
 		}
 
-		def e = (validExists && isSupport(Driver.Support.DROPIFEXIST))?'IF EXISTS':''
+		def e = (validExists && isSupport(Support.DROPIFEXIST))?'IF EXISTS':''
 		def q = StringUtils.EvalMacroString(sqlDrop, [object: t, ifexists: e, name: n])
 
 		def con = jdbcConnection
@@ -1483,8 +1501,7 @@ class JDBCDriver extends Driver {
 	 * @param meta
 	 * @return
 	 */
-	@SuppressWarnings("GrUnresolvedAccess")
-	protected List<Field> meta2Fields (def meta, Boolean isTable) {
+	protected List<Field> meta2Fields(ResultSetMetaData meta, Boolean isTable) {
 		def result = [] as List<Field>
         //noinspection GroovyAssignabilityCheck
         for (Integer i = 0; i < meta.getColumnCount(); i++) {
@@ -1500,8 +1517,7 @@ class JDBCDriver extends Driver {
 		return result
 	}
 
-	@SuppressWarnings(['UnnecessaryQualifiedReference'])
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Override
 	@Synchronized('operationLock')
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
@@ -1541,7 +1557,7 @@ class JDBCDriver extends Driver {
 		
 		Map rowCopy
 		Closure copyToMap
-		def getFields = { meta ->
+		def getFields = { ResultSetMetaData meta ->
 			metaFields = meta2Fields(meta, isTable)
 			if (!isTable) {
 				dataset.field = metaFields
@@ -1604,7 +1620,7 @@ class JDBCDriver extends Driver {
 		try {
 			java.sql.Connection con = sqlConnect.connection
 			if (sqlParams == null) {
-				sqlConnect.eachRow(sql, getFields, offs, max) { groovy.sql.GroovyResultSet row ->
+				sqlConnect.eachRow(sql, getFields, offs, max) { GroovyResultSet row ->
 					Map outRow = [:]
 					copyToMap(con, row, outRow)
 					
@@ -1649,7 +1665,6 @@ class JDBCDriver extends Driver {
 		return countRec
 	}
 
-	@SuppressWarnings(['UnnecessaryQualifiedReference'])
 	@Override
 	void clearDataset(Dataset dataset, Map params) {
 		validTableName(dataset as JDBCDataset)
@@ -1658,11 +1673,11 @@ class JDBCDriver extends Driver {
 
 		def truncate = BoolUtils.IsValue(params.truncate, true)
 		if (truncate) {
-			if (!isOperation(Driver.Operation.TRUNCATE))
+			if (!isOperation(TRUNCATE))
 				throw new ExceptionGETL("Driver not supported truncate operation!")
 		}
 		else {
-			if (!isOperation(Driver.Operation.DELETE))
+			if (!isOperation(DELETE))
 				throw new ExceptionGETL("Driver not supported delete operation!")
 		}
 
@@ -1809,7 +1824,6 @@ $sql
 	 * @param wp
 	 * @return
 	 */
-	@SuppressWarnings('unused')
 	protected Closure generateSetStatement(String operation, List<Field> procFields, List<String> statFields, WriterParams wp) {
 		if (statFields.isEmpty())
 			throw new ExceptionGETL('Required fields from generate prepared statement')
@@ -2030,7 +2044,6 @@ $sql
 		return res
 	}
 
-	@SuppressWarnings(['UnnecessaryQualifiedReference', 'SpellCheckingInspection'])
 	@Override
 	@Synchronized('operationLock')
 	void openWrite(Dataset dataset, Map params, Closure prepareCode) {
@@ -2046,28 +2059,28 @@ $sql
 
 		switch (operation) {
 			case 'INSERT':
-				if (!(Operation.INSERT in operations()))
+				if (!(INSERT in operations()))
 					throw new ExceptionGETL('Operation INSERT not support!')
 
 				break
 			case 'UPDATE':
-				if (!(Operation.UPDATE in operations()))
+				if (!(UPDATE in operations()))
 					throw new ExceptionGETL('Operation UPDATE not support!')
 
 				break
 			case 'DELETE':
-				if (!(Operation.DELETE in operations()))
+				if (!(DELETE in operations()))
 					throw new ExceptionGETL('Operation DELETE not support!')
 
 				break
 			case 'MERGE':
-				if (!(Operation.MERGE in operations()))
+				if (!(MERGE in operations()))
 					throw new ExceptionGETL('Operation MERGE not support!')
 
 				break
 		}
 
-		def batchSize = (!isSupport(Driver.Support.BATCH)?1:((params.batchSize != null)?params.batchSize:500L))
+		def batchSize = (!isSupport(Support.BATCH)?1:((params.batchSize != null)?params.batchSize:500L))
 		if (params.onSaveBatch != null) wp.onSaveBatch = params.onSaveBatch as Closure
 		
 		def fields = prepareFieldFromWrite(dataset as JDBCDataset, prepareCode)
@@ -2276,8 +2289,7 @@ $sql
 		connection.logger.warning("${dataset.params.tableName} rejects rows: ${el}")
 	}
 
-	@SuppressWarnings('UnnecessaryQualifiedReference')
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	protected void saveBatch(Dataset dataset, WriterParams wp) {
 		def countComplete = 0L
 		wp.batchCount++
@@ -2315,8 +2327,7 @@ $sql
 		if (wp.onSaveBatch) wp.onSaveBatch.call(wp.batchCount)
 	}
 
-	@SuppressWarnings('UnnecessaryQualifiedReference')
-	@groovy.transform.CompileStatic
+	@CompileStatic
 	@Override
 	void write(Dataset dataset, Map row) {
 		def wp = (dataset._driver_params as WriterParams)
@@ -2534,10 +2545,8 @@ $sql
 
 	protected Map deleteRowsHint(TableDataset dataset, Map procParams) { [:] }
 
-	@SuppressWarnings("GrMethodMayBeStatic")
 	protected String deleteRowsPattern() { 'DELETE {afterDelete} FROM {table} {afterTable} {where} {afterWhere}'}
 
-	@SuppressWarnings('UnnecessaryQualifiedReference')
 	Long deleteRows(TableDataset dataset, Map procParams) {
 		def where = (procParams.where as String)?:(dataset.writeDirective.where as String)
 		if (where != null)
@@ -2554,7 +2563,7 @@ $sql
 		def con = jdbcConnection
 
 		Long count
-		def autoTran = isSupport(Driver.Support.TRANSACTIONAL)
+		def autoTran = isSupport(Support.TRANSACTIONAL)
 		if (autoTran) {
 			autoTran = (!con.autoCommit && !con.isTran())
 		}
@@ -2578,7 +2587,6 @@ $sql
 	}
 
 	/** Return options for create sequence */
-	@SuppressWarnings("GrMethodMayBeStatic")
 	protected List<String> createSequenceAttrs(SequenceCreateSpec opts) {
 		def res = [] as List<String>
 		if (opts.incrementBy != null) res << "INCREMENT BY ${opts.incrementBy}".toString()
@@ -2644,7 +2652,6 @@ $sql
 	 * Syntax for copying from table to table
 	 * @return sql script template
 	 */
-	@SuppressWarnings("GrMethodMayBeStatic")
 	protected String syntaxCopyTableTo(TableDataset source, TableDataset dest, Map<String, Object> qParams) {
 		def sql = '''INSERT {after_insert} INTO {dest} (
 {dest_cols}

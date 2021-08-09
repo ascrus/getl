@@ -61,11 +61,12 @@ abstract class Job {
 	 * @param args command arguments
 	 */
 	void run(def args = null) {
-		Config.ClearConfig()
+		//Config.ClearConfig()
 		if (args != null)
 			processConfigArgs(args)
 		init()
-		Config.LoadConfig()
+		if (dslCreator == null)
+			Config.LoadConfig()
 		doRun()
 	}
 	
@@ -86,8 +87,8 @@ abstract class Job {
 	@SuppressWarnings(["UnnecessaryQualifiedReference", "GroovyVariableNotAssigned"])
 	protected void doRun () {
 		DateUtils.init()
-		if (dslCreator == null)
-			Logs.Init()
+		//if (dslCreator == null)
+		Logs.Init()
 		getl.deploy.Version.SayInfo()
 		prepareRun()
 		def isError = false

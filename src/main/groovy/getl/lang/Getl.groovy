@@ -163,8 +163,8 @@ Examples:
 
         if (jobArgs.vars == null) jobArgs.vars = [:]
         def vars = jobArgs.vars as Map
-        Config.Init(jobArgs)
-        Config.setVars(vars)
+        configuration.manager.init(jobArgs)
+        configuration.manager.setVars(vars)
 
         if (vars != null && !vars.isEmpty())
             _fillFieldFromVars(this, vars, true, true)
@@ -242,6 +242,7 @@ Examples:
                     throw new ExceptionDSL("Class \"${runClass.name}\" is not assignable from Getl class!")
 
                 eng = runClass.newInstance() as Getl
+                eng.configuration.manager.init(jobArgs)
                 if (jobArgs.vars != null)
                     eng.configVars.putAll(jobArgs.vars as Map)
                 dslCreator = eng
@@ -336,19 +337,19 @@ Examples:
 
                     if (en.jdbcLogPath != null) {
                         jdbcConnectionLoggingPath = StringUtils.EvalMacroString(en.jdbcLogPath as String,
-                                [env: instance.configuration.environment, process: instance.getClass().name], false)
+                                [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
                         logFine("Logging jdbc connections to path \"${FileUtils.TransformFilePath(jdbcConnectionLoggingPath, false)}\"")
                     }
 
                     if (en.filesLogPath != null) {
                         fileManagerLoggingPath = StringUtils.EvalMacroString(en.filesLogPath as String,
-                                [env: instance.configuration.environment, process: instance.getClass().name], false)
+                                [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
                         logFine("Logging file managers to path \"${FileUtils.TransformFilePath(fileManagerLoggingPath, false)}\"")
                     }
 
                     if (en.tempDBLogFileName != null) {
                         tempDBSQLHistoryFile = StringUtils.EvalMacroString(en.tempDBLogFileName as String,
-                                [env: instance.configuration.environment, process: instance.getClass().name], false)
+                                [env: instance.configuration.environment?:'prod', process: instance.getClass().name], false)
                         logFine("Logging of ebmedded database SQL commands to a file \"${FileUtils.TransformFilePath(tempDBSQLHistoryFile, false)}\"")
                     }
                 }
@@ -589,6 +590,7 @@ Examples:
         _params.executedClasses = new SynchronizeObject()
 
         _langOpts = new LangSpec(this)
+        _configOpts = new ConfigSpec(this)
         _logOpts = new LogSpec(this)
         _repositoryFilter = new RepositoryFilter(this)
         _repositoryStorageManager = new RepositoryStorageManager(this)
@@ -597,6 +599,7 @@ Examples:
         _fileman = new FilemanSpec(this)
 
         _params.langOpts = _langOpts
+        _params.configOpts = _configOpts
         _params.logOpts = _logOpts
         _params.repositoryFilter = _repositoryFilter
         _params.repositoryStorageManager = _repositoryStorageManager
@@ -640,6 +643,7 @@ Examples:
         _getl = this
         _getl._getlInstance = true
         Config.configClassManager = getlMainInstance.configuration.manager
+        Logs.global = getlMainInstance.logging.manager
     }
 
     /** Get current Getl instance */
@@ -771,12 +775,15 @@ Examples:
 
     /** Set language parameters */
     protected void importGetlParams(Map importParams) {
-        _params.putAll(importParams)
+        _params.putAll(MapUtils.Copy(importParams, ['langOpts', 'configOpts', 'logOpts']))
 
-        _langOpts.importParams(getlMainInstance.configuration.params)
-        _configOpts.importParams(getlMainInstance.configuration.params)
-        //_logOpts.importParams(getlMainInstance.logging.params)
-        _logOpts = _params.logOpts as LogSpec
+        _langOpts.importParams((importParams.langOpts as LangSpec).params, true)
+        _configOpts.importParams((importParams.configOpts as ConfigSpec).params, true)
+        _logOpts.importParams((importParams.logOpts as LogSpec).params, true)
+
+        /*_langOpts = _params.langOpts as LangSpec
+        _configOpts = _params.configOpts as ConfigSpec
+        _logOpts = _params.logOpts as LogSpec*/
         _repositoryFilter = _params.repositoryFilter as RepositoryFilter
         _repositoryStorageManager = _params.repositoryStorageManager as RepositoryStorageManager
         _etl = _params.etl as EtlSpec
@@ -2072,7 +2079,8 @@ Examples:
         try {
             if (isGetlScript) {
                 def scriptGetl = script as Getl
-                scriptGetl.importGetlParams(_params)
+                if (scriptGetl != getlMainInstance)
+                    scriptGetl.importGetlParams(_params)
                 scriptGetl._setGetlInstance()
 
                 _doInitMethod(scriptGetl)
@@ -2574,7 +2582,7 @@ Examples:
     protected ConfigSlurper getConfigManager() { configuration.manager }
 
     /** Configuration options instance */
-    private final ConfigSpec _configOpts = new ConfigSpec(this)
+    private ConfigSpec _configOpts
 
     /** Configuration options */
     ConfigSpec getConfiguration() { _configOpts }
@@ -3557,12 +3565,10 @@ Examples:
     }
 
     /** Temporary database default connection */
-    TDS embeddedConnection() {
-        TDS.storage
-    }
+    TDS embeddedConnection() { options.defaultEmbeddedConnection }
 
     /** Use default temporary connection for new datasets */
-    TDS useEmbeddedConnection(TDS connection = TDS.storage) {
+    TDS useEmbeddedConnection(TDS connection) {
         useJdbcConnection(RepositoryDatasets.EMBEDDEDTABLE, connection) as TDS
     }
 
@@ -3573,7 +3579,7 @@ Examples:
         def parent = registerDataset(null, RepositoryDatasets.EMBEDDEDTABLE, name, registration,
                 defaultJdbcConnection(RepositoryDatasets.EMBEDDEDTABLE), TDS, cl) as TDSTable
         if ((name == null || registration) && parent.connection == null)
-            parent.connection = TDS.storage
+            parent.connection = options.defaultEmbeddedConnection
         runClosure(parent, cl)
 
         return parent
@@ -3593,6 +3599,11 @@ Examples:
     }
 
     /** Table with temporary database */
+    TDSTable embeddedTable() {
+        embeddedTable(null, false, null)
+    }
+
+    /** Table with temporary database */
     TDSTable embeddedTableWithDataset(String name, Dataset sourceDataset,
                                       @DelegatesTo(TDSTable)
                                       @ClosureParams(value = SimpleType, options = ['getl.tfs.TDSTable']) Closure cl = null) {
@@ -3605,7 +3616,7 @@ Examples:
                 throw new ExceptionDSL("Required field from dataset $sourceDataset")
         }
 
-        TDSTable parent = new TDSTable(connection: defaultJdbcConnection(RepositoryDatasets.EMBEDDEDTABLE) ?: TDS.storage)
+        TDSTable parent = new TDSTable(connection: defaultJdbcConnection(RepositoryDatasets.EMBEDDEDTABLE) ?: options.defaultEmbeddedConnection)
         parent.field = sourceDataset.field
         parent.resetFieldsTypeName()
 
@@ -4882,6 +4893,6 @@ Examples:
 
     /** Converting code variables to a map */
     Map<String, Object> toVars(Closure cl) {
-        return MapUtils.Closure2Map(configuration.environment, cl)
+        return MapUtils.Closure2Map(configuration.environment?:'prod', cl)
     }
 }

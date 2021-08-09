@@ -485,7 +485,7 @@ class VerticaDriver extends JDBCDriver {
 
 	@Override
 	List<Field> fields(Dataset dataset) {
-		TableDataset ds = dataset as TableDataset
+		def ds = dataset as JDBCDataset
 		def res = super.fields(ds)
 		if (ds.type in [JDBCDataset.viewType, JDBCDataset.localTemporaryViewType]) {
 			res.each {it.isNull = true }

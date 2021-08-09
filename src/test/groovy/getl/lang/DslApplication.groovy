@@ -8,9 +8,7 @@ class DslApplication extends Getl {
     String field1
     Integer field2
 
-    @Override
-    protected  void initGetlParams() {
-        super.initGetlParams()
+    void init() {
         configContent.init = true
     }
 

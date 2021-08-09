@@ -130,9 +130,7 @@ class ConfigSpec extends BaseSpec {
     }
 
     /** Current environment */
-    String getEnvironment() {
-        return manager.environment
-    }
+    String getEnvironment() { manager.environment?:'prod' }
     /** Current environment */
     void setEnvironment(String value) {
         manager.environment = value

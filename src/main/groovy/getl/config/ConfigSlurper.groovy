@@ -32,8 +32,10 @@ class ConfigSlurper extends ConfigManager {
 		super.init(initParams)
 		evalVars = false
 
-		if (Job.jobArgs.environment != null)
-			environment = Job.jobArgs.environment
+		if (initParams?.environment != null)
+			environment = (initParams.environment as String).toLowerCase()
+		else if (Job.jobArgs.environment != null)
+			environment = (Job.jobArgs.environment as String).toLowerCase()
 
 		if (initParams?.config == null)
 			return

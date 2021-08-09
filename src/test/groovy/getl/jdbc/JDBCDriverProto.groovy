@@ -424,9 +424,12 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 
     protected void validCount() {
         def q = new QueryDataset(connection: con, query: "SELECT Count(*) AS count_rows FROM ${table.fullNameDataset()} WHERE ${table.sqlObjectName('name')} IS NOT NULL AND ${table.sqlObjectName(descriptionName)} IS NOT NULL")
+        q.retrieveFields()
+        assertEquals(1, q.field.size())
+        assertEquals(['COUNT_ROWS'], q.fieldNames*.toUpperCase())
         def rows = q.rows()
         assertEquals(1, rows.size())
-        Integer cr = rows[0].count_rows
+        def cr = rows[0].count_rows
         assertEquals(countRows, cr)
     }
 

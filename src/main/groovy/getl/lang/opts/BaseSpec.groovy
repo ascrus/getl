@@ -44,10 +44,15 @@ class BaseSpec implements Cloneable {
      * @param importParams imported parameters
      * @return current object
      */
-    BaseSpec importParams(Map<String, Object> importParams) {
-        _params = [:] as Map<String, Object>
-        initSpec()
-        importFromMap(importParams)
+    BaseSpec importParams(Map<String, Object> importParams, Boolean useExternalParams = false) {
+        if (!useExternalParams) {
+            _params = [:] as Map<String, Object>
+            initSpec()
+            importFromMap(importParams)
+        }
+        else {
+            _params = importParams
+        }
         return this
     }
 
@@ -105,14 +110,11 @@ class BaseSpec implements Cloneable {
     @SuppressWarnings(["GrMethodMayBeStatic", 'unused'])
     protected List<String> ignoreImportKeys(Map<String, Object> importParams) { [] as List<String> }
 
-    /**
-     * Import options from map
-     */
+    /** Import options from map */
     void importFromMap(Map<String, Object> importParams) {
         if (importParams == null)
             throw new ExceptionGETL('Required "importParams" value!')
 
-        //params.putAll(MapUtils.Copy(importParams, ignoreImportKeys(importParams)))
         def c = MapUtils.Copy(importParams, ignoreImportKeys(importParams)) as Map<String, Object>
         MapUtils.MergeMap(params, c, true, true)
     }

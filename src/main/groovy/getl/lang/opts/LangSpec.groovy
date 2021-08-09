@@ -7,6 +7,7 @@ import getl.data.*
 import getl.exception.ExceptionDSL
 import getl.jdbc.TableDataset
 import getl.lang.Getl
+import getl.lang.sub.RepositoryDatasets
 import getl.tfs.TDS
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
@@ -31,6 +32,8 @@ class LangSpec extends BaseSpec {
             saveParamValue('projectConfigParams', new ConcurrentHashMap<String, Object>())
         if (params.countThreadsLoadRepository == null)
             saveParamValue('countThreadsLoadRepository', 16)
+        if (params.defaultEmbeddedConnection == null)
+            params.defaultEmbeddedConnection = new TDS(dslCreator: dslCreator)
     }
 
     /** Getl owner */
@@ -183,4 +186,8 @@ class LangSpec extends BaseSpec {
         if ((value?:0) < 1  )
             throw new ExceptionDSL('The "countThreadsLoadRepository" parameter must be greater than zero!')
     }
+
+    /** Default embedded database connection */
+    @JsonIgnore
+    TDS getDefaultEmbeddedConnection() { params.defaultEmbeddedConnection as TDS }
 }

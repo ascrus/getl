@@ -33,7 +33,19 @@ class Logs {
 	static private Logs global
 	/** Global instance log */
 	@JsonIgnore
+	@Synchronized
 	static Logs getGlobal() { global }
+	/** Global instance log */
+	@Synchronized
+	static void setGlobal(Logs value) {
+		if (global == value)
+			return
+
+		if (value == null)
+			throw new ExceptionGETL('Global manager can not be null!')
+
+		global = value
+	}
 
 	/** Logger name */
 	private String loggerName
@@ -306,9 +318,10 @@ class Logs {
 
 	/** Initialize log after load config */
 	static void Init() {
-		if (global == null)
+		if (global == null) {
 			global = new Logs()
-		global.init()
+			global.init()
+		}
 	}
 	
 	/** Initialize log after load config */

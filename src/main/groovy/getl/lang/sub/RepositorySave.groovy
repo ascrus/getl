@@ -121,7 +121,7 @@ class RepositorySave extends Getl {
         if (getlDefaultConfigEnvironment == null)
             readGetlRepositoryProperties()
 
-        def pathToSave = (options.getlConfigProperties.repository as Map)?.repositorySavePath as String
+        def pathToSave = (options.getlConfigProperties?.repository as Map)?.repositorySavePath as String
         if (pathToSave != null)
             repositoryStorageManager.storagePath = pathToSave
 
