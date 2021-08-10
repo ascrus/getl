@@ -48,7 +48,7 @@ class SFTPManager extends Manager implements UserLogins {
 		super.registerParameters()
 		methodParams.register('super', ['server', 'port', 'login', 'password', 'knownHostsFile',
 										'identityFile', 'codePage', 'aliveInterval', 'aliveCountMax', 'hostKey',
-										'hostOS', 'storedLogins', 'strictHostKeyChecking'])
+										'hostOS', 'storedLogins', 'strictHostKeyChecking', 'passphrase'])
 	}
 	
 	@Override

@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -7,7 +8,6 @@ import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.models.opts.ReferenceVerticaTableSpec
 import getl.models.sub.DatasetsModel
-import getl.utils.Logs
 import getl.utils.Path
 import getl.vertica.VerticaConnection
 import getl.vertica.VerticaTable

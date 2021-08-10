@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.models.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -6,7 +7,6 @@ import getl.exception.ExceptionModel
 import getl.models.MapTables
 import getl.models.sub.DatasetSpec
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 import java.util.concurrent.CopyOnWriteArrayList
 
 @InheritConstructors
@@ -66,10 +66,8 @@ class MapTableSpec extends DatasetSpec {
     Dataset getDestination() { ownerModel.dslCreator.dataset(destinationName) }
 
     /** List of key values for partitions being processed */
-    @Synchronized
     List getListPartitions() { params.listPartitions as List }
     /** List of key values for partitions being processed */
-    @Synchronized
     void setListPartitions(List value) {
         listPartitions.clear()
         if (value != null)
@@ -105,10 +103,8 @@ class MapTableSpec extends DatasetSpec {
     }
 
     /** Mapping the relationship of the fields of the destination table to the source table: map.put('destinationField', 'sourceField') */
-    @Synchronized
     Map<String, String> getMap() { params.map as Map<String, String> }
     /** Mapping the relationship of the fields of the destination table to the source table: map.put('destinationField', 'sourceField') */
-    @Synchronized
     void setMap(Map<String, String> value) {
         map.clear()
         if (value != null)

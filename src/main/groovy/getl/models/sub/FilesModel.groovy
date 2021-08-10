@@ -1,8 +1,10 @@
+//file:noinspection unused
 package getl.models.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.exception.ExceptionModel
 import getl.files.Manager
+import getl.models.opts.ReferenceFileSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.Synchronized
 
@@ -13,23 +15,18 @@ import groovy.transform.Synchronized
 @InheritConstructors
 class FilesModel<T extends FileSpec> extends BaseModel {
     /** Source file manager name for model */
-    @Synchronized
     String getSourceManagerName() { params.sourceManagerName as String }
     /** Source file manager name for model */
-    @Synchronized
     void setSourceManagerName(String value) { useSourceManager(value) }
 
     /** Source file manager for model */
     @JsonIgnore
-    @Synchronized
     Manager getSourceManager() { dslCreator.filemanager(sourceManagerName) }
     /** Source file manager for model */
     @JsonIgnore
-    @Synchronized
     void setSourceManager(Manager value) { useSourceManager(value) }
 
     /** Specify the source file manager for the model */
-    @Synchronized
     void useSourceManager(String managerName) {
         if (managerName == null)
             throw new ExceptionModel('File manager name required!')
@@ -38,7 +35,6 @@ class FilesModel<T extends FileSpec> extends BaseModel {
         saveParamValue('sourceManagerName', managerName)
     }
     /** Specify the source file manager for the model */
-    @Synchronized
     void useSourceManager(Manager manager) {
         if (manager == null)
             throw new ExceptionModel('File manager required!')
@@ -47,11 +43,6 @@ class FilesModel<T extends FileSpec> extends BaseModel {
 
         saveParamValue('sourceManagerName', manager.dslNameObject)
     }
-
-
-    /** Used files in the model */
-    @Synchronized
-    List<T> getUsedFiles() { usedObjects as List<T>  }
 
     /**
      * Add file to model
@@ -64,7 +55,7 @@ class FilesModel<T extends FileSpec> extends BaseModel {
 
         checkModel(false)
 
-        def parent = usedFiles.find { modelFile -> (modelFile.filePath == filePath) }
+        def parent = ((usedObjects as ReferenceFileSpec).find { modelFile -> (modelFile.filePath == filePath) }) as T
         if (parent == null)
             parent = newSpec(filePath) as T
 

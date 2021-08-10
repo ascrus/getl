@@ -1003,12 +1003,33 @@ class RepositoryTest extends TestDsl {
                     assertEquals('/test1', rootPath)
                     assertNull(scriptHistoryFile)
                 }
+
                 files('test:file2') {
-                    assertEquals('/test2', rootPath)
+                    assertEquals('/test2.dev', rootPath)
                     assertNull(scriptHistoryFile)
                 }
+                assertTrue(repositoryStorageManager.objectFile(RepositoryFilemanagers, 'test:file2').exists())
+                assertTrue(repositoryStorageManager.objectFile(RepositoryFilemanagers, 'test:file2', 'dev').exists())
+                assertTrue(repositoryStorageManager.objectFile(RepositoryFilemanagers, 'test:file2', 'prod').exists())
+                repositoryStorageManager.renameObject(RepositoryFilemanagers, 'test:file2', 'test:file3', true, ['dev', 'prod'])
+                files('test:file3') {
+                    assertEquals('/test2.dev', rootPath)
+                    assertNull(scriptHistoryFile)
+                }
+                assertFalse(repositoryStorageManager.objectFile(RepositoryFilemanagers, 'test:file2').exists())
+                assertFalse(repositoryStorageManager.objectFile(RepositoryFilemanagers, 'test:file2', 'dev').exists())
+                assertFalse(repositoryStorageManager.objectFile(RepositoryFilemanagers, 'test:file2', 'prod').exists())
+                assertTrue(repositoryStorageManager.objectFile(RepositoryFilemanagers, 'test:file3').exists())
+                assertTrue(repositoryStorageManager.objectFile(RepositoryFilemanagers, 'test:file3', 'dev').exists())
+                assertTrue(repositoryStorageManager.objectFile(RepositoryFilemanagers, 'test:file3', 'prod').exists())
+                repositoryStorageManager.loadObject(RepositoryFilemanagers, 'test:file3', 'prod', true)
+                files('test:file3') {
+                    assertEquals('/test2.prod', rootPath)
+                    assertNull(scriptHistoryFile)
+                }
+
                 ftp('test:ftp1') {
-                    assertEquals('/', rootPath)
+                    assertEquals('/ftp', rootPath)
                     assertEquals('user1', login)
                     assertEquals(repositoryStorageManager.encryptText('12345'), password)
                     assertNotNull(scriptHistoryFile)
@@ -1067,7 +1088,7 @@ class RepositoryTest extends TestDsl {
 
                 repositoryStorageManager.removeRepositoryFiles(RepositoryFilemanagers, 'dev', 'test')
                 assertNull(findFilemanager('test:file1'))
-                assertNull(findFilemanager('test:file2'))
+                assertNull(findFilemanager('test:file3'))
 
                 repositoryStorageManager.listRepositories.each { repName ->
                     repositoryStorageManager.removeRepositoryFiles(repName, 'dev')

@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.models.opts
 
 import getl.models.ReferenceFiles

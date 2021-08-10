@@ -23,9 +23,10 @@ import groovy.transform.Synchronized
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Repository Storage Manager
+ * Repository storage manager
  * @author Alexsey Konstantinov
  */
+@SuppressWarnings('unused')
 class RepositoryStorageManager {
     RepositoryStorageManager(Getl owner) {
         dslCreator = owner
@@ -144,6 +145,9 @@ class RepositoryStorageManager {
 
     /** Register repository in list */
     void registerRepository(Class<RepositoryObjects> classRepository, Integer priority = null) {
+        if (classRepository == null)
+            throw new ExceptionDSL('Required repository class name!')
+
         def parent = classRepository.newInstance()
         registerRepository(classRepository.name, parent, priority)
     }
@@ -154,6 +158,8 @@ class RepositoryStorageManager {
      * @return repository object
      */
     RepositoryObjects repository(String name) {
+        if (name == null)
+            throw new ExceptionDSL('Required repository name!')
         def rep = _listRepositories.get(name)
         if (rep == null)
             throw new ExceptionDSL("Repository \"$name\" not found!")
@@ -167,7 +173,10 @@ class RepositoryStorageManager {
      * @return repository object
      */
     RepositoryObjects repository(Class<RepositoryObjects> repositoryClass) {
-        repository(repositoryClass.name)
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
+        return repository(repositoryClass.name)
     }
 
     /**
@@ -185,7 +194,6 @@ class RepositoryStorageManager {
      * @param mask object name mask
      * @param env used environment
      */
-    //@Synchronized("lockObject")
     void saveRepositories(String mask = null, String env = null) {
         listRepositories.each { name ->
             saveRepository(name, mask, env)
@@ -199,6 +207,9 @@ class RepositoryStorageManager {
 
     /** Repository storage path */
     String repositoryStoragePath(Class<RepositoryObjects> repositoryClass, String env = 'all') {
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
         if (storagePath == null)
             throw new ExceptionDSL('The repository storage path is not specified in "storagePath"!')
 
@@ -211,6 +222,9 @@ class RepositoryStorageManager {
 
     /** Repository directory path */
     String repositoryPath(Class<RepositoryObjects> repositoryClass, String env = 'all') {
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
         if (storagePath == null)
             throw new ExceptionDSL('The repository storage path is not specified in "storagePath"!')
 
@@ -233,7 +247,6 @@ class RepositoryStorageManager {
      * @param env used environment
      * @return count of saved objects
      */
-    //@Synchronized("lockObject")
     Integer saveRepository(String repositoryName, String mask = null, String env = null) {
         if (isResourceStoragePath)
             throw new ExceptionDSL('Cannot be saved to the resource directory!')
@@ -260,6 +273,9 @@ class RepositoryStorageManager {
      * @return count of saved objects
      */
     Integer saveRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null) {
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
         saveRepository(repositoryClass.name, mask, env)
     }
 
@@ -269,7 +285,6 @@ class RepositoryStorageManager {
      * @param objName parsed object name
      * @param env used environment
      */
-    //@Synchronized("synchRepository")
     protected void saveObjectToStorage(RepositoryObjects repository, ParseObjectName objName, String env) {
         if (isResourceStoragePath)
             throw new ExceptionDSL('Cannot be saved to the resource directory!')
@@ -312,6 +327,9 @@ class RepositoryStorageManager {
      * @param env used environment
      */
     void saveObject(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
         saveObject(repositoryClass.name, name, env)
     }
 
@@ -414,6 +432,9 @@ class RepositoryStorageManager {
      * @param group object group name
      */
     void removeRepositoryFiles(Class<RepositoryObjects> repositoryClass, String env = null, String group = null) {
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
         removeRepositoryFiles(repositoryClass.name, env, group)
     }
 
@@ -449,7 +470,6 @@ class RepositoryStorageManager {
      * @param ignoreExists don't load existing ones (default true)
      * @return count of saved objects
      */
-    //@Synchronized("synchRepository")
     Integer loadRepository(String repositoryName, String mask = null, String env = null, Boolean ignoreExists = true) {
         def res = 0
         def repository = repository(repositoryName)
@@ -534,6 +554,9 @@ class RepositoryStorageManager {
      * @return count of saved objects
      */
     Integer loadRepository(Class<RepositoryObjects> repositoryClass, String mask = null, String env = null, Boolean ignoreExists = true) {
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
         loadRepository(repositoryClass.name, mask, env)
     }
 
@@ -545,7 +568,6 @@ class RepositoryStorageManager {
      * @param validExist valid existing file (default true)
      * @param overloading reload existing object
      */
-    //@Synchronized("lockObject")
     GetlRepository readObject(RepositoryObjects repository, String name, String env = null, Boolean validExist = true,
                               Boolean overloading = false) {
         def objName = ParseObjectName.Parse(name)
@@ -613,7 +635,6 @@ class RepositoryStorageManager {
      * @param env used environment
      * @param overloading load over existing (default false)
      */
-    //@Synchronized("lockObject")
     GetlRepository loadObject(String repositoryName, String name, String env = null, Boolean overloading = false) {
         GetlRepository obj = null
         runWithLoadMode(true) {
@@ -632,6 +653,9 @@ class RepositoryStorageManager {
      * @param overloading load over existing (default false)
      */
     GetlRepository loadObject(Class<RepositoryObjects> repositoryClass, String name, String env = null, Boolean overloading = false) {
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
         loadObject(repositoryClass.name, name, env, overloading)
     }
 
@@ -659,6 +683,9 @@ class RepositoryStorageManager {
      * @param repositoryClass repository class
      */
     Boolean removeStorage(Class<RepositoryObjects> repositoryClass, String env = null) {
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
         removeStorage(repositoryClass.name, env)
     }
 
@@ -721,6 +748,9 @@ class RepositoryStorageManager {
      * @return file path
      */
     String objectFilePath(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
         objectFilePathInStorage(repository(repositoryClass.name), ParseObjectName.Parse(name), env)
     }
 
@@ -743,6 +773,86 @@ class RepositoryStorageManager {
      * @return file object
      */
     File objectFile(Class<RepositoryObjects> repositoryClass, String name, String env = null) {
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
         return new File(objectFilePath(repositoryClass, name, env))
+    }
+
+    /**
+     * Rename object in specified repository
+     * @param repositoryClass repository class
+     * @param name name object
+     * @param newName new name object
+     * @param saveToStorage rename object in storage
+     * @param envs list environments
+     */
+    void renameObject(Class<RepositoryObjects> repositoryClass, String name, String newName, Boolean saveToStorage = false,
+                      List<String> envs = null) {
+        if (repositoryClass == null)
+            throw new ExceptionDSL('Required repository class name!')
+
+        renameObject(repositoryClass.name, name, newName, saveToStorage, envs)
+    }
+
+    /**
+     * Rename object in specified repository
+     * @param repositoryClassName repository class name
+     * @param name name object
+     * @param newName new name object
+     * @param saveToStorage rename object in storage
+     * @param envs list environments
+     */
+    void renameObject(String repositoryClassName, String name, String newName, Boolean saveToStorage = false,
+                      List<String> envs = null) {
+        if (isResourceStoragePath)
+            throw new ExceptionDSL('Renaming is not supported for staged repositories in resource files!')
+        if (name == null)
+            throw new ExceptionDSL('Required object name!')
+        if (newName == null)
+            throw new ExceptionDSL('Required new object name!')
+        if (name == newName)
+            return
+
+        def repName = dslCreator.repObjectName(name, true)
+        def repNewName = dslCreator.repObjectName(newName, true)
+
+        def rep = repository(repositoryClassName)
+        def obj = rep.find(repName, true)
+        if (obj == null)
+            throw new ExceptionDSL("Object \"$name\" not found in repository \"$repositoryClassName\"!")
+
+        if (rep.find(repNewName, true))
+            throw new ExceptionDSL("Object \"$newName\" already exists in repository \"$repositoryClassName\"!")
+
+        synchronized (rep.synchObjects) {
+            try {
+                if (saveToStorage) {
+                    def renameFile = { String env ->
+                        def objFile = objectFile(repositoryClassName, repName, env)
+                        if (objFile.exists()) {
+                            def objNewFile = objectFile(repositoryClassName, repNewName, env)
+                            FileUtils.ValidFilePath(objNewFile)
+                            if (!objFile.renameTo(objNewFile))
+                                throw new ExceptionDSL("Failed to rename for object \"$name\" file \"$objFile\" to file \"$objNewFile\"!")
+                        }
+                    }
+                    renameFile.call(dslCreator.configuration.environment)
+
+                    if (envs != null) {
+                        ((envs*.toLowerCase()) - [dslCreator.configuration.environment.toLowerCase()]).each { env ->
+                            renameFile.call(env)
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                obj.dslNameObject = repName
+                throw e
+            }
+            rep.objects.remove(repName)
+            rep.objects.put(repNewName, obj)
+            obj.dslNameObject = repNewName
+        }
     }
 }

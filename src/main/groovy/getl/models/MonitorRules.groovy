@@ -1,3 +1,5 @@
+//file:noinspection unused
+//file:noinspection SpellCheckingInspection
 package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore

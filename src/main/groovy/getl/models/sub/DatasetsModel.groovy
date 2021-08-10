@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.models.sub
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -9,9 +10,7 @@ import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.jdbc.ViewDataset
-import getl.utils.Path
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 
 /**
  * Datasets model
@@ -20,13 +19,10 @@ import groovy.transform.Synchronized
 @InheritConstructors
 class DatasetsModel<T extends DatasetSpec> extends BaseModel {
     /** Repository connection name */
-    @Synchronized
     protected String getModelConnectionName() { params.modelConnectionName as String }
     /** Repository connection name */
-    @Synchronized
     protected void setModelConnectionName(String value) { saveParamValue('modelConnectionName', value) }
     /** Set the name of the connection */
-    @Synchronized
     protected void useModelConnection(String connectionName) {
         if (connectionName == null)
             throw new ExceptionModel('Connection name required!')
@@ -35,13 +31,10 @@ class DatasetsModel<T extends DatasetSpec> extends BaseModel {
         saveParamValue('modelConnectionName', connectionName)
     }
     /** Used connection */
-    @Synchronized
     protected Connection getModelConnection() { dslCreator.connection(modelConnectionName) }
     /** Used connection */
-    @Synchronized
     protected setModelConnection(Connection value) { useModelConnection(value) }
     /** Set connection */
-    @Synchronized
     protected void useModelConnection(Connection connection) {
         if (connection == null)
             throw new ExceptionModel('Connection required!')

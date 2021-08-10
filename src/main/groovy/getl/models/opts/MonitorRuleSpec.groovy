@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.models.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore

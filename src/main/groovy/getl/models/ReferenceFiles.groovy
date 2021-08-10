@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -10,10 +11,8 @@ import getl.models.sub.FilesModel
 import getl.stat.ProcessTime
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
-import getl.utils.Logs
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 

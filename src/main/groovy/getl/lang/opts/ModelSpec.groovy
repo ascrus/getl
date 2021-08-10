@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.lang.opts
 
 import getl.lang.Getl
@@ -91,6 +92,14 @@ class ModelSpec extends BaseSpec {
 
     /**
      * Process a list of reference tables models
+     * @param cl process code
+     */
+    void processReferenceVerticaTables(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processReferenceVerticaTables(null, cl)
+    }
+
+    /**
+     * Process a list of reference tables models
      * @param mask search mask
      * @param cl process code
      */
@@ -150,6 +159,14 @@ class ModelSpec extends BaseSpec {
                                     @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.ReferenceFiles'])
                                             Closure<Boolean> filter = null) {
         repository(RepositoryReferenceFiles).list(mask, null, true, filter)
+    }
+
+    /**
+     * Process a list of files reference models
+     * @param cl process code
+     */
+    void processReferenceFiles(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processReferenceFiles(null, cl)
     }
 
     /**
@@ -216,6 +233,14 @@ class ModelSpec extends BaseSpec {
 
     /**
      * Process a list of monitor tables models
+     * @param cl process code
+     */
+    void processMonitorRules(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processMonitorRules(null, cl)
+    }
+
+    /**
+     * Process a list of monitor tables models
      * @param mask search mask
      * @param cl process code
      */
@@ -276,6 +301,14 @@ class ModelSpec extends BaseSpec {
 
     /**
      * Process a list of map tables models
+     * @param cl process code
+     */
+    void processMapTables(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processMapTables(null, cl)
+    }
+
+    /**
+     * Process a list of map tables models
      * @param mask search mask
      * @param cl process code
      */
@@ -332,6 +365,14 @@ class ModelSpec extends BaseSpec {
                                  @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.SetOfTables'])
                                         Closure<Boolean> filter = null) {
         repository(RepositorySetOfTables).list(mask, null, true, filter)
+    }
+
+    /**
+     * Process a list of list tables models
+     * @param cl process code
+     */
+    void processSetOfTables(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processSetOfTables(null, cl)
     }
 
     /**

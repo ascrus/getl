@@ -63,23 +63,41 @@ class RepositorySaveTest extends RepositorySave {
     }
 
     @SaveToRepository(type = 'Files', env = 'Dev, Prod', mask = 'test:*')
-    void filemanagers2() {
+    void filemanagers_ftp() {
         options {
             jdbcConnectionLoggingPath = logDir
             fileManagerLoggingPath = logDir
         }
-        files('test:file2', true) {
-            rootPath = '/test2'
-        }
-
         ftp('test:ftp1', true) {
-            rootPath = '/'
+            rootPath = '/ftp'
             login = 'user1'
             password = '12345'
             scriptHistoryFile = TFS.systemPath
             assert password == repositoryStorageManager.encryptText('12345')
             storedLogins.user2 = '12345'
             assert storedLogins.user2 == repositoryStorageManager.encryptText('12345')
+        }
+    }
+
+    @SaveToRepository(type = 'Files', env = 'Dev', mask = 'test:*')
+    void filemanagers2_dev() {
+        options {
+            jdbcConnectionLoggingPath = logDir
+            fileManagerLoggingPath = logDir
+        }
+        files('test:file2', true) {
+            rootPath = '/test2.dev'
+        }
+    }
+
+    @SaveToRepository(type = 'Files', env = 'Prod', mask = 'test:*')
+    void filemanagers2_prod() {
+        options {
+            jdbcConnectionLoggingPath = logDir
+            fileManagerLoggingPath = logDir
+        }
+        files('test:file2', true) {
+            rootPath = '/test2.prod'
         }
     }
 

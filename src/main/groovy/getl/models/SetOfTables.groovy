@@ -1,14 +1,13 @@
+//file:noinspection unused
 package getl.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.data.Dataset
 import getl.exception.ExceptionDSL
 import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
 import getl.models.opts.TableSpec
 import getl.models.sub.DatasetsModel
 import groovy.transform.InheritConstructors
-import groovy.transform.Synchronized
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 

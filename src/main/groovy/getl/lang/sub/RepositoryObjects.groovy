@@ -44,7 +44,7 @@ abstract class RepositoryObjects<T extends GetlRepository> implements GetlReposi
         dslCreator = null
     }
 
-    private final Object synchObjects = new Object()
+    protected final Object synchObjects = new Object()
 
     /** Repository objects */
     private Map<String, T> objects

@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.models.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -86,6 +87,7 @@ class ReferenceVerticaTableSpec extends DatasetSpec {
     }
 
     /** Reference data source */
+    @JsonIgnore
     Dataset getSourceDataset() { (sourceDatasetName != null)?ownerModel.dslCreator.dataset(sourceDatasetName):null }
     /** Reference data source */
     void setSourceDataset(Dataset value) {
