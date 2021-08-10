@@ -238,7 +238,7 @@ verticaTable('ver:table1', true) {
 }
 
 // Регистрируем представление mssql:view1 из БД MSSQL
-view('mssql:view1') {
+view('mssql:view1', true) {
   // Соединение к MSSQL
   useConnection mssqlConnection('mssql:con1')
   // Имя схемы таблицы в БД
