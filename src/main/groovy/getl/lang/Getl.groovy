@@ -312,7 +312,7 @@ Examples:
 
         options {
             if (autoInitFromConfig) {
-                loadProjectProperties(instance.configuration.manager.environment, extProp.filename as String)
+                loadProjectProperties(instance.configuration.environment, extProp.filename as String)
                 if (!extProp?.isEmpty())
                     MapUtils.MergeMap(options.getlConfigProperties,
                             MapUtils.CleanMap(extProp, ['filepath']) as Map<String, Object>, true, false)
