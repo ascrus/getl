@@ -7,6 +7,8 @@ import getl.jdbc.JDBCConnection
 import getl.jdbc.TableDataset
 import getl.models.opts.TableSpec
 import getl.models.sub.DatasetsModel
+import getl.utils.CloneUtils
+import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
@@ -43,6 +45,23 @@ class SetOfTables extends DatasetsModel<TableSpec> {
     List<TableSpec> getUsedTables() { usedObjects as List<TableSpec> }
     /** Used tables */
     void setUsedTables(List<TableSpec> value) { usedObjects = value }
+    /** Assign used tables from list of map structure */
+    void assignUsedTables(List<Map> value) {
+        def own = this
+        def list = [] as List<TableSpec>
+        value?.each { node ->
+            def p = CloneUtils.CloneMap(node, true)
+            p.datasetName = p.sourceTableName
+            p.remove('sourceTableName')
+
+            MapUtils.RemoveKeys(p) { k, v ->
+                return (v == null) || (v instanceof String && v.length() == 0) || (v instanceof GString && v.length() == 0)
+            }
+
+            list.add(new TableSpec(own, p))
+        }
+        usedTables = list
+    }
 
     /**
      * Use table in list

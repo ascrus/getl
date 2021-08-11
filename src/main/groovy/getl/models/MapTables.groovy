@@ -43,7 +43,7 @@ class MapTables extends DatasetsModel<MapTableSpec> {
     List<MapTableSpec> getUsedMapping() { usedObjects as List<MapTableSpec> }
     /** Used mapping datasets */
     void setUsedMapping(List<MapTableSpec> value) { usedObjects = value }
-    /** Used mapping datasets */
+    /** Assign mapping datasets from list of map structure */
     void assignUsedMapping(List<Map> value) {
         def own = this
         def list = [] as List<MapTableSpec>
