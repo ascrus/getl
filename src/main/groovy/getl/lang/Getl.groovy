@@ -536,24 +536,18 @@ Examples:
                 throw new ExceptionDSL('Required name for the process being checked!')
 
             if (_langOpts.processControlDataset instanceof TableDataset) {
-                def table = _langOpts.processControlDataset as TableDataset
-
-                def changeLogin = (_langOpts.processControlLogin != null) &&
-                        (table.currentJDBCConnection.login == null || table.currentJDBCConnection.login != _langOpts.processControlLogin)
-                if (changeLogin) {
-                    table = table.cloneDatasetConnection() as TableDataset
-                    table.currentJDBCConnection.useLogin(_langOpts.processControlLogin)
-                }
-
+                def table = (_langOpts.processControlDataset as TableDataset).cloneDatasetConnection() as TableDataset
                 try {
+                    if (_langOpts.processControlLogin != null)
+                        table.currentJDBCConnection.useLogin(_langOpts.processControlLogin)
+
                     def row = sqlQueryRow(table.currentJDBCConnection,
                             "SELECT enabled FROM ${table.fullNameDataset()} WHERE name = '$processName'")
                     if (row != null && !row.isEmpty())
                         res = BoolUtils.IsValue(row.enabled)
                 }
                 finally {
-                    if (changeLogin)
-                        table.currentJDBCConnection.connected = false
+                    table.currentJDBCConnection.connected = false
                 }
             } else {
                 def ds = _langOpts.processControlDataset

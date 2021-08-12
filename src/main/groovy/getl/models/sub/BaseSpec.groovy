@@ -130,7 +130,7 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
         def unknownKeys = [] as List<String>
         attrs.each { k, v ->
             if (!Path.MatchList(k, validation))
-                unknownKeys << k
+                unknownKeys.add(k)
         }
 
         if (!unknownKeys.isEmpty())

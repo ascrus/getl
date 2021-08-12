@@ -210,9 +210,10 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
     /**
      * Check attribute naming and generate an unknown error for used objects
      * @param allowAttrs list of allowed attribute names
+     * @param checkObjects check attributes in objects
      */
     @Synchronized('synchAttrs')
-    void checkAttrs(List<String> allowAttrs) {
+    void checkAttrs(List<String> allowAttrs, Boolean checkObjects = true) {
         if (allowAttrs == null)
             throw new ExceptionDSL('The list of attribute names in parameter "allowAttrs" is not specified!')
 
@@ -220,14 +221,16 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         def unknownKeys = [] as List<String>
         modelAttrs.each { k, v ->
             if (!Path.MatchList(k, validation))
-                unknownKeys << k
+                unknownKeys.add(k)
         }
 
         if (!unknownKeys.isEmpty())
             throw new ExceptionDSL("Unknown attributes were detected in model \"$dslNameObject\": $unknownKeys, allow attributes: $allowAttrs")
 
-        usedObjects.each { node ->
-            node.checkAttrsInternal(validation, allowAttrs)
+        if (checkObjects) {
+            usedObjects.each { node ->
+                node.checkAttrsInternal(validation, allowAttrs)
+            }
         }
     }
 

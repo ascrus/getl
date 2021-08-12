@@ -35,7 +35,7 @@ if (path != null)
 logFine "  files: ${scripts.join(', ')}"
 
 logFinest "Connect to server $con ..."
-con.connect()
+con.connected = true
 
 //noinspection GroovyVariableNotAssigned
 sql {scripter ->
