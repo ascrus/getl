@@ -256,11 +256,13 @@ environments {
         Dsl(this) {
             forGroup 'getl.testdsl.h2'
 
-            etl.rowsTo(h2Table('table1')) {
-                writeRow { append ->
-                    (1..this.table1_rows).each { append id: it, name: "test $it", dt: DateUtils.now }
+            h2Table('table1') {
+                etl.rowsTo {
+                    writeRow { append ->
+                        (1..this.table1_rows).each { append id: it, name: "test $it", dt: DateUtils.now }
+                    }
+                    assertEquals(this.table1_rows, countRow)
                 }
-                assertEquals(this.table1_rows, countRow)
             }
         }
     }
@@ -387,18 +389,25 @@ ORDER BY t1.id"""
             forGroup 'getl.testdsl.h2'
 
             h2Table('table1') {
-                readOpts { where = 'id < 3'; order = ['id ASC'] }
-                etl.rowsProcess {
-                    def i = 0
-                    readRow { row ->
-                        i++
-                        assertTrue(row.id < 3)
-                        assertTrue(row.t1_dt < DateUtils.now )
-                        assertEquals(i, row.id)
+                readOpts {
+                    pushOptions(true)
+                    where = 'id < 3'
+                    order = ['id ASC']
+                    etl.rowsProcess {
+                        def i = 0
+                        readRow { row ->
+                            i++
+                            assertTrue(row.id < 3)
+                            assertTrue(row.t1_dt < DateUtils.now)
+                            assertEquals(i, row.id)
+                        }
+                        assertEquals(2, countRow)
                     }
-                    assertEquals(2, countRow)
                 }
-                readOpts { where = null; order = [] }
+                readOpts {
+                    assertNull(where)
+                    assertTrue(order.isEmpty())
+                }
             }
         }
     }

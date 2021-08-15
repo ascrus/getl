@@ -67,19 +67,35 @@ class BaseSpec implements Cloneable {
     /** Init options after create object */
     protected void initSpec() { }
 
-    /** Detect delegate object for closure code */
-    static Object DetectClosureDelegate(Object obj) { Getl.DetectClosureDelegate(obj) }
+    /**
+     * Detect delegate object for closure code
+     * @param obj analyzed object
+     * @param ignore options and return their owner
+     * @return found object
+     */
+    static Object DetectClosureDelegate(Object obj, Boolean ignoreOpts = false) {
+        Getl.DetectClosureDelegate(obj, ignoreOpts)
+    }
 
     /** Run closure for this object */
     void runClosure(Closure cl) {
-        if (cl == null) return
-        this.with(cl)
+        if (cl == null)
+            return
+
+        try {
+            this.with(cl)
+        }
+        finally {
+            this.pullOptions(false)
+        }
     }
 
     /** Run closure for specified object */
     @SuppressWarnings('GrMethodMayBeStatic')
     void runClosure(Object parent, Closure cl) {
-        if (cl == null) return
+        if (cl == null)
+            return
+
         parent.with(cl)
     }
 
@@ -147,7 +163,8 @@ class BaseSpec implements Cloneable {
     @Synchronized('synchParams')
     void pullOptions(Boolean throwIfNotExist = true) {
         if (_savedOptions.isEmpty()) {
-            if (!throwIfNotExist) return
+            if (!throwIfNotExist)
+                return
             throw new ExceptionGETL("No saved options for ${getClass().name} object available!")
         }
 

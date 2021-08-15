@@ -55,7 +55,7 @@ class FilesModel<T extends FileSpec> extends BaseModel {
 
         checkModel(false)
 
-        def parent = ((usedObjects as ReferenceFileSpec).find { modelFile -> (modelFile.filePath == filePath) }) as T
+        def parent = ((usedObjects as List<ReferenceFileSpec>).find { modelFile -> (modelFile.filePath == filePath) }) as T
         if (parent == null)
             parent = newSpec(filePath) as T
 

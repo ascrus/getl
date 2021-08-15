@@ -41,6 +41,7 @@ class WebServiceDriver extends FileDriver {
 
         def serv = WebUtils.CreateConnection(url: url, service: serviceName, connectTimeout: connectTimeout,
                 readTimeout: readTimeout, requestMethod: requestMethod, params: urlParams, vars: urlVars)
+
         WebUtils.DataToFile(serv, fullFileNameDataset(dataset))
     }
 
@@ -48,8 +49,11 @@ class WebServiceDriver extends FileDriver {
     Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
         super.eachRow(dataset, params, prepareCode, code)
         def ds = dataset as WebServiceDataset
-        if (ds.autoCaptureFromWeb())
+        if (ds.autoCaptureFromWeb()) {
+            if (ds.existsFile())
+                ds.drop()
             ds.readFromWeb()
+        }
 
         return 0L
     }

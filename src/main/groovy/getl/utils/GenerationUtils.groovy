@@ -185,7 +185,6 @@ $body
 	 * @param dataset source structured dataset
 	 * @param onlyFields parse only specified fields (if empty or null, all fields are parsed)
 	 * @param className class name of used nodes
-	 * @param isStringDateTime for fields of type date and time, the original values are stored in the text
 	 * @param structName the name of the variable from which to take the field values
 	 * @param rowName name of the map variable, where to store the field values
 	 * @param tabHead code indentation in head script
@@ -194,8 +193,7 @@ $body
 	 * @return scripts sections for code generation (init - parsing initialization, body - parsing fields)
 	 */
 	static Map<String, String> GenerateConvertFromBuilderMap(StructureFileDataset dataset, List<String> onlyFields,
-															 String className, Boolean isStringDateTime,
-															 String structName, String rowName,
+															 String className, String structName, String rowName,
 															 Integer tabHead, Integer tabBody, Boolean saveOnlyWithValue,
 															 Closure<String> prepareField = null) {
 		def rootNode = dataset.rootNode
@@ -236,15 +234,17 @@ $body
 
 			// Add using format
 			if (destField.type in [Field.dateFieldType, Field.timeFieldType, Field.datetimeFieldType, Field.timestamp_with_timezoneFieldType]) {
-				if (isStringDateTime)
+				if (format.toLowerCase() in ['@java', '@unix'])
+					sourceField.type = Field.bigintFieldType
+				else {
 					sourceField.type = Field.stringFieldType
-
-				sourceField.format = null
-				def el = new FormatElement()
-				el.type = destField.type
-				el.format = format
-				if (listFormats.find {it.type == el.type && it.format == el.format } == null)
-					listFormats.add(el)
+					//sourceField.format = null
+					def el = new FormatElement()
+					el.type = destField.type
+					el.format = format
+					if (listFormats.find {it.type == el.type && it.format == el.format } == null)
+						listFormats.add(el)
+				}
 			}
 
 			// Add using sections and setting
@@ -438,10 +438,7 @@ $body
 	
 	/**
 	 * Generate convert code from source field to destination field
-	 * @param dest destination field
-	 * @param source source field
-	 * @param format parsing format
-	 * @param value path to source value
+	 * @param params convert parameters
 	 * @return parsing code
 	 */
 	static String GenerateConvertValue(Map params) {
@@ -793,7 +790,7 @@ $body
 				break
 
 			case Field.dateFieldType:
-				formatField = formatField?: DateFormat(dest.type)
+				formatField = formatField?:DateFormat(dest.type)
 
 				switch (source.type) {
 					case Field.dateFieldType:
@@ -816,7 +813,13 @@ $body
 						break
 
 					case Field.bigintFieldType:
-						r =  "new java.sql.Date(($sourceValue as Long)"
+						formatField = (formatField?:'@java').toLowerCase()
+						if (formatField == '@java')
+							r =  "new java.sql.Date(($sourceValue as Long))"
+						else if (formatField == '@unix')
+							r =  "new java.sql.Date(($sourceValue as Long) * 1000)"
+						else
+							throw new ExceptionGETL("Unknown format value \"$formatField\" for field \"${source.name}\"!")
 
 						break
 
@@ -827,7 +830,7 @@ $body
 				break
 
 			case Field.datetimeFieldType: case Field.timestamp_with_timezoneFieldType:
-				formatField = formatField?: DateFormat(dest.type)
+				formatField = formatField?:DateFormat(dest.type)
 
 				switch (source.type) {
 					case Field.datetimeFieldType:
@@ -850,7 +853,14 @@ $body
 						break
 
 					case Field.bigintFieldType:
-						r =  "new java.sql.Timestamp($sourceValue as Long)"
+						formatField = (formatField?:'@java').toLowerCase()
+						if (formatField == '@java')
+							r =  "new java.sql.Timestamp(($sourceValue as Long))"
+						else if (formatField == '@unix')
+							r =  "new java.sql.Timestamp(($sourceValue as Long) * 1000)"
+						else
+							throw new ExceptionGETL("Unknown format value \"$formatField\" for field \"${source.name}\"!")
+
 
 						break
 
@@ -885,7 +895,13 @@ $body
 						break
 
 					case Field.bigintFieldType:
-						r =  "new java.sql.Time($sourceValue as Long)"
+						formatField = (formatField?:'@java').toLowerCase()
+						if (formatField == '@java')
+							r =  "new java.sql.Time(($sourceValue as Long))"
+						else if (formatField == '@unix')
+							r =  "new java.sql.Time(($sourceValue as Long) * 1000)"
+						else
+							throw new ExceptionGETL("Unknown format value \"$formatField\" for field \"${source.name}\"!")
 
 						break
 

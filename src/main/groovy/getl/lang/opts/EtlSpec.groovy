@@ -101,7 +101,7 @@ class EtlSpec extends BaseSpec {
                 @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowWriteSpec']) Closure cl) {
         if (cl == null)
             throw new ExceptionDSL('Required closure code!')
-        def destination = DetectClosureDelegate(cl)
+        def destination = DetectClosureDelegate(cl, true)
         if (destination == null || !(destination instanceof Dataset))
             throw new ExceptionDSL('Can not detect destination dataset!')
 
@@ -176,7 +176,7 @@ class EtlSpec extends BaseSpec {
                      @ClosureParams(value = SimpleType, options = ['getl.proc.opts.FlowProcessSpec']) Closure cl) {
         if (cl == null)
             throw new ExceptionDSL('Required closure code!')
-        def source = DetectClosureDelegate(cl)
+        def source = DetectClosureDelegate(cl, true)
         if (source == null || !(source instanceof Dataset))
             throw new ExceptionDSL('Can not detect source dataset!')
 

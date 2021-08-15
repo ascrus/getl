@@ -140,16 +140,30 @@ class Connection implements Cloneable, GetlRepository {
 		return this
 	}
 
-	/**
-	 * Extended attributes
-	 */
+	/** Extended attributes */
 	Map<String, Object> getAttributes() { params.attributes as Map<String, Object> }
-	/**
-	 * Extended attributes
-	 */
+	/** Extended attributes */
 	void setAttributes(Map<String, Object> value) {
 		attributes.clear()
-		if (value != null) attributes.putAll(value)
+		if (value != null)
+			attributes.putAll(value)
+	}
+	/** Extended attributes */
+	Map<String, Object> attributes() { attributes }
+	/** Read extended attribute value */
+	Object attribute(String name) {
+		if (name == null)
+			throw new ExceptionGETL('Required "name" parameter!')
+
+		return attributes().get(name)
+	}
+	/** Write value to extended attribute */
+	@Synchronized
+	void saveAttribute(String name, Object value) {
+		if (name == null)
+			throw new ExceptionGETL('Required "name" parameter!')
+
+		attributes.put(name, value)
 	}
 
 	/** Create a new dataset object for the current connection */

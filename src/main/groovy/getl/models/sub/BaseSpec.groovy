@@ -81,13 +81,21 @@ abstract class BaseSpec extends getl.lang.opts.BaseSpec {
         if (value != null)
             attrs.putAll(value)
     }
+    /** Save attribute value */
+    @Synchronized('synchAttrs')
+    void saveAttribute(String name, Object value) {
+        attrs.put(name, value)
+    }
     /**
      * Get the value of the specified attribute
      * @param name attribute name
      * @return attribute value
      */
     @Synchronized('synchAttrs')
-    Object attribute(String name) { ListUtils.NotNullValue(attrs.get(name), ownerModel.modelAttrs.get(name)) }
+    Object attribute(String name) {
+        //ListUtils.NotNullValue(attrs.get(name), ownerModel.modelAttrs.get(name))
+        attributes().get(name)
+    }
 
     /**
      * Return node attributes

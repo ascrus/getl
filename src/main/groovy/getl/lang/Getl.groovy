@@ -2487,9 +2487,19 @@ Examples:
         }
     }
 
-    /** Detect delegate object for closure code */
-    static Object DetectClosureDelegate(Object obj) {
-        while (obj instanceof Closure) obj = (obj as Closure).delegate
+    /**
+     * Detect delegate object for closure code
+     * @param obj analyzed object
+     * @param ignore options and return their owner
+     * @return found object
+     */
+    static Object DetectClosureDelegate(Object obj, Boolean ignoreOpts = false) {
+        while (obj instanceof Closure)
+            obj = (obj as Closure).delegate
+
+        if (obj != null && ignoreOpts && obj instanceof BaseSpec && !(obj instanceof GetlRepository))
+            obj = (obj as BaseSpec).ownerObject
+
         return obj
     }
 
@@ -4368,7 +4378,7 @@ Examples:
                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.SQLScripter']) Closure cl = null) {
         def parent = new SQLScripter()
         parent.dslCreator = this
-        def owner = DetectClosureDelegate(cl)
+        def owner = DetectClosureDelegate(cl, true)
 
         if (connection != null)
             parent.connection = connection

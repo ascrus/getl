@@ -69,6 +69,9 @@ class WebServiceDataset extends FileDataset {
         return res
     }
 
+    @Override
+    Map<String, Object> attributes() { super.attributes() + webVars }
+
     /** Get request method */
     @SuppressWarnings('SpellCheckingInspection')
     static public final String WEBREQUESTMETHODGET = 'GET'

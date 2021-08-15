@@ -194,8 +194,27 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 	/** Extended attributes */
 	void setAttributes(Map<String, Object> value) {
 		attributes.clear()
-		if (value != null) attributes.putAll(value)
+		if (value != null)
+			attributes.putAll(value)
 	}
+	/** Extended attributes */
+	Map<String, Object> attributes() { (connection?.attributes()?:[:]) + attributes }
+	/** Read extended attribute value */
+	Object attribute(String name) {
+		if (name == null)
+			throw new ExceptionGETL('Required "name" parameter!')
+
+		return attributes().get(name)
+	}
+	/** Write value to extended attribute */
+	@Synchronized
+	void saveAttribute(String name, Object value) {
+		if (name == null)
+			throw new ExceptionGETL('Required "name" parameter!')
+
+		attributes.put(name, value)
+	}
+
 
 	/** Description of dataset */
 	String getDescription() { params.description as String }

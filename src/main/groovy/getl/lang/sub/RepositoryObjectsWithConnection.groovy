@@ -22,7 +22,7 @@ abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithCo
             if  (params.connection != null)
                 repObj.connection = params.connection as Connection
             else if (params.classConnection != null && params.code != null) {
-                def owner = Getl.DetectClosureDelegate(params.code as Closure)
+                def owner = Getl.DetectClosureDelegate(params.code as Closure, true)
                 if ((params.classConnection as Class).isInstance(owner))
                     repObj.connection = owner as Connection
             }

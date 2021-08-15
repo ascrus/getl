@@ -98,7 +98,7 @@ class JSONDriver extends WebServiceDriver {
 		sb << '@groovy.transform.CompileStatic\n'
 		sb << 'void proc(getl.json.JSONDataset dataset, Closure code, Object data, Integer limit) {\n'
 
-		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,'Map', true,
+		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,'Map',
 				'struct','row', 1,
 				2 + (dataset.rootNodePath().size() - 1), true)
 		sb << genScript.head

@@ -81,4 +81,7 @@ class WebServiceConnection extends FileConnection {
     Boolean getAutoCaptureFromWeb() { params.autoCaptureFromWeb as Boolean }
     /** Automatic data capture from a web service when reading rows */
     void setAutoCaptureFromWeb(Boolean value) { params.autoCaptureFromWeb = value }
+
+    @Override
+    Map<String, Object> attributes() { super.attributes() + webVars }
 }

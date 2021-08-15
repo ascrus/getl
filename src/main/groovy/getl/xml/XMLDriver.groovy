@@ -143,8 +143,8 @@ class XMLDriver extends WebServiceDriver {
 			return field2alias(field, name, isAlias, ds.defaultAccessMethod)
 		}
 
-		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields, 'groovy.util.Node',
-				true, 'struct', 'row', 0, 1,
+		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,
+				'groovy.util.Node', 'struct', 'row', 0, 1,
 				false, prepareField)
 		sb << genScript.head
 

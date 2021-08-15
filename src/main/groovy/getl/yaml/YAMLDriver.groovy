@@ -57,7 +57,7 @@ class YAMLDriver extends WebServiceDriver {
         sb << '@groovy.transform.CompileStatic\n'
         sb << 'void proc(getl.yaml.YAMLDataset dataset, Closure code, Object data, Integer limit) {\n'
 
-        def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,'Map', true,
+        def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,'Map',
                 'struct','row', 1,
                 2 + (dataset.rootNodePath().size() - 1), true)
         sb << genScript.head

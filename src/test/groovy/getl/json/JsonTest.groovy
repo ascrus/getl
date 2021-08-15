@@ -11,6 +11,8 @@ import getl.utils.GenerationUtils
 import groovy.transform.InheritConstructors
 import org.junit.Test
 
+import java.sql.Time
+
 @InheritConstructors
 class JsonTest extends GetlTest {
     static private final countRowsInFile = 100000
@@ -45,6 +47,66 @@ class JsonTest extends GetlTest {
                 }
                 assertEquals(3, readRows)
                 assertEquals(1, rows(limit: 1).size())
+            }
+        }
+    }
+
+    @Test
+    void testDatetimeFormat() {
+        Getl.Dsl {
+            json {
+                fileName = textFile {
+                    temporaryFile = true
+                    writeln '''{
+    "id": 1,
+    "name": "test",
+    
+    "date_str": "2020-12-31",
+    "date_java": 1609362000000,
+    "date_unix": 1609362000,
+    
+    "time_str": "12:13:59.000",
+    "time_java": 33239000,
+    "time_unix": 33239,
+    
+    "datetime_str": "2020-12-31 12:13:59.000",
+    "datetime_java": 1609406039000,
+    "datetime_unix": 1609406039, 
+}
+'''
+                }.filePath()
+
+                field('id') { type = integerFieldType }
+                field('name')
+
+                field('date_str') { type = dateFieldType }
+                field('date_java') { type = dateFieldType; format = '@java' }
+                field('date_unix') { type = dateFieldType; format = '@unix' }
+
+                field('time_str') { type = timeFieldType }
+                field('time_java') { type = timeFieldType; format = '@java' }
+                field('time_unix') { type = timeFieldType; format = '@unix' }
+
+                field('datetime_str') { type = datetimeFieldType }
+                field('datetime_java') { type = datetimeFieldType; format = '@java' }
+                field('datetime_unix') { type = datetimeFieldType; format = '@unix' }
+
+                def row=  rows()[0]
+
+                assertEquals(1, row.id)
+                assertEquals('test', row.name)
+
+                assertEquals('2020-12-31', DateUtils.FormatDate(row.date_str as Date))
+                assertEquals('2020-12-31', DateUtils.FormatDate(row.date_java as Date))
+                assertEquals('2020-12-31', DateUtils.FormatDate(row.date_unix as Date))
+
+                assertEquals('12:13:59.000', DateUtils.FormatTime(row.time_str as Time))
+                assertEquals('12:13:59.000', DateUtils.FormatTime(row.time_java as Time))
+                assertEquals('12:13:59.000', DateUtils.FormatTime(row.time_unix as Time))
+
+                assertEquals('2020-12-31 12:13:59.000', DateUtils.FormatDateTime(row.datetime_str as Date))
+                assertEquals('2020-12-31 12:13:59.000', DateUtils.FormatDateTime(row.datetime_java as Date))
+                assertEquals('2020-12-31 12:13:59.000', DateUtils.FormatDateTime(row.datetime_unix as Date))
             }
         }
     }
@@ -134,6 +196,7 @@ class JsonTest extends GetlTest {
                 rootNode = 'list'
                 field('id') {  type = integerFieldType }
                 field('name')
+                field('dt') { type = datetimeFieldType; format = '@unix' }
                 field('lat') { type = numericFieldType; length = 10; precision = 4; alias = 'coord.lat' }
                 field('lon') { type = numericFieldType; length = 10; precision = 4; alias = 'coord.lon' }
                 field('temp') { type = numericFieldType; length = 5; precision = 2; alias = 'main.temp' }
@@ -148,6 +211,7 @@ class JsonTest extends GetlTest {
                 def rows = rows()
                 assertEquals(2, rows.size())
                 assertEquals('Moscow', rows[0].name)
+                assertNotNull(rows[0].dt)
                 assertEquals(55.7522, rows[0].lat)
                 assertEquals(37.6156, rows[0].lon)
                 println rows[0]

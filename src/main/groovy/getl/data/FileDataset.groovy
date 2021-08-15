@@ -48,7 +48,7 @@ class FileDataset extends Dataset {
 	/** File name */
 	void setFileName(String value) { params.fileName = value }
 	/** File name with conversion of attribute names in it to attribute values */
-	String fileName() { StringUtils.EvalMacroString(fileName, attributes, false) }
+	String fileName() { StringUtils.EvalMacroString(fileName, attributes(), false) }
 	
 	/** Code page for file */
 	String getCodePage() { params.codePage as String }

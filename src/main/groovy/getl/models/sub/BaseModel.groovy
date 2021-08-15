@@ -127,6 +127,11 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
         if (value != null)
             modelAttrs.putAll(value)
     }
+    /** Save attribute value */
+    @Synchronized('synchAttrs')
+    void saveModelAttribute(String name, Object value) {
+        modelAttrs.put(name, value)
+    }
     /**
      * Get the value of the specified attribute
      * @param name attribute name
