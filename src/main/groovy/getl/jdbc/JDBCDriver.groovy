@@ -1458,7 +1458,8 @@ class JDBCDriver extends Driver {
 				fields << prepareFieldNameForSQL(f.name, table as JDBCDataset)
 			}
 			
-			if (fields.isEmpty()) throw new ExceptionGETL("Required fields by dataset $table")
+			if (fields.isEmpty())
+				throw new ExceptionGETL("Required fields by dataset $table")
 			
 			def selectFields = fields.join(",")
 

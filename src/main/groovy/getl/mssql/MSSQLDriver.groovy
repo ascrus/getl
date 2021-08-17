@@ -88,6 +88,14 @@ class MSSQLDriver extends JDBCDriver {
 		if (dl.with != null) {
 			dir.afteralias = "with (${dl.with})"
 		}
+		if (params.limit != null) {
+			dir.afterselect = ((dir.afterselect != null)?(dir.afterselect + '\n'):'') + "TOP ${params.limit}"
+			params.limit = null
+		}
+		if (params.offs != null) {
+			dir.afterOrderBy = ((dir.afterOrderBy != null)?(dir.afterOrderBy + '\n'):'') + "OFFSET ${params.offs} ROWS"
+			params.offs = null
+		}
 	}
 	
 	@Override
