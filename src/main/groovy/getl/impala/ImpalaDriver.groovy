@@ -47,6 +47,8 @@ class ImpalaDriver extends JDBCDriver {
         defaultTransactionIsolation = Connection.TRANSACTION_READ_UNCOMMITTED
 
         defaultSchemaName = 'default'
+
+        sqlExpressions.sysDualTable = '(SELECT 1 AS row_num) AS dual'
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -210,7 +212,7 @@ class ImpalaDriver extends JDBCDriver {
     }
 
     @Override
-    String getSysDualTable() { impalaConnection.dualTable?:'(SELECT 1 AS row_num) AS x' }
+    String getSysDualTable() { impalaConnection.dualTable?:sqlExpressionValue('sysDualTable') }
 
     @Override
     protected void initOpenWrite(JDBCDataset dataset, Map params, String query) {

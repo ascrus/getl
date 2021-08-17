@@ -48,6 +48,8 @@ class HiveDriver extends JDBCDriver {
         syntaxPartitionKeyInColumns = false
 
         defaultSchemaName = 'default'
+
+        sqlExpressions.now = 'CURRENT_TIMESTAMP'
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -479,7 +481,4 @@ class HiveDriver extends JDBCDriver {
             throw e
         }
     }
-
-    @Override
-    String getNowFunc() { 'CURRENT_TIMESTAMP' }
 }

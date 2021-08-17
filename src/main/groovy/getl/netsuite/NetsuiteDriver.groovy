@@ -31,6 +31,8 @@ class NetsuiteDriver extends JDBCDriver {
 		fieldEndPrefix = ']'
 		tablePrefix = '['
 		tableEndPrefix = ']'
+
+		sqlExpressions.now = 'GETDATE()'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -99,7 +101,4 @@ class NetsuiteDriver extends JDBCDriver {
 
 		return url
 	}
-
-	@Override
-	String getNowFunc() { 'GETDATE()' }
 }

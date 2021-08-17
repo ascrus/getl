@@ -86,7 +86,7 @@ class BaseSpec implements Cloneable {
             this.with(cl)
         }
         finally {
-            this.pullOptions(false)
+            this.pullAllOptions(false)
         }
     }
 
@@ -169,6 +169,23 @@ class BaseSpec implements Cloneable {
         }
 
         clearOptions()
+        _params.putAll(_savedOptions.pop() as Map<String, Object>)
+    }
+
+    /**
+     * Restore first saved options from stack
+     * @param throwIfNotExist generate an error if options were not saved (default true)
+     */
+    @Synchronized('synchParams')
+    void pullAllOptions(Boolean throwIfNotExist = true) {
+        if (_savedOptions.isEmpty()) {
+            if (!throwIfNotExist)
+                return
+            throw new ExceptionGETL("No saved options for ${getClass().name} object available!")
+        }
+
+        clearOptions()
+        while (_savedOptions.size() > 1) { _savedOptions.pop() }
         _params.putAll(_savedOptions.pop() as Map<String, Object>)
     }
 

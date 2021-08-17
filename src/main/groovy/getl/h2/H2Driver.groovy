@@ -27,13 +27,14 @@ class H2Driver extends JDBCDriver {
 	protected void initParams() {
 		super.initParams()
 
-		sqlAutoIncrement = "AUTO_INCREMENT"
 		commitDDL = false
 
 		caseObjectName = "UPPER"
 		defaultSchemaName = "PUBLIC"
 		connectionParamBegin = ";"
 		connectionParamJoin = ";"
+
+		sqlExpressions.ddlAutoIncrement = 'AUTO_INCREMENT'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

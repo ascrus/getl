@@ -16,6 +16,8 @@ import getl.utils.Logs
 import getl.utils.MapUtils
 import groovy.transform.Synchronized
 
+import java.sql.Timestamp
+
 /**
  * Save point manager class
  * @author Alexsey Konstantinov
@@ -229,6 +231,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 			else {
 				CheckTableFields(it, tableHistoryFields)
 			}
+			return true
 		}
 	}
 
@@ -356,17 +359,18 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	
 	/**
 	 * Return last value of history point by source
+	 * @param convertNull if there are no values, then instead of null, return the minimum possible value
 	 * @return value
 	 */
-	Object lastValue() {
+	Object lastValue(Boolean convertNull = false) {
 		prepareManager(true)
 
 		def con = currentJDBCConnection
 
-		def isAutoTran = !con.isTran() && con.currentJDBCDriver.isSupport(Driver.Support.TRANSACTIONAL)
+		def isAutoTran = con.currentJDBCDriver.isSupport(Driver.Support.TRANSACTIONAL) && !con.isTran()
 		if (isAutoTran)
 			con.startTran(true)
-		def rows
+		List<Map<String, Object>> rows
 		try {
 			rows = lastValueQuery.rows()
 			if (rows.size() > 1)
@@ -380,11 +384,26 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 		if (isAutoTran)
 			con.commitTran(true)
 		
-		return (!rows.isEmpty())?rows[0].value:null
+		def res = (!rows.isEmpty())?rows[0].value:null
+		if (convertNull)
+			res = convertNullValue
+
+		return res
 	}
 
+	/** Минимальное значение для числовых значений, в которое конвертируется null */
+	static public final Long identityMinValue = Long.MIN_VALUE
+	/** Минимальное значение для таймстамп значений, в которое конвертируется null */
+	static public final Timestamp timestampMinValue = DateUtils.ParseSQLTimestamp('yyyy-MM-dd HH:mm:ss',
+			'1900-01-01')
+
+	/** Минимальное значение, в которое конвертируется null */
+	Object getConvertNullValue() { (sourceType == identitySourceType)?identityMinValue:timestampMinValue }
+
+	/** Объект синхронизации работы с менеджером */
 	static private Object operationLock = new Object()
 
+	/** Таблица для сохранения точек */
 	private TableDataset saveTable
 
 	/**

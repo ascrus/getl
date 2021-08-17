@@ -27,6 +27,7 @@ class MySQLDriver extends JDBCDriver {
 		supportLocalTemporaryRetrieveFields = false
 
 		sqlExpressions.convertTextToTimestamp = 'CAST(\'{value}\' AS datetime)'
+		sqlExpressions.sysDualTable = 'DUAL'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -125,9 +126,6 @@ class MySQLDriver extends JDBCDriver {
 			}
 		}
 	}
-
-	@Override
-	String getSysDualTable() { return 'DUAL' }
 
 	@Override
 	protected String sessionID() {

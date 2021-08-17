@@ -37,6 +37,8 @@ class MSSQLDriver extends JDBCDriver {
 		createViewTypes = ['CREATE', 'CREATE OR ALTER']
 
 		sqlExpressions.convertTextToTimestamp = 'CONVERT(datetime, \'{value}\', 101)'
+		sqlExpressions.now = 'GETDATE()'
+		sqlExpressions.sequenceNext = 'SELECT NEXT VALUE FOR {value} AS id'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -137,11 +139,4 @@ class MSSQLDriver extends JDBCDriver {
 
 	@Override
 	Boolean timestampWithTimezoneConvertOnWrite() { return true }
-
-	/** Next value sequence sql script */
-	@Override
-	protected String sqlSequenceNext(String sequenceName) { "SELECT NEXT VALUE FOR ${sequenceName} AS id" }
-
-	@Override
-	String getNowFunc() { 'GETDATE()' }
 }

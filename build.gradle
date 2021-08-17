@@ -7,7 +7,7 @@ plugins {
 }
 
 //noinspection GroovyUnusedAssignment
-version = '4.11.1-11-SNAPSHOT' //noinspection GroovyUnusedAssignment
+version = '4.11.1-13-SNAPSHOT' //noinspection GroovyUnusedAssignment
 group = 'net.sourceforge.getl'
 
 configurations {
@@ -177,7 +177,6 @@ task("generateProjectConfig") {
 	def resDir = "$buildDir/resources/main"
 	doLast {
 		file(resDir).mkdirs()
-		def curYear = LocalDateTime.now().year
 		file("$resDir/getl.conf").text = """/* 
 Getl Configuration File
 Generated: ${LocalDateTime.now().format('yyyy-MM-dd HH:mm')} 

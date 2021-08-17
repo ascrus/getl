@@ -38,10 +38,10 @@ class VerticaDriver extends JDBCDriver {
 
 		defaultSchemaName = 'public'
 		tempSchemaName = 'v_temp_schema'
-		sqlCreateView = sqlCreateView = '''{create} {temporary} VIEW {name} {privileges} AS
-{select}'''
 
         addPKFieldsToUpdateStatementFromMerge = true
+
+		sqlExpressions.ddlCreateView = '{create} {temporary} VIEW {name} {privileges} AS\n{select}'
 	}
 
     @Override
@@ -90,12 +90,18 @@ class VerticaDriver extends JDBCDriver {
 		def result = ''
 		def temporary = (((dataset as JDBCDataset).type as JDBCDataset.Type) in
 				[JDBCDataset.Type.GLOBAL_TEMPORARY, JDBCDataset.Type.LOCAL_TEMPORARY])
-		if (temporary && params.onCommit != null && params.onCommit) result += 'ON COMMIT PRESERVE ROWS\n'
-		if (params.orderBy != null && !(params.orderBy as List).isEmpty()) result += "ORDER BY ${(params.orderBy as List).join(", ")}\n"
-		if (params.segmentedBy != null && params.unsegmented != null) throw new ExceptionGETL('Invalid segmented options')
-		if (params.segmentedBy != null) result += "SEGMENTED BY ${params.segmentedBy}\n"
-		if (params.unsegmented != null && params.unsegmented) result += "UNSEGMENTED ALL NODES\n"
-		if (params.partitionBy != null) result += "PARTITION BY ${params.partitionBy}\n"
+		if (temporary && BoolUtils.IsValue(params.onCommit))
+			result += 'ON COMMIT PRESERVE ROWS\n'
+		if (params.orderBy != null && !(params.orderBy as List).isEmpty())
+			result += "ORDER BY ${(params.orderBy as List).join(", ")}\n"
+		if (params.segmentedBy != null && BoolUtils.IsValue(params.unsegmented))
+			throw new ExceptionGETL('Invalid segmented options')
+		if (params.segmentedBy != null)
+			result += "SEGMENTED BY ${params.segmentedBy}\n"
+		else if (BoolUtils.IsValue(params.unsegmented))
+			result += "UNSEGMENTED ALL NODES\n"
+		if (params.partitionBy != null)
+			result += "PARTITION BY ${params.partitionBy}\n"
 
 		return result
 	}

@@ -28,6 +28,12 @@ import java.time.Duration
 @InheritConstructors
 class KafkaDriver extends Driver {
     @Override
+    protected void registerParameters() {
+        super.registerParameters()
+        methodParams.register("eachRow", ['fields', 'filter', 'readDuration'])
+    }
+
+    @Override
     List<Support> supported() {
         return [Support.EACHROW, Support.WRITE, Support.DATE, Support.TIME, Support.AUTOLOADSCHEMA]
     }
@@ -110,9 +116,9 @@ class KafkaDriver extends Driver {
 
         def ro = ds.readOpts
         def keyName = ds.keyName
-        def dur = Duration.ofMillis(ro.readDuration?:(Long.MAX_VALUE))
+        def dur = Duration.ofMillis((params.readDuration as Long)?:ro.readDuration?:(Long.MAX_VALUE))
         def limit = ro.limit
-        def maxPoolRecords = ro.maxPollRecords?:10000
+        def maxPoolRecords = (params.maxPollRecords as Integer)?:ro.maxPollRecords?:10000
 
         def props = new Properties()
         props.putAll(con.connectProperties)
@@ -216,8 +222,7 @@ class KafkaDriver extends Driver {
                     formatDateTime = ds.formatDateTime
                     formatTimestampWithTz = ds.formatTimestampWithTz
                     uniFormatDateTime = ds.uniFormatDateTime
-                    if (ds.readOpts.onFilter != null)
-                        readOpts.onFilter = ds.readOpts.onFilter
+                    readOpts.onFilter = (params.filter)?:ds.readOpts.onFilter
 
                     return true
                 }

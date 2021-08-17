@@ -56,12 +56,6 @@ class JDBCDriver extends Driver {
 		super.initParams()
 
 		addPKFieldsToUpdateStatementFromMerge = false
-		sqlCreateTable = '''CREATE {type} TABLE {ifNotExists} {tableName} (
-{fields}
-{pk}
-)
-{extend}'''
-		sqlCreateIndex = '''CREATE {unique} {hash} INDEX {ifNotExists} {indexName} ON {tableName} ({columns})'''
 		commitDDL = false
 		transactionalDDL = false
 		transactionalTruncate = false
@@ -74,9 +68,6 @@ class JDBCDriver extends Driver {
 		connectionParamBegin = "?"
 		connectionParamJoin = "&"
 		defaultTransactionIsolation = java.sql.Connection.TRANSACTION_READ_COMMITTED
-		sqlDrop = 'DROP {object} {ifexists} {name}'
-		sqlCreateView = '''{create} {temporary} VIEW {name} AS
-{select}'''
 		createViewTypes = ['CREATE', 'CREATE OR REPLACE']
 		syntaxPartitionKey = '{column}'
 		syntaxPartitionKeyInColumns = true
@@ -84,7 +75,18 @@ class JDBCDriver extends Driver {
 		fieldPrefix = '"'
 		tablePrefix = '"'
 
-		sqlExpressions = [convertTextToTimestamp: 'CAST(\'{value}\' AS timestamp)']
+		sqlExpressions = [
+				convertTextToTimestamp: 'CAST(\'{value}\' AS timestamp)',
+				now: 'NOW()',
+				sequenceNext: 'SELECT NextVal(\'{value}\') AS id;',
+				sysDualTable: null,
+
+				ddlCreateTable: 'CREATE {type} TABLE {ifNotExists} {tableName} (\n{fields}\n{pk}\n)\n{extend}',
+				ddlCreateIndex: 'CREATE {unique} {hash} INDEX {ifNotExists} {indexName} ON {tableName} ({columns})',
+				ddlDrop: 'DROP {object} {ifexists} {name}',
+				ddlCreateView: '{create} {temporary} VIEW {name} AS\n{select}',
+				ddlAutoIncrement: null
+		]
 	}
 
 	/** Start time connect */
@@ -984,9 +986,6 @@ class JDBCDriver extends Driver {
 		}
 	}
 	
-	protected String sqlCreateTable
-	protected String sqlCreateIndex
-	protected String sqlAutoIncrement
 	protected Boolean commitDDL
 	protected Boolean transactionalDDL
 	protected Boolean transactionalTruncate
@@ -1004,10 +1003,10 @@ class JDBCDriver extends Driver {
 	Boolean isSupportLocalTemporaryRetrieveFields() { supportLocalTemporaryRetrieveFields }
 
 	/** Name dual system table */
-	String getSysDualTable() { return null }
+	String getSysDualTable() { sqlExpressionValue('sysDualTable') }
 
 	/** Name of current date time function */
-	String getNowFunc() { 'NOW()' }
+	String getNowFunc() { sqlExpressionValue('now') }
 
 	@Synchronized
 	@Override
@@ -1104,7 +1103,7 @@ class JDBCDriver extends Driver {
 					fields: fields,
 					pk: pk,
 					extend: extend]
-			def sqlCodeCT = StringUtils.EvalMacroString(sqlCreateTable, varsCT)
+			def sqlCodeCT = sqlExpressionValue('ddlCreateTable', varsCT)
 			//		println sqlCodeCT
 			executeCommand(sqlCodeCT, p)
 
@@ -1125,7 +1124,7 @@ class JDBCDriver extends Driver {
 							tableName: tableName,
 							columns: idxCols.join(",")
 					]
-					def sqlCodeCI = StringUtils.EvalMacroString(sqlCreateIndex, varsCI)
+					def sqlCodeCI = sqlExpressionValue('ddlCreateIndex', varsCI)
 
 					if (commitDDL && !(jdbcConnection.autoCommit)) {
 						if (transactionalDDL) {
@@ -1162,8 +1161,9 @@ class JDBCDriver extends Driver {
 	 * @return
 	 */
 	String generateColumnDefinition(Field f, Boolean useNativeDBType) {
+		def autoIncrement = sqlExpressionValue('ddlAutoIncrement')
 		return "${prepareFieldNameForSQL(f.name)} ${type2sqlType(f, useNativeDBType)}" + ((isSupport(Support.PRIMARY_KEY) && !f.isNull)?" NOT NULL":"") +
-				((f.isAutoincrement && sqlAutoIncrement != null)?" ${sqlAutoIncrement}":"") +
+				((f.isAutoincrement && autoIncrement != null)?" $autoIncrement":"") +
 				((isSupport(Support.DEFAULT_VALUE) && f.defaultValue != null)?" ${generateDefaultDefinition(f)}":"") +
 				((isSupport(Support.COMPUTE_FIELD) && f.compute != null)?" AS ${f.compute}":"")
 	}
@@ -1322,9 +1322,6 @@ class JDBCDriver extends Driver {
 		return r
 	}
 
-	/** Drop sql statement syntax */
-	protected String sqlDrop
-
 	@Synchronized
 	@Override
 	void dropDataset(Dataset dataset, Map params) {
@@ -1348,7 +1345,7 @@ class JDBCDriver extends Driver {
 		}
 
 		def e = (validExists && isSupport(Support.DROPIFEXIST))?'IF EXISTS':''
-		def q = StringUtils.EvalMacroString(sqlDrop, [object: t, ifexists: e, name: n])
+		def q = sqlExpressionValue('ddlDrop', [object: t, ifexists: e, name: n])
 
 		def con = jdbcConnection
 
@@ -2392,13 +2389,10 @@ $sql
 		}
 	}
 
-	/** Next value sequence sql script */
-	protected String sqlSequenceNext(String sequenceName) { "SELECT NextVal('${sequenceName}') AS id;" }
-	
 	@Override
 	@Synchronized('operationLock')
 	Long getSequence(String sequenceName) {
-		def sql = sqlSequenceNext(sequenceName)
+		def sql = sqlExpressionValue('sequenceNext', [value: sequenceName])
 		saveToHistory(sql)
 		def r = sqlConnect.firstRow(sql)
 		return r.id
@@ -2768,8 +2762,6 @@ FROM {source} {after_from}'''
 	@Synchronized
 	void dropSchema(String schemaName, Map<String, Object> dropParams) { }
 
-	/** Create view SQL syntax*/
-	protected String sqlCreateView
 	/** Create or replace view SQL syntax*/
 	protected List<String> createViewTypes
 
@@ -2785,7 +2777,7 @@ FROM {source} {after_from}'''
 
 		validTableName(dataset as JDBCDataset)
 		def qp = createViewParams(dataset, params)
-		dataset.currentJDBCConnection.executeCommand(sqlCreateView, [queryParams: qp])
+		dataset.currentJDBCConnection.executeCommand(sqlExpressionValue('ddlCreateView', qp))
 	}
 
 	/**
@@ -2817,6 +2809,17 @@ FROM {source} {after_from}'''
 	/** Sql expressions */
 	protected Map<String, String> sqlExpressions
 
-	/** Sql expressions by name */
-	String sqlExpression(String name) { sqlExpressions.get(name) }
+	/** Sql expression by name */
+	String sqlExpression(String name) {
+		if (!sqlExpressions.containsKey(name))
+			throw new ExceptionGETL("Unknown sql expression name \"$name\"!")
+
+		return sqlExpressions.get(name)
+	}
+
+	/** Value from sql expression by name */
+	String sqlExpressionValue(String name, Map<String, Object> extParams = [:]) {
+		def expr = sqlExpression(name)
+		return StringUtils.EvalMacroString(expr, sqlExpressions + (extParams?:[:]))
+	}
 }

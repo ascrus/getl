@@ -21,6 +21,8 @@ class DB2Driver extends JDBCDriver {
 		connectionParamBegin = ':'
 		connectionParamJoin = ';'
 		connectionParamFinish = ';'
+
+		sqlExpressions.sequenceNext = 'SELECT NEXT VALUE FOR {value} AS id'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -61,8 +63,4 @@ class DB2Driver extends JDBCDriver {
 
 	@Override
 	protected String getChangeSessionPropertyQuery() { return 'SET {name} = {value}' }
-
-	/** Next value sequence sql script */
-	@Override
-	protected String sqlSequenceNext(String sequenceName) { "SELECT NEXT VALUE FOR ${sequenceName} AS id" }
 }

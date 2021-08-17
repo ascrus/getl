@@ -20,6 +20,13 @@ import groovy.yaml.YamlSlurper
  */
 @InheritConstructors
 class YAMLDriver extends WebServiceDriver {
+    @Override
+    protected void registerParameters() {
+        super.registerParameters()
+
+        methodParams.register('eachRow', ['fields', 'filter'])
+    }
+
     @SuppressWarnings("UnnecessaryQualifiedReference")
     @Override
     List<Driver.Support> supported() {

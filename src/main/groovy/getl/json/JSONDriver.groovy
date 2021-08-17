@@ -22,7 +22,7 @@ class JSONDriver extends WebServiceDriver {
 	@Override
 	protected void registerParameters() {
 		super.registerParameters()
-		methodParams.register("eachRow", ["fields", "filter", "initAttr"])
+		methodParams.register('eachRow', ['fields', 'filter', 'initAttr'])
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

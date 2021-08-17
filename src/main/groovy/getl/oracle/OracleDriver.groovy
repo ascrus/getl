@@ -34,6 +34,9 @@ class OracleDriver extends JDBCDriver {
 		transactionalDDL = true
 
 		sqlExpressions.convertTextToTimestamp = 'TO_TIMESTAMP(\'{value}\', \'yyyy-mm-dd hh24:mi:ss.FF\')'
+		sqlExpressions.now = 'LOCALTIMESTAMP'
+		sqlExpressions.sequenceNext = 'SELECT {value}.nextval id FROM dual'
+		sqlExpressions.sysDualTable = 'DUAL'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")
@@ -225,10 +228,7 @@ class OracleDriver extends JDBCDriver {
 				((isSupport(Driver.Support.COMPUTE_FIELD) && f.compute != null)?" COMPUTED BY ${f.compute}":"")
 	}
 
-	@Override
-	String getSysDualTable() { return 'DUAL' }
-
-	@SuppressWarnings('SpellCheckingInspection')
+	@SuppressWarnings(['SpellCheckingInspection', 'SqlNoDataSourceInspection'])
 	@Override
 	protected String sessionID() {
 		String res = null
@@ -257,10 +257,6 @@ class OracleDriver extends JDBCDriver {
 
         return url
 	}
-
-	/** Next value sequence sql script */
-	@Override
-	protected String sqlSequenceNext(String sequenceName) { "SELECT ${sequenceName}.nextval id FROM dual" }
 
 	@Synchronized
 	@Override
@@ -299,7 +295,4 @@ end;
 			super.createSequence(name, ifNotExists, opts)
 		}
 	}
-
-	@Override
-	String getNowFunc() { 'LOCALTIMESTAMP' }
 }

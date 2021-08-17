@@ -20,8 +20,8 @@ class NetezzaDriver extends JDBCDriver {
         connectionParamBegin = ";"
         connectionParamJoin = ";"
 
-        //noinspection SpellCheckingInspection
-        sqlDrop = 'DROP {object} {name} {ifexists}'
+        sqlExpressions.sequenceNext = 'SELECT NEXT VALUE FOR {value} AS id'
+        sqlExpressions.ddlDrop = 'DROP {object} {name} {ifexists}'
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -80,8 +80,4 @@ class NetezzaDriver extends JDBCDriver {
         return res
     }
     */
-
-    /** Next value sequence sql script */
-    @Override
-    protected String sqlSequenceNext(String sequenceName) { "SELECT NEXT VALUE FOR ${sequenceName} AS id" }
 }
