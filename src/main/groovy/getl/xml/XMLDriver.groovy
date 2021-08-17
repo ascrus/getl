@@ -130,14 +130,14 @@ class XMLDriver extends WebServiceDriver {
 	 * Read attributes and rows from dataset
 	 */
 	@CompileStatic
-	protected void readRows(XMLDataset dataset, List<String> listFields, Integer limit, Object data, Closure<Boolean> initAttr, Closure code) {
+	protected void readRows(XMLDataset dataset, List<String> listFields, Long limit, Object data, Closure<Boolean> initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
-		sb << "{ getl.xml.XMLDataset dataset, Closure initAttr, Closure code, groovy.util.Node data, Integer limit ->\n"
+		sb << "{ getl.xml.XMLDataset dataset, Closure initAttr, Closure code, groovy.util.Node data, Long limit ->\n"
 		generateAttrRead(dataset, initAttr, sb)
 
 		sb << 'proc(dataset, code, data, limit)\n'
 		sb << '}\n'
-		sb << 'void proc(getl.xml.XMLDataset dataset, Closure code, groovy.util.Node data, Integer limit) {\n'
+		sb << 'void proc(getl.xml.XMLDataset dataset, Closure code, groovy.util.Node data, Long limit) {\n'
 
 		Closure<String> prepareField = { XMLDataset ds, Field field, String name, Boolean isAlias ->
 			return field2alias(field, name, isAlias, ds.defaultAccessMethod)
@@ -227,7 +227,7 @@ class XMLDriver extends WebServiceDriver {
 			throw new ExceptionGETL("Required \"rootNode\" value with xml dataset!")
 
 		def data = params.data
-		Integer limit = (params.limit != null)?(params.limit as Integer):0
+		def limit = (params.limit as Long)?:0L
 
 		if (data == null) {
 			def fn = fullFileNameDataset(dataset)
@@ -255,7 +255,7 @@ class XMLDriver extends WebServiceDriver {
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		super.eachRow(dataset, params, prepareCode, code)
 
-		Closure<Boolean> filter = params."filter" as Closure<Boolean>
+		Closure<Boolean> filter = params.filter as Closure<Boolean>
 		
 		def countRec = 0L
 		doRead(dataset as XMLDataset, params, prepareCode) { Map row ->

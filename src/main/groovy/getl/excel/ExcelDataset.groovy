@@ -57,12 +57,12 @@ class ExcelDataset extends FileDataset {
     /** Limit rows to return */
     void setLimit(final Integer value) { params.limit = value }
 
-    /** Header row */
-    Boolean getHeader() {
-        BoolUtils.IsValue([params.header, currentExcelConnection?.header], false)
-    }
-    /** Header row */
+    /** The first entry is the field header */
+    Boolean getHeader() { params.header as Boolean }
+    /** The first entry is the field header */
     void setHeader(Boolean value) { params.header = value }
+    /** The first entry is the field header */
+    Boolean header() { BoolUtils.IsValue([header, currentExcelConnection.header, true])}
 
     /** Warnings from Dataset (e.g. show warning when list not found) */
     @SuppressWarnings('unused')

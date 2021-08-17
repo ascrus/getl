@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import getl.data.Dataset
 import getl.data.FileConnection
 import getl.driver.Driver
+import getl.utils.BoolUtils
 import groovy.transform.InheritConstructors
 
 /**

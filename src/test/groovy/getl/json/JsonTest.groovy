@@ -47,6 +47,15 @@ class JsonTest extends GetlTest {
                 }
                 assertEquals(3, readRows)
                 assertEquals(1, rows(limit: 1).size())
+
+                def fr = rows(filter: { it.id == 1 })
+                assertEquals(1, fr.size())
+                assertEquals(1, fr[0].id)
+
+                readOpts.filter { it.id == 1 }
+                fr = rows()
+                assertEquals(1, fr.size())
+                assertEquals(1, fr[0].id)
             }
         }
     }

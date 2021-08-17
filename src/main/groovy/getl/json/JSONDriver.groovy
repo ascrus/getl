@@ -89,14 +89,14 @@ class JSONDriver extends WebServiceDriver {
 	 * @param code row process code
 	 */
 	@CompileStatic
-	protected void readRows(JSONDataset dataset, List<String> listFields, Integer limit, Object data, Closure initAttr, Closure code) {
+	protected void readRows(JSONDataset dataset, List<String> listFields, Long limit, Object data, Closure initAttr, Closure code) {
 		StringBuilder sb = new StringBuilder()
-		sb << "{ getl.json.JSONDataset dataset, Closure initAttr, Closure code, Object data, Integer limit ->\n"
+		sb << "{ getl.json.JSONDataset dataset, Closure initAttr, Closure code, Object data, Long limit ->\n"
 		generateAttrRead(dataset, initAttr, sb)
 		sb << 'proc(dataset, code, data, limit)\n'
 		sb << '}\n'
 		sb << '@groovy.transform.CompileStatic\n'
-		sb << 'void proc(getl.json.JSONDataset dataset, Closure code, Object data, Integer limit) {\n'
+		sb << 'void proc(getl.json.JSONDataset dataset, Closure code, Object data, Long limit) {\n'
 
 		def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,'Map',
 				'struct','row', 1,
@@ -192,7 +192,7 @@ class JSONDriver extends WebServiceDriver {
 			throw new ExceptionGETL("Required fields description with dataset!")
 
 		def data = params.data
-		Integer limit = (params.limit != null)?(params.limit as Integer):0
+		def limit = (params.limit as Long)?:0L
 
 		if (data == null) {
 			def fn = fullFileNameDataset(dataset)
@@ -221,11 +221,12 @@ class JSONDriver extends WebServiceDriver {
 	Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
 		super.eachRow(dataset, params, prepareCode, code)
 
-		Closure<Boolean> filter = params."filter" as Closure<Boolean>
+		Closure<Boolean> filter = params.filter as Closure<Boolean>
 		
 		def countRec = 0L
 		doRead(dataset as JSONDataset, params, prepareCode) { Map row ->
-			if (filter != null && !(filter.call(row))) return
+			if (filter != null && !(filter.call(row)))
+				return
 			
 			countRec++
 			code.call(row)

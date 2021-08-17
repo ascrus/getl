@@ -21,12 +21,21 @@ class YamlTest extends TestDsl {
                 field('charValueUse') { type = objectFieldType }
                 field('dependency')
 
-                def rows = rows()
-                assertEquals(158, rows.size())
-                rows.each {r ->
-                    assertNotNull(r.code)
-                    assertNotNull(r.name)
+                def r = rows()
+                assertEquals(158, r.size())
+                r.each {
+                    assertNotNull(it.code)
+                    assertNotNull(it.name)
                 }
+
+                def fr = rows(filter: { it.code == 'PCR-ANY-COMP-NEWBASEMON3-VOICE-MA46' })
+                assertEquals(1, fr.size())
+                assertEquals('PCR-ANY-COMP-NEWBASEMON3-VOICE-MA46', fr[0].code)
+
+                readOpts.filter { it.code == 'PCR-ANY-COMP-NEWBASEMON3-VOICE-MA46' }
+                fr = rows()
+                assertEquals(1, fr.size())
+                assertEquals('PCR-ANY-COMP-NEWBASEMON3-VOICE-MA46', fr[0].code)
             }
         }
     }

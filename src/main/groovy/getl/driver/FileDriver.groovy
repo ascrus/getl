@@ -1,6 +1,6 @@
 package getl.driver
 
-import getl.data.opts.FileWriteOpts
+import getl.data.sub.FileWriteOpts
 import groovy.transform.CompileStatic
 import groovy.transform.InheritConstructors
 

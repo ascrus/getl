@@ -260,8 +260,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 		if (createTable)
 			localCreate(true)
 
-		saveTable = historyTable.cloneDatasetConnection() as TableDataset
-		saveTable.currentJDBCConnection.autoCommit = true
+		saveTable = historyTable.cloneDataset() as TableDataset
 		saveTable.with {
 			writeOpts {
 				batchSize = 1
@@ -366,6 +365,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 		prepareManager(true)
 
 		def con = currentJDBCConnection
+		lastValueQuery.connection = con
 
 		def isAutoTran = con.currentJDBCDriver.isSupport(Driver.Support.TRANSACTIONAL) && !con.isTran()
 		if (isAutoTran)
@@ -385,7 +385,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 			con.commitTran(true)
 		
 		def res = (!rows.isEmpty())?rows[0].value:null
-		if (convertNull)
+		if (convertNull && res == null)
 			res = convertNullValue
 
 		return res
@@ -393,9 +393,8 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 
 	/** Минимальное значение для числовых значений, в которое конвертируется null */
 	static public final Long identityMinValue = Long.MIN_VALUE
-	/** Минимальное значение для таймстамп значений, в которое конвертируется null */
-	static public final Timestamp timestampMinValue = DateUtils.ParseSQLTimestamp('yyyy-MM-dd HH:mm:ss',
-			'1900-01-01')
+	/** Минимальное значение для временных значений, в которое конвертируется null */
+	static public final Timestamp timestampMinValue = DateUtils.ParseSQLTimestamp('yyyy-MM-dd', '1900-01-01')
 
 	/** Минимальное значение, в которое конвертируется null */
 	Object getConvertNullValue() { (sourceType == identitySourceType)?identityMinValue:timestampMinValue }
@@ -420,6 +419,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 		row.put('changed', DateUtils.Now())
 		row.put(sourceFieldName, newValue)
 
+		saveTable.connection = currentJDBCConnection
 		saveTable.queryParams.value = newValue
 
 		def save = { oper ->

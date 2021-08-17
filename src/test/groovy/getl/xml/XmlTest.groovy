@@ -42,6 +42,15 @@ class XmlTest extends GetlTest {
                 assertEquals(DateUtils.ParseSQLTimestamp("yyyy-MM-dd'T'HH:mm:ssXXX", '2019-01-02T01:02:03+03:00'), attributeValue.time)
 
                 assertEquals(1, rows(limit: 1).size())
+
+                def fr = rows(filter: { it.id == 1 })
+                assertEquals(1, fr.size())
+                assertEquals(1, fr[0].id)
+
+                readOpts.filter { it.id == 1 }
+                fr = rows()
+                assertEquals(1, fr.size())
+                assertEquals(1, fr[0].id)
             }
         }
     }

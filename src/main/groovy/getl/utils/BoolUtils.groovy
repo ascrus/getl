@@ -17,8 +17,10 @@ class BoolUtils {
 	 * @return
 	 */
     static Boolean IsValue(def value, Boolean defaultValue = false) {
-		if (value == null) return defaultValue
-		if (value instanceof Boolean) return value
+		if (value == null)
+			return defaultValue
+		if (value instanceof Boolean)
+			return value
 
         Boolean result
 		if (value instanceof List) {
@@ -46,7 +48,10 @@ class BoolUtils {
 				//noinspection UnnecessaryQualifiedReference
 				directive = Closure.DONE
 			}
-			if (result == null) return defaultValue else return result
+			if (result == null)
+				return defaultValue
+			else
+				return result
 		}
 
         def v = value.toString().toLowerCase()

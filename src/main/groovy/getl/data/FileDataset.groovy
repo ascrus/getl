@@ -1,7 +1,7 @@
 package getl.data
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import getl.data.opts.FileWriteOpts
+import getl.data.sub.FileWriteOpts
 import getl.driver.FileDriver
 import getl.exception.ExceptionGETL
 import getl.utils.StringUtils

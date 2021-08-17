@@ -1,6 +1,7 @@
 package getl.csv.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.opts.FileReadSpec
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -12,7 +13,7 @@ import groovy.transform.stc.SimpleType
  *
  */
 @InheritConstructors
-class CSVReadSpec extends BaseSpec {
+class CSVReadSpec extends FileReadSpec {
     /** Check constraints while reading a file */
     Boolean getIsValid() { params.isValid as Boolean }
     /** Check constraints while reading a file */
@@ -48,26 +49,6 @@ class CSVReadSpec extends BaseSpec {
         setOnProcessError(value)
     }
 
-    /**
-     * Filter reading file records
-     * <br>Closure parameters: Map row
-     */
-    @JsonIgnore
-    Closure<Boolean> getOnFilter() { params.filter as Closure<Boolean> }
-    /**
-     * Filter reading file records
-     * <br>Closure parameters: Map row
-     */
-    void setOnFilter(Closure<Boolean> value) { saveParamValue('filter', value) }
-    /**
-     * Filter reading file records
-     * <br>Closure parameters: Map row
-     */
-    void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap'])
-                        Closure<Boolean> value) {
-        setOnFilter(value)
-    }
-
     /** Ignore field header when reading a file (true by default) */
     Boolean getIgnoreHeader() { params.ignoreHeader as Boolean }
     /** Ignore field header when reading a file (true by default) */
@@ -77,11 +58,6 @@ class CSVReadSpec extends BaseSpec {
     Long getSkipRows() { params.skipRows as Long }
     /** Skip n-lines after the header */
     void setSkipRows(Long value) { saveParamValue('skipRows', value) }
-
-    /** Read no more than the specified number of rows */
-    Long getLimit() { params.limit as Long }
-    /** Read no more than the specified number of rows */
-    void setLimit(Long value) { saveParamValue('limit', value) }
 
     /** Save errors to error dataset */
     Boolean getSaveErrors() { params.saveErrors as Boolean }

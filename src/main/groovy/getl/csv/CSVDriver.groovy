@@ -1,7 +1,7 @@
 package getl.csv
 
 import getl.csv.proc.*
-import getl.data.opts.FileWriteOpts
+import getl.data.sub.FileWriteOpts
 import getl.data.*
 import getl.driver.Driver
 import getl.driver.FileDriver

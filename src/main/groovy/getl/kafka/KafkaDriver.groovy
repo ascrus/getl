@@ -222,7 +222,7 @@ class KafkaDriver extends Driver {
                     formatDateTime = ds.formatDateTime
                     formatTimestampWithTz = ds.formatTimestampWithTz
                     uniFormatDateTime = ds.uniFormatDateTime
-                    readOpts.onFilter = (params.filter)?:ds.readOpts.onFilter
+                    readOpts.onFilter = (params.filter as Closure<Boolean>)?:ds.readOpts.onFilter
 
                     return true
                 }

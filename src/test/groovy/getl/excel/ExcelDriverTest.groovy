@@ -102,5 +102,12 @@ class ExcelDriverTest extends getl.test.GetlTest {
         assertEquals(2, rows.size())
         assertEquals(100, rows[0].a)
         assertEquals(200, rows[1].a)
+
+        def filter = excelDataset.onFilter
+        excelDataset.onFilter = null
+        rows = excelDataset.rows(filter: filter)
+        assertEquals(2, rows.size())
+        assertEquals(100, rows[0].a)
+        assertEquals(200, rows[1].a)
     }
 }

@@ -436,7 +436,9 @@ class VerticaDriver extends JDBCDriver {
 	@Override
 	protected String syntaxUpdateStatement(JDBCDataset dataset, Map params) {
 		def res = "UPDATE ${writeHints(params)} {table} SET {values} WHERE {keys}"
-		if (params.where != null) res += " AND (${params.where})"
+		if (params.where != null)
+			res += " AND (${prepareWhereExpression(dataset, params)})"
+
 		return res
 	}
 

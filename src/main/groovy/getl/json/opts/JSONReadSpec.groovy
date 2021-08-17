@@ -1,6 +1,7 @@
 package getl.json.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.opts.FileReadSpec
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -12,7 +13,7 @@ import groovy.transform.stc.SimpleType
  *
  */
 @InheritConstructors
-class JSONReadSpec extends BaseSpec {
+class JSONReadSpec extends FileReadSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
@@ -29,25 +30,6 @@ class JSONReadSpec extends BaseSpec {
     void setFields(List<String> value) {
         fields.clear()
         if (value != null) fields.addAll(value)
-    }
-
-    /**
-     * Filtering readable records
-     * <br>A readable record is passed as parameter (Map object)
-     */
-    @JsonIgnore
-    Closure<Boolean> getOnFilter() { params.filter as Closure<Boolean> }
-    /**
-     * Filtering readable records
-     * <br>A readable record is passed as parameter (Map object)
-     */
-    void setOnFilter(Closure<Boolean> value) { saveParamValue('filter', value) }
-    /**
-     * Filtering readable records
-     * <br>A readable record is passed as parameter (Map object)
-     */
-    void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> value) {
-        setOnFilter(value)
     }
 
     /**
@@ -73,9 +55,4 @@ class JSONReadSpec extends BaseSpec {
     Boolean getConvertToList () { params.convertToList as Boolean }
     /** Wrap json text in root */
     void setConvertToList (Boolean value) { params.convertToList = value }
-
-    /** Read no more than the specified number of rows */
-    Integer getLimit() { params.limit as Integer }
-    /** Read no more than the specified number of rows */
-    void setLimit(Integer value) { saveParamValue('limit', value) }
 }

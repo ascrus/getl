@@ -56,13 +56,13 @@ class YAMLDriver extends WebServiceDriver {
      */
     @CompileStatic
     @SuppressWarnings("GrMethodMayBeStatic")
-    protected void readRows(YAMLDataset dataset, List<String> listFields, Integer limit, def data, Closure code) {
+    protected void readRows(YAMLDataset dataset, List<String> listFields, Long limit, def data, Closure code) {
         StringBuilder sb = new StringBuilder()
-        sb << "{ getl.yaml.YAMLDataset dataset, Closure code, Object data, Integer limit ->\n"
+        sb << "{ getl.yaml.YAMLDataset dataset, Closure code, Object data, Long limit ->\n"
         sb << 'proc(dataset, code, data, limit)\n'
         sb << '}\n'
         sb << '@groovy.transform.CompileStatic\n'
-        sb << 'void proc(getl.yaml.YAMLDataset dataset, Closure code, Object data, Integer limit) {\n'
+        sb << 'void proc(getl.yaml.YAMLDataset dataset, Closure code, Object data, Long limit) {\n'
 
         def genScript = GenerationUtils.GenerateConvertFromBuilderMap(dataset, listFields,'Map',
                 'struct','row', 1,
@@ -121,7 +121,7 @@ class YAMLDriver extends WebServiceDriver {
             throw new ExceptionGETL("Required fields description with dataset!")
 
         def data = params.data
-        Integer limit = (params.limit != null)?(params.limit as Integer):0
+        def limit = (params.limit as Long)?:0L
 
         if (data == null) {
             def fn = fullFileNameDataset(dataset)
@@ -150,7 +150,7 @@ class YAMLDriver extends WebServiceDriver {
     Long eachRow(Dataset dataset, Map params, Closure prepareCode, Closure code) {
         super.eachRow(dataset, params, prepareCode, code)
 
-        Closure<Boolean> filter = params."filter" as Closure<Boolean>
+        Closure<Boolean> filter = params.filter as Closure<Boolean>
 
         def countRec = 0L
         doRead(dataset as YAMLDataset, params, prepareCode) { Map row ->

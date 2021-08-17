@@ -2018,11 +2018,19 @@ $sql
 	/** When inserting, indicate the values of the partition fields are indicated last in the list of fields */
 	protected Boolean syntaxPartitionLastPosInValues
 
-	/**
-	 * SQL insert statement pattern
-	 */
+	/** SQL insert statement pattern */
 	protected String syntaxInsertStatement(JDBCDataset dataset, Map params) {
 		return 'INSERT INTO {table} ({columns}) VALUES({values})'
+	}
+
+	/** Prepare sql where expression */
+	protected String prepareWhereExpression(JDBCDataset dataset, Map params) {
+		def where = params.where as String
+		if (where == null)
+			return null
+
+		def qp = dataset.queryParams + ((params.queryParams as Map)?:[:])
+		return StringUtils.EvalMacroString(where, qp, true)
 	}
 
 	/**
@@ -2031,7 +2039,8 @@ $sql
 	protected String syntaxUpdateStatement(JDBCDataset dataset, Map params) {
 		def res =  'UPDATE {table} SET {values} WHERE ({keys})'
 		if (params.where != null)
-			res += " AND (${StringUtils.EvalMacroString(params.where as String, dataset.queryParams + ((params.queryParams as Map)?:[:]), false)})"
+			res += " AND (${prepareWhereExpression(dataset, params)})"
+
 		return res
 	}
 
@@ -2041,7 +2050,8 @@ $sql
 	protected String syntaxDeleteStatement(JDBCDataset dataset, Map params){
 		def res = 'DELETE FROM {table} WHERE ({keys})'
 		if (params.where != null)
-			res += " AND (${StringUtils.EvalMacroString(params.where as String, dataset.queryParams + ((params.queryParams as Map)?:[:]), false)})"
+			res += " AND (${prepareWhereExpression(dataset, params)})"
+
 		return res
 	}
 

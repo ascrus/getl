@@ -1,6 +1,7 @@
 package getl.yaml.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import getl.data.opts.FileReadSpec
 import getl.lang.opts.BaseSpec
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -12,7 +13,7 @@ import groovy.transform.stc.SimpleType
  *
  */
 @InheritConstructors
-class YAMLReadSpec extends BaseSpec {
+class YAMLReadSpec extends FileReadSpec {
     @Override
     protected void initSpec() {
         super.initSpec()
@@ -30,28 +31,4 @@ class YAMLReadSpec extends BaseSpec {
         fields.clear()
         if (value != null) fields.addAll(value)
     }
-
-    /**
-     * Filtering readable records
-     * <br>A readable record is passed as parameter (Map object)
-     */
-    @JsonIgnore
-    Closure<Boolean> getOnFilter() { params.filter as Closure<Boolean> }
-    /**
-     * Filtering readable records
-     * <br>A readable record is passed as parameter (Map object)
-     */
-    void setOnFilter(Closure<Boolean> value) { saveParamValue('filter', value) }
-    /**
-     * Filtering readable records
-     * <br>A readable record is passed as parameter (Map object)
-     */
-    void filter(@ClosureParams(value = SimpleType, options = ['java.util.HashMap']) Closure<Boolean> value) {
-        setOnFilter(value)
-    }
-
-    /** Read no more than the specified number of rows */
-    Integer getLimit() { params.limit as Integer }
-    /** Read no more than the specified number of rows */
-    void setLimit(Integer value) { saveParamValue('limit', value) }
 }

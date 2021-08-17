@@ -33,7 +33,7 @@ class ExcelDriver extends FileDriver {
     @Override
     protected void registerParameters() {
         super.registerParameters()
-        methodParams.register('eachRow', ['header', 'offset', 'limit', 'showWarnings', 'filter'])
+        methodParams.register('eachRow', ['limit', 'showWarnings', 'filter', 'prepareFilter'])
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
@@ -78,8 +78,7 @@ class ExcelDriver extends FileDriver {
         if (!FileUtils.ExistsFile(fullPath))
             throw new ExceptionGETL("Excel file \"${fullPath}\" doesn't exists!")
 
-        def header = BoolUtils.IsValue([params.header, dataset.header,
-                                        (dataset.connection as ExcelConnection).header], true)
+        def header = dataset.header()
 
         if (dataset.field.isEmpty())
             throw new ExceptionGETL("Required fields description with $dataset!")
@@ -87,8 +86,8 @@ class ExcelDriver extends FileDriver {
         def offsetRows = (dataset.offsetRows?:0) + ((header)?1:0)
         def offsetCells = (dataset.offsetCells?:0).shortValue()
 
-        def prepareFilter = dataset.onPrepareFilter
-        def filter = dataset.onFilter
+        def prepareFilter = (params.prepareFilter as Closure)?:dataset.onPrepareFilter
+        def filter = (params.filter as Closure)?:dataset.onFilter
 
         def decimalSeparator = dataset.decimalSeparator()
         def dfs = new DecimalFormatSymbols()
