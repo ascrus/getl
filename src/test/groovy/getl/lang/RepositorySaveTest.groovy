@@ -1,5 +1,6 @@
 package getl.lang
 
+import getl.jdbc.HistoryPointManager
 import getl.lang.sub.RepositorySave
 import getl.lang.sub.SaveToRepository
 import getl.tfs.TDS
@@ -49,6 +50,11 @@ class RepositorySaveTest extends RepositorySave {
         // added from connection
         addTables(embeddedConnection('test:con'), 'public', 'test')
         embeddedTable('test:table1').attributes.a1 = 1
+
+        embeddedTable('test:table_points', true) {
+            useConnection embeddedConnection('test:con')
+            HistoryPointManager.prepareTable(it)
+        }
     }
 
     @SaveToRepository(type = 'Files', mask = 'test:*')
@@ -104,9 +110,9 @@ class RepositorySaveTest extends RepositorySave {
     @SaveToRepository(type = 'Historypoints', mask = 'test:*')
     void historypoints() {
         historypoint('test:hp', true) {
-            useConnection embeddedConnection('test:con')
-            schemaName = 'public'
-            tableName = 's_hp'
+            useHistoryTableName 'test:table_points'
+            sourceName = 'source1'
+            sourceType = identitySourceType
             saveMethod = mergeSave
         }
     }

@@ -5,13 +5,11 @@ import getl.data.Field
 import getl.files.FileManager
 import getl.h2.H2Connection
 import getl.h2.H2Table
-import getl.jdbc.SavePointManager
 import getl.jdbc.Sequence
 import getl.jdbc.TableDataset
 import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
-import getl.lang.sub.RepositoryHistorypoints
 import getl.lang.sub.RepositorySequences
 import getl.test.Config
 import getl.test.TestDsl
@@ -19,6 +17,8 @@ import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
+import getl.utils.GenerationUtils
+import getl.utils.SynchronizeObject
 import groovy.time.TimeCategory
 import groovy.transform.InheritConstructors
 import org.junit.Test
@@ -121,41 +121,6 @@ class RepositoryTest extends TestDsl {
                     assertSame(getl.h2Connection('group:con'), tobj.connection)
                     assertNotSame(con, tobj.connection)
                     assertSame(tobj.connection, (rep.register(getl, rep.H2TABLE, 'group:obj') as Dataset).connection)
-                }
-                exec()
-            }
-        }
-    }
-
-    @Test
-    void testHistoryPoint() {
-        def getl = Getl.GetlInstance()
-        getl.CleanGetl(true)
-        def rep = new RepositoryHistorypoints(dslCreator: getl)
-
-        getl.h2Connection('group:con', true) { }
-        def con = getl.h2Connection('group:con')
-        assertSame(con, getl.h2Connection('group:con'))
-
-        def obj = rep.register(getl, con, rep.SAVEPOINTMANAGER, 'group:obj', true)
-        obj.with { params.test = 'test' }
-
-        assertSame(con, obj.connection)
-        assertTrue(obj instanceof SavePointManager)
-        assertSame(obj, rep.register(getl,rep.SAVEPOINTMANAGER, 'group:obj') )
-        assertEquals('test', (rep.register(getl, rep.SAVEPOINTMANAGER, 'group:obj') as SavePointManager).params.test)
-
-        getl.with {
-            thread {
-                abortOnError = true
-                addThread {
-                    def tobj = rep.register(getl, rep.SAVEPOINTMANAGER, 'group:obj') as SavePointManager
-                    assertNotSame(obj, tobj)
-                    assertEquals('test', tobj.params.test)
-                    assertNotSame(con, getl.h2Connection('group:con'))
-                    assertSame(getl.h2Connection('group:con'), tobj.connection)
-                    assertNotSame(con, tobj.connection)
-                    assertSame(tobj.connection, (rep.register(getl, rep.SAVEPOINTMANAGER, 'group:obj') as SavePointManager).connection)
                 }
                 exec()
             }
@@ -342,9 +307,9 @@ class RepositoryTest extends TestDsl {
             assertEquals(1, listSequences().size())
 
             historypoint('point', true) {
-                useConnection h2Connection('h2:con')
-                schemaName = 'public'
-                tableName = 's_history'
+                useHistoryTable embeddedTable('test:s_points', true) { useConnection embeddedConnection('con') }
+                sourceName = 'test_point'
+                sourceType = identitySourceType
                 saveMethod = mergeSave
             }
             assertEquals(1, listHistorypoints().size())
@@ -438,7 +403,7 @@ class RepositoryTest extends TestDsl {
             assertTrue(models.listReferenceVerticaTables().isEmpty())
 
             repositoryStorageManager {
-                assertEquals(7, repositoryFiles(RepositoryDatasets.name).countRow())
+                assertEquals(8, repositoryFiles(RepositoryDatasets.name).countRow())
                 assertEquals(2, repositoryFiles(RepositoryDatasets.name, null, 'rules').countRow())
                 assertEquals(1, repositoryFiles(RepositoryDatasets.name, null, 'ver').countRow())
             }
@@ -448,7 +413,7 @@ class RepositoryTest extends TestDsl {
                 autoLoadForList = true
             }
             assertEquals(4, listConnections().size)
-            assertEquals(7, listDatasets().size)
+            assertEquals(8, listDatasets().size)
             assertEquals(1, listSequences().size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(2, listFilemanagers().size())
@@ -518,9 +483,9 @@ class RepositoryTest extends TestDsl {
             }
 
             historypoint('point') {
-                assertEquals(h2Connection('h2:con'), currentJDBCConnection)
-                assertEquals('public', schemaName)
-                assertEquals('s_history', tableName)
+                assertNotNull(historyTable)
+                assertEquals('test_point', sourceName)
+                assertEquals(identitySourceType, sourceType)
                 assertEquals(mergeSave, saveMethod)
             }
 
@@ -666,7 +631,7 @@ class RepositoryTest extends TestDsl {
                 loadRepositories()
             }
             assertEquals(4, listConnections().size())
-            assertEquals(7, listDatasets().size())
+            assertEquals(8, listDatasets().size())
             assertEquals(1, listSequences().size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(2, listFilemanagers().size())
@@ -695,7 +660,7 @@ class RepositoryTest extends TestDsl {
             }
 
             assertEquals(1, listConnections().size)
-            assertEquals(1, listDatasets().size)
+            assertEquals(2, listDatasets().size)
             assertEquals(0, listSequences().size())
             assertEquals(1, listHistorypoints().size())
             assertEquals(0, listFilemanagers().size())
@@ -1035,9 +1000,9 @@ class RepositoryTest extends TestDsl {
                     assertNotNull(scriptHistoryFile)
                 }
                 historypoint('test:hp') {
-                    assertEquals(con, connection)
-                    assertEquals('public', schemaName)
-                    assertEquals('s_hp', tableName)
+                    assertEquals(historyTable, dataset('test:table_points'))
+                    assertEquals('source1', sourceName)
+                    assertEquals(identitySourceType, sourceType)
                     assertEquals(mergeSave, saveMethod)
                 }
                 sequence('test:seq') {

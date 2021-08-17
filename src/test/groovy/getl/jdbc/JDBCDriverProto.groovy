@@ -4,6 +4,7 @@ import getl.data.*
 import getl.driver.Driver
 import getl.proc.Flow
 import getl.stat.ProcessTime
+import getl.test.GetlTest
 import getl.tfs.TFS
 import getl.utils.*
 import groovy.transform.InheritConstructors
@@ -11,11 +12,13 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 
+import java.sql.Timestamp
+
 /**
  * Created by ascru on 21.11.2016.
  */
 @InheritConstructors
-abstract class JDBCDriverProto extends getl.test.GetlTest {
+abstract class JDBCDriverProto extends GetlTest {
 	def static configName = 'resource:/jdbc/setup.conf'
 
     @BeforeClass
@@ -23,7 +26,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
 		Config.LoadConfig(fileName: configName)
 	}
 
-    static final countRows = 100
+    static final countRows = 100L
     JDBCConnection _con
     static final def validConnections = [:]
     protected String defaultDatabase
@@ -429,7 +432,7 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         assertEquals(['COUNT_ROWS'], q.fieldNames*.toUpperCase())
         def rows = q.rows()
         assertEquals(1, rows.size())
-        def cr = rows[0].count_rows
+        def cr = rows[0].count_rows as Long
         assertEquals(countRows, cr)
     }
 
@@ -489,17 +492,21 @@ abstract class JDBCDriverProto extends getl.test.GetlTest {
         def drv = (con.driver as JDBCDriver)
         def fieldName = drv.prepareFieldNameForSQL('ID1', table)
 
-        def q1 = new QueryDataset(connection: con, query: "SELECT * FROM ${table.objectFullName} WHERE $fieldName = :param1")
+        def q1 = new QueryDataset(connection: con, query: "SELECT $fieldName FROM ${table.objectFullName} WHERE $fieldName = :param1")
         def r1 = q1.rows(sqlParams: [param1: 1])
         assertEquals(1, r1.size())
         def id1 = r1[0].id1 as Integer
         assertEquals(1, id1)
 
-        def q2 = new QueryDataset(connection: con, query: "SELECT * FROM ${table.objectFullName} WHERE $fieldName = {param1}")
-        def r2 = q2.rows(queryParams: [param1: 2])
+        def dt = new Timestamp(new Date().time)
+        def dtExpr = drv.sqlExpression('convertTextToTimestamp')
+        def q2 = new QueryDataset(connection: con, query: "SELECT $fieldName, $dtExpr AS calc_dt FROM ${table.objectFullName} WHERE $fieldName = {param1}")
+        def r2 = q2.rows(queryParams: [param1: 2, value: dt])
         assertEquals(1, r2.size())
         def id2 = r2[0].id1 as Integer
         assertEquals(2, id2)
+        if (dt != r2[0].calc_dt)
+            assertEquals(DateUtils.TruncTime('MINUTE', dt), DateUtils.TruncTime('MINUTE', r2[0].calc_dt as Date))
 
         def q3 = new QueryDataset(connection: con)
         q3.loadFile('resource:/sql/test_query.sql')

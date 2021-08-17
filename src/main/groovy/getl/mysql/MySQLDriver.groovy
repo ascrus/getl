@@ -25,6 +25,8 @@ class MySQLDriver extends JDBCDriver {
 
         localTemporaryTablePrefix = 'TEMPORARY'
 		supportLocalTemporaryRetrieveFields = false
+
+		sqlExpressions.convertTextToTimestamp = 'CAST(\'{value}\' AS datetime)'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

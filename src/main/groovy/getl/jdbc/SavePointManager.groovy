@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -12,7 +13,6 @@ import getl.utils.*
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
 import groovy.transform.Synchronized
-import sun.rmi.runtime.Log
 
 import java.sql.Timestamp
 
@@ -81,44 +81,58 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	@JsonIgnore
 	Logs getLogger() { (dslCreator != null)?dslCreator.logging.manager: Logs.global }
 
-	/** Source JDBC connection */
-	private JDBCConnection connection
-	/** Source connection */
+	/** Connection */
+	private JDBCConnection localConnection
+
+	/** Connection */
 	@JsonIgnore
-	Connection getConnection() { connection }
-	/** Source connection */
+	@Override
+	Connection getConnection() {
+		(dslCreator != null && connectionName != null)?dslCreator.jdbcConnection(connectionName):this.localConnection
+	}
+	/** Connection */
+	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof JDBCConnection))
 			throw new ExceptionGETL('Only work with JDBC connections is supported!')
 
 		useConnection(value as JDBCConnection)
-		map.clear()
 	}
-	/** Use specified source JDBC connection */
+	/** Use specified connection */
 	JDBCConnection useConnection(JDBCConnection value) {
-		this.connection = value
+		if (value != null && dslCreator != null && value.dslCreator != null && value.dslNameObject != null) {
+			params.connection = value.dslNameObject
+			this.localConnection = null
+		} else {
+			this.localConnection = value
+			params.connection = null
+		}
+
+		map.clear()
 		return value
 	}
 
 	/** The name of the connection in the repository */
-	String getConnectionName() { connection?.dslNameObject }
+	String getConnectionName() { params.connection as String }
 	/** The name of the connection in the repository */
 	void setConnectionName(String value) {
 		if (value != null) {
 			GetlValidate.IsRegister(this)
 			def con = dslCreator.jdbcConnection(value)
-			useConnection(con)
+			value = con.dslNameObject
 		}
-		else
-			useConnection(null)
+
+		map.clear()
+		params.connection = value
+		this.localConnection = null
 	}
 
 	/** Current JDBC connection */
 	@JsonIgnore
-	JDBCConnection getCurrentJDBCConnection() { connection }
+	JDBCConnection getCurrentJDBCConnection() { connection as JDBCConnection }
 
 	/** Database name for table */
-	String getDbName () { (params.dbName as String)?:connection.dbName }
+	String getDbName () { (params.dbName as String)?:currentJDBCConnection.dbName }
 	/** Database name for table */
 	void setDbName (String value) {
 		params.dbName = value
@@ -126,7 +140,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	}
 	
 	/** Schema name for table */
-	String getSchemaName () { (params.schemaName as String)?:connection.schemaName }
+	String getSchemaName () { (params.schemaName as String)?:currentJDBCConnection.schemaName }
 	/** Schema name for table */
 	void setSchemaName (String value) {
 		params.schemaName = value
@@ -195,32 +209,33 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 
 	/** Clone current dataset on specified connection */
 	@Synchronized
-	SavePointManager cloneSavePointManager(JDBCConnection newConnection = null, Map otherParams = [:], Getl getl = null) {
-		if (newConnection == null) newConnection = this.connection
-		String className = this.getClass().name
+	SavePointManager cloneSavePointManager(JDBCConnection con = null, Map otherParams = [:], Getl getl = null) {
 		Map p = CloneUtils.CloneMap(this.params, false)
-		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
-		def man = Class.forName(className).newInstance() as SavePointManager
-		man.sysParams.dslCreator = dslCreator?:getl
-		if (newConnection != null) man.connection = newConnection
-		man.params.putAll(p)
+		if (otherParams != null)
+			MapUtils.MergeMap(p, otherParams)
 
-		return man
+		def res = getClass().newInstance() as SavePointManager
+		res.sysParams.dslCreator = dslCreator?:getl
+		res.params.putAll(p)
+		if (con != null)
+			res.connection = con
+
+		return res
 	}
 
 	@Synchronized
 	SavePointManager cloneSavePointManagerConnection(Map otherParams = [:]) {
-		cloneSavePointManager(connection?.cloneConnection() as JDBCConnection, otherParams)
+		cloneSavePointManager(currentJDBCConnection?.cloneConnection() as JDBCConnection, otherParams)
 	}
 
 	/** Set fields mapping */
 	protected void prepareTable () {
-		assert connection != null, "Required set value for \"connection\""
+		assert currentJDBCConnection != null, "Required set value for \"connection\""
 		assert tableName != null, "Required set value for \"tableName\""
 		
 		if (!map.isEmpty()) return
 		
-		JDBCDriver drv = connection.driver as JDBCDriver
+		JDBCDriver drv = currentJDBCConnection.driver as JDBCDriver
 		
 		// Mapping fields
 		table_field.each { Field field ->
@@ -235,7 +250,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		}
 		
 		// Set table parameters
-		table.connection = connection
+		table.connection = currentJDBCConnection
 		table.dbName = dbName
 		table.schemaName = schemaName
 		table.tableName = tableName
@@ -258,7 +273,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		
 		if (ifNotExists && table.exists) return false
 		def indexes = [:]
-		if (saveMethod == "INSERT" && connection.driver.isSupport(Driver.Support.INDEX)) {
+		if (saveMethod == "INSERT" && currentJDBCConnection.driver.isSupport(Driver.Support.INDEX)) {
 			indexes."idx_${table.objectName.replace('.', '_')}_getl_savepoint" = [columns: [map.source, map.type, "${map.value} DESC"]]
 		}
 		table.create(indexes: indexes)
@@ -318,7 +333,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		prepareTable()
 		source = source.toUpperCase()
 		
-		JDBCDriver driver = connection.driver as JDBCDriver
+		JDBCDriver driver = currentJDBCConnection.driver as JDBCDriver
 		def fp = driver.fieldPrefix
 		def fpe = driver.fieldEndPrefix?:fp
 		
@@ -330,18 +345,18 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 			sql = "SELECT ${fp}${map.type}${fpe} AS type, Max(${fp}${map.value}${fpe}) AS value FROM ${table.fullNameDataset()} WHERE $fp${map.source}$fpe = '${source}' GROUP BY ${fp}${map.type}${fpe}"
 		}
 		
-		QueryDataset query = new QueryDataset(connection: connection, query: sql)
-		def isAutoTran = !connection.isTran()
-		if (isAutoTran) connection.startTran(true)
+		QueryDataset query = new QueryDataset(connection: currentJDBCConnection, query: sql)
+		def isAutoTran = !currentJDBCConnection.isTran()
+		if (isAutoTran) currentJDBCConnection.startTran(true)
 		def rows
 		try {
 			rows = query.rows()
 		}
 		catch (Exception e) {
-			if (isAutoTran) connection.rollbackTran(true)
+			if (isAutoTran) currentJDBCConnection.rollbackTran(true)
 			throw e
 		}
-		if (isAutoTran) connection.commitTran(true)
+		if (isAutoTran) currentJDBCConnection.commitTran(true)
 		
 		Map<String, Object> res = [type: null as Object, value: null as Object]
 		rows.each { row ->
@@ -500,8 +515,8 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		}
 
 		if (saveMethod == 'MERGE') {
-			def isAutoTran = !connection.isTran()
-			if (isAutoTran) connection.startTran(true)
+			def isAutoTran = !currentJDBCConnection.isTran()
+			if (isAutoTran) currentJDBCConnection.startTran(true)
 			try {
 				if (save("UPDATE") == 0) {
 					def last = lastValue(source).value
@@ -520,10 +535,10 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 				}
 			}
 			catch (Exception e) {
-				if (isAutoTran) connection.rollbackTran(true)
+				if (isAutoTran) currentJDBCConnection.rollbackTran(true)
 				throw e
 			}
-			if (isAutoTran) connection.commitTran(true)
+			if (isAutoTran) currentJDBCConnection.commitTran(true)
 		} else {
 			if (save("INSERT") != 1)
 				throw new ExceptionGETL("Error inserting new value into table $table for source \"$source\"!")
@@ -588,17 +603,17 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 	@Synchronized('operationLock')
 	void clearValue (String source) {
 		prepareTable()
-		
-		connection.startTran()
+
+		currentJDBCConnection.startTran()
 		try {
 			def sql = "DELETE FROM ${table.fullNameDataset()} WHERE ${(map.source as String).toLowerCase()} = '${source.toUpperCase()}'"
-			connection.executeCommand(command: sql)
+			currentJDBCConnection.executeCommand(command: sql)
 		}
 		catch (Exception e) {
-			connection.rollbackTran()
+			currentJDBCConnection.rollbackTran()
 			throw e
 		}
-		connection.commitTran()
+		currentJDBCConnection.commitTran()
 	}
 
 	/** Delete all rows in history point table */
@@ -612,6 +627,7 @@ class SavePointManager implements Cloneable, GetlRepository, WithConnection {
 		return cloneSavePointManager()
 	}
 
+	@Override
 	Object cloneWithConnection() {
 		return cloneSavePointManagerConnection()
 	}

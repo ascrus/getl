@@ -35,6 +35,8 @@ class MSSQLDriver extends JDBCDriver {
 		transactionalDDL = true
 		transactionalTruncate = true
 		createViewTypes = ['CREATE', 'CREATE OR ALTER']
+
+		sqlExpressions.convertTextToTimestamp = 'CONVERT(datetime, \'{value}\', 101)'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

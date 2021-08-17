@@ -22,6 +22,7 @@ class SynchronizeObject {
 	clear  () {
 		count = 0
 		text = null
+		date = null
 		list.clear()
 	}
 
@@ -59,6 +60,17 @@ class SynchronizeObject {
 	/** Text value */
 	@Synchronized
 	setText (String value) { text = value }
+
+	/** Date value */
+	private Date date = DateUtils.ParseDate('1900-01-01')
+
+	/** Date value */
+	@Synchronized
+	Date getDate() { date }
+
+	/** Date value */
+	@Synchronized
+	void setDate(Date value) { date = value }
 
 	/** Array list */
 	private final List list = []

@@ -1,3 +1,4 @@
+//file:noinspection unused
 package getl.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -5,10 +6,8 @@ import getl.data.Connection
 import getl.data.sub.WithConnection
 import getl.driver.Driver
 import getl.exception.ExceptionGETL
-import getl.jdbc.opts.DropSpec
 import getl.jdbc.opts.SequenceCreateSpec
 import getl.lang.Getl
-import getl.lang.opts.BaseSpec
 import getl.lang.sub.GetlRepository
 import getl.lang.sub.GetlValidate
 import getl.utils.CloneUtils
@@ -84,11 +83,16 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	void setDslCreator(Getl value) { sysParams.dslCreator = value }
 
 	/** Connection */
-	private JDBCConnection connection
+	private JDBCConnection localConnection
+
 	/** Connection */
 	@JsonIgnore
-	Connection getConnection() { connection }
+	@Override
+	Connection getConnection() {
+		(dslCreator != null && connectionName != null)?dslCreator.jdbcConnection(connectionName):this.localConnection
+	}
 	/** Connection */
+	@Override
 	void setConnection(Connection value) {
 		if (value != null && !(value instanceof JDBCConnection))
 			throw new ExceptionGETL('Only work with JDBC connections is supported!')
@@ -98,28 +102,38 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	/** Use specified connection */
 	JDBCConnection useConnection(JDBCConnection value) {
 		if (value != null && !value.driver.isSupport(Driver.Support.SEQUENCE))
-			throw new ExceptionGETL("At connection \"$connection\" the driver does not support sequence!")
+			throw new ExceptionGETL("At connection \"$value\" the driver does not support sequence!")
 
-		this.connection = value
+		if (value != null && dslCreator != null && value.dslCreator != null && value.dslNameObject != null) {
+			params.connection = value.dslNameObject
+			this.localConnection = null
+		} else {
+			this.localConnection = value
+			params.connection = null
+		}
+
 		return value
 	}
 
 	/** The name of the connection in the repository */
-	String getConnectionName() { connection?.dslNameObject }
+	String getConnectionName() { params.connection as String }
 	/** The name of the connection in the repository */
 	void setConnectionName(String value) {
 		if (value != null) {
 			GetlValidate.IsRegister(this)
 			def con = dslCreator.jdbcConnection(value)
-			useConnection(con)
+			if (!con.driver.isSupport(Driver.Support.SEQUENCE))
+				throw new ExceptionGETL("At connection \"$con\" the driver does not support sequence!")
+			value = con.dslNameObject
 		}
-		else
-			useConnection(null)
+
+		params.connection = value
+		this.localConnection = null
 	}
 
 	/** Current JDBC connection */
 	@JsonIgnore
-	JDBCConnection getCurrentJDBCConnection() { connection }
+	JDBCConnection getCurrentJDBCConnection() { getConnection() as JDBCConnection }
 
 	/** Sequence name */
 	String getName() { params.name as String }
@@ -130,12 +144,17 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	String getSchema() {
 		def res = params.schema as String
 		if (res  == null && name?.indexOf('.') == -1)
-			res = (connection as JDBCConnection).schemaName
+			res = currentJDBCConnection?.schemaName
 
 		return res
 	}
 	/** Sequence name */
 	void setSchema(String value) { params.schema = value }
+
+	/** Database name */
+	String getDbName() { params.dbName as String }
+	/** Sequence name */
+	void setDbName(String value) { params.dbName = value }
 
 	/** Sequence cache interval */
 	Long getCache() { params.cache as Long }
@@ -166,11 +185,14 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	@Synchronized
 	Sequence cloneSequence(JDBCConnection con = null, Map otherParams = [:], Getl getl = null) {
 		Map p = CloneUtils.CloneMap(this.params, false)
-		if (otherParams != null) MapUtils.MergeMap(p, otherParams)
-		Sequence res = getClass().newInstance() as Sequence
+		if (otherParams != null)
+			MapUtils.MergeMap(p, otherParams)
+
+		def res = getClass().newInstance() as Sequence
 		res.sysParams.dslCreator = dslCreator?:getl
-		res.connection = con
 		res.params.putAll(p)
+		if (con != null)
+			res.connection = con
 
 		return res
 	}
@@ -180,6 +202,7 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 		return cloneSequence()
 	}
 
+	@Override
 	Object cloneWithConnection() {
 		return cloneSequenceConnection()
 	}
@@ -187,7 +210,21 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	/** Sequence full name */
 	@JsonIgnore
 	String getFullName() {
-		return (schema != null)?"${schema}.$name":name
+		def res = name
+
+		if (schema != null)
+			res = schema + '.' + res
+
+		if (dbName != null)
+			res = dbName + '.' + res
+
+		return res
+	}
+
+	/** Check that the connection is specified */
+	private void validConnection() {
+		if (connection == null)
+			throw new ExceptionGETL("Connection required!")
 	}
 
 	/** Get next sequence value */
@@ -207,8 +244,10 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	@JsonIgnore
 	Long getNextValueFast() {
 		if ((current == 0) || (offs >= cache)) {
-			connection.tryConnect()
-			current = connection.driver.getSequence(fullName)
+			validConnection()
+			def con = currentJDBCConnection
+			con.tryConnect()
+			current = con.driver.getSequence(fullName)
 			offs = 0
 		}
 
@@ -236,10 +275,12 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	void createSequence(Boolean ifNotExists = false,
 						@DelegatesTo(SequenceCreateSpec)
 						@ClosureParams(value = SimpleType, options = ['getl.jdbc.opts.SequenceCreateSpec']) Closure cl = null) {
+		validConnection()
 		def parent = new SequenceCreateSpec(this)
 		parent.runClosure(cl)
-		connection.tryConnect()
-		connection.currentJDBCDriver.createSequence(fullName, ifNotExists, parent)
+		def con = currentJDBCConnection
+		con.tryConnect()
+		con.currentJDBCDriver.createSequence(fullName, ifNotExists, parent)
 	}
 
 	/**
@@ -256,7 +297,9 @@ class Sequence implements Cloneable, GetlRepository, WithConnection {
 	 * @param ifExists drop if exists
 	 */
 	void dropSequence(Boolean ifExists = false) {
-		connection.tryConnect()
-		connection.currentJDBCDriver.dropSequence(fullName, ifExists)
+		validConnection()
+		def con = currentJDBCConnection
+		con.tryConnect()
+		con.currentJDBCDriver.dropSequence(fullName, ifExists)
 	}
 }

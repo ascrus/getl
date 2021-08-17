@@ -1729,4 +1729,67 @@ class Dataset implements Cloneable, GetlRepository, WithConnection {
 		if (resetAttributes || !isCompatibleDataset)
 			resetFieldToDefault(false, false, true)
 	}
+
+	/**
+	 * Cast field type for relative comparison
+	 * @param type source type
+	 * @return the resulting type for comparison
+	 */
+	static Field.Type FieldSoftType(Field.Type type) {
+		def res = type
+		switch (type) {
+			case Field.integerFieldType:
+				res = Field.bigintFieldType
+				break
+
+			case Field.dateFieldType: case Field.timeFieldType: case Field.timestamp_with_timezoneFieldType:
+				res = Field.datetimeFieldType
+				break
+
+			case Field.numericFieldType:
+				res = Field.doubleFieldType
+				break
+
+			case Field.textFieldType:
+				res = Field.stringFieldType
+				break
+
+			case Field.arrayFieldType:
+				res = Field.objectFieldType
+				break
+		}
+
+		return res
+	}
+
+	static void CheckTableFields(Dataset dataset, List<Field> fields) {
+		if (dataset == null)
+			throw new ExceptionGETL('Need dataset!')
+
+		if (dataset.field.isEmpty())
+			return
+
+		fields.each { needField ->
+			def dsField = dataset.fieldByName(needField.name)
+			if (dsField == null)
+				throw new ExceptionGETL("Field \"${needField.name}\" not found in dataset!")
+
+			def fieldType = FieldSoftType(dsField.type)
+			def needType = FieldSoftType(needField.type)
+			if (fieldType != needType)
+				throw new ExceptionGETL("Field \"${needField.name}\" is not compatible with type \"${needField.type}\"!")
+
+			if (Field.AllowLength(needField) && needField.length != null && (dsField.length?:0) < needField.length)
+				throw new ExceptionGETL("Field \"${needField.name}\" must have a length of at least ${needField.length}!")
+
+			if (Field.AllowPrecision(needField) && needField.precision != null && (dsField.precision?:0) < needField.precision)
+				throw new ExceptionGETL("Field \"${needField.name}\" must have a precision of at least ${needField.precision}!")
+
+			if (!needField.isNull && dsField.isNull)
+				throw new ExceptionGETL("Field \"${needField.name}\" cannot be nullable!")
+
+			if (needField.isKey && !dsField.isKey)
+				throw new ExceptionGETL("Field \"${needField.name}\" must be a key field!")
+		}
+	}
 }

@@ -274,7 +274,7 @@ class Logs {
 
 	class OutConsoleHandler extends StreamHandler {
 		OutConsoleHandler(OutputStream out, Formatter f) {
-			super(out, f);
+			super(out, f)
 		}
 
 		@Override
@@ -282,13 +282,13 @@ class Logs {
 			if (record.level.intValue() >= Level.SEVERE.intValue())
 				return
 
-			super.publish(record);
-			flush();
+			super.publish(record)
+			flush()
 		}
 
 		@Override
 		synchronized void close() throws SecurityException {
-			flush();
+			flush()
 		}
 	}
 	

@@ -83,6 +83,8 @@ class JDBCDriver extends Driver {
 		syntaxPartitionLastPosInValues = true
 		fieldPrefix = '"'
 		tablePrefix = '"'
+
+		sqlExpressions = [convertTextToTimestamp: 'CAST(\'{value}\' AS timestamp)']
 	}
 
 	/** Start time connect */
@@ -1600,7 +1602,9 @@ class JDBCDriver extends Driver {
 		if (sp != null) {
 			sqlParams = new HashMap<String, Object>()
 			sp.each { name, value ->
-				if (value instanceof GString) value = String.valueOf(value)
+				if (value instanceof GString)
+					value = String.valueOf(value)
+
 				sqlParams.put(name as String, value)
 			}
 		}
@@ -2809,4 +2813,10 @@ FROM {source} {after_from}'''
 
 		return res
 	}
+
+	/** Sql expressions */
+	protected Map<String, String> sqlExpressions
+
+	/** Sql expressions by name */
+	String sqlExpression(String name) { sqlExpressions.get(name) }
 }

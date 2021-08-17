@@ -472,48 +472,24 @@ ORDER BY t1.id"""
         Dsl(this) {
             forGroup 'getl.testdsl.h2'
 
-            historypoint('history1', true) {
-                useConnection embeddedConnection('getl.testdsl.h2:h2')
+            embeddedTable('#historyTable', true)
 
-                tableName = 'historytable'
+            historypoint('history1', true) {
+                historyTableName = '#historyTable'
                 saveMethod = mergeSave
+                sourceName = 'source1'
+                sourceType = identitySourceType
                 create(true)
 
                 assertTrue(exists)
-                assertNull(lastValue('table1').value)
-                assertNull(lastValue('table2').value)
+                assertNull(lastValue())
 
-                saveValue('table1', 1)
-                assertEquals(1, lastValue('table1').value)
+                saveValue(1)
+                assertEquals(1, lastValue())
 
-                def nowDate = DateUtils.now
-                saveValue('table2', nowDate)
-                assertEquals(nowDate, lastValue('table2').value)
-
-                saveValue('table1', 2)
-                assertEquals(2, lastValue('table1').value)
-
-                nowDate = DateUtils.now
-                saveValue('table2', nowDate)
-                assertEquals(nowDate, lastValue('table2').value)
-
-                clearValue('table1')
-                assertNull(lastValue('table1').value)
-                assertEquals(nowDate, lastValue('table2').value)
-
-                truncate()
-                assertNull(lastValue('table2').value)
+                clearValue()
+                assertNull(lastValue())
             }
-
-            def hp = historypoint('getl.testdsl.h2:history1')
-            assertEquals('getl.testdsl.h2:history1', findHistorypoint(hp))
-
-            def anhp = historypoint { }
-            assertTrue(findHistorypoint(anhp) == null)
-            anhp.with {
-                sysParams.dslNameObject = 'getl.testdsl.h2:history2'
-            }
-            assertTrue(findHistorypoint(anhp) == null)
         }
     }
 

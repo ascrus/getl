@@ -10,6 +10,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.DatatypeConverter
 import java.security.Key
+import java.sql.Timestamp
 import java.util.regex.Pattern
 
 /**
@@ -113,6 +114,8 @@ class StringUtils {
 
 			if (formatValue != null)
 				varValue = formatValue.call(varValue)
+			else if (varValue instanceof Timestamp)
+				varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss.SSS', varValue as Date)
 			else if (varValue instanceof Date)
 				varValue = DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', varValue as Date)
 

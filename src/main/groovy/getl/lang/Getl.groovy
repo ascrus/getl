@@ -1499,7 +1499,8 @@ Examples:
     /** Register dataset in repository */
     protected Dataset registerDataset(Connection connection, String datasetClassName, String name, Boolean registration = false,
                                       Connection defaultConnection = null, Class classConnection = null, Closure cl = null) {
-        (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).register(this, connection, datasetClassName, name, registration, defaultConnection, classConnection, cl)
+        (_repositoryStorageManager.repository(RepositoryDatasets) as RepositoryDatasets).register(this, connection,
+                datasetClassName, name, registration, defaultConnection, classConnection, cl)
     }
 
     /**
@@ -1561,7 +1562,7 @@ Examples:
      * @return list of history point manager names according to specified conditions
      */
     List<String> listHistorypoints(String mask = null,
-                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.SavePointManager'])
+                                   @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.HistoryPointManager'])
                                            Closure<Boolean> filter = null) {
         _repositoryStorageManager.repository(RepositoryHistorypoints).list(mask, null, true, filter)
     }
@@ -1571,7 +1572,7 @@ Examples:
      * @param filter object filtering code
      * @return list of history point manager names according to specified conditions
      */
-    List<String> listHistorypoints(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.SavePointManager'])
+    List<String> listHistorypoints(@ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.HistoryPointManager'])
                                             Closure<Boolean> filter) {
         listHistorypoints(null, filter)
     }
@@ -1599,7 +1600,7 @@ Examples:
      * @param obj history point manager
      * @return name of the object in the repository or null if not found
      */
-    String findHistorypoint(SavePointManager obj) {
+    String findHistorypoint(HistoryPointManager obj) {
         _repositoryStorageManager.repository(RepositoryHistorypoints).find(obj)
     }
 
@@ -1608,8 +1609,8 @@ Examples:
      * @param name history point manager name
      * @return found history point manager object or null if not found
      */
-    SavePointManager findHistorypoint(String name) {
-        (_repositoryStorageManager.repository(RepositoryHistorypoints) as RepositoryHistorypoints).find(name) as SavePointManager
+    HistoryPointManager findHistorypoint(String name) {
+        (_repositoryStorageManager.repository(RepositoryHistorypoints) as RepositoryHistorypoints).find(name) as HistoryPointManager
     }
 
     /**
@@ -1620,10 +1621,9 @@ Examples:
      * @param cl user code
      * @return history point manager object
      */
-    protected SavePointManager registerHistoryPoint(JDBCConnection connection, String name,  Boolean registration = false,
-                                                    Closure cl = null) {
-        (_repositoryStorageManager.repository(RepositoryHistorypoints) as RepositoryHistorypoints).register(this, connection,
-                RepositoryHistorypoints.SAVEPOINTMANAGER, name, registration, defaultJdbcConnection(RepositoryDatasets.QUERYDATASET), JDBCConnection, cl)
+    protected HistoryPointManager registerHistoryPoint(String name,  Boolean registration = false) {
+        (_repositoryStorageManager.repository(RepositoryHistorypoints) as RepositoryHistorypoints).register(this,
+                RepositoryHistorypoints.HISTORYPOINTMANAGER, name, registration, true) as HistoryPointManager
     }
 
     /**
@@ -1632,8 +1632,9 @@ Examples:
      * @param name name object in repository
      * @param validExist checking if an object is registered in the repository (default true)
      */
-    SavePointManager registerHistoryPointObject(SavePointManager obj, String name = null, Boolean validExist = true) {
-        (_repositoryStorageManager.repository(RepositoryHistorypoints) as RepositoryHistorypoints).registerObject(this, obj, name, validExist)
+    HistoryPointManager registerHistoryPointObject(HistoryPointManager obj, String name = null, Boolean validExist = true) {
+        (_repositoryStorageManager.repository(RepositoryHistorypoints) as RepositoryHistorypoints).registerObject(this,
+                obj, name, validExist) as HistoryPointManager
     }
 
     /**
@@ -1642,7 +1643,7 @@ Examples:
      * @param filter object filtering code
      */
     void unregisterHistorypoint(String mask = null,
-                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.SavePointManager'])
+                                @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.jdbc.HistoryPointManager'])
                                         Closure<Boolean> filter = null) {
         _repositoryStorageManager.repository(RepositoryHistorypoints).unregister(mask, null, filter)
     }
@@ -2447,7 +2448,7 @@ Examples:
                             } else if (Manager.isAssignableFrom(prop.type)) {
                                 if (value instanceof String)
                                     value = getl.dataset(value as String)
-                            } else if (SavePointManager.isAssignableFrom(prop.type)) {
+                            } else if (HistoryPointManager.isAssignableFrom(prop.type)) {
                                 if (value instanceof String)
                                     value = getl.historypoint(value as String)
                             } else if (Sequence.isAssignableFrom(prop.type)) {
@@ -4727,53 +4728,54 @@ Examples:
     }
 
     /** Incremental history point manager */
-    SavePointManager historypoint(String name = null, Boolean registration = false, JDBCConnection connection = null,
-                                  @DelegatesTo(SavePointManager)
-                                  @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl = null) {
-        def parent = registerHistoryPoint(connection, name, registration, cl)
+    HistoryPointManager historypoint(String name = null, Boolean registration = false,
+                                  @DelegatesTo(HistoryPointManager)
+                                  @ClosureParams(value = SimpleType, options = ['getl.jdbc.HistoryPointManager']) Closure cl = null) {
+        def parent = registerHistoryPoint(name, registration)
         runClosure(parent, cl)
 
         return parent
     }
 
     /** Incremental history point manager */
-    SavePointManager historypoint(String name, Boolean registration = false,
-                                  @DelegatesTo(SavePointManager)
-                                  @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl) {
-        historypoint(name, registration, null, cl)
+    HistoryPointManager historypoint(String name,
+                                     @DelegatesTo(HistoryPointManager)
+                                     @ClosureParams(value = SimpleType, options = ['getl.jdbc.HistoryPointManager'])
+                                             Closure cl) {
+        historypoint(name, false, cl)
     }
 
-    /** Incremental history point manager */
-    SavePointManager historypoint(@DelegatesTo(SavePointManager)
-                                  @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl) {
-        historypoint(null, false, null, cl)
+                                     /** Incremental history point manager */
+    HistoryPointManager historypoint(@DelegatesTo(HistoryPointManager)
+                                  @ClosureParams(value = SimpleType, options = ['getl.jdbc.HistoryPointManager'])
+                                             Closure cl) {
+        historypoint(null, false, cl)
     }
 
     /**
      * Clone history point manager
      * @param point original history point manager to clone
-     * @param con used connection for new history point manager
      * @return cloned history point manager
      */
-    SavePointManager cloneHistorypoint(SavePointManager point, JDBCConnection con = null) {
+    HistoryPointManager cloneHistorypoint(HistoryPointManager point) {
         if (point == null)
             throw new ExceptionDSL('Need object value!')
 
-        return point.cloneSavePointManager(con, null, this) as SavePointManager
+        return point.cloneHistoryPointManager(null, this) as HistoryPointManager
     }
 
     /**
      * Clone history point manager
      * @param newName repository name for cloned history point manager
      * @param point original history point manager to clone
-     * @param con used connection for new history point manager
      * @param cl cloned history point manager processing code
      * @return cloned history point manager
      */
-    SavePointManager cloneHistorypoint(String newName, SavePointManager point, JDBCConnection con = null,
-                                       @DelegatesTo(SavePointManager)
-                                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.SavePointManager']) Closure cl = null) {
-        def parent = cloneHistorypoint(point, con)
+    HistoryPointManager cloneHistorypoint(String newName, HistoryPointManager point,
+                                       @DelegatesTo(HistoryPointManager)
+                                       @ClosureParams(value = SimpleType, options = ['getl.jdbc.HistoryPointManager'])
+                                               Closure cl = null) {
+        def parent = cloneHistorypoint(point)
         registerHistoryPointObject(parent, newName)
         runClosure(parent, cl)
 

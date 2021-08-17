@@ -3,7 +3,6 @@ package getl.lang.sub
 import getl.data.Connection
 import getl.exception.ExceptionDSL
 import getl.jdbc.Sequence
-import getl.utils.MapUtils
 import groovy.transform.InheritConstructors
 
 /**
@@ -38,21 +37,17 @@ class RepositorySequences extends RepositoryObjectsWithConnection<Sequence> {
         if (obj.fullName == null)
             throw new ExceptionDSL("No name specified for sequence \"${obj.dslNameObject}\"!")
 
-        return [connection: obj.connection.dslNameObject] + obj.params
+        return obj.params
     }
 
     @Override
     GetlRepository importConfig(Map config, GetlRepository existObject) {
         def connectionName = config.connection as String
-        Connection con
         if (connectionName != null)
-            con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
+            dslCreator.registerConnection(null, connectionName, false, false) as Connection
 
         def obj = (existObject as Sequence)?:(new Sequence())
-        obj.importParams(MapUtils.CleanMap(config, ['connection']) as Map<String, Object>)
-
-        if (con != null)
-            obj.setConnection(con)
+        obj.importParams(config)
 
         return obj
     }

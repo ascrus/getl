@@ -1,9 +1,7 @@
 package getl.lang.sub
 
-import getl.data.Connection
 import getl.exception.ExceptionDSL
-import getl.jdbc.SavePointManager
-import getl.utils.MapUtils
+import getl.jdbc.HistoryPointManager
 import groovy.transform.InheritConstructors
 
 /**
@@ -12,11 +10,11 @@ import groovy.transform.InheritConstructors
  */
 @InheritConstructors
 @SuppressWarnings('SpellCheckingInspection')
-class RepositoryHistorypoints extends RepositoryObjectsWithConnection<SavePointManager> {
-    static public final String SAVEPOINTMANAGER = SavePointManager.name
+class RepositoryHistorypoints extends RepositoryObjects<HistoryPointManager> {
+    static public final String HISTORYPOINTMANAGER = HistoryPointManager.name
 
     /** List of allowed history point manager classes */
-    static public final List<String> LISTHISTORYPOINTS = [SAVEPOINTMANAGER]
+    static public final List<String> LISTHISTORYPOINTS = [HISTORYPOINTMANAGER]
 
     @Override
     List<String> getListClasses() {
@@ -24,36 +22,27 @@ class RepositoryHistorypoints extends RepositoryObjectsWithConnection<SavePointM
     }
 
     @Override
-    protected SavePointManager createObject(String className) {
-        return new SavePointManager()
+    protected HistoryPointManager createObject(String className) {
+        return new HistoryPointManager()
     }
 
     @Override
     Map exportConfig(GetlRepository repObj) {
-        def obj = repObj as SavePointManager
-        if (obj.connection == null)
-            throw new ExceptionDSL("No connection specified for history point \"${obj.dslNameObject}\"!")
-        if (obj.connection.dslNameObject == null)
-            throw new ExceptionDSL("Connection for history point \"${obj.dslNameObject}\" not found in repository!")
-        if (obj.fullTableName == null)
-            throw new ExceptionDSL("No table specified for history point \"${obj.dslNameObject}\"!")
+        def obj = repObj as HistoryPointManager
+        if (obj.sourceName == null)
+            throw new ExceptionDSL("No source name specified for history point \"${obj.dslNameObject}\"!")
+        if (obj.sourceType == null)
+            throw new ExceptionDSL("No source type specified for history point \"${obj.dslNameObject}\"!")
+        if (obj.historyTableName == null)
+            throw new ExceptionDSL("No history table name specified for history point \"${obj.dslNameObject}\"!")
 
-        return [connection: obj.connection.dslNameObject] + obj.params
+        return obj.params
     }
 
     @Override
     GetlRepository importConfig(Map config, GetlRepository existObject) {
-        def connectionName = config.connection as String
-        Connection con
-        if (connectionName != null)
-            con = dslCreator.registerConnection(null, connectionName, false, false) as Connection
-
-        def obj = (existObject as SavePointManager)?:(new SavePointManager())
-        obj.importParams(MapUtils.CleanMap(config, ['connection']) as Map<String, Object>)
-
-        if (con != null)
-            obj.setConnection(con)
-
+        def obj = (existObject as HistoryPointManager)?:(new HistoryPointManager())
+        obj.importParams(config)
         return obj
     }
 }

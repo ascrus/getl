@@ -32,6 +32,8 @@ class OracleDriver extends JDBCDriver {
 		caseObjectName = 'UPPER'
 		commitDDL = true
 		transactionalDDL = true
+
+		sqlExpressions.convertTextToTimestamp = 'TO_TIMESTAMP(\'{value}\', \'yyyy-mm-dd hh24:mi:ss.FF\')'
 	}
 
 	@SuppressWarnings("UnnecessaryQualifiedReference")

@@ -100,7 +100,7 @@ class ResourceManagerTest extends TestDsl {
                 connect()
 
                 def list = buildListFiles('*.conf') { recursive = true }
-                assertEquals(23, list.countRow())
+                assertEquals(24, list.countRow())
                 assertTrue(existsDirectory('/' + RepositoryConnections.name))
                 assertTrue(existsDirectory(RepositoryConnections.name))
 

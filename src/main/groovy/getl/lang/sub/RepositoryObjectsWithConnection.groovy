@@ -48,16 +48,20 @@ abstract class RepositoryObjectsWithConnection<T extends GetlRepository & WithCo
 
     /**
      * Register an object on the specified connection
+     * @param creator Getl creator
      * @param connection connection for an object
      * @param className object class name
      * @param name repository object name
      * @param registration registration required in the repository
+     * @param defaultConnection use connection by default
+     * @param classConnection connection instance of specified class
+     * @param code owned user code
      * @return repository object
      */
     T register(Getl creator, Connection connection, String className, String name, Boolean registration = false,
-               Connection defaultConnection = null, Class classConnection = null, Closure cl = null) {
+               Connection defaultConnection = null, Class classConnection = null, Closure code = null) {
         register(creator, className, name, registration, true,
-                [connection: connection, defaultConnection: defaultConnection, classConnection: classConnection, code: cl]) as T
+                [connection: connection, defaultConnection: defaultConnection, classConnection: classConnection, code: code]) as T
     }
 
     /**

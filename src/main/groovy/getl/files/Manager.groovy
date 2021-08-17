@@ -12,6 +12,7 @@ import getl.files.sub.ManagerListProcessing
 import getl.jdbc.*
 import getl.lang.Getl
 import getl.lang.sub.GetlRepository
+import getl.lang.sub.GetlValidate
 import getl.lang.sub.ParseObjectName
 import getl.proc.Executor
 import getl.proc.Flow
@@ -760,11 +761,7 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** History table */
 	@JsonIgnore
 	TableDataset getStory() {
-		def res = params.story as TableDataset
-		if (res == null && storyName != null)
-			res = dslCreator.jdbcTable(storyName)
-
-		return res
+		(dslCreator != null && storyName != null)?dslCreator.jdbcTable(storyName):(params.story as TableDataset)
 	}
 	/** History table */
 	void setStory(TableDataset value) {
@@ -772,8 +769,13 @@ abstract class Manager implements Cloneable, GetlRepository {
 	}
 	/** Use table for storing history download files */
 	void useStory(TableDataset value) {
-		params.story = value
-		setStoryName(value?.dslNameObject)
+		if (value != null && dslCreator != null && value.dslCreator != null && value.dslNameObject != null) {
+			params.storyName = value.dslNameObject
+			params.story = null
+		} else {
+			params.story = value
+			params.storyName = null
+		}
 	}
 
 	/** History table name */
@@ -781,11 +783,15 @@ abstract class Manager implements Cloneable, GetlRepository {
 	/** History table name */
 	void setStoryName(String value) { useStoryName(value) }
 	/** Use table name for storing history download files */
-	void useStoryName(String tableName) {
-		if (tableName != null)
-			dslCreator.jdbcTable(tableName)
+	void useStoryName(String value) {
+		if (value != null) {
+			GetlValidate.IsRegister(this)
+			def tab = dslCreator.jdbcTable(value)
+			value = tab.dslNameObject
+		}
 
-		params.storyName = tableName
+		params.storyName = value
+		this.story = null
 	}
 
 	/** Directory level for which to enable parallelization */
