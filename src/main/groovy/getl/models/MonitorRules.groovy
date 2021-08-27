@@ -15,6 +15,7 @@ import getl.proc.Flow
 import getl.tfs.TDS
 import getl.tfs.TDSTable
 import getl.utils.BoolUtils
+import getl.utils.CloneUtils
 import getl.utils.DateUtils
 import getl.utils.EMailer
 import getl.utils.StringUtils
@@ -55,7 +56,22 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
     /** List of used rules */
     List<MonitorRuleSpec> getUsedRules() { usedObjects as List<MonitorRuleSpec> }
     /** List of used rules */
-    void setUsedRules(List<MonitorRuleSpec> value) { usedObjects = value }
+    void setUsedRules(List<MonitorRuleSpec> value) {
+        usedRules.clear()
+        if (value != null)
+            usedRules.addAll(value)
+    }
+    /** Convert a list of parameters to usable monitor rules */
+    void assignUsedRules(List<Map> value) {
+        def own = this
+        def list = [] as List<MonitorRuleSpec>
+        value?.each { node ->
+            def p = CloneUtils.CloneMap(node, true)
+            list.add(new MonitorRuleSpec(own, p))
+        }
+        usedRules = list
+    }
+
     /** List of enabled rules */
     List<MonitorRuleSpec> getEnabledRules() {
         return usedRules.findAll { rule -> BoolUtils.IsValue(rule.enabled, true) }
@@ -125,9 +141,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
      * @param queryName
      * @return rule specification
      */
-    MonitorRuleSpec findRule(String queryName) {
-        usedRules.find { r -> r.queryName == queryName } as MonitorRuleSpec
-    }
+    MonitorRuleSpec findRule(String queryName) { objectByName(queryName) }
 
     /**
      * Define monitor source table
@@ -289,6 +303,8 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         def statTab = statusTable
         _currentDateTime = null
 
+        dslCreator.logFinest("+++ Starting a rules check for \"$dslNameObject\" model ...")
+
         // Copy status table to temp
         new Flow(dslCreator).copy(source: statTab, dest: lastCheckStatusTable, clear: true) { s, d ->
             d.operation = 'NONE'
@@ -436,7 +452,11 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
             }
         }
 
-        return (histtab.countRow('is_notification') == 0)
+        def countNotification = histtab.countRow('is_notification')
+
+        dslCreator.logInfo("+++ Rule check for \"$dslNameObject\" model completed, $countNotification notifications detected")
+
+        return (countNotification == 0)
     }
 
     /** Generate html notification */
@@ -551,7 +571,7 @@ class MonitorRules extends BaseModel<MonitorRuleSpec> {
         def titleStr = StringUtils.EvalMacroString(title, [name: repositoryModelName, active: activeErrors, close: closeErrors])
 
         smtpServer.with {
-            dslCreator.logFinest("Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients: $toAddress")
+            dslCreator.logFinest("+++ Sending mail to ${DateUtils.FormatDate('yyyy-MM-dd HH:mm:ss', currentDateTime)} for recipients: $toAddress")
             def text = htmlNotification(rows)
             sendMail(null, titleStr, text, true)
         }

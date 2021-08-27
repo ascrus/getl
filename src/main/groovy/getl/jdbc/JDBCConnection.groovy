@@ -890,7 +890,6 @@ ${tab}${tab}}
 	static public final Integer transactionIsolationSerializable = java.sql.Connection.TRANSACTION_SERIALIZABLE
 
 	/** Current transactional isolation level */
-	@JsonIgnore
 	Integer getTransactionIsolation() {
 		checkEstablishedConnection()
 		return currentJDBCDriver.transactionIsolation

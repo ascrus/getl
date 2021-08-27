@@ -1,3 +1,4 @@
+//file:noinspection GrMethodMayBeStatic
 package getl.lang.opts
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -120,10 +121,7 @@ class BaseSpec implements Cloneable {
             _params.remove(key)
     }
 
-    /**
-     * Detected ignore key map from import
-     */
-    @SuppressWarnings(["GrMethodMayBeStatic", 'unused'])
+    /** Detected ignore key map from import */
     protected List<String> ignoreImportKeys(Map<String, Object> importParams) { [] as List<String> }
 
     /** Import options from map */

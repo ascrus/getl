@@ -265,15 +265,16 @@ class BaseModel<T extends getl.models.sub.BaseSpec> extends getl.lang.opts.BaseS
 
         usedObjects.each { obj ->
             def objName = obj.objectNameInModel()
-            if (includePath == null && excludePath == null)
-                res << objName
-            else if (includePath != null) {
-                if (Path.MatchList(objName, includePath))
-                    if (excludePath == null || !Path.MatchList(objName, excludePath))
-                        res << objName
+            if (objName != null) {
+                if (includePath == null && excludePath == null)
+                    res << objName
+                else if (includePath != null) {
+                    if (Path.MatchList(objName, includePath))
+                        if (excludePath == null || !Path.MatchList(objName, excludePath))
+                            res << objName
+                } else if (excludePath != null && !Path.MatchList(objName, excludePath))
+                    res << objName
             }
-            else if (excludePath != null && !Path.MatchList(objName, excludePath))
-                res << objName
         }
 
         return res

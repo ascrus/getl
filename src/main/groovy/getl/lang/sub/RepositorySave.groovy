@@ -10,6 +10,7 @@ import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
 import getl.models.sub.RepositorySetOfTables
+import getl.models.sub.RepositoryWorkflows
 import getl.utils.BoolUtils
 import getl.utils.FileUtils
 
@@ -112,7 +113,7 @@ class RepositorySave extends Getl {
 
     /** Processed object types */
     static private final ObjectTypes = ['Connections', 'Datasets', 'Sequences', 'Historypoints', 'Files', 'SetOfTables', 'MapTables',
-                          'MonitorRules', 'ReferenceFiles', 'ReferenceVerticaTables']
+                          'MonitorRules', 'ReferenceFiles', 'ReferenceVerticaTables', 'Workflows']
 
     @Override
     Object run() {
@@ -294,6 +295,10 @@ class RepositorySave extends Getl {
         repositoryStorageManager.repository(RepositorySetOfTables).unregister()
     }
 
+    void clearWorkflow() {
+        repositoryStorageManager.repository(RepositoryWorkflows).unregister()
+    }
+
     /** Save connections */
     void saveConnections(String env = getlDefaultConfigEnvironment, String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryConnections, mask, env)
@@ -440,5 +445,11 @@ class RepositorySave extends Getl {
     void saveMapTables(String mask = null) {
         def count = repositoryStorageManager.saveRepository(RepositoryMapTables, mask)
         logInfo "$count models of map tables saved"
+    }
+
+    /** Save model of monitoring rules */
+    void saveWorkflows(String mask = null) {
+        def count = repositoryStorageManager.saveRepository(RepositoryWorkflows, mask)
+        logInfo "$count model of workflow saved"
     }
 }

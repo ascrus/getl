@@ -8,7 +8,9 @@ import getl.exception.ExceptionModel
 import getl.jdbc.QueryDataset
 import getl.models.opts.ReferenceVerticaTableSpec
 import getl.models.sub.DatasetsModel
+import getl.utils.CloneUtils
 import getl.utils.Path
+import getl.utils.StringUtils
 import getl.vertica.VerticaConnection
 import getl.vertica.VerticaTable
 import groovy.transform.InheritConstructors
@@ -41,7 +43,21 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     /** List of used tables */
     List<ReferenceVerticaTableSpec> getUsedTables() { usedDatasets as List<ReferenceVerticaTableSpec> }
     /** List of used tables */
-    void setUsedTables(List<ReferenceVerticaTableSpec> value) { usedObjects = value }
+    void setUsedTables(List<ReferenceVerticaTableSpec> value) {
+        usedTables.clear()
+        if (value != null)
+            usedTables.addAll(value)
+    }
+    /** Convert a list of parameters to usable reference tables */
+    void assignUsedTables(List<Map> value) {
+        def own = this
+        def list = [] as List<ReferenceVerticaTableSpec>
+        value?.each { node ->
+            def p = CloneUtils.CloneMap(node, true)
+            list.add(new ReferenceVerticaTableSpec(own, p))
+        }
+        usedTables = list
+    }
 
     /** Reference storage schema */
     String getReferenceSchemaName() { params.referenceSchemaName as String }
@@ -273,7 +289,7 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
     Integer fill(List<String> include = null, List<String> exclude = null, Boolean usePartitions = true) {
         checkModel()
 
-        dslCreator.logFine("*** Start deploying tables for \"$repositoryModelName\" model")
+        dslCreator.logFinest("+++ Start deploying tables for \"$repositoryModelName\" model ...")
 
         def includePath = Path.Masks2Paths(include)
         def excludePath = Path.Masks2Paths(exclude)
@@ -299,7 +315,8 @@ class ReferenceVerticaTables extends DatasetsModel<ReferenceVerticaTableSpec> {
             }
         }
 
-        dslCreator.logInfo("${repositoryModelName}: $res tables successfully filled from reference tables")
+        dslCreator.logInfo("+++ Deployment ${StringUtils.WithGroupSeparator(res)} tables for model " +
+                "\"$repositoryModelName\" completed successfully")
 
         return res
     }

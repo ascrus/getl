@@ -462,7 +462,7 @@ class StringUtils {
 	 */
 	static String ToCamelCase(String text, Boolean capitalized = false) {
 		text = text.replaceAll( "(_)([A-Za-z0-9])", { List<String> it -> it[2].toUpperCase() } )
-		return (capitalized)? text.capitalize() : text
+		return (capitalized)?text.capitalize():text
     }
 
     /**

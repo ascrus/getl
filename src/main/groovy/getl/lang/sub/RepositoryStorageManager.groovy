@@ -14,6 +14,7 @@ import getl.models.sub.RepositoryMapTables
 import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
+import getl.models.sub.RepositoryWorkflows
 import getl.proc.Executor
 import getl.utils.FileUtils
 import getl.utils.Path
@@ -113,6 +114,7 @@ class RepositoryStorageManager {
         registerRepository(RepositoryMonitorRules)
         registerRepository(RepositoryMapTables)
         registerRepository(RepositorySetOfTables)
+        registerRepository(RepositoryWorkflows)
     }
 
     /** List of registered repositories */

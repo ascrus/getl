@@ -64,6 +64,13 @@ class ExcelDataset extends FileDataset {
     /** The first entry is the field header */
     Boolean header() { BoolUtils.IsValue([header, currentExcelConnection.header, true])}
 
+    /** The number of rows to keep in memory at any given point (default 100) */
+    Integer getRowCacheSize() { params.rowCacheSize as Integer }
+    /** The number of rows to keep in memory at any given point (default 100) */
+    void setRowCacheSize(Integer value) { params.rowCacheSize = value }
+    /** The number of rows to keep in memory at any given point (default 100) */
+    Integer rowCacheSize() { rowCacheSize?:100 }
+
     /** Warnings from Dataset (e.g. show warning when list not found) */
     @SuppressWarnings('unused')
     Boolean getShowWarnings() { params.showWarnings as Boolean }

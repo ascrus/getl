@@ -68,6 +68,10 @@ class Getl extends Script {
         initGetlParams()
     }
 
+    static {
+        GetlSetInstance(new Getl())
+    }
+
     static void main(String[] args) {
         Main(args.toList(), true)
     }

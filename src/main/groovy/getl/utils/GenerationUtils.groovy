@@ -1603,48 +1603,6 @@ sb << """
 	}
 
 	/**
-	 * Run groovy script
-	 * @param value
-	 * @param vars
-	 * @return
-	 */
-	@CompileStatic
-	@NamedVariant
-	static def EvalGroovyScript(String value, Map<String, Object> vars = null, Boolean convertReturn = false,
-								ClassLoader classLoader = null, Getl owner = null) {
-		if (value == null)
-			return null
-
-		convertReturn = BoolUtils.IsValue(convertReturn)
-		if (convertReturn)
-			value = value.replace('\r', '\u0001')
-
-		def logger = (owner != null)?owner.logging.manager:Logs.global
-		
-		Binding bind = new Binding()
-		vars?.each { String key, Object val ->
-			bind.setVariable(key, val)
-		}
-
-		def sh = (classLoader == null)?new GroovyShell(bind):new GroovyShell(classLoader, bind, CompilerConfiguration.DEFAULT)
-		
-		def res
-		try {
-			res = sh.evaluate(value)
-			if (convertReturn && res != null) res = (res as String).replace('\u0001', '\r')
-		}
-		catch (Exception e) {
-			logger.severe("Error parse [${StringUtils.CutStr(value, 1000)}]")
-			StringBuilder sb = new StringBuilder("script:\n$value\nvars:")
-			vars?.each { varName, varValue -> sb.append("\n	$varName: ${StringUtils.LeftStr(varValue.toString(), 256)}") }
-			logger.dump(e, 'GenerationUtils', 'EvalGroovyScript', sb.toString())
-			throw e
-		}
-
-        return res
-	}
-	
-	/**
 	 * Evaluate ${variable} in text
 	 * @param value
 	 * @param vars
@@ -1660,7 +1618,54 @@ sb << """
 
         return value
 	}
-	
+
+	/**
+	 * Run groovy script
+	 * @param value code text
+	 * @param vars used variables
+	 * @param convertReturn convert the line return character so that it is not involved in processing
+	 * @param classLoader the load class through which to compile the code
+	 * @param owner Getl creator
+	 * @return generated closure code
+	 */
+	@CompileStatic
+	@NamedVariant
+	static def EvalGroovyScript(String value, Map<String, Object> vars = null, Boolean convertReturn = false,
+								ClassLoader classLoader = null, Getl owner = null) {
+		if (value == null)
+			return null
+
+		convertReturn = BoolUtils.IsValue(convertReturn)
+		if (convertReturn)
+			value = value.replace('\r', '\u0001')
+
+		def logger = (owner != null)?owner.logging.manager:Logs.global
+
+		Binding bind = new Binding()
+		vars?.each { String key, Object val ->
+			bind.setVariable(key, val)
+		}
+
+		def sh = (classLoader == null)?new GroovyShell(bind):new GroovyShell(classLoader, bind,
+				CompilerConfiguration.DEFAULT)
+
+		def res
+		try {
+			res = sh.evaluate(value)
+			if (convertReturn && res != null)
+				res = (res as String).replace('\u0001', '\r')
+		}
+		catch (Exception e) {
+			logger.severe("Error parse [${StringUtils.CutStr(value, 1000)}]")
+			StringBuilder sb = new StringBuilder("script:\n$value\nvars:")
+			vars?.each { varName, varValue -> sb.append("\n	$varName: ${StringUtils.LeftStr(varValue.toString(), 256)}") }
+			logger.dump(e, 'GenerationUtils', 'EvalGroovyScript', sb.toString())
+			throw e
+		}
+
+		return res
+	}
+
 	/**
 	 * Convert field type to string type
 	 * @param field

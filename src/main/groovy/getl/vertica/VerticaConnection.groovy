@@ -7,15 +7,13 @@ import getl.jdbc.QueryDataset
 import getl.jdbc.TableDataset
 import getl.stat.ProcessTime
 import getl.utils.BoolUtils
-import getl.utils.Logs
 import getl.utils.Path
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
-
-import static getl.utils.StringUtils.WithGroupSeparator
 import getl.jdbc.JDBCConnection
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
+import static getl.utils.StringUtils.WithGroupSeparator
 
 /**
  * Vertica connection class

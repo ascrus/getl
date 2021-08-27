@@ -139,4 +139,36 @@ class RepositorySaveTest extends RepositorySave {
             }
         }
     }
+
+    @SaveToRepository(type = 'Workflows')
+    void workflows() {
+        models.workflow('test:workflow', true) {
+            start('Start 1') {
+                countThreads = 2
+
+                script WorkflowStepTestScript, [stepName: stepName, stepNum: 1]
+                script WorkflowStepTestScript, [stepName: stepName, stepNum: 2]
+
+                onError {
+                    script WorkflowStepTestScript, [stepName: stepName, stepNum: -1]
+                }
+
+                later {
+                    condition = '(configContent.countProcessed == 2)'
+
+                    script WorkflowStepTestScript, [stepName: stepName, stepNum: 101]
+                    script WorkflowStepTestScript, [stepName: stepName, stepNum: 102]
+
+                    onError {
+                        script WorkflowStepTestScript, [stepName: stepName, stepNum: -101]
+                    }
+
+                    later {
+                        condition = '(configContent.countProcessed == 4)'
+                        script WorkflowStepTestScript, [stepName: stepName, stepNum: 201]
+                    }
+                }
+            }
+        }
+    }
 }

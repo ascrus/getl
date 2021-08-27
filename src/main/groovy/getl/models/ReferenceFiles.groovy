@@ -10,6 +10,7 @@ import getl.models.opts.ReferenceFileSpec
 import getl.models.sub.FilesModel
 import getl.stat.ProcessTime
 import getl.utils.BoolUtils
+import getl.utils.CloneUtils
 import getl.utils.FileUtils
 import getl.utils.StringUtils
 import groovy.transform.InheritConstructors
@@ -25,7 +26,21 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
     /** List of reference files */
     List<ReferenceFileSpec> getUsedFiles() { usedObjects as List<ReferenceFileSpec> }
     /** List of reference files */
-    void setUsedFiles(List<ReferenceFileSpec> value) { usedObjects = value }
+    void setUsedFiles(List<ReferenceFileSpec> value) {
+        usedFiles.clear()
+        if (value != null)
+            usedFiles.addAll(value)
+    }
+    /** Convert a list of parameters to usable reference files */
+    void assignUsedFiles(List<Map> value) {
+        def own = this
+        def list = [] as List<ReferenceFileSpec>
+        value?.each { node ->
+            def p = CloneUtils.CloneMap(node, true)
+            list.add(new ReferenceFileSpec(own, p))
+        }
+        usedFiles = list
+    }
 
     /** Destination file manager name */
     String getDestinationManagerName() { params.destinationManagerName as String }
@@ -111,8 +126,10 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
      * Fill destination path with reference files
      * @param cleanSource clear source before fill
      */
-    void fill(Boolean cleanSource = false) {
+    Integer fill(Boolean cleanSource = false) {
         checkModel()
+
+        def res = 0
 
         def source = sourceManager.cloneManager(null, dslCreator)
         source.resetLocalDir()
@@ -121,7 +138,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
         source.connect()
         dest.connect()
 
-        dslCreator.logFine("Start deploying files for \"$repositoryModelName\" model")
+        dslCreator.logFinest("+++ Start deploying files for \"$repositoryModelName\" model ...")
 
         def isLocalUnpack = BoolUtils.IsValue(localUnpack) || !dest.allowCommand
         try {
@@ -129,6 +146,7 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                 dest.cleanDir()
 
             usedFiles.each { modelFile ->
+                res++
                 def fileName = FileUtils.FileName(modelFile.filePath)
                 new ProcessTime(dslCreator: dslCreator,
                         name: "Download reference file \"$fileName\" from \"$source\" to local directory",
@@ -159,14 +177,14 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                             new ProcessTime(dslCreator: dslCreator,
                                     name: "Unpack reference file \"$fileName\" on \"$cmdMan\"",
                                     objectName: 'file', debug: true).run {
-                                def res = cmdMan.command(cmdText, cmdOut, cmdErr)
-                                if (res == -1) {
+                                def cmdRes = cmdMan.command(cmdText, cmdOut, cmdErr)
+                                if (cmdRes == -1) {
                                     def err = new ExceptionModel("Failed to execute command \"$cmdText\"!")
                                     def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
                                     dslCreator.logging.dump(err, cmdMan.getClass().name, cmdMan.toString(), data)
                                     throw err
                                 }
-                                if (res > 0) {
+                                if (cmdRes > 0) {
                                     def err = new ExceptionModel("Error executing command \"$cmdText\"!")
                                     def data = 'console output:\n' + cmdOut.toString() + '\nconsole error:\n' + cmdErr.toString()
                                     dslCreator.logging.dump(err, cmdMan.getClass().name, cmdMan.toString(), data)
@@ -183,7 +201,8 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
                             }
                         }
                         finally {
-                            if (isLocalUnpack) cmdMan.disconnect()
+                            if (isLocalUnpack)
+                                cmdMan.disconnect()
                         }
                         dslCreator.logInfo("Reference file \"$fileName\" processing completed successfully")
                     }
@@ -198,7 +217,8 @@ class ReferenceFiles extends FilesModel<ReferenceFileSpec> {
             source.disconnect()
             dest.disconnect()
         }
-        dslCreator.logInfo("Deployment files of model \"$repositoryModelName\" completed successfully")
+        dslCreator.logInfo("+++ Deployment ${StringUtils.WithGroupSeparator(res)} files for model " +
+                "\"$repositoryModelName\" completed successfully")
     }
 
     @Override

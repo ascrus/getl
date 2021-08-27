@@ -8,11 +8,13 @@ import getl.models.MapTables
 import getl.models.MonitorRules
 import getl.models.ReferenceFiles
 import getl.models.ReferenceVerticaTables
+import getl.models.Workflows
 import getl.models.sub.RepositorySetOfTables
 import getl.models.sub.RepositoryMapTables
 import getl.models.sub.RepositoryMonitorRules
 import getl.models.sub.RepositoryReferenceFiles
 import getl.models.sub.RepositoryReferenceVerticaTables
+import getl.models.sub.RepositoryWorkflows
 import getl.vertica.VerticaConnection
 import groovy.transform.InheritConstructors
 import groovy.transform.stc.ClosureParams
@@ -383,5 +385,76 @@ class ModelSpec extends BaseSpec {
     void processSetOfTables(String mask,
                             @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
         repository(RepositorySetOfTables).processObjects(mask, null, cl)
+    }
+
+    /** Workflow model description */
+    Workflows workflow(String modelName, Boolean registration = false,
+                       @DelegatesTo(Workflows)
+                       @ClosureParams(value = SimpleType, options = ['getl.models.Workflows'])
+                               Closure cl = null) {
+        def parent = (repository(RepositoryWorkflows) as RepositoryWorkflows)
+                .register(getl, Workflows.name, modelName, registration)
+        runClosure(parent, cl)
+
+        return parent
+    }
+
+    /** Workflow model description */
+    Workflows workflow(String modelName,
+                       @DelegatesTo(Workflows)
+                       @ClosureParams(value = SimpleType, options = ['getl.models.Workflows'])
+                               Closure cl) {
+        workflow(modelName, false, cl)
+    }
+
+    /** Workflow model description */
+    Workflows workflow(@DelegatesTo(Workflows)
+                       @ClosureParams(value = SimpleType, options = ['getl.models.Workflows'])
+                               Closure cl) {
+        workflow(null, false, cl)
+    }
+
+    /** Unregister workflow models */
+    void unregisterWorkflows(String mask) {
+        repository(RepositoryWorkflows).unregister(mask)
+    }
+
+    /**
+     * Register workflow models from storage configuration files to repository
+     * @param mask model name mask
+     * @return number of registered models
+     */
+    Integer registerWorkflowsFromStorage(String mask = null) {
+        return getl.repositoryStorageManager.loadRepository(RepositoryWorkflows, mask, null)
+    }
+
+    /**
+     * Return a list of workflow models
+     * @param mask search mask
+     * @param filter filter code
+     * @return list of names of found models
+     */
+    List<String> listWorkflows(String mask = null,
+                               @ClosureParams(value = SimpleType, options = ['java.lang.String', 'getl.models.Workflows'])
+                                       Closure<Boolean> filter = null) {
+        repository(RepositoryWorkflows).list(mask, null, true, filter)
+    }
+
+    /**
+     * Process a list of workflow models
+     * @param cl process code
+     */
+    void processWorkflows(@ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        processWorkflows(null, cl)
+    }
+
+    /**
+     * Process a list of workflow
+     * @param mask search mask
+     * @param cl process code
+     */
+    void processWorkflows(String mask,
+                          @ClosureParams(value = SimpleType, options = ['java.lang.String']) Closure cl) {
+        repository(RepositoryWorkflows).processObjects(mask, null, cl)
     }
 }

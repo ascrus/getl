@@ -11,14 +11,13 @@ import getl.lang.sub.RepositoryConnections
 import getl.lang.sub.RepositoryDatasets
 import getl.lang.sub.RepositoryFilemanagers
 import getl.lang.sub.RepositorySequences
+import getl.models.sub.RepositoryWorkflows
 import getl.test.Config
 import getl.test.TestDsl
 import getl.tfs.TDS
 import getl.tfs.TFS
 import getl.utils.DateUtils
 import getl.utils.FileUtils
-import getl.utils.GenerationUtils
-import getl.utils.SynchronizeObject
 import groovy.time.TimeCategory
 import groovy.transform.InheritConstructors
 import org.junit.Test
@@ -926,6 +925,7 @@ class RepositoryTest extends TestDsl {
 
             try {
                 callScript RepositorySaveTest
+
                 embeddedConnection('test:con') {
                     assertEquals('repositorysave_test', connectDatabase)
                     assertEquals(1, attributes.a1)
@@ -1017,6 +1017,55 @@ class RepositoryTest extends TestDsl {
                         assertEquals(2, objectVars.test2)
                         assertEquals(3, modelAttrs.a1)
                         assertEquals([a:1, b:2, c:3], modelAttrs.a2 as Map)
+                    }
+                }
+
+                models.workflow('test:workflow') {
+                    assertEquals(1, usedSteps.size())
+                    step('Start 1') {
+                        assertEquals('Start 1', stepName)
+                        assertEquals(executeOperation, operation)
+
+                        assertEquals(2, scripts.size())
+
+                        assertEquals('getl.lang.WorkflowStepTestScript', scripts[0].name)
+                        assertEquals(stepName, scripts[0].params.stepName)
+                        assertEquals(1, scripts[0].params.stepNum)
+
+                        assertEquals('getl.lang.WorkflowStepTestScript', scripts[1].name)
+                        assertEquals(stepName, scripts[1].params.stepName)
+                        assertEquals(2, scripts[1].params.stepNum)
+
+                        step('ERROR 1') {
+                            assertEquals('getl.lang.WorkflowStepTestScript', scripts[0].name)
+                            assertEquals(stepName, scripts[0].params.stepName)
+                            assertEquals(-1, scripts[0].params.stepNum)
+                        }
+
+                        step('EXECUTE 1') {
+                            assertEquals('(configContent.countProcessed == 2)', condition)
+
+                            assertEquals('getl.lang.WorkflowStepTestScript', scripts[0].name)
+                            assertEquals(stepName, scripts[0].params.stepName)
+                            assertEquals(101, scripts[0].params.stepNum)
+
+                            assertEquals('getl.lang.WorkflowStepTestScript', scripts[1].name)
+                            assertEquals(stepName, scripts[1].params.stepName)
+                            assertEquals(102, scripts[1].params.stepNum)
+
+                            step('ERROR 1') {
+                                assertEquals('getl.lang.WorkflowStepTestScript', scripts[0].name)
+                                assertEquals(stepName, scripts[0].params.stepName)
+                                assertEquals(-101, scripts[0].params.stepNum)
+                            }
+
+                            step('EXECUTE 1') {
+                                assertEquals('(configContent.countProcessed == 4)', condition)
+                                assertEquals('getl.lang.WorkflowStepTestScript', scripts[0].name)
+                                assertEquals(stepName, scripts[0].params.stepName)
+                                assertEquals(201, scripts[0].params.stepNum)
+                            }
+                        }
                     }
                 }
 

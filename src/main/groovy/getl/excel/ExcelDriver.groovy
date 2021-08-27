@@ -99,7 +99,7 @@ class ExcelDriver extends FileDriver {
         if (prepareCode != null)
             prepareCode([])
 
-        def workbook = getWorkbookType(fullPath)
+        def workbook = getWorkbookType(fullPath, dataset.rowCacheSize(), dataset.bufferSize())
         Sheet sheet
         try {
             if (dataset.listName != null) {
@@ -277,14 +277,15 @@ class ExcelDriver extends FileDriver {
 		return res
     }
 
-    static protected Workbook getWorkbookType(String fileName) {
+    /** Create work book manager */
+    static protected Workbook getWorkbookType(String fileName, Integer rowCacheSize = null, Integer bufferSize = null) {
         def ext = FileUtils.FileExtension(fileName).toLowerCase()
         def file = new File(fileName)
         if (!file.exists())
-            throw new ExceptionGETL("File '$fileName' doesn't exists")
+            throw new ExceptionGETL("File \"$fileName\" doesn't exists!")
 
         if (!(ext in ['xls', 'xlsx']))
-            throw new ExceptionGETL("'$ext' is not available. Please, use 'xls' or 'xlsx'.")
+            throw new ExceptionGETL("\"$ext\" extension for file \"$fileName\" is not available. Please, use 'xls' or 'xlsx' types!")
 
         def is = new FileInputStream(file)
 
@@ -292,8 +293,8 @@ class ExcelDriver extends FileDriver {
         switch (ext) {
             case {fileName.endsWith(ext) && ext == 'xlsx'}:
                 res = StreamingReader.builder()
-                        .rowCacheSize(100)
-                        .bufferSize(4096)
+                        .rowCacheSize(rowCacheSize?:100)
+                        .bufferSize(bufferSize?:4096)
                         .open(is)
                 //res = new XSSFWorkbook(OPCPackage.open(is))
                 break
@@ -301,7 +302,7 @@ class ExcelDriver extends FileDriver {
                 res = new HSSFWorkbook(new POIFSFileSystem(is), false)
                 break
             default:
-                throw new ExceptionGETL("Something went wrong!")
+                throw new ExceptionGETL("Unknown extension of Excel file \"$fileName\"!")
         }
 
         return res

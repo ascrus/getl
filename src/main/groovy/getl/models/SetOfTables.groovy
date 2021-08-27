@@ -44,7 +44,11 @@ class SetOfTables extends DatasetsModel<TableSpec> {
     /** Used tables */
     List<TableSpec> getUsedTables() { usedObjects as List<TableSpec> }
     /** Used tables */
-    void setUsedTables(List<TableSpec> value) { usedObjects = value }
+    void setUsedTables(List<TableSpec> value) {
+        usedTables.clear()
+        if (value != null)
+            usedTables.addAll(value)
+    }
     /** Assign used tables from list of map structure */
     void assignUsedTables(List<Map> value) {
         def own = this

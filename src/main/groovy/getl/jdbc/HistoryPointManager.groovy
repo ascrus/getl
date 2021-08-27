@@ -83,6 +83,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	private TableDataset localHistoryTable
 
 	/** Incremental capture history storage table */
+	@JsonIgnore
 	TableDataset getHistoryTable() {
 		(dslCreator != null && historyTableName != null)?dslCreator.jdbcTable(historyTableName):this.localHistoryTable
 	}
@@ -397,6 +398,7 @@ class HistoryPointManager implements Cloneable, GetlRepository {
 	static public final Timestamp timestampMinValue = DateUtils.ParseSQLTimestamp('yyyy-MM-dd', '1900-01-01')
 
 	/** Минимальное значение, в которое конвертируется null */
+	@JsonIgnore
 	Object getConvertNullValue() { (sourceType == identitySourceType)?identityMinValue:timestampMinValue }
 
 	/** Объект синхронизации работы с менеджером */

@@ -11,7 +11,7 @@ import groovy.time.Duration
 import groovy.transform.InheritConstructors
 
 /**
- * Table tracking options
+ * Rule monitor options
  * @author Alexsey Konstantinov
  */
 @InheritConstructors
